@@ -1,6 +1,6 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
-const User = require("./user"); // Assuming User exists
+const User = require("./users"); // Assuming User exists
 const { v4: uuidv4 } = require("uuid"); // Importing UUID library
 
 const Quotation = sequelize.define("Quotation", {

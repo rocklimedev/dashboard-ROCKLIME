@@ -1,28 +1,38 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
 const Quotation = require("./quotation"); // Assuming Quotation exists
-const { v4: uuidv4 } = require("uuid"); // Importing UUID library
 
 const Order = sequelize.define("Order", {
-  orderNama: {
-    type: DataTypes.UUID, // Changed to UUID
+  id: {
+    type: DataTypes.UUID,
     primaryKey: true,
-    defaultValue: uuidv4, // Automatically generates a UUID
+    defaultValue: DataTypes.UUIDV4,
   },
+
+  title: { type: DataTypes.STRING, allowNull: false },
   pipeline: {
-    type: DataTypes.ARRAY(DataTypes.STRING), // or DataTypes.JSON for array
+    type: DataTypes.JSON, // Store array as JSON
   },
   status: {
-    type: DataTypes.ENUM("active", "inactive", "cancelled"),
+    type: DataTypes.ENUM(
+      "CREATED",
+      "PREPARING",
+      "CHECKING",
+      "INVOICE",
+      "DISPATCHED",
+      "DELIVERED",
+      "PARTIALLY_DELIVERED"
+    ),
+    defaultValue: "CREATED",
   },
   dueDate: {
     type: DataTypes.DATEONLY,
   },
   assigned: {
-    type: DataTypes.ARRAY(DataTypes.STRING), // or DataTypes.JSON for array
+    type: DataTypes.JSON, // Store array as JSON
   },
   followupDates: {
-    type: DataTypes.ARRAY(DataTypes.DATEONLY), // or DataTypes.JSON for array
+    type: DataTypes.JSON, // Store array as JSON
   },
   source: {
     type: DataTypes.STRING,

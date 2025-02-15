@@ -1,6 +1,6 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
-const User = require("./user");
+const User = require("./users");
 const { v4: uuidv4 } = require("uuid"); // Importing UUID library
 
 const Signature = sequelize.define("Signature", {

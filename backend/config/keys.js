@@ -1,6 +1,6 @@
 module.exports = {
   app: {
-    name: "NayaVyapaar Backend",
+    name: "ROCKLIME DASHBOARD Backend",
     apiURL: `${process.env.BASE_API_URL}`,
     clientURL: process.env.CLIENT_URL || "http://localhost:3000",
   },

@@ -2,7 +2,7 @@ const socketio = require("socket.io");
 const jwt = require("jsonwebtoken");
 const { ROLES } = require("../config/constant");
 const keys = require("../config/keys");
-const User = require("../models/user"); // Importing Sequelize-based User model
+const User = require("../models/users"); // Importing Sequelize-based User model
 const support = require("./support");
 
 const authHandler = async (socket, next) => {

@@ -1,76 +1,77 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
 const { v4: uuidv4 } = require("uuid"); // Importing UUID library
+const Order = require("./orders"); // Import Order model
 
 const Invoice = sequelize.define(
   "Invoice",
   {
     invoiceId: {
-      type: DataTypes.UUID, // Changed to UUID
+      type: DataTypes.UUID,
       primaryKey: true,
       defaultValue: uuidv4, // Auto-generate UUID
     },
     client: {
-      type: DataTypes.UUID, // Assuming userId is UUID in the 'users' table
+      type: DataTypes.UUID,
       references: {
-        model: "users", // Table name of user
-        key: "userId", // Reference to userId in users table
+        model: "users",
+        key: "userId",
       },
     },
     billTo: {
       type: DataTypes.STRING(255),
-      allowNull: true, // Can be a custom name or user name
+      allowNull: true,
     },
     shipTo: {
-      type: DataTypes.UUID, // Assuming addressId is UUID in the 'addresses' table
+      type: DataTypes.UUID,
       references: {
-        model: "addresses", // Table name of address
-        key: "addressId", // Reference to addressId in addresses table
+        model: "addresses",
+        key: "addressId",
       },
     },
     amount: {
       type: DataTypes.DECIMAL(10, 2),
-      allowNull: false, // Invoice amount
+      allowNull: false,
     },
     orderNumber: {
       type: DataTypes.STRING(100),
-      allowNull: true, // Can link to orderName in orders table
+      allowNull: true,
     },
     invoiceDate: {
       type: DataTypes.DATEONLY,
-      allowNull: false, // Exact date of the invoice
+      allowNull: false,
     },
     dueDate: {
       type: DataTypes.DATEONLY,
-      allowNull: false, // Due date to submit the order
+      allowNull: false,
     },
     paymentMethod: {
-      type: DataTypes.JSON, // Store array of payment methods
+      type: DataTypes.JSON,
       allowNull: true,
     },
     status: {
       type: DataTypes.ENUM("paid", "unpaid", "partially paid"),
-      allowNull: false, // Payment status
+      allowNull: false,
     },
     orderId: {
-      type: DataTypes.UUID, // Changed to UUID for consistency
+      type: DataTypes.UUID, // Ensure this matches the primary key type in Order
       references: {
-        model: "orders", // Table name of orders
-        key: "orderNama", // Reference to orderNama in orders table (assuming it's UUID)
+        model: Order, // Correct reference to Order model
+        key: "id", // Fix: Reference the correct column `id` instead of `orderNama`
       },
     },
     products: {
       type: DataTypes.JSON,
-      allowNull: false, // Array of products from the order
+      allowNull: false,
     },
     signatureName: {
       type: DataTypes.STRING(255),
-      allowNull: true, // Signature name, linked to signature table
+      allowNull: true,
     },
   },
   {
     tableName: "invoices",
-    timestamps: false, // Set to true if you need createdAt and updatedAt fields
+    timestamps: false,
   }
 );
 

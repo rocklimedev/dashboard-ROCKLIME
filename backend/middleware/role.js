@@ -1,4 +1,4 @@
-const { ROLES } = require("../constants"); // Define roles like ROLES.Admin, ROLES.User
+const { ROLES } = require("../config/constant"); // Define roles like ROLES.Admin, ROLES.User
 
 const role = {
   check: (requiredRole) => (req, res, next) => {
