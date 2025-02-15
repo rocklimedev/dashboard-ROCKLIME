@@ -11,6 +11,7 @@ const roleRoutes = require("./routes/roles");
 const permissionRoutes = require("./routes/permission");
 const addressRoutes = require("./routes/address");
 const signatureRoutes = require("./routes/signature")
+const categoryRoutes = require("./routes/category")
 const setupDB = require("./utils/db");
 const app = express();
 const helmet = require("helmet");
@@ -36,6 +37,7 @@ app.use("/api/roles", roleRoutes);
 app.use("/api/permission", permissionRoutes);
 app.use("/api/address", addressRoutes);
 app.use("/api/signature", signatureRoutes)
+app.use("/api/category", categoryRoutes)
 
 // Sync Database
 db.sync()

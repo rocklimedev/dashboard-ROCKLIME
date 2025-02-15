@@ -1,4 +1,4 @@
-const { Category } = require("../models");
+const Category  = require("../models/category");
 const { v4: uuidv4 } = require("uuid");
 const slugify = require("slugify");
 
