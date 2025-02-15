@@ -5,7 +5,7 @@ const { v4: uuidv4 } = require("uuid"); // Importing UUID library
 
 const Signature = sequelize.define("Signature", {
   signatureId: {
-    type: DataTypes.UUID, // Changed to UUID
+    type: DataTypes.UUID,
     primaryKey: true,
     defaultValue: uuidv4, // Automatically generates a UUID
   },
@@ -14,7 +14,7 @@ const Signature = sequelize.define("Signature", {
     allowNull: false,
   },
   signature_image: {
-    type: DataTypes.TEXT,
+    type: DataTypes.BLOB("long"), // Changed from TEXT to BLOB to store images
     allowNull: false,
   },
   mark_as_default: {
