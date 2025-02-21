@@ -1,0 +1,16 @@
+{
+    "parentCategories": [
+        {
+            "slug": "C_1",
+            "name": "Sanitary"
+        },
+        {
+            "slug": "C_2",
+            "name": "Ceramics"
+        },
+        {
+            "slug": "C_3",
+            "name": "Kitchen"
+        }
+    ]
+}

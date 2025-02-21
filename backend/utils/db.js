@@ -12,7 +12,8 @@ const Order = require("../models/orders");
 const Quotation = require("../models/quotation");
 const RolePermission = require("../models/rolePermission");
 const Signature = require("../models/signature");
-
+const Vendor = require("../models/vendor")
+const Brand = require("../models/brand")
 const setupDB = async () => {
   try {
     await sequelize.authenticate();
@@ -26,7 +27,12 @@ const setupDB = async () => {
 
     User.belongsTo(RolePermission, { foreignKey: "role_id", as: "Role" });
     RolePermission.hasMany(User, { foreignKey: "role_id", as: "Users" });
+    Brand.hasMany(Vendor, { foreignKey: 'brandId' });
+    Vendor.belongsTo(Brand, { foreignKey: 'brandId' });
 
+
+Brand.hasMany(Vendor, { foreignKey: "brandSlug", sourceKey: "brandSlug" });
+Vendor.belongsTo(Brand, { foreignKey: "brandSlug", targetKey: "brandSlug" });
     User.belongsTo(RolePermission, { foreignKey: "role_id" });
     Address.belongsTo(User, { foreignKey: "userId" });
     Product.belongsTo(Category, { foreignKey: "categoryId" });

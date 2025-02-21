@@ -1,0 +1,21 @@
+{
+    "brands": [
+        {
+            "brandSlug": "AS_001",
+            "brandName": "American Standard"
+        },
+        {
+            "brandSlug": "GP_002",
+            "brandName": "Grohe Premium"
+
+        },
+        {
+            "brandSlug": "JA_003",
+            "brandName": "Jayna"
+        },
+        {
+            "brandSlug": "GB_004",
+            "brandName": "Grohe Bau"
+        }
+    ]
+}

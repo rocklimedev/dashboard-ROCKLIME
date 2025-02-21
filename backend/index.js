@@ -6,12 +6,14 @@ const cors = require("cors");
 const db = require("./config/database");
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
+const vendorRoutes = require("./routes/vendor")
 const orderRoutes = require("./routes/order");
 const roleRoutes = require("./routes/roles");
 const permissionRoutes = require("./routes/permission");
 const addressRoutes = require("./routes/address");
 const signatureRoutes = require("./routes/signature")
 const categoryRoutes = require("./routes/category")
+const parentCategoryRoutes = require("./routes/parentController")
 const setupDB = require("./utils/db");
 const app = express();
 const helmet = require("helmet");
@@ -38,7 +40,8 @@ app.use("/api/permission", permissionRoutes);
 app.use("/api/address", addressRoutes);
 app.use("/api/signature", signatureRoutes)
 app.use("/api/category", categoryRoutes)
-
+app.use("/api/vendors", vendorRoutes)
+app.use("/api/parent-categories", parentCategoryRoutes);
 // Sync Database
 db.sync()
   .then(() => console.log("Database connected and synced successfully."))

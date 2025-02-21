@@ -2,6 +2,7 @@ const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
 const Category = require("./category"); // Assuming the Category model exists
 const { v4: uuidv4 } = require("uuid"); // Importing UUID library
+const Brand = require("./brand");
 
 const Product = sequelize.define("Product", {
   productId: {
@@ -10,7 +11,11 @@ const Product = sequelize.define("Product", {
     defaultValue: uuidv4, // Automatically generates a UUID
   },
   itemType: {
-    type: DataTypes.ENUM("product", "service"),
+    type: DataTypes.STRING(100),
+    allowNull: false,
+  },
+  productGroup: {
+    type: DataTypes.STRING(100),
     allowNull: false,
   },
   name: {
@@ -52,6 +57,18 @@ const Product = sequelize.define("Product", {
   },
   images: {
     type: DataTypes.JSON,
+  },
+  brandId: {
+    type: DataTypes.UUID(25),
+    references: {
+      model: Brand,
+      key: "id",
+    },
+  },
+  categoryId: {
+    type: DataTypes.UUID,
+    model: Category,
+    key: "id",
   },
 });
 
