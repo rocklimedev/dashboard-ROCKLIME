@@ -1,0 +1,39 @@
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+
+export const signatureApi = createApi({
+  reducerPath: "signatureApi",
+  baseQuery: fetchBaseQuery({ baseUrl: "http://localhost:5000/api/signatures" }), // Update this with your backend URL
+  tagTypes: ["Signature"],
+  endpoints: (builder) => ({
+    createSignature: builder.mutation({
+      query: (formData) => ({
+        url: "/",
+        method: "POST",
+        body: formData,
+      }),
+      invalidatesTags: ["Signature"],
+    }),
+    getAllSignatures: builder.query({
+      query: () => "/",
+      providesTags: ["Signature"],
+    }),
+    getSignatureById: builder.query({
+      query: (id) => `/${id}`,
+      providesTags: ["Signature"],
+    }),
+    deleteSignature: builder.mutation({
+      query: (id) => ({
+        url: `/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Signature"],
+    }),
+  }),
+});
+
+export const {
+  useCreateSignatureMutation,
+  useGetAllSignaturesQuery,
+  useGetSignatureByIdQuery,
+  useDeleteSignatureMutation,
+} = signatureApi;

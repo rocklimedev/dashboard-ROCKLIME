@@ -9,13 +9,10 @@ const Router = () => {
   };
 
   return (
-
-      <Routes>
+    <Routes>
       {renderRoutes(masterRoutes)}
       <Route path="*" element={<Navigate to="/404" />} />
     </Routes>
-
-  
   );
 };
 

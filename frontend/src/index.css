@@ -1,13 +1,13 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+@import url("assets/plugins/fontawesome/css/fontawesome.min.css");
+@import url("assets/plugins/fontawesome/css/all.min.css");
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
-}
+@import url("assets/plugins/feather/feather.css");
+
+@import url("assets/plugins/select2/css/select2.min.css");
+
+@import url("assets/css/bootstrap-datetimepicker.min.css");
+
+@import url("assets/css/dataTables.bootstrap5.min.css");
+
+@import url("assets/css/style.css");
+

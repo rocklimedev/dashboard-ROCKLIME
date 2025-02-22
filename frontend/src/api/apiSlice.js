@@ -1,7 +1,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 const baseQuery = fetchBaseQuery({
-  baseUrl: "https://dashboard-crud.onrender.com/api",
+  baseUrl:  "http://localhost:4000/api",
   credentials: "include", // Include cookies (for authentication)
   prepareHeaders: (headers) => {
     const token = localStorage.getItem("token");

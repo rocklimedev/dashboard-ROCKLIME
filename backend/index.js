@@ -20,7 +20,11 @@ const helmet = require("helmet");
 const keys = require("./config/keys");
 // Middleware
 const { port } = keys;
-app.use(cors());
+const corsOptions = {
+  origin: true,
+  credentials: true,
+};
+app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(

@@ -1,12 +1,11 @@
-import "./App.css";
+
 import Header from "./components/Common/Header";
-import Sidebar from "./components/Common/Sidebar";
 import Router from "./router/Router";
 import { useLocation } from "react-router-dom";
-
+import Sidebar from "./components/Common/SidebarNew";
 function App() {
   const location = useLocation();
-  const isAuthPage = ["/login", "/signup", "/404"].includes(location.pathname); // Add more auth routes if needed
+  const isAuthPage = ["/login", "/signup", "/404", "/forgot-password"].includes(location.pathname); // Add more auth routes if needed
 
   return (
     <div className="main-wrapper">

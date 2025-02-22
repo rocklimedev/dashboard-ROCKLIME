@@ -1,25 +1,10 @@
 exports.ROLES = {
   Admin: "ADMIN",
   SuperAdmin: "SUPER_ADMIN",
-  Buyer: "BUYER",
   Accounts: "ACCOUNTS",
   Developer: "DEVELOPER",
+  Users: "USERS"
 };
-
-exports.MERCHANT_STATUS = {
-  Rejected: "Rejected",
-  Approved: "Approved",
-  Waiting_Approval: "Waiting Approval",
-};
-
-exports.CART_ITEM_STATUS = {
-  Processing: "Processing",
-  Shipped: "Shipped",
-  Delivered: "Delivered",
-  Cancelled: "Cancelled",
-  Not_processed: "Not processed",
-};
-
 exports.REVIEW_STATUS = {
   Rejected: "Rejected",
   Approved: "Approved",
@@ -33,3 +18,19 @@ exports.EMAIL_PROVIDER = {
 };
 
 exports.JWT_COOKIE = "x-jwt-cookie";
+
+
+exports.INVOICE_STATUS = {
+  PAID: "Paid",
+  OVERDUE: "Overdue",
+  CANCELLED: "Cancelled",
+  PARTIALLY: "Partially Paid",
+  UNDUE: "Undue",
+  DRAFT: "Draft",
+};
+
+
+
+
+
+ 

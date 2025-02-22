@@ -1,80 +1,75 @@
-import React from "react";
-
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useLoginMutation } from "../../api/authApi";
 const Login = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [login, { isLoading, error }] = useLoginMutation();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await login({ email, password }).unwrap();
+      localStorage.setItem("token", response.token);
+      navigate("/dashboard");
+    } catch (err) {
+      console.error("Login failed:", err);
+    }
+  };
+
   return (
-    <div class="main-wrapper login-body">
-      <div class="login-wrapper">
-        <div class="container">
+    <div className="main-wrapper login-body">
+      <div className="login-wrapper">
+        <div className="container">
           <img
-            class="img-fluid logo-dark mb-2 logo-color"
+            className="img-fluid logo-dark mb-2 logo-color"
             src="assets/img/logo2.png"
             alt="Logo"
           />
           <img
-            class="img-fluid logo-light mb-2"
+            className="img-fluid logo-light mb-2"
             src="assets/img/logo2-white.png"
             alt="Logo"
           />
-          <div class="loginbox">
-            <div class="login-right">
-              <div class="login-right-wrap">
+          <div className="loginbox">
+            <div className="login-right">
+              <div className="login-right-wrap">
                 <h1>Login</h1>
-                <p class="account-subtitle">Access to our dashboard</p>
-
-                <form action="https://kanakku.dreamstechnologies.com/html/template/index.html">
-                  <div class="input-block mb-3">
-                    <label class="form-control-label">Email Address</label>
-                    <input type="email" class="form-control" />
+                <p className="account-subtitle">Access to our dashboard</p>
+                <form onSubmit={handleSubmit}>
+                  <div className="input-block mb-3">
+                    <label className="form-control-label">Email Address</label>
+                    <input
+                      type="email"
+                      className="form-control"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
                   </div>
-                  <div class="input-block mb-3">
-                    <label class="form-control-label">Password</label>
-                    <div class="pass-group">
-                      <input type="password" class="form-control pass-input" />
-                      <span class="fas fa-eye toggle-password"></span>
+                  <div className="input-block mb-3">
+                    <label className="form-control-label">Password</label>
+                    <div className="pass-group">
+                      <input
+                        type="password"
+                        className="form-control pass-input"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                      />
                     </div>
                   </div>
-                  <div class="input-block mb-3">
-                    <div class="row">
-                      <div class="col-6">
-                        <div class="form-check custom-checkbox">
-                          <input
-                            type="checkbox"
-                            class="form-check-input"
-                            id="cb1"
-                          />
-                          <label class="custom-control-label" for="cb1">
-                            Remember me
-                          </label>
-                        </div>
-                      </div>
-                      <div class="col-6 text-end">
-                        <a class="forgot-link" href="forgot-password.html">
-                          Forgot Password ?
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                  <button class="btn btn-lg  btn-primary w-100" type="submit">
-                    Login
+                  {error && <p className="text-danger">{error.data?.message || "Login failed"}</p>}
+                  <button className="btn btn-lg btn-primary w-100" type="submit" disabled={isLoading}>
+                    {isLoading ? "Logging in..." : "Login"}
                   </button>
-                  <div class="login-or">
-                    <span class="or-line"></span>
-                    <span class="span-or">or</span>
+                  <div className="login-or">
+                    <span className="or-line"></span>
+                    <span className="span-or">or</span>
                   </div>
-
-                  <div class="social-login mb-3">
-                    <span>Login with</span>
-                    <a href="#" class="facebook">
-                      <i class="fab fa-facebook-f"></i>
-                    </a>
-                    <a href="#" class="google">
-                      <i class="fab fa-google"></i>
-                    </a>
-                  </div>
-
-                  <div class="text-center dont-have">
-                    Don't have an account yet?{" "}
-                    <a href="/signup">Signup</a>
+                  <div className="text-center dont-have">
+                    Don't have an account yet? <a href="/signup">Signup</a>
                   </div>
                 </form>
               </div>

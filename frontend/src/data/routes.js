@@ -1,8 +1,12 @@
+import ForgotPassword from "../components/Auth/ForgotPassword";
 import Login from "../components/Auth/Login";
 import Signup from "../components/Auth/Signup";
+import ListTable from "../components/Categories/ListTable";
 import Error404 from "../components/Error/Error404";
 import PageWrapper from "../components/Home/PageWrapper";
-
+import ComapniesWrapper from "../components/Companies/ComapniesWrapper";
+import ProductList from "../components/Product/ProductList";
+import InventoryWrapper from "../components/Inventory/InventoryWrapper";
 const masterRoutes = [
   {
     path: "/",
@@ -69,8 +73,10 @@ const masterRoutes = [
         icon: "fe fe-list",
         isSidebarActive: true,
       },
+      
       {
         path: "/inventory/categories",
+        element: <ListTable/>,
         name: "Schedule",
         icon: "fe fe-calendar",
         isSidebarActive: true,
@@ -239,6 +245,42 @@ const masterRoutes = [
     icon: "fe fe-error",
     isSidebarActive: false,
     element: <Error404/>
+  },
+   {
+    path: "/forgot-password",
+    name: "Forgot Password",
+    icon: "fe fe-error",
+    isSidebarActive: false,
+    element: <ForgotPassword/>
+  },
+  {
+    path: "/categories",
+    name: "Forgot Password",
+    icon: "fe fe-error",
+    isSidebarActive: true,
+    element: <ListTable/>
+  },
+  {
+    path: "/vendors",
+    name: "Vendors",
+    icon: "fe fe-master",
+    isSidebarActive: true,
+    element: <ComapniesWrapper/>
+  },  {
+    path: "/products/list",
+    name: "POS",
+    icon: "fe fe-list",
+    isSidebarActive: true,
+    element: <ProductList/>
+  },
+  {
+  
+      path: "/inventory/list",
+      name: "Inventory ",
+      icon: "fe fe-list",
+      isSidebarActive: true,
+      element: <InventoryWrapper />
+    
   }
 
 ];
