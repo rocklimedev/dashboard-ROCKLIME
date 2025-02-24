@@ -1,0 +1,110 @@
+[
+    {
+        "Company Code": "20593000",
+        "Product Description": "20593000",
+        "Product Segment": "Bathroom Fittings",
+        "Product group": "Basin Mixer - DM",
+        "MRP": "₹ 1,10,000",
+        "Brand_Slug": "GP_002",
+        "Vendor_Slug": "V_3",
+        "Category_Name": "Sanitary",
+        "Product Code": "EGRGP2059001",
+        "Company Code": "20593000 "
+    },
+    {
+        "Company Code": "20595000",
+        "Product Description": "\"Three-hole basin mixer deck mounted with knob",
+        "Product Segment": null,
+        "Product group": null,
+        "MRP": null,
+        "Brand_Slug": null,
+        "Vendor_Slug": null,
+        "Category_Name": null,
+        "Product Code": null,
+        "Company Code": null
+    },
+    {
+        "Company Code": "chrome\"",
+        "Product Description": "Bathroom Fittings",
+        "Product Segment": "Basin Mixer - DM",
+        "Product group": "₹ 1,35,000",
+        "MRP": "GP_002",
+        "Brand_Slug": "V_3",
+        "Vendor_Slug": "Sanitary",
+        "Category_Name": "EGRGP5000002",
+        "Product Code": "20595000 ",
+        "Company Code": null
+    },
+    {
+        "Company Code": "21134000",
+        "Product Description": "One-hole basin mixer 1/2\" L-Size with stick",
+        "Product Segment": "Bathroom Fittings",
+        "Product group": "Basin Mixer - DM",
+        "MRP": "₹ 1,30,000",
+        "Brand_Slug": "GP_002",
+        "Vendor_Slug": "V_3",
+        "Category_Name": "Sanitary",
+        "Product Code": "EGRGP2113003",
+        "Company Code": "21134000 "
+    },
+    {
+        "Company Code": "21138000",
+        "Product Description": "One-hole basin mixer 1/2\" L-Size with knob",
+        "Product Segment": "Bathroom Fittings",
+        "Product group": "Basin Mixer - DM",
+        "MRP": "₹ 1,55,000",
+        "Brand_Slug": "GP_002",
+        "Vendor_Slug": "V_3",
+        "Category_Name": "Sanitary",
+        "Product Code": "EGRGP8000004",
+        "Company Code": "21138000 "
+    },
+    {
+        "Company Code": "21140000",
+        "Product Description": "One-hole basin mixer 1/2\" XL-Size with stick",
+        "Product Segment": "Bathroom Fittings",
+        "Product group": "Basin Mixer - DM",
+        "MRP": "₹ 1,44,450",
+        "Brand_Slug": "GP_002",
+        "Vendor_Slug": "V_3",
+        "Category_Name": "Sanitary",
+        "Product Code": "EGRGP2114005",
+        "Company Code": "21140000 "
+    },
+    {
+        "Company Code": "21142000",
+        "Product Description": "One-hole basin mixer 1/2\" XL-Size with knob",
+        "Product Segment": "Bathroom Fittings",
+        "Product group": "Basin Mixer - DM",
+        "MRP": "₹ 1,69,450",
+        "Brand_Slug": "GP_002",
+        "Vendor_Slug": "V_3",
+        "Category_Name": "Sanitary",
+        "Product Code": "EGRGP2000006",
+        "Company Code": "21142000 "
+    },
+    {
+        "Company Code": "48456000",
+        "Product Description": "\"Acc: white Caesarstone inlay set 1 (2x) for basin",
+        "Product Segment": null,
+        "Product group": null,
+        "MRP": null,
+        "Brand_Slug": null,
+        "Vendor_Slug": null,
+        "Category_Name": null,
+        "Product Code": null,
+        "Company Code": null
+    },
+    {
+        "Company Code": "OHM L- and XL-size\"",
+        "Product Description": "Bathroom Fittings",
+        "Product Segment": "Basin Mixer - DM",
+        "Product group": "₹ 35,500",
+        "MRP": "GP_002",
+        "Brand_Slug": "V_3",
+        "Vendor_Slug": "Sanitary",
+        "Category_Name": "EGRGP4845007",
+        "Product Code": "48456000 ",
+        "Company Code": null
+    }
+]

@@ -1,13 +1,16 @@
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import masterRoutes from "../data/routes";
-const Router = () => {
-  const renderRoutes = (routes) => {
-    return routes.map(({ path, element }, index) => (
-      <Route key={index} path={path} element={element} />
-    ));
-  };
 
+const renderRoutes = (routes) => {
+  return routes.flatMap(({ path, element, submenu }) => {
+    const mainRoute = element ? <Route key={path} path={path} element={element} /> : null;
+    const subRoutes = submenu ? renderRoutes(submenu) : [];
+    return mainRoute ? [mainRoute, ...subRoutes] : subRoutes;
+  });
+};
+
+const Router = () => {
   return (
     <Routes>
       {renderRoutes(masterRoutes)}

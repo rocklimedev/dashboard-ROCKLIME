@@ -14,7 +14,8 @@ const addressRoutes = require("./routes/address");
 const signatureRoutes = require("./routes/signature")
 const categoryRoutes = require("./routes/category")
 const parentCategoryRoutes = require("./routes/parentController")
-const setupDB = require("./utils/db");
+const customerRoutes = require("./routes/customer")
+const setupDB = require("./utils/db")
 const app = express();
 const helmet = require("helmet");
 const keys = require("./config/keys");
@@ -46,6 +47,7 @@ app.use("/api/signature", signatureRoutes)
 app.use("/api/category", categoryRoutes)
 app.use("/api/vendors", vendorRoutes)
 app.use("/api/parent-categories", parentCategoryRoutes);
+app.use("/api/customers", customerRoutes);
 // Sync Database
 db.sync()
   .then(() => console.log("Database connected and synced successfully."))

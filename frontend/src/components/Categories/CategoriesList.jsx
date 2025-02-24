@@ -1,7 +1,7 @@
 import React from "react";
 import CategoriesItem from "./CategoriesItem";
 
-const ListTable = () => {
+const CategoriesList = () => {
   return (
     <div class="page-wrapper">
       <div class="content container-fluid">
@@ -110,4 +110,4 @@ const ListTable = () => {
   );
 };
 
-export default ListTable;
+export default CategoriesList;

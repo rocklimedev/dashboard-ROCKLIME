@@ -1,16 +1,50 @@
-import { apiSlice } from "./apiSlice";
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
-export const userApi = apiSlice.injectEndpoints({
-  endpoints: (build) => ({
-    getUsers: build.query({
-      query: () => "users",
-      providesTags: ["Users"],
+export const userApi = createApi({
+  reducerPath: 'authApi',
+  baseQuery: fetchBaseQuery({ baseUrl: '/api/users' }),
+  providesTags: ["users"],
+  endpoints: (builder) => ({
+    getProfile: builder.query({
+      query: () => '/me',
     }),
-    getRoles: build.query({
-      query: () => "roles",
-      providesTags: ["Roles"],
+    updateProfile: builder.mutation({
+      query: (data) => ({
+        url: '/',
+        method: 'PUT',
+        body: data,
+      }),
+    }),
+    getAllUsers: builder.query({
+      query: () => '/',
+    }),
+    searchUser: builder.query({
+      query: (query) => `/search?query=${query}`,
+    }),
+    getUserById: builder.query({
+      query: (userId) => `/${userId}`,
+    }),
+    deleteUser: builder.mutation({
+      query: (userId) => ({
+        url: `/${userId}`,
+        method: 'DELETE',
+      }),
+    }),
+    reportUser: builder.mutation({
+      query: (userId) => ({
+        url: `/report/${userId}`,
+        method: 'POST',
+      }),
     }),
   }),
 });
 
-export const { useGetUsersQuery, useGetRolesQuery } = userApi;
+export const {
+  useGetProfileQuery,
+  useUpdateProfileMutation,
+  useGetAllUsersQuery,
+  useSearchUserQuery,
+  useGetUserByIdQuery,
+  useDeleteUserMutation,
+  useReportUserMutation,
+} = userApi;
