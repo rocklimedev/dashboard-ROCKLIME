@@ -86,4 +86,16 @@
       width: 200px;
     }
   }
+  .menu-arrow {
+    margin-left: 5px;
+    transition: transform 0.3s ease;
+  }
+  
+  .second-arrow {
+    margin-left: -5px;
+  }
+  
+  .active .menu-arrow {
+    transform: rotate(180deg);
+  }
   

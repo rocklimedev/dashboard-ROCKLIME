@@ -3,8 +3,8 @@ const Vendor = require("../models/vendor")
 
 const createVendor = async (req, res) => {
   try {
-    const { vendorId, vendorName, brandId } = req.body;
-    const vendor = await Vendor.create({ vendorId, vendorName, brandId });
+    const { vendorId, vendorName, brandSlug, brandId } = req.body;
+    const vendor = await Vendor.create({ vendorId, vendorName, brandSlug, brandId });
     res.status(201).json(vendor);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -35,16 +35,14 @@ const getVendorById = async (req, res) => {
 
 const updateVendor = async (req, res) => {
   try {
-    const { vendorName, brandId } = req.body;
-    const vendor = await Vendor.findByPk(req.params.id);
-    if (vendor) {
-      vendor.vendorName = vendorName;
-      vendor.brandId = brandId;
-      await vendor.save();
-      res.status(200).json(vendor);
-    } else {
-      res.status(404).json({ message: "Vendor not found" });
+    const {id} = req.params;
+    const { vendorName, brandId, brandSlug } = req.body;
+    const vendor = await Vendor.findByPk(id);
+    if (!vendor) {
+      return res.status(404).json({ message: "Vendor not found." });
     }
+    await vendor.update({vendorName, brandId, brandSlug})
+    res.json({ message: "Vendor updated successfully.", vendor });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

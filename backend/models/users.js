@@ -1,4 +1,4 @@
-const { DataTypes } = require("sequelize");
+const { DataTypes, Op } = require("sequelize");
 const sequelize = require("../config/database"); // Sequelize instance
 const { ROLES } = require("../config/constant");
 
@@ -16,20 +16,26 @@ const User = sequelize.define(
     mobileNumber: { type: DataTypes.STRING(20), allowNull: true },
 
     roles: {
-      type: DataTypes.ARRAY(DataTypes.ENUM(...Object.values(ROLES))), // Multiple roles except SuperAdmin
+      type: DataTypes.STRING, // Store roles as a comma-separated string
       allowNull: false,
-      defaultValue: [ROLES.Users], // Default role is USERS
+      defaultValue: ROLES.Users, // Default role is "users"
+      get() {
+        return this.getDataValue("roles")?.split(",") || [];
+      },
+      set(value) {
+        this.setDataValue("roles", Array.isArray(value) ? value.join(",") : value);
+      },
     },
 
     status: {
       type: DataTypes.ENUM("active", "inactive", "restricted"),
       allowNull: false,
-      defaultValue: "inactive", // If no roleId assigned within 7 days
+      defaultValue: "inactive",
     },
 
-    password: { type: DataTypes.STRING, allowNull: false }, // Hashed password
+    password: { type: DataTypes.STRING, allowNull: false },
 
-    role_id: { type: DataTypes.UUID, allowNull: true }, // Assigned only if needed
+    role_id: { type: DataTypes.UUID, allowNull: true },
   },
   { timestamps: true }
 );
@@ -38,7 +44,9 @@ const User = sequelize.define(
 User.beforeCreate(async (user) => {
   if (user.roles.includes(ROLES.SuperAdmin)) {
     const existingSuperAdmin = await User.findOne({
-      where: { roles: { [sequelize.Op.contains]: [ROLES.SuperAdmin] } },
+      where: {
+        roles: { [Op.like]: `%${ROLES.SuperAdmin}%` }, // Use LIKE for search
+      },
     });
 
     if (existingSuperAdmin) {

@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const customerController = require("../controllers/customerController");
+const customerController = require("../controller/customerController");
 
 router.post("/", customerController.createCustomer);   // Create a customer
 router.get("/", customerController.getCustomers);     // Get all customers

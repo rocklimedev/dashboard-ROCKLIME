@@ -1,1 +1,14 @@
-DELETE FROM rolepermissions
+ALTER TABLE `brands` 
+DROP INDEX `brandSlug_2`,
+DROP INDEX `brandSlug_3`,
+DROP INDEX `brandSlug_4`,
+DROP INDEX `brandSlug_5`,
+DROP INDEX `brandSlug_6`,
+DROP INDEX `brandSlug_7`,
+DROP INDEX `brandSlug_8`,
+DROP INDEX `brandSlug_9`,
+DROP INDEX `brandSlug_10`,
+DROP INDEX `brandSlug_11`,
+DROP INDEX `brandSlug_12`,
+DROP INDEX `brandSlug_13`,
+DROP INDEX `brandSlug_14`;

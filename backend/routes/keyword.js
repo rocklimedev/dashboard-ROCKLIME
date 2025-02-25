@@ -1,21 +1,21 @@
 const express = require("express");
-const keywordController = require("../controllers/keywordController");
+const keywordController = require("../controller/keywordController");
 
 const router = express.Router();
 
 // Create keyword
-router.post("/keywords", keywordController.createKeyword);
+router.post("/", keywordController.createKeyword);
 
 // Get all keywords
-router.get("/keywords", keywordController.getAllKeywords);
+router.get("/", keywordController.getAllKeywords);
 
 // Get keyword by ID
-router.get("/keywords/:id", keywordController.getKeywordById);
+router.get("/:id", keywordController.getKeywordById);
 
 // Update keyword
-router.put("/keywords/:id", keywordController.updateKeyword);
+router.put("/:id", keywordController.updateKeyword);
 
 // Delete keyword
-router.delete("/keywords/:id", keywordController.deleteKeyword);
+router.delete("/:id", keywordController.deleteKeyword);
 
 module.exports = router;

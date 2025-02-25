@@ -2,8 +2,8 @@ const Brand = require("../models/brand")
 
 const createBrand = async (req, res) => {
   try {
-    const { brandId, brandName } = req.body;
-    const brand = await Brand.create({ brandId, brandName });
+    const {  brandName, brandSlug } = req.body;
+    const brand = await Brand.create({ brandName, brandSlug });
     res.status(201).json(brand);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -34,16 +34,19 @@ const getBrandById = async (req, res) => {
 
 const updateBrand = async (req, res) => {
   try {
-    const { brandName } = req.body;
-    const brand = await Brand.findByPk(req.params.id);
-    if (brand) {
-      brand.brandName = brandName;
-      await brand.save();
-      res.status(200).json(brand);
-    } else {
-      res.status(404).json({ message: "Brand not found" });
-    }
-  } catch (error) {
+    const {id} = req.params;
+    const { brandName, brandSlug } = req.body;
+    const brand = await Brand.findByPk(id);
+   
+      if (!brand) {
+        return res.status(404).json({ message: "Brand not found." });
+      }
+  
+      await brand.update({ brandName, brandSlug });
+  
+      res.json({ message: "Brand updated successfully.", brand });
+    } 
+  catch (error) {
     res.status(500).json({ error: error.message });
   }
 };

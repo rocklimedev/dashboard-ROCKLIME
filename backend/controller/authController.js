@@ -3,44 +3,33 @@ const jwt = require("jsonwebtoken");
 const { Op } = require("sequelize");
 const User = require("../models/users");
 const { ROLES } = require("../config/constant");
-
+require("dotenv").config()
 // Store refresh tokens (temporary, recommend using Redis in production)
 const refreshTokens = new Set();
 
 // Register
 exports.register = async (req, res) => {
   try {
-    const { username, name, email, mobileNumber, password, roles } = req.body;
+    const { username, name, email, mobileNumber, password } = req.body;
 
-    const existingUser = await User.findOne({ where: { email } });
+    // Convert email to lowercase for case-insensitive lookup
+    const normalizedEmail = email.toLowerCase();
+
+    const existingUser = await User.findOne({ where: { email: normalizedEmail } });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Default role to USERS if none is assigned
-    const assignedRoles = roles && roles.length ? roles : [ROLES.Users];
-
-    // Check if trying to assign SUPER_ADMIN (must be unique)
-    if (assignedRoles.includes(ROLES.SuperAdmin)) {
-      const superAdminExists = await User.findOne({
-        where: { roles: { [Op.contains]: [ROLES.SuperAdmin] } },
-      });
-
-      if (superAdminExists) {
-        return res.status(400).json({ message: "SuperAdmin already exists" });
-      }
-    }
-
     const newUser = await User.create({
       username,
       name,
-      email,
+      email: normalizedEmail,
       mobileNumber,
       password: hashedPassword,
-      roles: assignedRoles,
-      status: assignedRoles.includes(ROLES.Users) ? "inactive" : "active",
+      roles: [ROLES.Users], // Default role assigned as an array
+      status: "inactive",
     });
 
     res.status(201).json({ message: "User registered successfully", user: newUser });
@@ -49,40 +38,61 @@ exports.register = async (req, res) => {
   }
 };
 
+
+
 // Login
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ where: { email } });
+    console.log("Login attempt for:", email);
+
+    const user = await User.findOne({ where: { email: email.toLowerCase() } });
     if (!user) {
+      console.log("User not found.");
       return res.status(400).json({ message: "Invalid credentials" });
     }
+
+    console.log("User found:", user);
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
+      console.log("Invalid password.");
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
+    console.log("Generating token...");
+    console.log("JWT Secret:", process.env.JWT_SECRET);
+
     const accessToken = jwt.sign(
-      { userId: user.userId, roles: user.roles },
+      { userId: user.userId || user.id, roles: user.roles },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
 
+    console.log("Generated Access Token:", accessToken);
+    console.log("Decoded Access Token:", jwt.decode(accessToken));
+
     const refreshToken = jwt.sign(
-      { userId: user.userId, roles: user.roles },
+      { userId: user.userId || user.id, roles: user.roles },
       process.env.REFRESH_SECRET,
       { expiresIn: "7d" }
     );
 
-    refreshTokens.add(refreshToken);
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
 
-    res.status(200).json({ message: "Login successful", accessToken, refreshToken });
+    res.status(200).json({ message: "Login successful", accessToken });
   } catch (err) {
+    console.error("Login error:", err);
     res.status(500).json({ message: "Server Error", error: err.message });
   }
 };
+
 
 // Logout
 exports.logout = async (req, res) => {

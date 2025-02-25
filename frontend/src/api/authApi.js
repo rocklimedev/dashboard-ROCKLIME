@@ -14,6 +14,7 @@ export const authApi = createApi({
       return headers;
     },
   }),
+  tagTypes: ["Users"], 
   endpoints: (builder) => ({
     register: builder.mutation({
       query: (userData) => ({
@@ -28,7 +29,7 @@ export const authApi = createApi({
         method: "POST",
         body: credentials,
       }),
-      invalidatesTags: ["Users"],
+    
     }),
     logout: builder.mutation({
       query: () => ({
