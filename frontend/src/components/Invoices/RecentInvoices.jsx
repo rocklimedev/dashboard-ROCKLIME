@@ -1,65 +1,11 @@
 import React from "react";
 import PageHeader from "../Common/PageHeader";
-import Actions from "../Common/Actions";
 
-const ProductList = () => {
+const RecentInvoices = () => {
   return (
     <div class="page-wrapper">
       <div class="content">
-        <div class="page-header">
-          <div class="add-item d-flex">
-            <div class="page-title">
-              <h4 class="fw-bold">Product List</h4>
-              <h6>Manage your products</h6>
-            </div>
-          </div>
-          <ul class="table-top-head">
-            <li>
-              <a data-bs-toggle="tooltip" data-bs-placement="top" title="Pdf">
-                <img src="assets/img/icons/pdf.svg" alt="img" />
-              </a>
-            </li>
-            <li>
-              <a data-bs-toggle="tooltip" data-bs-placement="top" title="Excel">
-                <img src="assets/img/icons/excel.svg" alt="img" />
-              </a>
-            </li>
-            <li>
-              <a
-                data-bs-toggle="tooltip"
-                data-bs-placement="top"
-                title="Refresh"
-              >
-                <i class="ti ti-refresh"></i>
-              </a>
-            </li>
-            <li>
-              <a
-                data-bs-toggle="tooltip"
-                data-bs-placement="top"
-                title="Collapse"
-                id="collapse-header"
-              >
-                <i class="ti ti-chevron-up"></i>
-              </a>
-            </li>
-          </ul>
-          <div class="page-btn">
-            <a href="add-product.html" class="btn btn-primary">
-              <i class="ti ti-circle-plus me-1"></i>Add Product
-            </a>
-          </div>
-          <div class="page-btn import">
-            <a
-              href="#"
-              class="btn btn-secondary color"
-              data-bs-toggle="modal"
-              data-bs-target="#view-notes"
-            >
-              <i data-feather="download" class="me-1"></i>Import Product
-            </a>
-          </div>
-        </div>
+        <PageHeader />
 
         <div class="card">
           <div class="card-header d-flex align-items-center justify-content-between flex-wrap row-gap-3">
@@ -77,7 +23,7 @@ const ProductList = () => {
                   class="dropdown-toggle btn btn-white btn-md d-inline-flex align-items-center"
                   data-bs-toggle="dropdown"
                 >
-                  Category
+                  Customer
                 </a>
                 <ul class="dropdown-menu  dropdown-menu-end p-3">
                   <li>
@@ -85,7 +31,7 @@ const ProductList = () => {
                       href="javascript:void(0);"
                       class="dropdown-item rounded-1"
                     >
-                      Computers
+                      Carl Evans
                     </a>
                   </li>
                   <li>
@@ -93,7 +39,7 @@ const ProductList = () => {
                       href="javascript:void(0);"
                       class="dropdown-item rounded-1"
                     >
-                      Electronics
+                      Minerva Rameriz
                     </a>
                   </li>
                   <li>
@@ -101,7 +47,7 @@ const ProductList = () => {
                       href="javascript:void(0);"
                       class="dropdown-item rounded-1"
                     >
-                      Shoe
+                      Robert Lamon
                     </a>
                   </li>
                   <li>
@@ -109,7 +55,42 @@ const ProductList = () => {
                       href="javascript:void(0);"
                       class="dropdown-item rounded-1"
                     >
-                      Electronics
+                      Patricia Lewis
+                    </a>
+                  </li>
+                </ul>
+              </div>
+              <div class="dropdown me-2">
+                <a
+                  href="javascript:void(0);"
+                  class="dropdown-toggle btn btn-white btn-md d-inline-flex align-items-center"
+                  data-bs-toggle="dropdown"
+                >
+                  Status
+                </a>
+                <ul class="dropdown-menu  dropdown-menu-end p-3">
+                  <li>
+                    <a
+                      href="javascript:void(0);"
+                      class="dropdown-item rounded-1"
+                    >
+                      Paid
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="javascript:void(0);"
+                      class="dropdown-item rounded-1"
+                    >
+                      Unpaid
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="javascript:void(0);"
+                      class="dropdown-item rounded-1"
+                    >
+                      Overdue
                     </a>
                   </li>
                 </ul>
@@ -120,7 +101,7 @@ const ProductList = () => {
                   class="dropdown-toggle btn btn-white btn-md d-inline-flex align-items-center"
                   data-bs-toggle="dropdown"
                 >
-                  Brand
+                  Sort By : Last 7 Days
                 </a>
                 <ul class="dropdown-menu  dropdown-menu-end p-3">
                   <li>
@@ -128,7 +109,7 @@ const ProductList = () => {
                       href="javascript:void(0);"
                       class="dropdown-item rounded-1"
                     >
-                      Lenovo
+                      Recently Added
                     </a>
                   </li>
                   <li>
@@ -136,7 +117,7 @@ const ProductList = () => {
                       href="javascript:void(0);"
                       class="dropdown-item rounded-1"
                     >
-                      Beats
+                      Ascending
                     </a>
                   </li>
                   <li>
@@ -144,7 +125,7 @@ const ProductList = () => {
                       href="javascript:void(0);"
                       class="dropdown-item rounded-1"
                     >
-                      Nike
+                      Desending
                     </a>
                   </li>
                   <li>
@@ -152,7 +133,15 @@ const ProductList = () => {
                       href="javascript:void(0);"
                       class="dropdown-item rounded-1"
                     >
-                      Apple
+                      Last Month
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="javascript:void(0);"
+                      class="dropdown-item rounded-1"
+                    >
+                      Last 7 Days
                     </a>
                   </li>
                 </ul>
@@ -170,14 +159,13 @@ const ProductList = () => {
                         <span class="checkmarks"></span>
                       </label>
                     </th>
-                    <th>SKU </th>
-                    <th>Product Name</th>
-                    <th>Category</th>
-                    <th>Brand</th>
-                    <th>Price</th>
-                    <th>Unit</th>
-                    <th>Qty</th>
-                    <th>Created By</th>
+                    <th>Invoice No</th>
+                    <th>Customer</th>
+                    <th>Due Date</th>
+                    <th>Amount</th>
+                    <th>Paid</th>
+                    <th>Amount Due</th>
+                    <th>Status</th>
                     <th class="no-sort"></th>
                   </tr>
                 </thead>
@@ -189,7 +177,9 @@ const ProductList = () => {
                         <span class="checkmarks"></span>
                       </label>
                     </td>
-                    <td>PT001 </td>
+                    <td>
+                      <a href="invoice-details-2.html">INV001</a>
+                    </td>
                     <td>
                       <div class="d-flex align-items-center">
                         <a
@@ -197,34 +187,39 @@ const ProductList = () => {
                           class="avatar avatar-md me-2"
                         >
                           <img
-                            src="assets/img/products/stock-img-01.png"
+                            src="assets/img/users/user-27.jpg"
                             alt="product"
                           />
                         </a>
-                        <a href="javascript:void(0);">Lenovo IdeaPad 3 </a>
+                        <a href="javascript:void(0);">Carl Evans</a>
                       </div>
                     </td>
-                    <td>Computers</td>
-                    <td>Lenovo</td>
-                    <td>$600</td>
-                    <td>Pc</td>
-                    <td>100</td>
+                    <td>24 Dec 2024</td>
+                    <td>$1000</td>
+                    <td>$1000</td>
+                    <td>$0.00</td>
                     <td>
-                      <div class="d-flex align-items-center">
-                        <a
-                          href="javascript:void(0);"
-                          class="avatar avatar-sm me-2"
-                        >
-                          <img
-                            src="assets/img/users/user-30.jpg"
-                            alt="product"
-                          />
-                        </a>
-                        <a href="javascript:void(0);">James Kirwin</a>
-                      </div>
+                      <span class="badge badge-soft-success badge-xs shadow-none">
+                        <i class="ti ti-point-filled me-1"></i>Paid
+                      </span>
                     </td>
-                    <td class="action-table-data">
-                      <Actions />
+                    <td class="d-flex">
+                      <div class="edit-delete-action d-flex align-items-center justify-content-center">
+                        <a
+                          class="me-2 p-2 d-flex align-items-center justify-content-between border rounded"
+                          href="invoice-details.html"
+                        >
+                          <i data-feather="eye" class="feather-eye"></i>
+                        </a>
+                        <a
+                          class="p-2 d-flex align-items-center justify-content-between border rounded"
+                          href="javascript:void(0);"
+                          data-bs-toggle="modal"
+                          data-bs-target="#delete"
+                        >
+                          <i data-feather="trash-2" class="feather-trash-2"></i>
+                        </a>
+                      </div>
                     </td>
                   </tr>
                 </tbody>
@@ -237,4 +232,4 @@ const ProductList = () => {
   );
 };
 
-export default ProductList;
+export default RecentInvoices;

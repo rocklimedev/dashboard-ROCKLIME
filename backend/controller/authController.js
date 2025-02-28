@@ -1,9 +1,9 @@
-const bcrypt = require("bcryptjs");
+const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { Op } = require("sequelize");
 const User = require("../models/users");
 const { ROLES } = require("../config/constant");
-require("dotenv").config()
+require("dotenv").config();
 // Store refresh tokens (temporary, recommend using Redis in production)
 const refreshTokens = new Set();
 
@@ -15,7 +15,9 @@ exports.register = async (req, res) => {
     // Convert email to lowercase for case-insensitive lookup
     const normalizedEmail = email.toLowerCase();
 
-    const existingUser = await User.findOne({ where: { email: normalizedEmail } });
+    const existingUser = await User.findOne({
+      where: { email: normalizedEmail },
+    });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
@@ -32,13 +34,13 @@ exports.register = async (req, res) => {
       status: "inactive",
     });
 
-    res.status(201).json({ message: "User registered successfully", user: newUser });
+    res
+      .status(201)
+      .json({ message: "User registered successfully", user: newUser });
   } catch (err) {
     res.status(500).json({ message: "Server Error", error: err.message });
   }
 };
-
-
 
 // Login
 exports.login = async (req, res) => {
@@ -93,12 +95,12 @@ exports.login = async (req, res) => {
   }
 };
 
-
 // Logout
 exports.logout = async (req, res) => {
   try {
     const { refreshToken } = req.body;
-    if (!refreshToken) return res.status(400).json({ message: "Refresh token required" });
+    if (!refreshToken)
+      return res.status(400).json({ message: "Refresh token required" });
 
     if (!refreshTokens.has(refreshToken)) {
       return res.status(403).json({ message: "Invalid refresh token" });
@@ -122,9 +124,13 @@ exports.forgotPassword = async (req, res) => {
     }
 
     // Generate a reset token
-    const resetToken = jwt.sign({ userId: user.userId }, process.env.JWT_SECRET, {
-      expiresIn: "15m",
-    });
+    const resetToken = jwt.sign(
+      { userId: user.userId },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "15m",
+      }
+    );
 
     // TODO: Send email with resetToken (For now, returning in response)
     res.status(200).json({ message: "Password reset link sent", resetToken });

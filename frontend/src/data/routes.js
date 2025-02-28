@@ -39,7 +39,18 @@ import { IoLogOut, IoLogIn, IoHome } from "react-icons/io5";
 import Profile from "../components/Profile/Profile";
 import POSWrapper from "../components/POS/POSWrapper";
 import CreateProduct from "../components/Product/CreateProduct";
-
+import RecentOrders from "../components/Orders/RecentOrders";
+import ResetPassword from "../components/Auth/ResetPassword";
+import QuotationList from "../components/Quotation/QuotationList";
+import RecentInvoices from "../components/Invoices/RecentInvoices";
+import { MdPermIdentity } from "react-icons/md";
+import RolePermission from "../components/RolesPermission/RolePermission";
+import Permissions from "../components/RolesPermission/Permissions";
+import Error500 from "../components/Error/Error500";
+import Brands from "../components/Brands/Brands";
+import GivePermission from "../components/RolesPermission/GivePermissions";
+import QuotaionDetails from "../components/Quotation/QuotaionDetails";
+import ProductDetails from "../components/Product/ProductDetails";
 const masterRoutes = [
   {
     path: "/",
@@ -57,20 +68,16 @@ const masterRoutes = [
     submenu: [
       {
         path: "/super-admin/customers",
-        name: "Users",
+        name: "Customers",
         icon: <LuUsersRound />,
         isSidebarActive: true,
+        element: <CustomerList />,
       },
       {
-        path: "/super-admin/signatures",
-        name: "Signatures",
-        icon: <PiSignatureDuotone />,
-        isSidebarActive: true,
-      },
-      {
-        path: "/super-admin/orders",
+        path: "/super-admin/recent-orders",
         name: "Recent Orders",
         icon: <FaFirstOrderAlt />,
+        element: <RecentOrders />,
         isSidebarActive: true,
       },
       {
@@ -78,12 +85,14 @@ const masterRoutes = [
         name: "Recent Invoices",
         icon: <LiaFileInvoiceSolid />,
         isSidebarActive: true,
+        element: <RecentInvoices />,
       },
       {
         path: "/super-admin/permissions",
         name: "Permission To Give",
         icon: <MdOutlineBorderColor />,
         isSidebarActive: true,
+        element: <GivePermission />,
       },
     ],
   },
@@ -98,18 +107,21 @@ const masterRoutes = [
         name: "Customers",
         icon: <PiUserListBold />,
         isSidebarActive: true,
+        element: <CustomerList />,
       },
       {
         path: "/vendors/list",
         name: "Vendors",
         icon: <MdBrandingWatermark />,
         isSidebarActive: true,
+        element: <ComapniesWrapper />,
       },
       {
         path: "/brands/list",
         name: "Brands",
         icon: <MdOutlineBrandingWatermark />,
         isSidebarActive: true,
+        element: <Brands />,
       },
     ],
   },
@@ -139,13 +151,14 @@ const masterRoutes = [
         name: "Products Add",
         icon: <AiOutlineProduct />,
         isSidebarActive: true,
-        element: <CreateProduct/>
+        element: <CreateProduct />,
       },
       {
         path: "/inventory/product/:id",
         name: "Product Details",
         icon: <ProductList />,
         isSidebarActive: false,
+        element: <ProductDetails />,
       },
       {
         path: "/inventory/product/:id/edit",
@@ -191,9 +204,9 @@ const masterRoutes = [
   {
     path: "/pos",
     name: "POS",
-    icon: <FaPooStorm/>,
+    icon: <FaPooStorm />,
     isSidebarActive: true,
-    element: <POSWrapper/>
+    element: <POSWrapper />,
   },
   {
     path: "#",
@@ -206,12 +219,14 @@ const masterRoutes = [
         name: "Quotations List",
         icon: <FaRegFile />,
         isSidebarActive: true,
+        element: <QuotationList />,
       },
       {
         path: "/quotations/:id",
         name: "Quotations Details",
         icon: <FaRegFile />,
         isSidebarActive: true,
+        element: <QuotaionDetails />,
       },
       {
         path: "/quotations/add",
@@ -224,6 +239,28 @@ const masterRoutes = [
         name: "Edit Quotations",
         icon: <FaRegFile />,
         isSidebarActive: false,
+      },
+    ],
+  },
+  {
+    path: "/roles-permissions",
+    name: "Roles & Permission",
+    icon: <MdPermIdentity />,
+    isSidebarActive: true,
+    submenu: [
+      {
+        path: "/roles-permission/list",
+        name: "Roles Permission List",
+        icon: <MdPermIdentity />,
+        isSidebarActive: true,
+        element: <RolePermission />,
+      },
+      {
+        path: "roles-permission/permissions/:id",
+        name: "Permission Details",
+        icon: <MdPermIdentity />,
+        isSidebarActive: false,
+        element: <Permissions />,
       },
     ],
   },
@@ -258,7 +295,7 @@ const masterRoutes = [
     name: "Profile",
     icon: <CgProfile />,
     isSidebarActive: true,
-    element: <Profile/>
+    element: <Profile />,
   },
   {
     path: "#",
@@ -293,6 +330,20 @@ const masterRoutes = [
     icon: <MdError />,
     isSidebarActive: false,
     element: <ForgotPassword />,
+  },
+  {
+    path: "/reset-password",
+    name: "Reset Password",
+    icon: <MdError />,
+    isSidebarActive: false,
+    element: <ResetPassword />,
+  },
+  {
+    path: "/500",
+    name: "ERROR 500",
+    icon: <MdError />,
+    isSidebarActive: false,
+    element: <Error500 />,
   },
 ];
 

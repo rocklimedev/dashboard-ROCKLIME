@@ -1,0 +1,29 @@
+.dropdownCustom {
+  width: 500px;
+  text-align: center;
+  background-color: white;
+  border-radius: 10px;
+  padding: 10px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dropdownCustom .row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.link-item {
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: black;
+  padding: 10px;
+  border-radius: 8px;
+  transition: 0.3s;
+}
+
+.link-item:hover {
+  background-color: #f0f0f0;
+}

@@ -1,80 +1,88 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useRegisterMutation } from "../../api/authApi";
 
 const Signup = () => {
-  const [register, { data: auth, isLoading, error }] = useRegisterMutation();
   const [formData, setFormData] = useState({
     username: "",
     name: "",
     email: "",
     password: "",
+    confirmPassword: "",
+    agreeTerms: false,
   });
+  const [register, { isLoading, error }] = useRegisterMutation();
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value, type, checked } = e.target;
+    setFormData({
+      ...formData,
+      [name]: type === "checkbox" ? checked : value,
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (formData.password !== formData.confirmPassword) {
+      alert("Passwords do not match!");
+      return;
+    }
     try {
       await register(formData).unwrap();
       alert("Registration successful!");
+      navigate("/login");
     } catch (err) {
       console.error("Registration failed:", err);
     }
   };
 
   return (
-    <div className="main-wrapper login-body">
-      <div className="login-wrapper">
-        <div className="container">
-          <img className="img-fluid logo-dark mb-2" src="assets/img/logo2.png" alt="Logo" />
-          <img className="img-fluid logo-light mb-2" src="assets/img/logo2-white.png" alt="Logo" />
-
-          <div className="loginbox">
-            <div className="login-right">
-              <div className="login-right-wrap">
-                <h1>Sign Up</h1>
-                <p className="account-subtitle">Access to our dashboard</p>
-
-                <form onSubmit={handleSubmit}>
-                  <div className="input-block mb-3">
-                    <label className="form-control-label">Username</label>
-                    <input className="form-control" type="text" name="username" value={formData.username} onChange={handleChange} required />
-                  </div>
-                  <div className="input-block mb-3">
-                    <label className="form-control-label">Name</label>
-                    <input className="form-control" type="text" name="name" value={formData.name} onChange={handleChange} required />
-                  </div>
-                  <div className="input-block mb-3">
-                    <label className="form-control-label">Email Address</label>
-                    <input className="form-control" type="email" name="email" value={formData.email} onChange={handleChange} required />
-                  </div>
-                 
-                  <div className="input-block mb-3">
-                    <label className="form-control-label">Password</label>
-                    <input className="form-control" type="password" name="password" value={formData.password} onChange={handleChange} required />
-                  </div>
-
-                  <div className="input-block mb-0">
-                    <button className="btn btn-lg btn-primary w-100" type="submit" disabled={isLoading}>
-                      {isLoading ? "Registering..." : "Register"}
-                    </button>
-                  </div>
-                </form>
-
-                {error && <p style={{ color: "red" }}>Error: {error.data?.message || "Something went wrong"}</p>}
-
-                <div className="login-or">
-                  <span className="or-line"></span>
-                  <span className="span-or">or</span>
+    <div className="main-wrapper">
+      <div className="account-content">
+        <div className="login-wrapper bg-img">
+          <div className="login-content authent-content">
+            <form onSubmit={handleSubmit}>
+              <div className="login-userset">
+                <div className="login-userheading">
+                  <h3>Register</h3>
+                  <h4>Create New Account</h4>
                 </div>
-
-                <div className="text-center dont-have">
-                  Already have an account? <a href="/login">Login</a>
+                <div className="mb-3">
+                  <label className="form-label">Name <span className="text-danger">*</span></label>
+                  <input type="text" className="form-control" name="name" value={formData.name} onChange={handleChange} required />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Email <span className="text-danger">*</span></label>
+                  <input type="email" className="form-control" name="email" value={formData.email} onChange={handleChange} required />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Password <span className="text-danger">*</span></label>
+                  <input type="password" className="form-control" name="password" value={formData.password} onChange={handleChange} required />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Confirm Password <span className="text-danger">*</span></label>
+                  <input type="password" className="form-control" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required />
+                </div>
+                <div className="form-login authentication-check">
+                  <label className="checkboxs ps-4 mb-0 pb-0 line-height-1">
+                    <input type="checkbox" name="agreeTerms" checked={formData.agreeTerms} onChange={handleChange} />
+                    <span className="checkmarks"></span>I agree to the <a href="#" className="text-primary">Terms & Privacy</a>
+                  </label>
+                </div>
+                <div className="form-login">
+                  <button type="submit" className="btn btn-primary w-100" disabled={isLoading}>
+                    {isLoading ? "Registering..." : "Sign Up"}
+                  </button>
+                </div>
+                {error && <p className="text-danger">{error.data?.message || "Registration failed!"}</p>}
+                <div className="signinform">
+                  <h4>
+                    Already have an account? <a href="/login" className="hover-a">Sign In Instead</a>
+                  </h4>
                 </div>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       </div>

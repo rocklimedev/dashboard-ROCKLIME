@@ -1,114 +1,96 @@
 import React from "react";
-import { IoFilterOutline } from "react-icons/io5"
-const PageHeader = ({ title, actions }) => {
+import {
+  AiOutlinePlusCircle,
+  AiOutlineFilePdf,
+  AiOutlineFileExcel,
+} from "react-icons/ai";
+import { FcCollapse } from "react-icons/fc";
+
+const PageHeader = ({ title, subtitle, onAdd }) => {
+  // Function to handle downloading PDF
+  const handleDownloadPDF = () => {
+    const pdfContent = "This is a sample PDF content.";
+    const blob = new Blob([pdfContent], { type: "application/pdf" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `${title}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Function to handle downloading Excel
+  const handleDownloadExcel = () => {
+    const excelContent =
+      "data:text/csv;charset=utf-8,Column1,Column2\nValue1,Value2";
+    const encodedUri = encodeURI(excelContent);
+    const link = document.createElement("a");
+    link.href = encodedUri;
+    link.download = `${title}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Function to handle collapsing
+  const handleCollapse = () => {
+    const element = document.getElementById("collapse-header");
+    if (element) {
+      element.classList.toggle("collapsed");
+    }
+  };
+
   return (
-    <div className="content-page-header">
-      <h5>{title}</h5>
-      <div className="page-content">
-        <div className="list-btn">
-          <ul className="filter-list">
-            {actions?.refresh && (
-              <li>
-                <button
-                  className="btn-filters"
-                  onClick={actions.refresh}
-                  data-bs-toggle="tooltip"
-                  data-bs-placement="bottom"
-                  title="Refresh"
-                >
-                  <span>
-                    <i className="fe fe-refresh-ccw"></i>
-                  </span>
-                </button>
-              </li>
-            )}
-            {actions?.filter && (
-              <li>
-                <button
-                  className="btn btn-filters w-auto popup-toggle"
-                  onClick={actions.filter}
-                  data-bs-toggle="tooltip"
-                  data-bs-placement="bottom"
-                  title="Filter"
-                >
-                  <span className="me-2">
-                 <IoFilterOutline/>
-                  </span>
-                  Filter
-                </button>
-              </li>
-            )}
-            {actions?.export && (
-              <li>
-                <div
-                  className="dropdown dropdown-action"
-                  data-bs-toggle="tooltip"
-                  data-bs-placement="bottom"
-                  title="Download"
-                >
-                  <button
-                    className="btn btn-filters dropdown-toggle"
-                    data-bs-toggle="dropdown"
-                    aria-expanded="false"
-                  >
-                    <span className="me-2">
-                      <i className="fe fe-download"></i>
-                    </span>
-                    Export
-                  </button>
-                  <div className="dropdown-menu dropdown-menu-end">
-                    <ul className="d-block">
-                      <li>
-                        <button
-                          className="d-flex align-items-center download-item"
-                          onClick={() => actions.export("pdf")}
-                        >
-                          <i className="far fa-file-pdf me-2"></i>Export as PDF
-                        </button>
-                      </li>
-                      <li>
-                        <button
-                          className="d-flex align-items-center download-item"
-                          onClick={() => actions.export("excel")}
-                        >
-                          <i className="far fa-file-text me-2"></i>Export as Excel
-                        </button>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </li>
-            )}
-            {actions?.print && (
-              <li>
-                <button
-                  className="btn btn-filters"
-                  onClick={actions.print}
-                  data-bs-toggle="tooltip"
-                  data-bs-placement="bottom"
-                  title="Print"
-                >
-                  <span className="me-2">
-                    <i className="fe fe-printer"></i>
-                  </span>
-                  Print
-                </button>
-              </li>
-            )}
-            {actions?.add && (
-              <li>
-                <button
-                  className="btn btn-primary"
-                  onClick={actions.add}
-                  data-bs-toggle="modal"
-                >
-                  <i className="fa fa-plus-circle me-2" aria-hidden="true"></i>
-                  Add {title}
-                </button>
-              </li>
-            )}
-          </ul>
+    <div className="page-header">
+      <div className="add-item d-flex">
+        <div className="page-title">
+          <h4 className="fw-bold">{title}</h4>
+          {subtitle && <h6>{subtitle}</h6>}
         </div>
+      </div>
+      <ul className="table-top-head">
+        <li title="Download PDF" onClick={handleDownloadPDF}>
+          <a data-bs-toggle="tooltip" data-bs-placement="top" title="Pdf">
+            <AiOutlineFilePdf
+              size={22}
+              className="text-red-500 hover:text-red-700"
+            />
+          </a>
+        </li>
+        <li title="Download Excel" onClick={handleDownloadExcel}>
+          <a data-bs-toggle="tooltip" data-bs-placement="top" title="Excel">
+            <AiOutlineFileExcel
+              size={22}
+              className="text-green-500 hover:text-green-700"
+            />
+          </a>
+        </li>
+        <li title="Collapse" onClick={handleCollapse}>
+          <a
+            data-bs-toggle="tooltip"
+            data-bs-placement="top"
+            title="Collapse"
+            id="collapse-header"
+          >
+            <FcCollapse
+              size={22}
+              className="text-gray-500 hover:text-gray-700"
+            />
+          </a>
+        </li>
+      </ul>
+      <div className="page-btn">
+        {onAdd && (
+          <button
+            onClick={onAdd}
+            className="btn btn-primary"
+            data-bs-toggle="modal"
+            data-bs-target="#add-category"
+          >
+            <AiOutlinePlusCircle size={20} />
+            Add {title}
+          </button>
+        )}
       </div>
     </div>
   );

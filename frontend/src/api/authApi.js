@@ -7,14 +7,15 @@ export const authApi = createApi({
     baseUrl: `${API_URL}/auth`,
     credentials: "include",
     prepareHeaders: (headers) => {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("accessToken");
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
       }
       return headers;
     },
   }),
-  tagTypes: ["Users"], 
+  tagTypes: ["Auth"], // Changed from "Users" to "Auth" for clarity
+
   endpoints: (builder) => ({
     register: builder.mutation({
       query: (userData) => ({
@@ -22,21 +23,24 @@ export const authApi = createApi({
         method: "POST",
         body: userData,
       }),
+      invalidatesTags: ["Auth"], // Ensure user-related cache is refreshed
     }),
     login: builder.mutation({
       query: (credentials) => ({
         url: "/login",
         method: "POST",
         body: credentials,
+        headers: {
+          "Content-Type": "application/json",
+        },
       }),
-    
+      invalidatesTags: ["Auth"], // Ensure user-related cache is refreshed
     }),
     logout: builder.mutation({
       query: () => ({
         url: "/logout",
         method: "POST",
       }),
-      invalidatesTags: ["Users"],
     }),
     forgotPassword: builder.mutation({
       query: (email) => ({

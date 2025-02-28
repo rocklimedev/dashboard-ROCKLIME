@@ -1,6 +1,6 @@
 import React from "react";
-import error from "../../assets/img/authentication/error-404.png";
-const Error404 = () => {
+import error from "../../assets/img/authentication/error-500.png";
+const Error500 = () => {
   return (
     <div class="main-wrapper">
       <div class="error-box">
@@ -9,10 +9,10 @@ const Error404 = () => {
         </div>
         <h3 class="h2 mb-3">Oops, something went wrong</h3>
         <p>
-          Error 404 Page not found. Sorry the page you looking for doesn’t exist
-          or has been moved
+          Server Error 500. We apologise and are fixing the problem Please try
+          again at a later stage
         </p>
-        <a href="/" class="btn btn-primary">
+        <a href="index.html" class="btn btn-primary">
           Back to Dashboard
         </a>
       </div>
@@ -20,4 +20,4 @@ const Error404 = () => {
   );
 };
 
-export default Error404;
+export default Error500;
