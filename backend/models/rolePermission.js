@@ -1,15 +1,14 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
-const User = require("./users");
 const { v4: uuidv4 } = require("uuid");
 
-const RolePermission = sequelize.define("RolePermission", {
+const Role = sequelize.define("Role", {
   roleId: {
     type: DataTypes.UUID,
     primaryKey: true,
     defaultValue: uuidv4,
   },
-  role_name: {
+  roleName: {
     type: DataTypes.STRING(100),
     allowNull: false,
     unique: true,
@@ -17,10 +16,8 @@ const RolePermission = sequelize.define("RolePermission", {
   permissions: {
     type: DataTypes.JSON,
     allowNull: false,
+    defaultValue: {}, // Default to an empty object (e.g., { "CREATE_USER": true, "DELETE_ORDER": false })
   },
 });
 
-// Relationship with User
-RolePermission.belongsTo(User, { foreignKey: "userId" });
-
-module.exports = RolePermission;
+module.exports = Role;

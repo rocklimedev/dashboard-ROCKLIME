@@ -1,6 +1,15 @@
 const { DataTypes, Op } = require("sequelize");
 const sequelize = require("../config/database"); // Sequelize instance
-const { ROLES } = require("../config/constant");
+
+// Define roles directly
+const ROLES = {
+  Admin: "ADMIN",
+  SuperAdmin: "SUPER_ADMIN",
+  Accounts: "ACCOUNTS",
+  Developer: "DEVELOPER",
+  Users: "USERS",
+  Sales: "SALES",
+};
 
 const User = sequelize.define(
   "User",
@@ -17,13 +26,16 @@ const User = sequelize.define(
 
     roles: {
       type: DataTypes.STRING, // Store roles as a comma-separated string
-      allowNull: false,
-      defaultValue: ROLES.Users, // Default role is "users"
+      allowNull: true,
+      defaultValue: ROLES.Users, // Default role is "USERS"
       get() {
         return this.getDataValue("roles")?.split(",") || [];
       },
       set(value) {
-        this.setDataValue("roles", Array.isArray(value) ? value.join(",") : value);
+        this.setDataValue(
+          "roles",
+          Array.isArray(value) ? value.join(",") : value
+        );
       },
     },
 
@@ -35,7 +47,11 @@ const User = sequelize.define(
 
     password: { type: DataTypes.STRING, allowNull: false },
 
-    role_id: { type: DataTypes.UUID, allowNull: true },
+    roleId: {
+      type: DataTypes.UUID,
+      allowNull: true, // Allow NULL values
+      defaultValue: null, // Default roleId as NULL
+    },
   },
   { timestamps: true }
 );

@@ -11,9 +11,9 @@ const Product = sequelize.define("Product", {
     primaryKey: true,
     defaultValue: uuidv4,
   },
-  itemType: {
+  product_segment: {
     type: DataTypes.STRING(100),
-    allowNull: false,
+    allowNull: true,
   },
   productGroup: {
     type: DataTypes.STRING(100),
@@ -23,7 +23,12 @@ const Product = sequelize.define("Product", {
     type: DataTypes.STRING(255),
     allowNull: false,
   },
-  sku: {
+  product_code: {
+    type: DataTypes.STRING(100),
+    allowNull: false,
+    unique: true,
+  },
+  company_code: {
     type: DataTypes.STRING(100),
     allowNull: false,
     unique: true,
@@ -60,7 +65,7 @@ const Product = sequelize.define("Product", {
     type: DataTypes.JSON,
   },
   brandId: {
-    type: DataTypes.UUID(25),
+    type: DataTypes.UUID,
     references: {
       model: Brand,
       key: "id",
@@ -68,8 +73,10 @@ const Product = sequelize.define("Product", {
   },
   categoryId: {
     type: DataTypes.UUID,
-    model: Category,
-    key: "id",
+    references: {
+      model: Category,
+      key: "categoryId",
+    },
   },
 });
 
@@ -82,8 +89,16 @@ Product.beforeCreate(async (product) => {
 async function determineProductGroup(name) {
   const keywords = await Keyword.findAll(); // Fetch all keywords from DB
 
-  let ceramicsMatches = keywords.filter(k => k.type === "Ceramics" && name.toLowerCase().includes(k.keyword.toLowerCase())).length;
-  let sanitaryMatches = keywords.filter(k => k.type === "Sanitary" && name.toLowerCase().includes(k.keyword.toLowerCase())).length;
+  let ceramicsMatches = keywords.filter(
+    (k) =>
+      k.type === "Ceramics" &&
+      name.toLowerCase().includes(k.keyword.toLowerCase())
+  ).length;
+  let sanitaryMatches = keywords.filter(
+    (k) =>
+      k.type === "Sanitary" &&
+      name.toLowerCase().includes(k.keyword.toLowerCase())
+  ).length;
 
   if (ceramicsMatches > 0 && sanitaryMatches === 0) {
     return "Ceramics";

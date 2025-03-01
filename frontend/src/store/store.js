@@ -9,6 +9,7 @@ import { addressApi } from "../api/addressApi";
 import { userApi } from "../api/userApi";
 import { keywordApi } from "../api/keywordApi";
 import { parentCategoryApi } from "../api/parentCategoryApi";
+import { productApi } from "../api/productApi";
 export const store = configureStore({
   reducer: {
     [vendorApi.reducerPath]: vendorApi.reducer,
@@ -20,7 +21,8 @@ export const store = configureStore({
     [addressApi.reducerPath]: addressApi.reducer,
     [userApi.reducerPath]: userApi.reducer,
     [keywordApi.reducerPath]: keywordApi.reducer,
-    [parentCategoryApi.reducerPath]: parentCategoryApi.reducer
+    [parentCategoryApi.reducerPath]: parentCategoryApi.reducer,
+    [productApi.reducerPath]: productApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -33,7 +35,8 @@ export const store = configureStore({
       addressApi.middleware,
       userApi.middleware,
       keywordApi.middleware,
-      parentCategoryApi.middleware
+      parentCategoryApi.middleware,
+      productApi.middleware
     ),
 });
 

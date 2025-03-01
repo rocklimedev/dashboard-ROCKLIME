@@ -1,8 +1,22 @@
-import React from "react";
+import React, { useState } from "react";
 import PageHeader from "../Common/PageHeader";
 import Actions from "../Common/Actions";
-
+import { useGetAllProductsQuery } from "../../api/productApi";
+import DataTablePagination from "../Common/DataTablePagination";
+import TableHeader from "../Common/TableHeader";
 const ProductList = () => {
+  const { data, error, isLoading } = useGetAllProductsQuery();
+  const products = Array.isArray(data?.products) ? data.products : [];
+
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 10;
+
+  if (isLoading) return <p>Loading...</p>;
+  if (error) return <p>Error fetching products.</p>;
+  if (products.length === 0) return <p>No products available.</p>;
+
+  const offset = currentPage * itemsPerPage;
+  const currentItems = products.slice(offset, offset + itemsPerPage);
   return (
     <div class="page-wrapper">
       <div class="content">
@@ -62,103 +76,7 @@ const ProductList = () => {
         </div>
 
         <div class="card">
-          <div class="card-header d-flex align-items-center justify-content-between flex-wrap row-gap-3">
-            <div class="search-set">
-              <div class="search-input">
-                <span class="btn-searchset">
-                  <i class="ti ti-search fs-14 feather-search"></i>
-                </span>
-              </div>
-            </div>
-            <div class="d-flex table-dropdown my-xl-auto right-content align-items-center flex-wrap row-gap-3">
-              <div class="dropdown me-2">
-                <a
-                  href="javascript:void(0);"
-                  class="dropdown-toggle btn btn-white btn-md d-inline-flex align-items-center"
-                  data-bs-toggle="dropdown"
-                >
-                  Category
-                </a>
-                <ul class="dropdown-menu  dropdown-menu-end p-3">
-                  <li>
-                    <a
-                      href="javascript:void(0);"
-                      class="dropdown-item rounded-1"
-                    >
-                      Computers
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="javascript:void(0);"
-                      class="dropdown-item rounded-1"
-                    >
-                      Electronics
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="javascript:void(0);"
-                      class="dropdown-item rounded-1"
-                    >
-                      Shoe
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="javascript:void(0);"
-                      class="dropdown-item rounded-1"
-                    >
-                      Electronics
-                    </a>
-                  </li>
-                </ul>
-              </div>
-              <div class="dropdown">
-                <a
-                  href="javascript:void(0);"
-                  class="dropdown-toggle btn btn-white btn-md d-inline-flex align-items-center"
-                  data-bs-toggle="dropdown"
-                >
-                  Brand
-                </a>
-                <ul class="dropdown-menu  dropdown-menu-end p-3">
-                  <li>
-                    <a
-                      href="javascript:void(0);"
-                      class="dropdown-item rounded-1"
-                    >
-                      Lenovo
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="javascript:void(0);"
-                      class="dropdown-item rounded-1"
-                    >
-                      Beats
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="javascript:void(0);"
-                      class="dropdown-item rounded-1"
-                    >
-                      Nike
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="javascript:void(0);"
-                      class="dropdown-item rounded-1"
-                    >
-                      Apple
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
+          <TableHeader />
           <div class="card-body p-0">
             <div class="table-responsive">
               <table class="table datatable">
@@ -170,8 +88,10 @@ const ProductList = () => {
                         <span class="checkmarks"></span>
                       </label>
                     </th>
-                    <th>SKU </th>
+
                     <th>Product Name</th>
+                    <th>Product Code</th>
+                    <th>Product Group</th>
                     <th>Category</th>
                     <th>Brand</th>
                     <th>Price</th>
@@ -182,57 +102,66 @@ const ProductList = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td>
-                      <label class="checkboxs">
-                        <input type="checkbox" />
-                        <span class="checkmarks"></span>
-                      </label>
-                    </td>
-                    <td>PT001 </td>
-                    <td>
-                      <div class="d-flex align-items-center">
-                        <a
-                          href="javascript:void(0);"
-                          class="avatar avatar-md me-2"
-                        >
-                          <img
-                            src="assets/img/products/stock-img-01.png"
-                            alt="product"
-                          />
-                        </a>
-                        <a href="javascript:void(0);">Lenovo IdeaPad 3 </a>
-                      </div>
-                    </td>
-                    <td>Computers</td>
-                    <td>Lenovo</td>
-                    <td>$600</td>
-                    <td>Pc</td>
-                    <td>100</td>
-                    <td>
-                      <div class="d-flex align-items-center">
-                        <a
-                          href="javascript:void(0);"
-                          class="avatar avatar-sm me-2"
-                        >
-                          <img
-                            src="assets/img/users/user-30.jpg"
-                            alt="product"
-                          />
-                        </a>
-                        <a href="javascript:void(0);">James Kirwin</a>
-                      </div>
-                    </td>
-                    <td class="action-table-data">
-                      <Actions />
-                    </td>
-                  </tr>
+                  {currentItems?.map((product) => (
+                    <tr key={product.productId}>
+                      <td>
+                        <label class="checkboxs">
+                          <input type="checkbox" />
+                          <span class="checkmarks"></span>
+                        </label>
+                      </td>
+
+                      <td>
+                        <div class="d-flex align-items-center">
+                          <a
+                            href="javascript:void(0);"
+                            class="avatar avatar-md me-2"
+                          >
+                            <img
+                              src="assets/img/products/stock-img-01.png"
+                              alt="product"
+                            />
+                          </a>
+                          <a href="javascript:void(0);"> {product.name} </a>
+                        </div>
+                      </td>
+                      <td>{product.product_code}</td>
+                      <td>{product.productGroup}</td>
+                      <td>{product.categoryId}</td>
+                      <td>{product.brandId}</td>
+                      <td>{product.sellingPrice}</td>
+                      <td>{product.tax}</td>
+                      <td>{product.quantity}</td>
+                      <td>
+                        <div class="d-flex align-items-center">
+                          <a
+                            href="javascript:void(0);"
+                            class="avatar avatar-sm me-2"
+                          >
+                            <img
+                              src="assets/img/users/user-30.jpg"
+                              alt="product"
+                            />
+                          </a>
+                          <a href="javascript:void(0);">James Kirwin</a>
+                        </div>
+                      </td>
+                      <td class="action-table-data">
+                        <Actions />
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
           </div>
         </div>
       </div>
+      <DataTablePagination
+        data={products}
+        itemsPerPage={itemsPerPage}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 };

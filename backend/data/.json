@@ -1,0 +1,86 @@
+1. Address Routes (addressController)
+Route	Allowed Roles
+POST / (Create Address)	Admin, SuperAdmin, Accounts
+GET / (Get All Addresses)	Admin, SuperAdmin, Accounts, Users
+GET /:addressId (Get Address by ID)	Admin, SuperAdmin, Accounts, Users
+PUT /:addressId (Update Address)	Admin, SuperAdmin, Accounts
+DELETE /:addressId (Delete Address)	SuperAdmin, Admin   2. Auth Routes (authController)
+Route	Allowed Roles
+POST /register	SuperAdmin, Admin
+POST /login	All Roles (Public Route)
+POST /logout	All Roles (Logged-in Users)
+POST /forgot-password	All Roles
+POST /reset-password	All Roles
+POST /refresh-token	All Roles 1. Brand Routes (brandController)
+Route	Allowed Roles
+POST /add (Create Brand)	Admin, SuperAdmin, Developer
+GET / (Get All Brands)	Admin, SuperAdmin, Accounts, Users
+GET /:id (Get Brand by ID)	Admin, SuperAdmin, Accounts, Users
+PUT /:id (Update Brand)	Admin, SuperAdmin, Developer
+POST /:id (Delete Brand)	SuperAdmin, Admin   2. Category Routes (categoryController)
+Route	Allowed Roles
+POST / (Create Category)	Admin, SuperAdmin, Developer
+GET /all (Get All Categories)	Admin, SuperAdmin, Accounts, Users
+GET /:id (Get Category by ID)	Admin, SuperAdmin, Accounts, Users
+PUT /:id (Update Category)	Admin, SuperAdmin, Developer
+DELETE /:id (Delete Category)	SuperAdmin, Admin   3. Customer Routes (customerController)
+Route	Allowed Roles
+POST / (Create Customer)	Admin, SuperAdmin, Accounts
+GET / (Get All Customers)	Admin, SuperAdmin, Accounts, Users
+GET /:id (Get Customer by ID)	Admin, SuperAdmin, Accounts, Users
+PUT /:id (Update Customer)	Admin, SuperAdmin, Accounts
+DELETE /:id (Delete Customer)	SuperAdmin, Admin 1. Keyword Routes (keywordController)
+Route	Allowed Roles
+POST / (Create Keyword)	Admin, SuperAdmin, Developer
+GET / (Get All Keywords)	Admin, SuperAdmin, Accounts, Users
+GET /:id (Get Keyword by ID)	Admin, SuperAdmin, Accounts, Users
+PUT /:id (Update Keyword)	Admin, SuperAdmin, Developer
+DELETE /:id (Delete Keyword)	SuperAdmin, Admin 2. Order Routes (orderController)
+Route	Allowed Roles
+POST /create (Create Order)	Users, Admin, SuperAdmin, Accounts
+GET /all (Get All Orders)	Admin, SuperAdmin, Accounts
+GET /:id (Get Order by ID)	Admin, SuperAdmin, Accounts, Users (Only Own Orders)
+PUT /update-status/:id (Update Order Status)	Admin, SuperAdmin, Accounts
+DELETE /delete/:id (Delete Order)	SuperAdmin, Admin   3. Parent Category Routes (parentCategoryController)
+Route	Allowed Roles
+POST / (Create Parent Category)	Admin, SuperAdmin, Developer
+GET / (Get All Parent Categories)	Admin, SuperAdmin, Accounts, Users
+GET /:id (Get Parent Category by ID)	Admin, SuperAdmin, Accounts, Users
+PUT /:id (Update Parent Category)	Admin, SuperAdmin, Developer
+DELETE /:id (Delete Parent Category)	SuperAdmin, Admin 1. Permission Routes (permissionController)
+Route	Allowed Roles
+POST / (Create Permission)	SuperAdmin
+GET / (Get All Permissions)	SuperAdmin, Admin
+PUT /:permissionId (Update Permission)	SuperAdmin
+DELETE /:permissionId (Delete Permission)	SuperAdmin 2. Role Routes (roleController)
+Route	Allowed Roles
+POST / (Create Role)	SuperAdmin
+GET / (Get All Roles)	SuperAdmin, Admin
+PUT /:roleId (Update Role Permissions)	SuperAdmin
+DELETE /:roleId (Delete Role)	SuperAdmin
+PUT /:roleId/permissions (Assign Permissions to Role)	SuperAdmin   2. Role Routes (roleController)
+Route	Allowed Roles
+POST / (Create Role)	SuperAdmin
+GET / (Get All Roles)	SuperAdmin, Admin
+PUT /:roleId (Update Role Permissions)	SuperAdmin
+DELETE /:roleId (Delete Role)	SuperAdmin
+PUT /:roleId/permissions (Assign Permissions to Role)	SuperAdmin 3. Signature Routes (signatureController)
+Route	Allowed Roles
+POST / (Upload Signature)	Users, Accounts, Admin
+GET / (Get All Signatures)	Admin, Accounts
+GET /:id (Get Signature By ID)	Admin, Accounts, Users (only their own)
+DELETE /:id (Delete Signature)	Admin 4. User Routes (userController)
+Route	Allowed Roles
+GET /me (Get Profile)	Users (Self-Access)
+PUT / (Update Profile)	Users (Self-Access)
+GET / (Get All Users)	Admin, SuperAdmin
+GET /search (Search User)	Admin, SuperAdmin
+GET /:userId (Get User By ID)	Admin, SuperAdmin
+DELETE /:userId (Delete User)	SuperAdmin
+POST /report/:userId (Report User)	Users   5. Vendor Routes (vendorController)
+Route	Allowed Roles
+POST / (Create Vendor)	Admin, Accounts
+GET / (Get All Vendors)	Admin, Accounts
+GET /:id (Get Vendor By ID)	Admin, Accounts
+PUT /:id (Update Vendor)	Admin, Accounts
+DELETE /:id (Delete Vendor)	SuperAdmin

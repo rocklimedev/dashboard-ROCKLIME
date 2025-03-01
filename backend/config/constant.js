@@ -3,7 +3,8 @@ exports.ROLES = {
   SuperAdmin: "SUPER_ADMIN",
   Accounts: "ACCOUNTS",
   Developer: "DEVELOPER",
-  Users: "USERS"
+  Users: "USERS",
+  SALES: "SALES",
 };
 exports.REVIEW_STATUS = {
   Rejected: "Rejected",
@@ -19,7 +20,6 @@ exports.EMAIL_PROVIDER = {
 
 exports.JWT_COOKIE = "x-jwt-cookie";
 
-
 exports.INVOICE_STATUS = {
   PAID: "Paid",
   OVERDUE: "Overdue",
@@ -28,9 +28,3 @@ exports.INVOICE_STATUS = {
   UNDUE: "Undue",
   DRAFT: "Draft",
 };
-
-
-
-
-
- 
