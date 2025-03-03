@@ -5,9 +5,13 @@ import FilterInputs from "../Common/FilterInputs";
 import Stats from "../Common/Stats";
 import AddCompanyModal from "./AddCompanyModal";
 const ComapniesWrapper = () => {
-  const { data: vendors, error, isLoading } = useGetVendorsQuery();
-  const [showModal, setShowModal] = useState(false);
+  const { data, error, isLoading } = useGetVendorsQuery();
+  const vendors = Array.isArray(data) ? data : null;
 
+  const [showModal, setShowModal] = useState(false);
+  if (isLoading) return <p>Loading...</p>;
+  if (error) return <p>Error fetching vendors.</p>;
+  if (vendors.length === 0) return <p>No vendors available.</p>;
   const handleExport = (type) => {
     console.log(`Exporting as ${type}`);
   };
@@ -101,62 +105,58 @@ const ComapniesWrapper = () => {
                         <span class="checkmarks"></span>
                       </label>
                     </th>
+                    <th>Vendor ID</th>
+                    <th>Vendor Name</th>
                     <th>Brand</th>
+                    <th>Brand Slug</th>
                     <th>Created Date</th>
-                    <th>Status</th>
+
                     <th class="no-sort"></th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td>
-                      <label class="checkboxs">
-                        <input type="checkbox" />
-                        <span class="checkmarks"></span>
-                      </label>
-                    </td>
-                    <td>
-                      <div class="d-flex align-items-center">
-                        <a
-                          href="javascript:void(0);"
-                          class="avatar avatar-md bg-light-900 p-1 me-2"
-                        >
-                          <img
-                            class="object-fit-contain"
-                            src="assets/img/brand/lenova.png"
-                            alt="img"
-                          />
-                        </a>
-                        <a href="javascript:void(0);">Lenovo</a>
-                      </div>
-                    </td>
-                    <td>24 Dec 2024</td>
-                    <td>
-                      <span class="badge table-badge bg-success fw-medium fs-10">
-                        Active
-                      </span>
-                    </td>
-                    <td class="action-table-data">
-                      <div class="edit-delete-action">
-                        <a
-                          class="me-2 p-2"
-                          href="#"
-                          data-bs-toggle="modal"
-                          data-bs-target="#edit-brand"
-                        >
-                          <i data-feather="edit" class="feather-edit"></i>
-                        </a>
-                        <a
-                          data-bs-toggle="modal"
-                          data-bs-target="#delete-modal"
-                          class="p-2"
-                          href="javascript:void(0);"
-                        >
-                          <i data-feather="trash-2" class="feather-trash-2"></i>
-                        </a>
-                      </div>
-                    </td>
-                  </tr>
+                  {vendors.map((vendor) => (
+                    <tr key={vendor.id}>
+                      <td>
+                        <label class="checkboxs">
+                          <input type="checkbox" />
+                          <span class="checkmarks"></span>
+                        </label>
+                      </td>
+                      <td>{vendor.vendorId}</td>
+                      <td>{vendor.vendorName}</td>
+                      <td>{vendor.brandId}</td>
+                      <td>{vendor.brandSlug}</td>
+                      <td>
+                        {" "}
+                        {new Date(vendor.createdAt).toLocaleDateString()}
+                      </td>
+
+                      <td class="action-table-data">
+                        <div class="edit-delete-action">
+                          <a
+                            class="me-2 p-2"
+                            href="#"
+                            data-bs-toggle="modal"
+                            data-bs-target="#edit-brand"
+                          >
+                            <i data-feather="edit" class="feather-edit"></i>
+                          </a>
+                          <a
+                            data-bs-toggle="modal"
+                            data-bs-target="#delete-modal"
+                            class="p-2"
+                            href="javascript:void(0);"
+                          >
+                            <i
+                              data-feather="trash-2"
+                              class="feather-trash-2"
+                            ></i>
+                          </a>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>

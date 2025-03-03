@@ -11,7 +11,7 @@ router.post(
 );
 router.get(
   "/all",
-  checkPermission("/categories_view"),
+  //  checkPermission("/categories_view"),
   categoryController.getAllCategories
 );
 router.get(

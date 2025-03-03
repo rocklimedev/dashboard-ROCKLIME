@@ -13,11 +13,14 @@ function App() {
   const isPOSPage = location.pathname === "/pos"; // Check if route is /pos
 
   return (
-    <div className="main-wrapper pos-five">
-      {!isAuthPage && <Header />}
-      {!isAuthPage && !isPOSPage && <Sidebar />} {/* Remove Sidebar on /pos */}
-      <Router />
-      <Footer />
+    <div className="pos-page">
+      <div className="main-wrapper pos-five">
+        {!isAuthPage && <Header />}
+        {!isAuthPage && !isPOSPage && <Sidebar />}{" "}
+        {/* Remove Sidebar on /pos */}
+        <Router />
+        <Footer />
+      </div>
     </div>
   );
 }

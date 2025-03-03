@@ -4,7 +4,7 @@ const User = require("../models/users");
 const Product = require("../models/product");
 
 const Permission = require("../models/permisson");
-
+const Cart = require("../models/carts");
 const Address = require("../models/address");
 const Category = require("../models/category");
 const Invoice = require("../models/invoice");
@@ -50,6 +50,9 @@ const setupDB = async () => {
     Quotation.belongsTo(User, { foreignKey: "customerId" });
     RolePermission.belongsTo(User, { foreignKey: "userId" });
     Signature.belongsTo(User, { foreignKey: "userId" });
+    // User-Cart Relationship
+    User.hasMany(Cart, { foreignKey: "user_id" });
+    Cart.belongsTo(User, { foreignKey: "user_id" });
 
     await sequelize.sync({ alter: true });
     console.log("\x1b[32m%s\x1b[0m", "✓ Database tables synced!");

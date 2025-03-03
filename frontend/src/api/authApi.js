@@ -14,7 +14,7 @@ export const authApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ["Auth"], // Changed from "Users" to "Auth" for clarity
+  tagTypes: ["Auth"],
 
   endpoints: (builder) => ({
     register: builder.mutation({
@@ -23,7 +23,7 @@ export const authApi = createApi({
         method: "POST",
         body: userData,
       }),
-      invalidatesTags: ["Auth"], // Ensure user-related cache is refreshed
+      invalidatesTags: (result, error) => (result ? ["Auth"] : []), // ✅ Fix here
     }),
     login: builder.mutation({
       query: (credentials) => ({
@@ -34,7 +34,7 @@ export const authApi = createApi({
           "Content-Type": "application/json",
         },
       }),
-      invalidatesTags: ["Auth"], // Ensure user-related cache is refreshed
+      invalidatesTags: (result, error) => (result ? ["Auth"] : []), // ✅ Fix here
     }),
     logout: builder.mutation({
       query: () => ({

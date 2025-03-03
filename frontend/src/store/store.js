@@ -10,6 +10,7 @@ import { userApi } from "../api/userApi";
 import { keywordApi } from "../api/keywordApi";
 import { parentCategoryApi } from "../api/parentCategoryApi";
 import { productApi } from "../api/productApi";
+import { brandApi } from "../api/brandsApi";
 export const store = configureStore({
   reducer: {
     [vendorApi.reducerPath]: vendorApi.reducer,
@@ -23,6 +24,7 @@ export const store = configureStore({
     [keywordApi.reducerPath]: keywordApi.reducer,
     [parentCategoryApi.reducerPath]: parentCategoryApi.reducer,
     [productApi.reducerPath]: productApi.reducer,
+    [brandApi.reducerPath]: brandApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -36,7 +38,8 @@ export const store = configureStore({
       userApi.middleware,
       keywordApi.middleware,
       parentCategoryApi.middleware,
-      productApi.middleware
+      productApi.middleware,
+      brandApi.middleware
     ),
 });
 

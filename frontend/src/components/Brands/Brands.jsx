@@ -1,6 +1,15 @@
 import React from "react";
 import PageHeader from "../Common/PageHeader";
+import { useGetAllBrandsQuery } from "../../api/brandsApi";
+import { AiOutlineEdit } from "react-icons/ai";
+import { FcEmptyTrash } from "react-icons/fc";
 const Brands = () => {
+  const { data, error, isLoading } = useGetAllBrandsQuery();
+  const brands = Array.isArray(data) ? data : [];
+
+  if (isLoading) return <p>Loading...</p>;
+  if (error) return <p>Error fetching brands.</p>;
+  if (brands.length === 0) return <p>No brands available.</p>;
   const handleAddCategory = () => alert("Open Add Category Modal");
   const handlePdfDownload = () => alert("Downloading PDF...");
   const handleExcelDownload = () => alert("Downloading Excel...");
@@ -101,61 +110,55 @@ const Brands = () => {
                       </label>
                     </th>
                     <th>Brand</th>
+                    <th>Brand Slug</th>
                     <th>Created Date</th>
                     <th>Status</th>
                     <th class="no-sort"></th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td>
-                      <label class="checkboxs">
-                        <input type="checkbox" />
-                        <span class="checkmarks"></span>
-                      </label>
-                    </td>
-                    <td>
-                      <div class="d-flex align-items-center">
-                        <a
-                          href="javascript:void(0);"
-                          class="avatar avatar-md bg-light-900 p-1 me-2"
-                        >
-                          <img
-                            class="object-fit-contain"
-                            src="assets/img/brand/lenova.png"
-                            alt="img"
-                          />
-                        </a>
-                        <a href="javascript:void(0);">Lenovo</a>
-                      </div>
-                    </td>
-                    <td>24 Dec 2024</td>
-                    <td>
-                      <span class="badge table-badge bg-success fw-medium fs-10">
-                        Active
-                      </span>
-                    </td>
-                    <td class="action-table-data">
-                      <div class="edit-delete-action">
-                        <a
-                          class="me-2 p-2"
-                          href="#"
-                          data-bs-toggle="modal"
-                          data-bs-target="#edit-brand"
-                        >
-                          <i data-feather="edit" class="feather-edit"></i>
-                        </a>
-                        <a
-                          data-bs-toggle="modal"
-                          data-bs-target="#delete-modal"
-                          class="p-2"
-                          href="javascript:void(0);"
-                        >
-                          <i data-feather="trash-2" class="feather-trash-2"></i>
-                        </a>
-                      </div>
-                    </td>
-                  </tr>
+                  {brands.map((brand) => (
+                    <tr key={brand.id}>
+                      <td>
+                        <label class="checkboxs">
+                          <input type="checkbox" />
+                          <span class="checkmarks"></span>
+                        </label>
+                      </td>
+                      <td>
+                        <div class="d-flex align-items-center">
+                          <a href="javascript:void(0);">{brand.brandName}</a>
+                        </div>
+                      </td>
+                      <td>{brand.brandSlug}</td>
+                      <td> {new Date(brand.createdAt).toLocaleDateString()}</td>
+                      <td>
+                        <span class="badge table-badge bg-success fw-medium fs-10">
+                          Active
+                        </span>
+                      </td>
+                      <td class="action-table-data">
+                        <div class="edit-delete-action">
+                          <a
+                            class="me-2 p-2"
+                            href="#"
+                            data-bs-toggle="modal"
+                            data-bs-target="#edit-brand"
+                          >
+                            <AiOutlineEdit />
+                          </a>
+                          <a
+                            data-bs-toggle="modal"
+                            data-bs-target="#delete-modal"
+                            class="p-2"
+                            href="javascript:void(0);"
+                          >
+                            <FcEmptyTrash />
+                          </a>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>

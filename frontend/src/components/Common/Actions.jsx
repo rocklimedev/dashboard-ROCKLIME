@@ -3,7 +3,7 @@ import { IoEyeOutline } from "react-icons/io5";
 import { FaPen } from "react-icons/fa";
 import { ImBin } from "react-icons/im";
 
-const Actions = ({ id, name, viewUrl, editUrl, deleteAction }) => {
+const Actions = ({ id, name, viewUrl, editUrl, onDelete }) => {
   return (
     <div class="edit-delete-action">
       <a
@@ -21,7 +21,7 @@ const Actions = ({ id, name, viewUrl, editUrl, deleteAction }) => {
         data-bs-toggle="modal"
         data-bs-target="#delete-modal"
         class="p-2"
-        onClick={() => deleteAction({ id, name })}
+        onClick={onDelete}
       >
         <ImBin className="align-middle fs-18" />
       </a>

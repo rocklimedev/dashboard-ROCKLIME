@@ -18,6 +18,8 @@ const customerRoutes = require("./routes/customer");
 const brandRoutes = require("./routes/brands");
 const keywordRoutes = require("./routes/keyword");
 const productRoutes = require("./routes/products");
+const cartRoutes = require("./routes/cart");
+const connectMongoDB = require("./config/dbMongo");
 const setupDB = require("./utils/db");
 const app = express();
 const helmet = require("helmet");
@@ -25,9 +27,10 @@ const keys = require("./config/keys");
 // Middleware
 const { port } = keys;
 const corsOptions = {
-  origin: true,
+  origin: ["http://locahost:4000/"],
   credentials: true,
 };
+
 app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -38,7 +41,9 @@ app.use(
   })
 );
 // Database Setup
+connectMongoDB();
 setupDB();
+
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
@@ -54,6 +59,7 @@ app.use("/api/customers", customerRoutes);
 app.use("/api/brands", brandRoutes);
 app.use("/api/keyword", keywordRoutes);
 app.use("/api/products", productRoutes);
+app.use("/api/carts", cartRoutes);
 // Sync Database
 db.sync()
   .then(() => console.log("Database connected and synced successfully."))

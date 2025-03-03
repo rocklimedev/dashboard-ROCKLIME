@@ -2,7 +2,9 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 export const parentCategoryApi = createApi({
   reducerPath: "parentCategoryApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "http://localhost:5000/api/parent-categories" }), // Adjust base URL if needed
+  baseQuery: fetchBaseQuery({
+    baseUrl: "http://localhost:4000/api/parent-categories",
+  }), // Adjust base URL if needed
   tagTypes: ["ParentCategory"], // Helps with caching and auto-refetching
   endpoints: (builder) => ({
     getAllParentCategories: builder.query({
@@ -27,7 +29,9 @@ export const parentCategoryApi = createApi({
         method: "PUT",
         body: updatedData,
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: "ParentCategory", id }],
+      invalidatesTags: (result, error, { id }) => [
+        { type: "ParentCategory", id },
+      ],
     }),
     deleteParentCategory: builder.mutation({
       query: (id) => ({
