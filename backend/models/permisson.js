@@ -8,10 +8,14 @@ const Permission = sequelize.define("Permission", {
     primaryKey: true,
     defaultValue: uuidv4,
   },
-  action: {
-    type: DataTypes.STRING(100),
+  route: {
+    type: DataTypes.STRING(255),
     allowNull: false,
-    unique: true, // Example: "CREATE_USER", "DELETE_ORDER"
+    unique: true, // Each API route should be unique
+  },
+  name: {
+    type: DataTypes.ENUM("view", "delete", "write", "edit"),
+    allowNull: false, // Defines the type of access for the route
   },
 });
 

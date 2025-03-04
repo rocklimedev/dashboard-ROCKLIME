@@ -49,6 +49,8 @@ const setupDB = async () => {
     Order.belongsTo(Quotation, { foreignKey: "quotationId" });
     Quotation.belongsTo(User, { foreignKey: "customerId" });
     RolePermission.belongsTo(User, { foreignKey: "userId" });
+    RolePermission.belongsToMany(Permission, { through: "RolePermissions" });
+    Permission.belongsToMany(RolePermission, { through: "RolePermissions" });
     Signature.belongsTo(User, { foreignKey: "userId" });
     // User-Cart Relationship
     User.hasMany(Cart, { foreignKey: "user_id" });

@@ -25,7 +25,7 @@ import {
   MdOutlineSettings,
 } from "react-icons/md";
 import { AiOutlineProduct } from "react-icons/ai";
-import { BiSolidCategory } from "react-icons/bi";
+import { BiSolidCategory, BiUserCheck } from "react-icons/bi";
 import { FaFileCircleCheck, FaPooStorm } from "react-icons/fa6";
 import {
   FaRegFile,
@@ -51,6 +51,8 @@ import Brands from "../components/Brands/Brands";
 import GivePermission from "../components/RolesPermission/GivePermissions";
 import QuotaionDetails from "../components/Quotation/QuotaionDetails";
 import ProductDetails from "../components/Product/ProductDetails";
+import UserList from "../components/User/UserList";
+import GeneralSettings from "../components/Settings/GeneralSettings";
 const masterRoutes = [
   {
     path: "/",
@@ -72,6 +74,13 @@ const masterRoutes = [
         icon: <LuUsersRound />,
         isSidebarActive: true,
         element: <CustomerList />,
+      },
+      {
+        path: "/super-admin/users",
+        name: "Users",
+        icon: <BiUserCheck />,
+        isSidebarActive: true,
+        element: <UserList />,
       },
       {
         path: "/super-admin/recent-orders",
@@ -123,6 +132,31 @@ const masterRoutes = [
         isSidebarActive: true,
         element: <Brands />,
       },
+      {
+        path: "/signature/list",
+        name: "Signature",
+        icon: <LiaFileSignatureSolid />,
+        isSidebarActive: true,
+        element: <SignatureWrapper />,
+      },
+      {
+        path: "/signature/:id",
+        name: "Signature Details",
+        icon: <LiaFileSignatureSolid />,
+        isSidebarActive: true,
+      },
+      {
+        path: "/signature/:id/edit",
+        name: "Signature Edit",
+        icon: <LiaFileSignatureSolid />,
+        isSidebarActive: true,
+      },
+      {
+        path: "/signature/add",
+        name: "Signature Add",
+        icon: <LiaFileSignatureSolid />,
+        isSidebarActive: true,
+      },
     ],
   },
   {
@@ -140,7 +174,7 @@ const masterRoutes = [
       },
 
       {
-        path: "/inventory/categories",
+        path: "/inventory/categories-keywords",
         element: <CategoriesList />,
         name: "Categories & Keywords",
         icon: <BiSolidCategory />,
@@ -154,53 +188,21 @@ const masterRoutes = [
         element: <CreateProduct />,
       },
       {
-        path: "/inventory/product/:id",
+        path: "/product/:id",
         name: "Product Details",
-        icon: <ProductList />,
-        isSidebarActive: false,
+        icon: <AiOutlineProduct />,
+        isSidebarActive: true,
         element: <ProductDetails />,
       },
       {
-        path: "/inventory/product/:id/edit",
+        path: "/product/:id/edit",
         name: "Product Edit",
-        icon: <ProductList />,
-        isSidebarActive: false,
-      },
-    ],
-  },
-  {
-    path: "#",
-    name: "Signature",
-    icon: <PiSignatureDuotone />,
-    isSidebarActive: true,
-    submenu: [
-      {
-        path: "/signature/list",
-        name: "Signature",
-        icon: <LiaFileSignatureSolid />,
-        isSidebarActive: true,
-        element: <SignatureWrapper />,
-      },
-      {
-        path: "/signature/:id",
-        name: "Signature Details",
-        icon: <LiaFileSignatureSolid />,
-        isSidebarActive: false,
-      },
-      {
-        path: "/signature/:id/edit",
-        name: "Signature Edit",
-        icon: <LiaFileSignatureSolid />,
-        isSidebarActive: false,
-      },
-      {
-        path: "/signature/add",
-        name: "Signature Add",
-        icon: <LiaFileSignatureSolid />,
+        icon: <AiOutlineProduct />,
         isSidebarActive: true,
       },
     ],
   },
+
   {
     path: "/pos",
     name: "POS",
@@ -238,7 +240,7 @@ const masterRoutes = [
         path: "/quotations/:id/edit",
         name: "Edit Quotations",
         icon: <FaRegFile />,
-        isSidebarActive: false,
+        isSidebarActive: true,
       },
     ],
   },
@@ -259,29 +261,25 @@ const masterRoutes = [
         path: "roles-permission/permissions/:id",
         name: "Permission Details",
         icon: <MdPermIdentity />,
-        isSidebarActive: false,
+        isSidebarActive: true,
         element: <Permissions />,
       },
     ],
   },
+
   {
-    path: "/order",
-    name: "Orders",
-    icon: <FaJediOrder />,
-    isSidebarActive: true,
-  },
-  {
-    path: "/credit-notes",
-    name: "Credit",
-    isSidebarActive: true,
-    icon: <AiTwotoneCreditCard />,
-  },
-  {
-    path: "/settings",
+    path: "#",
     name: "Settings",
     icon: <MdOutlineSettings />,
     isSidebarActive: true,
     submenu: [
+      {
+        path: "/settings/",
+        name: "General Settings",
+        icon: <MdOutlineSettings />,
+        isSidebarActive: true,
+        element: <GeneralSettings />,
+      },
       {
         path: "/settings/profile",
         name: "Profile Settings",
@@ -307,42 +305,42 @@ const masterRoutes = [
     path: "/login",
     name: "login",
     icon: <IoLogIn />,
-    isSidebarActive: false,
+    isSidebarActive: true,
     element: <Login />,
   },
   {
     path: "/signup",
     name: "Signup",
     icon: <IoLogIn />,
-    isSidebarActive: false,
+    isSidebarActive: true,
     element: <Signup />,
   },
   {
     path: "/404",
     name: "Error",
     icon: <MdError />,
-    isSidebarActive: false,
+    isSidebarActive: true,
     element: <Error404 />,
   },
   {
     path: "/forgot-password",
     name: "Forgot Password",
     icon: <MdError />,
-    isSidebarActive: false,
+    isSidebarActive: true,
     element: <ForgotPassword />,
   },
   {
     path: "/reset-password",
     name: "Reset Password",
     icon: <MdError />,
-    isSidebarActive: false,
+    isSidebarActive: true,
     element: <ResetPassword />,
   },
   {
     path: "/500",
     name: "ERROR 500",
     icon: <MdError />,
-    isSidebarActive: false,
+    isSidebarActive: true,
     element: <Error500 />,
   },
 ];

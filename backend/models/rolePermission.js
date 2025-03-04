@@ -1,6 +1,7 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
 const { v4: uuidv4 } = require("uuid");
+const Permission = require("./permisson"); // Importing Permission model
 
 const Role = sequelize.define("Role", {
   roleId: {
@@ -13,11 +14,8 @@ const Role = sequelize.define("Role", {
     allowNull: false,
     unique: true,
   },
-  permissions: {
-    type: DataTypes.JSON,
-    allowNull: false,
-    defaultValue: {}, // Default to an empty object (e.g., { "CREATE_USER": true, "DELETE_ORDER": false })
-  },
 });
+
+// Many-to-Many Relationship Between Roles and Permissions
 
 module.exports = Role;

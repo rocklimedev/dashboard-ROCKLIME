@@ -19,6 +19,7 @@ const brandRoutes = require("./routes/brands");
 const keywordRoutes = require("./routes/keyword");
 const productRoutes = require("./routes/products");
 const cartRoutes = require("./routes/cart");
+const quotationRoutes = require("./routes/quotation");
 const connectMongoDB = require("./config/dbMongo");
 const setupDB = require("./utils/db");
 const app = express();
@@ -27,11 +28,13 @@ const keys = require("./config/keys");
 // Middleware
 const { port } = keys;
 const corsOptions = {
-  origin: ["http://locahost:4000/"],
+  origin: ["http://localhost:3000"], // ✅ Remove trailing slash
   credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], // ✅ Allow necessary methods
+  allowedHeaders: ["Content-Type", "Authorization"], // ✅ Specify allowed headers
 };
-
 app.use(cors(corsOptions));
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(
@@ -60,6 +63,7 @@ app.use("/api/brands", brandRoutes);
 app.use("/api/keyword", keywordRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/carts", cartRoutes);
+app.use("/api/quotation", quotationRoutes);
 // Sync Database
 db.sync()
   .then(() => console.log("Database connected and synced successfully."))

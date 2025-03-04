@@ -77,7 +77,7 @@ const ProductList = () => {
                     <th>Brand</th>
                     <th>Price</th>
                     <th>Qty</th>
-                    <th>Created By</th>
+                    <th>Created At</th>
                     <th className="no-sort">Actions</th>
                   </tr>
                 </thead>
@@ -96,7 +96,10 @@ const ProductList = () => {
                       <td>{product.brandId}</td>
                       <td>{product.sellingPrice}</td>
                       <td>{product.quantity}</td>
-                      <td>James Kirwin</td>
+                      <td>
+                        {" "}
+                        {new Date(product.createdAt).toLocaleDateString()}
+                      </td>
                       <td>
                         <Actions onDelete={() => handleDeleteClick(product)} />
                       </td>

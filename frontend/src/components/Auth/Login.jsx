@@ -9,7 +9,8 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [login, { isLoading, error }] = useLoginMutation();
   const navigate = useNavigate();
-
+  const token = localStorage.getItem("accessToken");
+  console.log("Login response:", token);
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -17,6 +18,7 @@ const Login = () => {
 
       if (rememberMe) {
         localStorage.setItem("token", response.accessToken);
+        console.log("Login response:", response.accesstoken);
       } else {
         sessionStorage.setItem("token", response.accessToken);
       }
