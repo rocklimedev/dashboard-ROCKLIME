@@ -5,22 +5,45 @@ import { useGetAllProductsQuery } from "../../api/productApi";
 import DataTablePagination from "../Common/DataTablePagination";
 import TableHeader from "../Common/TableHeader";
 import DeleteModal from "../Common/DeleteModal";
+import { useGetAllCategoriesQuery } from "../../api/categoryApi";
+import { useGetAllBrandsQuery } from "../../api/brandsApi";
+import StockModal from "../Common/StockModal";
+import HistoryModal from "../Common/HistoryModal";
+import { useNavigate } from "react-router-dom";
 
 const ProductList = () => {
+  const navigate = useNavigate();
   const { data, error, isLoading } = useGetAllProductsQuery();
   const products = Array.isArray(data) ? data : [];
+  const { data: categoriesData } = useGetAllCategoriesQuery();
+  const { data: brandsData } = useGetAllBrandsQuery();
+  const categories = Array.isArray(categoriesData?.categories)
+    ? categoriesData.categories
+    : [];
+  const brands = Array.isArray(brandsData) ? brandsData : [];
 
-  console.log("Total products:", products.length);
+  const getBrandsName = (brandId) => {
+    if (!brandId) return "NOT BRANDED";
+    const brand = brands.find((b) => b.id === brandId);
+    return brand ? brand.brandName : "NOT BRANDED";
+  };
+
+  const getCategoryName = (categoryId) => {
+    const category = categories.find((cat) => cat.categoryId === categoryId);
+    return category ? category.name : "Uncategorized";
+  };
 
   const [currentPage, setCurrentPage] = useState(0);
   const [isModalVisible, setModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
-
+  const [isStockModalVisible, setStockModalVisible] = useState(false);
+  const [isHistoryModalVisible, setHistoryModalVisible] = useState(false);
+  const [stockHistory, setStockHistory] = useState([]);
   const itemsPerPage = 20;
 
   useEffect(() => {
     if (currentPage >= Math.ceil(products.length / itemsPerPage)) {
-      setCurrentPage(0); // Reset if out of bounds
+      setCurrentPage(0);
     }
   }, [products.length, currentPage]);
 
@@ -31,32 +54,50 @@ const ProductList = () => {
   const offset = currentPage * itemsPerPage;
   const currentItems = products.slice(offset, offset + itemsPerPage);
 
-  console.log("Current Page:", currentPage);
-  console.log("Offset:", offset);
-  console.log("Current Items:", currentItems);
-
-  // Open delete modal
   const handleDeleteClick = (product) => {
     setSelectedProduct(product);
     setModalVisible(true);
   };
 
-  // Handle delete confirmation
   const handleConfirmDelete = () => {
     console.log("Deleting product:", selectedProduct);
-    // TODO: Replace with API call to delete product
     setModalVisible(false);
   };
 
-  // Close modal
-  const handleCancelDelete = () => {
-    setModalVisible(false);
+  const handleStockClick = (product) => {
+    setSelectedProduct(product);
+    setStockModalVisible(true);
   };
 
+  const handleHistoryClick = (product) => {
+    setSelectedProduct(product);
+    setHistoryModalVisible(true);
+  };
+  const handleStockSubmit = (stockData) => {
+    console.log("Stock updated:", stockData);
+    setStockHistory([...stockHistory, { ...stockData, date: new Date() }]);
+  };
+
+  const openStockModal = (product) => {
+    setSelectedProduct(product);
+    setStockModalVisible(true);
+  };
+
+  const openHistoryModal = (product) => {
+    setSelectedProduct(product);
+    setHistoryModalVisible(true);
+  };
+  const handleAddProduct = () => {
+    navigate("/inventory/product/add");
+  };
   return (
     <div className="page-wrapper">
       <div className="content">
-        <PageHeader />
+        <PageHeader
+          title="Products"
+          subtitle="Manage your product inventory"
+          onAdd={() => handleAddProduct()}
+        />
 
         <div className="card">
           <TableHeader />
@@ -65,39 +106,44 @@ const ProductList = () => {
               <table className="table datatable">
                 <thead className="thead-light">
                   <tr>
-                    <th class="no-sort">
-                      <label class="checkboxs">
-                        <input type="checkbox" id="select-all" />
-                        <span class="checkmarks"></span>
-                      </label>
-                    </th>
                     <th>Product Name</th>
                     <th>Product Code</th>
                     <th>Category</th>
                     <th>Brand</th>
                     <th>Price</th>
                     <th>Qty</th>
+                    <th>Stock In/Out/History</th>
                     <th>Created At</th>
-                    <th className="no-sort">Actions</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {currentItems.map((product) => (
                     <tr key={product.productId}>
-                      <td>
-                        <label class="checkboxs">
-                          <input type="checkbox" />
-                          <span class="checkmarks"></span>
-                        </label>
-                      </td>
                       <td>{product.name}</td>
                       <td>{product.product_code}</td>
-                      <td>{product.categoryId}</td>
-                      <td>{product.brandId}</td>
+                      <td>{getCategoryName(product.categoryId)}</td>
+                      <td>{getBrandsName(product.brandId)}</td>
                       <td>{product.sellingPrice}</td>
                       <td>{product.quantity}</td>
                       <td>
-                        {" "}
+                        <button
+                          type="button"
+                          class="btn btn-secondary"
+                          onClick={() => openStockModal(product)}
+                        >
+                          Stock
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-secondary"
+                          onClick={() => openHistoryModal(product)}
+                        >
+                          History
+                        </button>
+                      </td>
+
+                      <td>
                         {new Date(product.createdAt).toLocaleDateString()}
                       </td>
                       <td>
@@ -111,20 +157,31 @@ const ProductList = () => {
           </div>
         </div>
 
-        {/* Pagination */}
         <DataTablePagination
           totalItems={products.length}
           itemNo={itemsPerPage}
           onPageChange={(selectedPage) => setCurrentPage(selectedPage - 1)}
         />
 
-        {/* Delete Confirmation Modal */}
         <DeleteModal
           item={selectedProduct}
           itemType="Product"
           isVisible={isModalVisible}
           onConfirm={handleConfirmDelete}
-          onCancel={handleCancelDelete}
+          onCancel={() => setModalVisible(false)}
+        />
+
+        <StockModal
+          show={isStockModalVisible}
+          onHide={() => setStockModalVisible(false)}
+          onSubmit={handleStockSubmit}
+          product={selectedProduct}
+        />
+        <HistoryModal
+          show={isHistoryModalVisible}
+          onHide={() => setHistoryModalVisible(false)}
+          history={stockHistory}
+          product={selectedProduct}
         />
       </div>
     </div>

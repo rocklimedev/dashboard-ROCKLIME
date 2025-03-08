@@ -19,8 +19,8 @@ const Brands = () => {
     <div class="page-wrapper">
       <div class="content">
         <PageHeader
-          title="Products"
-          subtitle="Manage your product inventory"
+          title="Brands"
+          subtitle="Manage your brands"
           onAdd={() => console.log("Add button clicked!")}
         />
 

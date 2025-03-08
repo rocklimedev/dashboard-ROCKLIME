@@ -1,7 +1,7 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
 const Quotation = require("./quotation"); // Assuming Quotation exists
-
+const Team = require("./team");
 const Order = sequelize.define("Order", {
   id: {
     type: DataTypes.UUID,
@@ -47,5 +47,5 @@ const Order = sequelize.define("Order", {
 
 // Relationship with Quotation
 Order.belongsTo(Quotation, { foreignKey: "quotationId" });
-
+Order.belongsTo(Team, { foreignKey: "teamId" });
 module.exports = Order;

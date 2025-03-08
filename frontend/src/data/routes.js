@@ -53,6 +53,8 @@ import QuotaionDetails from "../components/Quotation/QuotaionDetails";
 import ProductDetails from "../components/Product/ProductDetails";
 import UserList from "../components/User/UserList";
 import GeneralSettings from "../components/Settings/GeneralSettings";
+import UnderMaintanance from "../components/Error/UnderMaintanance";
+import ComingSoon from "../components/Error/ComingSoon";
 const masterRoutes = [
   {
     path: "/",
@@ -342,6 +344,20 @@ const masterRoutes = [
     icon: <MdError />,
     isSidebarActive: true,
     element: <Error500 />,
+  },
+  {
+    path: "/under-maintainance",
+    name: "Under Maintance",
+    icon: <MdError />,
+    isSidebarActive: true,
+    element: <UnderMaintanance />,
+  },
+  {
+    path: "/coming-soon",
+    name: "Coming Soon",
+    icon: <MdError />,
+    isSidebarActive: true,
+    element: <ComingSoon />,
   },
 ];
 

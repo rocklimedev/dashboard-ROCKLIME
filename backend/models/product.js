@@ -78,6 +78,11 @@ const Product = sequelize.define("Product", {
       key: "categoryId",
     },
   },
+  isFeatured: {
+    // Correctly placed isFeatured field
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
 });
 
 // Assign productGroup dynamically before saving
@@ -85,7 +90,7 @@ Product.beforeCreate(async (product) => {
   product.productGroup = await determineProductGroup(product.name);
 });
 
-// Function to determine the product group from database
+// Function to determine the product group from the database
 async function determineProductGroup(name) {
   const keywords = await Keyword.findAll(); // Fetch all keywords from DB
 
@@ -112,6 +117,5 @@ async function determineProductGroup(name) {
 }
 
 // Relationship with Category
-Product.belongsTo(Category, { foreignKey: "categoryId" });
 
 module.exports = Product;

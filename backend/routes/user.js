@@ -6,10 +6,10 @@ const userController = require("../controller/userController");
 const { ROLES } = require("../config/constant");
 
 // General user routes
-router.get("/me", userController.getProfile); // Get current user's profile
+router.get("/me", auth, userController.getProfile); // Get current user's profile
 router.put("/", userController.updateProfile); // Update current user's profile
 router.get("/", userController.getAllUsers);
-
+router.post("/add", userController.createUser);
 // Admin-specific routes
 router.get("/search", userController.searchUser);
 router.get("/:userId", userController.getUserById);

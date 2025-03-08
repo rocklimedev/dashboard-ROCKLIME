@@ -5,7 +5,10 @@ const RecentInvoices = () => {
   return (
     <div class="page-wrapper">
       <div class="content">
-        <PageHeader />
+        <PageHeader
+          title="Recent Invoices"
+          subtitle="Manage your Recent Invoices"
+        />
 
         <div class="card">
           <div class="card-header d-flex align-items-center justify-content-between flex-wrap row-gap-3">

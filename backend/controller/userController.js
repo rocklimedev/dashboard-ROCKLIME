@@ -1,9 +1,46 @@
+const { Op } = require("sequelize");
 const User = require("../models/users");
+
+// Create User
+exports.createUser = async (req, res) => {
+  try {
+    const { username, name, email, password, mobileNumber } = req.body;
+
+    // Check if the user already exists
+    const existingUser = await User.findOne({
+      where: {
+        [Op.or]: [{ username }, { email }],
+      },
+    });
+
+    if (existingUser) {
+      return res
+        .status(400)
+        .json({ message: "Username or Email already exists" });
+    }
+
+    // Create a new user
+    const newUser = await User.create({
+      username,
+      name,
+      email,
+      password, // Make sure to hash the password before storing
+      mobileNumber,
+      role,
+    });
+
+    res
+      .status(201)
+      .json({ message: "User created successfully", user: newUser });
+  } catch (err) {
+    res.status(500).json({ message: "Server Error", error: err.message });
+  }
+};
 
 // Get Profile
 exports.getProfile = async (req, res) => {
   try {
-    const user = await User.findByPk(req.userId);
+    const user = await User.findByPk(req.user.userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }

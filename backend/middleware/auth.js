@@ -32,10 +32,10 @@ const auth = (req, res, next) => {
 
 const generateToken = (user) => {
   const payload = {
-    id: user.id,
+    userId: user.userId,
     role: user.role,
     email: user.email,
-    iat: Math.floor(Date.now() / 1000), // Issued at time
+    iat: Math.floor(Date.now() / 1000),
   };
 
   return jwt.sign(payload, secret, { expiresIn: tokenLife });

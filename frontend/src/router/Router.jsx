@@ -4,7 +4,9 @@ import masterRoutes from "../data/routes";
 
 const renderRoutes = (routes) => {
   return routes.flatMap(({ path, element, submenu }) => {
-    const mainRoute = element ? <Route key={path} path={path} element={element} /> : null;
+    const mainRoute = element ? (
+      <Route key={path} path={path} element={element} />
+    ) : null;
     const subRoutes = submenu ? renderRoutes(submenu) : [];
     return mainRoute ? [mainRoute, ...subRoutes] : subRoutes;
   });

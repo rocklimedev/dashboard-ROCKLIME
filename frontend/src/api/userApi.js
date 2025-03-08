@@ -2,12 +2,12 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { API_URL } from "../data/config";
 
 export const userApi = createApi({
-  reducerPath: "authApi",
+  reducerPath: "userApi",
   baseQuery: fetchBaseQuery({
     baseUrl: `${API_URL}/user`,
     credentials: "include",
     prepareHeaders: (headers) => {
-      const token = localStorage.getItem("accessToken");
+      const token = localStorage.getItem("token");
       console.log(token);
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
@@ -48,6 +48,13 @@ export const userApi = createApi({
         method: "POST",
       }),
     }),
+    createUser: builder.mutation({
+      query: (data) => ({
+        url: "/",
+        method: "POST",
+        body: data,
+      }),
+    }),
   }),
 });
 
@@ -59,4 +66,5 @@ export const {
   useGetUserByIdQuery,
   useDeleteUserMutation,
   useReportUserMutation,
+  useCreateUserMutation,
 } = userApi;

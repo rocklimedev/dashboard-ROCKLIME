@@ -8,7 +8,6 @@ export const authApi = createApi({
     credentials: "include",
     prepareHeaders: (headers) => {
       const token = localStorage.getItem("accessToken");
-      console.log("Login response:", token);
 
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
@@ -25,7 +24,7 @@ export const authApi = createApi({
         method: "POST",
         body: userData,
       }),
-      invalidatesTags: (result) => (result !== undefined ? ["Auth"] : []),
+      invalidatesTags: ["Auth"], // Always returns an array
     }),
     login: builder.mutation({
       query: (credentials) => ({
@@ -36,13 +35,15 @@ export const authApi = createApi({
           "Content-Type": "application/json",
         },
       }),
-      invalidatesTags: (result) => (result !== undefined ? ["Auth"] : []),
+      invalidatesTags: (result, error) => (result ? ["Auth"] : []),
     }),
+
     logout: builder.mutation({
       query: () => ({
         url: "/logout",
         method: "POST",
       }),
+      invalidatesTags: ["Auth"], // Ensure logout invalidates cache
     }),
     forgotPassword: builder.mutation({
       query: (email) => ({
@@ -78,6 +79,7 @@ export const authApi = createApi({
         method: "POST",
         body: data,
       }),
+      invalidatesTags: ["Auth"], // If password changes, user data should refresh
     }),
   }),
 });

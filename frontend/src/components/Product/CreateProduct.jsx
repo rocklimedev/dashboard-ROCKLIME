@@ -1,6 +1,39 @@
 import React from "react";
-
+import { FaArrowLeft } from "react-icons/fa";
+import { useState } from "react";
+import { useCreateProductMutation } from "../../api/productApi";
+import { GiFeatherWound } from "react-icons/gi";
 const CreateProduct = () => {
+  const [formData, setFormData] = useState({
+    productName: "",
+    productSegment: "",
+    productGroup: "",
+    productCode: "",
+    companyCode: "",
+    sellingPrice: "",
+    category: "",
+    parentCategory: "",
+    brand: "",
+    isFeatured: "",
+    barcode: "",
+    description: "",
+  });
+
+  const [createProduct, { isLoading, error }] = useCreateProductMutation();
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await createProduct(formData).unwrap();
+      alert("Product created successfully");
+    } catch (err) {
+      console.error("Failed to create product:", err);
+    }
+  };
   return (
     <div class="page-wrapper">
       <div class="content">
@@ -33,15 +66,12 @@ const CreateProduct = () => {
             </li>
           </ul>
           <div class="page-btn mt-0">
-            <a href="product-list.html" class="btn btn-secondary">
-              <i data-feather="arrow-left" class="me-2"></i>Back to Product
+            <a href="/inventory/list" class="btn btn-secondary">
+              <FaArrowLeft class="me-2" /> Back to Product
             </a>
           </div>
         </div>
-        <form
-          action="https://dreamspos.dreamstechnologies.com/html/template/add-product.html"
-          class="add-product-form"
-        >
+        <form onSubmit={handleSubmit} class="add-product-form">
           <div class="add-product">
             <div class="accordions-items-seperate" id="accordionSpacingExample">
               <div class="accordion-item border mb-4">
@@ -55,7 +85,7 @@ const CreateProduct = () => {
                   >
                     <div class="d-flex align-items-center justify-content-between flex-fill">
                       <h5 class="d-flex align-items-center">
-                        <i data-feather="info" class="text-primary me-2"></i>
+                        <GiFeatherWound lass="text-primary me-2" />
                         <span>Product Information</span>
                       </h5>
                     </div>
@@ -71,43 +101,6 @@ const CreateProduct = () => {
                       <div class="col-sm-6 col-12">
                         <div class="mb-3">
                           <label class="form-label">
-                            Store<span class="text-danger ms-1">*</span>
-                          </label>
-                          <select class="select">
-                            <option>Select</option>
-                            <option>Electro Mart</option>
-                            <option>Quantum Gadgets</option>
-                            <option>Gadget World</option>
-                            <option>Volt Vault</option>
-                            <option>Elite Retail</option>
-                            <option>Prime Mart</option>
-                            <option>NeoTech Store</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div class="col-sm-6 col-12">
-                        <div class="mb-3">
-                          <label class="form-label">
-                            Warehouse<span class="text-danger ms-1">*</span>
-                          </label>
-                          <select class="select">
-                            <option>Select</option>
-                            <option>Lavish Warehouse</option>
-                            <option>Quaint Warehouse</option>
-                            <option>Traditional Warehouse</option>
-                            <option>Cool Warehouse</option>
-                            <option>Overflow Warehouse</option>
-                            <option>Nova Storage Hub</option>
-                            <option>Retail Supply Hub</option>
-                            <option>EdgeWare Solutions</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="row">
-                      <div class="col-sm-6 col-12">
-                        <div class="mb-3">
-                          <label class="form-label">
                             Product Name<span class="text-danger ms-1">*</span>
                           </label>
                           <input type="text" class="form-control" />
@@ -116,7 +109,24 @@ const CreateProduct = () => {
                       <div class="col-sm-6 col-12">
                         <div class="mb-3">
                           <label class="form-label">
-                            Slug<span class="text-danger ms-1">*</span>
+                            Product Segment
+                            <span class="text-danger ms-1">*</span>
+                          </label>
+                          <input type="text" class="form-control" />
+                        </div>
+                      </div>
+                      <div class="col-sm-6 col-12">
+                        <div class="mb-3">
+                          <label class="form-label">
+                            Product Group<span class="text-danger ms-1">*</span>
+                          </label>
+                          <input type="text" class="form-control" />
+                        </div>
+                      </div>
+                      <div class="col-sm-6 col-12">
+                        <div class="mb-3">
+                          <label class="form-label">
+                            Product Code<span class="text-danger ms-1">*</span>
                           </label>
                           <input type="text" class="form-control" />
                         </div>
@@ -126,24 +136,17 @@ const CreateProduct = () => {
                       <div class="col-sm-6 col-12">
                         <div class="mb-3 list position-relative">
                           <label class="form-label">
-                            SKU<span class="text-danger ms-1">*</span>
+                            Company Code <span class="text-danger ms-1">*</span>
                           </label>
                           <input type="text" class="form-control list" />
-                          <button type="submit" class="btn btn-primaryadd">
-                            Generate
-                          </button>
                         </div>
                       </div>
                       <div class="col-sm-6 col-12">
                         <div class="mb-3">
                           <label class="form-label">
-                            Selling Type<span class="text-danger ms-1">*</span>
+                            Selling price<span class="text-danger ms-1">*</span>
                           </label>
-                          <select class="select">
-                            <option>Select</option>
-                            <option>Online</option>
-                            <option>POS</option>
-                          </select>
+                          <input type="text" class="form-control" />
                         </div>
                       </div>
                     </div>
@@ -183,7 +186,7 @@ const CreateProduct = () => {
                         <div class="col-sm-6 col-12">
                           <div class="mb-3">
                             <label class="form-label">
-                              Sub Category
+                              Parent Category
                               <span class="text-danger ms-1">*</span>
                             </label>
                             <select class="select">
@@ -226,59 +229,24 @@ const CreateProduct = () => {
                           <div class="mb-3">
                             <div class="add-newplus">
                               <label class="form-label">
-                                Unit<span class="text-danger ms-1">*</span>
+                                Is Featured?
+                                <span class="text-danger ms-1">*</span>
                               </label>
                             </div>
                             <select class="select">
-                              <option>Select</option>
-                              <option>Kg</option>
-                              <option>Pcs</option>
-                              <option>L</option>
-                              <option>dz</option>
-                              <option>bx</option>
+                              <option>select</option>
+                              <option>true</option>
+                              <option>false</option>
                             </select>
                           </div>
                         </div>
                       </div>
                     </div>
                     <div class="row">
-                      <div class="col-sm-6">
-                        <div class="mb-3">
-                          <div class="add-newplus">
-                            <label class="form-label">
-                              Barcode Symbology
-                              <span class="text-danger ms-1">*</span>
-                            </label>
-                          </div>
-                          <select class="select">
-                            <option>Select</option>
-                            <option>Code 128</option>
-                            <option>Code 39</option>
-                            <option>UPC-A</option>
-                            <option>UPC_E</option>
-                            <option>EAN-8</option>
-                            <option>EAN-13</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div class="col-lg-6 col-sm-6 col-12">
-                        <div class="mb-3">
-                          <label class="form-label">Barcode Symbology</label>
-                          <select class="select">
-                            <option>Choose</option>
-                            <option>Code 128</option>
-                            <option>Code 39</option>
-                            <option>UPC-A</option>
-                            <option>UPC-E</option>
-                            <option>EAN-8</option>
-                            <option>EAN-13</option>
-                          </select>
-                        </div>
-                      </div>
                       <div class="col-lg-6 col-sm-6 col-12">
                         <div class="mb-3 list position-relative">
                           <label class="form-label">
-                            Item Barcode<span class="text-danger ms-1">*</span>
+                            Barcode<span class="text-danger ms-1">*</span>
                           </label>
                           <input type="text" class="form-control list" />
                           <button type="submit" class="btn btn-primaryadd">
@@ -324,55 +292,6 @@ const CreateProduct = () => {
                   aria-labelledby="headingSpacingTwo"
                 >
                   <div class="accordion-body border-top">
-                    <div class="mb-3s">
-                      <label class="form-label">
-                        Product Type<span class="text-danger ms-1">*</span>
-                      </label>
-                      <div class="single-pill-product mb-3">
-                        <ul
-                          class="nav nav-pills"
-                          id="pills-tab1"
-                          role="tablist"
-                        >
-                          <li class="nav-item" role="presentation">
-                            <span
-                              class="custom_radio me-4 mb-0 active"
-                              id="pills-home-tab"
-                              data-bs-toggle="pill"
-                              data-bs-target="#pills-home"
-                              role="tab"
-                              aria-controls="pills-home"
-                              aria-selected="true"
-                            >
-                              <input
-                                type="radio"
-                                class="form-control"
-                                name="payment"
-                              />
-                              <span class="checkmark"></span> Single Product
-                            </span>
-                          </li>
-                          <li class="nav-item" role="presentation">
-                            <span
-                              class="custom_radio me-2 mb-0"
-                              id="pills-profile-tab"
-                              data-bs-toggle="pill"
-                              data-bs-target="#pills-profile"
-                              role="tab"
-                              aria-controls="pills-profile"
-                              aria-selected="false"
-                            >
-                              <input
-                                type="radio"
-                                class="form-control"
-                                name="sign"
-                              />
-                              <span class="checkmark"></span> Variable Product
-                            </span>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
                     <div class="tab-content" id="pills-tabContent">
                       <div
                         class="tab-pane fade show active"
@@ -394,24 +313,13 @@ const CreateProduct = () => {
                             <div class="col-lg-4 col-sm-6 col-12">
                               <div class="mb-3">
                                 <label class="form-label">
-                                  Price<span class="text-danger ms-1">*</span>
+                                  Alert Quantity
+                                  <span class="text-danger ms-1">*</span>
                                 </label>
                                 <input type="text" class="form-control" />
                               </div>
                             </div>
-                            <div class="col-lg-4 col-sm-6 col-12">
-                              <div class="mb-3">
-                                <label class="form-label">
-                                  Tax Type
-                                  <span class="text-danger ms-1">*</span>
-                                </label>
-                                <select class="select">
-                                  <option>Select</option>
-                                  <option>Exclusive</option>
-                                  <option>Inclusive</option>
-                                </select>
-                              </div>
-                            </div>
+
                             <div class="col-lg-4 col-sm-6 col-12">
                               <div class="mb-3">
                                 <label class="form-label">
@@ -427,312 +335,6 @@ const CreateProduct = () => {
                                 </select>
                               </div>
                             </div>
-
-                            <div class="col-lg-4 col-sm-6 col-12">
-                              <div class="mb-3">
-                                <label class="form-label">
-                                  Discount Type
-                                  <span class="text-danger ms-1">*</span>
-                                </label>
-                                <select class="select">
-                                  <option>Select</option>
-                                  <option>Percentage</option>
-                                  <option>Fixed</option>
-                                </select>
-                              </div>
-                            </div>
-                            <div class="col-lg-4 col-sm-6 col-12">
-                              <div class="mb-3">
-                                <label class="form-label">
-                                  Discount Value
-                                  <span class="text-danger ms-1">*</span>
-                                </label>
-                                <input class="form-control" type="text" />
-                              </div>
-                            </div>
-                            <div class="col-lg-4 col-sm-6 col-12">
-                              <div class="mb-3">
-                                <label class="form-label">
-                                  Quantity Alert
-                                  <span class="text-danger ms-1">*</span>
-                                </label>
-                                <input type="text" class="form-control" />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div
-                        class="tab-pane fade"
-                        id="pills-profile"
-                        role="tabpanel"
-                        aria-labelledby="pills-profile-tab"
-                      >
-                        <div class="row select-color-add">
-                          <div class="col-lg-6 col-sm-6 col-12">
-                            <div class="mb-3">
-                              <label class="form-label">
-                                Variant Attribute{" "}
-                                <span class="text-danger ms-1">*</span>
-                              </label>
-                              <div class="row">
-                                <div class="col-lg-10 col-sm-10 col-10">
-                                  <select
-                                    class="form-control variant-select select-option"
-                                    id="colorSelect"
-                                  >
-                                    <option>Choose</option>
-                                    <option>Color</option>
-                                    <option value="red">Red</option>
-                                    <option value="black">Black</option>
-                                  </select>
-                                </div>
-                                <div class="col-lg-2 col-sm-2 col-2 ps-0">
-                                  <div class="add-icon tab">
-                                    <a
-                                      class="btn btn-filter"
-                                      data-bs-toggle="modal"
-                                      data-bs-target="#add-product-category"
-                                    >
-                                      <i class="feather feather-plus-circle"></i>
-                                    </a>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            <div class="selected-hide-color" id="input-show">
-                              <label class="form-label">
-                                Variant Attribute{" "}
-                                <span class="text-danger ms-1">*</span>
-                              </label>
-                              <div class="row align-items-center">
-                                <div class="col-lg-10 col-sm-10 col-10">
-                                  <div class="mb-3">
-                                    <input
-                                      class="input-tags form-control"
-                                      id="inputBox"
-                                      type="text"
-                                      data-role="tagsinput"
-                                      name="specialist"
-                                      value="red, black"
-                                    />
-                                  </div>
-                                </div>
-                                <div class="col-lg-2 col-sm-2 col-2 ps-0">
-                                  <div class="mb-3 ">
-                                    <a
-                                      href="javascript:void(0);"
-                                      class="remove-color"
-                                    >
-                                      <i class="far fa-trash-alt"></i>
-                                    </a>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div class="modal-body-table border" id="variant-table">
-                          <div class="table-responsive">
-                            <table class="table border">
-                              <thead>
-                                <tr>
-                                  <th>Variantion</th>
-                                  <th>Variant Value</th>
-                                  <th>SKU</th>
-                                  <th>Quantity</th>
-                                  <th>Price</th>
-                                  <th class="no-sort"></th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                <tr>
-                                  <td>
-                                    <div class="add-product">
-                                      <input
-                                        type="text"
-                                        class="form-control"
-                                        value="color"
-                                      />
-                                    </div>
-                                  </td>
-                                  <td>
-                                    <div class="add-product">
-                                      <input
-                                        type="text"
-                                        class="form-control"
-                                        value="red"
-                                      />
-                                    </div>
-                                  </td>
-                                  <td>
-                                    <div class="add-product">
-                                      <input
-                                        type="text"
-                                        class="form-control"
-                                        value="1234"
-                                      />
-                                    </div>
-                                  </td>
-                                  <td>
-                                    <div class="product-quantity">
-                                      <span class="quantity-btn">
-                                        <i
-                                          data-feather="minus-circle"
-                                          class="feather-search"
-                                        ></i>
-                                      </span>
-                                      <input
-                                        type="text"
-                                        class="quntity-input form-control"
-                                        value="2"
-                                      />
-                                      <span class="quantity-btn">
-                                        +
-                                        <i
-                                          data-feather="plus-circle"
-                                          class="plus-circle"
-                                        ></i>
-                                      </span>
-                                    </div>
-                                  </td>
-                                  <td>
-                                    <div class="add-product">
-                                      <input
-                                        type="text"
-                                        class="form-control"
-                                        value="50000"
-                                      />
-                                    </div>
-                                  </td>
-                                  <td class="action-table-data">
-                                    <div class="edit-delete-action">
-                                      <div class="input-block add-lists">
-                                        <label class="checkboxs">
-                                          <input type="checkbox" checked />
-                                          <span class="checkmarks"></span>
-                                        </label>
-                                      </div>
-                                      <a
-                                        class="me-2 p-2"
-                                        href="javascript:void(0);"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#add-variation"
-                                      >
-                                        <i
-                                          data-feather="plus"
-                                          class="feather-edit"
-                                        ></i>
-                                      </a>
-                                      <a
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#delete-modal"
-                                        class="p-2"
-                                        href="javascript:void(0);"
-                                      >
-                                        <i
-                                          data-feather="trash-2"
-                                          class="feather-trash-2"
-                                        ></i>
-                                      </a>
-                                    </div>
-                                  </td>
-                                </tr>
-                                <tr>
-                                  <td>
-                                    <div class="add-product">
-                                      <input
-                                        type="text"
-                                        class="form-control"
-                                        value="color"
-                                      />
-                                    </div>
-                                  </td>
-                                  <td>
-                                    <div class="add-product">
-                                      <input
-                                        type="text"
-                                        class="form-control"
-                                        value="black"
-                                      />
-                                    </div>
-                                  </td>
-                                  <td>
-                                    <div class="add-product">
-                                      <input
-                                        type="text"
-                                        class="form-control"
-                                        value="2345"
-                                      />
-                                    </div>
-                                  </td>
-                                  <td>
-                                    <div class="product-quantity">
-                                      <span class="quantity-btn">
-                                        <i
-                                          data-feather="minus-circle"
-                                          class="feather-search"
-                                        ></i>
-                                      </span>
-                                      <input
-                                        type="text"
-                                        class="quntity-input form-control"
-                                        value="3"
-                                      />
-                                      <span class="quantity-btn">
-                                        +
-                                        <i
-                                          data-feather="plus-circle"
-                                          class="plus-circle"
-                                        ></i>
-                                      </span>
-                                    </div>
-                                  </td>
-                                  <td>
-                                    <div class="add-product">
-                                      <input
-                                        type="text"
-                                        class="form-control"
-                                        value="50000"
-                                      />
-                                    </div>
-                                  </td>
-                                  <td class="action-table-data">
-                                    <div class="edit-delete-action">
-                                      <div class="input-block add-lists">
-                                        <label class="checkboxs">
-                                          <input type="checkbox" checked />
-                                          <span class="checkmarks"></span>
-                                        </label>
-                                      </div>
-                                      <a
-                                        class="me-2 p-2"
-                                        href="#"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#add-variation"
-                                      >
-                                        <i
-                                          data-feather="plus"
-                                          class="feather-edit"
-                                        ></i>
-                                      </a>
-                                      <a
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#delete-modal"
-                                        class="p-2"
-                                        href="javascript:void(0);"
-                                      >
-                                        <i
-                                          data-feather="trash-2"
-                                          class="feather-trash-2"
-                                        ></i>
-                                      </a>
-                                    </div>
-                                  </td>
-                                </tr>
-                              </tbody>
-                            </table>
                           </div>
                         </div>
                       </div>
@@ -802,130 +404,6 @@ const CreateProduct = () => {
                                 class="x-square-add remove-product"
                               ></i>
                             </a>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="accordion-item border mb-4">
-                <h2 class="accordion-header" id="headingSpacingFour">
-                  <div
-                    class="accordion-button collapsed bg-white"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#SpacingFour"
-                    aria-expanded="true"
-                    aria-controls="SpacingFour"
-                  >
-                    <div class="d-flex align-items-center justify-content-between flex-fill">
-                      <h5 class="d-flex align-items-center">
-                        <i data-feather="list" class="text-primary me-2"></i>
-                        <span>Custom Fields</span>
-                      </h5>
-                    </div>
-                  </div>
-                </h2>
-                <div
-                  id="SpacingFour"
-                  class="accordion-collapse collapse show"
-                  aria-labelledby="headingSpacingFour"
-                >
-                  <div class="accordion-body border-top">
-                    <div>
-                      <div class="p-3 bg-light rounded d-flex align-items-center border mb-3">
-                        <div class=" d-flex align-items-center">
-                          <div class="form-check form-check-inline">
-                            <input
-                              class="form-check-input"
-                              type="checkbox"
-                              id="warranties"
-                              value="option1"
-                            />
-                            <label class="form-check-label" for="warranties">
-                              Warranties
-                            </label>
-                          </div>
-                          <div class="form-check form-check-inline">
-                            <input
-                              class="form-check-input"
-                              type="checkbox"
-                              id="manufacturer"
-                              value="option2"
-                            />
-                            <label class="form-check-label" for="manufacturer">
-                              Manufacturer
-                            </label>
-                          </div>
-                          <div class="form-check form-check-inline">
-                            <input
-                              class="form-check-input"
-                              type="checkbox"
-                              id="expiry"
-                              value="option2"
-                            />
-                            <label class="form-check-label" for="expiry">
-                              Expiry
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="row">
-                        <div class="col-sm-6 col-12">
-                          <div class="mb-3">
-                            <label class="form-label">
-                              Warranty<span class="text-danger ms-1">*</span>
-                            </label>
-                            <select class="select">
-                              <option>Select</option>
-                              <option>Replacement Warranty</option>
-                              <option>On-Site Warranty</option>
-                              <option>Accidental Protection Plan</option>
-                            </select>
-                          </div>
-                        </div>
-                        <div class="col-sm-6 col-12">
-                          <div class="mb-3 add-product">
-                            <label class="form-label">
-                              Manufacturer
-                              <span class="text-danger ms-1">*</span>
-                            </label>
-                            <input type="text" class="form-control" />
-                          </div>
-                        </div>
-                      </div>
-                      <div class="row">
-                        <div class="col-sm-6 col-12">
-                          <div class="mb-3">
-                            <label class="form-label">
-                              Manufactured Date
-                              <span class="text-danger ms-1">*</span>
-                            </label>
-
-                            <div class="input-groupicon calender-input">
-                              <i data-feather="calendar" class="info-img"></i>
-                              <input
-                                type="text"
-                                class="datetimepicker form-control"
-                                placeholder="dd/mm/yyyy"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                        <div class="col-sm-6 col-12">
-                          <div class="mb-3">
-                            <label class="form-label">
-                              Expiry On<span class="text-danger ms-1">*</span>
-                            </label>
-
-                            <div class="input-groupicon calender-input">
-                              <i data-feather="calendar" class="info-img"></i>
-                              <input
-                                type="text"
-                                class="datetimepicker form-control"
-                                placeholder="dd/mm/yyyy"
-                              />
-                            </div>
                           </div>
                         </div>
                       </div>

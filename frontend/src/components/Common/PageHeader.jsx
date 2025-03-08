@@ -5,20 +5,17 @@ import {
   AiOutlineFileExcel,
 } from "react-icons/ai";
 import { FcCollapse } from "react-icons/fc";
+import { jsPDF } from "jspdf";
+import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
 const PageHeader = ({ title, subtitle, onAdd }) => {
   // Function to handle downloading PDF
-  const handleDownloadPDF = () => {
-    const pdfContent = "This is a sample PDF content.";
-    const blob = new Blob([pdfContent], { type: "application/pdf" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `${title}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
 
+  const handleDownloadPDF = () => {
+    const doc = new jsPDF();
+    doc.text("This is a sample PDF content.", 10, 10);
+    doc.save(`${title}.pdf`);
+  };
   // Function to handle downloading Excel
   const handleDownloadExcel = () => {
     const excelContent =
@@ -81,12 +78,7 @@ const PageHeader = ({ title, subtitle, onAdd }) => {
       </ul>
       <div className="page-btn">
         {onAdd && (
-          <button
-            onClick={onAdd}
-            className="btn btn-primary"
-            data-bs-toggle="modal"
-            data-bs-target="#add-category"
-          >
+          <button onClick={onAdd} className="btn btn-primary">
             <AiOutlinePlusCircle size={20} />
             Add {title}
           </button>

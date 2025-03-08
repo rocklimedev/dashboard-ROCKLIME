@@ -1,7 +1,6 @@
 const { DataTypes, Op } = require("sequelize");
 const sequelize = require("../config/database"); // Sequelize instance
 
-// Define roles directly
 const ROLES = {
   Admin: "ADMIN",
   SuperAdmin: "SUPER_ADMIN",
@@ -25,9 +24,9 @@ const User = sequelize.define(
     mobileNumber: { type: DataTypes.STRING(20), allowNull: true },
 
     roles: {
-      type: DataTypes.STRING, // Store roles as a comma-separated string
+      type: DataTypes.STRING,
       allowNull: true,
-      defaultValue: ROLES.Users, // Default role is "USERS"
+      defaultValue: ROLES.Users,
       get() {
         return this.getDataValue("roles")?.split(",") || [];
       },
@@ -47,22 +46,24 @@ const User = sequelize.define(
 
     password: { type: DataTypes.STRING, allowNull: false },
 
-    roleId: {
+    role_id: {
       type: DataTypes.UUID,
-      allowNull: true, // Allow NULL values
-      defaultValue: null, // Default roleId as NULL
+      allowNull: true,
+      references: {
+        model: "roles",
+        key: "roleId",
+      },
     },
   },
   { timestamps: true }
 );
 
 // Ensure only one SuperAdmin exists
-User.beforeCreate(async (user) => {
+User.beforeCreate(async (user, options) => {
   if (user.roles.includes(ROLES.SuperAdmin)) {
     const existingSuperAdmin = await User.findOne({
-      where: {
-        roles: { [Op.like]: `%${ROLES.SuperAdmin}%` }, // Use LIKE for search
-      },
+      where: { roles: { [Op.like]: `%${ROLES.SuperAdmin}%` } },
+      transaction: options.transaction,
     });
 
     if (existingSuperAdmin) {

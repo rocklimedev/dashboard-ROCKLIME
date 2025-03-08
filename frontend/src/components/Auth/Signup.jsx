@@ -49,36 +49,104 @@ const Signup = () => {
                   <h4>Create New Account</h4>
                 </div>
                 <div className="mb-3">
-                  <label className="form-label">Name <span className="text-danger">*</span></label>
-                  <input type="text" className="form-control" name="name" value={formData.name} onChange={handleChange} required />
+                  <label className="form-label">
+                    Name <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                  />
                 </div>
                 <div className="mb-3">
-                  <label className="form-label">Email <span className="text-danger">*</span></label>
-                  <input type="email" className="form-control" name="email" value={formData.email} onChange={handleChange} required />
+                  <label className="form-label">
+                    Username <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="username"
+                    className="form-control"
+                    name="username"
+                    value={formData.username}
+                    onChange={handleChange}
+                    required
+                  />
                 </div>
                 <div className="mb-3">
-                  <label className="form-label">Password <span className="text-danger">*</span></label>
-                  <input type="password" className="form-control" name="password" value={formData.password} onChange={handleChange} required />
+                  <label className="form-label">
+                    Email <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    className="form-control"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                  />
                 </div>
                 <div className="mb-3">
-                  <label className="form-label">Confirm Password <span className="text-danger">*</span></label>
-                  <input type="password" className="form-control" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required />
+                  <label className="form-label">
+                    Password <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    className="form-control"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">
+                    Confirm Password <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    className="form-control"
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    required
+                  />
                 </div>
                 <div className="form-login authentication-check">
                   <label className="checkboxs ps-4 mb-0 pb-0 line-height-1">
-                    <input type="checkbox" name="agreeTerms" checked={formData.agreeTerms} onChange={handleChange} />
-                    <span className="checkmarks"></span>I agree to the <a href="#" className="text-primary">Terms & Privacy</a>
+                    <input
+                      type="checkbox"
+                      name="agreeTerms"
+                      checked={formData.agreeTerms}
+                      onChange={handleChange}
+                    />
+                    <span className="checkmarks"></span>I agree to the{" "}
+                    <a href="#" className="text-primary">
+                      Terms & Privacy
+                    </a>
                   </label>
                 </div>
                 <div className="form-login">
-                  <button type="submit" className="btn btn-primary w-100" disabled={isLoading}>
+                  <button
+                    type="submit"
+                    className="btn btn-primary w-100"
+                    disabled={isLoading}
+                  >
                     {isLoading ? "Registering..." : "Sign Up"}
                   </button>
                 </div>
-                {error && <p className="text-danger">{error.data?.message || "Registration failed!"}</p>}
+                {error && (
+                  <p className="text-danger">
+                    {error.data?.message || "Registration failed!"}
+                  </p>
+                )}
                 <div className="signinform">
                   <h4>
-                    Already have an account? <a href="/login" className="hover-a">Sign In Instead</a>
+                    Already have an account?{" "}
+                    <a href="/login" className="hover-a">
+                      Sign In Instead
+                    </a>
                   </h4>
                 </div>
               </div>

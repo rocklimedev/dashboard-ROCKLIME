@@ -25,7 +25,7 @@ const setupDB = async () => {
     Permission.belongsTo(RolePermission, { foreignKey: "role_id" });
     Product.belongsTo(User, { foreignKey: "user_id" });
     User.hasMany(Product, { foreignKey: "user_id" });
-
+    Product.belongsTo(Category, { foreignKey: "categoryId" });
     User.belongsTo(RolePermission, { foreignKey: "role_id", as: "Role" });
     RolePermission.hasMany(User, { foreignKey: "role_id", as: "Users" });
     Brand.hasMany(Vendor, { foreignKey: "brandId" });

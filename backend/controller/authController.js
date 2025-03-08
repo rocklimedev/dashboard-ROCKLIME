@@ -66,15 +66,17 @@ exports.login = async (req, res) => {
     console.log("Generating token...");
     console.log("JWT Secret:", process.env.JWT_SECRET);
 
+    // Set access token expiration to 7 days
     const accessToken = jwt.sign(
       { userId: user.userId || user.id, roles: user.roles },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" }
+      { expiresIn: "7d" }
     );
 
     console.log("Generated Access Token:", accessToken);
     console.log("Decoded Access Token:", jwt.decode(accessToken));
 
+    // Refresh token remains 7 days (no change needed)
     const refreshToken = jwt.sign(
       { userId: user.userId || user.id, roles: user.roles },
       process.env.REFRESH_SECRET,

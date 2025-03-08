@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { useGetProfileQuery } from "../../api/userApi";
+import { useGetProfileQuery, useGetUserByIdQuery } from "../../api/userApi";
 import {
   FaSearch,
   FaPlusCircle,
@@ -10,15 +10,28 @@ import {
   FaTruck,
   FaClipboardList,
   FaStore,
+  FaCartPlus,
+  FaUserCircle,
 } from "react-icons/fa";
 import {
   MdCategory,
   MdOutlineShoppingBag,
   MdOutlinePointOfSale,
+  MdSearch,
+  MdPointOfSale,
 } from "react-icons/md";
 
+import { FcSettings } from "react-icons/fc";
+import { BiCommand, BiFullscreen, BiLogOut } from "react-icons/bi";
+import img from "../../assets/img/avatar/avatar-1.jpg";
 const Header = () => {
   const { data: user, isLoading, error } = useGetProfileQuery();
+  const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Only fetch userProfile if `user` exists and has an ID
+  // const { data: userProfile } = useGetUserByIdQuery(user?.userId, {
+  //   skip: !user?.userId, // Skip the query if userId is not available
+  // });
 
   return (
     <div className="header">
@@ -37,21 +50,39 @@ const Header = () => {
         </div>
 
         {/* Mobile Menu Button */}
-        <button id="mobile_btn" className="mobile_btn">
+        <button
+          id="mobile_btn"
+          className="mobile_btn"
+          onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
+        >
           <span className="bar-icon">
             <span></span>
             <span></span>
             <span></span>
           </span>
         </button>
-
+        {isMobileMenuOpen && (
+          <div className="mobile-menu">
+            <ul>
+              <li>
+                <Link to="/category-list">Categories</Link>
+              </li>
+              <li>
+                <Link to="/add-product">Add Product</Link>
+              </li>
+              <li>
+                <Link to="/online-orders">Orders</Link>
+              </li>
+            </ul>
+          </div>
+        )}
         {/* User Menu */}
         <ul className="nav user-menu">
           {/* Search Bar */}
           <li className="nav-item nav-searchinputs">
             <div className="top-nav-search">
               <button className="responsive-search">
-                <i className="fa fa-search"></i>
+                <FaSearch />
               </button>
               <form className="dropdown">
                 <div
@@ -63,19 +94,91 @@ const Header = () => {
                   <input type="text" placeholder="Search" />
                   <div className="search-addon">
                     <span>
-                      <i className="ti ti-search"></i>
+                      <MdSearch />
                     </span>
                   </div>
                   <span className="input-group-text">
                     <kbd className="d-flex align-items-center">
-                      <img
-                        src="/assets/img/icons/command.svg"
-                        alt="Cmd"
-                        className="me-1"
-                      />
-                      K
+                      <BiCommand />K
                     </kbd>
                   </span>
+                </div>
+                <div
+                  class="dropdown-menu search-dropdown"
+                  aria-labelledby="dropdownMenuClickable"
+                >
+                  <div class="search-info">
+                    <h6>
+                      <span>
+                        <i data-feather="search" class="feather-16"></i>
+                      </span>
+                      Recent Searches
+                    </h6>
+                    <ul class="search-tags">
+                      <li>
+                        <a href="javascript:void(0);">Products</a>
+                      </li>
+                      <li>
+                        <a href="javascript:void(0);">Sales</a>
+                      </li>
+                      <li>
+                        <a href="javascript:void(0);">Applications</a>
+                      </li>
+                    </ul>
+                  </div>
+                  <div class="search-info">
+                    <h6>
+                      <span>
+                        <i data-feather="help-circle" class="feather-16"></i>
+                      </span>
+                      Help
+                    </h6>
+                    <p>
+                      How to Change Product Volume from 0 to 200 on Inventory
+                      management
+                    </p>
+                    <p>Change Product Name</p>
+                  </div>
+                  <div class="search-info">
+                    <h6>
+                      <span>
+                        <i data-feather="user" class="feather-16"></i>
+                      </span>
+                      Customers
+                    </h6>
+                    <ul class="customers">
+                      <li>
+                        <a href="javascript:void(0);">
+                          Aron Varu
+                          <img
+                            src="assets/img/profiles/avator1.jpg"
+                            alt="Img"
+                            class="img-fluid"
+                          />
+                        </a>
+                      </li>
+                      <li>
+                        <a href="javascript:void(0);">
+                          Jonita
+                          <img
+                            src="assets/img/profiles/avatar-01.jpg"
+                            alt="Img"
+                            class="img-fluid"
+                          />
+                        </a>
+                      </li>
+                      <li>
+                        <a href="javascript:void(0);">
+                          Aaron
+                          <img
+                            src="assets/img/profiles/avatar-10.jpg"
+                            alt="Img"
+                            class="img-fluid"
+                          />
+                        </a>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
               </form>
             </div>
@@ -134,7 +237,7 @@ const Header = () => {
               className="btn btn-primary btn-md d-inline-flex align-items-center"
               data-bs-toggle="dropdown"
             >
-              <i className="ti ti-circle-plus me-1"></i> Add New
+              <FaCartPlus /> Add New
             </button>
             <div className="dropdown-menu dropdown-xl dropdown-menu-center">
               <div className="row g-2">
@@ -193,9 +296,7 @@ const Header = () => {
                 ].map((item, index) => (
                   <div key={index} className="col-md-2">
                     <Link to={item.link} className="link-item">
-                      <span className="link-icon">
-                        <i className={`ti ${item.icon}`}></i>
-                      </span>
+                      <span className="link-icon">${item.icon}</span>
                       <p>{item.text}</p>
                     </Link>
                   </div>
@@ -206,17 +307,29 @@ const Header = () => {
 
           {/* POS Button */}
           <li className="nav-item pos-nav">
-            <Link to="/pos" className="btn btn-secondary">
-              <i className="ti ti-point-of-sale"></i> POS
+            <Link
+              to="/pos"
+              class="btn btn-dark btn-md d-inline-flex align-items-center"
+            >
+              <MdPointOfSale /> POS
             </Link>
           </li>
-
+          <li class="nav-item nav-item-box">
+            <a href="/settings">
+              <FcSettings />
+            </a>
+          </li>
+          <li class="nav-item nav-item-box">
+            <a href="javascript:void(0);" id="btnFullscreen">
+              <BiFullscreen />
+            </a>
+          </li>
           {/* User Profile */}
-          <li className="nav-item dropdown">
+          <li className="nav-item dropdown has-arrow main-drop profile-nav">
             {isLoading ? (
-              <span>Loading...</span>
+              <span class="user-letter"> Loading...</span>
             ) : error ? (
-              <span>Error loading profile</span>
+              <span class="user-letter">Error loading profile</span>
             ) : user ? (
               <button
                 className="dropdown-toggle nav-link"
@@ -225,27 +338,35 @@ const Header = () => {
                 <span className="user-info">
                   <span className="user-letter">
                     <img
-                      src={
-                        user.profileImage || "/assets/img/default-avatar.png"
-                      }
+                      src={user?.user?.profileImage || img}
                       alt="User"
                       className="img-fluid"
                     />
                   </span>
-                  <span className="user-detail">
-                    <span className="user-name">{user.name}</span>
-                  </span>
                 </span>
               </button>
             ) : null}
-            <div className="dropdown-menu dropdown-menu-right">
-              <Link to="/profile" className="dropdown-item">
-                Profile
+            <div className="dropdown-menu menu-drop-user">
+              <div class="profileset d-flex align-items-center">
+                <span class="user-img me-2">
+                  <img src={user?.user?.profileImage || img} alt="Img" />
+                </span>
+                <div>
+                  <h6 class="fw-medium">{user?.user?.name}</h6>
+                  <p>Admin</p>
+                </div>
+              </div>
+              <Link to={`/u/${user?.user?.userId}`} className="dropdown-item">
+                <FaUserCircle /> Profile
               </Link>
               <Link to="/settings" className="dropdown-item">
-                Settings
+                <FcSettings /> Settings
               </Link>
-              <button className="dropdown-item">Logout</button>
+              <button className="dropdown-item">
+                {" "}
+                <BiLogOut />
+                Logout
+              </button>
             </div>
           </li>
         </ul>

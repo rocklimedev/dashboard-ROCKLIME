@@ -11,10 +11,12 @@ import { keywordApi } from "../api/keywordApi";
 import { parentCategoryApi } from "../api/parentCategoryApi";
 import { productApi } from "../api/productApi";
 import { brandApi } from "../api/brandsApi";
+import { quotationApi } from "../api/quotationApi";
+import { orderApi } from "../api/orderApi";
 export const store = configureStore({
   reducer: {
     [vendorApi.reducerPath]: vendorApi.reducer,
-    [apiSlice.reducerPath]: apiSlice.reducer,
+    // [apiSlice.reducerPath]: apiSlice.reducer,
     [authApi.reducerPath]: authApi.reducer,
     [categoryApi.reducerPath]: categoryApi.reducer,
     [signatureApi.reducerPath]: signatureApi.reducer,
@@ -25,10 +27,12 @@ export const store = configureStore({
     [parentCategoryApi.reducerPath]: parentCategoryApi.reducer,
     [productApi.reducerPath]: productApi.reducer,
     [brandApi.reducerPath]: brandApi.reducer,
+    [quotationApi.reducerPath]: quotationApi.reducer,
+    [orderApi.reducerPath]: orderApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
-      apiSlice.middleware,
+      // apiSlice.middleware,
       vendorApi.middleware,
       authApi.middleware,
       categoryApi.middleware,
@@ -39,7 +43,9 @@ export const store = configureStore({
       keywordApi.middleware,
       parentCategoryApi.middleware,
       productApi.middleware,
-      brandApi.middleware
+      brandApi.middleware,
+      quotationApi.middleware,
+      orderApi.middleware
     ),
 });
 

@@ -4,18 +4,18 @@ const quotationController = require("../controller/quotationController");
 const { auth } = require("../middleware/auth"); // Middleware for authentication
 
 // Create a new quotation
-router.post("/add", auth, quotationController.createQuotation);
+router.post("/add", quotationController.createQuotation);
 
 // Get all quotations
-router.get("/", auth, quotationController.getAllQuotations);
+router.get("/", quotationController.getAllQuotations);
 
 // Get a single quotation by ID
-router.get("/:id", auth, quotationController.getQuotationById);
+router.get("/:id", quotationController.getQuotationById);
 
 // Update a quotation by ID
-router.put("/:id", auth, quotationController.updateQuotation);
+router.put("/:id", quotationController.updateQuotation);
 
 // Delete a quotation by ID
-router.delete("/:id", auth, quotationController.deleteQuotation);
+router.delete("/:id", quotationController.deleteQuotation);
 
 module.exports = router;

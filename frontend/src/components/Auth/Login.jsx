@@ -9,21 +9,22 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [login, { isLoading, error }] = useLoginMutation();
   const navigate = useNavigate();
-  const token = localStorage.getItem("accessToken");
-  console.log("Login response:", token);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    console.log("Login attempt with:", { email, password });
+
     try {
       const response = await login({ email, password }).unwrap();
 
       if (rememberMe) {
         localStorage.setItem("token", response.accessToken);
-        console.log("Login response:", response.accesstoken);
       } else {
         sessionStorage.setItem("token", response.accessToken);
       }
 
-      navigate("/dashboard");
+      navigate("/");
     } catch (err) {
       console.error("Login failed:", err);
     }
@@ -42,7 +43,7 @@ const Login = () => {
                 <div className="login-userheading">
                   <h3>Sign In</h3>
                   <h4 className="fs-16">
-                    Access the Dreamspos panel using your email and passcode.
+                    Access the Rocklime panel using your email and passcode.
                   </h4>
                 </div>
                 <div className="mb-3">
