@@ -1,6 +1,6 @@
 const Product = require("../models/product");
 const { Op } = require("sequelize");
-
+const { InventoryHistory } = require("../models/history");
 exports.createProduct = async (req, res) => {
   try {
     const product = await Product.create(req.body);
@@ -77,20 +77,43 @@ exports.deleteProduct = async (req, res) => {
 
 // Inventory Management Features
 
-// Add stock to a product
 exports.addStock = async (req, res) => {
   try {
     const { productId } = req.params;
     const { quantity } = req.body;
+
+    if (isNaN(quantity) || Number(quantity) <= 0) {
+      return res.status(400).json({ message: "Invalid quantity value" });
+    }
+
     const product = await Product.findByPk(productId);
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
-    product.quantity += quantity;
+
+    product.quantity += Number(quantity);
     await product.save();
-    return res
-      .status(200)
-      .json({ message: "Stock added successfully", product });
+
+    // ✅ Update or create inventory history in MongoDB
+    const historyEntry = await InventoryHistory.findOneAndUpdate(
+      { productId: productId.toString() }, // ✅ Ensure productId is a string
+      {
+        $push: {
+          history: {
+            quantity: Number(quantity),
+            action: "add-stock",
+            timestamp: new Date(),
+          },
+        },
+      },
+      { upsert: true, new: true }
+    );
+
+    return res.status(200).json({
+      message: "Stock added successfully",
+      product,
+      history: historyEntry,
+    });
   } catch (error) {
     return res
       .status(500)
@@ -103,18 +126,43 @@ exports.removeStock = async (req, res) => {
   try {
     const { productId } = req.params;
     const { quantity } = req.body;
+
+    if (isNaN(quantity) || Number(quantity) <= 0) {
+      return res.status(400).json({ message: "Invalid quantity value" });
+    }
+
     const product = await Product.findByPk(productId);
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
+
     if (product.quantity < quantity) {
       return res.status(400).json({ message: "Insufficient stock" });
     }
-    product.quantity -= quantity;
+
+    product.quantity -= Number(quantity);
     await product.save();
-    return res
-      .status(200)
-      .json({ message: "Stock removed successfully", product });
+
+    // ✅ Update or create inventory history in MongoDB
+    const historyEntry = await InventoryHistory.findOneAndUpdate(
+      { productId: productId.toString() }, // ✅ Ensure productId is a string
+      {
+        $push: {
+          history: {
+            quantity: Number(quantity),
+            action: "remove-stock",
+            timestamp: new Date(),
+          },
+        },
+      },
+      { upsert: true, new: true }
+    );
+
+    return res.status(200).json({
+      message: "Stock removed successfully",
+      product,
+      history: historyEntry,
+    });
   } catch (error) {
     return res
       .status(500)
@@ -133,6 +181,54 @@ exports.getLowStockProducts = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       message: "Error fetching low stock products",
+      error: error.message,
+    });
+  }
+};
+
+// Function to log stock changes
+exports.updateInventoryHistory = async (productId, quantity, action) => {
+  try {
+    let historyEntry = await InventoryHistory.findOne({ productId });
+
+    if (!historyEntry) {
+      // If no history exists, create a new one
+      historyEntry = new InventoryHistory({ productId, history: [] });
+    }
+
+    // Push new history record
+    historyEntry.history.push({ quantity, action });
+
+    await historyEntry.save();
+  } catch (error) {
+    console.error("Error updating inventory history:", error);
+  }
+};
+
+// Get inventory history for a specific product
+exports.getHistoryByProductId = async (req, res) => {
+  try {
+    const { productId } = req.params;
+
+    const historyEntry = await InventoryHistory.findOne({
+      productId: productId.toString(),
+    });
+
+    // Fix: Return an empty array instead of a 404 error
+    if (!historyEntry || historyEntry.history.length === 0) {
+      return res.status(200).json({
+        message: "No history found for this product",
+        history: [], // Return an empty array instead of a 404
+      });
+    }
+
+    return res.status(200).json({
+      message: "Inventory history retrieved successfully",
+      history: historyEntry.history,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error retrieving inventory history",
       error: error.message,
     });
   }

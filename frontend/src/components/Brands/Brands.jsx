@@ -1,27 +1,25 @@
-import React from "react";
+import React, { useState } from "react";
 import PageHeader from "../Common/PageHeader";
 import { useGetAllBrandsQuery } from "../../api/brandsApi";
 import { AiOutlineEdit } from "react-icons/ai";
 import { FcEmptyTrash } from "react-icons/fc";
+import AddBrand from "./AddBrandModal";
 const Brands = () => {
   const { data, error, isLoading } = useGetAllBrandsQuery();
   const brands = Array.isArray(data) ? data : [];
-
+  const [showModal, setShowModal] = useState(false);
   if (isLoading) return <p>Loading...</p>;
   if (error) return <p>Error fetching brands.</p>;
   if (brands.length === 0) return <p>No brands available.</p>;
-  const handleAddCategory = () => alert("Open Add Category Modal");
-  const handlePdfDownload = () => alert("Downloading PDF...");
-  const handleExcelDownload = () => alert("Downloading Excel...");
-  const handleRefresh = () => alert("Refreshing...");
-  const handleCollapse = () => alert("Collapsing...");
+  const handleAddBrand = () => setShowModal(true);
+  const handleCloseModal = () => setShowModal(false);
   return (
     <div class="page-wrapper">
       <div class="content">
         <PageHeader
           title="Brands"
           subtitle="Manage your brands"
-          onAdd={() => console.log("Add button clicked!")}
+          onAdd={handleAddBrand}
         />
 
         <div class="card">
@@ -165,6 +163,7 @@ const Brands = () => {
           </div>
         </div>
       </div>
+      {showModal ? <AddBrand onClose={handleCloseModal} /> : null}
     </div>
   );
 };

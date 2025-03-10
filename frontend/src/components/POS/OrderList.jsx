@@ -1,6 +1,13 @@
-import React from "react";
-
+import React, { useState } from "react";
+import { useGetCustomersQuery } from "../../api/customerApi";
+import AddCustomer from "../Customers/AddCustomer";
 const OrderList = () => {
+  const { data, isLoading, isError } = useGetCustomersQuery();
+  const [showModal, setShowModal] = useState(false);
+  const customers = data?.data || [];
+  const customerList = Array.isArray(customers) ? customers : [];
+  const handleAddCustomer = () => setShowModal(true);
+  const handleCloseModal = () => setShowModal(false);
   return (
     <div class="col-md-12 col-lg-5 col-xl-4 ps-0 theiaStickySidebar d-lg-flex">
       <aside class="product-order-list bg-secondary-transparent flex-fill">
@@ -24,15 +31,22 @@ const OrderList = () => {
               <div class="d-flex align-items-center gap-2">
                 <div class="flex-grow-1">
                   <select class="select">
-                    <option>Walk in Customer</option>
-                    <option>John</option>
-                    <option>Smith</option>
-                    <option>Ana</option>
-                    <option>Elza</option>
+                    <option>Walk-in Customer</option>
+                    {isLoading ? (
+                      <option>Loading...</option>
+                    ) : isError ? (
+                      <option>Error fetching customers</option>
+                    ) : (
+                      customerList.map((customer) => (
+                        <option key={customer.id} value={customer.id}>
+                          {customer.name}
+                        </option>
+                      ))
+                    )}
                   </select>
                 </div>
                 <a
-                  href="#"
+                  onClick={handleAddCustomer}
                   class="btn btn-teal btn-icon fs-20"
                   data-bs-toggle="modal"
                   data-bs-target="#create"
@@ -156,171 +170,6 @@ const OrderList = () => {
                           </td>
                           <td class="fs-13 fw-semibold text-gray-9 text-end">
                             $15800
-                          </td>
-                        </tr>
-                        <tr>
-                          <td>
-                            <div class="d-flex align-items-center">
-                              <a
-                                class="delete-icon"
-                                href="javascript:void(0);"
-                                data-bs-toggle="modal"
-                                data-bs-target="#delete"
-                              >
-                                <i class="ti ti-trash-x-filled"></i>
-                              </a>
-                              <h6 class="fs-13 fw-normal ">
-                                <a
-                                  href="#"
-                                  class="link-default"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#products"
-                                >
-                                  Red Nike Angelo
-                                </a>
-                              </h6>
-                            </div>
-                          </td>
-                          <td>
-                            <div class="qty-item m-0">
-                              <a
-                                href="javascript:void(0);"
-                                class="dec d-flex justify-content-center align-items-center"
-                                data-bs-toggle="tooltip"
-                                data-bs-placement="top"
-                                title="minus"
-                              >
-                                <i class="ti ti-minus"></i>
-                              </a>
-                              <input
-                                type="text"
-                                class="form-control text-center"
-                                name="qty"
-                                value="4"
-                              />
-                              <a
-                                href="javascript:void(0);"
-                                class="inc d-flex justify-content-center align-items-center"
-                                data-bs-toggle="tooltip"
-                                data-bs-placement="top"
-                                title="plus"
-                              >
-                                <i class="ti ti-plus"></i>
-                              </a>
-                            </div>
-                          </td>
-                          <td class="fs-13 fw-semibold text-gray-9 text-end">
-                            $398
-                          </td>
-                        </tr>
-                        <tr>
-                          <td>
-                            <div class="d-flex align-items-center">
-                              <a
-                                class="delete-icon"
-                                href="javascript:void(0);"
-                                data-bs-toggle="modal"
-                                data-bs-target="#delete"
-                              >
-                                <i class="ti ti-trash-x-filled"></i>
-                              </a>
-                              <h6 class="fs-13 fw-normal ">
-                                <a
-                                  href="#"
-                                  class="link-default"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#products"
-                                >
-                                  Tablet 1.02 inch
-                                </a>
-                              </h6>
-                            </div>
-                          </td>
-                          <td>
-                            <div class="qty-item m-0">
-                              <a
-                                href="javascript:void(0);"
-                                class="dec d-flex justify-content-center align-items-center"
-                                data-bs-toggle="tooltip"
-                                data-bs-placement="top"
-                                title="minus"
-                              >
-                                <i class="ti ti-minus"></i>
-                              </a>
-                              <input
-                                type="text"
-                                class="form-control text-center"
-                                name="qty"
-                                value="4"
-                              />
-                              <a
-                                href="javascript:void(0);"
-                                class="inc d-flex justify-content-center align-items-center"
-                                data-bs-toggle="tooltip"
-                                data-bs-placement="top"
-                                title="plus"
-                              >
-                                <i class="ti ti-plus"></i>
-                              </a>
-                            </div>
-                          </td>
-                          <td class="fs-13 fw-semibold text-gray-9 text-end">
-                            $3000
-                          </td>
-                        </tr>
-                        <tr>
-                          <td>
-                            <div class="d-flex align-items-center">
-                              <a
-                                class="delete-icon"
-                                href="javascript:void(0);"
-                                data-bs-toggle="modal"
-                                data-bs-target="#delete"
-                              >
-                                <i class="ti ti-trash-x-filled"></i>
-                              </a>
-                              <h6 class="fs-13 fw-normal ">
-                                <a
-                                  href="#"
-                                  class="link-default"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#products"
-                                >
-                                  IdeaPad Slim 3i
-                                </a>
-                              </h6>
-                            </div>
-                          </td>
-                          <td>
-                            <div class="qty-item m-0">
-                              <a
-                                href="javascript:void(0);"
-                                class="dec d-flex justify-content-center align-items-center"
-                                data-bs-toggle="tooltip"
-                                data-bs-placement="top"
-                                title="minus"
-                              >
-                                <i class="ti ti-minus"></i>
-                              </a>
-                              <input
-                                type="text"
-                                class="form-control text-center"
-                                name="qty"
-                                value="4"
-                              />
-                              <a
-                                href="javascript:void(0);"
-                                class="inc d-flex justify-content-center align-items-center"
-                                data-bs-toggle="tooltip"
-                                data-bs-placement="top"
-                                title="plus"
-                              >
-                                <i class="ti ti-plus"></i>
-                              </a>
-                            </div>
-                          </td>
-                          <td class="fs-13 fw-semibold text-gray-9 text-end">
-                            $3000
                           </td>
                         </tr>
                       </tbody>
@@ -474,6 +323,7 @@ const OrderList = () => {
           </a>
         </div>
       </aside>
+      {showModal ? <AddCustomer onClose={handleCloseModal} /> : null}
     </div>
   );
 };

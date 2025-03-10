@@ -13,5 +13,5 @@ router.delete("/:productId", productController.deleteProduct);
 router.post("/:productId/add-stock", productController.addStock);
 router.post("/:productId/remove-stock", productController.removeStock);
 router.get("/low-stock", productController.getLowStockProducts);
-
+router.get("/:productId/history", productController.getHistoryByProductId);
 module.exports = router;

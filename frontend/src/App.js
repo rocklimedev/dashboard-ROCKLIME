@@ -20,7 +20,7 @@ function App() {
   console.log(token);
   return (
     <div className="pos-page">
-      <div className="main-wrapper pos-five">
+      <div className="main-wrapper">
         {!isAuthPage && <Header />}
         {!isAuthPage && !isPOSPage && <Sidebar />}{" "}
         {/* Remove Sidebar on /pos */}

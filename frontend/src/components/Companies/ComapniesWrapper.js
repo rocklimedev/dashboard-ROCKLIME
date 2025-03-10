@@ -15,11 +15,16 @@ const ComapniesWrapper = () => {
   const handleExport = (type) => {
     console.log(`Exporting as ${type}`);
   };
-
+  const handleAddVendor = () => setShowModal(true);
+  const handleCloseModal = () => setShowModal(false);
   return (
     <div class="page-wrapper">
       <div class="content">
-        <PageHeader />
+        <PageHeader
+          title="Vendors"
+          subtitle="Manage your Vendors"
+          onAdd={handleAddVendor}
+        />
         <div class="card">
           <div class="card-header d-flex align-items-center justify-content-between flex-wrap row-gap-3">
             <div class="search-set">
@@ -163,6 +168,7 @@ const ComapniesWrapper = () => {
           </div>
         </div>
       </div>
+      {showModal ? <AddCompanyModal onClose={handleCloseModal} /> : null}
     </div>
   );
 };

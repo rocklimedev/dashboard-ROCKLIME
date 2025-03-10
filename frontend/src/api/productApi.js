@@ -71,6 +71,12 @@ export const productApi = createApi({
       query: (threshold = 10) => `/low-stock?threshold=${threshold}`,
       providesTags: ["Product"],
     }),
+
+    // Get Inventory History by Product ID
+    getHistoryByProductId: builder.query({
+      query: (productId) => `/${productId}/history`, // Assuming your API follows this route
+      providesTags: ["Product"],
+    }),
   }),
 });
 
@@ -83,4 +89,5 @@ export const {
   useAddStockMutation,
   useRemoveStockMutation,
   useGetLowStockProductsQuery,
+  useGetHistoryByProductIdQuery, // ✅ Added hook for fetching history
 } = productApi;

@@ -29,10 +29,7 @@ const AddCompanyModal = ({ show, onClose }) => {
     }
   };
   return (
-    <div
-      className={`modal custom-modal fade ${show ? "show d-block" : ""}`}
-      id="add_companies"
-    >
+    <div className="modal fade show" style={{ display: "block" }}>
       <div className="modal-dialog modal-dialog-centered modal-md">
         <div className="modal-content">
           <div className="modal-header border-0">
@@ -45,9 +42,7 @@ const AddCompanyModal = ({ show, onClose }) => {
               onClick={onClose}
             ></button>
           </div>
-          <form
-             onSubmit={handleSubmit}
-          >
+          <form onSubmit={handleSubmit}>
             <div className="modal-body">
               <div className="row">
                 <div className="col-md-12">
@@ -101,7 +96,11 @@ const AddCompanyModal = ({ show, onClose }) => {
               >
                 Cancel
               </button>
-              <button type="submit" className="btn btn-primary" disabled={isLoading}>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={isLoading}
+              >
                 {isLoading ? "Adding..." : "Add New"}
               </button>
             </div>
