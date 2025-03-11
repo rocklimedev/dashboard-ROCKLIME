@@ -9,7 +9,7 @@ const SettingsNav = ({ menuItems }) => {
   };
 
   return (
-    <ul className="settings-nav">
+    <ul>
       {menuItems.map((item, index) => (
         <li
           key={index}
@@ -20,7 +20,7 @@ const SettingsNav = ({ menuItems }) => {
             onClick={() => toggleMenu(index)}
             className={openMenus[index] ? "active subdrop" : ""}
           >
-            <i className={item.icon}></i>
+            {item.icon}
             <span className="fs-14 fw-medium ms-2">{item.title}</span>
             <span className="menu-arrow"></span>
           </a>

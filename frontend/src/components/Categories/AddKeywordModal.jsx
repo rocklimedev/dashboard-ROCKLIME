@@ -1,26 +1,26 @@
-import React, { useState } from "react"; // Adjust the import as needed
-import { useCreateCategoryMutation } from "../../api/categoryApi";
-const AddCategoryModal = ({ onClose }) => {
-  const [createCategory, { isLoading, error }] = useCreateCategoryMutation();
+import React, { useState } from "react";
+import { useCreateKeywordMutation } from "../../api/keywordApi";
+
+const AddKeywordModal = ({ onClose }) => {
+  const [createKeyword, { isLoading, error }] = useCreateKeywordMutation();
   const [formData, setFormData] = useState({
-    name: "",
-    slug: "",
-    parentCategory: "None",
+    keyword: "",
+    type: "",
   });
 
   // Handle Input Change
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData({ ...formData, [e.target.name]: e.target.value }); // Fixed
   };
 
   // Handle Form Submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await createCategory(formData).unwrap();
+      await createKeyword(formData).unwrap();
       onClose(); // Close the modal on success
     } catch (err) {
-      console.error("Error creating category:", err);
+      console.error("Error creating keyword:", err); // Fixed message
     }
   };
 
@@ -29,7 +29,7 @@ const AddCategoryModal = ({ onClose }) => {
       <div className="modal-dialog modal-dialog-centered modal-md">
         <div className="modal-content">
           <div className="modal-header border-0 pb-0">
-            <h4 className="mb-0">Add Category</h4>
+            <h4 className="mb-0">Add Keyword</h4>
             <button type="button" className="close" onClick={onClose}>
               <span>&times;</span>
             </button>
@@ -41,61 +41,43 @@ const AddCategoryModal = ({ onClose }) => {
                   <div className="card-body">
                     <div className="form-group-item border-0 pb-0 mb-0">
                       <div className="row">
-                        {/* Name Field */}
+                        {/* Keyword Field */}
                         <div className="col-lg-12 col-sm-12">
                           <div className="input-block mb-3">
                             <label>
-                              Name <span className="text-danger">*</span>
+                              Keyword <span className="text-danger">*</span>
                             </label>
                             <input
                               type="text"
-                              name="name"
+                              name="keyword"
                               className="form-control"
-                              placeholder="Enter Title"
-                              value={formData.name}
+                              placeholder="Enter Keyword"
+                              value={formData.keyword}
                               onChange={handleChange}
                               required
                             />
                           </div>
                         </div>
-                        {/* Slug Field */}
+                        {/* Type Field */}
                         <div className="col-lg-12 col-sm-12">
                           <div className="input-block mb-3">
-                            <label>Slug</label>
+                            <label>Type</label>
                             <input
                               type="text"
-                              name="slug"
+                              name="type"
                               className="form-control"
-                              placeholder="Enter Slug"
-                              value={formData.slug}
+                              placeholder="Enter Type"
+                              value={formData.type}
                               onChange={handleChange}
                             />
                           </div>
                         </div>
-                        {/* Parent Category */}
-                        <div className="col-lg-12 col-sm-12">
-                          <div className="input-block mb-3">
-                            <label>Parent Category</label>
-                            <select
-                              name="parentCategory"
-                              className="form-control"
-                              value={formData.parentCategory}
-                              onChange={handleChange}
-                            >
-                              <option>None</option>
-                              <option>Coupons</option>
-                              <option>News</option>
-                              <option>Plugins</option>
-                              <option>Themes</option>
-                              <option>Tutorial</option>
-                            </select>
-                          </div>
-                        </div>
+
                         {/* Error Message */}
                         {error && (
                           <div className="col-12">
                             <p className="text-danger">
-                              {error?.data?.message || "Failed to add category"}
+                              {error?.data?.message || "Failed to add keyword."}
                             </p>
                           </div>
                         )}
@@ -119,7 +101,7 @@ const AddCategoryModal = ({ onClose }) => {
                 className="btn btn-primary paid-continue-btn"
                 disabled={isLoading}
               >
-                {isLoading ? "Adding..." : "Add Category"}
+                {isLoading ? "Adding..." : "Add Keyword"}
               </button>
             </div>
           </form>
@@ -129,4 +111,4 @@ const AddCategoryModal = ({ onClose }) => {
   );
 };
 
-export default AddCategoryModal;
+export default AddKeywordModal;

@@ -1,11 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import { useGetAllKeywordsQuery } from "../../api/keywordApi";
 import PageHeader from "../Common/PageHeader";
 import { AiOutlineEdit } from "react-icons/ai";
 import { FcEmptyTrash } from "react-icons/fc";
+import AddCategoryModal from "./AddCategoryModal";
+import AddKeywordModal from "./AddKeywordModal";
 
 const CategoriesList = () => {
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showKeywordModal, setShowKeywordModal] = useState(false);
   const {
     data: categoryData,
     error: categoryError,
@@ -24,8 +28,12 @@ const CategoriesList = () => {
     ? keywordData.keywords
     : [];
 
-  const handleAddCategory = () => alert("Open Add Category Modal");
-  const handleAddKeyword = () => alert("Open Add Keyword Modal");
+  const handleAddCategory = () => setShowCategoryModal(true);
+  const handleCloseCategoryModal = () => setShowCategoryModal(false);
+
+  const handleAddKeyword = () => setShowKeywordModal(true);
+  const handleCloseKeywordModal = () => setShowKeywordModal(false);
+
   const handlePdfDownload = () => alert("Downloading PDF...");
   const handleExcelDownload = () => alert("Downloading Excel...");
   const handleRefresh = () => alert("Refreshing...");
@@ -91,6 +99,9 @@ const CategoriesList = () => {
               </table>
             </div>
           </div>
+          {showCategoryModal && (
+            <AddCategoryModal onClose={handleCloseCategoryModal} />
+          )}
         </div>
 
         {/* Keywords Section */}
@@ -144,6 +155,9 @@ const CategoriesList = () => {
           </div>
         </div>
       </div>
+      {showKeywordModal && (
+        <AddKeywordModal onClose={handleCloseKeywordModal} />
+      )}
     </div>
   );
 };

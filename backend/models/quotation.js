@@ -1,13 +1,14 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
-const User = require("./users"); // Assuming User exists
-const { v4: uuidv4 } = require("uuid"); // Importing UUID library
+const User = require("./users"); // Import User model
+const Customer = require("./customers"); // Import Customer model
+const { v4: uuidv4 } = require("uuid");
 
 const Quotation = sequelize.define("Quotation", {
   quotationId: {
-    type: DataTypes.UUID, // Changed to UUID
+    type: DataTypes.UUID,
     primaryKey: true,
-    defaultValue: uuidv4, // Automatically generates a UUID
+    defaultValue: uuidv4,
   },
   document_title: {
     type: DataTypes.STRING(255),
@@ -51,9 +52,26 @@ const Quotation = sequelize.define("Quotation", {
   signature_image: {
     type: DataTypes.TEXT,
   },
+  createdBy: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: User,
+      key: "userId",
+    },
+  },
+  customerId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: Customer,
+      key: "customerId",
+    },
+  },
 });
 
-// Relationship with User
-Quotation.belongsTo(User, { foreignKey: "customerId" });
+// Define Correct Relationships
+Quotation.belongsTo(User, { foreignKey: "createdBy", as: "creator" }); // User who created the quotation
+Quotation.belongsTo(Customer, { foreignKey: "customerId", as: "customer" }); // Customer for whom the quotation is made
 
 module.exports = Quotation;

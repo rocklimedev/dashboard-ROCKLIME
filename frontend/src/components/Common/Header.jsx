@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+
 import { useGetProfileQuery, useGetUserByIdQuery } from "../../api/userApi";
 import {
   FaSearch,
@@ -20,19 +21,35 @@ import {
   MdSearch,
   MdPointOfSale,
 } from "react-icons/md";
+import { useLogoutMutation } from "../../api/authApi"; // Import useLogoutMutation
 
 import { FcSettings } from "react-icons/fc";
 import { BiCommand, BiFullscreen, BiLogOut } from "react-icons/bi";
 import img from "../../assets/img/avatar/avatar-1.jpg";
-const Header = () => {
+import SearchDropdown from "../Search/SearchDropdown";
+const Header = ({ toggleSidebar }) => {
+  const navigate = useNavigate();
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
   const { data: user, isLoading, error } = useGetProfileQuery();
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
-
+  const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
   // Only fetch userProfile if `user` exists and has an ID
   // const { data: userProfile } = useGetUserByIdQuery(user?.userId, {
   //   skip: !user?.userId, // Skip the query if userId is not available
   // });
-
+  const handleLogout = async () => {
+    try {
+      await logout().unwrap(); // Call the mutation
+      localStorage.removeItem("token"); // Clear token if stored
+      navigate("/login"); // Redirect to login page
+    } catch (error) {
+      console.error("Logout failed", error);
+    }
+  };
+  const handleSidebarToggle = () => {
+    setSidebarOpen(!isSidebarOpen);
+    toggleSidebar(!isSidebarOpen);
+  };
   return (
     <div className="header">
       <div className="main-header">
@@ -53,7 +70,7 @@ const Header = () => {
         <button
           id="mobile_btn"
           className="mobile_btn"
-          onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
+          onClick={handleSidebarToggle}
         >
           <span className="bar-icon">
             <span></span>
@@ -61,21 +78,7 @@ const Header = () => {
             <span></span>
           </span>
         </button>
-        {isMobileMenuOpen && (
-          <div className="mobile-menu">
-            <ul>
-              <li>
-                <Link to="/category-list">Categories</Link>
-              </li>
-              <li>
-                <Link to="/add-product">Add Product</Link>
-              </li>
-              <li>
-                <Link to="/online-orders">Orders</Link>
-              </li>
-            </ul>
-          </div>
-        )}
+
         {/* User Menu */}
         <ul className="nav user-menu">
           {/* Search Bar */}
@@ -84,103 +87,7 @@ const Header = () => {
               <button className="responsive-search">
                 <FaSearch />
               </button>
-              <form className="dropdown">
-                <div
-                  className="searchinputs input-group dropdown-toggle"
-                  id="dropdownMenuClickable"
-                  data-bs-toggle="dropdown"
-                  data-bs-auto-close="outside"
-                >
-                  <input type="text" placeholder="Search" />
-                  <div className="search-addon">
-                    <span>
-                      <MdSearch />
-                    </span>
-                  </div>
-                  <span className="input-group-text">
-                    <kbd className="d-flex align-items-center">
-                      <BiCommand />K
-                    </kbd>
-                  </span>
-                </div>
-                <div
-                  class="dropdown-menu search-dropdown"
-                  aria-labelledby="dropdownMenuClickable"
-                >
-                  <div class="search-info">
-                    <h6>
-                      <span>
-                        <i data-feather="search" class="feather-16"></i>
-                      </span>
-                      Recent Searches
-                    </h6>
-                    <ul class="search-tags">
-                      <li>
-                        <a href="javascript:void(0);">Products</a>
-                      </li>
-                      <li>
-                        <a href="javascript:void(0);">Sales</a>
-                      </li>
-                      <li>
-                        <a href="javascript:void(0);">Applications</a>
-                      </li>
-                    </ul>
-                  </div>
-                  <div class="search-info">
-                    <h6>
-                      <span>
-                        <i data-feather="help-circle" class="feather-16"></i>
-                      </span>
-                      Help
-                    </h6>
-                    <p>
-                      How to Change Product Volume from 0 to 200 on Inventory
-                      management
-                    </p>
-                    <p>Change Product Name</p>
-                  </div>
-                  <div class="search-info">
-                    <h6>
-                      <span>
-                        <i data-feather="user" class="feather-16"></i>
-                      </span>
-                      Customers
-                    </h6>
-                    <ul class="customers">
-                      <li>
-                        <a href="javascript:void(0);">
-                          Aron Varu
-                          <img
-                            src="assets/img/profiles/avator1.jpg"
-                            alt="Img"
-                            class="img-fluid"
-                          />
-                        </a>
-                      </li>
-                      <li>
-                        <a href="javascript:void(0);">
-                          Jonita
-                          <img
-                            src="assets/img/profiles/avatar-01.jpg"
-                            alt="Img"
-                            class="img-fluid"
-                          />
-                        </a>
-                      </li>
-                      <li>
-                        <a href="javascript:void(0);">
-                          Aaron
-                          <img
-                            src="assets/img/profiles/avatar-10.jpg"
-                            alt="Img"
-                            class="img-fluid"
-                          />
-                        </a>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </form>
+              <SearchDropdown />
             </div>
           </li>
 
@@ -362,14 +269,49 @@ const Header = () => {
               <Link to="/settings" className="dropdown-item">
                 <FcSettings /> Settings
               </Link>
-              <button className="dropdown-item">
-                {" "}
-                <BiLogOut />
-                Logout
+              <button
+                className="dropdown-item"
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+              >
+                <BiLogOut /> {isLoggingOut ? "Logging out..." : "Logout"}
               </button>
             </div>
           </li>
         </ul>
+        <div class="dropdown mobile-user-menu">
+          {isLoading ? (
+            <span class="user-letter"> Loading...</span>
+          ) : error ? (
+            <span class="user-letter">Error loading profile</span>
+          ) : user ? (
+            <button
+              className="dropdown-toggle nav-link"
+              data-bs-toggle="dropdown"
+            >
+              <span className="user-info">
+                <span className="user-letter">
+                  <img
+                    src={user?.user?.profileImage || img}
+                    alt="User"
+                    className="img-fluid"
+                  />
+                </span>
+              </span>
+            </button>
+          ) : null}
+          <div class="dropdown-menu dropdown-menu-right">
+            <a class="dropdown-item" href="/u/:id">
+              My Profile
+            </a>
+            <a class="dropdown-item" href="/settings/general">
+              Settings
+            </a>
+            <a class="dropdown-item" href="#">
+              Logout
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   );

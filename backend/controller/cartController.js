@@ -2,7 +2,10 @@ const Cart = require("../routes/cart");
 
 exports.addToCart = async (req, res) => {
   try {
-    const { userId, productId, name, price } = req.body;
+    // Extract userId from the decoded token (middleware should set req.user)
+    const userId = req.user.userId; // Secure way to get userId
+
+    const { productId, name, price } = req.body;
 
     let cart = await Cart.findOne({ userId });
 
@@ -11,7 +14,7 @@ exports.addToCart = async (req, res) => {
     }
 
     const existingItem = cart.items.find(
-      (item) => item.productId === productId
+      (item) => item.productId.toString() === productId
     );
 
     if (existingItem) {

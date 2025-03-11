@@ -4,7 +4,7 @@ const quotationController = require("../controller/quotationController");
 const { auth } = require("../middleware/auth"); // Middleware for authentication
 
 // Create a new quotation
-router.post("/add", quotationController.createQuotation);
+router.post("/add", auth, quotationController.createQuotation);
 
 // Get all quotations
 router.get("/", quotationController.getAllQuotations);

@@ -55,6 +55,7 @@ import UserList from "../components/User/UserList";
 import GeneralSettings from "../components/Settings/GeneralSettings";
 import UnderMaintanance from "../components/Error/UnderMaintanance";
 import ComingSoon from "../components/Error/ComingSoon";
+import AddQuntation from "../components/Quotation/AddQuntation";
 const masterRoutes = [
   {
     path: "/",
@@ -236,6 +237,7 @@ const masterRoutes = [
         path: "/quotations/add",
         name: "Add Quotations",
         icon: <FaRegFile />,
+        element: <AddQuntation />,
         isSidebarActive: true,
       },
       {
@@ -270,13 +272,13 @@ const masterRoutes = [
   },
 
   {
-    path: "#",
+    path: "/settings/general",
     name: "Settings",
     icon: <MdOutlineSettings />,
     isSidebarActive: true,
     submenu: [
       {
-        path: "/settings/",
+        path: "/settings/general",
         name: "General Settings",
         icon: <MdOutlineSettings />,
         isSidebarActive: true,

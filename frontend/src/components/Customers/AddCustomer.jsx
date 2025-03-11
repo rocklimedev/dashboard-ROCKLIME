@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useCreateCustomerMutation } from "../../api/customerApi";
-const AddCustomer = () => {
+const AddCustomer = ({ onClose }) => {
   const [createCustomer, { isLoading, error }] = useCreateCustomerMutation();
   const [formData, setFormData] = useState({
     name: "",
@@ -43,8 +43,7 @@ const AddCustomer = () => {
             <button
               type="button"
               className="close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
+              onClick={onClose} // Ensure this calls the prop function
             >
               <span>&times;</span>
             </button>

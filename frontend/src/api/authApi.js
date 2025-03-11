@@ -7,7 +7,7 @@ export const authApi = createApi({
     baseUrl: `${API_URL}/auth`,
     credentials: "include",
     prepareHeaders: (headers) => {
-      const token = localStorage.getItem("accessToken");
+      const token = localStorage.getItem("token");
 
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
@@ -37,14 +37,22 @@ export const authApi = createApi({
       }),
       invalidatesTags: (result, error) => (result ? ["Auth"] : []),
     }),
-
     logout: builder.mutation({
-      query: () => ({
-        url: "/logout",
-        method: "POST",
-      }),
-      invalidatesTags: ["Auth"], // Ensure logout invalidates cache
+      query: () => {
+        const refreshToken = localStorage.getItem("refreshToken"); // Retrieve the refresh token
+
+        return {
+          url: "/logout",
+          method: "POST",
+          body: { refreshToken }, // Send refresh token in request body
+          headers: {
+            "Content-Type": "application/json",
+          },
+        };
+      },
+      invalidatesTags: ["Auth"], // Ensures logout invalidates cache
     }),
+
     forgotPassword: builder.mutation({
       query: (email) => ({
         url: "/forgot-password",

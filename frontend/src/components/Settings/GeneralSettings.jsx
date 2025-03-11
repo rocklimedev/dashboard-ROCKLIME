@@ -2,12 +2,16 @@ import React from "react";
 import { Outlet } from "react-router-dom";
 import SettingsNav from "./SettingsNav";
 import Router from "../../router/Router";
+import { FcSettings } from "react-icons/fc";
+import { GiWorld } from "react-icons/gi";
+import { MdDevices, MdMiscellaneousServices } from "react-icons/md";
+import ProfileSettings from "./ProfileSettings";
 
 // Define menu items dynamically
 const menuItems = [
   {
     title: "General Settings",
-    icon: "ti ti-settings fs-18",
+    icon: <FcSettings />,
     subItems: [
       { label: "Profile", link: "/settings/general" },
       { label: "Security", link: "/settings/security" },
@@ -17,7 +21,7 @@ const menuItems = [
   },
   {
     title: "Website Settings",
-    icon: "ti ti-world fs-18",
+    icon: <GiWorld />,
     subItems: [
       { label: "System Settings", link: "/settings/system" },
       { label: "Company Settings", link: "/settings/company" },
@@ -28,7 +32,7 @@ const menuItems = [
   },
   {
     title: "App Settings",
-    icon: "ti ti-device-mobile fs-18",
+    icon: <MdDevices />,
     subItems: [
       { label: "Invoice Settings", link: "/settings/invoice" },
       { label: "POS", link: "/settings/pos" },
@@ -37,7 +41,7 @@ const menuItems = [
   },
   {
     title: "Other Settings",
-    icon: "ti ti-more fs-18",
+    icon: <MdMiscellaneousServices />,
     subItems: [
       { label: "Integrations", link: "/settings/integrations" },
       { label: "API Keys", link: "/settings/api-keys" },
@@ -69,7 +73,7 @@ const GeneralSettings = () => {
                   </div>
                 </div>
               </div>
-              <Router />
+              <ProfileSettings />
             </div>
           </div>
         </div>

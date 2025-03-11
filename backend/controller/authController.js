@@ -90,7 +90,9 @@ exports.login = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
-    res.status(200).json({ message: "Login successful", accessToken });
+    res
+      .status(200)
+      .json({ message: "Login successful", accessToken, refreshToken });
   } catch (err) {
     console.error("Login error:", err);
     res.status(500).json({ message: "Server Error", error: err.message });
@@ -100,7 +102,7 @@ exports.login = async (req, res) => {
 // Logout
 exports.logout = async (req, res) => {
   try {
-    const { refreshToken } = req.body;
+    const refreshToken = req.body.refreshToken || req.cookies.refreshToken; // Check body or cookie
     if (!refreshToken)
       return res.status(400).json({ message: "Refresh token required" });
 
@@ -109,6 +111,7 @@ exports.logout = async (req, res) => {
     }
 
     refreshTokens.delete(refreshToken);
+    res.clearCookie("refreshToken"); // Clear the cookie if using cookies
     res.status(200).json({ message: "Logged out successfully" });
   } catch (err) {
     res.status(500).json({ message: "Server Error", error: err.message });

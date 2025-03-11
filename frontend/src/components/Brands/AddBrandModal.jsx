@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useCreateBrandMutation } from "../../api/brandsApi";
-const AddBrand = () => {
+const AddBrand = ({ onClose }) => {
   const [createBrand, { isLoading, error }] = useCreateBrandMutation();
   const [formData, setFormData] = useState({
     brandName: "",
@@ -34,8 +34,7 @@ const AddBrand = () => {
             <button
               type="button"
               className="close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
+              onClick={onClose} // Ensure this calls the prop function
             >
               <span>&times;</span>
             </button>

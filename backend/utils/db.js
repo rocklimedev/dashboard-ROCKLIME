@@ -32,7 +32,10 @@ const setupDB = async () => {
     Vendor.belongsTo(Brand, { foreignKey: "brandId" });
 
     // Customer Associations
-    Customer.hasMany(Quotation, { foreignKey: "customerId" });
+    Customer.hasMany(Quotation, {
+      foreignKey: "customerId",
+      as: "customerQuotations",
+    }); // UNIQUE ALIAS
     Customer.hasMany(Invoice, { foreignKey: "customerId" });
     Customer.belongsTo(Vendor, { foreignKey: "vendorId", as: "vendor" });
     Brand.hasMany(Vendor, { foreignKey: "brandSlug", sourceKey: "brandSlug" });
@@ -40,6 +43,7 @@ const setupDB = async () => {
       foreignKey: "brandSlug",
       targetKey: "brandSlug",
     });
+
     User.belongsTo(RolePermission, { foreignKey: "role_id" });
     Address.belongsTo(User, { foreignKey: "userId" });
     Product.belongsTo(Category, { foreignKey: "categoryId" });
@@ -47,11 +51,22 @@ const setupDB = async () => {
     Invoice.belongsTo(Address, { foreignKey: "shipTo" });
     Invoice.belongsTo(Order, { foreignKey: "orderId" });
     Order.belongsTo(Quotation, { foreignKey: "quotationId" });
-    Quotation.belongsTo(User, { foreignKey: "customerId" });
+
+    // A Quotation belongs to a Customer
+    Quotation.belongsTo(Customer, {
+      foreignKey: "customerId",
+      as: "quotationCustomer",
+    }); // UNIQUE ALIAS
+
+    // A Quotation is created by a User
+    Quotation.belongsTo(User, { foreignKey: "createdBy", as: "Users" });
+    User.hasMany(Quotation, { foreignKey: "createdBy" });
+
     RolePermission.belongsTo(User, { foreignKey: "userId" });
     RolePermission.belongsToMany(Permission, { through: "RolePermissions" });
     Permission.belongsToMany(RolePermission, { through: "RolePermissions" });
     Signature.belongsTo(User, { foreignKey: "userId" });
+
     // User-Cart Relationship
     User.hasMany(Cart, { foreignKey: "user_id" });
     Cart.belongsTo(User, { foreignKey: "user_id" });

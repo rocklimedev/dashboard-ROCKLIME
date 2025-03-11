@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import masterRoutes from "../../data/routes";
 
-const Sidebar = () => {
+const Sidebar = ({ isSidebarOpen }) => {
   const [openMenu, setOpenMenu] = useState(null);
 
   const toggleDropdown = (index) => {
@@ -10,7 +10,7 @@ const Sidebar = () => {
   };
 
   return (
-    <div className="sidebar" id="sidebar">
+    <div className={`sidebar ${isSidebarOpen ? "active" : ""}`} id="sidebar">
       <div className="sidebar-logo active">
         <a href="index.html" className="logo logo-normal">
           <img src="assets/img/logo.svg" alt="Logo" />
@@ -76,13 +76,19 @@ const Sidebar = () => {
       </div>
 
       {/* Make sidebar scrollable */}
-      <div className="sidebar-inner slimscroll" style={{ maxHeight: "calc(100vh - 120px)", overflowY: "auto" }}>
+      <div
+        className="sidebar-inner slimscroll"
+        style={{ maxHeight: "calc(100vh - 120px)", overflowY: "auto" }}
+      >
         <div id="sidebar-menu" className="sidebar-menu">
           <ul>
             {masterRoutes
               .filter((section) => section.isSidebarActive)
               .map((section, index) => (
-                <li key={index} className={section.submenu?.length ? "submenu" : ""}>
+                <li
+                  key={index}
+                  className={section.submenu?.length ? "submenu" : ""}
+                >
                   {section.submenu?.length > 0 ? (
                     <a
                       href="#"
@@ -104,7 +110,11 @@ const Sidebar = () => {
                   )}
 
                   {section.submenu?.length > 0 && (
-                    <ul className={openMenu === index ? "submenu-open" : "submenu-closed"}>
+                    <ul
+                      className={
+                        openMenu === index ? "submenu-open" : "submenu-closed"
+                      }
+                    >
                       {section.submenu
                         .filter((sub) => sub.isSidebarActive)
                         .map((sub, subIdx) => (

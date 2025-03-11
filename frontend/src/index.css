@@ -15,3 +15,20 @@
 @import url("./assets/plugins/pickr/pickr-themes.css");
 
 @import url("./assets/css/style.css");
+.sidebar {
+  width: 250px;
+  transition: all 0.3s ease-in-out;
+}
+
+.sidebar.active {
+  width: 0;
+}
+
+.main-content {
+  margin-left: 250px;
+  transition: all 0.3s ease-in-out;
+}
+
+.main-content.shrink {
+  margin-left: 0;
+}

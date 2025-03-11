@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.post(
   "/",
-  checkPermission("/categories_create"),
+  // checkPermission("/categories_create"),
   categoryController.createCategory
 );
 router.get(
@@ -16,17 +16,17 @@ router.get(
 );
 router.get(
   "/:id",
-  checkPermission("/categories_view_by_id"),
+  //checkPermission("/categories_view_by_id"),
   categoryController.getCategoryById
 );
 router.put(
   "/:id",
-  checkPermission("/categories_update"),
+  // checkPermission("/categories_update"),
   categoryController.updateCategory
 );
 router.delete(
   "/:id",
-  checkPermission("/categories_delete"),
+  //  checkPermission("/categories_delete"),
   categoryController.deleteCategory
 );
 

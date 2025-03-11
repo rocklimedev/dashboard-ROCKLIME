@@ -11,7 +11,7 @@ const POSProducts = () => {
   const { data: user, isLoading: userLoading } = useGetProfileQuery(); // Fetch logged-in user
   const [addToCart] = useAddToCartMutation();
 
-  const userId = user?.id; // Ensure userId is fetched correctly
+  const userId = user?.user?.userId; // Ensure userId is fetched correctly
 
   const products = Array.isArray(productsData) ? productsData : [];
   const categories = Array.isArray(categoriesData?.categories)

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useCreateUserMutation } from "../../api/userApi";
-const AddUser = () => {
+const AddUser = ({ onClose }) => {
   const [createUser, { isLoading, error }] = useCreateUserMutation();
   const [formData, setFormData] = useState({
     name: "",
@@ -40,13 +40,8 @@ const AddUser = () => {
             <div className="page-title">
               <h4>Add user</h4>
             </div>
-            <button
-              type="button"
-              className="close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            >
-              <span aria-hidden="true">&times;</span>
+            <button type="button" className="close" onClick={onClose}>
+              <span>&times;</span>
             </button>
           </div>
           <form onSubmit={handleSubmit}>
