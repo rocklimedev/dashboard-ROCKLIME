@@ -1,9 +1,20 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa";
-import { useState } from "react";
-import { useCreateProductMutation } from "../../api/productApi";
+import {
+  useCreateProductMutation,
+  useUpdateProductMutation,
+  useGetProductByIdQuery, // Fetch product data for editing
+} from "../../api/productApi";
 import { GiFeatherWound } from "react-icons/gi";
+
 const CreateProduct = () => {
+  const { id } = useParams(); // Get product ID from URL
+  const isEditMode = Boolean(id); // Check if we're editing
+
+  const { data: existingProduct, isLoading: isFetching } =
+    useGetProductByIdQuery(id, { skip: !isEditMode }); // Fetch product only if editing
+
   const [formData, setFormData] = useState({
     name: "",
     productSegment: "",
@@ -20,7 +31,16 @@ const CreateProduct = () => {
     description: "",
   });
 
-  const [createProduct, { isLoading, error }] = useCreateProductMutation();
+  const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
+  const [updateProduct, { isLoading: isUpdating, error }] =
+    useUpdateProductMutation();
+
+  // Pre-fill form when editing
+  useEffect(() => {
+    if (existingProduct) {
+      setFormData(existingProduct);
+    }
+  }, [existingProduct]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -28,20 +48,25 @@ const CreateProduct = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Remove commas before sending data
     const sanitizedData = {
       ...formData,
-      sellingPrice: formData.sellingPrice.replace(/,/g, ""),
+      sellingPrice: formData.sellingPrice.replace(/,/g, ""), // Remove commas
     };
 
     try {
-      await createProduct(sanitizedData);
-      alert("Product created successfully!");
+      if (isEditMode) {
+        await updateProduct({ id, ...sanitizedData });
+        alert("Product updated successfully!");
+      } else {
+        await createProduct(sanitizedData);
+        alert("Product created successfully!");
+      }
     } catch (error) {
-      console.error("Error creating product:", error);
+      console.error("Error submitting product:", error);
     }
   };
+
+  if (isFetching) return <p>Loading product details...</p>;
 
   return (
     <div className="page-wrapper">
@@ -49,10 +74,15 @@ const CreateProduct = () => {
         <div className="page-header">
           <div className="add-item d-flex">
             <div className="page-title">
-              <h4 className="fw-bold">Create Product</h4>
-              <h6>Create new product</h6>
+              <h4 className="fw-bold">
+                {isEditMode ? "Edit Product" : "Create Product"}
+              </h4>
+              <h6>
+                {isEditMode ? "Update product details" : "Create a new product"}
+              </h6>
             </div>
           </div>
+
           <ul className="table-top-head">
             <li>
               <a
@@ -86,9 +116,9 @@ const CreateProduct = () => {
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={isLoading}
+              disabled={isCreating || isUpdating}
             >
-              {isLoading ? "Creating..." : "Create Product"}
+              {isEditMode ? "Update Product" : "Create Product"}
             </button>
           </div>
           <div className="add-product">

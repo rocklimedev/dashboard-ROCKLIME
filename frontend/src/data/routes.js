@@ -24,7 +24,7 @@ import {
   MdBrandingWatermark,
   MdOutlineSettings,
 } from "react-icons/md";
-import { AiOutlineProduct } from "react-icons/ai";
+import { AiFillSecurityScan, AiOutlineProduct } from "react-icons/ai";
 import { BiSolidCategory, BiUserCheck } from "react-icons/bi";
 import { FaFileCircleCheck, FaPooStorm } from "react-icons/fa6";
 import {
@@ -56,6 +56,9 @@ import GeneralSettings from "../components/Settings/GeneralSettings";
 import UnderMaintanance from "../components/Error/UnderMaintanance";
 import ComingSoon from "../components/Error/ComingSoon";
 import AddQuntation from "../components/Quotation/AddQuntation";
+import { GiCorporal } from "react-icons/gi";
+import CmList from "../components/CMTrading/cmList";
+import SecuritySettings from "../components/Settings/SecuritySettings";
 const masterRoutes = [
   {
     path: "/",
@@ -84,6 +87,13 @@ const masterRoutes = [
         icon: <BiUserCheck />,
         isSidebarActive: true,
         element: <UserList />,
+      },
+      {
+        path: "/super-admin/companies",
+        name: "Companies",
+        icon: <GiCorporal />,
+        isSidebarActive: true,
+        element: <CmList />,
       },
       {
         path: "/super-admin/recent-orders",
@@ -202,6 +212,7 @@ const masterRoutes = [
         name: "Product Edit",
         icon: <AiOutlineProduct />,
         isSidebarActive: true,
+        element: <CreateProduct />,
       },
     ],
   },
@@ -289,6 +300,12 @@ const masterRoutes = [
         name: "Profile Settings",
         icon: <AiFillProfile />,
         isSidebarActive: true,
+      },
+      {
+        path: "/settings/security",
+        name: "Secure Settings",
+        icon: <AiFillSecurityScan />,
+        element: <SecuritySettings />,
       },
     ],
   },

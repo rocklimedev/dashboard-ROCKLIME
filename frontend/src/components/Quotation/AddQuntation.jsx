@@ -4,7 +4,15 @@ import { useCreateQuotationMutation } from "../../api/quotationApi";
 import { useGetAllProductsQuery } from "../../api/productApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import { PiPlus } from "react-icons/pi";
+import { useGetProfileQuery } from "../../api/userApi";
+
 const AddQuotation = () => {
+  const { data: userData } = useGetProfileQuery();
+  const userId = userData?.user?.userId || "nill";
+  console.log(userId);
+  const { data: customersData } = useGetCustomersQuery();
+  const customers = customersData?.data || [];
+
   const [formData, setFormData] = useState({
     document_title: "",
     quotation_date: "",
@@ -18,14 +26,15 @@ const AddQuotation = () => {
     finalAmount: "",
     signature_name: "",
     signature_image: "",
-    customerId: "",
+    customerId: "", // Initially empty
+    createdBy: userId,
   });
 
   const [productSearch, setProductSearch] = useState("");
   const { data: products, isLoading, error } = useGetAllProductsQuery();
-  const { data: customersData } = useGetCustomersQuery();
-  const customers = customersData?.data || [];
   const [createQuotation] = useCreateQuotationMutation();
+
+  // Add product to quotation
   const addProduct = (product) => {
     setFormData((prev) => ({
       ...prev,
@@ -36,11 +45,12 @@ const AddQuotation = () => {
           qty: 1,
           discount: product.discountType || 0,
           tax: 0,
-          total: Number(product.sellingPrice) || 0, // Ensure total is a number
+          total: Number(product.sellingPrice) || 0,
         },
       ],
     }));
   };
+
   // Function to calculate final amount
   const calculateFinalAmount = () => {
     let subtotal = formData.products.reduce(
@@ -55,7 +65,6 @@ const AddQuotation = () => {
     setFormData((prev) => ({ ...prev, finalAmount: finalAmount.toFixed(2) }));
   };
 
-  // Recalculate the final amount whenever products, GST, or round-off change
   useEffect(() => {
     calculateFinalAmount();
   }, [
@@ -81,6 +90,7 @@ const AddQuotation = () => {
     setFormData({ ...formData, products: updatedProducts });
   };
 
+  // Update state when form fields change
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData({
@@ -89,10 +99,45 @@ const AddQuotation = () => {
     });
   };
 
+  // Handle customer selection
+  const handleCustomerChange = (e) => {
+    const selectedCustomerId = e.target.value;
+    console.log("Selected Customer ID:", selectedCustomerId);
+    setFormData((prev) => ({
+      ...prev,
+      customerId: selectedCustomerId,
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!formData.customerId) {
+      alert("Please select a customer.");
+      return;
+    }
+
+    // Ensure discount, GST, and roundOff are numbers
+    const formattedProducts = formData.products.map((product) => ({
+      ...product,
+      discount: isNaN(product.discount) ? 0 : Number(product.discount),
+      qty: isNaN(product.qty) ? 1 : Number(product.qty),
+      tax: isNaN(product.tax) ? 0 : Number(product.tax),
+      total: isNaN(product.total) ? 0 : Number(product.total),
+    }));
+
+    const formattedFormData = {
+      ...formData,
+      gst_value: isNaN(formData.gst_value) ? 0 : Number(formData.gst_value),
+      roundOff: isNaN(formData.roundOff) ? 0 : Number(formData.roundOff),
+      finalAmount: isNaN(formData.finalAmount)
+        ? 0
+        : Number(formData.finalAmount),
+      products: formattedProducts,
+    };
+
     try {
-      await createQuotation(formData).unwrap();
+      await createQuotation(formattedFormData).unwrap();
       alert("Quotation created successfully!");
     } catch (err) {
       console.error("Failed to create quotation:", err);
@@ -105,6 +150,7 @@ const AddQuotation = () => {
       product.name.toLowerCase().includes(productSearch.toLowerCase())
     )
     .slice(0, 3);
+
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -131,7 +177,7 @@ const AddQuotation = () => {
                       className="form-control"
                       name="customerId"
                       value={formData.customerId}
-                      onChange={handleChange}
+                      onChange={handleCustomerChange}
                       required
                     >
                       <option value="">Select</option>
@@ -141,7 +187,10 @@ const AddQuotation = () => {
                         <option>Error loading customers</option>
                       ) : (
                         customers?.map((customer) => (
-                          <option key={customer.id} value={customer.id}>
+                          <option
+                            key={customer.customerId}
+                            value={customer.customerId}
+                          >
                             {customer.name}
                           </option>
                         ))

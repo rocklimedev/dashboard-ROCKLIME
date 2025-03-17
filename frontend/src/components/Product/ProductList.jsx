@@ -147,7 +147,11 @@ const ProductList = () => {
                         {new Date(product.createdAt).toLocaleDateString()}
                       </td>
                       <td>
-                        <Actions onDelete={() => handleDeleteClick(product)} />
+                        <Actions
+                          viewUrl={`/product/${product.productId}`}
+                          editUrl={`/product/${product.productId}/edit`}
+                          onDelete={() => handleDeleteClick(product)}
+                        />
                       </td>
                     </tr>
                   ))}

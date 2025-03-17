@@ -1,7 +1,7 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
-const User = require("./users"); // Import User model
-const Customer = require("./customers"); // Import Customer model
+const User = require("./users");
+const Customer = require("./customers");
 const { v4: uuidv4 } = require("uuid");
 
 const Quotation = sequelize.define("Quotation", {
@@ -54,24 +54,24 @@ const Quotation = sequelize.define("Quotation", {
   },
   createdBy: {
     type: DataTypes.UUID,
-    allowNull: false,
+    allowNull: true, // Allow null to avoid foreign key conflict
     references: {
       model: User,
       key: "userId",
     },
+    onDelete: "SET NULL",
+    onUpdate: "CASCADE",
   },
   customerId: {
     type: DataTypes.UUID,
-    allowNull: false,
+    allowNull: false, // It cannot be null
     references: {
       model: Customer,
       key: "customerId",
     },
+    onDelete: "RESTRICT", // Prevent deletion if referenced
+    onUpdate: "CASCADE",
   },
 });
-
-// Define Correct Relationships
-Quotation.belongsTo(User, { foreignKey: "createdBy", as: "creator" }); // User who created the quotation
-Quotation.belongsTo(Customer, { foreignKey: "customerId", as: "customer" }); // Customer for whom the quotation is made
 
 module.exports = Quotation;

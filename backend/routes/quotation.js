@@ -17,5 +17,5 @@ router.put("/:id", quotationController.updateQuotation);
 
 // Delete a quotation by ID
 router.delete("/:id", quotationController.deleteQuotation);
-
+router.post("/export/:id", quotationController.exportQuotation);
 module.exports = router;

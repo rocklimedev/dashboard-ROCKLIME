@@ -53,13 +53,14 @@ const setupDB = async () => {
     Order.belongsTo(Quotation, { foreignKey: "quotationId" });
 
     // A Quotation belongs to a Customer
+
+    Quotation.belongsTo(User, { foreignKey: "createdBy", as: "users" });
     Quotation.belongsTo(Customer, {
       foreignKey: "customerId",
-      as: "quotationCustomer",
-    }); // UNIQUE ALIAS
-
+      as: "customers",
+    });
     // A Quotation is created by a User
-    Quotation.belongsTo(User, { foreignKey: "createdBy", as: "Users" });
+
     User.hasMany(Quotation, { foreignKey: "createdBy" });
 
     RolePermission.belongsTo(User, { foreignKey: "userId" });

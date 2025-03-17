@@ -1,5 +1,6 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { API_URL } from "../data/config";
+
 export const quotationApi = createApi({
   reducerPath: "quotationApi",
   baseQuery: fetchBaseQuery({
@@ -11,28 +12,21 @@ export const quotationApi = createApi({
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
       }
+      headers.set(
+        "Accept",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+
       return headers;
     },
-  }), // Adjust base URL if needed
+  }),
   tagTypes: ["Quotations"],
   endpoints: (builder) => ({
     getAllQuotations: builder.query({
-      queryKey: "quotations",
-      queryFn: async () => {
-        const response = await fetch("/");
-        if (!response.ok) throw new Error("Failed to fetch quotations");
-        return response.json();
-      },
-      providesTags: ["Quotations"],
+      query: () => "/",
     }),
     getQuotationById: builder.query({
-      queryKey: (id) => ["quotation", id],
-      queryFn: async (id) => {
-        const response = await fetch(`/${id}`);
-        if (!response.ok) throw new Error("Quotation not found");
-        return response.json();
-      },
-      providesTags: (result, error, id) => [{ type: "Quotations", id }],
+      query: (id) => `/${id}`,
     }),
     createQuotation: builder.mutation({
       query: (newQuotation) => ({
@@ -57,6 +51,13 @@ export const quotationApi = createApi({
       }),
       invalidatesTags: ["Quotations"],
     }),
+    exportQuotation: builder.mutation({
+      query: (id) => ({
+        url: `/export/${id}`,
+        method: "POST",
+        responseHandler: async (response) => response.blob(), // Ensures response is treated as a Blob
+      }),
+    }),
   }),
 });
 
@@ -66,4 +67,5 @@ export const {
   useCreateQuotationMutation,
   useUpdateQuotationMutation,
   useDeleteQuotationMutation,
+  useExportQuotationMutation,
 } = quotationApi;

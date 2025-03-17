@@ -19,6 +19,7 @@ const brandRoutes = require("./routes/brands");
 const keywordRoutes = require("./routes/keyword");
 const productRoutes = require("./routes/products");
 const cartRoutes = require("./routes/cart");
+const companiesRoutes = require("./routes/company");
 const quotationRoutes = require("./routes/quotation");
 const connectMongoDB = require("./config/dbMongo");
 const setupDB = require("./utils/db");
@@ -63,6 +64,7 @@ app.use("/api/brands", brandRoutes);
 app.use("/api/keyword", keywordRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/carts", cartRoutes);
+app.use("/api/companies", companiesRoutes);
 app.use("/api/quotation", quotationRoutes);
 // Sync Database
 db.sync()
