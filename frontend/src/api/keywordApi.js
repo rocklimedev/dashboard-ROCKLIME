@@ -1,8 +1,8 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-
+import { API_URL } from "../data/config";
 export const keywordApi = createApi({
   reducerPath: "keywordApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "http://localhost:4000/api/keyword" }), // Adjust base URL if needed
+  baseQuery: fetchBaseQuery({ baseUrl: `${API_URL}/keyword` }), // Adjust base URL if needed
   tagTypes: ["Keyword"], // Helps with caching and auto-refetching
   endpoints: (builder) => ({
     getAllKeywords: builder.query({

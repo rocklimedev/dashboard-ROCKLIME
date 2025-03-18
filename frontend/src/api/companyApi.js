@@ -1,8 +1,8 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-
+import { API_URL } from "../data/config";
 export const companyApi = createApi({
   reducerPath: "companyApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "http://localhost:4000/api/companies" }),
+  baseQuery: fetchBaseQuery({ baseUrl: `${API_URL}/companies` }),
   endpoints: (builder) => ({
     createCompany: builder.mutation({
       query: (newCompany) => ({

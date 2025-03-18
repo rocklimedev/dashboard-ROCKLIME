@@ -1,9 +1,9 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-
+import { API_URL } from "../data/config";
 // Define API slice
 export const customerApi = createApi({
   reducerPath: "customerApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "http://localhost:4000/api/customers" }), // Adjust base URL as needed
+  baseQuery: fetchBaseQuery({ baseUrl: `${API_URL}/customers` }), // Adjust base URL as needed
   endpoints: (builder) => ({
     // Create Customer
     createCustomer: builder.mutation({

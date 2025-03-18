@@ -14,19 +14,25 @@
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
--- Dumping structure for table dashboard.rolepermissions
-CREATE TABLE IF NOT EXISTS `rolepermissions` (
+-- Dumping structure for table dashboard.parentcategories
+CREATE TABLE IF NOT EXISTS `parentcategories` (
+  `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `slug` varchar(255) NOT NULL,
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL,
-  `RoleRoleId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `PermissionPermissionId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  PRIMARY KEY (`RoleRoleId`,`PermissionPermissionId`),
-  KEY `PermissionPermissionId` (`PermissionPermissionId`),
-  CONSTRAINT `rolepermissions_ibfk_1` FOREIGN KEY (`RoleRoleId`) REFERENCES `roles` (`roleId`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `rolepermissions_ibfk_2` FOREIGN KEY (`PermissionPermissionId`) REFERENCES `permissions` (`permissionId`) ON DELETE CASCADE ON UPDATE CASCADE
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`),
+  UNIQUE KEY `slug` (`slug`),
+  UNIQUE KEY `name_2` (`name`),
+  UNIQUE KEY `slug_2` (`slug`),
+  UNIQUE KEY `name_3` (`name`),
+  UNIQUE KEY `slug_3` (`slug`),
+  UNIQUE KEY `name_4` (`name`),
+  UNIQUE KEY `slug_4` (`slug`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table dashboard.rolepermissions: ~0 rows (approximately)
+-- Dumping data for table dashboard.parentcategories: ~0 rows (approximately)
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

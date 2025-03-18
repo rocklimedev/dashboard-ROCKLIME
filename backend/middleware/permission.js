@@ -1,32 +1,40 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/users");
 const Permission = require("../models/permisson");
+const Role = require("../models/rolePermission");
+const { ROLES } = require("../config/constant"); // Import role constants
 
-const checkPermission = (requiredAction) => {
+const checkPermission = (requiredAction, requiredRoute) => {
   return async (req, res, next) => {
     try {
-      // Get token from header
       const token = req.headers.authorization?.split(" ")[1];
       if (!token) return res.status(401).json({ message: "Unauthorized" });
 
-      // Verify JWT token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const user = await User.findByPk(decoded.id, { include: ["roles"] });
 
       if (!user) return res.status(401).json({ message: "User not found" });
 
-      // Fetch user's permissions based on their role
-      const userPermissions = await Permission.findAll({
-        where: { roleId: user.roleId },
+      // ✅ Super Admin Bypass: Grant full access
+      const userRoles = await user.getRoles();
+      if (userRoles.some((role) => role.name === ROLES.SuperAdmin)) {
+        console.log("Super Admin detected, bypassing permission check.");
+        return next();
+      }
+
+      // Fetch user's roles and permissions
+      const roles = await user.getRoles({
+        include: [
+          {
+            model: Permission,
+            where: { route: requiredRoute, action: requiredAction },
+          },
+        ],
       });
 
-      // Check if the required action is in the user's permissions
-      const hasPermission = userPermissions.some(
-        (perm) => perm.action === requiredAction
-      );
-
-      if (!hasPermission)
+      if (roles.length === 0) {
         return res.status(403).json({ message: "Forbidden: No permission" });
+      }
 
       next();
     } catch (error) {

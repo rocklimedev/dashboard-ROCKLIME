@@ -1,21 +1,25 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
-const { v4: uuidv4 } = require("uuid");
-const Permission = require("./permisson"); // Importing Permission model
 
-const Role = sequelize.define("Role", {
-  roleId: {
-    type: DataTypes.UUID,
-    primaryKey: true,
-    defaultValue: uuidv4,
+const RolePermission = sequelize.define(
+  "RolePermission",
+  {
+    id: {
+      type: DataTypes.UUID,
+      primaryKey: true,
+      defaultValue: DataTypes.UUIDV4,
+    },
+
+    permissions: {
+      type: DataTypes.JSONB, // Use JSONB for efficient querying if supported by your DB
+      allowNull: false,
+      defaultValue: [], // Default to empty array or any default structure
+    },
   },
-  roleName: {
-    type: DataTypes.STRING(100),
-    allowNull: false,
-    unique: true,
-  },
-});
+  {
+    tableName: "rolepermissions",
+    timestamps: true, // Automatically adds `createdAt` and `updatedAt`
+  }
+);
 
-// Many-to-Many Relationship Between Roles and Permissions
-
-module.exports = Role;
+module.exports = RolePermission;

@@ -1,19 +1,34 @@
 const express = require("express");
 const router = express.Router();
-const { auth } = require("../middleware/auth");
-const role = require("../middleware/role");
+const { auth } = require("../middleware/auth"); // Authentication Middleware
+const role = require("../middleware/role").check; // Role-Based Access Control Middleware
 const userController = require("../controller/userController");
 const { ROLES } = require("../config/constant");
 
-// General user routes
-router.get("/me", auth, userController.getProfile); // Get current user's profile
-router.put("/", userController.updateProfile); // Update current user's profile
-router.get("/", userController.getAllUsers);
-router.post("/add", userController.createUser);
-// Admin-specific routes
-router.get("/search", userController.searchUser);
-router.get("/:userId", userController.getUserById);
-// router.put("/:userId", userController.updateUser);
-router.delete("/:userId", userController.deleteUser);
-router.post("/report/:userId", userController.reportUser);
+// ✅ General User Routes (For All Logged-in Users)
+router.get("/me", auth, userController.getProfile); // Get logged-in user's profile
+router.put("/", auth, userController.updateProfile); // edit logged-in user's profile
+
+// ✅ Admin-Only Routes
+router.get("/", auth, role([ROLES.Admin]), userController.getAllUsers); // View all users
+router.post("/add", auth, role([ROLES.Admin]), userController.createUser); // Add a new user
+router.delete("/:userId", auth, role([ROLES.Admin]), userController.deleteUser); // Delete a user
+
+// ✅ Admin & Moderator Routes
+router.get(
+  "/search",
+  auth,
+  role([ROLES.Admin, ROLES.SALES]),
+  userController.searchUser
+);
+router.get(
+  "/:userId",
+  auth,
+  role([ROLES.Admin, ROLES.SALES]),
+  userController.getUserById
+);
+
+// ✅ Public Reporting Route (Any Logged-in User)
+router.post("/report/:userId", auth, userController.reportUser);
+
 module.exports = router;

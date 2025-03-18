@@ -21,60 +21,30 @@ CREATE TABLE IF NOT EXISTS `users` (
   `name` varchar(100) DEFAULT NULL,
   `email` varchar(100) NOT NULL,
   `mobileNumber` varchar(20) DEFAULT NULL,
-  `role` enum('superadmin','admin','Accounts','users','staff') NOT NULL,
-  `status` enum('active','inactive','restricted') NOT NULL,
+  `roles` varchar(255) DEFAULT 'USERS',
+  `status` enum('active','inactive','restricted') NOT NULL DEFAULT 'inactive',
   `password` varchar(255) NOT NULL,
-  `role_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL,
+  `role_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   PRIMARY KEY (`userId`),
   UNIQUE KEY `username` (`username`),
   UNIQUE KEY `email` (`email`),
+  UNIQUE KEY `username_31` (`username`),
+  UNIQUE KEY `email_31` (`email`),
   UNIQUE KEY `username_2` (`username`),
   UNIQUE KEY `email_2` (`email`),
   UNIQUE KEY `username_3` (`username`),
   UNIQUE KEY `email_3` (`email`),
-  UNIQUE KEY `username_4` (`username`),
-  UNIQUE KEY `email_4` (`email`),
-  UNIQUE KEY `username_5` (`username`),
-  UNIQUE KEY `email_5` (`email`),
-  UNIQUE KEY `username_6` (`username`),
-  UNIQUE KEY `email_6` (`email`),
-  UNIQUE KEY `username_7` (`username`),
-  UNIQUE KEY `email_7` (`email`),
-  UNIQUE KEY `username_8` (`username`),
-  UNIQUE KEY `email_8` (`email`),
-  UNIQUE KEY `username_9` (`username`),
-  UNIQUE KEY `email_9` (`email`),
-  UNIQUE KEY `username_10` (`username`),
-  UNIQUE KEY `email_10` (`email`),
-  UNIQUE KEY `username_11` (`username`),
-  UNIQUE KEY `email_11` (`email`),
-  UNIQUE KEY `username_12` (`username`),
-  UNIQUE KEY `email_12` (`email`),
-  UNIQUE KEY `username_13` (`username`),
-  UNIQUE KEY `email_13` (`email`),
-  UNIQUE KEY `username_14` (`username`),
-  UNIQUE KEY `email_14` (`email`),
   KEY `role_id` (`role_id`),
-  CONSTRAINT `users_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `rolepermissions` (`roleId`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `users_ibfk_10` FOREIGN KEY (`role_id`) REFERENCES `rolepermissions` (`roleId`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `users_ibfk_11` FOREIGN KEY (`role_id`) REFERENCES `rolepermissions` (`roleId`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `users_ibfk_12` FOREIGN KEY (`role_id`) REFERENCES `rolepermissions` (`roleId`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `users_ibfk_13` FOREIGN KEY (`role_id`) REFERENCES `rolepermissions` (`roleId`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `users_ibfk_2` FOREIGN KEY (`role_id`) REFERENCES `rolepermissions` (`roleId`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `users_ibfk_3` FOREIGN KEY (`role_id`) REFERENCES `rolepermissions` (`roleId`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `users_ibfk_4` FOREIGN KEY (`role_id`) REFERENCES `rolepermissions` (`roleId`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `users_ibfk_5` FOREIGN KEY (`role_id`) REFERENCES `rolepermissions` (`roleId`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `users_ibfk_6` FOREIGN KEY (`role_id`) REFERENCES `rolepermissions` (`roleId`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `users_ibfk_7` FOREIGN KEY (`role_id`) REFERENCES `rolepermissions` (`roleId`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `users_ibfk_8` FOREIGN KEY (`role_id`) REFERENCES `rolepermissions` (`roleId`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `users_ibfk_9` FOREIGN KEY (`role_id`) REFERENCES `rolepermissions` (`roleId`) ON DELETE SET NULL ON UPDATE CASCADE
+  CONSTRAINT `users_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `roles` (`roleId`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table dashboard.users: ~1 rows (approximately)
-INSERT INTO `users` (`userId`, `username`, `name`, `email`, `mobileNumber`, `role`, `status`, `password`, `role_id`, `createdAt`, `updatedAt`) VALUES
-	('f73086f0-e8f0-46dd-994c-2c26b60770ec', 'dashingvijay', 'dashingvijay', 'user1@example.com', NULL, 'users', 'active', '$2a$10$ef/4xHEX2Aogp/cjIIoKEOtWOMBrnLMWR8Dx.iCv/pHVz3GlJxapG', NULL, '2025-02-15 09:22:54', '2025-02-15 09:22:54');
+-- Dumping data for table dashboard.users: ~3 rows (approximately)
+INSERT INTO `users` (`userId`, `username`, `name`, `email`, `mobileNumber`, `roles`, `status`, `password`, `createdAt`, `updatedAt`, `role_id`) VALUES
+	('2754cc2c-c5d6-4961-bc41-375df0caa9aa', '', 'vermadhruv09112002', 'vermadhruv09112002@gmail.com', NULL, 'USERS', 'inactive', '$2b$10$3RkviShB7gEuY7nj.DP3/ujMGHsQ3Wi.c4e4PYvePRseqjK6emkdC', '2025-03-04 04:29:27', '2025-03-04 04:29:27', NULL),
+	('5d5bd153-8877-4db1-a5cc-2af5c7e55d9c', 'nandmurlibalakrishn', 'nandmurli balakrishn', 'nandmurlibalakrishn@gmail.com', NULL, 'USERS', 'inactive', '$2b$10$fCjd0f5naTpvJvS0qkXve.26TZ.1AeTaxabsWba3mNSj2GBbyE9DS', '2025-03-08 04:31:16', '2025-03-08 04:31:16', NULL),
+	('6208fc6a-45a3-4563-af1f-a63c294fd3bf', 'dhruvermafz', 'dhruv verma', 'dhruvermafz@rocklime.com', NULL, 'USERS', 'active', '$2b$10$lMYcK.pxcLvXwgishy.33urquQu2zo5BoY5uJ/r8QVh3tUCnLHIbq', '2025-03-01 11:02:37', '2025-03-01 11:02:37', NULL);
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

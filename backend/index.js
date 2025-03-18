@@ -26,6 +26,8 @@ const setupDB = require("./utils/db");
 const app = express();
 const helmet = require("helmet");
 const keys = require("./config/keys");
+//const seedPermissions = require("./seeders/seedPermission");
+
 // Middleware
 const { port } = keys;
 const corsOptions = {
@@ -47,7 +49,7 @@ app.use(
 // Database Setup
 connectMongoDB();
 setupDB();
-
+//seedPermissions();
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);

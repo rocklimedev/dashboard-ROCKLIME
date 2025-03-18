@@ -1,9 +1,9 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-
+import { API_URL } from "../data/config";
 export const parentCategoryApi = createApi({
   reducerPath: "parentCategoryApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:4000/api/parent-categories",
+    baseUrl: `${API_URL}/parent-categories`,
   }), // Adjust base URL if needed
   tagTypes: ["ParentCategory"], // Helps with caching and auto-refetching
   endpoints: (builder) => ({

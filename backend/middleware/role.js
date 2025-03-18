@@ -1,16 +1,23 @@
-const { ROLES } = require("../config/constant"); // Define roles like ROLES.Admin, ROLES.User
+const { ROLES } = require("../config/constant"); // Import role constants
 
 const role = {
-  check: (requiredRole) => (req, res, next) => {
+  check: (allowedRoles) => (req, res, next) => {
     try {
       if (!req.user || !req.user.role) {
         console.log("Role check failed: User or role is undefined.");
         return res.status(403).json({ error: "User role is not defined." });
       }
 
-      console.log("User role:", req.user.role, "Required role:", requiredRole);
+      console.log("User role:", req.user.role, "Allowed roles:", allowedRoles);
 
-      if (req.user.role !== requiredRole) {
+      // ✅ Super Admin has full access (bypass check)
+      if (req.user.role === ROLES.SuperAdmin) {
+        console.log("Super Admin detected, bypassing role check.");
+        return next();
+      }
+
+      // Check if the user's role is in the allowedRoles array
+      if (!allowedRoles.includes(req.user.role)) {
         console.log("Access forbidden: Insufficient permissions.");
         return res.status(403).json({
           error: "Access forbidden: insufficient permissions.",
