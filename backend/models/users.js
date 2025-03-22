@@ -45,15 +45,6 @@ const User = sequelize.define(
     },
 
     password: { type: DataTypes.STRING, allowNull: false },
-
-    role_id: {
-      type: DataTypes.UUID,
-      allowNull: true,
-      references: {
-        model: "roles",
-        key: "roleId",
-      },
-    },
   },
   { timestamps: true }
 );

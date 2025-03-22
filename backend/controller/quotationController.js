@@ -190,3 +190,46 @@ exports.exportQuotation = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+exports.cloneQuotation = async (req, res) => {
+  try {
+    const originalQuotation = await Quotation.findByPk(req.params.id);
+    if (!originalQuotation)
+      return res.status(404).json({ message: "Quotation not found" });
+
+    const originalItems = await QuotationItem.findOne({
+      quotationId: req.params.id,
+    });
+
+    // Generate a new unique ID for the cloned quotation
+    const newQuotationId = uuidv4();
+
+    // Create a new quotation with modified details
+    const clonedQuotation = await Quotation.create({
+      quotationId: newQuotationId,
+      quotationTitle: `${originalQuotation.quotationTitle} (Copy)`,
+      date: new Date(), // Set new date for the cloned quotation
+      customerName: originalQuotation.customerName,
+      customerAddress: originalQuotation.customerAddress,
+      // Include other relevant fields
+    });
+
+    // Duplicate items and associate them with the new quotation
+    if (originalItems) {
+      const clonedItems = originalItems.items.map((item) => ({
+        ...item,
+      }));
+
+      await QuotationItem.create({
+        quotationId: newQuotationId,
+        items: clonedItems,
+      });
+    }
+
+    res.status(201).json({
+      message: "Quotation cloned successfully",
+      clonedQuotation,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

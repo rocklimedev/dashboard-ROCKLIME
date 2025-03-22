@@ -1,7 +1,16 @@
-import React, { useState } from "react";
-import { useCreateCustomerMutation } from "../../api/customerApi";
-const AddCustomer = ({ onClose }) => {
-  const [createCustomer, { isLoading, error }] = useCreateCustomerMutation();
+import React, { useState, useEffect } from "react";
+import {
+  useCreateCustomerMutation,
+  useUpdateCustomerMutation,
+} from "../../api/customerApi";
+const AddCustomer = ({ onClose, existingCustomer }) => {
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+
+  const [createCustomer, { isLoading: isCreating, error: createError }] =
+    useCreateCustomerMutation();
+  const [updateCustomer, { isLoading: isEditing, error: editError }] =
+    useUpdateCustomerMutation();
   const [formData, setFormData] = useState({
     name: "",
     companyName: "",
@@ -15,22 +24,50 @@ const AddCustomer = ({ onClose }) => {
     paymentMode: "",
     invoiceStatus: "Draft",
   });
+  useEffect(() => {
+    if (existingCustomer) {
+      setFormData((prevData) => ({
+        ...prevData,
+        ...existingCustomer,
+      }));
+    }
+  }, [existingCustomer]);
+
+  const handleEditCustomer = (customer) => {
+    console.log("Editing customer:", customer); // ✅ Debugging
+    setSelectedCustomer(customer);
+    setShowModal(true);
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prevData) => ({
       ...prevData,
-      [name]: type === "checkbox" ? checked : value,
+      [name]:
+        name === "isVendor"
+          ? value === "true"
+          : type === "checkbox"
+          ? checked
+          : value,
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await createCustomer(formData).unwrap();
-      alert("Customer added successfully!");
+      if (existingCustomer) {
+        await updateCustomer({
+          id: existingCustomer.customerId,
+          ...formData,
+        }).unwrap();
+        alert("Customer updated successfully!");
+      } else {
+        await createCustomer(formData).unwrap();
+        alert("Customer added successfully!");
+      }
+      onClose();
     } catch (err) {
-      console.error("Failed to add customer:", err);
+      console.error("Failed to add/update customer:", err);
     }
   };
 
@@ -39,7 +76,9 @@ const AddCustomer = ({ onClose }) => {
       <div className="modal-dialog modal-dialog-centered">
         <div className="modal-content">
           <div className="modal-header">
-            <h4 className="modal-title">Add Customer</h4>
+            <h4 className="modal-title">
+              {existingCustomer ? "Edit Customer" : "Add Customer"}
+            </h4>
             <button
               type="button"
               className="close"
@@ -214,20 +253,27 @@ const AddCustomer = ({ onClose }) => {
                 type="button"
                 className="btn btn-secondary"
                 data-bs-dismiss="modal"
+                onClick={onClose}
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 className="btn btn-primary"
-                disabled={isLoading}
+                disabled={isCreating || isEditing}
               >
-                {isLoading ? "Adding..." : "Add Customer"}
+                {isCreating || isEditing
+                  ? "Processing..."
+                  : existingCustomer
+                  ? "Update Customer"
+                  : "Add Customer"}
               </button>
             </div>
-            {error && (
+            {(createError || editError) && (
               <p className="text-danger mt-2">
-                {error.data?.message || "Error adding customer"}
+                {createError?.data?.message ||
+                  editError?.data?.message ||
+                  "Error processing request"}
               </p>
             )}
           </form>

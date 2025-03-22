@@ -149,7 +149,7 @@ const QuotationsDetails = () => {
             href="#"
             class="btn btn-secondary d-flex justify-content-center align-items-center border"
           >
-            <i class="ti ti-copy me-2"></i>Clone Invoice
+            <i class="ti ti-copy me-2"></i>Clone Quotation
           </a>
         </div>
       </div>

@@ -13,15 +13,16 @@ const auth = (req, res, next) => {
   const token = authHeader.split(" ")[1];
   console.log("Received Token:", token);
 
-  if (!token) {
-    return res.status(401).json({ error: "Token is missing." });
-  }
-
   try {
-    console.log("JWT Secret:", secret);
-    const decoded = jwt.verify(token, secret);
-    console.log("Decoded Token:", decoded);
+    console.log("Using Secret Key:", process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+    if (!decoded.roleId) {
+      console.log("Role check failed: User or roleId is undefined.");
+      return res.status(403).json({ error: "Unauthorized: Missing roleId." });
+    }
+
+    console.log("Decoded Token:", decoded);
     req.user = decoded;
     next();
   } catch (error) {
@@ -33,11 +34,11 @@ const auth = (req, res, next) => {
 const generateToken = (user) => {
   const payload = {
     userId: user.userId,
-    role: user.role,
+    roleId: user.roleId,
     email: user.email,
     iat: Math.floor(Date.now() / 1000),
   };
-
+  console.log(payload);
   return jwt.sign(payload, secret, { expiresIn: tokenLife });
 };
 module.exports = { auth, generateToken };

@@ -1,87 +1,149 @@
 const Permission = require("../models/permisson");
+const Role = require("../models/roles");
+const RolePermission = require("../models/rolePermission");
 
-// Create a new permission with HTTP methods
-const createPermission = async (req, res) => {
-  const { action, methods } = req.body;
-
-  // Validate methods
-  if (!methods || typeof methods !== "object") {
-    return res.status(400).json({ message: "Methods must be an object" });
-  }
-
+/**
+ * Create a new permission
+ */
+exports.createPermission = async (req, res) => {
   try {
-    const newPermission = await Permission.create({
-      action,
-      methods,
+    const { route, name, module } = req.body;
+
+    // Check if the permission already exists
+    const existingPermission = await Permission.findOne({
+      where: { route, name },
     });
-
-    res.status(201).json(newPermission);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error creating permission" });
-  }
-};
-
-// Get all permissions
-const getAllPermissions = async (req, res) => {
-  try {
-    const permissions = await Permission.findAll();
-    res.status(200).json(permissions);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error retrieving permissions" });
-  }
-};
-
-// Update a permission (methods like POST, GET, PUT, DELETE)
-const updatePermission = async (req, res) => {
-  const { permissionId } = req.params;
-  const { methods } = req.body; // Methods is an object { POST: true, GET: false, etc. }
-
-  if (!methods || typeof methods !== "object") {
-    return res.status(400).json({ message: "Methods must be an object" });
-  }
-
-  try {
-    const permission = await Permission.findByPk(permissionId);
-
-    if (!permission) {
-      return res.status(404).json({ message: "Permission not found" });
+    if (existingPermission) {
+      return res.status(400).json({ message: "Permission already exists." });
     }
 
-    // Update the permission methods
-    permission.methods = methods;
-    await permission.save();
-
-    res.status(200).json(permission);
+    const permission = await Permission.create({ route, name, module });
+    res
+      .status(201)
+      .json({ message: "Permission created successfully.", permission });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error updating permission" });
+    res
+      .status(500)
+      .json({ message: "Error creating permission.", error: error.message });
   }
 };
 
-// Delete a permission
-const deletePermission = async (req, res) => {
-  const { permissionId } = req.params;
-
+/**
+ * Edit a permission
+ */
+exports.editPermission = async (req, res) => {
   try {
-    const permission = await Permission.findByPk(permissionId);
+    const { permissionId } = req.params;
+    const { route, name, module } = req.body;
 
+    const permission = await Permission.findByPk(permissionId);
     if (!permission) {
-      return res.status(404).json({ message: "Permission not found" });
+      return res.status(404).json({ message: "Permission not found." });
+    }
+
+    await permission.update({ route, name, module });
+    res.json({ message: "Permission updated successfully.", permission });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error updating permission.", error: error.message });
+  }
+};
+
+/**
+ * Delete a permission
+ */
+exports.deletePermission = async (req, res) => {
+  try {
+    const { permissionId } = req.params;
+
+    const permission = await Permission.findByPk(permissionId);
+    if (!permission) {
+      return res.status(404).json({ message: "Permission not found." });
     }
 
     await permission.destroy();
-    res.status(200).json({ message: "Permission deleted successfully" });
+    res.json({ message: "Permission deleted successfully." });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error deleting permission" });
+    res
+      .status(500)
+      .json({ message: "Error deleting permission.", error: error.message });
   }
 };
 
-module.exports = {
-  createPermission,
-  getAllPermissions,
-  updatePermission,
-  deletePermission,
+/**
+ * View a specific permission
+ */
+exports.getPermission = async (req, res) => {
+  try {
+    const { permissionId } = req.params;
+
+    const permission = await Permission.findByPk(permissionId);
+    if (!permission) {
+      return res.status(404).json({ message: "Permission not found." });
+    }
+
+    res.json({ permission });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error fetching permission.", error: error.message });
+  }
+};
+
+/**
+ * View all permissions
+ */
+exports.getAllPermissions = async (req, res) => {
+  try {
+    const permissions = await Permission.findAll();
+    res.json({ permissions });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error fetching permissions.", error: error.message });
+  }
+};
+
+/**
+ * Assign permission to a role
+ */
+exports.assignPermissionToRole = async (req, res) => {
+  try {
+    const { roleId, permissionId } = req.body;
+
+    const role = await Role.findByPk(roleId);
+    const permission = await Permission.findByPk(permissionId);
+
+    if (!role) {
+      return res.status(404).json({ message: "Role not found." });
+    }
+    if (!permission) {
+      return res.status(404).json({ message: "Permission not found." });
+    }
+
+    let rolePermission = await RolePermission.findOne({ where: { roleId } });
+
+    if (!rolePermission) {
+      rolePermission = await RolePermission.create({
+        roleId,
+        permissions: [permissionId],
+      });
+    } else {
+      let permissions = rolePermission.permissions;
+      if (!permissions.includes(permissionId)) {
+        permissions.push(permissionId);
+        await rolePermission.update({ permissions });
+      }
+    }
+
+    res.json({
+      message: "Permission assigned to role successfully.",
+      rolePermission,
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error assigning permission.", error: error.message });
+  }
 };

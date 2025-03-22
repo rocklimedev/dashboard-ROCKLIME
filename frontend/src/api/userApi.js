@@ -8,7 +8,6 @@ export const userApi = createApi({
     credentials: "include",
     prepareHeaders: (headers) => {
       const token = localStorage.getItem("token");
-      console.log(token);
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
       }
@@ -50,7 +49,7 @@ export const userApi = createApi({
     }),
     createUser: builder.mutation({
       query: (data) => ({
-        url: "/",
+        url: "/add",
         method: "POST",
         body: data,
       }),

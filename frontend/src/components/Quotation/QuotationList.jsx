@@ -23,21 +23,24 @@ const QuotationList = () => {
   const users = usersData?.users || [];
 
   const [showModal, setShowModal] = useState(false);
-  const [selectedProducts, setSelectedProducts] = useState([]);
+  const [selectedQuotations, setSelectedQuotations] = useState([]);
 
   if (isLoading) return <p>Loading quotations...</p>;
   if (isError) return <p>Error fetching quotations!</p>;
 
   const handleAddQuotation = () => navigate("/quotations/add");
-
+  const handleDeleteClick = (product) => {
+    setSelectedQuotations(product);
+    setShowModal(true);
+  };
   const handleOpenModal = (products) => {
-    setSelectedProducts(products || []);
+    setSelectedQuotations(products || []);
     setShowModal(true);
   };
 
   const handleCloseModal = () => {
     setShowModal(false);
-    setSelectedProducts([]);
+    setSelectedQuotations([]);
   };
 
   // Map Customer ID to Name
@@ -125,6 +128,8 @@ const QuotationList = () => {
                         <td>
                           <Actions
                             viewUrl={`/quotations/${quotation.quotationId}`}
+                            editUrl={`/quotations/${quotation.quotationId}/edit`}
+                            onDelete={() => handleDeleteClick(quotation)}
                           />
                         </td>
                       </tr>
@@ -145,7 +150,7 @@ const QuotationList = () => {
       <QuotationProductModal
         show={showModal}
         onHide={handleCloseModal}
-        products={selectedProducts}
+        products={selectedQuotations}
       />
     </div>
   );

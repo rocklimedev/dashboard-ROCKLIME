@@ -31,7 +31,11 @@ const keys = require("./config/keys");
 // Middleware
 const { port } = keys;
 const corsOptions = {
-  origin: ["http://localhost:3000"], // ✅ Remove trailing slash
+  origin: [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "https://dashboard-rocklime.vercel.app/",
+  ], // ✅ Remove trailing slash
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], // ✅ Allow necessary methods
   allowedHeaders: ["Content-Type", "Authorization"], // ✅ Specify allowed headers
@@ -49,7 +53,7 @@ app.use(
 // Database Setup
 connectMongoDB();
 setupDB();
-//seedPermissions();
+//seedPermissions();0
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);

@@ -9,12 +9,6 @@ const RolePermission = sequelize.define(
       primaryKey: true,
       defaultValue: DataTypes.UUIDV4,
     },
-
-    permissions: {
-      type: DataTypes.JSONB, // Use JSONB for efficient querying if supported by your DB
-      allowNull: false,
-      defaultValue: [], // Default to empty array or any default structure
-    },
   },
   {
     tableName: "rolepermissions",

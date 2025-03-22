@@ -1,5 +1,8 @@
 import React, { useState } from "react";
 import { useCreateBrandMutation } from "../../api/brandsApi";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 const AddBrand = ({ onClose }) => {
   const [createBrand, { isLoading, error }] = useCreateBrandMutation();
   const [formData, setFormData] = useState({
@@ -8,20 +11,29 @@ const AddBrand = ({ onClose }) => {
   });
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     setFormData((prevData) => ({
       ...prevData,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: value,
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.brandName || !formData.brandSlug) {
+      toast.error("Please fill in all fields.");
+      return;
+    }
+
     try {
       await createBrand(formData).unwrap();
-      alert("Brand added successfully!");
+      toast.success("Brand added successfully!", { autoClose: 2000 });
+      setTimeout(() => {
+        onClose(); // Close modal or form after success
+      }, 2000);
     } catch (err) {
       console.error("Failed to add Brand:", err);
+      toast.error(err?.data?.message || "Failed to add brand. Try again.");
     }
   };
 

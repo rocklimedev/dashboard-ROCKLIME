@@ -119,53 +119,7 @@ const AddUser = ({ onClose }) => {
                     <option value="Users">Users</option>
                   </select>
                 </div>
-                <div className="col-lg-6 mb-3">
-                  <label className="form-label">
-                    State<span className="text-danger ms-1">*</span>
-                  </label>
-                  <select
-                    name="state"
-                    className="form-control"
-                    value={formData.state}
-                    onChange={handleChange}
-                    required
-                  >
-                    <option value="">Select</option>
-                    <option value="California">California</option>
-                    <option value="New York">New York</option>
-                    <option value="Texas">Texas</option>
-                  </select>
-                </div>
-                <div className="col-lg-6 mb-3">
-                  <label className="form-label">
-                    Country<span className="text-danger ms-1">*</span>
-                  </label>
-                  <select
-                    name="country"
-                    className="form-control"
-                    value={formData.country}
-                    onChange={handleChange}
-                    required
-                  >
-                    <option value="">Select</option>
-                    <option value="United States">United States</option>
-                    <option value="Canada">Canada</option>
-                    <option value="Germany">Germany</option>
-                  </select>
-                </div>
-                <div className="col-lg-6 mb-3">
-                  <label className="form-label">
-                    Postal Code<span className="text-danger ms-1">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="postalCode"
-                    className="form-control"
-                    value={formData.postalCode}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
+
                 <div className="col-lg-12">
                   <div className="status-toggle modal-status d-flex justify-content-between align-items-center">
                     <span className="status-label">Status</span>

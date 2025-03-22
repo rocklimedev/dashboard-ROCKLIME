@@ -10,8 +10,8 @@ const { ROLES } = require("../config/constant"); // User role constants
 router.post(
   "/add",
   auth,
-  role.check([ROLES.Admin, ROLES.Manager]),
-  checkPermission("write", "/quotations"),
+  // role.check([ROLES.Admin, ROLES.Manager]),
+  // checkPermission("write", "/quotations"),
   quotationController.createQuotation
 );
 
@@ -19,8 +19,8 @@ router.post(
 router.get(
   "/",
   auth,
-  role.check([ROLES.Admin, ROLES.Manager, ROLES.Sales]),
-  checkPermission("view", "/quotations"),
+  // role.check([ROLES.Admin, ROLES.Manager, ROLES.Sales]),
+  //checkPermission("view", "/quotations"),
   quotationController.getAllQuotations
 );
 
@@ -28,8 +28,8 @@ router.get(
 router.get(
   "/:id",
   auth,
-  role.check([ROLES.Admin, ROLES.Accounts, ROLES.SALES]),
-  checkPermission("view", "/quotations/:id"),
+  //role.check([ROLES.Admin, ROLES.Accounts, ROLES.SALES]),
+  //checkPermission("view", "/quotations/:id"),
   quotationController.getQuotationById
 );
 
@@ -37,8 +37,8 @@ router.get(
 router.put(
   "/:id",
   auth,
-  role.check([ROLES.Admin, ROLES.Accounts]),
-  checkPermission("edit", "/quotations/:id"),
+  // role.check([ROLES.Admin, ROLES.Accounts]),
+  //  checkPermission("edit", "/quotations/:id"),
   quotationController.updateQuotation
 );
 
@@ -55,9 +55,9 @@ router.delete(
 router.post(
   "/export/:id",
   auth,
-  role.check([ROLES.Admin, ROLES.Accounts, ROLES.SALES]),
-  checkPermission("export", "/quotations/:id"),
+  //  role.check([ROLES.Admin, ROLES.Accounts, ROLES.SALES]),
+  //  checkPermission("export", "/quotations/:id"),
   quotationController.exportQuotation
 );
-
+router.post("/clone/:id", quotationController.cloneQuotation);
 module.exports = router;

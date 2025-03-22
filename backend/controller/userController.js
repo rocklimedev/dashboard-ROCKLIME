@@ -1,6 +1,6 @@
 const { Op } = require("sequelize");
 const User = require("../models/users");
-
+const Roles = require("../models/roles");
 // Create User
 exports.createUser = async (req, res) => {
   try {
@@ -151,5 +151,57 @@ exports.getUserById = async (req, res) => {
     res.status(200).json({ user });
   } catch (err) {
     res.status(500).json({ message: "Server Error", error: err.message });
+  }
+};
+
+exports.assignRole = async (userId, role) => {
+  try {
+    const user = await User.findOne({ where: { id: userId } });
+
+    if (!user) {
+      return { success: false, message: "User not found" };
+    }
+
+    // Fetch roleId from Roles table
+    const roleData = await Roles.findOne({ where: { roleName: role } });
+
+    if (!roleData) {
+      return { success: false, message: "Invalid role specified" };
+    }
+
+    const roleId = roleData.roleId; // Assign roleId dynamically
+
+    // Check if a SuperAdmin already exists
+    if (role === "SuperAdmin") {
+      const existingSuperAdmin = await User.findOne({
+        where: { roles: { [Op.substring]: "SuperAdmin" } }, // Improved check
+      });
+
+      if (existingSuperAdmin) {
+        return { success: false, message: "A SuperAdmin already exists" };
+      }
+    }
+
+    // Assigning roles
+    let userRoles = user.roles ? user.roles.split(",") : [];
+
+    if (role === "Users") {
+      user.roles = "Users";
+      user.roleId = null;
+      user.status = "inactive";
+    } else {
+      if (!userRoles.includes(role)) {
+        userRoles.push(role);
+      }
+      user.roles = userRoles.join(",");
+      user.roleId = roleId; // Now dynamically assigned from Roles table
+      user.status = "active";
+    }
+
+    await user.save();
+    return { success: true, message: `Role ${role} assigned successfully` };
+  } catch (error) {
+    console.error("Error assigning role:", error);
+    return { success: false, message: "Internal server error" };
   }
 };

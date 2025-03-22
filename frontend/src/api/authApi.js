@@ -38,19 +38,15 @@ export const authApi = createApi({
       invalidatesTags: (result, error) => (result ? ["Auth"] : []),
     }),
     logout: builder.mutation({
-      query: () => {
-        const refreshToken = localStorage.getItem("refreshToken"); // Retrieve the refresh token
-
-        return {
-          url: "/logout",
-          method: "POST",
-          body: { refreshToken }, // Send refresh token in request body
-          headers: {
-            "Content-Type": "application/json",
-          },
-        };
-      },
-      invalidatesTags: ["Auth"], // Ensures logout invalidates cache
+      query: () => ({
+        url: "/logout",
+        method: "POST",
+        credentials: "include", // Ensures cookies are sent
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }),
+      invalidatesTags: ["Auth"],
     }),
 
     forgotPassword: builder.mutation({

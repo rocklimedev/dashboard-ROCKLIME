@@ -67,10 +67,16 @@ exports.login = async (req, res) => {
     console.log("JWT Secret:", process.env.JWT_SECRET);
 
     // Set access token expiration to 7 days
+    const now = Math.floor(Date.now() / 1000); // Current time in seconds
     const accessToken = jwt.sign(
-      { userId: user.userId || user.id, roles: user.roles },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
+      {
+        userId: user.userId,
+        roles: user.roles,
+        roleId: user.roleId,
+        iat: now,
+        exp: now + 7 * 24 * 60 * 60, // 7 days expiration
+      },
+      process.env.JWT_SECRET
     );
 
     console.log("Generated Access Token:", accessToken);
@@ -78,7 +84,11 @@ exports.login = async (req, res) => {
 
     // Refresh token remains 7 days (no change needed)
     const refreshToken = jwt.sign(
-      { userId: user.userId || user.id, roles: user.roles },
+      {
+        userId: user.userId || user.id,
+        roles: user.roles,
+        roleId: user.roleId,
+      },
       process.env.REFRESH_SECRET,
       { expiresIn: "7d" }
     );
@@ -102,18 +112,20 @@ exports.login = async (req, res) => {
 // Logout
 exports.logout = async (req, res) => {
   try {
-    const refreshToken = req.body.refreshToken || req.cookies.refreshToken; // Check body or cookie
-    if (!refreshToken)
-      return res.status(400).json({ message: "Refresh token required" });
+    console.log("Logout request received:");
+    console.log("Cookies:", req.cookies);
+    console.log("Body:", req.body);
 
-    if (!refreshTokens.has(refreshToken)) {
-      return res.status(403).json({ message: "Invalid refresh token" });
-    }
+    // Clear the access token cookie
+    res.clearCookie("accessToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Strict",
+    });
 
-    refreshTokens.delete(refreshToken);
-    res.clearCookie("refreshToken"); // Clear the cookie if using cookies
-    res.status(200).json({ message: "Logged out successfully" });
+    return res.status(200).json({ message: "Logged out successfully" });
   } catch (err) {
+    console.error("Logout error:", err);
     res.status(500).json({ message: "Server Error", error: err.message });
   }
 };
@@ -178,7 +190,7 @@ exports.refreshToken = async (req, res) => {
       if (err) return res.status(403).json({ message: "Invalid token" });
 
       const newAccessToken = jwt.sign(
-        { userId: user.userId, roles: user.roles },
+        { userId: user.userId, roles: user.roles, roleId: user.roleId },
         process.env.JWT_SECRET,
         { expiresIn: "1h" }
       );

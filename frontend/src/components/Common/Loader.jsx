@@ -1,11 +1,13 @@
-import React from 'react'
+import React, { useState, useEffect } from "react";
 
-const Loader = () => {
+const Loader = ({ loading }) => {
   return (
-    <div id="global-loader" >
-    <div class="whirly-loader"> </div>
-</div>
-  )
-}
+    loading && (
+      <div id="global-loader">
+        <div className="whirly-loader"></div>
+      </div>
+    )
+  );
+};
 
-export default Loader
+export default Loader;

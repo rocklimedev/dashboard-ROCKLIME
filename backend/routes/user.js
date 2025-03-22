@@ -18,17 +18,17 @@ router.delete("/:userId", auth, role([ROLES.Admin]), userController.deleteUser);
 router.get(
   "/search",
   auth,
-  role([ROLES.Admin, ROLES.SALES]),
+  //  role([ROLES.Admin, ROLES.SALES]),
   userController.searchUser
 );
 router.get(
   "/:userId",
   auth,
-  role([ROLES.Admin, ROLES.SALES]),
+  // role([ROLES.Admin, ROLES.SALES]),
   userController.getUserById
 );
 
 // ✅ Public Reporting Route (Any Logged-in User)
 router.post("/report/:userId", auth, userController.reportUser);
-
+router.post("/assign-role", userController.assignRole);
 module.exports = router;

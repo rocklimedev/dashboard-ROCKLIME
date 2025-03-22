@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { useCreateKeywordMutation } from "../../api/keywordApi";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const AddKeywordModal = ({ onClose }) => {
   const [createKeyword, { isLoading, error }] = useCreateKeywordMutation();
@@ -10,7 +12,7 @@ const AddKeywordModal = ({ onClose }) => {
 
   // Handle Input Change
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value }); // Fixed
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   // Handle Form Submission
@@ -18,9 +20,11 @@ const AddKeywordModal = ({ onClose }) => {
     e.preventDefault();
     try {
       await createKeyword(formData).unwrap();
+      toast.success("Keyword added successfully! 🎉");
       onClose(); // Close the modal on success
     } catch (err) {
-      console.error("Error creating keyword:", err); // Fixed message
+      toast.error(err?.data?.message || "Failed to add keyword. ❌");
+      console.error("Error creating keyword:", err);
     }
   };
 
@@ -72,7 +76,6 @@ const AddKeywordModal = ({ onClose }) => {
                             />
                           </div>
                         </div>
-
                         {/* Error Message */}
                         {error && (
                           <div className="col-12">

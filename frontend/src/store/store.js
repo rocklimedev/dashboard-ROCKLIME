@@ -15,6 +15,8 @@ import { quotationApi } from "../api/quotationApi";
 import { orderApi } from "../api/orderApi";
 import { cartApi } from "../api/cartApi";
 import { companyApi } from "../api/companyApi";
+import { rolesApi } from "../api/rolesApi";
+import { permissionsApi } from "../api/permissionApi";
 export const store = configureStore({
   reducer: {
     [vendorApi.reducerPath]: vendorApi.reducer,
@@ -33,6 +35,8 @@ export const store = configureStore({
     [orderApi.reducerPath]: orderApi.reducer,
     [cartApi.reducerPath]: cartApi.reducer,
     [companyApi.reducerPath]: companyApi.reducer,
+    [rolesApi.reducerPath]: rolesApi.reducer,
+    [permissionsApi.reducerPath]: permissionsApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -51,7 +55,9 @@ export const store = configureStore({
       quotationApi.middleware,
       orderApi.middleware,
       cartApi.middleware,
-      companyApi.middleware
+      companyApi.middleware,
+      rolesApi.middleware,
+      permissionsApi.middleware
     ),
 });
 

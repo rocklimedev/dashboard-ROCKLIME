@@ -13,6 +13,7 @@ import {
   FaStore,
   FaCartPlus,
   FaUserCircle,
+  FaSignature,
 } from "react-icons/fa";
 import {
   MdCategory,
@@ -20,32 +21,35 @@ import {
   MdOutlinePointOfSale,
   MdSearch,
   MdPointOfSale,
+  MdKey,
+  MdPermIdentity,
 } from "react-icons/md";
 import { useLogoutMutation } from "../../api/authApi"; // Import useLogoutMutation
-
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css"; // Import Toastify CSS
 import { FcSettings } from "react-icons/fc";
 import { BiCommand, BiFullscreen, BiLogOut } from "react-icons/bi";
 import img from "../../assets/img/avatar/avatar-1.jpg";
 import SearchDropdown from "../Search/SearchDropdown";
+import { FaPerson } from "react-icons/fa6";
 const Header = ({ toggleSidebar }) => {
   const navigate = useNavigate();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const { data: user, isLoading, error } = useGetProfileQuery();
-  const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
-  // Only fetch userProfile if `user` exists and has an ID
-  // const { data: userProfile } = useGetUserByIdQuery(user?.userId, {
-  //   skip: !user?.userId, // Skip the query if userId is not available
-  // });
+
   const handleLogout = async () => {
     try {
       await logout().unwrap(); // Call the mutation
       localStorage.removeItem("token"); // Clear token if stored
+      toast.success("Logged out successfully!"); // Show success toast
       navigate("/login"); // Redirect to login page
     } catch (error) {
+      toast.error("Logout failed. Please try again."); // Show error toast
       console.error("Logout failed", error);
     }
   };
+
   const handleSidebarToggle = () => {
     setSidebarOpen(!isSidebarOpen);
     toggleSidebar(!isSidebarOpen);
@@ -150,55 +154,61 @@ const Header = ({ toggleSidebar }) => {
               <div className="row g-2">
                 {[
                   {
-                    link: "category-list.html",
+                    link: "/inventory/categories-keywords",
                     icon: <MdCategory />,
                     text: "Category",
                   },
                   {
-                    link: "add-product.html",
+                    link: "/inventory/categories-keywords",
+                    icon: <MdKey />,
+                    text: "Keyword",
+                  },
+                  {
+                    link: "/inventory/product/add",
                     icon: <FaPlusCircle />,
                     text: "Product",
                   },
                   {
-                    link: "category-list.html",
+                    link: "/pos",
                     icon: <MdOutlineShoppingBag />,
-                    text: "Purchase",
+                    text: "Order",
                   },
                   {
-                    link: "online-orders.html",
+                    link: "/quotations/add",
                     icon: <FaShoppingCart />,
-                    text: "Sale",
-                  },
-                  {
-                    link: "expense-list.html",
-                    icon: <FaClipboardList />,
-                    text: "Expense",
-                  },
-                  {
-                    link: "quotation-list.html",
-                    icon: <FaStore />,
                     text: "Quotation",
                   },
                   {
-                    link: "sales-returns.html",
+                    link: "/customers/list",
                     icon: <FaClipboardList />,
-                    text: "Return",
-                  },
-                  { link: "users.html", icon: <FaUser />, text: "User" },
-                  {
-                    link: "customers.html",
-                    icon: <FaUsers />,
                     text: "Customer",
                   },
+
                   {
-                    link: "suppliers.html",
-                    icon: <FaUser />,
-                    text: "Supplier",
+                    link: "/brands/list",
+                    icon: <FaClipboardList />,
+                    text: "Brand",
                   },
                   {
-                    link: "stock-transfer.html",
-                    icon: <FaTruck />,
-                    text: "Transfer",
+                    link: "/super-admin/users",
+                    icon: <FaUser />,
+                    text: "User",
+                  },
+
+                  {
+                    link: "/vendors/list",
+                    icon: <FaPerson />,
+                    text: "Vendor",
+                  },
+                  {
+                    link: "/signature",
+                    icon: <FaSignature />,
+                    text: "Signature",
+                  },
+                  {
+                    link: "/roles-permissions/list",
+                    icon: <MdPermIdentity />,
+                    text: "Roles",
                   },
                 ].map((item, index) => (
                   <div key={index} className="col-md-2">

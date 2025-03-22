@@ -1,12 +1,32 @@
-import React, { useState } from "react"; // Adjust the import as needed
-import { useCreateCategoryMutation } from "../../api/categoryApi";
-const AddCategoryModal = ({ onClose }) => {
-  const [createCategory, { isLoading, error }] = useCreateCategoryMutation();
+import React, { useState, useEffect } from "react";
+import {
+  useCreateCategoryMutation,
+  useUpdateCategoryMutation,
+} from "../../api/categoryApi";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+const AddCategoryModal = ({ onClose, editMode = false, categoryData = {} }) => {
+  const [createCategory, { isLoading: isCreating, error: createError }] =
+    useCreateCategoryMutation();
+  const [updateCategory, { isLoading: isUpdating, error: updateError }] =
+    useUpdateCategoryMutation();
+
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
-    parentCategory: "None",
+    parentCategory: "0", // Default to 0
   });
+
+  useEffect(() => {
+    if (editMode && categoryData) {
+      setFormData({
+        name: categoryData.name || "",
+        slug: categoryData.slug || "",
+        parentCategory: categoryData.parentCategory || "0",
+      });
+    }
+  }, [editMode, categoryData]);
 
   // Handle Input Change
   const handleChange = (e) => {
@@ -17,10 +37,17 @@ const AddCategoryModal = ({ onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await createCategory(formData).unwrap();
+      if (editMode) {
+        await updateCategory({ id: categoryData.id, ...formData }).unwrap();
+        toast.success("Category updated successfully!");
+      } else {
+        await createCategory(formData).unwrap();
+        toast.success("Category added successfully!");
+      }
       onClose(); // Close the modal on success
     } catch (err) {
-      console.error("Error creating category:", err);
+      console.error("Error handling category:", err);
+      toast.error("Failed to process category.");
     }
   };
 
@@ -29,7 +56,9 @@ const AddCategoryModal = ({ onClose }) => {
       <div className="modal-dialog modal-dialog-centered modal-md">
         <div className="modal-content">
           <div className="modal-header border-0 pb-0">
-            <h4 className="mb-0">Add Category</h4>
+            <h4 className="mb-0">
+              {editMode ? "Edit Category" : "Add Category"}
+            </h4>
             <button type="button" className="close" onClick={onClose}>
               <span>&times;</span>
             </button>
@@ -82,20 +111,18 @@ const AddCategoryModal = ({ onClose }) => {
                               value={formData.parentCategory}
                               onChange={handleChange}
                             >
-                              <option>None</option>
-                              <option>Coupons</option>
-                              <option>News</option>
-                              <option>Plugins</option>
-                              <option>Themes</option>
-                              <option>Tutorial</option>
+                              <option value="1">1</option>
+                              <option value="0">0</option>
                             </select>
                           </div>
                         </div>
                         {/* Error Message */}
-                        {error && (
+                        {(createError || updateError) && (
                           <div className="col-12">
                             <p className="text-danger">
-                              {error?.data?.message || "Failed to add category"}
+                              {createError?.data?.message ||
+                                updateError?.data?.message ||
+                                "Failed to process category"}
                             </p>
                           </div>
                         )}
@@ -117,9 +144,15 @@ const AddCategoryModal = ({ onClose }) => {
               <button
                 type="submit"
                 className="btn btn-primary paid-continue-btn"
-                disabled={isLoading}
+                disabled={isCreating || isUpdating}
               >
-                {isLoading ? "Adding..." : "Add Category"}
+                {isCreating || isUpdating
+                  ? editMode
+                    ? "Updating..."
+                    : "Adding..."
+                  : editMode
+                  ? "Update Category"
+                  : "Add Category"}
               </button>
             </div>
           </form>

@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLoginMutation } from "../../api/authApi";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -13,8 +15,6 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    console.log("Login attempt with:", { email, password });
-
     try {
       const response = await login({ email, password }).unwrap();
 
@@ -24,12 +24,13 @@ const Login = () => {
         sessionStorage.setItem("token", response.accessToken);
       }
 
-      navigate("/");
+      toast.success("Login successful!", { autoClose: 2000 });
+      setTimeout(() => navigate("/"), 2000);
     } catch (err) {
       console.error("Login failed:", err);
+      toast.error(err?.data?.message || "Invalid email or password");
     }
   };
-
   return (
     <div className="main-wrapper">
       <div className="account-content">

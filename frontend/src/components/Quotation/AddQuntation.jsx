@@ -1,12 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { FaArrowLeft } from "react-icons/fa";
-import { useCreateQuotationMutation } from "../../api/quotationApi";
+import {
+  useCreateQuotationMutation,
+  useGetQuotationByIdQuery,
+} from "../../api/quotationApi";
 import { useGetAllProductsQuery } from "../../api/productApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import { PiPlus } from "react-icons/pi";
 import { useGetProfileQuery } from "../../api/userApi";
-
+import { useUpdateQuotationMutation } from "../../api/quotationApi";
+import { useParams } from "react-router-dom";
 const AddQuotation = () => {
+  const { id } = useParams();
+  const isEditMode = Boolean(id);
+  const { data: existingQuotation, isLoading: isFetching } =
+    useGetQuotationByIdQuery(id, { skip: !isEditMode });
   const { data: userData } = useGetProfileQuery();
   const userId = userData?.user?.userId || "nill";
   console.log(userId);
@@ -31,9 +39,21 @@ const AddQuotation = () => {
   });
 
   const [productSearch, setProductSearch] = useState("");
-  const { data: products, isLoading, error } = useGetAllProductsQuery();
-  const [createQuotation] = useCreateQuotationMutation();
+  const { data: products, isLoading } = useGetAllProductsQuery();
+  const [createQuotation, { isLoading: isCreating }] =
+    useCreateQuotationMutation();
+  useEffect(() => {
+    if (existingQuotation) {
+      setFormData((prev) => ({
+        ...prev,
+        ...existingQuotation,
+        createdBy: userId, // Ensure it doesn't override the createdBy field when editing
+      }));
+    }
+  }, [existingQuotation, userId]);
 
+  const [updateQuotation, { isLoading: isUpdating, error }] =
+    useUpdateQuotationMutation();
   // Add product to quotation
   const addProduct = (product) => {
     setFormData((prev) => ({
@@ -117,7 +137,6 @@ const AddQuotation = () => {
       return;
     }
 
-    // Ensure discount, GST, and roundOff are numbers
     const formattedProducts = formData.products.map((product) => ({
       ...product,
       discount: isNaN(product.discount) ? 0 : Number(product.discount),
@@ -137,11 +156,19 @@ const AddQuotation = () => {
     };
 
     try {
-      await createQuotation(formattedFormData).unwrap();
-      alert("Quotation created successfully!");
+      if (isEditMode) {
+        await updateQuotation({
+          id,
+          ...formattedFormData,
+        }).unwrap();
+        alert("Quotation updated successfully!");
+      } else {
+        await createQuotation(formattedFormData).unwrap();
+        alert("Quotation created successfully!");
+      }
     } catch (err) {
-      console.error("Failed to create quotation:", err);
-      alert("Failed to create quotation.");
+      console.error("Failed to process quotation:", err);
+      alert("Failed to process quotation.");
     }
   };
 

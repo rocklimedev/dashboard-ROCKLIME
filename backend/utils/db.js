@@ -26,14 +26,28 @@ const setupDB = async () => {
     // ==============================
 
     // Many-to-Many: Roles & Permissions (via RolePermission)
+
     Role.belongsToMany(Permission, {
       through: RolePermission,
       foreignKey: "roleId",
+      otherKey: "permissionId",
+      as: "permissions",
     });
+
     Permission.belongsToMany(Role, {
       through: RolePermission,
       foreignKey: "permissionId",
+      otherKey: "roleId",
+      as: "roles",
     });
+
+    // Ensure RolePermission tracks its direct role and permission
+    RolePermission.belongsTo(Role, { foreignKey: "roleId" });
+    RolePermission.belongsTo(Permission, { foreignKey: "permissionId" });
+
+    // Optional: If needed for direct queries from Role or Permission
+    Role.hasMany(RolePermission, { foreignKey: "roleId" });
+    Permission.hasMany(RolePermission, { foreignKey: "permissionId" });
 
     // One-to-Many: Role to User
     Role.hasMany(User, { foreignKey: "roleId", as: "Users" });

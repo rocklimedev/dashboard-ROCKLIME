@@ -6,6 +6,10 @@ const {
   updateRolePermissions,
   deleteRole,
   assignPermissionsToRole,
+  assignRole,
+  getRoleById,
+  removePermissionFromRole,
+  getRolePermissions,
 } = require("../controller/roleController");
 
 const { auth } = require("../middleware/auth"); // Authentication middleware
@@ -17,8 +21,8 @@ const { ROLES } = require("../config/constant"); // User role constants
 router.post(
   "/",
   auth,
-  role.check(ROLES.Admin),
-  checkPermission("write", "/roles"),
+  // role.check(ROLES.Admin),
+  // checkPermission("write", "/roles"),
   createRole
 );
 
@@ -26,8 +30,8 @@ router.post(
 router.get(
   "/",
   auth,
-  role.check([ROLES.Admin, ROLES.Accounts]),
-  checkPermission("view", "/roles"),
+  // role.check([ROLES.Admin, ROLES.Accounts]),
+  // checkPermission("view", "/roles"),
   getAllRoles
 );
 
@@ -35,8 +39,8 @@ router.get(
 router.put(
   "/:roleId",
   auth,
-  role.check(ROLES.Admin),
-  checkPermission("edit", "/roles/:roleId"),
+  //  role.check(ROLES.Admin),
+  // checkPermission("edit", "/roles/:roleId"),
   updateRolePermissions
 );
 
@@ -44,18 +48,27 @@ router.put(
 router.delete(
   "/:roleId",
   auth,
-  role.check(ROLES.Admin),
-  checkPermission("delete", "/roles/:roleId"),
+  // role.check(ROLES.Admin),
+  //checkPermission("delete", "/roles/:roleId"),
   deleteRole
 );
 
 // ✅ Assign permissions to a role (Only Admins)
-router.put(
+router.post(
   "/:roleId/permissions",
   auth,
-  role.check(ROLES.Admin),
-  checkPermission("edit", "/roles/:roleId/permissions"),
+  // role.check(ROLES.Admin),
+  // checkPermission("edit", "/roles/:roleId/permissions"),
   assignPermissionsToRole
 );
-
+router.delete(
+  "/:roleId/permissions",
+  auth,
+  // role.check(ROLES.Admin),
+  // checkPermission("delete", "/roles/:roleId/permissions"),
+  removePermissionFromRole
+);
+router.post("/assign-role", assignRole);
+router.get("/:roleId", getRoleById);
+router.get("/:roleId", getRolePermissions);
 module.exports = router;

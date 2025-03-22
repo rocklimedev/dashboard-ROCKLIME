@@ -1,102 +1,111 @@
 import React from "react";
+import { useParams } from "react-router-dom";
 import PageHeader from "../Common/PageHeader";
+import { useGetCustomerByIdQuery } from "../../api/customerApi";
 import FilterInputs from "../Common/FilterInputs";
-
 const CustomerDetails = () => {
-  return (
-    <div class="page-wrapper">
-      <div class="content container-fluid">
-        <PageHeader />
+  const { id } = useParams();
+  const { data, error, isLoading } = useGetCustomerByIdQuery(id);
+  const customer = data?.data;
 
-        <div class="card customer-details-group">
-          <div class="card-body">
-            <div class="row align-items-center">
-              <div class="col-xl-3 col-lg-4 col-md-6 col-12">
-                <div class="customer-details">
-                  <div class="d-flex align-items-center">
-                    <span class="customer-widget-img d-inline-flex">
+  if (isLoading) return <p>Loading customer details...</p>;
+  if (error) return <p>Error fetching customer details.</p>;
+  if (!customer) return <p>No customer data found.</p>;
+
+  return (
+    <div className="page-wrapper">
+      <div className="content container-fluid">
+        <PageHeader title="Customer Details" />
+
+        <div className="card customer-details-group">
+          <div className="card-body">
+            <div className="row align-items-center">
+              <div className="col-xl-3 col-lg-4 col-md-6 col-12">
+                <div className="customer-details">
+                  <div className="d-flex align-items-center">
+                    <span className="customer-widget-img d-inline-flex">
                       <img
-                        class="rounded-circle"
-                        src="assets/img/profiles/avatar-14.jpg"
+                        className="rounded-circle"
+                        src={
+                          customer.profileImage ||
+                          "assets/img/profiles/avatar-placeholder.png"
+                        }
                         alt="profile-img"
                       />
                     </span>
-                    <div class="customer-details-cont">
-                      <h6>John Smith</h6>
-                      <p>Cl-12345</p>
+                    <div className="customer-details-cont">
+                      <h6>{customer.name}</h6>
+                      <p>Customer ID: {customer.id}</p>
                     </div>
                   </div>
                 </div>
               </div>
-              <div class="col-xl-3 col-lg-4 col-md-6 col-12">
-                <div class="customer-details">
-                  <div class="d-flex align-items-center">
-                    <span class="customer-widget-icon d-inline-flex">
-                      <i class="fe fe-mail"></i>
+
+              <div className="col-xl-3 col-lg-4 col-md-6 col-12">
+                <div className="customer-details">
+                  <div className="d-flex align-items-center">
+                    <span className="customer-widget-icon d-inline-flex">
+                      <i className="fe fe-mail"></i>
                     </span>
-                    <div class="customer-details-cont">
+                    <div className="customer-details-cont">
                       <h6>Email Address</h6>
-                      <p>
-                        <a
-                          href="https://kanakku.dreamstechnologies.com/cdn-cgi/l/email-protection"
-                          class="__cf_email__"
-                          data-cfemail="90fafff8fed0f5e8f1fde0fcf5bef3fffd"
-                        >
-                          [email&#160;protected]
-                        </a>
-                      </p>
+                      <p>{customer.email}</p>
                     </div>
                   </div>
                 </div>
               </div>
-              <div class="col-xl-3 col-lg-4 col-md-6 col-12">
-                <div class="customer-details">
-                  <div class="d-flex align-items-center">
-                    <span class="customer-widget-icon d-inline-flex">
-                      <i class="fe fe-phone"></i>
+
+              <div className="col-xl-3 col-lg-4 col-md-6 col-12">
+                <div className="customer-details">
+                  <div className="d-flex align-items-center">
+                    <span className="customer-widget-icon d-inline-flex">
+                      <i className="fe fe-phone"></i>
                     </span>
-                    <div class="customer-details-cont">
+                    <div className="customer-details-cont">
                       <h6>Phone Number</h6>
-                      <p>585-785-4840</p>
+                      <p>{customer.mobileNumber}</p>
                     </div>
                   </div>
                 </div>
               </div>
-              <div class="col-xl-3 col-lg-4 col-md-6 col-12">
-                <div class="customer-details">
-                  <div class="d-flex align-items-center">
-                    <span class="customer-widget-icon d-inline-flex">
-                      <i class="fe fe-airplay"></i>
+
+              <div className="col-xl-3 col-lg-4 col-md-6 col-12">
+                <div className="customer-details">
+                  <div className="d-flex align-items-center">
+                    <span className="customer-widget-icon d-inline-flex">
+                      <i className="fe fe-briefcase"></i>
                     </span>
-                    <div class="customer-details-cont">
+                    <div className="customer-details-cont">
                       <h6>Company Name</h6>
-                      <p>Kanakku Corporation</p>
+                      <p>{customer.company || "N/A"}</p>
                     </div>
                   </div>
                 </div>
               </div>
-              <div class="col-xl-3 col-lg-4 col-md-6 col-12">
-                <div class="customer-details">
-                  <div class="d-flex align-items-center">
-                    <span class="customer-widget-icon d-inline-flex">
-                      <i class="fe fe-globe"></i>
+
+              <div className="col-xl-3 col-lg-4 col-md-6 col-12">
+                <div className="customer-details">
+                  <div className="d-flex align-items-center">
+                    <span className="customer-widget-icon d-inline-flex">
+                      <i className="fe fe-globe"></i>
                     </span>
-                    <div class="customer-details-cont">
+                    <div className="customer-details-cont">
                       <h6>Website</h6>
-                      <p class="customer-mail">www.example.com</p>
+                      <p>{customer.website || "N/A"}</p>
                     </div>
                   </div>
                 </div>
               </div>
-              <div class="col-xl-3 col-lg-4 col-md-6 col-12">
-                <div class="customer-details">
-                  <div class="d-flex align-items-center">
-                    <span class="customer-widget-icon d-inline-flex">
-                      <i class="fe fe-briefcase"></i>
+
+              <div className="col-xl-3 col-lg-4 col-md-6 col-12">
+                <div className="customer-details">
+                  <div className="d-flex align-items-center">
+                    <span className="customer-widget-icon d-inline-flex">
+                      <i className="fe fe-map-pin"></i>
                     </span>
-                    <div class="customer-details-cont">
-                      <h6>Company Address</h6>
-                      <p>4712 Cherry Ridge Drive Rochester, NY 14620.</p>
+                    <div className="customer-details-cont">
+                      <h6>Address</h6>
+                      <p>{customer.address || "No address available"}</p>
                     </div>
                   </div>
                 </div>

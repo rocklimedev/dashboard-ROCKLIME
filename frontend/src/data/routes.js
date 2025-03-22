@@ -132,6 +132,13 @@ const masterRoutes = [
         element: <CustomerList />,
       },
       {
+        path: "/customer/:id",
+        name: "Customer Details",
+        icon: <PiUserListBold />,
+        isSidebarActive: true,
+        element: <CustomerDetails />,
+      },
+      {
         path: "/vendors/list",
         name: "Vendors",
         icon: <MdBrandingWatermark />,
@@ -255,6 +262,7 @@ const masterRoutes = [
         path: "/quotations/:id/edit",
         name: "Edit Quotations",
         icon: <FaRegFile />,
+        element: <AddQuntation />,
         isSidebarActive: true,
       },
     ],
