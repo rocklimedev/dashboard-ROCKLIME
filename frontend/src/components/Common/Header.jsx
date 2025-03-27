@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-
+import logo_small from "../../assets/img/logo-small.png";
+import logo from "../../assets/img/logo.svg";
+import logo_white from "../../assets/img/logo-white.svg";
 import { useGetProfileQuery, useGetUserByIdQuery } from "../../api/userApi";
 import {
   FaSearch,
@@ -28,15 +30,22 @@ import { useLogoutMutation } from "../../api/authApi"; // Import useLogoutMutati
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css"; // Import Toastify CSS
 import { FcSettings } from "react-icons/fc";
-import { BiCommand, BiFullscreen, BiLogOut } from "react-icons/bi";
+import {
+  BiCalculator,
+  BiCommand,
+  BiFullscreen,
+  BiLogOut,
+} from "react-icons/bi";
 import img from "../../assets/img/avatar/avatar-1.jpg";
 import SearchDropdown from "../Search/SearchDropdown";
 import { FaPerson } from "react-icons/fa6";
+import CalculatorModal from "./Calculator";
 const Header = ({ toggleSidebar }) => {
   const navigate = useNavigate();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const { data: user, isLoading, error } = useGetProfileQuery();
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
+  const [showModal, setShowModal] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -59,15 +68,15 @@ const Header = ({ toggleSidebar }) => {
       <div className="main-header">
         {/* Logo Section */}
         <div className="header-left active">
-          <Link to="/" className="logo logo-normal">
-            <img src="/assets/img/logo.svg" alt="Logo" />
-          </Link>
-          <Link to="/" className="logo logo-white">
-            <img src="/assets/img/logo-white.svg" alt="Logo" />
-          </Link>
-          <Link to="/" className="logo-small">
-            <img src="/assets/img/logo-small.png" alt="Logo" />
-          </Link>
+          <a href="/" className="logo logo-normal">
+            <img src={logo} alt="Logo" />
+          </a>
+          <a href="/" className="logo logo-white">
+            <img src={logo_white} alt="Logo" />
+          </a>
+          <a href="/" className="logo-small">
+            <img src={logo_small} alt="Logo" />
+          </a>
         </div>
 
         {/* Mobile Menu Button */}
@@ -236,6 +245,7 @@ const Header = ({ toggleSidebar }) => {
               <FcSettings />
             </a>
           </li>
+
           <li class="nav-item nav-item-box">
             <a href="javascript:void(0);" id="btnFullscreen">
               <BiFullscreen />
@@ -323,6 +333,7 @@ const Header = ({ toggleSidebar }) => {
           </div>
         </div>
       </div>
+      {showModal && <CalculatorModal />}
     </div>
   );
 };

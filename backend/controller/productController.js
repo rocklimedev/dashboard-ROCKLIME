@@ -233,3 +233,94 @@ exports.getHistoryByProductId = async (req, res) => {
     });
   }
 };
+
+// Search products with
+
+exports.searchProducts = async (req, res) => {
+  try {
+    const {
+      query, // General search term (searches across all fields)
+      name,
+      sellingPrice,
+      minSellingPrice,
+      maxSellingPrice,
+      purchasingPrice,
+      minPurchasingPrice,
+      maxPurchasingPrice,
+      companyCode,
+      productCode,
+      brandId,
+      categoryId,
+    } = req.query;
+
+    const filters = {};
+
+    // 🔍 General Search (Search in all relevant fields)
+    if (query) {
+      filters[Op.or] = [
+        { name: { [Op.iLike]: `%${query}%` } },
+        { companyCode: { [Op.iLike]: `%${query}%` } },
+        { productCode: { [Op.iLike]: `%${query}%` } },
+        { brandId: { [Op.eq]: query } },
+        { categoryId: { [Op.eq]: query } },
+      ];
+    }
+
+    // 🔍 Specific Field Search (Only applied if explicitly given)
+    if (name) {
+      filters.name = { [Op.iLike]: `%${name}%` };
+    }
+    if (sellingPrice) {
+      filters.sellingPrice = { [Op.eq]: Number(sellingPrice) };
+    }
+    if (minSellingPrice) {
+      filters.sellingPrice = {
+        ...filters.sellingPrice,
+        [Op.gte]: Number(minSellingPrice),
+      };
+    }
+    if (maxSellingPrice) {
+      filters.sellingPrice = {
+        ...filters.sellingPrice,
+        [Op.lte]: Number(maxSellingPrice),
+      };
+    }
+    if (purchasingPrice) {
+      filters.purchasingPrice = { [Op.eq]: Number(purchasingPrice) };
+    }
+    if (minPurchasingPrice) {
+      filters.purchasingPrice = {
+        ...filters.purchasingPrice,
+        [Op.gte]: Number(minPurchasingPrice),
+      };
+    }
+    if (maxPurchasingPrice) {
+      filters.purchasingPrice = {
+        ...filters.purchasingPrice,
+        [Op.lte]: Number(maxPurchasingPrice),
+      };
+    }
+    if (companyCode) {
+      filters.companyCode = companyCode;
+    }
+    if (productCode) {
+      filters.productCode = productCode;
+    }
+    if (brandId) {
+      filters.brandId = brandId;
+    }
+    if (categoryId) {
+      filters.categoryId = categoryId;
+    }
+
+    console.log("Filters applied:", filters); // Debugging
+
+    const products = await Product.findAll({ where: filters });
+
+    return res.status(200).json(products);
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "Error searching products", error: error.message });
+  }
+};

@@ -4,6 +4,7 @@ import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import { useAddToCartMutation } from "../../api/cartApi";
 import { useGetProfileQuery } from "../../api/userApi"; // Fetch user data
 import DataTablePagination from "../Common/DataTablePagination";
+import pos from "../../assets/img/products/pos-product-01.jpg";
 
 const POSProducts = () => {
   const { data: productsData, error, isLoading } = useGetAllProductsQuery();
@@ -76,10 +77,7 @@ const POSProducts = () => {
               >
                 <div className="product-info card mb-0">
                   <a href="javascript:void(0);" className="pro-img">
-                    <img
-                      src={product.image || "assets/img/default-product.png"}
-                      alt={product.name}
-                    />
+                    <img src={product.image || pos} alt={product.name} />
                     <span
                       onClick={() => handleAddToCart(product)}
                       style={{ cursor: "pointer" }}

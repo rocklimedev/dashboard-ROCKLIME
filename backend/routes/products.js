@@ -65,5 +65,5 @@ router.get(
   // checkPermission("view", "/products/:productId/history"),
   productController.getHistoryByProductId
 );
-
+router.get("/search", productController.searchProducts);
 module.exports = router;

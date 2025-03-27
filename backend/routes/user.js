@@ -13,7 +13,7 @@ router.put("/", auth, userController.updateProfile); // edit logged-in user's pr
 router.get("/", auth, role([ROLES.Admin]), userController.getAllUsers); // View all users
 router.post("/add", auth, role([ROLES.Admin]), userController.createUser); // Add a new user
 router.delete("/:userId", auth, role([ROLES.Admin]), userController.deleteUser); // Delete a user
-
+router.put("/:userId", auth, userController.updateUser);
 // ✅ Admin & Moderator Routes
 router.get(
   "/search",
@@ -30,5 +30,5 @@ router.get(
 
 // ✅ Public Reporting Route (Any Logged-in User)
 router.post("/report/:userId", auth, userController.reportUser);
-router.post("/assign-role", userController.assignRole);
+router.put("/assign-role/:userId", userController.assignRole);
 module.exports = router;

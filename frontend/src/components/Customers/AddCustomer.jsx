@@ -3,14 +3,13 @@ import {
   useCreateCustomerMutation,
   useUpdateCustomerMutation,
 } from "../../api/customerApi";
-const AddCustomer = ({ onClose, existingCustomer }) => {
-  const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [showModal, setShowModal] = useState(false);
 
+const AddCustomer = ({ onClose, existingCustomer }) => {
   const [createCustomer, { isLoading: isCreating, error: createError }] =
     useCreateCustomerMutation();
   const [updateCustomer, { isLoading: isEditing, error: editError }] =
     useUpdateCustomerMutation();
+
   const [formData, setFormData] = useState({
     name: "",
     companyName: "",
@@ -24,31 +23,51 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
     paymentMode: "",
     invoiceStatus: "Draft",
   });
+
+  // Populate formData when existingCustomer is provided
   useEffect(() => {
     if (existingCustomer) {
-      setFormData((prevData) => ({
-        ...prevData,
+      setFormData({
         ...existingCustomer,
-      }));
+        isVendor: existingCustomer.isVendor.toString(), // Ensure select value is a string
+      });
+    } else {
+      setFormData({
+        name: "",
+        companyName: "",
+        email: "",
+        mobileNumber: "",
+        isVendor: "false",
+        totalAmount: "",
+        paidAmount: "",
+        balance: "",
+        dueDate: "",
+        paymentMode: "",
+        invoiceStatus: "Draft",
+      });
     }
   }, [existingCustomer]);
 
-  const handleEditCustomer = (customer) => {
-    console.log("Editing customer:", customer); // ✅ Debugging
-    setSelectedCustomer(customer);
-    setShowModal(true);
+  const formatDate = (date) => {
+    if (!date) return "";
+    return date.split("T")[0]; // Extract only the YYYY-MM-DD part
   };
 
+  useEffect(() => {
+    if (existingCustomer) {
+      setFormData({
+        ...existingCustomer,
+        dueDate: formatDate(existingCustomer.dueDate),
+        isVendor: existingCustomer.isVendor.toString(),
+      });
+    }
+  }, [existingCustomer]);
+
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     setFormData((prevData) => ({
       ...prevData,
-      [name]:
-        name === "isVendor"
-          ? value === "true"
-          : type === "checkbox"
-          ? checked
-          : value,
+      [name]: name === "dueDate" ? formatDate(value) : value,
     }));
   };
 
@@ -59,10 +78,14 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
         await updateCustomer({
           id: existingCustomer.customerId,
           ...formData,
+          isVendor: formData.isVendor === "true",
         }).unwrap();
         alert("Customer updated successfully!");
       } else {
-        await createCustomer(formData).unwrap();
+        await createCustomer({
+          ...formData,
+          isVendor: formData.isVendor === "true",
+        }).unwrap();
         alert("Customer added successfully!");
       }
       onClose();
@@ -79,11 +102,7 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
             <h4 className="modal-title">
               {existingCustomer ? "Edit Customer" : "Add Customer"}
             </h4>
-            <button
-              type="button"
-              className="close"
-              onClick={onClose} // Ensure this calls the prop function
-            >
+            <button type="button" className="close" onClick={onClose}>
               <span>&times;</span>
             </button>
           </div>
@@ -153,8 +172,8 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
                     onChange={handleChange}
                     required
                   >
-                    <option value={true}>Yes</option>
-                    <option value={false}>No</option>
+                    <option value="true">Yes</option>
+                    <option value="false">No</option>
                   </select>
                 </div>
                 <div className="col-lg-6 mb-3">
@@ -208,43 +227,6 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
                     onChange={handleChange}
                     required
                   />
-                </div>
-                <div className="col-lg-6 mb-3">
-                  <label className="form-label">
-                    Payment Mode<span className="text-danger ms-1">*</span>
-                  </label>
-                  <select
-                    name="paymentMode"
-                    className="form-control"
-                    value={formData.paymentMode}
-                    onChange={handleChange}
-                    required
-                  >
-                    <option value="">Select Mode</option>
-                    <option value="Cash">Cash</option>
-                    <option value="Credit Card">Credit Card</option>
-                    <option value="Bank Transfer">Bank Transfer</option>
-                    <option value="UPI">UPI</option>
-                  </select>
-                </div>
-                <div className="col-lg-12 mb-3">
-                  <label className="form-label">
-                    Invoice Status<span className="text-danger ms-1">*</span>
-                  </label>
-                  <select
-                    name="invoiceStatus"
-                    className="form-control"
-                    value={formData.invoiceStatus}
-                    onChange={handleChange}
-                    required
-                  >
-                    <option value="Paid">Paid</option>
-                    <option value="Overdue">Overdue</option>
-                    <option value="Cancelled">Cancelled</option>
-                    <option value="Partially Paid">Partially Paid</option>
-                    <option value="Undue">Undue</option>
-                    <option value="Draft">Draft</option>
-                  </select>
                 </div>
               </div>
             </div>

@@ -7,5 +7,13 @@ const { auth } = require("../middleware/auth");
 router.post("/add", auth, cartController.addToCart);
 router.get("/:userId", cartController.getCart);
 router.post("/remove", cartController.removeFromCart);
+router.get("/:cartId", cartController.getCartById);
+router.post(
+  "/convert-to-cart/:quotationId",
+  cartController.convertQuotationToCart
+);
+router.post("/clear", cartController.clearCart);
 
+// Update cart item
+router.post("/update", cartController.updateCart);
 module.exports = router;

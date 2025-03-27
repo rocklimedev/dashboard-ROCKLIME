@@ -1,18 +1,39 @@
-import React, { useState } from "react";
-import { useCreateUserMutation } from "../../api/userApi";
-const AddUser = ({ onClose }) => {
-  const [createUser, { isLoading, error }] = useCreateUserMutation();
+import React, { useState, useEffect } from "react";
+import {
+  useCreateUserMutation,
+  useUpdateUserMutation,
+  useAssignRoleMutation,
+} from "../../api/userApi";
+import { useGetRolesQuery } from "../../api/rolesApi";
+const AddUser = ({ onClose, userToEdit, isViewMode }) => {
+  const [createUser, { isLoading: isCreating, error: createError }] =
+    useCreateUserMutation();
+  const [updateUser, { isLoading: isUpdating, error: updateError }] =
+    useUpdateUserMutation();
+  const [assignRole] = useAssignRoleMutation();
+
+  const {
+    data: roles,
+    isLoading: isRolesLoading,
+    error: rolesError,
+  } = useGetRolesQuery(); // Fetch roles
+
+  const [isEditMode, setIsEditMode] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     username: "",
     email: "",
     phone: "",
     role: "",
-    state: "",
-    country: "",
-    postalCode: "",
     status: true,
   });
+
+  useEffect(() => {
+    if (userToEdit) {
+      setFormData(userToEdit);
+      setIsEditMode(true); // Enable edit mode
+    }
+  }, [userToEdit]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -25,10 +46,30 @@ const AddUser = ({ onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await createUser(formData).unwrap();
-      alert("user added successfully!");
+      if (userToEdit && isEditMode) {
+        await updateUser({ userId: userToEdit.userId, ...formData }).unwrap();
+        alert("User updated successfully!");
+      } else {
+        await createUser(formData).unwrap();
+        alert("User added successfully!");
+      }
+      onClose();
     } catch (err) {
-      console.error("Failed to add user:", err);
+      console.error("Operation failed:", err);
+    }
+  };
+
+  const handleAssignRole = async () => {
+    if (formData.role && userToEdit) {
+      try {
+        await assignRole({
+          userId: userToEdit.userId,
+          role: formData.role,
+        }).unwrap();
+        alert("Role assigned successfully!");
+      } catch (err) {
+        console.error("Failed to assign role:", err);
+      }
     }
   };
 
@@ -37,9 +78,13 @@ const AddUser = ({ onClose }) => {
       <div className="modal-dialog modal-dialog-centered">
         <div className="modal-content">
           <div className="modal-header">
-            <div className="page-title">
-              <h4>Add user</h4>
-            </div>
+            <h4>
+              {userToEdit
+                ? isViewMode
+                  ? "View User"
+                  : "Edit User"
+                : "Add User"}
+            </h4>
             <button type="button" className="close" onClick={onClose}>
               <span>&times;</span>
             </button>
@@ -47,61 +92,27 @@ const AddUser = ({ onClose }) => {
           <form onSubmit={handleSubmit}>
             <div className="modal-body">
               <div className="row">
+                {["name", "username", "email", "phone"].map((field) => (
+                  <div key={field} className="col-lg-6 mb-3">
+                    <label className="form-label">
+                      {field.charAt(0).toUpperCase() + field.slice(1)}
+                      <span className="text-danger">*</span>
+                    </label>
+                    <input
+                      type={field === "email" ? "email" : "text"}
+                      name={field}
+                      className="form-control"
+                      value={formData[field]}
+                      onChange={handleChange}
+                      required
+                      disabled={isViewMode && !isEditMode}
+                    />
+                  </div>
+                ))}
+
                 <div className="col-lg-6 mb-3">
                   <label className="form-label">
-                    Name<span className="text-danger ms-1">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    className="form-control"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="col-lg-6 mb-3">
-                  <label className="form-label">
-                    Username<span className="text-danger ms-1">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="username"
-                    className="form-control"
-                    value={formData.username}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="col-lg-12 mb-3">
-                  <label className="form-label">
-                    Email<span className="text-danger ms-1">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    className="form-control"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="col-lg-12 mb-3">
-                  <label className="form-label">
-                    Phone<span className="text-danger ms-1">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    className="form-control"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="col-lg-6 mb-3">
-                  <label className="form-label">
-                    Role<span className="text-danger ms-1">*</span>
+                    Role<span className="text-danger">*</span>
                   </label>
                   <select
                     name="role"
@@ -109,54 +120,91 @@ const AddUser = ({ onClose }) => {
                     value={formData.role}
                     onChange={handleChange}
                     required
+                    disabled={(isViewMode && !isEditMode) || isRolesLoading}
                   >
                     <option value="">Select</option>
-                    <option value="Admin">Admin</option>
-                    <option value="Super Admin">Super Admin</option>
-                    <option value="Accounts">Accounts</option>
-                    <option value="Sales">Sales</option>
-                    <option value="Developer">Developer</option>
-                    <option value="Users">Users</option>
+                    {isRolesLoading ? (
+                      <option>Loading roles...</option>
+                    ) : rolesError ? (
+                      <option>Error loading roles</option>
+                    ) : (
+                      roles?.map((role) => (
+                        <option key={role.roleId} value={role.name}>
+                          {role.roleName}
+                        </option>
+                      ))
+                    )}
                   </select>
                 </div>
 
+                {userToEdit && isEditMode && (
+                  <div className="col-lg-12 mt-3">
+                    <button
+                      type="button"
+                      className="btn btn-warning"
+                      onClick={handleAssignRole}
+                    >
+                      Assign Role
+                    </button>
+                  </div>
+                )}
+
                 <div className="col-lg-12">
-                  <div className="status-toggle modal-status d-flex justify-content-between align-items-center">
-                    <span className="status-label">Status</span>
+                  <div className="status-toggle d-flex justify-content-between align-items-center">
+                    <span>Status</span>
                     <input
                       type="checkbox"
                       name="status"
-                      id="user1"
+                      id="userStatus"
                       className="check"
                       checked={formData.status}
                       onChange={handleChange}
+                      disabled={isViewMode && !isEditMode}
                     />
-                    <label htmlFor="user1" className="checktoggle">
-                      {" "}
-                    </label>
+                    <label htmlFor="userStatus" className="checktoggle"></label>
                   </div>
                 </div>
               </div>
             </div>
             <div className="modal-footer">
-              <button
-                type="button"
-                className="btn me-2 btn-secondary fs-13 fw-medium p-2 px-3 shadow-none"
-                data-bs-dismiss="modal"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="btn btn-primary fs-13 fw-medium p-2 px-3"
-                disabled={isLoading}
-              >
-                {isLoading ? "Adding..." : "Add user"}
-              </button>
+              {isViewMode && !isEditMode ? (
+                <button
+                  type="button"
+                  className="btn btn-info"
+                  onClick={() => setIsEditMode(true)}
+                >
+                  Enable Edit Mode
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={onClose}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={isCreating || isUpdating}
+                  >
+                    {userToEdit
+                      ? isUpdating
+                        ? "Updating..."
+                        : "Update User"
+                      : isCreating
+                      ? "Adding..."
+                      : "Add User"}
+                  </button>
+                </>
+              )}
             </div>
-            {error && (
+            {(createError || updateError) && (
               <p className="text-danger mt-2">
-                {error.data?.message || "Error adding user"}
+                {createError?.data?.message ||
+                  updateError?.data?.message ||
+                  "Error processing request"}
               </p>
             )}
           </form>

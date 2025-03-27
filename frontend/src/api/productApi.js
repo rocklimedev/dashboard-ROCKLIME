@@ -77,6 +77,13 @@ export const productApi = createApi({
       query: (productId) => `/${productId}/history`, // Assuming your API follows this route
       providesTags: ["Product"],
     }),
+    searchProducts: builder.query({
+      query: (params) => {
+        const queryString = new URLSearchParams(params).toString(); // Convert params object to query string
+        return `/search?${queryString}`;
+      },
+      providesTags: ["Product"],
+    }),
   }),
 });
 
@@ -89,5 +96,6 @@ export const {
   useAddStockMutation,
   useRemoveStockMutation,
   useGetLowStockProductsQuery,
-  useGetHistoryByProductIdQuery, // ✅ Added hook for fetching history
+  useGetHistoryByProductIdQuery,
+  useSearchProductsQuery, // ✅ Added hook for fetching history
 } = productApi;

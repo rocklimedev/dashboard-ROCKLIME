@@ -54,6 +54,21 @@ export const userApi = createApi({
         body: data,
       }),
     }),
+    updateUser: builder.mutation({
+      query: ({ userId, ...data }) => ({
+        url: `/${userId}`,
+        method: "PUT",
+        body: data, // This sends the updated user details
+      }),
+    }),
+
+    assignRole: builder.mutation({
+      query: ({ userId, role }) => ({
+        url: `/assign-role/${userId}`,
+        method: "PUT",
+        body: { role },
+      }),
+    }),
   }),
 });
 
@@ -66,4 +81,6 @@ export const {
   useDeleteUserMutation,
   useReportUserMutation,
   useCreateUserMutation,
+  useAssignRoleMutation,
+  useUpdateUserMutation,
 } = userApi;

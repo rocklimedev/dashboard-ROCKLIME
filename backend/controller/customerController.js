@@ -1,12 +1,21 @@
-const Customer  = require("../models/customers"); // Import Customer model
+const Customer = require("../models/customers"); // Import the Customer model
 
 // Create a new customer
 exports.createCustomer = async (req, res) => {
   try {
-    const newCustomer = await Customer.create(req.body);
+    const { name, email, phone } = req.body;
+
+    // Basic validation
+    if (!name || !email) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Name and email are required" });
+    }
+
+    const newCustomer = await Customer.create({ name, email, phone });
     res.status(201).json({ success: true, data: newCustomer });
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -24,9 +33,13 @@ exports.getCustomers = async (req, res) => {
 exports.getCustomerById = async (req, res) => {
   try {
     const customer = await Customer.findByPk(req.params.id);
+
     if (!customer) {
-      return res.status(404).json({ success: false, message: "Customer not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Customer not found" });
     }
+
     res.status(200).json({ success: true, data: customer });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -36,24 +49,44 @@ exports.getCustomerById = async (req, res) => {
 // Update customer details
 exports.updateCustomer = async (req, res) => {
   try {
-    const [updated] = await Customer.update(req.body, { where: { customerId: req.params.id } });
-    if (!updated) {
-      return res.status(404).json({ success: false, message: "Customer not found" });
+    const customer = await Customer.findByPk(req.params.id);
+
+    if (!customer) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Customer not found" });
     }
-    res.status(200).json({ success: true, message: "Customer updated successfully" });
+
+    await customer.update(req.body);
+
+    res
+      .status(200)
+      .json({
+        success: true,
+        message: "Customer updated successfully",
+        data: customer,
+      });
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
 // Delete a customer
 exports.deleteCustomer = async (req, res) => {
   try {
-    const deleted = await Customer.destroy({ where: { customerId: req.params.id } });
-    if (!deleted) {
-      return res.status(404).json({ success: false, message: "Customer not found" });
+    const customer = await Customer.findByPk(req.params.id);
+
+    if (!customer) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Customer not found" });
     }
-    res.status(200).json({ success: true, message: "Customer deleted successfully" });
+
+    await customer.destroy();
+
+    res
+      .status(200)
+      .json({ success: true, message: "Customer deleted successfully" });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

@@ -2,12 +2,12 @@ import React, { useState } from "react";
 import PageHeader from "../Common/PageHeader";
 import { useGetAllQuotationsQuery } from "../../api/quotationApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
-import { useGetAllUsersQuery, useGetProfileQuery } from "../../api/userApi";
+import { useGetAllUsersQuery } from "../../api/userApi";
 import { useNavigate } from "react-router-dom";
 import TableHeader from "../Common/TableHeader";
 import Actions from "../Common/Actions";
+import ReactPaginate from "react-paginate";
 import QuotationProductModal from "./QuotationProductModal";
-
 const QuotationList = () => {
   const navigate = useNavigate();
   const {
@@ -24,38 +24,46 @@ const QuotationList = () => {
 
   const [showModal, setShowModal] = useState(false);
   const [selectedQuotations, setSelectedQuotations] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   if (isLoading) return <p>Loading quotations...</p>;
   if (isError) return <p>Error fetching quotations!</p>;
 
   const handleAddQuotation = () => navigate("/quotations/add");
-  const handleDeleteClick = (product) => {
-    setSelectedQuotations(product);
+  const handleDeleteClick = (quotation) => {
+    setSelectedQuotations(quotation);
     setShowModal(true);
   };
   const handleOpenModal = (products) => {
     setSelectedQuotations(products || []);
     setShowModal(true);
   };
-
   const handleCloseModal = () => {
     setShowModal(false);
     setSelectedQuotations([]);
   };
 
-  // Map Customer ID to Name
   const getCustomerName = (customerId) => {
     const customer = customers.find((c) => c.customerId === customerId);
     return customer ? customer.name : "Unknown";
   };
 
-  // Map User ID to Name
   const getUserName = (createdBy) => {
     if (!users || users.length === 0 || !createdBy) return "Unknown";
     const user = users.find(
       (u) => u.userId && u.userId.trim() === createdBy.trim()
     );
     return user ? user.name : "Unknown";
+  };
+
+  // Pagination Logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentQuotations = quotations.slice(indexOfFirstItem, indexOfLastItem);
+
+  const handlePageChange = ({ selected }) => {
+    setCurrentPage(selected + 1);
   };
 
   return (
@@ -67,15 +75,6 @@ const QuotationList = () => {
           onAdd={handleAddQuotation}
         />
         <div className="card">
-          <div className="card-header d-flex align-items-center justify-content-between flex-wrap row-gap-3">
-            <div className="search-set">
-              <div className="search-input">
-                <span className="btn-searchset">
-                  <i className="ti ti-search fs-14 feather-search"></i>
-                </span>
-              </div>
-            </div>
-          </div>
           <div className="card-body p-0">
             <div className="table-responsive">
               <table className="table datatable">
@@ -96,8 +95,8 @@ const QuotationList = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {quotations.length > 0 ? (
-                    quotations.map((quotation) => (
+                  {currentQuotations.length > 0 ? (
+                    currentQuotations.map((quotation) => (
                       <tr key={quotation.quotationId}>
                         <td>{quotation.document_title}</td>
                         <td>
@@ -144,6 +143,26 @@ const QuotationList = () => {
                 </tbody>
               </table>
             </div>
+            {/* Pagination Controls */}
+            <ReactPaginate
+              previousLabel={"Previous"}
+              nextLabel={"Next"}
+              breakLabel={"..."}
+              pageCount={Math.ceil(quotations.length / itemsPerPage)}
+              marginPagesDisplayed={2}
+              pageRangeDisplayed={3}
+              onPageChange={handlePageChange}
+              containerClassName={"pagination justify-content-end mb-0"}
+              pageClassName={"page-item"}
+              pageLinkClassName={"page-link"}
+              previousClassName={"page-item"}
+              previousLinkClassName={"page-link"}
+              nextClassName={"page-item"}
+              nextLinkClassName={"page-link"}
+              breakClassName={"page-item"}
+              breakLinkClassName={"page-link"}
+              activeClassName={"active"}
+            />
           </div>
         </div>
       </div>

@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import PageHeader from "../Common/PageHeader";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import AddCustomer from "./AddCustomer";
 import Actions from "../Common/Actions";
 import DeleteModal from "../Common/DeleteModal";
-
+import { BiEdit, BiTrash } from "react-icons/bi";
 const CustomerList = () => {
   const { data, error, isLoading } = useGetCustomersQuery();
   const customers = data?.data || [];
@@ -24,8 +24,9 @@ const CustomerList = () => {
   };
 
   const handleEditCustomer = (customer) => {
-    setSelectedCustomer(customer);
-    setShowModal(true);
+    setSelectedCustomer({ ...customer }); // Ensure new reference
+    setShowModal(true); // Close the modal first
+    // Open modal after a slight delay
   };
 
   const handleDelete = (customerId) => {
@@ -69,14 +70,30 @@ const CustomerList = () => {
                         <td>{customer.mobileNumber}</td>
                         <td>{customer.companyName}</td>
                         <td>
-                          <Actions
+                          {/* <Actions
                             id={customer.customerId}
                             name={customer.name}
                             viewUrl={`/customer/${customer.customerId}`}
-                            editUrl="#"
                             onEdit={() => handleEditCustomer(customer)}
                             onDelete={() => handleDelete(customer.customerId)}
-                          />
+                          /> */}
+
+                          <div class="edit-delete-action">
+                            <a
+                              class="me-2 p-2"
+                              onClick={() => handleEditCustomer(customer)}
+                            >
+                              <BiEdit />
+                            </a>
+                            <a
+                              data-bs-toggle="modal"
+                              data-bs-target="#delete-modal"
+                              class="p-2"
+                              href="javascript:void(0);"
+                            >
+                              <BiTrash />
+                            </a>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -90,6 +107,7 @@ const CustomerList = () => {
 
       {showModal && (
         <AddCustomer
+          key={selectedCustomer?.customerId || "new"} // Ensures fresh re-render
           onClose={() => setShowModal(false)}
           existingCustomer={selectedCustomer}
         />

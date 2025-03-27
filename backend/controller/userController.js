@@ -1,10 +1,10 @@
 const { Op } = require("sequelize");
 const User = require("../models/users");
 const Roles = require("../models/roles");
-// Create User
+
 exports.createUser = async (req, res) => {
   try {
-    const { username, name, email, password, mobileNumber } = req.body;
+    const { username, name, email, password, mobileNumber, role } = req.body;
 
     // Check if the user already exists
     const existingUser = await User.findOne({
@@ -19,6 +19,15 @@ exports.createUser = async (req, res) => {
         .json({ message: "Username or Email already exists" });
     }
 
+    // Fetch roleId from the Roles table
+    let roleData = await Roles.findOne({ where: { roleName: role } });
+
+    if (!roleData) {
+      return res.status(400).json({ message: "Invalid role specified" });
+    }
+
+    const roleId = roleData.roleId; // Assign roleId dynamically
+
     // Create a new user
     const newUser = await User.create({
       username,
@@ -26,7 +35,8 @@ exports.createUser = async (req, res) => {
       email,
       password, // Make sure to hash the password before storing
       mobileNumber,
-      role,
+      role, // Storing the role name
+      roleId, // Assigning the correct role ID
     });
 
     res
@@ -203,5 +213,80 @@ exports.assignRole = async (userId, role) => {
   } catch (error) {
     console.error("Error assigning role:", error);
     return { success: false, message: "Internal server error" };
+  }
+};
+
+// Update User
+
+exports.updateUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { username, name, email, mobileNumber, role } = req.body;
+
+    // Find the user by ID
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check if username or email is already taken (excluding the current user)
+    const existingUser = await User.findOne({
+      where: {
+        [Op.or]: [{ username }, { email }],
+        userId: { [Op.ne]: userId }, // Ensure correct column name
+      },
+    });
+
+    if (existingUser) {
+      return res
+        .status(400)
+        .json({ message: "Username or Email already exists" });
+    }
+
+    // Update user details
+    user.username = username || user.username;
+    user.name = name || user.name;
+    user.email = email || user.email;
+    user.mobileNumber = mobileNumber || user.mobileNumber;
+
+    // Handle role updates
+    if (role) {
+      const roleData = await Roles.findOne({ where: { roleName: role } });
+      if (!roleData) {
+        return res.status(400).json({ message: "Invalid role specified" });
+      }
+
+      // Prevent multiple SuperAdmins
+      if (role === "SuperAdmin") {
+        const existingSuperAdmin = await User.findOne({
+          where: {
+            roles: { [Op.substring]: "SuperAdmin" },
+            userId: { [Op.ne]: userId },
+          },
+        });
+
+        if (existingSuperAdmin) {
+          return res
+            .status(400)
+            .json({ message: "A SuperAdmin already exists" });
+        }
+      }
+
+      // Ensure user.roles is always treated as a string
+      let userRoles =
+        typeof user.roles === "string" ? user.roles.split(",") : [];
+      if (!userRoles.includes(role)) {
+        userRoles.push(role);
+      }
+      user.roles = userRoles.join(",");
+      user.roleId = roleData.roleId;
+      user.status = role === "Users" ? "inactive" : "active";
+    }
+
+    await user.save();
+    res.status(200).json({ message: "User updated successfully", user });
+  } catch (err) {
+    console.error("Error updating user:", err);
+    res.status(500).json({ message: "Server Error", error: err.message });
   }
 };

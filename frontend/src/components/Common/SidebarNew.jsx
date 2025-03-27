@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import masterRoutes from "../../data/routes";
-
+import logo_small from "../../assets/img/logo-small.png";
+import logo from "../../assets/img/logo.svg";
+import logo_white from "../../assets/img/logo-white.svg";
 const Sidebar = ({ isSidebarOpen }) => {
   const [openMenu, setOpenMenu] = useState(null);
 
@@ -12,14 +14,14 @@ const Sidebar = ({ isSidebarOpen }) => {
   return (
     <div className={`sidebar ${isSidebarOpen ? "active" : ""}`} id="sidebar">
       <div className="sidebar-logo active">
-        <a href="index.html" className="logo logo-normal">
-          <img src="assets/img/logo.svg" alt="Logo" />
+        <a href="/" className="logo logo-normal">
+          <img src={logo} alt="Logo" />
         </a>
-        <a href="index.html" className="logo logo-white">
-          <img src="assets/img/logo-white.svg" alt="Logo" />
+        <a href="/" className="logo logo-white">
+          <img src={logo_white} alt="Logo" />
         </a>
-        <a href="index.html" className="logo-small">
-          <img src="assets/img/logo-small.png" alt="Logo" />
+        <a href="/" className="logo-small">
+          <img src={logo_small} alt="Logo" />
         </a>
         <a id="toggle_btn" href="#">
           <i data-feather="chevrons-left" className="feather-16"></i>

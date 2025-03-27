@@ -1,0 +1,3627 @@
+[
+  {
+    "A": "SHOWER TOILET"
+  },
+  {
+    "B": "NAME",
+    "C": "CODE",
+    "D": "PRICE"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Shower Toilet",
+    "C": "CEAS5006-0000424C0",
+    "D": 472950
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Aerozen Shower Toilet",
+    "C": "CEAS5312-1000402C0",
+    "D": 266800
+  },
+  {
+    "A": "E-BIDET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Pristine E-bidet (w/Deodorizer)",
+    "C": "CEAS7SL1-0100510A0",
+    "D": 54600
+  },
+  {
+    "A": "MANUAL BIDET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Axisse Slim Smart Washer - Euro U Style",
+    "C": "CFB10400-FAST3",
+    "D": 9000
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Axisse Slim Smart Washer - Amer R Style",
+    "C": "CEBFB108",
+    "D": 9000
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Axisse Slim Smart Washer-250mm hse(left)",
+    "C": "CFB10400-ASI2",
+    "D": 8580
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Axisse Slim Smart Washer-250mm hs(right)",
+    "C": "CFB10400-ASI3",
+    "D": 8580
+  },
+  {
+    "A": "TOILETS"
+  },
+  {
+    "A": "BACK TO WALL TOILETS",
+    "B": "ACACIA E BACK TO WALL"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Vortex BTW",
+    "C": "CL3229B-6DACTCB",
+    "D": 36850
+  },
+  {
+    "B": "CrystaSleek Seat & Cover",
+    "C": "CL6151M-6D",
+    "D": 12350
+  },
+  {
+    "B": "UF Seat & Cover",
+    "C": "CL6117M-6D",
+    "D": 9800
+  },
+  {
+    "A": "WALL HUNG TOILETS",
+    "B": "CITY WH TOILET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "CITY 3 / 4.5L Double Vortex WH WT",
+    "C": "CL3119B-6DACTPTY",
+    "D": 28350
+  },
+  {
+    "B": "CrystaSleek Seat & Cover",
+    "C": "CL6151M-6D",
+    "D": 12350
+  },
+  {
+    "B": "City 3 / 4.5 L Conceal Cistern",
+    "C": "CCAS4119-0205010C0",
+    "D": 83600
+  },
+  {
+    "B": "ACACIA SUPASLEEK SQUARE WH TOILET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia SupaSleek Square WH",
+    "C": "CCAS3120-5W20410F0",
+    "D": 36200
+  },
+  {
+    "B": "Acacia SupaSleek Square Seat cover",
+    "C": "CCASC120-U200410F0",
+    "D": 8250
+  },
+  {
+    "B": "ACACIA E WH TOILET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E",
+    "C": "CL3119B-6DACTPT",
+    "D": 27700
+  },
+  {
+    "B": "CrystaSleek Seat & Cover",
+    "C": "CL6151M-6D",
+    "D": 12350
+  },
+  {
+    "B": "UF Seat & Cover",
+    "C": "CL6117M-6D",
+    "D": 9800
+  },
+  {
+    "B": "SIGNATURE WH TOILET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Signature",
+    "C": "CCAS3140-3W20400F0",
+    "D": 23250
+  },
+  {
+    "B": "Signature WH seat cover",
+    "C": "CCASC119-U20U420C0",
+    "D": 9800
+  },
+  {
+    "B": "KASTELLO WH TOILET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Kastello Square toilet_Bowl",
+    "C": "CCAS3131-3W20400F0",
+    "D": 18350
+  },
+  {
+    "B": "Kastello Square WH toilet Seat Cover",
+    "C": "CCASC131-U200410F0",
+    "D": 7500
+  },
+  {
+    "B": "CONCEPT WH TOILET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept",
+    "C": "CCAS3105-4W20410A0",
+    "D": 14750
+  },
+  {
+    "B": "Concept Slim AmorLid S&C",
+    "C": "CCASC105-0200410A0",
+    "D": 5810
+  },
+  {
+    "B": "COMPACT CODIE WH TOILET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Compact Codie toilet_Bowl",
+    "C": "CCAS3207-3W20410F0",
+    "D": 11250
+  },
+  {
+    "B": "Slim S&C",
+    "C": "CCASC128-0200410A0",
+    "D": 2700
+  },
+  {
+    "B": "WINSTON WH TOILET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Winston 3/6lpf Wall Hung Toilet bowl",
+    "C": "CCAS3130-3W20410A0",
+    "D": 9850
+  },
+  {
+    "B": "Seat & Cover",
+    "C": "CF070001-6DF00-N",
+    "D": 3250
+  },
+  {
+    "B": "CADET WH TOILET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Cadet 3/6lpf Wall Hung Toilet Bowl - w/o S&C",
+    "C": "CCAS3128-3W20410A0",
+    "D": 7450
+  },
+  {
+    "B": "Cadet Seat & Cover",
+    "C": "CCASC128-0200410A0",
+    "D": 2700
+  },
+  {
+    "A": "ONE-PIECE TOILETS",
+    "B": "KASTELLO OP TOILET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Kastello One Piece Toilet",
+    "C": "CCAS2025-111A410C0",
+    "D": 81250
+  },
+  {
+    "B": "NEO NOBILE OP TOILET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Neo Nobile",
+    "C": "CCAS2060-5110410F0",
+    "D": 74230
+  },
+  {
+    "B": "Neo Nobile Soft-closing S&C",
+    "C": "CCASC060-U20U410C0",
+    "D": 9950
+  },
+  {
+    "B": "LA MODA OP TOILET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "La Moda",
+    "C": "CCAS2009-1120410F0",
+    "D": 65650
+  },
+  {
+    "B": "Soft-closing S&C",
+    "C": "CCASC630-0200410C0",
+    "D": 5900
+  },
+  {
+    "B": "ACACIA E OP TOILET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E SupaSleek",
+    "C": "CL20075-6DACTCBT",
+    "D": 63650
+  },
+  {
+    "B": "SIGNATURE OP TOILET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Signature One-Piece Toilet",
+    "C": "CCAS1880-111A410F0",
+    "D": 60650
+  },
+  {
+    "B": "MILANO OP TOILET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Milano",
+    "C": "CCAS1860-112A410F0",
+    "D": 42700
+  },
+  {
+    "B": "Milano Soft-closing S&C",
+    "C": "CCASC830-0200410C0",
+    "D": 5450
+  },
+  {
+    "B": "NEO MODERN OP TOILET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Neo Modern",
+    "C": "CCAS2073-1110410F0",
+    "D": 37150
+  },
+  {
+    "B": "Neo Modern Soft Closing S&C",
+    "C": "CCASC630-0200410C0",
+    "D": 5900
+  },
+  {
+    "B": "CADET OP TOILET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Cadet",
+    "C": "CCAS1841-1120410C0",
+    "D": 28800
+  },
+  {
+    "B": "Soft closing S&C",
+    "C": "CCASC791-0200410C0",
+    "D": 2650
+  },
+  {
+    "B": "YOKA OP TOILET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Yoka",
+    "C": "CCAS2090-1120410F0",
+    "D": 26450
+  },
+  {
+    "B": "Soft closing S&C",
+    "C": "CCASC791-0200410C0",
+    "D": 2650
+  },
+  {
+    "B": "FLEXIO OP TOILET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Flexio",
+    "C": "C2530300-1MA21",
+    "D": 20450
+  },
+  {
+    "B": "Flexio Seat & Cover",
+    "C": "CL6104M-6D",
+    "D": 2500
+  },
+  {
+    "B": "Waste Pipe Connector",
+    "C": "M11494",
+    "D": 2410
+  },
+  {
+    "B": "LOVEN OP TOILET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Loven One Piece Toilet",
+    "C": "CCAS1862-1320411A0",
+    "D": 15400
+  },
+  {
+    "A": "CLOSE-COUPLED TOILETS",
+    "B": "ACACIA E CC TOILET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Vortex",
+    "C": "CL23075-6DACTCB",
+    "D": 55900
+  },
+  {
+    "B": "CYGNET CC TOILET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Cygnet Square",
+    "C": "CL23095-6DACTCB",
+    "D": 44200
+  },
+  {
+    "B": "COMPACT CODIE CC TOILET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Compact Codie",
+    "C": "CL24075-6DACTCB",
+    "D": 38600
+  },
+  {
+    "B": "CONCEPT CUBE CC TOILET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Cube",
+    "C": "CL27045-6DACTST",
+    "D": 37250
+  },
+  {
+    "B": "CONCEPT D CC TOILET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept D",
+    "C": "CL27055-6DACTST",
+    "D": 34700
+  },
+  {
+    "B": "TONIC CC TOILET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Tonic New Wave",
+    "C": "CL21030-6DACTST",
+    "D": 34700
+  },
+  {
+    "B": "NEW SIBIA CC TOILET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "New Sibia",
+    "C": "CL27935-6DAWDPT",
+    "D": 32300
+  },
+  {
+    "B": "NEO MODERN CC TOILET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Neo Modern",
+    "C": "CL26305-6DACTST",
+    "D": 30750
+  },
+  {
+    "B": "HALO CC TOILET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Halo",
+    "C": "CL28930-6DAWDST",
+    "D": 25300
+  },
+  {
+    "B": "BECCA CC TOILET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Becca",
+    "C": "CL25915-6DAWDPT",
+    "D": 21450
+  },
+  {
+    "B": "WINSTON CC TOILET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Winston",
+    "C": "CCAS3396-1120410A0",
+    "D": 10400
+  },
+  {
+    "B": "Winston Tank",
+    "C": "CCAS4797-0120410A0",
+    "D": 7750
+  },
+  {
+    "B": "Winston Slow Closing S&C",
+    "C": "CRTS480S-1M",
+    "D": 2400
+  },
+  {
+    "B": "Rubber Gasket",
+    "C": "CC1-CN511P9000A505",
+    "D": 300
+  },
+  {
+    "A": "WASH BASINS"
+  },
+  {
+    "A": "COUNTER TOP"
+  },
+  {
+    "B": "NAME",
+    "C": "CODE",
+    "D": "PRICE"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "(Single Hole) Fecility",
+    "C": "CCASF521-1000410F0",
+    "D": 36200
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Fecility",
+    "C": "CCASF521-1010410F0",
+    "D": 36200
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Neo Nobile",
+    "C": "CCASF507-1010410F0",
+    "D": 17050
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Signature 550 mm",
+    "C": "CCAS0420-1010410F0",
+    "D": 10800
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Sphere",
+    "C": "CL0452I-6DAWDLT",
+    "D": 8150
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Ceros",
+    "C": "CL0477I-6DAWDLU",
+    "D": 6350
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Aqualyn",
+    "C": "CL0476I-6DACTLT",
+    "D": 5850
+  },
+  {
+    "A": "ABOVE COUNTER/VESSEL"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "La Moda Vessel",
+    "C": "CCASF602-1000410F0",
+    "D": 21450
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia SupaSleek Vessel 600mm",
+    "C": "CCASF420-1010411F0",
+    "D": 20350
+  },
+  {
+    "A": "#VALUE!",
+    "B": "KASTELLO 600mm",
+    "C": "CCASF525-1010410F0",
+    "D": 19050
+  },
+  {
+    "A": "#VALUE!",
+    "B": "KASTELLO 600mm Vessel Basin (8” hole)",
+    "C": "CCASF525-1080410F0",
+    "D": 19050
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia Neo Vessel 600mm",
+    "C": "CCAS0620-1010411A0",
+    "D": 18300
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia SupaSleek Vessel 550mm",
+    "C": "CCASF412-1000410F0",
+    "D": 17800
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Signature 550mm Vessel w Deck SH",
+    "C": "CCAS0618-1010410F0",
+    "D": 17150
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Signature 550mm Vessel w Deck (8” hole)",
+    "C": "CCAS0618-1080410F0",
+    "D": 17150
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Signature 550mm Vessel",
+    "C": "CCAS0628-0000410F0",
+    "D": 14600
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia SupaSleek Vessel 420mm",
+    "C": "CCASF411-1000410F0",
+    "D": 14600
+  },
+  {
+    "A": "#VALUE!",
+    "B": "LuXus 600mm",
+    "C": "CCAS0428-1000410F0",
+    "D": 25300
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Neo Modern",
+    "C": "CCASF633-0000410F0",
+    "D": 13700
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Ova Oval",
+    "C": "CCASF608-0000410F0",
+    "D": 13700
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Square Thin 500mm",
+    "C": "CCASF611-0000410F0",
+    "D": 13700
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Mizu (600mm)",
+    "C": "CCASF446-1010410F0",
+    "D": 13350
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Cygnet Vessel 550mm",
+    "C": "CCASF646-0000410F0",
+    "D": 14000
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Milano Vessel 550mm",
+    "C": "CCASF650-1000410F0",
+    "D": 12600
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Round Vessel Basin WT",
+    "C": "CL0509I-6DACTLA",
+    "D": 12200
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Mizu (450mm)",
+    "C": "CCASF445-1010410F0",
+    "D": 11550
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Vallo Above Countertop Basin",
+    "C": "CL0500I-6DACTLA",
+    "D": 10800
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Active",
+    "C": "CL0950I-6DACTLA",
+    "D": 10300
+  },
+  {
+    "A": "#VALUE!",
+    "B": "White Square",
+    "C": "CCASF606-0000410F0",
+    "D": 9800
+  },
+  {
+    "A": "#VALUE!",
+    "B": "White Round",
+    "C": "CCASF605-0000410F0",
+    "D": 9400
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Flexio Vessel 500 mm",
+    "C": "CL0613I1-1MA00",
+    "D": 6750
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept (New Cerla)",
+    "C": "CL0294F1-6DA10",
+    "D": 5100
+  },
+  {
+    "A": "SEMI COUNTER"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia SupaSleek Semi Counter Basin 550mm (3hole)",
+    "C": "CCASF419-1080411F0",
+    "D": 19700
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia SupaSleek Semi Counter Basin 550mm",
+    "C": "CCASF419-1010411F0",
+    "D": 19700
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Neo Nobile",
+    "C": "CCASF316-1010410F0",
+    "D": 19550
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E",
+    "C": "CL0519I-6DACTLS",
+    "D": 12100
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia",
+    "C": "CCASF372-1010410F0",
+    "D": 11450
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Signature 550mm",
+    "C": "CCAS0320-1010410F0",
+    "D": 11450
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Paramount",
+    "C": "CL0518I-6DACTLS",
+    "D": 11200
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Milano",
+    "C": "CCASF301-1010410F0",
+    "D": 9550
+  },
+  {
+    "A": "#VALUE!",
+    "B": "White",
+    "C": "CCASF307-1010410F0",
+    "D": 8500
+  },
+  {
+    "A": "UNDER COUNTER"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Cube",
+    "C": "CL0451I-6DAWDLU",
+    "D": 14500
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Square Thin 600mm",
+    "C": "CCASF513-1000410F0",
+    "D": 13100
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Square Thin 500mm",
+    "C": "CCASF514-1000410F0",
+    "D": 12100
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Studio",
+    "C": "CL0474I-6DACTLU",
+    "D": 8400
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Activa",
+    "C": "CCAS0440-1000410F0",
+    "D": 7600
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Active",
+    "C": "CCAS0426-1000410F0",
+    "D": 7000
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Cadet Under Counter 550mm",
+    "C": "CL2216I1-1MA00",
+    "D": 4450
+  },
+  {
+    "A": "#VALUE!",
+    "B": "OVALYN (19”x16”)",
+    "C": "CL0470I-6DAWDLU",
+    "D": 4450
+  },
+  {
+    "A": "WALL-HUNG"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Town Square",
+    "C": "CCASF479-0040410C0",
+    "D": 21600
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E",
+    "C": "CL0507I-6DACTLWW",
+    "D": 13600
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Cygnet",
+    "C": "CCAS1511-1010410F0",
+    "D": 13100
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept D",
+    "C": "CL0553I-6DACTLW",
+    "D": 10150
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Cube",
+    "C": "CCASF550-1010410F0",
+    "D": 9800
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Active",
+    "C": "CL0955I-6DACTLW",
+    "D": 9400
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Sphere",
+    "C": "CL0552I-6DACTLW",
+    "D": 8650
+  },
+  {
+    "A": "#VALUE!",
+    "B": "New Modern Wall-Hung Basin 55cm wt",
+    "C": "CL0953I-6DACTLW",
+    "D": 8400
+  },
+  {
+    "A": "#VALUE!",
+    "B": "New Codie Square",
+    "C": "CCAS1560-1010410F0",
+    "D": 7750
+  },
+  {
+    "A": "#VALUE!",
+    "B": "New Codie Round",
+    "C": "CCAS1530-1010410F0",
+    "D": 7350
+  },
+  {
+    "A": "#VALUE!",
+    "B": "New Codie 350mm",
+    "C": "CL0945I-6DAWDLW",
+    "D": 5100
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Winston (with Rag Bolt holes)",
+    "C": "CCAS0279-1110410A0",
+    "D": 4450
+  },
+  {
+    "A": "CORNER"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "New Codie",
+    "C": "CCAS0220-1010410F0",
+    "D": 7150
+  },
+  {
+    "A": "FLOOR STANDING"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "LuXus Floor Standing Vessel",
+    "C": "CCASF523-1000410C0",
+    "D": 62250
+  },
+  {
+    "A": "FULL PEDESTAL"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Universal Pedestal",
+    "C": "CL900PI1-1MA00",
+    "D": 2800
+  },
+  {
+    "A": "SEMI-PEDESTAL"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Cygnet Semi-Pedestal",
+    "C": "CCASF712-1000410F0",
+    "D": 5700
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Semi Pedestal",
+    "C": "CL0707S-6DACT",
+    "D": 5450
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Active Semi Pedestal",
+    "C": "CLO755F-6DACT",
+    "D": 5350
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Semi Pedestal",
+    "C": "CLO740S-6DACT",
+    "D": 4900
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Universal Semi Pedestal",
+    "C": "CLO741PI1-1MA00",
+    "D": 2800
+  },
+  {
+    "A": "BATHROOM FITTINGS"
+  },
+  {
+    "A": "BASIN MIXER",
+    "B": "LUXUS"
+  },
+  {
+    "B": "NAME",
+    "C": "CODE",
+    "D": "PRICE"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "LuXus Inwall Vessel Faucet",
+    "C": "FFAS0104-101500BC0",
+    "D": 52450
+  },
+  {
+    "A": "#VALUE!",
+    "B": "LuXus SH Vessel Faucet",
+    "C": "FFAS0102-101500BC0",
+    "D": 47700
+  },
+  {
+    "A": "#VALUE!",
+    "B": "LuXus SH Basin Faucet",
+    "C": "FFAS0101-101500BC0",
+    "D": 41550
+  },
+  {
+    "B": "SIGNATURE"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Signature Wall Mounted With Pop-up Drain",
+    "C": "FFAS1704-1015L0BC0",
+    "D": 24450
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Signature 3-Hole With Pop-up Drain",
+    "C": "FFAS1703-1015L0BC0",
+    "D": 22000
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Signature Single Hole Extended With Pop-up Drain",
+    "C": "FFAS1702-1015L0BC0",
+    "D": 18950
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Signature Single Hole With Pop-up Drain",
+    "C": "FFAS1701-1015L0BC0",
+    "D": 13450
+  },
+  {
+    "B": "CITY"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "CITY Deck Mounted Pull-Out Basin Mixer",
+    "C": "FFAS4801-101500BC0",
+    "D": 19100
+  },
+  {
+    "B": "LA MODA"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Basin Mixer With Pop-up Vessel",
+    "C": "FFAS0802-101500BF0",
+    "D": 23550
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Basin Mixer With Pop-up",
+    "C": "FFAS0801-101500BF0",
+    "D": 18850
+  },
+  {
+    "B": "ACACIA E"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E 3H Dual Control",
+    "C": "FFAS1303-102500BF0",
+    "D": 23250
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E 8\" Spread BasinFaucet_Matte Black",
+    "C": "FFAS1303-101440BF0",
+    "D": 25110
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E 8\" Spread BasinFaucet_Brushed Hard Graphite",
+    "C": "FFAS1303-101AL0BF0",
+    "D": 26740
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E 8\" Spread BasinFaucet",
+    "C": "FFAS1303-101GL0BF0",
+    "D": 26740
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E In-Wall Vessel Mixer_Brushed Hard Graphite",
+    "C": "FFAS1304-101AL0BF0",
+    "D": 23450
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E In-Wall Vessel Mixer",
+    "C": "FFAS1304-101GL0BF0",
+    "D": 23450
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E In-Wall Vessel Mixer_Matte Black",
+    "C": "FFAS1304-101440BF0",
+    "D": 21950
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E In-wall Vessel",
+    "C": "FFAS1304-102500BF0",
+    "D": 20350
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Single Hole Side Lava Faucet_Brushed Hard Graphite",
+    "C": "FFAS1305-101AL0BF0",
+    "D": 15810
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Single Hole Side Lava Faucet",
+    "C": "FFAS1305-101GL0BF0",
+    "D": 15810
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E SH SL vessel mixer-F_Brushed Hard Graphite",
+    "C": "FFAS1302-101AL0BF0",
+    "D": 22400
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E SH SL vessel mixer-F_Cool Sunrise",
+    "C": "FFAS1302-101GL0BF0",
+    "D": 22400
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Single Hole Vessel",
+    "C": "FFAS1302-102500BF0",
+    "D": 19450
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E SH SL basin mixer-C1_Brushed Hard Graphite",
+    "C": "FFAS1301-101AL0BF0",
+    "D": 16650
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E SH SL basin mixer-C1_Matte Black",
+    "C": "FFAS1301-101440BF0",
+    "D": 15650
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E SH SL vessel mixer-F_Matte Black",
+    "C": "FFAS1302-101440BF0",
+    "D": 21050
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E SH SL basin mixer-C1_Cool Sunrise",
+    "C": "FFAS1301-101GL0BF0",
+    "D": 16620
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Basin mono_Matt Black",
+    "C": "FFAS1306-1T1440BF0",
+    "D": 10100
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Single Hole",
+    "C": "FFAS1301-102500BF0",
+    "D": 14450
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Single Hole",
+    "C": "FFAS1305-102500BF0",
+    "D": 13750
+  },
+  {
+    "B": "KASTELLO"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "KASTELLO 3H Basin Mixer With Pop-up Drain",
+    "C": "FFAS1603-101500BF0",
+    "D": 35450
+  },
+  {
+    "A": "#VALUE!",
+    "B": "KASTELLO In-wall Vessel Basin Mixer W/o Pop-up",
+    "C": "FFAS1604-101501BF0",
+    "D": 30200
+  },
+  {
+    "A": "#VALUE!",
+    "B": "KASTELLO Basin Mixer With Pop-up Drain",
+    "C": "FFAS1601-101500BF0",
+    "D": 24600
+  },
+  {
+    "B": "CONCEPT ROUND"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept SH Basin MXR With PUW",
+    "C": "FFAS1401-101500BF0",
+    "D": 9250
+  },
+  {
+    "B": "CONCEPT SQUARE"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Square Single Hole",
+    "C": "FFAS0401-151500BA0",
+    "D": 11500
+  },
+  {
+    "B": "CYGNET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Cygnet Single Hole Extended",
+    "C": "FFAS0303-151500BA0",
+    "D": 17250
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Cygnet Single Hole Lava Faucet",
+    "C": "FFAS0301-151500BA0",
+    "D": 10950
+  },
+  {
+    "B": "MILANO"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Milano Extended Basin Mixer w/o PUW",
+    "C": "FFAS0902-102501BF0",
+    "D": 14850
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Milano In-wall Basin Mixer w/o PUW",
+    "C": "FFAS0904-102501BF0",
+    "D": 14950
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Milano Basin Mixer With PUW",
+    "C": "FFAS0901-102500BF0",
+    "D": 10750
+  },
+  {
+    "B": "NEO MODERN"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Neo Modern Single Hole Extended",
+    "C": "FFAS0703-151500BA0",
+    "D": 10650
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Neo Modern Single Hole Lava Faucet",
+    "C": "FFAS0701-151500BA0",
+    "D": 6150
+  },
+  {
+    "B": "CODIE"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Basin Mixer w/o Pop-up",
+    "C": "FFASB201-101501BF0",
+    "D": 8150
+  },
+  {
+    "B": "SIMPLICITY SQUARE"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Simplicity Square Basin Mixer w/o Pop-up",
+    "C": "FFAST501-151500BF0",
+    "D": 7550
+  },
+  {
+    "B": "SEVA"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Seva Basin Mixer w/o Pop-up Drain",
+    "C": "FFAS6501-102500BF0",
+    "D": 7250
+  },
+  {
+    "A": "NOBILE"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Basin Mixer with Pop Up - Joystick",
+    "C": "FFAS0602-101500BF0",
+    "D": 19900
+  },
+  {
+    "A": "CERAPLAN"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Ceraplan Single Hole Lava Faucet - Long",
+    "C": "FFAS1261-105500BC0",
+    "D": 19350
+  },
+  {
+    "A": "CHI"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "CHI Extended Mono Faucet",
+    "C": "FTP0051",
+    "D": 5700
+  },
+  {
+    "A": "MONO FAUCETS"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Signature Extended w/o Pop-up Drain",
+    "C": "FFAS1707-1015L0BA0",
+    "D": 18150
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Neo Modern",
+    "C": "FFAS0707-101500BF0",
+    "D": 9850
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Square Single Hole",
+    "C": "FFAS0406-151500BA0",
+    "D": 10350
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Signature w/o Pop-up Drain",
+    "C": "FFAS1706-1015L0BA0",
+    "D": 8850
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Cygnet",
+    "C": "FFAS0306-101500BF0",
+    "D": 8100
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Milano",
+    "C": "FFAS0906-102500BF0",
+    "D": 8350
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Codie",
+    "C": "FFASB206-101500BF0",
+    "D": 7590
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E",
+    "C": "FFAS1306-101500BF0",
+    "D": 9350
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Easy Flo Basin Mono",
+    "C": "FFAST823-109500BF0",
+    "D": 7600
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Simplicity Square",
+    "C": "FFAST506-151500BA0",
+    "D": 7400
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Seva Basin Mono w/o Pop-up Drain",
+    "C": "FFAS6506-101500BF0",
+    "D": 7000
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Neo Modern",
+    "C": "FFAS0706-151500BA0",
+    "D": 5590
+  },
+  {
+    "A": "SELF CLOSING MONO FAUCETS"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Cool",
+    "C": "F22400-CHACTN",
+    "D": 19350
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Frost",
+    "C": "FFAS4609-101500BF0",
+    "D": 10350
+  },
+  {
+    "A": "BATH & SHOWER MIXER",
+    "B": "LA MODA"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "La Moda Freestanding",
+    "C": "FFAS0816-602500BF0",
+    "D": 109750
+  },
+  {
+    "A": "#VALUE!",
+    "B": "La Moda Concealed (w/o U-Box)",
+    "C": "FFAS0821-608500BF0",
+    "D": 29850
+  },
+  {
+    "B": "SIGNATURE"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Signature Exposed With Integrated Rain Shower Kit",
+    "C": "FFAS1772-701500BC0",
+    "D": 59050
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Signature Exposed",
+    "C": "FFAS1711-609500BC0",
+    "D": 30950
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Signature Concealed",
+    "C": "FFAS1721-609500BC0",
+    "D": 19250
+  },
+  {
+    "B": "ACACIA E"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E DM",
+    "C": "FFAS1300-601500BF0",
+    "D": 41450
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Exposed",
+    "C": "FFAS1311-602500BF0",
+    "D": 35350
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Concealed BnS Main Mixing Val_Brushed Hard Graphite",
+    "C": "FFAS1321-608AL0BF0",
+    "D": 20990
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Concealed BnS Main Mixing Val_Matte Black",
+    "C": "FFAS1321-608440BF0",
+    "D": 19710
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Concealed BnS Main Mixing Val",
+    "C": "FFAS1321-608GL0BF0",
+    "D": 20950
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Concealed BnS Main Mixing Val_Matte Black",
+    "C": "FFAS1326-7T1440BF0",
+    "D": 15120
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Concealed (w/o U-Box)",
+    "C": "FFAS1321-608500BF0",
+    "D": 18250
+  },
+  {
+    "B": "MILANO"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Milano Exposed",
+    "C": "FFAS0911-602501BF0",
+    "D": 20100
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Milano Concealed",
+    "C": "FFAS0921-609500BF0",
+    "D": 15500
+  },
+  {
+    "B": "KASTELLO"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "KASTELLO Concealed (w/o U-Box)",
+    "C": "FFAS1621-608500ZF0",
+    "D": 27050
+  },
+  {
+    "B": "CONCEPT ROUND"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Exposed",
+    "C": "FFAS1411-601500BF0",
+    "D": 14450
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Concealed",
+    "C": "FFAS1420-609500BF0",
+    "D": 12850
+  },
+  {
+    "B": "CONCEPT SQUARE"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Square Concealed",
+    "C": "FFAS0421-659500BA0",
+    "D": 15150
+  },
+  {
+    "B": "CYGNET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Cygnet Concealed",
+    "C": "FFAS0321-659500BA0",
+    "D": 14650
+  },
+  {
+    "B": "NEO MODERN"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Neo Modern Exposed",
+    "C": "FFAS0711-651500BA0",
+    "D": 10750
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Neo Modern L-Bend Mixer (Chrome)",
+    "C": "FFAS0714-604500BA0",
+    "D": 9300
+  },
+  {
+    "B": "(White)",
+    "C": "FFAS0714-604090BA0",
+    "D": 9300
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Neo Modern Concealed",
+    "C": "FFAS0721-659500BA0",
+    "D": 9290
+  },
+  {
+    "B": "CODIE"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Codie Concealed",
+    "C": "FFASB221-609500BF0",
+    "D": 13300
+  },
+  {
+    "B": "SIMPLICITY SQUARE"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Simplicity Square Concealed",
+    "C": "FFAST521-659500BF0",
+    "D": 10750
+  },
+  {
+    "B": "SEVA"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Seva Exposed (With Shower Kits)",
+    "C": "FFAS6511-601500BF0",
+    "D": 12650
+  },
+  {
+    "A": "SHOWER MIXER"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E-Exposed",
+    "C": "FFAS1312-701500BF0",
+    "D": 28790
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Signature Exposed",
+    "C": "FFAS1712-709500BC0",
+    "D": 18450
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E-Concealed",
+    "C": "FFAS1322-708500BF0",
+    "D": 15380
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Signature Concealed",
+    "C": "FFAS1722-709500BC0",
+    "D": 13530
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Concealed Shower Main Mixing",
+    "C": "FFAS1322-708AL0BF0",
+    "D": 17690
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Concealed Shower Main Mixing",
+    "C": "FFAS1322-708GL0BF0",
+    "D": 17690
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Milano- Concealed",
+    "C": "FFAS0922-709500BF0",
+    "D": 13550
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Seva Exposed",
+    "C": "FFAS6512-701500BF0",
+    "D": 10500
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Round - Concealed",
+    "C": "FFAS1422-709500BF0",
+    "D": 9950
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Seva Concealed",
+    "C": "FFAS6521-609500BF0",
+    "D": 7350
+  },
+  {
+    "A": "UNIVERSAL"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Universal Installation Box",
+    "C": "FFAS0625-000990BF0",
+    "D": 8550
+  },
+  {
+    "A": "SHOWER MONO"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Signature Exposed",
+    "C": "FFAS1726-701500BA0",
+    "D": 7380
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Simplicity Square-Exposed",
+    "C": "FFAST526-701500BF0",
+    "D": 7250
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Neo Modern-Concealed",
+    "C": "FFAS0722-709500BF0",
+    "D": 5690
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Neo Modern-Exposed",
+    "C": "FFAS0726-701500BF0",
+    "D": 5410
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Easy Flo Concealed Shower Mono",
+    "C": "FFAST826-709500BF0",
+    "D": 5050
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Easy Flo Exposed Shower Mono",
+    "C": "FFAST825-709500BF0",
+    "D": 4500
+  },
+  {
+    "A": "BATH SPOUT"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "KASTELLO With Handspray",
+    "C": "FFAS1600-601500BF0",
+    "D": 47800
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Deck mounted B&S Faucet-C_Brushed Hard Graphite",
+    "C": "FFAS1300-601AL0BF0",
+    "D": 47670
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Deck mounted B&S Faucet-Cool Sunrise",
+    "C": "FFAS1300-601GL0BF0",
+    "D": 47670
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Deck mounted B&S Faucet-C_Matte Black",
+    "C": "FFAS1300-601440BF0",
+    "D": 44770
+  },
+  {
+    "A": "#VALUE!",
+    "B": "La Moda",
+    "C": "FFAS9713-001500BF0",
+    "D": 20400
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Onyx",
+    "C": "FF1-CN521X00000460",
+    "D": 6200
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E-Milano",
+    "C": "FFAS9714-000500BF0",
+    "D": 6500
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Rectangle",
+    "C": "FF1-CN521X00000461",
+    "D": 6450
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Minialistic",
+    "C": "FF1-CN521X00000458",
+    "D": 5300
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Cygnet",
+    "C": "FF1-CN521X00000478",
+    "D": 4350
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Simplicity Square Bath Spout Graphite",
+    "C": "103835AL01",
+    "D": 4810
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Simplicity Square Bath Spout",
+    "C": "103835GL01",
+    "D": 4810
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Simplicity Square Bath Spout- Chrome_Matte Black",
+    "C": "FF1-CN521X44000480",
+    "D": 4450
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Simplicity Square",
+    "C": "FF1-CN521X00000480",
+    "D": 4050
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Neo Modern",
+    "C": "FF1-CN521X00000477",
+    "D": 3450
+  },
+  {
+    "A": "FREE STANDING BATH FILLER"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Floor Standing Bath Filler",
+    "C": "FFAS6816-601500BF0",
+    "D": 93000
+  },
+  {
+    "A": "WINSTON FAUCETS"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Winston Exposed B&S Mono (2 ways) (Cross)",
+    "C": "FFAST703-601500BF0",
+    "D": 4600
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Winston Pillar Tap-Cross Handle-Export",
+    "C": "FFAST701-101500BF0",
+    "D": 3700
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Winston Exposed B&S Mono (2 ways) (Lever)",
+    "C": "FFAST603-601500BF0",
+    "D": 4250
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Winston Pillar Tap-Lever Handle-Export",
+    "C": "FFAST601-101500BF0",
+    "D": 3450
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Winston Concealed Shower Mono (Cross)",
+    "C": "FFAST705-709500BF0",
+    "D": 3050
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Winston Concealed Shower Mono (Lever)",
+    "C": "FFAST605-709500BF0",
+    "D": 3050
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Winston Wall Tap (Cross Handle)",
+    "C": "FFAST702-000500BF0",
+    "D": 2400
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Winston Wall Tap (Lever Handle)",
+    "C": "FFAST602-000500BF0",
+    "D": 2290
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Winston Exposed Shower Mono (Cross)",
+    "C": "FFAST704-701500BF0",
+    "D": 2140
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Winston Exposed Shower Mono (Lever)",
+    "C": "FFAST604-701500BF0",
+    "D": 2000
+  },
+  {
+    "A": "HYGIENE SPRAY & ANGLE VALVE"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "DuoSTiX Hygiene Spray (Chrome & Matte Black)",
+    "C": "FFASTS28-000440BF0",
+    "D": 3000
+  },
+  {
+    "A": "#VALUE!",
+    "B": "DuoSTiX Hygiene Spray (Chrome & Glossy White)",
+    "C": "FFASTS28-000090BF0",
+    "D": 3000
+  },
+  {
+    "A": "#VALUE!",
+    "B": "DuoSTiX™ Hygiene Spray",
+    "C": "FFASTS28-000AL0BF0",
+    "D": 3440
+  },
+  {
+    "A": "#VALUE!",
+    "B": "DuoSTiX™ Hygiene Spray",
+    "C": "FFASTS28-000GL0BF0",
+    "D": 3440
+  },
+  {
+    "A": "#VALUE!",
+    "B": "DuoSTiX Hygiene Spray (Glossy White)",
+    "C": "FFASTS28-000091BF0",
+    "D": 2750
+  },
+  {
+    "A": "#VALUE!",
+    "B": "DuoSTiX™ Hygiene Spray_Matte Black",
+    "C": "FFASTS28-000441BF0",
+    "D": 3300
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Jet Washer With 120cm PVC Hose And Holder",
+    "C": "CLTP405-CHZZ",
+    "D": 2300
+  },
+  {
+    "A": "#VALUE!",
+    "B": "STOP VALVE CERAMIC VALVE",
+    "C": "103650AL01",
+    "D": 1700
+  },
+  {
+    "A": "#VALUE!",
+    "B": "STOP VALVE CERAMIC VALVE",
+    "C": "103650GL01",
+    "D": 1700
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Angle Stop",
+    "C": "F54400-CHACT",
+    "D": 900
+  },
+  {
+    "A": "EASYSET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Easy Set exposed bath & shower\r\n3-way rainshower System",
+    "C": "FFAS4956-601500BC0",
+    "D": 86150
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Easy Set exposed bath & shower auto temperature\r\nmixer with integrated rain-shower kit",
+    "C": "FFAS4955-701500BC0",
+    "D": 73850
+  },
+  {
+    "A": "#VALUE!",
+    "B": "EasySET Exposed Auto Temperature Shower_Brushed Hard Graphite",
+    "C": "FFAS4956-601AL0BF0",
+    "D": 94770
+  },
+  {
+    "A": "#VALUE!",
+    "B": "EasySET Exposed Auto Temperature Shower",
+    "C": "FFAS4956-601GL0BF0",
+    "D": 94770
+  },
+  {
+    "A": "#VALUE!",
+    "B": "EasySET  Exposed Shower Auto Temperature",
+    "C": "FFAS4955-701440BF0",
+    "D": 79750
+  },
+  {
+    "A": "#VALUE!",
+    "B": "EasySET Exposed Auto Temperature Shower",
+    "C": "FFAS4956-601440BF0",
+    "D": 93050
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Easy Set exposed bath & shower auto temperature\r\nmixer with shower kit",
+    "C": "FFAS4954-601500BC0",
+    "D": 61550
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Easy Set exposed bath & shower auto\r\ntemperature mixer",
+    "C": "FFAS4954-609500BC0",
+    "D": 55250
+  },
+  {
+    "A": "#VALUE!",
+    "B": "EasySET for Hand Shower_Brushed Hard Graphite",
+    "C": "FFAS0925-709AL0BF0",
+    "D": 17000
+  },
+  {
+    "A": "#VALUE!",
+    "B": "EasySET for Hand Shower",
+    "C": "FFAS0925-709GL0BF0",
+    "D": 17000
+  },
+  {
+    "A": "#VALUE!",
+    "B": "EasySET for Head Shower_Brushed Hard Graphite",
+    "C": "FFAS0926-709AL0BF0",
+    "D": 17000
+  },
+  {
+    "A": "#VALUE!",
+    "B": "EasySET for Head Shower",
+    "C": "FFAS0926-709GL0BF0",
+    "D": 17000
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Conceal Thermostatic Mixer with Trim_Brushed Hard Graphite",
+    "C": "FFAS0930-709AL0BF0",
+    "D": 25800
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Conceal Thermostatic Mixer with Trim",
+    "C": "FFAS0930-709GL0BF0",
+    "D": 25800
+  },
+  {
+    "A": "#VALUE!",
+    "B": "EasySET for Hand Shower_Matt Black",
+    "C": "FFAS0925-709440BF0",
+    "D": 16650
+  },
+  {
+    "A": "#VALUE!",
+    "B": "EasySET for Head Shower_Matt Black",
+    "C": "FFAS0926-709440BF0",
+    "D": 16650
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Conceal Thermostatic Mixer with T_MB",
+    "C": "FFAS0930-709440BF0",
+    "D": 25350
+  },
+  {
+    "A": "#VALUE!",
+    "B": "EasySET for BodySpray_Matte Black",
+    "C": "FFAS0927-709440BF0",
+    "D": 16690
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Conceal Thermostatic Mixer With Trim\r\nThermostats",
+    "C": "FFAS0930-000500BC0",
+    "D": 23450
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Easy Dial For Body Shower",
+    "C": "FFAS0927-709500BC0",
+    "D": 15450
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Easy Dial For Hand Shower",
+    "C": "FFAS0925-709500BC0",
+    "D": 15450
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Easy Dial For Head Shower",
+    "C": "FFAS0926-709500BC0",
+    "D": 15450
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Body Showers with conceal body(G1/2\")",
+    "C": "FFASS054-000AL0BC0",
+    "D": 9900
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Body Showers with conceal body(G1/2\")",
+    "C": "FFASS054-000GL0BC0",
+    "D": 9900
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Body Showers with conceal body(G1/2\")-C_Matte Black",
+    "C": "FFASS054-000440BF0",
+    "D": 9300
+  },
+  {
+    "A": "#VALUE!",
+    "B": "EasySET for Body Shower",
+    "C": "FFAS0927-709AL0BF0",
+    "D": 17000
+  },
+  {
+    "A": "#VALUE!",
+    "B": "EasySET for Body Shower",
+    "C": "FFAS0927-709GL0BF0",
+    "D": 17000
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Body Showers With Conceal Body",
+    "C": "FFASS054-000500BC0",
+    "D": 8610
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Square Wall Outlet With Holder (G1/2\")_Brushed Hard Graphite",
+    "C": "FFAS9143-000AL0BF0",
+    "D": 7250
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Square Wall Outlet With Holder (G1/2\") Cool Sunrise",
+    "C": "FFAS9143-000GL0BF0",
+    "D": 7250
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Square Wall Outlet With Holder (G1/2\") Matt Black",
+    "C": "FFAS9143-000440BF0",
+    "D": 7150
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Wall outlet - (G1/2\")",
+    "C": "FFAS9142-000GL0BF0",
+    "D": 5720
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Wall Outlet With Holder - Square (G1/2”)",
+    "C": "FFAS9143-000500BC0",
+    "D": 7010
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Wall Outlet With Holder - Round (G1/2”)",
+    "C": "FFAS9141-000500BC0",
+    "D": 5160
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Wall Outlet - Square (G1/2”)",
+    "C": "FFAS9142-000500BC0",
+    "D": 3810
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Wall Outlet - Round (G1/2”)",
+    "C": "FFAS9140-000500BC0",
+    "D": 3670
+  },
+  {
+    "A": "SHOWERS & SHOWER SYSTEM"
+  },
+  {
+    "A": "SPECTRA SHOWER HEAD"
+  },
+  {
+    "B": "NAME",
+    "C": "CODE",
+    "D": "PRICE"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Spectra E-Touch",
+    "C": "FFASS057-000500BC0",
+    "D": 19350
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Spectra Touch",
+    "C": "FFASS056-000500BC0",
+    "D": 15500
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Spectra Duo",
+    "C": "FFASS055-000500BC0",
+    "D": 14200
+  },
+  {
+    "A": "RAIN SHOWER - BRASS (SQUARE)"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Square 300x300mm Brass Rain Shower Head",
+    "C": "FFASTS06-006500BF0",
+    "D": 41500
+  },
+  {
+    "A": "#VALUE!",
+    "B": "254mm Square Brass Rain Shower Head",
+    "C": "FFASS038-000500BC0",
+    "D": 28150
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Square 250x250mm Brass Rain Shower Head",
+    "C": "FFASTS05-006500BF0",
+    "D": 26600
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Square 200x200mm Brass Rain Shower Head",
+    "C": "FFASS037-000500BF0",
+    "D": 17700
+  },
+  {
+    "A": "RAIN SHOWER - BRASS (ROUND)"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "12” Round Brass Rain Shower Head With Air-In",
+    "C": "FFASTS04-006500BF0",
+    "D": 35550
+  },
+  {
+    "A": "#VALUE!",
+    "B": "10” Round Brass Rain Shower Head With Air-In",
+    "C": "FFASTS03-006500BF0",
+    "D": 22200
+  },
+  {
+    "A": "#VALUE!",
+    "B": "8” Round Brass Rain Shower Head (w/o sh)",
+    "C": "FFASS035-000500BF0",
+    "D": 13200
+  },
+  {
+    "A": "RAIN SHOWER - STAINLESS STEEL (SQUARE)"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Super Thin 300mm Square Rain Shower Head",
+    "C": "FFASS034-000500BC0",
+    "D": 21700
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Super Thin 250mm Square Rain Shower Head",
+    "C": "FFASS033-000500BC0",
+    "D": 17550
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Super Thin 200mm Square Air-in Rain Shower Head",
+    "C": "FFASS032-006500BC0",
+    "D": 9800
+  },
+  {
+    "A": "RAIN SHOWER - STAINLESS STEEL (ROUND)"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "12” Round Stainless Steel Rain Shower Head",
+    "C": "FFASTS02-006500BF0",
+    "D": 20650
+  },
+  {
+    "A": "#VALUE!",
+    "B": "10” Round Stainless Steel Rain Shower Head",
+    "C": "FFASTS01-006500BF0",
+    "D": 16300
+  },
+  {
+    "A": "#VALUE!",
+    "B": "8” Round Stainless Steel Rain Shower Head",
+    "C": "FFASS029-000500BF0",
+    "D": 8900
+  },
+  {
+    "A": "SHOWER HEAD"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "202mm Rain Shower - Square",
+    "C": "FFASS026-006500BC0",
+    "D": 7100
+  },
+  {
+    "A": "#VALUE!",
+    "B": "EasySet Headshower_Brushed Hard Graphite",
+    "C": "FFASS515-000AL0BF0",
+    "D": 7750
+  },
+  {
+    "A": "#VALUE!",
+    "B": "EasySet Headshower_Matte Black",
+    "C": "FFASS515-000440BF0",
+    "D": 7750
+  },
+  {
+    "A": "#VALUE!",
+    "B": "EasySet Headshower",
+    "C": "FFASS515-000GL0BF0",
+    "D": 7750
+  },
+  {
+    "A": "#VALUE!",
+    "B": "200mm Rain Shower - Round",
+    "C": "FFASS025-006500BC0",
+    "D": 6250
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Shower Head 100mm 5-Function",
+    "C": "F40011-CHADY",
+    "D": 6050
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Idyll In-wall Shower Head With Arm",
+    "C": "FFAS9033-000500BC0",
+    "D": 3550
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Celia In-wall Shower Head With Arm",
+    "C": "FFAS9036-000500BC0",
+    "D": 3350
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Olyos In-wall Shower Head With Arm",
+    "C": "FFAS9031-000500BC0",
+    "D": 2550
+  },
+  {
+    "A": "SHOWER ARMS"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Shower Arm",
+    "C": "FF163505050",
+    "D": 3300
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Wall Mounted Shower Arm-C1_Brushed Hard Graphite",
+    "C": "FFAS9909-000AL0BF0",
+    "D": 4750
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Wall Mounted Shower Arm-C1_Cool Sunrise",
+    "C": "FFAS9909-000GL0BF0",
+    "D": 4750
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Wall Mounted Shower Arm-C1_Matte Black",
+    "C": "FFAS9909-000440BF0",
+    "D": 4450
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Top Installation Shower Arm_Matte Black",
+    "C": "FFAS9908-000440BF0",
+    "D": 3810
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Top Installation Shower Arm",
+    "C": "FFAS9908-000500BC0",
+    "D": 2850
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Top Installation Shower Arm",
+    "C": "FFAS9908-000AL0BF0",
+    "D": 4080
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Top Installation Shower Arm",
+    "C": "FFAS9908-000GL0BF0",
+    "D": 4080
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Shower Arm With Escutcheon - Chrome",
+    "C": "F46022-CHACT",
+    "D": 2140
+  },
+  {
+    "A": "HAND SHOWER"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "3-Function Hand Shower Set With Push Button",
+    "C": "F40017-CHADY",
+    "D": 6950
+  },
+  {
+    "A": "#VALUE!",
+    "B": "RainClick 130 Round 3F Hand Shower_Brushed Hard Graphite",
+    "C": "FFAS9H11-000AL0BF0",
+    "D": 7650
+  },
+  {
+    "A": "#VALUE!",
+    "B": "RainClick 130 Round 3F Hand Shower_Matte Black",
+    "C": "FFAS9H11-000440BF0",
+    "D": 7150
+  },
+  {
+    "A": "#VALUE!",
+    "B": "RainClick 130 Round 3F Hand Shower Cool Sunrise",
+    "C": "FFAS9H11-000GL0BF0",
+    "D": 7650
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Hand Shower",
+    "C": "F46014-CHADYHS",
+    "D": 5000
+  },
+  {
+    "A": "GENIE"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Genie Hand Shower (Steel Grey)",
+    "C": "FFASS505-000440BA0",
+    "D": 3200
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Genie Hand Shower (Petal Pink)",
+    "C": "FFASS505-000560BA0",
+    "D": 3200
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Genie Hand Shower (Aquamarine)",
+    "C": "FFASS505-000600BA0",
+    "D": 3200
+  },
+  {
+    "A": "SLIDE BAR"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Slide Bar With Soap Dish (Brass)",
+    "C": "F40013-CHADY",
+    "D": 9050
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Curved Slide Bar w/o Soap Dish (Brass)",
+    "C": "F40014-CHADY",
+    "D": 7600
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Slide Bar With Soap Dish",
+    "C": "F40015-CHADY",
+    "D": 12250
+  },
+  {
+    "A": "ACACIA E"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Towel Shelf",
+    "C": "FFAS1395-908500BC0",
+    "D": 20550
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Dual Towel Rack",
+    "C": "FFAS1394-908500BC0",
+    "D": 8930
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Soap Dish",
+    "C": "FFAS1382-908500BC0",
+    "D": 2930
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Cup Holder",
+    "C": "FFAS1384-908500BC0",
+    "D": 2930
+  },
+  {
+    "A": "BATHROOM ACCESSORIES"
+  },
+  {
+    "A": "ACACIA E"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Robe Hook",
+    "C": "FFAS1381-908500BC0",
+    "D": 2680
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Robe Hook_Matt Black",
+    "C": "FFAS1381-908440BF0",
+    "D": 2850
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Square Single Tissue Holder",
+    "C": "FFAS0498-908AL0BF0",
+    "D": 6650
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Square Single Tissue Holder",
+    "C": "FFAS0498-908GL0BF0",
+    "D": 6650
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Square Towel Rack",
+    "C": "FFAS0493-908AL0BF0",
+    "D": 6510
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Square Towel Rack",
+    "C": "FFAS0493-908GL0BF0",
+    "D": 6510
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Toilet Brush",
+    "C": "FFAS1386-908500BC0",
+    "D": 6030
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Towel Rack",
+    "C": "FFAS1393-908500BC0",
+    "D": 5900
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Towel Ring",
+    "C": "FFAS1390-908500BC0",
+    "D": 4790
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Tissue Holder_Matt Black",
+    "C": "FFAS1387-908440BF0",
+    "D": 3500
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Tissue Holder",
+    "C": "FFAS1387-908500BC0",
+    "D": 3240
+  },
+  {
+    "A": "CONCEPT ROUND"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Round Double Tissue Holder with Shelf",
+    "C": "FFAS1499-908500BC0",
+    "D": 7750
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Round Single Tissue Holder with Shelf",
+    "C": "FFAS1498-908500BC0",
+    "D": 5800
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Square Towel Shelf",
+    "C": "FFAS0495-908AL0BF0",
+    "D": 20520
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Square Towel Shelf",
+    "C": "FFAS0495-908GL0BF0",
+    "D": 20520
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Round Towel Rack",
+    "C": "FFAS1495-908500BF0",
+    "D": 12000
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia E Towel Rack_Matt Black",
+    "C": "FFAS1393-908440BF0",
+    "D": 6350
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Round Towel Holder 60cm",
+    "C": "FFAS1493-908500BF0",
+    "D": 8500
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Round Glass Shelf With Bar",
+    "C": "FFAS1492-908500BF0",
+    "D": 5800
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Round Double Towel Holder 60cm",
+    "C": "FFAS1494-908500BF0",
+    "D": 5800
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Round Soap Bracket",
+    "C": "FFAS1483-908500BF0",
+    "D": 5550
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Round Brush Holder",
+    "C": "FFAS1486-908500BF0",
+    "D": 5400
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Round Double Grass",
+    "C": "FFAS1485-908500BF0",
+    "D": 4800
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Round Soap Holder",
+    "C": "FFAS1482-908500BF0",
+    "D": 3050
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Round Double Hook",
+    "C": "FFAS1481-908500BF0",
+    "D": 1950
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Round Glass Shelf",
+    "C": "FFAS1491-908500BF0",
+    "D": 4800
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Round Paper Holder (Vertical)",
+    "C": "FFAS1488-908500BF0",
+    "D": 4350
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Round Paper Holder (Horizontal)",
+    "C": "FFAS1487-908500BF0",
+    "D": 3950
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Round Paper Holder",
+    "C": "FFAS1489-908500BF0",
+    "D": 3950
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Round Towel Ring",
+    "C": "FFAS1490-908500BF0",
+    "D": 3350
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Square SingleTissueHolder w/S_MB",
+    "C": "FFAS0498-908440BF0",
+    "D": 6250
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Round Glass Holder",
+    "C": "FFAS1484-908500BF0",
+    "D": 3300
+  },
+  {
+    "A": "CONCEPT SQUARE"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Square Double Tissue Holder with Shelf",
+    "C": "FFAS0499-908500BC0",
+    "D": 8000
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Square Single Tissue Holder with Shelf",
+    "C": "FFAS0498-908500BC0",
+    "D": 6050
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Square Towel Rack",
+    "C": "FFAS0495-908500BF0",
+    "D": 18750
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Square Double Towel Holder 60cm",
+    "C": "FFAS0494-908500BF0",
+    "D": 8900
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Square Brush Holder",
+    "C": "FFAS0486-908500BF0",
+    "D": 6850
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Square Double Glass Holder",
+    "C": "FFAS0485-908500BF0",
+    "D": 6600
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Square Glass Shelf With Bar",
+    "C": "FFAS0492-908500BF0",
+    "D": 6050
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Square Single Towel Holder 60cm",
+    "C": "FFAS0493-908500BF0",
+    "D": 5950
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Square Soap Bracket",
+    "C": "FFAS0483-908500BF0",
+    "D": 5550
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Square Glass Shelf",
+    "C": "FFAS0491-908500BF0",
+    "D": 5000
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Square Glass Holder",
+    "C": "FFAS0484-908500BF0",
+    "D": 4950
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Square Paper Holder",
+    "C": "FFAS0489-908500BF0",
+    "D": 4850
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Square Paper Holder (Vertical)",
+    "C": "FFAS0488-908500BF0",
+    "D": 4750
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Square Soap Holder",
+    "C": "FFAS0482-908500BF0",
+    "D": 4500
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Square Towel Ring",
+    "C": "FFAS0490-908500BF0",
+    "D": 4350
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Square Paper Holder (Horizontal)",
+    "C": "FFAS0487-908500BF0",
+    "D": 4350
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Square Robe Hook",
+    "C": "FFAS0481-908AL0BF0",
+    "D": 3220
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Square Robe Hook",
+    "C": "FFAS0481-908GL0BF0",
+    "D": 3220
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Square Double Hook",
+    "C": "FFAS0481-908500BF0",
+    "D": 2950
+  },
+  {
+    "A": "HERITAGE"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Heritage Towel Shelf",
+    "C": "FFAS0295-908500BC0",
+    "D": 15500
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Heritage Dual Towel Rack",
+    "C": "FFAS0294-908500BC0",
+    "D": 10600
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Heritage Towel Rack",
+    "C": "FFAS0293-908500BC0",
+    "D": 6450
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Heritage Tissue Holder",
+    "C": "FFAS0287-908500BC0",
+    "D": 6450
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Heritage Toilet Brush",
+    "C": "FFAS0286-908500BC0",
+    "D": 6050
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Heritage Soap Dish",
+    "C": "FFAS0282-908500BC0",
+    "D": 4250
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Heritage Cup Holder",
+    "C": "FFAS0284-908500BC0",
+    "D": 4250
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Heritage Towel Ring",
+    "C": "FFAS0290-908500BC0",
+    "D": 3400
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Heritage Robe Hook",
+    "C": "FFAS0281-908500BC0",
+    "D": 2250
+  },
+  {
+    "A": "SEVA"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Seva Towel Shelf(Round)",
+    "C": "FFAS6589-908500BF0",
+    "D": 7650
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Seva Towel Holder",
+    "C": "FFAS6588-908500BF0",
+    "D": 2800
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Seva Towel Ring",
+    "C": "FFAS6590-908500BF0",
+    "D": 2800
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Seva Glass Holder",
+    "C": "FFAS6583-908500BF0",
+    "D": 2250
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Seva Robe Hook",
+    "C": "FFAS6581-908500BF0",
+    "D": 1650
+  },
+  {
+    "A": "SIMPLE"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Seva Towel Shelf",
+    "C": "FFAS6587-908500BF0",
+    "D": 6350
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Simple Tissue Holder",
+    "C": "FFAS6586-908500BF0",
+    "D": 2750
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Simple Soap Dish",
+    "C": "FFAS6582-908500BF0",
+    "D": 2150
+  },
+  {
+    "A": "WASTE & OVERFLOW"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Brass Floor Drain 10X10 cm",
+    "C": "F78205-CHADY",
+    "D": 2850
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Waste & Over\u001fow For Lavatory - Chrome",
+    "C": "F78007-CHADY",
+    "D": 2140
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Waste & Over\u001fow For Lavatory",
+    "C": "F78006-CHADYN",
+    "D": 1950
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Floordrain With Cover Plate-Stainless",
+    "C": "F78200-CHADYN",
+    "D": 1100
+  },
+  {
+    "A": "#VALUE!",
+    "B": "FLOORDRAIN - STAINLESS",
+    "C": "F78201-CHADYN",
+    "D": 1030
+  },
+  {
+    "A": "SENSOR FAUCET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Line-sensor Technology Square Extend",
+    "C": "FFAS8510-D00500BF0",
+    "D": 45600
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Line- sensor Technology Sensor Faucet - AC",
+    "C": "FFAS8506-A00500BF0",
+    "D": 34750
+  },
+  {
+    "A": "PRO & COMMERCIAL"
+  },
+  {
+    "A": "SENSOR FAUCET"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Line-sensor Technology Extend",
+    "C": "FFAS8507-D00500BC0",
+    "D": 41550
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Line-sensor Technology In Wall Square",
+    "C": "FFAS8511-D00500BF0",
+    "D": 41850
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Line- sensor Technology Square Extended",
+    "C": "FFAS8510-A00500BC0",
+    "D": 41750
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Line- sensor Technology Sensor Extended",
+    "C": "FFAS8507-A00500BC0",
+    "D": 41350
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Line-sensor Technology In Wall",
+    "C": "FFAS8508-D00500BF0",
+    "D": 41100
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Line- sensor Technology Sensor In-Wall",
+    "C": "FFAS8508-A00500BC0",
+    "D": 38500
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Line-sensor Technology Square",
+    "C": "FFAS8509-D00500BF0",
+    "D": 38000
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Line- sensor Technology In-Wall",
+    "C": "FFAS8511-A00500BC0",
+    "D": 38000
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Line-sensor Technology",
+    "C": "FFAS8506-D00500BF0",
+    "D": 37350
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Line- sensor Technology Square",
+    "C": "FFAS8509-A00500BC0",
+    "D": 35400
+  },
+  {
+    "A": "#VALUE!",
+    "B": "SENSEFLOW SENSOR FAUCET (AC)",
+    "C": "FFAS8611-000500BF0",
+    "D": 33450
+  },
+  {
+    "A": "#VALUE!",
+    "B": "SENSEFLOW SENSOR FAUCET (DC)",
+    "C": "FFAS8601-000500BF0",
+    "D": 30900
+  },
+  {
+    "A": "URINALS"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Lynbrook FSD Intergrated Urinal - AC",
+    "C": "CCAS6606-312A410F0",
+    "D": 99800
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Lynbrook FSD Intergrated Urinal - DC",
+    "C": "CCAS6606-311A410F0",
+    "D": 98550
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept 1.9 L Urinal",
+    "C": "CCAS6507-3100410C0",
+    "D": 87300
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Integrated Sensor Urinal",
+    "C": "CCAS6506-4110410F0",
+    "D": 68600
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Lynbrook Int WH Urinal_0.5L_AC",
+    "C": "CCAS6519-3120410F0",
+    "D": 54900
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Lynbrook Int WH Urinal_0.5L_DC",
+    "C": "CCAS6519-3110410F0",
+    "D": 53650
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Lynbrook 0.9L Water-saving Floor Standing",
+    "C": "CCAS6605-3200420F0",
+    "D": 43650
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Lynbrook 0.9L Water-saving Floor Standing",
+    "C": "CCAS6605-3100420F0",
+    "D": 41900
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Lynbrook 0.5L Water-saving Wall-hung Urinal",
+    "C": "CCAS6509-3100410C0",
+    "D": 32450
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Washbrook Pro (With Back Inlet Only)",
+    "C": "CCAS6591-3100410C0",
+    "D": 28200
+  },
+  {
+    "B": "Washbrook Pro Water-saving (Top Inlet)",
+    "C": "CCAS6591-3200410C0",
+    "D": 25350
+  },
+  {
+    "A": "#VALUE!",
+    "B": "New Contour Urinal Back Inlet 1.9LPF",
+    "C": "CCAS6737-3100410F0",
+    "D": 26050
+  },
+  {
+    "B": "New Contour Urinal Top Inlet 1.9LPF",
+    "C": "CCAS6737-3200410F0",
+    "D": 26050
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Neo Modern 0.9L Water-saving Urinal",
+    "C": "CCAS6747-3100410C1",
+    "D": 24950
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Flexbrook Urinal 0.5 litres",
+    "C": "CCAS6510-3200410C0",
+    "D": 24950
+  },
+  {
+    "B": "Flexbrook Urinal 0.5 litres",
+    "C": "CCAS6510-3100410C0",
+    "D": 23700
+  },
+  {
+    "A": "#VALUE!",
+    "B": "AS Mini Washbrook Top Inlet Urinal",
+    "C": "CCAS6401-3200410F0",
+    "D": 22100
+  },
+  {
+    "A": "#VALUE!",
+    "B": "AS Mini Washbrook Back Inlet Urinal",
+    "C": "CCAS6401-3100410F0",
+    "D": 22100
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Active Wall-Hung Urinal(Top inlet)",
+    "C": "CCAS6728-3200410F0",
+    "D": 18690
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Active Wall-Hung Urinal (Back Inlet)",
+    "C": "CCAS6728-3100410F0",
+    "D": 20550
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Penta Urinal",
+    "C": "CL6734U-6DACTUS",
+    "D": 18700
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Wall Urinal",
+    "C": "CL0412U-6DACTUS",
+    "D": 7750
+  },
+  {
+    "A": "URINAL SENSOR"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Sense Flow Concealed Urinal Sensor AC",
+    "C": "FFAS8614-000500BF0",
+    "D": 30750
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Sense Flow Exposed Urinal Sensor DC",
+    "C": "FFAS8609-000500BF0",
+    "D": 27000
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Sense Flow Concealed Urinal Sensor DC",
+    "C": "FFAS8604-000500BF0",
+    "D": 27000
+  },
+  {
+    "A": "TOILET SENSOR"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concealed Sensor Toilet Flush Valve - DC",
+    "C": "FFAS8603-000500BF0",
+    "D": 44700
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Sense ow Concealed SensorToilet FV,(AC)",
+    "C": "FFAS8613-000500BF0",
+    "D": 47150
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Sense ow II Concealed Sensor Toilet FV",
+    "C": "FFAS8703-000500BC0",
+    "D": 49100
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Sense ow II Concealed Sensor Toilet FV (AC)",
+    "C": "FFAS8713-000500BC0",
+    "D": 51700
+  },
+  {
+    "A": "CISTERN & FLUSH PLATES"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Adroit Flushing System (K303)",
+    "C": "FK303D01-AASI1",
+    "D": 6100
+  },
+  {
+    "A": "CISTERN & FLUSH PLATES"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Oblong Flush Plate - Chrome Finish",
+    "C": "CLCN59ZZ",
+    "D": 3500
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Pillow Flush Plate - Chrome Finish",
+    "C": "CLCN60ZZ",
+    "D": 3500
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Little Square Flush Plate - Chrome Finish",
+    "C": "FA2315A0-CH",
+    "D": 3500
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Dynamic Dots Flush Plate - Chrome Finish",
+    "C": "FA0325A0-CH",
+    "D": 3500
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Stretch Square Flush Plate - Chrome Finish",
+    "C": "FA1325A0-CH",
+    "D": 3500
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Wide Square Flush Plate - Chrome Finish",
+    "C": "F0A1350A-ACH",
+    "D": 2600
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Step Square Flush Plate - Chrome Finish",
+    "C": "FA4305A0-CH",
+    "D": 2600
+  },
+  {
+    "A": "MANUAL FLUSH VALVE"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Urinal Flush Valve",
+    "C": "FFAS9802-007500BC0",
+    "D": 7750
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Arc Dual Flush Valve - 40mm",
+    "C": "FFAS9808-000500BA0",
+    "D": 5550
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Arc Dual Flush Valve - 32mm",
+    "C": "FFAS9809-000500BA0",
+    "D": 5450
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Manual Urinal Flush Valve with\r\n Volume adjustment",
+    "C": "FFAS9802-009500BF0",
+    "D": 5550
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Manual Urinal Flush Valve",
+    "C": "FFAS9859-000500BF0",
+    "D": 4700
+  },
+  {
+    "A": "HAND DRYER"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "High Speed Hand Dryer (White)",
+    "C": "FFAS8017-000090BA0",
+    "D": 53850
+  },
+  {
+    "A": "#VALUE!",
+    "B": "High Speed Hand Dryer (Silver)",
+    "C": "FFAS8017-000230BA0",
+    "D": 53850
+  },
+  {
+    "A": "HANDICAP ACCESSORIES"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Floor Stand Nylon Grab Bar",
+    "C": "FFAS9403-000040BC0",
+    "D": 144600
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Shower Nylon Chair",
+    "C": "FFAS9407-000040BC0",
+    "D": 136550
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Turnup Nylon Grab Bar",
+    "C": "FFAS9401-000040BC0",
+    "D": 122850
+  },
+  {
+    "A": "#VALUE!",
+    "B": "L Nylon Grab Bar (Left)",
+    "C": "FFAS9404-000040BC0",
+    "D": 51050
+  },
+  {
+    "A": "#VALUE!",
+    "B": "L Nylon Grab Bar (Right)",
+    "C": "FFAS9405-000040BC0",
+    "D": 51050
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Nylon Grab Bar",
+    "C": "FFAS9402-000040BC0",
+    "D": 46500
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Shower Nylon Grab Bar",
+    "C": "FFAS9406-000040BC0",
+    "D": 27250
+  },
+  {
+    "A": "DRAIN TECHNOLOGY"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Brass Chromed/ABS 40cm Long",
+    "C": "F78108-CHADYBR",
+    "D": 6200
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Tubing Trap For Lavatory Slide Pack",
+    "C": "F78100-CHADY",
+    "D": 5300
+  },
+  {
+    "A": "#VALUE!",
+    "B": "P-trap For Lavatory, Long Tail Piece, C",
+    "C": "F78100-CHACTLS",
+    "D": 5050
+  },
+  {
+    "A": "#VALUE!",
+    "B": "P-trap For Lava Long Tail Top 25cm",
+    "C": "F78100-CHACTLST",
+    "D": 5150
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Tubing Trap For Lavatory - Chrome",
+    "C": "F78100-CHACTN",
+    "D": 5100
+  },
+  {
+    "A": "#VALUE!",
+    "B": "P-trap For Lava Tail Top 30cm",
+    "C": "F78100-CHACTLSTT",
+    "D": 5100
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Bottle Trap For Lavatory - Chrome",
+    "C": "F78102-CHADYN",
+    "D": 5100
+  },
+  {
+    "A": "#VALUE!",
+    "B": "ABS Bottle Trap (Chrome Plated)",
+    "C": "F78104-CHADYN",
+    "D": 2750
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Stainless Steel/ABS Long 25cm Long",
+    "C": "F78106-CHADYST",
+    "D": 2600
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Bottle Trap 25cm (Brass)",
+    "C": "F78107-CHADYBR",
+    "D": 2450
+  },
+  {
+    "A": "SOAP DISPENSER"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Automatic Soap Dispenser",
+    "C": "FFAS8006-010090BF0",
+    "D": 27100
+  },
+  {
+    "A": "KITCHEN DEVICES"
+  },
+  {
+    "A": "KITCHEN MIXER"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Touch Sensor Kitchen Faucet",
+    "C": "FFAS5644-5015L0BF0",
+    "D": 69750
+  },
+  {
+    "A": "#VALUE!",
+    "B": "GL890 Multifunction Kitchen Faucet (EdgeWater)",
+    "C": "FFAS5634-5015L0BF0",
+    "D": 37350
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Ceraplan Single Hole Deck Kitchen Faucet",
+    "C": "FFAS5637-501500BF0",
+    "D": 12950
+  },
+  {
+    "A": "KITCHEN MONO"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Winston Deck Mounted Kitchen Tap (Cross)",
+    "C": "FFAST706-501500BF0",
+    "D": 4400
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Winston Deck Mounted Kitchen",
+    "C": "FFAST606-501500BF0",
+    "D": 4250
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Winston Wall Mounted Kitchen Tap (Cross)",
+    "C": "FFAST707-501500BF0",
+    "D": 3750
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Winston Wall Mounted Kitchen",
+    "C": "FFAST607-501500BF0",
+    "D": 3750
+  },
+  {
+    "A": "BATH TUBS"
+  },
+  {
+    "A": "WELLNESS TUBS"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "IDS Round Freestanding Tub",
+    "C": "B70212-6DAWD",
+    "D": 940150
+  },
+  {
+    "A": "#VALUE!",
+    "B": "IDS Round Freestanding Tub",
+    "C": "B70211-6DAWD",
+    "D": 762300
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Drop-In Tub",
+    "C": "BTAS6716-2650403C5",
+    "D": 291900
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Concept Drop-In Tub",
+    "C": "BTAS6716-2350403C5",
+    "D": 228700
+  },
+  {
+    "A": "FREESTANDING TUBS"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "ZeniStone oor standingtub (rectangle)",
+    "C": "BTAS9831-0020400C5",
+    "D": 628850
+  },
+  {
+    "A": "#VALUE!",
+    "B": "ZeniStone oor standingtub (oval)",
+    "C": "BTAS9761-0020400C5",
+    "D": 603450
+  },
+  {
+    "A": "#VALUE!",
+    "B": "IDS FS Round Tub 1.7",
+    "C": "B70210-6DAWD",
+    "D": 533600
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia II 1.7 m cast iron Floor-Standing Tub",
+    "C": "BTAS2732-2520400C5",
+    "D": 393750
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia 1.6M Cast Iron Floor-Standing Tub",
+    "C": "BTAS2601-0320400C0",
+    "D": 349350
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia Floor-standing Tub,HEAII",
+    "C": "BTAS6704-0020403C5",
+    "D": 209650
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia 1.6M Acrylic Floor-Standing Tub",
+    "C": "BTAS6601-0320403C0",
+    "D": 167700
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia Evolution Freestanding Tub",
+    "C": "BTAS6719-032ASXJF0",
+    "D": 291900
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia-E 1.7M Seamless",
+    "C": "BTAS6719-632AS00C5",
+    "D": 304900
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Acacia-E FSD Tub(with faucet hole)",
+    "C": "BTAS6719-602ASXJF0",
+    "D": 304900
+  },
+  {
+    "A": "STEEL TUBS"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "STL D-i 1.5M GZ D-350",
+    "C": "BTAS1550-0020403C0",
+    "D": 69300
+  },
+  {
+    "A": "DROP-IN TUBS"
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Active 1.7M Cast Iron Drop-in Tub, HEA I w/ handle",
+    "C": "BTAS2702-2520403C5",
+    "D": 167700
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Milano Drop-In Tub (1.7M)",
+    "C": "BTAS2708-0520403C5",
+    "D": 153700
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Milano Drop-In Tub (1.5M)",
+    "C": "BTAS2508-2520403C5",
+    "D": 130700
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Active 1.7M Acrylic Drop-in Tub w/ handle",
+    "C": "BTAS6722-2020403C5",
+    "D": 120700
+  },
+  {
+    "A": "#VALUE!",
+    "B": "New Codie Drop-In Tub (1.5M)",
+    "C": "BTAS6512-0520403C5",
+    "D": 108000
+  },
+  {
+    "A": "#VALUE!",
+    "B": "New Codie 1.5M Drop-In Tub WT",
+    "C": "B70280-6DACT",
+    "D": 63550
+  },
+  {
+    "A": "#VALUE!",
+    "B": "1.7M cast iron Drop-in Tub w/Hand",
+    "C": "BTAS2715-2020403C5",
+    "D": 209650
+  },
+  {
+    "A": "#VALUE!",
+    "B": "New Codie 1.5M Drop-In Tub w/Pop-Up WT",
+    "C": "B70280-6DACTPW",
+    "D": 63550
+  },
+  {
+    "A": "#VALUE!",
+    "B": "1.5m PVC Twist-free Flexible Hose For_Brushed Hard Graphite",
+    "C": "FFAS9127-000AL0BF0",
+    "D": 2450
+  },
+  {
+    "A": "#VALUE!",
+    "B": "1.5m PVC Twist-free Flexible Hose For Cool Sunrise",
+    "C": "FFAS9127-000GL0BF0",
+    "D": 2450
+  },
+  {
+    "A": "#VALUE!",
+    "B": "1.5m PVC Twist-free Flexible Hose",
+    "C": "FFAS9127-000440BF0",
+    "D": 1750
+  },
+  {
+    "A": "#VALUE!",
+    "B": "Push LOCK WASTE&OVERFLOW FOR LAVA Type A",
+    "C": "FFASTA15-000440BF0",
+    "D": 1800
+  }
+]
