@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useLocation } from "react-router-dom";
 import { Link, useNavigate } from "react-router-dom";
 import logo_small from "../../assets/img/logo-small.png";
 import logo from "../../assets/img/logo.svg";
@@ -25,6 +26,7 @@ import {
   MdPointOfSale,
   MdKey,
   MdPermIdentity,
+  MdDashboard,
 } from "react-icons/md";
 import { useLogoutMutation } from "../../api/authApi"; // Import useLogoutMutation
 import { toast } from "react-toastify";
@@ -41,6 +43,8 @@ import SearchDropdown from "../Search/SearchDropdown";
 import { FaPerson } from "react-icons/fa6";
 import CalculatorModal from "./Calculator";
 const Header = ({ toggleSidebar }) => {
+  const location = useLocation();
+  const currentPath = location.pathname;
   const navigate = useNavigate();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const { data: user, isLoading, error } = useGetProfileQuery();
@@ -101,53 +105,6 @@ const Header = ({ toggleSidebar }) => {
                 <FaSearch />
               </button>
               <SearchDropdown />
-            </div>
-          </li>
-
-          {/* Store Dropdown */}
-          <li className="nav-item dropdown has-arrow main-drop select-store-dropdown">
-            <button
-              className="dropdown-toggle nav-link select-store"
-              data-bs-toggle="dropdown"
-            >
-              <span className="user-info">
-                <span className="user-letter">
-                  <img
-                    src="/assets/img/store/store-01.png"
-                    alt="Store Logo"
-                    className="img-fluid"
-                  />
-                </span>
-                <span className="user-detail">
-                  <span className="user-name">Freshmart</span>
-                </span>
-              </span>
-            </button>
-            <div className="dropdown-menu dropdown-menu-right">
-              <button className="dropdown-item">
-                <img
-                  src="/assets/img/store/store-02.png"
-                  alt="Store"
-                  className="img-fluid"
-                />{" "}
-                Grocery Apex
-              </button>
-              <button className="dropdown-item">
-                <img
-                  src="/assets/img/store/store-03.png"
-                  alt="Store"
-                  className="img-fluid"
-                />{" "}
-                Grocery Bevy
-              </button>
-              <button className="dropdown-item">
-                <img
-                  src="/assets/img/store/store-04.png"
-                  alt="Store"
-                  className="img-fluid"
-                />{" "}
-                Grocery Eden
-              </button>
             </div>
           </li>
 
@@ -232,14 +189,27 @@ const Header = ({ toggleSidebar }) => {
           </li>
 
           {/* POS Button */}
-          <li className="nav-item pos-nav">
-            <Link
-              to="/pos"
-              class="btn btn-dark btn-md d-inline-flex align-items-center"
-            >
-              <MdPointOfSale /> POS
-            </Link>
-          </li>
+          {currentPath !== "/pos" && (
+            <li className="nav-item pos-nav">
+              <Link
+                to="/pos"
+                className="btn btn-dark btn-md d-inline-flex align-items-center"
+              >
+                <MdPointOfSale /> POS
+              </Link>
+            </li>
+          )}
+          {currentPath !== "/" && (
+            <li className="nav-item pos-nav">
+              <Link
+                to="/"
+                className="btn btn-dark btn-md d-inline-flex align-items-center"
+              >
+                <MdDashboard />
+                Home
+              </Link>
+            </li>
+          )}
           <li class="nav-item nav-item-box">
             <a href="/settings">
               <FcSettings />
