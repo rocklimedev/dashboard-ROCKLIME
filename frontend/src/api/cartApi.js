@@ -22,6 +22,15 @@ export const cartApi = createApi({
         body: cartData,
       }),
     }),
+    addProductToCart: builder.mutation({
+      query: ({ userId, productId }) => ({
+        url: "/add-to-cart",
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, productId }),
+      }),
+    }),
+
     getCart: builder.query({
       query: (userId) => `/${userId}`,
     }),
@@ -61,4 +70,5 @@ export const {
   useConvertToCartMutation,
   useClearCartMutation, // ✅ Hook for clearing cart
   useUpdateCartMutation, // ✅ Hook for updating cart item
+  useAddProductToCartMutation,
 } = cartApi;

@@ -10,6 +10,7 @@ const {
   getRoleById,
   removePermissionFromRole,
   getRolePermissions,
+  getRecentRoleToGive,
 } = require("../controller/roleController");
 
 const { auth } = require("../middleware/auth"); // Authentication middleware
@@ -71,4 +72,5 @@ router.delete(
 router.post("/assign-role", assignRole);
 router.get("/:roleId", getRoleById);
 router.get("/:roleId", getRolePermissions);
+router.get("/recent", getRecentRoleToGive);
 module.exports = router;

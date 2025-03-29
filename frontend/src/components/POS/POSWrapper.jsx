@@ -6,44 +6,51 @@ import POSFooter from "./POSFooter";
 import OrderList from "./OrderList";
 import { useGetProfileQuery } from "../../api/userApi";
 import { useGetAllQuotationsQuery } from "../../api/quotationApi";
-import { useSearchProductsQuery } from "../../api/productApi";
-import { useGetCartQuery, useConvertToCartMutation } from "../../api/cartApi"; // Import mutation
+import { useGetCartQuery } from "../../api/cartApi";
 import ShowQuotations from "./ShowQuotations";
+import { useGetAllProductsQuery } from "../../api/productApi";
 
 const POSWrapper = () => {
   const dispatch = useDispatch();
   const { data: user, isLoading, isError } = useGetProfileQuery();
   const { data: quotations, isLoading: isQuotationsLoading } =
     useGetAllQuotationsQuery();
-
   const [showQuotations, setShowQuotations] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-
-  const { data: searchResults, isLoading: isSearchLoading } =
-    useSearchProductsQuery(searchTerm, {
-      skip: searchTerm.length < 2,
-    });
-
+  const { data: products, isLoading: isProductsLoading } =
+    useGetAllProductsQuery();
   const { data: cartData, refetch } = useGetCartQuery();
 
-  const [convertToCart] = useConvertToCartMutation();
   useEffect(() => {
     refetch();
   }, [cartData, refetch]);
 
-  const handleConvertToCart = async (quotationId) => {
-    console.log("Converting quotation to cart:", quotationId);
-    if (!quotationId) {
-      console.error("Invalid quotation ID");
+  const handleConvertToCart = (quotation) => {
+    if (!quotation || !Array.isArray(quotation.products)) {
+      console.error("Products array is undefined or not an array", quotation);
       return;
     }
-    try {
-      const response = await convertToCart(quotationId);
-      console.log("Cart converted:", response.data);
-    } catch (error) {
-      console.error("Error converting quotation:", error);
-    }
+
+    const cartData = {
+      customerId: quotation.customerId,
+      items: quotation.products.map((product) => ({
+        id: product.productId, // Ensure this matches the key in your data
+        name: product.name,
+        quantity: product.quantity || 1,
+        price: product.sellingPrice, // Ensure the correct key for price
+      })),
+      totalAmount: quotation.finalAmount,
+    };
+
+    console.log("Converted Cart Data:", cartData);
+    // Here, you can dispatch an action to update the cart or handle API calls.
   };
+
+  const filteredProducts = searchTerm
+    ? products?.filter((product) =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : products;
 
   const userName = user?.user?.name || "User";
   const currentDate = new Date().toLocaleDateString("en-US", {
@@ -98,7 +105,7 @@ const POSWrapper = () => {
                 <ShowQuotations
                   isQuotationsLoading={isQuotationsLoading}
                   quotations={quotations}
-                  onConvertToOrder={handleConvertToCart} // Correct the prop name
+                  onConvertToOrder={handleConvertToCart}
                 />
               )}
 
@@ -109,17 +116,15 @@ const POSWrapper = () => {
               <div className="content-wrap">
                 <div className="tab-content-wrap">
                   <POSProducts
-                    products={searchTerm.length > 1 ? searchResults : []}
-                    isLoading={isSearchLoading}
+                    products={filteredProducts}
+                    isLoading={isProductsLoading}
                   />
                 </div>
               </div>
             </div>
           </div>
-
           <OrderList onConvertToOrder={handleConvertToCart} />
         </div>
-
         <POSFooter />
       </div>
     </div>

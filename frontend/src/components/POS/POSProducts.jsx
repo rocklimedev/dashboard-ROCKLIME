@@ -1,74 +1,88 @@
 import React, { useState, useEffect } from "react";
 import { useGetAllProductsQuery } from "../../api/productApi";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
-import { useAddToCartMutation } from "../../api/cartApi";
-import { useGetProfileQuery } from "../../api/userApi"; // Fetch user data
+import { useAddProductToCartMutation } from "../../api/cartApi";
+import { useGetProfileQuery } from "../../api/userApi";
 import DataTablePagination from "../Common/DataTablePagination";
 import pos from "../../assets/img/products/pos-product-01.jpg";
+import { toast } from "react-toastify";
 
-const POSProducts = () => {
+const POSProducts = ({ filteredProducts = [] }) => {
   const { data: productsData, error, isLoading } = useGetAllProductsQuery();
   const { data: categoriesData } = useGetAllCategoriesQuery();
-  const { data: user, isLoading: userLoading } = useGetProfileQuery(); // Fetch logged-in user
-  const [addToCart] = useAddToCartMutation();
+  const { data: user, isLoading: userLoading } = useGetProfileQuery();
 
-  const userId = user?.user?.userId; // Ensure userId is fetched correctly
+  // Fetch userId from useGetProfileQuery
+  const userId = user?.user?.userId;
+
+  const [addProductToCart, { isLoading: cartLoading }] =
+    useAddProductToCartMutation();
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 20;
 
   const products = Array.isArray(productsData) ? productsData : [];
   const categories = Array.isArray(categoriesData?.categories)
     ? categoriesData.categories
     : [];
-
-  // Function to get category name
-  const getCategoryName = (categoryId) => {
-    const category = categories.find((cat) => cat.categoryId === categoryId);
-    return category ? category.name : "Uncategorized";
-  };
-
-  // Pagination states
-  const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 20;
+  const displayedProducts =
+    Array.isArray(filteredProducts) && filteredProducts.length
+      ? filteredProducts
+      : products;
 
   useEffect(() => {
-    if (currentPage >= Math.ceil(products.length / itemsPerPage)) {
+    if (currentPage >= Math.ceil(displayedProducts.length / itemsPerPage)) {
       setCurrentPage(0);
     }
-  }, [products.length, currentPage]);
+  }, [displayedProducts.length, currentPage]);
 
-  // Handle add to cart
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [searchTerm]);
+
+  const getCategoryName = (categoryId) => {
+    return (
+      categories.find((cat) => cat.categoryId === categoryId)?.name ||
+      "Uncategorized"
+    );
+  };
+
   const handleAddToCart = async (product) => {
     if (!userId) {
-      alert("User not logged in!");
+      toast.error("User not logged in!");
       return;
     }
 
-    try {
-      await addToCart({
-        userId, // Include userId
-        productId: product.id,
-        quantity: 1,
-      }).unwrap();
+    // Check if product ID exists
+    const productId = product.productId || product.id;
+    if (!productId) {
+      toast.error("Invalid product ID");
+      return;
+    }
 
-      alert(`${product.name} added to cart!`);
+    console.log("Adding to cart - User ID:", userId, "Product ID:", productId);
+
+    try {
+      await addProductToCart({ userId, productId }).unwrap();
+      toast.success(`${product.name} added to cart!`);
     } catch (error) {
-      console.error("Failed to add to cart", error);
-      alert("Error adding product to cart.");
+      console.error("Failed to add to cart:", error);
+      toast.error(`Error: ${error.data?.message || "Unknown error"}`);
     }
   };
 
-  // Handle API loading and error states
   if (isLoading || userLoading) return <p>Loading...</p>;
   if (error) return <p>Error fetching products.</p>;
-  if (products.length === 0) return <p>No products available.</p>;
+  if (!displayedProducts.length) return <p>No products available.</p>;
 
-  // Pagination logic
   const offset = currentPage * itemsPerPage;
-  const currentItems = products.slice(offset, offset + itemsPerPage);
+  const currentItems = displayedProducts.slice(offset, offset + itemsPerPage);
 
   return (
     <div className="pos-products">
       <div className="tabs_container">
-        <div className="tab_content active" data-tab="all">
+        <div className="tab_content active">
           <div className="row g-3">
             {currentItems.map((product) => (
               <div
@@ -76,22 +90,28 @@ const POSProducts = () => {
                 className="col-sm-6 col-md-6 col-lg-4 col-xl-3"
               >
                 <div className="product-info card mb-0">
-                  <a href="javascript:void(0);" className="pro-img">
+                  <a
+                    href="#"
+                    onClick={(e) => e.preventDefault()}
+                    className="pro-img"
+                  >
                     <img src={product.image || pos} alt={product.name} />
                     <span
-                      onClick={() => handleAddToCart(product)}
+                      onClick={() => !cartLoading && handleAddToCart(product)}
                       style={{ cursor: "pointer" }}
                     >
                       <i className="ti ti-circle-check-filled"></i>
                     </span>
                   </a>
                   <h6 className="cat-name">
-                    <a href="javascript:void(0);">
+                    <a href="#" onClick={(e) => e.preventDefault()}>
                       {getCategoryName(product.categoryId)}
                     </a>
                   </h6>
                   <h6 className="product-name">
-                    <a href="javascript:void(0);">{product.name}</a>
+                    <a href="#" onClick={(e) => e.preventDefault()}>
+                      {product.name}
+                    </a>
                   </h6>
                   <div className="d-flex align-items-center justify-content-between price">
                     <span>{product.quantity} Pcs</span>
@@ -103,9 +123,8 @@ const POSProducts = () => {
           </div>
         </div>
 
-        {/* Pagination Component */}
         <DataTablePagination
-          totalItems={products.length}
+          totalItems={displayedProducts.length}
           itemNo={itemsPerPage}
           onPageChange={(selectedPage) => setCurrentPage(selectedPage - 1)}
         />

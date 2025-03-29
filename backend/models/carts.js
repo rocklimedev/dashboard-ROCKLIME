@@ -1,40 +1,24 @@
-const { DataTypes } = require("sequelize");
-const sequelize = require("../config/database");
+const mongoose = require("mongoose");
 
-const Cart = sequelize.define(
-  "Cart",
-  {
-    id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true,
-      allowNull: false,
-    },
-    user_id: {
-      type: DataTypes.UUID,
-      allowNull: false,
-    },
-    items: {
-      type: DataTypes.JSON, // ✅ Stores an array of cart items
-      allowNull: false,
-      defaultValue: [], // ✅ Ensure it starts as an empty array
-    },
-    created_at: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-    },
-    updated_at: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-      onUpdate: DataTypes.NOW,
-    },
+const CartItemSchema = new mongoose.Schema({
+  productId: {
+    type: String,
+    required: true,
   },
-  {
-    tableName: "cart",
-    timestamps: true,
-    createdAt: "created_at",
-    updatedAt: "updated_at",
-  }
-);
+  name: String,
+  price: Number,
+  quantity: { type: Number, default: 1 },
+  discount: { type: Number, default: 0 },
+  tax: { type: Number, default: 0 },
+  total: Number,
+});
 
-module.exports = Cart;
+const CartSchema = new mongoose.Schema({
+  customerId: { type: String, required: false },
+  userId: { type: String, required: true },
+  items: [CartItemSchema], // Embedded array of cart items
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
+});
+
+module.exports = mongoose.model("Cart", CartSchema);

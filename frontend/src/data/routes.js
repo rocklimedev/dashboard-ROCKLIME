@@ -6,16 +6,14 @@ import Error404 from "../components/Error/Error404";
 import PageWrapper from "../components/Home/PageWrapper";
 import ComapniesWrapper from "../components/Companies/ComapniesWrapper";
 import ProductList from "../components/Product/ProductList";
-import InventoryWrapper from "../components/Inventory/InventoryWrapper";
-import CategoriesItem from "../components/Categories/CategoriesItem";
 import CustomerList from "../components/Customers/CustomerList";
 import CustomerDetails from "../components/Customers/CustomerDetails";
-import CustomerLedger from "../components/Customers/CustomerLedger";
 import SignatureWrapper from "../components/Signature/SignatureWrapper";
 import { RiAdminLine } from "react-icons/ri";
 import { LuUsersRound } from "react-icons/lu";
 import { PiSignatureDuotone, PiUserListBold } from "react-icons/pi";
 import { LiaFileInvoiceSolid, LiaFileSignatureSolid } from "react-icons/lia";
+import OrderWrapper from "../components/POS/OrderWrapper";
 import {
   MdOutlineBrandingWatermark,
   MdOutlineBorderColor,
@@ -26,7 +24,7 @@ import {
 } from "react-icons/md";
 import { AiFillSecurityScan, AiOutlineProduct } from "react-icons/ai";
 import { BiSolidCategory, BiUserCheck } from "react-icons/bi";
-import { FaFileCircleCheck, FaPooStorm } from "react-icons/fa6";
+import { FaFileCircleCheck, FaFirstOrder, FaPooStorm } from "react-icons/fa6";
 import {
   FaRegFile,
   FaJediOrder,
@@ -230,6 +228,13 @@ const masterRoutes = [
     icon: <FaPooStorm />,
     isSidebarActive: true,
     element: <POSWrapper />,
+  },
+  {
+    path: "/orders/list",
+    name: "Orders",
+    icon: <FaFirstOrder />,
+    isSidebarActive: true,
+    element: <OrderWrapper />,
   },
   {
     path: "#",

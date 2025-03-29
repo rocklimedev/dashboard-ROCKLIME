@@ -13,7 +13,7 @@ router.post(
   cartController.convertQuotationToCart
 );
 router.post("/clear", cartController.clearCart);
-
+router.post("/add-to-cart", cartController.addProductToCart);
 // Update cart item
 router.post("/update", cartController.updateCart);
 module.exports = router;

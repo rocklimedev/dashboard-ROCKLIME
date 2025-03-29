@@ -31,4 +31,5 @@ router.get(
 // ✅ Public Reporting Route (Any Logged-in User)
 router.post("/report/:userId", auth, userController.reportUser);
 router.put("/assign-role/:userId", userController.assignRole);
+router.put("/:userId", auth, userController.changeStatusToInactive);
 module.exports = router;

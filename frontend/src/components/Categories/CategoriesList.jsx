@@ -6,15 +6,19 @@ import { AiOutlineEdit } from "react-icons/ai";
 import { FcEmptyTrash } from "react-icons/fc";
 import AddCategoryModal from "./AddCategoryModal";
 import AddKeywordModal from "./AddKeywordModal";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const CategoriesList = () => {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showKeywordModal, setShowKeywordModal] = useState(false);
+
   const {
     data: categoryData,
     error: categoryError,
     isLoading: categoryLoading,
   } = useGetAllCategoriesQuery();
+
   const {
     data: keywordData,
     error: keywordError,
@@ -24,25 +28,58 @@ const CategoriesList = () => {
   const categories = Array.isArray(categoryData?.categories)
     ? categoryData.categories
     : [];
+
   const keywords = Array.isArray(keywordData?.keywords)
     ? keywordData.keywords
     : [];
 
-  const handleAddCategory = () => setShowCategoryModal(true);
-  const handleCloseCategoryModal = () => setShowCategoryModal(false);
+  const handleAddCategory = () => {
+    setShowCategoryModal(true);
+    toast.info("Opening category modal...");
+  };
 
-  const handleAddKeyword = () => setShowKeywordModal(true);
-  const handleCloseKeywordModal = () => setShowKeywordModal(false);
+  const handleCloseCategoryModal = () => {
+    setShowCategoryModal(false);
+    toast.success("Category modal closed.");
+  };
 
-  const handlePdfDownload = () => alert("Downloading PDF...");
-  const handleExcelDownload = () => alert("Downloading Excel...");
-  const handleRefresh = () => alert("Refreshing...");
-  const handleCollapse = () => alert("Collapsing...");
+  const handleAddKeyword = () => {
+    setShowKeywordModal(true);
+    toast.info("Opening keyword modal...");
+  };
+
+  const handleCloseKeywordModal = () => {
+    setShowKeywordModal(false);
+    toast.success("Keyword modal closed.");
+  };
+
+  const handlePdfDownload = () => {
+    toast.success("Downloading PDF...");
+  };
+
+  const handleExcelDownload = () => {
+    toast.success("Downloading Excel...");
+  };
+
+  const handleRefresh = () => {
+    toast.info("Refreshing data...");
+  };
+
+  const handleCollapse = () => {
+    toast.info("Collapsing sections...");
+  };
 
   if (categoryLoading || keywordLoading) return <p>Loading data...</p>;
-  if (categoryError) return <p>Error fetching categories.</p>;
-  if (keywordError) return <p>Error fetching keywords.</p>;
 
+  if (categoryError) {
+    toast.error("Error fetching categories!");
+    return <p>Error fetching categories.</p>;
+  }
+
+  if (keywordError) {
+    toast.error("Error fetching keywords!");
+    return <p>Error fetching keywords.</p>;
+  }
   return (
     <div className="page-wrapper">
       <div className="content">

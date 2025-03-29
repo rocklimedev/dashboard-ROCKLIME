@@ -1,14 +1,27 @@
 import React, { useState } from "react";
 import { Dropdown } from "react-bootstrap";
-import { FaEye, FaPen, FaTrash } from "react-icons/fa";
+import {
+  FaEye,
+  FaPen,
+  FaTrash,
+  FaExclamationTriangle,
+  FaBan,
+} from "react-icons/fa";
 import PageHeader from "../Common/PageHeader";
-import { useGetAllUsersQuery } from "../../api/userApi";
+import {
+  useGetAllUsersQuery,
+  useReportUserMutation,
+  useInactiveUserMutation,
+} from "../../api/userApi";
 import AddUser from "./AddUser";
 import DataTablePagination from "../Common/DataTablePagination";
 
 const UserList = () => {
   const { data, error, isLoading } = useGetAllUsersQuery();
   const users = data?.users || [];
+
+  const [reportUser] = useReportUserMutation();
+  const [inactiveUser] = useInactiveUserMutation();
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -38,6 +51,24 @@ const UserList = () => {
 
   const handleDeleteUser = (userId) => {
     alert(`Delete functionality for user ID: ${userId} is pending`);
+  };
+
+  const handleReportUser = async (userId) => {
+    try {
+      await reportUser(userId);
+      alert("User reported successfully.");
+    } catch (error) {
+      alert("Failed to report user.");
+    }
+  };
+
+  const handleInactiveUser = async (userId) => {
+    try {
+      await inactiveUser(userId);
+      alert("User marked as inactive.");
+    } catch (error) {
+      alert("Failed to mark user as inactive.");
+    }
   };
 
   const handleCloseModal = () => {
@@ -103,6 +134,17 @@ const UserList = () => {
                               <FaPen className="me-2" /> Edit
                             </Dropdown.Item>
                             <Dropdown.Item
+                              onClick={() => handleInactiveUser(user.id)}
+                            >
+                              <FaBan className="me-2" /> Inactive User
+                            </Dropdown.Item>
+                            <Dropdown.Item
+                              onClick={() => handleReportUser(user.id)}
+                            >
+                              <FaExclamationTriangle className="me-2 text-warning" />{" "}
+                              Report User
+                            </Dropdown.Item>
+                            <Dropdown.Item
                               onClick={() => handleDeleteUser(user.id)}
                               className="text-danger"
                             >
@@ -116,12 +158,12 @@ const UserList = () => {
                 </tbody>
               </table>
             </div>
-            <DataTablePagination
-              totalItems={users.length}
-              itemNo={itemsPerPage}
-              onPageChange={handlePageChange}
-            />
           </div>
+          <DataTablePagination
+            totalItems={users.length}
+            itemNo={itemsPerPage}
+            onPageChange={handlePageChange}
+          />
         </div>
       </div>
       {showModal && (

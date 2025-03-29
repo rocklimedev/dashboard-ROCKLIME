@@ -5,6 +5,7 @@ import AddCustomer from "./AddCustomer";
 import Actions from "../Common/Actions";
 import DeleteModal from "../Common/DeleteModal";
 import { BiEdit, BiTrash } from "react-icons/bi";
+import { FaEye } from "react-icons/fa";
 const CustomerList = () => {
   const { data, error, isLoading } = useGetCustomersQuery();
   const customers = data?.data || [];
@@ -79,6 +80,12 @@ const CustomerList = () => {
                           /> */}
 
                           <div class="edit-delete-action">
+                            <a
+                              href={`/customer/${customer.customerId}`}
+                              target="_blank"
+                            >
+                              <FaEye />
+                            </a>
                             <a
                               class="me-2 p-2"
                               onClick={() => handleEditCustomer(customer)}

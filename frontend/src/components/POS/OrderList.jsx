@@ -4,38 +4,117 @@ import {
   useGetCartQuery,
   useUpdateCartMutation,
   useClearCartMutation,
+  useRemoveFromCartMutation,
 } from "../../api/cartApi";
 import AddCustomer from "../Customers/AddCustomer";
+import { useGetProfileQuery } from "../../api/userApi";
 import OrderTotal from "./OrderTotal";
-
+import PaymentMethod from "./PaymentMethod";
+import { toast } from "react-toastify";
+import InvoiceDetails from "./InvoiceDetails";
 const OrderList = ({ onConvertToOrder }) => {
-  const { data: customerData, isLoading, isError } = useGetCustomersQuery();
-  const { data: cartData } = useGetCartQuery();
+  const {
+    data: profileData,
+    isLoading: profileLoading,
+    error: profileError,
+  } = useGetProfileQuery();
+  const userId = profileData?.user?.userId;
+
+  const {
+    data: cartData,
+    isLoading: cartLoading,
+    isError: cartError,
+    refetch,
+  } = useGetCartQuery(userId, { skip: !userId });
+
+  const {
+    data: customerData,
+    isLoading: customersLoading,
+    isError: customersError,
+  } = useGetCustomersQuery();
+
   const [updateCart] = useUpdateCartMutation();
   const [clearCart] = useClearCartMutation();
+  const [removeFromCart] = useRemoveFromCartMutation();
 
   const [showModal, setShowModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState("");
 
   const customers = customerData?.data || [];
   const customerList = Array.isArray(customers) ? customers : [];
+  const cartItems = cartData?.cart?.items || [];
 
-  const cartItems = cartData?.items || [];
   const totalItems = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+  const totalAmount = cartItems.reduce(
+    (acc, item) => acc + item.price * item.quantity,
+    0
+  );
 
   const handleClearCart = () => {
     clearCart();
   };
 
-  const handleRemoveItem = (itemId) => {
-    updateCart({ itemId, quantity: 0 });
-  };
+  const handleRemoveItem = async (productId) => {
+    if (!userId) return toast.error("User not logged in!");
 
-  const handleUpdateQuantity = (itemId, newQuantity) => {
-    if (newQuantity >= 1) {
-      updateCart({ itemId, quantity: newQuantity });
+    try {
+      await removeFromCart({ userId, productId }).unwrap();
+      toast.success("Item removed from cart!");
+    } catch (error) {
+      console.error("Remove error:", error);
+      toast.error(`Error: ${error.data?.message || "Unknown error"}`);
     }
   };
+
+  const handleUpdateQuantity = async (productId, quantity) => {
+    if (!userId) return toast.error("User not logged in!");
+
+    if (quantity < 1) return;
+
+    try {
+      await updateCart({ userId, productId, quantity }).unwrap();
+      toast.success("Quantity updated!");
+    } catch (error) {
+      console.error("Update error:", error);
+      toast.error(`Error: ${error.data?.message || "Unknown error"}`);
+    }
+  };
+
+  const handlePlaceOrder = () => {
+    if (!selectedCustomer) {
+      alert("Please select a customer before placing an order.");
+      return;
+    }
+
+    const orderData = {
+      customerId: selectedCustomer,
+      userId,
+      items: cartItems.map((item) => ({
+        id: item.productId,
+        name: item.name,
+        price: item.price, // no division, raw price
+        quantity: item.quantity,
+        total: item.total, // no division
+      })),
+      totalAmount: cartData?.cart?.totalAmount, // raw amount
+    };
+
+    onConvertToOrder(orderData);
+    clearCart();
+  };
+
+  if (profileLoading || cartLoading) {
+    return <div>Loading cart...</div>;
+  }
+
+  if (profileError || cartError) {
+    return (
+      <div>
+        Error loading cart: {profileError?.message || cartError?.message}
+        <button onClick={refetch}>Retry</button>
+      </div>
+    );
+  }
 
   return (
     <div className="col-md-12 col-lg-5 col-xl-4 ps-0 theiaStickySidebar d-lg-flex">
@@ -44,12 +123,17 @@ const OrderList = ({ onConvertToOrder }) => {
           <div className="card-body">
             <div className="order-head d-flex align-items-center justify-content-between w-100">
               <h3>Order List</h3>
-              <button
-                className="link-danger fs-16 border-0 bg-transparent"
-                onClick={handleClearCart}
-              >
-                <i className="ti ti-trash-x-filled"></i>
-              </button>
+              <div className="d-flex align-items-center gap-2">
+                <span className="badge badge-dark fs-10 fw-medium badge-xs">
+                  ORDER #123
+                </span>
+                <button
+                  className="link-danger fs-16 border-0 bg-transparent"
+                  onClick={handleClearCart}
+                >
+                  <i className="ti ti-trash-x-filled"></i>
+                </button>
+              </div>
             </div>
 
             <div className="customer-info block-section">
@@ -61,9 +145,9 @@ const OrderList = ({ onConvertToOrder }) => {
                   onChange={(e) => setSelectedCustomer(e.target.value)}
                 >
                   <option value="">Walk-in Customer</option>
-                  {isLoading ? (
+                  {customersLoading ? (
                     <option>Loading...</option>
-                  ) : isError ? (
+                  ) : customersError ? (
                     <option>Error fetching customers</option>
                   ) : (
                     customerList.map((customer) => (
@@ -114,11 +198,13 @@ const OrderList = ({ onConvertToOrder }) => {
                       </thead>
                       <tbody>
                         {cartItems.map((item) => (
-                          <tr key={item.id}>
+                          <tr key={item.productId}>
                             <td>
                               <div className="d-flex align-items-center">
                                 <button
-                                  onClick={() => handleRemoveItem(item.id)}
+                                  onClick={() =>
+                                    handleRemoveItem(item.productId)
+                                  }
                                   className="delete-icon border-0 bg-transparent"
                                 >
                                   <i className="ti ti-trash-x-filled"></i>
@@ -131,7 +217,7 @@ const OrderList = ({ onConvertToOrder }) => {
                                 <button
                                   onClick={() =>
                                     handleUpdateQuantity(
-                                      item.id,
+                                      item.productId,
                                       item.quantity - 1
                                     )
                                   }
@@ -148,7 +234,7 @@ const OrderList = ({ onConvertToOrder }) => {
                                 <button
                                   onClick={() =>
                                     handleUpdateQuantity(
-                                      item.id,
+                                      item.productId,
                                       item.quantity + 1
                                     )
                                   }
@@ -159,7 +245,7 @@ const OrderList = ({ onConvertToOrder }) => {
                               </div>
                             </td>
                             <td className="fs-13 fw-semibold text-gray-9 text-end">
-                              ${item.price * item.quantity}
+                              ₹{item.price * item.quantity}
                             </td>
                           </tr>
                         ))}
@@ -168,10 +254,27 @@ const OrderList = ({ onConvertToOrder }) => {
                   </div>
                 )}
               </div>
-              <OrderTotal />
             </div>
           </div>
+
+          <OrderTotal
+            shipping={40}
+            tax={25}
+            coupon={25}
+            discount={15}
+            roundOff={0}
+            subTotal={totalAmount}
+          />
         </div>
+        <InvoiceDetails
+          billTo="John Doe"
+          shipTo="123 Street, Mumbai, India"
+          invoiceDate="2025-03-28"
+          dueDate="2025-04-05"
+          signatureName="Mr. Sharma"
+        />
+
+        <PaymentMethod />
 
         <div className="btn-row d-flex align-items-center justify-content-between gap-3">
           <button className="btn btn-white flex-fill">
@@ -179,7 +282,7 @@ const OrderList = ({ onConvertToOrder }) => {
           </button>
           <button
             className="btn btn-secondary flex-fill"
-            onClick={() => onConvertToOrder(cartItems, selectedCustomer)}
+            onClick={handlePlaceOrder}
           >
             <i className="ti ti-shopping-cart me-2"></i>Place Order
           </button>

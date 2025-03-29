@@ -57,6 +57,10 @@ export const rolesApi = createApi({
       query: (roleId) => `/${roleId}`,
       invalidatesTags: ["Roles"],
     }),
+    getRecentRoleToGive: builder.query({
+      query: "/recent",
+      invalidatesTags: ["Roles"],
+    }),
   }),
 });
 
@@ -68,4 +72,5 @@ export const {
   useAssignPermissionsToRoleMutation,
   useGetRoleQuery,
   useGetRolePermissionsQuery,
+  useGetRecentRoleToGiveQuery,
 } = rolesApi;

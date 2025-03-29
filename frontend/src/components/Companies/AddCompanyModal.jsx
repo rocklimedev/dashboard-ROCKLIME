@@ -3,6 +3,8 @@ import {
   useCreateVendorMutation,
   useUpdateVendorMutation,
 } from "../../api/vendorApi.js";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const AddCompanyModal = ({ show, onClose, existingVendor }) => {
   const [formData, setFormData] = useState({
@@ -35,17 +37,16 @@ const AddCompanyModal = ({ show, onClose, existingVendor }) => {
     try {
       if (formData.vendorId) {
         await updateVendor(formData).unwrap();
-        alert("Vendor updated successfully!");
+        toast.success("Vendor updated successfully!");
       } else {
         await addVendor(formData).unwrap();
-        alert("Vendor added successfully!");
+        toast.success("Vendor added successfully!");
       }
       onClose();
     } catch (error) {
-      console.error("Failed to submit vendor: ", error);
+      toast.error("Failed to submit vendor. Please try again.");
     }
   };
-
   return (
     <div
       className="modal fade show"

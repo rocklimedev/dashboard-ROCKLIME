@@ -57,6 +57,36 @@ const assignRole = async (userId, role) => {
     return { success: false, message: "Internal server error" };
   }
 };
+const getRecentRoleToGive = async () => {
+  try {
+    const fourteenDaysAgo = new Date();
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+    const users = await User.findAll({
+      where: {
+        [Op.or]: [
+          { roleId: { [Op.is]: null } }, // Ensure roleId is explicitly checked for null
+          {
+            createdAt: { [Op.gte]: fourteenDaysAgo },
+            status: "inactive",
+          },
+        ],
+        status: { [Op.ne]: "restricted" },
+      },
+      include: [{ model: Roles, attributes: ["id", "name"] }], // Include role details
+    });
+
+    // If no users are found or all users have roleId assigned
+    if (!users.length || users.every((user) => user.roleId !== null)) {
+      return { success: true, message: "No users left for role assignment" };
+    }
+
+    return { success: true, users };
+  } catch (error) {
+    console.error("Error fetching recent users for role assignment:", error);
+    return { success: false, message: "Internal server error" };
+  }
+};
 
 // Auto-set status to inactive if no roleId assigned within 7 days
 const checkUserRoleStatus = async () => {
@@ -118,8 +148,6 @@ const getAllRoles = async (req, res) => {
     res.status(500).json({ message: "Error retrieving roles" });
   }
 };
-
-// Update a role's permissions
 
 // Delete a role
 const deleteRole = async (req, res) => {
@@ -332,4 +360,5 @@ module.exports = {
   removePermissionFromRole,
   getRolePermissions,
   updateRolePermissions,
+  getRecentRoleToGive,
 };

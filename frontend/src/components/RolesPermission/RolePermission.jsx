@@ -2,6 +2,7 @@ import React from "react";
 import PageHeader from "../Common/PageHeader";
 import { useGetRolesQuery } from "../../api/rolesApi";
 import { useGetAllPermissionsQuery } from "../../api/permissionApi";
+import PermissionsTable from "./PermissionsTable";
 const RolePermission = () => {
   const { data: roles, isLoading, isError } = useGetRolesQuery();
   const {
@@ -129,86 +130,7 @@ const RolePermission = () => {
         </div>
         <PageHeader title="Permissions" subtitle="Manage your Permissions" />
 
-        <div className="card">
-          <div className="card-header d-flex align-items-center justify-content-between flex-wrap row-gap-3">
-            <div className="search-set">
-              <div className="search-input">
-                <span className="btn-searchset">
-                  <i className="ti ti-search fs-14 feather-search"></i>
-                </span>
-              </div>
-            </div>
-            <div className="d-flex table-dropdown my-xl-auto right-content align-items-center flex-wrap row-gap-3">
-              <div className="dropdown">
-                <a
-                  href="javascript:void(0);"
-                  className="dropdown-toggle btn btn-white btn-md d-inline-flex align-items-center"
-                  data-bs-toggle="dropdown"
-                >
-                  Status
-                </a>
-                <ul className="dropdown-menu dropdown-menu-end p-3">
-                  <li>
-                    <a
-                      href="javascript:void(0);"
-                      className="dropdown-item rounded-1"
-                    >
-                      Active
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="javascript:void(0);"
-                      className="dropdown-item rounded-1"
-                    >
-                      Inactive
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-          <div className="card-body p-0">
-            <div className="table-responsive">
-              <table className="table datatable">
-                <thead className="thead-light">
-                  <tr>
-                    <th className="no-sort">
-                      <div className="form-check form-check-md">
-                        <input
-                          className="form-check-input"
-                          type="checkbox"
-                          id="select-all"
-                        />
-                      </div>
-                    </th>
-                    <th>Module</th>
-                    <th>Route</th>
-                    <th>Name</th>
-                    <th>Created Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {permissions?.map((permission) => (
-                    <tr key={permission.permissionId}>
-                      <td>
-                        <div className="form-check form-check-md">
-                          <input className="form-check-input" type="checkbox" />
-                        </div>
-                      </td>
-                      <td>{permission.module}</td>
-                      <td>{permission.route}</td>
-                      <td>{permission.name}</td>
-                      <td>
-                        {new Date(permission.createdAt).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+        <PermissionsTable permissions={permissions} />
       </div>
     </div>
   );

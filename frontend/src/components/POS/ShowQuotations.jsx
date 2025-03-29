@@ -1,14 +1,47 @@
 import React, { useState } from "react";
 import ShowProducts from "./ShowProducts";
 import { Link } from "react-router-dom";
+import { useAddToCartMutation } from "../../api/cartApi";
+import { useGetProfileQuery } from "../../api/userApi"; // Import profile query
 
-const ShowQuotations = ({
-  isQuotationsLoading,
-  quotations,
-  onConvertToOrder,
-}) => {
+const ShowQuotations = ({ isQuotationsLoading, quotations }) => {
   const [selectedQuotation, setSelectedQuotation] = useState(null);
-  console.log("onConvertToOrder:", onConvertToOrder); // Debugging
+  const [addToCartMutation] = useAddToCartMutation(); // ✅ Fixing how the mutation is accessed
+  const { data: profileData, isLoading: isProfileLoading } =
+    useGetProfileQuery();
+
+  const handleConvertToOrder = (quotation) => {
+    if (!quotation || !quotation.customerId) {
+      console.error("Invalid quotation data");
+      return;
+    }
+
+    if (!quotation.products || quotation.products.length === 0) {
+      console.error("No products found in the quotation.");
+      return;
+    }
+
+    // Use fetched userId
+    const userId = profileData?.user?.userId;
+
+    const cartData = {
+      customerId: quotation.customerId,
+      userId, // ✅ Correctly setting userId
+      items: quotation.products.map((product) => ({
+        productId: product.productId,
+        quantity: product.qty,
+        price: product.sellingPrice,
+      })),
+      totalAmount: quotation.finalAmount,
+    };
+
+    console.log("Converted Cart Data:", cartData);
+
+    addToCartMutation(cartData)
+      .unwrap()
+      .then(() => alert("Cart successfully updated!"))
+      .catch((error) => console.error("Error adding to cart:", error));
+  };
 
   return (
     <div className="order-body">
@@ -64,7 +97,7 @@ const ShowQuotations = ({
 
                 <button
                   className="btn btn-md btn-black"
-                  onClick={() => onConvertToOrder(quotation)} // Pass selected quotation to parent
+                  onClick={() => handleConvertToOrder(quotation)}
                 >
                   Convert to Order
                 </button>
@@ -86,7 +119,6 @@ const ShowQuotations = ({
         <p>No quotations available</p>
       )}
 
-      {/* ShowProducts Modal */}
       {selectedQuotation && (
         <ShowProducts
           quotation={selectedQuotation}
