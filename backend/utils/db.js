@@ -104,13 +104,15 @@ const setupDB = async () => {
 
     // Customer ↔ Invoice
     Customer.hasMany(Invoice, { foreignKey: "customerId" });
-
+    Invoice.belongsTo(Customer, { foreignKey: "client" });
+    Invoice.belongsTo(Address, { foreignKey: "shipTo" });
     // ==============================
     // 🔥 ORDER & QUOTATION RELATIONSHIPS
     // ==============================
 
     Order.belongsTo(Quotation, { foreignKey: "quotationId" });
     Invoice.belongsTo(Order, { foreignKey: "orderId" });
+    Order.hasMany(Invoice, { foreignKey: "orderId", onDelete: "CASCADE" });
 
     // ==============================
     // 🔥 BRAND & VENDOR RELATIONSHIPS

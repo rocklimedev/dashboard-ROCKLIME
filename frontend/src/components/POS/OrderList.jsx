@@ -12,6 +12,7 @@ import OrderTotal from "./OrderTotal";
 import PaymentMethod from "./PaymentMethod";
 import { toast } from "react-toastify";
 import InvoiceDetails from "./InvoiceDetails";
+
 const OrderList = ({ onConvertToOrder }) => {
   const {
     data: profileData,
@@ -42,16 +43,55 @@ const OrderList = ({ onConvertToOrder }) => {
 
   const customers = customerData?.data || [];
   const customerList = Array.isArray(customers) ? customers : [];
-  const cartItems = cartData?.cart?.items || [];
+  const cartItems = Array.isArray(cartData?.cart?.items)
+    ? cartData.cart.items
+    : [];
 
-  const totalItems = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+  const totalItems = cartItems.reduce(
+    (acc, item) => acc + (item.quantity || 0),
+    0
+  );
   const totalAmount = cartItems.reduce(
-    (acc, item) => acc + item.price * item.quantity,
+    (acc, item) => acc + (item.price || 0) * (item.quantity || 0),
     0
   );
 
-  const handleClearCart = () => {
-    clearCart();
+  const handleClearCart = async () => {
+    if (!userId) {
+      toast.error("User not logged in!");
+      return;
+    }
+
+    try {
+      await clearCart(userId).unwrap(); // Pass userId to clearCart
+      toast.success("Cart cleared!");
+      refetch();
+    } catch (error) {
+      console.error("Clear cart error:", error);
+      toast.error(`Error: ${error.data?.message || "Failed to clear cart"}`);
+    }
+  };
+
+  const handleUpdateQuantity = async (productId, newQuantity) => {
+    if (!userId) return toast.error("User not logged in!");
+
+    try {
+      if (newQuantity <= 0) {
+        await removeFromCart({ userId, productId }).unwrap();
+        toast.success("Item removed from cart!");
+      } else {
+        await updateCart({
+          userId,
+          productId,
+          quantity: Number(newQuantity),
+        }).unwrap();
+        toast.success("Quantity updated!");
+      }
+      refetch();
+    } catch (error) {
+      console.error("Update/Remove error:", error);
+      toast.error(`Error: ${error.data?.message || "Unknown error"}`);
+    }
   };
 
   const handleRemoveItem = async (productId) => {
@@ -60,47 +100,48 @@ const OrderList = ({ onConvertToOrder }) => {
     try {
       await removeFromCart({ userId, productId }).unwrap();
       toast.success("Item removed from cart!");
+      refetch();
     } catch (error) {
       console.error("Remove error:", error);
       toast.error(`Error: ${error.data?.message || "Unknown error"}`);
     }
   };
 
-  const handleUpdateQuantity = async (productId, quantity) => {
-    if (!userId) return toast.error("User not logged in!");
-
-    if (quantity < 1) return;
-
-    try {
-      await updateCart({ userId, productId, quantity }).unwrap();
-      toast.success("Quantity updated!");
-    } catch (error) {
-      console.error("Update error:", error);
-      toast.error(`Error: ${error.data?.message || "Unknown error"}`);
-    }
-  };
-
   const handlePlaceOrder = () => {
     if (!selectedCustomer) {
-      alert("Please select a customer before placing an order.");
+      toast.error("Please select a customer before placing an order.");
       return;
     }
 
+    if (!userId) {
+      toast.error("User not logged in!");
+      return;
+    }
+
+    const selectedCustomerData = customerList.find(
+      (customer) => customer.customerId === selectedCustomer
+    );
+
     const orderData = {
-      customerId: selectedCustomer,
+      customerId: selectedCustomerData?.customerId || "",
       userId,
       items: cartItems.map((item) => ({
-        id: item.productId,
-        name: item.name,
-        price: item.price, // no division, raw price
-        quantity: item.quantity,
-        total: item.total, // no division
+        id: item?.productId || "",
+        name: item?.name || "Unnamed Product",
+        price: item?.price || 0,
+        quantity: item?.quantity || 1,
+        total: (item?.price || 0) * (item?.quantity || 1),
       })),
-      totalAmount: cartData?.cart?.totalAmount, // raw amount
+      totalAmount: totalAmount || 0,
     };
 
-    onConvertToOrder(orderData);
-    clearCart();
+    try {
+      onConvertToOrder(orderData);
+      handleClearCart();
+    } catch (error) {
+      console.error("Place order error:", error);
+      toast.error("Failed to place order");
+    }
   };
 
   if (profileLoading || cartLoading) {
@@ -151,7 +192,10 @@ const OrderList = ({ onConvertToOrder }) => {
                     <option>Error fetching customers</option>
                   ) : (
                     customerList.map((customer) => (
-                      <option key={customer.id} value={customer.id}>
+                      <option
+                        key={customer.customerId}
+                        value={customer.customerId}
+                      >
                         {customer.name}
                       </option>
                     ))

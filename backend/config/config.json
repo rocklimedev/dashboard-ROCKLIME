@@ -1,23 +1,23 @@
 {
   "development": {
-    "username": "root",
-    "password": "dv@09112002",
-    "database": "dashboard",
-    "host": "127.0.0.1",
+    "username": "spsyn8lm_rocklime_dash",
+    "password": "rocklime@2025",
+    "database": "spsyn8lm_rocklime_dashboard",
+    "host": "119.18.54.11",
     "dialect": "mysql"
   },
   "test": {
-    "username": "root",
-    "password": "dv@09112002",
-    "database": "dashboard",
-    "host": "127.0.0.1",
+    "username": "spsyn8lm_rocklime_dash",
+    "password": "rocklime@2025",
+    "database": "spsyn8lm_rocklime_dashboard",
+    "host": "119.18.54.11",
     "dialect": "mysql"
   },
   "production": {
-    "username": "root",
-    "password": "dv@09112002",
-    "database": "dashboard",
-    "host": "127.0.0.1",
+    "username": "spsyn8lm_rocklime_dash",
+    "password": "rocklime@2025",
+    "database": "spsyn8lm_rocklime_dashboard",
+    "host": "119.18.54.11",
     "dialect": "mysql"
   }
 }

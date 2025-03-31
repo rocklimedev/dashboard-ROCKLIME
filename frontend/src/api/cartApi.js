@@ -7,7 +7,6 @@ export const cartApi = createApi({
     baseUrl: `${API_URL}/carts`,
     prepareHeaders: (headers) => {
       const token = localStorage.getItem("token");
-
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
       }
@@ -30,15 +29,25 @@ export const cartApi = createApi({
         body: JSON.stringify({ userId, productId }),
       }),
     }),
-
     getCart: builder.query({
       query: (userId) => `/${userId}`,
+    }),
+    getAllCarts: builder.query({
+      query: () => "/all",
     }),
     removeFromCart: builder.mutation({
       query: (data) => ({
         url: "/remove",
         method: "POST",
         body: data,
+      }),
+    }),
+    reduceQuantity: builder.mutation({
+      query: ({ userId, productId }) => ({
+        url: "/reduce",
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, productId }),
       }),
     }),
     convertToCart: builder.mutation({
@@ -66,9 +75,11 @@ export const cartApi = createApi({
 export const {
   useAddToCartMutation,
   useGetCartQuery,
+  useGetAllCartsQuery,
   useRemoveFromCartMutation,
+  useReduceQuantityMutation,
   useConvertToCartMutation,
-  useClearCartMutation, // ✅ Hook for clearing cart
-  useUpdateCartMutation, // ✅ Hook for updating cart item
+  useClearCartMutation,
+  useUpdateCartMutation,
   useAddProductToCartMutation,
 } = cartApi;

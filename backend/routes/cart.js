@@ -16,4 +16,6 @@ router.post("/clear", cartController.clearCart);
 router.post("/add-to-cart", cartController.addProductToCart);
 // Update cart item
 router.post("/update", cartController.updateCart);
+router.get("/all", cartController.getAllCarts);
+router.post("/reduce", cartController.reduceQuantity);
 module.exports = router;

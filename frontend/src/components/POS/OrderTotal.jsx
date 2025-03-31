@@ -1,4 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
+
+const formatCurrency = (value) =>
+  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(
+    value
+  );
 
 const OrderTotal = ({
   shipping = 0,
@@ -8,13 +13,8 @@ const OrderTotal = ({
   roundOff = 0,
   subTotal = 0,
 }) => {
-  const totalPayable = (
-    subTotal +
-    shipping +
-    tax +
-    roundOff -
-    discount -
-    coupon
+  const totalPayable = Number(
+    subTotal + shipping + tax + roundOff - discount - coupon
   ).toFixed(2);
 
   return (
@@ -24,21 +24,23 @@ const OrderTotal = ({
         <tbody>
           <tr>
             <td>Shipping</td>
-            <td className="text-gray-9 text-end">₹{shipping.toFixed(2)}</td>
+            <td className="text-gray-9 text-end">{formatCurrency(shipping)}</td>
           </tr>
           <tr>
             <td>Tax</td>
-            <td className="text-gray-9 text-end">₹{tax.toFixed(2)}</td>
+            <td className="text-gray-9 text-end">{formatCurrency(tax)}</td>
           </tr>
           <tr>
             <td>Coupon</td>
-            <td className="text-gray-9 text-end">-₹{coupon.toFixed(2)}</td>
+            <td className="text-gray-9 text-end">-{formatCurrency(coupon)}</td>
           </tr>
           <tr>
             <td>
               <span className="text-danger">Discount</span>
             </td>
-            <td className="text-danger text-end">-₹{discount.toFixed(2)}</td>
+            <td className="text-danger text-end">
+              -{formatCurrency(discount)}
+            </td>
           </tr>
           <tr>
             <td>
@@ -57,17 +59,18 @@ const OrderTotal = ({
               </div>
             </td>
             <td className="text-gray-9 text-end">
-              {roundOff >= 0 ? "+" : "-"}₹{Math.abs(roundOff).toFixed(2)}
+              {roundOff >= 0 ? "+" : "-"}
+              {formatCurrency(Math.abs(roundOff))}
             </td>
           </tr>
           <tr>
             <td>Sub Total</td>
-            <td className="text-gray-9 text-end">₹{subTotal.toFixed(2)}</td>
+            <td className="text-gray-9 text-end">{formatCurrency(subTotal)}</td>
           </tr>
           <tr>
             <td className="fw-bold border-top border-dashed">Total Payable</td>
             <td className="text-gray-9 fw-bold text-end border-top border-dashed">
-              ₹{totalPayable}
+              {formatCurrency(totalPayable)}
             </td>
           </tr>
         </tbody>

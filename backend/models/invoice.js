@@ -2,6 +2,8 @@ const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
 const { v4: uuidv4 } = require("uuid"); // Importing UUID library
 const Order = require("./orders"); // Import Order model
+const Customer = require("./customers");
+const Address = require("./address");
 
 const Invoice = sequelize.define(
   "Invoice",
@@ -14,51 +16,63 @@ const Invoice = sequelize.define(
     client: {
       type: DataTypes.UUID,
       references: {
-        model: "users",
-        key: "userId",
+        model: Customer,
+        key: "customerId",
       },
+      allowNull: false,
+    },
+    orderId: {
+      type: DataTypes.UUID,
+      references: {
+        model: Order,
+        key: "id",
+      },
+      allowNull: false,
     },
     billTo: {
       type: DataTypes.STRING(255),
-      allowNull: true,
+      allowNull: false,
     },
     shipTo: {
       type: DataTypes.UUID,
       references: {
-        model: "addresses",
+        model: Address,
         key: "addressId",
       },
+      allowNull: false,
     },
     amount: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
     },
-    orderNumber: {
-      type: DataTypes.STRING(100),
-      allowNull: true,
-    },
     invoiceDate: {
       type: DataTypes.DATEONLY,
       allowNull: false,
+      validate: {
+        isBeforeDueDate(value) {
+          if (this.dueDate && value >= this.dueDate) {
+            throw new Error("Invoice date must be before the due date.");
+          }
+        },
+      },
     },
     dueDate: {
       type: DataTypes.DATEONLY,
       allowNull: false,
     },
     paymentMethod: {
-      type: DataTypes.JSON,
+      type: DataTypes.JSON, // Store mode of payment (UPI, card, etc.)
       allowNull: true,
     },
     status: {
-      type: DataTypes.ENUM("paid", "unpaid", "partially paid"),
+      type: DataTypes.ENUM(
+        "paid",
+        "unpaid",
+        "partially paid",
+        "void",
+        "refund"
+      ),
       allowNull: false,
-    },
-    orderId: {
-      type: DataTypes.UUID, // Ensure this matches the primary key type in Order
-      references: {
-        model: Order, // Correct reference to Order model
-        key: "id", // Fix: Reference the correct column `id` instead of `orderNama`
-      },
     },
     products: {
       type: DataTypes.JSON,
@@ -66,7 +80,8 @@ const Invoice = sequelize.define(
     },
     signatureName: {
       type: DataTypes.STRING(255),
-      allowNull: true,
+      allowNull: false,
+      defaultValue: "CM TRADING CO",
     },
   },
   {

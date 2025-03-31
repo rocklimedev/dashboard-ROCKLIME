@@ -14,6 +14,7 @@ import { LuUsersRound } from "react-icons/lu";
 import { PiSignatureDuotone, PiUserListBold } from "react-icons/pi";
 import { LiaFileInvoiceSolid, LiaFileSignatureSolid } from "react-icons/lia";
 import OrderWrapper from "../components/POS/OrderWrapper";
+import OrderDetails from "../components/POS/OrderDetail";
 import {
   MdOutlineBrandingWatermark,
   MdOutlineBorderColor,
@@ -235,6 +236,13 @@ const masterRoutes = [
     icon: <FaFirstOrder />,
     isSidebarActive: true,
     element: <OrderWrapper />,
+  },
+  {
+    path: "/orders/:id",
+    name: "Order Details",
+    icon: <FaFirstOrder />,
+    isSidebarActive: true,
+    element: <OrderDetails />,
   },
   {
     path: "#",

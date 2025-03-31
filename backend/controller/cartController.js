@@ -162,22 +162,25 @@ exports.getCart = async (req, res) => {
 };
 
 // Remove from cart
+// removeFromCart
 exports.removeFromCart = async (req, res) => {
   try {
     const { userId, productId } = req.body;
+    console.log("Remove Request:", { userId, productId });
 
     if (!userId || !productId) {
       return res.status(400).json({ message: "Invalid data" });
     }
 
     const cart = await Cart.findOne({ userId });
-
     if (!cart) {
       return res.status(404).json({ message: "Cart not found" });
     }
 
     const initialLength = cart.items.length;
-    cart.items = cart.items.filter((item) => item.productId !== productId);
+    cart.items = cart.items.filter(
+      (item) => item.productId.toString() !== productId.toString()
+    ); // Ensure string comparison
 
     if (cart.items.length === initialLength) {
       return res.status(404).json({ message: "Product not found in cart" });
@@ -193,39 +196,42 @@ exports.removeFromCart = async (req, res) => {
   }
 };
 
-// Update cart
+// updateCart
 exports.updateCart = async (req, res) => {
   try {
     const { userId, productId, quantity, discount = 0, tax = 0 } = req.body;
+    console.log("Update Request:", {
+      userId,
+      productId,
+      quantity,
+      discount,
+      tax,
+    });
 
     if (!userId || !productId || !quantity || quantity < 1) {
       return res.status(400).json({ message: "Invalid update data" });
     }
 
     const cart = await Cart.findOne({ userId });
-
     if (!cart) {
       return res.status(404).json({ message: "Cart not found" });
     }
 
     const existingItem = cart.items.find(
-      (item) => item.productId === productId
+      (item) => item.productId.toString() === productId.toString()
     );
-
     if (!existingItem) {
       return res.status(404).json({ message: "Product not found in cart" });
     }
 
-    // Fetch price from MySQL
-    const product = await Product.findByPk(productId);
-    if (!product) {
-      return res.status(404).json({ message: "Product not found in catalog" });
-    }
-
-    existingItem.quantity = quantity;
-    existingItem.discount = discount;
-    existingItem.tax = tax;
-    existingItem.total = product.price * quantity - discount + tax;
+    // Temporary: Use existing price to isolate MySQL issue
+    existingItem.quantity = Number(quantity); // Ensure number
+    existingItem.discount = Number(discount);
+    existingItem.tax = Number(tax);
+    existingItem.total =
+      existingItem.price * existingItem.quantity -
+      existingItem.discount +
+      existingItem.tax;
 
     cart.updatedAt = new Date();
     await cart.save();
@@ -236,7 +242,6 @@ exports.updateCart = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-
 // Clear cart
 exports.clearCart = async (req, res) => {
   try {
@@ -374,5 +379,43 @@ exports.getCartById = async (req, res) => {
   } catch (err) {
     console.error("Error fetching cart:", err.message);
     res.status(500).json({ error: err.message });
+  }
+};
+
+// ✅ Get All Carts
+exports.getAllCarts = async (req, res) => {
+  try {
+    const carts = await Cart.find(); // Fetch all cart documents
+    res.status(200).json({ success: true, carts });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ success: false, message: "Error fetching carts", error });
+  }
+};
+
+exports.reduceQuantity = async (req, res) => {
+  try {
+    const { userId, productId } = req.body;
+
+    // Find the cart item
+    const cartItem = await Cart.findOne({ userId, productId });
+
+    if (!cartItem) {
+      return res.status(404).json({ message: "Item not found in cart" });
+    }
+
+    // Decrease the quantity
+    if (cartItem.quantity > 1) {
+      cartItem.quantity -= 1;
+      await cartItem.save();
+      return res.status(200).json({ message: "Quantity reduced", cartItem });
+    } else {
+      // If quantity is 1, remove the item
+      await Cart.deleteOne({ userId, productId });
+      return res.status(200).json({ message: "Item removed from cart" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Error reducing quantity", error });
   }
 };
