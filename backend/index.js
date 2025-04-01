@@ -34,7 +34,7 @@ const corsOptions = {
   origin: [
     "http://localhost:3000",
     "http://localhost:3001",
-    "https://dashboard-rocklime.vercel.app/",
+    "https://dashboard-rocklime.vercel.app",
   ], // ✅ Remove trailing slash
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], // ✅ Allow necessary methods
