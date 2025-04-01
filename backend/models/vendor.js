@@ -35,9 +35,10 @@ const Vendor = sequelize.define(
       },
     },
   },
-  { sequelize, modelName: "Vendor" }
+  {
+    tableName: "vendors", // Force lowercase table name
+    timestamps: true,
+  }
 );
-
-
 
 module.exports = Vendor;

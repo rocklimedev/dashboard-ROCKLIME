@@ -46,7 +46,10 @@ const User = sequelize.define(
 
     password: { type: DataTypes.STRING, allowNull: false },
   },
-  { timestamps: true }
+  {
+    tableName: "users", // Force lowercase table name
+    timestamps: true,
+  }
 );
 
 // Ensure only one SuperAdmin exists

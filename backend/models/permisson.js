@@ -1,6 +1,6 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
-const { v4: uuidv4 } = require("uuid");
+const { v4: uuidv4 } = require("uuid"); // Import UUID function
 
 const Permission = sequelize.define(
   "Permission",
@@ -8,7 +8,7 @@ const Permission = sequelize.define(
     permissionId: {
       type: DataTypes.UUID,
       primaryKey: true,
-      defaultValue: uuidv4,
+      defaultValue: uuidv4, // Use UUIDv4 for default value
     },
     route: {
       type: DataTypes.STRING(255),
@@ -20,19 +20,12 @@ const Permission = sequelize.define(
     },
     module: {
       type: DataTypes.STRING(255),
-      allowNull: false, // This will represent the name of the whole module (router)
+      allowNull: false,
     },
   },
   {
-    indexes: [
-      {
-        unique: true,
-        fields: ["route", "name"], // Ensure the combination is unique, not just route
-      },
-      {
-        fields: ["module"], // Index for faster queries on the module
-      },
-    ],
+    tableName: "permissions",
+    timestamps: true,
   }
 );
 

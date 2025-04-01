@@ -14,12 +14,11 @@
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
+-- Dumping database structure for spsyn8lm_rocklime_dashboard
+CREATE DATABASE IF NOT EXISTS `spsyn8lm_rocklime_dashboard` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+USE `spsyn8lm_rocklime_dashboard`;
 
--- Dumping database structure for dashboard
-CREATE DATABASE IF NOT EXISTS `dashboard` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
-USE `dashboard`;
-
--- Dumping structure for table dashboard.addresses
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.addresses
 CREATE TABLE IF NOT EXISTS `addresses` (
   `addressId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `street` varchar(255) DEFAULT NULL,
@@ -33,11 +32,11 @@ CREATE TABLE IF NOT EXISTS `addresses` (
   PRIMARY KEY (`addressId`),
   KEY `userId` (`userId`),
   CONSTRAINT `addresses_fk_userId` FOREIGN KEY (`userId`) REFERENCES `users` (`userId`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table dashboard.addresses: ~0 rows (approximately)
+-- Dumping data for table spsyn8lm_rocklime_dashboard.addresses: ~0 rows (approximately)
 
--- Dumping structure for table dashboard.brands
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.brands
 CREATE TABLE IF NOT EXISTS `brands` (
   `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `brandSlug` varchar(255) NOT NULL,
@@ -46,9 +45,9 @@ CREATE TABLE IF NOT EXISTS `brands` (
   `updatedAt` datetime NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `brandSlug` (`brandSlug`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table dashboard.brands: ~6 rows (approximately)
+-- Dumping data for table spsyn8lm_rocklime_dashboard.brands: ~6 rows (approximately)
 INSERT INTO `brands` (`id`, `brandSlug`, `brandName`, `createdAt`, `updatedAt`) VALUES
 	('13847c2c-3c91-4bb2-a130-f94928658237', 'GP_002', 'Grohe Premium', '2025-03-01 10:10:42', '2025-03-01 10:10:42'),
 	('25df6ffd-16a5-4cd2-8c4b-c7a18a3f18ab', 'JA_003', 'Jayna', '2025-03-01 10:10:42', '2025-03-01 10:10:42'),
@@ -57,7 +56,7 @@ INSERT INTO `brands` (`id`, `brandSlug`, `brandName`, `createdAt`, `updatedAt`) 
 	('d642a7f4-9bb9-4d91-bcf3-fd63b438b85e', 'GB_004', 'Grohe Bau', '2025-03-01 10:10:42', '2025-03-01 10:10:42'),
 	('f6a48262-0459-40fd-af0c-c9e323ebfb33', 'JA_03456', 'eliiiotttttt', '2025-03-22 04:00:43', '2025-03-22 04:00:43');
 
--- Dumping structure for table dashboard.cart
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.cart
 CREATE TABLE IF NOT EXISTS `cart` (
   `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `user_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
@@ -67,13 +66,13 @@ CREATE TABLE IF NOT EXISTS `cart` (
   PRIMARY KEY (`id`),
   KEY `cart_ibfk_1` (`user_id`),
   CONSTRAINT `cart_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`userId`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table dashboard.cart: ~1 rows (approximately)
+-- Dumping data for table spsyn8lm_rocklime_dashboard.cart: ~1 rows (approximately)
 INSERT INTO `cart` (`id`, `user_id`, `created_at`, `updated_at`, `items`) VALUES
 	('b93fc33e-dcc6-4a8c-b077-e28e66451b32', '5d5bd153-8877-4db1-a5cc-2af5c7e55d9c', '2025-03-24 11:48:03', '2025-03-24 11:48:03', 'null');
 
--- Dumping structure for table dashboard.categories
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.categories
 CREATE TABLE IF NOT EXISTS `categories` (
   `categoryId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `name` varchar(100) NOT NULL,
@@ -91,16 +90,16 @@ CREATE TABLE IF NOT EXISTS `categories` (
   KEY `parentCategoryId` (`parentCategoryId`),
   CONSTRAINT `categories_fk_parentCategoryId` FOREIGN KEY (`parentCategoryId`) REFERENCES `parentcategories` (`id`),
   CONSTRAINT `categories_fk_vendorId` FOREIGN KEY (`vendorId`) REFERENCES `vendors` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table dashboard.categories: ~4 rows (approximately)
+-- Dumping data for table spsyn8lm_rocklime_dashboard.categories: ~4 rows (approximately)
 INSERT INTO `categories` (`categoryId`, `name`, `total_products`, `vendorId`, `slug`, `parentCategory`, `parentCategoryId`, `createdAt`, `updatedAt`) VALUES
 	('0e718b1d-a0ab-47a7-bb51-021e522b5596', 'Sanitary', 0, NULL, 'C_1', 1, NULL, '2025-03-01 10:10:18', '2025-03-01 10:10:18'),
 	('748a1b48-aa57-440f-9d85-f6a544b094d5', 'Ceramics', 0, NULL, 'C_2', 1, NULL, '2025-03-01 10:10:18', '2025-03-01 10:10:18'),
 	('b802d456-fca2-4e42-b5af-a20392b2f4b3', 'test 234', 0, NULL, 'test-234', 1, NULL, '2025-03-22 06:34:52', '2025-03-22 06:34:52'),
 	('e84647d5-98d8-46b5-bbae-43e140ff81f2', 'Kitchen', 0, NULL, 'C_3', 1, NULL, '2025-03-01 10:10:18', '2025-03-01 10:10:18');
 
--- Dumping structure for table dashboard.companies
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.companies
 CREATE TABLE IF NOT EXISTS `companies` (
   `companyId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `name` varchar(255) NOT NULL,
@@ -116,9 +115,9 @@ CREATE TABLE IF NOT EXISTS `companies` (
   UNIQUE KEY `slug` (`slug`),
   KEY `parentCompanyId` (`parentCompanyId`),
   CONSTRAINT `companies_ibfk_1` FOREIGN KEY (`parentCompanyId`) REFERENCES `companies` (`companyId`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table dashboard.companies: ~5 rows (approximately)
+-- Dumping data for table spsyn8lm_rocklime_dashboard.companies: ~5 rows (approximately)
 INSERT INTO `companies` (`companyId`, `name`, `address`, `website`, `createdDate`, `slug`, `parentCompanyId`, `createdAt`, `updatedAt`) VALUES
 	('3dec65cc-3d93-4b12-b060-6e0374f375d9', 'SP SYNDICATE PRIVATE LIMITED', '123, Main Street, Mumbai, India', 'https://spsyndicate.com', '2005-07-20', 'sp-syndicate-private-limited', NULL, '2025-03-12 10:57:43', '2025-03-12 10:57:43'),
 	('401df7ef-f350-4bc4-ba6f-bf36923af252', 'CHABBRA MARBEL', '123, Main Street, Mumbai, India', 'https://cmtradingco.com/', '2005-07-20', 'chabbra-marbel', NULL, '2025-03-12 11:03:07', '2025-03-12 11:03:07'),
@@ -126,7 +125,7 @@ INSERT INTO `companies` (`companyId`, `name`, `address`, `website`, `createdDate
 	('5ffbaa43-2cea-410f-b604-8b6e5558b2e8', 'RIPPOTAI ARCHITECTURE', '123, Main Street, Mumbai, India', 'https://rippotaiarchitecture.com/', '2005-07-20', 'rippotai-architecture', NULL, '2025-03-12 11:01:37', '2025-03-12 11:01:37'),
 	('87a5c590-5a81-4893-985e-f19a0ad0b122', 'ROCKLIME', '123, Main Street, Mumbai, India', 'https://cmtradingco.com/', '2005-07-20', 'rocklime', NULL, '2025-03-12 11:04:18', '2025-03-12 11:04:18');
 
--- Dumping structure for table dashboard.customers
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.customers
 CREATE TABLE IF NOT EXISTS `customers` (
   `customerId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `name` varchar(100) NOT NULL,
@@ -149,15 +148,15 @@ CREATE TABLE IF NOT EXISTS `customers` (
   PRIMARY KEY (`customerId`),
   UNIQUE KEY `email` (`email`),
   KEY `vendorId` (`vendorId`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table dashboard.customers: ~3 rows (approximately)
+-- Dumping data for table spsyn8lm_rocklime_dashboard.customers: ~3 rows (approximately)
 INSERT INTO `customers` (`customerId`, `name`, `email`, `mobileNumber`, `companyName`, `address`, `quotations`, `invoices`, `isVendor`, `vendorId`, `totalAmount`, `paidAmount`, `balance`, `dueDate`, `paymentMode`, `invoiceStatus`, `createdAt`, `updatedAt`) VALUES
 	('09e042f3-b3e4-4889-a21e-71a95af8125e', 'utkash gulati', 'utkarshgulati@gmail.com', '8923892323', 'ELIOT', NULL, NULL, NULL, 0, NULL, 23000, 12000, 12000, '2025-03-29 00:00:00', 'Cash', 'Overdue', '2025-03-10 10:02:16', '2025-03-10 10:02:16'),
 	('2e56a4ad-7d78-463d-840d-efc82ae47d92', 'Dhruv Verma', 'vermadhruv09112002@gmail.com', '08278978827', 'ELIOTTTT', NULL, NULL, NULL, 0, NULL, 450000, 40000, 5000, '2025-03-28 00:00:00', 'Cash', 'Overdue', '2025-03-22 03:56:31', '2025-03-22 03:56:31'),
 	('db5daa16-f57d-426b-8093-c81c8d209ac3', 'grohe vendor 1234', 'random@gmail.com', '8798987676', 'GROHE', NULL, NULL, NULL, 0, NULL, 0, 0, 0, NULL, NULL, NULL, '2025-03-03 05:57:38', '2025-03-03 05:57:38');
 
--- Dumping structure for table dashboard.invoices
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.invoices
 CREATE TABLE IF NOT EXISTS `invoices` (
   `invoiceId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `client` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
@@ -182,11 +181,11 @@ CREATE TABLE IF NOT EXISTS `invoices` (
   CONSTRAINT `invoices_ibfk_712` FOREIGN KEY (`client`) REFERENCES `users` (`userId`) ON UPDATE CASCADE,
   CONSTRAINT `invoices_ibfk_713` FOREIGN KEY (`shipTo`) REFERENCES `addresses` (`addressId`),
   CONSTRAINT `invoices_ibfk_717` FOREIGN KEY (`shipTo`) REFERENCES `addresses` (`addressId`) ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table dashboard.invoices: ~0 rows (approximately)
+-- Dumping data for table spsyn8lm_rocklime_dashboard.invoices: ~0 rows (approximately)
 
--- Dumping structure for table dashboard.keywords
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.keywords
 CREATE TABLE IF NOT EXISTS `keywords` (
   `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `keyword` varchar(100) NOT NULL,
@@ -195,9 +194,9 @@ CREATE TABLE IF NOT EXISTS `keywords` (
   `updatedAt` datetime NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `keyword` (`keyword`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table dashboard.keywords: ~24 rows (approximately)
+-- Dumping data for table spsyn8lm_rocklime_dashboard.keywords: ~24 rows (approximately)
 INSERT INTO `keywords` (`id`, `keyword`, `type`, `createdAt`, `updatedAt`) VALUES
 	('0ae5be0e-5fb2-465e-81ed-b861fd786d56', 'faucet', 'Sanitary', '2025-03-04 07:16:01', '2025-03-04 07:16:01'),
 	('0d08646f-e165-4f0c-87d0-8de053a1cdf9', 'cover', 'Ceramics', '2025-03-04 07:16:01', '2025-03-04 07:16:01'),
@@ -224,7 +223,7 @@ INSERT INTO `keywords` (`id`, `keyword`, `type`, `createdAt`, `updatedAt`) VALUE
 	('b89ca00a-c73c-4e8d-9ab8-2be7115a221b', 'basin', 'Ceramics', '2025-03-04 07:16:01', '2025-03-04 07:16:01'),
 	('eabb744b-99e8-4963-85fe-c9594f771f00', 'seat', 'Ceramics', '2025-03-04 07:16:01', '2025-03-04 07:16:01');
 
--- Dumping structure for table dashboard.orders
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.orders
 CREATE TABLE IF NOT EXISTS `orders` (
   `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `title` varchar(255) NOT NULL,
@@ -250,11 +249,11 @@ CREATE TABLE IF NOT EXISTS `orders` (
   CONSTRAINT `Orders_createdBy_foreign_idx` FOREIGN KEY (`createdBy`) REFERENCES `users` (`userId`),
   CONSTRAINT `Orders_createdFor_foreign_idx` FOREIGN KEY (`createdFor`) REFERENCES `customers` (`customerId`),
   CONSTRAINT `orders_fk_quotationId` FOREIGN KEY (`quotationId`) REFERENCES `quotations` (`quotationId`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table dashboard.orders: ~0 rows (approximately)
+-- Dumping data for table spsyn8lm_rocklime_dashboard.orders: ~0 rows (approximately)
 
--- Dumping structure for table dashboard.parentcategories
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.parentcategories
 CREATE TABLE IF NOT EXISTS `parentcategories` (
   `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `name` varchar(100) NOT NULL,
@@ -264,11 +263,11 @@ CREATE TABLE IF NOT EXISTS `parentcategories` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`),
   UNIQUE KEY `slug` (`slug`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table dashboard.parentcategories: ~0 rows (approximately)
+-- Dumping data for table spsyn8lm_rocklime_dashboard.parentcategories: ~0 rows (approximately)
 
--- Dumping structure for table dashboard.permissions
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.permissions
 CREATE TABLE IF NOT EXISTS `permissions` (
   `permissionId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `createdAt` datetime NOT NULL,
@@ -279,9 +278,9 @@ CREATE TABLE IF NOT EXISTS `permissions` (
   PRIMARY KEY (`permissionId`),
   UNIQUE KEY `permissions_route_name` (`route`,`name`),
   KEY `permissions_module` (`module`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table dashboard.permissions: ~72 rows (approximately)
+-- Dumping data for table spsyn8lm_rocklime_dashboard.permissions: ~72 rows (approximately)
 INSERT INTO `permissions` (`permissionId`, `createdAt`, `updatedAt`, `route`, `name`, `module`) VALUES
 	('007ecf3e-90e5-434b-a166-fefb031b1c2e', '2025-03-18 09:42:35', '2025-03-18 09:42:35', '/parent-categories/:id', 'delete', 'parentController'),
 	('0253d597-db9b-439b-b401-5a6521f47128', '2025-03-18 09:42:35', '2025-03-18 09:42:35', '/keywords/:id', 'view', 'keyword'),
@@ -356,7 +355,7 @@ INSERT INTO `permissions` (`permissionId`, `createdAt`, `updatedAt`, `route`, `n
 	('f94a17c5-83be-4d54-8287-4d65d3475dca', '2025-03-18 09:42:36', '2025-03-18 09:42:36', '/roles', 'write', 'roles'),
 	('fb5926c0-61cc-4ae4-ac1e-e93b4788bbb8', '2025-03-18 09:42:35', '2025-03-18 09:42:35', '/companies/parent/:parentId', 'view', 'company');
 
--- Dumping structure for table dashboard.products
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.products
 CREATE TABLE IF NOT EXISTS `products` (
   `productId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `product_segment` varchar(100) DEFAULT NULL,
@@ -389,9 +388,9 @@ CREATE TABLE IF NOT EXISTS `products` (
   CONSTRAINT `fk_products_brand` FOREIGN KEY (`brandId`) REFERENCES `brands` (`id`),
   CONSTRAINT `fk_products_category` FOREIGN KEY (`categoryId`) REFERENCES `categories` (`categoryId`) ON UPDATE CASCADE,
   CONSTRAINT `fk_products_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`userId`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table dashboard.products: ~198 rows (approximately)
+-- Dumping data for table spsyn8lm_rocklime_dashboard.products: ~198 rows (approximately)
 INSERT INTO `products` (`productId`, `product_segment`, `productGroup`, `name`, `product_code`, `company_code`, `sellingPrice`, `purchasingPrice`, `quantity`, `discountType`, `barcode`, `alert_quantity`, `tax`, `description`, `images`, `brandId`, `categoryId`, `createdAt`, `updatedAt`, `user_id`, `isFeatured`) VALUES
 	('00d10f20-f032-448e-bce4-3522ed7433d2', NULL, 'Shower Railset', 'Euphoria 110 Champagne Shower Rail Set+ Dish\r\n600mm', 'EGRGP20011366', '27232001', 17200.00, 13760.00, 357, 'percent', 'b512fb7e-b4e1-400f-91f6-91ea297148df', 10, 18.00, 'Euphoria 110 Champagne Shower Rail Set+ Dish\r\n600mm', '"[]"', '13847c2c-3c91-4bb2-a130-f94928658237', '0e718b1d-a0ab-47a7-bb51-021e522b5596', '2025-03-01 10:19:10', '2025-03-10 08:02:11', NULL, 0),
 	('015d7d11-5d50-426c-8bde-aed619ac4ea1', NULL, 'Stop Valve', 'STOP VALVE CERAMIC VALVE', 'EASGL012127', '103650GL01', 1700.00, 1360.00, 100, 'percent', '4a5c726d-01ea-4726-afbb-867c224ea2c4', 10, 18.00, 'STOP VALVE CERAMIC VALVE', '"[]"', '4e3acf32-1e47-4d38-a6bb-417addd52ac0', '0e718b1d-a0ab-47a7-bb51-021e522b5596', '2025-03-01 10:19:10', '2025-03-01 10:19:10', NULL, 0),
@@ -592,7 +591,7 @@ INSERT INTO `products` (`productId`, `product_segment`, `productGroup`, `name`, 
 	('fe22ebe9-7fd5-4578-9637-e74e5bf99953', NULL, 'Flush Plate', 'Nova Cosmopolitan Flush Plate, Chrome', 'EGRGB40002041', '38765000', 4950.00, 3960.00, 100, 'percent', 'cfe0feb5-9003-41a8-a3f1-073cbdfbbd37', 10, 18.00, 'Nova Cosmopolitan Flush Plate, Chrome', '"[]"', 'd642a7f4-9bb9-4d91-bcf3-fd63b438b85e', '748a1b48-aa57-440f-9d85-f6a544b094d5', '2025-03-01 10:19:10', '2025-03-01 10:19:10', NULL, 0),
 	('fed02ff0-a1dd-4dab-ae52-0d331e8de560', NULL, 'Hand Shower', 'Euphoria Cube+ Stick handshower 9,5l', 'EGRGP5GN01358', '26885GN0', 16200.00, 12960.00, 100, 'percent', 'e444f5aa-96c3-456e-8a91-37b5545383b0', 10, 18.00, 'Euphoria Cube+ Stick handshower 9,5l', '"[]"', '13847c2c-3c91-4bb2-a130-f94928658237', '0e718b1d-a0ab-47a7-bb51-021e522b5596', '2025-03-01 10:19:10', '2025-03-01 10:19:10', NULL, 0);
 
--- Dumping structure for table dashboard.quotations
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.quotations
 CREATE TABLE IF NOT EXISTS `quotations` (
   `quotationId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `document_title` varchar(255) NOT NULL,
@@ -624,9 +623,9 @@ CREATE TABLE IF NOT EXISTS `quotations` (
   CONSTRAINT `quotations_ibfk_70` FOREIGN KEY (`createdBy`) REFERENCES `users` (`userId`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `quotations_ibfk_71` FOREIGN KEY (`customerId`) REFERENCES `customers` (`customerId`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `quotations_ibfk_72` FOREIGN KEY (`createdBy`) REFERENCES `users` (`userId`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table dashboard.quotations: ~11 rows (approximately)
+-- Dumping data for table spsyn8lm_rocklime_dashboard.quotations: ~11 rows (approximately)
 INSERT INTO `quotations` (`quotationId`, `document_title`, `quotation_date`, `due_date`, `reference_number`, `include_gst`, `gst_value`, `products`, `discountType`, `roundOff`, `finalAmount`, `signature_name`, `signature_image`, `createdAt`, `updatedAt`, `customerId`, `createdBy`) VALUES
 	('06c554b0-15a1-49b8-b3b7-912de4fa8dd6', 'TEST 1234455', '2025-03-19', '2025-05-02', '8278978827', 1, 2.50, '[{"qty": 1, "tax": 0, "name": "Grandera Ceiling Shower Arm 142mm", "total": 11510, "images": "[]", "barcode": "bd5838d4-e2ab-449d-85b7-f037bf60cee9", "brandId": "13847c2c-3c91-4bb2-a130-f94928658237", "user_id": null, "discount": "percent", "quantity": 100, "createdAt": "2025-03-01T10:19:10.000Z", "productId": "1d2343f6-af57-45be-8155-0ea1ac6d0bc9", "updatedAt": "2025-03-01T10:19:10.000Z", "categoryId": "0e718b1d-a0ab-47a7-bb51-021e522b5596", "isFeatured": false, "description": "Grandera Ceiling Shower Arm 142mm", "company_code": "26899000", "discountType": "percent", "productGroup": "Shower Accessories", "product_code": "EGRGP90001522", "sellingPrice": "11510.00", "alert_quantity": 10, "product_segment": null, "purchasingPrice": "9208.00"}, {"qty": 1, "tax": 0, "name": "Euphoria 260 Headshower Set 142mm", "total": 22950, "images": "[]", "barcode": "d8e0a60b-253b-4867-bf7a-5e9d2658d21f", "brandId": "13847c2c-3c91-4bb2-a130-f94928658237", "user_id": null, "discount": "percent", "quantity": 100, "createdAt": "2025-03-01T10:19:10.000Z", "productId": "32c60a6d-9543-41fa-bce3-a4290d3569db", "updatedAt": "2025-03-01T10:19:10.000Z", "categoryId": "0e718b1d-a0ab-47a7-bb51-021e522b5596", "isFeatured": false, "description": "Euphoria 260 Headshower Set 142mm", "company_code": "26460000", "discountType": "percent", "productGroup": "Head Shower", "product_code": "EGRGP00001333", "sellingPrice": "22950.00", "alert_quantity": 10, "product_segment": null, "purchasingPrice": "18360.00"}, {"qty": 1, "tax": 0, "name": "Brass chromed/ABS 40 cm long", "total": 6200, "images": "[]", "barcode": "3cb6f78c-fdc4-4e69-9cb7-af8d1bc17a23", "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0", "user_id": null, "discount": "percent", "quantity": 100, "createdAt": "2025-03-01T10:19:10.000Z", "productId": "049acce1-3390-4452-bc18-1dd2fbff10df", "updatedAt": "2025-03-01T10:19:10.000Z", "categoryId": "0e718b1d-a0ab-47a7-bb51-021e522b5596", "isFeatured": false, "description": "Brass chromed/ABS 40 cm long", "company_code": "F78108-CHADYBR", "discountType": "percent", "productGroup": "Drain Technology (Traps)", "product_code": "EAS81082130", "sellingPrice": "6200.00", "alert_quantity": 10, "product_segment": null, "purchasingPrice": "4960.00"}]', 'percent', 2.50, 41679.00, 'Sachin', '', '2025-03-17 04:40:23', '2025-03-17 04:40:23', 'db5daa16-f57d-426b-8093-c81c8d209ac3', '5d5bd153-8877-4db1-a5cc-2af5c7e55d9c'),
 	('1b4e7469-23f7-44dc-ab48-8e12f3676faa', 'Test Quotation 6', '2025-05-07', '2025-11-09', 'QTN-009', 1, 18.00, '[{"MRP": 144500, "Brand_Slug": "13847c2c-3c91-4bb2-a130-f94928658237", "Category_Id": "0e718b1d-a0ab-47a7-bb51-021e522b5596", "Vendor_Slug": "V_3", "Company Code": "20593AL0", "Product Code": "EGRGP3AL0009", "Product group": "Basin Mixer - DM", "Product Segment": "Bathroom Fittings", "Product Description": "Three-hole basin mixer deck mounted for stick"}]', 'percent', 50.00, 120000.00, 'John Doe', 'base64_encoded_string', '2025-03-13 06:23:40', '2025-03-13 06:23:40', '09e042f3-b3e4-4889-a21e-71a95af8125e', '6208fc6a-45a3-4563-af1f-a63c294fd3bf'),
@@ -640,7 +639,7 @@ INSERT INTO `quotations` (`quotationId`, `document_title`, `quotation_date`, `du
 	('d6237d5e-99db-43c6-bb9c-5addc84de0b9', 'New Quotation 6', '2025-03-13', '2025-05-01', 'REF-1234555', 1, 18.00, '[{"tax": 18, "name": "Product A", "price": 500, "total": 0, "discount": 10, "quantity": 2, "productId": "product-uuid-1"}, {"tax": 12, "name": "Product B", "price": 1000, "total": 0, "discount": 5, "quantity": 1, "productId": "product-uuid-2"}]', 'percent', 2.50, 0.00, 'John Doe', 'base64string', '2025-03-13 07:48:17', '2025-03-13 07:48:17', '09e042f3-b3e4-4889-a21e-71a95af8125e', '5d5bd153-8877-4db1-a5cc-2af5c7e55d9c'),
 	('e7f5a181-5ca8-4def-9666-f41379136db1', 'New Quotation 6', '2025-03-17', '2025-05-01', 'REF-1234555', 1, 18.00, '[{"tax": 18, "name": "Product A", "price": 500, "total": 0, "discount": 10, "quantity": 2, "productId": "product-uuid-1"}, {"tax": 12, "name": "Product B", "price": 1000, "total": 0, "discount": 5, "quantity": 1, "productId": "product-uuid-2"}]', 'percent', 2.50, 0.00, 'John Doe', 'base64string', '2025-03-17 04:10:24', '2025-03-17 04:10:24', '09e042f3-b3e4-4889-a21e-71a95af8125e', '5d5bd153-8877-4db1-a5cc-2af5c7e55d9c');
 
--- Dumping structure for table dashboard.rolepermissions
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.rolepermissions
 CREATE TABLE IF NOT EXISTS `rolepermissions` (
   `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `createdAt` datetime NOT NULL,
@@ -650,13 +649,13 @@ CREATE TABLE IF NOT EXISTS `rolepermissions` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `RolePermissions_permissionId_roleId_unique` (`roleId`,`permissionId`),
   KEY `permissionId` (`permissionId`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table dashboard.rolepermissions: ~1 rows (approximately)
+-- Dumping data for table spsyn8lm_rocklime_dashboard.rolepermissions: ~1 rows (approximately)
 INSERT INTO `rolepermissions` (`id`, `createdAt`, `updatedAt`, `roleId`, `permissionId`) VALUES
 	('a09eb65d-7db9-494c-8da2-cea98015320a', '2025-03-22 08:01:55', '2025-03-22 08:01:55', 'c2eaf23a-765c-4ee5-91bf-cbc37fbdea21', '084a4f97-216b-4570-a3f8-f7eaf02e18bb');
 
--- Dumping structure for table dashboard.roles
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.roles
 CREATE TABLE IF NOT EXISTS `roles` (
   `roleId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `roleName` varchar(100) NOT NULL,
@@ -664,9 +663,9 @@ CREATE TABLE IF NOT EXISTS `roles` (
   `updatedAt` datetime NOT NULL,
   PRIMARY KEY (`roleId`),
   UNIQUE KEY `roleName` (`roleName`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table dashboard.roles: ~6 rows (approximately)
+-- Dumping data for table spsyn8lm_rocklime_dashboard.roles: ~6 rows (approximately)
 INSERT INTO `roles` (`roleId`, `roleName`, `createdAt`, `updatedAt`) VALUES
 	('0c3392e0-f416-407c-8699-e8638554eba9', 'USERS', '2025-03-18 09:59:47', '2025-03-18 09:59:47'),
 	('5bb7eed4-1106-4b93-9218-ad733cfc7b12', 'DEVELOPER', '2025-03-18 09:59:47', '2025-03-18 09:59:47'),
@@ -675,7 +674,7 @@ INSERT INTO `roles` (`roleId`, `roleName`, `createdAt`, `updatedAt`) VALUES
 	('cfbe02d3-c61d-4f09-9bc7-88fb2493f31d', 'ACCOUNTS', '2025-03-18 09:59:47', '2025-03-18 09:59:47'),
 	('ffb71a9e-3f2e-4e26-97e4-8611591356b0', 'ADMIN', '2025-03-18 09:59:47', '2025-03-18 09:59:47');
 
--- Dumping structure for table dashboard.signatures
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.signatures
 CREATE TABLE IF NOT EXISTS `signatures` (
   `signatureId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `signature_name` varchar(255) NOT NULL,
@@ -686,11 +685,11 @@ CREATE TABLE IF NOT EXISTS `signatures` (
   `userId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   PRIMARY KEY (`signatureId`),
   KEY `userId` (`userId`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table dashboard.signatures: ~0 rows (approximately)
+-- Dumping data for table spsyn8lm_rocklime_dashboard.signatures: ~0 rows (approximately)
 
--- Dumping structure for table dashboard.teammembers
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.teammembers
 CREATE TABLE IF NOT EXISTS `teammembers` (
   `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `teamId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
@@ -702,11 +701,11 @@ CREATE TABLE IF NOT EXISTS `teammembers` (
   `updatedAt` datetime NOT NULL,
   PRIMARY KEY (`id`),
   KEY `teamId` (`teamId`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table dashboard.teammembers: ~0 rows (approximately)
+-- Dumping data for table spsyn8lm_rocklime_dashboard.teammembers: ~0 rows (approximately)
 
--- Dumping structure for table dashboard.teams
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.teams
 CREATE TABLE IF NOT EXISTS `teams` (
   `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `adminId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
@@ -714,11 +713,11 @@ CREATE TABLE IF NOT EXISTS `teams` (
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table dashboard.teams: ~0 rows (approximately)
+-- Dumping data for table spsyn8lm_rocklime_dashboard.teams: ~0 rows (approximately)
 
--- Dumping structure for table dashboard.users
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.users
 CREATE TABLE IF NOT EXISTS `users` (
   `userId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `username` varchar(50) NOT NULL,
@@ -736,15 +735,15 @@ CREATE TABLE IF NOT EXISTS `users` (
   UNIQUE KEY `email` (`email`),
   KEY `roleId` (`roleId`),
   CONSTRAINT `users_ibfk_1` FOREIGN KEY (`roleId`) REFERENCES `roles` (`roleId`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table dashboard.users: ~3 rows (approximately)
+-- Dumping data for table spsyn8lm_rocklime_dashboard.users: ~3 rows (approximately)
 INSERT INTO `users` (`userId`, `username`, `name`, `email`, `mobileNumber`, `roles`, `status`, `password`, `createdAt`, `updatedAt`, `roleId`) VALUES
 	('2754cc2c-c5d6-4961-bc41-375df0caa9aa', 'vermadhruv', 'vermadhruv09112002', 'vermadhruv09112002@gmail.com', NULL, 'SALES', 'active', '$2b$10$3RkviShB7gEuY7nj.DP3/ujMGHsQ3Wi.c4e4PYvePRseqjK6emkdC', '2025-03-04 04:29:27', '2025-03-27 06:06:12', 'c3893e5f-4b6c-43c5-83ec-bc74beecfb30'),
 	('5d5bd153-8877-4db1-a5cc-2af5c7e55d9c', 'nandmurlibalakrishn', 'nandmurli balakrishn', 'nandmurlibalakrishn@gmail.com', NULL, 'SUPER_ADMIN', 'active', '$2b$10$fCjd0f5naTpvJvS0qkXve.26TZ.1AeTaxabsWba3mNSj2GBbyE9DS', '2025-03-08 04:31:16', '2025-03-08 04:31:16', 'c2eaf23a-765c-4ee5-91bf-cbc37fbdea21'),
 	('6208fc6a-45a3-4563-af1f-a63c294fd3bf', 'dhruvermafz', 'dhruv verma', 'dhruvermafz@rocklime.com', NULL, 'USERS', 'active', '$2b$10$lMYcK.pxcLvXwgishy.33urquQu2zo5BoY5uJ/r8QVh3tUCnLHIbq', '2025-03-01 11:02:37', '2025-03-01 11:02:37', NULL);
 
--- Dumping structure for table dashboard.vendors
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.vendors
 CREATE TABLE IF NOT EXISTS `vendors` (
   `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `vendorId` varchar(255) NOT NULL,
@@ -759,9 +758,9 @@ CREATE TABLE IF NOT EXISTS `vendors` (
   KEY `vendors_fk_brandSlug` (`brandSlug`),
   CONSTRAINT `vendors_fk_brandId` FOREIGN KEY (`brandId`) REFERENCES `brands` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `vendors_fk_brandSlug` FOREIGN KEY (`brandSlug`) REFERENCES `brands` (`brandSlug`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table dashboard.vendors: ~5 rows (approximately)
+-- Dumping data for table spsyn8lm_rocklime_dashboard.vendors: ~5 rows (approximately)
 INSERT INTO `vendors` (`id`, `vendorId`, `vendorName`, `brandId`, `brandSlug`, `createdAt`, `updatedAt`) VALUES
 	('04a1e87e-baef-49ef-b881-c4ecc0c851a6', 'V_2', 'S4 Bath', 'd642a7f4-9bb9-4d91-bcf3-fd63b438b85e', 'GB_004', '2025-03-01 10:12:42', '2025-03-01 10:12:42'),
 	('18f6e324-5156-42da-8a70-89ec03f93e96', 'V_4', 'Jayna', '25df6ffd-16a5-4cd2-8c4b-c7a18a3f18ab', 'JA_003', '2025-03-01 10:12:42', '2025-03-01 10:12:42'),

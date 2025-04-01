@@ -35,7 +35,10 @@ const Customer = sequelize.define(
       allowNull: true,
     },
   },
-  { timestamps: true }
+  {
+    tableName: "customers", // Force lowercase table name
+    timestamps: true,
+  }
 );
 
 module.exports = Customer;

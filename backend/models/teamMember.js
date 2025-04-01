@@ -2,42 +2,49 @@ const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
 const Team = require("./team");
 
-const TeamMember = sequelize.define("TeamMember", {
-  id: {
-    type: DataTypes.UUID,
-    primaryKey: true,
-    defaultValue: DataTypes.UUIDV4,
-  },
+const TeamMember = sequelize.define(
+  "TeamMember",
+  {
+    id: {
+      type: DataTypes.UUID,
+      primaryKey: true,
+      defaultValue: DataTypes.UUIDV4,
+    },
 
-  teamId: {
-    type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: Team,
-      key: "id",
+    teamId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: {
+        model: Team,
+        key: "id",
+      },
+    },
+
+    userId: {
+      type: DataTypes.UUID, // User ID
+      allowNull: false,
+    },
+
+    userName: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+
+    roleId: {
+      type: DataTypes.STRING, // Role ID (e.g., sales, procurement)
+      allowNull: false,
+    },
+
+    roleName: {
+      type: DataTypes.STRING, // Role Name (e.g., Sales, Procurement)
+      allowNull: false,
     },
   },
-
-  userId: {
-    type: DataTypes.UUID, // User ID
-    allowNull: false,
-  },
-
-  userName: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-
-  roleId: {
-    type: DataTypes.STRING, // Role ID (e.g., sales, procurement)
-    allowNull: false,
-  },
-
-  roleName: {
-    type: DataTypes.STRING, // Role Name (e.g., Sales, Procurement)
-    allowNull: false,
-  },
-});
+  {
+    tableName: "teammembers", // Force lowercase table name
+    timestamps: true,
+  }
+);
 
 // Relationships
 Team.hasMany(TeamMember, { foreignKey: "teamId", onDelete: "CASCADE" });

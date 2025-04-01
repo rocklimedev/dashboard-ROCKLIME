@@ -50,8 +50,8 @@ const setupDB = async () => {
     Permission.hasMany(RolePermission, { foreignKey: "permissionId" });
 
     // One-to-Many: Role to User
-    Role.hasMany(User, { foreignKey: "roleId", as: "Users" });
-    User.belongsTo(Role, { foreignKey: "roleId", as: "Role" });
+    Role.hasMany(User, { foreignKey: "roleId", as: "users" });
+    User.belongsTo(Role, { foreignKey: "roleId", as: "role" });
 
     // ==============================
     // 🔥 USER RELATIONSHIPS
@@ -90,7 +90,7 @@ const setupDB = async () => {
     // ==============================
 
     // Customer ↔ Vendor
-    Customer.belongsTo(Vendor, { foreignKey: "vendorId", as: "vendor" });
+    Customer.belongsTo(Vendor, { foreignKey: "vendorId", as: "vendors" });
 
     // Customer ↔ Quotation (One-to-Many)
     Customer.hasMany(Quotation, {
