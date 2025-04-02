@@ -27,10 +27,8 @@ const POSFooter = () => {
           <i class="ti ti-cash-banknote me-2"></i>Payment
         </a>
         <a
-          href="javascript:void(0);"
+          href="/orders/list"
           class="btn btn-secondary d-inline-flex align-items-center justify-content-center"
-          data-bs-toggle="modal"
-          data-bs-target="#orders"
         >
           <i class="ti ti-shopping-cart me-2"></i>View Orders
         </a>

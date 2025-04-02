@@ -1,8 +1,8 @@
 import React from "react";
 import PageHeader from "../Common/PageHeader";
-import { useGetRecentOrdersQuery } from "../../api/orderApi";
+import { useRecentOrdersQuery } from "../../api/orderApi";
 const RecentOrders = () => {
-  const { data, error, isLoading } = useGetRecentOrdersQuery();
+  const { data, error, isLoading } = useRecentOrdersQuery();
   const recentOrder = data?.data || [];
 
   if (isLoading) return <p>Loading...</p>;

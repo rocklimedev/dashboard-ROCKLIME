@@ -70,7 +70,7 @@ const setupDB = async () => {
     // Cart.belongsTo(User, { foreignKey: "user_id" });
 
     // User ↔ Invoice
-    Invoice.belongsTo(User, { foreignKey: "client" });
+    Invoice.belongsTo(User, { foreignKey: "createdBy" });
 
     // User ↔ Quotation
     User.hasMany(Quotation, { foreignKey: "createdBy" });
@@ -103,16 +103,19 @@ const setupDB = async () => {
     });
 
     // Customer ↔ Invoice
-    Customer.hasMany(Invoice, { foreignKey: "customerId" });
-    Invoice.belongsTo(Customer, { foreignKey: "client" });
-    Invoice.belongsTo(Address, { foreignKey: "shipTo" });
-    // ==============================
-    // 🔥 ORDER & QUOTATION RELATIONSHIPS
-    // ==============================
+    Customer.hasMany(Invoice, {
+      foreignKey: "customerId",
+      onDelete: "CASCADE",
+    });
+    Invoice.belongsTo(Customer, { foreignKey: "customerId" });
 
+    // Address ↔ Invoice
+    Invoice.belongsTo(Address, { foreignKey: "shipTo" });
+
+    // Order ↔ Invoice & Quotation Relationships
     Order.belongsTo(Quotation, { foreignKey: "quotationId" });
-    Invoice.belongsTo(Order, { foreignKey: "orderId" });
-    Order.hasMany(Invoice, { foreignKey: "orderId", onDelete: "CASCADE" });
+    Invoice.belongsTo(Order, { foreignKey: "orderId", onDelete: "CASCADE" });
+    Order.hasMany(Invoice, { foreignKey: "orderId" });
 
     // ==============================
     // 🔥 BRAND & VENDOR RELATIONSHIPS

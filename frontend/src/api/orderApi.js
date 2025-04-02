@@ -1,8 +1,9 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { API_URL } from "../data/config";
+// Create the API slice
 export const orderApi = createApi({
   reducerPath: "orderApi",
-  baseQuery: fetchBaseQuery({ baseUrl: `${API_URL}/orders` }),
+  baseQuery: fetchBaseQuery({ baseUrl: `${API_URL}/orders` }), // Adjust the base URL according to your backend
   endpoints: (builder) => ({
     createOrder: builder.mutation({
       query: (orderData) => ({
@@ -15,32 +16,32 @@ export const orderApi = createApi({
       query: (orderId) => `/${orderId}`,
     }),
     updateOrderStatus: builder.mutation({
-      query: ({ orderId, status }) => ({
+      query: (statusData) => ({
         url: "/update-status",
         method: "PUT",
-        body: { orderId, status },
+        body: statusData,
       }),
     }),
     deleteOrder: builder.mutation({
       query: (orderId) => ({
-        url: `/${orderId}`,
+        url: `/delete/${orderId}`,
         method: "DELETE",
       }),
     }),
-    getRecentOrders: builder.query({
+    recentOrders: builder.query({
       query: () => "/recent",
     }),
-    getOrderById: builder.query({
-      query: (orderId) => `/order/${orderId}`,
+    orderById: builder.query({
+      query: (orderId) => `/${orderId}`,
     }),
     updateOrderById: builder.mutation({
-      query: ({ orderId, updates }) => ({
-        url: `/order/${orderId}`,
+      query: ({ orderId, orderData }) => ({
+        url: `/${orderId}`,
         method: "PUT",
-        body: updates,
+        body: orderData,
       }),
     }),
-    createDraftOrder: builder.mutation({
+    draftOrder: builder.mutation({
       query: (orderData) => ({
         url: "/draft",
         method: "POST",
@@ -48,10 +49,10 @@ export const orderApi = createApi({
       }),
     }),
     updateOrderTeam: builder.mutation({
-      query: ({ orderId, teamMembers }) => ({
+      query: (teamData) => ({
         url: "/update-team",
         method: "PUT",
-        body: { orderId, teamMembers },
+        body: teamData,
       }),
     }),
   }),
@@ -62,9 +63,9 @@ export const {
   useGetOrderDetailsQuery,
   useUpdateOrderStatusMutation,
   useDeleteOrderMutation,
-  useGetRecentOrdersQuery,
-  useGetOrderByIdQuery,
+  useRecentOrdersQuery,
+  useOrderByIdQuery,
   useUpdateOrderByIdMutation,
-  useCreateDraftOrderMutation,
+  useDraftOrderMutation,
   useUpdateOrderTeamMutation,
 } = orderApi;

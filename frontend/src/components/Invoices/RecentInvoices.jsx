@@ -1,232 +1,211 @@
-import React from "react";
-import PageHeader from "../Common/PageHeader";
-
+import React, { useEffect, useState } from "react";
+import PageHeader from "../Common/PageHeader"; // Assuming it's a custom hook
+import { useGetAllInvoicesQuery } from "../../api/invoiceApi";
 const RecentInvoices = () => {
+  const { data, loading, error } = useGetAllInvoicesQuery();
+  const invoices = data?.data || []; // Ensure it's an array
+
   return (
-    <div class="page-wrapper">
-      <div class="content">
+    <div className="page-wrapper">
+      <div className="content">
         <PageHeader
           title="Recent Invoices"
           subtitle="Manage your Recent Invoices"
         />
 
-        <div class="card">
-          <div class="card-header d-flex align-items-center justify-content-between flex-wrap row-gap-3">
-            <div class="search-set">
-              <div class="search-input">
-                <span class="btn-searchset">
-                  <i class="ti ti-search fs-14 feather-search"></i>
+        <div className="card">
+          <div className="card-header d-flex align-items-center justify-content-between flex-wrap row-gap-3">
+            <div className="search-set">
+              <div className="search-input">
+                <span className="btn-searchset">
+                  <i className="ti ti-search fs-14 feather-search"></i>
                 </span>
               </div>
             </div>
-            <div class="d-flex table-dropdown my-xl-auto right-content align-items-center flex-wrap row-gap-3">
-              <div class="dropdown me-2">
+
+            {/* Filters */}
+            <div className="d-flex table-dropdown my-xl-auto right-content align-items-center flex-wrap row-gap-3">
+              <div className="dropdown me-2">
                 <a
-                  href="javascript:void(0);"
-                  class="dropdown-toggle btn btn-white btn-md d-inline-flex align-items-center"
+                  href="#"
+                  className="dropdown-toggle btn btn-white btn-md d-inline-flex align-items-center"
                   data-bs-toggle="dropdown"
                 >
                   Customer
                 </a>
-                <ul class="dropdown-menu  dropdown-menu-end p-3">
-                  <li>
-                    <a
-                      href="javascript:void(0);"
-                      class="dropdown-item rounded-1"
-                    >
-                      Carl Evans
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="javascript:void(0);"
-                      class="dropdown-item rounded-1"
-                    >
-                      Minerva Rameriz
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="javascript:void(0);"
-                      class="dropdown-item rounded-1"
-                    >
-                      Robert Lamon
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="javascript:void(0);"
-                      class="dropdown-item rounded-1"
-                    >
-                      Patricia Lewis
-                    </a>
-                  </li>
+                <ul className="dropdown-menu dropdown-menu-end p-3">
+                  {/* Example static customers */}
+                  {[
+                    "Carl Evans",
+                    "Minerva Rameriz",
+                    "Robert Lamon",
+                    "Patricia Lewis",
+                  ].map((name, index) => (
+                    <li key={index}>
+                      <a href="#" className="dropdown-item rounded-1">
+                        {name}
+                      </a>
+                    </li>
+                  ))}
                 </ul>
               </div>
-              <div class="dropdown me-2">
+
+              {/* Status Filter */}
+              <div className="dropdown me-2">
                 <a
-                  href="javascript:void(0);"
-                  class="dropdown-toggle btn btn-white btn-md d-inline-flex align-items-center"
+                  href="#"
+                  className="dropdown-toggle btn btn-white btn-md d-inline-flex align-items-center"
                   data-bs-toggle="dropdown"
                 >
                   Status
                 </a>
-                <ul class="dropdown-menu  dropdown-menu-end p-3">
-                  <li>
-                    <a
-                      href="javascript:void(0);"
-                      class="dropdown-item rounded-1"
-                    >
-                      Paid
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="javascript:void(0);"
-                      class="dropdown-item rounded-1"
-                    >
-                      Unpaid
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="javascript:void(0);"
-                      class="dropdown-item rounded-1"
-                    >
-                      Overdue
-                    </a>
-                  </li>
+                <ul className="dropdown-menu dropdown-menu-end p-3">
+                  {["Paid", "Unpaid", "Overdue"].map((status, index) => (
+                    <li key={index}>
+                      <a href="#" className="dropdown-item rounded-1">
+                        {status}
+                      </a>
+                    </li>
+                  ))}
                 </ul>
               </div>
-              <div class="dropdown">
+
+              {/* Sort By */}
+              <div className="dropdown">
                 <a
-                  href="javascript:void(0);"
-                  class="dropdown-toggle btn btn-white btn-md d-inline-flex align-items-center"
+                  href="#"
+                  className="dropdown-toggle btn btn-white btn-md d-inline-flex align-items-center"
                   data-bs-toggle="dropdown"
                 >
-                  Sort By : Last 7 Days
+                  Sort By: Last 7 Days
                 </a>
-                <ul class="dropdown-menu  dropdown-menu-end p-3">
-                  <li>
-                    <a
-                      href="javascript:void(0);"
-                      class="dropdown-item rounded-1"
-                    >
-                      Recently Added
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="javascript:void(0);"
-                      class="dropdown-item rounded-1"
-                    >
-                      Ascending
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="javascript:void(0);"
-                      class="dropdown-item rounded-1"
-                    >
-                      Desending
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="javascript:void(0);"
-                      class="dropdown-item rounded-1"
-                    >
-                      Last Month
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="javascript:void(0);"
-                      class="dropdown-item rounded-1"
-                    >
-                      Last 7 Days
-                    </a>
-                  </li>
+                <ul className="dropdown-menu dropdown-menu-end p-3">
+                  {[
+                    "Recently Added",
+                    "Ascending",
+                    "Descending",
+                    "Last Month",
+                    "Last 7 Days",
+                  ].map((sort, index) => (
+                    <li key={index}>
+                      <a href="#" className="dropdown-item rounded-1">
+                        {sort}
+                      </a>
+                    </li>
+                  ))}
                 </ul>
               </div>
             </div>
           </div>
-          <div class="card-body p-0">
-            <div class="table-responsive">
-              <table class="table datatable">
-                <thead class="thead-light">
-                  <tr>
-                    <th class="no-sort">
-                      <label class="checkboxs">
-                        <input type="checkbox" id="select-all" />
-                        <span class="checkmarks"></span>
-                      </label>
-                    </th>
-                    <th>Invoice No</th>
-                    <th>Customer</th>
-                    <th>Due Date</th>
-                    <th>Amount</th>
-                    <th>Paid</th>
-                    <th>Amount Due</th>
-                    <th>Status</th>
-                    <th class="no-sort"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>
-                      <label class="checkboxs">
-                        <input type="checkbox" />
-                        <span class="checkmarks"></span>
-                      </label>
-                    </td>
-                    <td>
-                      <a href="invoice-details-2.html">INV001</a>
-                    </td>
-                    <td>
-                      <div class="d-flex align-items-center">
-                        <a
-                          href="javascript:void(0);"
-                          class="avatar avatar-md me-2"
-                        >
-                          <img
-                            src="assets/img/users/user-27.jpg"
-                            alt="product"
-                          />
-                        </a>
-                        <a href="javascript:void(0);">Carl Evans</a>
-                      </div>
-                    </td>
-                    <td>24 Dec 2024</td>
-                    <td>$1000</td>
-                    <td>$1000</td>
-                    <td>$0.00</td>
-                    <td>
-                      <span class="badge badge-soft-success badge-xs shadow-none">
-                        <i class="ti ti-point-filled me-1"></i>Paid
-                      </span>
-                    </td>
-                    <td class="d-flex">
-                      <div class="edit-delete-action d-flex align-items-center justify-content-center">
-                        <a
-                          class="me-2 p-2 d-flex align-items-center justify-content-between border rounded"
-                          href="invoice-details.html"
-                        >
-                          <i data-feather="eye" class="feather-eye"></i>
-                        </a>
-                        <a
-                          class="p-2 d-flex align-items-center justify-content-between border rounded"
-                          href="javascript:void(0);"
-                          data-bs-toggle="modal"
-                          data-bs-target="#delete"
-                        >
-                          <i data-feather="trash-2" class="feather-trash-2"></i>
-                        </a>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+
+          {/* Table Content */}
+          <div className="card-body p-0">
+            <div className="table-responsive">
+              {loading ? (
+                <p className="text-center">Loading...</p>
+              ) : error ? (
+                <p className="text-danger text-center">
+                  Error: {error.message}
+                </p>
+              ) : (
+                <table className="table datatable">
+                  <thead className="thead-light">
+                    <tr>
+                      <th className="no-sort">
+                        <label className="checkboxs">
+                          <input type="checkbox" id="select-all" />
+                          <span className="checkmarks"></span>
+                        </label>
+                      </th>
+                      <th>Invoice No</th>
+                      <th>Order Id</th>
+                      <th>Customer</th>
+                      <th>Bill To</th>
+                      <th>Ship To</th>
+                      <th>Invoice Date</th>
+                      <th>Due Date</th>
+                      <th>Amount</th>
+                      <th>Paid</th>
+                      <th>Amount Due</th>
+                      <th>Created By</th>
+                      <th>Status</th>
+                      <th className="no-sort"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {invoices?.map((invoice) => (
+                      <tr key={invoice.invoiceId}>
+                        <td>
+                          <label className="checkboxs">
+                            <input type="checkbox" />
+                            <span className="checkmarks"></span>
+                          </label>
+                        </td>
+                        <td>
+                          <a href={`invoice-details/${invoice.invoiceId}`}>
+                            {invoice.invoiceNo}
+                          </a>
+                        </td>
+                        <td>
+                          <div className="d-flex align-items-center">
+                            <a href="#" className="avatar avatar-md me-2">
+                              <img
+                                src={
+                                  invoice.customerImage ||
+                                  "assets/img/users/default.jpg"
+                                }
+                                alt="customer"
+                              />
+                            </a>
+                            <a href="#">{invoice.customerName}</a>
+                          </div>
+                        </td>
+                        <td>
+                          {new Date(invoice.dueDate).toLocaleDateString()}
+                        </td>
+                        <td>${invoice.amount}</td>
+                        <td>${invoice.paidAmount}</td>
+                        <td>${invoice.amountDue}</td>
+                        <td>
+                          <span
+                            className={`badge ${
+                              invoice.status === "Paid"
+                                ? "badge-soft-success"
+                                : invoice.status === "Unpaid"
+                                ? "badge-soft-danger"
+                                : "badge-soft-warning"
+                            } badge-xs shadow-none`}
+                          >
+                            <i className="ti ti-point-filled me-1"></i>
+                            {invoice.status}
+                          </span>
+                        </td>
+                        <td className="d-flex">
+                          <div className="edit-delete-action d-flex align-items-center justify-content-center">
+                            <a
+                              className="me-2 p-2 d-flex align-items-center justify-content-between border rounded"
+                              href={`invoice-details/${invoice.invoiceId}`}
+                            >
+                              <i data-feather="eye" className="feather-eye"></i>
+                            </a>
+                            <a
+                              className="p-2 d-flex align-items-center justify-content-between border rounded"
+                              href="#"
+                              data-bs-toggle="modal"
+                              data-bs-target="#delete"
+                            >
+                              <i
+                                data-feather="trash-2"
+                                className="feather-trash-2"
+                              ></i>
+                            </a>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
         </div>

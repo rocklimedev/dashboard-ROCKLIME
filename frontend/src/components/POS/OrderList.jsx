@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import {
   useGetCartQuery,
@@ -12,7 +12,7 @@ import OrderTotal from "./OrderTotal";
 import PaymentMethod from "./PaymentMethod";
 import { toast } from "react-toastify";
 import InvoiceDetails from "./InvoiceDetails";
-
+import { useCreateInvoiceMutation } from "../../api/invoiceApi";
 const OrderList = ({ onConvertToOrder }) => {
   const {
     data: profileData,
@@ -20,7 +20,8 @@ const OrderList = ({ onConvertToOrder }) => {
     error: profileError,
   } = useGetProfileQuery();
   const userId = profileData?.user?.userId;
-
+  console.log(userId);
+  const [createInvoice] = useCreateInvoiceMutation();
   const {
     data: cartData,
     isLoading: cartLoading,
@@ -37,10 +38,21 @@ const OrderList = ({ onConvertToOrder }) => {
   const [updateCart] = useUpdateCartMutation();
   const [clearCart] = useClearCartMutation();
   const [removeFromCart] = useRemoveFromCartMutation();
+  const [invoiceData, setInvoiceData] = useState({
+    invoiceDate: "",
+    dueDate: "",
+    shipTo: "",
+    signatureName: "",
+    billTo: "",
+  });
+
+  const handleInvoiceChange = (key, value) => {
+    setInvoiceData((prev) => ({ ...prev, [key]: value }));
+  };
 
   const [showModal, setShowModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState("");
-
+  const [error, setError] = useState("");
   const customers = customerData?.data || [];
   const customerList = Array.isArray(customers) ? customers : [];
   const cartItems = Array.isArray(cartData?.cart?.items)
@@ -56,6 +68,22 @@ const OrderList = ({ onConvertToOrder }) => {
     0
   );
 
+  const validateDueDate = () => {
+    const { invoiceDate, dueDate } = invoiceData;
+    if (invoiceDate && dueDate) {
+      const invoice = new Date(invoiceDate);
+      const due = new Date(dueDate);
+      if (due <= invoice) {
+        setError("Due date must be after invoice date");
+      } else {
+        setError("");
+      }
+    }
+  };
+
+  useEffect(() => {
+    validateDueDate();
+  }, [invoiceData.invoiceDate, invoiceData.dueDate]);
   const handleClearCart = async () => {
     if (!userId) {
       toast.error("User not logged in!");
@@ -107,7 +135,7 @@ const OrderList = ({ onConvertToOrder }) => {
     }
   };
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (!selectedCustomer) {
       toast.error("Please select a customer before placing an order.");
       return;
@@ -123,8 +151,8 @@ const OrderList = ({ onConvertToOrder }) => {
     );
 
     const orderData = {
-      customerId: selectedCustomerData?.customerId || "",
-      userId,
+      createdFor: selectedCustomerData?.customerId || "",
+      createdBy: userId,
       items: cartItems.map((item) => ({
         id: item?.productId || "",
         name: item?.name || "Unnamed Product",
@@ -136,11 +164,34 @@ const OrderList = ({ onConvertToOrder }) => {
     };
 
     try {
+      const invoiceDataToSubmit = {
+        createdBy: userId,
+        customerId: selectedCustomerData?.customerId || "Walk-in Customer",
+        billTo: invoiceData.billTo,
+        shipTo: invoiceData.shipTo,
+        amount: totalAmount,
+        orderNumber: orderData.orderNumber || "ORD123",
+        invoiceDate: invoiceData.invoiceDate,
+        dueDate: invoiceData.dueDate,
+        paymentMethod: "Cash", // Update if needed
+        status: "Pending",
+        orderId: orderData.orderId || "ORD123",
+        products: cartItems.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+        signatureName: invoiceData.signatureName,
+      };
+
+      await createInvoice(invoiceDataToSubmit).unwrap();
+
       onConvertToOrder(orderData);
       handleClearCart();
+      toast.success("Order placed and invoice created successfully!");
     } catch (error) {
       console.error("Place order error:", error);
-      toast.error("Failed to place order");
+      toast.error("Failed to place order or create invoice", error);
     }
   };
 
@@ -311,11 +362,8 @@ const OrderList = ({ onConvertToOrder }) => {
           />
         </div>
         <InvoiceDetails
-          billTo="John Doe"
-          shipTo="123 Street, Mumbai, India"
-          invoiceDate="2025-03-28"
-          dueDate="2025-04-05"
-          signatureName="Mr. Sharma"
+          invoiceData={invoiceData}
+          onChange={handleInvoiceChange}
         />
 
         <PaymentMethod />
@@ -328,7 +376,7 @@ const OrderList = ({ onConvertToOrder }) => {
             className="btn btn-secondary flex-fill"
             onClick={handlePlaceOrder}
           >
-            <i className="ti ti-shopping-cart me-2"></i>Place Order
+            <i className="ti ti-shopping-cart me-2"></i>Generate Invoice
           </button>
         </div>
       </aside>

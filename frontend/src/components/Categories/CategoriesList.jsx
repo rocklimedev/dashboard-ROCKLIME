@@ -53,22 +53,6 @@ const CategoriesList = () => {
     toast.success("Keyword modal closed.");
   };
 
-  const handlePdfDownload = () => {
-    toast.success("Downloading PDF...");
-  };
-
-  const handleExcelDownload = () => {
-    toast.success("Downloading Excel...");
-  };
-
-  const handleRefresh = () => {
-    toast.info("Refreshing data...");
-  };
-
-  const handleCollapse = () => {
-    toast.info("Collapsing sections...");
-  };
-
   if (categoryLoading || keywordLoading) return <p>Loading data...</p>;
 
   if (categoryError) {
@@ -88,12 +72,6 @@ const CategoriesList = () => {
           title="Categories"
           subtitle="Manage your categories"
           onAdd={handleAddCategory}
-          actions={{
-            pdf: handlePdfDownload,
-            excel: handleExcelDownload,
-            refresh: handleRefresh,
-            collapse: handleCollapse,
-          }}
         />
 
         <div className="card">
@@ -122,7 +100,7 @@ const CategoriesList = () => {
                       <td>{category.total_products}</td>
                       <td className="action-table-data">
                         <div className="edit-delete-action">
-                          <a className="me-2 p-2" href="#">
+                          <a className="me-2 p-2">
                             <AiOutlineEdit />
                           </a>
                           <a className="p-2" href="#">
@@ -146,12 +124,6 @@ const CategoriesList = () => {
           title="Keywords"
           subtitle="Manage your keywords"
           onAdd={handleAddKeyword}
-          actions={{
-            pdf: handlePdfDownload,
-            excel: handleExcelDownload,
-            refresh: handleRefresh,
-            collapse: handleCollapse,
-          }}
         />
 
         <div className="card">

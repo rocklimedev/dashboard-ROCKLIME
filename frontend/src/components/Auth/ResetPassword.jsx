@@ -1,81 +1,90 @@
-import React from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useResetPasswordMutation } from "../../api/authApi";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const ResetPassword = () => {
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const navigate = useNavigate();
+  const [resetPassword, { isLoading }] = useResetPasswordMutation();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    try {
+      const response = await resetPassword({ newPassword }).unwrap();
+      toast.success(response.message || "Password changed successfully!");
+      navigate("/signin");
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to reset password");
+    }
+  };
+
   return (
-    <div class="main-wrapper">
-      <div class="account-content">
-        <div class="login-wrapper login-new">
-          <div class="row w-100">
-            <div class="col-lg-5 mx-auto">
-              <div class="login-content user-login">
-                <div class="login-logo">
-                  <img src="assets/img/logo.svg" alt="img" />
-                  <a href="index.html" class="login-logo logo-white">
-                    <img src="assets/img/logo-white.svg" alt="Img" />
-                  </a>
+    <div className="main-wrapper">
+      <div className="account-content">
+        <div className="login-wrapper login-new">
+          <div className="row w-100">
+            <div className="col-lg-5 mx-auto">
+              <div className="login-content user-login">
+                <div className="login-logo">
+                  <img src="assets/img/logo.svg" alt="logo" />
                 </div>
-                <form action="https://dreamspos.dreamstechnologies.com/html/template/success-3.html">
-                  <div class="card">
-                    <div class="card-body p-5">
-                      <div class="login-userheading">
-                        <h3>Reset password?</h3>
-                        <h4>
-                          Enter New Password & Confirm Password to get inside
-                        </h4>
+                <form onSubmit={handleSubmit}>
+                  <div className="card">
+                    <div className="card-body p-5">
+                      <div className="login-userheading">
+                        <h3>Reset Password</h3>
+                        <h4>Enter your new password to proceed.</h4>
                       </div>
-                      <div class="mb-3">
-                        <label class="form-label">
-                          Old Password <span class="text-danger"> *</span>
-                        </label>
-                        <div class="pass-group">
-                          <input
-                            type="password"
-                            class="pass-input form-control"
-                          />
-                          <span class="ti toggle-password ti-eye-off text-gray-9"></span>
-                        </div>
+                      <div className="mb-3">
+                        <label className="form-label">New Password *</label>
+                        <input
+                          type="password"
+                          className="form-control"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          required
+                        />
                       </div>
-                      <div class="mb-3">
-                        <label class="form-label">
-                          New Password <span class="text-danger"> *</span>
-                        </label>
-                        <div class="pass-group">
-                          <input
-                            type="password"
-                            class="pass-inputs form-control"
-                          />
-                          <span class="ti toggle-passwords ti-eye-off text-gray-9"></span>
-                        </div>
+                      <div className="mb-3">
+                        <label className="form-label">Confirm Password *</label>
+                        <input
+                          type="password"
+                          className="form-control"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          required
+                        />
                       </div>
-                      <div class="mb-3">
-                        <label class="form-label">
-                          Confirm Password <span class="text-danger"> *</span>
-                        </label>
-                        <div class="pass-group">
-                          <input
-                            type="password"
-                            class="pass-inputa form-control"
-                          />
-                          <span class="ti toggle-passworda ti-eye-off text-gray-9"></span>
-                        </div>
-                      </div>
-                      <div class="form-login">
-                        <button type="submit" class="btn btn-login">
-                          Change Password
+                      <div className="form-login">
+                        <button
+                          type="submit"
+                          className="btn btn-login"
+                          disabled={isLoading}
+                        >
+                          {isLoading ? "Changing..." : "Change Password"}
                         </button>
                       </div>
-                      <div class="signinform text-center mb-0">
+                      <div className="signinform text-center mb-0">
                         <h4>
                           Return to{" "}
-                          <a href="signin-3.html" class="hover-a">
-                            {" "}
-                            login{" "}
+                          <a href="/login" className="hover-a">
+                            login
                           </a>
                         </h4>
                       </div>
                     </div>
                   </div>
                 </form>
+                {/* Toast Container */}
+                <toast.Container position="top-right" autoClose={3000} />
               </div>
             </div>
           </div>

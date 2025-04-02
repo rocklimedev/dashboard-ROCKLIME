@@ -1,64 +1,82 @@
-import React from "react";
+import React, { useState } from "react";
+import { useForgotPasswordMutation } from "../../api/authApi"; // Adjust import based on your setup
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const ForgotPassword = () => {
+  const [email, setEmail] = useState("");
+  const navigate = useNavigate();
+  const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await forgotPassword({ email }).unwrap();
+      toast.success(response.message || "OTP sent successfully!");
+      navigate("/reset-password");
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to send OTP");
+    }
+  };
+
   return (
-    <div class="main-wrapper">
-      <div class="account-content">
-        <div class="login-wrapper login-new">
-          <div class="row w-100">
-            <div class="col-lg-5 mx-auto">
-              <div class="login-content user-login">
-                <div class="login-logo">
-                  <img src="assets/img/logo.svg" alt="img" />
-                  <a href="index.html" class="login-logo logo-white">
-                    <img src="assets/img/logo-white.svg" alt="Img" />
-                  </a>
+    <div className="main-wrapper">
+      <div className="account-content">
+        <div className="login-wrapper login-new">
+          <div className="row w-100">
+            <div className="col-lg-5 mx-auto">
+              <div className="login-content user-login">
+                <div className="login-logo">
+                  <img src="assets/img/logo.svg" alt="logo" />
                 </div>
-                <form action="https://dreamspos.dreamstechnologies.com/html/template/signin-3.html">
-                  <div class="card">
-                    <div class="card-body p-5">
-                      <div class="login-userheading">
+                <form onSubmit={handleSubmit}>
+                  <div className="card">
+                    <div className="card-body p-5">
+                      <div className="login-userheading">
                         <h3>Forgot password?</h3>
-                        <h4>
-                          If you forgot your password, well, then we’ll email
-                          you instructions to reset your password.
-                        </h4>
+                        <h4>Enter your email, and we'll send you an OTP.</h4>
                       </div>
-                      <div class="mb-3">
-                        <label class="form-label">
-                          Email <span class="text-danger"> *</span>
+                      <div className="mb-3">
+                        <label className="form-label">
+                          Email <span className="text-danger">*</span>
                         </label>
-                        <div class="input-group">
+                        <div className="input-group">
                           <input
-                            type="text"
-                            value=""
-                            class="form-control border-end-0"
+                            type="email"
+                            className="form-control border-end-0"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
                           />
-                          <span class="input-group-text border-start-0">
-                            <i class="ti ti-mail"></i>
+                          <span className="input-group-text border-start-0">
+                            <i className="ti ti-mail"></i>
                           </span>
                         </div>
                       </div>
-                      <div class="form-login">
-                        <button type="submit" class="btn btn-login">
-                          Sign Up
+                      <div className="form-login">
+                        <button
+                          type="submit"
+                          className="btn btn-login"
+                          disabled={isLoading}
+                        >
+                          {isLoading ? "Sending..." : "Send OTP"}
                         </button>
                       </div>
-                      <div class="signinform text-center">
+                      <div className="signinform text-center">
                         <h4>
-                          Return to
-                          <a href="signin-3.html" class="hover-a">
+                          Return to{" "}
+                          <a href="signin-3.html" className="hover-a">
                             {" "}
                             login{" "}
                           </a>
                         </h4>
                       </div>
-                      <div class="form-setlogin or-text">
-                        <h4>OR</h4>
-                      </div>
                     </div>
                   </div>
                 </form>
+                {/* Toast Container */}
+                <toast.Container position="top-right" autoClose={3000} />
               </div>
             </div>
           </div>

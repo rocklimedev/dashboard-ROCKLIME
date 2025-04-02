@@ -60,6 +60,10 @@ const CustomerList = () => {
                       <th>Email</th>
                       <th>Phone</th>
                       <th>Company</th>
+                      <th>Is Vendor</th>
+                      <th>Total Amount</th>
+                      <th>Balance</th>
+                      <th>Paid Amount</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -70,6 +74,10 @@ const CustomerList = () => {
                         <td>{customer.email}</td>
                         <td>{customer.mobileNumber}</td>
                         <td>{customer.companyName}</td>
+                        <td>{customer?.isVendor ? "Yes" : "No"}</td>
+                        <td>{customer.totalAmount}</td>
+                        <td>{customer.balance}</td>
+                        <td>{customer.paidAmount}</td>
                         <td>
                           {/* <Actions
                             id={customer.customerId}

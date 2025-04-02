@@ -3,7 +3,8 @@ import PageHeader from "../Common/PageHeader";
 import Actions from "../Common/Actions";
 import { useGetAllCompaniesQuery } from "../../api/companyApi";
 import AddCompanyModal from "../Companies/AddCompanyModal";
-
+import { BiEdit, BiTrash } from "react-icons/bi";
+import { FaEye } from "react-icons/fa";
 const CmList = () => {
   const { data, error, isLoading, refetch } = useGetAllCompaniesQuery();
   const [showCompanyModal, setShowCompanyModal] = useState(false);
@@ -36,13 +37,13 @@ const CmList = () => {
                     <th>Website</th>
                     <th>Slug</th>
                     <th>Created Date</th>
-                    <th>Status</th>
-                    <th></th>
+                    <th>Parent Company</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {companies.map((company) => (
-                    <tr key={company.id}>
+                    <tr key={company.companyId}>
                       <td>{company.name}</td>
                       <td>{company.address}</td>
                       <td>{company.website}</td>
@@ -56,11 +57,29 @@ const CmList = () => {
                               : "badge-danger"
                           }`}
                         >
-                          {company.status}
+                          {company.parentCompanyId}
                         </span>
                       </td>
                       <td>
-                        <Actions />
+                        <div class="edit-delete-action">
+                          <a href={`/${companies.companyId}`} target="_blank">
+                            <FaEye />
+                          </a>
+                          <a
+                            class="me-2 p-2"
+                            onClick={() => handleAddCompany(company)}
+                          >
+                            <BiEdit />
+                          </a>
+                          <a
+                            data-bs-toggle="modal"
+                            data-bs-target="#delete-modal"
+                            class="p-2"
+                            href="javascript:void(0);"
+                          >
+                            <BiTrash />
+                          </a>
+                        </div>
                       </td>
                     </tr>
                   ))}

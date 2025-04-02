@@ -50,6 +50,7 @@ const Header = ({ toggleSidebar }) => {
   const { data: user, isLoading, error } = useGetProfileQuery();
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
   const [showModal, setShowModal] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -66,6 +67,15 @@ const Header = ({ toggleSidebar }) => {
   const handleSidebarToggle = () => {
     setSidebarOpen(!isSidebarOpen);
     toggleSidebar(!isSidebarOpen);
+  };
+  const handleFullscreenToggle = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+      setIsFullscreen(true);
+    } else if (document.exitFullscreen) {
+      document.exitFullscreen();
+      setIsFullscreen(false);
+    }
   };
   return (
     <div className="header">
@@ -179,7 +189,7 @@ const Header = ({ toggleSidebar }) => {
                 ].map((item, index) => (
                   <div key={index} className="col-md-2">
                     <Link to={item.link} className="link-item">
-                      <span className="link-icon">${item.icon}</span>
+                      <span className="link-icon">{item.icon}</span>
                       <p>{item.text}</p>
                     </Link>
                   </div>
@@ -216,10 +226,14 @@ const Header = ({ toggleSidebar }) => {
             </a>
           </li>
 
-          <li class="nav-item nav-item-box">
-            <a href="javascript:void(0);" id="btnFullscreen">
-              <BiFullscreen />
-            </a>
+          <li
+            className="nav-item nav-item-box"
+            onClick={handleFullscreenToggle}
+          >
+            <BiFullscreen
+              style={{ cursor: "pointer" }}
+              title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+            />
           </li>
           {/* User Profile */}
           <li className="nav-item dropdown has-arrow main-drop profile-nav">

@@ -4,6 +4,7 @@ const { v4: uuidv4 } = require("uuid"); // Importing UUID library
 const Order = require("./orders"); // Import Order model
 const Customer = require("./customers");
 const Address = require("./address");
+const User = require("./users");
 
 const Invoice = sequelize.define(
   "Invoice",
@@ -13,13 +14,12 @@ const Invoice = sequelize.define(
       primaryKey: true,
       defaultValue: uuidv4, // Auto-generate UUID
     },
-    client: {
+    createdBy: {
       type: DataTypes.UUID,
       references: {
-        model: Customer,
-        key: "customerId",
+        model: User,
+        key: "userId",
       },
-      allowNull: false,
     },
     orderId: {
       type: DataTypes.UUID,

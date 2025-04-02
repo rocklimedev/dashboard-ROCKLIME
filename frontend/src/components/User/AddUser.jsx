@@ -5,6 +5,7 @@ import {
   useAssignRoleMutation,
 } from "../../api/userApi";
 import { useGetRolesQuery } from "../../api/rolesApi";
+
 const AddUser = ({ onClose, userToEdit, isViewMode }) => {
   const [createUser, { isLoading: isCreating, error: createError }] =
     useCreateUserMutation();
@@ -30,8 +31,11 @@ const AddUser = ({ onClose, userToEdit, isViewMode }) => {
 
   useEffect(() => {
     if (userToEdit) {
-      setFormData(userToEdit);
-      setIsEditMode(true); // Enable edit mode
+      setFormData({
+        ...userToEdit,
+        role: userToEdit.roleId || "", // Use roleId from DB
+      });
+      setIsEditMode(true);
     }
   }, [userToEdit]);
 
@@ -46,30 +50,31 @@ const AddUser = ({ onClose, userToEdit, isViewMode }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      let user;
       if (userToEdit && isEditMode) {
-        await updateUser({ userId: userToEdit.userId, ...formData }).unwrap();
+        user = await updateUser({
+          userId: userToEdit.userId,
+          ...formData,
+        }).unwrap();
         alert("User updated successfully!");
       } else {
-        await createUser(formData).unwrap();
+        user = await createUser(formData).unwrap();
         alert("User added successfully!");
       }
+
+      // Assign role if user is created/updated successfully
+      if (user && formData.role) {
+        await assignRole({
+          userId: user.userId || userToEdit.userId,
+          roleId: formData.role,
+        }).unwrap();
+        alert("Role assigned successfully!");
+      }
+
       onClose();
     } catch (err) {
       console.error("Operation failed:", err);
-    }
-  };
-
-  const handleAssignRole = async () => {
-    if (formData.role && userToEdit) {
-      try {
-        await assignRole({
-          userId: userToEdit.userId,
-          role: formData.role,
-        }).unwrap();
-        alert("Role assigned successfully!");
-      } catch (err) {
-        console.error("Failed to assign role:", err);
-      }
+      alert("Failed to process the request.");
     }
   };
 
@@ -118,7 +123,9 @@ const AddUser = ({ onClose, userToEdit, isViewMode }) => {
                     name="role"
                     className="form-control"
                     value={formData.role}
-                    onChange={handleChange}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, role: e.target.value }))
+                    }
                     required
                     disabled={(isViewMode && !isEditMode) || isRolesLoading}
                   >
@@ -129,25 +136,13 @@ const AddUser = ({ onClose, userToEdit, isViewMode }) => {
                       <option>Error loading roles</option>
                     ) : (
                       roles?.map((role) => (
-                        <option key={role.roleId} value={role.name}>
+                        <option key={role.roleId} value={role.roleId}>
                           {role.roleName}
                         </option>
                       ))
                     )}
                   </select>
                 </div>
-
-                {userToEdit && isEditMode && (
-                  <div className="col-lg-12 mt-3">
-                    <button
-                      type="button"
-                      className="btn btn-warning"
-                      onClick={handleAssignRole}
-                    >
-                      Assign Role
-                    </button>
-                  </div>
-                )}
 
                 <div className="col-lg-12">
                   <div className="status-toggle d-flex justify-content-between align-items-center">

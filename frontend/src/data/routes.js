@@ -13,7 +13,7 @@ import { RiAdminLine } from "react-icons/ri";
 import { LuUsersRound } from "react-icons/lu";
 import { PiSignatureDuotone, PiUserListBold } from "react-icons/pi";
 import { LiaFileInvoiceSolid, LiaFileSignatureSolid } from "react-icons/lia";
-import OrderWrapper from "../components/POS/OrderWrapper";
+import OrderWrapper from "../components/Orders/OrderWrapper";
 import OrderDetails from "../components/POS/OrderDetail";
 import {
   MdOutlineBrandingWatermark,
