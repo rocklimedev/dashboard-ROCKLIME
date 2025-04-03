@@ -125,8 +125,7 @@ const RecentInvoices = () => {
                       <th>Invoice Date</th>
                       <th>Due Date</th>
                       <th>Amount</th>
-                      <th>Paid</th>
-                      <th>Amount Due</th>
+
                       <th>Created By</th>
                       <th>Status</th>
                       <th className="no-sort"></th>
@@ -146,26 +145,19 @@ const RecentInvoices = () => {
                             {invoice.invoiceNo}
                           </a>
                         </td>
+                        <td>{invoice.orderId}</td>
+                        <td>{invoice.customerId}</td>
+                        <td>{invoice.billTo}</td>
+                        <td>{invoice.shipTo}</td>
                         <td>
-                          <div className="d-flex align-items-center">
-                            <a href="#" className="avatar avatar-md me-2">
-                              <img
-                                src={
-                                  invoice.customerImage ||
-                                  "assets/img/users/default.jpg"
-                                }
-                                alt="customer"
-                              />
-                            </a>
-                            <a href="#">{invoice.customerName}</a>
-                          </div>
+                          {new Date(invoice.invoiceDate).toLocaleDateString()}
                         </td>
                         <td>
                           {new Date(invoice.dueDate).toLocaleDateString()}
                         </td>
+
                         <td>${invoice.amount}</td>
-                        <td>${invoice.paidAmount}</td>
-                        <td>${invoice.amountDue}</td>
+                        <td>{invoice.createdBy}</td>
                         <td>
                           <span
                             className={`badge ${
@@ -184,7 +176,8 @@ const RecentInvoices = () => {
                           <div className="edit-delete-action d-flex align-items-center justify-content-center">
                             <a
                               className="me-2 p-2 d-flex align-items-center justify-content-between border rounded"
-                              href={`invoice-details/${invoice.invoiceId}`}
+                              target="_blank"
+                              href={`invoices/${invoice.invoiceId}`}
                             >
                               <i data-feather="eye" className="feather-eye"></i>
                             </a>

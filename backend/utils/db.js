@@ -15,7 +15,8 @@ const Signature = require("../models/signature");
 const Vendor = require("../models/vendor");
 const Brand = require("../models/brand");
 const Customer = require("../models/customers");
-
+const Team = require("../models/team");
+const TeamMember = require("../models/teamMember");
 const setupDB = async () => {
   try {
     await sequelize.authenticate();
@@ -130,6 +131,7 @@ const setupDB = async () => {
       foreignKey: "brandSlug",
       targetKey: "brandSlug",
     });
+    // Define relationship with alias
 
     // ==============================
     // 🔥 SYNC DATABASE

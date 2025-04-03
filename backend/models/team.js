@@ -9,19 +9,17 @@ const Team = sequelize.define(
       primaryKey: true,
       defaultValue: DataTypes.UUIDV4,
     },
-
     adminId: {
-      type: DataTypes.UUID, // Admin's user ID
+      type: DataTypes.UUID,
       allowNull: false,
     },
-
     adminName: {
       type: DataTypes.STRING,
       allowNull: false,
     },
   },
   {
-    tableName: "teams", // Force lowercase table name
+    tableName: "teams",
     timestamps: true,
   }
 );

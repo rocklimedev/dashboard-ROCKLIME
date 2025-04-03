@@ -22,6 +22,7 @@ const cartRoutes = require("./routes/cart");
 const companiesRoutes = require("./routes/company");
 const quotationRoutes = require("./routes/quotation");
 const invoiceRoutes = require("./routes/invoices");
+const teamRoutes = require("./routes/teams");
 const connectMongoDB = require("./config/dbMongo");
 const setupDB = require("./utils/db");
 const app = express();
@@ -74,6 +75,7 @@ app.use("/api/carts", cartRoutes);
 app.use("/api/companies", companiesRoutes);
 app.use("/api/quotation", quotationRoutes);
 app.use("/api/invoices", invoiceRoutes);
+app.use("/api/teams", teamRoutes);
 // Sync Database
 db.sync()
   .then(() => console.log("Database connected and synced successfully."))
