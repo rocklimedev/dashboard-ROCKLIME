@@ -3,29 +3,62 @@ const TeamMember = require("../models/teamMember");
 const User = require("../models/users");
 
 // Create a new team with members
+const { Op } = require("sequelize");
+
 exports.createTeam = async (req, res) => {
   try {
     const { teamName, adminId, memberIds } = req.body;
+
+    // Validate request body
+    if (!teamName || !adminId) {
+      return res.status(400).json({
+        success: false,
+        message: "Team name and admin ID are required.",
+      });
+    }
+
+    console.log("Received request body:", req.body);
 
     // Fetch admin details from User model
     const admin = await User.findByPk(adminId);
     if (!admin) {
       return res
         .status(404)
-        .json({ success: false, message: "Admin not found" });
+        .json({ success: false, message: "Admin not found." });
     }
+
+    // Ensure memberIds is an array
+    const memberIdArray = Array.isArray(memberIds)
+      ? memberIds.filter((id) => id)
+      : [];
+
+    // Fetch member details from User model
+    const members = await User.findAll({
+      where: { userId: { [Op.in]: memberIdArray } },
+    });
+    console.log("Received memberIds:", memberIds);
+    console.log("Filtered memberIdArray:", memberIdArray);
+    if (!members.length && memberIdArray.length > 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "No valid members found." });
+    }
+
+    console.log(
+      "Members found:",
+      members.map((m) => m.userId)
+    );
 
     // Create the team
     const team = await Team.create({
-      name: teamName,
+      teamName,
       adminId,
       adminName: admin.username,
     });
 
-    // Fetch member details from User model
-    const members = await User.findAll({ where: { userId: memberIds } });
+    console.log("Team created:", team.id);
 
-    // Add members (including the admin)
+    // Prepare team members (including admin)
     const teamMembers = members.map((member) => ({
       teamId: team.id,
       userId: member.userId,
@@ -34,7 +67,7 @@ exports.createTeam = async (req, res) => {
       roleName: member.roleName || "Member",
     }));
 
-    // Ensure admin is also added as a member
+    // Ensure admin is also added as a team member
     teamMembers.push({
       teamId: team.id,
       userId: admin.userId,
@@ -43,11 +76,19 @@ exports.createTeam = async (req, res) => {
       roleName: admin.roleName || "Admin",
     });
 
-    await TeamMember.bulkCreate(teamMembers);
+    // Insert members into TeamMember table
+    await TeamMember.bulkCreate(teamMembers, { validate: true });
 
-    res.status(201).json({ success: true, team, members: teamMembers });
+    console.log("Team members added successfully.");
+
+    return res.status(201).json({ success: true, team, members: teamMembers });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error("Error creating team:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
   }
 };
 
@@ -55,7 +96,7 @@ exports.createTeam = async (req, res) => {
 exports.getAllTeams = async (req, res) => {
   try {
     const teams = await Team.findAll({
-      include: [{ model: TeamMember, as: "teamMembers" }],
+      include: [{ model: TeamMember, as: "teammembers" }],
     });
     res.status(200).json({ success: true, teams });
   } catch (error) {

@@ -1,47 +1,35 @@
 const Order = require("../models/orders");
 const OrderItem = require("../models/orderItem");
-const Cart = require("../routes/cart");
 const Team = require("../models/team");
-const TeamMember = require("../models/teamMember");
+// Ensure Team and Order models are imported
 
 exports.createOrder = async (req, res) => {
   try {
-    const { title, quotationId, admin, teamMembers } = req.body;
+    const { title, quotationId, teamName } = req.body;
 
-    if (!admin || !teamMembers || teamMembers.length === 0) {
-      return res
-        .status(400)
-        .json({ message: "Admin and team members are required" });
+    // Validate request body
+    if (!teamName) {
+      return res.status(400).json({ message: "teamName is required" });
     }
 
-    // Create Team
-    const team = await Team.create({
-      adminId: admin.userId,
-      adminName: admin.name,
-    });
+    // Find team by teamName
+    const team = await Team.findOne({ where: { teamName } });
 
-    // Add Team Members
-    const members = teamMembers.map((member) => ({
-      teamId: team.id,
-      userId: member.userId,
-      userName: member.name,
-      roleId: member.roleId,
-      roleName: member.roleName,
-    }));
-    await TeamMember.bulkCreate(members);
+    if (!team) {
+      return res.status(404).json({ message: "Team not found" });
+    }
 
-    // Create Order with Team Reference
+    // Create the order with the found teamId
     const order = await Order.create({
       title,
       quotationId,
       status: "CREATED",
-      teamId: team.id,
+      teamId: team.id, // ✅ Use team.id instead of req.body.teamId
     });
 
-    res
-      .status(201)
-      .json({ message: "Order created", orderId: order.id, teamId: team.id });
+    res.status(201).json({ message: "Order created", orderId: order.id });
   } catch (err) {
+    console.error("Error creating order:", err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -50,18 +38,11 @@ exports.getOrderDetails = async (req, res) => {
   try {
     const { orderId } = req.params;
 
-    const order = await Order.findByPk(orderId, {
-      include: {
-        model: Team,
-        include: TeamMember,
-      },
-    });
+    const order = await Order.findByPk(orderId);
 
     if (!order) return res.status(404).json({ message: "Order not found" });
 
-    res
-      .status(200)
-      .json({ order, team: order.Team, members: order.Team.TeamMembers });
+    res.status(200).json({ order });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -71,6 +52,7 @@ exports.updateOrderStatus = async (req, res) => {
   try {
     const { orderId, status } = req.body;
     const order = await Order.findByPk(orderId);
+
     if (!order) return res.status(404).json({ message: "Order not found" });
 
     order.status = status;
@@ -86,9 +68,10 @@ exports.deleteOrder = async (req, res) => {
   try {
     const { orderId } = req.params;
     const order = await Order.findByPk(orderId);
+
     if (!order) return res.status(404).json({ message: "Order not found" });
 
-    await OrderItem.deleteOne({ orderId });
+    await OrderItem.destroy({ where: { orderId } });
     await order.destroy();
 
     res.status(200).json({ message: "Order deleted successfully" });
@@ -138,41 +121,17 @@ exports.updateOrderById = async (req, res) => {
 
 exports.draftOrder = async (req, res) => {
   try {
-    const { title, quotationId } = req.body;
+    const { title, quotationId, teamId } = req.body;
+    if (!teamId) return res.status(400).json({ message: "teamId is required" });
+
     const order = await Order.create({
       title,
       quotationId,
       status: "DRAFT",
+      teamId,
     });
+
     res.status(201).json({ message: "Draft order created", order });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-exports.updateOrderTeam = async (req, res) => {
-  try {
-    const { orderId, teamMembers } = req.body;
-
-    const order = await Order.findByPk(orderId);
-    if (!order) return res.status(404).json({ message: "Order not found" });
-
-    const team = await Team.findByPk(order.teamId);
-    if (!team) return res.status(404).json({ message: "Team not found" });
-
-    // Remove existing members and add new ones
-    await TeamMember.destroy({ where: { teamId: team.id } });
-
-    const newMembers = teamMembers.map((member) => ({
-      teamId: team.id,
-      userId: member.userId,
-      userName: member.name,
-      roleId: member.roleId,
-      roleName: member.roleName,
-    }));
-
-    await TeamMember.bulkCreate(newMembers);
-
-    res.status(200).json({ message: "Team updated", team });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

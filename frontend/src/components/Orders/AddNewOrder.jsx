@@ -20,7 +20,7 @@ const AddNewOrder = ({ onClose, adminName }) => {
   );
   const selectedInvoice = selectedInvoiceData?.data;
   const { data: teamsData, refetch } = useGetAllTeamsQuery();
-  const teams = teamsData?.data || [];
+  const teams = teamsData?.teams || [];
   const [formData, setFormData] = useState({
     title: "",
     createdFor: "",
@@ -59,11 +59,28 @@ const AddNewOrder = ({ onClose, adminName }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate required fields
+    if (!formData.title || !formData.pipeline || !formData.dueDate) {
+      alert("Please fill all required fields.");
+      return;
+    }
+
     try {
-      await createOrder(formData);
+      const response = await createOrder(formData).unwrap(); // Unwrap to handle API errors properly
+      console.log("Order created successfully:", response);
       onClose();
     } catch (err) {
-      console.error("Error creating order", err);
+      console.error("Error creating order:", err);
+
+      // Handle API response errors
+      if (err?.status === 400) {
+        alert(`Bad Request: ${err.data?.message || "Invalid data provided."}`);
+      } else if (err?.status === 500) {
+        alert("Server error. Please try again later.");
+      } else {
+        alert("Something went wrong. Please try again.");
+      }
     }
   };
 
@@ -90,6 +107,77 @@ const AddNewOrder = ({ onClose, adminName }) => {
                   required
                 />
               </div>
+              <div className="mb-3">
+                <label className="form-label">Pipeline</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  name="pipeline"
+                  value={formData.pipeline}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="mb-3">
+                <label className="form-label">Due Date</label>
+                <input
+                  type="date"
+                  className="form-control"
+                  name="dueDate"
+                  value={formData.dueDate}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label">Follow-up Dates</label>
+                {formData.followupDates.map((date, index) => (
+                  <div key={index} className="d-flex align-items-center mb-2">
+                    <input
+                      type="date"
+                      className="form-control"
+                      value={date}
+                      onChange={(e) => {
+                        const updatedDates = [...formData.followupDates];
+                        updatedDates[index] = e.target.value;
+                        setFormData({
+                          ...formData,
+                          followupDates: updatedDates,
+                        });
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-danger ms-2"
+                      onClick={() => {
+                        const updatedDates = formData.followupDates.filter(
+                          (_, i) => i !== index
+                        );
+                        setFormData({
+                          ...formData,
+                          followupDates: updatedDates,
+                        });
+                      }}
+                    >
+                      &times;
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  className="btn btn-primary mt-2"
+                  onClick={() =>
+                    setFormData({
+                      ...formData,
+                      followupDates: [...formData.followupDates, ""],
+                    })
+                  }
+                >
+                  + Add Follow-up Date
+                </button>
+              </div>
+
               <div className="mb-3">
                 <label className="form-label">Invoice</label>
                 <select
@@ -219,7 +307,7 @@ const AddNewOrder = ({ onClose, adminName }) => {
                   {teams.length > 0 ? (
                     teams.map((team) => (
                       <option key={team.id} value={team.id}>
-                        {team.name}
+                        {team.teamName}
                       </option>
                     ))
                   ) : (

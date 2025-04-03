@@ -17,12 +17,26 @@ const AddNewTeam = ({ onClose, onTeamAdded }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!teamName.trim() || !adminId) return;
+
+    if (!teamName.trim()) {
+      console.error("Team name is required");
+      return;
+    }
+
+    if (!adminId) {
+      console.error("Admin must be selected");
+      return;
+    }
+
+    const adminUser = users.find((user) => user.userId === adminId);
+    if (!adminUser) {
+      console.error("Admin user not found");
+      return;
+    }
 
     try {
-      const adminUser = users.find((user) => user.userId === adminId);
       const response = await createTeam({
-        name: teamName,
+        teamName,
         adminId,
         adminName: adminUser?.name || "Unknown",
         members,
@@ -32,6 +46,7 @@ const AddNewTeam = ({ onClose, onTeamAdded }) => {
       setTeamName("");
       setMembers([]);
       setAdminId("");
+
       if (typeof onTeamAdded === "function") onTeamAdded();
       onClose();
     } catch (err) {
@@ -81,7 +96,10 @@ const AddNewTeam = ({ onClose, onTeamAdded }) => {
             <select
               className="form-control mb-2"
               value={adminId}
-              onChange={(e) => setAdminId(e.target.value)}
+              onChange={(e) => {
+                console.log("Admin ID selected:", e.target.value); // Debugging
+                setAdminId(e.target.value);
+              }}
             >
               <option value="">Select Admin</option>
               {users.map((user) => (

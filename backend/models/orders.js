@@ -1,7 +1,7 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
 const Team = require("./team");
-const Customer = require("./customers"); // Assuming a Customer model exists
+const Customer = require("./customers");
 const User = require("./users");
 
 const Order = sequelize.define(
@@ -17,7 +17,7 @@ const Order = sequelize.define(
       allowNull: false,
       references: {
         model: Customer,
-        key: "customerId",
+        key: "customerId", // Fix: Use correct primary key
       },
     },
     createdBy: {
@@ -25,7 +25,7 @@ const Order = sequelize.define(
       allowNull: false,
       references: {
         model: User,
-        key: "userId",
+        key: "userId", // Fix: Use correct primary key
       },
     },
     title: { type: DataTypes.STRING, allowNull: false },
@@ -55,23 +55,25 @@ const Order = sequelize.define(
         model: Team,
         key: "id",
       },
-      allowNull: false, // Store array as JSON
+      allowNull: true, // Fix: Make nullable
     },
     followupDates: {
       type: DataTypes.JSON, // Store array as JSON
+      allowNull: true,
     },
     source: {
       type: DataTypes.STRING,
     },
     priority: {
       type: DataTypes.ENUM("high", "medium", "low"),
+      defaultValue: "medium",
     },
     description: {
       type: DataTypes.TEXT,
     },
   },
   {
-    tableName: "orders", // Force lowercase table name
+    tableName: "orders",
     timestamps: true,
   }
 );

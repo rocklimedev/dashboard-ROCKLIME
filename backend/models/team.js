@@ -9,6 +9,10 @@ const Team = sequelize.define(
       primaryKey: true,
       defaultValue: DataTypes.UUIDV4,
     },
+    teamName: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
     adminId: {
       type: DataTypes.UUID,
       allowNull: false,

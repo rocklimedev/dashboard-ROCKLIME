@@ -26,7 +26,4 @@ router.put("/order/:orderId", orderController.updateOrderById);
 // Create a draft order
 router.post("/draft", orderController.draftOrder);
 
-// Update order team
-router.put("/update-team", orderController.updateOrderTeam);
-
 module.exports = router;

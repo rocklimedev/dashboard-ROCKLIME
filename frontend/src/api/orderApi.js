@@ -3,7 +3,7 @@ import { API_URL } from "../data/config";
 // Create the API slice
 export const orderApi = createApi({
   reducerPath: "orderApi",
-  baseQuery: fetchBaseQuery({ baseUrl: `${API_URL}/orders` }), // Adjust the base URL according to your backend
+  baseQuery: fetchBaseQuery({ baseUrl: `${API_URL}/order` }), // Adjust the base URL according to your backend
   endpoints: (builder) => ({
     createOrder: builder.mutation({
       query: (orderData) => ({
