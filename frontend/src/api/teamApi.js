@@ -1,8 +1,8 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-
+import { API_URL } from "../data/config";
 export const teamApi = createApi({
   reducerPath: "teamApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "http://localhost:4000/api/teams" }), // Adjust base URL
+  baseQuery: fetchBaseQuery({ baseUrl: `${API_URL}/teams` }), // Adjust base URL
   tagTypes: ["Teams", "Members"],
   endpoints: (builder) => ({
     // Create Team
@@ -49,7 +49,10 @@ export const teamApi = createApi({
       }),
       invalidatesTags: ["Members"],
     }),
-
+    getTeamById: builder.query({
+      query: (teamId) => `/${teamId}`,
+      providesTags: ["Teams"],
+    }),
     // Get Team Members
     getTeamMembers: builder.query({
       query: (teamId) => `/${teamId}/members`,
@@ -86,4 +89,5 @@ export const {
   useGetTeamMembersQuery,
   useUpdateTeamMemberMutation,
   useRemoveTeamMemberMutation,
+  useGetTeamByIdQuery,
 } = teamApi;

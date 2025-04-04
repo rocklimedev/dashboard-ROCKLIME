@@ -2,35 +2,90 @@ const Order = require("../models/orders");
 const OrderItem = require("../models/orderItem");
 const Team = require("../models/team");
 // Ensure Team and Order models are imported
-
+const Quotation = require("../models/quotation");
 exports.createOrder = async (req, res) => {
   try {
-    const { title, quotationId, teamName } = req.body;
+    const {
+      title,
+      createdFor,
+      createdBy,
+      pipeline,
+      status,
+      dueDate,
+      assignedTo,
+      followupDates,
+      source,
+      priority,
+      description,
+      quotationId,
+      teamId,
+    } = req.body;
 
-    // Validate request body
-    if (!teamName) {
-      return res.status(400).json({ message: "teamName is required" });
+    console.log("Received data:", req.body);
+
+    // Validate required fields
+    if (!title || !quotationId || !createdFor || !createdBy || !teamId) {
+      return res.status(400).json({
+        message:
+          "Title, quotationId, createdFor, createdBy, and teamId are required",
+      });
     }
 
-    // Find team by teamName
-    const team = await Team.findOne({ where: { teamName } });
-
-    if (!team) {
-      return res.status(404).json({ message: "Team not found" });
+    // Check if quotationId exists (if it's a foreign key)
+    const quotationExists = await Quotation.findByPk(quotationId);
+    if (!quotationExists) {
+      return res.status(404).json({ message: "Quotation not found" });
     }
 
-    // Create the order with the found teamId
+    // Ensure followupDates is properly formatted (if needed)
+    const parsedFollowupDates = Array.isArray(followupDates)
+      ? followupDates
+      : [];
+
+    // Create the order
     const order = await Order.create({
       title,
+      createdFor,
+      createdBy,
+      pipeline,
+      status: status || "CREATED", // Default status
+      dueDate,
+      assignedTo,
+      followupDates: parsedFollowupDates,
+      source,
+      priority,
+      description,
       quotationId,
-      status: "CREATED",
-      teamId: team.id, // ✅ Use team.id instead of req.body.teamId
+      teamId,
     });
 
-    res.status(201).json({ message: "Order created", orderId: order.id });
+    console.log("Order created:", order);
+
+    res.status(201).json({
+      message: "Order created successfully",
+      orderId: order.id,
+    });
   } catch (err) {
     console.error("Error creating order:", err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      error: "Something went wrong while creating the order",
+    });
+  }
+};
+exports.getAllOrders = async (req, res) => {
+  try {
+    console.log("Fetching orders...");
+    const orders = await Order.findAll();
+
+    console.log("Orders fetched:", orders.length); // Log the count
+    if (!orders || orders.length === 0) {
+      return res.status(404).json({ message: "No orders found" });
+    }
+
+    res.status(200).json({ orders });
+  } catch (err) {
+    console.error("Error fetching orders:", err);
+    res.status(500).json({ message: "Server Error", error: err.message });
   }
 };
 

@@ -1,56 +1,66 @@
-import React, { useState } from "react";
-import { useCreateTeamMutation } from "../../api/teamApi";
+import React, { useState, useEffect } from "react";
+import {
+  useCreateTeamMutation,
+  useUpdateTeamMutation,
+} from "../../api/teamApi";
 import { useGetAllUsersQuery, useGetUserByIdQuery } from "../../api/userApi";
 
-const AddNewTeam = ({ onClose, onTeamAdded }) => {
-  const [teamName, setTeamName] = useState("");
+const AddNewTeam = ({ onClose, onTeamAdded, team }) => {
+  const [teamName, setTeamName] = useState(team?.teamName || "");
   const [selectedUserId, setSelectedUserId] = useState("");
-  const [members, setMembers] = useState([]);
-  const [adminId, setAdminId] = useState("");
+  const [members, setMembers] = useState(team?.members || []);
+  const [adminId, setAdminId] = useState(team?.adminId || "");
+
   const { data } = useGetAllUsersQuery();
-  const users = data?.users || [];
+  const users = Array.isArray(data?.users) ? data.users : [];
 
   const { data: userDetails } = useGetUserByIdQuery(selectedUserId, {
     skip: !selectedUserId,
   });
-  const [createTeam, { isLoading, error }] = useCreateTeamMutation();
+
+  const [createTeam, { isLoading: creating }] = useCreateTeamMutation();
+  const [updateTeam, { isLoading: updating }] = useUpdateTeamMutation();
+
+  useEffect(() => {
+    if (team) {
+      setTeamName(team.teamName);
+      setAdminId(team.adminId);
+      setMembers(team.members || []); // Ensure members is always an array
+    }
+  }, [team]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!teamName.trim()) {
-      console.error("Team name is required");
-      return;
-    }
-
-    if (!adminId) {
-      console.error("Admin must be selected");
-      return;
-    }
+    if (!teamName.trim()) return console.error("Team name is required");
+    if (!adminId) return console.error("Admin must be selected");
 
     const adminUser = users.find((user) => user.userId === adminId);
-    if (!adminUser) {
-      console.error("Admin user not found");
-      return;
-    }
+    if (!adminUser) return console.error("Admin user not found");
+
+    const teamData = {
+      teamName,
+      adminId,
+      adminName: adminUser?.name || "Unknown",
+      members,
+    };
 
     try {
-      const response = await createTeam({
-        teamName,
-        adminId,
-        adminName: adminUser?.name || "Unknown",
-        members,
-      }).unwrap();
+      if (team) {
+        await updateTeam({ id: team.id, ...teamData }).unwrap();
+        console.log("Team updated successfully");
+      } else {
+        await createTeam(teamData).unwrap();
+        console.log("Team created successfully");
+      }
 
-      console.log("Team created successfully:", response);
       setTeamName("");
       setMembers([]);
       setAdminId("");
-
       if (typeof onTeamAdded === "function") onTeamAdded();
       onClose();
     } catch (err) {
-      console.error("Error creating team:", err);
+      console.error("Error saving team:", err);
     }
   };
 
@@ -78,9 +88,9 @@ const AddNewTeam = ({ onClose, onTeamAdded }) => {
       <div className="modal-dialog modal-dialog-centered">
         <div className="modal-content">
           <div className="modal-header">
-            <h5>Add New Team</h5>
+            <h5>{team ? "Edit Team" : "Add New Team"}</h5>
             <button type="button" className="close" onClick={onClose}>
-              &times;
+              ×
             </button>
           </div>
           <div className="modal-body">
@@ -96,17 +106,18 @@ const AddNewTeam = ({ onClose, onTeamAdded }) => {
             <select
               className="form-control mb-2"
               value={adminId}
-              onChange={(e) => {
-                console.log("Admin ID selected:", e.target.value); // Debugging
-                setAdminId(e.target.value);
-              }}
+              onChange={(e) => setAdminId(e.target.value)}
             >
               <option value="">Select Admin</option>
-              {users.map((user) => (
-                <option key={user.userId} value={user.userId}>
-                  {user.name}
-                </option>
-              ))}
+              {users?.length > 0 ? (
+                users.map((user) => (
+                  <option key={user.userId} value={user.userId}>
+                    {user.name}
+                  </option>
+                ))
+              ) : (
+                <option disabled>Loading users...</option>
+              )}
             </select>
 
             <h6>Team Members</h6>
@@ -116,11 +127,15 @@ const AddNewTeam = ({ onClose, onTeamAdded }) => {
               onChange={(e) => setSelectedUserId(e.target.value)}
             >
               <option value="">Select a user</option>
-              {users.map((user) => (
-                <option key={user.userId} value={user.userId}>
-                  {user.name}
-                </option>
-              ))}
+              {users?.length > 0 ? (
+                users.map((user) => (
+                  <option key={user.userId} value={user.userId}>
+                    {user.name}
+                  </option>
+                ))
+              ) : (
+                <option disabled>Loading users...</option>
+              )}
             </select>
             <button
               className="btn btn-success mb-3"
@@ -155,7 +170,6 @@ const AddNewTeam = ({ onClose, onTeamAdded }) => {
                 </button>
               </div>
             ))}
-            {error && <p className="text-danger">Error creating team</p>}
           </div>
           <div className="modal-footer">
             <button className="btn btn-secondary" onClick={onClose}>
@@ -164,9 +178,13 @@ const AddNewTeam = ({ onClose, onTeamAdded }) => {
             <button
               className="btn btn-primary"
               onClick={handleSubmit}
-              disabled={isLoading}
+              disabled={creating || updating}
             >
-              {isLoading ? "Adding..." : "Add Team"}
+              {creating || updating
+                ? "Saving..."
+                : team
+                ? "Update Team"
+                : "Add Team"}
             </button>
           </div>
         </div>

@@ -9,12 +9,12 @@ exports.createInvoice = async (req, res) => {
       billTo,
       shipTo,
       amount,
-      orderNumber,
+
       invoiceDate,
       dueDate,
       paymentMethod,
       status,
-      orderId,
+
       products,
       signatureName,
     } = req.body;
@@ -25,12 +25,12 @@ exports.createInvoice = async (req, res) => {
       billTo,
       shipTo,
       amount,
-      orderNumber,
+
       invoiceDate,
       dueDate,
       paymentMethod,
       status,
-      orderId,
+
       products,
       signatureName,
     });

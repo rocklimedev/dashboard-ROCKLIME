@@ -1,10 +1,11 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
-const { v4: uuidv4 } = require("uuid"); // Importing UUID library
-const Order = require("./orders"); // Import Order model
+const { v4: uuidv4 } = require("uuid");
+const Order = require("./orders");
 const Customer = require("./customers");
 const Address = require("./address");
 const User = require("./users");
+const Quotation = require("./quotation"); // Ensure you have this model
 
 const Invoice = sequelize.define(
   "Invoice",
@@ -12,7 +13,7 @@ const Invoice = sequelize.define(
     invoiceId: {
       type: DataTypes.UUID,
       primaryKey: true,
-      defaultValue: uuidv4, // Auto-generate UUID
+      defaultValue: uuidv4,
     },
     createdBy: {
       type: DataTypes.UUID,
@@ -21,13 +22,14 @@ const Invoice = sequelize.define(
         key: "userId",
       },
     },
-    orderId: {
+
+    quotationId: {
       type: DataTypes.UUID,
       references: {
-        model: Order,
-        key: "id",
+        model: Quotation,
+        key: "quotationId",
       },
-      allowNull: false,
+      allowNull: true, // Optional field
     },
     billTo: {
       type: DataTypes.STRING(255),
@@ -48,20 +50,13 @@ const Invoice = sequelize.define(
     invoiceDate: {
       type: DataTypes.DATEONLY,
       allowNull: false,
-      validate: {
-        isBeforeDueDate(value) {
-          if (this.dueDate && value >= this.dueDate) {
-            throw new Error("Invoice date must be before the due date.");
-          }
-        },
-      },
     },
     dueDate: {
       type: DataTypes.DATEONLY,
       allowNull: false,
     },
     paymentMethod: {
-      type: DataTypes.JSON, // Store mode of payment (UPI, card, etc.)
+      type: DataTypes.JSON,
       allowNull: true,
     },
     status: {

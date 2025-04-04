@@ -1,11 +1,14 @@
 import React from "react";
 
-const OrderItem = () => {
+const OrderItem = ({ order }) => {
+  if (!order) return null;
+
   return (
-    <div class="card-body p-4">
-      <div class="d-flex align-items-center justify-content-between">
-        <span class="badge bg-outline-success d-inline-flex align-items-center">
-          <i class="fas fa-circle fs-6 me-1"></i>High
+    <div className="card-body p-4">
+      <div className="d-flex align-items-center justify-content-between">
+        <span className="badge bg-outline-success d-inline-flex align-items-center">
+          <i className="fas fa-circle fs-6 me-1"></i>
+          {order.priority} - {order.assignedTo || "null"}
         </span>
         <div>
           <a
@@ -13,29 +16,19 @@ const OrderItem = () => {
             data-bs-toggle="dropdown"
             aria-expanded="false"
           >
-            <i class="fas fa-ellipsis-v"></i>
+            <i className="fas fa-ellipsis-v"></i>
           </a>
-          <div class="dropdown-menu notes-menu dropdown-menu-end">
-            <a
-              href="#"
-              class="dropdown-item"
-              data-bs-toggle="modal"
-              data-bs-target="#edit-note-units"
-            >
+          <div className="dropdown-menu notes-menu dropdown-menu-end">
+            <a href="#" className="dropdown-item">
               <span>
-                <i data-feather="edit"></i>
-              </span>
+                <i className="ti ti-edit"></i>
+              </span>{" "}
               Edit
             </a>
-            <a
-              href="#"
-              class="dropdown-item"
-              data-bs-toggle="modal"
-              data-bs-target="#delete_modal"
-            >
+            <a href="#" className="dropdown-item">
               <span>
-                <i data-feather="trash-2"></i>
-              </span>
+                <i className="ti ti-trash"></i>
+              </span>{" "}
               Delete
             </a>
             <a href="javascript:void(0);" class="dropdown-item">
@@ -58,43 +51,55 @@ const OrderItem = () => {
           </div>
         </div>
       </div>
-      <div class="my-3">
-        <h5 class="text-truncate mb-1">
-          <a href="javascript:void(0);">Create a compost pile</a>
+
+      <div className="my-3">
+        <h5 className="text-truncate mb-1">
+          <a href="javascript:void(0);">
+            {order.title || "Order Title"} - {order.pipeline}
+          </a>
         </h5>
-        <p class="mb-3 d-flex align-items-center text-dark">
-          <i class="ti ti-calendar me-1"></i>27 Jan 2024
+        <p className="mb-3 d-flex align-items-center text-dark">
+          <i className="ti ti-calendar me-1"></i>{" "}
+          {order.dueDate || "No Due Date"} - {order.followupDates}
         </p>
-        <p class="text-truncate line-clamb-2 text-wrap">
-          Compost pile refers to fruit and vegetable scraps, used tea, coffee
-          grounds etc..
+        <p className="text-truncate line-clamb-2 text-wrap">
+          {order.description || "No description available"}
         </p>
       </div>
-      <div class="d-flex align-items-center justify-content-between border-top pt-3">
-        <div class="d-flex align-items-center">
-          <a href="javascript:void(0);" class="avatar avatar-md me-2">
-            <img
-              src="assets/img/profiles/avatar-08.jpg"
-              alt="Profile"
-              class="img-fluid rounded-circle"
-            />
-          </a>
-          <span class="text-warning d-flex align-items-center">
-            <i class="fas fa-square square-rotate fs-10 me-1"></i>
-            Social
+
+      <div className="d-flex align-items-center justify-content-between border-top pt-3">
+        <div className="d-flex align-items-center">
+          <span className="text-warning d-flex align-items-center">
+            <i className="fas fa-square square-rotate fs-10 me-1"></i>{" "}
+            {order.source || "Unknown"}
           </span>
         </div>
-        <div class="d-flex align-items-center">
-          <a href="javascript:void(0);" class="me-2">
-            <span>
-              <i class="fas fa-star text-warning"></i>
+        <div class="d-flex align-items-center justify-content-between border-top pt-3">
+          <div class="d-flex align-items-center">
+            <a href="javascript:void(0);" class="avatar avatar-md me-2">
+              <img
+                src="assets/img/profiles/avatar-01.jpg"
+                alt="Profile"
+                class="img-fluid rounded-circle"
+              />
+            </a>
+            <span class="text-info d-flex align-items-center">
+              <i class="fas fa-square square-rotate fs-10 me-1"></i>
+              {order.status}
             </span>
-          </a>
-          <a href="javascript:void(0);">
-            <span>
-              <i class="ti ti-trash text-danger"></i>
-            </span>
-          </a>
+          </div>
+          <div class="d-flex align-items-center">
+            <a href="javascript:void(0);" class="me-2">
+              <span>
+                <i class="fas fa-star text-warning"></i>
+              </span>
+            </a>
+            <a href="javascript:void(0);">
+              <span>
+                <i class="ti ti-trash text-danger"></i>
+              </span>
+            </a>
+          </div>
         </div>
       </div>
     </div>

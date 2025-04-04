@@ -6,21 +6,26 @@ import {
 } from "../../api/invoiceApi";
 import { useGetAllTeamsQuery } from "../../api/teamApi";
 import AddNewTeam from "./AddNewTeam";
+
 const AddNewOrder = ({ onClose, adminName }) => {
   const [createOrder, { isLoading, error }] = useCreateOrderMutation();
   const { data: invoicesData } = useGetAllInvoicesQuery();
   const invoices = invoicesData?.data || [];
+
   const [showNewTeamModal, setShowNewTeamModal] = useState(false);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState("");
+
   const { data: selectedInvoiceData } = useGetInvoiceByIdQuery(
     selectedInvoiceId,
     {
-      skip: !selectedInvoiceId, // Skip query if no invoice is selected
+      skip: !selectedInvoiceId,
     }
   );
   const selectedInvoice = selectedInvoiceData?.data;
+
   const { data: teamsData, refetch } = useGetAllTeamsQuery();
   const teams = teamsData?.teams || [];
+
   const [formData, setFormData] = useState({
     title: "",
     createdFor: "",
@@ -31,17 +36,22 @@ const AddNewOrder = ({ onClose, adminName }) => {
     dueDate: "",
     followupDates: [],
     source: "",
+    teamId: "",
     priority: "",
     description: "",
     invoiceId: "",
+    quotationId: "", // Added quotationId field
     orderNo: "",
   });
 
   useEffect(() => {
+    console.log("Fetched Invoice:", selectedInvoice);
     if (selectedInvoice) {
       setFormData((prev) => ({
         ...prev,
+
         invoiceId: selectedInvoiceId,
+        quotationId: selectedInvoice.quotationId || "",
         createdBy: selectedInvoice.createdBy || "",
         createdFor: selectedInvoice.customerId || "",
         orderNo: selectedInvoice.orderId || "",
@@ -56,24 +66,24 @@ const AddNewOrder = ({ onClose, adminName }) => {
   const handleInvoiceSelect = (e) => {
     setSelectedInvoiceId(e.target.value);
   };
+  useEffect(() => {
+    console.log("Fetched Teams:", teams);
+  }, [teams]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate required fields
     if (!formData.title || !formData.pipeline || !formData.dueDate) {
       alert("Please fill all required fields.");
       return;
     }
 
     try {
-      const response = await createOrder(formData).unwrap(); // Unwrap to handle API errors properly
+      const response = await createOrder(formData).unwrap();
       console.log("Order created successfully:", response);
       onClose();
     } catch (err) {
       console.error("Error creating order:", err);
-
-      // Handle API response errors
       if (err?.status === 400) {
         alert(`Bad Request: ${err.data?.message || "Invalid data provided."}`);
       } else if (err?.status === 500) {
@@ -114,6 +124,17 @@ const AddNewOrder = ({ onClose, adminName }) => {
                   className="form-control"
                   name="pipeline"
                   value={formData.pipeline}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="mb-3">
+                <label className="form-label">Source</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  name="source"
+                  value={formData.source}
                   onChange={handleChange}
                   required
                 />
@@ -288,7 +309,7 @@ const AddNewOrder = ({ onClose, adminName }) => {
                 </select>
               </div>
               <div className="mb-3">
-                <label className="form-label">Assigned To</label>{" "}
+                <label className="form-label">Assigned To</label>
                 <button
                   type="button"
                   className="btn btn-primary ms-2"
@@ -298,23 +319,20 @@ const AddNewOrder = ({ onClose, adminName }) => {
                 </button>
                 <select
                   className="form-select"
-                  name="assignedTo"
-                  value={formData.assignedTo}
+                  name="teamId"
+                  value={formData.teamId}
                   onChange={handleChange}
                   required
                 >
-                  <option value="">Select Team Member</option>
-                  {teams.length > 0 ? (
-                    teams.map((team) => (
-                      <option key={team.id} value={team.id}>
-                        {team.teamName}
-                      </option>
-                    ))
-                  ) : (
-                    <option disabled>No Team Members Available</option>
-                  )}
+                  <option value="">Select Team</option>
+                  {teams.map((team) => (
+                    <option key={team.id} value={team.id}>
+                      {team.teamName}
+                    </option>
+                  ))}
                 </select>
               </div>
+
               <div className="mb-3">
                 <label className="form-label">Description</label>
                 <textarea

@@ -31,6 +31,7 @@ import {
   FaJediOrder,
   FaFirstOrderAlt,
   FaUserGraduate,
+  FaTeamspeak,
 } from "react-icons/fa";
 import { AiTwotoneCreditCard, AiFillProfile } from "react-icons/ai";
 import { CgProfile } from "react-icons/cg";
@@ -58,6 +59,7 @@ import AddQuntation from "../components/Quotation/AddQuntation";
 import { GiCorporal } from "react-icons/gi";
 import CmList from "../components/CMTrading/cmList";
 import SecuritySettings from "../components/Settings/SecuritySettings";
+import TeamsList from "../components/Orders/TeamsList";
 const masterRoutes = [
   {
     path: "/",
@@ -223,6 +225,13 @@ const masterRoutes = [
         icon: <FaFirstOrder />,
         isSidebarActive: false,
         element: <OrderDetails />,
+      },
+      {
+        path: "/orders/teams",
+        name: "Teams",
+        icon: <FaTeamspeak />,
+        element: <TeamsList />,
+        isSidebarActive: true,
       },
     ],
   },

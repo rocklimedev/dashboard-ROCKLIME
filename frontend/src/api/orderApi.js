@@ -31,6 +31,9 @@ export const orderApi = createApi({
     recentOrders: builder.query({
       query: () => "/recent",
     }),
+    getAllOrders: builder.query({
+      query: () => "/all",
+    }),
     orderById: builder.query({
       query: (orderId) => `/${orderId}`,
     }),
@@ -68,4 +71,5 @@ export const {
   useUpdateOrderByIdMutation,
   useDraftOrderMutation,
   useUpdateOrderTeamMutation,
+  useGetAllOrdersQuery,
 } = orderApi;

@@ -108,15 +108,22 @@ const setupDB = async () => {
       foreignKey: "customerId",
       onDelete: "CASCADE",
     });
+    // Customer ↔ Invoice
     Invoice.belongsTo(Customer, { foreignKey: "customerId" });
 
     // Address ↔ Invoice
     Invoice.belongsTo(Address, { foreignKey: "shipTo" });
 
-    // Order ↔ Invoice & Quotation Relationships
-    Order.belongsTo(Quotation, { foreignKey: "quotationId" });
-    Invoice.belongsTo(Order, { foreignKey: "orderId", onDelete: "CASCADE" });
-    Order.hasMany(Invoice, { foreignKey: "orderId" });
+    // Order ↔ Invoice
+    Invoice.hasOne(Order, { foreignKey: "invoiceId", onDelete: "CASCADE" });
+    Order.belongsTo(Invoice, { foreignKey: "invoiceId" });
+
+    // Quotation ↔ Invoice
+    Invoice.belongsTo(Quotation, {
+      foreignKey: "quotationId",
+      allowNull: true,
+    });
+    Quotation.hasOne(Invoice, { foreignKey: "quotationId" }); // Assuming each quotation generates one invoice
 
     // ==============================
     // 🔥 BRAND & VENDOR RELATIONSHIPS
@@ -132,6 +139,8 @@ const setupDB = async () => {
       targetKey: "brandSlug",
     });
     // Define relationship with alias
+    Team.hasMany(Order, { foreignKey: "assignedTo" });
+    Order.belongsTo(Team, { foreignKey: "assignedTo" });
 
     // ==============================
     // 🔥 SYNC DATABASE
