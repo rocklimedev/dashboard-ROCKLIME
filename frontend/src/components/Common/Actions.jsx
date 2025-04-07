@@ -17,12 +17,7 @@ const Actions = ({ id, name, viewUrl, editUrl, onDelete }) => {
       <a class="me-2 p-2" href={`${editUrl}`}>
         <FaPen className="align-middle fs-18" />
       </a>
-      <a
-        data-bs-toggle="modal"
-        data-bs-target="#delete-modal"
-        class="p-2"
-        onClick={onDelete}
-      >
+      <a class="p-2" onClick={onDelete}>
         <ImBin className="align-middle fs-18" />
       </a>
     </div>

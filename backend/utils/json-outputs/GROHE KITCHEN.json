@@ -1,5 +1,5 @@
 {
-  "GROHE SMART CONTROL \r\nKITCHEN MIXERS": [
+  "GROHE SMART CONTROL  KITCHEN MIXERS": [
     {
       "Name": "Zedra SmartControl 1-Handle Sink Mixer, L\u0002Spout, Pull-O",
       "Code": "31593002",
@@ -19,7 +19,7 @@
       "Image": "31615000.jpg"
     }
   ],
-  "KITCHEN MIXERS\r\nONLY MOUSSEUR": [
+  "KITCHEN MIXERS ONLY MOUSSEUR": [
     {
       "Name": "EURODISC COSMO",
       "Code": "32259003",
@@ -63,7 +63,7 @@
       "Image": "31255000.jpg"
     }
   ],
-  "KITCHEN MIXERS\r\nLOW SPOUT": [
+  "KITCHEN MIXERS LOW SPOUT": [
     {
       "Name": "EUROSMART LOW SPOUT",
       "Code": "33281002",
@@ -95,39 +95,39 @@
       "Image": "33977002.jpg"
     },
     {
-      "Name": "EURODISC LOW SPOUT\r\nPULL OUT DUAL SPRAY",
+      "Name": "EURODISC LOW SPOUT PULL OUT DUAL SPRAY",
       "Code": "32257001",
       "Price": 51000,
       "Image": "32257001.jpg"
     },
     {
-      "Name": "EUROSMART LOW SPOUT\r\nPULL-OUT DUAL SPRAY",
+      "Name": "EUROSMART LOW SPOUT PULL-OUT DUAL SPRAY",
       "Code": "30305000",
       "Price": 16490,
       "Image": "30305000.jpg"
     }
   ],
-  "KITCHEN MIXERS \r\nMEDIUM SPOUT": [
+  "KITCHEN MIXERS  MEDIUM SPOUT": [
     {
-      "Name": "EUROSMART COSMO\r\nMIDUUM SPOUT",
+      "Name": "EUROSMART COSMO MIDUUM SPOUT",
       "Code": "30193000",
       "Price": 24450,
       "Image": "30193000.jpg"
     },
     {
-      "Name": "EURODISC COSMO\r\nMEDIUM SPOUT",
+      "Name": "EURODISC COSMO MEDIUM SPOUT",
       "Code": "33770002",
       "Price": 46400,
       "Image": "33770002.jpg"
     },
     {
-      "Name": "CONCETTO MIDUUM SPOUT\r\nPULL OUT MOUSSEUR",
+      "Name": "CONCETTO MIDUUM SPOUT PULL OUT MOUSSEUR",
       "Code": "31129001",
       "Price": 33200,
       "Image": "31129001.jpg"
     },
     {
-      "Name": "EURODISC COSMO MEDIUM\r\nPULL OUT DUAL SPRAY",
+      "Name": "EURODISC COSMO MEDIUM PULL OUT DUAL SPRAY",
       "Code": "32257002",
       "Price": 56550,
       "Image": "32257002.jpg"
@@ -139,13 +139,13 @@
       "Image": "31124002.jpg"
     },
     {
-      "Name": "CONCETTO MEDIUM SPOUT \r\nPULL OUT DUAL SPRAY",
+      "Name": "CONCETTO MEDIUM SPOUT  PULL OUT DUAL SPRAY",
       "Code": "30273001",
       "Price": 37200,
       "Image": "30273001.jpg"
     }
   ],
-  "KITCHEN MIXERS\r\nPULL-OUT MOUSSEUR": [
+  "KITCHEN MIXERS PULL-OUT MOUSSEUR": [
     {
       "Name": "Minta 1-Handle Kitchen Mixer, L-Spout, Pull Out",
       "Code": "32168000",
@@ -153,7 +153,7 @@
       "Image": "32168000.jpg"
     },
     {
-      "Name": "K7\r\nPULL-OUT DUAL SPRAY",
+      "Name": "K7 PULL-OUT DUAL SPRAY",
       "Code": "32176000",
       "Price": 98200,
       "Image": "32176000.jpg"
@@ -171,16 +171,27 @@
       "Image": "31379000.jpg"
     },
     {
-      "Name": "EUROCUBE PROFESSIONAL\r\nPULL-OUT DUAL SPRAY",
+      "Name": "EUROCUBE PROFESSIONAL PULL-OUT DUAL SPRAY",
       "Code": "31395000",
       "Price": 98000,
       "Image": "31395000.jpg"
     }
   ],
-  "KITCHEN MIXERS\r\nCOLOUR FINISHED": [],
-  "KITCHEN MIXERS\r\nCOLOUR HOSE FINISHED": [
+
+  "KITCHEN MIXERS - COLOUR FINISHED": [
+    { "Name": "ESSENCE COOL SUNRISE-GLOSS", "Code": "30629GN0" },
+    { "Name": "ESSENCE BRUSHED COOL SUNRISE", "Code": "30629GLO" },
+    { "Name": "ESSENCE WARM SUNSET-GLOSS", "Code": "30629DA0" },
+    { "Name": "ESSENCE BRUSHED WARM SUNSET", "Code": "30629DL0" },
+    { "Name": "ESSENCE HARD GRAPHITE-GLOSS", "Code": "30629A00" },
+    { "Name": "ESSENCE BRUSHED HARD GRAPHITE", "Code": "30629AL0" },
+    { "Name": "ESSENCE POLISHED NICKEL-GLOSS", "Code": "30629BE0" },
+    { "Name": "ESSENCE BRUSHED NICKEL", "Code": "30629EN0" }
+  ],
+
+  "KITCHEN MIXERS COLOUR HOSE FINISHED": [
     {
-      "Name": "Essence New 1-Handle Kitchen Mixer, \r\nProfessional Spray",
+      "Name": "Essence New 1-Handle Kitchen Mixer,  Professional Spray",
       "Code": "30294000",
       "Price": 60750,
       "Image": "30294000.jpg"
@@ -192,7 +203,7 @@
       "Image": "30321MW0.jpg"
     },
     {
-      "Name": "Essence New 1-Handle Kitchen Mixer, \r\nProfessional Spray",
+      "Name": "Essence New 1-Handle Kitchen Mixer,  Professional Spray",
       "Code": "30294000",
       "Price": 60750,
       "Image": "30294000.jpg"
@@ -204,7 +215,7 @@
       "Image": "30321YR0.jpg"
     },
     {
-      "Name": "Essence New 1-Handle Kitchen Mixer, \r\nProfessional Spray",
+      "Name": "Essence New 1-Handle Kitchen Mixer,  Professional Spray",
       "Code": "30294000",
       "Price": 60750,
       "Image": "30294000.jpg"
@@ -216,7 +227,7 @@
       "Image": "30321XC0.jpg"
     },
     {
-      "Name": "Essence New 1-Handle Kitchen Mixer, \r\nProfessional Spray",
+      "Name": "Essence New 1-Handle Kitchen Mixer,  Professional Spray",
       "Code": "30294000",
       "Price": 60750,
       "Image": "30294000.jpg"
@@ -228,7 +239,7 @@
       "Image": "30321YF0.jpg"
     },
     {
-      "Name": "Essence New 1-Handle Kitchen Mixer, \r\nProfessional Spray",
+      "Name": "Essence New 1-Handle Kitchen Mixer,  Professional Spray",
       "Code": "30294000",
       "Price": 60750,
       "Image": "30294000.jpg"
@@ -240,7 +251,7 @@
       "Image": "30321DG0.jpg"
     },
     {
-      "Name": "Essence New 1-Handle Kitchen Mixer, \r\nProfessional Spray",
+      "Name": "Essence New 1-Handle Kitchen Mixer,  Professional Spray",
       "Code": "30294000",
       "Price": 60750,
       "Image": "30294000.jpg"
@@ -252,7 +263,7 @@
       "Image": "30321DP0.jpg"
     },
     {
-      "Name": "Essence New 1-Handle Kitchen Mixer, \r\nProfessional Spray",
+      "Name": "Essence New 1-Handle Kitchen Mixer,  Professional Spray",
       "Code": "30294000",
       "Price": 60750,
       "Image": "30294000.jpg"
@@ -264,7 +275,7 @@
       "Image": "30321DU0.jpg"
     },
     {
-      "Name": "Essence New 1-Handle Kitchen Mixer, \r\nProfessional Spray",
+      "Name": "Essence New 1-Handle Kitchen Mixer,  Professional Spray",
       "Code": "30294000",
       "Price": 60750,
       "Image": "30294000.jpg"
@@ -276,7 +287,7 @@
       "Image": "30321GE0.jpg"
     },
     {
-      "Name": "Essence New 1-Handle Kitchen Mixer, \r\nProfessional Spray",
+      "Name": "Essence New 1-Handle Kitchen Mixer,  Professional Spray",
       "Code": "30294000",
       "Price": 60750,
       "Image": "30294000.jpg"
@@ -288,7 +299,7 @@
       "Image": "30321TY0.jpg"
     },
     {
-      "Name": "Essence New 1-Handle Kitchen Mixer, \r\nProfessional Spray",
+      "Name": "Essence New 1-Handle Kitchen Mixer,  Professional Spray",
       "Code": "30294000",
       "Price": 60750,
       "Image": "30294000.jpg"
@@ -300,15 +311,15 @@
       "Image": "30321HG0.jpg"
     }
   ],
-  "ZEDRA TOUCH\r\nELECTRONIC SINGLE LIVER SINK MIXER": [
+  "ZEDRA TOUCH ELECTRONIC SINGLE LIVER SINK MIXER": [
     {
-      "Name": "Zedra Touch 1-Handle Kitchen Mixer, C-Spout \r\nTriple Spray",
+      "Name": "Zedra Touch 1-Handle Kitchen Mixer, C-Spout  Triple Spray",
       "Code": "30219002",
       "Price": 156350,
       "Image": "30219002.jpg"
     }
   ],
-  "MINTA TOUCH\r\nELECTRONIC SINGLE LIVER SINK MIXER": [
+  "MINTA TOUCH ELECTRONIC SINGLE LIVER SINK MIXER": [
     {
       "Name": "Minta Touch 1-Handle Kitchen Mixer, L-Spout, Pull Out",
       "Code": "31360001",
@@ -316,95 +327,95 @@
       "Image": "31360001.jpg"
     },
     {
-      "Name": "MINTA TOUCH\r\nPULL-OUT SPRAY C SHAPE",
+      "Name": "MINTA TOUCH PULL-OUT SPRAY C SHAPE",
       "Code": "31358001",
       "Price": 70620,
       "Image": "31358001.jpg"
     }
   ],
-  "ESSENCE FOOT CONTROL\r\nELECTRONIC SINGLE LIVER SINK MIXER": [
+  "ESSENCE FOOT CONTROL ELECTRONIC SINGLE LIVER SINK MIXER": [
     {
-      "Name": "ESSENCE FOOT CONTROL\r\nPULL-OUT DUAL SPRAY",
+      "Name": "ESSENCE FOOT CONTROL PULL-OUT DUAL SPRAY",
       "Code": "30311000",
       "Price": 77740,
       "Image": "30311000.jpg"
     }
   ],
-  "BAU KITCHEN MIXERS & \r\nSINK TAPS": [
+  "BAU KITCHEN MIXERS &  SINK TAPS": [
     {
-      "Name": "BauLoop\r\nSingle-lever sink mixer 1/2\"",
+      "Name": "BauLoop Single-lever sink mixer 1/2\"",
       "Code": "31232001",
       "Price": 11750,
       "Image": "31232001.jpg"
     },
     {
-      "Name": "BauLoop\r\nSink tap 1/2\"",
+      "Name": "BauLoop Sink tap 1/2\"",
       "Code": "31222000",
       "Price": 6650,
       "Image": "31222000.jpg"
     },
     {
-      "Name": "BauLoop Sink tap 1/2\"\r\n31227000",
+      "Name": "BauLoop Sink tap 1/2\" 31227000",
       "Code": "31227000",
       "Price": 5950,
       "Image": "31227000.jpg"
     },
     {
-      "Name": "BauEdge\r\nSingle-lever sink mixer 1/2\"",
+      "Name": "BauEdge Single-lever sink mixer 1/2\"",
       "Code": "31233001",
       "Price": 11950,
       "Image": "31233001.jpg"
     },
     {
-      "Name": "BauEdge\r\nSink tap 1/2\"",
+      "Name": "BauEdge Sink tap 1/2\"",
       "Code": "31223000",
       "Price": 6750,
       "Image": "31223000.jpg"
     },
     {
-      "Name": "BauEdge\r\nSink tap 1/2\"",
+      "Name": "BauEdge Sink tap 1/2\"",
       "Code": "31228000",
       "Price": 6050,
       "Image": "31228000.jpg"
     },
     {
-      "Name": "GROHE BauCurve\r\nSingle-lever sink mixer 1/2\"",
+      "Name": "GROHE BauCurve Single-lever sink mixer 1/2\"",
       "Code": "31231001",
       "Price": 11550,
       "Image": "31231001.jpg"
     },
     {
-      "Name": "GROHE BauCurve\r\nSink tap 1/2\"",
+      "Name": "GROHE BauCurve Sink tap 1/2\"",
       "Code": "31221000",
       "Price": 6550,
       "Image": "31221000.jpg"
     },
     {
-      "Name": "GROHE BauCurve\r\nSink tap 1/2\"",
+      "Name": "GROHE BauCurve Sink tap 1/2\"",
       "Code": "31226000",
       "Price": 5850,
       "Image": "31226000.jpg"
     },
     {
-      "Name": "GROHE BauFlow\r\nSingle-lever sink mixer 1/2\"",
+      "Name": "GROHE BauFlow Single-lever sink mixer 1/2\"",
       "Code": "31230001",
       "Price": 11350,
       "Image": "31230001.jpg"
     },
     {
-      "Name": "GROHE BauFlow\r\nSink tap 1/2\"",
+      "Name": "GROHE BauFlow Sink tap 1/2\"",
       "Code": "31220000",
       "Price": 6450,
       "Image": "31220000.jpg"
     },
     {
-      "Name": "GROHE BauFlow\r\nSink tap 1/2\"",
+      "Name": "GROHE BauFlow Sink tap 1/2\"",
       "Code": "31225000",
       "Price": 5750,
       "Image": "31225000.jpg"
     }
   ],
-  "SOAP DISPENSERS\r\nFOR LIQUID SOAPS (500 ML)": [
+  "SOAP DISPENSERS FOR LIQUID SOAPS (500 ML)": [
     {
       "Name": "ZEDRA",
       "Code": "40553000",
@@ -430,102 +441,109 @@
       "Image": "40536000.jpg"
     }
   ],
-  "KITCHEN SINK- SINGLE/DOUBLE BOWL": [],
-  "SINGLE BOWL": [
+  "KITCHEN SINK- SINGLE/DOUBLE BOWL": [
     {
-      "Name": "31650 AP0/AT0",
-      "Code": "16” X 20” TOP",
-      "Price": 17000,
-      "Image": "16” X 20” TOP.jpg"
-    },
-    {
-      "Name": "31651 AP0/AT0",
-      "Code": "22” X 20” TOP",
-      "Price": 21500,
-      "Image": "22” X 20” TOP.jpg"
-    },
-    {
-      "Name": "31652 AP0/AT0",
-      "Code": "30” X 20” TOP",
-      "Price": 26500,
-      "Image": "30” X 20” TOP.jpg"
+      "SINGLE BOWL": [
+        {
+          "Name": "31650 AP0/AT0",
+          "Code": "16” X 20” TOP",
+          "Price": 17000,
+          "Image": "16” X 20” TOP.jpg"
+        },
+        {
+          "Name": "31651 AP0/AT0",
+          "Code": "22” X 20” TOP",
+          "Price": 21500,
+          "Image": "22” X 20” TOP.jpg"
+        },
+        {
+          "Name": "31652 AP0/AT0",
+          "Code": "30” X 20” TOP",
+          "Price": 26500,
+          "Image": "30” X 20” TOP.jpg"
+        }
+      ],
+      "SINGLE & HALF 1.5 BOWL": [
+        {
+          "Name": "31648 AP0/AT0",
+          "Code": "22” X 18” TOP/UNDER",
+          "Price": 25500,
+          "Image": "22” X 18” TOP/UNDER.jpg"
+        }
+      ],
+      "DOUBLE BOWL": [
+        {
+          "Name": "31657 AP0/AT0",
+          "Code": "33” X 20” TOP/UNDER",
+          "Price": 32500,
+          "Image": "33” X 20” TOP/UNDER.jpg"
+        },
+        {
+          "Name": "31658 AP0/AT0",
+          "Code": "36” X 20” TOP",
+          "Price": 34500,
+          "Image": "36” X 20” TOP.jpg"
+        },
+        {
+          "Name": "31872 AP0/AT0",
+          "Code": "34” X 20” TOP/UNDER",
+          "Price": 28500,
+          "Image": "34” X 20” TOP/UNDER.jpg"
+        },
+        {
+          "Name": "31649 AP0/AT0",
+          "Code": "34” X 20” TOP",
+          "Price": 29500,
+          "Image": "34” X 20” TOP.jpg"
+        }
+      ]
     }
   ],
-  "SINGLE & HALF 1.5 BOWL": [
+
+  "KITCHEN SINK WITH DRAIN BOARD": [
     {
-      "Name": "31648 AP0/AT0",
-      "Code": "22” X 18” TOP/UNDER",
-      "Price": 25500,
-      "Image": "22” X 18” TOP/UNDER.jpg"
-    }
-  ],
-  "DOUBLE BOWL": [
-    {
-      "Name": "31657 AP0/AT0",
-      "Code": "33” X 20” TOP/UNDER",
-      "Price": 32500,
-      "Image": "33” X 20” TOP/UNDER.jpg"
-    },
-    {
-      "Name": "31658 AP0/AT0",
-      "Code": "36” X 20” TOP",
-      "Price": 34500,
-      "Image": "36” X 20” TOP.jpg"
-    },
-    {
-      "Name": "31872 AP0/AT0",
-      "Code": "34” X 20” TOP/UNDER",
-      "Price": 28500,
-      "Image": "34” X 20” TOP/UNDER.jpg"
-    },
-    {
-      "Name": "31649 AP0/AT0",
-      "Code": "34” X 20” TOP",
-      "Price": 29500,
-      "Image": "34” X 20” TOP.jpg"
-    }
-  ],
-  "KITCHEN SINK WITH DRAIN BOARD": [],
-  "SINGLE BOWL WITH DRAIN": [
-    {
-      "Name": "31641 AP0/AT0",
-      "Code": "40” X 20” TOP MOUNT",
-      "Price": 26500,
-      "Image": "40” X 20” TOP MOUNT.jpg"
-    },
-    {
-      "Name": "31654 AP0/AT0",
-      "Code": "40” X 20” TOP MOUNT",
-      "Price": 27500,
-      "Image": "40” X 20” TOP MOUNT.jpg"
-    }
-  ],
-  "DOUBLE BOWL WITH DRAIN": [
-    {
-      "Name": "31647 AP0/AT0",
-      "Code": "46” X 20” TOP MOUNT",
-      "Price": 35500,
-      "Image": "46” X 20” TOP MOUNT.jpg"
-    }
-  ],
-  "SINGLE & HALF 1.5 BOWL WITH DRAIN": [
-    {
-      "Name": "31642 AP0/AT0",
-      "Code": "40” X 20” TOP MOUNT",
-      "Price": 27500,
-      "Image": "40” X 20” TOP MOUNT.jpg"
-    },
-    {
-      "Name": "31646 AP0/AT0",
-      "Code": "40” X 20” TOP MOUNT",
-      "Price": 28500,
-      "Image": "40” X 20” TOP MOUNT.jpg"
-    },
-    {
-      "Name": "31643 AP0/AT0",
-      "Code": "46” X 20” TOP MOUNT",
-      "Price": 31500,
-      "Image": "46” X 20” TOP MOUNT.jpg"
+      "SINGLE BOWL WITH DRAIN": [
+        {
+          "Name": "31641 AP0/AT0",
+          "Code": "40” X 20” TOP MOUNT",
+          "Price": 26500,
+          "Image": "40” X 20” TOP MOUNT.jpg"
+        },
+        {
+          "Name": "31654 AP0/AT0",
+          "Code": "40” X 20” TOP MOUNT",
+          "Price": 27500,
+          "Image": "40” X 20” TOP MOUNT.jpg"
+        }
+      ],
+      "DOUBLE BOWL WITH DRAIN": [
+        {
+          "Name": "31647 AP0/AT0",
+          "Code": "46” X 20” TOP MOUNT",
+          "Price": 35500,
+          "Image": "46” X 20” TOP MOUNT.jpg"
+        }
+      ],
+      "SINGLE & HALF 1.5 BOWL WITH DRAIN": [
+        {
+          "Name": "31642 AP0/AT0",
+          "Code": "40” X 20” TOP MOUNT",
+          "Price": 27500,
+          "Image": "40” X 20” TOP MOUNT.jpg"
+        },
+        {
+          "Name": "31646 AP0/AT0",
+          "Code": "40” X 20” TOP MOUNT",
+          "Price": 28500,
+          "Image": "40” X 20” TOP MOUNT.jpg"
+        },
+        {
+          "Name": "31643 AP0/AT0",
+          "Code": "46” X 20” TOP MOUNT",
+          "Price": 31500,
+          "Image": "46” X 20” TOP MOUNT.jpg"
+        }
+      ]
     }
   ]
 }

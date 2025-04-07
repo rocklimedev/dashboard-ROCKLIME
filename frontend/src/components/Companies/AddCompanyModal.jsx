@@ -18,11 +18,15 @@ const AddCompanyModal = ({ show, onClose, existingVendor }) => {
 
   useEffect(() => {
     if (existingVendor) {
-      setFormData(existingVendor);
+      setFormData({
+        vendorId: existingVendor.vendorId || "",
+        vendorName: existingVendor.vendorName || "",
+        brandSlug: existingVendor.brandSlug || "",
+      });
     } else {
-      setFormData({ vendorId: "", vendorName: "", brandSlug: "" }); // Reset on add
+      setFormData({ vendorId: "", vendorName: "", brandSlug: "" });
     }
-  }, [existingVendor, show]); // Add `show` dependency
+  }, [existingVendor, show]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -48,10 +52,7 @@ const AddCompanyModal = ({ show, onClose, existingVendor }) => {
     }
   };
   return (
-    <div
-      className="modal fade show"
-      style={{ display: show ? "block" : "none" }}
-    >
+    <div className="modal fade show" style={{ display: "block" }}>
       <div className="modal-dialog modal-dialog-centered modal-md">
         <div className="modal-content">
           <div className="modal-header border-0">

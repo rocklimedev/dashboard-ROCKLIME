@@ -2,9 +2,9 @@ import React, { useState } from "react";
 import PageHeader from "../Common/PageHeader";
 import Actions from "../Common/Actions";
 import { useGetAllCompaniesQuery } from "../../api/companyApi";
-import AddCompanyModal from "../Companies/AddCompanyModal";
 import { BiEdit, BiTrash } from "react-icons/bi";
 import { FaEye } from "react-icons/fa";
+import AddCompany from "./AddCompany";
 const CmList = () => {
   const { data, error, isLoading, refetch } = useGetAllCompaniesQuery();
   const [showCompanyModal, setShowCompanyModal] = useState(false);
@@ -91,9 +91,7 @@ const CmList = () => {
       </div>
 
       {/* Ensure Modal is rendered properly with onCompanyAdded */}
-      {showCompanyModal && (
-        <AddCompanyModal onClose={handleCloseCompanyModal} />
-      )}
+      {showCompanyModal && <AddCompany onClose={handleCloseCompanyModal} />}
     </div>
   );
 };

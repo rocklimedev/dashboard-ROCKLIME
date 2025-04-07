@@ -3,19 +3,30 @@ const Customer = require("../models/customers"); // Import the Customer model
 // Create a new customer
 exports.createCustomer = async (req, res) => {
   try {
-    const { name, email, phone } = req.body;
+    const requiredFields = ["name", "email"]; // You can add more required fields here if needed
 
-    // Basic validation
-    if (!name || !email) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Name and email are required" });
+    // Check for missing required fields
+    for (const field of requiredFields) {
+      if (!req.body[field]) {
+        return res.status(400).json({
+          success: false,
+          message: `${field} is required`,
+        });
+      }
     }
 
-    const newCustomer = await Customer.create({ name, email, phone });
-    res.status(201).json({ success: true, data: newCustomer });
+    // Create customer with all fields provided in the request body
+    const newCustomer = await Customer.create(req.body);
+
+    res.status(201).json({
+      success: true,
+      data: newCustomer,
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
@@ -59,13 +70,11 @@ exports.updateCustomer = async (req, res) => {
 
     await customer.update(req.body);
 
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Customer updated successfully",
-        data: customer,
-      });
+    res.status(200).json({
+      success: true,
+      message: "Customer updated successfully",
+      data: customer,
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

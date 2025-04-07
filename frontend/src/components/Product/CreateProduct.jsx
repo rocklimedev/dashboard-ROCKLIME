@@ -48,9 +48,20 @@ const CreateProduct = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Check if any field is empty
+    const emptyFields = Object.entries(formData).filter(
+      ([key, value]) => value === "" || value === null || value === undefined
+    );
+
+    if (emptyFields.length > 0) {
+      alert("All fields must be filled before submitting the form.");
+      return;
+    }
+
     const sanitizedData = {
       ...formData,
-      sellingPrice: formData.sellingPrice.replace(/,/g, ""), // Remove commas
+      sellingPrice: formData.sellingPrice.replace(/,/g, ""),
     };
 
     try {
@@ -63,6 +74,7 @@ const CreateProduct = () => {
       }
     } catch (error) {
       console.error("Error submitting product:", error);
+      alert("Something went wrong while saving the product.");
     }
   };
 

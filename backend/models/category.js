@@ -16,22 +16,6 @@ const Category = sequelize.define(
       allowNull: false,
       unique: true,
     },
-    total_products: {
-      type: DataTypes.INTEGER,
-      defaultValue: 0,
-    },
-    vendorId: {
-      type: DataTypes.UUID(25),
-      references: {
-        model: Vendor,
-        key: "id",
-      },
-    },
-    slug: {
-      type: DataTypes.STRING(255),
-      allowNull: false,
-      unique: true,
-    },
     parentCategory: {
       type: DataTypes.BOOLEAN,
       allowNull: false,

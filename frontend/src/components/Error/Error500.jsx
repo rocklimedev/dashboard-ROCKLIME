@@ -12,7 +12,7 @@ const Error500 = () => {
           Server Error 500. We apologise and are fixing the problem Please try
           again at a later stage
         </p>
-        <a href="index.html" class="btn btn-primary">
+        <a href="/" class="btn btn-primary">
           Back to Dashboard
         </a>
       </div>

@@ -101,10 +101,9 @@ const CustomerList = () => {
                               <BiEdit />
                             </a>
                             <a
-                              data-bs-toggle="modal"
-                              data-bs-target="#delete-modal"
-                              class="p-2"
+                              className="p-2"
                               href="javascript:void(0);"
+                              onClick={() => handleDelete(customer.customerId)}
                             >
                               <BiTrash />
                             </a>

@@ -3,13 +3,32 @@ import { useParams } from "react-router-dom";
 import PageHeader from "../Common/PageHeader";
 import { useGetCustomerByIdQuery } from "../../api/customerApi";
 import FilterInputs from "../Common/FilterInputs";
+import avatar from "../../assets/img/avatar/avatar-1.jpg";
+import { useGetAllInvoicesQuery } from "../../api/invoiceApi";
 const CustomerDetails = () => {
   const { id } = useParams();
-  const { data, error, isLoading } = useGetCustomerByIdQuery(id);
-  const customer = data?.data;
 
-  if (isLoading) return <p>Loading customer details...</p>;
-  if (error) return <p>Error fetching customer details.</p>;
+  // Fetch customer details
+  const {
+    data: customerData,
+    error: customerError,
+    isLoading: isCustomerLoading,
+  } = useGetCustomerByIdQuery(id);
+  const customer = customerData?.data;
+
+  // Fetch all invoices
+  const {
+    data: invoiceData,
+    error: invoiceError,
+    isLoading: isInvoiceLoading,
+  } = useGetAllInvoicesQuery();
+  const invoices = invoiceData?.data?.filter(
+    (invoice) => invoice.customerId === id
+  );
+
+  if (isCustomerLoading || isInvoiceLoading)
+    return <p>Loading customer details...</p>;
+  if (customerError || invoiceError) return <p>Error fetching data.</p>;
   if (!customer) return <p>No customer data found.</p>;
 
   return (
@@ -23,19 +42,9 @@ const CustomerDetails = () => {
               <div className="col-xl-3 col-lg-4 col-md-6 col-12">
                 <div className="customer-details">
                   <div className="d-flex align-items-center">
-                    <span className="customer-widget-img d-inline-flex">
-                      <img
-                        className="rounded-circle"
-                        src={
-                          customer.profileImage ||
-                          "assets/img/profiles/avatar-placeholder.png"
-                        }
-                        alt="profile-img"
-                      />
-                    </span>
                     <div className="customer-details-cont">
-                      <h6>{customer.name}</h6>
-                      <p>Customer ID: {customer.id}</p>
+                      <h6>Name</h6>
+                      <p>{customer.name}</p>
                     </div>
                   </div>
                 </div>
@@ -77,7 +86,7 @@ const CustomerDetails = () => {
                     </span>
                     <div className="customer-details-cont">
                       <h6>Company Name</h6>
-                      <p>{customer.company || "N/A"}</p>
+                      <p>{customer.companyName || "N/A"}</p>
                     </div>
                   </div>
                 </div>
@@ -113,8 +122,6 @@ const CustomerDetails = () => {
             </div>
           </div>
         </div>
-
-        <FilterInputs />
 
         <div class="row">
           <div class="col-xl-2 col-lg-4 col-sm-6 col-12 d-flex">
@@ -309,145 +316,91 @@ const CustomerDetails = () => {
                             <input type="checkbox" name="invoice" />
                             <span class="checkmark"></span>
                           </label>
-                          Invoice No
                         </th>
-                        <th>Category</th>
-                        <th>Created On</th>
-                        <th>Total Amount</th>
-                        <th>Paid Amount</th>
-                        <th>Payment Mode</th>
-                        <th>Balance</th>
+                        <th>Invoice No</th>
+
+                        <th>Customer</th>
+                        <th>Bill To</th>
+                        <th>Ship To</th>
+                        <th>Invoice Date</th>
                         <th>Due Date</th>
+                        <th>Amount</th>
+
+                        <th>Created By</th>
                         <th>Status</th>
                         <th class="text-end">Action</th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr>
-                        <td>
-                          <label class="custom_check">
-                            <input type="checkbox" name="invoice" />
-                            <span class="checkmark"></span>
-                          </label>
-                          <a href="invoice-details.html" class="invoice-link">
-                            #4987
-                          </a>
-                        </td>
-                        <td>Food</td>
-                        <td>23 Mar 2023</td>
-                        <td>$1,54,220</td>
-                        <td>$1,50,000</td>
-                        <td>Cash</td>
-                        <td>$2,54,00</td>
-                        <td>25 Mar 2023</td>
-                        <td>
-                          <span class="badge bg-success-light">Paid</span>
-                        </td>
-                        <td>
-                          <div class="dropdown dropdown-action">
-                            <a
-                              href="#"
-                              class=" btn-action-icon "
-                              data-bs-toggle="dropdown"
-                              aria-expanded="false"
-                            >
-                              <i class="fas fa-ellipsis-v"></i>
+                      {invoices.map((invoice) => (
+                        <tr key={invoice.invoiceId}>
+                          <td>
+                            <label className="checkboxs">
+                              <input type="checkbox" />
+                              <span className="checkmarks"></span>
+                            </label>
+                          </td>
+                          <td>
+                            <a href={`invoice-details/${invoice.invoiceId}`}>
+                              {invoice.invoiceNo}
                             </a>
-                            <div class="dropdown-menu dropdown-menu-end customer-dropdown">
-                              <ul>
-                                <li>
-                                  <a
-                                    class="dropdown-item"
-                                    href="edit-customer.html"
-                                  >
-                                    <i class="far fa-edit me-2"></i>Edit
-                                  </a>
-                                </li>
-                                <li>
-                                  <a
-                                    class="dropdown-item"
-                                    href="javascript:void(0);"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#delete_modal"
-                                  >
-                                    <i class="far fa-trash-alt me-2"></i>Delete
-                                  </a>
-                                </li>
-                                <li>
-                                  <a
-                                    class="dropdown-item"
-                                    href="customer-details.html"
-                                  >
-                                    <i class="far fa-eye me-2"></i>View
-                                  </a>
-                                </li>
-                                <li>
-                                  <a class="dropdown-item" href="#">
-                                    <i class="fe fe-send me-2"></i>Send
-                                  </a>
-                                </li>
-                                <li>
-                                  <a class="dropdown-item" href="#">
-                                    <i class="fe fe-download me-2"></i>Download
-                                  </a>
-                                </li>
-                                <li>
-                                  <a
-                                    class="dropdown-item"
-                                    href="add-credit-notes.html"
-                                  >
-                                    <i class="fe fe-file-text me-2"></i>Convert
-                                    to Sales Return
-                                  </a>
-                                </li>
-                                <li>
-                                  <a class="dropdown-item" href="#">
-                                    <i class="fe fe-copy me-2"></i>Clone as
-                                    Invoice
-                                  </a>
-                                </li>
-                              </ul>
+                          </td>
+
+                          <td>{invoice.customerId}</td>
+                          <td>{invoice.billTo}</td>
+                          <td>{invoice.shipTo}</td>
+                          <td>
+                            {new Date(invoice.invoiceDate).toLocaleDateString()}
+                          </td>
+                          <td>
+                            {new Date(invoice.dueDate).toLocaleDateString()}
+                          </td>
+
+                          <td>${invoice.amount}</td>
+                          <td>{invoice.createdBy}</td>
+                          <td>
+                            <span
+                              className={`badge ${
+                                invoice.status === "Paid"
+                                  ? "badge-soft-success"
+                                  : invoice.status === "Unpaid"
+                                  ? "badge-soft-danger"
+                                  : "badge-soft-warning"
+                              } badge-xs shadow-none`}
+                            >
+                              <i className="ti ti-point-filled me-1"></i>
+                              {invoice.status}
+                            </span>
+                          </td>
+                          <td className="d-flex">
+                            <div className="edit-delete-action d-flex align-items-center justify-content-center">
+                              <a
+                                className="me-2 p-2 d-flex align-items-center justify-content-between border rounded"
+                                target="_blank"
+                                href={`invoices/${invoice.invoiceId}`}
+                              >
+                                <i
+                                  data-feather="eye"
+                                  className="feather-eye"
+                                ></i>
+                              </a>
+                              <a
+                                className="p-2 d-flex align-items-center justify-content-between border rounded"
+                                href="#"
+                                data-bs-toggle="modal"
+                                data-bs-target="#delete"
+                              >
+                                <i
+                                  data-feather="trash-2"
+                                  className="feather-trash-2"
+                                ></i>
+                              </a>
                             </div>
-                          </div>
-                        </td>
-                      </tr>
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="modal custom-modal fade" id="delete_modal" role="dialog">
-          <div class="modal-dialog modal-dialog-centered modal-md">
-            <div class="modal-content">
-              <div class="modal-body">
-                <div class="form-header">
-                  <h3>Delete Customer Details</h3>
-                  <p>Are you sure want to delete?</p>
-                </div>
-                <div class="modal-btn delete-action">
-                  <div class="row">
-                    <div class="col-6">
-                      <a
-                        href="#"
-                        data-bs-dismiss="modal"
-                        class="btn btn-primary paid-continue-btn"
-                      >
-                        Delete
-                      </a>
-                    </div>
-                    <div class="col-6">
-                      <a
-                        href="#"
-                        data-bs-dismiss="modal"
-                        class="btn btn-primary paid-cancel-btn"
-                      >
-                        Cancel
-                      </a>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>

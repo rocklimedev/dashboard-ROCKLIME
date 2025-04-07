@@ -1,9 +1,15 @@
 import React, { useState } from "react";
-import { useGetVendorsQuery } from "../../api/vendorApi";
+import {
+  useGetVendorsQuery,
+  useDeleteVendorMutation,
+} from "../../api/vendorApi";
+import { useGetAllBrandsQuery } from "../../api/brandsApi";
 import PageHeader from "../Common/PageHeader";
 import AddCompanyModal from "./AddCompanyModal";
-import { useGetAllBrandsQuery } from "../../api/brandsApi";
+import DeleteModal from "../Common/DeleteModal";
 import { BiEdit, BiTrash } from "react-icons/bi";
+import { toast } from "react-toastify";
+
 const CompaniesWrapper = () => {
   const {
     data: vendorsData,
@@ -16,17 +22,20 @@ const CompaniesWrapper = () => {
     isLoading: brandsLoading,
   } = useGetAllBrandsQuery();
 
-  const vendors = Array.isArray(vendorsData) ? vendorsData : [];
-  const brands = Array.isArray(brandsData) ? brandsData : [];
+  const [deleteVendor] = useDeleteVendorMutation();
 
   const [selectedVendor, setSelectedVendor] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [vendorToDelete, setVendorToDelete] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  const vendors = Array.isArray(vendorsData) ? vendorsData : [];
+  const brands = Array.isArray(brandsData) ? brandsData : [];
 
   if (vendorsLoading || brandsLoading) return <p>Loading...</p>;
   if (vendorsError || brandsError) return <p>Error fetching data.</p>;
   if (vendors.length === 0) return <p>No vendors available.</p>;
 
-  // Function to get brandName from brandId
   const getBrandName = (brandId) => {
     const brand = brands.find((b) => b.id === brandId);
     return brand ? brand.brandName : "Unknown";
@@ -35,6 +44,19 @@ const CompaniesWrapper = () => {
   const handleEditVendor = (vendor) => {
     setSelectedVendor(vendor);
     setShowModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!vendorToDelete?.id) return;
+    try {
+      await deleteVendor(vendorToDelete.id).unwrap();
+      toast.success("Vendor deleted successfully!");
+      setShowDeleteModal(false);
+      setVendorToDelete(null);
+    } catch (err) {
+      toast.error("Failed to delete vendor.");
+      console.error("Error deleting vendor:", err);
+    }
   };
 
   return (
@@ -53,7 +75,7 @@ const CompaniesWrapper = () => {
                     <th>Brand</th>
                     <th>Brand Slug</th>
                     <th>Created Date</th>
-                    <th></th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -61,26 +83,26 @@ const CompaniesWrapper = () => {
                     <tr key={vendor.id}>
                       <td>{vendor.vendorId}</td>
                       <td>{vendor.vendorName}</td>
-                      <td>{getBrandName(vendor.brandId)}</td>{" "}
-                      {/* Fetch brand name */}
+                      <td>{getBrandName(vendor.brandId)}</td>
                       <td>{vendor.brandSlug}</td>
                       <td>{new Date(vendor.createdAt).toLocaleDateString()}</td>
-                      <td class="action-table-data">
-                        <div class="edit-delete-action">
-                          <a
-                            class="me-2 p-2"
+                      <td className="action-table-data">
+                        <div className="edit-delete-action d-flex">
+                          <button
+                            className="me-2 p-2 btn btn-link"
                             onClick={() => handleEditVendor(vendor)}
                           >
                             <BiEdit />
-                          </a>
-                          <a
-                            data-bs-toggle="modal"
-                            data-bs-target="#delete-modal"
-                            class="p-2"
-                            href="javascript:void(0);"
+                          </button>
+                          <button
+                            className="p-2 btn btn-link text-danger"
+                            onClick={() => {
+                              setVendorToDelete(vendor);
+                              setShowDeleteModal(true);
+                            }}
                           >
                             <BiTrash />
-                          </a>
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -92,6 +114,18 @@ const CompaniesWrapper = () => {
         </div>
       </div>
 
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <DeleteModal
+          item={vendorToDelete}
+          itemType="Vendor"
+          show={showDeleteModal}
+          onConfirm={handleConfirmDelete}
+          onClose={() => setShowDeleteModal(false)}
+        />
+      )}
+
+      {/* Add / Edit Modal */}
       {showModal && (
         <AddCompanyModal
           show={showModal}

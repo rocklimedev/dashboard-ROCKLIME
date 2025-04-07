@@ -1,16 +1,24 @@
 {
   "parentCategories": [
     {
-      "slug": "C_1",
-      "name": "Sanitary"
+      "slug": "CT_AS_001",
+      "name": "American Standard"
     },
     {
-      "slug": "C_2",
-      "name": "Ceramics"
+      "slug": "CT_GK_002",
+      "name": "Grohe Kitchen"
     },
     {
-      "slug": "C_3",
-      "name": "Kitchen"
+      "slug": "CT_GB_003",
+      "name": "Grohe Bau"
+    },
+    {
+      "slug": "CT_GP_004",
+      "name": "Grohe Premium"
+    },
+    {
+      "slug": "CT_GC_005",
+      "name": "Grohe Colour"
     }
   ]
 }
