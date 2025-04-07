@@ -145,20 +145,10 @@ const Brands = () => {
                       </td>
                       <td class="action-table-data">
                         <div class="edit-delete-action">
-                          <a
-                            class="me-2 p-2"
-                            href="#"
-                            data-bs-toggle="modal"
-                            data-bs-target="#edit-brand"
-                          >
+                          <a class="me-2 p-2" data-bs-target="#edit-brand">
                             <AiOutlineEdit />
                           </a>
-                          <a
-                            data-bs-toggle="modal"
-                            data-bs-target="#delete-modal"
-                            class="p-2"
-                            href="javascript:void(0);"
-                          >
+                          <a class="p-2" href="javascript:void(0);">
                             <FcEmptyTrash />
                           </a>
                         </div>

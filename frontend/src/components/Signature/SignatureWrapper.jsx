@@ -7,7 +7,7 @@ const SignatureWrapper = () => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        <PageHeader />
+        <PageHeader title="Signature" subtitle="" />
 
         <div className="card">
           <div className="card-header d-flex align-items-center justify-content-between flex-wrap row-gap-3">

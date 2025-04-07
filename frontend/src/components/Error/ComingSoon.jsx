@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-
+import logo from "../../assets/img/logo-small.png";
 const ComingSoon = () => {
   // Set target date (Change this to your desired launch date)
   const targetDate = new Date("2025-06-01T00:00:00").getTime();
@@ -36,7 +36,7 @@ const ComingSoon = () => {
       <div className="comming-soon-pg w-100">
         <div className="coming-soon-box">
           <div className="pos-logo">
-            <img src="assets/img/logo-small.png" alt="Img" />
+            <img src={logo} alt="Img" />
           </div>
           <span>Our Website is</span>
           <h1>

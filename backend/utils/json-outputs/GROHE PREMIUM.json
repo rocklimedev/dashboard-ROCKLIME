@@ -1,14 +1,8 @@
 {
-  "SMART BOX": [],
-  "SMART CONTROL\r\n THERMOSTAT & MIXER": [
+  "SMART BOX": [{ "Code": "35600000", "Price": 16550.0 }],
+  "SMART CONTROL  THERMOSTAT & MIXER": [
     {
-      "Name": "NAME",
-      "Code": "CODE",
-      "Price": "PRICE",
-      "Image": "CODE.jpg"
-    },
-    {
-      "Name": "Grohtherm SmartControl Thermostat Square, 3 \r\nControl",
+      "Name": "Grohtherm SmartControl Thermostat Square, 3  Control",
       "Code": "29126000",
       "Price": 131200,
       "Image": "29126000.jpg"
@@ -20,15 +14,15 @@
       "Image": "29149000.jpg"
     }
   ],
-  "NEW 2WAY \r\nTHERMOSTAT": [
+  "NEW 2WAY  THERMOSTAT": [
     {
-      "Name": "Grohtherm Thermostatic Bath Mixer Round, 2-\r\nWay Diverter",
+      "Name": "Grohtherm Thermostatic Bath Mixer Round, 2- Way Diverter",
       "Code": "24077000",
       "Price": 28850,
       "Image": "24077000.jpg"
     },
     {
-      "Name": "NEW 2WAY \r\nTHERMOSTAT",
+      "Name": "NEW 2WAY  THERMOSTAT",
       "Code": "24138003",
       "Price": 43450,
       "Image": "24138003.jpg"
@@ -86,7 +80,7 @@
       "Image": "35500000.jpg"
     }
   ],
-  "3WAY \r\nTHERMOSTAT": [
+  "3WAY  THERMOSTAT": [
     {
       "Name": "Grohtherm Special Thermostatic Bath/Shower",
       "Code": "29095000",
@@ -108,7 +102,7 @@
       "Image": "33963000.jpg"
     }
   ],
-  "SMARTCONTROL THERMOSTATS\r\n CHROME -CUBE ROUND GLASS": [
+  "SMARTCONTROL THERMOSTATS  CHROME -CUBE ROUND GLASS": [
     {
       "Name": "Universal rough-in box, 1/2\"",
       "Code": "35600000",
@@ -118,25 +112,25 @@
   ],
   "THM – SQUARE": [
     {
-      "Name": "Grohtherm SmartControl Thermostat Square, 1 \r\nControl",
+      "Name": "Grohtherm SmartControl Thermostat Square, 1  Control",
       "Code": "29123000",
       "Price": 110700,
       "Image": "29123000.jpg"
     },
     {
-      "Name": "Grohtherm SmartControl Thermostat Square, 2 \r\nControl",
+      "Name": "Grohtherm SmartControl Thermostat Square, 2  Control",
       "Code": "29124000",
       "Price": 121750,
       "Image": "29124000.jpg"
     },
     {
-      "Name": "Grohtherm SmartControl Thermostat Square \r\nwith Shower Holder, 2 Contro",
+      "Name": "Grohtherm SmartControl Thermostat Square  with Shower Holder, 2 Contro",
       "Code": "29125000",
       "Price": 145900,
       "Image": "29125000.jpg"
     },
     {
-      "Name": "Grohtherm SmartControl Volume Control Trim \r\nSquare, 3 Control",
+      "Name": "Grohtherm SmartControl Volume Control Trim  Square, 3 Control",
       "Code": "29127000",
       "Price": 116150,
       "Image": "29127000.jpg"
@@ -144,83 +138,83 @@
   ],
   "THM –ROUND": [
     {
-      "Name": "Grohtherm SmartControl Thermostat Round, 1 \r\nControl",
+      "Name": "Grohtherm SmartControl Thermostat Round, 1  Control",
       "Code": "29118000",
       "Price": 105450,
       "Image": "29118000.jpg"
     },
     {
-      "Name": "Grohtherm SmartControl Thermostat Round, 2 \r\nControl",
+      "Name": "Grohtherm SmartControl Thermostat Round, 2  Control",
       "Code": "29119000",
       "Price": 116500,
       "Image": "29119000.jpg"
     },
     {
-      "Name": "Grohtherm SmartControl Thermostat Round \r\nwith Shower Holder, 2 Control",
+      "Name": "Grohtherm SmartControl Thermostat Round  with Shower Holder, 2 Control",
       "Code": "29120000",
       "Price": 139600,
       "Image": "29120000.jpg"
     },
     {
-      "Name": "Grohtherm SmartControl Thermostat Round, 3 \r\nControl",
+      "Name": "Grohtherm SmartControl Thermostat Round, 3  Control",
       "Code": "29121000",
       "Price": 126550,
       "Image": "29121000.jpg"
     },
     {
-      "Name": "Grohtherm SmartControl Volume Control Trim \r\nRound, 3 Contro",
+      "Name": "Grohtherm SmartControl Volume Control Trim  Round, 3 Contro",
       "Code": "29122000",
       "Price": 111950,
       "Image": "29122000.jpg"
     }
   ],
-  "THM – SQUARE\r\n ACRYLIC GLASS (LS0)": [
+  "THM – SQUARE  ACRYLIC GLASS (LS0)": [
     {
-      "Name": "Grohtherm SmartControl Thermostat Square, 1 \r\nControl",
+      "Name": "Grohtherm SmartControl Thermostat Square, 1  Control",
       "Code": "29153LS0",
       "Price": 127500,
       "Image": "29153LS0.jpg"
     },
     {
-      "Name": "Grohtherm SmartControl Thermostat Square, 2 \r\nControl",
+      "Name": "Grohtherm SmartControl Thermostat Square, 2  Control",
       "Code": "29156LS0",
       "Price": 140100,
       "Image": "29156LS0.jpg"
     },
     {
-      "Name": "Grohtherm SmartControl Thermostat Square, 3 \r\nControl",
+      "Name": "Grohtherm SmartControl Thermostat Square, 3  Control",
       "Code": "29157LS0",
       "Price": 153300,
       "Image": "29157LS0.jpg"
     },
     {
-      "Name": "Grohtherm SmartControl Volume Control Trim \r\nSquare, 3 Control",
+      "Name": "Grohtherm SmartControl Volume Control Trim  Square, 3 Control",
       "Code": "29158LS0",
       "Price": 154950,
       "Image": "29158LS0.jpg"
     }
   ],
-  "THM – ROUND\r\n GLASS (LS0)": [
+  "THM – ROUND  GLASS (LS0)": [
     {
-      "Name": "Control Grohtherm SmartControl Thermostat \r\nRound, 1 Control",
+      "Name": "Control Grohtherm SmartControl Thermostat  Round, 1 Control",
       "Code": "29150LS0",
       "Price": 121200,
       "Image": "29150LS0.jpg"
     },
     {
-      "Name": "Grohtherm SmartControl Thermostat Round, 2 \r\nControl",
+      "Name": "Grohtherm SmartControl Thermostat Round, 2  Control",
       "Code": "29151LS0",
       "Price": 133800,
       "Image": "29151LS0.jpg"
     },
     {
-      "Name": "Grohtherm SmartControl Thermostat Round, 3 \r\nControl",
+      "Name": "Grohtherm SmartControl Thermostat Round, 3  Control",
       "Code": "29904LS0",
       "Price": 145450,
       "Image": "29904LS0.jpg"
     },
     {
-      "Name": "Grohtherm SmartControl Volume Control Trim \r\nRound, 3 Control",
+      "Name": "Grohtherm SmartControl Volume Control Trim  Round, 3 Control",
       "Code": "29152LS0",
       "Price": 150100,
       "Image": "29152LS0.jpg"
@@ -280,19 +274,19 @@
       "Image": "24138003.jpg"
     },
     {
-      "Name": "Grohtherm Thermostatic Bath Mixer Square, 2-\r\nWay Diverter",
+      "Name": "Grohtherm Thermostatic Bath Mixer Square, 2- Way Diverter",
       "Code": "24080000",
       "Price": 35250,
       "Image": "24080000.jpg"
     },
     {
-      "Name": "Allure Thermostatic Bath/Shower mixer- 2 way \r\ndiverter",
+      "Name": "Allure Thermostatic Bath/Shower mixer- 2 way  diverter",
       "Code": "19446002",
       "Price": 75000,
       "Image": "19446002.jpg"
     },
     {
-      "Name": "Grohtherm Cube Thermostatic Bath Mixer, 2-\r\nWay Diverter",
+      "Name": "Grohtherm Cube Thermostatic Bath Mixer, 2- Way Diverter",
       "Code": "24155000",
       "Price": 42250,
       "Image": "24155000.jpg"
@@ -392,25 +386,25 @@
   ],
   "GROHE ICON 3D: ALLURE BRILLIANT & ATRIO": [
     {
-      "Name": "Allure Brilliant Icon 3D\r\nDeck Mounted",
+      "Name": "Allure Brilliant Icon 3D Deck Mounted",
       "Code": "20603SD0",
       "Price": 2759680,
       "Image": "20603SD0.jpg"
     },
     {
-      "Name": "Allure Brilliant Icon 3D\r\nWall Mounted",
+      "Name": "Allure Brilliant Icon 3D Wall Mounted",
       "Code": "20608SD0",
       "Price": 2759680,
       "Image": "20608SD0.jpg"
     },
     {
-      "Name": "Atrio Icon 3D\r\nDeck Mounted",
+      "Name": "Atrio Icon 3D Deck Mounted",
       "Code": "20609SD0",
       "Price": 2345720,
       "Image": "20609SD0.jpg"
     },
     {
-      "Name": "Atrio Icon 3D\r\nWall Mounted",
+      "Name": "Atrio Icon 3D Wall Mounted",
       "Code": "20614SD0",
       "Price": 2345720,
       "Image": "20614SD0.jpg"
@@ -424,13 +418,13 @@
       "Image": "24254001.jpg"
     },
     {
-      "Name": "Eurosmart 2021 2-Hole, 1-Handle Wall Mount \r\nBasin Mixer,S Size",
+      "Name": "Eurosmart 2021 2-Hole, 1-Handle Wall Mount  Basin Mixer,S Size",
       "Code": "29337003(171MM)",
       "Price": 13850,
       "Image": "29337003(171MM).jpg"
     },
     {
-      "Name": "Concetto 2-Hole, 1-Handle Wall-Mount Basin \r\nMixer, S Size",
+      "Name": "Concetto 2-Hole, 1-Handle Wall-Mount Basin  Mixer, S Size",
       "Code": "19575001(147MM)",
       "Price": 26950,
       "Image": "19575001(147MM).jpg"
@@ -448,7 +442,7 @@
       "Image": "19381000(170MM).jpg"
     },
     {
-      "Name": "Eurostyle 2015 2-Hole, 1-Handle Wall-Mount \r\nBasin Mixer, M Size",
+      "Name": "Eurostyle 2015 2-Hole, 1-Handle Wall-Mount  Basin Mixer, M Size",
       "Code": "19571003(200MM)",
       "Price": 21350,
       "Image": "19571003(200MM).jpg"
@@ -570,13 +564,13 @@
       "Image": "24247001.jpg"
     },
     {
-      "Name": "EUROSMART \r\nCOSMO",
+      "Name": "EUROSMART  COSMO",
       "Code": "32824000",
       "Price": 17300,
       "Image": "32824000.jpg"
     },
     {
-      "Name": "Eurosmart Cosmopolitan 1-Handle Basin Mixer \r\nwithout Pop Up, M Size",
+      "Name": "Eurosmart Cosmopolitan 1-Handle Basin Mixer  without Pop Up, M Size",
       "Code": "23327000",
       "Price": 20050,
       "Image": "23327000.jpg"
@@ -588,19 +582,19 @@
       "Image": "23590001.jpg"
     },
     {
-      "Name": "Essence 1-Handle Basin Mixer without Pop-Up, \r\nM Size",
+      "Name": "Essence 1-Handle Basin Mixer without Pop-Up,  M Size",
       "Code": "23463001",
       "Price": 27250,
       "Image": "23463001.jpg"
     },
     {
-      "Name": "ALLURE\r\nBRILLIANT",
+      "Name": "ALLURE BRILLIANT",
       "Code": "23033000",
       "Price": 115950,
       "Image": "23033000.jpg"
     },
     {
-      "Name": "ALLURE\r\nBRILLIANT",
+      "Name": "ALLURE BRILLIANT",
       "Code": "23109000",
       "Price": 139950,
       "Image": "23109000.jpg"
@@ -660,13 +654,13 @@
       "Image": "23658000.jpg"
     },
     {
-      "Name": "Eurodisc Cosmopolitan 1-Handle Basin Mixer \r\nwithout Pop Up, S Size",
+      "Name": "Eurodisc Cosmopolitan 1-Handle Basin Mixer  without Pop Up, S Size",
       "Code": "2338220E",
       "Price": 31000,
       "Image": "2338220E.jpg"
     },
     {
-      "Name": "Eurodisc Cosmopolitan 1-Handle Basin Mixer \r\nwithout Pop Up, M Size",
+      "Name": "Eurodisc Cosmopolitan 1-Handle Basin Mixer  without Pop Up, M Size",
       "Code": "23449002",
       "Price": 35800,
       "Image": "23449002.jpg"
@@ -684,7 +678,7 @@
       "Image": "23872003.jpg"
     },
     {
-      "Name": "Eurostyle 2015 Solid 1-Handle Basin Mixer \r\nwithout Pop-Up, S Size",
+      "Name": "Eurostyle 2015 Solid 1-Handle Basin Mixer  without Pop-Up, S Size",
       "Code": "23715003",
       "Price": 14400,
       "Image": "23715003.jpg"
@@ -708,19 +702,19 @@
       "Image": "23427000.jpg"
     },
     {
-      "Name": "GRANDERA \r\nCHROME",
+      "Name": "GRANDERA  CHROME",
       "Code": "23310000",
       "Price": 69450,
       "Image": "23310000.jpg"
     },
     {
-      "Name": "GRANDERA \r\nCHROME",
+      "Name": "GRANDERA  CHROME",
       "Code": "23313000",
       "Price": 99450,
       "Image": "23313000.jpg"
     },
     {
-      "Name": "Eurostyle Cosmopolitan 1-Handle Basin Mixer \r\nwithout Pop-Up, S Size",
+      "Name": "Eurostyle Cosmopolitan 1-Handle Basin Mixer  without Pop-Up, S Size",
       "Code": "2337320E",
       "Price": 16650,
       "Image": "2337320E.jpg"
@@ -732,7 +726,7 @@
       "Image": "32042003.jpg"
     },
     {
-      "Name": "Eurostyle 2015 1-Handle Basin Mixer without \r\nPop-Up, S Size",
+      "Name": "Eurostyle 2015 1-Handle Basin Mixer without  Pop-Up, S Size",
       "Code": "32468003",
       "Price": 12800,
       "Image": "32468003.jpg"
@@ -744,13 +738,13 @@
       "Image": "33558LS3.jpg"
     },
     {
-      "Name": "GRANDERA \r\nGOLD",
+      "Name": "GRANDERA  GOLD",
       "Code": "23310IG0",
       "Price": 92950,
       "Image": "23310IG0.jpg"
     },
     {
-      "Name": "GRANDERA \r\nGOLD",
+      "Name": "GRANDERA  GOLD",
       "Code": "23313IG0",
       "Price": 135950,
       "Image": "23313IG0.jpg"
@@ -764,31 +758,31 @@
       "Image": "24249001.jpg"
     },
     {
-      "Name": "Eurosmart Cosmopolitan 1-Handle Basin Mixer \r\nwith Pop Up, L Size",
+      "Name": "Eurosmart Cosmopolitan 1-Handle Basin Mixer  with Pop Up, L Size",
       "Code": "32830001",
       "Price": 26700,
       "Image": "32830001.jpg"
     },
     {
-      "Name": "Eurostyle 2015 Solid 1-Handle Basin Mixer with \r\nPop-Up, L Size",
+      "Name": "Eurostyle 2015 Solid 1-Handle Basin Mixer with  Pop-Up, L Size",
       "Code": "23718003",
       "Price": 25100,
       "Image": "23718003.jpg"
     },
     {
-      "Name": "Eurostyle 2015 Solid 1-Handle Basin Mixer \r\nwithout Pop-Up, XL Size",
+      "Name": "Eurostyle 2015 Solid 1-Handle Basin Mixer  without Pop-Up, XL Size",
       "Code": "23719003",
       "Price": 31000,
       "Image": "23719003.jpg"
     },
     {
-      "Name": "Eurodisc Cosmopolitan 1-Handle Basin Mixer \r\nwith Pop Up, L Size",
+      "Name": "Eurodisc Cosmopolitan 1-Handle Basin Mixer  with Pop Up, L Size",
       "Code": "23054003",
       "Price": 37950,
       "Image": "23054003.jpg"
     },
     {
-      "Name": "Eurodisc Cosmopolitan 1-Handle Basin Mixer \r\nwithout Pop Up, XL Size",
+      "Name": "Eurodisc Cosmopolitan 1-Handle Basin Mixer  without Pop Up, XL Size",
       "Code": "23432000",
       "Price": 49150,
       "Image": "23432000.jpg"
@@ -806,13 +800,13 @@
       "Image": "23569003.jpg"
     },
     {
-      "Name": "Eurostyle 2015 1-Handle Basin Mixer without \r\nPop-Up, XL Size",
+      "Name": "Eurostyle 2015 1-Handle Basin Mixer without  Pop-Up, XL Size",
       "Code": "23570003",
       "Price": 25100,
       "Image": "23570003.jpg"
     },
     {
-      "Name": "Eurostyle 2015 1-Handle Basin Mixer without \r\nPop-Up, XL Size",
+      "Name": "Eurostyle 2015 1-Handle Basin Mixer without  Pop-Up, XL Size",
       "Code": "23570LS3",
       "Price": 32600,
       "Image": "23570LS3.jpg"
@@ -848,7 +842,7 @@
       "Image": "23541001.jpg"
     },
     {
-      "Name": "Essence 1-Handle Basin Mixer U Spout without \r\nPop-Up, XL Size",
+      "Name": "Essence 1-Handle Basin Mixer U Spout without  Pop-Up, XL Size",
       "Code": "32901001",
       "Price": 41700,
       "Image": "32901001.jpg"
@@ -872,19 +866,19 @@
       "Image": "23661000.jpg"
     },
     {
-      "Name": "Eurodisc Joystick 1-Handle Basin Mixer without \r\nPop Up, XL Size",
+      "Name": "Eurodisc Joystick 1-Handle Basin Mixer without  Pop Up, XL Size",
       "Code": "23428000",
       "Price": 94650,
       "Image": "23428000.jpg"
     },
     {
-      "Name": "GRANDERA \r\nCHROME",
+      "Name": "GRANDERA  CHROME",
       "Code": "23313000",
       "Price": 99450,
       "Image": "23313000.jpg"
     },
     {
-      "Name": "GRANDERA \r\nGOLD CHROME",
+      "Name": "GRANDERA  GOLD CHROME",
       "Code": "23313IG0",
       "Price": 135950,
       "Image": "23313IG0.jpg"
@@ -902,7 +896,7 @@
       "Image": "23403001.jpg"
     },
     {
-      "Name": "ALLURE\r\nBRILLIANT",
+      "Name": "ALLURE BRILLIANT",
       "Code": "23114000",
       "Price": 198950,
       "Image": "23114000.jpg"
@@ -938,7 +932,7 @@
       "Image": "21044003.jpg"
     },
     {
-      "Name": "ALLURE FLOOR \r\nMOUNT",
+      "Name": "ALLURE FLOOR  MOUNT",
       "Code": "23403001",
       "Price": 120000,
       "Image": "23403001.jpg"
@@ -958,7 +952,7 @@
       "Image": "13261000.jpg"
     },
     {
-      "Name": "EURO COSMO \r\nDIVERTOR SPOUT",
+      "Name": "EURO COSMO  DIVERTOR SPOUT",
       "Code": "13262000",
       "Price": 16100,
       "Image": "13262000.jpg"
@@ -1048,7 +1042,7 @@
       "Image": "13264001.jpg"
     },
     {
-      "Name": "GRANDERA GOLD \r\nCHROME",
+      "Name": "GRANDERA GOLD  CHROME",
       "Code": "13341IG0",
       "Price": 55450,
       "Image": "13341IG0.jpg"
@@ -1108,7 +1102,7 @@
   ],
   "RAINSHOWER AQUA": [
     {
-      "Name": "Rainshower AQUA Mono Ceiling Shower incl. \r\nRough-In",
+      "Name": "Rainshower AQUA Mono Ceiling Shower incl.  Rough-In",
       "Code": "26731000",
       "Price": 126000,
       "Image": "26731000.jpg"
@@ -1242,7 +1236,7 @@
       "Image": "27869001.jpg"
     },
     {
-      "Name": "125 MM (5’’)\r\n4 SPRAY",
+      "Name": "125 MM (5’’) 4 SPRAY",
       "Code": "27870001",
       "Price": 7650,
       "Image": "27870001.jpg"
@@ -1268,7 +1262,7 @@
       "Image": "26557000.jpg"
     },
     {
-      "Name": "Rainshower 310 Mono Cube Headshower Set, \r\n422mm",
+      "Name": "Rainshower 310 Mono Cube Headshower Set,  422mm",
       "Code": "26563000",
       "Price": 47050,
       "Image": "26563000.jpg"
@@ -1286,7 +1280,7 @@
       "Image": "26559000.jpg"
     },
     {
-      "Name": "Rainshower 310 Mono Cube Headshower Set, \r\n142mm",
+      "Name": "Rainshower 310 Mono Cube Headshower Set,  142mm",
       "Code": "26565000",
       "Price": 47050,
       "Image": "26565000.jpg"
@@ -1298,7 +1292,7 @@
       "Image": "26567LS0.jpg"
     }
   ],
-  "SMART ACTIVE SHOWERS\r\nSMART CONNECT SHOWER": [
+  "SMART ACTIVE SHOWERS SMART CONNECT SHOWER": [
     {
       "Name": "Rainshower Smartconnect 310 Headshower Set, Round, 422mm",
       "Code": "26640000",
@@ -1312,7 +1306,7 @@
       "Image": "26642000.jpg"
     },
     {
-      "Name": "Rainshower SmartActive 310 Headshower Set, \r\nRound, 400mm",
+      "Name": "Rainshower SmartActive 310 Headshower Set,  Round, 400mm",
       "Code": "26475000",
       "Price": 69700,
       "Image": "26475000.jpg"
@@ -1324,7 +1318,7 @@
       "Image": "26483000.jpg"
     },
     {
-      "Name": "Rainshower SmartActive 310 Headshower Set, \r\nCube, 400mm",
+      "Name": "Rainshower SmartActive 310 Headshower Set,  Cube, 400mm",
       "Code": "26479000",
       "Price": 77200,
       "Image": "26479000.jpg"
@@ -1348,7 +1342,7 @@
       "Image": "26264001.jpg"
     },
     {
-      "Name": "Rainshower SmartActive 310 Headshower Set, \r\nRound, 142mm",
+      "Name": "Rainshower SmartActive 310 Headshower Set,  Round, 142mm",
       "Code": "26477000",
       "Price": 69700,
       "Image": "26477000.jpg"
@@ -1360,7 +1354,7 @@
       "Image": "26483000.jpg"
     },
     {
-      "Name": "Rainshower SmartActive 310 Headshower Set, \r\nCube, 142mm",
+      "Name": "Rainshower SmartActive 310 Headshower Set,  Cube, 142mm",
       "Code": "26481000",
       "Price": 77200,
       "Image": "26481000.jpg"
@@ -1670,19 +1664,19 @@
   ],
   "HAND SHOWERS WITH HOLDER": [
     {
-      "Name": "3 SPRAY 100 MM \r\nWALL SHOWER HOLDER\r\nSHOWER HOSE 1250 MM",
+      "Name": "3 SPRAY 100 MM  WALL SHOWER HOLDER SHOWER HOSE 1250 MM",
       "Code": "27849001",
       "Price": 5850,
       "Image": "27849001.jpg"
     },
     {
-      "Name": "2 SPRAY 100 MM \r\nWALL SHOWER HOLDER\r\nSHOWER HOSE 1250 MM",
+      "Name": "2 SPRAY 100 MM  WALL SHOWER HOLDER SHOWER HOSE 1250 MM",
       "Code": "27799001",
       "Price": 4850,
       "Image": "27799001.jpg"
     },
     {
-      "Name": "1 SPRAY \r\nWALL SHOWER HOLDER\r\nSHOWER HOSE 1250 MM",
+      "Name": "1 SPRAY  WALL SHOWER HOLDER SHOWER HOSE 1250 MM",
       "Code": "27702000",
       "Price": 11600,
       "Image": "27702000.jpg"
@@ -1694,19 +1688,19 @@
       "Image": "27369000.jpg"
     },
     {
-      "Name": "1 SPRAY\r\nWALL SHOWER HOLDER\r\nSHOWER HOSE 1500 MM",
+      "Name": "1 SPRAY WALL SHOWER HOLDER SHOWER HOSE 1500 MM",
       "Code": "28348000",
       "Price": 32550,
       "Image": "28348000.jpg"
     },
     {
-      "Name": "4 SPRAY 100 MM \r\nSHOWER RAIL 600 MM\r\nSHOWER HOSE 1750 MM",
+      "Name": "4 SPRAY 100 MM  SHOWER RAIL 600 MM SHOWER HOSE 1750 MM",
       "Code": "26086001",
       "Price": 8750,
       "Image": "26086001.jpg"
     },
     {
-      "Name": "4 SPRAY 100 MM \r\nSHOWER RAIL 600 MM\r\nSHOWER HOSE 1750 MM",
+      "Name": "4 SPRAY 100 MM  SHOWER RAIL 600 MM SHOWER HOSE 1750 MM",
       "Code": "28593002",
       "Price": 8400,
       "Image": "28593002.jpg"
@@ -2062,7 +2056,7 @@
       "Image": "19910000.jpg"
     },
     {
-      "Name": "GROTHERM 3000 \r\nCOSMO",
+      "Name": "GROTHERM 3000  COSMO",
       "Code": "19470000",
       "Price": 11200,
       "Image": "19470000.jpg"
@@ -2074,13 +2068,13 @@
       "Image": "27623000.jpg"
     },
     {
-      "Name": "GRANDERA \r\nCHROME",
+      "Name": "GRANDERA  CHROME",
       "Code": "19944000",
       "Price": 18740,
       "Image": "19944000.jpg"
     },
     {
-      "Name": "GRANDERA GOLD \r\nCHROME",
+      "Name": "GRANDERA GOLD  CHROME",
       "Code": "19944IG0",
       "Price": 25530,
       "Image": "19944IG0.jpg"
@@ -2438,7 +2432,7 @@
       "Image": "38858000.jpg"
     },
     {
-      "Name": "Arena Cosmopolitan\r\nWall plate",
+      "Name": "Arena Cosmopolitan Wall plate",
       "Code": "38862000",
       "Price": 8100,
       "Image": "38862000.jpg"
@@ -2494,13 +2488,13 @@
       "Image": "38732DL0.jpg"
     },
     {
-      "Name": "Brushed Hard \r\nGraphite",
+      "Name": "Brushed Hard  Graphite",
       "Code": "38732AL0",
       "Price": 12350,
       "Image": "38732AL0.jpg"
     },
     {
-      "Name": "Nova Cosmopolitan Flush Plate, Small Size \r\nBrushed Hard Graphite",
+      "Name": "Nova Cosmopolitan Flush Plate, Small Size  Brushed Hard Graphite",
       "Code": "37601AL0",
       "Price": 17650,
       "Image": "37601AL0.jpg"
@@ -2540,21 +2534,21 @@
       "Image": "26250000.jpg"
     }
   ],
-  "SMART CONTROL EXPOSED \r\nSHOWER PANEL WITH SPOUT": [
+  "SMART CONTROL EXPOSED  SHOWER PANEL WITH SPOUT": [
     {
-      "Name": "Euphoria SmartControl 260 Thermostatic \r\nBath/Shower System, 3 Control",
+      "Name": "Euphoria SmartControl 260 Thermostatic  Bath/Shower System, 3 Control",
       "Code": "266080000",
       "Price": 124600,
       "Image": "266080000.jpg"
     },
     {
-      "Name": "Euphoria SmartControl 260 Thermostatic \r\nBath/Shower System, 3 Control",
+      "Name": "Euphoria SmartControl 260 Thermostatic  Bath/Shower System, 3 Control",
       "Code": "26510000",
       "Price": 126750,
       "Image": "26510000.jpg"
     }
   ],
-  "SMART CONTROL EXPOSED\r\nSHOWER PANEL WITH 2FLOW ROUND SHOWER": [
+  "SMART CONTROL EXPOSED SHOWER PANEL WITH 2FLOW ROUND SHOWER": [
     {
       "Name": "Euphoria SmartControl 310 Round Thermostatic Shower System, 3 Control",
       "Code": "26507000",
@@ -2562,9 +2556,9 @@
       "Image": "26507000.jpg"
     }
   ],
-  "SMART CONTROL EXPOSED\r\nSHOWER PANEL WITH 2FLOW SQUARE SHOWER": [
+  "SMART CONTROL EXPOSED SHOWER PANEL WITH 2FLOW SQUARE SHOWER": [
     {
-      "Name": "Euphoria SmartControl 310 Cube Thermostatic \r\nShower System, 3 Control",
+      "Name": "Euphoria SmartControl 310 Cube Thermostatic  Shower System, 3 Control",
       "Code": "26508000",
       "Price": 146000,
       "Image": "26508000.jpg"
@@ -2584,7 +2578,7 @@
       "Image": "27475001.jpg"
     }
   ],
-  "SINGLE LEVER DIVERTER WITH SPOUT\r\nSHOWER PANEL": [
+  "SINGLE LEVER DIVERTER WITH SPOUT SHOWER PANEL": [
     {
       "Name": "Single-lever bath mixer 1/2",
       "Code": "23601000",
@@ -2598,7 +2592,7 @@
       "Image": "27389002.jpg"
     }
   ],
-  "SINGLE LEVER DIVERTER\r\nSHOWER PANEL": [
+  "SINGLE LEVER DIVERTER SHOWER PANEL": [
     {
       "Name": "Single-lever shower mixer 1/2",
       "Code": "23632000",
@@ -2612,7 +2606,7 @@
       "Image": "27389002.jpg"
     }
   ],
-  "GROHE SENSIA ARENA \r\nWALL HUNG": [
+  "GROHE SENSIA ARENA  WALL HUNG": [
     {
       "Name": "WC & Seat  cover",
       "Code": "39354SH1",
@@ -2638,7 +2632,7 @@
       "Image": "38844000.jpg"
     }
   ],
-  "GROHE SENSIA ARENA \r\nFLOOR STANDING": [
+  "GROHE SENSIA ARENA  FLOOR STANDING": [
     {
       "Name": "Shower toilet complete system, floorstanding",
       "Code": "39355SH0",
@@ -2658,75 +2652,79 @@
       "Image": "38844000.jpg"
     }
   ],
-  "WALL HUNG WC": [],
-  "ESSENCE RIM LESS": [
+  "WALL HUNG WC": [
     {
-      "Name": "Essence Toilet Wall-Hung Rimless without Seat",
-      "Code": "3957100H",
-      "Price": 41180,
-      "Image": "3957100H.jpg"
-    },
-    {
-      "Name": "WC seat soft close",
-      "Code": "39577000",
-      "Price": 8730,
-      "Image": "39577000.jpg"
+      "ESSENCE RIM LESS": [
+        {
+          "Name": "Essence Toilet Wall-Hung Rimless without Seat",
+          "Code": "3957100H",
+          "Price": 41180,
+          "Image": "3957100H.jpg"
+        },
+        {
+          "Name": "WC seat soft close",
+          "Code": "39577000",
+          "Price": 8730,
+          "Image": "39577000.jpg"
+        }
+      ],
+      "EUROCUBE RIM LESS": [
+        {
+          "Name": "Eurocube Toilet Wall-Hung Rimless with Seat",
+          "Code": "39244000",
+          "Price": 47420,
+          "Image": "39244000.jpg"
+        }
+      ],
+      "GROHE P-LINE RIM LESS": [
+        {
+          "Name": "Projectline Toilet Wall-Hung with Seat Cover",
+          "Code": "39321000",
+          "Price": 42420,
+          "Image": "39321000.jpg"
+        }
+      ],
+      "EUROCOSMO RIM LESS": [
+        {
+          "Name": "Eurocosmo Toilet Wall-Hung Rimless with Seat",
+          "Code": "39296000",
+          "Price": 39930,
+          "Image": "39296000.jpg"
+        }
+      ],
+      "EUROSMART-AG RIM LESS": [
+        {
+          "Name": "Wall hung WC with PureGuard",
+          "Code": "3932800H",
+          "Price": 28690,
+          "Image": "3932800H.jpg"
+        },
+        {
+          "Name": "EURO CERAMIC WC SEAT SOFT CLOSE",
+          "Code": "39330001",
+          "Price": 7470,
+          "Image": "39330001.jpg"
+        }
+      ],
+      "EUROSMART SQUARE  NORMAL-RIM": [
+        {
+          "Name": "Wall hung WC",
+          "Code": "39205000",
+          "Price": 21500,
+          "Image": "39205000.jpg"
+        }
+      ],
+      "BAU – WALL HUNG RIM LESS": [
+        {
+          "Name": "Wall hung WC",
+          "Code": "39706000",
+          "Price": 14960,
+          "Image": "39706000.jpg"
+        }
+      ]
     }
   ],
-  "EUROCUBE RIM LESS": [
-    {
-      "Name": "Eurocube Toilet Wall-Hung Rimless with Seat",
-      "Code": "39244000",
-      "Price": 47420,
-      "Image": "39244000.jpg"
-    }
-  ],
-  "GROHE P-LINE RIM LESS": [
-    {
-      "Name": "Projectline Toilet Wall-Hung with Seat Cover",
-      "Code": "39321000",
-      "Price": 42420,
-      "Image": "39321000.jpg"
-    }
-  ],
-  "EUROCOSMO RIM LESS": [
-    {
-      "Name": "Eurocosmo Toilet Wall-Hung Rimless with Seat",
-      "Code": "39296000",
-      "Price": 39930,
-      "Image": "39296000.jpg"
-    }
-  ],
-  "EUROSMART-AG RIM LESS": [
-    {
-      "Name": "Wall hung WC with PureGuard",
-      "Code": "3932800H",
-      "Price": 28690,
-      "Image": "3932800H.jpg"
-    },
-    {
-      "Name": "EURO CERAMIC WC SEAT SOFT CLOSE",
-      "Code": "39330001",
-      "Price": 7470,
-      "Image": "39330001.jpg"
-    }
-  ],
-  "EUROSMART\r\nSQUARE  NORMAL-RIM": [
-    {
-      "Name": "Wall hung WC",
-      "Code": "39205000",
-      "Price": 21500,
-      "Image": "39205000.jpg"
-    }
-  ],
-  "BAU – WALL HUNG RIM LESS": [
-    {
-      "Name": "Wall hung WC",
-      "Code": "39706000",
-      "Price": 14960,
-      "Image": "39706000.jpg"
-    }
-  ],
+
   "FLOOR MOUNTING WC": [
     {
       "Name": "Eurostyle Toilet One Piece Rimless with Seat",
@@ -3177,7 +3175,7 @@
       "Image": "40777001.jpg"
     },
     {
-      "Name": "TOWEL RING TOWEL RAIL 600MM\r\nROBE HOOK PAPER HOLDER",
+      "Name": "TOWEL RING TOWEL RAIL 600MM ROBE HOOK PAPER HOLDER",
       "Code": "40778001",
       "Price": 16050,
       "Image": "40778001.jpg"
@@ -3493,19 +3491,19 @@
   ],
   "G2- BAU- BASIN MIXER": [
     {
-      "Name": "BAUEDGE WALL MOUNTED \r\nBASIN MIXER",
+      "Name": "BAUEDGE WALL MOUNTED  BASIN MIXER",
       "Code": "20474000",
       "Price": 16880,
       "Image": "20474000.jpg"
     },
     {
-      "Name": "BAULOOP WALL MOUNTED \r\nBASIN MIXER",
+      "Name": "BAULOOP WALL MOUNTED  BASIN MIXER",
       "Code": "20289000",
       "Price": 16880,
       "Image": "20289000.jpg"
     },
     {
-      "Name": "BAUCLASSIC WALL MOUNTED \r\nBASIN MIXER",
+      "Name": "BAUCLASSIC WALL MOUNTED  BASIN MIXER",
       "Code": "20292000",
       "Price": 14350,
       "Image": "20292000.jpg"
@@ -3529,13 +3527,13 @@
       "Image": "21111000.jpg"
     },
     {
-      "Name": "BAUEDGE TALL BODY\r\nBASIN MIXER",
+      "Name": "BAUEDGE TALL BODY BASIN MIXER",
       "Code": "32860000",
       "Price": 9820,
       "Image": "32860000.jpg"
     },
     {
-      "Name": "BAULOOP TALL BODY\r\nBASIN MIXER",
+      "Name": "BAULOOP TALL BODY BASIN MIXER",
       "Code": "32856000",
       "Price": 9820,
       "Image": "32856000.jpg"
@@ -3543,19 +3541,19 @@
   ],
   "G2- BAU- 3 HOLE BASIN MIXER & PILLAR TAP": [
     {
-      "Name": "BAUEDGE 3 HOLE \r\nBASIN MIXER",
+      "Name": "BAUEDGE 3 HOLE  BASIN MIXER",
       "Code": "20197000",
       "Price": 15900,
       "Image": "20197000.jpg"
     },
     {
-      "Name": "BAULOOP 3 HOLE \r\nBASIN MIXER",
+      "Name": "BAULOOP 3 HOLE  BASIN MIXER",
       "Code": "20471000",
       "Price": 14410,
       "Image": "20471000.jpg"
     },
     {
-      "Name": "GLOUCESTER 3 HOLE \r\nBASIN MIXER",
+      "Name": "GLOUCESTER 3 HOLE  BASIN MIXER",
       "Code": "20475000",
       "Price": 19790,
       "Image": "20475000.jpg"
@@ -3633,64 +3631,99 @@
       "Image": "22016000.jpg"
     }
   ],
-  "Basin Mixer with mixing device": [],
-  "ESSENCE E": [
+  "Basin Mixer with mixing device": [
     {
-      "Name": "Concealed Box for Electronic Faucet Basin",
-      "Code": "36264001",
-      "Price": 29750,
-      "Image": "36264001.jpg"
+      "ESSENCE E": [
+        {
+          "Name": "Concealed Box for Electronic Faucet Basin",
+          "Code": "36264001",
+          "Price": 29750,
+          "Image": "36264001.jpg"
+        }
+      ],
+      "EUROSMART COSMO E": [
+        {
+          "Name": "With Pop-up Waste and Battery",
+          "Code": "36331001",
+          "Price": 47100,
+          "Image": "36331001.jpg"
+        },
+        {
+          "Name": "Concealed mounting box",
+          "Code": "36339001",
+          "Price": 23100,
+          "Image": "36339001.jpg"
+        },
+        {
+          "Name": "Concealed mounting box",
+          "Code": "36336001",
+          "Price": 40150,
+          "Image": "36336001.jpg"
+        },
+        {
+          "Name": "Concealed mounting box",
+          "Code": "36337001",
+          "Price": 26650,
+          "Image": "36337001.jpg"
+        },
+        {
+          "Name": "Concealed mounting box",
+          "Code": "36336001",
+          "Price": 40150,
+          "Image": "36336001.jpg"
+        },
+        {
+          "Name": "Concealed mounting box",
+          "Code": "36337001",
+          "Price": 26650,
+          "Image": "36337001.jpg"
+        }
+      ],
+      "EUROPLUS E": [
+        {
+          "Name": "Europlus E Infrared Basin Mixer, DC",
+          "Code": "36207001",
+          "Price": 85400.0
+        },
+        {
+          "Name": "Europlus E Infrared Basin Tap, DC",
+          "Price": 76100.0,
+          "Code": 36208001
+        }
+      ],
+      "EUROECO COSMO E": [
+        {
+          "Name": "Euroeco Cosmopolitan E Powerbox",
+          "Code": "36384000",
+          "Price": 78470,
+          "Image": "36384000.jpg"
+        }
+      ]
     }
   ],
-  "EUROSMART COSMO E": [
+
+  "BAU COSMO E: THE GAME CHANGER": [
+    { "name": "6 V lithium battery", "code": "36451000", "price": 22050 },
+    { "name": "Plug transformer 6DC", "code": "36453000", "price": 22450 },
+    { "name": "6 V lithium battery", "code": "36452000", "price": 19650 }
+  ],
+  "SENSOR FOR WC": [
     {
-      "Name": "With Pop-up Waste and Battery",
-      "Code": "36331001",
-      "Price": 47100,
-      "Image": "36331001.jpg"
+      "name": "Tectron Skate Infrared Toilet Flush Plate Chrome 100230 V AC 6 V DC",
+      "code": "37419000",
+      "price": 85850
     },
     {
-      "Name": "Concealed mounting box",
-      "Code": "36339001",
-      "Price": 23100,
-      "Image": "36339001.jpg"
+      "name": "Tectron Skate Infrared Electronic Flush Plate for Toilet Flushing Cistern, 240 V, Stainless Steel",
+      "code": "37419SD0",
+      "price": 69350
     },
     {
-      "Name": "Concealed mounting box",
-      "Code": "36336001",
-      "Price": 40150,
-      "Image": "36336001.jpg"
-    },
-    {
-      "Name": "Concealed mounting box",
-      "Code": "36337001",
-      "Price": 26650,
-      "Image": "36337001.jpg"
-    },
-    {
-      "Name": "Concealed mounting box",
-      "Code": "36336001",
-      "Price": 40150,
-      "Image": "36336001.jpg"
-    },
-    {
-      "Name": "Concealed mounting box",
-      "Code": "36337001",
-      "Price": 26650,
-      "Image": "36337001.jpg"
+      "name": "Tectron Skate Infrared Electronic Flush Plate for Toilet Flushing Cistern, 240 V",
+      "code": "38698SD1",
+      "price": 51250
     }
   ],
-  "EUROPLUS E": [],
-  "EUROECO COSMO E": [
-    {
-      "Name": "Euroeco Cosmopolitan E\r\nPowerbox",
-      "Code": "36384000",
-      "Price": 78470,
-      "Image": "36384000.jpg"
-    }
-  ],
-  "BAU COSMO E : THE GAME CHANGER": [],
-  "SENSOR FOR WC": [],
   "SENSOR FOR URINAL": [
     {
       "Name": "Rapido U Urinal Flush Valve Concealed",

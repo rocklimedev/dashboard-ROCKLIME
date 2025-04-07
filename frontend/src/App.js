@@ -25,10 +25,10 @@ function App() {
   const isPOSPage = location.pathname === "/pos";
 
   const token = localStorage.getItem("token");
-  console.log(token);
-  // Fetch user profile
+
   const { data: profileData, isLoading: isProfileLoading } =
     useGetProfileQuery();
+
   const userId = profileData?.user?.userId || null;
   const roleId = profileData?.user?.roleId || null;
 
@@ -42,13 +42,15 @@ function App() {
   useEffect(() => {
     if (!isProfileLoading && (!userId || !roleId) && !isAuthPage) {
       toast.error("Access denied. No role assigned.");
-      navigate("/login"); // Redirect to login or an error page
+      navigate("/login");
     }
   }, [isProfileLoading, userId, roleId, isAuthPage, navigate]);
 
   return (
     <div className="pos-page">
-      {isProfileLoading && <Loader />} {/* Show loader when loading */}
+      {/* ✅ Fullscreen Loader on top of everything */}
+      <Loader loading={isProfileLoading} />
+
       <div className="main-wrapper">
         {!isAuthPage && <Header toggleSidebar={setSidebarOpen} />}
         {!isAuthPage && !isPOSPage && <Sidebar isSidebarOpen={isSidebarOpen} />}

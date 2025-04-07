@@ -3,7 +3,7 @@ import PageHeader from "../Common/PageHeader";
 import Actions from "../Common/Actions";
 import { useGetAllProductsQuery } from "../../api/productApi";
 import DataTablePagination from "../Common/DataTablePagination";
-import TableHeader from "../Common/TableHeader";
+import TableHeader from "./TableHeader";
 import DeleteModal from "../Common/DeleteModal";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import { useGetAllBrandsQuery } from "../../api/brandsApi";
@@ -39,20 +39,51 @@ const ProductList = () => {
   const [isStockModalVisible, setStockModalVisible] = useState(false);
   const [isHistoryModalVisible, setHistoryModalVisible] = useState(false);
   const [stockHistory, setStockHistory] = useState([]);
+
+  const [filters, setFilters] = useState({});
   const itemsPerPage = 20;
 
+  const applyFilters = () => {
+    if (!products) return [];
+
+    return products.filter((product) => {
+      const createdByName = product.customerId;
+
+      const matchesCreator =
+        !filters.createdBy || createdByName === filters.createdBy;
+
+      const matchesCategory =
+        !filters.category || product.categoryId === filters.category;
+
+      const matchesBrand = !filters.brand || product.brandId === filters.brand;
+
+      let matchesDate = true;
+      if (filters.sortBy === "Last 7 Days") {
+        const daysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        matchesDate = new Date(product.createdAt) >= daysAgo;
+      } else if (filters.sortBy === "Last Month") {
+        const oneMonthAgo = new Date();
+        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+        matchesDate = new Date(product.createdAt) >= oneMonthAgo;
+      }
+
+      return matchesCreator && matchesCategory && matchesBrand && matchesDate;
+    });
+  };
+
+  const filteredProducts = applyFilters();
   useEffect(() => {
-    if (currentPage >= Math.ceil(products.length / itemsPerPage)) {
+    if (currentPage >= Math.ceil(filteredProducts.length / itemsPerPage)) {
       setCurrentPage(0);
     }
-  }, [products.length, currentPage]);
+  }, [filteredProducts.length, currentPage]);
 
   if (isLoading) return <p>Loading...</p>;
   if (error) return <p>Error fetching products.</p>;
   if (products.length === 0) return <p>No products available.</p>;
 
   const offset = currentPage * itemsPerPage;
-  const currentItems = products.slice(offset, offset + itemsPerPage);
+  const currentItems = filteredProducts.slice(offset, offset + itemsPerPage);
 
   const handleDeleteClick = (product) => {
     setSelectedProduct(product);
@@ -100,7 +131,7 @@ const ProductList = () => {
         />
 
         <div className="card">
-          <TableHeader />
+          <TableHeader onFilterChange={setFilters} />
           <div className="card-body p-0">
             <div className="table-responsive">
               <table className="table datatable">
@@ -160,9 +191,8 @@ const ProductList = () => {
             </div>
           </div>
         </div>
-
         <DataTablePagination
-          totalItems={products.length}
+          totalItems={filteredProducts.length}
           itemNo={itemsPerPage}
           onPageChange={(selectedPage) => setCurrentPage(selectedPage - 1)}
         />

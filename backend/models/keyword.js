@@ -14,13 +14,19 @@ const Keyword = sequelize.define(
       allowNull: false,
       unique: true, // Ensure no duplicate keywords
     },
-    type: {
-      type: DataTypes.ENUM("Ceramics", "Sanitary"),
+    categoryId: {
+      type: DataTypes.UUID,
       allowNull: false,
+      references: {
+        model: "categories", // Must match the actual table name of the Category model
+        key: "categoryId",
+      },
+      onUpdate: "CASCADE",
+      onDelete: "CASCADE", // Optional: Deletes keyword if category is deleted
     },
   },
   {
-    tableName: "keywords", // Force lowercase table name
+    tableName: "keywords",
     timestamps: true,
   }
 );

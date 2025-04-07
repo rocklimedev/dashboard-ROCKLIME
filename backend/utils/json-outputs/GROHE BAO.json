@@ -1,11 +1,66 @@
 {
-  "GROHE BAUEDGE": [
+  "GROHE BAULOOP": [
+    { "Name": "Single-lever basin mixer", "Code": "32814001", "Price": 7750.0 },
+    { "Name": "Single-lever basin mixer", "Code": "32854001", "Price": 7550.0 },
+    { "Name": "Single-lever basin mixer", "Code": "23876001", "Price": 7650.0 },
+    { "Name": "Single-lever basin mixer", "Code": "23091001", "Price": 8050.0 },
+    { "Name": "Single-lever basin mixer", "Code": "23890001", "Price": 9150.0 },
+    { "Name": "Single-lever basin mixer", "Code": "32856001", "Price": 9050.0 },
+    { "Name": "Pillar Tap", "Code": "23962001", "Price": 8550.0 },
+    { "Name": "XS-Size", "Code": "32857001", "Price": 3490.0 },
+    { "Name": "3-hole basin mixer", "Code": "20225001", "Price": 14120.0 },
     {
-      "Name": "NAME",
-      "Code": "CODE",
-      "Price": "PRICE",
-      "Image": "CODE.jpg"
+      "Name": "2-hole single-lever basin mixer",
+      "Code": "20289001",
+      "Price": 14450.0
     },
+    { "Name": "Bib Tap 2 in 1", "Code": "20283001", "Price": 4120.0 },
+    { "Name": "Bib Tap", "Code": "20237001", "Price": 2910.0 },
+    { "Name": "Bath spout with diverter", "Code": "13425001", "Price": 4950.0 },
+    { "Name": "Bath spout", "Code": "13255001", "Price": 3250.0 },
+    {
+      "Name": "Shower Valve,1/2\" Inlet, 1/2\" Outlet",
+      "Code": "26020001",
+      "Price": 3880.0
+    },
+    {
+      "Name": "Angle Valve,1/2\" Inlet, 1/2\" Outlet",
+      "Code": "22008001",
+      "Price": 2050.0
+    },
+    {
+      "Name": "Single-lever bath/shower mixer",
+      "Code": "29062001",
+      "Price": 9450.0
+    },
+    {
+      "Name": "Single-lever bath/shower mixer",
+      "Code": "29041001",
+      "Price": 9450.0
+    },
+    {
+      "Name": "Single-lever shower mixer",
+      "Code": "29042001",
+      "Price": 8820.0
+    },
+    {
+      "Name": "Single-lever bath/shower mixer",
+      "Code": "29189001",
+      "Price": 6450.0
+    },
+    {
+      "Name": "Single-lever bath/shower mixer Exposed",
+      "Code": "23603001",
+      "Price": 10150.0
+    },
+    {
+      "Name": "Single-lever shower mixer Exposed",
+      "Code": "23634001",
+      "Price": 9180.0
+    }
+  ],
+
+  "GROHE BAUEDGE": [
     {
       "Name": "Single-lever basin mixer",
       "Code": "32819001",
@@ -141,12 +196,6 @@
   ],
   "GROHE BAUCURVE": [
     {
-      "Name": "NAME",
-      "Code": "CODE",
-      "Price": "PRICE",
-      "Image": "CODE.jpg"
-    },
-    {
       "Name": "Single-lever basin mixer",
       "Code": "32848000",
       "Price": 7350,
@@ -226,12 +275,6 @@
     }
   ],
   "GROHE BAUFLOW": [
-    {
-      "Name": "NAME",
-      "Code": "CODE",
-      "Price": "PRICE",
-      "Image": "CODE.jpg"
-    },
     {
       "Name": "Single-lever basin mixer",
       "Code": "23098000",
@@ -361,12 +404,6 @@
   ],
   "GROHE BAUCLASSIC": [
     {
-      "Name": "NAME",
-      "Code": "CODE",
-      "Price": "PRICE",
-      "Image": "CODE.jpg"
-    },
-    {
       "Name": "Single-lever basin mixer\r\nwith pop-up waste set",
       "Code": "32862000",
       "Price": 8150,
@@ -467,12 +504,6 @@
   ],
   "GROHE EUROECO": [
     {
-      "Name": "NAME",
-      "Code": "CODE",
-      "Price": "PRICE",
-      "Image": "CODE.jpg"
-    },
-    {
       "Name": "Self-Closing Pillar Tap",
       "Code": "36265000",
       "Price": 8250,
@@ -565,12 +596,6 @@
   ],
   "GROHE UNIVERSAL": [
     {
-      "Name": "NAME",
-      "Code": "CODE",
-      "Price": "PRICE",
-      "Image": "CODE.jpg"
-    },
-    {
       "Name": "Pillar Tap Basin U-Spout",
       "Code": "20202000",
       "Price": 17300,
@@ -597,12 +622,6 @@
   ],
   "GROHE GROHTHERM 800": [
     {
-      "Name": "NAME",
-      "Code": "CODE",
-      "Price": "PRICE",
-      "Image": "CODE.jpg"
-    },
-    {
       "Name": "Grohtherm 800 Thermostatic Mixer with \r\nHand Shower and 900mm Rail",
       "Code": "34566001",
       "Price": 27750,
@@ -628,12 +647,6 @@
     }
   ],
   "GROHE TEMPESTA 250": [
-    {
-      "Name": "NAME",
-      "Code": "CODE",
-      "Price": "PRICE",
-      "Image": "CODE.jpg"
-    },
     {
       "Name": "Tempesta 250 head shower\r\nprojection: 380 mm\r\n1 spray pattern: Rain\r\nwith 9.5 l/min",
       "Code": "26663000",
@@ -672,12 +685,6 @@
     }
   ],
   "GROHE NEW TEMPESTA COSMOPOLITAN": [
-    {
-      "Name": "NAME",
-      "Code": "CODE",
-      "Price": "PRICE",
-      "Image": "CODE.jpg"
-    },
     {
       "Name": "New Tempesta Cosmopolitan 100 with \r\n600mm Rail, 4 Sprays, 9.5L",
       "Code": "27577002",
@@ -788,12 +795,6 @@
     }
   ],
   "GROHE NEW TEMPESTA CLASSIC": [
-    {
-      "Name": "NAME",
-      "Code": "CODE",
-      "Price": "PRICE",
-      "Image": "CODE.jpg"
-    },
     {
       "Name": "New Tempesta 100 with 600mm Rail, \r\n3 Sprays",
       "Code": "27794001",
@@ -971,12 +972,6 @@
   ],
   "GROHE NEW TEMPESTA RUSTIC": [
     {
-      "Name": "NAME",
-      "Code": "CODE",
-      "Price": "PRICE",
-      "Image": "CODE.jpg"
-    },
-    {
       "Name": "New Tempesta Rustic 200, Shower: 2 Sprays, Hand Shower: 4 Sprays",
       "Code": "27399002",
       "Price": 25400,
@@ -1008,12 +1003,6 @@
     }
   ],
   "GROHE SHOWERS ACCESSORIES": [
-    {
-      "Name": "NAME",
-      "Code": "CODE",
-      "Price": "PRICE",
-      "Image": "CODE.jpg"
-    },
     {
       "Name": "New Tempesta Cosmopolitan Shower Rail 900mm",
       "Code": "27522000",
@@ -1058,12 +1047,6 @@
     }
   ],
   "GROHE FLUSH PLATES": [
-    {
-      "Name": "NAME",
-      "Code": "CODE",
-      "Price": "PRICE",
-      "Image": "CODE.jpg"
-    },
     {
       "Name": "Skate Cosmopolitan, Stainless Steel",
       "Code": "38732SD0",
@@ -1151,12 +1134,6 @@
   ],
   "GROHE CISTERNS": [
     {
-      "Name": "NAME",
-      "Code": "CODE",
-      "Price": "PRICE",
-      "Image": "CODE.jpg"
-    },
-    {
       "Name": "Rapid SL Concealed Cistern with\r\nFull Frame, 6-9L, Pneumatic",
       "Code": "38536001",
       "Price": 14250,
@@ -1194,12 +1171,6 @@
     }
   ],
   "GROHE TRIGGER SPRAY": [
-    {
-      "Name": "NAME",
-      "Code": "CODE",
-      "Price": "PRICE",
-      "Image": "CODE.jpg"
-    },
     {
       "Name": "New Tempesta-F Trigger Spray 30 Set \r\nwith Angle Valve",
       "Code": "27514001",
@@ -1251,12 +1222,6 @@
   ],
   "GROHE ANGLE VALVES": [
     {
-      "Name": "NAME",
-      "Code": "CODE",
-      "Price": "PRICE",
-      "Image": "CODE.jpg"
-    },
-    {
       "Name": "Angle Valve, 1/2\" Inlet, 1/2\" Outlet, 10 pcs",
       "Code": "2201100M",
       "Price": 17500,
@@ -1300,12 +1265,6 @@
     }
   ],
   "GROHE ACCESSORIES": [
-    {
-      "Name": "NAME",
-      "Code": "CODE",
-      "Price": "PRICE",
-      "Image": "CODE.jpg"
-    },
     {
       "Name": "BauCosmopolitan Multi-towel Rack 510mm",
       "Code": "40462001",
@@ -1375,12 +1334,6 @@
   ],
   "GROHE CERAMIC": [
     {
-      "Name": "NAME",
-      "Code": "CODE",
-      "Price": "PRICE",
-      "Image": "CODE.jpg"
-    },
-    {
       "Name": "Bau Ceramic WC wall hung Rimless",
       "Code": "39706000",
       "Price": 14960,
@@ -1400,12 +1353,6 @@
     }
   ],
   "GROHE BAU KITCHEN": [
-    {
-      "Name": "NAME",
-      "Code": "CODE",
-      "Price": "PRICE",
-      "Image": "CODE.jpg"
-    },
     {
       "Name": "BauEdge Wall Tap Sink",
       "Code": "31228000",
