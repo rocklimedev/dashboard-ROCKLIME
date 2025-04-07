@@ -17,6 +17,7 @@ const Brand = require("../models/brand");
 const Customer = require("../models/customers");
 const Team = require("../models/team");
 const TeamMember = require("../models/teamMember");
+const ParentCategory = require("../models/parentCategory");
 const setupDB = async () => {
   try {
     await sequelize.authenticate();
@@ -141,6 +142,17 @@ const setupDB = async () => {
     // Define relationship with alias
     Team.hasMany(Order, { foreignKey: "assignedTo" });
     Order.belongsTo(Team, { foreignKey: "assignedTo" });
+    // Assuming this is placed in a central association file or after all models are defined:
+
+    ParentCategory.hasMany(Category, {
+      foreignKey: "parentCategoryId",
+      as: "categories", // optional alias
+    });
+
+    Category.belongsTo(ParentCategory, {
+      foreignKey: "parentCategoryId",
+      as: "parentcategories", // optional alias
+    });
 
     // ==============================
     // 🔥 SYNC DATABASE
