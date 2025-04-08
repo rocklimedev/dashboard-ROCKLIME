@@ -17,24 +17,16 @@ exports.createOrder = async (req, res) => {
       source,
       priority,
       description,
-      quotationId,
+      invoiceId,
       teamId,
     } = req.body;
 
-    console.log("Received data:", req.body);
-
     // Validate required fields
-    if (!title || !quotationId || !createdFor || !createdBy || !teamId) {
+    if (!title || !invoiceId || !createdFor || !createdBy || !teamId) {
       return res.status(400).json({
         message:
-          "Title, quotationId, createdFor, createdBy, and teamId are required",
+          "Title, invoiceId, createdFor, createdBy, and teamId are required",
       });
-    }
-
-    // Check if quotationId exists (if it's a foreign key)
-    const quotationExists = await Quotation.findByPk(quotationId);
-    if (!quotationExists) {
-      return res.status(404).json({ message: "Quotation not found" });
     }
 
     // Ensure followupDates is properly formatted (if needed)
@@ -55,7 +47,7 @@ exports.createOrder = async (req, res) => {
       source,
       priority,
       description,
-      quotationId,
+      invoiceId,
       teamId,
     });
 
@@ -74,10 +66,8 @@ exports.createOrder = async (req, res) => {
 };
 exports.getAllOrders = async (req, res) => {
   try {
-    console.log("Fetching orders...");
     const orders = await Order.findAll();
 
-    console.log("Orders fetched:", orders.length); // Log the count
     if (!orders || orders.length === 0) {
       return res.status(404).json({ message: "No orders found" });
     }
@@ -189,5 +179,32 @@ exports.draftOrder = async (req, res) => {
     res.status(201).json({ message: "Draft order created", order });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+// controllers/order.controller.js
+
+exports.getFilteredOrders = async (req, res) => {
+  try {
+    const { status, priority, dueDate, createdBy, assignedTo, createdFor } =
+      req.query;
+
+    const filters = {};
+
+    if (status) filters.status = status;
+    if (priority) filters.priority = priority;
+    if (dueDate) filters.dueDate = dueDate;
+    if (createdBy) filters.createdBy = createdBy;
+    if (assignedTo) filters.assignedTo = assignedTo;
+    if (createdFor) filters.createdFor = createdFor;
+
+    const orders = await Order.findAll({
+      where: filters,
+      order: [["createdAt", "DESC"]],
+    });
+
+    return res.status(200).json(orders);
+  } catch (err) {
+    console.error("Filter Error:", err);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };

@@ -1,78 +1,90 @@
 import React, { useState } from "react";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import { useGetAllKeywordsQuery } from "../../api/keywordApi";
+import { useGetAllParentCategoriesQuery } from "../../api/parentCategoryApi";
 import PageHeader from "../Common/PageHeader";
-import { AiOutlineEdit } from "react-icons/ai";
-import { FcEmptyTrash } from "react-icons/fc";
 import AddCategoryModal from "./AddCategoryModal";
-import AddKeywordModal from "./AddKeywordModal";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+
+import DataTablePagination from "../Common/DataTablePagination";
+import Keyword from "./Keyword";
+import { AiOutlineEdit } from "react-icons/ai";
+import { FcFullTrash } from "react-icons/fc";
 
 const CategoriesList = () => {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showKeywordModal, setShowKeywordModal] = useState(false);
+  const [selectedParentId, setSelectedParentId] = useState(null);
+  const [categoryPage, setCategoryPage] = useState(1);
+
+  const itemsPerPage = 20;
 
   const {
     data: categoryData,
-    error: categoryError,
     isLoading: categoryLoading,
+    error: categoryError,
   } = useGetAllCategoriesQuery();
-
   const {
     data: keywordData,
-    error: keywordError,
     isLoading: keywordLoading,
+    error: keywordError,
   } = useGetAllKeywordsQuery();
+  const {
+    data: parentCategoryData,
+    isLoading: parentCategoryLoading,
+    error: parentCategoryError,
+  } = useGetAllParentCategoriesQuery();
 
   const categories = Array.isArray(categoryData?.categories)
     ? categoryData.categories
     : [];
 
-  const keywords = Array.isArray(keywordData?.keywords)
-    ? keywordData.keywords
+  const parentCategories = Array.isArray(parentCategoryData?.data)
+    ? parentCategoryData.data
     : [];
 
-  const handleAddCategory = () => {
-    setShowCategoryModal(true);
-    toast.info("Opening category modal...");
-  };
+  const filteredCategories = selectedParentId
+    ? categories.filter((c) => c.parentCategoryId === selectedParentId)
+    : categories;
 
-  const handleCloseCategoryModal = () => {
-    setShowCategoryModal(false);
-    toast.success("Category modal closed.");
-  };
+  const paginatedCategories = filteredCategories.slice(
+    (categoryPage - 1) * itemsPerPage,
+    categoryPage * itemsPerPage
+  );
 
-  const handleAddKeyword = () => {
-    setShowKeywordModal(true);
-    toast.info("Opening keyword modal...");
-  };
+  const handleAddCategory = () => setShowCategoryModal(true);
+  const handleCloseCategoryModal = () => setShowCategoryModal(false);
 
-  const handleCloseKeywordModal = () => {
-    setShowKeywordModal(false);
-    toast.success("Keyword modal closed.");
-  };
+  const handleCloseKeywordModal = () => setShowKeywordModal(false);
 
-  if (categoryLoading || keywordLoading) return <p>Loading data...</p>;
+  if (categoryLoading || keywordLoading || parentCategoryLoading)
+    return <p>Loading data...</p>;
+  if (categoryError || parentCategoryError || keywordError)
+    return <p>Error fetching data.</p>;
 
-  if (categoryError) {
-    toast.error("Error fetching categories!");
-    return <p>Error fetching categories.</p>;
-  }
-
-  if (keywordError) {
-    toast.error("Error fetching keywords!");
-    return <p>Error fetching keywords.</p>;
-  }
   return (
     <div className="page-wrapper">
       <div className="content">
-        {/* Categories Section */}
         <PageHeader
           title="Categories"
           subtitle="Manage your categories"
           onAdd={handleAddCategory}
         />
+
+        <div className="mb-4">
+          <label className="form-label">Filter by Parent Category:</label>
+          <select
+            className="form-select"
+            value={selectedParentId || ""}
+            onChange={(e) => setSelectedParentId(e.target.value || null)}
+          >
+            <option value="">All Categories</option>
+            {parentCategories.map((pc) => (
+              <option key={pc.id} value={pc.id}>
+                {pc.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
         <div className="card">
           <div className="card-body p-0">
@@ -81,92 +93,54 @@ const CategoriesList = () => {
                 <thead className="thead-light">
                   <tr>
                     <th>Category</th>
-                    <th>Category Slug</th>
                     <th>Parent Category</th>
                     <th>Created On</th>
-                    <th>Total Products</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {categories.map((category) => (
-                    <tr key={category._id}>
-                      <td>{category.name}</td>
-                      <td>{category.slug}</td>
-                      <td>{category.parentCategory || "N/A"}</td>
-                      <td>
-                        {new Date(category.createdAt).toLocaleDateString()}
-                      </td>
-                      <td>{category.total_products}</td>
-                      <td className="action-table-data">
-                        <div className="edit-delete-action">
-                          <a className="me-2 p-2">
-                            <AiOutlineEdit />
-                          </a>
-                          <a className="p-2" href="#">
-                            <FcEmptyTrash />
-                          </a>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {paginatedCategories.map((category) => {
+                    const parentName =
+                      parentCategories.find(
+                        (p) => p.id === category.parentCategoryId
+                      )?.name || "N/A";
+
+                    return (
+                      <tr key={category._id}>
+                        <td>{category.name}</td>
+                        <td>{parentName}</td>
+                        <td>
+                          {new Date(category.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="action-table-data">
+                          <div className="edit-delete-action">
+                            <a className="me-2 p-2" title="Edit">
+                              <AiOutlineEdit />
+                            </a>
+                            <a className="me-2 p-2" title="delete">
+                              <FcFullTrash />
+                            </a>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
-            </div>
-          </div>
-          {showCategoryModal && (
-            <AddCategoryModal onClose={handleCloseCategoryModal} />
-          )}
-        </div>
-
-        {/* Keywords Section */}
-        <PageHeader
-          title="Keywords"
-          subtitle="Manage your keywords"
-          onAdd={handleAddKeyword}
-        />
-
-        <div className="card">
-          <div className="card-body p-0">
-            <div className="table-responsive">
-              <table className="table datatable">
-                <thead className="thead-light">
-                  <tr>
-                    <th>Keyword</th>
-                    <th>Type</th>
-                    <th>Created On</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {keywords.map((keyword) => (
-                    <tr key={keyword.id}>
-                      <td>{keyword.keyword}</td>
-                      <td>{keyword.type}</td>
-                      <td>
-                        {new Date(keyword.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="action-table-data">
-                        <div className="edit-delete-action">
-                          <a className="me-2 p-2" href="#">
-                            <AiOutlineEdit />
-                          </a>
-                          <a className="p-2" href="#">
-                            <FcEmptyTrash />
-                          </a>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <DataTablePagination
+                totalItems={filteredCategories.length}
+                itemNo={itemsPerPage}
+                onPageChange={setCategoryPage}
+              />
             </div>
           </div>
         </div>
+
+        {showCategoryModal && (
+          <AddCategoryModal onClose={handleCloseCategoryModal} />
+        )}
+        <Keyword />
       </div>
-      {showKeywordModal && (
-        <AddKeywordModal onClose={handleCloseKeywordModal} />
-      )}
     </div>
   );
 };

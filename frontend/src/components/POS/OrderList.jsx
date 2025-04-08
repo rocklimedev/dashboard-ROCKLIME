@@ -91,7 +91,7 @@ const OrderList = ({ onConvertToOrder }) => {
     }
 
     try {
-      await clearCart(userId).unwrap(); // Pass userId to clearCart
+      await clearCart({ userId }).unwrap(); // ✅ wrap userId in object
       toast.success("Cart cleared!");
       refetch();
     } catch (error) {

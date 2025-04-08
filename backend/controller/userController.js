@@ -1,10 +1,17 @@
 const { Op } = require("sequelize");
 const User = require("../models/users");
 const Roles = require("../models/roles");
-
+const bcrypt = require("bcrypt");
 exports.createUser = async (req, res) => {
   try {
-    const { username, name, email, password, mobileNumber, role } = req.body;
+    const {
+      username,
+      name,
+      email,
+      password,
+      mobileNumber,
+      roleId: roleId,
+    } = req.body;
 
     // Check if the user already exists
     const existingUser = await User.findOne({
@@ -19,29 +26,42 @@ exports.createUser = async (req, res) => {
         .json({ message: "Username or Email already exists" });
     }
 
-    // Fetch roleId from the Roles table
-    let roleData = await Roles.findOne({ where: { roleName: role } });
+    // Fetch role data using roleId
+    const roleData = await Roles.findOne({ where: { roleId } });
 
     if (!roleData) {
       return res.status(400).json({ message: "Invalid role specified" });
     }
 
-    const roleId = roleData.roleId; // Assign roleId dynamically
+    const roleName = roleData.roleName;
 
-    // Create a new user
+    // Hash the password before saving (best practice)
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create the new user
     const newUser = await User.create({
       username,
       name,
       email,
-      password, // Make sure to hash the password before storing
+      password: hashedPassword, // Store hashed password
       mobileNumber,
-      role, // Storing the role name
-      roleId, // Assigning the correct role ID
+      roles: roleName, // Store role name
+      roleId, // Store role ID
     });
 
-    res
-      .status(201)
-      .json({ message: "User created successfully", user: newUser });
+    res.status(201).json({
+      message: "User created successfully",
+      user: {
+        userId: newUser.userId,
+        username: newUser.username,
+        name: newUser.name,
+        email: newUser.email,
+        mobileNumber: newUser.mobileNumber,
+        roles: newUser.role,
+        roleId: newUser.roleId,
+        createdAt: newUser.createdAt,
+      },
+    });
   } catch (err) {
     res.status(500).json({ message: "Server Error", error: err.message });
   }
@@ -221,7 +241,7 @@ exports.assignRole = async (userId, role) => {
 exports.updateUser = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { username, name, email, mobileNumber, role } = req.body;
+    const { username, name, email, mobileNumber, role, roleId } = req.body;
 
     // Find the user by ID
     const user = await User.findByPk(userId);
@@ -233,7 +253,7 @@ exports.updateUser = async (req, res) => {
     const existingUser = await User.findOne({
       where: {
         [Op.or]: [{ username }, { email }],
-        userId: { [Op.ne]: userId }, // Ensure correct column name
+        userId: { [Op.ne]: userId },
       },
     });
 
@@ -243,21 +263,30 @@ exports.updateUser = async (req, res) => {
         .json({ message: "Username or Email already exists" });
     }
 
-    // Update user details
+    // Update basic details
     user.username = username || user.username;
     user.name = name || user.name;
     user.email = email || user.email;
     user.mobileNumber = mobileNumber || user.mobileNumber;
 
-    // Handle role updates
-    if (role) {
-      const roleData = await Roles.findOne({ where: { roleName: role } });
+    // Handle role updates if either role or roleId is provided
+    if (role || roleId) {
+      let roleData;
+
+      if (roleId) {
+        roleData = await Roles.findOne({ where: { roleId } });
+      } else {
+        roleData = await Roles.findOne({ where: { roleName: role } });
+      }
+
       if (!roleData) {
         return res.status(400).json({ message: "Invalid role specified" });
       }
 
+      const roleNameToAssign = roleData.roleName;
+
       // Prevent multiple SuperAdmins
-      if (role === "SuperAdmin") {
+      if (roleNameToAssign === "SuperAdmin") {
         const existingSuperAdmin = await User.findOne({
           where: {
             roles: { [Op.substring]: "SuperAdmin" },
@@ -272,19 +301,36 @@ exports.updateUser = async (req, res) => {
         }
       }
 
-      // Ensure user.roles is always treated as a string
+      // Convert roles string to array and ensure role isn't duplicated
       let userRoles =
         typeof user.roles === "string" ? user.roles.split(",") : [];
-      if (!userRoles.includes(role)) {
-        userRoles.push(role);
+      if (!userRoles.includes(roleNameToAssign)) {
+        userRoles.push(roleNameToAssign);
       }
+
+      // Set updated roles and roleId
       user.roles = userRoles.join(",");
       user.roleId = roleData.roleId;
-      user.status = role === "Users" ? "inactive" : "active";
+      user.status = roleNameToAssign === "Users" ? "inactive" : "active";
     }
 
+    // Save the updated user
     await user.save();
-    res.status(200).json({ message: "User updated successfully", user });
+
+    res.status(200).json({
+      message: "User updated successfully",
+      user: {
+        userId: user.userId,
+        username: user.username,
+        name: user.name,
+        email: user.email,
+        mobileNumber: user.mobileNumber,
+        roles: user.roles,
+        roleId: user.roleId,
+        status: user.status,
+        updatedAt: user.updatedAt,
+      },
+    });
   } catch (err) {
     console.error("Error updating user:", err);
     res.status(500).json({ message: "Server Error", error: err.message });

@@ -25,5 +25,5 @@ router.put("/:orderId", orderController.updateOrderById);
 
 // Create a draft order
 router.post("/draft", orderController.draftOrder);
-
+router.get("/filter", orderController.getFilteredOrders);
 module.exports = router;
