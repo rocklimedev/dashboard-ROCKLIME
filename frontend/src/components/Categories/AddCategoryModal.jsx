@@ -5,35 +5,37 @@ import {
 } from "../../api/categoryApi";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
+import { useGetAllParentCategoriesQuery } from "../../api/parentCategoryApi.js";
 const AddCategoryModal = ({ onClose, editMode = false, categoryData = {} }) => {
   const [createCategory, { isLoading: isCreating, error: createError }] =
     useCreateCategoryMutation();
   const [updateCategory, { isLoading: isUpdating, error: updateError }] =
     useUpdateCategoryMutation();
+  const { data: parentCategoryData } = useGetAllParentCategoriesQuery();
+  const parentCategories = Array.isArray(parentCategoryData?.data)
+    ? parentCategoryData.data
+    : [];
 
   const [formData, setFormData] = useState({
     name: "",
-    slug: "",
-    parentCategory: "0", // Default to 0
+    parentCategoryId: "",
+    parentCategory: "0", // Keep this state as requested
   });
 
   useEffect(() => {
     if (editMode && categoryData) {
       setFormData({
         name: categoryData.name || "",
-        slug: categoryData.slug || "",
+        parentCategoryId: categoryData.parentCategoryId || "",
         parentCategory: categoryData.parentCategory || "0",
       });
     }
   }, [editMode, categoryData]);
 
-  // Handle Input Change
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Handle Form Submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -44,7 +46,7 @@ const AddCategoryModal = ({ onClose, editMode = false, categoryData = {} }) => {
         await createCategory(formData).unwrap();
         toast.success("Category added successfully!");
       }
-      onClose(); // Close the modal on success
+      onClose();
     } catch (err) {
       console.error("Error handling category:", err);
       toast.error("Failed to process category.");
@@ -87,21 +89,28 @@ const AddCategoryModal = ({ onClose, editMode = false, categoryData = {} }) => {
                             />
                           </div>
                         </div>
-                        {/* Slug Field */}
+
+                        {/* Parent Category ID Dropdown */}
                         <div className="col-lg-12 col-sm-12">
                           <div className="input-block mb-3">
-                            <label>Slug</label>
-                            <input
-                              type="text"
-                              name="slug"
+                            <label>Parent Category</label>
+                            <select
+                              name="parentCategoryId"
                               className="form-control"
-                              placeholder="Enter Slug"
-                              value={formData.slug}
+                              value={formData.parentCategoryId}
                               onChange={handleChange}
-                            />
+                            >
+                              <option value="">Select Parent Category</option>
+                              {parentCategories.map((cat) => (
+                                <option key={cat.id} value={cat.id}>
+                                  {cat.name}
+                                </option>
+                              ))}
+                            </select>
                           </div>
                         </div>
-                        {/* Parent Category */}
+
+                        {/* Parent Category Field (Static or Business Logic Based) */}
                         <div className="col-lg-12 col-sm-12">
                           <div className="input-block mb-3">
                             <label>Parent Category</label>
@@ -116,6 +125,7 @@ const AddCategoryModal = ({ onClose, editMode = false, categoryData = {} }) => {
                             </select>
                           </div>
                         </div>
+
                         {/* Error Message */}
                         {(createError || updateError) && (
                           <div className="col-12">
@@ -132,6 +142,7 @@ const AddCategoryModal = ({ onClose, editMode = false, categoryData = {} }) => {
                 </div>
               </div>
             </div>
+
             {/* Footer Buttons */}
             <div className="modal-footer">
               <button

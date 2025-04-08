@@ -57,11 +57,13 @@ export const cartApi = createApi({
       }),
     }),
     clearCart: builder.mutation({
-      query: () => ({
+      query: (userData) => ({
         url: "/clear",
         method: "POST",
+        body: userData, // send { userId: "..." }
       }),
     }),
+
     updateCart: builder.mutation({
       query: (data) => ({
         url: "/update",

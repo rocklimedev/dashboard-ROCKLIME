@@ -9,7 +9,7 @@ const Address = sequelize.define(
     addressId: {
       type: DataTypes.UUID, // Changed to UUID
       primaryKey: true,
-      defaultValue: uuidv4, // Auto-generate UUID
+      defaultValue: DataTypes.UUIDV4,
     },
     street: {
       type: DataTypes.STRING(255),

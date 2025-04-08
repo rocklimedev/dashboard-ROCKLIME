@@ -4,9 +4,21 @@ import OrderPagination from "./OrderPagination";
 import OrderList from "./OrderList";
 import OrderFilter from "./OrderFilter";
 import AddNewOrder from "./AddNewOrder";
-
+import OrderItem from "./Orderitem";
+import { useGetAllOrdersQuery } from "../../api/orderApi";
+import DataTablePagination from "../Common/DataTablePagination";
 const OrderWrapper = () => {
   const [showModal, setShowModal] = useState(false);
+  const [filters, setFilters] = useState({ page: 1, limit: 6 });
+
+  const { data, error, isLoading } = useGetAllOrdersQuery(filters);
+
+  const orders = data?.orders || [];
+  const totalCount = data?.totalCount || 0;
+
+  const handlePageChange = (page) => {
+    setFilters((prev) => ({ ...prev, page }));
+  };
 
   return (
     <div className="page-wrapper notes-page-wrapper">
@@ -31,13 +43,40 @@ const OrderWrapper = () => {
         </div>
 
         <div className="row">
-          <OrderFilter />
+          <OrderFilter setFilters={setFilters} />
           <div className="col-xl-9 budget-role-notes">
-            <OrderList />
-            <OrderPagination
-              pageCount={10}
-              onPageChange={(selected) => console.log(selected)}
-            />
+            <div className="tab-content">
+              <div className="tab-pane fade active show">
+                <div className="border-bottom mb-4 pb-4">
+                  <h4>All Orders</h4>
+                </div>
+
+                {isLoading ? (
+                  <p>Loading...</p>
+                ) : error ? (
+                  <p>Error loading orders!</p>
+                ) : orders.length > 0 ? (
+                  <div className="row">
+                    {orders.map((order) => (
+                      <div key={order.id} className="col-md-4 d-flex">
+                        <div className="card rounded-3 mb-4 flex-fill">
+                          <OrderItem order={order} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p>No orders found.</p>
+                )}
+
+                {/* Pagination */}
+                <DataTablePagination
+                  totalItems={totalCount}
+                  itemNo={filters.limit}
+                  onPageChange={handlePageChange}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>

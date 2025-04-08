@@ -24,9 +24,10 @@ const AddUser = ({ onClose, userToEdit, isViewMode }) => {
     name: "",
     username: "",
     email: "",
-    phone: "",
+    mobileNumber: "",
     role: "",
     status: true,
+    password: "",
   });
 
   useEffect(() => {
@@ -50,26 +51,37 @@ const AddUser = ({ onClose, userToEdit, isViewMode }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const selectedRoleObj = roles?.find((r) => r.roleId === formData.role);
+
+      if (!selectedRoleObj) {
+        alert("Selected role is invalid.");
+        return;
+      }
+
+      const userPayload = {
+        ...formData,
+        roles: selectedRoleObj.roleName,
+        roleId: selectedRoleObj.roleId, // ✅ Add this line
+      };
+
       let user;
       if (userToEdit && isEditMode) {
         user = await updateUser({
           userId: userToEdit.userId,
-          ...formData,
+          ...userPayload,
         }).unwrap();
         alert("User updated successfully!");
       } else {
-        user = await createUser(formData).unwrap();
+        user = await createUser(userPayload).unwrap();
         alert("User added successfully!");
       }
 
-      // Assign role if user is created/updated successfully
-      if (user && formData.role) {
-        await assignRole({
-          userId: user.userId || userToEdit.userId,
-          roleId: formData.role,
-        }).unwrap();
-        alert("Role assigned successfully!");
-      }
+      // Assign role using roleId
+      await assignRole({
+        userId: user.userId || userToEdit.userId,
+        roleId: selectedRoleObj.roleId, // ensure this is UUID
+      }).unwrap();
+      alert("Role assigned successfully!");
 
       onClose();
     } catch (err) {
@@ -97,7 +109,7 @@ const AddUser = ({ onClose, userToEdit, isViewMode }) => {
           <form onSubmit={handleSubmit}>
             <div className="modal-body">
               <div className="row">
-                {["name", "username", "email", "phone"].map((field) => (
+                {["name", "username", "email", "mobileNumber"].map((field) => (
                   <div key={field} className="col-lg-6 mb-3">
                     <label className="form-label">
                       {field.charAt(0).toUpperCase() + field.slice(1)}
@@ -114,6 +126,21 @@ const AddUser = ({ onClose, userToEdit, isViewMode }) => {
                     />
                   </div>
                 ))}
+                {!userToEdit && (
+                  <div className="col-lg-6 mb-3">
+                    <label className="form-label">
+                      Password<span className="text-danger">*</span>
+                    </label>
+                    <input
+                      type="password"
+                      name="password"
+                      className="form-control"
+                      value={formData.password}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                )}
 
                 <div className="col-lg-6 mb-3">
                   <label className="form-label">

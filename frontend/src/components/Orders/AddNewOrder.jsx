@@ -40,7 +40,7 @@ const AddNewOrder = ({ onClose, adminName }) => {
     priority: "",
     description: "",
     invoiceId: "",
-    quotationId: "", // Added quotationId field
+
     orderNo: "",
   });
 
@@ -51,7 +51,7 @@ const AddNewOrder = ({ onClose, adminName }) => {
         ...prev,
 
         invoiceId: selectedInvoiceId,
-        quotationId: selectedInvoice.quotationId || "",
+        dueDate: selectedInvoice.dueDate || "",
         createdBy: selectedInvoice.createdBy || "",
         createdFor: selectedInvoice.customerId || "",
         orderNo: selectedInvoice.orderId || "",

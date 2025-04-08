@@ -58,6 +58,12 @@ export const orderApi = createApi({
         body: teamData,
       }),
     }),
+    fitler: builder.query({
+      query: (filters) => {
+        const queryParams = new URLSearchParams(filters).toString();
+        return `orders?${queryParams}`;
+      },
+    }),
   }),
 });
 
@@ -72,4 +78,5 @@ export const {
   useDraftOrderMutation,
   useUpdateOrderTeamMutation,
   useGetAllOrdersQuery,
+  useFitlerQuery,
 } = orderApi;

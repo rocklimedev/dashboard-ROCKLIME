@@ -1,4 +1,5 @@
 const Invoice = require("../models/invoice");
+const Address = require("../models/address");
 const { v4: uuidv4 } = require("uuid");
 
 // Create a new invoice
@@ -7,30 +8,40 @@ exports.createInvoice = async (req, res) => {
     const {
       createdBy,
       billTo,
-      shipTo,
       amount,
-
       invoiceDate,
       dueDate,
       paymentMethod,
       status,
-
       products,
       signatureName,
     } = req.body;
 
+    // Get the first address associated with the user (you can customize filter logic)
+    const address = await Address.findOne({
+      where: {
+        userId: createdBy, // dynamically find shipTo from createdBy
+      },
+    });
+
+    if (!address) {
+      return res.status(404).json({
+        success: false,
+        message: "Shipping address not found for this user",
+      });
+    }
+
+    // Use address.addressId as shipTo
     const invoice = await Invoice.create({
       invoiceId: uuidv4(),
       createdBy,
       billTo,
-      shipTo,
+      shipTo: address.addressId,
       amount,
-
       invoiceDate,
       dueDate,
       paymentMethod,
       status,
-
       products,
       signatureName,
     });
@@ -42,9 +53,10 @@ exports.createInvoice = async (req, res) => {
     });
   } catch (error) {
     console.error("Error creating invoice:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal Server Error" });
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
   }
 };
 
