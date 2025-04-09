@@ -7,14 +7,12 @@ import DataTablePagination from "../Common/DataTablePagination";
 import pos from "../../assets/img/products/pos-product-01.jpg";
 import { toast } from "react-toastify";
 
-const POSProducts = ({ filteredProducts = [] }) => {
+const POSProducts = ({ products = [] }) => {
   const { data: productsData, error, isLoading } = useGetAllProductsQuery();
   const { data: categoriesData } = useGetAllCategoriesQuery();
   const { data: user, isLoading: userLoading } = useGetProfileQuery();
 
-  // Fetch userId from useGetProfileQuery
   const userId = user?.user?.userId;
-
   const [addProductToCart, { isLoading: cartLoading }] =
     useAddProductToCartMutation();
 
@@ -22,14 +20,15 @@ const POSProducts = ({ filteredProducts = [] }) => {
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 20;
 
-  const products = Array.isArray(productsData) ? productsData : [];
   const categories = Array.isArray(categoriesData?.categories)
     ? categoriesData.categories
     : [];
-  const displayedProducts =
-    Array.isArray(filteredProducts) && filteredProducts.length
-      ? filteredProducts
-      : products;
+
+  const baseProducts = Array.isArray(products) ? products : [];
+
+  const displayedProducts = baseProducts.filter((product) =>
+    product.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   useEffect(() => {
     if (currentPage >= Math.ceil(displayedProducts.length / itemsPerPage)) {
@@ -54,14 +53,11 @@ const POSProducts = ({ filteredProducts = [] }) => {
       return;
     }
 
-    // Check if product ID exists
     const productId = product.productId || product.id;
     if (!productId) {
       toast.error("Invalid product ID");
       return;
     }
-
-    console.log("Adding to cart - User ID:", userId, "Product ID:", productId);
 
     try {
       await addProductToCart({ userId, productId }).unwrap();

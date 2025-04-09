@@ -35,8 +35,6 @@ const ShowQuotations = ({ isQuotationsLoading, quotations }) => {
       totalAmount: quotation.finalAmount,
     };
 
-    console.log("Converted Cart Data:", cartData);
-
     addToCartMutation(cartData)
       .unwrap()
       .then(() => alert("Cart successfully updated!"))

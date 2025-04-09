@@ -40,7 +40,10 @@ const AddCategoryModal = ({ onClose, editMode = false, categoryData = {} }) => {
     e.preventDefault();
     try {
       if (editMode) {
-        await updateCategory({ id: categoryData.id, ...formData }).unwrap();
+        await updateCategory({
+          id: categoryData.categoryId,
+          ...formData,
+        }).unwrap();
         toast.success("Category updated successfully!");
       } else {
         await createCategory(formData).unwrap();

@@ -48,7 +48,6 @@ const ProductList = () => {
 
     return products.filter((product) => {
       const createdByName = product.customerId;
-
       const matchesCreator =
         !filters.createdBy || createdByName === filters.createdBy;
 
@@ -56,6 +55,13 @@ const ProductList = () => {
         !filters.category || product.categoryId === filters.category;
 
       const matchesBrand = !filters.brand || product.brandId === filters.brand;
+
+      const matchesSearch =
+        !filters.search ||
+        product.name?.toLowerCase().includes(filters.search.toLowerCase()) ||
+        product.product_code
+          ?.toLowerCase()
+          .includes(filters.search.toLowerCase());
 
       let matchesDate = true;
       if (filters.sortBy === "Last 7 Days") {
@@ -67,7 +73,13 @@ const ProductList = () => {
         matchesDate = new Date(product.createdAt) >= oneMonthAgo;
       }
 
-      return matchesCreator && matchesCategory && matchesBrand && matchesDate;
+      return (
+        matchesCreator &&
+        matchesCategory &&
+        matchesBrand &&
+        matchesSearch &&
+        matchesDate
+      );
     });
   };
 
@@ -131,7 +143,10 @@ const ProductList = () => {
         />
 
         <div className="card">
-          <TableHeader onFilterChange={setFilters} />
+          <TableHeader
+            onFilterChange={(newFilters) => setFilters(newFilters)}
+          />
+
           <div className="card-body p-0">
             <div className="table-responsive">
               <table className="table datatable">

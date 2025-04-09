@@ -16,6 +16,7 @@ const Vendor = require("../models/vendor");
 const Brand = require("../models/brand");
 const Customer = require("../models/customers");
 const Team = require("../models/team");
+const Keyword = require("../models/keyword");
 const TeamMember = require("../models/teamMember");
 const ParentCategory = require("../models/parentCategory");
 const setupDB = async () => {
@@ -153,6 +154,8 @@ const setupDB = async () => {
       foreignKey: "parentCategoryId",
       as: "parentcategories", // optional alias
     });
+    Keyword.belongsTo(Category, { foreignKey: "categoryId", as: "categories" });
+    Category.hasMany(Keyword, { foreignKey: "categoryId" });
 
     // ==============================
     // 🔥 SYNC DATABASE
