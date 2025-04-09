@@ -3,12 +3,18 @@ import {
   useCreateCustomerMutation,
   useUpdateCustomerMutation,
 } from "../../api/customerApi";
-
+import { useGetAllVendorsQuery } from "../../api/vendorApi";
+import { useGetVendorsQuery } from "../../api/vendorApi";
 const AddCustomer = ({ onClose, existingCustomer }) => {
   const [createCustomer, { isLoading: isCreating, error: createError }] =
     useCreateCustomerMutation();
   const [updateCustomer, { isLoading: isEditing, error: editError }] =
     useUpdateCustomerMutation();
+  const { data: vendors = [], isLoading: vendorsLoading } =
+    useGetVendorsQuery();
+  const [vendorSlug, setVendorSlug] = useState("");
+  const [vendorExists, setVendorExists] = useState(false);
+  const [adminApprovalPending, setAdminApprovalPending] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -176,6 +182,71 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
                     <option value="false">No</option>
                   </select>
                 </div>
+                {formData.isVendor === "true" && (
+                  <div className="col-lg-12 mb-3">
+                    <label className="form-label">
+                      Enter Vendor Slug or ID
+                    </label>
+                    <div className="d-flex gap-2">
+                      <input
+                        type="text"
+                        name="vendorSlug"
+                        className="form-control"
+                        value={vendorSlug}
+                        onChange={(e) => setVendorSlug(e.target.value)}
+                        disabled={adminApprovalPending}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-outline-primary"
+                        disabled={vendorsLoading || adminApprovalPending}
+                        onClick={() => {
+                          const foundVendor = vendors.find(
+                            (v) =>
+                              v.slug?.toLowerCase() ===
+                                vendorSlug.toLowerCase() ||
+                              v.id?.toString() === vendorSlug
+                          );
+
+                          if (foundVendor) {
+                            setVendorExists(true);
+                            alert("✅ Vendor exists!");
+                          } else {
+                            setVendorExists(false);
+                            const proceed = window.confirm(
+                              "Vendor not found. Do you want to request to add this as a new vendor?"
+                            );
+                            if (proceed) {
+                              setAdminApprovalPending(true);
+
+                              // Notify backend for approval
+                              fetch("/api/vendors/request-approval", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  slug: vendorSlug,
+                                  customerName: formData.name,
+                                }),
+                              });
+
+                              alert(
+                                "🛎️ Admin approval requested. Please wait."
+                              );
+                            }
+                          }
+                        }}
+                      >
+                        Check
+                      </button>
+                    </div>
+                    {adminApprovalPending && (
+                      <p className="text-warning mt-2">
+                        Waiting for admin approval...
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <div className="col-lg-6 mb-3">
                   <label className="form-label">
                     Total Amount<span className="text-danger ms-1">*</span>

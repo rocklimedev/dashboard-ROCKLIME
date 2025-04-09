@@ -31,7 +31,7 @@ const Permissions = () => {
   const permissionTypes = ["view", "delete", "write", "edit", "export"];
   const permissions = Array.isArray(data?.permissions) ? data.permissions : [];
   const roleName = roleData?.role?.name || "Unknown Role";
-
+  console.log(roleName);
   // Extract unique module names
 
   const modules = useMemo(() => {
@@ -110,6 +110,9 @@ const Permissions = () => {
           title="Permissions"
           subtitle="Manage your Permissions for this role."
         />
+        <a href="/roles-permission/list" className="btn btn-secondary">
+          <FaArrowLeft className="me-2" /> Back to Roles & Permissions
+        </a>
         <div className="page-btn">
           <button
             className="btn btn-primary mt-3"
@@ -117,10 +120,8 @@ const Permissions = () => {
           >
             Save Permissions
           </button>
-          <a href="/roles-permission/list" className="btn btn-secondary">
-            <FaArrowLeft className="me-2" /> Back to Roles & Permissions
-          </a>
         </div>
+
         <div className="card">
           <div className="card-header">
             <div className="table-top mb-0">
@@ -133,7 +134,7 @@ const Permissions = () => {
               </div>
               <div className="d-flex align-items-center">
                 <p className="mb-0 fw-medium text-gray-9 me-1">Role:</p>
-                <p>{roleName}</p>
+                <p>{roleData?.role?.roleName}</p>
               </div>
             </div>
           </div>

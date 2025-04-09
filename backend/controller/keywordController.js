@@ -1,26 +1,47 @@
 const Keyword = require("../models/keyword");
+const Category = require("../models/category"); // Assuming your Category model exists
 
 // ✅ Create a new keyword
 exports.createKeyword = async (req, res) => {
   try {
-    const { keyword, type } = req.body;
+    const { keyword, categoryId } = req.body;
 
-    if (!keyword || !type || !["Ceramics", "Sanitary"].includes(type)) {
-      return res.status(400).json({ error: "Invalid keyword or type" });
+    if (!keyword || !categoryId) {
+      return res
+        .status(400)
+        .json({ error: "Keyword and categoryId are required" });
     }
 
-    const newKeyword = await Keyword.create({ keyword, type });
-    return res.status(201).json({ message: "Keyword added successfully", newKeyword });
+    // Validate if categoryId exists
+    const category = await Category.findByPk(categoryId);
+    if (!category) {
+      return res.status(400).json({ error: "Invalid categoryId" });
+    }
+
+    const newKeyword = await Keyword.create({ keyword, categoryId });
+
+    return res.status(201).json({
+      message: "Keyword added successfully",
+      newKeyword,
+    });
   } catch (error) {
     console.error("Error creating keyword:", error);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
-// ✅ Read all keywords
+// ✅ Get all keywords
 exports.getAllKeywords = async (req, res) => {
   try {
-    const keywords = await Keyword.findAll();
+    const keywords = await Keyword.findAll({
+      include: [
+        {
+          model: Category,
+          as: "categories",
+          attributes: ["categoryId", "name"],
+        },
+      ],
+    });
     return res.status(200).json({ keywords });
   } catch (error) {
     console.error("Error fetching keywords:", error);
@@ -28,11 +49,13 @@ exports.getAllKeywords = async (req, res) => {
   }
 };
 
-// ✅ Read a single keyword by ID
+// ✅ Get single keyword by ID
 exports.getKeywordById = async (req, res) => {
   try {
     const { id } = req.params;
-    const keyword = await Keyword.findByPk(id);
+    const keyword = await Keyword.findByPk(id, {
+      include: [{ model: Category, attributes: ["categoryId", "name"] }],
+    });
 
     if (!keyword) {
       return res.status(404).json({ error: "Keyword not found" });
@@ -45,11 +68,11 @@ exports.getKeywordById = async (req, res) => {
   }
 };
 
-// ✅ Update a keyword
+// ✅ Update keyword
 exports.updateKeyword = async (req, res) => {
   try {
     const { id } = req.params;
-    const { keyword, type } = req.body;
+    const { keyword, categoryId } = req.body;
 
     const existingKeyword = await Keyword.findByPk(id);
     if (!existingKeyword) {
@@ -57,22 +80,33 @@ exports.updateKeyword = async (req, res) => {
     }
 
     if (keyword) existingKeyword.keyword = keyword;
-    if (type && ["Ceramics", "Sanitary"].includes(type)) existingKeyword.type = type;
+
+    if (categoryId) {
+      const category = await Category.findByPk(categoryId);
+      if (!category) {
+        return res.status(400).json({ error: "Invalid categoryId" });
+      }
+      existingKeyword.categoryId = categoryId;
+    }
 
     await existingKeyword.save();
-    return res.status(200).json({ message: "Keyword updated successfully", keyword: existingKeyword });
+
+    return res.status(200).json({
+      message: "Keyword updated successfully",
+      keyword: existingKeyword,
+    });
   } catch (error) {
     console.error("Error updating keyword:", error);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
-// ✅ Delete a keyword
+// ✅ Delete keyword
 exports.deleteKeyword = async (req, res) => {
   try {
     const { id } = req.params;
-
     const keyword = await Keyword.findByPk(id);
+
     if (!keyword) {
       return res.status(404).json({ error: "Keyword not found" });
     }

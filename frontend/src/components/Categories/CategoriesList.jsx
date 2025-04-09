@@ -15,6 +15,9 @@ const CategoriesList = () => {
   const [showKeywordModal, setShowKeywordModal] = useState(false);
   const [selectedParentId, setSelectedParentId] = useState(null);
   const [categoryPage, setCategoryPage] = useState(1);
+  const [categorySearchTerm, setCategorySearchTerm] = useState("");
+  const [parentSearchTerm, setParentSearchTerm] = useState("");
+  const [editingCategory, setEditingCategory] = useState(null);
 
   const itemsPerPage = 20;
 
@@ -42,16 +45,33 @@ const CategoriesList = () => {
     ? parentCategoryData.data
     : [];
 
-  const filteredCategories = selectedParentId
-    ? categories.filter((c) => c.parentCategoryId === selectedParentId)
-    : categories;
+  const filteredCategories = categories.filter((c) => {
+    const categoryNameMatch = c.name
+      .toLowerCase()
+      .includes(categorySearchTerm.toLowerCase());
+    const parentName =
+      parentCategories.find((p) => p.id === c.parentCategoryId)?.name || "";
+    const parentNameMatch = parentName
+      .toLowerCase()
+      .includes(parentSearchTerm.toLowerCase());
+
+    const matchesParentId = selectedParentId
+      ? c.parentCategoryId === selectedParentId
+      : true;
+
+    return categoryNameMatch && parentNameMatch && matchesParentId;
+  });
 
   const paginatedCategories = filteredCategories.slice(
     (categoryPage - 1) * itemsPerPage,
     categoryPage * itemsPerPage
   );
 
-  const handleAddCategory = () => setShowCategoryModal(true);
+  const handleAddCategory = () => {
+    setEditingCategory(null);
+    setShowCategoryModal(true);
+  };
+
   const handleCloseCategoryModal = () => setShowCategoryModal(false);
 
   const handleCloseKeywordModal = () => setShowKeywordModal(false);
@@ -86,6 +106,28 @@ const CategoriesList = () => {
           </select>
         </div>
 
+        {/* Search Inputs */}
+        <div className="row mb-3">
+          <div className="col-md-6">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Search Category..."
+              value={categorySearchTerm}
+              onChange={(e) => setCategorySearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="col-md-6">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Search Parent Category..."
+              value={parentSearchTerm}
+              onChange={(e) => setParentSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+
         <div className="card">
           <div className="card-body p-0">
             <div className="table-responsive">
@@ -114,9 +156,17 @@ const CategoriesList = () => {
                         </td>
                         <td className="action-table-data">
                           <div className="edit-delete-action">
-                            <a className="me-2 p-2" title="Edit">
+                            <a
+                              className="me-2 p-2"
+                              title="Edit"
+                              onClick={() => {
+                                setEditingCategory(category); // Set category data
+                                setShowCategoryModal(true); // Open modal
+                              }}
+                            >
                               <AiOutlineEdit />
                             </a>
+
                             <a className="me-2 p-2" title="delete">
                               <FcFullTrash />
                             </a>
@@ -137,8 +187,16 @@ const CategoriesList = () => {
         </div>
 
         {showCategoryModal && (
-          <AddCategoryModal onClose={handleCloseCategoryModal} />
+          <AddCategoryModal
+            editMode={!!editingCategory} // If editingCategory has value, it's edit mode
+            categoryData={editingCategory} // Pass category data to edit
+            onClose={() => {
+              setShowCategoryModal(false);
+              setEditingCategory(null); // Clear after close
+            }}
+          />
         )}
+
         <Keyword />
       </div>
     </div>

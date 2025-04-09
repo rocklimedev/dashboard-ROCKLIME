@@ -11,8 +11,22 @@ const CmList = () => {
 
   const companies = Array.isArray(data?.companies) ? data.companies : [];
 
-  const handleAddCompany = () => setShowCompanyModal(true);
-  const handleCloseCompanyModal = () => setShowCompanyModal(false);
+  const [editingCompany, setEditingCompany] = useState(null);
+
+  const handleAddCompany = () => {
+    setEditingCompany(null); // reset edit
+    setShowCompanyModal(true);
+  };
+
+  const handleEditCompany = (company) => {
+    setEditingCompany(company);
+    setShowCompanyModal(true);
+  };
+
+  const handleCloseCompanyModal = () => {
+    setShowCompanyModal(false);
+    setEditingCompany(null);
+  };
 
   if (isLoading) return <p>Loading...</p>;
   if (error) return <p>Error loading companies</p>;
@@ -66,11 +80,12 @@ const CmList = () => {
                             <FaEye />
                           </a>
                           <a
-                            class="me-2 p-2"
-                            onClick={() => handleAddCompany(company)}
+                            className="me-2 p-2"
+                            onClick={() => handleEditCompany(company)}
                           >
                             <BiEdit />
                           </a>
+
                           <a
                             data-bs-toggle="modal"
                             data-bs-target="#delete-modal"
@@ -91,7 +106,12 @@ const CmList = () => {
       </div>
 
       {/* Ensure Modal is rendered properly with onCompanyAdded */}
-      {showCompanyModal && <AddCompany onClose={handleCloseCompanyModal} />}
+      {showCompanyModal && (
+        <AddCompany
+          onClose={handleCloseCompanyModal}
+          companyToEdit={editingCompany}
+        />
+      )}
     </div>
   );
 };

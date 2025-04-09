@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import PageHeader from "../Common/PageHeader";
 import { useGetCustomersQuery } from "../../api/customerApi";
+import { useDeleteCustomerMutation } from "../../api/customerApi";
+
 import AddCustomer from "./AddCustomer";
 import Actions from "../Common/Actions";
 import DeleteModal from "../Common/DeleteModal";
@@ -14,6 +16,7 @@ const CustomerList = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [customerToDelete, setCustomerToDelete] = useState(null);
+  const [deleteCustomer] = useDeleteCustomerMutation();
 
   if (isLoading) return <p>Loading...</p>;
   if (error) return <p>Error fetching customers.</p>;
@@ -35,9 +38,21 @@ const CustomerList = () => {
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = () => {
-    console.log("Deleting customer:", customerToDelete);
-    setShowDeleteModal(false);
+  const confirmDelete = async () => {
+    if (!customerToDelete) {
+      console.warn("No customer selected to delete.");
+      return;
+    }
+
+    try {
+      await deleteCustomer(customerToDelete).unwrap();
+      console.log("Customer deleted:", customerToDelete);
+    } catch (err) {
+      console.error("Error deleting customer:", err);
+    } finally {
+      setShowDeleteModal(false);
+      setCustomerToDelete(null);
+    }
   };
 
   return (

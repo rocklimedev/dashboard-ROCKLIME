@@ -15,6 +15,7 @@ const TableHeader = ({ onFilterChange }) => {
     category: null,
     brand: null,
     sortBy: "Last 7 Days",
+    search: "", // 👈 Add search field
   });
 
   const handleFilterChange = (field, value) => {
@@ -24,7 +25,11 @@ const TableHeader = ({ onFilterChange }) => {
   };
 
   const handleClearFilter = (field) => {
-    handleFilterChange(field, null);
+    handleFilterChange(field, field === "search" ? "" : null);
+  };
+
+  const handleSearchChange = (e) => {
+    handleFilterChange("search", e.target.value);
   };
 
   const createdByList = [
@@ -42,11 +47,25 @@ const TableHeader = ({ onFilterChange }) => {
 
   return (
     <div className="card-header d-flex align-items-center justify-content-between flex-wrap row-gap-3">
+      {/* ===== SEARCH BOX ===== */}
       <div className="search-set">
         <div className="search-input">
           <span className="btn-searchset">
             <i className="ti ti-search fs-14 feather-search"></i>
           </span>
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Search products..."
+            value={selectedFilters.search}
+            onChange={handleSearchChange}
+          />
+          {selectedFilters.search && (
+            <i
+              className="ti ti-x fs-16 position-absolute end-0 me-3 mt-2 cursor-pointer"
+              onClick={() => handleClearFilter("search")}
+            ></i>
+          )}
         </div>
       </div>
 
@@ -73,8 +92,6 @@ const TableHeader = ({ onFilterChange }) => {
               </li>
             ))}
           </ul>
-
-          {/* Filter Badge */}
           {selectedFilters.category && (
             <div className="position-absolute top-0 start-100 translate-middle badge bg-primary text-white px-2 py-1 rounded-pill d-flex align-items-center">
               <span className="me-1">{selectedFilters.category}</span>
@@ -108,14 +125,45 @@ const TableHeader = ({ onFilterChange }) => {
               </li>
             ))}
           </ul>
-
-          {/* Filter Badge */}
           {selectedFilters.brand && (
             <div className="position-absolute top-0 start-100 translate-middle badge bg-primary text-white px-2 py-1 rounded-pill d-flex align-items-center">
               <span className="me-1">{selectedFilters.brand}</span>
               <i
                 className="ti ti-x cursor-pointer"
                 onClick={() => handleClearFilter("brand")}
+              ></i>
+            </div>
+          )}
+        </div>
+
+        {/* ===== CREATED BY FILTER ===== */}
+        <div className="dropdown position-relative me-2">
+          <a
+            href="#"
+            className="dropdown-toggle btn btn-white btn-md d-inline-flex align-items-center"
+            data-bs-toggle="dropdown"
+          >
+            Created By
+          </a>
+          <ul className="dropdown-menu dropdown-menu-end p-3">
+            {createdByList?.map((name, i) => (
+              <li key={i}>
+                <a
+                  href="#"
+                  onClick={() => handleFilterChange("createdBy", name)}
+                  className="dropdown-item rounded-1"
+                >
+                  {name}
+                </a>
+              </li>
+            ))}
+          </ul>
+          {selectedFilters.createdBy && (
+            <div className="position-absolute top-0 start-100 translate-middle badge bg-primary text-white px-2 py-1 rounded-pill d-flex align-items-center">
+              <span className="me-1">{selectedFilters.createdBy}</span>
+              <i
+                className="ti ti-x cursor-pointer"
+                onClick={() => handleClearFilter("createdBy")}
               ></i>
             </div>
           )}

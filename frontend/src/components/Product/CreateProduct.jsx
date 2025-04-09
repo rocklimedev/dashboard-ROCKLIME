@@ -7,7 +7,9 @@ import {
   useGetProductByIdQuery, // Fetch product data for editing
 } from "../../api/productApi";
 import { GiFeatherWound } from "react-icons/gi";
-
+import { useGetAllCategoriesQuery } from "../../api/categoryApi";
+import { useGetAllParentCategoriesQuery } from "../../api/parentCategoryApi";
+import { useGetAllBrandsQuery } from "../../api/brandsApi";
 const CreateProduct = () => {
   const { id } = useParams(); // Get product ID from URL
   const isEditMode = Boolean(id); // Check if we're editing
@@ -34,7 +36,16 @@ const CreateProduct = () => {
   const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
   const [updateProduct, { isLoading: isUpdating, error }] =
     useUpdateProductMutation();
+  const { data: categoryData = [], isLoading: isCategoryLoading } =
+    useGetAllCategoriesQuery();
 
+  const { data: parentCategories, isLoading: isParentCategoryLoading } =
+    useGetAllParentCategoriesQuery();
+  const parentCategoryData = Array.isArray(parentCategories?.data)
+    ? parentCategories.data
+    : [];
+  const { data: brands, isLoading: isBrandLoading } = useGetAllBrandsQuery();
+  const brandData = Array.isArray(brands) ? brands : [];
   // Pre-fill form when editing
   useEffect(() => {
     if (existingProduct) {
@@ -298,15 +309,12 @@ const CreateProduct = () => {
                               value={formData.category}
                               onChange={handleChange}
                             >
-                              <option>Select</option>
-                              <option>Computers</option>
-                              <option>Electronics</option>
-                              <option>Shoe</option>
-                              <option>Cosmetics</option>
-                              <option>Groceries</option>
-                              <option>Furniture</option>
-                              <option>Bags</option>
-                              <option>Phone</option>
+                              <option value="">Select</option>
+                              {categoryData?.categories?.map((cat) => (
+                                <option key={cat.id} value={cat.id}>
+                                  {cat.name}
+                                </option>
+                              ))}
                             </select>
                           </div>
                         </div>
@@ -322,23 +330,17 @@ const CreateProduct = () => {
                               value={formData.parentCategory}
                               onChange={handleChange}
                             >
-                              <option>Select</option>
-                              <option>Laptop</option>
-                              <option>Desktop</option>
-                              <option>Sneakers</option>
-                              <option>Formals</option>
-                              <option>Wearables</option>
-                              <option>Speakers</option>
-                              <option>Handbags</option>
-                              <option>Travel</option>
-                              <option>Sofa</option>
+                              <option value="">Select</option>
+                              {parentCategoryData?.parentCategories?.map(
+                                (parent) => (
+                                  <option key={parent.id} value={parent.id}>
+                                    {parent.name}
+                                  </option>
+                                )
+                              )}
                             </select>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                    <div className="add-product-new">
-                      <div className="row">
                         <div className="col-sm-6 col-12">
                           <div className="mb-3">
                             <div className="add-newplus">
@@ -352,13 +354,12 @@ const CreateProduct = () => {
                               value={formData.brand}
                               onChange={handleChange}
                             >
-                              <option>Select</option>
-                              <option>Lenevo</option>
-                              <option>Beats</option>
-                              <option>Nike</option>
-                              <option>Apple</option>
-                              <option>Amazon</option>
-                              <option>Woodmart</option>
+                              <option value="">Select</option>
+                              {brandData?.brands?.map((brand) => (
+                                <option key={brand.id} value={brand.id}>
+                                  {brand.name}
+                                </option>
+                              ))}
                             </select>
                           </div>
                         </div>
@@ -384,6 +385,7 @@ const CreateProduct = () => {
                         </div>
                       </div>
                     </div>
+
                     <div className="row">
                       <div className="col-lg-6 col-sm-6 col-12">
                         <div className="mb-3 list position-relative">

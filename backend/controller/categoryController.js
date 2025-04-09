@@ -90,8 +90,6 @@ exports.updateCategory = async (req, res) => {
       }
     }
 
-    const slug = name ? slugify(name, { lower: true }) : category.slug;
-
     await category.update({
       name,
       parentCategory,

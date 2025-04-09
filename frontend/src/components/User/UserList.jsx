@@ -12,7 +12,9 @@ import {
   useGetAllUsersQuery,
   useReportUserMutation,
   useInactiveUserMutation,
+  useDeleteUserMutation,
 } from "../../api/userApi";
+
 import AddUser from "./AddUser";
 import DataTablePagination from "../Common/DataTablePagination";
 
@@ -22,9 +24,10 @@ const UserList = () => {
 
   const [reportUser] = useReportUserMutation();
   const [inactiveUser] = useInactiveUserMutation();
+  const [deleteUser] = useDeleteUserMutation();
 
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 20;
 
   const [showModal, setShowModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
@@ -49,8 +52,19 @@ const UserList = () => {
     setShowViewModal(true);
   };
 
-  const handleDeleteUser = (userId) => {
-    alert(`Delete functionality for user ID: ${userId} is pending`);
+  const handleDeleteUser = async (userId) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this user?"
+    );
+    if (!confirmDelete) return;
+
+    try {
+      await deleteUser(userId).unwrap();
+      alert("User deleted successfully.");
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      alert("Failed to delete user.");
+    }
   };
 
   const handleReportUser = async (userId) => {
@@ -113,7 +127,7 @@ const UserList = () => {
                 </thead>
                 <tbody>
                   {paginatedUsers.map((user) => (
-                    <tr key={user.id}>
+                    <tr key={user.userId}>
                       <td>{user.name}</td>
                       <td>{user.email}</td>
                       <td>{user.username}</td>
@@ -134,18 +148,18 @@ const UserList = () => {
                               <FaPen className="me-2" /> Edit
                             </Dropdown.Item>
                             <Dropdown.Item
-                              onClick={() => handleInactiveUser(user.id)}
+                              onClick={() => handleInactiveUser(user.userId)}
                             >
                               <FaBan className="me-2" /> Inactive User
                             </Dropdown.Item>
                             <Dropdown.Item
-                              onClick={() => handleReportUser(user.id)}
+                              onClick={() => handleReportUser(user.userId)}
                             >
                               <FaExclamationTriangle className="me-2 text-warning" />{" "}
                               Report User
                             </Dropdown.Item>
                             <Dropdown.Item
-                              onClick={() => handleDeleteUser(user.id)}
+                              onClick={() => handleDeleteUser(user.userId)}
                               className="text-danger"
                             >
                               <FaTrash className="me-2" /> Delete

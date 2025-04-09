@@ -7,16 +7,21 @@ import { AiOutlineEdit } from "react-icons/ai";
 import { FcEmptyTrash } from "react-icons/fc";
 import { toast } from "react-toastify";
 import AddKeywordModal from "./AddKeywordModal";
+
 const Keyword = () => {
   const [keywordPage, setKeywordPage] = useState(1);
   const [selectedCategoryId, setSelectedCategoryId] = useState("all");
   const itemsPerPage = 20;
+
   const [showKeywordModal, setShowKeywordModal] = useState(false);
+  const [keywordToEdit, setKeywordToEdit] = useState(null); // ✅ Edit state
+
   const {
     data: keywordData,
     isLoading: keywordLoading,
     error: keywordError,
   } = useGetAllKeywordsQuery();
+
   const {
     data: categoryData,
     isLoading: categoryLoading,
@@ -51,8 +56,21 @@ const Keyword = () => {
     keywordPage * itemsPerPage
   );
 
-  const handleAddKeyword = () => setShowKeywordModal(true);
-  const handleCloseKeywordModal = () => setShowKeywordModal(false);
+  const handleAddKeyword = () => {
+    setKeywordToEdit(null); // Clear edit
+    setShowKeywordModal(true);
+  };
+
+  const handleCloseKeywordModal = () => {
+    setShowKeywordModal(false);
+    setKeywordToEdit(null); // Reset after closing
+  };
+
+  const handleEdit = (keyword) => {
+    setKeywordToEdit(keyword);
+    setShowKeywordModal(true);
+  };
+
   return (
     <>
       <PageHeader
@@ -69,7 +87,7 @@ const Keyword = () => {
             value={selectedCategoryId}
             onChange={(e) => {
               setSelectedCategoryId(e.target.value);
-              setKeywordPage(1); // Reset page on filter change
+              setKeywordPage(1);
             }}
           >
             <option value="all">All Categories</option>
@@ -111,7 +129,11 @@ const Keyword = () => {
                       </td>
                       <td className="action-table-data">
                         <div className="edit-delete-action">
-                          <a className="me-2 p-2" href="#">
+                          <a
+                            className="me-2 p-2"
+                            href="#"
+                            onClick={() => handleEdit(keyword)}
+                          >
                             <AiOutlineEdit />
                           </a>
                           <a className="p-2" href="#">
@@ -133,8 +155,12 @@ const Keyword = () => {
           </div>
         </div>
       </div>
+
       {showKeywordModal && (
-        <AddKeywordModal onClose={handleCloseKeywordModal} />
+        <AddKeywordModal
+          onClose={handleCloseKeywordModal}
+          editData={keywordToEdit} // ✅ Passing edit info
+        />
       )}
     </>
   );

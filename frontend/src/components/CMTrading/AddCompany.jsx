@@ -1,15 +1,41 @@
-import React, { useState } from "react";
-import { useCreateCompanyMutation } from "../../api/companyApi";
+import React, { useEffect, useState } from "react";
+import {
+  useCreateCompanyMutation,
+  useUpdateCompanyMutation,
+  useGetAllCompaniesQuery,
+} from "../../api/companyApi";
 
-const AddCompany = ({ onClose }) => {
+const AddCompany = ({ onClose, companyToEdit = null }) => {
+  const isEditMode = !!companyToEdit;
+
   const [formData, setFormData] = useState({
     name: "",
     address: "",
     slug: "",
     website: "",
+    parentCompanyId: "",
+    createdDate: "",
   });
 
-  const [addCompany, { isLoading, isError }] = useCreateCompanyMutation();
+  const { data, isLoading: companiesLoading } = useGetAllCompaniesQuery();
+  const companies = Array.isArray(data?.companies) ? data.companies : [];
+
+  const [addCompany, { isLoading: isCreating }] = useCreateCompanyMutation();
+  const [updateCompany, { isLoading: isUpdating }] = useUpdateCompanyMutation();
+
+  // Fill form with existing data if editing
+  useEffect(() => {
+    if (isEditMode && companyToEdit) {
+      setFormData({
+        name: companyToEdit.name || "",
+        address: companyToEdit.address || "",
+        slug: companyToEdit.slug || "",
+        website: companyToEdit.website || "",
+        parentCompanyId: companyToEdit.parentCompanyId || "",
+        createdDate: companyToEdit.createdDate?.slice(0, 10) || "", // for <input type="date">
+      });
+    }
+  }, [companyToEdit]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -21,12 +47,29 @@ const AddCompany = ({ onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
-      await addCompany(formData).unwrap();
-      setFormData({ name: "", email: "", phone: "", website: "" }); // Reset form
-      onClose(); // Optional: close modal on success
+      if (isEditMode) {
+        await updateCompany({
+          id: companyToEdit.companyId,
+          updatedData: formData,
+        }).unwrap();
+      } else {
+        await addCompany(formData).unwrap();
+      }
+
+      setFormData({
+        name: "",
+        address: "",
+        slug: "",
+        website: "",
+        parentCompanyId: "",
+        createdDate: "",
+      });
+
+      onClose();
     } catch (error) {
-      console.error("Failed to add company:", error);
+      console.error("Failed to submit company:", error);
     }
   };
 
@@ -35,7 +78,9 @@ const AddCompany = ({ onClose }) => {
       <div className="modal-dialog modal-dialog-centered modal-lg">
         <div className="modal-content">
           <div className="modal-header">
-            <h4 className="modal-title">Add New Company</h4>
+            <h4 className="modal-title">
+              {isEditMode ? "Edit Company" : "Add New Company"}
+            </h4>
             <button
               type="button"
               className="btn-close custom-btn-close p-0"
@@ -65,7 +110,7 @@ const AddCompany = ({ onClose }) => {
                 <div className="col-lg-6 mb-3">
                   <label className="form-label">Address</label>
                   <input
-                    type="address"
+                    type="text"
                     className="form-control"
                     name="address"
                     value={formData.address}
@@ -84,17 +129,37 @@ const AddCompany = ({ onClose }) => {
                   />
                 </div>
                 <div className="col-lg-6 mb-3">
-                  <label className="form-label">Parent Category </label>
+                  <label className="form-label">
+                    Created Date <span className="text-danger">*</span>
+                  </label>
                   <input
-                    type="text"
+                    type="date"
                     className="form-control"
-                    name="parentCategoryId"
-                    value={formData.parentCategoryId}
+                    name="createdDate"
+                    value={formData.createdDate}
                     onChange={handleChange}
                     required
                   />
                 </div>
-
+                <div className="col-lg-6 mb-3">
+                  <label className="form-label">Parent Company</label>
+                  <select
+                    className="form-select"
+                    name="parentCompanyId"
+                    value={formData.parentCompanyId}
+                    onChange={handleChange}
+                    disabled={companiesLoading}
+                  >
+                    <option value="">
+                      -- Select Parent Company (Optional) --
+                    </option>
+                    {companies.map((company) => (
+                      <option key={company.companyId} value={company.companyId}>
+                        {company.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <div className="col-lg-6 mb-3">
                   <label className="form-label">Website</label>
                   <input
@@ -119,17 +184,18 @@ const AddCompany = ({ onClose }) => {
               <button
                 type="submit"
                 className="btn btn-primary"
-                disabled={isLoading}
+                disabled={isCreating || isUpdating}
               >
-                {isLoading ? "Adding..." : "Add Company"}
+                {isEditMode
+                  ? isUpdating
+                    ? "Updating..."
+                    : "Update Company"
+                  : isCreating
+                  ? "Adding..."
+                  : "Add Company"}
               </button>
             </div>
           </form>
-          {isError && (
-            <p className="text-danger text-center">
-              Failed to add company. Try again.
-            </p>
-          )}
         </div>
       </div>
     </div>
