@@ -5,9 +5,10 @@ import {
 } from "../../api/vendorApi.js";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
+import { useGetAllBrandsQuery } from "../../api/brandsApi.js";
 const AddCompanyModal = ({ show, onClose, existingVendor }) => {
   const [formData, setFormData] = useState({
+    id: null, // this helps differentiate edit vs new
     vendorId: "",
     vendorName: "",
     brandSlug: "",
@@ -15,16 +16,24 @@ const AddCompanyModal = ({ show, onClose, existingVendor }) => {
 
   const [addVendor, { isLoading: isCreating }] = useCreateVendorMutation();
   const [updateVendor, { isLoading: isUpdating }] = useUpdateVendorMutation();
+  const { data: brands = [], isLoading: loadingBrands } =
+    useGetAllBrandsQuery();
 
   useEffect(() => {
     if (existingVendor) {
       setFormData({
+        id: existingVendor.id || null,
         vendorId: existingVendor.vendorId || "",
         vendorName: existingVendor.vendorName || "",
         brandSlug: existingVendor.brandSlug || "",
       });
     } else {
-      setFormData({ vendorId: "", vendorName: "", brandSlug: "" });
+      setFormData({
+        id: null,
+        vendorId: "",
+        vendorName: "",
+        brandSlug: "",
+      });
     }
   }, [existingVendor, show]);
 
@@ -39,7 +48,7 @@ const AddCompanyModal = ({ show, onClose, existingVendor }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (formData.vendorId) {
+      if (formData.id) {
         await updateVendor(formData).unwrap();
         toast.success("Vendor updated successfully!");
       } else {
@@ -51,13 +60,14 @@ const AddCompanyModal = ({ show, onClose, existingVendor }) => {
       toast.error("Failed to submit vendor. Please try again.");
     }
   };
+
   return (
     <div className="modal fade show" style={{ display: "block" }}>
       <div className="modal-dialog modal-dialog-centered modal-md">
         <div className="modal-content">
           <div className="modal-header border-0">
             <h4 className="mb-0">
-              {formData.vendorId ? "Edit Company" : "Add New Company"}
+              {formData.id ? "Edit Company" : "Add New Company"}
             </h4>
             <button
               type="button"
@@ -67,6 +77,17 @@ const AddCompanyModal = ({ show, onClose, existingVendor }) => {
           </div>
           <form onSubmit={handleSubmit}>
             <div className="modal-body">
+              <div className="input-block mb-3">
+                <label className="form-label">Vendor Id</label>
+                <input
+                  type="text"
+                  name="vendorId"
+                  className="form-control"
+                  placeholder="Vendor Id"
+                  value={formData.vendorId}
+                  onChange={handleChange}
+                />
+              </div>
               <div className="input-block mb-3">
                 <label className="form-label">Vendor Name</label>
                 <input
@@ -80,14 +101,20 @@ const AddCompanyModal = ({ show, onClose, existingVendor }) => {
               </div>
               <div className="input-block mb-3">
                 <label className="form-label">Brand Slug</label>
-                <input
-                  type="text"
+                <select
                   name="brandSlug"
                   className="form-control"
-                  placeholder="Brand Slug"
                   value={formData.brandSlug}
                   onChange={handleChange}
-                />
+                  disabled={loadingBrands}
+                >
+                  <option value="">Select a brand</option>
+                  {brands.map((brand) => (
+                    <option key={brand.brandId} value={brand.brandSlug}>
+                      {brand.brandName} ({brand.brandSlug})
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
             <div className="modal-footer">
@@ -105,7 +132,7 @@ const AddCompanyModal = ({ show, onClose, existingVendor }) => {
               >
                 {isCreating || isUpdating
                   ? "Saving..."
-                  : formData.vendorId
+                  : formData.id
                   ? "Update"
                   : "Add New"}
               </button>

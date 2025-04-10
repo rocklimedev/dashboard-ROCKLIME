@@ -1,101 +1,22 @@
-/* Sidebar Styles */
-.sidebar {
-    width: 250px;
-    background: white;
-    color: #ffffff;
-    height: 100vh;
-    overflow-y: auto;
-  }
-  
-  .sidebar-inner {
-    padding: 10px 0;
-  }
-  
-  /* Sidebar Links */
-  .sidebar-menu ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-  
-  .sidebar-menu ul li {
-    position: relative;
-  }
-  
-  .sidebar-menu ul li a {
-    display: flex;
-    align-items: center;
-    padding: 12px 20px;
-    color: #ffffff;
-    text-decoration: none;
-    font-size: 16px;
-    transition: background 0.3s ease-in-out;
-  }
-  
-  .sidebar-menu ul li a:hover,
-  .sidebar-menu ul li a.active {
-    background: whitesmoke;
-  }
-  
-  /* Sidebar Icons */
-  .sidebar-menu ul li a i {
-    margin-right: 10px;
-    font-size: 18px;
-  }
-  
-  /* Dropdown (submenu) */
-  .submenu ul {
-    padding-left: 20px;
-    list-style: none;
-    display: none; /* Initially hidden */
-  }
-  
-  .submenu ul li a {
-    font-size: 14px;
-    padding: 10px 15px;
-    color: #ddd;
-  }
-  
-  .submenu ul li a:hover {
-    background: #555;
-    color: #ffffff;
-  }
-  
-  /* Dropdown Toggle */
-  .submenu-open {
-    display: block !important; /* Show submenu when open */
-  }
-  
-  .submenu-closed {
-    display: none !important; /* Hide submenu when closed */
-  }
-  
-  /* Arrow Icon for Dropdown */
-  .menu-arrow {
-    margin-left: auto;
-    transition: transform 0.3s ease-in-out;
-  }
-  
-  .submenu > a.active .menu-arrow {
-    transform: rotate(90deg);
-  }
-  
-  /* Responsive Sidebar */
-  @media (max-width: 768px) {
-    .sidebar {
-      width: 200px;
-    }
-  }
-  .menu-arrow {
-    margin-left: 5px;
-    transition: transform 0.3s ease;
-  }
-  
-  .second-arrow {
-    margin-left: -5px;
-  }
-  
-  .active .menu-arrow {
-    transform: rotate(180deg);
-  }
-  
+.sidebar a svg {
+  color: #000 !important;
+  fill: currentColor !important;
+  opacity: 1 !important;
+}
+.sidebar a.active svg,
+.sidebar a.subdrop svg {
+  color: #000 !important;
+}
+
+/* Remove default bullets from all ul inside the sidebar */
+.sidebar ul,
+.sidebar-menu ul,
+.sidebar-menu ul li,
+.sidebar-menu ul li ul {
+  list-style-type: none !important;
+  margin: 0;
+  padding: 0;
+}
+.sidebar-menu ul li ul li {
+  padding-left: 15px;
+}

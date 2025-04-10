@@ -44,5 +44,6 @@ router.delete(
   //checkPermission("delete", "/customers/:id"),
   customerController.deleteCustomer
 );
+router.get("/:id/invoices", customerController.getInvoicesByCustomerId);
 
 module.exports = router;

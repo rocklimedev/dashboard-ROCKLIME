@@ -1,9 +1,7 @@
 import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Link, useNavigate } from "react-router-dom";
-import logo_small from "../../assets/img/logo-small.png";
-import logo from "../../assets/img/logo.svg";
-import logo_white from "../../assets/img/logo-white.svg";
+import logo from "../../assets/img/logo.png";
 import { useGetProfileQuery, useGetUserByIdQuery } from "../../api/userApi";
 import {
   FaSearch,
@@ -86,10 +84,10 @@ const Header = ({ toggleSidebar }) => {
             <img src={logo} alt="Logo" />
           </a>
           <a href="/" className="logo logo-white">
-            <img src={logo_white} alt="Logo" />
+            <img src={logo} alt="Logo" />
           </a>
           <a href="/" className="logo-small">
-            <img src={logo_small} alt="Logo" />
+            <img src={logo} alt="Logo" />
           </a>
         </div>
 

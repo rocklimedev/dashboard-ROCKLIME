@@ -1,31 +1,70 @@
-import React from "react";
+import React, { useState } from "react";
 import PageHeader from "../Common/PageHeader";
 import { useGetAllOrdersQuery } from "../../api/orderApi";
+import ViewOrderModal from "./ViewOrderModal";
+import EditOrderModal from "./EditOrderModal";
+import DeleteModal from "../Common/DeleteModal";
+import { useDeleteCustomerMutation } from "../../api/customerApi"; // adjust path
+import { useDeleteOrderMutation } from "../../api/orderApi";
 const RecentOrders = () => {
   const { data, error, isLoading } = useGetAllOrdersQuery();
   const recentOrder = data?.orders || [];
-  console.log(recentOrder);
+  const [showModal, setShowModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [modalType, setModalType] = useState("");
+  const [customerToDelete, setCustomerToDelete] = useState(null);
+  const [orderToDelete, setOrderToDelete] = useState(null);
+  const [deleteCustomer] = useDeleteCustomerMutation();
+  const [deleteOrder] = useDeleteOrderMutation(); // hypothetical
+  const openModal = (order, type) => {
+    setSelectedOrder(order);
+    setModalType(type);
+  };
+
   if (isLoading) return <p>Loading...</p>;
   if (error) return <p>Error fetching recent Orders.</p>;
   if (recentOrder.length === 0) return <p>No recent Orders available.</p>;
+  const handleDelete = (customerId) => {
+    setCustomerToDelete(customerId);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!customerToDelete) {
+      console.warn("No customer selected to delete.");
+      return;
+    }
+
+    try {
+      await deleteCustomer(customerToDelete).unwrap();
+      console.log("Customer deleted:", customerToDelete);
+    } catch (err) {
+      console.error("Error deleting customer:", err);
+    } finally {
+      setShowDeleteModal(false);
+      setCustomerToDelete(null);
+    }
+  };
+
   return (
-    <div class="page-wrapper">
-      <div class="content">
+    <div className="page-wrapper">
+      <div className="content">
         <PageHeader
           title="Recent Orders"
           subtitle="Manage your recent orders"
         />
 
-        <div class="card">
-          <div class="card-body p-0">
-            <div class="table-responsive">
-              <table class="table datatable">
-                <thead class="thead-light">
+        <div className="card">
+          <div className="card-body p-0">
+            <div className="table-responsive">
+              <table className="table datatable">
+                <thead className="thead-light">
                   <tr>
-                    <th class="no-sort">
-                      <label class="checkboxs">
+                    <th className="no-sort">
+                      <label className="checkboxs">
                         <input type="checkbox" id="select-all" />
-                        <span class="checkmarks"></span>
+                        <span className="checkmarks"></span>
                       </label>
                     </th>
                     <th>Title</th>
@@ -38,112 +77,124 @@ const RecentOrders = () => {
                     <th>Priority</th>
                     <th>Description</th>
                     <th>Created At</th>
-                    <th>Quotation Attached</th>
+                    <th>Invoice Attached</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
-                <tbody class="sales-list">
-                  <tr>
-                    <td>
-                      <label class="checkboxs">
-                        <input type="checkbox" />
-                        <span class="checkmarks"></span>
-                      </label>
-                    </td>
-                    <td>{recentOrder.title}</td>
-                    <td>{recentOrder.pipeline}</td>
-                    <td>{recentOrder.status}</td>
-                    <td>{recentOrder.teamId}</td>
-                    <td>{recentOrder.followupDates}</td>
-                    <td>{recentOrder.source}</td>
-                    <td>
-                      <span class="badge badge-success">
-                        {recentOrder.priority}
-                      </span>
-                    </td>
-                    <td>{recentOrder.description}</td>
-                    <td>{recentOrder.createdAt}</td>
-                    <td>{recentOrder.quotationId}</td>
-
-                    <td class="text-center">
-                      <a
-                        class="action-set"
-                        href="javascript:void(0);"
-                        data-bs-toggle="dropdown"
-                        aria-expanded="true"
-                      >
-                        <i class="fa fa-ellipsis-v" aria-hidden="true"></i>
-                      </a>
-                      <ul class="dropdown-menu">
-                        <li>
-                          <a
-                            href="javascript:void(0);"
-                            class="dropdown-item"
-                            data-bs-toggle="modal"
-                            data-bs-target="#sales-details-new"
-                          >
-                            <i data-feather="eye" class="info-img"></i>Sale
-                            Detail
-                          </a>
-                        </li>
-                        <li>
-                          <a
-                            href="javascript:void(0);"
-                            class="dropdown-item"
-                            data-bs-toggle="modal"
-                            data-bs-target="#edit-sales-new"
-                          >
-                            <i data-feather="edit" class="info-img"></i>Edit
-                            Sale
-                          </a>
-                        </li>
-                        <li>
-                          <a
-                            href="javascript:void(0);"
-                            class="dropdown-item"
-                            data-bs-toggle="modal"
-                            data-bs-target="#showpayment"
-                          >
-                            <i data-feather="dollar-sign" class="info-img"></i>
-                            Show Payments
-                          </a>
-                        </li>
-                        <li>
-                          <a
-                            href="javascript:void(0);"
-                            class="dropdown-item"
-                            data-bs-toggle="modal"
-                            data-bs-target="#createpayment"
-                          >
-                            <i data-feather="plus-circle" class="info-img"></i>
-                            Create Payment
-                          </a>
-                        </li>
-                        <li>
-                          <a href="javascript:void(0);" class="dropdown-item">
-                            <i data-feather="download" class="info-img"></i>
-                            Download pdf
-                          </a>
-                        </li>
-                        <li>
-                          <a
-                            href="javascript:void(0);"
-                            class="dropdown-item mb-0"
-                            data-bs-toggle="modal"
-                            data-bs-target="#delete"
-                          >
-                            <i data-feather="trash-2" class="info-img"></i>
-                            Delete Sale
-                          </a>
-                        </li>
-                      </ul>
-                    </td>
-                  </tr>
+                <tbody>
+                  {recentOrder.map((order, index) => (
+                    <tr key={order.id || index}>
+                      <td>
+                        <label className="checkboxs">
+                          <input type="checkbox" />
+                          <span className="checkmarks"></span>
+                        </label>
+                      </td>
+                      <td>{order.title}</td>
+                      <td>{order.pipeline}</td>
+                      <td>{order.status}</td>
+                      <td>{order.dueDate}</td>
+                      <td>{order.assignedTo || "—"}</td>
+                      <td>{order.followupDates.join(", ")}</td>
+                      <td>{order.source}</td>
+                      <td>
+                        <span className="badge badge-success">
+                          {order.priority}
+                        </span>
+                      </td>
+                      <td>{order.description}</td>
+                      <td>{new Date(order.createdAt).toLocaleDateString()}</td>
+                      <td>{order.invoiceId || "—"}</td>
+                      <td className="text-center">
+                        <a
+                          className="action-set"
+                          href="#"
+                          data-bs-toggle="dropdown"
+                          aria-expanded="true"
+                        >
+                          <i
+                            className="fa fa-ellipsis-v"
+                            aria-hidden="true"
+                          ></i>
+                        </a>
+                        <ul className="dropdown-menu">
+                          <li>
+                            <a
+                              href="#"
+                              className="dropdown-item"
+                              onClick={() => openModal(order, "view")}
+                            >
+                              <i data-feather="eye" className="info-img"></i>
+                              View Order
+                            </a>
+                          </li>
+                          <li>
+                            <a href="#" className="dropdown-item">
+                              <i data-feather="edit" className="info-img"></i>
+                              Edit Order
+                            </a>
+                          </li>
+                          <li>
+                            <li>
+                              <a
+                                href={`/invoices/${order.invoiceId}`} // or `/order/${order.id}/invoice`
+                                className="dropdown-item"
+                              >
+                                <i
+                                  data-feather="dollar-sign"
+                                  className="info-img"
+                                ></i>
+                                Show Invoice
+                              </a>
+                            </li>
+                          </li>
+                          <li>
+                            <a
+                              href="#"
+                              className="dropdown-item"
+                              onClick={() => openModal(order, "delete")}
+                            >
+                              <i
+                                data-feather="trash-2"
+                                className="info-img"
+                              ></i>
+                              Delete Order
+                            </a>
+                          </li>
+                        </ul>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      {modalType === "view" && selectedOrder && (
+        <ViewOrderModal
+          order={selectedOrder}
+          onClose={() => setModalType("")}
+        />
+      )}
+
+      {modalType === "edit" && selectedOrder && (
+        <EditOrderModal
+          order={selectedOrder}
+          onClose={() => setModalType("")}
+        />
+      )}
+
+      {showDeleteModal && (
+        <DeleteModal
+          itemType="Order"
+          isVisible={handleDelete}
+          onConfirm={confirmDelete}
+          onCancel={() => setShowDeleteModal(false)}
+        />
+      )}
     </div>
   );
 };

@@ -32,6 +32,7 @@ import {
   FaFirstOrderAlt,
   FaUserGraduate,
   FaTeamspeak,
+  FaFileInvoice,
 } from "react-icons/fa";
 import { AiTwotoneCreditCard, AiFillProfile } from "react-icons/ai";
 import { CgProfile } from "react-icons/cg";
@@ -60,6 +61,7 @@ import { GiCorporal } from "react-icons/gi";
 import CmList from "../components/CMTrading/cmList";
 import SecuritySettings from "../components/Settings/SecuritySettings";
 import TeamsList from "../components/Orders/TeamsList";
+import InvoiceDetails from "../components/Invoices/InvoiceDetails";
 const masterRoutes = [
   {
     path: "/",
@@ -232,6 +234,13 @@ const masterRoutes = [
         icon: <FaTeamspeak />,
         element: <TeamsList />,
         isSidebarActive: true,
+      },
+      {
+        path: "/invoice/:invoiceId",
+        name: "Invoices",
+        icon: <FaFileInvoice />,
+        element: <InvoiceDetails />,
+        isSidebarActive: false,
       },
     ],
   },

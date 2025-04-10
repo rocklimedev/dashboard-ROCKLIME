@@ -10,12 +10,28 @@ import "react-toastify/dist/ReactToastify.css";
 const Brands = () => {
   const { data, error, isLoading, refetch } = useGetAllBrandsQuery();
   const brands = Array.isArray(data) ? data : [];
-  const [showModal, setShowModal] = useState(false);
 
-  const handleAddBrand = () => setShowModal(true);
+  const [showModal, setShowModal] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [selectedBrand, setSelectedBrand] = useState(null);
+
+  const handleAddBrand = () => {
+    setEditMode(false);
+    setSelectedBrand(null);
+    setShowModal(true);
+  };
+
+  const handleEditBrand = (brand) => {
+    setEditMode(true);
+    setSelectedBrand(brand);
+    setShowModal(true);
+  };
+
   const handleCloseModal = () => {
     setShowModal(false);
-    refetch(); // Refresh brands list after adding a new brand
+    setEditMode(false);
+    setSelectedBrand(null);
+    refetch(); // Refresh brand list
   };
 
   if (isLoading) return <p>Loading...</p>;
@@ -31,79 +47,6 @@ const Brands = () => {
         />
 
         <div class="card">
-          <div class="card-header d-flex align-items-center justify-content-between flex-wrap row-gap-3">
-            <div class="search-set">
-              <div class="search-input">
-                <span class="btn-searchset">
-                  <i class="ti ti-search fs-14 feather-search"></i>
-                </span>
-              </div>
-            </div>
-            <div class="d-flex table-dropdown my-xl-auto right-content align-items-center flex-wrap row-gap-3">
-              <div class="dropdown me-2">
-                <a
-                  href="javascript:void(0);"
-                  class="dropdown-toggle btn btn-white btn-md d-inline-flex align-items-center"
-                  data-bs-toggle="dropdown"
-                >
-                  Status
-                </a>
-                <ul class="dropdown-menu  dropdown-menu-end p-3">
-                  <li>
-                    <a
-                      href="javascript:void(0);"
-                      class="dropdown-item rounded-1"
-                    >
-                      Active
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="javascript:void(0);"
-                      class="dropdown-item rounded-1"
-                    >
-                      Inactive
-                    </a>
-                  </li>
-                </ul>
-              </div>
-              <div class="dropdown">
-                <a
-                  href="javascript:void(0);"
-                  class="dropdown-toggle btn btn-white btn-md d-inline-flex align-items-center"
-                  data-bs-toggle="dropdown"
-                >
-                  Sort By : Latest
-                </a>
-                <ul class="dropdown-menu  dropdown-menu-end p-3">
-                  <li>
-                    <a
-                      href="javascript:void(0);"
-                      class="dropdown-item rounded-1"
-                    >
-                      Latest
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="javascript:void(0);"
-                      class="dropdown-item rounded-1"
-                    >
-                      Ascending
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="javascript:void(0);"
-                      class="dropdown-item rounded-1"
-                    >
-                      Desending
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
           <div class="card-body p-0">
             <div class="table-responsive">
               <table class="table datatable">
@@ -145,9 +88,13 @@ const Brands = () => {
                       </td>
                       <td class="action-table-data">
                         <div class="edit-delete-action">
-                          <a class="me-2 p-2" data-bs-target="#edit-brand">
+                          <a
+                            className="me-2 p-2"
+                            onClick={() => handleEditBrand(brand)}
+                          >
                             <AiOutlineEdit />
                           </a>
+
                           <a class="p-2" href="javascript:void(0);">
                             <FcEmptyTrash />
                           </a>
@@ -161,7 +108,9 @@ const Brands = () => {
           </div>
         </div>
       </div>
-      {showModal ? <AddBrand onClose={handleCloseModal} /> : null}
+      {showModal && (
+        <AddBrand onClose={handleCloseModal} existingBrand={selectedBrand} />
+      )}
     </div>
   );
 };

@@ -13,6 +13,7 @@ import { useGetAllBrandsQuery } from "../../api/brandsApi";
 const CreateProduct = () => {
   const { id } = useParams(); // Get product ID from URL
   const isEditMode = Boolean(id); // Check if we're editing
+  const [filteredCategories, setFilteredCategories] = useState([]);
 
   const { data: existingProduct, isLoading: isFetching } =
     useGetProductByIdQuery(id, { skip: !isEditMode }); // Fetch product only if editing
@@ -54,7 +55,52 @@ const CreateProduct = () => {
   }, [existingProduct]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    if (name === "category") {
+      const selectedCategory = categoryData?.categories?.find(
+        (cat) => cat.id === value
+      );
+
+      if (selectedCategory) {
+        const linkedParentCategoryId = selectedCategory.parentCategoryId;
+
+        setFormData((prev) => ({
+          ...prev,
+          category: value,
+          parentCategory: linkedParentCategoryId || "",
+        }));
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          category: value,
+          parentCategory: "",
+        }));
+      }
+
+      return;
+    }
+
+    if (name === "parentCategory") {
+      setFormData((prev) => ({
+        ...prev,
+        parentCategory: value,
+        category: "", // Reset category so user picks fresh
+      }));
+
+      const matchingCategories = categoryData?.categories?.filter(
+        (cat) => cat.parentCategoryId === value
+      );
+
+      setFilteredCategories(matchingCategories || []);
+      return;
+    }
+
+    // Default handler
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -282,106 +328,95 @@ const CreateProduct = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="addservice-info">
-                      <div className="row">
-                        <div className="col-sm-6 col-12">
-                          <div className="mb-3">
-                            <div className="add-newplus">
-                              <label className="form-label">
-                                Category
-                                <span className="text-danger ms-1">*</span>
-                              </label>
-                              <a
-                                href="javascript:void(0);"
-                                data-bs-toggle="modal"
-                                data-bs-target="#add-product-category"
-                              >
-                                <i
-                                  data-feather="plus-circle"
-                                  className="plus-down-add"
-                                ></i>
-                                <span>Add New</span>
-                              </a>
-                            </div>
-                            <select
-                              className="select"
-                              name="category"
-                              value={formData.category}
-                              onChange={handleChange}
-                            >
-                              <option value="">Select</option>
-                              {categoryData?.categories?.map((cat) => (
-                                <option key={cat.id} value={cat.id}>
-                                  {cat.name}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
+
+                    <div className="row">
+                      <div className="col-lg-6 col-sm-6 col-12">
+                        <div className="mb-3 list position-relative">
+                          <label className="form-label">
+                            Category
+                            <span className="text-danger ms-1">*</span>
+                          </label>
+
+                          <select
+                            className="form-control"
+                            name="category"
+                            value={formData.category}
+                            onChange={handleChange}
+                          >
+                            <option value="">Select</option>
+                            {(formData.parentCategory
+                              ? filteredCategories
+                              : categoryData?.categories
+                            )?.map((cat) => (
+                              <option key={cat.id} value={cat.id}>
+                                {cat.name}
+                              </option>
+                            ))}
+                          </select>
                         </div>
-                        <div className="col-sm-6 col-12">
-                          <div className="mb-3">
+                      </div>
+                      <div className="col-lg-6 col-sm-6 col-12">
+                        <div className="mb-3 list position-relative">
+                          <label className="form-label">
+                            Parent Category
+                            <span className="text-danger ms-1">*</span>
+                          </label>
+                          <select
+                            className="form-control"
+                            name="parentCategory"
+                            value={formData.parentCategory}
+                            onChange={handleChange}
+                            disabled={!!formData.category} // disables if category already selected
+                          >
+                            <option value="">Select</option>
+                            {parentCategoryData.map((parent) => (
+                              <option key={parent.id} value={parent.id}>
+                                {parent.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      <div className="col-lg-6 col-sm-6 col-12">
+                        <div className="mb-3 list position-relative">
+                          <div className="add-newplus">
                             <label className="form-label">
-                              Parent Category
+                              Brand<span className="text-danger ms-1">*</span>
+                            </label>
+                          </div>
+                          <select
+                            className="form-control"
+                            name="brand"
+                            value={formData.brand}
+                            onChange={handleChange}
+                          >
+                            <option value="">Select</option>
+                            {brandData?.map((brand) => (
+                              <option key={brand.id} value={brand.id}>
+                                {brand.brandName}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      <div className="col-lg-6 col-sm-6 col-12">
+                        <div className="mb-3 list position-relative">
+                          <div className="add-newplus">
+                            <label className="form-label">
+                              Is Featured?
                               <span className="text-danger ms-1">*</span>
                             </label>
-                            <select
-                              className="select"
-                              name="parentCategory"
-                              value={formData.parentCategory}
-                              onChange={handleChange}
-                            >
-                              <option value="">Select</option>
-                              {parentCategoryData?.parentCategories?.map(
-                                (parent) => (
-                                  <option key={parent.id} value={parent.id}>
-                                    {parent.name}
-                                  </option>
-                                )
-                              )}
-                            </select>
                           </div>
-                        </div>
-                        <div className="col-sm-6 col-12">
-                          <div className="mb-3">
-                            <div className="add-newplus">
-                              <label className="form-label">
-                                Brand<span className="text-danger ms-1">*</span>
-                              </label>
-                            </div>
-                            <select
-                              className="select"
-                              name="brand"
-                              value={formData.brand}
-                              onChange={handleChange}
-                            >
-                              <option value="">Select</option>
-                              {brandData?.brands?.map((brand) => (
-                                <option key={brand.id} value={brand.id}>
-                                  {brand.name}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-                        <div className="col-sm-6 col-12">
-                          <div className="mb-3">
-                            <div className="add-newplus">
-                              <label className="form-label">
-                                Is Featured?
-                                <span className="text-danger ms-1">*</span>
-                              </label>
-                            </div>
-                            <select
-                              className="select"
-                              name="isFeatured"
-                              value={formData.isFeatured}
-                              onChange={handleChange}
-                            >
-                              <option>select</option>
-                              <option>true</option>
-                              <option>false</option>
-                            </select>
-                          </div>
+                          <select
+                            className="form-control"
+                            name="isFeatured"
+                            value={formData.isFeatured}
+                            onChange={handleChange}
+                          >
+                            <option>select</option>
+                            <option>true</option>
+                            <option>false</option>
+                          </select>
                         </div>
                       </div>
                     </div>
