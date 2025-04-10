@@ -23,7 +23,9 @@ export const customerApi = createApi({
     getCustomerById: builder.query({
       query: (id) => `/${id}`,
     }),
-
+    getInvoicesByCustomerId: builder.query({
+      query: (id) => `/${id}/invoices`, // This hits /customers/:id/invoices
+    }),
     // Update Customer
     updateCustomer: builder.mutation({
       query: ({ id, updatedData }) => ({
@@ -50,4 +52,5 @@ export const {
   useGetCustomerByIdQuery,
   useUpdateCustomerMutation,
   useDeleteCustomerMutation,
+  useGetInvoicesByCustomerIdQuery,
 } = customerApi;

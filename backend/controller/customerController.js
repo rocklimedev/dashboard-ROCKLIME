@@ -1,4 +1,35 @@
 const Customer = require("../models/customers"); // Import the Customer model
+const Invoice = require("../models/invoice"); // Import Invoice model
+
+// Get invoices by customer ID
+exports.getInvoicesByCustomerId = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Optionally: Check if customer exists first
+    const customer = await Customer.findByPk(id);
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: "Customer not found",
+      });
+    }
+
+    const invoices = await Invoice.findAll({
+      where: { customerId: id },
+    });
+
+    res.status(200).json({
+      success: true,
+      data: invoices,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
 // Create a new customer
 exports.createCustomer = async (req, res) => {

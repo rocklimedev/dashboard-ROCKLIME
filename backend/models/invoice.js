@@ -1,11 +1,12 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
 const { v4: uuidv4 } = require("uuid");
+const crypto = require("crypto");
 const Order = require("./orders");
 const Customer = require("./customers");
 const Address = require("./address");
 const User = require("./users");
-const Quotation = require("./quotation"); // Ensure you have this model
+const Quotation = require("./quotation");
 
 const Invoice = sequelize.define(
   "Invoice",
@@ -15,6 +16,12 @@ const Invoice = sequelize.define(
       primaryKey: true,
       defaultValue: uuidv4,
     },
+    invoiceNo: {
+      type: DataTypes.STRING,
+      allowNull: true, // ← change this
+      unique: true,
+    },
+
     createdBy: {
       type: DataTypes.UUID,
       references: {
@@ -22,14 +29,13 @@ const Invoice = sequelize.define(
         key: "userId",
       },
     },
-
     quotationId: {
       type: DataTypes.UUID,
       references: {
         model: Quotation,
         key: "quotationId",
       },
-      allowNull: true, // Optional field
+      allowNull: true,
     },
     billTo: {
       type: DataTypes.STRING(255),
@@ -81,8 +87,26 @@ const Invoice = sequelize.define(
   },
   {
     tableName: "invoices",
-    timestamps: false,
+    timestamps: true,
   }
 );
+
+Invoice.beforeCreate(async (invoice, options) => {
+  let unique = false;
+
+  while (!unique) {
+    const randomNumber = crypto.randomInt(100000, 999999); // More secure RNG
+    const generatedNo = `INV_${randomNumber}`;
+
+    const existing = await Invoice.findOne({
+      where: { invoiceNo: generatedNo },
+    });
+
+    if (!existing) {
+      invoice.invoiceNo = generatedNo;
+      unique = true;
+    }
+  }
+});
 
 module.exports = Invoice;

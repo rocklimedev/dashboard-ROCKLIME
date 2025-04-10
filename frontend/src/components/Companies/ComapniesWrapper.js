@@ -16,6 +16,7 @@ const CompaniesWrapper = () => {
     error: vendorsError,
     isLoading: vendorsLoading,
   } = useGetVendorsQuery();
+
   const {
     data: brandsData,
     error: brandsError,
@@ -46,6 +47,11 @@ const CompaniesWrapper = () => {
     setShowModal(true);
   };
 
+  const handleAddVendor = () => {
+    setSelectedVendor(null); // important: reset to null for add mode
+    setShowModal(true);
+  };
+
   const handleConfirmDelete = async () => {
     if (!vendorToDelete?.id) return;
     try {
@@ -62,7 +68,11 @@ const CompaniesWrapper = () => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        <PageHeader title="Vendors" subtitle="Manage your Vendors" />
+        <PageHeader
+          title="Vendors"
+          subtitle="Manage your Vendors"
+          onAdd={handleAddVendor}
+        />
 
         <div className="card">
           <div className="card-body p-0">
@@ -125,7 +135,7 @@ const CompaniesWrapper = () => {
         />
       )}
 
-      {/* Add / Edit Modal */}
+      {/* Add / Edit Vendor Modal */}
       {showModal && (
         <AddCompanyModal
           show={showModal}

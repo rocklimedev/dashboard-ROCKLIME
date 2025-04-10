@@ -141,7 +141,7 @@ const RecentInvoices = () => {
                           </label>
                         </td>
                         <td>
-                          <a href={`invoice-details/${invoice.invoiceId}`}>
+                          <a href={`/invoice/${invoice.invoiceId}`}>
                             {invoice.invoiceNo}
                           </a>
                         </td>

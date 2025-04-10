@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { ChevronsLeft } from "react-feather"; // Feather icon component
 import masterRoutes from "../../data/routes";
-import logo_small from "../../assets/img/logo-small.png";
-import logo from "../../assets/img/logo.svg";
-import logo_white from "../../assets/img/logo-white.svg";
+import logo from "../../assets/img/logo.png";
+import "./sidebar.css";
 const Sidebar = ({ isSidebarOpen }) => {
   const [openMenu, setOpenMenu] = useState(null);
 
@@ -13,71 +13,21 @@ const Sidebar = ({ isSidebarOpen }) => {
 
   return (
     <div className={`sidebar ${isSidebarOpen ? "active" : ""}`} id="sidebar">
-      <div className="sidebar-logo active">
+      <div className="sidebar-logo">
         <a href="/" className="logo logo-normal">
           <img src={logo} alt="Logo" />
         </a>
         <a href="/" className="logo logo-white">
-          <img src={logo_white} alt="Logo" />
+          <img src={logo} alt="Logo" />
         </a>
         <a href="/" className="logo-small">
-          <img src={logo_small} alt="Logo" />
+          <img src={logo} alt="Logo" />
         </a>
         <a id="toggle_btn" href="#">
-          <i data-feather="chevrons-left" className="feather-16"></i>
+          <ChevronsLeft size={16} color="#000" /> {/* Changed here */}
         </a>
       </div>
 
-      <div className="modern-profile p-3 pb-0">
-        <div className="text-center rounded bg-light p-3 mb-4 user-profile">
-          <div className="avatar avatar-lg online mb-3">
-            <img
-              src="assets/img/customer/customer15.jpg"
-              alt="Profile"
-              className="img-fluid rounded-circle"
-            />
-          </div>
-          <h6 className="fs-14 fw-bold mb-1">Adrian Herman</h6>
-          <p className="fs-12 mb-0">System Admin</p>
-        </div>
-        <div className="sidebar-nav mb-3">
-          <ul className="nav nav-tabs nav-tabs-solid nav-tabs-rounded nav-justified bg-transparent">
-            <li className="nav-item">
-              <a className="nav-link active border-0" href="#">
-                Menu
-              </a>
-            </li>
-            <li className="nav-item">
-              <a className="nav-link border-0" href="chat.html">
-                Chats
-              </a>
-            </li>
-            <li className="nav-item">
-              <a className="nav-link border-0" href="email.html">
-                Inbox
-              </a>
-            </li>
-          </ul>
-        </div>
-      </div>
-
-      <div className="sidebar-header p-3 pb-0 pt-2">
-        <div className="text-center rounded bg-light p-2 mb-4 sidebar-profile d-flex align-items-center">
-          <div className="avatar avatar-md online">
-            <img
-              src="assets/img/customer/customer15.jpg"
-              alt="Profile"
-              className="img-fluid rounded-circle"
-            />
-          </div>
-          <div className="text-start sidebar-profile-info ms-2">
-            <h6 className="fs-14 fw-bold mb-1">Adrian Herman</h6>
-            <p className="fs-12">System Admin</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Make sidebar scrollable */}
       <div
         className="sidebar-inner slimscroll"
         style={{ maxHeight: "calc(100vh - 120px)", overflowY: "auto" }}
@@ -99,14 +49,15 @@ const Sidebar = ({ isSidebarOpen }) => {
                         e.preventDefault();
                         toggleDropdown(index);
                       }}
+                      style={{ color: "#000" }} // Force icon color here if needed
                     >
-                      {section.icon}
+                      <span style={{ color: "#000" }}>{section.icon}</span>
                       <span>{section.name}</span>
                       <span className="menu-arrow"></span>
                     </a>
                   ) : (
                     <Link to={section.path}>
-                      {section.icon}
+                      <span style={{ color: "#000" }}>{section.icon}</span>
                       <span>{section.name}</span>
                     </Link>
                   )}
@@ -122,7 +73,8 @@ const Sidebar = ({ isSidebarOpen }) => {
                         .map((sub, subIdx) => (
                           <li key={subIdx}>
                             <Link to={sub.path}>
-                              {sub.icon} {sub.name}
+                              <span style={{ color: "#000" }}>{sub.icon}</span>{" "}
+                              {sub.name}
                             </Link>
                           </li>
                         ))}

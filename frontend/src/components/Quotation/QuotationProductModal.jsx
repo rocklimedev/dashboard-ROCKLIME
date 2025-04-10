@@ -10,27 +10,37 @@ const QuotationProductModal = ({ show, onHide, products = [] }) => {
 
   return (
     <>
-      <Modal show={show} onHide={onHide} size="lg" centered>
+      <Modal show={show} onHide={onHide} size="xl" centered>
         <Modal.Header closeButton>
           <Modal.Title>Quotation Products</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          <Table striped bordered hover>
-            <thead>
+        <Modal.Body style={{ overflowX: "auto" }}>
+          <Table
+            striped
+            bordered
+            hover
+            responsive
+            className="align-middle text-center"
+          >
+            <thead className="table-dark">
               <tr>
-                <th>#</th>
-                <th>Product Name</th>
-                <th>Quantity</th>
-                <th>Price</th>
-                <th>Discount (%)</th>
-                <th>Tax (%)</th>
-                <th>Total</th>
+                <th style={{ minWidth: "50px" }}>#</th>
+                <th style={{ minWidth: "200px" }}>Product Name</th>
+                <th style={{ minWidth: "100px" }}>Quantity</th>
+                <th style={{ minWidth: "100px" }}>Price</th>
+                <th style={{ minWidth: "120px" }}>Discount (%)</th>
+                <th style={{ minWidth: "100px" }}>Tax (%)</th>
+                <th style={{ minWidth: "120px" }}>Total</th>
               </tr>
             </thead>
             <tbody>
               {products.length > 0 ? (
                 products.map((product, index) => (
-                  <tr key={index} onClick={() => handleRowClick(product)}>
+                  <tr
+                    key={index}
+                    onClick={() => handleRowClick(product)}
+                    style={{ cursor: "pointer" }}
+                  >
                     <td>{index + 1}</td>
                     <td>{product.name}</td>
                     <td>{product.quantity}</td>
@@ -59,7 +69,7 @@ const QuotationProductModal = ({ show, onHide, products = [] }) => {
 
       {/* Product Details Modal */}
       {selectedProduct && (
-        <Modal show={true} onHide={() => setSelectedProduct(null)} centered>
+        <Modal show centered onHide={() => setSelectedProduct(null)}>
           <Modal.Header closeButton>
             <Modal.Title>Product Details</Modal.Title>
           </Modal.Header>

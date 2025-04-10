@@ -1,14 +1,32 @@
-import React, { useState } from "react";
-import { useCreateBrandMutation } from "../../api/brandsApi";
+import React, { useState, useEffect } from "react";
+import {
+  useCreateBrandMutation,
+  useUpdateBrandMutation,
+} from "../../api/brandsApi";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const AddBrand = ({ onClose }) => {
-  const [createBrand, { isLoading, error }] = useCreateBrandMutation();
+const AddBrand = ({ onClose, existingBrand }) => {
   const [formData, setFormData] = useState({
+    id: null,
     brandName: "",
     brandSlug: "",
   });
+
+  const [createBrand, { isLoading: isCreating }] = useCreateBrandMutation();
+  const [updateBrand, { isLoading: isUpdating }] = useUpdateBrandMutation();
+
+  useEffect(() => {
+    if (existingBrand) {
+      setFormData({
+        id: existingBrand.id || null,
+        brandName: existingBrand.brandName || "",
+        brandSlug: existingBrand.brandSlug || "",
+      });
+    } else {
+      setFormData({ id: null, brandName: "", brandSlug: "" });
+    }
+  }, [existingBrand]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -26,14 +44,20 @@ const AddBrand = ({ onClose }) => {
     }
 
     try {
-      await createBrand(formData).unwrap();
-      toast.success("Brand added successfully!", { autoClose: 2000 });
+      if (formData.id) {
+        await updateBrand(formData).unwrap();
+        toast.success("Brand updated successfully!", { autoClose: 2000 });
+      } else {
+        await createBrand(formData).unwrap();
+        toast.success("Brand added successfully!", { autoClose: 2000 });
+      }
+
       setTimeout(() => {
-        onClose(); // Close modal or form after success
+        onClose();
       }, 2000);
     } catch (err) {
-      console.error("Failed to add Brand:", err);
-      toast.error(err?.data?.message || "Failed to add brand. Try again.");
+      console.error("Failed to submit Brand:", err);
+      toast.error(err?.data?.message || "Failed to submit brand. Try again.");
     }
   };
 
@@ -42,12 +66,10 @@ const AddBrand = ({ onClose }) => {
       <div className="modal-dialog modal-dialog-centered">
         <div className="modal-content">
           <div className="modal-header">
-            <h4 className="modal-title">Add Brand</h4>
-            <button
-              type="button"
-              className="close"
-              onClick={onClose} // Ensure this calls the prop function
-            >
+            <h4 className="modal-title">
+              {formData.id ? "Edit Brand" : "Add Brand"}
+            </h4>
+            <button type="button" className="close" onClick={onClose}>
               <span>&times;</span>
             </button>
           </div>
@@ -86,23 +108,22 @@ const AddBrand = ({ onClose }) => {
               <button
                 type="button"
                 className="btn btn-secondary"
-                data-bs-dismiss="modal"
+                onClick={onClose}
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 className="btn btn-primary"
-                disabled={isLoading}
+                disabled={isCreating || isUpdating}
               >
-                {isLoading ? "Adding..." : "Add Brand"}
+                {isCreating || isUpdating
+                  ? "Saving..."
+                  : formData.id
+                  ? "Update Brand"
+                  : "Add Brand"}
               </button>
             </div>
-            {error && (
-              <p className="text-danger mt-2">
-                {error.data?.message || "Error adding Brand"}
-              </p>
-            )}
           </form>
         </div>
       </div>

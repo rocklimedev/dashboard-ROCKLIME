@@ -165,6 +165,24 @@ const AddQuotation = () => {
       } else {
         await createQuotation(formattedFormData).unwrap();
         alert("Quotation created successfully!");
+
+        // ✅ Clear the form after successful creation
+        setFormData({
+          document_title: "",
+          quotation_date: "",
+          due_date: "",
+          reference_number: "",
+          include_gst: false,
+          gst_value: "",
+          products: [],
+          discountType: "percent",
+          roundOff: "",
+          finalAmount: "",
+          signature_name: "",
+          signature_image: "",
+          customerId: "",
+          createdBy: userId,
+        });
       }
     } catch (err) {
       console.error("Failed to process quotation:", err);
