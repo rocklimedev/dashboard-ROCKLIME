@@ -9,6 +9,8 @@ import { useGetUserByIdQuery } from "../../api/userApi";
 import img from "../../assets/img/avatar/avatar-1.jpg";
 import { useGetAllUsersQuery } from "../../api/userApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
+import { toast } from "react-toastify";
+
 const QuotationsDetails = () => {
   const { id } = useParams();
   const { data: quotation, error, isLoading } = useGetQuotationByIdQuery(id);
@@ -28,27 +30,30 @@ const QuotationsDetails = () => {
   const handleDownload = async () => {
     try {
       if (!id) {
-        console.error("Quotation ID is missing.");
+        toast.error("Quotation ID is missing.");
         return;
       }
 
-      const blob = await exportQuotation(id).unwrap(); // No need to access blob.blob
+      const blob = await exportQuotation(id).unwrap();
 
       if (!blob) {
-        console.error("Invalid response:", blob);
+        toast.error("Invalid export data.");
         return;
       }
 
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `quotation_${id}.xlsx`; // Set the filename dynamically
+      a.download = `quotation_${id}.xlsx`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      window.URL.revokeObjectURL(url); // Cleanup
+      window.URL.revokeObjectURL(url);
+
+      toast.success("Quotation downloaded successfully!");
     } catch (error) {
       console.error("Export failed:", error);
+      toast.error("Failed to export quotation.");
     }
   };
 

@@ -103,7 +103,6 @@ const ProductList = () => {
   };
 
   const handleConfirmDelete = () => {
-    console.log("Deleting product:", selectedProduct);
     setModalVisible(false);
   };
 
@@ -117,7 +116,6 @@ const ProductList = () => {
     setHistoryModalVisible(true);
   };
   const handleStockSubmit = (stockData) => {
-    console.log("Stock updated:", stockData);
     setStockHistory([...stockHistory, { ...stockData, date: new Date() }]);
   };
 

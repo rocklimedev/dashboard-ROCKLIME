@@ -10,6 +10,9 @@ import { GiFeatherWound } from "react-icons/gi";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import { useGetAllParentCategoriesQuery } from "../../api/parentCategoryApi";
 import { useGetAllBrandsQuery } from "../../api/brandsApi";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 const CreateProduct = () => {
   const { id } = useParams(); // Get product ID from URL
   const isEditMode = Boolean(id); // Check if we're editing
@@ -106,13 +109,12 @@ const CreateProduct = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Check if any field is empty
     const emptyFields = Object.entries(formData).filter(
       ([key, value]) => value === "" || value === null || value === undefined
     );
 
     if (emptyFields.length > 0) {
-      alert("All fields must be filled before submitting the form.");
+      toast.warning("All fields must be filled before submitting the form.");
       return;
     }
 
@@ -124,14 +126,14 @@ const CreateProduct = () => {
     try {
       if (isEditMode) {
         await updateProduct({ id, ...sanitizedData });
-        alert("Product updated successfully!");
+        toast.success("Product updated successfully!");
       } else {
         await createProduct(sanitizedData);
-        alert("Product created successfully!");
+        toast.success("Product created successfully!");
       }
     } catch (error) {
       console.error("Error submitting product:", error);
-      alert("Something went wrong while saving the product.");
+      toast.error("Something went wrong while saving the product.");
     }
   };
 

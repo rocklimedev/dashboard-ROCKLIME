@@ -6,6 +6,8 @@ import {
 import { useGetRolesQuery } from "../../api/rolesApi";
 //import "./profile.css";
 import { useParams } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Profile = () => {
   const {
@@ -53,9 +55,11 @@ const Profile = () => {
   const handleSaveClick = async () => {
     try {
       await updateProfile(formData).unwrap();
+      toast.success("Profile updated successfully!");
       setIsEditing(false);
     } catch (error) {
       console.error("Error updating profile:", error);
+      toast.error("Failed to update profile. Please try again.");
     }
   };
 

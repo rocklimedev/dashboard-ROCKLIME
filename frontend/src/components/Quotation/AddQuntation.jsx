@@ -10,6 +10,9 @@ import { PiPlus } from "react-icons/pi";
 import { useGetProfileQuery } from "../../api/userApi";
 import { useUpdateQuotationMutation } from "../../api/quotationApi";
 import { useParams } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 const AddQuotation = () => {
   const { id } = useParams();
   const isEditMode = Boolean(id);
@@ -133,7 +136,7 @@ const AddQuotation = () => {
     e.preventDefault();
 
     if (!formData.customerId) {
-      alert("Please select a customer.");
+      toast.error("Please select a customer.");
       return;
     }
 
@@ -157,16 +160,13 @@ const AddQuotation = () => {
 
     try {
       if (isEditMode) {
-        await updateQuotation({
-          id,
-          ...formattedFormData,
-        }).unwrap();
-        alert("Quotation updated successfully!");
+        await updateQuotation({ id, ...formattedFormData }).unwrap();
+        toast.success("Quotation updated successfully!");
       } else {
         await createQuotation(formattedFormData).unwrap();
-        alert("Quotation created successfully!");
+        toast.success("Quotation created successfully!");
 
-        // ✅ Clear the form after successful creation
+        // Clear the form after successful creation
         setFormData({
           document_title: "",
           quotation_date: "",
@@ -186,7 +186,7 @@ const AddQuotation = () => {
       }
     } catch (err) {
       console.error("Failed to process quotation:", err);
-      alert("Failed to process quotation.");
+      toast.error("Failed to process quotation.");
     }
   };
 
