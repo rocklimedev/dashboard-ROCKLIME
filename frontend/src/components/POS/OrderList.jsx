@@ -166,7 +166,7 @@ const OrderList = ({ onConvertToOrder }) => {
     try {
       const invoiceDataToSubmit = {
         createdBy: userId,
-        customerId: selectedCustomerData?.customerId || "Walk-in Customer",
+        customerId: selectedCustomerData.customerId,
         billTo: invoiceData.billTo,
         shipTo: invoiceData.shipTo,
         amount: totalAmount,
@@ -236,7 +236,7 @@ const OrderList = ({ onConvertToOrder }) => {
                   value={selectedCustomer}
                   onChange={(e) => setSelectedCustomer(e.target.value)}
                 >
-                  <option value="">Walk-in Customer</option>
+                  <option value="">Select a customer</option>
                   {customersLoading ? (
                     <option>Loading...</option>
                   ) : customersError ? (

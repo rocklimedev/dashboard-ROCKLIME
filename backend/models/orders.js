@@ -42,7 +42,9 @@ const Order = sequelize.define(
         "DISPATCHED",
         "DELIVERED",
         "PARTIALLY_DELIVERED",
-        "CANCELED"
+        "CANCELED",
+        "DRAFT",
+        "ONHOLD"
       ),
       defaultValue: "CREATED",
     },

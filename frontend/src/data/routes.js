@@ -62,6 +62,7 @@ import CmList from "../components/CMTrading/cmList";
 import SecuritySettings from "../components/Settings/SecuritySettings";
 import TeamsList from "../components/Orders/TeamsList";
 import InvoiceDetails from "../components/Invoices/InvoiceDetails";
+import OrderWithInvoice from "../components/Orders/OrderWithInvoice";
 const masterRoutes = [
   {
     path: "/",
@@ -222,11 +223,11 @@ const masterRoutes = [
         element: <OrderWrapper />,
       },
       {
-        path: "/orders/:id",
+        path: "/order/:id",
         name: "Order Details",
         icon: <FaFirstOrder />,
         isSidebarActive: false,
-        element: <OrderDetails />,
+        element: <OrderWithInvoice />,
       },
       {
         path: "/orders/teams",

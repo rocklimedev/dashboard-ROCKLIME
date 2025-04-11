@@ -6,6 +6,7 @@ const { v4: uuidv4 } = require("uuid");
 exports.createInvoice = async (req, res) => {
   try {
     const {
+      customerId,
       createdBy,
       billTo,
       amount,
@@ -35,6 +36,7 @@ exports.createInvoice = async (req, res) => {
     const invoice = await Invoice.create({
       invoiceId: uuidv4(),
       createdBy,
+      customerId,
       billTo,
       shipTo: address.addressId,
       amount,

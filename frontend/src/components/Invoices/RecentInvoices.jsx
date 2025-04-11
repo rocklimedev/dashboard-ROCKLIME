@@ -1,9 +1,65 @@
 import React, { useEffect, useState } from "react";
-import PageHeader from "../Common/PageHeader"; // Assuming it's a custom hook
+import PageHeader from "../Common/PageHeader";
+import { useGetAllAddressesQuery } from "../../api/addressApi";
+import { useGetAllUsersQuery } from "../../api/userApi";
 import { useGetAllInvoicesQuery } from "../../api/invoiceApi";
+import { useGetCustomersQuery } from "../../api/customerApi";
+
 const RecentInvoices = () => {
-  const { data, loading, error } = useGetAllInvoicesQuery();
-  const invoices = data?.data || []; // Ensure it's an array
+  const {
+    data: invoiceData,
+    isLoading: invoiceLoading,
+    error: invoiceError,
+  } = useGetAllInvoicesQuery();
+
+  const { data: customerData, isLoading: customerLoading } =
+    useGetCustomersQuery();
+  const { data: addressData, isLoading: addressLoading } =
+    useGetAllAddressesQuery();
+  const { data: userData, isLoading: userLoading } = useGetAllUsersQuery();
+
+  const invoices = invoiceData?.data || [];
+
+  const [customerMap, setCustomerMap] = useState({});
+  const [addressMap, setAddressMap] = useState({});
+  const [userMap, setUserMap] = useState({});
+
+  useEffect(() => {
+    if (customerData?.data) {
+      const map = {};
+      customerData.data.forEach((cust) => {
+        map[cust.customerId] = cust.name;
+      });
+      setCustomerMap(map);
+    }
+
+    if (addressData?.data) {
+      const map = {};
+      addressData.data.forEach((addr) => {
+        map[addr.addressId] = [
+          addr.street,
+          addr.city,
+          addr.state,
+          addr.country,
+          addr.postalCode,
+        ]
+          .filter(Boolean)
+          .join(", ");
+      });
+      setAddressMap(map);
+    }
+
+    if (userData?.data) {
+      const map = {};
+      userData.data.forEach((user) => {
+        map[user.userId] = user.name;
+      });
+      setUserMap(map);
+    }
+  }, [customerData, addressData, userData]);
+
+  const isLoading =
+    invoiceLoading || customerLoading || addressLoading || userLoading;
 
   return (
     <div className="page-wrapper">
@@ -101,11 +157,11 @@ const RecentInvoices = () => {
           {/* Table Content */}
           <div className="card-body p-0">
             <div className="table-responsive">
-              {loading ? (
+              {isLoading ? (
                 <p className="text-center">Loading...</p>
-              ) : error ? (
+              ) : invoiceError ? (
                 <p className="text-danger text-center">
-                  Error: {error.message}
+                  Error: {invoiceError.message}
                 </p>
               ) : (
                 <table className="table datatable">
@@ -118,7 +174,7 @@ const RecentInvoices = () => {
                         </label>
                       </th>
                       <th>Invoice No</th>
-                      <th>Order Id</th>
+
                       <th>Customer</th>
                       <th>Bill To</th>
                       <th>Ship To</th>
@@ -132,32 +188,32 @@ const RecentInvoices = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {invoices?.map((invoice) => (
+                    {invoices.map((invoice) => (
                       <tr key={invoice.invoiceId}>
                         <td>
-                          <label className="checkboxs">
-                            <input type="checkbox" />
-                            <span className="checkmarks"></span>
-                          </label>
+                          <input type="checkbox" />
                         </td>
                         <td>
                           <a href={`/invoice/${invoice.invoiceId}`}>
                             {invoice.invoiceNo}
                           </a>
                         </td>
-                        <td>{invoice.orderId}</td>
-                        <td>{invoice.customerId}</td>
+                        <td>
+                          {customerMap[invoice.customerId] ||
+                            invoice.customerId}
+                        </td>
                         <td>{invoice.billTo}</td>
-                        <td>{invoice.shipTo}</td>
+                        <td>{addressMap[invoice.shipTo] || invoice.shipTo}</td>
                         <td>
                           {new Date(invoice.invoiceDate).toLocaleDateString()}
                         </td>
                         <td>
                           {new Date(invoice.dueDate).toLocaleDateString()}
                         </td>
-
-                        <td>${invoice.amount}</td>
-                        <td>{invoice.createdBy}</td>
+                        <td>Rs {invoice.amount}</td>
+                        <td>
+                          {userMap[invoice.createdBy] || invoice.createdBy}
+                        </td>
                         <td>
                           <span
                             className={`badge ${
@@ -166,33 +222,19 @@ const RecentInvoices = () => {
                                 : invoice.status === "Unpaid"
                                 ? "badge-soft-danger"
                                 : "badge-soft-warning"
-                            } badge-xs shadow-none`}
+                            }`}
                           >
                             <i className="ti ti-point-filled me-1"></i>
                             {invoice.status}
                           </span>
                         </td>
-                        <td className="d-flex">
-                          <div className="edit-delete-action d-flex align-items-center justify-content-center">
-                            <a
-                              className="me-2 p-2 d-flex align-items-center justify-content-between border rounded"
-                              target="_blank"
-                              href={`invoices/${invoice.invoiceId}`}
-                            >
-                              <i data-feather="eye" className="feather-eye"></i>
-                            </a>
-                            <a
-                              className="p-2 d-flex align-items-center justify-content-between border rounded"
-                              href="#"
-                              data-bs-toggle="modal"
-                              data-bs-target="#delete"
-                            >
-                              <i
-                                data-feather="trash-2"
-                                className="feather-trash-2"
-                              ></i>
-                            </a>
-                          </div>
+                        <td>
+                          <a
+                            href={`/invoice/${invoice.invoiceId}`}
+                            className="btn btn-light"
+                          >
+                            View
+                          </a>
                         </td>
                       </tr>
                     ))}

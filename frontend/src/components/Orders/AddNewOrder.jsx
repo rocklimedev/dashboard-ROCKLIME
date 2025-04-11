@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useCreateOrderMutation } from "../../api/orderApi";
+import { useUpdateOrderByIdMutation } from "../../api/orderApi";
 import {
   useGetAllInvoicesQuery,
   useGetInvoiceByIdQuery,
@@ -7,8 +8,12 @@ import {
 import { useGetAllTeamsQuery } from "../../api/teamApi";
 import AddNewTeam from "./AddNewTeam";
 
-const AddNewOrder = ({ onClose, adminName }) => {
-  const [createOrder, { isLoading, error }] = useCreateOrderMutation();
+const AddNewOrder = ({ onClose, adminName, orderToEdit }) => {
+  const isEditMode = Boolean(orderToEdit);
+
+  const [createOrder, error, isLoading] = useCreateOrderMutation();
+  const [updateOrder] = useUpdateOrderByIdMutation();
+
   const { data: invoicesData } = useGetAllInvoicesQuery();
   const invoices = invoicesData?.data || [];
 
@@ -40,35 +45,50 @@ const AddNewOrder = ({ onClose, adminName }) => {
     priority: "",
     description: "",
     invoiceId: "",
-
-    orderNo: "",
   });
 
+  // For edit mode: populate form data
+
   useEffect(() => {
-    console.log("Fetched Invoice:", selectedInvoice);
+    if (isEditMode && orderToEdit) {
+      setFormData({ ...orderToEdit });
+      setSelectedInvoiceId(orderToEdit.invoiceId); // trigger invoice autofill too
+    }
+  }, [isEditMode, orderToEdit]);
+
+  // When invoice is selected
+  useEffect(() => {
     if (selectedInvoice) {
       setFormData((prev) => ({
         ...prev,
-
         invoiceId: selectedInvoiceId,
         dueDate: selectedInvoice.dueDate || "",
         createdBy: selectedInvoice.createdBy || "",
         createdFor: selectedInvoice.customerId || "",
-        orderNo: selectedInvoice.orderId || "",
+        invoiceNo: selectedInvoice.pipeline || "",
       }));
     }
   }, [selectedInvoice, selectedInvoiceId]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === "teamId") {
+      setFormData((prev) => ({
+        ...prev,
+        teamId: value,
+        assignedTo: value,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   const handleInvoiceSelect = (e) => {
     setSelectedInvoiceId(e.target.value);
   };
-  useEffect(() => {
-    console.log("Fetched Teams:", teams);
-  }, [teams]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -79,11 +99,19 @@ const AddNewOrder = ({ onClose, adminName }) => {
     }
 
     try {
-      const response = await createOrder(formData).unwrap();
-      console.log("Order created successfully:", response);
+      if (isEditMode) {
+        const response = await updateOrder({
+          id: orderToEdit._id, // assuming _id or id
+          updatedData: formData,
+        }).unwrap();
+        console.log("Order updated successfully:", response);
+      } else {
+        const response = await createOrder(formData).unwrap();
+        console.log("Order created successfully:", response);
+      }
       onClose();
     } catch (err) {
-      console.error("Error creating order:", err);
+      console.error("Error submitting order:", err);
       if (err?.status === 400) {
         alert(`Bad Request: ${err.data?.message || "Invalid data provided."}`);
       } else if (err?.status === 500) {
@@ -93,7 +121,6 @@ const AddNewOrder = ({ onClose, adminName }) => {
       }
     }
   };
-
   return (
     <div className="modal fade show" style={{ display: "block" }}>
       <div className="modal-dialog modal-dialog-centered">
@@ -124,8 +151,7 @@ const AddNewOrder = ({ onClose, adminName }) => {
                   className="form-control"
                   name="pipeline"
                   value={formData.pipeline}
-                  onChange={handleChange}
-                  required
+                  readOnly
                 />
               </div>
               <div className="mb-3">
@@ -206,6 +232,7 @@ const AddNewOrder = ({ onClose, adminName }) => {
                   name="invoiceId"
                   value={formData.invoiceId}
                   onChange={handleInvoiceSelect}
+                  disabled={isEditMode} // disable in edit mode
                   required
                 >
                   <option value="">Select Invoice</option>
@@ -234,6 +261,9 @@ const AddNewOrder = ({ onClose, adminName }) => {
                   </p>
                   <p>
                     <strong>Date:</strong> {selectedInvoice.invoiceDate}
+                  </p>
+                  <p>
+                    <strong>INVOCIE NO:</strong> {selectedInvoice.invoiceNo}
                   </p>
                 </div>
               )}
@@ -361,7 +391,13 @@ const AddNewOrder = ({ onClose, adminName }) => {
                   className="btn btn-primary"
                   disabled={isLoading}
                 >
-                  {isLoading ? "Submitting..." : "Submit"}
+                  {isLoading
+                    ? isEditMode
+                      ? "Updating..."
+                      : "Creating..."
+                    : isEditMode
+                    ? "Update Order"
+                    : "Create Order"}
                 </button>
               </div>
             </form>

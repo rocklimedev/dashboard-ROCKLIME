@@ -2,7 +2,9 @@ const Order = require("../models/orders");
 const OrderItem = require("../models/orderItem");
 const Team = require("../models/team");
 // Ensure Team and Order models are imported
+
 const Quotation = require("../models/quotation");
+
 exports.createOrder = async (req, res) => {
   try {
     const {
@@ -18,21 +20,38 @@ exports.createOrder = async (req, res) => {
       priority,
       description,
       invoiceId,
-      teamId,
     } = req.body;
 
-    // Validate required fields
-    if (!title || !invoiceId || !createdFor || !createdBy || !teamId) {
+    // Required fields validation
+    if (!title || !invoiceId || !createdFor || !createdBy) {
       return res.status(400).json({
-        message:
-          "Title, invoiceId, createdFor, createdBy, and teamId are required",
+        message: "Title, invoiceId, createdFor, and createdBy are required",
       });
     }
 
-    // Ensure followupDates is properly formatted (if needed)
+    // Parse followupDates safely
     const parsedFollowupDates = Array.isArray(followupDates)
       ? followupDates
       : [];
+
+    // Normalize assignedTo
+    const assignedTeamId = assignedTo?.trim?.() === "" ? null : assignedTo;
+
+    // Debug log (optional)
+    console.log(
+      "assignedTo received:",
+      assignedTo,
+      "| Parsed:",
+      assignedTeamId
+    );
+
+    // Check if assignedTo team exists
+    if (assignedTeamId) {
+      const team = await Team.findByPk(assignedTeamId);
+      if (!team) {
+        return res.status(400).json({ error: "Assigned team not found." });
+      }
+    }
 
     // Create the order
     const order = await Order.create({
@@ -40,15 +59,14 @@ exports.createOrder = async (req, res) => {
       createdFor,
       createdBy,
       pipeline,
-      status: status || "CREATED", // Default status
+      status: status || "CREATED",
       dueDate,
-      assignedTo,
+      assignedTo: assignedTeamId,
       followupDates: parsedFollowupDates,
       source,
       priority,
       description,
       invoiceId,
-      teamId,
     });
 
     console.log("Order created:", order);
@@ -61,9 +79,11 @@ exports.createOrder = async (req, res) => {
     console.error("Error creating order:", err);
     res.status(500).json({
       error: "Something went wrong while creating the order",
+      details: err.message,
     });
   }
 };
+
 exports.getAllOrders = async (req, res) => {
   try {
     const orders = await Order.findAll();

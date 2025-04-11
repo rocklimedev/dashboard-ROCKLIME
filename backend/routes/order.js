@@ -17,9 +17,6 @@ router.delete("/delete/:orderId", orderController.deleteOrder);
 // Get recent orders
 router.get("/recent", orderController.recentOrders);
 
-// Get an order by ID
-router.get("/:orderId", orderController.orderById);
-
 // Update an order by ID
 router.put("/:orderId", orderController.updateOrderById);
 

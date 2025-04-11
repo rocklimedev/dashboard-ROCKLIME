@@ -1,5 +1,5 @@
 import React from "react";
-
+import avatar from "../../assets/img/profiles/avatar-01.jpg";
 const OrderItem = ({ order }) => {
   if (!order) return null;
 
@@ -78,7 +78,7 @@ const OrderItem = ({ order }) => {
           <div class="d-flex align-items-center">
             <a href="javascript:void(0);" class="avatar avatar-md me-2">
               <img
-                src="assets/img/profiles/avatar-01.jpg"
+                src={avatar}
                 alt="Profile"
                 class="img-fluid rounded-circle"
               />
