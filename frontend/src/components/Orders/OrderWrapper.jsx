@@ -1,26 +1,63 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import PageHeader from "../Common/PageHeader";
 import OrderPagination from "./OrderPagination";
 import OrderList from "./OrderList";
 import OrderFilter from "./OrderFilter";
 import AddNewOrder from "./AddNewOrder";
 import OnHoldModal from "./OnHoldOrder";
-import OrderItem from "./Orderitem";
-import { useGetAllOrdersQuery } from "../../api/orderApi";
-import DataTablePagination from "../Common/DataTablePagination";
-import avatar from "../../assets/img/profiles/avatar-01.jpg";
+import ShowInvoices from "./ShowInvoices";
+import {
+  useGetFilteredOrdersQuery,
+  useGetAllOrdersQuery,
+} from "../../api/orderApi";
+import { useGetTeamByIdQuery } from "../../api/teamApi";
 import { FaEdit, FaOpencart, FaPause, FaTrash } from "react-icons/fa";
-import { useGetInvoiceByIdQuery } from "../../api/invoiceApi"; // adjust path if needed
 
 const OrderWrapper = () => {
+  const [activeTab, setActiveTab] = useState("orders");
   const [showModal, setShowModal] = useState(false);
-  const [showHoldModal, setShowHoldModal] = useState(false); // new state
+  const [showHoldModal, setShowHoldModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [filters, setFilters] = useState({ page: 1, limit: 6 });
+  const [filters, setFilters] = useState({
+    status: "",
+    priority: "",
+    important: false,
+    trash: false,
+    page: 1,
+    limit: 10,
+  });
 
-  const { data, error, isLoading } = useGetAllOrdersQuery(filters);
-  const orders = data?.orders || [];
-  const totalCount = data?.totalCount || 0;
+  const {
+    data: filteredData,
+    error: filteredError,
+    isLoading: filteredLoading,
+  } = useGetFilteredOrdersQuery(filters, {
+    skip: !Object.values(filters).some((val) => val),
+  });
+
+  const {
+    data: allData,
+    error: allError,
+    isLoading: allLoading,
+  } = useGetAllOrdersQuery({ skip: Object.values(filters).some((val) => val) });
+
+  const isFiltered = useMemo(
+    () =>
+      filters.status || filters.priority || filters.important || filters.trash,
+    [filters]
+  );
+
+  const orders = isFiltered ? filteredData?.orders : allData?.orders;
+  const totalCount = isFiltered
+    ? filteredData?.totalCount
+    : allData?.totalCount;
+  const isLoading = isFiltered ? filteredLoading : allLoading;
+  const error = isFiltered ? filteredError : allError;
+
+  const { data: teamData, isLoading: teamLoading } = useGetTeamByIdQuery(
+    selectedOrder?.assignedTo,
+    { skip: !selectedOrder?.assignedTo }
+  );
 
   const handlePageChange = (page) => {
     setFilters((prev) => ({ ...prev, page }));
@@ -41,11 +78,11 @@ const OrderWrapper = () => {
     setShowModal(false);
     setShowHoldModal(false);
   };
+
   const handleViewInvoice = (order) => {
-    const invoiceId = order.invoiceId; // assuming this field exists on the order
+    const invoiceId = order.invoiceId;
     if (invoiceId) {
-      // You could navigate, show a modal, or call the hook imperatively
-      window.open(`/invoice/${invoiceId}`, "_blank"); // example behavior
+      window.open(`/invoice/${invoiceId}`, "_blank");
     } else {
       alert("Invoice ID not found.");
     }
@@ -54,44 +91,51 @@ const OrderWrapper = () => {
   return (
     <div className="page-wrapper notes-page-wrapper">
       <div className="content">
-        {/* Header */}
         <div className="page-header page-add-notes border-0 flex-sm-row flex-column">
           <div className="add-item d-flex">
             <div className="page-title">
-              <h4>Orders</h4>
-              <h6 className="mb-0">Manage your orders</h6>
+              <h4>Orders & Invoices</h4>
+              <h6 className="mb-0">Manage everything from here</h6>
             </div>
           </div>
-          <div className="d-flex flex-sm-row flex-column align-items-sm-center align-items-start">
-            <div className="page-btn">
+          <ul className="nav nav-tabs">
+            <li className="nav-item">
               <button
-                onClick={() => {
-                  setSelectedOrder(null);
-                  setShowModal(true);
-                }}
-                className="btn btn-primary"
+                className={`nav-link ${activeTab === "orders" ? "active" : ""}`}
+                onClick={() => setActiveTab("orders")}
               >
-                <i className="ti ti-circle-plus me-1"></i>Add New Order
+                Orders
               </button>
-            </div>
-          </div>
+            </li>
+            <li className="nav-item">
+              <button
+                className={`nav-link ${
+                  activeTab === "invoices" ? "active" : ""
+                }`}
+                onClick={() => setActiveTab("invoices")}
+              >
+                Invoices
+              </button>
+            </li>
+          </ul>
         </div>
 
-        {/* Filters and Orders */}
-        <div className="row">
-          <OrderFilter setFilters={setFilters} />
-          <div className="col-xl-9 budget-role-notes">
-            <div className="tab-content">
-              <div className="tab-pane fade active show">
-                <div className="border-bottom mb-4 pb-4">
-                  <h4>All Orders</h4>
-                </div>
+        {activeTab === "orders" ? (
+          <div className="row">
+            <div class="col-xl-3 col-md-12 sidebars-right theiaStickySidebar section-bulk-widget">
+              <OrderFilter setFilters={setFilters} />
+            </div>
+            <div className="col-xl-9 budget-role-notes">
+              <div className="border-bottom mb-4 pb-4">
+                <h4>All Orders</h4>
+              </div>
 
-                {isLoading ? (
-                  <p>Loading...</p>
-                ) : error ? (
-                  <p>Error loading orders!</p>
-                ) : orders.length > 0 ? (
+              {isLoading ? (
+                <p>Loading orders...</p>
+              ) : error ? (
+                <p>Error loading orders: {error.message}</p>
+              ) : orders?.length > 0 ? (
+                <>
                   <div className="row">
                     {orders.map((order) => (
                       <div key={order.id} className="col-md-4 d-flex">
@@ -100,11 +144,14 @@ const OrderWrapper = () => {
                             <div className="d-flex align-items-center justify-content-between">
                               <span className="badge bg-outline-success d-inline-flex align-items-center">
                                 <i className="fas fa-circle fs-6 me-1"></i>
-                                {order.priority} - {order.assignedTo || "null"}
+                                {order.priority} -{" "}
+                                {teamData?.name ||
+                                  order.assignedTo ||
+                                  "Unassigned"}
                               </span>
                               <div>
                                 <a
-                                  href="javascript:void(0);"
+                                  href="#"
                                   data-bs-toggle="dropdown"
                                   aria-expanded="false"
                                 >
@@ -112,66 +159,51 @@ const OrderWrapper = () => {
                                 </a>
                                 <div className="dropdown-menu notes-menu dropdown-menu-end">
                                   <a
-                                    href={`/order/${order.invoiceId}`}
+                                    href={`/order/${order.id}`}
                                     className="dropdown-item"
                                   >
-                                    <span>
-                                      <FaOpencart />
-                                    </span>{" "}
-                                    Open Order
+                                    <FaOpencart /> Open Order
                                   </a>
                                   <a
                                     href="#"
                                     className="dropdown-item"
                                     onClick={() => handleEditClick(order)}
                                   >
-                                    <span>
-                                      <FaEdit />
-                                    </span>{" "}
-                                    Edit
+                                    <FaEdit /> Edit
                                   </a>
                                   <a
                                     href="#"
                                     className="dropdown-item"
                                     onClick={() => handleViewInvoice(order)}
                                   >
-                                    <span>
-                                      <i className="fas fa-file-invoice"></i>
-                                    </span>{" "}
-                                    View Invoice
+                                    <i className="fas fa-file-invoice"></i> View
+                                    Invoice
                                   </a>
-
                                   <a
                                     href="#"
                                     className="dropdown-item"
                                     onClick={() => handleHoldClick(order)}
                                   >
-                                    <span>
-                                      <FaPause />
-                                    </span>{" "}
-                                    Hold Order
+                                    <FaPause /> Hold Order
                                   </a>
                                   <a href="#" className="dropdown-item">
-                                    <span>
-                                      <FaTrash />
-                                    </span>{" "}
-                                    Delete
+                                    <FaTrash /> Delete
                                   </a>
                                 </div>
                               </div>
                             </div>
 
                             <div className="my-3">
-                              <h5 className="text-truncate mb-1">
-                                <a href={`/order/${order.invoiceId}`}>
-                                  {order.title || "Order Title"} -{" "}
+                              <h5 className="text truncate mb-1">
+                                <a href={`/order/${order.id}`}>
+                                  {order.title || "Untitled Order"} -{" "}
                                   {order.pipeline}
                                 </a>
                               </h5>
                               <p className="mb-3 d-flex align-items-center text-dark">
-                                <i className="ti ti-calendar me-1"></i>{" "}
+                                <i className="ti ti-calendar me-1"></i>
                                 {order.dueDate || "No Due Date"} -{" "}
-                                {order.followupDates}
+                                {order.followupDates || "No Follow-up"}
                               </p>
                               <p className="text-truncate line-clamb-2 text-wrap">
                                 {order.description ||
@@ -181,11 +213,11 @@ const OrderWrapper = () => {
 
                             <div className="d-flex align-items-center justify-content-between border-top pt-3">
                               <span className="text-warning d-flex align-items-center">
-                                <i className="fas fa-square square-rotate fs-10 me-1"></i>{" "}
+                                <i className="fas fa-square square-rotate fs-10 me-1"></i>
                                 {order.source || "Unknown"}
                               </span>
                               <span className="text-info d-flex align-items-center">
-                                <i className="fas fa-square square-rotate fs-10 me-1"></i>{" "}
+                                <i className="fas fa-square square-rotate fs-10 me-1"></i>
                                 {order.status}
                               </span>
                             </div>
@@ -194,28 +226,39 @@ const OrderWrapper = () => {
                       </div>
                     ))}
                   </div>
-                ) : (
-                  <p>No orders found.</p>
-                )}
-
-                <DataTablePagination
-                  totalItems={totalCount}
-                  itemNo={filters.limit}
-                  onPageChange={handlePageChange}
-                />
-              </div>
+                  {totalCount > filters.limit && (
+                    <OrderPagination
+                      currentPage={filters.page}
+                      totalCount={totalCount}
+                      pageSize={filters.limit}
+                      onPageChange={handlePageChange}
+                    />
+                  )}
+                </>
+              ) : (
+                <p>No orders found.</p>
+              )}
             </div>
           </div>
-        </div>
-      </div>
+        ) : (
+          <ShowInvoices />
+        )}
 
-      {/* Modals */}
-      {showModal && (
-        <AddNewOrder onClose={handleModalClose} orderToEdit={selectedOrder} />
-      )}
-      {showHoldModal && (
-        <OnHoldModal onClose={handleModalClose} order={selectedOrder} />
-      )}
+        {showModal && (
+          <AddNewOrder
+            visible={showModal}
+            onClose={handleModalClose}
+            order={selectedOrder}
+          />
+        )}
+        {showHoldModal && (
+          <OnHoldModal
+            visible={showHoldModal}
+            onClose={handleModalClose}
+            order={selectedOrder}
+          />
+        )}
+      </div>
     </div>
   );
 };

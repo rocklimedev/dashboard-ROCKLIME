@@ -2,80 +2,102 @@ import React from "react";
 
 const OrderFilter = ({ setFilters }) => {
   const applyFilter = (key, value) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: value,
-      page: 1, // Reset to first page on filter change
-    }));
+    setFilters((prev) => {
+      let newFilters = { ...prev, page: 1 };
+      if (key === "status" && value === "all") {
+        // Reset all filters for "All Orders"
+        newFilters = {
+          ...newFilters,
+          status: "",
+          priority: "",
+        };
+      } else if (key === "priority") {
+        // Apply priority filter and reset status
+        newFilters = {
+          ...newFilters,
+          status: "",
+          priority: value,
+        };
+      } else {
+        // Apply status filter and reset priority
+        newFilters = {
+          ...newFilters,
+          status: value,
+          priority: "",
+        };
+      }
+      return newFilters;
+    });
   };
 
+  const statuses = [
+    "CREATED",
+    "PREPARING",
+    "CHECKING",
+    "INVOICE",
+    "DISPATCHED",
+    "DELIVERED",
+    "PARTIALLY_DELIVERED",
+    "CANCELED",
+    "DRAFT",
+    "ONHOLD",
+  ];
+
+  const priorities = ["high", "medium", "low"];
+
   return (
-    <div className="col-xl-3 col-md-12 sidebars-right theiaStickySidebar section-bulk-widget">
-      <div className="border rounded-3 bg-white p-3">
-        <div className="mb-3 pb-3 border-bottom">
-          <h4 className="d-flex align-items-center">
-            <i className="ti ti-file-text me-2"></i>Order List
-          </h4>
-        </div>
+    <div className="border rounded-3 bg-white p-4 shadow-sm">
+      <div className="mb-4 border-bottom pb-2">
+        <h5 className="fw-bold text-secondary d-flex align-items-center">
+          <i className="ti ti-file-text me-2"></i> Order Filters
+        </h5>
+      </div>
 
-        <div className="border-bottom pb-3">
-          <div className="nav flex-column nav-pills">
+      <div className="mb-4">
+        <h6 className="text-muted mb-3">Quick Actions</h6>
+        <div className="btn-group-vertical w-100">
+          <button
+            className="btn btn-outline-primary mb-2"
+            onClick={() => applyFilter("status", "all")}
+          >
+            <i className="ti ti-inbox me-2"></i>All Orders
+          </button>
+          {priorities.map((priority) => (
             <button
-              className="nav-link active mb-1"
-              onClick={() => applyFilter("status", "all")}
+              key={priority}
+              className={`btn btn-outline-${
+                priority === "high"
+                  ? "danger"
+                  : priority === "medium"
+                  ? "warning"
+                  : "secondary"
+              } mb-2`}
+              onClick={() => applyFilter("priority", priority)}
             >
-              <i className="ti ti-inbox me-2"></i>All Orders
+              <i className={`ti ti-urgent me-2`}></i>
+              {priority.charAt(0).toUpperCase() + priority.slice(1)} Priority
             </button>
-            <button
-              className="nav-link mb-1"
-              onClick={() => applyFilter("important", true)}
-            >
-              <i className="ti ti-star me-2"></i>Important
-            </button>
-            <button
-              className="nav-link mb-0"
-              onClick={() => applyFilter("trash", true)}
-            >
-              <i className="ti ti-trash me-2"></i>Trash
-            </button>
-          </div>
+          ))}
         </div>
+      </div>
 
-        <div className="mt-3">
-          <div className="border-bottom px-2 pb-3 mb-3">
-            <h5 className="mb-2">Tags</h5>
-            <div className="d-flex flex-column mt-2">
-              {["Pending", "Onhold", "Inprogress", "Done"].map((status) => (
-                <a
-                  key={status}
-                  href="#"
-                  className={`text-${status.toLowerCase()}`}
-                  onClick={() => applyFilter("tag", status)}
-                >
-                  <i className="fas fa-square square-rotate fs-10 me-2"></i>
-                  {status}
-                </a>
-              ))}
-            </div>
-          </div>
-
-          <div className="px-2">
-            <h5 className="mb-2">Priority</h5>
-            <div className="d-flex flex-column mt-2">
-              {["Medium", "High", "Low"].map((priority) => (
-                <a
-                  key={priority}
-                  href="#"
-                  className={`text-${priority.toLowerCase()}`}
-                  onClick={() => applyFilter("priority", priority)}
-                >
-                  <i className="fas fa-square square-rotate fs-10 me-2"></i>
-                  {priority}
-                </a>
-              ))}
-            </div>
-          </div>
-        </div>
+      <div className="mb-4">
+        <h6 className="text-muted mb-3">Filter by Status</h6>
+        <ul className="list-group">
+          {statuses.map((status) => (
+            <li
+              key={status}
+              className="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+              role="button"
+              onClick={() => applyFilter("status", status)}
+            >
+              {status.replace(/_/g, " ")}
+              <span className="badge bg-light text-secondary">
+                {status.length}
+              </span>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );

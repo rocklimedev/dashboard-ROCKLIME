@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { useCreateOrderMutation } from "../../api/orderApi";
-import { useUpdateOrderByIdMutation } from "../../api/orderApi";
+import {
+  useCreateOrderMutation,
+  useUpdateOrderByIdMutation,
+} from "../../api/orderApi";
 import {
   useGetAllInvoicesQuery,
   useGetInvoiceByIdQuery,
@@ -11,10 +13,10 @@ import AddNewTeam from "./AddNewTeam";
 const AddNewOrder = ({ onClose, adminName, orderToEdit }) => {
   const isEditMode = Boolean(orderToEdit);
 
-  const [createOrder, error, isLoading] = useCreateOrderMutation();
+  const [createOrder] = useCreateOrderMutation();
   const [updateOrder] = useUpdateOrderByIdMutation();
 
-  const { data: invoicesData } = useGetAllInvoicesQuery();
+  const { data: invoicesData, isLoading, error } = useGetAllInvoicesQuery();
   const invoices = invoicesData?.data || [];
 
   const [showNewTeamModal, setShowNewTeamModal] = useState(false);
@@ -22,9 +24,7 @@ const AddNewOrder = ({ onClose, adminName, orderToEdit }) => {
 
   const { data: selectedInvoiceData } = useGetInvoiceByIdQuery(
     selectedInvoiceId,
-    {
-      skip: !selectedInvoiceId,
-    }
+    { skip: !selectedInvoiceId }
   );
   const selectedInvoice = selectedInvoiceData?.data;
 
@@ -41,31 +41,32 @@ const AddNewOrder = ({ onClose, adminName, orderToEdit }) => {
     dueDate: "",
     followupDates: [],
     source: "",
+    orderNo: "",
     teamId: "",
     priority: "",
     description: "",
     invoiceId: "",
   });
 
-  // For edit mode: populate form data
-
   useEffect(() => {
     if (isEditMode && orderToEdit) {
       setFormData({ ...orderToEdit });
-      setSelectedInvoiceId(orderToEdit.invoiceId); // trigger invoice autofill too
+      setSelectedInvoiceId(orderToEdit.invoiceId);
     }
   }, [isEditMode, orderToEdit]);
 
-  // When invoice is selected
   useEffect(() => {
     if (selectedInvoice) {
+      // Extract only numeric part from invoiceNo
+      const numericOrderNo = selectedInvoice.invoiceNo?.replace(/\D/g, "");
+
       setFormData((prev) => ({
         ...prev,
         invoiceId: selectedInvoiceId,
         dueDate: selectedInvoice.dueDate || "",
         createdBy: selectedInvoice.createdBy || "",
         createdFor: selectedInvoice.customerId || "",
-        invoiceNo: selectedInvoice.pipeline || "",
+        orderNo: numericOrderNo || "", // set only numeric orderNo
       }));
     }
   }, [selectedInvoice, selectedInvoiceId]);
@@ -101,7 +102,7 @@ const AddNewOrder = ({ onClose, adminName, orderToEdit }) => {
     try {
       if (isEditMode) {
         const response = await updateOrder({
-          id: orderToEdit._id, // assuming _id or id
+          id: orderToEdit._id,
           updatedData: formData,
         }).unwrap();
         console.log("Order updated successfully:", response);
@@ -151,7 +152,7 @@ const AddNewOrder = ({ onClose, adminName, orderToEdit }) => {
                   className="form-control"
                   name="pipeline"
                   value={formData.pipeline}
-                  readOnly
+                  onChange={handleChange}
                 />
               </div>
               <div className="mb-3">
