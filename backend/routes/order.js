@@ -6,7 +6,7 @@ const orderController = require("../controller/orderController");
 router.post("/create", orderController.createOrder);
 router.get("/all", orderController.getAllOrders);
 // Get order details by ID
-router.get("/:orderId", orderController.getOrderDetails);
+router.get("/:id", orderController.getOrderDetails);
 
 // Update order status
 router.put("/update-status", orderController.updateOrderStatus);
