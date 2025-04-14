@@ -6,6 +6,8 @@ const {
   editPermission,
   getPermission,
   deletePermission,
+  assignPermissionToRole,
+  removePermissionFromRole,
 } = require("../controller/permissonController");
 
 const checkPermission = require("../middleware/permission");
@@ -56,6 +58,7 @@ router.get(
 );
 
 // Assigning permissions to roles
-// router.post("/assign-permission",  permissionController.assignPermissionToRole);
 
+router.post("/assign-permission", assignPermissionToRole);
+router.post("/remove-permission", removePermissionFromRole);
 module.exports = router;

@@ -11,13 +11,11 @@ import CustomerDetails from "../components/Customers/CustomerDetails";
 import SignatureWrapper from "../components/Signature/SignatureWrapper";
 import { RiAdminLine } from "react-icons/ri";
 import { LuUsersRound } from "react-icons/lu";
-import { PiSignatureDuotone, PiUserListBold } from "react-icons/pi";
+import { PiUserListBold } from "react-icons/pi";
 import { LiaFileInvoiceSolid, LiaFileSignatureSolid } from "react-icons/lia";
 import OrderWrapper from "../components/Orders/OrderWrapper";
-import OrderDetails from "../components/POS/OrderDetail";
 import {
   MdOutlineBrandingWatermark,
-  MdOutlineBorderColor,
   MdError,
   MdInventory,
   MdBrandingWatermark,
@@ -28,13 +26,12 @@ import { BiSolidCategory, BiUserCheck } from "react-icons/bi";
 import { FaFileCircleCheck, FaFirstOrder, FaPooStorm } from "react-icons/fa6";
 import {
   FaRegFile,
-  FaJediOrder,
   FaFirstOrderAlt,
   FaUserGraduate,
   FaTeamspeak,
   FaFileInvoice,
 } from "react-icons/fa";
-import { AiTwotoneCreditCard, AiFillProfile } from "react-icons/ai";
+import { AiFillProfile } from "react-icons/ai";
 import { CgProfile } from "react-icons/cg";
 import { IoLogOut, IoLogIn, IoHome } from "react-icons/io5";
 import Profile from "../components/Profile/Profile";
@@ -49,7 +46,6 @@ import RolePermission from "../components/RolesPermission/RolePermission";
 import Permissions from "../components/RolesPermission/Permissions";
 import Error500 from "../components/Error/Error500";
 import Brands from "../components/Brands/Brands";
-import GivePermission from "../components/RolesPermission/GivePermissions";
 import QuotaionDetails from "../components/Quotation/QuotaionDetails";
 import ProductDetails from "../components/Product/ProductDetails";
 import UserList from "../components/User/UserList";
@@ -112,13 +108,6 @@ const masterRoutes = [
         icon: <LiaFileInvoiceSolid />,
         isSidebarActive: true,
         element: <RecentInvoices />,
-      },
-      {
-        path: "/super-admin/permissions",
-        name: "Permission To Give",
-        icon: <MdOutlineBorderColor />,
-        isSidebarActive: true,
-        element: <GivePermission />,
       },
     ],
   },

@@ -12,6 +12,7 @@ import { useDeleteCustomerMutation } from "../../api/customerApi";
 import ViewOrderModal from "./ViewOrderModal";
 import EditOrderModal from "./EditOrderModal";
 import DeleteModal from "../Common/DeleteModal";
+import { useGetAllTeamsQuery } from "../../api/teamApi"; // 👈 Make sure this path is correct
 
 const RecentOrders = () => {
   const { data, error, isLoading } = useGetAllOrdersQuery();
@@ -24,13 +25,21 @@ const RecentOrders = () => {
   const [modalType, setModalType] = useState("");
   const [customerToDelete, setCustomerToDelete] = useState(null);
   const [deleteCustomer] = useDeleteCustomerMutation();
+
+  const [orderToDelete, setOrderToDelete] = useState(null);
   const [deleteOrder] = useDeleteOrderMutation();
+
   const { data: invoiceData } = useGetAllInvoicesQuery();
   const invoice = invoiceData?.data;
   const openModal = (order, type) => {
     setSelectedOrder(order);
     setModalType(type);
   };
+  const { data: teamsData } = useGetAllTeamsQuery();
+  const teamMap = {};
+  teamsData?.teams?.forEach((team) => {
+    teamMap[team.id] = team.name;
+  });
 
   // ✅ Load all invoices after orders are fetched
   useEffect(() => {
@@ -66,21 +75,20 @@ const RecentOrders = () => {
   if (isLoading) return <p>Loading...</p>;
   if (error) return <p>Error fetching recent Orders.</p>;
   if (recentOrder.length === 0) return <p>No recent Orders available.</p>;
-
-  const handleDelete = (customerId) => {
-    setCustomerToDelete(customerId);
+  const handleDelete = (orderId) => {
+    setOrderToDelete(orderId);
     setShowDeleteModal(true);
   };
 
   const confirmDelete = async () => {
-    if (!customerToDelete) return;
+    if (!orderToDelete) return;
     try {
-      await deleteCustomer(customerToDelete).unwrap();
+      await deleteOrder(orderToDelete).unwrap();
     } catch (err) {
-      console.error("Error deleting customer:", err);
+      console.error("Error deleting order:", err);
     } finally {
       setShowDeleteModal(false);
-      setCustomerToDelete(null);
+      setOrderToDelete(null);
     }
   };
 
@@ -131,7 +139,8 @@ const RecentOrders = () => {
                       <td>{order.pipeline}</td>
                       <td>{order.status}</td>
                       <td>{order.dueDate}</td>
-                      <td>{order.assignedTo || "—"}</td>
+                      <td>{teamMap[order.assignedTo] || "—"}</td>
+
                       <td>{order.followupDates.join(", ")}</td>
                       <td>{order.source}</td>
                       <td>
@@ -191,7 +200,7 @@ const RecentOrders = () => {
                             <a
                               href="#"
                               className="dropdown-item"
-                              onClick={() => openModal(order, "delete")}
+                              onClick={() => handleDelete(order.id)}
                             >
                               <i
                                 data-feather="trash-2"
@@ -229,7 +238,7 @@ const RecentOrders = () => {
       {showDeleteModal && (
         <DeleteModal
           itemType="Order"
-          isVisible={handleDelete}
+          isVisible={showDeleteModal}
           onConfirm={confirmDelete}
           onCancel={() => setShowDeleteModal(false)}
         />

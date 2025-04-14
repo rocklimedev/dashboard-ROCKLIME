@@ -108,7 +108,54 @@ exports.getAllPermissions = async (req, res) => {
 /**
  * Assign permission to a role
  */
+// controllers/permissionController.js
+
 exports.assignPermissionToRole = async (req, res) => {
+  try {
+    const { roleId, permissionId, isGranted = true } = req.body;
+
+    const role = await Role.findByPk(roleId);
+    const permission = await Permission.findByPk(permissionId);
+
+    if (!role) {
+      return res.status(404).json({ message: "Role not found." });
+    }
+    if (!permission) {
+      return res.status(404).json({ message: "Permission not found." });
+    }
+
+    let rolePermission = await RolePermission.findOne({
+      where: { roleId, permissionId },
+    });
+
+    if (!rolePermission) {
+      rolePermission = await RolePermission.create({
+        id: uuidv4(),
+        roleId,
+        permissionId,
+        isGranted,
+      });
+    } else {
+      await rolePermission.update({ isGranted });
+    }
+
+    res.json({
+      message: `Permission ${isGranted ? "granted" : "revoked"} successfully.`,
+      rolePermission: {
+        roleId,
+        permissionId,
+        isGranted,
+      },
+    });
+  } catch (error) {
+    console.error("Error assigning permission:", error);
+    res
+      .status(500)
+      .json({ message: "Error assigning permission.", error: error.message });
+  }
+};
+// controllers/permissionController.js
+exports.removePermissionFromRole = async (req, res) => {
   try {
     const { roleId, permissionId } = req.body;
 
@@ -122,28 +169,26 @@ exports.assignPermissionToRole = async (req, res) => {
       return res.status(404).json({ message: "Permission not found." });
     }
 
-    let rolePermission = await RolePermission.findOne({ where: { roleId } });
+    const rolePermission = await RolePermission.findOne({
+      where: { roleId, permissionId },
+    });
 
     if (!rolePermission) {
-      rolePermission = await RolePermission.create({
-        roleId,
-        permissions: [permissionId],
-      });
-    } else {
-      let permissions = rolePermission.permissions;
-      if (!permissions.includes(permissionId)) {
-        permissions.push(permissionId);
-        await rolePermission.update({ permissions });
-      }
+      return res
+        .status(404)
+        .json({ message: "Permission not assigned to role." });
     }
 
+    await rolePermission.destroy();
+
     res.json({
-      message: "Permission assigned to role successfully.",
-      rolePermission,
+      message: "Permission removed successfully.",
+      rolePermission: { roleId, permissionId },
     });
   } catch (error) {
+    console.error("Error removing permission:", error);
     res
       .status(500)
-      .json({ message: "Error assigning permission.", error: error.message });
+      .json({ message: "Error removing permission.", error: error.message });
   }
 };
