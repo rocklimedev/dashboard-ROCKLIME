@@ -1,5 +1,6 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { API_URL } from "../data/config";
+
 export const permissionsApi = createApi({
   reducerPath: "permissionsApi",
   baseQuery: fetchBaseQuery({ baseUrl: `${API_URL}/permission` }),
@@ -30,12 +31,29 @@ export const permissionsApi = createApi({
         method: "DELETE",
       }),
     }),
+    assignPermissionsToRole: builder.mutation({
+      query: ({ roleId, permissionId }) => ({
+        url: "/assign-permission",
+        method: "POST",
+        body: { roleId, permissionId },
+      }),
+    }),
+    removePermissionFromRole: builder.mutation({
+      query: ({ roleId, permissionId }) => ({
+        url: "/remove-permission",
+        method: "POST",
+        body: { roleId, permissionId },
+      }),
+    }),
   }),
 });
 
 export const {
   useGetAllPermissionsQuery,
+  useGetPermissionQuery,
   useCreatePermissionMutation,
   useUpdatePermissionMutation,
   useDeletePermissionMutation,
+  useAssignPermissionsToRoleMutation,
+  useRemovePermissionFromRoleMutation,
 } = permissionsApi;

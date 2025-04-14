@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import PageHeader from "../Common/PageHeader";
-import { useGetRolesQuery } from "../../api/rolesApi";
+import { useGetRolesQuery, useCreateRoleMutation } from "../../api/rolesApi";
 import { useGetAllPermissionsQuery } from "../../api/permissionApi";
 import PermissionsTable from "./PermissionsTable";
+import AddRoleModal from "./AddRoleModal";
+
 const RolePermission = () => {
   const { data: roles, isLoading, isError } = useGetRolesQuery();
   const {
@@ -10,19 +12,32 @@ const RolePermission = () => {
     isLoading: isPermissionsLoading,
     isError: isPermissionsError,
   } = useGetAllPermissionsQuery();
+  const [createRole] = useCreateRoleMutation();
+  const [showModal, setShowModal] = useState(false);
+
+  const handleOpenRoleModal = () => {
+    setShowModal(true);
+  };
+
+  const handleCloseRoleModal = () => {
+    setShowModal(false);
+  };
+
+  const handleAddRole = async (roleName) => {
+    try {
+      await createRole({ roleName }).unwrap();
+      setShowModal(false);
+    } catch (err) {
+      console.error("Failed to create role:", err);
+    }
+  };
 
   const permissions = Array.isArray(permissionsData?.permissions)
     ? permissionsData.permissions
     : [];
 
-  console.log(permissions);
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (isError) {
-    return <div>Error loading roles!</div>;
-  }
+  if (isLoading || isPermissionsLoading) return <div>Loading...</div>;
+  if (isError || isPermissionsError) return <div>Error loading data!</div>;
 
   return (
     <div className="page-wrapper">
@@ -30,47 +45,10 @@ const RolePermission = () => {
         <PageHeader
           title="Roles & Permissions"
           subtitle="Manage your Roles & Permissions"
+          onAdd={handleOpenRoleModal}
         />
 
         <div className="card">
-          <div className="card-header d-flex align-items-center justify-content-between flex-wrap row-gap-3">
-            <div className="search-set">
-              <div className="search-input">
-                <span className="btn-searchset">
-                  <i className="ti ti-search fs-14 feather-search"></i>
-                </span>
-              </div>
-            </div>
-            <div className="d-flex table-dropdown my-xl-auto right-content align-items-center flex-wrap row-gap-3">
-              <div className="dropdown">
-                <a
-                  href="javascript:void(0);"
-                  className="dropdown-toggle btn btn-white btn-md d-inline-flex align-items-center"
-                  data-bs-toggle="dropdown"
-                >
-                  Status
-                </a>
-                <ul className="dropdown-menu dropdown-menu-end p-3">
-                  <li>
-                    <a
-                      href="javascript:void(0);"
-                      className="dropdown-item rounded-1"
-                    >
-                      Active
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="javascript:void(0);"
-                      className="dropdown-item rounded-1"
-                    >
-                      Inactive
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
           <div className="card-body p-0">
             <div className="table-responsive">
               <table className="table datatable">
@@ -87,7 +65,6 @@ const RolePermission = () => {
                     </th>
                     <th>Role</th>
                     <th>Created Date</th>
-
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -101,7 +78,6 @@ const RolePermission = () => {
                       </td>
                       <td>{role.roleName}</td>
                       <td>{new Date(role.createdAt).toLocaleDateString()}</td>
-
                       <td>
                         <div className="action-icon d-inline-flex">
                           <a
@@ -110,7 +86,6 @@ const RolePermission = () => {
                           >
                             <i className="ti ti-shield"></i>
                           </a>
-
                           <a
                             href="#"
                             data-bs-toggle="modal"
@@ -128,9 +103,15 @@ const RolePermission = () => {
             </div>
           </div>
         </div>
-        <PageHeader title="Permissions" subtitle="Manage your Permissions" />
 
+        <PageHeader title="Permissions" subtitle="Manage your Permissions" />
         <PermissionsTable permissions={permissions} />
+
+        <AddRoleModal
+          show={showModal}
+          onClose={handleCloseRoleModal}
+          onAddRole={handleAddRole}
+        />
       </div>
     </div>
   );

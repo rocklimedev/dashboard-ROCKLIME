@@ -19,6 +19,7 @@ import { rolesApi } from "../api/rolesApi";
 import { permissionsApi } from "../api/permissionApi";
 import { invoiceApi } from "../api/invoiceApi";
 import { teamApi } from "../api/teamApi";
+import { rolePermissionsApi } from "../api/rolePermissionApi";
 
 export const store = configureStore({
   reducer: {
@@ -42,6 +43,7 @@ export const store = configureStore({
     [permissionsApi.reducerPath]: permissionsApi.reducer,
     [invoiceApi.reducerPath]: invoiceApi.reducer,
     [teamApi.reducerPath]: teamApi.reducer,
+    [rolePermissionsApi.reducerPath]: rolePermissionsApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -64,7 +66,8 @@ export const store = configureStore({
       rolesApi.middleware,
       permissionsApi.middleware,
       invoiceApi.middleware,
-      teamApi.middleware
+      teamApi.middleware,
+      rolePermissionsApi.middleware
     ),
 });
 
