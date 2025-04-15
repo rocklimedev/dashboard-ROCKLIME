@@ -13,7 +13,8 @@ import ViewOrderModal from "./ViewOrderModal";
 import EditOrderModal from "./EditOrderModal";
 import DeleteModal from "../Common/DeleteModal";
 import { useGetAllTeamsQuery } from "../../api/teamApi"; // 👈 Make sure this path is correct
-
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css"; // import styles
 const RecentOrders = () => {
   const { data, error, isLoading } = useGetAllOrdersQuery();
   const recentOrder = data?.orders || [];
@@ -84,7 +85,9 @@ const RecentOrders = () => {
     if (!orderToDelete) return;
     try {
       await deleteOrder(orderToDelete).unwrap();
+      toast.success("Order deleted successfully!"); // Success toast
     } catch (err) {
+      toast.error("Error deleting order!"); // Error toast
       console.error("Error deleting order:", err);
     } finally {
       setShowDeleteModal(false);

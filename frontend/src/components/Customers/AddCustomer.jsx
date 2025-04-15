@@ -3,8 +3,10 @@ import {
   useCreateCustomerMutation,
   useUpdateCustomerMutation,
 } from "../../api/customerApi";
-import { useGetAllVendorsQuery } from "../../api/vendorApi";
 import { useGetVendorsQuery } from "../../api/vendorApi";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 const AddCustomer = ({ onClose, existingCustomer }) => {
   const [createCustomer, { isLoading: isCreating, error: createError }] =
     useCreateCustomerMutation();
@@ -86,20 +88,20 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
           ...formData,
           isVendor: formData.isVendor === "true",
         }).unwrap();
-        alert("Customer updated successfully!");
+        toast.success("Customer updated successfully!"); // Success toast
       } else {
         await createCustomer({
           ...formData,
           isVendor: formData.isVendor === "true",
         }).unwrap();
-        alert("Customer added successfully!");
+        toast.success("Customer added successfully!"); // Success toast
       }
       onClose();
     } catch (err) {
       console.error("Failed to add/update customer:", err);
+      toast.error("Failed to add/update customer!"); // Error toast
     }
   };
-
   return (
     <div className="modal fade show" style={{ display: "block" }}>
       <div className="modal-dialog modal-dialog-centered">

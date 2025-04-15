@@ -2,16 +2,17 @@ import React, { useState, useEffect } from "react";
 import PageHeader from "../Common/PageHeader";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import { useDeleteCustomerMutation } from "../../api/customerApi";
-
 import AddCustomer from "./AddCustomer";
 import Actions from "../Common/Actions";
 import DeleteModal from "../Common/DeleteModal";
 import { BiEdit, BiTrash } from "react-icons/bi";
 import { FaEye } from "react-icons/fa";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 const CustomerList = () => {
   const { data, error, isLoading } = useGetCustomersQuery();
   const customers = data?.data || [];
-
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -29,8 +30,7 @@ const CustomerList = () => {
 
   const handleEditCustomer = (customer) => {
     setSelectedCustomer({ ...customer }); // Ensure new reference
-    setShowModal(true); // Close the modal first
-    // Open modal after a slight delay
+    setShowModal(true); // Open modal to edit customer
   };
 
   const handleDelete = (customerId) => {
@@ -46,9 +46,10 @@ const CustomerList = () => {
 
     try {
       await deleteCustomer(customerToDelete).unwrap();
-      console.log("Customer deleted:", customerToDelete);
+      toast.success("Customer deleted successfully!"); // Success toast
     } catch (err) {
       console.error("Error deleting customer:", err);
+      toast.error("Failed to delete customer!"); // Error toast
     } finally {
       setShowDeleteModal(false);
       setCustomerToDelete(null);

@@ -175,9 +175,15 @@ exports.getLowStockProducts = async (req, res) => {
   try {
     const threshold = req.query.threshold || 10; // Default low stock threshold
     const products = await Product.findAll({
-      where: { quantity: { [Op.lte]: threshold } },
+      where: {
+        quantity: { [Op.lte]: threshold },
+      },
+      attributes: ["productId", "name", "quantity"],
     });
-    return res.status(200).json(products);
+    return res.status(200).json({
+      message: `${products.length} product(s) with low stock`,
+      products: products,
+    });
   } catch (error) {
     return res.status(500).json({
       message: "Error fetching low stock products",
@@ -322,5 +328,27 @@ exports.searchProducts = async (req, res) => {
     return res
       .status(500)
       .json({ message: "Error searching products", error: error.message });
+  }
+};
+// ✅ Get all products that are low in stock (quantity <= threshold)
+exports.getAllLowStockProducts = async (req, res) => {
+  try {
+    const threshold = parseInt(req.query.threshold) || 5; // Default threshold is 5
+    const lowStockProducts = await Product.findAll({
+      where: {
+        quantity: { [Op.lte]: threshold },
+      },
+      attributes: ["productId", "name", "quantity"], // Return only necessary fields
+    });
+
+    return res.status(200).json({
+      message: `${lowStockProducts.length} product(s) with low stock`,
+      products: lowStockProducts,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error fetching low stock products",
+      error: error.message,
+    });
   }
 };

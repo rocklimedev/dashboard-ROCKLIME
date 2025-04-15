@@ -24,7 +24,7 @@ const Sidebar = ({ isSidebarOpen }) => {
           <img src={logo} alt="Logo" />
         </a>
         <a id="toggle_btn" href="#">
-          <ChevronsLeft size={16} color="#000" /> {/* Changed here */}
+          <ChevronsLeft size={16} color="#000" />
         </a>
       </div>
 

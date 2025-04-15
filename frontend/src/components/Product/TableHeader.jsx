@@ -1,27 +1,18 @@
-import React, { useState } from "react";
+import React from "react";
 import { useGetAllProductsQuery } from "../../api/productApi";
 import { useGetAllBrandsQuery } from "../../api/brandsApi";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 
-const TableHeader = ({ onFilterChange }) => {
+const TableHeader = ({ filters, setFilters }) => {
   const { data: customersData } = useGetCustomersQuery();
   const { data: categoriesData } = useGetAllCategoriesQuery();
   const { data: brandsData } = useGetAllBrandsQuery();
   const { data: productsData } = useGetAllProductsQuery();
 
-  const [selectedFilters, setSelectedFilters] = useState({
-    createdBy: null,
-    category: null,
-    brand: null,
-    sortBy: "Last 7 Days",
-    search: "", // 👈 Add search field
-  });
-
   const handleFilterChange = (field, value) => {
-    const updatedFilters = { ...selectedFilters, [field]: value };
-    setSelectedFilters(updatedFilters);
-    if (onFilterChange) onFilterChange(updatedFilters);
+    const updatedFilters = { ...filters, [field]: value };
+    setFilters(updatedFilters);
   };
 
   const handleClearFilter = (field) => {
@@ -57,10 +48,10 @@ const TableHeader = ({ onFilterChange }) => {
             type="text"
             className="form-control"
             placeholder="Search products..."
-            value={selectedFilters.search}
+            value={filters.search || ""}
             onChange={handleSearchChange}
           />
-          {selectedFilters.search && (
+          {filters.search && (
             <i
               className="ti ti-x fs-16 position-absolute end-0 me-3 mt-2 cursor-pointer"
               onClick={() => handleClearFilter("search")}
@@ -84,7 +75,7 @@ const TableHeader = ({ onFilterChange }) => {
               <li key={cat.categoryId}>
                 <a
                   href="#"
-                  onClick={() => handleFilterChange("category", cat.name)}
+                  onClick={() => handleFilterChange("category", cat.categoryId)} // Use categoryId
                   className="dropdown-item rounded-1"
                 >
                   {cat.name}
@@ -92,9 +83,13 @@ const TableHeader = ({ onFilterChange }) => {
               </li>
             ))}
           </ul>
-          {selectedFilters.category && (
+          {filters.category && (
             <div className="position-absolute top-0 start-100 translate-middle badge bg-primary text-white px-2 py-1 rounded-pill d-flex align-items-center">
-              <span className="me-1">{selectedFilters.category}</span>
+              <span className="me-1">
+                {categoriesData?.categories?.find(
+                  (cat) => cat.categoryId === filters.category
+                )?.name || filters.category}
+              </span>
               <i
                 className="ti ti-x cursor-pointer"
                 onClick={() => handleClearFilter("category")}
@@ -117,7 +112,7 @@ const TableHeader = ({ onFilterChange }) => {
               <li key={brand.id}>
                 <a
                   href="#"
-                  onClick={() => handleFilterChange("brand", brand.brandName)}
+                  onClick={() => handleFilterChange("brand", brand.id)} // Use brand id
                   className="dropdown-item rounded-1"
                 >
                   {brand.brandName}
@@ -125,9 +120,12 @@ const TableHeader = ({ onFilterChange }) => {
               </li>
             ))}
           </ul>
-          {selectedFilters.brand && (
+          {filters.brand && (
             <div className="position-absolute top-0 start-100 translate-middle badge bg-primary text-white px-2 py-1 rounded-pill d-flex align-items-center">
-              <span className="me-1">{selectedFilters.brand}</span>
+              <span className="me-1">
+                {brandsData?.find((b) => b.id === filters.brand)?.brandName ||
+                  filters.brand}
+              </span>
               <i
                 className="ti ti-x cursor-pointer"
                 onClick={() => handleClearFilter("brand")}
@@ -158,9 +156,9 @@ const TableHeader = ({ onFilterChange }) => {
               </li>
             ))}
           </ul>
-          {selectedFilters.createdBy && (
+          {filters.createdBy && (
             <div className="position-absolute top-0 start-100 translate-middle badge bg-primary text-white px-2 py-1 rounded-pill d-flex align-items-center">
-              <span className="me-1">{selectedFilters.createdBy}</span>
+              <span className="me-1">{filters.createdBy}</span>
               <i
                 className="ti ti-x cursor-pointer"
                 onClick={() => handleClearFilter("createdBy")}
@@ -176,7 +174,7 @@ const TableHeader = ({ onFilterChange }) => {
             className="dropdown-toggle btn btn-white btn-md d-inline-flex align-items-center"
             data-bs-toggle="dropdown"
           >
-            Sort By: {selectedFilters.sortBy}
+            Sort By: {filters.sortBy || "Last 7 Days"}
           </a>
           <ul className="dropdown-menu dropdown-menu-end p-3">
             {[

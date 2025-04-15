@@ -4,6 +4,8 @@ import {
   useUpdateCompanyMutation,
   useGetAllCompaniesQuery,
 } from "../../api/companyApi";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const AddCompany = ({ onClose, companyToEdit = null }) => {
   const isEditMode = !!companyToEdit;
@@ -35,7 +37,7 @@ const AddCompany = ({ onClose, companyToEdit = null }) => {
         createdDate: companyToEdit.createdDate?.slice(0, 10) || "", // for <input type="date">
       });
     }
-  }, [companyToEdit]);
+  }, [companyToEdit, isEditMode]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -54,8 +56,10 @@ const AddCompany = ({ onClose, companyToEdit = null }) => {
           id: companyToEdit.companyId,
           updatedData: formData,
         }).unwrap();
+        toast.success("Company updated successfully!");
       } else {
         await addCompany(formData).unwrap();
+        toast.success("Company created successfully!");
       }
 
       setFormData({
@@ -70,9 +74,9 @@ const AddCompany = ({ onClose, companyToEdit = null }) => {
       onClose();
     } catch (error) {
       console.error("Failed to submit company:", error);
+      toast.error("Failed to save company. Please try again.");
     }
   };
-
   return (
     <div className="modal fade show" style={{ display: "block" }}>
       <div className="modal-dialog modal-dialog-centered modal-lg">

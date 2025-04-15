@@ -71,7 +71,7 @@ router.get(
   // checkPermission("view", "/signatures"),
   signatureController.getAllSignatures
 );
-
+router.put("/:id", auth, signatureController.updateSignature);
 router.get(
   "/:id",
   auth,

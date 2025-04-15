@@ -53,7 +53,12 @@ function App() {
 
       <div className="main-wrapper">
         {!isAuthPage && <Header toggleSidebar={setSidebarOpen} />}
-        {!isAuthPage && !isPOSPage && <Sidebar isSidebarOpen={isSidebarOpen} />}
+        {!isAuthPage && !isPOSPage && (
+          <Sidebar
+            isSidebarOpen={isSidebarOpen}
+            toggleSidebar={setSidebarOpen}
+          />
+        )}
         <Router />
         <Footer />
         <ToastContainer position="top-right" autoClose={3000} />

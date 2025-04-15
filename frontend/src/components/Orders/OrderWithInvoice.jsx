@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useGetInvoiceByIdQuery } from "../../api/invoiceApi";
 import { useGetOrderDetailsQuery } from "../../api/orderApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
+import { useGetAllTeamsQuery } from "../../api/teamApi"; // Import the new hook
 import { Dropdown, OverlayTrigger, Tooltip } from "react-bootstrap";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import {
@@ -10,100 +11,7 @@ import {
   useUpdateOrderStatusMutation,
 } from "../../api/orderApi";
 import AddNewOrder from "./AddNewOrder";
-
-// Mock team data (replace with API call if available)
-const teamData = {
-  success: true,
-  teams: [
-    {
-      id: "35066a2c-730e-4e02-9f20-054b28592aae",
-      teamName: "SALES",
-      adminId: "5d5bd153-8877-4db1-a5cc-2af5c7e55d9c",
-      adminName: "nandmurlibalakrishn",
-      createdAt: "2025-04-03T07:21:50.000Z",
-      updatedAt: "2025-04-03T07:21:50.000Z",
-      teammembers: [
-        {
-          id: "0e40d643-c3b1-4138-8b61-7fd22c92bb90",
-          teamId: "35066a2c-730e-4e02-9f20-054b28592aae",
-          userId: "5d5bd153-8877-4db1-a5cc-2af5c7e55d9c",
-          userName: "nandmurlibalakrishn",
-          roleId: "c2eaf23a-765c-4ee5-91bf-cbc37fbdea21",
-          roleName: "Admin",
-          createdAt: "2025-04-03T07:21:50.000Z",
-          updatedAt: "2025-04-03T07:21:50.000Z",
-        },
-      ],
-    },
-    {
-      id: "92be76d5-4a5a-4371-9d5a-dfcf177a7751",
-      teamName: "SOCIAL",
-      adminId: "2754cc2c-c5d6-4961-bc41-375df0caa9aa",
-      adminName: "vermadhruv",
-      createdAt: "2025-04-03T07:27:10.000Z",
-      updatedAt: "2025-04-03T07:27:10.000Z",
-      teammembers: [
-        {
-          id: "74d8198d-147c-4264-a016-eceb0f55ff9a",
-          teamId: "92be76d5-4a5a-4371-9d5a-dfcf177a7751",
-          userId: "2754cc2c-c5d6-4961-bc41-375df0caa9aa",
-          userName: "vermadhruv",
-          roleId: "c3893e5f-4b6c-43c5-83ec-bc74beecfb30",
-          roleName: "Admin",
-          createdAt: "2025-04-03T07:27:11.000Z",
-          updatedAt: "2025-04-03T07:27:11.000Z",
-        },
-      ],
-    },
-    {
-      id: "e6c82b96-31fb-4866-b5ec-d80b2b303b50",
-      teamName: "OPS",
-      adminId: "5d5bd153-8877-4db1-a5cc-2af5c7e55d9c",
-      adminName: "nandmurlibalakrishn",
-      createdAt: "2025-04-03T07:12:29.000Z",
-      updatedAt: "2025-04-03T07:12:29.000Z",
-      teammembers: [
-        {
-          id: "b6c270ea-ac78-441c-8b9c-99ace4a4e4a6",
-          teamId: "e6c82b96-31fb-4866-b5ec-d80b2b303b50",
-          userId: "5d5bd153-8877-4db1-a5cc-2af5c7e55d9c",
-          userName: "nandmurlibalakrishn",
-          roleId: "c2eaf23a-765c-4ee5-91bf-cbc37fbdea21",
-          roleName: "Admin",
-          createdAt: "2025-04-03T07:12:30.000Z",
-          updatedAt: "2025-04-03T07:12:30.000Z",
-        },
-      ],
-    },
-    {
-      id: "2775cacb-a47c-4ef3-bbaf-9d5b622df0d1",
-      teamName: "OPS",
-      adminId: "5d5bd153-8877-4db1-a5cc-2af5c7e55d9c",
-      adminName: "nandmurlibalakrishn",
-      createdAt: "2025-04-03T07:06:28.000Z",
-      updatedAt: "2025-04-03T07:06:28.000Z",
-      teammembers: [],
-    },
-    {
-      id: "5d2bd8b4-94e1-4fe4-9862-32c343f8d1ce",
-      teamName: "",
-      adminId: "5d5bd153-8877-4db1-a5cc-2af5c7e55d9c",
-      adminName: "nandmurli balakrishn",
-      createdAt: "2025-04-03T05:57:09.000Z",
-      updatedAt: "2025-04-03T05:57:09.000Z",
-      teammembers: [],
-    },
-    {
-      id: "8d1b261e-9ebe-4cb8-9e3c-8c9a2e35eae0",
-      teamName: "OPS",
-      adminId: "5d5bd153-8877-4db1-a5cc-2af5c7e55d9c",
-      adminName: "nandmurlibalakrishn",
-      createdAt: "2025-04-03T07:04:05.000Z",
-      updatedAt: "2025-04-03T07:04:05.000Z",
-      teammembers: [],
-    },
-  ],
-};
+import { toast } from "react-toastify"; // Import toast
 
 const OrderWithInvoice = () => {
   const { id } = useParams();
@@ -134,6 +42,13 @@ const OrderWithInvoice = () => {
   const products = invoice?.products || [];
   const customers = customerData?.data || [];
 
+  // Fetching team data
+  const {
+    data: teamData,
+    isLoading: teamLoading,
+    error: teamError,
+  } = useGetAllTeamsQuery();
+
   // Customer map
   const customerMap = useMemo(() => {
     const map = {};
@@ -143,30 +58,34 @@ const OrderWithInvoice = () => {
     return map;
   }, [customers]);
 
-  // User map
+  // User map from team data
   const userMap = useMemo(() => {
     const map = {};
-    teamData.teams.forEach((team) => {
-      team.teammembers.forEach((member) => {
-        map[member.userId] = member.userName;
+    if (teamData?.teams) {
+      teamData.teams.forEach((team) => {
+        team.teammembers.forEach((member) => {
+          map[member.userId] = member.userName;
+        });
       });
-    });
+    }
     return map;
-  }, []);
+  }, [teamData]);
 
   // Team map
   const teamMap = useMemo(() => {
     const map = {};
-    teamData.teams.forEach((team) => {
-      map[team.id] = team.teamName;
-    });
+    if (teamData?.teams) {
+      teamData.teams.forEach((team) => {
+        map[team.id] = team.teamName;
+      });
+    }
     return map;
-  }, []);
+  }, [teamData]);
 
   // Team members from assignedTo
   const normalizedTeamMembers = useMemo(() => {
     const teamId = order.assignedTo;
-    if (!teamId) return [];
+    if (!teamId || !teamData?.teams) return [];
     const team = teamData.teams.find((t) => t.id === teamId);
     if (!team) return [];
     return team.teammembers.map((member) => ({
@@ -174,7 +93,7 @@ const OrderWithInvoice = () => {
       role: member.roleName || "N/A",
       email: member.email || "N/A",
     }));
-  }, [order.assignedTo]);
+  }, [order.assignedTo, teamData]);
 
   const handleEditOrder = () => {
     setSelectedOrder(order);
@@ -185,9 +104,11 @@ const OrderWithInvoice = () => {
     if (window.confirm("Are you sure you want to delete this order?")) {
       try {
         await deleteOrder(id).unwrap();
+        toast.success("Order deleted successfully!"); // Show success toast
         navigate("/orders");
       } catch (err) {
         console.error("Failed to delete order:", err);
+        toast.error("Failed to delete order. Please try again."); // Show error toast
       }
     }
   };
@@ -195,8 +116,10 @@ const OrderWithInvoice = () => {
   const handleHoldOrder = async () => {
     try {
       await updateOrderStatus({ id, status: "On Hold" }).unwrap();
+      toast.success("Order status updated to 'On Hold'"); // Success toast
     } catch (err) {
       console.error("Failed to update status:", err);
+      toast.error("Failed to update order status. Please try again."); // Error toast
     }
   };
 

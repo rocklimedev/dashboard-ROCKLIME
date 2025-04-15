@@ -7,7 +7,8 @@ import { useGetAllBrandsQuery } from "../../api/brandsApi";
 import PageHeader from "../Common/PageHeader";
 import AddCompanyModal from "./AddCompanyModal";
 import DeleteModal from "../Common/DeleteModal";
-import { BiEdit, BiTrash } from "react-icons/bi";
+import ViewCompanies from "./ViewCompanies"; // ← import ViewCompanies
+import { BiEdit, BiTrash, BiShowAlt } from "react-icons/bi";
 import { toast } from "react-toastify";
 
 const CompaniesWrapper = () => {
@@ -30,6 +31,8 @@ const CompaniesWrapper = () => {
   const [vendorToDelete, setVendorToDelete] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
+  const [viewCompanyId, setViewCompanyId] = useState(null); // ← state for viewing company
+
   const vendors = Array.isArray(vendorsData) ? vendorsData : [];
   const brands = Array.isArray(brandsData) ? brandsData : [];
 
@@ -48,7 +51,7 @@ const CompaniesWrapper = () => {
   };
 
   const handleAddVendor = () => {
-    setSelectedVendor(null); // important: reset to null for add mode
+    setSelectedVendor(null);
     setShowModal(true);
   };
 
@@ -96,16 +99,26 @@ const CompaniesWrapper = () => {
                       <td>{getBrandName(vendor.brandId)}</td>
                       <td>{vendor.brandSlug}</td>
                       <td>{new Date(vendor.createdAt).toLocaleDateString()}</td>
-                      <td className="action-table-data">
-                        <div className="edit-delete-action d-flex">
+                      <td>
+                        <div className="d-flex gap-2">
                           <button
-                            className="me-2 p-2 btn btn-link"
+                            className="btn btn-sm btn-info"
+                            onClick={() => {
+                              console.log("Vendor:", vendor);
+                              console.log("Company ID:", vendor.companyId);
+                              setViewCompanyId(vendor.companyId);
+                            }}
+                          >
+                            <BiShowAlt />
+                          </button>
+                          <button
+                            className="btn btn-sm btn-warning"
                             onClick={() => handleEditVendor(vendor)}
                           >
                             <BiEdit />
                           </button>
                           <button
-                            className="p-2 btn btn-link text-danger"
+                            className="btn btn-sm btn-danger"
                             onClick={() => {
                               setVendorToDelete(vendor);
                               setShowDeleteModal(true);
@@ -122,27 +135,31 @@ const CompaniesWrapper = () => {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
+        {/* View Company Modal */}
+        {viewCompanyId && (
+          <ViewCompanies
+            companyId={viewCompanyId}
+            onClose={() => setViewCompanyId(null)}
+          />
+        )}
+
+        {/* Delete Confirmation Modal */}
         <DeleteModal
-          item={vendorToDelete}
-          itemType="Vendor"
           show={showDeleteModal}
+          onHide={() => setShowDeleteModal(false)}
           onConfirm={handleConfirmDelete}
-          onClose={() => setShowDeleteModal(false)}
+          title="Delete Vendor"
+          message="Are you sure you want to delete this vendor?"
         />
-      )}
 
-      {/* Add / Edit Vendor Modal */}
-      {showModal && (
+        {/* Add / Edit Modal */}
         <AddCompanyModal
           show={showModal}
-          onClose={() => setShowModal(false)}
-          existingVendor={selectedVendor}
+          onHide={() => setShowModal(false)}
+          vendor={selectedVendor}
         />
-      )}
+      </div>
     </div>
   );
 };

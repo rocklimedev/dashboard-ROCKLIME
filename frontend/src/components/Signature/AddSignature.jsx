@@ -1,57 +1,174 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import {
+  useCreateSignatureMutation,
+  useUpdateSignatureMutation,
+} from "../../api/signatureApi";
 
-const AddSignature = () => {
+const AddSignature = ({ signatureId, existingSignature, onclose }) => {
+  const [signatureName, setSignatureName] = useState("");
+  const [signatureImage, setSignatureImage] = useState(null);
+  const [markAsDefault, setMarkAsDefault] = useState(false);
+  const [userId, setUserId] = useState(""); // Get this from context or props ideally
+
+  const [createSignature, { isLoading: isAdding }] =
+    useCreateSignatureMutation();
+  const [updateSignature, { isLoading: isUpdating }] =
+    useUpdateSignatureMutation();
+
+  useEffect(() => {
+    if (signatureId && existingSignature) {
+      setSignatureName(existingSignature.signatureName);
+      setSignatureImage(null);
+      setMarkAsDefault(existingSignature.markAsDefault);
+      setUserId(existingSignature.userId);
+    }
+  }, [signatureId, existingSignature]);
+  const handleClose = () => {
+    setSignatureImage("");
+    setSignatureImage("");
+    setMarkAsDefault("");
+    setUserId("");
+    onclose();
+  };
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData();
+    formData.append("signatureName", signatureName);
+    if (signatureImage) formData.append("signatureImage", signatureImage);
+    formData.append("markAsDefault", markAsDefault);
+    formData.append("userId", userId);
+
+    try {
+      if (signatureId) {
+        await updateSignature({ signatureId, body: formData }).unwrap();
+        toast.success("Signature updated successfully!", {
+          position: toast.POSITION.TOP_RIGHT,
+          autoClose: 5000,
+        });
+      } else {
+        await createSignature(formData).unwrap();
+        toast.success("Signature added successfully!", {
+          position: toast.POSITION.TOP_RIGHT,
+          autoClose: 5000,
+        });
+      }
+
+      // Reset form state
+      setSignatureName("");
+      setSignatureImage(null);
+      setMarkAsDefault(false);
+    } catch (error) {
+      toast.error("Failed to save signature.", {
+        position: toast.POSITION.TOP_RIGHT,
+        autoClose: 5000,
+      });
+      console.error("Error saving signature:", error);
+    }
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSignatureImage(file);
+    }
+  };
+
   return (
-    <div class="modal fade" id="add-category">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-            <div class="page-title">
-              <h4>Add Category</h4>
+    <div className="modal fade show" style={{ display: "block" }}>
+      <div className="modal-dialog modal-dialog-centered">
+        <div className="modal-content">
+          <div className="modal-header">
+            <div className="page-title">
+              <h4>{signatureId ? "Edit Signature" : "Add Signature"}</h4>
             </div>
             <button
               type="button"
-              class="close bg-danger text-white fs-16"
-              data-bs-dismiss="modal"
+              className="btn-close"
+              onClick={handleClose}
               aria-label="Close"
-            >
-              <span aria-hidden="true">&times;</span>
-            </button>
+              data-bs-dismiss="modal"
+            ></button>
           </div>
-          <form action="https://dreamspos.dreamstechnologies.com/html/template/category-list.html">
-            <div class="modal-body">
-              <div class="mb-3">
-                <label class="form-label">
-                  Category<span class="text-danger ms-1">*</span>
+
+          <form onSubmit={handleFormSubmit}>
+            <div className="modal-body">
+              <div className="mb-3">
+                <label className="form-label">
+                  Signature Name<span className="text-danger ms-1">*</span>
                 </label>
-                <input type="text" class="form-control" />
+                <input
+                  type="text"
+                  className="form-control"
+                  value={signatureName}
+                  onChange={(e) => setSignatureName(e.target.value)}
+                  required
+                />
               </div>
-              <div class="mb-3">
-                <label class="form-label">
-                  Category Slug<span class="text-danger ms-1">*</span>
+
+              <div className="mb-3">
+                <label className="form-label">
+                  Signature Image<span className="text-danger ms-1">*</span>
                 </label>
-                <input type="text" class="form-control" />
+                <input
+                  type="file"
+                  className="form-control"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  required={!signatureId}
+                />
               </div>
-              <div class="mb-0">
-                <div class="status-toggle modal-status d-flex justify-content-between align-items-center">
-                  <span class="status-label">
-                    Status<span class="text-danger ms-1">*</span>
+
+              <div className="mb-3 form-check">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  id="defaultCheck"
+                  checked={markAsDefault}
+                  onChange={() => setMarkAsDefault(!markAsDefault)}
+                />
+                <label className="form-check-label" htmlFor="defaultCheck">
+                  Mark as Default
+                </label>
+              </div>
+
+              <div className="mb-0">
+                <div className="status-toggle modal-status d-flex justify-content-between align-items-center">
+                  <span className="status-label">
+                    Status<span className="text-danger ms-1">*</span>
                   </span>
-                  <input type="checkbox" id="user2" class="check" checked="" />
-                  <label for="user2" class="checktoggle"></label>
+                  <input
+                    type="checkbox"
+                    id="user2"
+                    className="check"
+                    checked={markAsDefault}
+                    onChange={() => setMarkAsDefault(!markAsDefault)}
+                  />
+                  <label htmlFor="user2" className="checktoggle"></label>
                 </div>
               </div>
             </div>
-            <div class="modal-footer">
+
+            <div className="modal-footer">
               <button
                 type="button"
-                class="btn me-2 btn-secondary"
+                className="btn me-2 btn-secondary"
                 data-bs-dismiss="modal"
               >
                 Cancel
               </button>
-              <button type="submit" class="btn btn-primary">
-                Add Category
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={isAdding || isUpdating}
+              >
+                {isAdding || isUpdating
+                  ? "Saving..."
+                  : signatureId
+                  ? "Update Signature"
+                  : "Add Signature"}
               </button>
             </div>
           </form>
