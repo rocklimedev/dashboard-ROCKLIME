@@ -6,11 +6,12 @@ import PageHeader from "../Common/PageHeader";
 import AddNewTeam from "./AddNewTeam";
 import DeleteModal from "../Common/DeleteModal";
 import { Dropdown } from "react-bootstrap";
-
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css"; // Import Toastify styles
 const TeamsList = ({ onClose, adminName }) => {
   const { data, isLoading, isError, refetch } = useGetAllTeamsQuery();
   const teams = Array.isArray(data?.teams) ? data.teams : [];
-  
+
   const [deleteTeam, { isLoading: isDeleting }] = useDeleteTeamMutation(); // Add delete mutation
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showNewTeamModal, setShowNewTeamModal] = useState(false);
@@ -37,16 +38,16 @@ const TeamsList = ({ onClose, adminName }) => {
 
     try {
       await deleteTeam(teamToDelete.id).unwrap(); // Call the delete mutation with team ID
-      console.log("Team deleted successfully");
+      toast.success("Team deleted successfully!"); // Success toast
       refetch(); // Refresh the team list after deletion
     } catch (err) {
+      toast.error("Error deleting team!"); // Error toast
       console.error("Error deleting team:", err);
     } finally {
       setShowDeleteModal(false); // Close the modal
       setTeamToDelete(null); // Clear the selected team
     }
   };
-
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -82,17 +83,26 @@ const TeamsList = ({ onClose, adminName }) => {
                   </a>
                   <ul className="dropdown-menu dropdown-menu-end p-3">
                     <li>
-                      <a href="javascript:void(0);" className="dropdown-item rounded-1">
+                      <a
+                        href="javascript:void(0);"
+                        className="dropdown-item rounded-1"
+                      >
                         Active
                       </a>
                     </li>
                     <li>
-                      <a href="javascript:void(0);" className="dropdown-item rounded-1">
+                      <a
+                        href="javascript:void(0);"
+                        className="dropdown-item rounded-1"
+                      >
                         Inactive
                       </a>
                     </li>
                     <li>
-                      <a href="javascript:void(0);" className="dropdown-item rounded-1">
+                      <a
+                        href="javascript:void(0);"
+                        className="dropdown-item rounded-1"
+                      >
                         New Joiners
                       </a>
                     </li>
@@ -108,27 +118,42 @@ const TeamsList = ({ onClose, adminName }) => {
                   </a>
                   <ul className="dropdown-menu dropdown-menu-end p-3">
                     <li>
-                      <a href="javascript:void(0);" className="dropdown-item rounded-1">
+                      <a
+                        href="javascript:void(0);"
+                        className="dropdown-item rounded-1"
+                      >
                         Recently Added
                       </a>
                     </li>
                     <li>
-                      <a href="javascript:void(0);" className="dropdown-item rounded-1">
+                      <a
+                        href="javascript:void(0);"
+                        className="dropdown-item rounded-1"
+                      >
                         Ascending
                       </a>
                     </li>
                     <li>
-                      <a href="javascript:void(0);" className="dropdown-item rounded-1">
+                      <a
+                        href="javascript:void(0);"
+                        className="dropdown-item rounded-1"
+                      >
                         Descending
                       </a>
                     </li>
                     <li>
-                      <a href="javascript:void(0);" className="dropdown-item rounded-1">
+                      <a
+                        href="javascript:void(0);"
+                        className="dropdown-item rounded-1"
+                      >
                         Last Month
                       </a>
                     </li>
                     <li>
-                      <a href="javascript:void(0);" className="dropdown-item rounded-1">
+                      <a
+                        href="javascript:void(0);"
+                        className="dropdown-item rounded-1"
+                      >
                         Last 7 Days
                       </a>
                     </li>
@@ -146,7 +171,10 @@ const TeamsList = ({ onClose, adminName }) => {
 
             {Array.isArray(teams) && teams.length > 0 ? (
               teams.map((team) => (
-                <div key={team.id} className="col-xxl-3 col-xl-4 col-lg-6 col-md-6">
+                <div
+                  key={team.id}
+                  className="col-xxl-3 col-xl-4 col-lg-6 col-md-6"
+                >
                   <div className="card">
                     <div className="card-body">
                       <div className="d-flex align-items-center justify-content-between mb-4">
@@ -186,15 +214,20 @@ const TeamsList = ({ onClose, adminName }) => {
                           Total Members: {team.teammembers?.length || 0}
                         </p>
                         <div className="avatar-list-stacked avatar-group-sm">
-                          {team.teammembers?.slice(0, 3).map((teammember, index) => (
-                            <span className="avatar avatar-rounded" key={index}>
-                              <img
-                                className="border border-white"
-                                src={teammember.userId || avatar}
-                                alt={teammember.userName}
-                              />
-                            </span>
-                          ))}
+                          {team.teammembers
+                            ?.slice(0, 3)
+                            .map((teammember, index) => (
+                              <span
+                                className="avatar avatar-rounded"
+                                key={index}
+                              >
+                                <img
+                                  className="border border-white"
+                                  src={teammember.userId || avatar}
+                                  alt={teammember.userName}
+                                />
+                              </span>
+                            ))}
                           {team.teammembers?.length > 3 && (
                             <a
                               className="avatar avatar-rounded text-fixed-white fs-10 fw-medium position-relative"

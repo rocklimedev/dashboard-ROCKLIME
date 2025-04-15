@@ -20,7 +20,9 @@ exports.createSignature = async (req, res) => {
       userId,
     });
 
-    res.status(201).json({ message: "Signature created successfully", signature });
+    res
+      .status(201)
+      .json({ message: "Signature created successfully", signature });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -69,6 +71,53 @@ exports.deleteSignature = async (req, res) => {
 
     await signature.destroy();
     res.status(200).json({ message: "Signature deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+// 📌 Update a Signature
+exports.updateSignature = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { signature_name, mark_as_default, userId, signature_image } =
+      req.body;
+
+    const signature = await Signature.findByPk(id);
+    if (!signature) {
+      return res.status(404).json({ error: "Signature not found" });
+    }
+
+    // Prepare updated fields
+    const updatedFields = {
+      signature_name: signature_name || signature.signature_name,
+      mark_as_default:
+        mark_as_default !== undefined
+          ? mark_as_default
+          : signature.mark_as_default,
+      userId: userId || signature.userId,
+    };
+
+    // Option 1: If a new file is uploaded
+    if (req.file) {
+      updatedFields.signature_image = fs.readFileSync(req.file.path);
+    }
+
+    // Option 2: If signature image is passed as base64 string in body
+    if (signature_image && !req.file) {
+      // Remove base64 prefix if it exists
+      const base64Data = signature_image.replace(
+        /^data:image\/\w+;base64,/,
+        ""
+      );
+      updatedFields.signature_image = Buffer.from(base64Data, "base64");
+    }
+
+    await signature.update(updatedFields);
+
+    res.status(200).json({
+      message: "Signature updated successfully",
+      signature,
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

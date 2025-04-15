@@ -4,6 +4,9 @@ import {
   useUpdateTeamMutation,
 } from "../../api/teamApi";
 import { useGetAllUsersQuery, useGetUserByIdQuery } from "../../api/userApi";
+import { toast } from "react-toastify"; // Import the toast function
+import { ToastContainer } from "react-toastify"; // Import ToastContainer
+import "react-toastify/dist/ReactToastify.css"; // Import the CSS for toast notifications
 
 const AddNewTeam = ({ onClose, onTeamAdded, team }) => {
   const [teamName, setTeamName] = useState(team?.teamName || "");
@@ -32,11 +35,20 @@ const AddNewTeam = ({ onClose, onTeamAdded, team }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!teamName.trim()) return console.error("Team name is required");
-    if (!adminId) return console.error("Admin must be selected");
+    if (!teamName.trim()) {
+      toast.error("Team name is required");
+      return;
+    }
+    if (!adminId) {
+      toast.error("Admin must be selected");
+      return;
+    }
 
     const adminUser = users.find((user) => user.userId === adminId);
-    if (!adminUser) return console.error("Admin user not found");
+    if (!adminUser) {
+      toast.error("Admin user not found");
+      return;
+    }
 
     const teamData = {
       teamName,
@@ -48,10 +60,10 @@ const AddNewTeam = ({ onClose, onTeamAdded, team }) => {
     try {
       if (team) {
         await updateTeam({ id: team.id, ...teamData }).unwrap();
-        console.log("Team updated successfully");
+        toast.success("Team updated successfully");
       } else {
         await createTeam(teamData).unwrap();
-        console.log("Team created successfully");
+        toast.success("Team created successfully");
       }
 
       setTeamName("");
@@ -61,6 +73,7 @@ const AddNewTeam = ({ onClose, onTeamAdded, team }) => {
       onClose();
     } catch (err) {
       console.error("Error saving team:", err);
+      toast.error("Error saving team, please try again");
     }
   };
 
@@ -76,13 +89,14 @@ const AddNewTeam = ({ onClose, onTeamAdded, team }) => {
         },
       ]);
       setSelectedUserId("");
+      toast.success("Member added successfully");
     }
   };
 
   const removeMember = (id) => {
     setMembers(members.filter((member) => member.userId !== id));
+    toast.info("Member removed");
   };
-
   return (
     <div className="modal fade show" style={{ display: "block" }}>
       <div className="modal-dialog modal-dialog-centered">

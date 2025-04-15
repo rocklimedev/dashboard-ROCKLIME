@@ -9,6 +9,8 @@ import {
 } from "../../api/invoiceApi";
 import { useGetAllTeamsQuery } from "../../api/teamApi";
 import AddNewTeam from "./AddNewTeam";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const AddNewOrder = ({ onClose, adminName, orderToEdit }) => {
   const isEditMode = Boolean(orderToEdit);
@@ -95,33 +97,38 @@ const AddNewOrder = ({ onClose, adminName, orderToEdit }) => {
     e.preventDefault();
 
     if (!formData.title || !formData.pipeline || !formData.dueDate) {
-      alert("Please fill all required fields.");
+      toast.error("Please fill all required fields.");
       return;
     }
 
     try {
+      let response;
       if (isEditMode) {
-        const response = await updateOrder({
+        response = await updateOrder({
           id: orderToEdit._id,
           updatedData: formData,
         }).unwrap();
-        console.log("Order updated successfully:", response);
+        toast.success("Order updated successfully!");
       } else {
-        const response = await createOrder(formData).unwrap();
-        console.log("Order created successfully:", response);
+        response = await createOrder(formData).unwrap();
+        toast.success("Order created successfully!");
       }
+      console.log("Order response:", response);
       onClose();
     } catch (err) {
       console.error("Error submitting order:", err);
       if (err?.status === 400) {
-        alert(`Bad Request: ${err.data?.message || "Invalid data provided."}`);
+        toast.error(
+          `Bad Request: ${err.data?.message || "Invalid data provided."}`
+        );
       } else if (err?.status === 500) {
-        alert("Server error. Please try again later.");
+        toast.error("Server error. Please try again later.");
       } else {
-        alert("Something went wrong. Please try again.");
+        toast.error("Something went wrong. Please try again.");
       }
     }
   };
+
   return (
     <div className="modal fade show" style={{ display: "block" }}>
       <div className="modal-dialog modal-dialog-centered">

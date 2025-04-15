@@ -8,8 +8,12 @@ import {
   useRemovePermissionFromRoleMutation,
 } from "../../api/rolePermissionApi";
 import { FaArrowLeft } from "react-icons/fa";
+import { toast } from "react-toastify"; // Import toast from react-toastify
 import "./permission.css";
 import { useGetAllRolePermissionsByRoleIdQuery } from "../../api/rolePermissionApi";
+
+// Add this import for ToastContainer
+import { ToastContainer } from "react-toastify";
 
 const Permissions = () => {
   const { id: roleId } = useParams();
@@ -90,14 +94,14 @@ const Permissions = () => {
           permissionId,
           isGranted: true,
         }).unwrap();
-        alert(
+        toast.success(
           `${
             type.charAt(0).toUpperCase() + type.slice(1)
           } permission assigned successfully.`
         );
       } else {
         await removePermission({ roleId, permissionId }).unwrap();
-        alert(
+        toast.success(
           `${
             type.charAt(0).toUpperCase() + type.slice(1)
           } permission removed successfully.`
@@ -110,7 +114,7 @@ const Permissions = () => {
       }));
     } catch (error) {
       console.error("Error toggling permission:", error);
-      alert("Failed to update permission.");
+      toast.error("Failed to update permission.");
     }
   };
 
