@@ -23,7 +23,7 @@ router.post(
   "/",
   auth,
   // role.check(ROLES.Admin),
-  // checkPermission("write", "/roles"),
+  checkPermission("write", "create_role", "roles", "/roles"),
   createRole
 );
 
@@ -32,7 +32,7 @@ router.get(
   "/",
   auth,
   // role.check([ROLES.Admin, ROLES.Accounts]),
-  // checkPermission("view", "/roles"),
+  checkPermission("view", "get_all_roles", "roles", "/roles"),
   getAllRoles
 );
 
@@ -41,7 +41,7 @@ router.put(
   "/:roleId",
   auth,
   //  role.check(ROLES.Admin),
-  // checkPermission("edit", "/roles/:roleId"),
+  checkPermission("edit", "update_role_permissions", "roles", "/roles/:roleId"),
   updateRolePermissions
 );
 
@@ -50,7 +50,7 @@ router.delete(
   "/:roleId",
   auth,
   // role.check(ROLES.Admin),
-  //checkPermission("delete", "/roles/:roleId"),
+  checkPermission("delete", "delete_role", "roles", "/roles/:roleId"),
   deleteRole
 );
 
@@ -59,18 +59,44 @@ router.post(
   "/:roleId/permissions",
   auth,
   // role.check(ROLES.Admin),
-  // checkPermission("edit", "/roles/:roleId/permissions"),
+  checkPermission(
+    "edit",
+    "assign_permissions_to_role",
+    "roles",
+    "/roles/:roleId/permissions"
+  ),
   assignPermissionsToRole
 );
 router.delete(
   "/:roleId/permissions",
   auth,
   // role.check(ROLES.Admin),
-  // checkPermission("delete", "/roles/:roleId/permissions"),
+  checkPermission(
+    "delete",
+    "remove_permission_from_role",
+    "roles",
+    "/roles/:roleId/permissions"
+  ),
   removePermissionFromRole
 );
-router.post("/assign-role", assignRole);
-router.get("/:roleId", getRoleById);
-router.get("/:roleId", getRolePermissions);
-router.get("/recent", getRecentRoleToGive);
+router.post(
+  "/assign-role",
+  checkPermission("write", "assign_role", "roles", "/roles/assign-role"),
+  assignRole
+);
+router.get(
+  "/:roleId",
+  checkPermission("view", "get_role_by_id", "roles", "/roles/:roleId"),
+  getRoleById
+);
+router.get(
+  "/:roleId",
+  checkPermission("view", "get_role_permissions", "roles", "/roles/:roleId"),
+  getRolePermissions
+);
+router.get(
+  "/recent",
+  checkPermission("view", "get_recent_role_to_give", "roles", "/roles/recent"),
+  getRecentRoleToGive
+);
 module.exports = router;

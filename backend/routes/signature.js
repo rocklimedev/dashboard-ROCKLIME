@@ -60,7 +60,7 @@ const uploadMiddleware = (req, res, next) => {
 router.post(
   "/",
   auth,
-  //checkPermission("write", "/signatures"),
+  checkPermission("write", "create_signature", "signatures", "/signatures"),
   uploadMiddleware,
   signatureController.createSignature
 );
@@ -68,21 +68,31 @@ router.post(
 router.get(
   "/",
   auth,
-  // checkPermission("view", "/signatures"),
+  checkPermission("view", "get_all_signatures", "signatures", "/signatures"),
   signatureController.getAllSignatures
 );
 router.put("/:id", auth, signatureController.updateSignature);
 router.get(
   "/:id",
   auth,
-  // checkPermission("view", "/signatures/:id"),
+  checkPermission(
+    "view",
+    "get_signature_by_id",
+    "signatures",
+    "/signatures/:id"
+  ),
   signatureController.getSignatureById
 );
 
 router.delete(
   "/:id",
   auth,
-  // checkPermission("delete", "/signatures/:id"),
+  checkPermission(
+    "delete",
+    "delete_signature",
+    "signatures",
+    "/signatures/:id"
+  ),
   signatureController.deleteSignature
 );
 

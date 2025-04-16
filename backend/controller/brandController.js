@@ -1,8 +1,23 @@
-const Brand = require("../models/brand")
+const Brand = require("../models/brand");
+const Product = require("../models/product");
+
+const getTotalProductOfBrand = async (req, res) => {
+  try {
+    const { brandId } = req.params;
+
+    const totalProducts = await Product.count({
+      where: { brandId },
+    });
+
+    res.status(200).json({ brandId, totalProducts });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 
 const createBrand = async (req, res) => {
   try {
-    const {  brandName, brandSlug } = req.body;
+    const { brandName, brandSlug } = req.body;
     const brand = await Brand.create({ brandName, brandSlug });
     res.status(201).json(brand);
   } catch (error) {
@@ -34,19 +49,18 @@ const getBrandById = async (req, res) => {
 
 const updateBrand = async (req, res) => {
   try {
-    const {id} = req.params;
+    const { id } = req.params;
     const { brandName, brandSlug } = req.body;
     const brand = await Brand.findByPk(id);
-   
-      if (!brand) {
-        return res.status(404).json({ message: "Brand not found." });
-      }
-  
-      await brand.update({ brandName, brandSlug });
-  
-      res.json({ message: "Brand updated successfully.", brand });
-    } 
-  catch (error) {
+
+    if (!brand) {
+      return res.status(404).json({ message: "Brand not found." });
+    }
+
+    await brand.update({ brandName, brandSlug });
+
+    res.json({ message: "Brand updated successfully.", brand });
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
@@ -65,4 +79,11 @@ const deleteBrand = async (req, res) => {
   }
 };
 
-module.exports = { createBrand, getBrands, getBrandById, updateBrand, deleteBrand };
+module.exports = {
+  createBrand,
+  getBrands,
+  getBrandById,
+  updateBrand,
+  deleteBrand,
+  getTotalProductOfBrand,
+};

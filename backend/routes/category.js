@@ -10,7 +10,7 @@ const router = express.Router();
 router.post(
   "/",
   // role.check(ROLES.Admin), // Only Admins can create categories
-  // checkPermission("write", "/category"),
+  checkPermission("write", "create_category", "categories", "/category"),
   categoryController.createCategory
 );
 
@@ -18,7 +18,7 @@ router.post(
 router.get(
   "/all",
   // role.check(ROLES.Users), // Minimum role required is Users
-  //  checkPermission("view", "/category/all"),
+  checkPermission("view", "get_all_categories", "categories", "/category/all"),
   categoryController.getAllCategories
 );
 
@@ -26,7 +26,7 @@ router.get(
 router.get(
   "/:id",
   //  role.check(ROLES.Users),
-  //  checkPermission("view", "/category/:id"),
+  checkPermission("view", "get_category_by_id", "categories", "/category/:id"),
   categoryController.getCategoryById
 );
 
@@ -34,7 +34,7 @@ router.get(
 router.put(
   "/:id",
   // role.check(ROLES.Admin), // Only Admin can edit categories
-  // checkPermission("edit", "/category/:id"),
+  checkPermission("edit", "update_category", "categories", "/category/:id"),
   categoryController.updateCategory
 );
 
@@ -42,7 +42,7 @@ router.put(
 router.delete(
   "/:id",
   // role.check(ROLES.SuperAdmin), // Only SuperAdmin can delete categories
-  //  checkPermission("delete", "/category/:id"),
+  checkPermission("delete", "delete_category", "categories", "/category/:id"),
   categoryController.deleteCategory
 );
 

@@ -6,6 +6,7 @@ import {
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useGetAllBrandsQuery } from "../../api/brandsApi.js";
+
 const AddCompanyModal = ({ show, onClose, existingVendor }) => {
   const [formData, setFormData] = useState({
     id: null, // this helps differentiate edit vs new
@@ -55,92 +56,100 @@ const AddCompanyModal = ({ show, onClose, existingVendor }) => {
         await addVendor(formData).unwrap();
         toast.success("Vendor added successfully!");
       }
-      onClose();
+      closeModal(); // Close the modal after successful submission
     } catch (error) {
       toast.error("Failed to submit vendor. Please try again.");
     }
   };
 
+  // Helper function to close modal
+  const closeModal = () => {
+    onClose(); // Trigger the onClose prop passed to the modal
+  };
+
   return (
-    <div className="modal fade show" style={{ display: "block" }}>
-      <div className="modal-dialog modal-dialog-centered modal-md">
-        <div className="modal-content">
-          <div className="modal-header border-0">
-            <h4 className="mb-0">
-              {formData.id ? "Edit Company" : "Add New Company"}
-            </h4>
-            <button
-              type="button"
-              className="btn-close"
-              onClick={onClose}
-            ></button>
-          </div>
-          <form onSubmit={handleSubmit}>
-            <div className="modal-body">
-              <div className="input-block mb-3">
-                <label className="form-label">Vendor Id</label>
-                <input
-                  type="text"
-                  name="vendorId"
-                  className="form-control"
-                  placeholder="Vendor Id"
-                  value={formData.vendorId}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="input-block mb-3">
-                <label className="form-label">Vendor Name</label>
-                <input
-                  type="text"
-                  name="vendorName"
-                  className="form-control"
-                  placeholder="Vendor Name"
-                  value={formData.vendorName}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="input-block mb-3">
-                <label className="form-label">Brand Slug</label>
-                <select
-                  name="brandSlug"
-                  className="form-control"
-                  value={formData.brandSlug}
-                  onChange={handleChange}
-                  disabled={loadingBrands}
-                >
-                  <option value="">Select a brand</option>
-                  {brands.map((brand) => (
-                    <option key={brand.brandId} value={brand.brandSlug}>
-                      {brand.brandName} ({brand.brandSlug})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="modal-footer">
+    // Add a condition to show or hide the modal based on the `show` prop
+    show && (
+      <div className="modal fade show" style={{ display: "block" }}>
+        <div className="modal-dialog modal-dialog-centered modal-md">
+          <div className="modal-content">
+            <div className="modal-header border-0">
+              <h4 className="mb-0">
+                {formData.id ? "Edit Company" : "Add New Company"}
+              </h4>
               <button
                 type="button"
-                className="btn btn-secondary"
-                onClick={onClose}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={isCreating || isUpdating}
-              >
-                {isCreating || isUpdating
-                  ? "Saving..."
-                  : formData.id
-                  ? "Update"
-                  : "Add New"}
-              </button>
+                className="btn-close"
+                onClick={closeModal} // Call closeModal to close the modal
+              ></button>
             </div>
-          </form>
+            <form onSubmit={handleSubmit}>
+              <div className="modal-body">
+                <div className="input-block mb-3">
+                  <label className="form-label">Vendor Id</label>
+                  <input
+                    type="text"
+                    name="vendorId"
+                    className="form-control"
+                    placeholder="Vendor Id"
+                    value={formData.vendorId}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="input-block mb-3">
+                  <label className="form-label">Vendor Name</label>
+                  <input
+                    type="text"
+                    name="vendorName"
+                    className="form-control"
+                    placeholder="Vendor Name"
+                    value={formData.vendorName}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="input-block mb-3">
+                  <label className="form-label">Brand Slug</label>
+                  <select
+                    name="brandSlug"
+                    className="form-control"
+                    value={formData.brandSlug}
+                    onChange={handleChange}
+                    disabled={loadingBrands}
+                  >
+                    <option value="">Select a brand</option>
+                    {brands.map((brand) => (
+                      <option key={brand.brandId} value={brand.brandSlug}>
+                        {brand.brandName} ({brand.brandSlug})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={closeModal} // Call closeModal to close the modal
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={isCreating || isUpdating}
+                >
+                  {isCreating || isUpdating
+                    ? "Saving..."
+                    : formData.id
+                    ? "Update"
+                    : "Add New"}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
-    </div>
+    )
   );
 };
 

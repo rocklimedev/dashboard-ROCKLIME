@@ -9,7 +9,12 @@ const { ROLES } = require("../config/constant");
 router.post(
   "/",
   // role.check(ROLES.Admin),
-  // checkPermission("write", "/parent-categories"),
+  checkPermission(
+    "write",
+    "create_parent_category",
+    "parentcategories",
+    "/parent-categories"
+  ),
   parentCategoryController.createParentCategory
 );
 
@@ -17,7 +22,12 @@ router.post(
 router.get(
   "/",
   // role.check(ROLES.SALES),
-  // checkPermission("view", "/parent-categories"),
+  checkPermission(
+    "view",
+    "get_all_parent_categories",
+    "parentcategories",
+    "/parent-categories"
+  ),
   parentCategoryController.getAllParentCategories
 );
 
@@ -25,7 +35,12 @@ router.get(
 router.get(
   "/:id",
   // role.check(ROLES.SALES),
-  // checkPermission("view", "/parent-categories/:id"),
+  checkPermission(
+    "view",
+    "get_parent_category_by_id",
+    "parentcategories",
+    "/parent-categories/:id"
+  ),
   parentCategoryController.getParentCategoryById
 );
 
@@ -33,7 +48,12 @@ router.get(
 router.put(
   "/:id",
   // role.check(ROLES.Admin),
-  //  checkPermission("edit", "/parent-categories/:id"),
+  checkPermission(
+    "edit",
+    "update_parent_category",
+    "parentcategories",
+    "/parent-categories/:id"
+  ),
   parentCategoryController.updateParentCategory
 );
 
@@ -41,7 +61,12 @@ router.put(
 router.delete(
   "/:id",
   // role.check(ROLES.SuperAdmin),
-  // checkPermission("delete", "/parent-categories/:id"),
+  checkPermission(
+    "delete",
+    "delete_parent_category",
+    "parentcategories",
+    "/parent-categories/:id"
+  ),
   parentCategoryController.deleteParentCategory
 );
 
