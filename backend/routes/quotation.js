@@ -11,7 +11,7 @@ router.post(
   "/add",
   auth,
   // role.check([ROLES.Admin, ROLES.Manager]),
-  // checkPermission("write", "/quotations"),
+  checkPermission("write", "create_quotation", "quotations", "/quotations/add"),
   quotationController.createQuotation
 );
 
@@ -20,7 +20,7 @@ router.get(
   "/",
   auth,
   // role.check([ROLES.Admin, ROLES.Manager, ROLES.Sales]),
-  //checkPermission("view", "/quotations"),
+  checkPermission("view", "get_all_quotations", "quotations", "/quotations"),
   quotationController.getAllQuotations
 );
 
@@ -29,7 +29,12 @@ router.get(
   "/:id",
   auth,
   //role.check([ROLES.Admin, ROLES.Accounts, ROLES.SALES]),
-  //checkPermission("view", "/quotations/:id"),
+  checkPermission(
+    "view",
+    "get_quotation_by_id",
+    "quotations",
+    "/quotations/:id"
+  ),
   quotationController.getQuotationById
 );
 
@@ -38,7 +43,7 @@ router.put(
   "/:id",
   auth,
   // role.check([ROLES.Admin, ROLES.Accounts]),
-  //  checkPermission("edit", "/quotations/:id"),
+  checkPermission("edit", "update_quotation", "quotations", "/quotations/:id"),
   quotationController.updateQuotation
 );
 
@@ -47,7 +52,12 @@ router.delete(
   "/:id",
   auth,
   role.check(ROLES.Admin),
-  checkPermission("delete", "/quotations/:id"),
+  checkPermission(
+    "delete",
+    "delete_quotation",
+    "quotations",
+    "/quotations/:id"
+  ),
   quotationController.deleteQuotation
 );
 
@@ -56,8 +66,22 @@ router.post(
   "/export/:id",
   auth,
   //  role.check([ROLES.Admin, ROLES.Accounts, ROLES.SALES]),
-  //  checkPermission("export", "/quotations/:id"),
+  checkPermission(
+    "export",
+    "export_quotation",
+    "quotations",
+    "/quotations/:id"
+  ),
   quotationController.exportQuotation
 );
-router.post("/clone/:id", quotationController.cloneQuotation);
+router.post(
+  "/clone/:id",
+  checkPermission(
+    "post",
+    "clone_quotation",
+    "quotations",
+    "/quotations/clone/:id"
+  ),
+  quotationController.cloneQuotation
+);
 module.exports = router;

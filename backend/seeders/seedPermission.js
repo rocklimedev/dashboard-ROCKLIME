@@ -1,49 +1,58 @@
 const fs = require("fs");
 const path = require("path");
-const Permission = require("../models/permisson"); // Import your Permission model
-const routesDir = path.join(__dirname, "../routes");
+const { v4: uuidv4 } = require("uuid");
+const sequelize = require("../config/database");
+const Permission = require("../models/permisson");
 
-const extractPermissions = (filePath, moduleName) => {
-  const content = fs.readFileSync(filePath, "utf-8");
-  const permissionRegex = /checkPermission\("(\w+)",\s*"([^"]+)"\)/g;
+// Regex to match checkPermission("api", "name", "module", "route")
+const checkPermissionRegex = /checkPermission\(([^)]+)\)/g;
 
-  let match;
-  const permissions = [];
-  while ((match = permissionRegex.exec(content)) !== null) {
-    const [_, name, route] = match;
-    permissions.push({ name, route, module: moduleName }); // Add module
-  }
-  return permissions;
-};
-
-const seedPermissions = async () => {
+(async () => {
   try {
-    console.log("Seeding permissions...");
-    const files = fs
-      .readdirSync(routesDir)
-      .filter((file) => file.endsWith(".js"));
+    const routesDir = path.join(__dirname, "../routes");
+    const files = fs.readdirSync(routesDir);
+    const permissions = [];
 
-    let allPermissions = [];
-    files.forEach((file) => {
+    for (const file of files) {
       const filePath = path.join(routesDir, file);
-      const moduleName = path.basename(file, ".js"); // Extract module name from filename (e.g., 'address' from 'address.js')
-      const permissions = extractPermissions(filePath, moduleName); // Pass moduleName to extractPermissions
-      allPermissions.push(...permissions);
-    });
+      const content = fs.readFileSync(filePath, "utf8");
 
-    // Insert unique permissions into the database
-    for (const { name, route, module } of allPermissions) {
-      await Permission.findOrCreate({
-        where: { name, route, module },
-        defaults: { name, route, module }, // Insert module into the defaults
+      const routePrefix = "/" + file.replace(/routes\.js$/, "").toLowerCase();
+
+      const matches = [...content.matchAll(checkPermissionRegex)];
+
+      matches.forEach((match) => {
+        const paramsRaw = match[1]
+          .split(",")
+          .map((s) => s.trim().replace(/^["'`](.*)["'`]$/, "$1"));
+
+        if (paramsRaw.length < 4) return;
+
+        const [api, name, module, route] = paramsRaw;
+
+        // Push into list
+        permissions.push({
+          permissionId: uuidv4(),
+          api,
+          name,
+          module,
+          route,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
       });
     }
 
-    console.log("Permissions seeding completed.");
-  } catch (error) {
-    console.error("Error seeding permissions:", error);
-  }
-};
+    console.log(`Found ${permissions.length} permissions. Inserting...`);
 
-seedPermissions().then(() => process.exit());
-module.exports = seedPermissions;
+    await Permission.bulkCreate(permissions, {
+      ignoreDuplicates: true,
+    });
+
+    console.log("✅ Permissions seeded successfully.");
+    process.exit(0);
+  } catch (error) {
+    console.error("❌ Error seeding permissions:", error);
+    process.exit(1);
+  }
+})();

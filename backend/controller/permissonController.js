@@ -1,3 +1,4 @@
+const { v4: uuidv4 } = require("uuid");
 const Permission = require("../models/permisson");
 const Role = require("../models/roles");
 const RolePermission = require("../models/rolePermission");
@@ -7,24 +8,37 @@ const RolePermission = require("../models/rolePermission");
  */
 exports.createPermission = async (req, res) => {
   try {
-    const { route, name, module } = req.body;
+    const { api, name, module, route } = req.body;
 
-    // Check if the permission already exists
-    const existingPermission = await Permission.findOne({
-      where: { route, name },
-    });
-    if (existingPermission) {
-      return res.status(400).json({ message: "Permission already exists." });
+    if (!api || !name || !module || !route) {
+      return res
+        .status(400)
+        .json({
+          message: "All fields (api, name, module, route) are required.",
+        });
     }
 
-    const permission = await Permission.create({ route, name, module });
-    res
-      .status(201)
-      .json({ message: "Permission created successfully.", permission });
+    const existingPermission = await Permission.findOne({
+      where: { api, route, module },
+    });
+    if (existingPermission) {
+      return res
+        .status(400)
+        .json({
+          message: "Permission already exists for this module and route.",
+        });
+    }
+
+    const permission = await Permission.create({ api, name, module, route });
+    res.status(201).json({
+      message: "Permission created successfully.",
+      permission,
+    });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error creating permission.", error: error.message });
+    res.status(500).json({
+      message: "Error creating permission.",
+      error: error.message,
+    });
   }
 };
 
@@ -34,19 +48,20 @@ exports.createPermission = async (req, res) => {
 exports.editPermission = async (req, res) => {
   try {
     const { permissionId } = req.params;
-    const { route, name, module } = req.body;
+    const { api, name, module, route } = req.body;
 
     const permission = await Permission.findByPk(permissionId);
     if (!permission) {
       return res.status(404).json({ message: "Permission not found." });
     }
 
-    await permission.update({ route, name, module });
+    await permission.update({ api, name, module, route });
     res.json({ message: "Permission updated successfully.", permission });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error updating permission.", error: error.message });
+    res.status(500).json({
+      message: "Error updating permission.",
+      error: error.message,
+    });
   }
 };
 
@@ -65,9 +80,10 @@ exports.deletePermission = async (req, res) => {
     await permission.destroy();
     res.json({ message: "Permission deleted successfully." });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error deleting permission.", error: error.message });
+    res.status(500).json({
+      message: "Error deleting permission.",
+      error: error.message,
+    });
   }
 };
 
@@ -85,9 +101,10 @@ exports.getPermission = async (req, res) => {
 
     res.json({ permission });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error fetching permission.", error: error.message });
+    res.status(500).json({
+      message: "Error fetching permission.",
+      error: error.message,
+    });
   }
 };
 
@@ -99,17 +116,16 @@ exports.getAllPermissions = async (req, res) => {
     const permissions = await Permission.findAll();
     res.json({ permissions });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error fetching permissions.", error: error.message });
+    res.status(500).json({
+      message: "Error fetching permissions.",
+      error: error.message,
+    });
   }
 };
 
 /**
  * Assign permission to a role
  */
-// controllers/permissionController.js
-
 exports.assignPermissionToRole = async (req, res) => {
   try {
     const { roleId, permissionId, isGranted = true } = req.body;
@@ -149,12 +165,16 @@ exports.assignPermissionToRole = async (req, res) => {
     });
   } catch (error) {
     console.error("Error assigning permission:", error);
-    res
-      .status(500)
-      .json({ message: "Error assigning permission.", error: error.message });
+    res.status(500).json({
+      message: "Error assigning permission.",
+      error: error.message,
+    });
   }
 };
-// controllers/permissionController.js
+
+/**
+ * Remove permission from a role
+ */
 exports.removePermissionFromRole = async (req, res) => {
   try {
     const { roleId, permissionId } = req.body;
@@ -187,8 +207,9 @@ exports.removePermissionFromRole = async (req, res) => {
     });
   } catch (error) {
     console.error("Error removing permission:", error);
-    res
-      .status(500)
-      .json({ message: "Error removing permission.", error: error.message });
+    res.status(500).json({
+      message: "Error removing permission.",
+      error: error.message,
+    });
   }
 };

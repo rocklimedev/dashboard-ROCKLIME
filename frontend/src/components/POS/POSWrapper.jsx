@@ -4,22 +4,25 @@ import POSCategories from "./POSCategories";
 import POSProducts from "./POSProducts";
 import POSFooter from "./POSFooter";
 import OrderList from "./OrderList";
+import ShowQuotations from "./ShowQuotations";
 import { useGetProfileQuery } from "../../api/userApi";
 import { useGetAllQuotationsQuery } from "../../api/quotationApi";
 import { useGetCartQuery } from "../../api/cartApi";
-import ShowQuotations from "./ShowQuotations";
-import { useGetAllProductsQuery } from "../../api/productApi";
-
+import { useGetAllProductsQuery } from "../../api/productApi"; // Assuming you have a brand API
+import { useGetAllBrandsQuery } from "../../api/brandsApi";
 const POSWrapper = () => {
   const dispatch = useDispatch();
   const { data: user, isLoading, isError } = useGetProfileQuery();
   const { data: quotations, isLoading: isQuotationsLoading } =
     useGetAllQuotationsQuery();
-  const [showQuotations, setShowQuotations] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
   const { data: products, isLoading: isProductsLoading } =
     useGetAllProductsQuery();
   const { data: cartData, refetch } = useGetCartQuery();
+  const { data: brands, isLoading: isBrandsLoading } = useGetAllBrandsQuery(); // Fetch all brands
+
+  const [activeTab, setActiveTab] = useState("products"); // Tab switching logic
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeBrand, setActiveBrand] = useState(null); // Active brand for filtering products
 
   useEffect(() => {
     refetch();
@@ -34,23 +37,23 @@ const POSWrapper = () => {
     const cartData = {
       customerId: quotation.customerId,
       items: quotation.products.map((product) => ({
-        id: product.productId, // Ensure this matches the key in your data
+        id: product.productId,
         name: product.name,
         quantity: product.quantity || 1,
-        price: product.sellingPrice, // Ensure the correct key for price
+        price: product.sellingPrice,
       })),
       totalAmount: quotation.finalAmount,
     };
 
     console.log("Converted Cart Data:", cartData);
-    // Here, you can dispatch an action to update the cart or handle API calls.
+    // Handle cart update or API calls
   };
 
-  const filteredProducts = searchTerm
-    ? products?.filter((product) =>
+  const filteredProducts = activeBrand
+    ? products?.filter((product) => product.brandId === activeBrand.id)
+    : products?.filter((product) =>
         product.name.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : products;
+      );
 
   const userName = user?.user?.name || "User";
   const currentDate = new Date().toLocaleDateString("en-US", {
@@ -58,6 +61,54 @@ const POSWrapper = () => {
     month: "long",
     day: "numeric",
   });
+
+  const handleBrandClick = (brand) => {
+    setActiveBrand(brand); // Set the active brand for filtering
+  };
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "quotations":
+        return (
+          <ShowQuotations
+            isQuotationsLoading={isQuotationsLoading}
+            quotations={quotations}
+            onConvertToOrder={handleConvertToCart}
+          />
+        );
+      case "products":
+        return (
+          <div className="content-wrap">
+            <POSCategories />
+            <POSProducts
+              products={filteredProducts}
+              isLoading={isProductsLoading}
+            />
+          </div>
+        );
+      case "brands":
+        return (
+          <div className="brand-list">
+            {isBrandsLoading ? (
+              <p>Loading Brands...</p>
+            ) : (
+              brands?.map((brand) => (
+                <div
+                  key={brand.id}
+                  className="brand-card"
+                  onClick={() => handleBrandClick(brand)}
+                >
+                  <h5>{brand.name}</h5>
+                  <p>Total Products: {brand.totalProducts}</p>
+                </div>
+              ))
+            )}
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="page-wrapper pos-pg-wrapper ms-0">
@@ -89,38 +140,28 @@ const POSWrapper = () => {
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
                   </div>
-                  <a href="#" className="btn btn-sm btn-dark mb-2 me-2">
-                    <i className="ti ti-tag me-1"></i>View All Brands
-                  </a>
                   <button
                     className="btn btn-sm btn-dark mb-2 me-2"
-                    onClick={() => setShowQuotations(!showQuotations)}
+                    onClick={() => setActiveTab("brands")}
+                  >
+                    <i className="ti ti-tag me-1"></i>View All Brands
+                  </button>
+                  <button
+                    className="btn btn-sm btn-dark mb-2 me-2"
+                    onClick={() => setActiveTab("quotations")}
                   >
                     <i className="ti ti-star me-1"></i>Choose from Quotations
+                  </button>
+                  <button
+                    className="btn btn-sm btn-dark mb-2 me-2"
+                    onClick={() => setActiveTab("products")}
+                  >
+                    <i className="ti ti-box me-1"></i>View Products
                   </button>
                 </div>
               </div>
 
-              {showQuotations && (
-                <ShowQuotations
-                  isQuotationsLoading={isQuotationsLoading}
-                  quotations={quotations}
-                  onConvertToOrder={handleConvertToCart}
-                />
-              )}
-
-              <div className="d-flex align-items-center flex-wrap justify-content-between">
-                <POSCategories />
-              </div>
-
-              <div className="content-wrap">
-                <div className="tab-content-wrap">
-                  <POSProducts
-                    products={filteredProducts}
-                    isLoading={isProductsLoading}
-                  />
-                </div>
-              </div>
+              {renderTabContent()}
             </div>
           </div>
           <OrderList onConvertToOrder={handleConvertToCart} />

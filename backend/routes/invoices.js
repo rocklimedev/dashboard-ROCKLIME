@@ -3,18 +3,38 @@ const router = express.Router();
 const invoiceController = require("../controller/invoiceController");
 
 // Create a new invoice
-router.post("/", invoiceController.createInvoice);
+router.post(
+  "/",
+  checkPermission("write", "create_invoice", "invoices", "/invoices"),
+  invoiceController.createInvoice
+);
 
 // Get all invoices
-router.get("/", invoiceController.getAllInvoices);
+router.get(
+  "/",
+  checkPermission("view", "get_all_invoices", "invoices", "/invoices"),
+  invoiceController.getAllInvoices
+);
 
 // Get an invoice by ID
-router.get("/:id", invoiceController.getInvoiceById);
+router.get(
+  "/:id",
+  checkPermission("view", "get_invoice_by_id", "invoices", "/invoices/:id"),
+  invoiceController.getInvoiceById
+);
 
 // Update an invoice by ID
-router.put("/:id", invoiceController.updateInvoice);
+router.put(
+  "/:id",
+  checkPermission("edit", "update_invoice", "invoices", "/invoices/:id"),
+  invoiceController.updateInvoice
+);
 
 // Delete an invoice by ID
-router.delete("/:id", invoiceController.deleteInvoice);
+router.delete(
+  "/:id",
+  checkPermission("delete", "delete_invoice", "invoices", "/invoices/:id"),
+  invoiceController.deleteInvoice
+);
 
 module.exports = router;

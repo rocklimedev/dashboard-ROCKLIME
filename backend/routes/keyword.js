@@ -9,7 +9,7 @@ const { ROLES } = require("../config/constant");
 router.post(
   "/",
   // role.check(ROLES.Admin), // Only Admin and SuperAdmin can create
-  //checkPermission("write", "/keywords"),
+  checkPermission("write", "create_keyword", "keywords", "/keywords"),
   keywordController.createKeyword
 );
 
@@ -17,7 +17,7 @@ router.post(
 router.get(
   "/",
   // role.check(ROLES.Accounts), // Minimum role required is Accounts
-  // checkPermission("view", "/keywords"),
+  checkPermission("view", "get_all_keywords", "keywords", "/keywords"),
   keywordController.getAllKeywords
 );
 
@@ -25,7 +25,7 @@ router.get(
 router.get(
   "/:id",
   //  role.check(ROLES.Accounts),
-  // checkPermission("view", "/keywords/:id"),
+  checkPermission("view", "get_keyword_by_id", "keywords", "/keywords/:id"),
   keywordController.getKeywordById
 );
 
@@ -33,7 +33,7 @@ router.get(
 router.put(
   "/:id",
   //  role.check(ROLES.Admin),
-  //  checkPermission("edit", "/keywords/:id"),
+  checkPermission("edit", "update_keyword", "keywords", "/keywords/:id"),
   keywordController.updateKeyword
 );
 
@@ -41,7 +41,7 @@ router.put(
 router.delete(
   "/:id",
   //role.check(ROLES.SuperAdmin),
-  //checkPermission("delete", "/keywords/:id"),
+  checkPermission("delete", "delete_keyword", "keywords", "/keywords/:id"),
   keywordController.deleteKeyword
 );
 

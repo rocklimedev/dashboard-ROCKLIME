@@ -7,7 +7,7 @@ import { useGetAllBrandsQuery } from "../../api/brandsApi";
 import PageHeader from "../Common/PageHeader";
 import AddCompanyModal from "./AddCompanyModal";
 import DeleteModal from "../Common/DeleteModal";
-import ViewCompanies from "./ViewCompanies"; // ← import ViewCompanies
+import ViewCompanies from "./ViewCompanies";
 import { BiEdit, BiTrash, BiShowAlt } from "react-icons/bi";
 import { toast } from "react-toastify";
 
@@ -30,14 +30,16 @@ const CompaniesWrapper = () => {
   const [showModal, setShowModal] = useState(false);
   const [vendorToDelete, setVendorToDelete] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-
-  const [viewCompanyId, setViewCompanyId] = useState(null); // ← state for viewing company
+  const [viewCompanyId, setViewCompanyId] = useState(null);
 
   const vendors = Array.isArray(vendorsData) ? vendorsData : [];
   const brands = Array.isArray(brandsData) ? brandsData : [];
 
   if (vendorsLoading || brandsLoading) return <p>Loading...</p>;
-  if (vendorsError || brandsError) return <p>Error fetching data.</p>;
+  if (vendorsError || brandsError)
+    return (
+      <p>Error fetching data: {JSON.stringify(vendorsError || brandsError)}</p>
+    );
   if (vendors.length === 0) return <p>No vendors available.</p>;
 
   const getBrandName = (brandId) => {
@@ -93,7 +95,7 @@ const CompaniesWrapper = () => {
                 </thead>
                 <tbody>
                   {vendors.map((vendor) => (
-                    <tr key={vendor.id}>
+                    <tr key={vendor.id} onClick={(e) => e.stopPropagation()}>
                       <td>{vendor.vendorId}</td>
                       <td>{vendor.vendorName}</td>
                       <td>{getBrandName(vendor.brandId)}</td>
@@ -101,16 +103,6 @@ const CompaniesWrapper = () => {
                       <td>{new Date(vendor.createdAt).toLocaleDateString()}</td>
                       <td>
                         <div className="d-flex gap-2">
-                          <button
-                            className="btn btn-sm btn-info"
-                            onClick={() => {
-                              console.log("Vendor:", vendor);
-                              console.log("Company ID:", vendor.companyId);
-                              setViewCompanyId(vendor.companyId);
-                            }}
-                          >
-                            <BiShowAlt />
-                          </button>
                           <button
                             className="btn btn-sm btn-warning"
                             onClick={() => handleEditVendor(vendor)}
@@ -136,7 +128,6 @@ const CompaniesWrapper = () => {
           </div>
         </div>
 
-        {/* View Company Modal */}
         {viewCompanyId && (
           <ViewCompanies
             companyId={viewCompanyId}
@@ -144,7 +135,6 @@ const CompaniesWrapper = () => {
           />
         )}
 
-        {/* Delete Confirmation Modal */}
         <DeleteModal
           show={showDeleteModal}
           onHide={() => setShowDeleteModal(false)}
@@ -153,11 +143,10 @@ const CompaniesWrapper = () => {
           message="Are you sure you want to delete this vendor?"
         />
 
-        {/* Add / Edit Modal */}
         <AddCompanyModal
           show={showModal}
-          onHide={() => setShowModal(false)}
-          vendor={selectedVendor}
+          onClose={() => setShowModal(false)} // Close modal when called
+          existingVendor={selectedVendor} // Pass selectedVendor for editing
         />
       </div>
     </div>

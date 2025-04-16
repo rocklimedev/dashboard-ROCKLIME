@@ -5,6 +5,7 @@ const {
   getBrands,
   updateBrand,
   deleteBrand,
+  getTotalProductOfBrand,
 } = require("../controller/brandController");
 const checkPermission = require("../middleware/permission");
 const role = require("../middleware/role"); // Role-based access middleware
@@ -16,7 +17,7 @@ const router = express.Router();
 router.post(
   "/add",
   // role.check(ROLES.Admin), // Only Admin can create brands
-  // checkPermission("write", "/brands"),
+  checkPermission("write", "create_brand", "brands", "/brands/add"),
   createBrand
 );
 
@@ -24,7 +25,7 @@ router.post(
 router.get(
   "/",
   //  role.check(ROLES.Users), // Minimum Users role required
-  // checkPermission("view", "/brands"),
+  checkPermission("view", "view_brand", "brands", "/brands"),
   getBrands
 );
 
@@ -32,7 +33,7 @@ router.get(
 router.get(
   "/:id",
   // role.check(ROLES.Users),
-  // checkPermission("view", "/brands/:id"),
+  checkPermission("view", "view_brand", "brands", "/brands/:id"),
   getBrandById
 );
 
@@ -40,7 +41,7 @@ router.get(
 router.put(
   "/:id",
   // role.check(ROLES.Admin), // Only Admin can edit brands
-  //  checkPermission("edit", "/brands/:id"),
+  checkPermission("edit", "edit_brand", "brands", "/brands/:id"),
   updateBrand
 );
 
@@ -48,8 +49,17 @@ router.put(
 router.delete(
   "/:id",
   // role.check(ROLES.SuperAdmin), // Only SuperAdmin can delete brands
-  // checkPermission("delete", "/brands/:id"),
+  checkPermission("delete", "delete_brand", "brands", "/brands/:id"),
   deleteBrand
 );
-
+router.get(
+  "/:brandId/total-products",
+  checkPermission(
+    "view",
+    "get_total_products_of_this_brand",
+    "brands",
+    "/brands/total-products"
+  ),
+  getTotalProductOfBrand
+);
 module.exports = router;
