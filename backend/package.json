@@ -21,6 +21,7 @@
     "express": "^4.21.2",
     "express-validator": "^7.2.1",
     "fs": "^0.0.1-security",
+    "ftp": "^0.3.10",
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.11.0",
@@ -28,6 +29,7 @@
     "mysql2": "^3.12.0",
     "nodemailer": "^6.10.0",
     "path": "^0.12.7",
+    "sharp": "^0.34.1",
     "slugify": "^1.6.6",
     "socket.io": "^4.8.1",
     "uuid": "^11.0.5",
@@ -36,7 +38,7 @@
   "devDependencies": {
     "jest": "^29.7.0",
     "nodemon": "^3.1.9",
-    "sequelize": "^6.37.5",
+    "sequelize": "^6.37.7",
     "sqlite3": "^5.1.7",
     "supertest": "^7.0.0"
   }

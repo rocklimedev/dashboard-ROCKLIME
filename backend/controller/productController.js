@@ -352,3 +352,22 @@ exports.getAllLowStockProducts = async (req, res) => {
     });
   }
 };
+exports.getAllProductCodes = async (req, res) => {
+  try {
+    const products = await Product.findAll({
+      attributes: ["productId", "product_code", "name", "categoryId"],
+    });
+
+    res.status(200).json({
+      success: true,
+      count: products.length,
+      data: products,
+    });
+  } catch (error) {
+    console.error("Error fetching product codes:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};

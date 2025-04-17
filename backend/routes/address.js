@@ -10,7 +10,7 @@ const router = express.Router();
 router.post(
   "/",
   // role.check(ROLES.Admin), // Only Admin can create addresses
-  checkPermission("write", "createAddress", "address", "/addresses"),
+  // checkPermission("write", "createAddress", "address", "/addresses"),
   addressController.createAddress
 );
 
@@ -18,7 +18,7 @@ router.post(
 router.get(
   "/",
   //  role.check(ROLES.Users), // Minimum Users role required
-  checkPermission("view", "getAllAddresses", "address", "/addresses"),
+  // checkPermission("view", "getAllAddresses", "address", "/addresses"),
   addressController.getAllAddresses
 );
 
@@ -26,7 +26,7 @@ router.get(
 router.get(
   "/:addressId",
   // role.check(ROLES.Users),
-  checkPermission("view", "getAddressById", "address", "/addresses/:addressId"),
+  // checkPermission("view", "getAddressById", "address", "/addresses/:addressId"),
   addressController.getAddressById
 );
 
@@ -34,7 +34,7 @@ router.get(
 router.put(
   "/:addressId",
   //  role.check(ROLES.Admin), // Only Admin can edit
-  checkPermission("edit", "updateAddress", "address", "/addresses/:addressId"),
+  // checkPermission("edit", "updateAddress", "address", "/addresses/:addressId"),
   addressController.updateAddress
 );
 
@@ -42,12 +42,12 @@ router.put(
 router.delete(
   "/:addressId",
   // role.check(ROLES.SuperAdmin), // Only SuperAdmin can delete
-  checkPermission(
-    "delete",
-    "deleteAddress",
-    "address",
-    "/addresses/:addressId"
-  ),
+  // checkPermission(
+  //   "delete",
+  //   "deleteAddress",
+  //   "address",
+  //   "/addresses/:addressId"
+  // ),
   addressController.deleteAddress
 );
 

@@ -17,7 +17,7 @@ const router = express.Router();
 router.post(
   "/add",
   // role.check(ROLES.Admin), // Only Admin can create brands
-  checkPermission("write", "create_brand", "brands", "/brands/add"),
+  // checkPermission("write", "create_brand", "brands", "/brands/add"),
   createBrand
 );
 
@@ -25,7 +25,7 @@ router.post(
 router.get(
   "/",
   //  role.check(ROLES.Users), // Minimum Users role required
-  checkPermission("view", "view_brand", "brands", "/brands"),
+  // checkPermission("view", "view_brand", "brands", "/brands"),
   getBrands
 );
 
@@ -33,7 +33,7 @@ router.get(
 router.get(
   "/:id",
   // role.check(ROLES.Users),
-  checkPermission("view", "view_brand", "brands", "/brands/:id"),
+  // checkPermission("view", "view_brand", "brands", "/brands/:id"),
   getBrandById
 );
 
@@ -41,7 +41,7 @@ router.get(
 router.put(
   "/:id",
   // role.check(ROLES.Admin), // Only Admin can edit brands
-  checkPermission("edit", "edit_brand", "brands", "/brands/:id"),
+  //checkPermission("edit", "edit_brand", "brands", "/brands/:id"),
   updateBrand
 );
 
@@ -49,17 +49,17 @@ router.put(
 router.delete(
   "/:id",
   // role.check(ROLES.SuperAdmin), // Only SuperAdmin can delete brands
-  checkPermission("delete", "delete_brand", "brands", "/brands/:id"),
+  // checkPermission("delete", "delete_brand", "brands", "/brands/:id"),
   deleteBrand
 );
 router.get(
   "/:brandId/total-products",
-  checkPermission(
-    "view",
-    "get_total_products_of_this_brand",
-    "brands",
-    "/brands/total-products"
-  ),
+  // checkPermission(
+  //   "view",
+  //   "get_total_products_of_this_brand",
+  //   "brands",
+  //   "/brands/total-products"
+  // ),
   getTotalProductOfBrand
 );
 module.exports = router;

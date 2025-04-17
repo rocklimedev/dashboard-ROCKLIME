@@ -9,13 +9,13 @@ const checkPermission = require("../middleware/permission");
 router.get(
   "/me",
   auth,
-  checkPermission("view", "get_profile", "users", "/users/me"),
+  // checkPermission("view", "get_profile", "users", "/users/me"),
   userController.getProfile
 ); // Get logged-in user's profile
 router.put(
   "/",
   auth,
-  checkPermission("edit", "update_profile", "users", "/users"),
+  //checkPermission("edit", "update_profile", "users", "/users"),
   userController.updateProfile
 ); // edit logged-in user's profile
 
@@ -30,21 +30,21 @@ router.get(
 router.post(
   "/add",
   auth,
-  checkPermission("write", "create_user", "users", "/users/add"),
+  //checkPermission("write", "create_user", "users", "/users/add"),
   role([ROLES.Admin]),
   userController.createUser
 ); // Add a new user
 router.delete(
   "/:userId",
   auth,
-  checkPermission("delete", "delete_user", "users", "/users/:userId"),
+  //  checkPermission("delete", "delete_user", "users", "/users/:userId"),
   role([ROLES.Admin]),
   userController.deleteUser
 ); // Delete a user
 router.put(
   "/:userId",
   auth,
-  checkPermission("edit", "update_user", "users", "/users/:userId"),
+  //checkPermission("edit", "update_user", "users", "/users/:userId"),
   userController.updateUser
 );
 // ✅ Admin & Moderator Routes
@@ -52,14 +52,14 @@ router.get(
   "/search",
   auth,
   //  role([ROLES.Admin, ROLES.SALES]),
-  checkPermission("view", "search_user", "users", "/users/search"),
+  // checkPermission("view", "search_user", "users", "/users/search"),
   userController.searchUser
 );
 router.get(
   "/:userId",
   auth,
   // role([ROLES.Admin, ROLES.SALES]),
-  checkPermission("view", "get_user_by_id", "users", "/users/:userId"),
+  //checkPermission("view", "get_user_by_id", "users", "/users/:userId"),
   userController.getUserById
 );
 
@@ -67,23 +67,23 @@ router.get(
 router.post(
   "/report/:userId",
   auth,
-  checkPermission("post", "report_user", "users", "/users/report/:userId"),
+  //checkPermission("post", "report_user", "users", "/users/report/:userId"),
   userController.reportUser
 );
 router.put(
   "/assign-role/:userId",
-  checkPermission("edit", "assign_role", "users", "/users/assign-role/:userId"),
+  //checkPermission("edit", "assign_role", "users", "/users/assign-role/:userId"),
   userController.assignRole
 );
 router.put(
   "/:userId",
   auth,
-  checkPermission(
-    "edit",
-    "change_status_to_inactive",
-    "users",
-    "/users/:userId"
-  ),
+  // checkPermission(
+  //   "edit",
+  //   "change_status_to_inactive",
+  //   "users",
+  //   "/users/:userId"
+  // ),
   userController.changeStatusToInactive
 );
 module.exports = router;
