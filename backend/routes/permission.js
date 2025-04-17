@@ -18,7 +18,7 @@ const { ROLES } = require("../config/constant");
 router.post(
   "/",
   // role.check(ROLES.SuperAdmin),
-  checkPermission("write", "create_permission", "permissions", "/permissions"),
+  //checkPermission("write", "create_permission", "permissions", "/permissions"),
   createPermission
 );
 
@@ -26,7 +26,7 @@ router.post(
 router.get(
   "/",
   //role.check(ROLES.Admin),
-  checkPermission("view", "get_all_permission", "permissions", "/permissions"),
+  // checkPermission("view", "get_all_permission", "permissions", "/permissions"),
   getAllPermissions
 );
 
@@ -34,12 +34,12 @@ router.get(
 router.put(
   "/:permissionId",
   // role.check(ROLES.SuperAdmin),
-  checkPermission(
-    "edit",
-    "edit_permission",
-    "permissions",
-    "/permissions/:permissionId"
-  ),
+  // checkPermission(
+  //   "edit",
+  //   "edit_permission",
+  //   "permissions",
+  //   "/permissions/:permissionId"
+  // ),
   editPermission
 );
 
@@ -47,23 +47,23 @@ router.put(
 router.delete(
   "/:permissionId",
   //role.check(ROLES.SuperAdmin),
-  checkPermission(
-    "delete",
-    "delete_permission",
-    "permissions",
-    "/permissions/:permissionId"
-  ),
+  // checkPermission(
+  //   "delete",
+  //   "delete_permission",
+  //   "permissions",
+  //   "/permissions/:permissionId"
+  // ),
   deletePermission
 );
 
 router.get(
   "/:permissionId",
-  checkPermission(
-    "view",
-    "get_permission",
-    "permissions",
-    "/permissions/:permissionId"
-  ),
+  // checkPermission(
+  //   "view",
+  //   "get_permission",
+  //   "permissions",
+  //   "/permissions/:permissionId"
+  // ),
   getPermission
 );
 
@@ -71,22 +71,22 @@ router.get(
 
 router.post(
   "/assign-permission",
-  checkPermission(
-    "write",
-    "assign_permission_to_role",
-    "permissions",
-    "/permissions/assign-permission"
-  ),
+  // checkPermission(
+  //   "write",
+  //   "assign_permission_to_role",
+  //   "permissions",
+  //   "/permissions/assign-permission"
+  // ),
   assignPermissionToRole
 );
 router.post(
   "/remove-permission",
-  checkPermission(
-    "write",
-    "remove_permission",
-    "permissions",
-    "/permissions/remove-permission"
-  ),
+  // checkPermission(
+  //   "write",
+  //   "remove_permission",
+  //   "permissions",
+  //   "/permissions/remove-permission"
+  // ),
   removePermissionFromRole
 );
 module.exports = router;

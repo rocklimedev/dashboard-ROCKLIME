@@ -9,7 +9,7 @@ const { ROLES } = require("../config/constant");
 router.post(
   "/",
   //role.check(ROLES.Admin), // Only Admins can create companies
-  checkPermission("write", "create_company", "companies", "/companies"),
+  // checkPermission("write", "create_company", "companies", "/companies"),
   companyController.createCompany
 );
 
@@ -17,7 +17,7 @@ router.post(
 router.get(
   "/",
   // role.check(ROLES.Users), // Minimum role required is Users
-  checkPermission("view", "get_all_companies", "companies", "/companies"),
+  //  checkPermission("view", "get_all_companies", "companies", "/companies"),
   companyController.getAllCompanies
 );
 
@@ -25,7 +25,7 @@ router.get(
 router.get(
   "/:id",
   //role.check(ROLES.Users),
-  checkPermission("view", "get_company_by_id", "companies", "/companies/:id"),
+  //checkPermission("view", "get_company_by_id", "companies", "/companies/:id"),
   companyController.getCompanyById
 );
 
@@ -33,12 +33,12 @@ router.get(
 router.get(
   "/parent/:parentId",
   // role.check(ROLES.Accounts), // Minimum role required is Accounts
-  checkPermission(
-    "view",
-    "get_child_companies",
-    "companies",
-    "/companies/parent/:parentId"
-  ),
+  // checkPermission(
+  //   "view",
+  //   "get_child_companies",
+  //   "companies",
+  //   "/companies/parent/:parentId"
+  // ),
   companyController.getChildCompanies
 );
 
@@ -46,7 +46,7 @@ router.get(
 router.put(
   "/:id",
   // role.check(ROLES.Admin), // Only Admins can edit companies
-  checkPermission("edit", "update_company", "companies", "/companies/:id"),
+  //checkPermission("edit", "update_company", "companies", "/companies/:id"),
   companyController.updateCompany
 );
 
@@ -54,7 +54,7 @@ router.put(
 router.delete(
   "/:id",
   // role.check(ROLES.SuperAdmin), // Only SuperAdmin can delete companies
-  checkPermission("delete", "delete_company", "companies", "/companies/:id"),
+  // checkPermission("delete", "delete_company", "companies", "/companies/:id"),
   companyController.deleteCompany
 );
 

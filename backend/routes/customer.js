@@ -9,7 +9,7 @@ const { ROLES } = require("../config/constant");
 router.post(
   "/",
   //role.check(ROLES.SALES), // Minimum role required is Sales
-  checkPermission("write", "create_customer", "customers", "/customers"),
+  //  checkPermission("write", "create_customer", "customers", "/customers"),
   customerController.createCustomer
 );
 
@@ -17,7 +17,7 @@ router.post(
 router.get(
   "/",
   // role.check(ROLES.Accounts), // Minimum role required is Accounts
-  checkPermission("view", "get_customers", "customers", "/customers"),
+  // checkPermission("view", "get_customers", "customers", "/customers"),
   customerController.getCustomers
 );
 
@@ -25,7 +25,7 @@ router.get(
 router.get(
   "/:id",
   // role.check(ROLES.Accounts),
-  checkPermission("view", "get_customer_by_id", "customers", "/customers/:id"),
+  // checkPermission("view", "get_customer_by_id", "customers", "/customers/:id"),
   customerController.getCustomerById
 );
 
@@ -33,7 +33,7 @@ router.get(
 router.put(
   "/:id",
   //  role.check(ROLES.Admin), // Only Admins can edit customers
-  checkPermission("edit", "update_customer", "customers", "/customers/:id"),
+  // checkPermission("edit", "update_customer", "customers", "/customers/:id"),
   customerController.updateCustomer
 );
 
@@ -41,17 +41,17 @@ router.put(
 router.delete(
   "/:id",
   //  role.check(ROLES.SuperAdmin), // Only SuperAdmin can delete customers
-  checkPermission("delete", "delete_customer", "customers", "/customers/:id"),
+  // checkPermission("delete", "delete_customer", "customers", "/customers/:id"),
   customerController.deleteCustomer
 );
 router.get(
   "/:id/invoices",
-  checkPermission(
-    "view",
-    "get_invoices_by_customer_id",
-    "customers",
-    "/customers/:id/invoices"
-  ),
+  // checkPermission(
+  //   "view",
+  //   "get_invoices_by_customer_id",
+  //   "customers",
+  //   "/customers/:id/invoices"
+  // ),
   customerController.getInvoicesByCustomerId
 );
 
