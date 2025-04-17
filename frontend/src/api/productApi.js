@@ -77,10 +77,14 @@ export const productApi = createApi({
       query: (productId) => `/${productId}/history`, // Assuming your API follows this route
       providesTags: ["Product"],
     }),
+    getAllProductCodes: builder.query({
+      query: () => "/search/get-product-codes",
+      providesTags: ["Product"],
+    }),
     searchProducts: builder.query({
       query: (params) => {
         const queryString = new URLSearchParams(params).toString(); // Convert params object to query string
-        return `/search?${queryString}`;
+        return `/search/all?${queryString}`;
       },
       providesTags: ["Product"],
     }),
@@ -98,4 +102,5 @@ export const {
   useGetLowStockProductsQuery,
   useGetHistoryByProductIdQuery,
   useSearchProductsQuery, // ✅ Added hook for fetching history
+  useGetAllProductCodesQuery,
 } = productApi;

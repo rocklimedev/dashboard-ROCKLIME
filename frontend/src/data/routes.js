@@ -59,6 +59,7 @@ import SecuritySettings from "../components/Settings/SecuritySettings";
 import TeamsList from "../components/Orders/TeamsList";
 import InvoiceDetails from "../components/Invoices/InvoiceDetails";
 import OrderWithInvoice from "../components/Orders/OrderWithInvoice";
+import CheckProductCodeStatus from "../components/Product/CheckProductCodeStatus";
 const masterRoutes = [
   {
     path: "/",
@@ -167,7 +168,13 @@ const masterRoutes = [
         element: <ProductList />,
         isSidebarActive: true,
       },
-
+      {
+        path: "/inventory/product/product-code-status",
+        name: "Check Product Code Status",
+        icon: <AiOutlineProduct />,
+        element: <CheckProductCodeStatus />,
+        isSidebarActive: true,
+      },
       {
         path: "/inventory/categories-keywords",
         element: <CategoriesList />,
