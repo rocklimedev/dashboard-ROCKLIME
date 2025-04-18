@@ -3703,25 +3703,25 @@
   ],
 
   "BAU COSMO E: THE GAME CHANGER": [
-    { "name": "6 V lithium battery", "code": "36451000", "price": 22050 },
-    { "name": "Plug transformer 6DC", "code": "36453000", "price": 22450 },
-    { "name": "6 V lithium battery", "code": "36452000", "price": 19650 }
+    { "Name": "6 V lithium battery", "Code": "36451000", "Price": 22050 },
+    { "Name": "Plug transformer 6DC", "Code": "36453000", "Price": 22450 },
+    { "Name": "6 V lithium battery", "Code": "36452000", "Price": 19650 }
   ],
   "SENSOR FOR WC": [
     {
-      "name": "Tectron Skate Infrared Toilet Flush Plate Chrome 100230 V AC 6 V DC",
-      "code": "37419000",
-      "price": 85850
+      "Name": "Tectron Skate Infrared Toilet Flush Plate Chrome 100230 V AC 6 V DC",
+      "Code": "37419000",
+      "Price": 85850
     },
     {
-      "name": "Tectron Skate Infrared Electronic Flush Plate for Toilet Flushing Cistern, 240 V, Stainless Steel",
-      "code": "37419SD0",
-      "price": 69350
+      "Name": "Tectron Skate Infrared Electronic Flush Plate for Toilet Flushing Cistern, 240 V, Stainless Steel",
+      "Code": "37419SD0",
+      "Price": 69350
     },
     {
-      "name": "Tectron Skate Infrared Electronic Flush Plate for Toilet Flushing Cistern, 240 V",
-      "code": "38698SD1",
-      "price": 51250
+      "Name": "Tectron Skate Infrared Electronic Flush Plate for Toilet Flushing Cistern, 240 V",
+      "Code": "38698SD1",
+      "Price": 51250
     }
   ],
   "SENSOR FOR URINAL": [

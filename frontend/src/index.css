@@ -32,3 +32,18 @@
 .main-content.shrink {
   margin-left: 0;
 }
+.badge-count {
+  background-color: #3e64ff;
+  color: white;
+  padding: 5px 10px;
+  font-size: 12px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+.category-box {
+  transition: 0.3s;
+}
+.category-box:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
