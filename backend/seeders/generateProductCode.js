@@ -1,73 +1,105 @@
 const fs = require("fs");
 const path = require("path");
-const sequelize = require("../config/database"); // Update path if needed
-const Product = require("../models/product"); // Update path if needed
+const Product = require("../models/product");
+const Category = require("../models/category");
+const Brand = require("../models/brand");
+const sequelize = require("../config/database");
+const { Op } = require("sequelize");
 
-async function generateProductCodeFile() {
+async function updateProductCodesInJson() {
   try {
-    await sequelize.sync();
+    await sequelize.authenticate();
+    console.log("✅ Connected to database.");
 
-    const products = await Product.findAll({
-      attributes: ["product_code", "company_code"],
-      raw: true,
-    });
+    const filePath = path.join(__dirname, "../utils/filteredProducts.json");
+    const rawData = fs.readFileSync(filePath, "utf-8");
+    const productsData = JSON.parse(rawData);
 
-    if (!products.length) {
-      console.log("⚠️ No products found in DB.");
-      return;
-    }
+    const updatedProducts = [];
 
-    const groupedByProductCode = {};
-
-    for (const { product_code, company_code } of products) {
-      if (!product_code || !company_code) continue;
-
-      if (!groupedByProductCode[product_code]) {
-        groupedByProductCode[product_code] = [];
-      }
-
-      groupedByProductCode[product_code].push(company_code);
-    }
-
-    const sortedCodes = Object.keys(groupedByProductCode).sort((a, b) =>
-      a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" })
-    );
-
-    let output = "";
-    let duplicates = [];
-
-    for (const code of sortedCodes) {
-      const companies = groupedByProductCode[code];
-
-      if (companies.length === 1) {
-        output += `${code} — ${companies[0]}\n`;
-      } else {
-        duplicates.push(code); // Save duplicates for DUPLICATE.TXT
-        output += `${code} —\n`;
-        companies.forEach((company, i) => {
-          output += `  ${i + 1}. ${company}\n`;
+    for (const product of productsData) {
+      // If product_code is already present, double check it's actually unique
+      if (product.product_code && product.product_code.trim() !== "") {
+        const exists = await Product.findOne({
+          where: { product_code: product.product_code.trim() },
         });
+
+        if (exists) {
+          console.warn(
+            `⚠️ "${product.name}" has conflicting code ${product.product_code}. Regenerating...`
+          );
+        } else {
+          updatedProducts.push(product);
+          continue; // Code is unique, keep it
+        }
       }
+
+      const category = await Category.findByPk(product.categoryId);
+      const brand = await Brand.findByPk(product.brandId);
+
+      if (!category || !brand) {
+        console.warn(
+          `⚠️ Skipping "${product.name}" due to missing category/brand`
+        );
+        updatedProducts.push(product);
+        continue;
+      }
+
+      const prefix = `E${category.name
+        .slice(0, 2)
+        .toUpperCase()}${brand.brandSlug
+        .slice(0, 2)
+        .toUpperCase()}${product.company_code.slice(-4)}`;
+
+      // Fetch all product codes starting with prefix
+      const existingProducts = await Product.findAll({
+        where: {
+          product_code: {
+            [Op.like]: `${prefix}%`,
+          },
+        },
+        attributes: ["product_code"],
+      });
+
+      const existingSuffixes = existingProducts
+        .map((p) => p.product_code.replace(prefix, ""))
+        .filter((code) => /^\d{3}$/.test(code))
+        .map(Number);
+
+      let suffix = 1;
+      let generatedCode;
+      let isUnique = false;
+
+      // Keep generating until a unique code is found
+      while (!isUnique) {
+        while (existingSuffixes.includes(suffix)) {
+          suffix++;
+        }
+
+        generatedCode = `${prefix}${suffix.toString().padStart(3, "0")}`;
+        const conflictCheck = await Product.findOne({
+          where: { product_code: generatedCode },
+        });
+
+        if (!conflictCheck) {
+          isUnique = true;
+        } else {
+          suffix++; // Try next
+        }
+      }
+
+      product.product_code = generatedCode;
+      updatedProducts.push(product);
+      console.log(`✅ Updated: "${product.name}" → ${generatedCode}`);
     }
 
-    // Write PRODUCTCODE.TXT
-    const outputPath = path.join(__dirname, "PRODUCTCODE.TXT");
-    fs.writeFileSync(outputPath, output, "utf-8");
-    console.log("✅ PRODUCTCODE.TXT created successfully.");
-
-    // Write DUPLICATE.TXT
-    if (duplicates.length > 0) {
-      const dupPath = path.join(__dirname, "DUPLICATE.TXT");
-      fs.writeFileSync(dupPath, duplicates.join("\n"), "utf-8");
-      console.log("📝 DUPLICATE.TXT created with duplicate product codes.");
-    } else {
-      console.log("✅ No duplicate product codes found.");
-    }
-  } catch (err) {
-    console.error("❌ Error generating PRODUCTCODE.TXT:", err);
+    fs.writeFileSync(filePath, JSON.stringify(updatedProducts, null, 2));
+    console.log("📝 updatedNoProductCode.json updated successfully.");
+  } catch (error) {
+    console.error("❌ Error:", error);
   } finally {
     await sequelize.close();
   }
 }
 
-generateProductCodeFile();
+updateProductCodesInJson();

@@ -4,26 +4,26 @@ import { useGetAllProductCodesQuery } from "../../api/productApi";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 
 const CheckProductCodeStatus = () => {
-  const { data: productsData } = useGetAllProductCodesQuery();
-  const { data: categoriesData } = useGetAllCategoriesQuery();
+  const { data: productData } = useGetAllProductCodesQuery();
+  const { data: categoryData } = useGetAllCategoriesQuery();
 
   const [searchCode, setSearchCode] = useState("");
   const [filteredProduct, setFilteredProduct] = useState(null);
-  const [productNotFound, setProductNotFound] = useState(false); // New state for handling product availability message
+  const [productNotFound, setProductNotFound] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [page, setPage] = useState(1);
   const pageSize = 25;
 
-  const products = Array.isArray(productsData?.data) ? productsData?.data : [];
-  const categories = categoriesData?.categories || [];
+  const products = Array.isArray(productData?.data) ? productData.data : [];
+  const categories = categoryData?.categories || [];
 
   const handleSearch = () => {
-    const match = products.find(
+    const result = products.find(
       (p) => p.product_code?.toLowerCase() === searchCode.trim().toLowerCase()
     );
-    setFilteredProduct(match || null);
-    setProductNotFound(!match); // If no product is found, set the flag to true
+    setFilteredProduct(result || null);
+    setProductNotFound(!result);
   };
 
   const handleCategoryClick = (categoryId) => {
@@ -50,12 +50,12 @@ const CheckProductCodeStatus = () => {
           <div className="add-item d-flex">
             <div className="page-title">
               <h4>Check Product Code Status</h4>
-              <h6>Search by Product Code or Explore by Category</h6>
+              <h6>Explore product code availability & category-wise status</h6>
             </div>
           </div>
         </div>
 
-        {/* HERO SECTION - Search Bar */}
+        {/* Search Box */}
         <div className="card">
           <div className="card-body p-4 text-center">
             <div className="position-relative input-icon w-50 mx-auto">
@@ -71,104 +71,114 @@ const CheckProductCodeStatus = () => {
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               />
             </div>
+
+            {/* Result display */}
             {filteredProduct && (
               <div className="mt-4">
-                <h5>Product Found:</h5>
+                <h5>✅ Product Found</h5>
                 <p>
-                  <strong>Name:</strong> {filteredProduct.name} <br />
-                  <strong>Product Code:</strong> {filteredProduct.product_code}{" "}
+                  <strong>Name:</strong> {filteredProduct.name}
+                  <br />
+                  <strong>Product Code:</strong> {filteredProduct.product_code}
                   <br />
                   <strong>Category ID:</strong> {filteredProduct.categoryId}
                 </p>
               </div>
             )}
+
             {!filteredProduct && searchCode && (
-              <div className="mt-3 text-danger">
-                No product found. <br />
+              <div className="mt-4">
+                <h5>❌ No Product Found</h5>
                 {productNotFound && (
-                  <span className="text-success">
-                    Product code is available to be taken.
-                  </span>
+                  <p className="text-success">
+                    ✅ Product Code is available to use.
+                  </p>
                 )}
               </div>
             )}
           </div>
         </div>
 
-        {/* CATEGORY CARDS */}
-        <div className="row justify-content-center mt-4">
-          {categories.map((category) => {
-            const count = products.filter(
-              (p) => p.categoryId === category.id
-            ).length;
-
-            return (
-              <div className="col-xxl-4 col-md-6" key={category.id}>
+        {/* Category Grid */}
+        <div className="card mt-4">
+          <div className="card-body">
+            <h5 className="mb-3">Explore Products by Category:</h5>
+            <div className="row">
+              {categories.map((cat) => (
                 <div
-                  className="card"
-                  onClick={() => handleCategoryClick(category.id)}
-                  style={{ cursor: "pointer" }}
+                  key={cat.categoryId}
+                  className="col-lg-4 col-md-6 col-sm-12 mb-3"
                 >
-                  <div className="card-body">
-                    <div className="img-sec w-100 position-relative mb-3">
-                      <div className="trend-tag badge bg-soft-info shadow-none fs-10 fw-medium">
-                        {category.name}
-                      </div>
-                      <span className="badge badge-success dot-icon">
-                        <i className="ti ti-point-filled"></i> {count} Products
+                  <div
+                    className="border rounded p-3 shadow-sm category-box cursor-pointer h-100"
+                    onClick={() => handleCategoryClick(cat.categoryId)}
+                  >
+                    <div className="d-flex justify-content-between align-items-center">
+                      <h6 className="mb-0">{cat.name}</h6>
+                      <span className="badge badge-count">
+                        {
+                          products.filter(
+                            (p) => p.categoryId === cat.categoryId
+                          ).length
+                        }
                       </span>
                     </div>
+
+                    {cat.parentcategories && (
+                      <small className="text-muted">
+                        Parent: {cat.parentcategories.name}
+                      </small>
+                    )}
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              ))}
+            </div>
+          </div>
         </div>
 
-        {/* MODAL FOR CATEGORY PRODUCTS */}
-        <Modal
-          size="lg"
-          show={showModal}
-          onHide={() => setShowModal(false)}
-          centered
-        >
+        {/* Modal */}
+        <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
           <Modal.Header closeButton>
-            <Modal.Title>Products in Category</Modal.Title>
+            <Modal.Title>Products in Selected Category</Modal.Title>
           </Modal.Header>
           <Modal.Body>
-            <Table bordered hover responsive>
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Product Code</th>
-                  <th>Category ID</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedProducts.map((prod) => (
-                  <tr key={prod.productId}>
-                    <td>{prod.name}</td>
-                    <td>{prod.product_code}</td>
-                    <td>{prod.categoryId}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-
-            {/* Pagination */}
-            <div className="d-flex justify-content-center">
-              <Pagination>
-                {[...Array(totalPages)].map((_, i) => (
-                  <Pagination.Item
-                    key={i}
-                    active={i + 1 === page}
-                    onClick={() => setPage(i + 1)}
-                  >
-                    {i + 1}
-                  </Pagination.Item>
-                ))}
-              </Pagination>
-            </div>
+            {paginatedProducts.length > 0 ? (
+              <>
+                <Table striped bordered hover>
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Name</th>
+                      <th>Product Code</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedProducts.map((product, idx) => (
+                      <tr key={product.id}>
+                        <td>{(page - 1) * pageSize + idx + 1}</td>
+                        <td>{product.name}</td>
+                        <td>{product.product_code}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+                <Pagination className="justify-content-center">
+                  {[...Array(totalPages)].map((_, i) => (
+                    <Pagination.Item
+                      key={i}
+                      active={i + 1 === page}
+                      onClick={() => setPage(i + 1)}
+                    >
+                      {i + 1}
+                    </Pagination.Item>
+                  ))}
+                </Pagination>
+              </>
+            ) : (
+              <p className="text-center">
+                No products found for this category.
+              </p>
+            )}
           </Modal.Body>
         </Modal>
       </div>

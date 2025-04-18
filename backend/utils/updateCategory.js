@@ -1,50 +1,87 @@
+const fs = require("fs");
+const path = require("path");
 const Category = require("../models/category");
-const Keyword = require("../models/keyword");
 const Product = require("../models/product");
-const productData = require("./json-outputs/American Standard.json"); // your JSON file
+const productData = require("./json-outputS/GROHE PREMIUM.json");
 
-async function assignCategoryIdsToProducts() {
-  for (const [categoryName, keywordGroups] of Object.entries(productData)) {
-    for (const keywordGroup of keywordGroups) {
-      for (const [keywordName, products] of Object.entries(keywordGroup)) {
-        // Get the keyword with its category context
-        const category = await Category.findOne({
-          where: { name: categoryName },
-        });
-        if (!category) continue;
+const BRAND_ID = "13847c2c-3c91-4bb2-a130-f94928658237";
+const notFoundFilePath = path.join(__dirname, "./notFoundProducts.json");
 
-        const keyword = await Keyword.findOne({
-          where: {
-            keyword: keywordName,
-            categoryId: category.categoryId,
-          },
-        });
-        if (!keyword) continue;
+let notFoundProducts = [];
 
-        for (const product of products) {
-          const dbProduct = await Product.findOne({
-            where: { company_code: product.Code },
-          });
-
-          if (dbProduct) {
-            dbProduct.categoryId = keyword.categoryId;
-            await dbProduct.save();
-            console.log(
-              `Updated ${product.Name} with categoryId ${keyword.categoryId}`
-            );
-          } else {
-            console.log(`Product with code ${product.Code} not found in DB`);
-          }
-        }
-      }
-    }
-  }
+// Load existing not-found products (if any)
+if (fs.existsSync(notFoundFilePath)) {
+  const existingData = fs.readFileSync(notFoundFilePath, "utf-8");
+  notFoundProducts = JSON.parse(existingData || "[]");
 }
 
-assignCategoryIdsToProducts()
+async function assignCategoryIdsToProducts(productData) {
+  for (const [categoryName, categoryValue] of Object.entries(productData)) {
+    const category = await Category.findOne({ where: { name: categoryName } });
+
+    if (!category) {
+      console.warn(`❌ Category not found: ${categoryName}`);
+      continue;
+    }
+
+    // Check if categoryValue is an array (which it should be based on the structure you provided)
+    if (Array.isArray(categoryValue)) {
+      for (const product of categoryValue) {
+        if (!product.Code) {
+          console.warn(`⚠️ Skipped product without Code: ${product.Name}`);
+          continue;
+        }
+
+        const dbProduct = await Product.findOne({
+          where: { company_code: product.Code },
+        });
+
+        if (dbProduct) {
+          dbProduct.categoryId = category.categoryId;
+          await dbProduct.save();
+          console.log(
+            `✅ Updated ${product.Code} → categoryId ${category.categoryId}`
+          );
+        } else {
+          console.warn(
+            `⚠️ Product not found in DB: ${product.Name || "Unnamed"} (${
+              product.Code
+            })`
+          );
+          notFoundProducts.push({
+            name: product.Name || "",
+            company_code: product.Code,
+            categoryId: category.categoryId,
+            brandId: BRAND_ID,
+            quantity: 20,
+            sellingPrice: product.Price || 0,
+            purchasingPrice: product.Price || 0,
+            description: "",
+            images: product.Image ? [product.Image] : [], // Assuming `Image` is the file name
+            productGroup: categoryName,
+            product_segment: "", // No segment as per your data structure
+          });
+        }
+      }
+    } else {
+      console.warn(
+        `⚠️ Invalid category structure for category: ${categoryName}`
+      );
+    }
+  }
+
+  return notFoundProducts;
+}
+
+assignCategoryIdsToProducts(productData)
   .then(() => {
-    console.log("All products updated successfully!");
+    // Save not-found products to JSON file
+    fs.writeFileSync(
+      notFoundFilePath,
+      JSON.stringify(notFoundProducts, null, 2)
+    );
+    console.log("✅ All products processed and not-found list updated!");
   })
   .catch((err) => {
-    console.error("Error updating products:", err);
+    console.error("❌ Error updating products:", err);
   });
