@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { Modal, Button, Container, Row, Col } from "react-bootstrap";
+import "./calculator.css";
 
 const CalculatorModal = ({ show, onClose }) => {
   const [input, setInput] = useState("0");
@@ -17,17 +19,21 @@ const CalculatorModal = ({ show, onClose }) => {
 
   const solve = () => {
     try {
-      setInput(eval(input).toString());
+      setInput(eval(input.replace(/x/g, "*").replace(/÷/g, "/")).toString());
     } catch {
       setInput("Error");
     }
   };
 
+  const buttons = [
+    ["C", "7", "4", "1", ","],
+    ["÷", "8", "5", "2", "00"],
+    ["%", "9", "6", "3", "."],
+    ["←", "x", "-", "+", "="],
+  ];
+
   return (
-    <div
-      className={`modal fade pos-modal ${show ? "show d-block" : ""}`}
-      style={{ display: "block" }}
-    >
+    <div className="modal fade show" style={{ display: "block" }}>
       <div className="modal-dialog modal-md modal-dialog-centered">
         <div className="modal-content">
           <div className="modal-body p-0">
@@ -43,38 +49,34 @@ const CalculatorModal = ({ show, onClose }) => {
                   <input className="input" type="text" value={input} readOnly />
                 </div>
               </div>
-              <div className="calculator-body d-flex justify-content-between">
-                {["C", "7", "4", "1", ","].map((val) => (
-                  <button
-                    key={val}
-                    className="btn"
-                    onClick={() => (val === "C" ? clr() : dis(val))}
-                  >
-                    {val}
-                  </button>
-                ))}
-                {["÷", "8", "5", "2", "00"].map((val) => (
-                  <button key={val} className="btn" onClick={() => dis(val)}>
-                    {val}
-                  </button>
-                ))}
-                {["%", "9", "6", "3", "."].map((val) => (
-                  <button key={val} className="btn" onClick={() => dis(val)}>
-                    {val}
-                  </button>
-                ))}
-                {["←", "x", "-", "+", "="].map((val) => (
-                  <button
-                    key={val}
-                    className="btn"
-                    onClick={() =>
-                      val === "←" ? back() : val === "=" ? solve() : dis(val)
-                    }
-                  >
-                    {val}
-                  </button>
-                ))}
-              </div>
+              <Container>
+                <Row>
+                  {buttons.flat().map((val, i) => (
+                    <Col xs={2} className="p-1" key={i}>
+                      <Button
+                        variant={
+                          val === "="
+                            ? "primary"
+                            : val === "C"
+                            ? "danger"
+                            : val === "←"
+                            ? "warning"
+                            : "light"
+                        }
+                        className="w-100 calc-btn"
+                        onClick={() => {
+                          if (val === "C") clr();
+                          else if (val === "←") back();
+                          else if (val === "=") solve();
+                          else dis(val);
+                        }}
+                      >
+                        {val}
+                      </Button>
+                    </Col>
+                  ))}
+                </Row>
+              </Container>
             </div>
           </div>
         </div>

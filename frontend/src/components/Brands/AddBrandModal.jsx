@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import {
   useCreateBrandMutation,
   useUpdateBrandMutation,
+  useGetAllBrandsQuery,
 } from "../../api/brandsApi";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -13,6 +14,7 @@ const AddBrand = ({ onClose, existingBrand }) => {
     brandSlug: "",
   });
 
+  const { data: allBrands = [] } = useGetAllBrandsQuery();
   const [createBrand, { isLoading: isCreating }] = useCreateBrandMutation();
   const [updateBrand, { isLoading: isUpdating }] = useUpdateBrandMutation();
 
@@ -38,13 +40,27 @@ const AddBrand = ({ onClose, existingBrand }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.brandName || !formData.brandSlug) {
+    const { brandName, brandSlug, id } = formData;
+
+    if (!brandName || !brandSlug) {
       toast.error("Please fill in all fields.");
       return;
     }
 
+    // Check for duplicate brandSlug (excluding current brand if editing)
+    const isDuplicate = allBrands.some(
+      (brand) =>
+        brand.brandSlug.toLowerCase() === brandSlug.toLowerCase() &&
+        brand.id !== id
+    );
+
+    if (isDuplicate) {
+      toast.error("This brand slug is already taken.");
+      return;
+    }
+
     try {
-      if (formData.id) {
+      if (id) {
         await updateBrand(formData).unwrap();
         toast.success("Brand updated successfully!", { autoClose: 2000 });
       } else {

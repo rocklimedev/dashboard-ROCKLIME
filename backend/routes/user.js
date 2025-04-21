@@ -23,7 +23,7 @@ router.put(
 router.get(
   "/",
   auth,
-  checkPermission("view", "get_all_users", "users", "/users"),
+  // checkPermission("view", "get_all_users", "users", "/users"),
   role([ROLES.Admin]),
   userController.getAllUsers
 ); // View all users

@@ -6,32 +6,57 @@ const Brand = require("../models/brand");
 const sequelize = require("../config/database");
 const { Op } = require("sequelize");
 
-async function updateProductCodesInJson() {
+const FILE_NAME = "output.json"; // change this if you rename the file
+const FILE_PATH = path.join(__dirname, "../", FILE_NAME);
+
+async function generateCode(product, category, brand) {
+  const match = product.company_code?.match(/\d{4}(?!.*\d)/);
+  const last4 = match ? match[0] : "0000";
+  const prefix = `E${category.name.slice(0, 2).toUpperCase()}${brand.brandName
+    .slice(0, 2)
+    .toUpperCase()}${last4}`;
+
+  const existing = await Product.findAll({
+    where: { product_code: { [Op.like]: `${prefix}%` } },
+    attributes: ["product_code"],
+  });
+
+  const suffixes = existing
+    .map((p) => p.product_code.replace(prefix, ""))
+    .filter((s) => /^\d{3}$/.test(s))
+    .map(Number);
+
+  let suffix = 1;
+  while (suffixes.includes(suffix)) suffix++;
+
+  return `${prefix}${suffix.toString().padStart(3, "0")}`;
+}
+
+async function updateFilteredJsonOnly() {
   try {
     await sequelize.authenticate();
     console.log("✅ Connected to database.");
 
-    const filePath = path.join(__dirname, "../utils/filteredProducts.json");
-    const rawData = fs.readFileSync(filePath, "utf-8");
-    const productsData = JSON.parse(rawData);
+    const data = fs.readFileSync(FILE_PATH, "utf-8");
+    const products = JSON.parse(data);
+    const updated = [];
 
-    const updatedProducts = [];
+    for (const product of products) {
+      const code = product.product_code?.trim();
 
-    for (const product of productsData) {
-      // If product_code is already present, double check it's actually unique
-      if (product.product_code && product.product_code.trim() !== "") {
-        const exists = await Product.findOne({
-          where: { product_code: product.product_code.trim() },
+      if (code) {
+        const existing = await Product.findOne({
+          where: { product_code: code },
         });
 
-        if (exists) {
-          console.warn(
-            `⚠️ "${product.name}" has conflicting code ${product.product_code}. Regenerating...`
-          );
-        } else {
-          updatedProducts.push(product);
-          continue; // Code is unique, keep it
+        if (!existing) {
+          updated.push(product);
+          continue;
         }
+
+        console.log(
+          `⚠️ Conflict for "${product.name}" → ${code}, regenerating.`
+        );
       }
 
       const category = await Category.findByPk(product.categoryId);
@@ -41,65 +66,23 @@ async function updateProductCodesInJson() {
         console.warn(
           `⚠️ Skipping "${product.name}" due to missing category/brand`
         );
-        updatedProducts.push(product);
+        updated.push(product);
         continue;
       }
 
-      const prefix = `E${category.name
-        .slice(0, 2)
-        .toUpperCase()}${brand.brandSlug
-        .slice(0, 2)
-        .toUpperCase()}${product.company_code.slice(-4)}`;
-
-      // Fetch all product codes starting with prefix
-      const existingProducts = await Product.findAll({
-        where: {
-          product_code: {
-            [Op.like]: `${prefix}%`,
-          },
-        },
-        attributes: ["product_code"],
-      });
-
-      const existingSuffixes = existingProducts
-        .map((p) => p.product_code.replace(prefix, ""))
-        .filter((code) => /^\d{3}$/.test(code))
-        .map(Number);
-
-      let suffix = 1;
-      let generatedCode;
-      let isUnique = false;
-
-      // Keep generating until a unique code is found
-      while (!isUnique) {
-        while (existingSuffixes.includes(suffix)) {
-          suffix++;
-        }
-
-        generatedCode = `${prefix}${suffix.toString().padStart(3, "0")}`;
-        const conflictCheck = await Product.findOne({
-          where: { product_code: generatedCode },
-        });
-
-        if (!conflictCheck) {
-          isUnique = true;
-        } else {
-          suffix++; // Try next
-        }
-      }
-
-      product.product_code = generatedCode;
-      updatedProducts.push(product);
-      console.log(`✅ Updated: "${product.name}" → ${generatedCode}`);
+      const newCode = await generateCode(product, category, brand);
+      product.product_code = newCode;
+      console.log(`✅ "${product.name}" → ${newCode}`);
+      updated.push(product);
     }
 
-    fs.writeFileSync(filePath, JSON.stringify(updatedProducts, null, 2));
-    console.log("📝 updatedNoProductCode.json updated successfully.");
-  } catch (error) {
-    console.error("❌ Error:", error);
+    fs.writeFileSync(FILE_PATH, JSON.stringify(updated, null, 2));
+    console.log(`📝 ${FILE_NAME} updated successfully.`);
+  } catch (err) {
+    console.error("❌ Error:", err.message);
   } finally {
     await sequelize.close();
   }
 }
 
-updateProductCodesInJson();
+updateFilteredJsonOnly();
