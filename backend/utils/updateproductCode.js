@@ -3,10 +3,7 @@ const path = require("path");
 
 // Load JSON files
 const cleaned = JSON.parse(
-  fs.readFileSync(
-    path.join(__dirname, "./logs/duplicateProductsInJSON.json"),
-    "utf-8"
-  )
+  fs.readFileSync(path.join(__dirname, "./filteredProducts.json"), "utf-8")
 );
 const notFound = JSON.parse(
   fs.readFileSync(path.join(__dirname, "./notFoundProductCode.json"), "utf-8")

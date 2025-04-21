@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { useForgotPasswordMutation } from "../../api/authApi"; // Adjust import based on your setup
+import { useForgotPasswordMutation } from "../../api/authApi";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify"; // ✅ Import ToastContainer
 import "react-toastify/dist/ReactToastify.css";
+import logo from "../../assets/img/logo.png";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -28,7 +29,7 @@ const ForgotPassword = () => {
             <div className="col-lg-5 mx-auto">
               <div className="login-content user-login">
                 <div className="login-logo">
-                  <img src="assets/img/logo.svg" alt="logo" />
+                  <img src={logo} alt="logo" />
                 </div>
                 <form onSubmit={handleSubmit}>
                   <div className="card">
@@ -67,16 +68,15 @@ const ForgotPassword = () => {
                         <h4>
                           Return to{" "}
                           <a href="signin-3.html" className="hover-a">
-                            {" "}
-                            login{" "}
+                            login
                           </a>
                         </h4>
                       </div>
                     </div>
                   </div>
                 </form>
-                {/* Toast Container */}
-                <toast.Container position="top-right" autoClose={3000} />
+                {/* ✅ Correct ToastContainer usage */}
+                <ToastContainer position="top-right" autoClose={3000} />
               </div>
             </div>
           </div>

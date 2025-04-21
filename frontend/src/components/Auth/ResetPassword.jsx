@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useResetPasswordMutation } from "../../api/authApi";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
+import logo from "../../assets/img/logo.png";
 const ResetPassword = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -34,7 +34,7 @@ const ResetPassword = () => {
             <div className="col-lg-5 mx-auto">
               <div className="login-content user-login">
                 <div className="login-logo">
-                  <img src="assets/img/logo.svg" alt="logo" />
+                  <img src={logo} alt="logo" />
                 </div>
                 <form onSubmit={handleSubmit}>
                   <div className="card">

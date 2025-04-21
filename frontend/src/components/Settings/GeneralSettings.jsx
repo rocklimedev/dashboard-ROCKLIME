@@ -1,12 +1,15 @@
 import React from "react";
-import { Outlet } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import SettingsNav from "./SettingsNav";
 import { FcSettings } from "react-icons/fc";
 import { GiWorld } from "react-icons/gi";
 import { MdDevices, MdMiscellaneousServices } from "react-icons/md";
 import ProfileSettings from "./ProfileSettings";
+import SecuritySettings from "./SecuritySettings";
 
-// Define menu items dynamically
+import "./settingsWrapper.css";
+
+// Define menu items
 const menuItems = [
   {
     title: "General Settings",
@@ -59,15 +62,25 @@ const GeneralSettings = () => {
         </div>
         <div className="settings-wrapper d-flex">
           <aside className="settings-sidebar">
-            <div class="sidebar-inner slimscroll">
-              <div id="sidebar-menu5" class="sidebar-menu">
-                <h4 class="fw-bold fs-18 mb-2 pb-2">Settings</h4>
+            <div className="sidebar-inner slimscroll">
+              <div id="sidebar-menu5" className="sidebar-menu">
+                <h4 className="fw-bold fs-18 mb-2 pb-2">Settings</h4>
                 <SettingsNav menuItems={menuItems} />
               </div>
             </div>
           </aside>
           <main className="settings-main">
-            <Outlet />
+            <Routes>
+              {/* Default route */}
+              <Route
+                path="/settings"
+                element={<Navigate to="/settings/profile" replace />}
+              />
+
+              {/* General Settings */}
+              <Route path="/settings/profile" element={<ProfileSettings />} />
+              <Route path="/settings/security" element={<SecuritySettings />} />
+            </Routes>
           </main>
         </div>
       </div>

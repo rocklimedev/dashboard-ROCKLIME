@@ -207,6 +207,16 @@ const Header = ({ toggleSidebar }) => {
               </Link>
             </li>
           )}
+          {currentPath === "/pos" && (
+            <li className="nav-item nav-item-box">
+              <BiCalculator
+                onClick={() => setShowModal(true)}
+                style={{ cursor: "pointer" }}
+                title="Open Calculator"
+              />
+            </li>
+          )}
+
           {currentPath !== "/" && (
             <li className="nav-item pos-nav">
               <Link
@@ -316,6 +326,9 @@ const Header = ({ toggleSidebar }) => {
         </div>
       </div>
       {showModal && <CalculatorModal />}
+      {currentPath === "/pos" && showModal && (
+        <CalculatorModal onClose={() => setShowModal(false)} />
+      )}
     </div>
   );
 };

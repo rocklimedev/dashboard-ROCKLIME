@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useLoginMutation } from "../../api/authApi";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
+import logo from "../../assets/img/logo.png";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -39,7 +39,7 @@ const Login = () => {
             <form onSubmit={handleSubmit}>
               <div className="login-userset">
                 <div className="login-logo logo-normal">
-                  <img src="assets/img/logo.svg" alt="Logo" />
+                  <img src={logo} alt="Logo" />
                 </div>
                 <div className="login-userheading">
                   <h3>Sign In</h3>
