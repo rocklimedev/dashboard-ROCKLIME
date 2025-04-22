@@ -14,23 +14,27 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
       const response = await login({ email, password }).unwrap();
 
+      const token = response.accessToken;
       if (rememberMe) {
-        localStorage.setItem("token", response.accessToken);
+        localStorage.setItem("token", token);
       } else {
-        sessionStorage.setItem("token", response.accessToken);
+        sessionStorage.setItem("token", token);
       }
 
-      toast.success("Login successful!", { autoClose: 2000 });
-      setTimeout(() => navigate("/"), 2000);
+      toast.success("Login successful!", { autoClose: 1000 });
+      setTimeout(() => {
+        navigate("/");
+        window.location.reload(); // TEMP: force reload to sync auth state
+      }, 1000);
     } catch (err) {
       console.error("Login failed:", err);
       toast.error(err?.data?.message || "Invalid email or password");
     }
   };
+
   return (
     <div className="main-wrapper">
       <div className="account-content">

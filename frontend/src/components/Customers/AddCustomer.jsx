@@ -1,18 +1,25 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useDispatch } from "react-redux";
 import {
   useCreateCustomerMutation,
   useUpdateCustomerMutation,
   useGetInvoicesByCustomerIdQuery,
+  customerApi as api,
 } from "../../api/customerApi";
+import { useGetCustomersQuery } from "../../api/customerApi";
+import { useGetVendorsQuery } from "../../api/vendorApi";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Tab, Tabs } from "react-bootstrap";
-import { useGetVendorsQuery } from "../../api/vendorApi";
+
 const AddCustomer = ({ onClose, existingCustomer }) => {
+  const dispatch = useDispatch();
   const [createCustomer, { isLoading: isCreating, error: createError }] =
     useCreateCustomerMutation();
   const [updateCustomer, { isLoading: isEditing, error: editError }] =
     useUpdateCustomerMutation();
+  const { data: allCustomersData, isLoading: isCustomersLoading } =
+    useGetCustomersQuery();
 
   const {
     data: invoices,
@@ -22,13 +29,11 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
   } = useGetInvoicesByCustomerIdQuery(existingCustomer?.customerId, {
     skip: !existingCustomer?.customerId,
   });
-
   const {
     data: vendors,
     isLoading: isVendorsLoading,
     error: vendorsError,
   } = useGetVendorsQuery();
-
   const [formData, setFormData] = useState({
     name: "",
     companyName: "",
@@ -47,48 +52,49 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
     quotations: [],
   });
 
-  // Calculate totalAmount and get dueDate from invoices
   const getInvoiceData = useCallback(() => {
-    if (!invoices || !Array.isArray(invoices.data)) {
-      console.log("No invoices or invalid data:", invoices);
-      return { totalAmount: "0.00", dueDate: "" };
-    }
+    if (!invoices?.data?.length) return { totalAmount: 0, dueDate: null };
 
     const total = invoices.data.reduce((sum, invoice) => {
       const payableAmount = parseFloat(invoice.amount || 0);
       return sum + (isNaN(payableAmount) ? 0 : payableAmount);
     }, 0);
 
-    // Use the latest dueDate
     const dueDate =
-      invoices.data.sort((a, b) => new Date(b.dueDate) - new Date(a.dueDate))[0]
-        ?.dueDate || "";
+      invoices.data.sort(
+        (a, b) => new Date(b.dueDate) - new Date(a.dueDate)
+      )?.[0]?.dueDate || null;
 
-    console.log("Invoice Data:", { totalAmount: total.toFixed(2), dueDate });
-
-    return {
-      totalAmount: total.toFixed(2),
-      dueDate,
-    };
+    return { totalAmount: total, dueDate };
   }, [invoices]);
 
-  // Debug invoices and vendors
+  useEffect(() => {
+    if (!existingCustomer && allCustomersData?.data?.length > 0) {
+      const isDuplicate = allCustomersData.data.some(
+        (cust) =>
+          cust.email === formData.email.trim() ||
+          cust.mobileNumber === formData.mobileNumber.trim()
+      );
+
+      if (isDuplicate) {
+        toast.error(
+          "Customer with same email or mobile number already exists."
+        );
+      }
+    }
+  }, [
+    existingCustomer,
+    allCustomersData,
+    formData.email,
+    formData.mobileNumber,
+  ]);
+
   useEffect(() => {
     if (existingCustomer && invoices) {
-      console.log("Customer ID:", existingCustomer.customerId);
-      console.log("Invoices:", invoices);
-    }
-    if (vendors) {
-      console.log("Vendors:", vendors);
-    }
-  }, [existingCustomer, invoices, vendors]);
-
-  // Initialize form
-  useEffect(() => {
-    if (existingCustomer) {
       const { totalAmount, dueDate } = getInvoiceData();
-      const paid = parseFloat(existingCustomer.paidAmount || "0.00");
-      const balance = (parseFloat(totalAmount) - paid).toFixed(2);
+      const paid = parseFloat(existingCustomer.paidAmount || 0);
+      const balance = totalAmount - paid;
+
       setFormData({
         ...existingCustomer,
         isVendor: existingCustomer.isVendor.toString(),
@@ -98,26 +104,26 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
           state: "",
           zip: "",
         },
-        totalAmount,
+        totalAmount: totalAmount.toFixed(2),
         paidAmount: paid.toFixed(2),
-        balance: balance < 0 ? "0.00" : balance,
-        dueDate: dueDate || existingCustomer.dueDate || "",
+        balance: balance < 0 ? "0.00" : balance.toFixed(2),
+        dueDate: dueDate || existingCustomer.dueDate || null,
         invoices: existingCustomer.invoices || [],
         quotations: existingCustomer.quotations || [],
         vendorId: existingCustomer.vendorId || "",
       });
     }
-  }, [existingCustomer, getInvoiceData]);
+  }, [existingCustomer, invoices, getInvoiceData]);
 
-  // Recalculate balance
   useEffect(() => {
     if (existingCustomer) {
-      const total = parseFloat(formData.totalAmount || "0.00");
-      const paid = parseFloat(formData.paidAmount || "0.00");
-      const balance = (total - paid).toFixed(2);
+      const total = parseFloat(formData.totalAmount || 0);
+      const paid = parseFloat(formData.paidAmount || 0);
+      const balance = total - paid;
+
       setFormData((prev) => ({
         ...prev,
-        balance: balance < 0 ? "0.00" : balance,
+        balance: balance < 0 ? "0.00" : balance.toFixed(2),
       }));
     }
   }, [existingCustomer, formData.totalAmount, formData.paidAmount]);
@@ -127,8 +133,9 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
 
     if (name === "paidAmount" && existingCustomer) {
       if (value === "" || parseFloat(value) < 0) return;
-      const total = parseFloat(formData.totalAmount || "0.00");
-      const paid = parseFloat(value || "0.00");
+
+      const total = parseFloat(formData.totalAmount || 0);
+      const paid = parseFloat(value || 0);
       if (paid > total) {
         toast.error("Paid Amount cannot exceed Total Amount");
         return;
@@ -136,12 +143,7 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
     }
 
     if (name === "isVendor" && value === "false") {
-      // Clear vendorId when isVendor is set to false
-      setFormData((prev) => ({
-        ...prev,
-        isVendor: value,
-        vendorId: "",
-      }));
+      setFormData((prev) => ({ ...prev, isVendor: value, vendorId: "" }));
     } else if (name.startsWith("address.")) {
       const field = name.split(".")[1];
       setFormData((prev) => ({
@@ -153,7 +155,6 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
     }
   };
 
-  // Handle JSON field updates (invoices/quotations)
   const handleJsonChange = (field, index, key, value) => {
     setFormData((prev) => {
       const updatedArray = [...prev[field]];
@@ -162,7 +163,6 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
     });
   };
 
-  // Add new invoice or quotation
   const addJsonEntry = (field) => {
     setFormData((prev) => ({
       ...prev,
@@ -175,7 +175,6 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
     }));
   };
 
-  // Remove invoice or quotation
   const removeJsonEntry = (field, index) => {
     setFormData((prev) => ({
       ...prev,
@@ -185,7 +184,23 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
+      if (!existingCustomer && allCustomersData?.data?.length > 0) {
+        const isDuplicate = allCustomersData.data.some(
+          (cust) =>
+            cust.email === formData.email.trim() ||
+            cust.mobileNumber === formData.mobileNumber.trim()
+        );
+
+        if (isDuplicate) {
+          toast.error(
+            "Customer with same email or mobile number already exists."
+          );
+          return;
+        }
+      }
+
       const payload = {
         ...formData,
         isVendor: formData.isVendor === "true",
@@ -194,9 +209,20 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
           : 0,
         paidAmount: existingCustomer ? parseFloat(formData.paidAmount) || 0 : 0,
         balance: existingCustomer ? parseFloat(formData.balance) || 0 : 0,
-        address: formData.address,
-        invoices: existingCustomer ? formData.invoices : [],
-        quotations: existingCustomer ? formData.quotations : [],
+        address:
+          formData.address.street ||
+          formData.address.city ||
+          formData.address.state ||
+          formData.address.zip
+            ? formData.address
+            : null,
+        invoices: null,
+        quotations: null,
+        dueDate: formData.dueDate || null,
+        vendorId:
+          formData.isVendor === "true" && formData.vendorId?.trim()
+            ? formData.vendorId
+            : null, // This is important
       };
 
       if (existingCustomer) {
@@ -204,11 +230,18 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
           id: existingCustomer.customerId,
           ...payload,
         }).unwrap();
+        dispatch(
+          api.util.invalidateTags([
+            { type: "Customer", id: existingCustomer.customerId },
+          ])
+        );
         toast.success("Customer updated successfully!");
       } else {
         await createCustomer(payload).unwrap();
+        dispatch(api.util.invalidateTags(["Customer"]));
         toast.success("Customer added successfully!");
       }
+
       onClose();
     } catch (err) {
       console.error("Failed to add/update customer:", err);
@@ -261,7 +294,6 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
                 id="customer-tabs"
                 className="mb-3"
               >
-                {/* General Tab */}
                 <Tab eventKey="general" title="General">
                   <div className="row">
                     <div className="col-lg-6 mb-3">
@@ -400,7 +432,6 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
                   </div>
                 </Tab>
 
-                {/* Financial Tab (Edit mode only) */}
                 {existingCustomer && (
                   <Tab eventKey="financial" title="Financial">
                     <div className="row">
@@ -481,14 +512,13 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
                           <option value="Draft">Draft</option>
                           <option value="Pending">Pending</option>
                           <option value="Paid">Paid</option>
-                          {/* Add other statuses from INVOICE_STATUS */}
+                          <option value="Overdue">Overdue</option>
                         </select>
                       </div>
                     </div>
                   </Tab>
                 )}
 
-                {/* Invoices Tab (Edit mode only) */}
                 {existingCustomer && (
                   <Tab eventKey="invoices" title="Invoices">
                     <button
@@ -498,88 +528,10 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
                     >
                       Add Invoice
                     </button>
-                    {formData.invoices.length > 0 ? (
-                      <div className="table-responsive">
-                        <table className="table table-bordered">
-                          <thead>
-                            <tr>
-                              <th>Invoice No</th>
-                              <th>Amount</th>
-                              <th>Due Date</th>
-                              <th>Action</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {formData.invoices.map((invoice, index) => (
-                              <tr key={index}>
-                                <td>
-                                  <input
-                                    type="text"
-                                    className="form-control"
-                                    value={invoice.invoiceNo || ""}
-                                    onChange={(e) =>
-                                      handleJsonChange(
-                                        "invoices",
-                                        index,
-                                        "invoiceNo",
-                                        e.target.value
-                                      )
-                                    }
-                                  />
-                                </td>
-                                <td>
-                                  <input
-                                    type="number"
-                                    className="form-control"
-                                    value={invoice.amount || ""}
-                                    onChange={(e) =>
-                                      handleJsonChange(
-                                        "invoices",
-                                        index,
-                                        "amount",
-                                        e.target.value
-                                      )
-                                    }
-                                  />
-                                </td>
-                                <td>
-                                  <input
-                                    type="date"
-                                    className="form-control"
-                                    value={invoice.dueDate || ""}
-                                    onChange={(e) =>
-                                      handleJsonChange(
-                                        "invoices",
-                                        index,
-                                        "dueDate",
-                                        e.target.value
-                                      )
-                                    }
-                                  />
-                                </td>
-                                <td>
-                                  <button
-                                    type="button"
-                                    className="btn btn-danger btn-sm"
-                                    onClick={() =>
-                                      removeJsonEntry("invoices", index)
-                                    }
-                                  >
-                                    Remove
-                                  </button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <p>No invoices available.</p>
-                    )}
+                    {/* Add invoice list rendering if needed */}
                   </Tab>
                 )}
 
-                {/* Quotations Tab (Edit mode only) */}
                 {existingCustomer && (
                   <Tab eventKey="quotations" title="Quotations">
                     <button
@@ -589,84 +541,7 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
                     >
                       Add Quotation
                     </button>
-                    {formData.quotations.length > 0 ? (
-                      <div className="table-responsive">
-                        <table className="table table-bordered">
-                          <thead>
-                            <tr>
-                              <th>Quotation No</th>
-                              <th>Amount</th>
-                              <th>Date</th>
-                              <th>Action</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {formData.quotations.map((quotation, index) => (
-                              <tr key={index}>
-                                <td>
-                                  <input
-                                    type="text"
-                                    className="form-control"
-                                    value={quotation.quotationNo || ""}
-                                    onChange={(e) =>
-                                      handleJsonChange(
-                                        "quotations",
-                                        index,
-                                        "quotationNo",
-                                        e.target.value
-                                      )
-                                    }
-                                  />
-                                </td>
-                                <td>
-                                  <input
-                                    type="number"
-                                    className="form-control"
-                                    value={quotation.amount || ""}
-                                    onChange={(e) =>
-                                      handleJsonChange(
-                                        "quotations",
-                                        index,
-                                        "amount",
-                                        e.target.value
-                                      )
-                                    }
-                                  />
-                                </td>
-                                <td>
-                                  <input
-                                    type="date"
-                                    className="form-control"
-                                    value={quotation.date || ""}
-                                    onChange={(e) =>
-                                      handleJsonChange(
-                                        "quotations",
-                                        index,
-                                        "date",
-                                        e.target.value
-                                      )
-                                    }
-                                  />
-                                </td>
-                                <td>
-                                  <button
-                                    type="button"
-                                    className="btn btn-danger btn-sm"
-                                    onClick={() =>
-                                      removeJsonEntry("quotations", index)
-                                    }
-                                  >
-                                    Remove
-                                  </button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <p>No quotations available.</p>
-                    )}
+                    {/* Add quotation list rendering if needed */}
                   </Tab>
                 )}
               </Tabs>

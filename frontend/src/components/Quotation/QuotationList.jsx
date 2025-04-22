@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import PageHeader from "../Common/PageHeader";
-import { useGetAllQuotationsQuery } from "../../api/quotationApi";
+import {
+  useGetAllQuotationsQuery,
+  useDeleteQuotationMutation, // Add delete mutation
+} from "../../api/quotationApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
 import { useNavigate } from "react-router-dom";
@@ -8,22 +11,31 @@ import TableHeader from "../Common/TableHeader";
 import Actions from "../Common/Actions";
 import ReactPaginate from "react-paginate";
 import QuotationProductModal from "./QuotationProductModal";
+import DeleteModal from "../Common/DeleteModal"; // Import DeleteModal
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 const QuotationList = () => {
   const navigate = useNavigate();
   const {
     data: quotationsData,
     isLoading,
     isError,
+    refetch, // Add refetch for list update
   } = useGetAllQuotationsQuery();
   const { data: customersData } = useGetCustomersQuery();
   const { data: usersData } = useGetAllUsersQuery();
+  const [deleteQuotation, { isLoading: isDeleting }] =
+    useDeleteQuotationMutation(); // Add mutation hook
 
   const quotations = quotationsData || [];
   const customers = customersData?.data || [];
   const users = usersData?.users || [];
 
-  const [showModal, setShowModal] = useState(false);
-  const [selectedQuotations, setSelectedQuotations] = useState([]);
+  const [showProductModal, setShowProductModal] = useState(false); // Renamed for clarity
+  const [showDeleteModal, setShowDeleteModal] = useState(false); // For DeleteModal
+  const [selectedProducts, setSelectedProducts] = useState([]); // For QuotationProductModal
+  const [quotationToDelete, setQuotationToDelete] = useState(null); // For DeleteModal
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -31,17 +43,44 @@ const QuotationList = () => {
   if (isError) return <p>Error fetching quotations!</p>;
 
   const handleAddQuotation = () => navigate("/quotations/add");
+
   const handleDeleteClick = (quotation) => {
-    setSelectedQuotations(quotation);
-    setShowModal(true);
+    console.log("Opening delete modal for quotation:", quotation);
+    setQuotationToDelete(quotation);
+    setShowDeleteModal(true);
   };
-  const handleOpenModal = (products) => {
-    setSelectedQuotations(products || []);
-    setShowModal(true);
+
+  const handleConfirmDelete = async () => {
+    if (!quotationToDelete?.quotationId) {
+      toast.error("No quotation selected for deletion");
+      setShowDeleteModal(false);
+      return;
+    }
+    try {
+      console.log("Deleting quotation with ID:", quotationToDelete.quotationId);
+      await deleteQuotation(quotationToDelete.quotationId).unwrap();
+      toast.success("Quotation deleted successfully!");
+      setShowDeleteModal(false);
+      setQuotationToDelete(null);
+      refetch(); // Refresh quotation list
+    } catch (err) {
+      toast.error(
+        `Failed to delete quotation: ${err.data?.message || "Unknown error"}`
+      );
+      console.error("Error deleting quotation:", err);
+    }
   };
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setSelectedQuotations([]);
+
+  const handleOpenProductModal = (products) => {
+    console.log("Opening product modal with products:", products);
+    setSelectedProducts(products || []);
+    setShowProductModal(true);
+  };
+
+  const handleCloseProductModal = () => {
+    console.log("Closing product modal");
+    setShowProductModal(false);
+    setSelectedProducts([]);
   };
 
   const getCustomerName = (customerId) => {
@@ -68,6 +107,7 @@ const QuotationList = () => {
 
   return (
     <div className="page-wrapper">
+      <ToastContainer /> {/* Required for toasts */}
       <div className="content">
         <PageHeader
           title="Quotations"
@@ -113,8 +153,9 @@ const QuotationList = () => {
                           <button
                             className="btn btn-link"
                             onClick={() =>
-                              handleOpenModal(quotation.products || [])
+                              handleOpenProductModal(quotation.products || [])
                             }
+                            aria-label="View products"
                           >
                             View Products ({quotation.products?.length || 0})
                           </button>
@@ -167,10 +208,24 @@ const QuotationList = () => {
         </div>
       </div>
       <QuotationProductModal
-        show={showModal}
-        onHide={handleCloseModal}
-        products={selectedQuotations}
+        show={showProductModal}
+        onHide={handleCloseProductModal}
+        products={selectedProducts}
       />
+      {showDeleteModal && (
+        <DeleteModal
+          item={quotationToDelete}
+          itemType="Quotation"
+          isVisible={showDeleteModal}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => {
+            console.log("Canceling delete modal");
+            setShowDeleteModal(false);
+            setQuotationToDelete(null);
+          }}
+          isLoading={isDeleting}
+        />
+      )}
     </div>
   );
 };

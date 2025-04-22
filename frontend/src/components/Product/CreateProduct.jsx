@@ -4,7 +4,7 @@ import { FaArrowLeft } from "react-icons/fa";
 import {
   useCreateProductMutation,
   useUpdateProductMutation,
-  useGetProductByIdQuery, // Fetch product data for editing
+  useGetProductByIdQuery,
 } from "../../api/productApi";
 import { GiFeatherWound } from "react-icons/gi";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
@@ -14,12 +14,24 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const CreateProduct = () => {
-  const { id } = useParams(); // Get product ID from URL
-  const isEditMode = Boolean(id); // Check if we're editing
+  const { id } = useParams();
+  const isEditMode = Boolean(id);
   const [filteredCategories, setFilteredCategories] = useState([]);
 
   const { data: existingProduct, isLoading: isFetching } =
-    useGetProductByIdQuery(id, { skip: !isEditMode }); // Fetch product only if editing
+    useGetProductByIdQuery(id, { skip: !isEditMode });
+  const {
+    data: categoryData = { categories: [] },
+    isLoading: isCategoryLoading,
+  } = useGetAllCategoriesQuery();
+  const { data: parentCategories, isLoading: isParentCategoryLoading } =
+    useGetAllParentCategoriesQuery();
+  const { data: brands, isLoading: isBrandLoading } = useGetAllBrandsQuery();
+
+  const parentCategoryData = Array.isArray(parentCategories?.data)
+    ? parentCategories.data
+    : [];
+  const brandData = Array.isArray(brands) ? brands : [];
 
   const [formData, setFormData] = useState({
     name: "",
@@ -35,71 +47,97 @@ const CreateProduct = () => {
     isFeatured: "",
     barcode: "",
     description: "",
+    quantity: "",
+    alertQuantity: "",
+    tax: "",
   });
 
   const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
   const [updateProduct, { isLoading: isUpdating, error }] =
     useUpdateProductMutation();
-  const { data: categoryData = [], isLoading: isCategoryLoading } =
-    useGetAllCategoriesQuery();
 
-  const { data: parentCategories, isLoading: isParentCategoryLoading } =
-    useGetAllParentCategoriesQuery();
-  const parentCategoryData = Array.isArray(parentCategories?.data)
-    ? parentCategories.data
-    : [];
-  const { data: brands, isLoading: isBrandLoading } = useGetAllBrandsQuery();
-  const brandData = Array.isArray(brands) ? brands : [];
-  // Pre-fill form when editing
+  // Pre-fill form and set filtered categories in edit mode
   useEffect(() => {
-    if (existingProduct) {
-      setFormData(existingProduct);
+    if (existingProduct && categoryData?.categories) {
+      console.log("Existing product:", existingProduct);
+      console.log("Category data:", categoryData.categories);
+      console.log("Parent categories:", parentCategoryData);
+
+      // Find the category to get its parentCategoryId
+      const selectedCategory = categoryData.categories.find(
+        (cat) => cat.id === existingProduct.category
+      );
+      const parentCategoryId =
+        selectedCategory?.parentCategoryId ||
+        existingProduct.parentCategory ||
+        "";
+
+      // Update filtered categories based on parentCategory
+      const matchingCategories = categoryData.categories.filter(
+        (cat) => cat.parentCategoryId === parentCategoryId
+      );
+      setFilteredCategories(matchingCategories);
+
+      setFormData({
+        name: existingProduct.name || "",
+        productSegment: existingProduct.productSegment || "",
+        productGroup: existingProduct.productGroup || "",
+        product_code: existingProduct.product_code || "",
+        company_code: existingProduct.company_code || "",
+        sellingPrice: existingProduct.sellingPrice || "",
+        purchasingPrice: existingProduct.purchasingPrice || "",
+        category: existingProduct.category || "",
+        parentCategory: parentCategoryId,
+        brand: existingProduct.brand || "",
+        isFeatured: existingProduct.isFeatured?.toString() || "",
+        barcode: existingProduct.barcode || "",
+        description: existingProduct.description || "",
+        quantity: existingProduct.quantity || "",
+        alertQuantity: existingProduct.alertQuantity || "",
+        tax: existingProduct.tax || "",
+      });
     }
-  }, [existingProduct]);
+  }, [existingProduct, categoryData, parentCategoryData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    console.log(`Handle change: ${name} = ${value}`);
 
     if (name === "category") {
       const selectedCategory = categoryData?.categories?.find(
         (cat) => cat.id === value
       );
+      const parentCategoryId = selectedCategory?.parentCategoryId || "";
 
-      if (selectedCategory) {
-        const linkedParentCategoryId = selectedCategory.parentCategoryId;
+      console.log("Selected category:", selectedCategory);
+      console.log("Setting parentCategory to:", parentCategoryId);
 
-        setFormData((prev) => ({
-          ...prev,
-          category: value,
-          parentCategory: linkedParentCategoryId || "",
-        }));
-      } else {
-        setFormData((prev) => ({
-          ...prev,
-          category: value,
-          parentCategory: "",
-        }));
-      }
-
+      setFormData((prev) => ({
+        ...prev,
+        category: value,
+        parentCategory: parentCategoryId,
+      }));
       return;
     }
 
     if (name === "parentCategory") {
-      setFormData((prev) => ({
-        ...prev,
-        parentCategory: value,
-        category: "", // Reset category so user picks fresh
-      }));
-
       const matchingCategories = categoryData?.categories?.filter(
         (cat) => cat.parentCategoryId === value
       );
+      console.log(
+        "Filtered categories for parentCategory:",
+        matchingCategories
+      );
 
       setFilteredCategories(matchingCategories || []);
+      setFormData((prev) => ({
+        ...prev,
+        parentCategory: value,
+        category: "", // Reset category
+      }));
       return;
     }
 
-    // Default handler
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -108,36 +146,65 @@ const CreateProduct = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("Submitting formData:", formData);
 
     const emptyFields = Object.entries(formData).filter(
       ([key, value]) => value === "" || value === null || value === undefined
     );
 
     if (emptyFields.length > 0) {
+      console.log("Empty fields:", emptyFields);
       toast.warning("All fields must be filled before submitting the form.");
       return;
+    }
+
+    // Validate parentCategory
+    if (formData.category) {
+      const selectedCategory = categoryData?.categories?.find(
+        (cat) => cat.id === formData.category
+      );
+      if (!selectedCategory?.parentCategoryId) {
+        toast.error("Selected category does not have a valid parent category.");
+        return;
+      }
     }
 
     const sanitizedData = {
       ...formData,
       sellingPrice: formData.sellingPrice.replace(/,/g, ""),
+      purchasingPrice: formData.purchasingPrice.replace(/,/g, ""),
+      quantity: Number(formData.quantity) || 0,
+      alertQuantity: Number(formData.alertQuantity) || 0,
+      isFeatured: formData.isFeatured === "true",
     };
 
     try {
       if (isEditMode) {
-        await updateProduct({ id, ...sanitizedData });
+        await updateProduct({ id, ...sanitizedData }).unwrap();
         toast.success("Product updated successfully!");
       } else {
-        await createProduct(sanitizedData);
+        await createProduct(sanitizedData).unwrap();
         toast.success("Product created successfully!");
       }
     } catch (error) {
       console.error("Error submitting product:", error);
-      toast.error("Something went wrong while saving the product.");
+      toast.error(
+        `Error: ${
+          error.data?.message ||
+          "Something went wrong while saving the product."
+        }`
+      );
     }
   };
 
-  if (isFetching) return <p>Loading product details...</p>;
+  if (
+    isFetching ||
+    isCategoryLoading ||
+    isParentCategoryLoading ||
+    isBrandLoading
+  ) {
+    return <p>Loading product details...</p>;
+  }
 
   return (
     <div className="page-wrapper">
@@ -153,7 +220,6 @@ const CreateProduct = () => {
               </h6>
             </div>
           </div>
-
           <ul className="table-top-head">
             <li>
               <a
@@ -189,7 +255,11 @@ const CreateProduct = () => {
               className="btn btn-primary"
               disabled={isCreating || isUpdating}
             >
-              {isEditMode ? "Update Product" : "Create Product"}
+              {isCreating || isUpdating
+                ? "Saving..."
+                : isEditMode
+                ? "Update Product"
+                : "Create Product"}
             </button>
           </div>
           <div className="add-product">
@@ -209,7 +279,6 @@ const CreateProduct = () => {
                     <div className="d-flex align-items-center justify-content-between flex-fill">
                       <h5 className="d-flex align-items-center">
                         <GiFeatherWound className="text-primary me-2" />
-
                         <span>Product Information</span>
                       </h5>
                     </div>
@@ -302,7 +371,7 @@ const CreateProduct = () => {
                       <div className="col-sm-6 col-12">
                         <div className="mb-3">
                           <label className="form-label">
-                            Selling price
+                            Selling Price
                             <span className="text-danger ms-1">*</span>
                           </label>
                           <input
@@ -317,7 +386,7 @@ const CreateProduct = () => {
                       <div className="col-sm-6 col-12">
                         <div className="mb-3">
                           <label className="form-label">
-                            Purchasing price
+                            Purchasing Price
                             <span className="text-danger ms-1">*</span>
                           </label>
                           <input
@@ -338,7 +407,6 @@ const CreateProduct = () => {
                             Category
                             <span className="text-danger ms-1">*</span>
                           </label>
-
                           <select
                             className="form-control"
                             name="category"
@@ -368,7 +436,7 @@ const CreateProduct = () => {
                             name="parentCategory"
                             value={formData.parentCategory}
                             onChange={handleChange}
-                            disabled={!!formData.category} // disables if category already selected
+                            disabled={!!formData.category}
                           >
                             <option value="">Select</option>
                             {parentCategoryData.map((parent) => (
@@ -415,9 +483,9 @@ const CreateProduct = () => {
                             value={formData.isFeatured}
                             onChange={handleChange}
                           >
-                            <option>select</option>
-                            <option>true</option>
-                            <option>false</option>
+                            <option value="">Select</option>
+                            <option value="true">True</option>
+                            <option value="false">False</option>
                           </select>
                         </div>
                       </div>
@@ -436,7 +504,7 @@ const CreateProduct = () => {
                             value={formData.barcode}
                             onChange={handleChange}
                           />
-                          <button type="submit" className="btn btn-primaryadd">
+                          <button type="button" className="btn btn-primaryadd">
                             Generate
                           </button>
                         </div>
@@ -507,6 +575,7 @@ const CreateProduct = () => {
                                   name="quantity"
                                   value={formData.quantity}
                                   onChange={handleChange}
+                                  min="0"
                                 />
                               </div>
                             </div>
@@ -522,27 +591,27 @@ const CreateProduct = () => {
                                   name="alertQuantity"
                                   value={formData.alertQuantity}
                                   onChange={handleChange}
+                                  min="0"
                                 />
                               </div>
                             </div>
-
                             <div className="col-lg-4 col-sm-6 col-12">
                               <div className="mb-3">
                                 <label className="form-label">
                                   Tax<span className="text-danger ms-1">*</span>
                                 </label>
                                 <select
-                                  className="select"
+                                  className="form-control"
                                   name="tax"
                                   value={formData.tax}
                                   onChange={handleChange}
                                 >
-                                  <option>Select</option>
-                                  <option>IGST (8%)</option>
-                                  <option>GST (5%)</option>
-                                  <option>SGST (4%)</option>
-                                  <option>CGST (16%)</option>
-                                  <option>Gst 18%</option>
+                                  <option value="">Select</option>
+                                  <option value="IGST (8%)">IGST (8%)</option>
+                                  <option value="GST (5%)">GST (5%)</option>
+                                  <option value="SGST (4%)">SGST (4%)</option>
+                                  <option value="CGST (16%)">CGST (16%)</option>
+                                  <option value="GST (18%)">GST (18%)</option>
                                 </select>
                               </div>
                             </div>
@@ -614,6 +683,7 @@ const CreateProduct = () => {
               </div>
             </div>
           </div>
+          <ToastContainer />
         </form>
       </div>
     </div>

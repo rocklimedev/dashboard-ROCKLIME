@@ -1,22 +1,25 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import PageHeader from "../Common/PageHeader";
 import { useGetAllPermissionsQuery } from "../../api/permissionApi";
 import { useGetRoleQuery } from "../../api/rolesApi";
 import {
   useAssignPermissionToRoleMutation,
   useRemovePermissionFromRoleMutation,
+  useGetAllRolePermissionsByRoleIdQuery,
 } from "../../api/rolePermissionApi";
+import { rolePermissionsApi as api } from "../../api/rolePermissionApi";
 import { FaArrowLeft } from "react-icons/fa";
-import { toast } from "react-toastify"; // Import toast from react-toastify
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import "./permission.css";
-import { useGetAllRolePermissionsByRoleIdQuery } from "../../api/rolePermissionApi";
-
-// Add this import for ToastContainer
-import { ToastContainer } from "react-toastify";
 
 const Permissions = () => {
   const { id: roleId } = useParams();
+  const dispatch = useDispatch();
+
+  console.log("Role ID:", roleId);
 
   const {
     data: roleData,
@@ -25,24 +28,37 @@ const Permissions = () => {
   } = useGetRoleQuery(roleId);
 
   const { data: rolePermissionsData, isLoading: isRolePermissionsLoading } =
-    useGetAllRolePermissionsByRoleIdQuery(roleId, { skip: !roleId });
+    useGetAllRolePermissionsByRoleIdQuery(roleId, {
+      skip: !roleId,
+      refetchOnMountOrArgChange: false,
+    });
 
-  const { data, isLoading, isError } = useGetAllPermissionsQuery();
+  const { data, isLoading, isError } = useGetAllPermissionsQuery(undefined, {
+    refetchOnMountOrArgChange: false,
+  });
 
-  const [assignPermission] = useAssignPermissionToRoleMutation();
-  const [removePermission] = useRemovePermissionFromRoleMutation();
+  console.log("Role Permissions Data:", rolePermissionsData);
 
-  const permissionTypes = ["view", "delete", "write", "edit", "export"];
   const permissions = Array.isArray(data?.permissions) ? data.permissions : [];
   const roleName = roleData?.roleName || "Unknown Role";
+  const assignedPermissions = rolePermissionsData?.rolePermissions || [];
+
+  console.log(
+    "Permissions IDs:",
+    permissions.map((p) => p.permissionId)
+  );
+  console.log(
+    "Role Permissions IDs:",
+    assignedPermissions.map((p) => p.permissionId)
+  );
+
+  const permissionTypes = useMemo(() => {
+    return [...new Set(permissions.map((p) => p.api))];
+  }, [permissions]);
 
   const modules = useMemo(() => {
     return [...new Set(permissions.map((p) => p.module))];
   }, [permissions]);
-
-  const assignedPermissions = rolePermissionsData?.rolePermissions || [];
-
-  const [permissionsByModule, setPermissionsByModule] = useState({});
 
   const routeLookup = useMemo(() => {
     const lookup = {};
@@ -50,7 +66,7 @@ const Permissions = () => {
       if (!lookup[perm.module]) {
         lookup[perm.module] = {};
       }
-      lookup[perm.module][perm.name] = {
+      lookup[perm.module][perm.api] = {
         route: perm.route || "No route",
         permissionId: perm.permissionId,
       };
@@ -58,67 +74,129 @@ const Permissions = () => {
     return lookup;
   }, [permissions]);
 
+  const [permissionsByModule, setPermissionsByModule] = useState({});
+  const [isUpdating, setIsUpdating] = useState(false);
+
   useEffect(() => {
-    if (rolePermissionsData) {
-      const permissionsMap = modules.reduce((acc, module) => {
-        acc[module] = permissionTypes.reduce((perms, type) => {
-          const permission = permissions.find(
-            (p) => p.module === module && p.name === type
-          );
-          const isGranted = permission
-            ? assignedPermissions.some(
-                (p) => p.permissionId === permission.permissionId
-              )
-            : false;
-          perms[type] = isGranted;
-          return perms;
-        }, {});
-        return acc;
-      }, {});
-      setPermissionsByModule((prev) =>
-        JSON.stringify(prev) === JSON.stringify(permissionsMap)
-          ? prev
-          : permissionsMap
-      );
+    if (isUpdating || !rolePermissionsData || permissions.length === 0) {
+      console.warn("Skipping permissionsByModule update:", {
+        isUpdating,
+        rolePermissionsData,
+        permissions,
+      });
+      return;
     }
-  }, [rolePermissionsData, modules, assignedPermissions, permissions]);
+
+    console.log("useEffect dependencies:", {
+      rolePermissionsData,
+      permissions,
+      modules,
+      assignedPermissions,
+      isUpdating,
+    });
+
+    console.log("Building permissionsByModule:", {
+      rolePermissionsData,
+      permissions,
+      modules,
+      assignedPermissions,
+    });
+
+    const permissionsMap = modules.reduce((acc, module) => {
+      acc[module] = permissionTypes.reduce((perms, type) => {
+        const permission = permissions.find(
+          (p) => p.module === module && p.api === type
+        );
+        const isGranted = permission
+          ? assignedPermissions.some(
+              (p) => p.permissionId === permission.permissionId
+            )
+          : false;
+        perms[type] = isGranted;
+        return perms;
+      }, {});
+      return acc;
+    }, {});
+
+    setPermissionsByModule((prev) => {
+      if (JSON.stringify(prev) !== JSON.stringify(permissionsMap)) {
+        return permissionsMap;
+      }
+      return prev;
+    });
+  }, [
+    rolePermissionsData,
+    permissions,
+    modules,
+    assignedPermissions,
+    isUpdating,
+  ]);
+
+  const [assignPermission] = useAssignPermissionToRoleMutation();
+  const [removePermission] = useRemovePermissionFromRoleMutation();
 
   const handlePermissionChange = async (module, type, isChecked) => {
+    if (isUpdating) return;
+    setIsUpdating(true);
+
     try {
       const permissionId = routeLookup[module]?.[type]?.permissionId;
-      if (!permissionId) throw new Error("Permission ID not found.");
-
-      if (isChecked) {
-        await assignPermission({
-          roleId,
-          permissionId,
-          isGranted: true,
-        }).unwrap();
-        toast.success(
-          `${
-            type.charAt(0).toUpperCase() + type.slice(1)
-          } permission assigned successfully.`
-        );
-      } else {
-        await removePermission({ roleId, permissionId }).unwrap();
-        toast.success(
-          `${
-            type.charAt(0).toUpperCase() + type.slice(1)
-          } permission removed successfully.`
-        );
+      if (!permissionId) {
+        throw new Error(`Permission ID not found for ${module} - ${type}`);
       }
 
       setPermissionsByModule((prev) => ({
         ...prev,
         [module]: { ...prev[module], [type]: isChecked },
       }));
+
+      if (isChecked) {
+        const result = await assignPermission({
+          roleId,
+          permissionId,
+          isGranted: true,
+        }).unwrap();
+        console.log("Assign Permission Result:", result);
+        dispatch(
+          api.util.invalidateTags([{ type: "RolePermissions", id: roleId }])
+        );
+        toast.success(
+          `${
+            type.charAt(0).toUpperCase() + type.slice(1)
+          } permission assigned successfully.`
+        );
+      } else {
+        const result = await removePermission({
+          roleId,
+          permissionId,
+        }).unwrap();
+        console.log("Remove Permission Result:", result);
+        dispatch(
+          api.util.invalidateTags([{ type: "RolePermissions", id: roleId }])
+        );
+        toast.success(
+          `${
+            type.charAt(0).toUpperCase() + type.slice(1)
+          } permission removed successfully.`
+        );
+      }
     } catch (error) {
       console.error("Error toggling permission:", error);
-      toast.error("Failed to update permission.");
+      toast.error(`Failed to update ${type} permission for ${module}.`);
+      setPermissionsByModule((prev) => ({
+        ...prev,
+        [module]: { ...prev[module], [type]: !isChecked },
+      }));
+    } finally {
+      setIsUpdating(false);
     }
   };
 
   const getCheckboxClass = (isGranted) => {
+    console.log(
+      `Checkbox for isGranted=${isGranted}:`,
+      isGranted ? "checkbox-green" : "checkbox-yellow"
+    );
     return isGranted ? "checkbox-green" : "checkbox-yellow";
   };
 
@@ -132,6 +210,7 @@ const Permissions = () => {
 
   return (
     <div className="page-wrapper">
+      <ToastContainer />
       <div className="content">
         <PageHeader
           title="Permissions"
@@ -161,7 +240,7 @@ const Permissions = () => {
               <table className="table datatable">
                 <thead className="thead-light">
                   <tr>
-                    <th className="no-sort">Modules</th>
+                    <th>Modules</th>
                     {permissionTypes.map((type) => (
                       <th key={type}>
                         {type.charAt(0).toUpperCase() + type.slice(1)}
@@ -170,28 +249,38 @@ const Permissions = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {Object.entries(permissionsByModule).map(
-                    ([module, perms]) => (
-                      <tr key={module}>
-                        <td>{module}</td>
-                        {permissionTypes.map((type) => (
-                          <td key={type}>
-                            <input
-                              type="checkbox"
-                              checked={perms[type]}
-                              onChange={(e) =>
-                                handlePermissionChange(
-                                  module,
-                                  type,
-                                  e.target.checked
-                                )
-                              }
-                              className={getCheckboxClass(perms[type])}
-                            />
-                          </td>
-                        ))}
-                      </tr>
+                  {modules.length > 0 ? (
+                    Object.entries(permissionsByModule).map(
+                      ([module, perms]) => (
+                        <tr key={module}>
+                          <td>{module}</td>
+                          {permissionTypes.map((type) => (
+                            <td key={type}>
+                              <input
+                                type="checkbox"
+                                checked={perms[type] || false}
+                                onChange={(e) =>
+                                  handlePermissionChange(
+                                    module,
+                                    type,
+                                    e.target.checked
+                                  )
+                                }
+                                className={`permission-checkbox ${getCheckboxClass(
+                                  perms[type]
+                                )}`}
+                              />
+                            </td>
+                          ))}
+                        </tr>
+                      )
                     )
+                  ) : (
+                    <tr>
+                      <td colSpan={permissionTypes.length + 1}>
+                        No permissions available
+                      </td>
+                    </tr>
                   )}
                 </tbody>
               </table>
@@ -203,4 +292,4 @@ const Permissions = () => {
   );
 };
 
-export default Permissions;
+export default React.memo(Permissions);
