@@ -27,7 +27,7 @@ export const brandApi = createApi({
     deleteBrand: builder.mutation({
       query: (id) => ({
         url: `/${id}`,
-        method: "POST", // Change to DELETE if API supports it
+        method: "DELETE", // Change to DELETE if API supports it
       }),
     }),
   }),

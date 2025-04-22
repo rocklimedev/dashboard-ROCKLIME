@@ -5,7 +5,8 @@ import {
   useGetCustomerByIdQuery,
   useGetInvoicesByCustomerIdQuery,
 } from "../../api/customerApi";
-import { useGetAllInvoicesQuery } from "../../api/invoiceApi";
+import { useGetAllUsersQuery } from "../../api/userApi";
+import { useGetAllAddressesQuery } from "../../api/addressApi";
 import {
   FaReceipt,
   FaMoneyBillAlt,
@@ -26,7 +27,7 @@ const CustomerDetails = () => {
   } = useGetCustomerByIdQuery(id);
   const customer = customerData?.data;
 
-  // Fetch invoices by customerId (skip if customer is undefined)
+  // Fetch invoices by customerId
   const {
     data: invoicesByCustomerData,
     error: invoiceError,
@@ -35,19 +36,69 @@ const CustomerDetails = () => {
     skip: !customer?.customerId,
   });
 
-  // Optional: get all invoices (if needed elsewhere)
-  // const {
-  //   data: allInvoicesData,
-  //   error: allInvoicesError,
-  //   isLoading: allInvoicesLoading,
-  // } = useGetAllInvoicesQuery();
+  // Fetch all users to map createdBy to username
+  const {
+    data: usersData,
+    error: usersError,
+    isLoading: isUsersLoading,
+  } = useGetAllUsersQuery();
 
-  if (isCustomerLoading || isInvoiceLoading)
+  // Fetch all addresses to map shipTo to address
+  const {
+    data: addressesData,
+    error: addressesError,
+    isLoading: isAddressesLoading,
+  } = useGetAllAddressesQuery();
+
+  // Loading and error handling
+  if (
+    isCustomerLoading ||
+    isInvoiceLoading ||
+    isUsersLoading ||
+    isAddressesLoading
+  ) {
     return <p>Loading customer details...</p>;
-  if (customerError || invoiceError) return <p>Error fetching data.</p>;
-  if (!customer) return <p>No customer data found.</p>;
+  }
+  if (customerError || invoiceError || usersError || addressesError) {
+    return (
+      <p>
+        Error fetching data:{" "}
+        {customerError?.data?.message ||
+          invoiceError?.data?.message ||
+          usersError?.data?.message ||
+          addressesError?.data?.message ||
+          "Unknown error"}
+      </p>
+    );
+  }
+  if (!customer) {
+    return <p>No customer data found.</p>;
+  }
 
   const invoices = invoicesByCustomerData?.data || [];
+  const users = usersData?.data || [];
+  const addresses = addressesData?.data || [];
+
+  // Log data for debugging
+  console.log("Customer:", customer);
+  console.log("Invoices:", invoices);
+  console.log("Users:", users);
+  console.log("Addresses:", addresses);
+
+  // Format address for display
+  const formatAddress = (shipTo) => {
+    const address = addresses.find((addr) => addr.addressId === shipTo);
+    if (!address) return "No address available";
+    const { street, city, state, postalCode, country } = address;
+    const parts = [street, city, state, postalCode, country].filter(Boolean);
+    return parts.length > 0 ? parts.join(", ") : "No address available";
+  };
+
+  // Map userId to username
+  const getUsername = (userId) => {
+    const user = users.find((u) => u.userId === userId);
+    return user ? user.username || user.name || "Unknown User" : "Unknown User";
+  };
 
   return (
     <div className="page-wrapper">
@@ -132,7 +183,7 @@ const CustomerDetails = () => {
                     </span>
                     <div className="customer-details-cont">
                       <h6>Address</h6>
-                      <p>{customer.address || "No address available"}</p>
+                      <p>{formatAddress(customer.address)}</p>
                     </div>
                   </div>
                 </div>
@@ -141,32 +192,30 @@ const CustomerDetails = () => {
           </div>
         </div>
 
-        <div class="row">
-          <div class="col-sm-12">
-            <div class="card-table">
-              <div class="card-body">
-                <div class="table-responsive">
-                  <table class="table table-stripped table-hover datatable">
-                    <thead class="thead-light">
+        <div className="row">
+          <div className="col-sm-12">
+            <div className="card-table">
+              <div className="card-body">
+                <div className="table-responsive">
+                  <table className="table table-stripped table-hover datatable">
+                    <thead className="thead-light">
                       <tr>
                         <th>
-                          <label class="custom_check">
+                          <label className="custom_check">
                             <input type="checkbox" name="invoice" />
-                            <span class="checkmark"></span>
+                            <span className="checkmark"></span>
                           </label>
                         </th>
                         <th>Invoice No</th>
-
                         <th>Customer</th>
                         <th>Bill To</th>
                         <th>Ship To</th>
                         <th>Invoice Date</th>
                         <th>Due Date</th>
                         <th>Amount</th>
-
                         <th>Created By</th>
                         <th>Status</th>
-                        <th class="text-end">Action</th>
+                        <th className="text-end">Action</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -179,23 +228,21 @@ const CustomerDetails = () => {
                             </label>
                           </td>
                           <td>
-                            <a href={`invoice-details/${invoice.invoiceId}`}>
+                            <a href={`/invoice/${invoice.invoiceId}`}>
                               {invoice.invoiceNo}
                             </a>
                           </td>
-
-                          <td>{invoice.customerId}</td>
+                          <td>{customer.name}</td>
                           <td>{invoice.billTo}</td>
-                          <td>{invoice.shipTo}</td>
+                          <td>{formatAddress(invoice.shipTo)}</td>
                           <td>
                             {new Date(invoice.invoiceDate).toLocaleDateString()}
                           </td>
                           <td>
                             {new Date(invoice.dueDate).toLocaleDateString()}
                           </td>
-
                           <td>${invoice.amount}</td>
-                          <td>{invoice.createdBy}</td>
+                          <td>{getUsername(invoice.createdBy)}</td>
                           <td>
                             <span
                               className={`badge ${

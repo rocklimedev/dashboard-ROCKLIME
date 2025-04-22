@@ -3,24 +3,28 @@ import { FaArrowLeft } from "react-icons/fa";
 import {
   useCreateQuotationMutation,
   useGetQuotationByIdQuery,
+  useUpdateQuotationMutation,
 } from "../../api/quotationApi";
 import { useGetAllProductsQuery } from "../../api/productApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import { PiPlus } from "react-icons/pi";
 import { useGetProfileQuery } from "../../api/userApi";
-import { useUpdateQuotationMutation } from "../../api/quotationApi";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom"; // Added useNavigate
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { BiTrash } from "react-icons/bi";
 
 const AddQuotation = () => {
   const { id } = useParams();
   const isEditMode = Boolean(id);
-  const { data: existingQuotation, isLoading: isFetching } =
-    useGetQuotationByIdQuery(id, { skip: !isEditMode });
+  const navigate = useNavigate(); // For redirecting
+  const {
+    data: existingQuotation,
+    isLoading: isFetching,
+    error: fetchError,
+  } = useGetQuotationByIdQuery(id, { skip: !isEditMode });
   const { data: userData } = useGetProfileQuery();
   const userId = userData?.user?.userId || "nill";
-  console.log(userId);
   const { data: customersData } = useGetCustomersQuery();
   const customers = customersData?.data || [];
 
@@ -37,26 +41,60 @@ const AddQuotation = () => {
     finalAmount: "",
     signature_name: "",
     signature_image: "",
-    customerId: "", // Initially empty
+    customerId: "",
     createdBy: userId,
   });
 
   const [productSearch, setProductSearch] = useState("");
-  const { data: products, isLoading } = useGetAllProductsQuery();
+  const { data: products, isLoading: isProductsLoading } =
+    useGetAllProductsQuery();
   const [createQuotation, { isLoading: isCreating }] =
     useCreateQuotationMutation();
+  const [updateQuotation, { isLoading: isUpdating }] =
+    useUpdateQuotationMutation();
+
+  // Handle fetch error or invalid quotation
+  useEffect(() => {
+    if (isEditMode && fetchError) {
+      console.error("Error fetching quotation:", fetchError);
+      toast.error("Quotation not found. Redirecting to quotations list...");
+      setTimeout(() => navigate("/quotations/list"), 2000);
+    }
+  }, [fetchError, isEditMode, navigate]);
+
+  // Pre-fill form in edit mode
   useEffect(() => {
     if (existingQuotation) {
-      setFormData((prev) => ({
-        ...prev,
-        ...existingQuotation,
-        createdBy: userId, // Ensure it doesn't override the createdBy field when editing
-      }));
+      console.log("Existing quotation:", existingQuotation);
+      setFormData({
+        ...formData,
+        document_title: existingQuotation.document_title || "",
+        quotation_date: existingQuotation.quotation_date || "",
+        due_date: existingQuotation.due_date || "",
+        reference_number: existingQuotation.reference_number || "",
+        include_gst: existingQuotation.include_gst || false,
+        gst_value: existingQuotation.gst_value || "",
+        discountType: existingQuotation.discountType || "percent",
+        roundOff: existingQuotation.roundOff || "",
+        finalAmount: existingQuotation.finalAmount || "",
+        signature_name: existingQuotation.signature_name || "",
+        signature_image: existingQuotation.signature_image || "",
+        customerId: existingQuotation.customerId || "",
+        createdBy: userId,
+        products: existingQuotation.products.map((p) => ({
+          id: p.productId,
+          productId: p.productId,
+          name: p.name,
+          qty: Number(p.qty) || 1,
+          sellingPrice: Number(p.sellingPrice) || 0,
+          discount: Number(p.discount) || 0,
+          tax: Number(p.tax) || 0,
+          total: Number(p.total) || 0,
+        })),
+      });
     }
   }, [existingQuotation, userId]);
 
-  const [updateQuotation, { isLoading: isUpdating, error }] =
-    useUpdateQuotationMutation();
   // Add product to quotation
   const addProduct = (product) => {
     setFormData((prev) => ({
@@ -64,20 +102,33 @@ const AddQuotation = () => {
       products: [
         ...prev.products,
         {
-          ...product,
+          id: product.id,
+          productId: product.id,
+          name: product.name,
           qty: 1,
-          discount: product.discountType || 0,
+          sellingPrice: Number(product.sellingPrice) || 0,
+          discount: 0,
           tax: 0,
           total: Number(product.sellingPrice) || 0,
         },
       ],
     }));
+    toast.success("Product added successfully!");
   };
 
-  // Function to calculate final amount
+  // Remove product from quotation
+  const removeProduct = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      products: prev.products.filter((_, i) => i !== index),
+    }));
+    toast.info("Product removed from quotation.");
+  };
+
+  // Calculate final amount
   const calculateFinalAmount = () => {
     let subtotal = formData.products.reduce(
-      (sum, product) => sum + product.total,
+      (sum, product) => sum + Number(product.total || 0),
       0
     );
     let gstAmount = formData.include_gst
@@ -97,23 +148,23 @@ const AddQuotation = () => {
     formData.roundOff,
   ]);
 
+  // Update product fields and recalculate total
   const updateProductField = (index, field, value) => {
     const updatedProducts = [...formData.products];
     updatedProducts[index][field] = value;
 
-    if (["qty", "price", "discount", "tax"].includes(field)) {
+    if (["qty", "discount", "tax"].includes(field)) {
       const qty = parseFloat(updatedProducts[index].qty) || 0;
-      const price = parseFloat(updatedProducts[index].price) || 0;
+      const sellingPrice = parseFloat(updatedProducts[index].sellingPrice) || 0;
       const discount = parseFloat(updatedProducts[index].discount) || 0;
       const tax = parseFloat(updatedProducts[index].tax) || 0;
       updatedProducts[index].total =
-        Number((qty * price - discount) * (1 + tax / 100)) || 0;
+        Number((qty * sellingPrice - discount) * (1 + tax / 100)) || 0;
     }
 
     setFormData({ ...formData, products: updatedProducts });
   };
 
-  // Update state when form fields change
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData({
@@ -122,7 +173,6 @@ const AddQuotation = () => {
     });
   };
 
-  // Handle customer selection
   const handleCustomerChange = (e) => {
     const selectedCustomerId = e.target.value;
     console.log("Selected Customer ID:", selectedCustomerId);
@@ -134,18 +184,26 @@ const AddQuotation = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("Submitting quotation with ID:", id);
+    console.log("Form data:", formData);
 
     if (!formData.customerId) {
       toast.error("Please select a customer.");
       return;
     }
 
+    if (isEditMode && !existingQuotation) {
+      toast.error("Quotation data not loaded. Please try again.");
+      return;
+    }
+
+    // Format products to match items structure
     const formattedProducts = formData.products.map((product) => ({
-      ...product,
-      discount: isNaN(product.discount) ? 0 : Number(product.discount),
-      qty: isNaN(product.qty) ? 1 : Number(product.qty),
-      tax: isNaN(product.tax) ? 0 : Number(product.tax),
-      total: isNaN(product.total) ? 0 : Number(product.total),
+      productId: product.productId,
+      quantity: Number(product.qty) || 1,
+      discount: Number(product.discount) || 0,
+      tax: Number(product.tax) || 0,
+      total: Number(product.total) || 0,
     }));
 
     const formattedFormData = {
@@ -155,8 +213,10 @@ const AddQuotation = () => {
       finalAmount: isNaN(formData.finalAmount)
         ? 0
         : Number(formData.finalAmount),
-      products: formattedProducts,
+      items: formattedProducts,
     };
+
+    console.log("Formatted form data:", formattedFormData);
 
     try {
       if (isEditMode) {
@@ -165,8 +225,6 @@ const AddQuotation = () => {
       } else {
         await createQuotation(formattedFormData).unwrap();
         toast.success("Quotation created successfully!");
-
-        // Clear the form after successful creation
         setFormData({
           document_title: "",
           quotation_date: "",
@@ -186,7 +244,14 @@ const AddQuotation = () => {
       }
     } catch (err) {
       console.error("Failed to process quotation:", err);
-      toast.error("Failed to process quotation.");
+      if (err.status === 404) {
+        toast.error("Quotation not found. It may have been deleted.");
+        setTimeout(() => navigate("/quotations/list"), 2000);
+      } else {
+        toast.error(
+          `Failed to process quotation: ${err.data?.message || "Unknown error"}`
+        );
+      }
     }
   };
 
@@ -196,12 +261,18 @@ const AddQuotation = () => {
     )
     .slice(0, 3);
 
+  if (isFetching) {
+    return <div>Loading quotation details...</div>;
+  }
+
   return (
     <div className="page-wrapper">
       <div className="content">
         <div className="page-header d-flex justify-between">
           <div className="page-title">
-            <h4 className="fw-bold">Create Quotation</h4>
+            <h4 className="fw-bold">
+              {isEditMode ? "Edit Quotation" : "Create Quotation"}
+            </h4>
             <h6>Fill out the quotation details</h6>
           </div>
           <div className="page-btn">
@@ -217,7 +288,7 @@ const AddQuotation = () => {
               <div className="mb-3">
                 <label className="form-label">Customer*</label>
                 <div className="row">
-                  <div class="col-lg-10 col-sm-10 col-10">
+                  <div className="col-lg-10 col-sm-10 col-10">
                     <select
                       className="form-control"
                       name="customerId"
@@ -226,12 +297,12 @@ const AddQuotation = () => {
                       required
                     >
                       <option value="">Select</option>
-                      {isLoading ? (
+                      {isProductsLoading ? (
                         <option>Loading...</option>
-                      ) : error ? (
-                        <option>Error loading customers</option>
+                      ) : customers.length === 0 ? (
+                        <option>No customers available</option>
                       ) : (
-                        customers?.map((customer) => (
+                        customers.map((customer) => (
                           <option
                             key={customer.customerId}
                             value={customer.customerId}
@@ -242,9 +313,9 @@ const AddQuotation = () => {
                       )}
                     </select>
                   </div>
-                  <div class="col-lg-2 col-sm-2 col-2 p-0">
-                    <div class="add-icon tab">
-                      <a class="bg-dark text-white p-2 rounded">
+                  <div className="col-lg-2 col-sm-2 col-2 p-0">
+                    <div className="add-icon tab">
+                      <a className="bg-dark text-white p-2 rounded">
                         <PiPlus />
                       </a>
                     </div>
@@ -320,7 +391,7 @@ const AddQuotation = () => {
                         className="list-group-item list-group-item-action"
                         onClick={() => addProduct(product)}
                       >
-                        {product.name} - ${product.price}
+                        {product.name} - ${product.sellingPrice}
                       </li>
                     ))}
                   </ul>
@@ -335,34 +406,39 @@ const AddQuotation = () => {
                     <tr>
                       <th>Product</th>
                       <th>Qty</th>
-                      <th>Price ($)</th>
+                      <th>Selling Price ($)</th>
                       <th>Discount ($)</th>
                       <th>Tax (%)</th>
                       <th>Total ($)</th>
+                      <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     {formData.products.map((product, index) => (
-                      <tr key={index}>
+                      <tr key={product.id || index}>
                         <td>{product.name}</td>
                         <td>
                           <input
                             type="number"
                             value={product.qty}
                             onChange={(e) =>
-                              updateProductField(index, "qty", e.target.value)
+                              updateProductField(
+                                index,
+                                "qty",
+                                Math.max(1, e.target.value)
+                              )
                             }
                             className="form-control"
+                            min="1"
                           />
                         </td>
                         <td>
                           <input
                             type="number"
-                            value={product.price}
-                            onChange={(e) =>
-                              updateProductField(index, "price", e.target.value)
-                            }
+                            value={product.sellingPrice}
                             className="form-control"
+                            disabled
+                            readOnly
                           />
                         </td>
                         <td>
@@ -373,10 +449,11 @@ const AddQuotation = () => {
                               updateProductField(
                                 index,
                                 "discount",
-                                e.target.value
+                                Math.max(0, e.target.value)
                               )
                             }
                             className="form-control"
+                            min="0"
                           />
                         </td>
                         <td>
@@ -384,12 +461,27 @@ const AddQuotation = () => {
                             type="number"
                             value={product.tax}
                             onChange={(e) =>
-                              updateProductField(index, "tax", e.target.value)
+                              updateProductField(
+                                index,
+                                "tax",
+                                Math.max(0, e.target.value)
+                              )
                             }
                             className="form-control"
+                            min="0"
                           />
                         </td>
                         <td>{Number(product.total || 0).toFixed(2)}</td>
+                        <td>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-danger"
+                            onClick={() => removeProduct(index)}
+                            aria-label="Remove product"
+                          >
+                            <BiTrash />
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -416,6 +508,7 @@ const AddQuotation = () => {
                 name="gst_value"
                 value={formData.gst_value}
                 onChange={handleChange}
+                min="0"
               />
             </div>
             <div className="col-md-4">
@@ -481,14 +574,23 @@ const AddQuotation = () => {
           </div>
 
           <div className="modal-footer mt-4">
-            <button type="button" className="btn btn-secondary me-2">
+            <button
+              type="button"
+              className="btn btn-secondary me-2"
+              onClick={() => navigate("/quotations/list")}
+            >
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary">
-              Submit
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={isCreating || isUpdating}
+            >
+              {isCreating || isUpdating ? "Saving..." : "Submit"}
             </button>
           </div>
         </form>
+        <ToastContainer />
       </div>
     </div>
   );

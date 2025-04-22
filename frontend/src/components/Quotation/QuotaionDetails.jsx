@@ -77,7 +77,7 @@ const QuotationsDetails = () => {
       <div className="content">
         <div className="page-header d-flex justify-content-between">
           <h4> Created by: {getUserName(quotation.createdBy)}</h4>
-          <a href="/quotations" className="btn btn-primary">
+          <a href="/quotations/list" className="btn btn-primary">
             <i data-feather="arrow-left" className="me-2"></i>Back to Quotations
           </a>
         </div>

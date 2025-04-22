@@ -24,7 +24,7 @@ const CompaniesWrapper = () => {
     isLoading: brandsLoading,
   } = useGetAllBrandsQuery();
 
-  const [deleteVendor] = useDeleteVendorMutation();
+  const [deleteVendor, { isLoading: isDeleting }] = useDeleteVendorMutation();
 
   const [selectedVendor, setSelectedVendor] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -35,40 +35,55 @@ const CompaniesWrapper = () => {
   const vendors = Array.isArray(vendorsData) ? vendorsData : [];
   const brands = Array.isArray(brandsData) ? brandsData : [];
 
-  if (vendorsLoading || brandsLoading) return <p>Loading...</p>;
-  if (vendorsError || brandsError)
-    return (
-      <p>Error fetching data: {JSON.stringify(vendorsError || brandsError)}</p>
-    );
-  if (vendors.length === 0) return <p>No vendors available.</p>;
-
   const getBrandName = (brandId) => {
     const brand = brands.find((b) => b.id === brandId);
     return brand ? brand.brandName : "Unknown";
   };
 
   const handleEditVendor = (vendor) => {
+    console.log("Editing vendor:", vendor);
     setSelectedVendor(vendor);
     setShowModal(true);
   };
 
   const handleAddVendor = () => {
+    console.log("Adding new vendor");
     setSelectedVendor(null);
     setShowModal(true);
   };
 
+  const handleDeleteVendor = (vendor) => {
+    console.log("Opening delete modal for vendor:", vendor);
+    setVendorToDelete(vendor);
+    setShowDeleteModal(true);
+  };
+
   const handleConfirmDelete = async () => {
-    if (!vendorToDelete?.id) return;
+    if (!vendorToDelete?.id) {
+      toast.error("No vendor selected for deletion");
+      setShowDeleteModal(false);
+      return;
+    }
     try {
+      console.log("Deleting vendor with ID:", vendorToDelete.id);
       await deleteVendor(vendorToDelete.id).unwrap();
       toast.success("Vendor deleted successfully!");
       setShowDeleteModal(false);
       setVendorToDelete(null);
     } catch (err) {
-      toast.error("Failed to delete vendor.");
+      toast.error(
+        `Failed to delete vendor: ${err.data?.message || "Unknown error"}`
+      );
       console.error("Error deleting vendor:", err);
     }
   };
+
+  if (vendorsLoading || brandsLoading) return <p>Loading...</p>;
+  if (vendorsError || brandsError)
+    return (
+      <p>Error fetching data: {JSON.stringify(vendorsError || brandsError)}</p>
+    );
+  if (vendors.length === 0) return <p>No vendors available.</p>;
 
   return (
     <div className="page-wrapper">
@@ -95,7 +110,7 @@ const CompaniesWrapper = () => {
                 </thead>
                 <tbody>
                   {vendors.map((vendor) => (
-                    <tr key={vendor.id} onClick={(e) => e.stopPropagation()}>
+                    <tr key={vendor.id}>
                       <td>{vendor.vendorId}</td>
                       <td>{vendor.vendorName}</td>
                       <td>{getBrandName(vendor.brandId)}</td>
@@ -106,15 +121,14 @@ const CompaniesWrapper = () => {
                           <button
                             className="btn btn-sm btn-warning"
                             onClick={() => handleEditVendor(vendor)}
+                            aria-label="Edit vendor"
                           >
                             <BiEdit />
                           </button>
                           <button
                             className="btn btn-sm btn-danger"
-                            onClick={() => {
-                              setVendorToDelete(vendor);
-                              setShowDeleteModal(true);
-                            }}
+                            onClick={() => handleDeleteVendor(vendor)}
+                            aria-label="Delete vendor"
                           >
                             <BiTrash />
                           </button>
@@ -135,19 +149,31 @@ const CompaniesWrapper = () => {
           />
         )}
 
-        <DeleteModal
-          show={showDeleteModal}
-          onHide={() => setShowDeleteModal(false)}
-          onConfirm={handleConfirmDelete}
-          title="Delete Vendor"
-          message="Are you sure you want to delete this vendor?"
-        />
+        {showDeleteModal && (
+          <DeleteModal
+            item={vendorToDelete}
+            itemType="Vendor"
+            isVisible={showDeleteModal}
+            onConfirm={handleConfirmDelete}
+            onCancel={() => {
+              console.log("Canceling delete modal");
+              setShowDeleteModal(false);
+              setVendorToDelete(null);
+            }}
+            isLoading={isDeleting}
+          />
+        )}
 
-        <AddCompanyModal
-          show={showModal}
-          onClose={() => setShowModal(false)} // Close modal when called
-          existingVendor={selectedVendor} // Pass selectedVendor for editing
-        />
+        {showModal && (
+          <AddCompanyModal
+            show={showModal}
+            onClose={() => {
+              console.log("Closing AddCompanyModal");
+              setShowModal(false);
+            }}
+            existingVendor={selectedVendor}
+          />
+        )}
       </div>
     </div>
   );
