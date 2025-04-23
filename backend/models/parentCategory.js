@@ -1,3 +1,4 @@
+// models/ParentCategory.js
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
 const { v4: uuidv4 } = require("uuid");
@@ -20,9 +21,17 @@ const ParentCategory = sequelize.define(
       allowNull: false,
       unique: true,
     },
+    brandId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: {
+        model: "brands", // References the 'brands' table
+        key: "id",
+      },
+    },
   },
   {
-    tableName: "parentcategories", // Force lowercase table name
+    tableName: "parentcategories",
     timestamps: true,
   }
 );

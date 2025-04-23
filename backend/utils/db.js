@@ -147,6 +147,9 @@ const setupDB = async () => {
       foreignKey: "brandSlug",
       targetKey: "brandSlug",
     });
+
+    Brand.hasMany(ParentCategory, { foreignKey: "brandId" });
+    ParentCategory.belongsTo(Brand, { foreignKey: "brandId" });
     // Define relationship with alias
     Team.hasMany(Order, { foreignKey: "assignedTo" });
     Order.belongsTo(Team, { foreignKey: "assignedTo" });

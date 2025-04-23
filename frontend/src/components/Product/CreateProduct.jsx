@@ -33,7 +33,7 @@ const CreateProduct = () => {
     : [];
   const brandData = Array.isArray(brands) ? brands : [];
 
-  const [formData, setFormData] = useState({
+  const initialFormData = {
     name: "",
     productSegment: "",
     productGroup: "",
@@ -42,15 +42,16 @@ const CreateProduct = () => {
     sellingPrice: "",
     purchasingPrice: "",
     category: "",
-    parentCategory: "",
+    parentCategory: "", // Used only for UI filtering, not sent to backend
     brand: "",
     isFeatured: "",
-    barcode: "",
     description: "",
     quantity: "",
     alertQuantity: "",
     tax: "",
-  });
+  };
+
+  const [formData, setFormData] = useState(initialFormData);
 
   const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
   const [updateProduct, { isLoading: isUpdating, error }] =
@@ -63,14 +64,18 @@ const CreateProduct = () => {
       console.log("Category data:", categoryData.categories);
       console.log("Parent categories:", parentCategoryData);
 
-      // Find the category to get its parentCategoryId
+      // Find the category to get its parentCategoryId for UI filtering
       const selectedCategory = categoryData.categories.find(
-        (cat) => cat.id === existingProduct.category
+        (cat) => cat.categoryId === existingProduct.category
       );
-      const parentCategoryId =
-        selectedCategory?.parentCategoryId ||
-        existingProduct.parentCategory ||
-        "";
+      const parentCategoryId = selectedCategory?.parentCategoryId || "";
+
+      // Log if parentCategoryId is missing
+      if (!parentCategoryId && selectedCategory) {
+        console.warn(
+          `Category '${selectedCategory.name}' (ID: ${selectedCategory.categoryId}) has no valid parentCategoryId.`
+        );
+      }
 
       // Update filtered categories based on parentCategory
       const matchingCategories = categoryData.categories.filter(
@@ -87,10 +92,9 @@ const CreateProduct = () => {
         sellingPrice: existingProduct.sellingPrice || "",
         purchasingPrice: existingProduct.purchasingPrice || "",
         category: existingProduct.category || "",
-        parentCategory: parentCategoryId,
+        parentCategory: parentCategoryId, // For UI only
         brand: existingProduct.brand || "",
         isFeatured: existingProduct.isFeatured?.toString() || "",
-        barcode: existingProduct.barcode || "",
         description: existingProduct.description || "",
         quantity: existingProduct.quantity || "",
         alertQuantity: existingProduct.alertQuantity || "",
@@ -104,14 +108,29 @@ const CreateProduct = () => {
     console.log(`Handle change: ${name} = ${value}`);
 
     if (name === "category") {
+      // Find the selected category to get its parentCategoryId
       const selectedCategory = categoryData?.categories?.find(
-        (cat) => cat.id === value
+        (cat) => cat.categoryId === value
       );
       const parentCategoryId = selectedCategory?.parentCategoryId || "";
 
       console.log("Selected category:", selectedCategory);
       console.log("Setting parentCategory to:", parentCategoryId);
 
+      // Log if parentCategoryId is missing
+      if (!parentCategoryId && selectedCategory) {
+        console.warn(
+          `Category '${selectedCategory.name}' (ID: ${selectedCategory.categoryId}) has no valid parentCategoryId.`
+        );
+      }
+
+      // Update filtered categories based on parentCategoryId
+      const matchingCategories = categoryData?.categories?.filter(
+        (cat) => cat.parentCategoryId === parentCategoryId
+      );
+      setFilteredCategories(matchingCategories || []);
+
+      // Update formData with category and parentCategory (parentCategory for UI only)
       setFormData((prev) => ({
         ...prev,
         category: value,
@@ -121,6 +140,7 @@ const CreateProduct = () => {
     }
 
     if (name === "parentCategory") {
+      // Filter categories based on selected parentCategory
       const matchingCategories = categoryData?.categories?.filter(
         (cat) => cat.parentCategoryId === value
       );
@@ -133,7 +153,7 @@ const CreateProduct = () => {
       setFormData((prev) => ({
         ...prev,
         parentCategory: value,
-        category: "", // Reset category
+        category: "", // Reset category when parentCategory changes
       }));
       return;
     }
@@ -148,34 +168,69 @@ const CreateProduct = () => {
     e.preventDefault();
     console.log("Submitting formData:", formData);
 
-    const emptyFields = Object.entries(formData).filter(
+    // Exclude parentCategory and barcode from required fields and payload
+    const requiredFields = {
+      name: formData.name,
+      productSegment: formData.productSegment,
+      productGroup: formData.productGroup,
+      product_code: formData.product_code,
+      company_code: formData.company_code,
+      sellingPrice: formData.sellingPrice,
+      purchasingPrice: formData.purchasingPrice,
+      category: formData.category,
+      brand: formData.brand,
+      isFeatured: formData.isFeatured,
+      description: formData.description,
+      quantity: formData.quantity,
+      alertQuantity: formData.alertQuantity,
+      tax: formData.tax,
+    };
+
+    const emptyFields = Object.entries(requiredFields).filter(
       ([key, value]) => value === "" || value === null || value === undefined
     );
 
     if (emptyFields.length > 0) {
       console.log("Empty fields:", emptyFields);
-      toast.warning("All fields must be filled before submitting the form.");
+      toast.warning(
+        "All required fields must be filled before submitting the form."
+      );
       return;
     }
 
-    // Validate parentCategory
+    // Validate category (relaxed to warn instead of block)
     if (formData.category) {
       const selectedCategory = categoryData?.categories?.find(
-        (cat) => cat.id === formData.category
+        (cat) => cat.categoryId === formData.category
       );
-      if (!selectedCategory?.parentCategoryId) {
-        toast.error("Selected category does not have a valid parent category.");
+      if (!selectedCategory) {
+        toast.error("Selected category is invalid.");
         return;
+      }
+      if (!selectedCategory?.parentCategoryId) {
+        console.warn(
+          `Submitting with category '${selectedCategory.name}' (ID: ${selectedCategory.categoryId}) that has no valid parentCategoryId.`
+        );
+        // Proceed with submission
       }
     }
 
+    // Prepare payload, excluding parentCategory and barcode
     const sanitizedData = {
-      ...formData,
+      name: formData.name,
+      productSegment: formData.productSegment,
+      productGroup: formData.productGroup,
+      product_code: formData.product_code,
+      company_code: formData.company_code,
       sellingPrice: formData.sellingPrice.replace(/,/g, ""),
       purchasingPrice: formData.purchasingPrice.replace(/,/g, ""),
+      categoryId: formData.category,
+      brandId: formData.brand,
+      isFeatured: formData.isFeatured === "true",
+      description: formData.description,
       quantity: Number(formData.quantity) || 0,
       alertQuantity: Number(formData.alertQuantity) || 0,
-      isFeatured: formData.isFeatured === "true",
+      tax: formData.tax,
     };
 
     try {
@@ -185,6 +240,9 @@ const CreateProduct = () => {
       } else {
         await createProduct(sanitizedData).unwrap();
         toast.success("Product created successfully!");
+        // Clear formData after successful creation
+        setFormData(initialFormData);
+        setFilteredCategories([]);
       }
     } catch (error) {
       console.error("Error submitting product:", error);
@@ -418,7 +476,10 @@ const CreateProduct = () => {
                               ? filteredCategories
                               : categoryData?.categories
                             )?.map((cat) => (
-                              <option key={cat.id} value={cat.id}>
+                              <option
+                                key={cat.categoryId}
+                                value={cat.categoryId}
+                              >
                                 {cat.name}
                               </option>
                             ))}
@@ -487,26 +548,6 @@ const CreateProduct = () => {
                             <option value="true">True</option>
                             <option value="false">False</option>
                           </select>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="row">
-                      <div className="col-lg-6 col-sm-6 col-12">
-                        <div className="mb-3 list position-relative">
-                          <label className="form-label">
-                            Barcode<span className="text-danger ms-1">*</span>
-                          </label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            name="barcode"
-                            value={formData.barcode}
-                            onChange={handleChange}
-                          />
-                          <button type="button" className="btn btn-primaryadd">
-                            Generate
-                          </button>
                         </div>
                       </div>
                     </div>
