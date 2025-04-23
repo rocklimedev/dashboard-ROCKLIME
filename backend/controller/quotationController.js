@@ -74,29 +74,80 @@ exports.getQuotationById = async (req, res) => {
 };
 
 // Update a quotation and its items
+// controllers/quotationController.js
 exports.updateQuotation = async (req, res) => {
   try {
+    const { id } = req.params;
     const { items, ...quotationData } = req.body;
+
+    console.log("Updating quotation with ID:", id);
+    console.log("Quotation data:", quotationData);
+    console.log("Items:", items);
+
+    // Validate input
+    if (!id) {
+      return res.status(400).json({ message: "Quotation ID is required" });
+    }
+    if (items && !Array.isArray(items)) {
+      return res.status(400).json({ message: "Items must be an array" });
+    }
+
+    // Sanity Check: Verify if the record exists in the database
+    const check = await Quotation.findOne({ where: { quotationId: id } });
+    if (!check) {
+      console.log("❌ ID exists in DB, but not matched via Sequelize");
+      return res.status(404).json({ message: "Quotation not found" });
+    } else {
+      console.log("✅ Sequelize did find the record:", check.toJSON());
+    }
+
+    // Ensure products are in JSON format
+    if (quotationData.products && typeof quotationData.products !== "string") {
+      quotationData.products = JSON.stringify(quotationData.products);
+    }
 
     // Update MySQL Quotation
     const updated = await Quotation.update(quotationData, {
-      where: { quotationId: req.params.id },
+      where: { quotationId: id },
     });
-    if (!updated[0])
+
+    console.log("Update result:", updated); // Should log [1] if updated successfully
+
+    if (!updated[0]) {
+      console.warn("Quotation not found for ID:", id);
       return res.status(404).json({ message: "Quotation not found" });
+    }
 
     // Update MongoDB Items
-    if (items) {
+    if (items && items.length > 0) {
       await QuotationItem.updateOne(
-        { quotationId: req.params.id },
-        { $set: { items: items } },
+        { quotationId: id },
+        {
+          $set: {
+            items: items.map((item) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+              discount: item.discount,
+              tax: item.tax,
+              total: item.total,
+            })),
+          },
+        },
         { upsert: true }
       );
+      console.log("MongoDB QuotationItem updated for ID:", id);
+    } else {
+      // Remove items if none provided
+      await QuotationItem.deleteOne({ quotationId: id });
+      console.log("MongoDB QuotationItem removed for ID:", id);
     }
 
     res.status(200).json({ message: "Quotation updated successfully" });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Error updating quotation:", error);
+    res
+      .status(500)
+      .json({ error: "Failed to update quotation", details: error.message });
   }
 };
 

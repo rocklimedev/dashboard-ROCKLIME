@@ -3,6 +3,8 @@ const OrderItem = require("../models/orderItem");
 const Team = require("../models/team");
 // Ensure Team and Order models are imported
 
+const { Op } = require("sequelize");
+
 const Quotation = require("../models/quotation");
 
 exports.createOrder = async (req, res) => {
@@ -213,44 +215,102 @@ exports.getFilteredOrders = async (req, res) => {
       createdBy,
       assignedTo,
       createdFor,
+      important,
+      trash,
       page = 1,
       limit = 10,
     } = req.query;
 
+    // Validate query parameters
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    if (isNaN(pageNum) || pageNum < 1) {
+      return res.status(400).json({ error: "Invalid page number" });
+    }
+    if (isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
+      return res.status(400).json({ error: "Invalid limit (must be 1-100)" });
+    }
+
     const filters = {};
 
-    if (status) filters.status = status;
-    if (priority) filters.priority = priority;
+    // Normalize and validate filters
+    if (status) {
+      const normalizedStatus = status.toUpperCase();
+      const validStatuses = [
+        "CREATED",
+        "PREPARING",
+        "CHECKING",
+        "INVOICE",
+        "DISPATCHED",
+        "DELIVERED",
+        "PARTIALLY_DELIVERED",
+        "CANCELED",
+        "DRAFT",
+        "ONHOLD",
+      ];
+      if (!validStatuses.includes(normalizedStatus)) {
+        return res.status(400).json({ error: "Invalid status value" });
+      }
+      filters.status = normalizedStatus;
+    }
+
+    if (priority) {
+      const normalizedPriority = priority.toLowerCase();
+      const validPriorities = ["high", "medium", "low"];
+      if (!validPriorities.includes(normalizedPriority)) {
+        return res.status(400).json({ error: "Invalid priority value" });
+      }
+      filters.priority = normalizedPriority;
+    }
+
     if (dueDate) {
+      // Assume dueDate is a date string like "2025-07-22"
+      // Use range filtering for dueDate (e.g., on or before)
+      const parsedDate = new Date(dueDate);
+      if (isNaN(parsedDate)) {
+        return res.status(400).json({ error: "Invalid dueDate format" });
+      }
       filters.dueDate = {
-        [Op.eq]: dueDate, // or Op.lte if you're filtering before or on dueDate
+        [Op.lte]: parsedDate, // Orders due on or before the specified date
       };
     }
+
     if (createdBy) filters.createdBy = createdBy;
     if (assignedTo) filters.assignedTo = assignedTo;
     if (createdFor) filters.createdFor = createdFor;
 
-    const offset = (page - 1) * limit;
+    // Add support for important and trash if fields exist in Order model
+    if (important !== undefined) {
+      filters.important = important === "true" || important === true;
+    }
+    if (trash !== undefined) {
+      filters.trash = trash === "true" || trash === true;
+    }
+
+    const offset = (pageNum - 1) * limitNum;
 
     // Fetch orders with pagination
     const orders = await Order.findAll({
       where: filters,
       order: [["createdAt", "DESC"]],
-      limit: parseInt(limit),
+      limit: limitNum,
       offset: offset,
     });
 
-    // Get the total count of matching orders
+    // Get total count of matching orders
     const totalCount = await Order.count({
       where: filters,
     });
 
     return res.status(200).json({
       orders,
-      totalCount, // Return the total count of orders for pagination
+      totalCount,
     });
   } catch (err) {
     console.error("Filter Error:", err);
-    return res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({
+      error: "Failed to fetch filtered orders",
+      details: err.message,
+    });
   }
 };

@@ -4,8 +4,7 @@ import {
   useUpdateProfileMutation,
 } from "../../api/userApi";
 import { useGetRolesQuery } from "../../api/rolesApi";
-//import "./profile.css";
-import { useParams } from "react-router-dom";
+
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -20,31 +19,46 @@ const Profile = () => {
     isLoading: isRolesLoading,
     error: rolesError,
   } = useGetRolesQuery();
-  const [updateProfile] = useUpdateProfileMutation();
+  const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    name: profile?.user?.name || "",
-    email: profile?.user?.email || "",
-    mobileNumber: profile?.user?.mobileNumber || "",
+    name: "",
+    email: "",
+    mobileNumber: "",
   });
 
-  if (isProfileLoading || isRolesLoading) return <p>Loading...</p>;
-  if (profileError || rolesError) return <p>Error loading profile</p>;
+  // Initialize formData when profile loads
+  React.useEffect(() => {
+    if (profile?.user) {
+      console.log("Profile data:", profile);
+      setFormData({
+        name: profile.user.name || "",
+        email: profile.user.email || "",
+        mobileNumber: profile.user.mobileNumber || "",
+      });
+    }
+  }, [profile]);
 
-  const roleId = profile?.user?.roleId;
+  if (isProfileLoading || isRolesLoading) return <p>Loading...</p>;
+  if (profileError) return <p>Error loading profile: {profileError.message}</p>;
+  if (rolesError) return <p>Error loading roles: {rolesError.message}</p>;
+  if (!profile?.user) return <p>No user profile data available.</p>;
+
+  const userId = profile.user.userId;
+  const roleId = profile.user.roleId;
   const roleName =
     rolesData?.find((role) => role.roleId === roleId)?.roleName || "N/A";
-  const status = profile?.user?.status || "N/A";
+  const status = profile.user.status || "N/A";
 
   const handleEditClick = () => setIsEditing(true);
 
   const handleCancelClick = () => {
     setIsEditing(false);
     setFormData({
-      name: profile?.user?.name || "",
-      email: profile?.user?.email || "",
-      mobileNumber: profile?.user?.mobileNumber || "",
+      name: profile.user.name || "",
+      email: profile.user.email || "",
+      mobileNumber: profile.user.mobileNumber || "",
     });
   };
 
@@ -53,13 +67,38 @@ const Profile = () => {
   };
 
   const handleSaveClick = async () => {
+    if (!userId) {
+      toast.error("User ID not found. Cannot update profile.");
+      return;
+    }
+
+    if (!formData.name || !formData.email || !formData.mobileNumber) {
+      toast.error("Please fill in all fields.");
+      return;
+    }
+
+    const updatedData = {
+      userId, // Include userId for the API
+      name: formData.name,
+      email: formData.email,
+      mobileNumber: formData.mobileNumber,
+    };
+
+    console.log("Updating profile with data:", updatedData);
+
     try {
-      await updateProfile(formData).unwrap();
+      await updateProfile(updatedData).unwrap();
       toast.success("Profile updated successfully!");
       setIsEditing(false);
     } catch (error) {
       console.error("Error updating profile:", error);
-      toast.error("Failed to update profile. Please try again.");
+      if (error.status === 404) {
+        toast.error("User not found. Please check your account.");
+      } else {
+        toast.error(
+          `Failed to update profile: ${error.data?.message || "Unknown error"}`
+        );
+      }
     }
   };
 
@@ -95,6 +134,7 @@ const Profile = () => {
                       className="form-control"
                       value={formData.name}
                       onChange={handleChange}
+                      required
                     />
                   ) : (
                     <p className="form-control-static">{formData.name}</p>
@@ -105,7 +145,7 @@ const Profile = () => {
               {/* Email */}
               <div className="col-lg-6 col-sm-12">
                 <div className="mb-3">
-                  <label>Email</label>
+                  <label className="form-label">Email</label>
                   {isEditing ? (
                     <input
                       type="email"
@@ -113,6 +153,7 @@ const Profile = () => {
                       className="form-control"
                       value={formData.email}
                       onChange={handleChange}
+                      required
                     />
                   ) : (
                     <p className="form-control-static">{formData.email}</p>
@@ -131,6 +172,7 @@ const Profile = () => {
                       className="form-control"
                       value={formData.mobileNumber}
                       onChange={handleChange}
+                      required
                     />
                   ) : (
                     <p className="form-control-static">
@@ -163,12 +205,14 @@ const Profile = () => {
                     <button
                       className="btn btn-success shadow-none me-2"
                       onClick={handleSaveClick}
+                      disabled={isUpdating}
                     >
-                      Save
+                      {isUpdating ? "Saving..." : "Save"}
                     </button>
                     <button
                       className="btn btn-secondary shadow-none"
                       onClick={handleCancelClick}
+                      disabled={isUpdating}
                     >
                       Cancel
                     </button>
@@ -185,6 +229,7 @@ const Profile = () => {
             </div>
           </div>
         </div>
+        <ToastContainer />
       </div>
     </div>
   );

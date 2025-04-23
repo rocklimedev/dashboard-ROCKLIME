@@ -9,7 +9,7 @@ import { useGetAllProductsQuery } from "../../api/productApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import { PiPlus } from "react-icons/pi";
 import { useGetProfileQuery } from "../../api/userApi";
-import { useParams, useNavigate } from "react-router-dom"; // Added useNavigate
+import { useParams, useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { BiTrash } from "react-icons/bi";
@@ -17,18 +17,19 @@ import { BiTrash } from "react-icons/bi";
 const AddQuotation = () => {
   const { id } = useParams();
   const isEditMode = Boolean(id);
-  const navigate = useNavigate(); // For redirecting
+  const navigate = useNavigate();
   const {
     data: existingQuotation,
     isLoading: isFetching,
     error: fetchError,
+    isSuccess: isFetchSuccess,
   } = useGetQuotationByIdQuery(id, { skip: !isEditMode });
   const { data: userData } = useGetProfileQuery();
   const userId = userData?.user?.userId || "nill";
   const { data: customersData } = useGetCustomersQuery();
   const customers = customersData?.data || [];
 
-  const [formData, setFormData] = useState({
+  const initialFormData = {
     document_title: "",
     quotation_date: "",
     due_date: "",
@@ -43,8 +44,9 @@ const AddQuotation = () => {
     signature_image: "",
     customerId: "",
     createdBy: userId,
-  });
+  };
 
+  const [formData, setFormData] = useState(initialFormData);
   const [productSearch, setProductSearch] = useState("");
   const { data: products, isLoading: isProductsLoading } =
     useGetAllProductsQuery();
@@ -53,24 +55,68 @@ const AddQuotation = () => {
   const [updateQuotation, { isLoading: isUpdating }] =
     useUpdateQuotationMutation();
 
+  // Log the quotation ID and fetch status for debugging
+  useEffect(() => {
+    if (isEditMode) {
+      console.log("Quotation ID from params:", id);
+      console.log("Fetch status:", {
+        isFetching,
+        isFetchSuccess,
+        fetchError,
+        existingQuotation,
+      });
+    }
+  }, [
+    id,
+    isEditMode,
+    isFetching,
+    isFetchSuccess,
+    fetchError,
+    existingQuotation,
+  ]);
+
   // Handle fetch error or invalid quotation
   useEffect(() => {
     if (isEditMode && fetchError) {
       console.error("Error fetching quotation:", fetchError);
-      toast.error("Quotation not found. Redirecting to quotations list...");
+      toast.error("Quotation not found or inaccessible. Redirecting...", {
+        position: "top-right",
+        autoClose: 3000,
+      });
       setTimeout(() => navigate("/quotations/list"), 2000);
     }
-  }, [fetchError, isEditMode, navigate]);
+    if (isEditMode && isFetchSuccess && !existingQuotation) {
+      console.warn("No quotation data found for ID:", id);
+      toast.error("Quotation not found. Redirecting to quotations list...", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      setTimeout(() => navigate("/quotations/list"), 2000);
+    }
+  }, [
+    fetchError,
+    isEditMode,
+    navigate,
+    isFetching,
+    isFetchSuccess,
+    existingQuotation,
+  ]);
 
   // Pre-fill form in edit mode
   useEffect(() => {
-    if (existingQuotation) {
-      console.log("Existing quotation:", existingQuotation);
+    if (isEditMode && existingQuotation) {
+      console.log("Populating form with quotation:", existingQuotation);
       setFormData({
-        ...formData,
+        ...initialFormData,
         document_title: existingQuotation.document_title || "",
-        quotation_date: existingQuotation.quotation_date || "",
-        due_date: existingQuotation.due_date || "",
+        quotation_date: existingQuotation.quotation_date
+          ? new Date(existingQuotation.quotation_date)
+              .toISOString()
+              .split("T")[0]
+          : "",
+        due_date: existingQuotation.due_date
+          ? new Date(existingQuotation.due_date).toISOString().split("T")[0]
+          : "",
         reference_number: existingQuotation.reference_number || "",
         include_gst: existingQuotation.include_gst || false,
         gst_value: existingQuotation.gst_value || "",
@@ -81,19 +127,20 @@ const AddQuotation = () => {
         signature_image: existingQuotation.signature_image || "",
         customerId: existingQuotation.customerId || "",
         createdBy: userId,
-        products: existingQuotation.products.map((p) => ({
-          id: p.productId,
-          productId: p.productId,
-          name: p.name,
-          qty: Number(p.qty) || 1,
-          sellingPrice: Number(p.sellingPrice) || 0,
-          discount: Number(p.discount) || 0,
-          tax: Number(p.tax) || 0,
-          total: Number(p.total) || 0,
-        })),
+        products:
+          existingQuotation.products?.map((p) => ({
+            id: p.productId,
+            productId: p.productId,
+            name: p.name || "Unknown",
+            qty: Number(p.quantity) || 1,
+            sellingPrice: Number(p.sellingPrice) || 0,
+            discount: Number(p.discount) || 0,
+            tax: Number(p.tax) || 0,
+            total: Number(p.total) || 0,
+          })) || [],
       });
     }
-  }, [existingQuotation, userId]);
+  }, [existingQuotation, userId, isEditMode]);
 
   // Add product to quotation
   const addProduct = (product) => {
@@ -188,16 +235,22 @@ const AddQuotation = () => {
     console.log("Form data:", formData);
 
     if (!formData.customerId) {
-      toast.error("Please select a customer.");
+      toast.error("Please select a customer.", {
+        position: "top-right",
+        autoClose: 3000,
+      });
       return;
     }
 
-    if (isEditMode && !existingQuotation) {
-      toast.error("Quotation data not loaded. Please try again.");
+    if (isEditMode && (!existingQuotation || fetchError)) {
+      toast.error("Cannot update quotation: Data not loaded or not found.", {
+        position: "top-right",
+        autoClose: 3000,
+      });
       return;
     }
 
-    // Format products to match items structure
+    // Format products to match backend items structure
     const formattedProducts = formData.products.map((product) => ({
       productId: product.productId,
       quantity: Number(product.qty) || 1,
@@ -216,41 +269,40 @@ const AddQuotation = () => {
       items: formattedProducts,
     };
 
-    console.log("Formatted form data:", formattedFormData);
+    console.log("Formatted form data for submission:", formattedFormData);
 
     try {
       if (isEditMode) {
-        await updateQuotation({ id, ...formattedFormData }).unwrap();
-        toast.success("Quotation updated successfully!");
-      } else {
-        await createQuotation(formattedFormData).unwrap();
-        toast.success("Quotation created successfully!");
-        setFormData({
-          document_title: "",
-          quotation_date: "",
-          due_date: "",
-          reference_number: "",
-          include_gst: false,
-          gst_value: "",
-          products: [],
-          discountType: "percent",
-          roundOff: "",
-          finalAmount: "",
-          signature_name: "",
-          signature_image: "",
-          customerId: "",
-          createdBy: userId,
+        const response = await updateQuotation({
+          id,
+          ...formattedFormData,
+        }).unwrap();
+        console.log("Update response:", response);
+        toast.success("Quotation updated successfully!", {
+          position: "top-right",
+          autoClose: 3000,
         });
+        navigate("/quotations/list");
+      } else {
+        const response = await createQuotation(formattedFormData).unwrap();
+        console.log("Create response:", response);
+        toast.success("Quotation created successfully!", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        setFormData({ ...initialFormData, createdBy: userId });
       }
     } catch (err) {
       console.error("Failed to process quotation:", err);
+      toast.error(
+        `Failed to process quotation: ${err.data?.message || "Unknown error"}`,
+        {
+          position: "top-right",
+          autoClose: 3000,
+        }
+      );
       if (err.status === 404) {
-        toast.error("Quotation not found. It may have been deleted.");
         setTimeout(() => navigate("/quotations/list"), 2000);
-      } else {
-        toast.error(
-          `Failed to process quotation: ${err.data?.message || "Unknown error"}`
-        );
       }
     }
   };
@@ -262,13 +314,19 @@ const AddQuotation = () => {
     .slice(0, 3);
 
   if (isFetching) {
-    return <div>Loading quotation details...</div>;
+    return (
+      <div className="text-center">
+        <div className="spinner-border" role="status">
+          <span className="visually-hidden">Loading quotation details...</span>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="page-wrapper">
       <div className="content">
-        <div className="page-header d-flex justify-between">
+        <div className="page-header d-flex justify-content-between">
           <div className="page-title">
             <h4 className="fw-bold">
               {isEditMode ? "Edit Quotation" : "Create Quotation"}
@@ -385,7 +443,7 @@ const AddQuotation = () => {
                 />
                 {productSearch && (
                   <ul className="list-group mt-2">
-                    {filteredProducts.map((product) => (
+                    {filteredProducts?.map((product) => (
                       <li
                         key={product.id}
                         className="list-group-item list-group-item-action"
@@ -584,7 +642,9 @@ const AddQuotation = () => {
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={isCreating || isUpdating}
+              disabled={
+                isCreating || isUpdating || (isEditMode && !existingQuotation)
+              }
             >
               {isCreating || isUpdating ? "Saving..." : "Submit"}
             </button>

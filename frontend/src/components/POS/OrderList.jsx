@@ -13,6 +13,7 @@ import PaymentMethod from "./PaymentMethod";
 import { toast } from "react-toastify";
 import InvoiceDetails from "./InvoiceDetails";
 import { useCreateInvoiceMutation } from "../../api/invoiceApi";
+
 const OrderList = ({ onConvertToOrder }) => {
   const {
     data: profileData,
@@ -20,7 +21,8 @@ const OrderList = ({ onConvertToOrder }) => {
     error: profileError,
   } = useGetProfileQuery();
   const userId = profileData?.user?.userId;
-  console.log(userId);
+  console.log("User ID:", userId);
+
   const [createInvoice] = useCreateInvoiceMutation();
   const {
     data: cartData,
@@ -38,21 +40,20 @@ const OrderList = ({ onConvertToOrder }) => {
   const [updateCart] = useUpdateCartMutation();
   const [clearCart] = useClearCartMutation();
   const [removeFromCart] = useRemoveFromCartMutation();
-  const [invoiceData, setInvoiceData] = useState({
+
+  const initialInvoiceData = {
     invoiceDate: "",
     dueDate: "",
     shipTo: "",
     signatureName: "",
     billTo: "",
-  });
-
-  const handleInvoiceChange = (key, value) => {
-    setInvoiceData((prev) => ({ ...prev, [key]: value }));
   };
 
+  const [invoiceData, setInvoiceData] = useState(initialInvoiceData);
   const [showModal, setShowModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState("");
   const [error, setError] = useState("");
+
   const customers = customerData?.data || [];
   const customerList = Array.isArray(customers) ? customers : [];
   const cartItems = Array.isArray(cartData?.cart?.items)
@@ -84,6 +85,11 @@ const OrderList = ({ onConvertToOrder }) => {
   useEffect(() => {
     validateDueDate();
   }, [invoiceData.invoiceDate, invoiceData.dueDate]);
+
+  const handleInvoiceChange = (key, value) => {
+    setInvoiceData((prev) => ({ ...prev, [key]: value }));
+  };
+
   const handleClearCart = async () => {
     if (!userId) {
       toast.error("User not logged in!");
@@ -91,7 +97,7 @@ const OrderList = ({ onConvertToOrder }) => {
     }
 
     try {
-      await clearCart({ userId }).unwrap(); // ✅ wrap userId in object
+      await clearCart({ userId }).unwrap();
       toast.success("Cart cleared!");
       refetch();
     } catch (error) {
@@ -153,7 +159,7 @@ const OrderList = ({ onConvertToOrder }) => {
     const orderData = {
       createdFor: selectedCustomerData?.customerId || "",
       createdBy: userId,
-      items: cartItems.map((item) => ({
+      products: cartItems.map((item) => ({
         id: item?.productId || "",
         name: item?.name || "Unnamed Product",
         price: item?.price || 0,
@@ -173,7 +179,7 @@ const OrderList = ({ onConvertToOrder }) => {
         orderNumber: orderData.orderNumber || "ORD123",
         invoiceDate: invoiceData.invoiceDate,
         dueDate: invoiceData.dueDate,
-        paymentMethod: "Cash", // Update if needed
+        paymentMethod: "Cash",
         status: "Pending",
         orderId: orderData.orderId || "ORD123",
         products: cartItems.map((item) => ({
@@ -184,26 +190,41 @@ const OrderList = ({ onConvertToOrder }) => {
         signatureName: invoiceData.signatureName,
       };
 
+      console.log("Submitting invoice data:", invoiceDataToSubmit);
       await createInvoice(invoiceDataToSubmit).unwrap();
-
       onConvertToOrder(orderData);
       handleClearCart();
       toast.success("Order placed and invoice created successfully!");
+      // Reset form data
+      setInvoiceData(initialInvoiceData);
+      setSelectedCustomer("");
     } catch (error) {
       console.error("Place order error:", error);
-      toast.error("Failed to place order or create invoice", error);
+      toast.error(
+        `Failed to place order or create invoice: ${
+          error.data?.message || "Unknown error"
+        }`
+      );
     }
   };
 
   if (profileLoading || cartLoading) {
-    return <div>Loading cart...</div>;
+    return (
+      <div className="text-center">
+        <div className="spinner-border" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
   }
 
   if (profileError || cartError) {
     return (
-      <div>
+      <div className="alert alert-danger">
         Error loading cart: {profileError?.message || cartError?.message}
-        <button onClick={refetch}>Retry</button>
+        <button className="btn btn-primary mt-2" onClick={refetch}>
+          Retry
+        </button>
       </div>
     );
   }
@@ -375,6 +396,7 @@ const OrderList = ({ onConvertToOrder }) => {
           <button
             className="btn btn-secondary flex-fill"
             onClick={handlePlaceOrder}
+            disabled={cartItems.length === 0 || error}
           >
             <i className="ti ti-shopping-cart me-2"></i>Generate Invoice
           </button>

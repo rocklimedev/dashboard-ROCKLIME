@@ -1,17 +1,3 @@
-/* profile.css */
-.page-wrapper {
-  display: flex;
-  justify-content: center;
-  padding: 100px;
-  background-color: #f4f6f9;
-  min-height: 100vh;
-}
-
-.content {
-  width: 100%;
-  max-width: 800px;
-}
-
 .card {
   background: #fff;
   border-radius: 8px;
