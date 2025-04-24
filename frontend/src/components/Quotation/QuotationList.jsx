@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import PageHeader from "../Common/PageHeader";
 import {
   useGetAllQuotationsQuery,
-  useDeleteQuotationMutation, // Add delete mutation
+  useDeleteQuotationMutation,
 } from "../../api/quotationApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
@@ -11,7 +11,7 @@ import TableHeader from "../Common/TableHeader";
 import Actions from "../Common/Actions";
 import ReactPaginate from "react-paginate";
 import QuotationProductModal from "./QuotationProductModal";
-import DeleteModal from "../Common/DeleteModal"; // Import DeleteModal
+import DeleteModal from "../Common/DeleteModal";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -21,21 +21,21 @@ const QuotationList = () => {
     data: quotationsData,
     isLoading,
     isError,
-    refetch, // Add refetch for list update
+    refetch,
   } = useGetAllQuotationsQuery();
   const { data: customersData } = useGetCustomersQuery();
   const { data: usersData } = useGetAllUsersQuery();
   const [deleteQuotation, { isLoading: isDeleting }] =
-    useDeleteQuotationMutation(); // Add mutation hook
+    useDeleteQuotationMutation();
 
   const quotations = quotationsData || [];
   const customers = customersData?.data || [];
   const users = usersData?.users || [];
 
-  const [showProductModal, setShowProductModal] = useState(false); // Renamed for clarity
-  const [showDeleteModal, setShowDeleteModal] = useState(false); // For DeleteModal
-  const [selectedProducts, setSelectedProducts] = useState([]); // For QuotationProductModal
-  const [quotationToDelete, setQuotationToDelete] = useState(null); // For DeleteModal
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedProducts, setSelectedProducts] = useState([]);
+  const [quotationToDelete, setQuotationToDelete] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -62,7 +62,7 @@ const QuotationList = () => {
       toast.success("Quotation deleted successfully!");
       setShowDeleteModal(false);
       setQuotationToDelete(null);
-      refetch(); // Refresh quotation list
+      refetch();
     } catch (err) {
       toast.error(
         `Failed to delete quotation: ${err.data?.message || "Unknown error"}`
@@ -72,8 +72,13 @@ const QuotationList = () => {
   };
 
   const handleOpenProductModal = (products) => {
-    console.log("Opening product modal with products:", products);
-    setSelectedProducts(products || []);
+    // Parse products if it's a JSON string
+    const parsedProducts =
+      typeof products === "string"
+        ? JSON.parse(products || "[]")
+        : products || [];
+    console.log("Opening product modal with products:", parsedProducts);
+    setSelectedProducts(parsedProducts);
     setShowProductModal(true);
   };
 
@@ -81,6 +86,15 @@ const QuotationList = () => {
     console.log("Closing product modal");
     setShowProductModal(false);
     setSelectedProducts([]);
+  };
+
+  const getProductCount = (products) => {
+    // Parse products if it's a JSON string and return the length
+    const parsedProducts =
+      typeof products === "string"
+        ? JSON.parse(products || "[]")
+        : products || [];
+    return parsedProducts.length;
   };
 
   const getCustomerName = (customerId) => {
@@ -107,7 +121,7 @@ const QuotationList = () => {
 
   return (
     <div className="page-wrapper">
-      <ToastContainer /> {/* Required for toasts */}
+      <ToastContainer />
       <div className="content">
         <PageHeader
           title="Quotations"
@@ -153,11 +167,12 @@ const QuotationList = () => {
                           <button
                             className="btn btn-link"
                             onClick={() =>
-                              handleOpenProductModal(quotation.products || [])
+                              handleOpenProductModal(quotation.products)
                             }
                             aria-label="View products"
                           >
-                            View Products ({quotation.products?.length || 0})
+                            View Products ({getProductCount(quotation.products)}
+                            )
                           </button>
                         </td>
                         <td>{quotation.discountType}</td>
@@ -184,7 +199,6 @@ const QuotationList = () => {
                 </tbody>
               </table>
             </div>
-            {/* Pagination Controls */}
             <ReactPaginate
               previousLabel={"Previous"}
               nextLabel={"Next"}

@@ -1,7 +1,6 @@
 require("dotenv").config();
 const socketio = require("socket.io");
 const express = require("express");
-const bodyParser = require("body-parser");
 const cors = require("cors");
 const db = require("./config/database");
 const authRoutes = require("./routes/auth");
@@ -26,37 +25,48 @@ const invoiceRoutes = require("./routes/invoices");
 const teamRoutes = require("./routes/teams");
 const connectMongoDB = require("./config/dbMongo");
 const setupDB = require("./utils/db");
-const app = express();
 const helmet = require("helmet");
 const keys = require("./config/keys");
-//const seedPermissions = require("./seeders/seedPermission");
 
-// Middleware
-const { port } = keys;
+const app = express();
+
+// CORS configuration
 const corsOptions = {
   origin: [
     "http://localhost:3000",
     "http://localhost:3001",
     "https://dashboard-rocklime.vercel.app",
-  ], // ✅ Remove trailing slash
+  ],
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], // ✅ Allow necessary methods
-  allowedHeaders: ["Content-Type", "Authorization"], // ✅ Specify allowed headers
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 };
 app.use(cors(corsOptions));
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+// Parse JSON bodies
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Log incoming requests for debugging
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  console.log("Request headers:", req.headers);
+  console.log("Raw request body:", req.body);
+  next();
+});
+
+// Security headers
 app.use(
   helmet({
-    contentSecurityPolicy: false, // Adjust as per your project needs
+    contentSecurityPolicy: false,
     frameguard: true,
   })
 );
+
 // Database Setup
 connectMongoDB();
 setupDB();
-//seedPermissions();0
+
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
@@ -78,14 +88,27 @@ app.use("/api/quotation", quotationRoutes);
 app.use("/api/role-permissions", rolePermissionRoutes);
 app.use("/api/invoices", invoiceRoutes);
 app.use("/api/teams", teamRoutes);
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error("Server error:", err);
+  res
+    .status(500)
+    .json({ error: "Internal server error", details: err.message });
+});
+
 // Sync Database
 db.sync()
   .then(() => console.log("Database connected and synced successfully."))
   .catch((err) => console.error("Database connection failed:", err));
 
-const server = app.listen(port, async () => {
-  console.log(`✓ Listening on port ${port}. Visit http://localhost:${port}/`);
+// Start server
+const server = app.listen(keys.port, async () => {
+  console.log(
+    `✓ Listening on port ${keys.port}. Visit http://localhost:${keys.port}/`
+  );
 });
+
 // Initialize Socket
 const io = socketio(server);
-require("./socket")(io); // Pass the io object to the socket handler
+require("./socket")(io);

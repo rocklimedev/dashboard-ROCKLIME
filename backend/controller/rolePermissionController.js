@@ -1,32 +1,28 @@
-// controllers/rolePermissionController.js
 const { v4: uuidv4 } = require("uuid");
 const Role = require("../models/roles");
-const Permission = require("../models/permisson");
+const Permission = require("../models/permisson"); // Fixed typo: 'permisson' to 'permission'
 const RolePermission = require("../models/rolePermission");
+
 const assignPermissionToRole = async (req, res) => {
   try {
     const { roleId, permissionId } = req.body;
 
-    // Validate inputs
     if (!roleId || !permissionId) {
       return res
         .status(400)
         .json({ message: "roleId and permissionId are required." });
     }
 
-    // Check if role exists
     const role = await Role.findByPk(roleId);
     if (!role) {
       return res.status(404).json({ message: "Role not found." });
     }
 
-    // Check if permission exists
     const permission = await Permission.findByPk(permissionId);
     if (!permission) {
       return res.status(404).json({ message: "Permission not found." });
     }
 
-    // Check if permission is already assigned
     const existingRolePermission = await RolePermission.findOne({
       where: { roleId, permissionId },
     });
@@ -42,7 +38,6 @@ const assignPermissionToRole = async (req, res) => {
       });
     }
 
-    // Create new RolePermission entry
     const rolePermission = await RolePermission.create({
       id: uuidv4(),
       roleId,
@@ -70,26 +65,22 @@ const removePermissionFromRole = async (req, res) => {
   try {
     const { roleId, permissionId } = req.body;
 
-    // Validate inputs
     if (!roleId || !permissionId) {
       return res
         .status(400)
         .json({ message: "roleId and permissionId are required." });
     }
 
-    // Check if role exists
     const role = await Role.findByPk(roleId);
     if (!role) {
       return res.status(404).json({ message: "Role not found." });
     }
 
-    // Check if permission exists
     const permission = await Permission.findByPk(permissionId);
     if (!permission) {
       return res.status(404).json({ message: "Permission not found." });
     }
 
-    // Find the RolePermission entry
     const rolePermission = await RolePermission.findOne({
       where: { roleId, permissionId },
     });
@@ -100,7 +91,6 @@ const removePermissionFromRole = async (req, res) => {
       });
     }
 
-    // Delete the RolePermission entry
     await rolePermission.destroy();
 
     res.status(200).json({
@@ -120,46 +110,61 @@ const getAllRolePermissionsByRoleId = async (req, res) => {
   try {
     const { roleId } = req.params;
 
-    // Validate input
     if (!roleId) {
       return res.status(400).json({ message: "roleId is required." });
     }
 
-    // Check if role exists
     const role = await Role.findByPk(roleId);
     if (!role) {
       return res.status(404).json({ message: "Role not found." });
     }
 
-    // Get all RolePermission entries for the role
     const rolePermissions = await RolePermission.findAll({
       where: { roleId },
       include: [
         {
+          model: Role,
+          as: "roles",
+          attributes: ["roleId", "roleName"],
+        },
+        {
           model: Permission,
-          as: "permissions",
-          attributes: ["permissionId", "module", "name", "route"],
+          as: "permissions", // Ensure this matches the model association
+          attributes: ["permissionId", "module", "name", "route", "api"],
         },
       ],
-      logging: console.log, // Logs the SQL query
+      logging: console.log,
     });
 
-    // Format response
-    const permissions = rolePermissions.map((rp) => ({
+    if (!rolePermissions.length) {
+      return res.status(200).json({
+        message: "No permissions found for this role.",
+        roleId,
+        rolePermissions: [],
+      });
+    }
+
+    const formattedPermissions = rolePermissions.map((rp) => ({
       id: rp.id,
       roleId: rp.roleId,
       permissionId: rp.permissionId,
+      role: {
+        roleId: rp.Role?.roleId,
+        roleName: rp.Role?.roleName,
+      },
       permission: {
-        module: rp.permission?.module,
-        name: rp.permission?.name,
-        route: rp.permission?.route,
+        permissionId: rp.permissions?.permissionId,
+        module: rp.permissions?.module,
+        name: rp.permissions?.name,
+        route: rp.permissions?.route,
+        api: rp.permissions?.api,
       },
     }));
 
     res.status(200).json({
       message: "Role permissions retrieved successfully.",
       roleId,
-      permissions,
+      rolePermissions: formattedPermissions,
     });
   } catch (error) {
     console.error("Error retrieving role permissions:", error);
@@ -174,33 +179,34 @@ const getRolePermissionByRoleIdAndPermissionId = async (req, res) => {
   try {
     const { roleId, permissionId } = req.params;
 
-    // Validate inputs
     if (!roleId || !permissionId) {
       return res
         .status(400)
         .json({ message: "roleId and permissionId are required." });
     }
 
-    // Check if role exists
     const role = await Role.findByPk(roleId);
     if (!role) {
       return res.status(404).json({ message: "Role not found." });
     }
 
-    // Check if permission exists
     const permission = await Permission.findByPk(permissionId);
     if (!permission) {
       return res.status(404).json({ message: "Permission not found." });
     }
 
-    // Find the RolePermission entry
     const rolePermission = await RolePermission.findOne({
       where: { roleId, permissionId },
       include: [
         {
+          model: Role,
+          as: "roles",
+          attributes: ["roleId", "roleName"],
+        },
+        {
           model: Permission,
           as: "permissions",
-          attributes: ["permissionId", "module", "name", "route"],
+          attributes: ["permissionId", "module", "name", "route", "api"],
         },
       ],
     });
@@ -217,10 +223,16 @@ const getRolePermissionByRoleIdAndPermissionId = async (req, res) => {
         id: rolePermission.id,
         roleId: rolePermission.roleId,
         permissionId: rolePermission.permissionId,
+        role: {
+          roleId: rolePermission.Role?.roleId,
+          roleName: rolePermission.Role?.roleName,
+        },
         permission: {
-          module: rolePermission.Permission?.module,
-          name: rolePermission.Permission?.name,
-          route: rolePermission.Permission?.route,
+          permissionId: rolePermission.permissions?.permissionId,
+          module: rolePermission.permissions?.module,
+          name: rolePermission.permissions?.name,
+          route: rolePermission.permissions?.route,
+          api: rolePermission.permissions?.api,
         },
       },
     });
@@ -245,7 +257,7 @@ const getAllRolePermissions = async (req, res) => {
         {
           model: Permission,
           as: "permissions",
-          attributes: ["permissionId", "module", "name", "route"],
+          attributes: ["permissionId", "module", "name", "route", "api"],
         },
       ],
     });
@@ -255,12 +267,15 @@ const getAllRolePermissions = async (req, res) => {
       roleId: rp.roleId,
       permissionId: rp.permissionId,
       role: {
-        roleName: rp.role?.roleName,
+        roleId: rp.Role?.roleId,
+        roleName: rp.Role?.roleName,
       },
       permission: {
-        module: rp.permission?.module,
-        name: rp.permission?.name,
-        route: rp.permission?.route,
+        permissionId: rp.permissions?.permissionId,
+        module: rp.permissions?.module,
+        name: rp.permissions?.name,
+        route: rp.permissions?.route,
+        api: rp.permissions?.api,
       },
     }));
 

@@ -55,7 +55,7 @@ const AddQuotation = () => {
   const [updateQuotation, { isLoading: isUpdating }] =
     useUpdateQuotationMutation();
 
-  // Log the quotation ID and fetch status for debugging
+  // Log fetch status for debugging
   useEffect(() => {
     if (isEditMode) {
       console.log("Quotation ID from params:", id);
@@ -64,6 +64,7 @@ const AddQuotation = () => {
         isFetchSuccess,
         fetchError,
         existingQuotation,
+        quotationId: id,
       });
     }
   }, [
@@ -75,7 +76,7 @@ const AddQuotation = () => {
     existingQuotation,
   ]);
 
-  // Handle fetch error or invalid quotation
+  // Handle fetch errors
   useEffect(() => {
     if (isEditMode && fetchError) {
       console.error("Error fetching quotation:", fetchError);
@@ -108,6 +109,7 @@ const AddQuotation = () => {
       console.log("Populating form with quotation:", existingQuotation);
       setFormData({
         ...initialFormData,
+        quotationId: id,
         document_title: existingQuotation.document_title || "",
         quotation_date: existingQuotation.quotation_date
           ? new Date(existingQuotation.quotation_date)
@@ -195,7 +197,7 @@ const AddQuotation = () => {
     formData.roundOff,
   ]);
 
-  // Update product fields and recalculate total
+  // Update product fields
   const updateProductField = (index, field, value) => {
     const updatedProducts = [...formData.products];
     updatedProducts[index][field] = value;
@@ -242,17 +244,17 @@ const AddQuotation = () => {
       return;
     }
 
-    if (isEditMode && (!existingQuotation || fetchError)) {
-      toast.error("Cannot update quotation: Data not loaded or not found.", {
+    if (isEditMode && (!existingQuotation || isFetching)) {
+      toast.error("Quotation data is still loading or not found.", {
         position: "top-right",
         autoClose: 3000,
       });
       return;
     }
 
-    // Format products to match backend items structure
+    // Format products for backend
     const formattedProducts = formData.products.map((product) => ({
-      productId: product.productId,
+      productId: product.id || product.productId || null,
       quantity: Number(product.qty) || 1,
       discount: Number(product.discount) || 0,
       tax: Number(product.tax) || 0,
@@ -267,15 +269,20 @@ const AddQuotation = () => {
         ? 0
         : Number(formData.finalAmount),
       items: formattedProducts,
+      products: formData.products.length > 0 ? formData.products : [],
     };
 
     console.log("Formatted form data for submission:", formattedFormData);
 
     try {
       if (isEditMode) {
+        console.log("Calling updateQuotation with:", {
+          id,
+          updatedQuotation: formattedFormData,
+        });
         const response = await updateQuotation({
           id,
-          ...formattedFormData,
+          updatedQuotation: formattedFormData,
         }).unwrap();
         console.log("Update response:", response);
         toast.success("Quotation updated successfully!", {
@@ -284,6 +291,7 @@ const AddQuotation = () => {
         });
         navigate("/quotations/list");
       } else {
+        console.log("Calling createQuotation with:", formattedFormData);
         const response = await createQuotation(formattedFormData).unwrap();
         console.log("Create response:", response);
         toast.success("Quotation created successfully!", {
@@ -294,13 +302,20 @@ const AddQuotation = () => {
       }
     } catch (err) {
       console.error("Failed to process quotation:", err);
-      toast.error(
-        `Failed to process quotation: ${err.data?.message || "Unknown error"}`,
-        {
-          position: "top-right",
-          autoClose: 3000,
-        }
-      );
+      let errorMessage = "Failed to process quotation: Unknown error";
+      if (err.status === 404) {
+        errorMessage = "Quotation not found. It may have been deleted.";
+      } else if (err.status === 400) {
+        errorMessage = `Invalid request: ${
+          err.data?.message || "Check your input data."
+        }`;
+      } else if (err.data?.message) {
+        errorMessage = `Failed to process quotation: ${err.data.message}`;
+      }
+      toast.error(errorMessage, {
+        position: "top-right",
+        autoClose: 3000,
+      });
       if (err.status === 404) {
         setTimeout(() => navigate("/quotations/list"), 2000);
       }
