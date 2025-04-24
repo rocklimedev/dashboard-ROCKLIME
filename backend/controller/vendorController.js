@@ -1,10 +1,14 @@
-
-const Vendor = require("../models/vendor")
+const Vendor = require("../models/vendor");
 
 const createVendor = async (req, res) => {
   try {
     const { vendorId, vendorName, brandSlug, brandId } = req.body;
-    const vendor = await Vendor.create({ vendorId, vendorName, brandSlug, brandId });
+    const vendor = await Vendor.create({
+      vendorId,
+      vendorName,
+      brandSlug,
+      brandId,
+    });
     res.status(201).json(vendor);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -35,13 +39,13 @@ const getVendorById = async (req, res) => {
 
 const updateVendor = async (req, res) => {
   try {
-    const {id} = req.params;
-    const { vendorName, brandId, brandSlug } = req.body;
+    const { id } = req.params;
+    const { vendorId, vendorName, brandSlug, brandId } = req.body;
     const vendor = await Vendor.findByPk(id);
     if (!vendor) {
       return res.status(404).json({ message: "Vendor not found." });
     }
-    await vendor.update({vendorName, brandId, brandSlug})
+    await vendor.update({ vendorId, vendorName, brandSlug, brandId });
     res.json({ message: "Vendor updated successfully.", vendor });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -62,4 +66,10 @@ const deleteVendor = async (req, res) => {
   }
 };
 
-module.exports = {createVendor, getVendors, getVendorById, updateVendor, deleteVendor,}
+module.exports = {
+  createVendor,
+  getVendors,
+  getVendorById,
+  updateVendor,
+  deleteVendor,
+};
