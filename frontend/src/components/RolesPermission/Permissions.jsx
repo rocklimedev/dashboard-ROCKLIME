@@ -95,13 +95,6 @@ const Permissions = () => {
       isUpdating,
     });
 
-    console.log("Building permissionsByModule:", {
-      rolePermissionsData,
-      permissions,
-      modules,
-      assignedPermissions,
-    });
-
     const permissionsMap = modules.reduce((acc, module) => {
       acc[module] = permissionTypes.reduce((perms, type) => {
         const permission = permissions.find(
@@ -109,7 +102,7 @@ const Permissions = () => {
         );
         const isGranted = permission
           ? assignedPermissions.some(
-              (p) => p.permissionId === permission.permissionId
+              (rp) => rp.permissionId === permission.permissionId
             )
           : false;
         perms[type] = isGranted;
@@ -120,6 +113,7 @@ const Permissions = () => {
 
     setPermissionsByModule((prev) => {
       if (JSON.stringify(prev) !== JSON.stringify(permissionsMap)) {
+        console.log("Updating permissionsByModule:", permissionsMap);
         return permissionsMap;
       }
       return prev;

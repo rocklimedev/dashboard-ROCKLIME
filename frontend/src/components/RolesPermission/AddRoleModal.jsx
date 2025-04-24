@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useCreateRoleMutation } from "../../api/rolesApi"; // Import mutation
 
-const AddRoleModal = ({ show, onClose, onAddRole }) => {
+const AddRoleModal = ({ show, onClose }) => {
   const [roleName, setRoleName] = useState("");
+  const [createRole, { isLoading }] = useCreateRoleMutation(); // Use mutation hook
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -12,12 +14,15 @@ const AddRoleModal = ({ show, onClose, onAddRole }) => {
       return;
     }
     try {
-      await onAddRole(roleName);
+      await createRole({ roleName }).unwrap();
       toast.success("Role added successfully!");
       setRoleName("");
       onClose();
     } catch (error) {
-      toast.error("Failed to add role. Please try again.");
+      toast.error(
+        `Failed to add role: ${error.data?.message || "Please try again."}`
+      );
+      console.error("Error adding role:", error);
     }
   };
 
@@ -55,6 +60,7 @@ const AddRoleModal = ({ show, onClose, onAddRole }) => {
                     value={roleName}
                     onChange={(e) => setRoleName(e.target.value)}
                     required
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -64,11 +70,16 @@ const AddRoleModal = ({ show, onClose, onAddRole }) => {
                   className="btn btn-secondary"
                   onClick={handleClose}
                   data-bs-dismiss="modal"
+                  disabled={isLoading}
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  Add New
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Adding..." : "Add New"}
                 </button>
               </div>
             </form>

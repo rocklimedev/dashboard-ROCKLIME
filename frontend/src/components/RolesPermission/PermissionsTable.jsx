@@ -64,6 +64,7 @@ const PermissionsTable = ({ permissions }) => {
                 </th>
                 <th>Route</th>
                 <th>Name</th>
+                <th>API</th>
                 <th>Created Date</th>
               </tr>
             </thead>
@@ -73,7 +74,7 @@ const PermissionsTable = ({ permissions }) => {
                   <React.Fragment key={module}>
                     {/* Module Header */}
                     <tr className="table-active">
-                      <td colSpan="4">
+                      <td colSpan="5">
                         <strong>{module}</strong>
                       </td>
                     </tr>
@@ -90,6 +91,7 @@ const PermissionsTable = ({ permissions }) => {
                         </td>
                         <td>{permission.route}</td>
                         <td>{permission.name}</td>
+                        <td>{permission.api}</td>
                         <td>
                           {new Date(permission.createdAt).toLocaleDateString()}
                         </td>

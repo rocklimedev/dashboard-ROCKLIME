@@ -4,6 +4,13 @@ import { Modal, Button, Table } from "react-bootstrap";
 const QuotationProductModal = ({ show, onHide, products = [] }) => {
   const [selectedProduct, setSelectedProduct] = useState(null);
 
+  // Normalize products to ensure it's an array
+  const normalizedProducts = Array.isArray(products)
+    ? products
+    : typeof products === "string"
+    ? JSON.parse(products || "[]")
+    : [];
+
   const handleRowClick = (product) => {
     setSelectedProduct(product);
   };
@@ -34,20 +41,20 @@ const QuotationProductModal = ({ show, onHide, products = [] }) => {
               </tr>
             </thead>
             <tbody>
-              {products.length > 0 ? (
-                products.map((product, index) => (
+              {normalizedProducts.length > 0 ? (
+                normalizedProducts.map((product, index) => (
                   <tr
                     key={index}
                     onClick={() => handleRowClick(product)}
                     style={{ cursor: "pointer" }}
                   >
                     <td>{index + 1}</td>
-                    <td>{product.name}</td>
-                    <td>{product.quantity}</td>
-                    <td>{product.price}</td>
-                    <td>{product.discount}</td>
-                    <td>{product.tax}</td>
-                    <td>{product.total}</td>
+                    <td>{product.name || "N/A"}</td>
+                    <td>{product.quantity || product.qty || 0}</td>
+                    <td>{product.price || product.sellingPrice || 0}</td>
+                    <td>{product.discount || 0}</td>
+                    <td>{product.tax || 0}</td>
+                    <td>{product.total || 0}</td>
                   </tr>
                 ))
               ) : (
@@ -67,7 +74,6 @@ const QuotationProductModal = ({ show, onHide, products = [] }) => {
         </Modal.Footer>
       </Modal>
 
-      {/* Product Details Modal */}
       {selectedProduct && (
         <Modal show centered onHide={() => setSelectedProduct(null)}>
           <Modal.Header closeButton>
@@ -75,22 +81,24 @@ const QuotationProductModal = ({ show, onHide, products = [] }) => {
           </Modal.Header>
           <Modal.Body>
             <p>
-              <strong>Product Name:</strong> {selectedProduct.name}
+              <strong>Product Name:</strong> {selectedProduct.name || "N/A"}
             </p>
             <p>
-              <strong>Quantity:</strong> {selectedProduct.quantity}
+              <strong>Quantity:</strong>{" "}
+              {selectedProduct.quantity || selectedProduct.qty || 0}
             </p>
             <p>
-              <strong>Price:</strong> {selectedProduct.price}
+              <strong>Price:</strong>{" "}
+              {selectedProduct.price || selectedProduct.sellingPrice || 0}
             </p>
             <p>
-              <strong>Discount:</strong> {selectedProduct.discount}%
+              <strong>Discount:</strong> {selectedProduct.discount || 0}%
             </p>
             <p>
-              <strong>Tax:</strong> {selectedProduct.tax}%
+              <strong>Tax:</strong> {selectedProduct.tax || 0}%
             </p>
             <p>
-              <strong>Total:</strong> {selectedProduct.total}
+              <strong>Total:</strong> {selectedProduct.total || 0}
             </p>
           </Modal.Body>
           <Modal.Footer>

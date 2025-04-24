@@ -4,6 +4,8 @@ const QuotationItem = require("../models/quotationItem");
 const XLSX = require("xlsx");
 const fs = require("fs");
 const path = require("path");
+const sequelize = require("../config/database");
+
 // Create a new quotation
 exports.createQuotation = async (req, res) => {
   try {
@@ -75,7 +77,9 @@ exports.getQuotationById = async (req, res) => {
 
 // Update a quotation and its items
 // controllers/quotationController.js
+
 exports.updateQuotation = async (req, res) => {
+  const t = await sequelize.transaction();
   try {
     const { id } = req.params;
     const { items, ...quotationData } = req.body;
@@ -86,36 +90,48 @@ exports.updateQuotation = async (req, res) => {
 
     // Validate input
     if (!id) {
+      await t.rollback();
       return res.status(400).json({ message: "Quotation ID is required" });
     }
+    if (Object.keys(quotationData).length === 0 && !items) {
+      await t.rollback();
+      return res.status(400).json({ message: "No data provided for update" });
+    }
     if (items && !Array.isArray(items)) {
+      await t.rollback();
       return res.status(400).json({ message: "Items must be an array" });
     }
 
-    // Sanity Check: Verify if the record exists in the database
-    const check = await Quotation.findOne({ where: { quotationId: id } });
+    // Check if quotation exists
+    const check = await Quotation.findOne({
+      where: { quotationId: id },
+      transaction: t,
+    });
     if (!check) {
-      console.log("❌ ID exists in DB, but not matched via Sequelize");
+      console.log("❌ Quotation not found in DB for ID:", id);
+      await t.rollback();
       return res.status(404).json({ message: "Quotation not found" });
-    } else {
-      console.log("✅ Sequelize did find the record:", check.toJSON());
     }
+    console.log("✅ Found quotation:", check.toJSON());
 
-    // Ensure products are in JSON format
+    // Stringify products if provided
     if (quotationData.products && typeof quotationData.products !== "string") {
       quotationData.products = JSON.stringify(quotationData.products);
     }
 
-    // Update MySQL Quotation
-    const updated = await Quotation.update(quotationData, {
-      where: { quotationId: id },
-    });
-
-    console.log("Update result:", updated); // Should log [1] if updated successfully
-
-    if (!updated[0]) {
-      console.warn("Quotation not found for ID:", id);
-      return res.status(404).json({ message: "Quotation not found" });
+    // Update MySQL Quotation if quotationData is not empty
+    let updated;
+    if (Object.keys(quotationData).length > 0) {
+      updated = await Quotation.update(quotationData, {
+        where: { quotationId: id },
+        transaction: t,
+      });
+      console.log("Update result:", updated);
+      if (!updated[0]) {
+        console.warn("No rows updated for ID:", id);
+        await t.rollback();
+        return res.status(404).json({ message: "Quotation not found" });
+      }
     }
 
     // Update MongoDB Items
@@ -125,7 +141,7 @@ exports.updateQuotation = async (req, res) => {
         {
           $set: {
             items: items.map((item) => ({
-              productId: item.productId,
+              productId: item.productId || null,
               quantity: item.quantity,
               discount: item.discount,
               tax: item.tax,
@@ -136,21 +152,21 @@ exports.updateQuotation = async (req, res) => {
         { upsert: true }
       );
       console.log("MongoDB QuotationItem updated for ID:", id);
-    } else {
-      // Remove items if none provided
+    } else if (items) {
       await QuotationItem.deleteOne({ quotationId: id });
       console.log("MongoDB QuotationItem removed for ID:", id);
     }
 
+    await t.commit();
     res.status(200).json({ message: "Quotation updated successfully" });
   } catch (error) {
+    await t.rollback();
     console.error("Error updating quotation:", error);
     res
       .status(500)
       .json({ error: "Failed to update quotation", details: error.message });
   }
 };
-
 // Delete a quotation and its items
 exports.deleteQuotation = async (req, res) => {
   try {

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import PageHeader from "../Common/PageHeader";
-import { useGetRolesQuery, useCreateRoleMutation } from "../../api/rolesApi";
+import { useGetRolesQuery } from "../../api/rolesApi"; // Removed useCreateRoleMutation
 import { useGetAllPermissionsQuery } from "../../api/permissionApi";
 import PermissionsTable from "./PermissionsTable";
 import AddRoleModal from "./AddRoleModal";
@@ -12,7 +12,6 @@ const RolePermission = () => {
     isLoading: isPermissionsLoading,
     isError: isPermissionsError,
   } = useGetAllPermissionsQuery();
-  const [createRole] = useCreateRoleMutation();
   const [showModal, setShowModal] = useState(false);
 
   const handleOpenRoleModal = () => {
@@ -21,15 +20,6 @@ const RolePermission = () => {
 
   const handleCloseRoleModal = () => {
     setShowModal(false);
-  };
-
-  const handleAddRole = async (roleName) => {
-    try {
-      await createRole({ roleName }).unwrap();
-      setShowModal(false);
-    } catch (err) {
-      console.error("Failed to create role:", err);
-    }
   };
 
   const permissions = Array.isArray(permissionsData?.permissions)
@@ -88,8 +78,6 @@ const RolePermission = () => {
                           </a>
                           <a
                             href="#"
-                            data-bs-toggle="modal"
-                            data-bs-target="#delete_modal"
                             className="d-flex align-items-center p-2 border rounded"
                           >
                             <i className="ti ti-trash"></i>
@@ -107,11 +95,7 @@ const RolePermission = () => {
         <PageHeader title="Permissions" subtitle="Manage your Permissions" />
         <PermissionsTable permissions={permissions} />
 
-        <AddRoleModal
-          show={showModal}
-          onClose={handleCloseRoleModal}
-          onAddRole={handleAddRole}
-        />
+        <AddRoleModal show={showModal} onClose={handleCloseRoleModal} />
       </div>
     </div>
   );

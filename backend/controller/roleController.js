@@ -115,14 +115,14 @@ const checkUserRoleStatus = async () => {
 
 // Create a new role
 const createRole = async (req, res) => {
-  const { role_name, permissions } = req.body;
+  const { roleName } = req.body;
 
   try {
     // Create a new role and associate permissions
-    const newRole = await RolePermission.create({
+    const newRole = await Roles.create({
       roleId: uuidv4(),
-      role_name,
-      permissions, // This will be an array of permission IDs
+      roleName,
+      // This will be an array of permission IDs
     });
 
     res.status(201).json(newRole);
@@ -154,7 +154,7 @@ const deleteRole = async (req, res) => {
   const { roleId } = req.params;
 
   try {
-    const role = await RolePermission.findByPk(roleId);
+    const role = await Roles.findByPk(roleId);
 
     if (!role) {
       return res.status(404).json({ message: "Role not found" });
@@ -269,43 +269,41 @@ const removePermissionFromRole = async (req, res) => {
 };
 
 const getRolePermissions = async (req, res) => {
-  const { roleId } = req.params;
-
   try {
-    // Validate if role exists
-    const roleExists = await Roles.findByPk(roleId);
-    if (!roleExists) {
-      return res.status(404).json({ message: "Role not found" });
+    const { roleId } = req.params;
+    if (!roleId) {
+      return res.status(400).json({ message: "Role ID is required" });
     }
 
-    // Fetch all permissions associated with the role
     const rolePermissions = await RolePermission.findAll({
       where: { roleId },
       include: [
+        { model: Roles, attributes: ["roleId", "roleName"] },
         {
           model: Permission,
-          attributes: ["id", "module", "name"], // Fetch only relevant fields
+          attributes: ["permissionId", "module", "api", "route"],
         },
       ],
     });
 
-    if (rolePermissions.length === 0) {
+    if (!rolePermissions.length) {
       return res.status(200).json({
-        message: "No permissions assigned to this role",
-        permissions: [],
+        message: "No permissions found for this role",
+        rolePermissions: [],
       });
     }
 
-    // Extract permissions
-    const permissions = rolePermissions.map((rp) => rp.Permission);
-
-    res.status(200).json({ roleId, permissions });
+    res.status(200).json({
+      message: "All role permissions retrieved successfully.",
+      rolePermissions,
+    });
   } catch (error) {
     console.error("Error fetching role permissions:", error);
-    res.status(500).json({ message: "Error retrieving permissions for role" });
+    res
+      .status(500)
+      .json({ message: "Failed to fetch role permissions", error });
   }
 };
-
 const updateRolePermissions = async (req, res) => {
   const { roleId } = req.params;
   const { permissions } = req.body; // Expect an array of permission IDs

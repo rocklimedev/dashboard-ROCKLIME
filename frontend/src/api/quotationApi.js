@@ -8,15 +8,10 @@ export const quotationApi = createApi({
     credentials: "include",
     prepareHeaders: (headers) => {
       const token = localStorage.getItem("token");
-
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
       }
-      headers.set(
-        "Accept",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-      );
-
+      headers.set("Content-Type", "application/json");
       return headers;
     },
   }),
@@ -24,9 +19,11 @@ export const quotationApi = createApi({
   endpoints: (builder) => ({
     getAllQuotations: builder.query({
       query: () => "/",
+      providesTags: ["Quotations"],
     }),
     getQuotationById: builder.query({
       query: (id) => `/${id}`,
+      providesTags: (result, error, id) => [{ type: "Quotations", id }],
     }),
     createQuotation: builder.mutation({
       query: (newQuotation) => ({
@@ -37,11 +34,17 @@ export const quotationApi = createApi({
       invalidatesTags: ["Quotations"],
     }),
     updateQuotation: builder.mutation({
-      query: ({ id, updatedQuotation }) => ({
-        url: `/${id}`,
-        method: "PUT",
-        body: updatedQuotation,
-      }),
+      query: ({ id, updatedQuotation }) => {
+        console.log("updateQuotation payload:", { id, updatedQuotation }); // Debug payload
+        return {
+          url: `/${id}`,
+          method: "PUT",
+          body: updatedQuotation,
+          headers: {
+            Accept: "application/json",
+          },
+        };
+      },
       invalidatesTags: (result, error, { id }) => [{ type: "Quotations", id }],
     }),
     deleteQuotation: builder.mutation({
@@ -55,7 +58,11 @@ export const quotationApi = createApi({
       query: (id) => ({
         url: `/export/${id}`,
         method: "POST",
-        responseHandler: async (response) => response.blob(), // Ensures response is treated as a Blob
+        headers: {
+          Accept:
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        },
+        responseHandler: async (response) => response.blob(),
       }),
     }),
   }),
