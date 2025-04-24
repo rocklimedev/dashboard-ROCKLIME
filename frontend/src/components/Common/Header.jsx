@@ -228,11 +228,6 @@ const Header = ({ toggleSidebar }) => {
               </Link>
             </li>
           )}
-          <li class="nav-item nav-item-box">
-            <a href="/settings">
-              <FcSettings />
-            </a>
-          </li>
 
           <li
             className="nav-item nav-item-box"
@@ -278,9 +273,7 @@ const Header = ({ toggleSidebar }) => {
               <Link to={`/u/${user?.user?.userId}`} className="dropdown-item">
                 <FaUserCircle /> Profile
               </Link>
-              <Link to="/settings" className="dropdown-item">
-                <FcSettings /> Settings
-              </Link>
+
               <button
                 className="dropdown-item"
                 onClick={handleLogout}
@@ -313,15 +306,17 @@ const Header = ({ toggleSidebar }) => {
             </button>
           ) : null}
           <div class="dropdown-menu dropdown-menu-right">
-            <a class="dropdown-item" href="/u/:id">
-              My Profile
-            </a>
-            <a class="dropdown-item" href="/settings/general">
-              Settings
-            </a>
-            <a class="dropdown-item" href="#">
-              Logout
-            </a>
+            <Link to={`/u/${user?.user?.userId}`} className="dropdown-item">
+              <FaUserCircle /> Profile
+            </Link>
+
+            <button
+              className="dropdown-item"
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+            >
+              <BiLogOut /> {isLoggingOut ? "Logging out..." : "Logout"}
+            </button>
           </div>
         </div>
       </div>
