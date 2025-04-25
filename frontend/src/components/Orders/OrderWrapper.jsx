@@ -13,15 +13,30 @@ import {
   useDeleteOrderMutation,
 } from "../../api/orderApi";
 import { useGetTeamByIdQuery } from "../../api/teamApi";
-import { FaEdit, FaOpencart, FaPause, FaTrash } from "react-icons/fa";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import DatesModal from "./DateModal";
+import OrderItem from "./Orderitem";
+import { useTeamDataMap } from "../../data/useTeamDataMap";
+// Custom Hook to fetch team name by teamId
+const useTeamName = (teamId) => {
+  const { data, isLoading } = useGetTeamByIdQuery(teamId, { skip: !teamId });
+  return {
+    teamName: data?.name || "Unassigned",
+    isLoading,
+  };
+};
 
 const OrderWrapper = () => {
   const [activeTab, setActiveTab] = useState("orders");
   const [showModal, setShowModal] = useState(false);
   const [showHoldModal, setShowHoldModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showDatesModal, setShowDatesModal] = useState(false);
+  const [selectedDates, setSelectedDates] = useState({
+    dueDate: null,
+    followupDates: [],
+  });
   const [filters, setFilters] = useState({
     status: "",
     priority: "",
@@ -35,8 +50,8 @@ const OrderWrapper = () => {
     return (
       filters.status !== "" ||
       filters.priority !== "" ||
-      filters.important !== false ||
-      filters.trash !== false ||
+      filters.important ||
+      filters.trash ||
       filters.page > 1
     );
   }, [filters]);
@@ -71,11 +86,6 @@ const OrderWrapper = () => {
   const isLoading = isFiltered ? filteredLoading : allLoading;
   const error = isFiltered ? filteredError : allError;
 
-  const { data: teamData, isLoading: teamLoading } = useGetTeamByIdQuery(
-    selectedOrder?.assignedTo,
-    { skip: !selectedOrder?.assignedTo }
-  );
-
   const [createOrder] = useCreateOrderMutation();
   const [updateOrder] = useUpdateOrderByIdMutation();
   const [deleteOrder] = useDeleteOrderMutation();
@@ -83,10 +93,6 @@ const OrderWrapper = () => {
   const handleOpenModal = () => {
     setSelectedOrder(null);
     setShowModal(true);
-  };
-
-  const handlePageChange = (page) => {
-    setFilters((prev) => ({ ...prev, page }));
   };
 
   const handleEditClick = (order) => {
@@ -146,6 +152,10 @@ const OrderWrapper = () => {
     }
   };
 
+  const handlePageChange = (page) => {
+    setFilters((prev) => ({ ...prev, page }));
+  };
+
   const handleClearFilters = () => {
     setFilters({
       status: "",
@@ -157,6 +167,35 @@ const OrderWrapper = () => {
     });
     toast.success("Filters cleared!");
   };
+
+  const handleOpenDatesModal = (dueDate, followupDates) => {
+    setSelectedDates({ dueDate, followupDates });
+    setShowDatesModal(true);
+  };
+
+  const handleCloseDatesModal = () => {
+    setShowDatesModal(false);
+    setSelectedDates({ dueDate: null, followupDates: [] });
+  };
+
+  const isDueDateClose = (dueDate) => {
+    if (!dueDate) return false;
+    const today = new Date();
+    const due = new Date(dueDate);
+    const diffTime = due - today;
+    const diffDays = diffTime / (1000 * 60 * 60 * 24);
+    return diffDays <= 3;
+  };
+  // In OrderWrapper.jsx
+  const uniqueTeamIds = useMemo(() => {
+    const ids = new Set();
+    orders.forEach((order) => {
+      if (order.assignedTo) ids.add(order.assignedTo);
+    });
+    return Array.from(ids);
+  }, [orders]);
+
+  const teamDataMap = useTeamDataMap(uniqueTeamIds);
 
   return (
     <div className="page-wrapper notes-page-wrapper">
@@ -222,99 +261,26 @@ const OrderWrapper = () => {
                 <>
                   <div className="row">
                     {orders.map((order) => (
-                      <div key={order.id} className="col-md-4 d-flex">
-                        <div className="card rounded-3 mb-4 flex-fill">
-                          <div className="card-body p-4">
-                            <div className="d-flex align-items-center justify-content-between">
-                              <span className="badge bg-outline-success d-inline-flex align-items-center">
-                                <i className="fas fa-circle fs-6 me-1"></i>
-                                {order.priority || "None"} -{" "}
-                                {teamLoading
-                                  ? "Loading..."
-                                  : teamData?.name ||
-                                    order.assignedTo ||
-                                    "Unassigned"}
-                              </span>
-                              <div>
-                                <a
-                                  href="#"
-                                  data-bs-toggle="dropdown"
-                                  aria-expanded="false"
-                                >
-                                  <i className="fas fa-ellipsis-v"></i>
-                                </a>
-                                <div className="dropdown-menu notes-menu dropdown-menu-end">
-                                  <a
-                                    href={`/orders/${order.id}`}
-                                    className="dropdown-item"
-                                  >
-                                    <FaOpencart /> Open Order
-                                  </a>
-                                  <a
-                                    href="#"
-                                    className="dropdown-item"
-                                    onClick={() => handleEditClick(order)}
-                                  >
-                                    <FaEdit /> Edit
-                                  </a>
-                                  <a
-                                    href="#"
-                                    className="dropdown-item"
-                                    onClick={() => handleViewInvoice(order)}
-                                  >
-                                    <i className="fas fa-file-invoice"></i> View
-                                    Invoice
-                                  </a>
-                                  <a
-                                    href="#"
-                                    className="dropdown-item"
-                                    onClick={() => handleHoldClick(order)}
-                                  >
-                                    <FaPause /> Hold Order
-                                  </a>
-                                  <a
-                                    href="#"
-                                    className="dropdown-item text-danger"
-                                    onClick={() => handleDeleteOrder(order.id)}
-                                  >
-                                    <FaTrash /> Delete
-                                  </a>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="my-3">
-                              <h5 className="text truncate mb-1">
-                                <a href={`/orders/${order.id}`}>
-                                  {order.title || "Untitled Order"} -
-                                  {order.pipeline || "No Pipeline"}
-                                </a>
-                              </h5>
-                              <p className="mb-3 d-flex align-items-center text-dark">
-                                <i className="ti ti-calendar me-1"></i>
-                                {order.dueDate || "No Due Date"} -{" "}
-                                {order.followupDates?.length
-                                  ? order.followupDates.join(", ")
-                                  : "No Follow-up"}
-                              </p>
-                              <p className="text-truncate line-clamb-2 text-wrap">
-                                {order.description ||
-                                  "No description available"}
-                              </p>
-                            </div>
-
-                            <div className="d-flex align-items-center justify-content-between border-top pt-3">
-                              <span className="text-warning d-flex align-items-center">
-                                <i className="fas fa-square square-rotate fs-10 me-1"></i>
-                                {order.source || "Unknown"}
-                              </span>
-                              <span className="text-info d-flex align-items-center">
-                                <i className="fas fa-square square-rotate fs-10 me-1"></i>
-                                {order.status || "Unknown"}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
+                      <div className="col-md-6" key={order.id}>
+                        <OrderItem
+                          order={order}
+                          teamName={
+                            order.assignedTo && teamDataMap[order.assignedTo]
+                              ? teamDataMap[order.assignedTo].teamName
+                              : "Unassigned"
+                          }
+                          isTeamLoading={
+                            order.assignedTo && teamDataMap[order.assignedTo]
+                              ? teamDataMap[order.assignedTo].isLoading
+                              : false
+                          }
+                          onEditClick={handleEditClick}
+                          onHoldClick={handleHoldClick}
+                          onViewInvoice={handleViewInvoice}
+                          onDeleteOrder={handleDeleteOrder}
+                          onOpenDatesModal={handleOpenDatesModal}
+                          isDueDateClose={isDueDateClose}
+                        />
                       </div>
                     ))}
                   </div>
@@ -348,7 +314,16 @@ const OrderWrapper = () => {
           <OnHoldModal
             visible={showHoldModal}
             onClose={handleModalClose}
+            foot
             order={selectedOrder}
+          />
+        )}
+        {showDatesModal && (
+          <DatesModal
+            show={showDatesModal}
+            onHide={handleCloseDatesModal}
+            dueDate={selectedDates.dueDate}
+            followupDates={selectedDates.followupDates}
           />
         )}
       </div>

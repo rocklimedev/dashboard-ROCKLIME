@@ -113,55 +113,60 @@ const POSWrapper = () => {
   return (
     <div className="page-wrapper pos-pg-wrapper ms-0">
       <div className="content pos-design p-0">
-        <div className="row align-items-start pos-wrapper">
-          <div className="col-md-12 col-lg-7 col-xl-8">
-            <div className="pos-categories tabs_wrapper pb-0">
-              <div className="mb-3">
-                {isLoading ? (
-                  <h5 className="mb-1">Loading...</h5>
-                ) : isError ? (
-                  <h5 className="mb-1 text-danger">Error fetching user</h5>
-                ) : (
-                  <>
-                    <h5 className="mb-1">Welcome, {userName}</h5>
-                    <p>{currentDate}</p>
-                  </>
-                )}
-                <div className="d-flex align-items-center flex-wrap mb-2">
-                  <div className="input-icon-start search-pos position-relative mb-2 me-3">
-                    <span className="input-icon-addon">
-                      <i className="ti ti-search"></i>
-                    </span>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="Search Product"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+        <div className="row  pos-wrapper">
+          <div className="col-md-12 col-lg-7 col-xl-8 d-flex">
+            <div className="pos-categories tabs_wrapper p-0 flex-fill">
+              <div class="tab-content-wrap">
+                <div class="d-flex align-items-center justify-content-between flex-wrap mb-2">
+                  <div className="mb-3">
+                    {isLoading ? (
+                      <h5 className="mb-1">Loading...</h5>
+                    ) : isError ? (
+                      <h5 className="mb-1 text-danger">Error fetching user</h5>
+                    ) : (
+                      <>
+                        <h5 className="mb-1">Welcome, {userName}</h5>
+                        <p>{currentDate}</p>
+                      </>
+                    )}
+                    <div className="d-flex align-items-center flex-wrap mb-2">
+                      <div className="input-icon-start search-pos position-relative mb-2 me-3">
+                        <span className="input-icon-addon">
+                          <i className="ti ti-search"></i>
+                        </span>
+                        <input
+                          type="text"
+                          className="form-control"
+                          placeholder="Search Product"
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                      </div>
+                      <button
+                        className="btn btn-sm btn-dark mb-2 me-2"
+                        onClick={() => setActiveTab("brands")}
+                      >
+                        <i className="ti ti-tag me-1"></i>View All Brands
+                      </button>
+                      <button
+                        className="btn btn-sm btn-dark mb-2 me-2"
+                        onClick={() => setActiveTab("quotations")}
+                      >
+                        <i className="ti ti-star me-1"></i>Choose from
+                        Quotations
+                      </button>
+                      <button
+                        className="btn btn-sm btn-dark mb-2 me-2"
+                        onClick={() => setActiveTab("products")}
+                      >
+                        <i className="ti ti-box me-1"></i>View Products
+                      </button>
+                    </div>
                   </div>
-                  <button
-                    className="btn btn-sm btn-dark mb-2 me-2"
-                    onClick={() => setActiveTab("brands")}
-                  >
-                    <i className="ti ti-tag me-1"></i>View All Brands
-                  </button>
-                  <button
-                    className="btn btn-sm btn-dark mb-2 me-2"
-                    onClick={() => setActiveTab("quotations")}
-                  >
-                    <i className="ti ti-star me-1"></i>Choose from Quotations
-                  </button>
-                  <button
-                    className="btn btn-sm btn-dark mb-2 me-2"
-                    onClick={() => setActiveTab("products")}
-                  >
-                    <i className="ti ti-box me-1"></i>View Products
-                  </button>
+
+                  {renderTabContent()}
                 </div>
               </div>
-
-              {renderTabContent()}
             </div>
           </div>
           <OrderList onConvertToOrder={handleConvertToCart} />

@@ -45,6 +45,10 @@ const InvoiceDetails = () => {
     isError: productErrors,
   } = useMultipleProducts(products);
 
+  // Debugging logs
+  console.log("Products:", products);
+  console.log("Product Details Map:", Array.from(productDetailsMap.entries()));
+
   // State for drag functionality
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -84,7 +88,14 @@ const InvoiceDetails = () => {
   if (isError || productErrors)
     return (
       <div style={{ textAlign: "center", padding: "20px", color: "red" }}>
-        Error fetching invoice.
+        Error fetching invoice or product details.
+      </div>
+    );
+
+  if (products.length === 0)
+    return (
+      <div style={{ textAlign: "center", padding: "20px" }}>
+        No products found in this invoice.
       </div>
     );
 
@@ -242,11 +253,23 @@ const InvoiceDetails = () => {
             <tbody>
               {products.map((p, idx) => {
                 const prod = productDetailsMap.get(p.productId);
+                // Log product details for debugging
+                console.log(`Product ${p.productId}:`, prod);
                 return (
                   <tr key={p.productId || idx}>
                     <td>{idx + 1}</td>
-                    <td>{prod?.name || "Unknown Product"}</td>
-                    <td>{prod?.product_code || "—"}</td>
+                    <td>
+                      {prod?.name ||
+                        prod?.title ||
+                        p.productId ||
+                        "Unknown Product"}
+                    </td>
+                    <td>
+                      {prod?.product_code ||
+                        prod?.productCode ||
+                        prod?.hsnCode ||
+                        "—"}
+                    </td>
                     <td>{p.quantity || 0}</td>
                     <td>{p.price ? p.price.toFixed(2) : "0.00"}</td>
                     <td>
@@ -259,6 +282,15 @@ const InvoiceDetails = () => {
               })}
             </tbody>
           </table>
+
+          {productDetailsMap.size === 0 && (
+            <div
+              style={{ textAlign: "center", color: "red", marginTop: "10px" }}
+            >
+              Warning: No product details found. Please check product IDs or API
+              connectivity.
+            </div>
+          )}
 
           <div style={styles.summarySection}>
             <p style={styles.summaryItem}>

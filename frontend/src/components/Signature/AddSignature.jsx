@@ -25,13 +25,15 @@ const AddSignature = ({ signatureId, existingSignature, onclose }) => {
       setUserId(existingSignature.userId);
     }
   }, [signatureId, existingSignature]);
+
   const handleClose = () => {
-    setSignatureImage("");
-    setSignatureImage("");
-    setMarkAsDefault("");
+    setSignatureImage(null);
+    setSignatureName("");
+    setMarkAsDefault(false);
     setUserId("");
     onclose();
   };
+
   const handleFormSubmit = async (e) => {
     e.preventDefault();
 
@@ -45,13 +47,13 @@ const AddSignature = ({ signatureId, existingSignature, onclose }) => {
       if (signatureId) {
         await updateSignature({ signatureId, body: formData }).unwrap();
         toast.success("Signature updated successfully!", {
-          position: toast.POSITION.TOP_RIGHT,
+          position: "top-right", // Hardcoded to avoid POSITION issue
           autoClose: 5000,
         });
       } else {
         await createSignature(formData).unwrap();
         toast.success("Signature added successfully!", {
-          position: toast.POSITION.TOP_RIGHT,
+          position: "top-right", // Hardcoded to avoid POSITION issue
           autoClose: 5000,
         });
       }
@@ -62,7 +64,7 @@ const AddSignature = ({ signatureId, existingSignature, onclose }) => {
       setMarkAsDefault(false);
     } catch (error) {
       toast.error("Failed to save signature.", {
-        position: toast.POSITION.TOP_RIGHT,
+        position: "top-right", // Hardcoded to avoid POSITION issue
         autoClose: 5000,
       });
       console.error("Error saving signature:", error);
