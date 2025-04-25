@@ -2,206 +2,91 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" href="./fav_icon.png" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="Web site created using create-react-app"
-    />
-    <link rel="apple-touch-icon" href="./fav_icon.png" />
-    <!--
-      manifest.json provides metadata used when your web app is installed on a
-      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
-    -->
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <!--
-      Notice the use of %PUBLIC_URL% in the tags above.
-      It will be replaced with the URL of the `public` folder during the build.
-      Only files inside the `public` folder can be referenced from the HTML.
+    <meta name="description" content="Rocklime Dashboard - Admin Panel" />
 
-      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
-      work correctly both with client-side routing and a non-root public URL.
-      Learn how to configure a non-root public URL by running `npm run build`.
-    -->
-    <script
-      src="assets/js/theme-script.js"
-      type="d3614f96d7b979489bf8cf23-text/javascript"
-    ></script>
+    <title>Rocklime Dashboard</title>
 
     <!-- Favicon -->
-    <link rel="shortcut icon" type="image/x-icon" href="./fav_icon.png" />
-
-    <!-- Apple Touch Icon -->
+    <link rel="icon" href="./fav_icon.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="./fav_icon.png" />
 
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="assets/css/bootstrap.min.css" />
+    <!-- Manifest -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
 
-    <!-- Datetimepicker CSS -->
-    <link rel="stylesheet" href="assets/css/bootstrap-datetimepicker.min.css" />
-    <link rel="stylesheet" href="assets/css/feather.css" />
-    <!-- animation CSS -->
-    <link rel="stylesheet" href="assets/css/animate.css" />
-
-    <!-- Select2 CSS -->
-    <link rel="stylesheet" href="assets/plugins/select2/css/select2.min.css" />
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="./assets/css/bootstrap.min.css" />
     <link
       rel="stylesheet"
-      href="assets/plugins/summernote/summernote-bs4.min.css"
+      href="./assets/css/bootstrap-datetimepicker.min.css"
     />
-    <!-- Daterangepikcer CSS -->
+    <link rel="stylesheet" href="./assets/css/feather.css" />
+    <link rel="stylesheet" href="./assets/css/animate.css" />
     <link
       rel="stylesheet"
-      href="assets/plugins/daterangepicker/daterangepicker.css"
-    />
-
-    <!-- Tabler Icon CSS -->
-    <link
-      rel="stylesheet"
-      href="assets/plugins/tabler-icons/tabler-icons.css"
+      href="./assets/plugins/select2/css/select2.min.css"
     />
     <link
       rel="stylesheet"
-      href="assets/plugins/bootstrap-tagsinput/bootstrap-tagsinput.css"
+      href="./assets/plugins/summernote/summernote-bs4.min.css"
     />
-    <!-- Fontawesome CSS -->
     <link
       rel="stylesheet"
-      href="assets/plugins/fontawesome/css/fontawesome.min.css"
+      href="./assets/plugins/daterangepicker/daterangepicker.css"
     />
-    <link rel="stylesheet" href="assets/plugins/fontawesome/css/all.min.css" />
-
-    <!-- Color Picker Css -->
     <link
       rel="stylesheet"
-      href="assets/plugins/@simonwep/pickr/themes/nano.min.css"
+      href="./assets/plugins/tabler-icons/tabler-icons.css"
     />
-
-    <!-- Main CSS -->
-    <link rel="stylesheet" href="assets/css/style.css" />
-    <title>Rocklime Dashboard</title>
+    <link
+      rel="stylesheet"
+      href="./assets/plugins/bootstrap-tagsinput/bootstrap-tagsinput.css"
+    />
+    <link
+      rel="stylesheet"
+      href="./assets/plugins/fontawesome/css/fontawesome.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="./assets/plugins/fontawesome/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="./assets/plugins/@simonwep/pickr/themes/nano.min.css"
+    />
+    <link rel="stylesheet" href="./assets/css/style.css" />
   </head>
+
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
 
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
+    <!-- Scripts -->
+    <script src="./assets/js/jquery-3.7.1.min.js"></script>
+    <script src="./assets/js/bootstrap.bundle.min.js"></script>
+    <script src="./assets/js/jquery.dataTables.min.js"></script>
+    <script src="./assets/js/dataTables.bootstrap5.min.js"></script>
+    <script src="./assets/js/feather.min.js"></script>
+    <script src="./assets/js/jquery.slimscroll.min.js"></script>
+    <script src="./assets/plugins/apexchart/apexcharts.min.js"></script>
+    <script src="./assets/plugins/apexchart/chart-data.js"></script>
+    <script src="./assets/plugins/chartjs/chart.min.js"></script>
+    <script src="./assets/plugins/chartjs/chart-data.js"></script>
+    <script src="./assets/js/moment.min.js"></script>
+    <script src="./assets/plugins/daterangepicker/daterangepicker.js"></script>
+    <script src="./assets/plugins/select2/js/select2.min.js"></script>
+    <script src="./assets/plugins/@simonwep/pickr/pickr.es5.min.js"></script>
 
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
+    <script src="./assets/js/script.js"></script>
 
-    <script
-      src="assets/js/jquery-3.7.1.min.js"
-      type="9a8ee4400d4f0501ecfabaf5-text/javascript"
-    ></script>
-
-    <!-- Bootstrap Core JS -->
-    <script
-      src="assets/js/bootstrap.bundle.min.js"
-      type="9a8ee4400d4f0501ecfabaf5-text/javascript"
-    ></script>
-
-    <!-- Datatable JS -->
-    <script
-      src="assets/js/jquery.dataTables.min.js"
-      type="9a8ee4400d4f0501ecfabaf5-text/javascript"
-    ></script>
-    <script
-      src="assets/js/dataTables.bootstrap5.min.js"
-      type="9a8ee4400d4f0501ecfabaf5-text/javascript"
-    ></script>
-
-    <script
-      src="assets/js/jquery-3.7.1.min.js"
-      type="d3614f96d7b979489bf8cf23-text/javascript"
-    ></script>
-
-    <!-- Feather Icon JS -->
-    <script
-      src="assets/js/feather.min.js"
-      type="d3614f96d7b979489bf8cf23-text/javascript"
-    ></script>
-
-    <!-- Slimscroll JS -->
-    <script
-      src="assets/js/jquery.slimscroll.min.js"
-      type="d3614f96d7b979489bf8cf23-text/javascript"
-    ></script>
-
-    <!-- Bootstrap Core JS -->
-    <script
-      src="assets/js/bootstrap.bundle.min.js"
-      type="d3614f96d7b979489bf8cf23-text/javascript"
-    ></script>
-
-    <!-- ApexChart JS -->
-    <script
-      src="assets/plugins/apexchart/apexcharts.min.js"
-      type="d3614f96d7b979489bf8cf23-text/javascript"
-    ></script>
-    <script
-      src="assets/plugins/apexchart/chart-data.js"
-      type="d3614f96d7b979489bf8cf23-text/javascript"
-    ></script>
-
-    <!-- Chart JS -->
-    <script
-      src="assets/plugins/chartjs/chart.min.js"
-      type="d3614f96d7b979489bf8cf23-text/javascript"
-    ></script>
-    <script
-      src="assets/plugins/chartjs/chart-data.js"
-      type="d3614f96d7b979489bf8cf23-text/javascript"
-    ></script>
-
-    <!-- Daterangepikcer JS -->
-    <script
-      src="assets/js/moment.min.js"
-      type="d3614f96d7b979489bf8cf23-text/javascript"
-    ></script>
-    <script
-      src="assets/plugins/daterangepicker/daterangepicker.js"
-      type="d3614f96d7b979489bf8cf23-text/javascript"
-    ></script>
-
-    <!-- Select2 JS -->
-    <script
-      src="assets/plugins/select2/js/select2.min.js"
-      type="d3614f96d7b979489bf8cf23-text/javascript"
-    ></script>
-
-    <!-- Color Picker JS -->
-    <script
-      src="assets/plugins/%40simonwep/pickr/pickr.es5.min.js"
-      type="d3614f96d7b979489bf8cf23-text/javascript"
-    ></script>
-
-    <!-- Custom JS -->
-    <script
-      src="assets/js/theme-colorpicker.js"
-      type="d3614f96d7b979489bf8cf23-text/javascript"
-    ></script>
-    <script
-      src="assets/js/script.js"
-      type="d3614f96d7b979489bf8cf23-text/javascript"
-    ></script>
-    <!-- 
-    <script
-      src="../../cdn-cgi/scripts/7d0fa10a/cloudflare-static/rocket-loader.min.js"
-      data-cf-settings="d3614f96d7b979489bf8cf23-|49"
-      defer
-    ></script> -->
+    <!-- Cloudflare Beacon (Optional) -->
     <script
       defer
       src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015"
       integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ=="
-      data-cf-beacon='{"rayId":"9176388ce9585972","version":"2025.1.0","serverTiming":{"name":{"cfExtPri":true,"cfL4":true,"cfSpeedBrain":true,"cfCacheStatus":true}},"token":"3ca157e612a14eccbb30cf6db6691c29","b":1}'
+      data-cf-beacon='{"rayId":"9176388ce9585972","version":"2025.1.0","token":"3ca157e612a14eccbb30cf6db6691c29"}'
       crossorigin="anonymous"
     ></script>
   </body>

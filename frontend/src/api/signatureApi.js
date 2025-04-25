@@ -2,7 +2,16 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { API_URL } from "../data/config";
 export const signatureApi = createApi({
   reducerPath: "signatureApi",
-  baseQuery: fetchBaseQuery({ baseUrl: `${API_URL}/signature` }), // Update this with your backend URL
+  baseQuery: fetchBaseQuery({
+    baseUrl: `${API_URL}/signature`,
+    prepareHeaders: (headers) => {
+      const token = localStorage.getItem("token");
+      if (token) {
+        headers.set("Authorization", `Bearer ${token}`);
+      }
+      return headers;
+    },
+  }), // Update this with your backend URL
   tagTypes: ["Signature"],
   endpoints: (builder) => ({
     createSignature: builder.mutation({

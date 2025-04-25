@@ -47,7 +47,7 @@ function App() {
   }, [isProfileLoading, userId, roleId, isAuthPage, navigate]);
 
   return (
-    <div className="pos-page">
+    <>
       {/* ✅ Fullscreen Loader on top of everything */}
       <Loader loading={isProfileLoading} />
 
@@ -63,7 +63,7 @@ function App() {
         <Footer />
         <ToastContainer position="top-right" autoClose={3000} />
       </div>
-    </div>
+    </>
   );
 }
 

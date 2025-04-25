@@ -1,29 +1,27 @@
+/* Importing CSS dependencies */
 @import url("./assets/css/bootstrap.min.css");
-
 @import url("./assets/css/bootstrap-datetimepicker.min.css");
-
 @import url("./assets/css/animate.css");
-
 @import url("./assets/plugins/select2/css/select2.min.css");
-
 @import url("./assets/plugins/daterangepicker/daterangepicker.css");
-
 @import url("./assets/plugins/tabler-icons/tabler-icons.css");
 @import url("./assets/plugins/fontawesome/css/fontawesome.min.css");
 @import url("./assets/plugins/fontawesome/css/all.min.css");
-
-@import url("./assets/plugins/pickr/pickr-themes.css");
-
+@import url("./assets/plugins/@simonwep/pickr/themes/nano.min.css"); /* Corrected path */
 @import url("./assets/css/style.css");
+
+/* Sidebar styles */
 .sidebar {
   width: 250px;
   transition: all 0.3s ease-in-out;
+  overflow: hidden;
 }
 
 .sidebar.active {
   width: 0;
 }
 
+/* Main content area styles */
 .main-content {
   margin-left: 250px;
   transition: all 0.3s ease-in-out;
@@ -32,18 +30,24 @@
 .main-content.shrink {
   margin-left: 0;
 }
+
+/* Notification badge */
 .badge-count {
   background-color: #3e64ff;
-  color: white;
+  color: #fff;
   padding: 5px 10px;
   font-size: 12px;
   border-radius: 20px;
   font-weight: 500;
+  display: inline-block;
 }
+
+/* Category box hover animation */
 .category-box {
-  transition: 0.3s;
+  transition: 0.3s ease-in-out;
 }
+
 .category-box:hover {
   transform: translateY(-3px);
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }

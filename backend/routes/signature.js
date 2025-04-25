@@ -2,45 +2,16 @@ const express = require("express");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const axios = require("axios"); // Add axios for HTTP requests
 const router = express.Router();
 const signatureController = require("../controller/signatureController");
 
 const { auth } = require("../middleware/auth"); // Authentication Middleware
 const checkPermission = require("../middleware/permission"); // Permission Middleware
 
-// ✅ Ensure 'uploads/signatures' folder exists (Organized File Structure)
-const uploadDir = "uploads/signatures/";
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// ✅ Multer Configuration for Secure Image Uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  },
-});
-
-// ✅ File Filter (Only Allow Images)
-const fileFilter = (req, file, cb) => {
-  const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
-  if (allowedTypes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error("Only JPEG, JPG, and PNG files are allowed!"), false);
-  }
-};
-
-// ✅ Multer Upload Configuration with Enhanced Error Handling
-const upload = multer({
-  storage,
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB File Size Limit
-  fileFilter,
-}).single("signature_image");
+// ✅ Multer Configuration for Secure Image Uploads (only temporarily storing)
+const storage = multer.memoryStorage(); // Store the file in memory temporarily
+const upload = multer({ storage }).single("signature_image");
 
 // ✅ Middleware for Handling File Upload Errors
 const uploadMiddleware = (req, res, next) => {
@@ -57,48 +28,12 @@ const uploadMiddleware = (req, res, next) => {
 };
 
 // ✅ API Routes with Authentication, Permission Control & Secure Uploads
-router.post(
-  "/",
-  auth,
-  // checkPermission("write", "create_signature", "signatures", "/signatures"),
-  uploadMiddleware,
-  signatureController.createSignature
-);
+router.post("/", auth, uploadMiddleware, signatureController.createSignature);
 
-router.get(
-  "/",
-  auth,
-  // checkPermission("view", "get_all_signatures", "signatures", "/signatures"),
-  signatureController.getAllSignatures
-);
-router.put(
-  "/:id",
-  auth,
-  // checkPermission("edit", "update_signature", "signatures", "/signatures/:id"),
-  signatureController.updateSignature
-);
-router.get(
-  "/:id",
-  auth,
-  // checkPermission(
-  //   "view",
-  //   "get_signature_by_id",
-  //   "signatures",
-  //   "/signatures/:id"
-  // ),
-  signatureController.getSignatureById
-);
+router.get("/", auth, signatureController.getAllSignatures);
+router.put("/:id", auth, signatureController.updateSignature);
+router.get("/:id", auth, signatureController.getSignatureById);
 
-router.delete(
-  "/:id",
-  auth,
-  // checkPermission(
-  //   "delete",
-  //   "delete_signature",
-  //   "signatures",
-  //   "/signatures/:id"
-  // ),
-  signatureController.deleteSignature
-);
+router.delete("/:id", auth, signatureController.deleteSignature);
 
 module.exports = router;
