@@ -1,13 +1,13 @@
+import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import Header from "./components/Common/Header";
 import Router from "./router/Router";
-import { useLocation, useNavigate } from "react-router-dom";
 import Sidebar from "./components/Common/SidebarNew";
 import Footer from "./components/Common/Footer";
-import { useState, useEffect } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useGetProfileQuery } from "./api/userApi";
-import Loader from "./components/Common/Loader"; // Import Loader
+import Loader from "./components/Common/Loader";
 
 function App() {
   const location = useLocation();
@@ -21,11 +21,11 @@ function App() {
     "/forgot-password",
     "/under-maintainance",
     "/coming-soon",
+    "/no-access", // Add /no-access to allowed pages
   ].includes(location.pathname);
   const isPOSPage = location.pathname === "/pos";
 
   const token = localStorage.getItem("token");
-  console.log(token);
   const { data: profileData, isLoading: isProfileLoading } =
     useGetProfileQuery();
 
@@ -40,17 +40,36 @@ function App() {
   }, [token, isAuthPage, navigate]);
 
   useEffect(() => {
-    if (!isProfileLoading && (!userId || !roleId) && !isAuthPage) {
-      toast.error("Access denied. No role assigned.");
+    if (isProfileLoading || isAuthPage) return;
+
+    if (!userId) {
+      toast.error("Access denied. No user profile found.");
       navigate("/login");
+      return;
     }
-  }, [isProfileLoading, userId, roleId, isAuthPage, navigate]);
+
+    // Check if the user has the default "USERS" role
+    if (roleId === "USERS" && location.pathname !== "/no-access") {
+      toast.warn("Access restricted. No valid role assigned.");
+      navigate("/no-access");
+    }
+
+    // Allow access to non-auth pages only if role is not "USERS"
+    if (roleId !== "USERS" && location.pathname === "/no-access") {
+      navigate("/");
+    }
+  }, [
+    isProfileLoading,
+    userId,
+    roleId,
+    isAuthPage,
+    location.pathname,
+    navigate,
+  ]);
 
   return (
     <>
-      {/* ✅ Fullscreen Loader on top of everything */}
       <Loader loading={isProfileLoading} />
-
       <div className="main-wrapper">
         {!isAuthPage && <Header toggleSidebar={setSidebarOpen} />}
         {!isAuthPage && !isPOSPage && (

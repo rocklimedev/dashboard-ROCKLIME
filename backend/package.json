@@ -30,6 +30,7 @@
     "mysql2": "^3.14.0",
     "nodemailer": "^6.10.0",
     "path": "^0.12.7",
+    "react-helmet": "^6.1.0",
     "sharp": "^0.34.1",
     "slugify": "^1.6.6",
     "socket.io": "^4.8.1",

@@ -4,12 +4,31 @@ import { Container, Row, Col, Button } from "react-bootstrap";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useLogoutMutation } from "../../api/authApi";
+import { useGetProfileQuery } from "../../api/userApi";
 import { BiLogOut } from "react-icons/bi";
-import "./NoAccess.css"; // Import custom CSS file
-
+import "./NoAccess.css";
 const NoAccess = () => {
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
   const navigate = useNavigate();
+  const { data: profileData, refetch: refetchProfile } = useGetProfileQuery();
+
+  const handleRetry = async () => {
+    try {
+      // Refetch the user profile to check for updated role
+      const updatedProfile = await refetchProfile().unwrap();
+      const roleId = updatedProfile?.user?.roleId;
+
+      if (roleId === "USERS") {
+        toast.error("Access still denied. Please contact an administrator.");
+      } else {
+        toast.success("Access granted! Redirecting to homepage...");
+        navigate("/");
+      }
+    } catch (error) {
+      toast.error("Failed to verify access. Please try again.");
+      console.error("Retry failed", error);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -24,7 +43,7 @@ const NoAccess = () => {
   };
 
   return (
-    <div className="page-wrapper">
+    <div className="main-wrapper">
       <div className="content">
         <Container className="text-center py-5">
           <Row className="justify-content-center">
@@ -41,11 +60,16 @@ const NoAccess = () => {
               <div className="d-flex justify-content-center gap-3 mt-4">
                 <Button
                   variant="primary"
-                  onClick={() => window.location.reload()}
+                  onClick={handleRetry}
+                  disabled={isLoggingOut}
                 >
                   Retry
                 </Button>
-                <Button variant="outline-danger" onClick={handleLogout}>
+                <Button
+                  variant="outline-danger"
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                >
                   <BiLogOut /> {isLoggingOut ? "Logging out..." : "Logout"}
                 </Button>
               </div>
