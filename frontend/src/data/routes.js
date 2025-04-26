@@ -22,7 +22,7 @@ import {
   MdOutlineSettings,
 } from "react-icons/md";
 import { AiFillSecurityScan, AiOutlineProduct } from "react-icons/ai";
-import { BiSolidCategory, BiUserCheck } from "react-icons/bi";
+import { BiAccessibility, BiSolidCategory, BiUserCheck } from "react-icons/bi";
 import { FaFileCircleCheck, FaFirstOrder, FaPooStorm } from "react-icons/fa6";
 import {
   FaRegFile,
@@ -60,6 +60,7 @@ import TeamsList from "../components/Orders/TeamsList";
 import InvoiceDetails from "../components/Invoices/InvoiceDetails";
 import OrderWithInvoice from "../components/Orders/OrderWithInvoice";
 import CheckProductCodeStatus from "../components/Product/CheckProductCodeStatus";
+import NoAccess from "../components/Common/NoAccess";
 const masterRoutes = [
   {
     path: "/",
@@ -361,6 +362,13 @@ const masterRoutes = [
         icon: <IoLogIn />,
         isSidebarActive: false,
         element: <Login />,
+      },
+      {
+        path: "/no-access",
+        name: "No Access",
+        icon: <BiAccessibility />,
+        isSidebarActive: false,
+        element: <NoAccess />,
       },
       {
         path: "/signup",

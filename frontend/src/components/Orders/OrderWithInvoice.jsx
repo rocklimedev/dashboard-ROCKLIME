@@ -3,7 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useGetInvoiceByIdQuery } from "../../api/invoiceApi";
 import { useGetOrderDetailsQuery } from "../../api/orderApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
-import { useGetAllTeamsQuery } from "../../api/teamApi"; // Import the new hook
+import { useGetAllTeamsQuery } from "../../api/teamApi";
+import { useGetProductByIdQuery } from "../../api/productApi";
 import { Dropdown, OverlayTrigger, Tooltip } from "react-bootstrap";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import {
@@ -11,7 +12,28 @@ import {
   useUpdateOrderStatusMutation,
 } from "../../api/orderApi";
 import AddNewOrder from "./AddNewOrder";
-import { toast } from "react-toastify"; // Import toast
+import { toast } from "react-toastify";
+
+// Subcomponent to handle each product row
+// Subcomponent to handle each product row
+const ProductRow = ({ product, index }) => {
+  const { data, isLoading, error } = useGetProductByIdQuery(product.productId, {
+    skip: !product.productId,
+  });
+
+  const productName = data?.name || "N/A";
+  const sellingPrice = parseFloat(data?.sellingPrice) || product.price; // Fallback to invoice price if not available
+
+  return (
+    <tr key={product.productId || index}>
+      <td>{index + 1}</td>
+      <td>{productName}</td>
+      <td>{product.quantity || 0}</td>
+      <td>{sellingPrice.toFixed(2) || 0}</td>
+      <td>{((product.quantity || 0) * sellingPrice).toFixed(2)}</td>
+    </tr>
+  );
+};
 
 const OrderWithInvoice = () => {
   const { id } = useParams();
@@ -42,7 +64,6 @@ const OrderWithInvoice = () => {
   const products = invoice?.products || [];
   const customers = customerData?.data || [];
 
-  // Fetching team data
   const {
     data: teamData,
     isLoading: teamLoading,
@@ -58,7 +79,7 @@ const OrderWithInvoice = () => {
     return map;
   }, [customers]);
 
-  // User map from team data
+  // User map
   const userMap = useMemo(() => {
     const map = {};
     if (teamData?.teams) {
@@ -82,7 +103,7 @@ const OrderWithInvoice = () => {
     return map;
   }, [teamData]);
 
-  // Team members from assignedTo
+  // Team members
   const normalizedTeamMembers = useMemo(() => {
     const teamId = order.assignedTo;
     if (!teamId || !teamData?.teams) return [];
@@ -104,11 +125,11 @@ const OrderWithInvoice = () => {
     if (window.confirm("Are you sure you want to delete this order?")) {
       try {
         await deleteOrder(id).unwrap();
-        toast.success("Order deleted successfully!"); // Show success toast
+        toast.success("Order deleted successfully!");
         navigate("/orders");
       } catch (err) {
         console.error("Failed to delete order:", err);
-        toast.error("Failed to delete order. Please try again."); // Show error toast
+        toast.error("Failed to delete order. Please try again.");
       }
     }
   };
@@ -116,10 +137,10 @@ const OrderWithInvoice = () => {
   const handleHoldOrder = async () => {
     try {
       await updateOrderStatus({ id, status: "On Hold" }).unwrap();
-      toast.success("Order status updated to 'On Hold'"); // Success toast
+      toast.success("Order status updated to 'On Hold'");
     } catch (err) {
       console.error("Failed to update status:", err);
-      toast.error("Failed to update order status. Please try again."); // Error toast
+      toast.error("Failed to update order status. Please try again.");
     }
   };
 
@@ -281,7 +302,7 @@ const OrderWithInvoice = () => {
                     <div className="col-6 mb-3">
                       <small className="text-muted">Invoice Number</small>
                       <p className="fw-semibold">
-                        {invoice.invoiceNumber || "N/A"}
+                        {invoice.invoiceNo || "N/A"}
                       </p>
                     </div>
                     <div className="col-6 mb-3">
@@ -296,8 +317,8 @@ const OrderWithInvoice = () => {
                     <div className="col-6 mb-3">
                       <small className="text-muted">Date</small>
                       <p>
-                        {invoice.date
-                          ? new Date(invoice.date).toLocaleDateString()
+                        {invoice.invoiceDate
+                          ? new Date(invoice.invoiceDate).toLocaleDateString()
                           : "N/A"}
                       </p>
                     </div>
@@ -312,12 +333,12 @@ const OrderWithInvoice = () => {
                           invoice.status === "Paid" ? "bg-success" : "bg-danger"
                         }`}
                       >
-                        {invoice.status || "N/A"}
+                        {invoice.status || "Unpaid"}
                       </span>
                     </div>
                     <div className="col-6 mb-3">
                       <small className="text-muted">Payment Mode</small>
-                      <p>{invoice.paymentMode || "N/A"}</p>
+                      <p>{invoice.paymentMethod || "N/A"}</p>
                     </div>
                   </div>
                 )}
@@ -363,14 +384,12 @@ const OrderWithInvoice = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {products.map((prod, idx) => (
-                      <tr key={prod.id || idx}>
-                        <td>{idx + 1}</td>
-                        <td>{prod.name || "N/A"}</td>
-                        <td>{prod.quantity || 0}</td>
-                        <td>{prod.unitPrice || 0}</td>
-                        <td>{(prod.quantity || 0) * (prod.unitPrice || 0)}</td>
-                      </tr>
+                    {products.map((product, index) => (
+                      <ProductRow
+                        key={product.productId || index}
+                        product={product}
+                        index={index}
+                      />
                     ))}
                   </tbody>
                 </table>

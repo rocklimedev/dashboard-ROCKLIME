@@ -4,7 +4,35 @@ import { useGetInvoiceByIdQuery } from "../../api/invoiceApi";
 import { useGetQuotationByIdQuery } from "../../api/quotationApi";
 import { useGetAddressByIdQuery } from "../../api/addressApi";
 import { useGetUserByIdQuery } from "../../api/userApi";
-import { useMultipleProducts } from "../../data/useMultipleProducts";
+import { useGetProductByIdQuery } from "../../api/productApi"; // Import product query
+import { globalStyles, componentStyles } from "./styles";
+
+// Subcomponent for each product row
+const ProductRow = ({ product, index }) => {
+  const { data, isLoading, isError } = useGetProductByIdQuery(
+    product.productId,
+    {
+      skip: !product.productId,
+    }
+  );
+
+  const prod = data || {};
+  const productName = data?.name || "N/A";
+  return (
+    <tr key={product.productId || index}>
+      <td>{index + 1}</td>
+      <td>{productName || "Unknown Product"}</td>
+      <td>{prod.product_code || "—"}</td>
+      <td>{product.quantity || 0}</td>
+      <td>{product.price ? product.price.toFixed(2) : "0.00"}</td>
+      <td>
+        {product.price && product.quantity
+          ? (product.price * product.quantity).toFixed(2)
+          : "0.00"}
+      </td>
+    </tr>
+  );
+};
 
 const InvoiceDetails = () => {
   const { invoiceId } = useParams();
@@ -39,16 +67,6 @@ const InvoiceDetails = () => {
       skip: !shipTo,
     });
 
-  const {
-    productDetailsMap,
-    isLoading: isProductLoading,
-    isError: productErrors,
-  } = useMultipleProducts(products);
-
-  // Debugging logs
-  console.log("Products:", products);
-  console.log("Product Details Map:", Array.from(productDetailsMap.entries()));
-
   // State for drag functionality
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -78,17 +96,17 @@ const InvoiceDetails = () => {
     setIsDragging(false);
   };
 
-  if (isLoading || isProductLoading || isAddressLoading)
+  if (isLoading || isAddressLoading)
     return (
       <div style={{ textAlign: "center", padding: "20px" }}>
         Loading invoice...
       </div>
     );
 
-  if (isError || productErrors)
+  if (isError)
     return (
       <div style={{ textAlign: "center", padding: "20px", color: "red" }}>
-        Error fetching invoice or product details.
+        Error fetching invoice details.
       </div>
     );
 
@@ -126,60 +144,12 @@ const InvoiceDetails = () => {
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
     >
+      <style>{globalStyles}</style>
       <div style={{ top: "100px", left: "30px" }}>
         <Link to="/invoices" className="btn btn-primary">
           <i className="me-2" data-feather="arrow-left"></i>Back to Invoices
         </Link>
       </div>
-      <style>
-        {`
-          .invoice-box {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-          }
-          .table th, .table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #eee;
-          }
-          .table th {
-            background-color: #f8f9fa;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 14px;
-          }
-          .table tbody tr:nth-child(even) {
-            background-color: #f9f9f9;
-          }
-          .table tbody tr:hover {
-            background-color: #f1f1f1;
-          }
-          .btn-primary {
-            background-color: #007bff;
-            border-color: #007bff;
-            padding: 12px 24px;
-            border-radius: 4px;
-            text-decoration: none;
-            color: white;
-            font-size: 16px;
-            font-weight: 500;
-            transition: background-color 0.3s, box-shadow 0.3s;
-            display: inline-flex;
-            align-items: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-          }
-          .btn-primary:hover {
-            background-color: #0056b3;
-            border-color: #0056b3;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-          }
-          .btn-primary i {
-            margin-right: 8px;
-          }
-        `}
-      </style>
-
       <div
         className="content"
         style={{
@@ -189,22 +159,22 @@ const InvoiceDetails = () => {
         <div className="page-header" onMouseDown={handleMouseDown}>
           <div
             className="add-item d-flex justify-between items-center"
-            style={styles.addItem}
+            style={componentStyles.addItem}
           >
-            <h4 style={styles.headerTitle}>Invoice Details</h4>
+            <h4 style={componentStyles.headerTitle}>Invoice Details</h4>
           </div>
         </div>
 
-        <div className="invoice-box" style={styles.invoiceBox}>
-          <h5 style={styles.invoiceTitle}>Invoice #{invoiceNo}</h5>
-          <div style={styles.dateSection}>
-            <p style={styles.dateItem}>
+        <div className="invoice-box" style={componentStyles.invoiceBox}>
+          <h5 style={componentStyles.invoiceTitle}>Invoice #{invoiceNo}</h5>
+          <div style={componentStyles.dateSection}>
+            <p style={componentStyles.dateItem}>
               <strong>Date:</strong>{" "}
               {invoiceDate
                 ? new Date(invoiceDate).toLocaleDateString()
                 : "Not available"}
             </p>
-            <p style={styles.dateItem}>
+            <p style={componentStyles.dateItem}>
               <strong>Due Date:</strong>{" "}
               {dueDate
                 ? new Date(dueDate).toLocaleDateString()
@@ -212,24 +182,24 @@ const InvoiceDetails = () => {
             </p>
           </div>
 
-          <div className="row mt-4" style={styles.addressRow}>
-            <div className="col-md-6" style={styles.addressCol}>
-              <h6 style={styles.addressTitle}>Bill To</h6>
-              <p style={styles.addressText}>
+          <div className="row mt-4" style={componentStyles.addressRow}>
+            <div className="col-md-6" style={componentStyles.addressCol}>
+              <h6 style={componentStyles.addressTitle}>Bill To</h6>
+              <p style={componentStyles.addressText}>
                 {billTo || createdByUser?.data?.name || "Unknown"}
               </p>
-              <p style={styles.addressText}>
+              <p style={componentStyles.addressText}>
                 {createdByUser?.data?.email || "Not available"}
               </p>
             </div>
-            <div className="col-md-6" style={styles.addressCol}>
-              <h6 style={styles.addressTitle}>Ship To</h6>
-              <p style={styles.addressText}>
+            <div className="col-md-6" style={componentStyles.addressCol}>
+              <h6 style={componentStyles.addressTitle}>Ship To</h6>
+              <p style={componentStyles.addressText}>
                 {shipToAddress?.data?.street
                   ? `${shipToAddress.data.street}, ${shipToAddress.data.city}`
                   : "Not available"}
               </p>
-              <p style={styles.addressText}>
+              <p style={componentStyles.addressText}>
                 {shipToAddress?.data?.state && shipToAddress?.data?.country
                   ? `${shipToAddress.data.state}, ${
                       shipToAddress.data.country
@@ -239,79 +209,48 @@ const InvoiceDetails = () => {
             </div>
           </div>
 
-          <table className="table mt-4" style={styles.table}>
+          <table className="table mt-4" style={componentStyles.table}>
             <thead>
               <tr>
                 <th>#</th>
                 <th>Item Name</th>
-                <th>HSN</th>
+                <th>Product Code</th>
                 <th>Qty</th>
                 <th>Rate</th>
                 <th>Amount</th>
               </tr>
             </thead>
             <tbody>
-              {products.map((p, idx) => {
-                const prod = productDetailsMap.get(p.productId);
-                // Log product details for debugging
-                console.log(`Product ${p.productId}:`, prod);
-                return (
-                  <tr key={p.productId || idx}>
-                    <td>{idx + 1}</td>
-                    <td>
-                      {prod?.name ||
-                        prod?.title ||
-                        p.productId ||
-                        "Unknown Product"}
-                    </td>
-                    <td>
-                      {prod?.product_code ||
-                        prod?.productCode ||
-                        prod?.hsnCode ||
-                        "—"}
-                    </td>
-                    <td>{p.quantity || 0}</td>
-                    <td>{p.price ? p.price.toFixed(2) : "0.00"}</td>
-                    <td>
-                      {p.price && p.quantity
-                        ? (p.price * p.quantity).toFixed(2)
-                        : "0.00"}
-                    </td>
-                  </tr>
-                );
-              })}
+              {products.map((product, idx) => (
+                <ProductRow
+                  key={product.productId || idx}
+                  product={product}
+                  index={idx}
+                />
+              ))}
             </tbody>
           </table>
 
-          {productDetailsMap.size === 0 && (
-            <div
-              style={{ textAlign: "center", color: "red", marginTop: "10px" }}
-            >
-              Warning: No product details found. Please check product IDs or API
-              connectivity.
-            </div>
-          )}
-
-          <div style={styles.summarySection}>
-            <p style={styles.summaryItem}>
+          <div style={componentStyles.summarySection}>
+            <p style={componentStyles.summaryItem}>
               <strong>Subtotal:</strong> ₹{subTotal.toFixed(2)}
             </p>
-            <p style={styles.summaryItem}>
+            <p style={componentStyles.summaryItem}>
               <strong>VAT (18%):</strong> ₹{vat.toFixed(2)}
             </p>
-            <p style={styles.totalItem}>
+            <p style={componentStyles.totalItem}>
               <strong>Total:</strong> ₹{total.toFixed(2)}
             </p>
-            <p style={styles.amountInWords}>
+            <p style={componentStyles.amountInWords}>
               <em>{amountInWords}</em>
             </p>
           </div>
 
-          <div style={styles.termsSection}>
-            <h6 style={styles.termsTitle}>Terms & Conditions</h6>
-            <ul style={styles.termsList}>
+          <div style={componentStyles.termsSection}>
+            <h6 style={componentStyles.termsTitle}>Terms & Conditions</h6>
+            <ul style={componentStyles.termsList}>
               {termsList.map((term, idx) => (
-                <li key={idx} style={styles.termsItem}>
+                <li key={idx} style={componentStyles.termsItem}>
                   {term}
                 </li>
               ))}
@@ -319,125 +258,15 @@ const InvoiceDetails = () => {
           </div>
 
           {signatureName && (
-            <div style={styles.signatureSection}>
-              <p style={styles.signatureLabel}>Authorized Signatory</p>
-              <h6 style={styles.signatureName}>{signatureName}</h6>
+            <div style={componentStyles.signatureSection}>
+              <p style={componentStyles.signatureLabel}>Authorized Signatory</p>
+              <h6 style={componentStyles.signatureName}>{signatureName}</h6>
             </div>
           )}
         </div>
       </div>
     </div>
   );
-};
-
-const styles = {
-  addItem: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontSize: "24px",
-    fontWeight: "600",
-    color: "#333",
-  },
-  invoiceBox: {
-    padding: "20px",
-  },
-  invoiceTitle: {
-    fontSize: "22px",
-    fontWeight: "700",
-    color: "#1a73e8",
-    marginBottom: "15px",
-  },
-  dateSection: {
-    display: "flex",
-    justifyContent: "space-between",
-    marginBottom: "20px",
-  },
-  dateItem: {
-    fontSize: "14px",
-    color: "#555",
-  },
-  addressRow: {
-    marginBottom: "20px",
-  },
-  addressCol: {
-    padding: "15px",
-    backgroundColor: "#fafafa",
-    border: "1px solid #eee",
-    borderRadius: "4px",
-  },
-  addressTitle: {
-    fontSize: "16px",
-    fontWeight: "600",
-    marginBottom: "10px",
-  },
-  addressText: {
-    fontSize: "14px",
-    color: "#666",
-    margin: "5px 0",
-  },
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
-  },
-  summarySection: {
-    marginTop: "20px",
-    padding: "15px",
-    backgroundColor: "#f8f9fa",
-    borderRadius: "4px",
-    textAlign: "right",
-  },
-  summaryItem: {
-    fontSize: "15px",
-    margin: "5px 0",
-    color: "#333",
-  },
-  totalItem: {
-    fontSize: "18px",
-    fontWeight: "700",
-    color: "#1a73e8",
-    margin: "10px 0",
-  },
-  amountInWords: {
-    fontSize: "14px",
-    color: "#555",
-    fontStyle: "italic",
-  },
-  termsSection: {
-    marginTop: "20px",
-  },
-  termsTitle: {
-    fontSize: "16px",
-    fontWeight: "600",
-    marginBottom: "10px",
-  },
-  termsList: {
-    listStyleType: "decimal",
-    paddingLeft: "20px",
-  },
-  termsItem: {
-    fontSize: "14px",
-    color: "#666",
-    marginBottom: "5px",
-  },
-  signatureSection: {
-    marginTop: "20px",
-    textAlign: "right",
-    borderTop: "1px solid #eee",
-    paddingTop: "10px",
-  },
-  signatureLabel: {
-    fontSize: "14px",
-    color: "#555",
-    marginBottom: "5px",
-  },
-  signatureName: {
-    fontSize: "16px",
-    fontWeight: "600",
-    color: "#333",
-  },
 };
 
 export default InvoiceDetails;

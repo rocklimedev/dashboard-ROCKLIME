@@ -1,81 +1,59 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import PageHeader from "../Common/PageHeader";
 import {
   useGetAllOrdersQuery,
   useDeleteOrderMutation,
 } from "../../api/orderApi";
-import {
-  useGetAllInvoicesQuery,
-  useGetInvoiceByIdQuery,
-} from "../../api/invoiceApi"; // ✅ import invoice hook
-import { useDeleteCustomerMutation } from "../../api/customerApi";
-import ViewOrderModal from "./ViewOrderModal";
-import EditOrderModal from "./EditOrderModal";
+import { useGetAllInvoicesQuery } from "../../api/invoiceApi";
+import { useGetAllTeamsQuery } from "../../api/teamApi";
 import DeleteModal from "../Common/DeleteModal";
-import { useGetAllTeamsQuery } from "../../api/teamApi"; // 👈 Make sure this path is correct
 import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css"; // import styles
+import "react-toastify/dist/ReactToastify.css";
+import DatesModal from "./DateModal";
+
 const RecentOrders = () => {
+  const navigate = useNavigate();
   const { data, error, isLoading } = useGetAllOrdersQuery();
-  const recentOrder = data?.orders || [];
+  const recentOrders = data?.orders || [];
 
   const [invoicesMap, setInvoicesMap] = useState({});
-  const [showModal, setShowModal] = useState(false);
+  const [teamMap, setTeamMap] = useState({});
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [modalType, setModalType] = useState("");
-  const [customerToDelete, setCustomerToDelete] = useState(null);
-  const [deleteCustomer] = useDeleteCustomerMutation();
-
   const [orderToDelete, setOrderToDelete] = useState(null);
   const [deleteOrder] = useDeleteOrderMutation();
 
-  const { data: invoiceData } = useGetAllInvoicesQuery();
-  const invoice = invoiceData?.data;
-  const openModal = (order, type) => {
-    setSelectedOrder(order);
-    setModalType(type);
-  };
-  const { data: teamsData } = useGetAllTeamsQuery();
-  const teamMap = {};
-  teamsData?.teams?.forEach((team) => {
-    teamMap[team.id] = team.name;
+  const [showDatesModal, setShowDatesModal] = useState(false);
+  const [selectedDates, setSelectedDates] = useState({
+    dueDate: null,
+    followupDates: [],
   });
 
-  // ✅ Load all invoices after orders are fetched
+  const { data: invoiceData } = useGetAllInvoicesQuery();
+  const { data: teamsData } = useGetAllTeamsQuery();
+
+  // Build invoiceId -> invoiceNo map
   useEffect(() => {
-    const fetchInvoices = async () => {
-      const invoiceIds = [
-        ...new Set(recentOrder.map((o) => o.invoiceId).filter(Boolean)),
-      ];
-      const invoicePromises = invoiceIds.map(async (id) => {
-        try {
-          const { data } = await invoice(id, {
-            skip: !id,
-          }).refetch();
-          return { id, invoiceNo: data?.invoice?.invoiceNo || "—" };
-        } catch {
-          return { id, invoiceNo: "—" };
-        }
+    if (invoiceData?.data) {
+      const map = {};
+      invoiceData.data.forEach((inv) => {
+        map[inv.invoiceId] = inv.invoiceNo || "—";
       });
-
-      const results = await Promise.all(invoicePromises);
-      const invoiceMap = {};
-      results.forEach(({ id, invoiceNo }) => {
-        invoiceMap[id] = invoiceNo;
-      });
-
-      setInvoicesMap(invoiceMap);
-    };
-
-    if (recentOrder.length > 0) {
-      fetchInvoices();
+      setInvoicesMap(map);
     }
-  }, [recentOrder]);
+  }, [invoiceData]);
 
-  if (isLoading) return <p>Loading...</p>;
-  if (error) return <p>Error fetching recent Orders.</p>;
-  if (recentOrder.length === 0) return <p>No recent Orders available.</p>;
+  // Build teamId -> teamName map
+  useEffect(() => {
+    if (teamsData?.teams) {
+      const map = {};
+      teamsData.teams.forEach((team) => {
+        map[team.id] = team.teamName || "—";
+      });
+      setTeamMap(map);
+    }
+  }, [teamsData]);
+
   const handleDelete = (orderId) => {
     setOrderToDelete(orderId);
     setShowDeleteModal(true);
@@ -85,15 +63,24 @@ const RecentOrders = () => {
     if (!orderToDelete) return;
     try {
       await deleteOrder(orderToDelete).unwrap();
-      toast.success("Order deleted successfully!"); // Success toast
+      toast.success("Order deleted successfully!");
     } catch (err) {
-      toast.error("Error deleting order!"); // Error toast
+      toast.error("Error deleting order!");
       console.error("Error deleting order:", err);
     } finally {
       setShowDeleteModal(false);
       setOrderToDelete(null);
     }
   };
+
+  const handleShowDates = (dueDate, followupDates) => {
+    setSelectedDates({ dueDate, followupDates });
+    setShowDatesModal(true);
+  };
+
+  if (isLoading) return <p>Loading...</p>;
+  if (error) return <p>Error fetching recent orders.</p>;
+  if (recentOrders.length === 0) return <p>No recent orders available.</p>;
 
   return (
     <div className="page-wrapper">
@@ -102,17 +89,16 @@ const RecentOrders = () => {
           title="Recent Orders"
           subtitle="Manage your recent orders"
         />
-
         <div className="card">
           <div className="card-body p-0">
             <div className="table-responsive">
               <table className="table datatable">
                 <thead className="thead-light">
                   <tr>
-                    <th className="no-sort">
+                    <th>
                       <label className="checkboxs">
-                        <input type="checkbox" id="select-all" />
-                        <span className="checkmarks"></span>
+                        <input type="checkbox" />
+                        <span className="checkmarks" />
                       </label>
                     </th>
                     <th>Title</th>
@@ -125,127 +111,80 @@ const RecentOrders = () => {
                     <th>Priority</th>
                     <th>Description</th>
                     <th>Created At</th>
-                    <th>Invoice Attached</th>
+                    <th>Invoice</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {recentOrder.map((order, index) => (
+                  {recentOrders.map((order, index) => (
                     <tr key={order.id || index}>
                       <td>
                         <label className="checkboxs">
                           <input type="checkbox" />
-                          <span className="checkmarks"></span>
+                          <span className="checkmarks" />
                         </label>
                       </td>
                       <td>{order.title}</td>
                       <td>{order.pipeline}</td>
                       <td>{order.status}</td>
                       <td>{order.dueDate}</td>
-                      <td>{teamMap[order.assignedTo] || "—"}</td>
-
-                      <td>{order.followupDates.join(", ")}</td>
-                      <td>{order.source}</td>
                       <td>
-                        <span className="badge badge-success">
-                          {order.priority}
-                        </span>
+                        {order.assignedTo
+                          ? teamMap[order.assignedTo] || "—"
+                          : "—"}
                       </td>
+                      <td>
+                        <button
+                          className="btn btn-sm btn-info"
+                          onClick={() =>
+                            handleShowDates(order.dueDate, order.followupDates)
+                          }
+                        >
+                          View Dates
+                        </button>
+                      </td>
+                      <td>{order.source}</td>
+                      <td>{order.priority}</td>
                       <td>{order.description}</td>
                       <td>{new Date(order.createdAt).toLocaleDateString()}</td>
-                      <td>{invoicesMap[order.invoiceId] || "—"}</td>
-                      <td className="text-center">
-                        <a
-                          className="action-set"
-                          href="#"
-                          data-bs-toggle="dropdown"
-                          aria-expanded="true"
+                      <td>
+                        {order.invoiceId
+                          ? invoicesMap[order.invoiceId] || "—"
+                          : "—"}
+                      </td>
+                      <td>
+                        <button
+                          className="btn btn-sm btn-primary me-1"
+                          onClick={() => navigate(`/order/${order.id}`)}
                         >
-                          <i
-                            className="fa fa-ellipsis-v"
-                            aria-hidden="true"
-                          ></i>
-                        </a>
-                        <ul className="dropdown-menu">
-                          <li>
-                            <a
-                              href="#"
-                              className="dropdown-item"
-                              onClick={() => openModal(order, "view")}
-                            >
-                              <i data-feather="eye" className="info-img"></i>{" "}
-                              View Order
-                            </a>
-                          </li>
-                          <li>
-                            <a
-                              href="#"
-                              className="dropdown-item"
-                              onClick={() => openModal(order, "edit")}
-                            >
-                              <i data-feather="edit" className="info-img"></i>{" "}
-                              Edit Order
-                            </a>
-                          </li>
-                          <li>
-                            <a
-                              href={`/invoices/${order.invoiceId}`}
-                              className="dropdown-item"
-                            >
-                              <i
-                                data-feather="dollar-sign"
-                                className="info-img"
-                              ></i>{" "}
-                              Show Invoice
-                            </a>
-                          </li>
-                          <li>
-                            <a
-                              href="#"
-                              className="dropdown-item"
-                              onClick={() => handleDelete(order.id)}
-                            >
-                              <i
-                                data-feather="trash-2"
-                                className="info-img"
-                              ></i>{" "}
-                              Delete Order
-                            </a>
-                          </li>
-                        </ul>
+                          View
+                        </button>
+                        <button
+                          className="btn btn-sm btn-danger"
+                          onClick={() => handleDelete(order.id)}
+                        >
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              <ToastContainer />
+              <DeleteModal
+                show={showDeleteModal}
+                onClose={() => setShowDeleteModal(false)}
+                onConfirm={confirmDelete}
+              />
+              <DatesModal
+                show={showDatesModal}
+                onClose={() => setShowDatesModal(false)}
+                dates={selectedDates}
+              />
             </div>
           </div>
         </div>
       </div>
-
-      {/* Modals */}
-      {modalType === "view" && selectedOrder && (
-        <ViewOrderModal
-          order={selectedOrder}
-          onClose={() => setModalType("")}
-        />
-      )}
-
-      {modalType === "edit" && selectedOrder && (
-        <EditOrderModal
-          order={selectedOrder}
-          onClose={() => setModalType("")}
-        />
-      )}
-
-      {showDeleteModal && (
-        <DeleteModal
-          itemType="Order"
-          isVisible={showDeleteModal}
-          onConfirm={confirmDelete}
-          onCancel={() => setShowDeleteModal(false)}
-        />
-      )}
     </div>
   );
 };

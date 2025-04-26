@@ -6,10 +6,10 @@ import {
 } from "../../api/quotationApi";
 import { useGetCustomerByIdQuery } from "../../api/customerApi";
 import { useGetUserByIdQuery } from "../../api/userApi";
-import img from "../../assets/img/avatar/avatar-1.jpg";
 import { useGetAllUsersQuery } from "../../api/userApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import { toast } from "react-toastify";
+import logo from "../../assets/img/logo.png";
 
 const QuotationsDetails = () => {
   const { id } = useParams();
@@ -21,7 +21,6 @@ const QuotationsDetails = () => {
   const { data: customer } = useGetCustomerByIdQuery(quotation?.customerId, {
     skip: !quotation?.customerId,
   });
-  console.log(customer?.address ?? "Address not available");
   const [exportQuotation] = useExportQuotationMutation();
   const { data: user } = useGetUserByIdQuery(quotation?.createdBy, {
     skip: !quotation?.createdBy,
@@ -64,19 +63,74 @@ const QuotationsDetails = () => {
     );
     return user ? user.name : "Unknown";
   };
+
   const getCustomerName = (customerId) => {
+    if (!customers || customers.length === 0 || !customerId) return "Unknown";
     const customer = customers.find((c) => c.customerId === customerId);
     return customer ? customer.name : "Unknown";
   };
-  if (isLoading) return <p>Loading...</p>;
-  if (error) return <p>Error loading quotation details.</p>;
-  if (!quotation) return <p>Quotation not found.</p>;
+
+  if (isLoading) {
+    return (
+      <div className="page-wrapper">
+        <div className="content text-center">
+          <p>Loading quotation details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="page-wrapper">
+        <div className="content text-center">
+          <p className="text-danger">Error loading quotation details.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!quotation) {
+    return (
+      <div className="page-wrapper">
+        <div className="content text-center">
+          <p>Quotation not found.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Ensure products is an array, fallback to empty array if undefined or not an array
+  const products = Array.isArray(quotation.products) ? quotation.products : [];
+
+  // Calculate subtotal (sum of product totals)
+  const subtotal = products.reduce(
+    (sum, product) => sum + Number(product.total || 0),
+    0
+  );
+
+  // Calculate GST amount
+  const gstAmount =
+    quotation.include_gst && quotation.gst_value
+      ? (subtotal * Number(quotation.gst_value)) / 100
+      : 0;
+
+  // Calculate final total (subtotal + GST)
+  const finalTotal = subtotal + gstAmount;
 
   return (
     <div className="page-wrapper">
       <div className="content">
-        <div className="page-header d-flex justify-content-between">
-          <h4> Created by: {getUserName(quotation.createdBy)}</h4>
+        {/* Header with Logo and Quotation Info */}
+        <div className="page-header d-flex justify-content-between align-items-center">
+          <div className="d-flex align-items-center">
+            <img
+              src={logo}
+              alt="Company Logo"
+              style={{ width: "50px", marginRight: "20px" }}
+            />
+            <h4 className="mb-0">Quotation Details</h4>
+          </div>
           <a href="/quotations/list" className="btn btn-primary">
             <i data-feather="arrow-left" className="me-2"></i>Back to Quotations
           </a>
@@ -85,13 +139,30 @@ const QuotationsDetails = () => {
         <div className="card">
           <div className="card-body">
             <div className="row align-items-center mb-3 border-bottom pb-3">
-              <div className="col-md-6"></div>
+              <div className="col-md-6">
+                <h5 className="text-gray mb-1">
+                  Created by: {getUserName(quotation.createdBy)}
+                </h5>
+                <p className="mb-1">
+                  Reference: {quotation.reference_number || "N/A"}
+                </p>
+              </div>
               <div className="col-md-6 text-end">
                 <h5 className="text-gray mb-1">
-                  Quotation: #{quotation.document_title}
+                  Quotation: #{quotation.document_title || "N/A"}
                 </h5>
-                <p className="mb-1">Created Date: {quotation.quotation_date}</p>
-                <p>Due Date: {quotation.due_date}</p>
+                <p className="mb-1">
+                  Created Date:{" "}
+                  {quotation.quotation_date
+                    ? new Date(quotation.quotation_date).toLocaleDateString()
+                    : "N/A"}
+                </p>
+                <p>
+                  Due Date:{" "}
+                  {quotation.due_date
+                    ? new Date(quotation.due_date).toLocaleDateString()
+                    : "N/A"}
+                </p>
               </div>
             </div>
 
@@ -110,52 +181,96 @@ const QuotationsDetails = () => {
               </div>
             </div>
 
-            <table className="table table-bordered">
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th>Quantity</th>
-                  <th>Price</th>
-                  <th>Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {quotation.products.map((product, index) => (
-                  <tr key={index}>
-                    <td>{product.name}</td>
-                    <td>{product.quantity}</td>
-                    <td>{product.sellingPrice}</td>
-                    <td>{product.total}</td>
+            {/* Products Table */}
+            {products.length > 0 ? (
+              <table
+                className="table table-bordered"
+                aria-label="Quotation products"
+              >
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>Price</th>
+                    <th>Discount</th>
+                    <th>Tax</th>
+                    <th>Total</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {products.map((product, index) => (
+                    <tr key={index}>
+                      <td>{product.name || "N/A"}</td>
+                      <td>{product.qty || product.quantity || "N/A"}</td>
+                      <td>
+                        {product.sellingPrice
+                          ? `₹${Number(product.sellingPrice).toFixed(2)}`
+                          : "N/A"}
+                      </td>
+                      <td>
+                        {product.discount
+                          ? `${
+                              product.discountType === "percent"
+                                ? `${product.discount}%`
+                                : `₹${Number(product.discount).toFixed(2)}`
+                            }`
+                          : "N/A"}
+                      </td>
+                      <td>
+                        {product.tax
+                          ? `${Number(product.tax).toFixed(2)}%`
+                          : "0%"}
+                      </td>
+                      <td>
+                        {product.total
+                          ? `₹${Number(product.total).toFixed(2)}`
+                          : "N/A"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p className="text-center text-muted">
+                No products available for this quotation.
+              </p>
+            )}
 
             <div className="text-end mt-3">
-              <h5>Subtotal: ₹{quotation.finalAmount}</h5>
-              {quotation.include_gst && (
+              <h5>Subtotal: ₹{subtotal.toFixed(2)}</h5>
+              {quotation.include_gst && quotation.gst_value && (
                 <p>
-                  GST ({quotation.gst_value}%): ₹
-                  {(quotation.finalAmount * quotation.gst_value) / 100}
+                  GST ({quotation.gst_value}%): ₹{gstAmount.toFixed(2)}
                 </p>
               )}
-              <h4>Total: ₹{quotation.finalAmount}</h4>
+              <h4>Total: ₹{finalTotal.toFixed(2)}</h4>
+              {quotation.roundOff && (
+                <p>Round Off: ₹{Number(quotation.roundOff).toFixed(2)}</p>
+              )}
+              {quotation.signature_name && (
+                <p>Signed by: {quotation.signature_name}</p>
+              )}
             </div>
           </div>
         </div>
-        <div class="d-flex justify-content-center align-items-center mb-4">
+
+        <div className="d-flex justify-content-center align-items-center mb-4">
           <button
-            onClick={() => handleDownload(quotation.id)}
-            class="btn btn-primary d-flex justify-content-center align-items-center me-2"
+            onClick={handleDownload}
+            className="btn btn-primary d-flex justify-content-center align-items-center me-2"
+            aria-label="Download quotation"
           >
-            <i class="ti ti-printer me-2"></i>Download Quotation
+            <i className="ti ti-printer me-2"></i>Download Quotation
           </button>
-          <a
-            href="#"
-            class="btn btn-secondary d-flex justify-content-center align-items-center border"
+          <button
+            className="btn btn-secondary d-flex justify-content-center align-items-center border"
+            onClick={() =>
+              toast.info("Clone functionality not implemented yet.")
+            }
+            aria-label="Clone quotation"
           >
-            <i class="ti ti-copy me-2"></i>Clone Quotation
-          </a>
+            <i className="ti ti-copy me-2"></i>Clone Quotation
+          </button>
         </div>
       </div>
     </div>
