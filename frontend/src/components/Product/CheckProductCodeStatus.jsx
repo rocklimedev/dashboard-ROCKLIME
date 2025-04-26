@@ -227,7 +227,7 @@ const CheckProductCodeStatus = () => {
 
   if (productsError || categoriesError) {
     return (
-      <div style={styles.pageWrapper}>
+      <div>
         <div className="content text-center">
           <p className="text-danger">Error fetching data.</p>
         </div>
