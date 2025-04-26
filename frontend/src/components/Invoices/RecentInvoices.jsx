@@ -39,24 +39,40 @@ const RecentInvoices = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedInvoices, setSelectedInvoices] = useState([]);
 
-  // Log unmatched customers for debugging
+  // Log unmatched customers and addresses for debugging
   useEffect(() => {
-    const unmatchedInvoices = invoices.filter(
+    // Unmatched customers
+    const unmatchedCustomerInvoices = invoices.filter(
       (inv) =>
         inv.customerId &&
         !customers.find((cust) => cust.customerId === inv.customerId)
     );
-    if (unmatchedInvoices.length > 0) {
+    if (unmatchedCustomerInvoices.length > 0) {
       console.warn(
         "Unmatched customer IDs:",
-        unmatchedInvoices.map((inv) => ({
+        unmatchedCustomerInvoices.map((inv) => ({
           invoiceNo: inv.invoiceNo,
           customerId: inv.customerId,
           billTo: inv.billTo,
         }))
       );
     }
-  }, [invoices, customers]);
+
+    // Unmatched addresses
+    const unmatchedAddressInvoices = invoices.filter(
+      (inv) =>
+        inv.shipTo && !addresses.find((addr) => addr.addressId === inv.shipTo)
+    );
+    if (unmatchedAddressInvoices.length > 0) {
+      console.warn(
+        "Unmatched shipTo address IDs:",
+        unmatchedAddressInvoices.map((inv) => ({
+          invoiceNo: inv.invoiceNo,
+          shipTo: inv.shipTo,
+        }))
+      );
+    }
+  }, [invoices, customers, addresses]);
 
   // Memoized maps
   const customerMap = useMemo(() => {
@@ -70,15 +86,20 @@ const RecentInvoices = () => {
   const addressMap = useMemo(() => {
     const map = {};
     addresses.forEach((addr) => {
-      map[addr.addressId] = [
+      // Collect non-null address fields
+      const addressParts = [
         addr.street,
         addr.city,
         addr.state,
-        addr.country,
         addr.postalCode,
-      ]
-        .filter(Boolean)
-        .join(", ");
+        addr.country,
+      ].filter((part) => part != null && part !== "");
+
+      // Format address: use "Incomplete Address" if no parts are available
+      map[addr.addressId] =
+        addressParts.length > 0
+          ? addressParts.join(", ")
+          : "Incomplete Address";
     });
     return map;
   }, [addresses]);
@@ -107,7 +128,8 @@ const RecentInvoices = () => {
 
   // Get invoice status with fallback
   const getInvoiceStatus = (invoice) => {
-    if (invoice.status && invoice.status !== "N/A") return invoice.status;
+    if (invoice.status && invoice.status !== "N/A" && invoice.status !== "")
+      return invoice.status;
     const customer = customers.find(
       (cust) => cust.customerId === invoice.customerId
     );
@@ -160,6 +182,9 @@ const RecentInvoices = () => {
           inv.billTo?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           customerMap[inv.customerId]
             ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          addressMap[inv.shipTo]
+            ?.toLowerCase()
             .includes(searchQuery.toLowerCase())
       );
     }
@@ -211,6 +236,7 @@ const RecentInvoices = () => {
     sortBy,
     searchQuery,
     customerMap,
+    addressMap,
   ]);
 
   const isLoading =
@@ -232,7 +258,7 @@ const RecentInvoices = () => {
                 <input
                   type="text"
                   className="form-control"
-                  placeholder="Search by invoice, customer, or bill to..."
+                  placeholder="Search by invoice, customer, bill to, or address..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />

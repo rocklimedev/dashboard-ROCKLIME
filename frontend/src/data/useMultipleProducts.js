@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { productApi } from "../api/productApi";
+import { API_URL } from "./config";
 
 export const useMultipleProducts = (products = []) => {
   const [productDetailsMap, setProductDetailsMap] = useState(new Map());
@@ -10,18 +10,20 @@ export const useMultipleProducts = (products = []) => {
     const fetchAllProducts = async () => {
       try {
         setIsLoading(true);
+
         const responses = await Promise.all(
-          products.map((p) =>
-            p.productId
-              ? productApi.endpoints.getProductById.initiate(p.productId)
-              : Promise.resolve(null)
-          )
+          products.map(async (p) => {
+            if (!p.productId) return null;
+            const res = await fetch(`${API_URL}/products/${p.productId}`);
+            const data = await res.json();
+            return { productId: p.productId, data: data?.data };
+          })
         );
 
         const detailsMap = new Map();
-        responses.forEach((res, idx) => {
-          if (res?.data?.data) {
-            detailsMap.set(products[idx].productId, res.data.data);
+        responses.forEach((res) => {
+          if (res?.data) {
+            detailsMap.set(res.productId, res.data);
           }
         });
 

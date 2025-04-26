@@ -19,7 +19,7 @@ const OrderItem = ({
     <div className="card shadow-sm mb-3">
       <div className="card-header bg-light">
         <a
-          href={`/orders/${order.id}`}
+          href={`/order/${order.id}`}
           className="text-primary font-weight-medium text-decoration-none d-block text-truncate"
         >
           {order.title || "Untitled Order"} - {order.pipeline || "No Pipeline"}
@@ -85,7 +85,7 @@ const OrderItem = ({
           </button>
           <div className="dropdown-menu dropdown-menu-end">
             <a
-              href={`/orders/${order.id}`}
+              href={`/order/${order.id}`}
               className="dropdown-item d-flex align-items-center"
             >
               <FaOpencart className="me-2" /> Open Order

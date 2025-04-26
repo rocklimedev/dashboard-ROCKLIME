@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import PageHeader from "../Common/PageHeader";
 import OrderPagination from "./OrderPagination";
 import OrderFilter from "./OrderFilter";
@@ -18,21 +18,17 @@ import "react-toastify/dist/ReactToastify.css";
 import DatesModal from "./DateModal";
 import OrderItem from "./Orderitem";
 import { useTeamDataMap } from "../../data/useTeamDataMap";
+import { useGetAllTeamsQuery } from "../../api/teamApi";
 // Custom Hook to fetch team name by teamId
-const useTeamName = (teamId) => {
-  const { data, isLoading } = useGetTeamByIdQuery(teamId, { skip: !teamId });
-  return {
-    teamName: data?.name || "Unassigned",
-    isLoading,
-  };
-};
 
 const OrderWrapper = () => {
   const [activeTab, setActiveTab] = useState("orders");
   const [showModal, setShowModal] = useState(false);
+  const [teamMap, setTeamMap] = useState({});
   const [showHoldModal, setShowHoldModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showDatesModal, setShowDatesModal] = useState(false);
+  const { data: teamsData } = useGetAllTeamsQuery();
   const [selectedDates, setSelectedDates] = useState({
     dueDate: null,
     followupDates: [],
@@ -73,7 +69,15 @@ const OrderWrapper = () => {
   } = useGetFilteredOrdersQuery(cleanFilters, {
     skip: !isFiltered,
   });
-
+  useEffect(() => {
+    if (teamsData?.teams) {
+      const map = {};
+      teamsData.teams.forEach((team) => {
+        map[team.id] = team.teamName || "—";
+      });
+      setTeamMap(map);
+    }
+  }, [teamsData]);
   const {
     data: allData,
     error: allError,
@@ -114,7 +118,7 @@ const OrderWrapper = () => {
   const handleViewInvoice = (order) => {
     const invoiceId = order.invoiceId;
     if (invoiceId) {
-      window.open(`/invoices/${invoiceId}`, "_blank");
+      window.open(`/invoice/${invoiceId}`, "_blank");
     } else {
       toast.error("No invoice associated with this order.");
     }
@@ -265,14 +269,9 @@ const OrderWrapper = () => {
                         <OrderItem
                           order={order}
                           teamName={
-                            order.assignedTo && teamDataMap[order.assignedTo]
-                              ? teamDataMap[order.assignedTo].teamName
-                              : "Unassigned"
-                          }
-                          isTeamLoading={
-                            order.assignedTo && teamDataMap[order.assignedTo]
-                              ? teamDataMap[order.assignedTo].isLoading
-                              : false
+                            order.assignedTo
+                              ? teamMap[order.assignedTo] || "—"
+                              : "—"
                           }
                           onEditClick={handleEditClick}
                           onHoldClick={handleHoldClick}
