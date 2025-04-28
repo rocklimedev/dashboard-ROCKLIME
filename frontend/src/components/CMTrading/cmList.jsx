@@ -7,24 +7,23 @@ import {
 import { BiEdit, BiTrash } from "react-icons/bi";
 import { FaEye } from "react-icons/fa";
 import AddCompany from "./AddCompany";
-import { toast } from "react-toastify"; // Optional: for notifications
 import DeleteModal from "../Common/DeleteModal";
+import DataTablePagination from "../Common/DataTablePagination"; // Import your pagination
+import { toast } from "react-toastify";
+
 const ViewCompany = ({ company, onClose }) => {
   const modalRef = useRef(null);
 
-  // Handle Escape key press
   useEffect(() => {
     const handleEscape = (event) => {
       if (event.key === "Escape") {
         onClose();
       }
     };
-
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
   }, [onClose]);
 
-  // Handle click outside modal
   const handleOutsideClick = (event) => {
     if (modalRef.current && !modalRef.current.contains(event.target)) {
       onClose();
@@ -110,13 +109,17 @@ const ViewCompany = ({ company, onClose }) => {
 
 const CmList = () => {
   const { data, error, isLoading } = useGetAllCompaniesQuery();
-  const [deleteCompany, { isLoading: isDeleting }] = useDeleteCompanyMutation();
+  const [deleteCompany] = useDeleteCompanyMutation();
   const [showCompanyModal, setShowCompanyModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false); // New state for DeleteModal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState(null);
-  const [companyToDelete, setCompanyToDelete] = useState(null); // New state for company to delete
+  const [companyToDelete, setCompanyToDelete] = useState(null);
   const [editingCompany, setEditingCompany] = useState(null);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const companies = Array.isArray(data?.companies) ? data.companies : [];
 
@@ -168,6 +171,15 @@ const CmList = () => {
     setSelectedCompany(null);
   };
 
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  // Calculate the companies to show on current page
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentCompanies = companies.slice(indexOfFirstItem, indexOfLastItem);
+
   if (isLoading) return <p>Loading...</p>;
   if (error)
     return (
@@ -182,7 +194,6 @@ const CmList = () => {
           subtitle="Manage your companies"
           onAdd={handleAddCompany}
         />
-
         <div className="card">
           <div className="card-body p-0">
             <div className="table-responsive">
@@ -199,7 +210,7 @@ const CmList = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {companies.map((company) => (
+                  {currentCompanies.map((company) => (
                     <tr key={company.companyId}>
                       <td>{company.name}</td>
                       <td>{company.address || "N/A"}</td>
@@ -210,17 +221,7 @@ const CmList = () => {
                           ? new Date(company.createdDate).toLocaleDateString()
                           : "N/A"}
                       </td>
-                      <td>
-                        <span
-                          className={`badge ${
-                            company.status === "Active"
-                              ? "badge-success"
-                              : "badge-danger"
-                          }`}
-                        >
-                          {company.parentCompanyId || "None"}
-                        </span>
-                      </td>
+                      <td>{company.parentCompanyId || "None"}</td>
                       <td>
                         <div className="edit-delete-action">
                           <a
@@ -246,27 +247,39 @@ const CmList = () => {
                       </td>
                     </tr>
                   ))}
+                  {currentCompanies.length === 0 && (
+                    <tr>
+                      <td colSpan="7" className="text-center">
+                        No companies found.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
           </div>
         </div>
+
+        {/* Pagination */}
+        <div className="d-flex justify-content-end my-3">
+          <DataTablePagination
+            totalItems={companies.length}
+            itemNo={itemsPerPage}
+            onPageChange={handlePageChange}
+          />
+        </div>
       </div>
 
-      {/* Add/Edit Company Modal */}
+      {/* Modals */}
       {showCompanyModal && (
         <AddCompany
           onClose={handleCloseCompanyModal}
           companyToEdit={editingCompany}
         />
       )}
-
-      {/* View Company Modal */}
       {showViewModal && (
         <ViewCompany company={selectedCompany} onClose={handleCloseViewModal} />
       )}
-
-      {/* Delete Company Modal */}
       {showDeleteModal && (
         <DeleteModal
           item={companyToDelete}

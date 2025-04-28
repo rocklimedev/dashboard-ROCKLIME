@@ -38,7 +38,7 @@ const OrderList = ({
         <>
           <div className="row">
             {orders.map((order) => (
-              <div className="col-md-6" key={order.id}>
+              <div className="col-md-4 d-flex" key={order.id}>
                 <OrderItem
                   order={order}
                   teamName={

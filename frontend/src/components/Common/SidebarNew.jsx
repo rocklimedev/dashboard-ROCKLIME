@@ -82,6 +82,14 @@ const Sidebar = ({ isSidebarOpen }) => {
                   )}
                 </li>
               ))}
+            <li class="submenu-open">
+              <h6 class="submenu-hdr">Extras</h6>
+
+              <a href="https://static.cmtradingco.com/" target="_blank">
+                <i data-feather="box"></i>
+                <span>Product Images</span>
+              </a>
+            </li>
           </ul>
         </div>
       </div>

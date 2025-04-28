@@ -2,26 +2,32 @@ import React, { useState } from "react";
 import PageHeader from "../Common/PageHeader";
 import {
   useGetAllBrandsQuery,
-  useDeleteBrandMutation, // Add delete mutation
+  useDeleteBrandMutation,
 } from "../../api/brandsApi";
 import { AiOutlineEdit } from "react-icons/ai";
 import { FcEmptyTrash } from "react-icons/fc";
 import AddBrand from "./AddBrandModal";
-import DeleteModal from "../Common/DeleteModal"; // Import DeleteModal
+import DeleteModal from "../Common/DeleteModal";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import DataTablePagination from "../Common/DataTablePagination"; // Import pagination component
 
 const Brands = () => {
   const { data, error, isLoading, refetch } = useGetAllBrandsQuery();
-  const [deleteBrand, { isLoading: isDeleting }] = useDeleteBrandMutation(); // Add mutation hook
+  const [deleteBrand, { isLoading: isDeleting }] = useDeleteBrandMutation();
   const brands = Array.isArray(data) ? data : [];
 
+  // State for modals, selected brand, deletion, pagination, and checkboxes
   const [showModal, setShowModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [selectedBrand, setSelectedBrand] = useState(null);
-  const [brandToDelete, setBrandToDelete] = useState(null); // Track brand to delete
-  const [showDeleteModal, setShowDeleteModal] = useState(false); // Control delete modal visibility
+  const [brandToDelete, setBrandToDelete] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1); // Pagination state
+  const [selectedBrands, setSelectedBrands] = useState([]); // Checkbox state
+  const itemsPerPage = 20; // Matches itemNo default in DataTablePagination
 
+  // Handle add brand
   const handleAddBrand = () => {
     console.log("Adding new brand");
     setEditMode(false);
@@ -29,6 +35,7 @@ const Brands = () => {
     setShowModal(true);
   };
 
+  // Handle edit brand
   const handleEditBrand = (brand) => {
     console.log("Editing brand:", brand);
     setEditMode(true);
@@ -36,12 +43,14 @@ const Brands = () => {
     setShowModal(true);
   };
 
+  // Handle delete brand
   const handleDeleteBrand = (brand) => {
     console.log("Opening delete modal for brand:", brand);
     setBrandToDelete(brand);
     setShowDeleteModal(true);
   };
 
+  // Confirm deletion
   const handleConfirmDelete = async () => {
     if (!brandToDelete?.id) {
       toast.error("No brand selected for deletion");
@@ -52,8 +61,13 @@ const Brands = () => {
       console.log("Deleting brand with ID:", brandToDelete.id);
       await deleteBrand(brandToDelete.id).unwrap();
       toast.success("Brand deleted successfully!");
+      // Reset to previous page if current page becomes empty
+      if (paginatedBrands.length === 1 && currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+      }
       setShowDeleteModal(false);
       setBrandToDelete(null);
+      setSelectedBrands([]); // Clear selections
       refetch(); // Refresh brand list
     } catch (err) {
       toast.error(
@@ -63,6 +77,7 @@ const Brands = () => {
     }
   };
 
+  // Handle modal close
   const handleCloseModal = () => {
     console.log("Closing AddBrand modal");
     setShowModal(false);
@@ -71,13 +86,42 @@ const Brands = () => {
     refetch(); // Refresh brand list
   };
 
+  // Handle page change
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    setSelectedBrands([]); // Clear selections on page change
+  };
+
+  // Checkbox handlers
+  const handleSelectAll = () => {
+    const currentPageBrandIds = paginatedBrands.map((brand) => brand.id);
+    setSelectedBrands(
+      selectedBrands.length === currentPageBrandIds.length
+        ? []
+        : currentPageBrandIds
+    );
+  };
+
+  const toggleBrand = (id) => {
+    setSelectedBrands((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  // Paginated brands
+  const paginatedBrands = (() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return brands.slice(startIndex, endIndex);
+  })();
+
   if (isLoading) return <p>Loading...</p>;
   if (error) return <p>Error fetching brands: {JSON.stringify(error)}</p>;
   if (brands.length === 0) return <p>No brands available.</p>;
 
   return (
     <div className="page-wrapper">
-      <ToastContainer /> {/* Required for toasts */}
+      <ToastContainer />
       <div className="content">
         <PageHeader
           title="Brands"
@@ -93,7 +137,15 @@ const Brands = () => {
                   <tr>
                     <th className="no-sort">
                       <label className="checkboxs">
-                        <input type="checkbox" id="select-all" />
+                        <input
+                          type="checkbox"
+                          id="select-all"
+                          checked={
+                            selectedBrands.length === paginatedBrands.length &&
+                            paginatedBrands.length > 0
+                          }
+                          onChange={handleSelectAll}
+                        />
                         <span className="checkmarks"></span>
                       </label>
                     </th>
@@ -105,11 +157,15 @@ const Brands = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {brands.map((brand) => (
+                  {paginatedBrands.map((brand) => (
                     <tr key={brand.id}>
                       <td>
                         <label className="checkboxs">
-                          <input type="checkbox" />
+                          <input
+                            type="checkbox"
+                            checked={selectedBrands.includes(brand.id)}
+                            onChange={() => toggleBrand(brand.id)}
+                          />
                           <span className="checkmarks"></span>
                         </label>
                       </td>
@@ -148,6 +204,14 @@ const Brands = () => {
                 </tbody>
               </table>
             </div>
+          </div>
+          {/* Pagination Component */}
+          <div className="card-footer">
+            <DataTablePagination
+              totalItems={brands.length}
+              itemNo={itemsPerPage}
+              onPageChange={handlePageChange}
+            />
           </div>
         </div>
       </div>

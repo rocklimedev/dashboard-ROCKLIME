@@ -23,8 +23,8 @@ export const invoiceApi = createApi({
     }),
     // Update an invoice by ID
     updateInvoice: builder.mutation({
-      query: ({ id, invoiceData }) => ({
-        url: `/${id}`,
+      query: ({ invoiceId, invoiceData }) => ({
+        url: `/${invoiceId}`,
         method: "PUT",
         body: invoiceData,
       }),
