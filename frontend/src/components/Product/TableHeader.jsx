@@ -23,6 +23,10 @@ const TableHeader = ({ filters, setFilters }) => {
     handleFilterChange("search", e.target.value);
   };
 
+  const handleCompanyCodeChange = (e) => {
+    handleFilterChange("company_code", e.target.value);
+  };
+
   const createdByList = [
     ...new Set(
       productsData?.data
@@ -47,7 +51,7 @@ const TableHeader = ({ filters, setFilters }) => {
           <input
             type="text"
             className="form-control"
-            placeholder="Search products..."
+            placeholder="Search products, Company Code, etc..."
             value={filters.search || ""}
             onChange={handleSearchChange}
           />
@@ -61,43 +65,6 @@ const TableHeader = ({ filters, setFilters }) => {
       </div>
 
       <div className="d-flex table-dropdown my-xl-auto right-content align-items-center flex-wrap row-gap-3">
-        {/* ===== CATEGORY FILTER ===== */}
-        <div className="dropdown me-2 position-relative">
-          <a
-            href="#"
-            className="dropdown-toggle btn btn-white btn-md d-inline-flex align-items-center"
-            data-bs-toggle="dropdown"
-          >
-            Category
-          </a>
-          <ul className="dropdown-menu dropdown-menu-end p-3">
-            {categoriesData?.categories?.map((cat) => (
-              <li key={cat.categoryId}>
-                <a
-                  href="#"
-                  onClick={() => handleFilterChange("category", cat.categoryId)} // Use categoryId
-                  className="dropdown-item rounded-1"
-                >
-                  {cat.name}
-                </a>
-              </li>
-            ))}
-          </ul>
-          {filters.category && (
-            <div className="position-absolute top-0 start-100 translate-middle badge bg-primary text-white px-2 py-1 rounded-pill d-flex align-items-center">
-              <span className="me-1">
-                {categoriesData?.categories?.find(
-                  (cat) => cat.categoryId === filters.category
-                )?.name || filters.category}
-              </span>
-              <i
-                className="ti ti-x cursor-pointer"
-                onClick={() => handleClearFilter("category")}
-              ></i>
-            </div>
-          )}
-        </div>
-
         {/* ===== BRAND FILTER ===== */}
         <div className="dropdown position-relative me-2">
           <a
@@ -129,6 +96,41 @@ const TableHeader = ({ filters, setFilters }) => {
               <i
                 className="ti ti-x cursor-pointer"
                 onClick={() => handleClearFilter("brand")}
+              ></i>
+            </div>
+          )}
+        </div>
+
+        {/* ===== COMPANY CODE FILTER ===== */}
+        <div className="dropdown position-relative me-2">
+          <a
+            href="#"
+            className="dropdown-toggle btn btn-white btn-md d-inline-flex align-items-center"
+            data-bs-toggle="dropdown"
+          >
+            Company Code
+          </a>
+          <ul className="dropdown-menu dropdown-menu-end p-3">
+            {productsData?.data?.map((product) => (
+              <li key={product.company_code}>
+                <a
+                  href="#"
+                  onClick={() =>
+                    handleFilterChange("company_code", product.company_code)
+                  } // Use company_code
+                  className="dropdown-item rounded-1"
+                >
+                  {product.company_code}
+                </a>
+              </li>
+            ))}
+          </ul>
+          {filters.company_code && (
+            <div className="position-absolute top-0 start-100 translate-middle badge bg-primary text-white px-2 py-1 rounded-pill d-flex align-items-center">
+              <span className="me-1">{filters.company_code}</span>
+              <i
+                className="ti ti-x cursor-pointer"
+                onClick={() => handleClearFilter("company_code")}
               ></i>
             </div>
           )}

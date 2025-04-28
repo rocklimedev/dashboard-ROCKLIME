@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import PageHeader from "../Common/PageHeader";
 import {
   useGetAllOrdersQuery,
@@ -11,6 +11,7 @@ import DeleteModal from "../Common/DeleteModal";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import DatesModal from "./DateModal";
+import { FaEye, FaTrash } from "react-icons/fa"; // Import icons from react-icons
 
 const RecentOrders = () => {
   const navigate = useNavigate();
@@ -76,6 +77,11 @@ const RecentOrders = () => {
   const handleShowDates = (dueDate, followupDates) => {
     setSelectedDates({ dueDate, followupDates });
     setShowDatesModal(true);
+  };
+
+  const handleCloseDatesModal = () => {
+    setShowDatesModal(false);
+    setSelectedDates({ dueDate: null, followupDates: [] });
   };
 
   if (isLoading) return <p>Loading...</p>;
@@ -148,22 +154,33 @@ const RecentOrders = () => {
                       <td>{order.description}</td>
                       <td>{new Date(order.createdAt).toLocaleDateString()}</td>
                       <td>
-                        {order.invoiceId
-                          ? invoicesMap[order.invoiceId] || "—"
-                          : "—"}
+                        {order.invoiceId && invoicesMap[order.invoiceId] ? (
+                          <Link
+                            to={`/invoice/${order.invoiceId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="invoice-link"
+                          >
+                            {invoicesMap[order.invoiceId]}
+                          </Link>
+                        ) : (
+                          "—"
+                        )}
                       </td>
                       <td>
                         <button
                           className="btn btn-sm btn-primary me-1"
                           onClick={() => navigate(`/order/${order.id}`)}
+                          title="View Order"
                         >
-                          View
+                          <FaEye className="me-1" />
                         </button>
                         <button
                           className="btn btn-sm btn-danger"
                           onClick={() => handleDelete(order.id)}
+                          title="Delete Order"
                         >
-                          Delete
+                          <FaTrash className="me-1" />
                         </button>
                       </td>
                     </tr>
@@ -176,11 +193,14 @@ const RecentOrders = () => {
                 onClose={() => setShowDeleteModal(false)}
                 onConfirm={confirmDelete}
               />
-              <DatesModal
-                show={showDatesModal}
-                onClose={() => setShowDatesModal(false)}
-                dates={selectedDates}
-              />
+              {showDatesModal && (
+                <DatesModal
+                  show={showDatesModal}
+                  onHide={handleCloseDatesModal}
+                  dueDate={selectedDates.dueDate}
+                  followupDates={selectedDates.followupDates}
+                />
+              )}
             </div>
           </div>
         </div>

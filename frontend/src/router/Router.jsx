@@ -9,7 +9,7 @@ const RouteWithHelmet = ({ element, name }) => {
     <>
       {name && (
         <Helmet>
-          <title>{`Rocklime - ${name}`}</title>
+          <title>{`CM Trading Co - ${name}`}</title>
         </Helmet>
       )}
       {element}

@@ -14,16 +14,17 @@ const NoAccess = () => {
 
   const handleRetry = async () => {
     try {
-      // Refetch the user profile to check for updated role
       const updatedProfile = await refetchProfile().unwrap();
-      const roleId = updatedProfile?.user?.roleId;
+      const roleNames = updatedProfile?.user?.roles || [];
 
-      if (roleId === "USERS") {
+      if (roleNames.includes("USERS")) {
         toast.error("Access still denied. Please contact an administrator.");
-      } else {
-        toast.success("Access granted! Redirecting to homepage...");
-        navigate("/");
+        return; // STOP here if still USERS
       }
+
+      // If user is upgraded (NOT USERS anymore)
+      toast.success("Access granted! Redirecting to homepage...");
+      navigate("/");
     } catch (error) {
       toast.error("Failed to verify access. Please try again.");
       console.error("Retry failed", error);

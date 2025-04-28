@@ -104,18 +104,32 @@ const OrderWithInvoice = () => {
   }, [teamData]);
 
   // Team members
+  // Team members
+  // Team members
   const normalizedTeamMembers = useMemo(() => {
-    const teamId = order.assignedTo;
-    if (!teamId || !teamData?.teams) return [];
-    const team = teamData.teams.find((t) => t.id === teamId);
-    if (!team) return [];
-    return team.teammembers.map((member) => ({
-      name: member.userName || "Unknown",
-      role: member.roleName || "N/A",
-      email: member.email || "N/A",
-    }));
-  }, [order.assignedTo, teamData]);
+    const teamIds = order.assignedTo
+      ? order.assignedTo.split(",").map((id) => id.trim())
+      : [];
+    if (!teamIds.length || !teamData?.teams) return [];
 
+    const teams = teamIds
+      .map((teamId) => {
+        const team = teamData.teams.find((t) => t.id === teamId);
+        if (!team) return null;
+        return {
+          teamId: team.id,
+          teamName: team.teamName || "Unknown Team",
+          members: team.teammembers.map((member) => ({
+            name: member.userName || "Unknown",
+            role: member.roleName || "N/A",
+            email: member.email || "N/A",
+          })),
+        };
+      })
+      .filter((team) => team !== null); // Remove invalid teams
+
+    return teams;
+  }, [order.assignedTo, teamData]);
   const handleEditOrder = () => {
     setSelectedOrder(order);
     setShowEditModal(true);
@@ -406,25 +420,38 @@ const OrderWithInvoice = () => {
             <h5>Team Members</h5>
             <div className="row">
               {normalizedTeamMembers.length > 0 ? (
-                normalizedTeamMembers.map((member, idx) => (
-                  <div key={idx} className="col-md-4 mb-3">
-                    <div className="card h-100 shadow-sm border rounded-3">
-                      <div className="card-body">
-                        <h6 className="fw-bold">{member.name}</h6>
-                        <p className="text-muted mb-1">
-                          <strong>Role:</strong> {member.role}
-                        </p>
-                        <p className="text-muted mb-0">
-                          <strong>Email:</strong> {member.email}
-                        </p>
+                normalizedTeamMembers.map((team, teamIdx) => (
+                  <div key={team.teamId} className="col-12 mb-4">
+                    <h6 className="fw-bold text-primary">{team.teamName}</h6>
+                    {team.members.length > 0 ? (
+                      <div className="row">
+                        {team.members.map((member, memberIdx) => (
+                          <div key={memberIdx} className="col-md-4 mb-3">
+                            <div className="card h-100 shadow-sm border rounded-3">
+                              <div className="card-body">
+                                <h6 className="fw-bold">{member.name}</h6>
+                                <p className="text-muted mb-1">
+                                  <strong>Role:</strong> {member.role}
+                                </p>
+                                <p className="text-muted mb-0">
+                                  <strong>Email:</strong> {member.email}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    </div>
+                    ) : (
+                      <p className="text-muted">
+                        No members found for this team.
+                      </p>
+                    )}
                   </div>
                 ))
               ) : (
                 <p className="text-muted">
                   {order.assignedTo
-                    ? "No team members found for this team."
+                    ? "No teams or members found for the assigned team(s)."
                     : "No team assigned to this order."}
                 </p>
               )}

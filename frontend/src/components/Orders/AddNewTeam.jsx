@@ -3,7 +3,7 @@ import {
   useCreateTeamMutation,
   useUpdateTeamMutation,
   useGetTeamMembersQuery,
-  useGetTeamByIdQuery, // Add useGetTeamByIdQuery
+  useGetTeamByIdQuery,
 } from "../../api/teamApi";
 import { useGetAllUsersQuery, useGetUserByIdQuery } from "../../api/userApi";
 import { toast } from "react-toastify";
@@ -142,8 +142,9 @@ const AddNewTeam = ({ onClose, onTeamAdded, team }) => {
         console.log("Updating team with ID:", team.id, teamData);
         await updateTeam({
           teamId: team.id,
-          teamData,
+          ...teamData,
         }).unwrap();
+
         toast.success("Team updated successfully");
       } else {
         console.log("Creating team:", teamData);
@@ -210,113 +211,102 @@ const AddNewTeam = ({ onClose, onTeamAdded, team }) => {
               <p>Loading team data...</p>
             ) : teamError && team ? (
               <p className="text-danger">
-                Error loading team: {teamError.data?.message || "Unknown error"}
+                Error loading team data. Please try again later.
               </p>
-            ) : membersError && team ? (
-              <p className="text-danger">
-                Error loading team members:{" "}
-                {membersError.data?.message || "Unknown error"}
-              </p>
-            ) : null}
-
-            <input
-              type="text"
-              className="form-control mb-2"
-              placeholder="Enter Team Name"
-              value={teamName}
-              onChange={(e) => setTeamName(e.target.value)}
-            />
-
-            <h6>Select Admin</h6>
-            <select
-              className="form-control mb-2"
-              value={adminId}
-              onChange={(e) => setAdminId(e.target.value)}
-            >
-              <option value="">Select Admin</option>
-              {users?.length > 0 ? (
-                users.map((user) => (
-                  <option key={user.userId} value={user.userId}>
-                    {user.name}
-                  </option>
-                ))
-              ) : (
-                <option disabled>Loading users...</option>
-              )}
-            </select>
-
-            <h6>Team Members</h6>
-            <select
-              className="form-control mb-2"
-              value={selectedUserId}
-              onChange={(e) => setSelectedUserId(e.target.value)}
-            >
-              <option value="">Select a user</option>
-              {users?.length > 0 ? (
-                users.map((user) => (
-                  <option key={user.userId} value={user.userId}>
-                    {user.name}
-                  </option>
-                ))
-              ) : (
-                <option disabled>Loading users...</option>
-              )}
-            </select>
-            <button
-              className="btn btn-success mb-3"
-              onClick={addMember}
-              disabled={!selectedUserId}
-            >
-              + Add Member
-            </button>
-
-            {members.length > 0 ? (
-              members.map((member) => (
-                <div
-                  key={member.userId}
-                  className="d-flex align-items-center gap-2 mb-2"
-                >
+            ) : (
+              <form onSubmit={handleSubmit}>
+                <div className="form-group">
+                  <label htmlFor="teamName">Team Name</label>
                   <input
                     type="text"
+                    id="teamName"
                     className="form-control"
-                    value={member.userName}
-                    readOnly
+                    value={teamName}
+                    onChange={(e) => setTeamName(e.target.value)}
                   />
-                  <input
-                    type="text"
+                </div>
+                <div className="form-group">
+                  <label htmlFor="adminId">Admin</label>
+                  <select
+                    id="adminId"
                     className="form-control"
-                    value={member.roleName}
-                    readOnly
-                  />
-                  <button
-                    className="btn btn-danger"
-                    onClick={() => removeMember(member.userId)}
+                    value={adminId}
+                    onChange={(e) => setAdminId(e.target.value)}
                   >
-                    ❌
+                    <option value="">Select Admin</option>
+                    {users.map((user) => (
+                      <option key={user.userId} value={user.userId}>
+                        {user.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="members">Team Members</label>
+                  <select
+                    id="members"
+                    className="form-control"
+                    value={selectedUserId}
+                    onChange={(e) => setSelectedUserId(e.target.value)}
+                  >
+                    <option value="">Select Member</option>
+                    {users.map((user) => (
+                      <option key={user.userId} value={user.userId}>
+                        {user.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={addMember}
+                    className="btn btn-primary mt-2"
+                  >
+                    Add Member
                   </button>
                 </div>
-              ))
-            ) : (
-              <p>No team members added.</p>
+                <div className="members-list mt-2">
+                  {members.map((member) => (
+                    <div
+                      key={member.userId}
+                      className="d-flex justify-content-between"
+                    >
+                      <span>
+                        {member.userName} - {member.roleName}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeMember(member.userId)}
+                        className="btn btn-danger btn-sm"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={onClose}
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={creating || updating}
+                  >
+                    {team
+                      ? updating
+                        ? "Updating..."
+                        : "Update"
+                      : creating
+                      ? "Creating..."
+                      : "Create"}
+                  </button>
+                </div>
+              </form>
             )}
-          </div>
-          <div className="modal-footer">
-            <button className="btn btn-secondary" onClick={onClose}>
-              Cancel
-            </button>
-            <button
-              className="btn btn-primary"
-              onClick={handleSubmit}
-              disabled={
-                creating || updating || isTeamLoading || isMembersLoading
-              }
-            >
-              {creating || updating
-                ? "Saving..."
-                : team
-                ? "Update Team"
-                : "Add Team"}
-            </button>
           </div>
         </div>
       </div>

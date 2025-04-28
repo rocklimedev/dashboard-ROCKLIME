@@ -55,6 +55,7 @@ const ProductList = () => {
     brand: null,
     sortBy: null, // Disable default date filter
     search: "",
+    company_code: "", // Added company_code filter
   });
   const itemsPerPage = 20;
 
@@ -79,7 +80,11 @@ const ProductList = () => {
         (product.product_code &&
           product.product_code
             .toLowerCase()
-            .includes(filters.search.toLowerCase()));
+            .includes(filters.search.toLowerCase())) ||
+        (product.company_code &&
+          product.company_code
+            .toLowerCase()
+            .includes(filters.company_code.toLowerCase())); // Added company_code search
 
       let matchesDate = true;
       if (filters.sortBy === "Last 7 Days") {
@@ -113,14 +118,6 @@ const ProductList = () => {
   };
 
   const filteredProducts = applyFilters(customers);
-  // console.log("Filtered Products:", filteredProducts);
-  // console.log(
-  //   "Current Items:",
-  //   filteredProducts.slice(
-  //     currentPage * itemsPerPage,
-  //     (currentPage + 1) * itemsPerPage
-  //   )
-  // );
 
   useEffect(() => {
     if (currentPage >= Math.ceil(filteredProducts.length / itemsPerPage)) {
@@ -191,12 +188,10 @@ const ProductList = () => {
                   <tr>
                     <th>Product Name</th>
                     <th>Product Code</th>
+                    <th>Company Code</th> {/* Added Company Code column */}
                     <th>Category</th>
                     <th>Brand</th>
-                    <th>Price</th>
-                    <th>Qty</th>
-                    <th>Stock In/Out/History</th>
-                    <th>Created At</th>
+                    <th>Created By</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -205,34 +200,26 @@ const ProductList = () => {
                     <tr key={product.productId}>
                       <td>{product.name}</td>
                       <td>{product.product_code}</td>
+                      <td>{product.company_code}</td>{" "}
+                      {/* Display Company Code */}
                       <td>{getCategoryName(product.categoryId)}</td>
                       <td>{getBrandsName(product.brandId)}</td>
-                      <td>{product.sellingPrice}</td>
-                      <td>{product.quantity}</td>
                       <td>
-                        <button
-                          type="button"
-                          className="btn btn-secondary"
-                          onClick={() => openStockModal(product)}
-                        >
-                          Stock
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-secondary"
-                          onClick={() => openHistoryModal(product)}
-                        >
-                          History
-                        </button>
-                      </td>
-                      <td>
-                        {new Date(product.createdAt).toLocaleDateString()}
+                        {
+                          customers.find((c) => c._id === product.customerId)
+                            ?.name
+                        }
                       </td>
                       <td>
                         <Actions
-                          viewUrl={`/product/${product.productId}`}
-                          editUrl={`/product/${product.productId}/edit`}
+                          onEdit={() =>
+                            navigate(
+                              `/inventory/product/edit/${product.productId}`
+                            )
+                          }
                           onDelete={() => handleDeleteClick(product)}
+                          onStock={() => handleStockClick(product)}
+                          onHistory={() => handleHistoryClick(product)}
                         />
                       </td>
                     </tr>
@@ -241,34 +228,34 @@ const ProductList = () => {
               </table>
             </div>
           </div>
+
+          <DataTablePagination
+            currentPage={currentPage}
+            setCurrentPage={setCurrentPage}
+            totalItems={filteredProducts.length}
+            itemsPerPage={itemsPerPage}
+          />
         </div>
-        <DataTablePagination
-          totalItems={filteredProducts.length}
-          itemNo={itemsPerPage}
-          onPageChange={(selectedPage) => setCurrentPage(selectedPage - 1)}
-        />
-
-        <DeleteModal
-          item={selectedProduct}
-          itemType="Product"
-          isVisible={isModalVisible}
-          onConfirm={handleConfirmDelete}
-          onCancel={() => setModalVisible(false)}
-        />
-
-        <StockModal
-          show={isStockModalVisible}
-          onHide={() => setStockModalVisible(false)}
-          onSubmit={handleStockSubmit}
-          product={selectedProduct}
-        />
-        <HistoryModal
-          show={isHistoryModalVisible}
-          onHide={() => setHistoryModalVisible(false)}
-          history={stockHistory}
-          product={selectedProduct}
-        />
       </div>
+
+      {/* Modals for delete, stock, and history */}
+      <DeleteModal
+        isVisible={isModalVisible}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setModalVisible(false)}
+        product={selectedProduct}
+      />
+      <StockModal
+        isVisible={isStockModalVisible}
+        onSubmit={handleStockSubmit}
+        onClose={() => setStockModalVisible(false)}
+        product={selectedProduct}
+      />
+      <HistoryModal
+        isVisible={isHistoryModalVisible}
+        onClose={() => setHistoryModalVisible(false)}
+        stockHistory={stockHistory}
+      />
     </div>
   );
 };

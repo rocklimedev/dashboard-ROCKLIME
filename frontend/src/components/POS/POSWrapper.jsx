@@ -8,29 +8,36 @@ import ShowQuotations from "./ShowQuotations";
 import { useGetProfileQuery } from "../../api/userApi";
 import { useGetAllQuotationsQuery } from "../../api/quotationApi";
 import { useGetCartQuery } from "../../api/cartApi";
-import { useGetAllProductsQuery } from "../../api/productApi"; // Assuming you have a brand API
+import { useGetAllProductsQuery } from "../../api/productApi";
 import { useGetAllBrandsQuery } from "../../api/brandsApi";
+import logo from "../../assets/img/logo.png";
+
 const POSWrapper = () => {
   const dispatch = useDispatch();
-  const { data: user, isLoading, isError } = useGetProfileQuery();
+
+  const {
+    data: user,
+    isLoading: isUserLoading,
+    isError: isUserError,
+  } = useGetProfileQuery();
   const { data: quotations, isLoading: isQuotationsLoading } =
     useGetAllQuotationsQuery();
   const { data: products, isLoading: isProductsLoading } =
     useGetAllProductsQuery();
-  const { data: cartData, refetch } = useGetCartQuery();
-  const { data: brands, isLoading: isBrandsLoading } = useGetAllBrandsQuery(); // Fetch all brands
+  const { data: cartData, refetch: refetchCart } = useGetCartQuery();
+  const { data: brands, isLoading: isBrandsLoading } = useGetAllBrandsQuery();
 
-  const [activeTab, setActiveTab] = useState("products"); // Tab switching logic
+  const [activeTab, setActiveTab] = useState("products");
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeBrand, setActiveBrand] = useState(null); // Active brand for filtering products
+  const [activeBrand, setActiveBrand] = useState(null);
 
   useEffect(() => {
-    refetch();
-  }, [cartData, refetch]);
+    refetchCart();
+  }, [cartData, refetchCart]);
 
   const handleConvertToCart = (quotation) => {
     if (!quotation || !Array.isArray(quotation.products)) {
-      console.error("Products array is undefined or not an array", quotation);
+      console.error("Invalid quotation data", quotation);
       return;
     }
 
@@ -46,7 +53,11 @@ const POSWrapper = () => {
     };
 
     console.log("Converted Cart Data:", cartData);
-    // Handle cart update or API calls
+    // Dispatch or API call for updating cart
+  };
+
+  const handleBrandClick = (brand) => {
+    setActiveBrand(brand);
   };
 
   const filteredProducts = activeBrand
@@ -55,16 +66,18 @@ const POSWrapper = () => {
         product.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
 
-  const userName = user?.user?.name || "User";
+  const userName = user?.user?.name || "Guest User";
+  const userEmail = user?.user?.email || "No Email Provided";
   const currentDate = new Date().toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
+    weekday: "short",
     day: "numeric",
+    month: "long",
+    year: "numeric",
   });
-
-  const handleBrandClick = (brand) => {
-    setActiveBrand(brand); // Set the active brand for filtering
-  };
+  const currentTime = new Date().toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -113,62 +126,64 @@ const POSWrapper = () => {
   return (
     <div className="page-wrapper pos-pg-wrapper ms-0">
       <div className="content pos-design p-0">
-        <div className="row  pos-wrapper">
+        <div className="row pos-wrapper">
           <div className="col-md-12 col-lg-7 col-xl-8 d-flex">
             <div className="pos-categories tabs_wrapper p-0 flex-fill">
-              <div class="tab-content-wrap">
-                <div class="d-flex align-items-center justify-content-between flex-wrap mb-2">
-                  <div className="mb-3">
-                    {isLoading ? (
-                      <h5 className="mb-1">Loading...</h5>
-                    ) : isError ? (
-                      <h5 className="mb-1 text-danger">Error fetching user</h5>
+              <div className="tab-content-wrap">
+                <div className="d-flex align-items-center justify-content-between flex-wrap mb-3">
+                  <div>
+                    {isUserLoading ? (
+                      <h5>Loading User...</h5>
+                    ) : isUserError ? (
+                      <h5 className="text-danger">Failed to Load User</h5>
                     ) : (
                       <>
-                        <h5 className="mb-1">Welcome, {userName}</h5>
-                        <p>{currentDate}</p>
+                        <h5 className="mb-1">👋 Welcome, {userName}</h5>
+                        <p className="mb-1">{userEmail}</p>
+                        <p className="text-muted">
+                          {currentDate} | {currentTime}
+                        </p>
                       </>
                     )}
-                    <div className="d-flex align-items-center flex-wrap mb-2">
-                      <div className="input-icon-start search-pos position-relative mb-2 me-3">
-                        <span className="input-icon-addon">
-                          <i className="ti ti-search"></i>
-                        </span>
-                        <input
-                          type="text"
-                          className="form-control"
-                          placeholder="Search Product"
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                      </div>
-                      <button
-                        className="btn btn-sm btn-dark mb-2 me-2"
-                        onClick={() => setActiveTab("brands")}
-                      >
-                        <i className="ti ti-tag me-1"></i>View All Brands
-                      </button>
-                      <button
-                        className="btn btn-sm btn-dark mb-2 me-2"
-                        onClick={() => setActiveTab("quotations")}
-                      >
-                        <i className="ti ti-star me-1"></i>Choose from
-                        Quotations
-                      </button>
-                      <button
-                        className="btn btn-sm btn-dark mb-2 me-2"
-                        onClick={() => setActiveTab("products")}
-                      >
-                        <i className="ti ti-box me-1"></i>View Products
-                      </button>
-                    </div>
                   </div>
-
-                  {renderTabContent()}
+                  <div className="d-flex align-items-center flex-wrap">
+                    <div className="input-icon-start search-pos position-relative mb-2 me-3">
+                      <span className="input-icon-addon">
+                        <i className="ti ti-search"></i>
+                      </span>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Search Product"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                    </div>
+                    <button
+                      className="btn btn-sm btn-dark mb-2 me-2"
+                      onClick={() => setActiveTab("brands")}
+                    >
+                      <i className="ti ti-tag me-1"></i> Brands
+                    </button>
+                    <button
+                      className="btn btn-sm btn-dark mb-2 me-2"
+                      onClick={() => setActiveTab("quotations")}
+                    >
+                      <i className="ti ti-star me-1"></i> Quotations
+                    </button>
+                    <button
+                      className="btn btn-sm btn-dark mb-2"
+                      onClick={() => setActiveTab("products")}
+                    >
+                      <i className="ti ti-box me-1"></i> Products
+                    </button>
+                  </div>
                 </div>
+                {renderTabContent()}
               </div>
             </div>
           </div>
+
           <OrderList onConvertToOrder={handleConvertToCart} />
         </div>
         <POSFooter />
