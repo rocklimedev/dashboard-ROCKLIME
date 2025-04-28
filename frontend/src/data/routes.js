@@ -11,7 +11,7 @@ import CustomerDetails from "../components/Customers/CustomerDetails";
 import SignatureWrapper from "../components/Signature/SignatureWrapper";
 import { RiAdminLine } from "react-icons/ri";
 import { LuUsersRound } from "react-icons/lu";
-import { PiUserListBold } from "react-icons/pi";
+import { PiQuestionMarkThin, PiUserListBold } from "react-icons/pi";
 import { LiaFileInvoiceSolid, LiaFileSignatureSolid } from "react-icons/lia";
 import OrderWrapper from "../components/Orders/OrderWrapper";
 import {
@@ -22,7 +22,12 @@ import {
   MdOutlineSettings,
 } from "react-icons/md";
 import { AiFillSecurityScan, AiOutlineProduct } from "react-icons/ai";
-import { BiAccessibility, BiSolidCategory, BiUserCheck } from "react-icons/bi";
+import {
+  BiAccessibility,
+  BiSolidCategory,
+  BiSolidQuoteAltRight,
+  BiUserCheck,
+} from "react-icons/bi";
 import { FaFileCircleCheck, FaFirstOrder, FaPooStorm } from "react-icons/fa6";
 import {
   FaRegFile,
@@ -30,6 +35,7 @@ import {
   FaUserGraduate,
   FaTeamspeak,
   FaFileInvoice,
+  FaQuora,
 } from "react-icons/fa";
 import { AiFillProfile } from "react-icons/ai";
 import { CgProfile } from "react-icons/cg";
@@ -72,44 +78,29 @@ const masterRoutes = [
   },
   {
     path: "#",
-    name: "Super Admin",
+    name: "Latests",
     icon: <RiAdminLine />,
     isSidebarActive: true,
     submenu: [
       {
-        path: "/super-admin/customers",
-        name: "Customers",
-        icon: <LuUsersRound />,
-        isSidebarActive: true,
-        element: <CustomerList />,
-      },
-      {
-        path: "/super-admin/users",
-        name: "Users",
-        icon: <BiUserCheck />,
-        isSidebarActive: true,
-        element: <UserList />,
-      },
-      {
-        path: "/super-admin/companies",
-        name: "Companies",
-        icon: <GiCorporal />,
-        isSidebarActive: true,
-        element: <CmList />,
-      },
-      {
-        path: "/super-admin/recent-orders",
+        path: "/recent/recent-orders",
         name: "Recent Orders",
         icon: <FaFirstOrderAlt />,
         element: <RecentOrders />,
         isSidebarActive: true,
       },
       {
-        path: "/super-admin/invoices",
+        path: "/recent/invoices",
         name: "Recent Invoices",
         icon: <LiaFileInvoiceSolid />,
         isSidebarActive: true,
         element: <RecentInvoices />,
+      },
+      {
+        path: "/recent/quotations",
+        name: "Recent Quotations",
+        icon: <FaQuora />,
+        isSidebarActive: true,
       },
     ],
   },
@@ -153,6 +144,20 @@ const masterRoutes = [
         icon: <LiaFileSignatureSolid />,
         isSidebarActive: true,
         element: <SignatureWrapper />,
+      },
+      {
+        path: "/users/list",
+        name: "Users",
+        icon: <BiUserCheck />,
+        isSidebarActive: true,
+        element: <UserList />,
+      },
+      {
+        path: "/companies/list",
+        name: "Companies",
+        icon: <GiCorporal />,
+        isSidebarActive: true,
+        element: <CmList />,
       },
     ],
   },
@@ -208,7 +213,7 @@ const masterRoutes = [
   },
   {
     path: "#",
-    name: "Orders & Invoices",
+    name: "Orders Management",
     icon: <FaFirstOrderAlt />,
     isSidebarActive: true,
     submenu: [
@@ -231,6 +236,13 @@ const masterRoutes = [
         name: "Teams",
         icon: <FaTeamspeak />,
         element: <TeamsList />,
+        isSidebarActive: true,
+      },
+      {
+        path: "/invoices/list",
+        name: "Invoices",
+        icon: <FaFileInvoice />,
+        element: <RecentInvoices />,
         isSidebarActive: true,
       },
       {
@@ -287,7 +299,7 @@ const masterRoutes = [
     ],
   },
   {
-    path: "/roles-permissions",
+    path: "#",
     name: "Roles & Permission",
     icon: <MdPermIdentity />,
     isSidebarActive: true,

@@ -10,6 +10,7 @@ import DeleteModal from "../Common/DeleteModal";
 import ViewCompanies from "./ViewCompanies";
 import { BiEdit, BiTrash, BiShowAlt } from "react-icons/bi";
 import { toast } from "react-toastify";
+import DataTablePagination from "../Common/DataTablePagination"; // Import pagination component
 
 const CompaniesWrapper = () => {
   const {
@@ -26,38 +27,46 @@ const CompaniesWrapper = () => {
 
   const [deleteVendor, { isLoading: isDeleting }] = useDeleteVendorMutation();
 
+  // State for modals, selected vendor, and pagination
   const [selectedVendor, setSelectedVendor] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [vendorToDelete, setVendorToDelete] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [viewCompanyId, setViewCompanyId] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1); // Pagination state
+  const itemsPerPage = 20; // Matches itemNo default in DataTablePagination
 
   const vendors = Array.isArray(vendorsData) ? vendorsData : [];
   const brands = Array.isArray(brandsData) ? brandsData : [];
 
+  // Get brand name by brandId
   const getBrandName = (brandId) => {
     const brand = brands.find((b) => b.id === brandId);
     return brand ? brand.brandName : "Unknown";
   };
 
+  // Handle edit vendor
   const handleEditVendor = (vendor) => {
     console.log("Editing vendor:", vendor);
     setSelectedVendor(vendor);
     setShowModal(true);
   };
 
+  // Handle add vendor
   const handleAddVendor = () => {
     console.log("Adding new vendor");
     setSelectedVendor(null);
     setShowModal(true);
   };
 
+  // Handle delete vendor
   const handleDeleteVendor = (vendor) => {
     console.log("Opening delete modal for vendor:", vendor);
     setVendorToDelete(vendor);
     setShowDeleteModal(true);
   };
 
+  // Confirm deletion
   const handleConfirmDelete = async () => {
     if (!vendorToDelete?.id) {
       toast.error("No vendor selected for deletion");
@@ -68,6 +77,10 @@ const CompaniesWrapper = () => {
       console.log("Deleting vendor with ID:", vendorToDelete.id);
       await deleteVendor(vendorToDelete.id).unwrap();
       toast.success("Vendor deleted successfully!");
+      // Reset to previous page if current page becomes empty
+      if (paginatedVendors.length === 1 && currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+      }
       setShowDeleteModal(false);
       setVendorToDelete(null);
     } catch (err) {
@@ -77,6 +90,18 @@ const CompaniesWrapper = () => {
       console.error("Error deleting vendor:", err);
     }
   };
+
+  // Handle page change
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  // Paginated vendors
+  const paginatedVendors = (() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return vendors.slice(startIndex, endIndex);
+  })();
 
   if (vendorsLoading || brandsLoading) return <p>Loading...</p>;
   if (vendorsError || brandsError)
@@ -109,7 +134,7 @@ const CompaniesWrapper = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {vendors.map((vendor) => (
+                  {paginatedVendors.map((vendor) => (
                     <tr key={vendor.id}>
                       <td>{vendor.vendorId}</td>
                       <td>{vendor.vendorName}</td>
@@ -118,6 +143,13 @@ const CompaniesWrapper = () => {
                       <td>{new Date(vendor.createdAt).toLocaleDateString()}</td>
                       <td>
                         <div className="d-flex gap-2">
+                          <button
+                            className="btn btn-sm btn-info"
+                            onClick={() => setViewCompanyId(vendor.id)}
+                            aria-label="View vendor"
+                          >
+                            <BiShowAlt />
+                          </button>
                           <button
                             className="btn btn-sm btn-warning"
                             onClick={() => handleEditVendor(vendor)}
@@ -129,6 +161,7 @@ const CompaniesWrapper = () => {
                             className="btn btn-sm btn-danger"
                             onClick={() => handleDeleteVendor(vendor)}
                             aria-label="Delete vendor"
+                            disabled={isDeleting}
                           >
                             <BiTrash />
                           </button>
@@ -139,6 +172,14 @@ const CompaniesWrapper = () => {
                 </tbody>
               </table>
             </div>
+          </div>
+          {/* Pagination Component */}
+          <div className="card-footer">
+            <DataTablePagination
+              totalItems={vendors.length}
+              itemNo={itemsPerPage}
+              onPageChange={handlePageChange}
+            />
           </div>
         </div>
 

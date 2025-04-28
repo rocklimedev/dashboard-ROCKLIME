@@ -14,9 +14,11 @@ import {
   useInactiveUserMutation,
   useDeleteUserMutation,
 } from "../../api/userApi";
-
 import AddUser from "./AddUser";
 import DataTablePagination from "../Common/DataTablePagination";
+import DeleteModal from "../Common/DeleteModal"; // Import DeleteModal
+import { ToastContainer, toast } from "react-toastify"; // Import react-toastify
+import "react-toastify/dist/ReactToastify.css"; // Import toastify CSS
 
 const UserList = () => {
   const { data, error, isLoading } = useGetAllUsersQuery();
@@ -24,84 +26,119 @@ const UserList = () => {
 
   const [reportUser] = useReportUserMutation();
   const [inactiveUser] = useInactiveUserMutation();
-  const [deleteUser] = useDeleteUserMutation();
+  const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
   const [showModal, setShowModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false); // State for DeleteModal
   const [selectedUser, setSelectedUser] = useState(null);
+  const [userToDelete, setUserToDelete] = useState(null); // Track user to delete
 
-  if (isLoading) return <p>Loading...</p>;
-  if (error) return <p>Error fetching users.</p>;
-  if (users.length === 0) return <p>No users available.</p>;
-
+  // Handle add user
   const handleAddUser = () => {
     setSelectedUser(null);
     setShowModal(true);
   };
 
+  // Handle edit user
   const handleEditUser = (user) => {
     setSelectedUser(user);
     setShowModal(true);
   };
 
+  // Handle view user
   const handleViewUser = (user) => {
     setSelectedUser(user);
     setShowViewModal(true);
   };
 
-  const handleDeleteUser = async (userId) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this user?"
-    );
-    if (!confirmDelete) return;
+  // Handle delete user
+  const handleDeleteUser = (userId) => {
+    setUserToDelete(userId);
+    setShowDeleteModal(true);
+  };
 
+  // Confirm deletion
+  const handleConfirmDelete = async () => {
+    if (!userToDelete) {
+      toast.error("No user selected for deletion");
+      setShowDeleteModal(false);
+      return;
+    }
     try {
-      await deleteUser(userId).unwrap();
-      alert("User deleted successfully.");
+      await deleteUser(userToDelete).unwrap();
+      toast.success("User deleted successfully!");
+      // Reset to previous page if current page becomes empty
+      if (paginatedUsers.length === 1 && currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+      }
     } catch (error) {
       console.error("Error deleting user:", error);
-      alert("Failed to delete user.");
+      toast.error(
+        `Failed to delete user: ${error.data?.message || "Unknown error"}`
+      );
+    } finally {
+      setShowDeleteModal(false);
+      setUserToDelete(null);
     }
   };
 
+  // Handle report user
   const handleReportUser = async (userId) => {
     try {
-      await reportUser(userId);
-      alert("User reported successfully.");
+      await reportUser(userId).unwrap();
+      toast.success("User reported successfully!");
     } catch (error) {
-      alert("Failed to report user.");
+      console.error("Error reporting user:", error);
+      toast.error(
+        `Failed to report user: ${error.data?.message || "Unknown error"}`
+      );
     }
   };
 
+  // Handle inactive user
   const handleInactiveUser = async (userId) => {
     try {
-      await inactiveUser(userId);
-      alert("User marked as inactive.");
+      await inactiveUser(userId).unwrap();
+      toast.success("User marked as inactive!");
     } catch (error) {
-      alert("Failed to mark user as inactive.");
+      console.error("Error marking user as inactive:", error);
+      toast.error(
+        `Failed to mark user as inactive: ${
+          error.data?.message || "Unknown error"
+        }`
+      );
     }
   };
 
+  // Handle modal close
   const handleCloseModal = () => {
     setShowModal(false);
     setShowViewModal(false);
     setSelectedUser(null);
   };
 
+  // Handle page change
   const handlePageChange = (page) => {
     setCurrentPage(page);
   };
 
+  // Paginated users
   const paginatedUsers = users.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
+  if (isLoading) return <p>Loading...</p>;
+  if (error) return <p>Error fetching users: {JSON.stringify(error)}</p>;
+  if (users.length === 0) return <p>No users available.</p>;
+
   return (
     <div className="page-wrapper">
+      <ToastContainer /> {/* Required for toasts */}
       <div className="content">
         <PageHeader
           title="Users"
@@ -173,11 +210,13 @@ const UserList = () => {
               </table>
             </div>
           </div>
-          <DataTablePagination
-            totalItems={users.length}
-            itemNo={itemsPerPage}
-            onPageChange={handlePageChange}
-          />
+          <div className="card-footer">
+            <DataTablePagination
+              totalItems={users.length}
+              itemNo={itemsPerPage}
+              onPageChange={handlePageChange}
+            />
+          </div>
         </div>
       </div>
       {showModal && (
@@ -188,6 +227,20 @@ const UserList = () => {
           onClose={handleCloseModal}
           userToEdit={selectedUser}
           isViewMode={true}
+        />
+      )}
+      {showDeleteModal && (
+        <DeleteModal
+          item={userToDelete}
+          itemType="User"
+          isVisible={showDeleteModal}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => {
+            console.log("Canceling delete modal");
+            setShowDeleteModal(false);
+            setUserToDelete(null);
+          }}
+          isLoading={isDeleting}
         />
       )}
     </div>

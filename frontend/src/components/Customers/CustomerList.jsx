@@ -1,43 +1,61 @@
 import React, { useState, useEffect } from "react";
 import PageHeader from "../Common/PageHeader";
-import { useGetCustomersQuery } from "../../api/customerApi";
-import { useDeleteCustomerMutation } from "../../api/customerApi";
+import {
+  useGetCustomersQuery,
+  useDeleteCustomerMutation,
+} from "../../api/customerApi";
 import AddCustomer from "./AddCustomer";
-import Actions from "../Common/Actions";
-import DeleteModal from "../Common/DeleteModal";
 import { BiEdit, BiTrash } from "react-icons/bi";
 import { FaEye } from "react-icons/fa";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import DeleteModal from "../Common/DeleteModal";
+import DataTablePagination from "../Common/DataTablePagination"; // Import pagination component
 
 const CustomerList = () => {
   const { data, error, isLoading } = useGetCustomersQuery();
   const customers = data?.data || [];
+  const [deleteCustomer] = useDeleteCustomerMutation();
+
+  // State for modals, selected customer, and pagination
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [customerToDelete, setCustomerToDelete] = useState(null);
-  const [deleteCustomer] = useDeleteCustomerMutation();
+  const [currentPage, setCurrentPage] = useState(1); // Pagination state
+  const itemsPerPage = 20; // Matches itemNo default in DataTablePagination
 
-  if (isLoading) return <p>Loading...</p>;
-  if (error) return <p>Error fetching customers.</p>;
-  if (customers.length === 0) return <p>No customers available.</p>;
+  // Handle page change
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
 
+  // Paginated customers
+  const paginatedCustomers = (() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return customers.slice(startIndex, endIndex);
+  })();
+
+  // Handle add customer
   const handleAddCustomer = () => {
     setSelectedCustomer(null);
     setShowModal(true);
   };
 
+  // Handle edit customer
   const handleEditCustomer = (customer) => {
     setSelectedCustomer({ ...customer }); // Ensure new reference
-    setShowModal(true); // Open modal to edit customer
+    setShowModal(true);
   };
 
+  // Handle delete customer
   const handleDelete = (customerId) => {
     setCustomerToDelete(customerId);
     setShowDeleteModal(true);
   };
 
+  // Confirm deletion
   const confirmDelete = async () => {
     if (!customerToDelete) {
       console.warn("No customer selected to delete.");
@@ -46,15 +64,23 @@ const CustomerList = () => {
 
     try {
       await deleteCustomer(customerToDelete).unwrap();
-      toast.success("Customer deleted successfully!"); // Success toast
+      toast.success("Customer deleted successfully!");
+      // Reset to previous page if current page becomes empty
+      if (paginatedCustomers.length === 1 && currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+      }
     } catch (err) {
       console.error("Error deleting customer:", err);
-      toast.error("Failed to delete customer!"); // Error toast
+      toast.error("Failed to delete customer!");
     } finally {
       setShowDeleteModal(false);
       setCustomerToDelete(null);
     }
   };
+
+  if (isLoading) return <p>Loading...</p>;
+  if (error) return <p>Error fetching customers.</p>;
+  if (customers.length === 0) return <p>No customers available.</p>;
 
   return (
     <>
@@ -84,7 +110,7 @@ const CustomerList = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {customers.map((customer) => (
+                    {paginatedCustomers.map((customer) => (
                       <tr key={customer.customerId}>
                         <td>{customer.name}</td>
                         <td>{customer.email}</td>
@@ -95,23 +121,17 @@ const CustomerList = () => {
                         <td>{customer.balance}</td>
                         <td>{customer.paidAmount}</td>
                         <td>
-                          {/* <Actions
-                            id={customer.customerId}
-                            name={customer.name}
-                            viewUrl={`/customer/${customer.customerId}`}
-                            onEdit={() => handleEditCustomer(customer)}
-                            onDelete={() => handleDelete(customer.customerId)}
-                          /> */}
-
-                          <div class="edit-delete-action">
+                          <div className="edit-delete-action">
                             <a
                               href={`/customer/${customer.customerId}`}
                               target="_blank"
+                              rel="noopener noreferrer"
                             >
                               <FaEye />
                             </a>
                             <a
-                              class="me-2 p-2"
+                              className="me-2 p-2"
+                              href="javascript:void(0);"
                               onClick={() => handleEditCustomer(customer)}
                             >
                               <BiEdit />
@@ -131,13 +151,21 @@ const CustomerList = () => {
                 </table>
               </div>
             </div>
+            {/* Pagination Component */}
+            <div className="card-footer">
+              <DataTablePagination
+                totalItems={customers.length}
+                itemNo={itemsPerPage}
+                onPageChange={handlePageChange}
+              />
+            </div>
           </div>
         </div>
       </div>
 
       {showModal && (
         <AddCustomer
-          key={selectedCustomer?.customerId || "new"} // Ensures fresh re-render
+          key={selectedCustomer?.customerId || "new"}
           onClose={() => setShowModal(false)}
           existingCustomer={selectedCustomer}
         />
@@ -145,12 +173,18 @@ const CustomerList = () => {
 
       {showDeleteModal && (
         <DeleteModal
+          item={customerToDelete} // Pass customerId
           itemType="Customer"
           isVisible={showDeleteModal}
           onConfirm={confirmDelete}
-          onCancel={() => setShowDeleteModal(false)}
+          onCancel={() => {
+            setShowDeleteModal(false);
+            setCustomerToDelete(null);
+          }}
         />
       )}
+
+      <ToastContainer />
     </>
   );
 };
