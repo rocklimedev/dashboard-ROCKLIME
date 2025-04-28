@@ -1,13 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   useGetProfileQuery,
   useUpdateProfileMutation,
 } from "../../api/userApi";
 import { useGetRolesQuery } from "../../api/rolesApi";
-
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
+import Avatar from "react-avatar";
+import { useForgotPasswordMutation } from "../../api/authApi";
 const Profile = () => {
   const {
     data: profile,
@@ -20,6 +20,8 @@ const Profile = () => {
     error: rolesError,
   } = useGetRolesQuery();
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
+  const [forgotPassword, { isLoading: isResetting }] =
+    useForgotPasswordMutation();
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -27,9 +29,11 @@ const Profile = () => {
     email: "",
     mobileNumber: "",
   });
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
 
-  // Initialize formData when profile loads
-  React.useEffect(() => {
+  // Initialize formData and avatar from profile and localStorage
+  useEffect(() => {
     if (profile?.user) {
       console.log("Profile data:", profile);
       setFormData({
@@ -37,8 +41,45 @@ const Profile = () => {
         email: profile.user.email || "",
         mobileNumber: profile.user.mobileNumber || "",
       });
+      const savedAvatar = localStorage.getItem(`avatar_${profile.user.userId}`);
+      if (savedAvatar) {
+        setAvatarUrl(savedAvatar);
+      } else {
+        setAvatarUrl(profile.user.name || profile.user.email);
+      }
     }
   }, [profile]);
+
+  // Handle avatar selection
+  const handleAvatarSelect = (avatar) => {
+    setAvatarUrl(avatar);
+    if (profile?.user?.userId) {
+      localStorage.setItem(`avatar_${profile.user.userId}`, avatar);
+    }
+    setShowAvatarPicker(false);
+  };
+
+  // Handle forgot password
+  const handleForgotPassword = async () => {
+    if (!formData.email) {
+      toast.error("Email is required to reset password.");
+      return;
+    }
+
+    try {
+      await forgotPassword({ email: formData.email }).unwrap();
+      toast.success("Password reset link sent to your email!");
+    } catch (error) {
+      console.error("Error sending password reset request:", error);
+      if (error.status === 404) {
+        toast.error("Email not found. Please check your email address.");
+      } else {
+        toast.error(
+          `Failed to send reset link: ${error.data?.error || "Unknown error"}`
+        );
+      }
+    }
+  };
 
   if (isProfileLoading || isRolesLoading) return <p>Loading...</p>;
   if (profileError) return <p>Error loading profile: {profileError.message}</p>;
@@ -60,6 +101,7 @@ const Profile = () => {
       email: profile.user.email || "",
       mobileNumber: profile.user.mobileNumber || "",
     });
+    setShowAvatarPicker(false);
   };
 
   const handleChange = (e) => {
@@ -78,7 +120,7 @@ const Profile = () => {
     }
 
     const updatedData = {
-      userId, // Include userId for the API
+      userId,
       name: formData.name,
       email: formData.email,
       mobileNumber: formData.mobileNumber,
@@ -90,6 +132,13 @@ const Profile = () => {
       await updateProfile(updatedData).unwrap();
       toast.success("Profile updated successfully!");
       setIsEditing(false);
+      if (formData.name !== profile.user.name) {
+        const savedAvatar = localStorage.getItem(`avatar_${userId}`);
+        if (!savedAvatar) {
+          setAvatarUrl(formData.name);
+          localStorage.setItem(`avatar_${userId}`, formData.name);
+        }
+      }
     } catch (error) {
       console.error("Error updating profile:", error);
       if (error.status === 404) {
@@ -101,6 +150,14 @@ const Profile = () => {
       }
     }
   };
+
+  const avatarOptions = [
+    formData.name || formData.email,
+    "John Doe",
+    "Jane Smith",
+    "User One",
+    "User Two",
+  ];
 
   return (
     <div className="page-wrapper">
@@ -114,13 +171,38 @@ const Profile = () => {
               <i className="ti ti-user text-primary me-1"></i>Basic Information
             </h5>
             <div className="profile-pic-upload image-field">
-              <div className="profile-pic p-2">
-                <img
-                  src="assets/img/users/user-49.png"
+              <div className="profile-pic p-2 position-relative">
+                <Avatar
+                  name={avatarUrl}
+                  size="100"
+                  round={true}
                   className="object-fit-cover h-100 rounded-1"
-                  alt="user"
                 />
+                {isEditing && (
+                  <button
+                    className="btn btn-sm btn-primary position-absolute bottom-0 end-0 m-1"
+                    onClick={() => setShowAvatarPicker(!showAvatarPicker)}
+                  >
+                    Change Avatar
+                  </button>
+                )}
               </div>
+              {isEditing && showAvatarPicker && (
+                <div className="avatar-picker mt-2">
+                  <div className="d-flex flex-wrap gap-2">
+                    {avatarOptions.map((option, index) => (
+                      <div
+                        key={index}
+                        className="avatar-option"
+                        onClick={() => handleAvatarSelect(option)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <Avatar name={option} size="50" round={true} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             <div className="row">
               {/* Name */}
@@ -199,7 +281,7 @@ const Profile = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="col-12 d-flex justify-content-end">
+              <div className="col-12 d-flex justify-content-end align-items-center">
                 {isEditing ? (
                   <>
                     <button
@@ -218,12 +300,21 @@ const Profile = () => {
                     </button>
                   </>
                 ) : (
-                  <button
-                    className="btn btn-primary shadow-none"
-                    onClick={handleEditClick}
-                  >
-                    Edit Profile
-                  </button>
+                  <>
+                    <button
+                      className="btn btn-primary shadow-none me-2"
+                      onClick={handleEditClick}
+                    >
+                      Edit Profile
+                    </button>
+                    <button
+                      className="btn btn-outline-warning shadow-none"
+                      onClick={handleForgotPassword}
+                      disabled={isResetting}
+                    >
+                      {isResetting ? "Sending..." : "Reset Password"}
+                    </button>
+                  </>
                 )}
               </div>
             </div>

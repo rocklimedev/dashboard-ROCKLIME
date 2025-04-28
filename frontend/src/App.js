@@ -26,6 +26,7 @@ function App() {
   const isPOSPage = location.pathname === "/pos";
 
   const token = localStorage.getItem("token");
+  console.log(token);
   const { data: profileData, isLoading: isProfileLoading } =
     useGetProfileQuery();
 
@@ -42,26 +43,29 @@ function App() {
   useEffect(() => {
     if (isProfileLoading || isAuthPage) return;
 
+    const roleNames = profileData?.user?.roles || [];
+
     if (!userId) {
       toast.error("Access denied. No user profile found.");
       navigate("/login");
       return;
     }
 
-    // Check if the user has the default "USERS" role
-    if (roleId === "USERS" && location.pathname !== "/no-access") {
+    // If the role is USERS and user is trying to access non-no-access page
+    if (roleNames.includes("USERS") && location.pathname !== "/no-access") {
       toast.warn("Access restricted. No valid role assigned.");
       navigate("/no-access");
+      return;
     }
 
-    // Allow access to non-auth pages only if role is not "USERS"
-    if (roleId !== "USERS" && location.pathname === "/no-access") {
+    // If the role is NOT USERS but user is stuck on /no-access
+    if (!roleNames.includes("USERS") && location.pathname === "/no-access") {
       navigate("/");
     }
   }, [
     isProfileLoading,
     userId,
-    roleId,
+    profileData,
     isAuthPage,
     location.pathname,
     navigate,

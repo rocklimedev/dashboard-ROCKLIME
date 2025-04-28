@@ -76,7 +76,7 @@ const Header = ({ toggleSidebar }) => {
     }
   };
   return (
-    <div className="header">
+    <div className="header pos-header">
       <div className="main-header">
         {/* Logo Section */}
         <div className="header-left active">

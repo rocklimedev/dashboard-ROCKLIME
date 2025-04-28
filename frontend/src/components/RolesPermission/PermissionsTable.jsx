@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 
 const PermissionsTable = ({ permissions }) => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedModule, setSelectedModule] = useState("All"); // Track selected module
 
   // Group permissions by module
   const groupedPermissions = useMemo(() => {
@@ -14,19 +15,42 @@ const PermissionsTable = ({ permissions }) => {
     }, {});
   }, [permissions]);
 
-  // Filtered Permissions based on search input
+  // Get unique modules for tags
+  const modules = useMemo(() => {
+    return ["All", ...Object.keys(groupedPermissions).sort()];
+  }, [groupedPermissions]);
+
+  // Filtered Permissions based on selected module and search input
   const filteredPermissions = useMemo(() => {
-    return Object.keys(groupedPermissions).reduce((acc, module) => {
-      const filtered = groupedPermissions[module].filter(
-        (perm) =>
-          perm.module.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          perm.route.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          perm.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      if (filtered.length) acc[module] = filtered;
-      return acc;
-    }, {});
-  }, [searchTerm, groupedPermissions]);
+    let filtered = {};
+
+    // If "All" is selected, include all modules; otherwise, include only the selected module
+    const modulesToFilter =
+      selectedModule === "All"
+        ? Object.keys(groupedPermissions)
+        : [selectedModule];
+
+    modulesToFilter.forEach((module) => {
+      if (groupedPermissions[module]) {
+        const filteredPerms = groupedPermissions[module].filter(
+          (perm) =>
+            perm.module.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            perm.route.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            perm.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        if (filteredPerms.length) {
+          filtered[module] = filteredPerms;
+        }
+      }
+    });
+
+    return filtered;
+  }, [searchTerm, selectedModule, groupedPermissions]);
+
+  // Handle module tag click
+  const handleModuleClick = (module) => {
+    setSelectedModule(module);
+  };
 
   return (
     <div className="card">
@@ -37,7 +61,7 @@ const PermissionsTable = ({ permissions }) => {
             <input
               type="text"
               className="form-control"
-              placeholder="Search..."
+              placeholder="Search by module, route, or name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -46,6 +70,22 @@ const PermissionsTable = ({ permissions }) => {
             </span>
           </div>
         </div>
+      </div>
+
+      {/* Module Tags */}
+      <div className="module-tags d-flex flex-wrap gap-2 p-3">
+        {modules.map((module) => (
+          <span
+            key={module}
+            className={`badge module-tag ${
+              selectedModule === module ? "badge-primary" : "badge-secondary"
+            }`}
+            onClick={() => handleModuleClick(module)}
+            style={{ cursor: "pointer" }}
+          >
+            {module}
+          </span>
+        ))}
       </div>
 
       <div className="card-body p-0">
@@ -101,7 +141,7 @@ const PermissionsTable = ({ permissions }) => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="4" className="text-center">
+                  <td colSpan="5" className="text-center">
                     No records found
                   </td>
                 </tr>

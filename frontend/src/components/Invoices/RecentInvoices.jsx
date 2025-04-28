@@ -1,9 +1,11 @@
 import React, { useEffect, useState, useMemo } from "react";
+import { Link } from "react-router-dom";
 import PageHeader from "../Common/PageHeader";
 import { useGetAllAddressesQuery } from "../../api/addressApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
 import { useGetAllInvoicesQuery } from "../../api/invoiceApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
+import { FaEye } from "react-icons/fa";
 
 const RecentInvoices = () => {
   const {
@@ -29,7 +31,8 @@ const RecentInvoices = () => {
 
   const invoices = invoiceData?.data || [];
   const customers = customerData?.data || [];
-  const addresses = addressData?.data || [];
+  const addresses = addressData || [];
+
   const users = userData?.data || [];
 
   // State for filters, sorting, search, and checkboxes
@@ -39,14 +42,84 @@ const RecentInvoices = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedInvoices, setSelectedInvoices] = useState([]);
 
-  // Log unmatched customers and addresses for debugging
+  // Memoized maps
+  const customerMap = useMemo(() => {
+    const map = {};
+    customers.forEach((cust) => {
+      if (cust.customerId && typeof cust.customerId === "string") {
+        map[cust.customerId.trim()] = cust.name || "Unnamed Customer";
+      } else {
+        console.warn("Invalid customerId:", cust);
+      }
+    });
+    return map;
+  }, [customers]);
+
+  const addressMap = useMemo(() => {
+    const map = {};
+    if (addresses.length === 0) {
+      console.warn("No addresses available in addressMap");
+    }
+    addresses.forEach((addr) => {
+      const hasNullFields =
+        addr.state === null ||
+        addr.postalCode === null ||
+        addr.country === null;
+      if (hasNullFields) {
+        map[addr.addressId] = "N/A";
+      } else {
+        const addressParts = [
+          addr.street,
+          addr.city,
+          addr.state,
+          addr.postalCode || addr.zip,
+          addr.country,
+        ].filter((part) => part != null && part !== "");
+        map[addr.addressId] =
+          addressParts.length > 0
+            ? addressParts.join(", ")
+            : "Incomplete Address";
+      }
+    });
+    return map;
+  }, [addresses]);
+
+  const userMap = useMemo(() => {
+    const map = {};
+    users.forEach((user) => {
+      map[user.userId] = user.name || "Unknown User";
+    });
+    return map;
+  }, [users]);
+
+  // Log data for debugging
   useEffect(() => {
+    console.log("Invoices data:", invoices);
+    console.log("Customers data:", customers);
+    console.log("Addresses data:", addresses);
+
+    // Log INV_803257 specifically
+    const inv803257 = invoices.find((inv) => inv.invoiceNo === "INV_803257");
+    if (inv803257) {
+      console.log("INV_803257 details:", inv803257);
+      console.log(
+        "INV_803257 shipTo mapping:",
+        inv803257.shipTo ? addressMap[inv803257.shipTo] : "No shipTo"
+      );
+    } else {
+      console.warn("INV_803257 not found in invoices");
+    }
+
     // Unmatched customers
-    const unmatchedCustomerInvoices = invoices.filter(
-      (inv) =>
-        inv.customerId &&
-        !customers.find((cust) => cust.customerId === inv.customerId)
-    );
+    const unmatchedCustomerInvoices = invoices.filter((inv) => {
+      if (!inv.customerId || typeof inv.customerId !== "string") {
+        console.warn("Invalid invoice customerId:", inv);
+        return true;
+      }
+      return !customers.find(
+        (cust) => cust.customerId === inv.customerId.trim()
+      );
+    });
     if (unmatchedCustomerInvoices.length > 0) {
       console.warn(
         "Unmatched customer IDs:",
@@ -72,45 +145,12 @@ const RecentInvoices = () => {
         }))
       );
     }
-  }, [invoices, customers, addresses]);
+  }, [invoices, customers, addresses, addressMap]);
 
-  // Memoized maps
-  const customerMap = useMemo(() => {
-    const map = {};
-    customers.forEach((cust) => {
-      map[cust.customerId] = cust.name;
-    });
-    return map;
-  }, [customers]);
-
-  const addressMap = useMemo(() => {
-    const map = {};
-    addresses.forEach((addr) => {
-      // Collect non-null address fields
-      const addressParts = [
-        addr.street,
-        addr.city,
-        addr.state,
-        addr.postalCode,
-        addr.country,
-      ].filter((part) => part != null && part !== "");
-
-      // Format address: use "Incomplete Address" if no parts are available
-      map[addr.addressId] =
-        addressParts.length > 0
-          ? addressParts.join(", ")
-          : "Incomplete Address";
-    });
-    return map;
-  }, [addresses]);
-
-  const userMap = useMemo(() => {
-    const map = {};
-    users.forEach((user) => {
-      map[user.userId] = user.name;
-    });
-    return map;
-  }, [users]);
+  // Log customerMap separately
+  useEffect(() => {
+    console.log("Customer map:", customerMap);
+  }, [customerMap]);
 
   // Derive statuses dynamically
   const statuses = useMemo(() => {
@@ -130,8 +170,10 @@ const RecentInvoices = () => {
   const getInvoiceStatus = (invoice) => {
     if (invoice.status && invoice.status !== "N/A" && invoice.status !== "")
       return invoice.status;
+    if (!invoice.customerId || typeof invoice.customerId !== "string")
+      return "Unknown";
     const customer = customers.find(
-      (cust) => cust.customerId === invoice.customerId
+      (cust) => cust.customerId === invoice.customerId.trim()
     );
     return customer?.invoiceStatus || "Unknown";
   };
@@ -166,7 +208,12 @@ const RecentInvoices = () => {
 
     // Filter by customer
     if (selectedCustomer) {
-      result = result.filter((inv) => inv.customerId === selectedCustomer);
+      result = result.filter(
+        (inv) =>
+          inv.customerId &&
+          typeof inv.customerId === "string" &&
+          inv.customerId.trim() === selectedCustomer
+      );
     }
 
     // Filter by status
@@ -176,17 +223,22 @@ const RecentInvoices = () => {
 
     // Filter by search query
     if (searchQuery) {
-      result = result.filter(
-        (inv) =>
+      result = result.filter((inv) => {
+        const customerName =
+          inv.customerId && typeof inv.customerId === "string"
+            ? customerMap[inv.customerId.trim()]
+            : inv.billTo;
+        return (
           inv.invoiceNo?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           inv.billTo?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          customerMap[inv.customerId]
-            ?.toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-          addressMap[inv.shipTo]
-            ?.toLowerCase()
-            .includes(searchQuery.toLowerCase())
-      );
+          (customerName &&
+            customerName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+          (inv.shipTo &&
+            addressMap[inv.shipTo]
+              ?.toLowerCase()
+              .includes(searchQuery.toLowerCase()))
+        );
+      });
     }
 
     // Sort
@@ -251,6 +303,13 @@ const RecentInvoices = () => {
           subtitle="Manage your Recent Invoices"
         />
 
+        {isLoading && <p className="text-center">Loading data...</p>}
+        {hasError && (
+          <p className="text-danger text-center">
+            Error loading data: {JSON.stringify(hasError)}. Please try again.
+          </p>
+        )}
+
         <div className="card">
           <div className="card-header d-flex align-items-center justify-content-between flex-wrap row-gap-3">
             <div className="search-set">
@@ -278,13 +337,12 @@ const RecentInvoices = () => {
                   aria-expanded="false"
                 >
                   {selectedCustomer
-                    ? customerMap[selectedCustomer]
+                    ? customerMap[selectedCustomer] || "Unknown Customer"
                     : "Customer"}
                 </a>
                 <ul className="dropdown-menu dropdown-menu-end p-3">
                   <li>
                     <a
-                      href="#"
                       className="dropdown-item rounded-1"
                       onClick={(e) => {
                         e.preventDefault();
@@ -295,16 +353,15 @@ const RecentInvoices = () => {
                     </a>
                   </li>
                   {customers.map((cust) => (
-                    <li key={cust.customerId}>
+                    <li key={cust.customerId || `cust-${Math.random()}`}>
                       <a
-                        href="#"
                         className="dropdown-item rounded-1"
                         onClick={(e) => {
                           e.preventDefault();
                           setSelectedCustomer(cust.customerId);
                         }}
                       >
-                        {cust.name}
+                        {cust.name || "Unnamed Customer"}
                       </a>
                     </li>
                   ))}
@@ -324,7 +381,6 @@ const RecentInvoices = () => {
                 <ul className="dropdown-menu dropdown-menu-end p-3">
                   <li>
                     <a
-                      href="#"
                       className="dropdown-item rounded-1"
                       onClick={(e) => {
                         e.preventDefault();
@@ -337,7 +393,6 @@ const RecentInvoices = () => {
                   {statuses.map((status) => (
                     <li key={status}>
                       <a
-                        href="#"
                         className="dropdown-item rounded-1"
                         onClick={(e) => {
                           e.preventDefault();
@@ -371,7 +426,6 @@ const RecentInvoices = () => {
                   ].map((sort) => (
                     <li key={sort}>
                       <a
-                        href="#"
                         className="dropdown-item rounded-1"
                         onClick={(e) => {
                           e.preventDefault();
@@ -441,31 +495,72 @@ const RecentInvoices = () => {
                           />
                         </td>
                         <td>
-                          <a href={`/invoice/${invoice.invoiceId}`}>
+                          <Link
+                            to={`/invoice/${invoice.invoiceId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="invoice-link"
+                          >
                             {invoice.invoiceNo}
-                          </a>
+                          </Link>
                         </td>
-                        <td>
-                          {customerMap[invoice.customerId] ||
-                            "Unknown Customer"}
-                        </td>
-                        <td>{normalizeName(invoice.billTo)}</td>
                         <td
                           className={
-                            !addressMap[invoice.shipTo] ? "text-warning" : ""
+                            !invoice.customerId ||
+                            !customerMap[invoice.customerId?.trim()]
+                              ? "text-warning"
+                              : ""
+                          }
+                          title={
+                            !invoice.customerId
+                              ? "Missing customerId"
+                              : !customerMap[invoice.customerId?.trim()]
+                              ? `Customer ID ${invoice.customerId} not found`
+                              : undefined
+                          }
+                        >
+                          {invoice.customerId &&
+                          customerMap[invoice.customerId?.trim()]
+                            ? customerMap[invoice.customerId.trim()]
+                            : normalizeName(invoice.billTo) ||
+                              "Customer Not Found"}
+                        </td>
+                        <td>{normalizeName(invoice.billTo) || "N/A"}</td>
+                        <td
+                          className={
+                            invoice.shipTo && !addressMap[invoice.shipTo]
+                              ? "text-warning"
+                              : ""
+                          }
+                          title={
+                            invoice.shipTo && !addressMap[invoice.shipTo]
+                              ? `Address ID ${invoice.shipTo} not found`
+                              : undefined
                           }
                         >
                           {invoice.shipTo
                             ? addressMap[invoice.shipTo] || "Address Not Found"
+                            : customers.find(
+                                (cust) => cust.customerId === invoice.customerId
+                              )?.address
+                            ? Object.values(
+                                customers.find(
+                                  (cust) =>
+                                    cust.customerId === invoice.customerId
+                                ).address
+                              )
+                                .filter(Boolean)
+                                .join(", ")
                             : "N/A"}
                         </td>
                         <td>
-                          {invoice.invoiceDate
+                          {invoice.invoiceDate &&
+                          invoice.invoiceDate !== "0000-00-00"
                             ? new Date(invoice.invoiceDate).toLocaleDateString()
                             : "N/A"}
                         </td>
                         <td>
-                          {invoice.dueDate
+                          {invoice.dueDate && invoice.dueDate !== "0000-00-00"
                             ? new Date(invoice.dueDate).toLocaleDateString()
                             : "N/A"}
                         </td>
@@ -488,6 +583,8 @@ const RecentInvoices = () => {
                                 ? "badge-soft-danger"
                                 : getInvoiceStatus(invoice) === "Draft"
                                 ? "badge-soft-info"
+                                : getInvoiceStatus(invoice) === "Overdue"
+                                ? "badge-soft-danger"
                                 : "badge-soft-warning"
                             }`}
                           >
@@ -496,12 +593,13 @@ const RecentInvoices = () => {
                           </span>
                         </td>
                         <td>
-                          <a
-                            href={`/invoice/${invoice.invoiceId}`}
+                          <Link
+                            to={`/invoice/${invoice.invoiceId}`}
                             className="btn btn-light"
+                            title="View Invoice"
                           >
-                            View
-                          </a>
+                            <FaEye className="me-1" /> View
+                          </Link>
                         </td>
                       </tr>
                     ))}
