@@ -67,6 +67,7 @@ import InvoiceDetails from "../components/Invoices/InvoiceDetails";
 import OrderWithInvoice from "../components/Orders/OrderWithInvoice";
 import CheckProductCodeStatus from "../components/Product/CheckProductCodeStatus";
 import NoAccess from "../components/Common/NoAccess";
+import RecentQuotation from "../components/Quotation/RecentQuotations";
 const masterRoutes = [
   {
     path: "/",
@@ -101,6 +102,7 @@ const masterRoutes = [
         name: "Recent Quotations",
         icon: <FaQuora />,
         isSidebarActive: true,
+        element: <RecentQuotation />,
       },
     ],
   },

@@ -30,11 +30,20 @@ export const teamApi = createApi({
 
     // Update Team
     updateTeam: builder.mutation({
-      query: ({ teamId, teamName, adminId, adminName, members }) => ({
-        url: `/update/${teamId}`,
-        method: "PUT",
-        body: { teamName, adminId, adminName, members },
-      }),
+      query: ({ teamId, teamName, adminId, adminName, members }) => {
+        const body = {
+          teamName,
+          adminId,
+          adminName,
+          memberIds: members.map((m) => m.userId), // Transform members to memberIds
+        };
+        console.log("RTK Query sending team update:", { teamId, body }); // Debug
+        return {
+          url: `/update/${teamId}`, // Correct endpoint
+          method: "PUT",
+          body,
+        };
+      },
     }),
 
     // Delete Team

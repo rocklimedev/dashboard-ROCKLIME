@@ -31,7 +31,7 @@ const AddNewTeam = ({ onClose, onTeamAdded, team }) => {
     isLoading: isTeamLoading,
     error: teamError,
   } = useGetTeamByIdQuery(team?.id, {
-    skip: !team?.id, // Skip if no team ID (create mode)
+    skip: !team?.id,
   });
 
   // Fetch team members when editing
@@ -53,7 +53,8 @@ const AddNewTeam = ({ onClose, onTeamAdded, team }) => {
     console.log("Team Error:", teamError);
     console.log("Team Members Data:", teamMembersData);
     console.log("Members Error:", membersError);
-  }, [team, teamData, teamError, teamMembersData, membersError]);
+    console.log("Current members state:", members);
+  }, [team, teamData, teamError, teamMembersData, membersError, members]);
 
   // Initialize form with team data
   useEffect(() => {
@@ -64,12 +65,10 @@ const AddNewTeam = ({ onClose, onTeamAdded, team }) => {
         return;
       }
 
-      // Use API-fetched team data if available
       const sourceTeam = teamData?.team || team;
       setTeamName(sourceTeam.teamName || "");
       setAdminId(sourceTeam.adminId || "");
 
-      // Use API-fetched members if available
       if (teamMembersData?.members) {
         setMembers(
           teamMembersData.members.map((member) => ({
@@ -80,21 +79,17 @@ const AddNewTeam = ({ onClose, onTeamAdded, team }) => {
           }))
         );
       } else {
-        // Fallback to team.teammembers or team.members
-        const sourceMembers =
-          Array.isArray(sourceTeam.teammembers) ||
-          Array.isArray(sourceTeam.members)
-            ? (sourceTeam.teammembers || sourceTeam.members).map((member) => ({
-                userId: member.userId,
-                userName: member.userName,
-                roleId: member.roleId,
-                roleName: member.roleName || "No Role",
-              }))
-            : [];
+        const sourceMembers = Array.isArray(sourceTeam.teammembers)
+          ? sourceTeam.teammembers.map((member) => ({
+              userId: member.userId,
+              userName: member.userName,
+              roleId: member.roleId,
+              roleName: member.roleName || "No Role",
+            }))
+          : [];
         setMembers(sourceMembers);
       }
     } else {
-      // Reset for new team
       setTeamName("");
       setAdminId("");
       setMembers([]);
@@ -134,21 +129,25 @@ const AddNewTeam = ({ onClose, onTeamAdded, team }) => {
       members,
     };
 
+    console.log("Submitting teamData:", teamData); // Debug
+
     try {
+      let response;
       if (team) {
         if (!team.id) {
           throw new Error("Team ID is missing");
         }
-        console.log("Updating team with ID:", team.id, teamData);
-        await updateTeam({
+        console.log("Updating team with ID:", team.id);
+        response = await updateTeam({
           teamId: team.id,
           ...teamData,
         }).unwrap();
-
+        console.log("Update response:", response);
         toast.success("Team updated successfully");
       } else {
-        console.log("Creating team:", teamData);
-        await createTeam(teamData).unwrap();
+        console.log("Creating team");
+        response = await createTeam(teamData).unwrap();
+        console.log("Create response:", response);
         toast.success("Team created successfully");
       }
 
@@ -162,6 +161,8 @@ const AddNewTeam = ({ onClose, onTeamAdded, team }) => {
       let errorMessage = "Please try again";
       if (err.status === 404) {
         errorMessage = "Team not found. It may have been deleted.";
+      } else if (err.status === 400) {
+        errorMessage = err.data?.message || "Invalid data provided";
       } else if (err.data?.message) {
         errorMessage = err.data.message;
       }
@@ -171,7 +172,6 @@ const AddNewTeam = ({ onClose, onTeamAdded, team }) => {
 
   const addMember = () => {
     if (userDetails?.user) {
-      // Prevent adding duplicate members
       if (members.some((member) => member.userId === selectedUserId)) {
         toast.warning("User is already a team member");
         return;

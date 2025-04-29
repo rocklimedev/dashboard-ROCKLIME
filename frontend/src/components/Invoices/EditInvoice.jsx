@@ -2,53 +2,74 @@ import React, { useState, useMemo } from "react";
 import { useUpdateInvoiceMutation } from "../../api/invoiceApi";
 import { useGetAllProductsQuery } from "../../api/productApi";
 import { useGetAllAddressesQuery } from "../../api/addressApi";
-
 import { useGetCustomersQuery } from "../../api/customerApi";
+
 const EditInvoice = ({ invoice, onClose }) => {
   const [updateInvoice, { isLoading: isUpdating }] = useUpdateInvoiceMutation();
   const { data: addresses = [], isLoading: isAddressesLoading } =
     useGetAllAddressesQuery();
   const { data: allProducts = [], isLoading: isProductsLoading } =
     useGetAllProductsQuery();
-  const { data: customers = [], isLoading: isCustomersLoading } =
-    useGetCustomersQuery(); // Get all customers using the custom query hook
+  const {
+    data: customersResponse = {},
+    isLoading: isCustomersLoading,
+    error: customersError,
+  } = useGetCustomersQuery();
 
+  const customers = customersResponse.data || [];
+
+  // Log debugging info
+  console.log("Invoice prop:", invoice);
+  console.log("Customers:", customers);
+  console.log("Customers response:", customersResponse);
+  console.log("Customers error:", customersError);
+
+  // Initialize form data with safe defaults
   const [formData, setFormData] = useState({
     invoiceNo: invoice.invoiceNo || "",
-    customerId: invoice.customerId || "",
+    customerId: invoice.customerId || customers[0]?.customerId || "",
     billTo: invoice.billTo || "",
     shipTo: invoice.shipTo || "",
-    invoiceDate: invoice.invoiceDate
-      ? new Date(invoice.invoiceDate).toISOString().split("T")[0]
-      : "",
-    dueDate: invoice.dueDate
-      ? new Date(invoice.dueDate).toISOString().split("T")[0]
-      : "",
+    invoiceDate:
+      invoice.invoiceDate && invoice.invoiceDate !== "0000-00-00"
+        ? new Date(invoice.invoiceDate).toISOString().split("T")[0]
+        : new Date().toISOString().split("T")[0],
+    dueDate:
+      invoice.dueDate && invoice.dueDate !== "0000-00-00"
+        ? new Date(invoice.dueDate).toISOString().split("T")[0]
+        : "",
     amount: parseFloat(invoice.amount) || 0,
     paymentMethod: invoice.paymentMethod || "",
-    status: invoice.status || "",
+    status: invoice.status || "Draft",
     signatureName: invoice.signatureName || "",
   });
 
-  const [products, setProducts] = useState(invoice.products || []);
+  const [products, setProducts] = useState(
+    invoice.products && invoice.products.length > 0
+      ? invoice.products
+      : [{ productId: "", price: 0, quantity: 1 }]
+  );
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Filter products based on search term
+  // Memoized product search results
   const searchResults = useMemo(() => {
     if (!searchTerm) return [];
     return allProducts
       .filter((product) =>
         product.name.toLowerCase().includes(searchTerm.toLowerCase())
       )
-      .slice(0, 10); // Take only top 10 products
+      .slice(0, 10);
   }, [searchTerm, allProducts]);
 
+  // Handle form input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    setError(null);
   };
 
+  // Handle product field changes
   const handleProductChange = (index, field, value) => {
     const updatedProducts = [...products];
     updatedProducts[index] = { ...updatedProducts[index], [field]: value };
@@ -56,25 +77,27 @@ const EditInvoice = ({ invoice, onClose }) => {
     updateTotalAmount(updatedProducts);
   };
 
+  // Add a product from search results
   const handleAddProduct = (product) => {
     const newProduct = {
       productId: product.productId,
-      price: product.sellingPrice, // Use 'sellingPrice' instead of 'price'
+      price: parseFloat(product.sellingPrice) || 0,
       quantity: 1,
     };
-
     const updatedProducts = [...products, newProduct];
     setProducts(updatedProducts);
     updateTotalAmount(updatedProducts);
     setSearchTerm("");
   };
 
+  // Remove a product
   const handleRemoveProduct = (index) => {
     const updatedProducts = products.filter((_, i) => i !== index);
     setProducts(updatedProducts);
     updateTotalAmount(updatedProducts);
   };
 
+  // Calculate total amount based on products
   const updateTotalAmount = (updatedProducts) => {
     const total = updatedProducts.reduce(
       (sum, prod) =>
@@ -84,31 +107,86 @@ const EditInvoice = ({ invoice, onClose }) => {
     setFormData((prev) => ({ ...prev, amount: total.toFixed(2) }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const updatedInvoice = {
-        invoiceId: invoice.invoiceId,
-        ...formData,
-        amount: parseFloat(formData.amount) || 0,
-        products: products.map((prod) => ({
-          productId: prod.productId,
-          price: parseFloat(prod.price) || 0,
-          quantity: parseInt(prod.quantity) || 1,
-        })),
-      };
-      await updateInvoice(updatedInvoice).unwrap();
-      onClose();
-    } catch (err) {
-      console.error("Failed to update invoice:", err);
-      setError("Failed to update invoice. Please try again.");
-    }
-  };
-
-  // Helper to get product name by ID
+  // Get product name by ID
   const getProductName = (productId) => {
     const product = allProducts.find((p) => p.productId === productId);
     return product ? product.name : "Unknown Product";
+  };
+
+  // Handle form submission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+
+    // Log validation inputs
+    console.log("Validation inputs:", {
+      customerId: formData.customerId,
+      status: formData.status,
+      invoiceDate: formData.invoiceDate,
+      products,
+    });
+
+    // Validate required fields
+    if (!formData.customerId) {
+      console.log("Validation failed: No customerId");
+      setError("Please select a customer.");
+      return;
+    }
+    if (!customers.find((c) => c.customerId === formData.customerId)) {
+      console.log("Validation failed: Invalid customerId");
+      setError("Selected customer is invalid.");
+      return;
+    }
+    if (!formData.status) {
+      console.log("Validation failed: No status");
+      setError("Please select a status.");
+      return;
+    }
+    if (!formData.invoiceDate) {
+      console.log("Validation failed: No invoiceDate");
+      setError("Invoice date is required.");
+      return;
+    }
+    if (products.length === 0 || products.some((p) => !p.productId)) {
+      console.log("Validation failed: Invalid products");
+      setError("At least one valid product is required.");
+      return;
+    }
+
+    // Construct invoiceData
+    const invoiceData = {
+      customerId: formData.customerId,
+      billTo: formData.billTo || null,
+      shipTo: formData.shipTo || null,
+      invoiceDate: formData.invoiceDate,
+      dueDate: formData.dueDate || null,
+      amount: parseFloat(formData.amount) || 0,
+      paymentMethod: formData.paymentMethod || null,
+      status: formData.status,
+      signatureName: formData.signatureName || null,
+      products: products.map((prod) => ({
+        productId: prod.productId,
+        price: parseFloat(prod.price) || 0,
+        quantity: parseInt(prod.quantity) || 1,
+      })),
+    };
+
+    const payload = {
+      invoiceId: invoice.invoiceId,
+      invoiceData,
+    };
+
+    try {
+      console.log("Submitting invoice payload:", payload);
+      const response = await updateInvoice(payload).unwrap();
+      console.log("Update response:", response);
+      onClose();
+    } catch (err) {
+      console.error("Failed to update invoice:", err);
+      setError(
+        err.data?.message || "Failed to update invoice. Please try again."
+      );
+    }
   };
 
   return (
@@ -128,6 +206,12 @@ const EditInvoice = ({ invoice, onClose }) => {
           </div>
           <div className="modal-body">
             {error && <div className="alert alert-danger">{error}</div>}
+            {customersError && (
+              <div className="alert alert-danger">
+                Failed to load customers:{" "}
+                {customersError.message || "Unknown error"}
+              </div>
+            )}
             <form onSubmit={handleSubmit}>
               <div className="row">
                 <div className="col-md-6 mb-3">
@@ -137,7 +221,6 @@ const EditInvoice = ({ invoice, onClose }) => {
                     className="form-control"
                     name="invoiceNo"
                     value={formData.invoiceNo}
-                    onChange={handleChange}
                     disabled
                   />
                 </div>
@@ -145,6 +228,8 @@ const EditInvoice = ({ invoice, onClose }) => {
                   <label className="form-label">Customer</label>
                   {isCustomersLoading ? (
                     <div>Loading customers...</div>
+                  ) : customers.length === 0 ? (
+                    <div className="text-danger">No customers available</div>
                   ) : (
                     <select
                       className="form-control"
@@ -176,6 +261,8 @@ const EditInvoice = ({ invoice, onClose }) => {
                   <label className="form-label">Ship To</label>
                   {isAddressesLoading ? (
                     <div>Loading addresses...</div>
+                  ) : addresses.length === 0 ? (
+                    <div className="text-warning">No addresses available</div>
                   ) : (
                     <select
                       className="form-control"
@@ -183,7 +270,7 @@ const EditInvoice = ({ invoice, onClose }) => {
                       value={formData.shipTo}
                       onChange={handleChange}
                     >
-                      <option value="">Select Address</option>
+                      <option value="">No Address</option>
                       {addresses.map((addr) => (
                         <option key={addr.addressId} value={addr.addressId}>
                           {[
@@ -200,7 +287,6 @@ const EditInvoice = ({ invoice, onClose }) => {
                     </select>
                   )}
                 </div>
-
                 <div className="col-md-6 mb-3">
                   <label className="form-label">Invoice Date</label>
                   <input
@@ -209,6 +295,7 @@ const EditInvoice = ({ invoice, onClose }) => {
                     name="invoiceDate"
                     value={formData.invoiceDate}
                     onChange={handleChange}
+                    required
                   />
                 </div>
                 <div className="col-md-6 mb-3">
@@ -230,13 +317,11 @@ const EditInvoice = ({ invoice, onClose }) => {
                     onChange={handleChange}
                   >
                     <option value="">Select Method</option>
-                    {["Cash", "Credit Card", "Bank Transfer"].map(
-                      (paymentMethod) => (
-                        <option key={paymentMethod} value={paymentMethod}>
-                          {paymentMethod}
-                        </option>
-                      )
-                    )}
+                    {["Cash", "Credit Card", "Bank Transfer"].map((method) => (
+                      <option key={method} value={method}>
+                        {method}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div className="col-md-6 mb-3">
@@ -246,6 +331,7 @@ const EditInvoice = ({ invoice, onClose }) => {
                     name="status"
                     value={formData.status}
                     onChange={handleChange}
+                    required
                   >
                     <option value="">Select Status</option>
                     {["Paid", "Unpaid", "Overdue", "Draft"].map((status) => (
@@ -305,7 +391,6 @@ const EditInvoice = ({ invoice, onClose }) => {
                   </ul>
                 )}
               </div>
-
               <h6 className="mt-4">Products</h6>
               {isProductsLoading ? (
                 <div>Loading products...</div>
@@ -326,6 +411,7 @@ const EditInvoice = ({ invoice, onClose }) => {
                         <td>
                           <input
                             type="number"
+                            className="form-control"
                             value={prod.price}
                             onChange={(e) =>
                               handleProductChange(
@@ -334,12 +420,13 @@ const EditInvoice = ({ invoice, onClose }) => {
                                 e.target.value
                               )
                             }
-                            className="form-control"
+                            min="0"
                           />
                         </td>
                         <td>
                           <input
                             type="number"
+                            className="form-control"
                             value={prod.quantity}
                             onChange={(e) =>
                               handleProductChange(
@@ -348,7 +435,7 @@ const EditInvoice = ({ invoice, onClose }) => {
                                 e.target.value
                               )
                             }
-                            className="form-control"
+                            min="1"
                           />
                         </td>
                         <td>
@@ -365,7 +452,6 @@ const EditInvoice = ({ invoice, onClose }) => {
                   </tbody>
                 </table>
               )}
-
               <div className="modal-footer">
                 <button
                   type="button"
@@ -377,7 +463,12 @@ const EditInvoice = ({ invoice, onClose }) => {
                 <button
                   type="submit"
                   className="btn btn-primary"
-                  disabled={isUpdating}
+                  disabled={
+                    isUpdating ||
+                    isCustomersLoading ||
+                    isProductsLoading ||
+                    customers.length === 0
+                  }
                 >
                   {isUpdating ? "Updating..." : "Update Invoice"}
                 </button>

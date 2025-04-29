@@ -7,27 +7,56 @@ import { useLogoutMutation } from "../../api/authApi";
 import { useGetProfileQuery } from "../../api/userApi";
 import { BiLogOut } from "react-icons/bi";
 import "./NoAccess.css";
+
 const NoAccess = () => {
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
   const navigate = useNavigate();
-  const { data: profileData, refetch: refetchProfile } = useGetProfileQuery();
+  const {
+    data: profileData,
+    refetch: refetchProfile,
+    error: profileError,
+    isFetching,
+  } = useGetProfileQuery(undefined, {
+    refetchOnMountOrArgChange: false, // No refetch automatically
+    skip: true, // Don't auto-fetch at all
+  });
 
   const handleRetry = async () => {
     try {
+      console.log("Manual refetching profile...");
       const updatedProfile = await refetchProfile().unwrap();
-      const roleNames = updatedProfile?.user?.roles || [];
+      console.log("Updated profile:", updatedProfile);
 
-      if (roleNames.includes("USERS")) {
-        toast.error("Access still denied. Please contact an administrator.");
-        return; // STOP here if still USERS
+      let roleNames = updatedProfile?.user?.roles || [];
+      if (typeof roleNames === "string") {
+        try {
+          roleNames = JSON.parse(roleNames);
+        } catch (e) {
+          console.error("Failed to parse roles:", roleNames);
+          roleNames = [];
+        }
       }
 
-      // If user is upgraded (NOT USERS anymore)
-      toast.success("Access granted! Redirecting to homepage...");
-      navigate("/");
+      const accessGrantingRoles = ["ADMIN", "MANAGER", "EDITOR"];
+      const hasAccess = roleNames.some((role) =>
+        accessGrantingRoles.includes(role?.trim())
+      );
+
+      if (!hasAccess) {
+        toast.error("Access still denied. Please contact an administrator.");
+        return;
+      }
+
+      if (updatedProfile.token) {
+        localStorage.setItem("token", updatedProfile.token);
+        console.log("Stored new token:", updatedProfile.token);
+      }
+
+      toast.success("Access granted! Redirecting...");
+      navigate("/", { replace: true });
     } catch (error) {
+      console.error("Retry failed:", error);
       toast.error("Failed to verify access. Please try again.");
-      console.error("Retry failed", error);
     }
   };
 
@@ -36,12 +65,16 @@ const NoAccess = () => {
       await logout().unwrap();
       localStorage.removeItem("token");
       toast.success("Logged out successfully!");
-      navigate("/login");
+      navigate("/login", { replace: true });
     } catch (error) {
+      console.error("Logout failed:", error);
       toast.error("Logout failed. Please try again.");
-      console.error("Logout failed", error);
     }
   };
+
+  if (profileError) {
+    console.error("Profile fetch error:", profileError);
+  }
 
   return (
     <div className="main-wrapper">
