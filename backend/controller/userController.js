@@ -2,10 +2,16 @@ const { Op } = require("sequelize");
 const User = require("../models/users");
 const Roles = require("../models/roles");
 const bcrypt = require("bcrypt");
-
 exports.createUser = async (req, res) => {
   try {
-    const { username, name, email, password, mobileNumber } = req.body;
+    const {
+      username,
+      name,
+      email,
+      password,
+      mobileNumber,
+      roleId: roleId,
+    } = req.body;
 
     // Check if the user already exists
     const existingUser = await User.findOne({
@@ -20,21 +26,16 @@ exports.createUser = async (req, res) => {
         .json({ message: "Username or Email already exists" });
     }
 
-    // Fetch the "USERS" role from the Roles table
-    const roleData = await Roles.findOne({ where: { roleName: "USERS" } });
+    // Fetch role data using roleId
+    const roleData = await Roles.findOne({ where: { roleId } });
 
     if (!roleData) {
-      return res.status(400).json({ message: "USERS role not found" });
+      return res.status(400).json({ message: "Invalid role specified" });
     }
 
-    const roleId = roleData.roleId; // e.g., "0c3392e0-f416-407c-8699-e8638554eba9"
-    const roleName = roleData.roleName; // "USERS"
+    const roleName = roleData.roleName;
 
-    // Alternative: Hardcode roleId (uncomment if preferred)
-    // const roleId = "0c3392e0-f416-407c-8699-e8638554eba9";
-    // const roleName = "USERS";
-
-    // Hash the password
+    // Hash the password before saving (best practice)
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create the new user
@@ -42,10 +43,10 @@ exports.createUser = async (req, res) => {
       username,
       name,
       email,
-      password: hashedPassword,
+      password: hashedPassword, // Store hashed password
       mobileNumber,
-      roles: [roleName], // Store roleName as an array
-      roleId, // Assign fetched or hardcoded roleId
+      roles: roleName, // Store role name
+      roleId, // Store role ID
     });
 
     res.status(201).json({
@@ -56,13 +57,12 @@ exports.createUser = async (req, res) => {
         name: newUser.name,
         email: newUser.email,
         mobileNumber: newUser.mobileNumber,
-        roles: newUser.roles, // Fixed: Use newUser.roles
+        roles: newUser.role,
         roleId: newUser.roleId,
         createdAt: newUser.createdAt,
       },
     });
   } catch (err) {
-    console.error("Error creating user:", err);
     res.status(500).json({ message: "Server Error", error: err.message });
   }
 };
