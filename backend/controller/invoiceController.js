@@ -1,7 +1,7 @@
 const Invoice = require("../models/invoice");
 const Address = require("../models/address");
 const { v4: uuidv4 } = require("uuid");
-
+const Customer = require("../models/customers");
 // Create a new invoice
 exports.createInvoice = async (req, res) => {
   try {
@@ -96,10 +96,11 @@ exports.getInvoiceById = async (req, res) => {
   }
 };
 
-// Update invoice
 exports.updateInvoice = async (req, res) => {
   try {
     const { id } = req.params;
+    console.log("Request headers:", req.headers); // Debug headers
+    console.log("Update invoice payload:", req.body); // Debug payload
     const invoice = await Invoice.findByPk(id);
 
     if (!invoice) {
@@ -108,7 +109,109 @@ exports.updateInvoice = async (req, res) => {
         .json({ success: false, message: "Invoice not found" });
     }
 
-    await invoice.update(req.body);
+    const {
+      customerId,
+      billTo,
+      shipTo,
+      amount,
+      invoiceDate,
+      dueDate,
+      paymentMethod,
+      status,
+      products,
+      signatureName,
+    } = req.body;
+
+    // Validate required fields
+    if (!customerId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Customer ID is required" });
+    }
+
+    // Validate customerId existence
+    const customer = await Customer.findByPk(customerId);
+    if (!customer) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid customer ID" });
+    }
+
+    if (!invoiceDate) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invoice date is required" });
+    }
+    if (!status) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Status is required" });
+    }
+    if (!products || !Array.isArray(products) || products.length === 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "At least one product is required" });
+    }
+
+    // Validate shipTo if provided
+    if (shipTo) {
+      const address = await Address.findByPk(shipTo);
+      if (!address) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Invalid shipping address ID" });
+      }
+    }
+
+    // Validate products
+    for (const product of products) {
+      if (!product.productId || !product.price || !product.quantity) {
+        return res.status(400).json({
+          success: false,
+          message: "Each product must have a productId, price, and quantity",
+        });
+      }
+      if (typeof product.price !== "number" || product.price < 0) {
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: "Product price must be a non-negative number",
+          });
+      }
+      if (typeof product.quantity !== "number" || product.quantity < 1) {
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: "Product quantity must be a positive integer",
+          });
+      }
+    }
+
+    // Validate amount
+    if (typeof amount !== "number" || amount < 0) {
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Amount must be a non-negative number",
+        });
+    }
+
+    // Update invoice
+    await invoice.update({
+      customerId,
+      billTo: billTo || null,
+      shipTo: shipTo || null,
+      amount,
+      invoiceDate,
+      dueDate: dueDate || null,
+      paymentMethod: paymentMethod || null,
+      status,
+      products,
+      signatureName: signatureName || null,
+    });
 
     return res.status(200).json({
       success: true,
@@ -117,9 +220,10 @@ exports.updateInvoice = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating invoice:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal Server Error" });
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Internal Server Error",
+    });
   }
 };
 

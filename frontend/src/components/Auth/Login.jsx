@@ -4,39 +4,58 @@ import { useLoginMutation } from "../../api/authApi";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import logo from "../../assets/img/logo.png";
+
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [login, { isLoading, error }] = useLoginMutation();
+  const [login, { isLoading }] = useLoginMutation();
   const navigate = useNavigate();
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const response = await login({ email, password }).unwrap();
+      console.log("Login response:", response); // Debug
 
       const token = response.accessToken;
+      if (!token) {
+        throw new Error("No access token received");
+      }
+
+      // Store token
       if (rememberMe) {
         localStorage.setItem("token", token);
       } else {
         sessionStorage.setItem("token", token);
       }
+      console.log("Stored token:", token); // Debug
 
       toast.success("Login successful!", { autoClose: 1000 });
       setTimeout(() => {
-        navigate("/");
-        window.location.reload(); // TEMP: force reload to sync auth state
+        navigate("/", { replace: true }); // Replace history
       }, 1000);
     } catch (err) {
-      console.error("Login failed:", err);
-      toast.error(err?.data?.message || "Invalid email or password");
+      console.error("Login failed:", err); // Debug
+
+      const status = err?.status;
+      const message = err?.data?.message || "";
+
+      if (
+        status === 403 ||
+        message.toLowerCase().includes("forbidden") ||
+        message.toLowerCase().includes("not allowed")
+      ) {
+        navigate("/no-access");
+      } else {
+        toast.error(message || "Invalid email or password");
+      }
     }
   };
 
   return (
     <div className="main-wrapper">
+      <ToastContainer />
       <div className="account-content">
         <div className="login-wrapper bg-img">
           <div className="login-content authent-content">
@@ -123,11 +142,6 @@ const Login = () => {
                     {isLoading ? "Signing In..." : "Sign In"}
                   </button>
                 </div>
-                {error && (
-                  <p className="text-danger">
-                    {error.data?.message || "Login failed!"}
-                  </p>
-                )}
                 <div className="signinform">
                   <h4>
                     New on our platform?

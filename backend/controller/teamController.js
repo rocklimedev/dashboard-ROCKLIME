@@ -86,13 +86,11 @@ exports.createTeam = async (req, res) => {
     });
   } catch (error) {
     console.error("Error creating team:", error);
-    return res
-      .status(500)
-      .json({
-        success: false,
-        message: "Internal Server Error",
-        error: error.message,
-      });
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
   }
 };
 
@@ -109,11 +107,18 @@ exports.getAllTeams = async (req, res) => {
   }
 };
 
-// Update a team
 exports.updateTeam = async (req, res) => {
   try {
     const { teamId } = req.params;
-    const { teamName, memberIds } = req.body;
+    const { teamName, adminId, adminName, memberIds } = req.body;
+
+    console.log("Received update request:", {
+      teamId,
+      teamName,
+      adminId,
+      adminName,
+      memberIds,
+    }); // Debug
 
     const team = await Team.findByPk(teamId);
     if (!team) {
@@ -122,17 +127,54 @@ exports.updateTeam = async (req, res) => {
         .json({ success: false, message: "Team not found" });
     }
 
-    if (teamName) {
-      await team.update({ teamName });
+    let changesMade = false;
+
+    // Update teamName if provided and different
+    if (teamName && teamName.trim() && teamName !== team.teamName) {
+      await team.update({ teamName: teamName.trim() });
+      changesMade = true;
+      console.log("Updated teamName:", teamName);
     }
 
-    if (memberIds) {
-      await TeamMember.destroy({ where: { teamId } });
+    // Update adminId and adminName if provided (optional)
+    if (adminId && adminId !== team.adminId) {
+      const admin = await User.findByPk(adminId);
+      if (!admin) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Invalid admin ID" });
+      }
+      await team.update({
+        adminId,
+        adminName: adminName || admin.username,
+      });
+      changesMade = true;
+      console.log("Updated admin:", { adminId, adminName });
+    }
 
+    // Update members if provided
+    if (Array.isArray(memberIds) && memberIds.length > 0) {
+      // Validate memberIds
       const members = await User.findAll({
         where: { userId: { [Op.in]: memberIds } },
       });
 
+      console.log(
+        "Found members:",
+        members.map((m) => m.userId)
+      );
+
+      if (members.length === 0) {
+        return res
+          .status(400)
+          .json({ success: false, message: "No valid members found" });
+      }
+
+      // Delete existing members
+      const deletedCount = await TeamMember.destroy({ where: { teamId } });
+      console.log(`Deleted ${deletedCount} existing team members`);
+
+      // Create new members
       const teamMembers = members.map((member) => ({
         teamId: team.id,
         userId: member.userId,
@@ -141,14 +183,35 @@ exports.updateTeam = async (req, res) => {
         roleName: member.roleName || "Member",
       }));
 
-      await TeamMember.bulkCreate(teamMembers);
+      await TeamMember.bulkCreate(teamMembers, { validate: true });
+      console.log("Created new team members:", teamMembers.length);
+      changesMade = true;
     }
 
-    res
-      .status(200)
-      .json({ success: true, message: "Team updated successfully" });
+    if (!changesMade) {
+      return res.status(200).json({
+        success: true,
+        message: "No changes made to the team",
+      });
+    }
+
+    // Fetch updated team for response
+    const updatedTeam = await Team.findByPk(teamId, {
+      include: [{ model: TeamMember, as: "teammembers" }],
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Team updated successfully",
+      team: updatedTeam,
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error("Error updating team:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
   }
 };
 

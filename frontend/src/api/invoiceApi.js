@@ -23,11 +23,14 @@ export const invoiceApi = createApi({
     }),
     // Update an invoice by ID
     updateInvoice: builder.mutation({
-      query: ({ invoiceId, invoiceData }) => ({
-        url: `/${invoiceId}`,
-        method: "PUT",
-        body: invoiceData,
-      }),
+      query: ({ invoiceId, invoiceData }) => {
+        console.log("RTK Query sending:", { invoiceId, invoiceData }); // Debug
+        return {
+          url: `/${invoiceId}`, // Fixed URL
+          method: "PUT",
+          body: invoiceData,
+        };
+      },
     }),
     // Delete an invoice by ID
     deleteInvoice: builder.mutation({
