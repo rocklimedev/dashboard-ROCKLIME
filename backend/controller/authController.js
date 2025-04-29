@@ -2,8 +2,10 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { Op } = require("sequelize");
 const User = require("../models/users");
+const Roles = require("../models/roles"); // Add Roles model
 const { ROLES } = require("../config/constant");
 require("dotenv").config();
+
 // Store refresh tokens (temporary, recommend using Redis in production)
 const refreshTokens = new Set();
 
@@ -15,29 +17,81 @@ exports.register = async (req, res) => {
     // Convert email to lowercase for case-insensitive lookup
     const normalizedEmail = email.toLowerCase();
 
+    // Check if the user already exists
     const existingUser = await User.findOne({
-      where: { email: normalizedEmail },
+      where: {
+        [Op.or]: [{ username }, { email: normalizedEmail }],
+      },
     });
+
     if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
+      return res
+        .status(400)
+        .json({ message: "Username or Email already exists" });
     }
 
+    // Fetch the "USERS" role from the Roles table
+    const roleData = await Roles.findOne({ where: { roleName: ROLES.Users } });
+
+    if (!roleData) {
+      console.error("USERS role not found in Roles table");
+      return res.status(400).json({ message: "USERS role not found" });
+    }
+
+    const roleId = roleData.roleId; // e.g., "0c3392e0-f416-407c-8699-e8638554eba9"
+    const roleName = roleData.roleName; // "USERS"
+    console.log("Fetched role:", { roleId, roleName }); // Debug
+
+    // Alternative: Hardcode roleId for testing
+    // const roleId = "0c3392e0-f416-407c-8699-e8638554eba9";
+    // const roleName = ROLES.Users;
+
+    // Validate roleId
+    if (!roleId) {
+      console.error("Invalid roleId:", roleId);
+      return res.status(400).json({ message: "Invalid roleId for USERS role" });
+    }
+
+    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Create the new user
     const newUser = await User.create({
       username,
       name,
       email: normalizedEmail,
       mobileNumber,
       password: hashedPassword,
-      roles: [ROLES.Users], // Default role assigned as an array
-      status: "inactive",
+      roles: [roleName], // Store as array
+      roleId, // Assign fetched or hardcoded roleId
+      status: "inactive", // Consistent with original register
     });
 
-    res
-      .status(201)
-      .json({ message: "User registered successfully", user: newUser });
+    console.log("Created user:", {
+      userId: newUser.userId,
+      username: newUser.username,
+      email: newUser.email,
+      roles: newUser.roles,
+      roleId: newUser.roleId,
+      status: newUser.status,
+    }); // Debug
+
+    res.status(201).json({
+      message: "User registered successfully",
+      user: {
+        userId: newUser.userId,
+        username: newUser.username,
+        name: newUser.name,
+        email: newUser.email,
+        mobileNumber: newUser.mobileNumber,
+        roles: newUser.roles,
+        roleId: newUser.roleId,
+        status: newUser.status,
+        createdAt: newUser.createdAt,
+      },
+    });
   } catch (err) {
+    console.error("Register error:", err);
     res.status(500).json({ message: "Server Error", error: err.message });
   }
 };
@@ -49,43 +103,57 @@ exports.login = async (req, res) => {
 
     console.log("Login attempt for:", email);
 
+    // Find user with case-insensitive email
     const user = await User.findOne({ where: { email: email.toLowerCase() } });
     if (!user) {
       console.log("User not found.");
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    console.log("User found:", user);
+    console.log("User found:", {
+      userId: user.userId,
+      email: user.email,
+      roles: user.roles,
+      roleId: user.roleId,
+    });
 
+    // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       console.log("Invalid password.");
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    console.log("Generating token...");
+    // Check if user is inactive
+    if (user.status === "inactive") {
+      console.log("User is inactive:", user.userId);
+      return res.status(403).json({
+        message: "Account is inactive. Please contact an administrator.",
+      });
+    }
+
+    console.log("Generating tokens...");
     console.log("JWT Secret:", process.env.JWT_SECRET);
 
-    // Set access token expiration to 7 days
+    // Generate access token (7 days expiration)
     const now = Math.floor(Date.now() / 1000); // Current time in seconds
     const accessToken = jwt.sign(
       {
         userId: user.userId,
+        email: user.email,
         roles: user.roles,
         roleId: user.roleId,
         iat: now,
-        exp: now + 7 * 24 * 60 * 60, // 7 days expiration
+        exp: now + 7 * 24 * 60 * 60, // 7 days
       },
       process.env.JWT_SECRET
     );
 
-    console.log("Generated Access Token:", accessToken);
-    console.log("Decoded Access Token:", jwt.decode(accessToken));
-
-    // Refresh token remains 7 days (no change needed)
+    // Generate refresh token (7 days expiration)
     const refreshToken = jwt.sign(
       {
-        userId: user.userId || user.id,
+        userId: user.userId,
+        email: user.email,
         roles: user.roles,
         roleId: user.roleId,
       },
@@ -93,6 +161,14 @@ exports.login = async (req, res) => {
       { expiresIn: "7d" }
     );
 
+    // Store refresh token
+    refreshTokens.add(refreshToken);
+
+    console.log("Generated Access Token:", accessToken);
+    console.log("Decoded Access Token:", jwt.decode(accessToken));
+    console.log("Generated Refresh Token:", refreshToken);
+
+    // Set refresh token as HTTP-only cookie
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -100,15 +176,25 @@ exports.login = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
-    res
-      .status(200)
-      .json({ message: "Login successful", accessToken, refreshToken });
+    res.status(200).json({
+      message: "Login successful",
+      accessToken,
+      user: {
+        userId: user.userId,
+        email: user.email,
+        username: user.username,
+        name: user.name,
+        mobileNumber: user.mobileNumber,
+        roles: user.roles,
+        roleId: user.roleId,
+        status: user.status,
+      },
+    });
   } catch (err) {
     console.error("Login error:", err);
     res.status(500).json({ message: "Server Error", error: err.message });
   }
 };
-
 // Logout
 exports.logout = async (req, res) => {
   try {
