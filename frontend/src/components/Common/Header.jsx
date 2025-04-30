@@ -267,7 +267,7 @@ const Header = ({ toggleSidebar }) => {
                 </span>
                 <div>
                   <h6 class="fw-medium">{user?.user?.name}</h6>
-                  <p>Admin</p>
+                  <p>{user?.user?.roles}</p>
                 </div>
               </div>
               <Link to={`/u/${user?.user?.userId}`} className="dropdown-item">

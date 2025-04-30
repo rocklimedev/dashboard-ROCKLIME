@@ -1,83 +1,156 @@
 import React, { useState } from "react";
-// Adjust path accordingly
-import { useGetLowStockProductsQuery } from "../../api/productApi";
-const Alert = () => {
-  const { data: lowStockProducts = [], isLoading } =
-    useGetLowStockProductsQuery();
+import { useGetAllProductsQuery } from "../../api/productApi";
+
+const Alert = ({
+  alertStyle = {},
+  buttonStyle = {},
+  icon = "ℹ️",
+  modalStyle = {},
+  title = "Low Stock Products",
+}) => {
+  const { data: allProducts = [], isLoading } = useGetAllProductsQuery();
   const [showModal, setShowModal] = useState(false);
+
+  const lowStockProducts = allProducts.filter(
+    (product) => product.stock < product.alertQuantity
+  );
 
   if (isLoading || !lowStockProducts.length) return null;
 
   return (
     <>
-      <div className="alert bg-orange-transparent alert-dismissible fade show mb-4">
+      <div
+        className="custom-alert-container"
+        style={{
+          backgroundColor: "rgba(255, 165, 0, 0.1)",
+          padding: "12px 16px",
+          borderRadius: "6px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "16px",
+          ...alertStyle,
+        }}
+      >
         <div>
+          <span style={{ marginRight: 6 }}>{icon}</span>
           <span>
-            <i className="ti ti-info-circle fs-14 text-orange me-2"></i>
             You have{" "}
-          </span>
-          <span className="text-orange fw-semibold">
-            {lowStockProducts.length} product(s)
+            <strong style={{ color: "orange" }}>
+              {lowStockProducts.length} product(s)
+            </strong>{" "}
+            running low on stock.
           </span>{" "}
-          running low on stock.{" "}
           <button
             onClick={() => setShowModal(true)}
-            className="link-orange text-decoration-underline fw-semibold btn btn-link p-0 m-0 align-baseline"
-            style={{ textDecoration: "underline" }}
+            style={{
+              background: "none",
+              border: "none",
+              color: "orange",
+              textDecoration: "underline",
+              fontWeight: "600",
+              cursor: "pointer",
+              ...buttonStyle,
+            }}
           >
             View Products
           </button>
         </div>
         <button
-          type="button"
-          className="btn-close text-gray-9 fs-14"
-          data-bs-dismiss="alert"
-          aria-label="Close"
+          onClick={() => setShowModal(false)}
+          style={{
+            background: "none",
+            border: "none",
+            fontSize: "18px",
+            color: "#666",
+            cursor: "pointer",
+          }}
         >
-          <i className="ti ti-x"></i>
+          ×
         </button>
       </div>
 
       {/* Modal */}
       {showModal && (
-        <div className="modal fade show d-block" tabIndex="-1">
-          <div className="modal-dialog modal-dialog-scrollable">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Low Stock Products</h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setShowModal(false)}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <ul className="list-group">
-                  {lowStockProducts.map((product) => (
-                    <li key={product.id} className="list-group-item">
-                      {product.name} —{" "}
-                      <span className="text-danger fw-bold">
-                        Only {product.stock} left
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="modal-footer">
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => setShowModal(false)}
-                >
-                  Close
-                </button>
-              </div>
+        <>
+          <div
+            className="custom-modal"
+            style={{
+              position: "fixed",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              zIndex: 1000,
+              backgroundColor: "white",
+              borderRadius: "8px",
+              width: "90%",
+              maxWidth: "500px",
+              maxHeight: "80vh",
+              overflowY: "auto",
+              boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
+              ...modalStyle,
+            }}
+          >
+            <div
+              style={{
+                padding: "16px",
+                borderBottom: "1px solid #ddd",
+                fontWeight: "bold",
+              }}
+            >
+              {title}
+            </div>
+            <div style={{ padding: "16px" }}>
+              <ul style={{ paddingLeft: "20px" }}>
+                {lowStockProducts.map((product) => (
+                  <li key={product.id} style={{ marginBottom: "10px" }}>
+                    {product.name} —{" "}
+                    <span style={{ color: "red", fontWeight: "bold" }}>
+                      Only {product.stock} left (Alert at{" "}
+                      {product.alertQuantity})
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div
+              style={{
+                padding: "12px 16px",
+                borderTop: "1px solid #ddd",
+                textAlign: "right",
+              }}
+            >
+              <button
+                onClick={() => setShowModal(false)}
+                style={{
+                  backgroundColor: "#eee",
+                  border: "none",
+                  padding: "6px 12px",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                }}
+              >
+                Close
+              </button>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Modal backdrop */}
-      {showModal && <div className="modal-backdrop fade show"></div>}
+          {/* Backdrop */}
+          <div
+            className="custom-modal-backdrop"
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0, 0, 0, 0.4)",
+              zIndex: 999,
+            }}
+            onClick={() => setShowModal(false)}
+          />
+        </>
+      )}
     </>
   );
 };
