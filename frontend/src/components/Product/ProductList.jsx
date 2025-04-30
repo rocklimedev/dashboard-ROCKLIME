@@ -11,26 +11,47 @@ import { useGetAllBrandsQuery } from "../../api/brandsApi";
 import StockModal from "../Common/StockModal";
 import HistoryModal from "../Common/HistoryModal";
 import { useNavigate } from "react-router-dom";
-
+import { Button } from "react-bootstrap";
 const ProductList = () => {
   const navigate = useNavigate();
   const { data, error, isLoading } = useGetAllProductsQuery();
+  const { data: categoriesData } = useGetAllCategoriesQuery();
+  const { data: brandsData } = useGetAllBrandsQuery();
+  const { data: customersData } = useGetCustomersQuery();
 
   const products = Array.isArray(data?.data)
     ? data.data
     : Array.isArray(data)
     ? data
     : [];
-  const { data: categoriesData } = useGetAllCategoriesQuery();
-  const { data: brandsData } = useGetAllBrandsQuery();
-  const { data: customersData } = useGetCustomersQuery();
+
   const categories = Array.isArray(categoriesData?.categories)
     ? categoriesData.categories
     : [];
+
   const brands = Array.isArray(brandsData) ? brandsData : [];
+
   const customers = Array.isArray(customersData?.data)
     ? customersData.data
     : [];
+
+  const [currentPage, setCurrentPage] = useState(0);
+  const [isModalVisible, setModalVisible] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [isStockModalVisible, setStockModalVisible] = useState(false);
+  const [isHistoryModalVisible, setHistoryModalVisible] = useState(false);
+  const [stockHistoryMap, setStockHistoryMap] = useState({});
+
+  const [filters, setFilters] = useState({
+    createdBy: null,
+    category: null,
+    brand: null,
+    sortBy: null,
+    search: "",
+    company_code: "",
+  });
+
+  const itemsPerPage = 20;
 
   const getBrandsName = (brandId) => {
     if (!brandId) return "NOT BRANDED";
@@ -43,28 +64,13 @@ const ProductList = () => {
     return category ? category.name : "Uncategorized";
   };
 
-  const [currentPage, setCurrentPage] = useState(0);
-  const [isModalVisible, setModalVisible] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [isStockModalVisible, setStockModalVisible] = useState(false);
-  const [isHistoryModalVisible, setHistoryModalVisible] = useState(false);
-  const [stockHistory, setStockHistory] = useState([]);
-  const [filters, setFilters] = useState({
-    createdBy: null,
-    category: null,
-    brand: null,
-    sortBy: null, // Disable default date filter
-    search: "",
-    company_code: "", // Added company_code filter
-  });
-  const itemsPerPage = 20;
-
   const applyFilters = (customers = []) => {
     if (!products) return [];
 
     let filtered = products.filter((product) => {
       const customer = customers.find((c) => c._id === product.customerId);
       const createdByName = customer?.name || "";
+
       const matchesCreator =
         !filters.createdBy || createdByName === filters.createdBy;
 
@@ -84,7 +90,7 @@ const ProductList = () => {
         (product.company_code &&
           product.company_code
             .toLowerCase()
-            .includes(filters.company_code.toLowerCase())); // Added company_code search
+            .includes(filters.company_code.toLowerCase()));
 
       let matchesDate = true;
       if (filters.sortBy === "Last 7 Days") {
@@ -105,7 +111,6 @@ const ProductList = () => {
       );
     });
 
-    // Apply sorting
     if (filters.sortBy === "Ascending") {
       filtered.sort((a, b) => a.name.localeCompare(b.name));
     } else if (filters.sortBy === "Descending") {
@@ -139,6 +144,7 @@ const ProductList = () => {
 
   const handleConfirmDelete = () => {
     setModalVisible(false);
+    // actual delete logic goes here
   };
 
   const handleStockClick = (product) => {
@@ -152,9 +158,24 @@ const ProductList = () => {
   };
 
   const handleStockSubmit = (stockData) => {
-    setStockHistory([...stockHistory, { ...stockData, date: new Date() }]);
+    const updatedStock = {
+      ...stockData,
+      productId: selectedProduct.productId,
+      date: new Date(),
+    };
+
+    setStockHistoryMap((prev) => {
+      const productId = selectedProduct.productId;
+      const newHistory = [...(prev[productId] || []), updatedStock];
+      return { ...prev, [productId]: newHistory };
+    });
+
+    setStockModalVisible(false);
   };
 
+  const handleAddProduct = () => {
+    navigate("/inventory/product/add");
+  };
   const openStockModal = (product) => {
     setSelectedProduct(product);
     setStockModalVisible(true);
@@ -164,18 +185,13 @@ const ProductList = () => {
     setSelectedProduct(product);
     setHistoryModalVisible(true);
   };
-
-  const handleAddProduct = () => {
-    navigate("/inventory/product/add");
-  };
-
   return (
     <div className="page-wrapper">
       <div className="content">
         <PageHeader
           title="Products"
           subtitle="Manage your product inventory"
-          onAdd={() => handleAddProduct()}
+          onAdd={handleAddProduct}
         />
 
         <div className="card">
@@ -188,9 +204,11 @@ const ProductList = () => {
                   <tr>
                     <th>Product Name</th>
                     <th>Product Code</th>
-                    <th>Company Code</th> {/* Added Company Code column */}
+                    <th>Company Code</th>
                     <th>Category</th>
                     <th>Brand</th>
+                    <th>Stock</th>
+                    <th>Stock In/Out - History</th>
                     <th>Created By</th>
                     <th>Actions</th>
                   </tr>
@@ -200,17 +218,34 @@ const ProductList = () => {
                     <tr key={product.productId}>
                       <td>{product.name}</td>
                       <td>{product.product_code}</td>
-                      <td>{product.company_code}</td>{" "}
-                      {/* Display Company Code */}
+                      <td>{product.company_code}</td>
                       <td>{getCategoryName(product.categoryId)}</td>
                       <td>{getBrandsName(product.brandId)}</td>
+                      <td>{product.quantity ?? 0}</td>
+                      <td>
+                        <Button
+                          variant="outline-success"
+                          size="sm"
+                          onClick={() => openStockModal(product)}
+                          className="me-2"
+                        >
+                          Stock
+                        </Button>
+                        <Button
+                          variant="outline-info"
+                          size="sm"
+                          onClick={() => openHistoryModal(product)}
+                        >
+                          History
+                        </Button>
+                      </td>
                       <td>
                         {
                           customers.find((c) => c._id === product.customerId)
                             ?.name
                         }
                       </td>
-                      <td>
+                      <div className="d-flex gap-2">
                         <Actions
                           onEdit={() =>
                             navigate(
@@ -218,10 +253,8 @@ const ProductList = () => {
                             )
                           }
                           onDelete={() => handleDeleteClick(product)}
-                          onStock={() => handleStockClick(product)}
-                          onHistory={() => handleHistoryClick(product)}
                         />
-                      </td>
+                      </div>
                     </tr>
                   ))}
                 </tbody>
@@ -238,24 +271,28 @@ const ProductList = () => {
         </div>
       </div>
 
-      {/* Modals for delete, stock, and history */}
+      {/* Modals */}
       <DeleteModal
         isVisible={isModalVisible}
         onConfirm={handleConfirmDelete}
         onCancel={() => setModalVisible(false)}
         product={selectedProduct}
       />
-      <StockModal
-        isVisible={isStockModalVisible}
-        onSubmit={handleStockSubmit}
-        onClose={() => setStockModalVisible(false)}
-        product={selectedProduct}
-      />
-      <HistoryModal
-        isVisible={isHistoryModalVisible}
-        onClose={() => setHistoryModalVisible(false)}
-        stockHistory={stockHistory}
-      />
+      {isStockModalVisible && selectedProduct && (
+        <StockModal
+          show={isStockModalVisible}
+          onHide={() => setStockModalVisible(false)}
+          product={selectedProduct}
+        />
+      )}
+
+      {isHistoryModalVisible && selectedProduct && (
+        <HistoryModal
+          show={isHistoryModalVisible}
+          onHide={() => setHistoryModalVisible(false)}
+          product={selectedProduct}
+        />
+      )}
     </div>
   );
 };

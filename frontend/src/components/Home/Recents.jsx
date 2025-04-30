@@ -1,76 +1,84 @@
 import React from "react";
+import { useGetAllProductsQuery } from "../../api/productApi";
+import { useGetAllQuotationsQuery } from "../../api/quotationApi";
+import { useGetAllInvoicesQuery } from "../../api/invoiceApi";
+import { useGetAllOrdersQuery } from "../../api/orderApi";
 
 const Recents = () => {
+  const { data: productData, isLoading: loadingProducts } =
+    useGetAllProductsQuery();
+  const { data: quotationData, isLoading: loadingQuotations } =
+    useGetAllQuotationsQuery();
+  const { data: invoiceData, isLoading: loadingInvoices } =
+    useGetAllInvoicesQuery();
+  const { data: orderData, isLoading: loadingOrders } = useGetAllOrdersQuery();
+
+  const productCount = productData?.length || 0;
+  const quotationCount = quotationData?.length || 0;
+  const invoiceCount = invoiceData?.data?.length || 0;
+  const orderCount = orderData?.orders?.length || 0;
+
   return (
-    <div class="row">
-      <div class="col-xl-3 col-sm-6 col-12 d-flex">
-        <div class="card bg-primary sale-widget flex-fill">
-          <div class="card-body d-flex align-items-center">
-            <span class="sale-icon bg-white text-primary">
-              <i class="ti ti-file-text fs-24"></i>
+    <div className="row">
+      <div className="col-xl-3 col-sm-6 col-12 d-flex">
+        <div className="card bg-primary sale-widget flex-fill">
+          <div className="card-body d-flex align-items-center">
+            <span className="sale-icon bg-white text-primary">
+              <i className="ti ti-file-text fs-24"></i>
             </span>
-            <div class="ms-2">
-              <p class="text-white mb-1">Total Sales</p>
-              <div class="d-inline-flex align-items-center flex-wrap gap-2">
-                <h4 class="text-white">$48,988,078</h4>
-                <span class="badge badge-soft-primary">
-                  <i class="ti ti-arrow-up me-1"></i>+22%
-                </span>
-              </div>
+            <div className="ms-2">
+              <p className="text-white mb-1">Total Orders</p>
+              <h4 className="text-white">
+                {loadingOrders ? "..." : orderCount}
+              </h4>
             </div>
           </div>
         </div>
       </div>
-      <div class="col-xl-3 col-sm-6 col-12 d-flex">
-        <div class="card bg-secondary sale-widget flex-fill">
-          <div class="card-body d-flex align-items-center">
-            <span class="sale-icon bg-white text-secondary">
-              <i class="ti ti-repeat fs-24"></i>
+
+      <div className="col-xl-3 col-sm-6 col-12 d-flex">
+        <div className="card bg-secondary sale-widget flex-fill">
+          <div className="card-body d-flex align-items-center">
+            <span className="sale-icon bg-white text-secondary">
+              <i className="ti ti-repeat fs-24"></i>
             </span>
-            <div class="ms-2">
-              <p class="text-white mb-1">Total Sales Return</p>
-              <div class="d-inline-flex align-items-center flex-wrap gap-2">
-                <h4 class="text-white">$16,478,145</h4>
-                <span class="badge badge-soft-danger">
-                  <i class="ti ti-arrow-down me-1"></i>-22%
-                </span>
-              </div>
+            <div className="ms-2">
+              <p className="text-white mb-1">Total Invoices</p>
+              <h4 className="text-white">
+                {loadingInvoices ? "..." : invoiceCount}
+              </h4>
             </div>
           </div>
         </div>
       </div>
-      <div class="col-xl-3 col-sm-6 col-12 d-flex">
-        <div class="card bg-teal sale-widget flex-fill">
-          <div class="card-body d-flex align-items-center">
-            <span class="sale-icon bg-white text-teal">
-              <i class="ti ti-gift fs-24"></i>
+
+      <div className="col-xl-3 col-sm-6 col-12 d-flex">
+        <div className="card bg-teal sale-widget flex-fill">
+          <div className="card-body d-flex align-items-center">
+            <span className="sale-icon bg-white text-teal">
+              <i className="ti ti-gift fs-24"></i>
             </span>
-            <div class="ms-2">
-              <p class="text-white mb-1">Total Purchase</p>
-              <div class="d-inline-flex align-items-center flex-wrap gap-2">
-                <h4 class="text-white">$24,145,789</h4>
-                <span class="badge badge-soft-success">
-                  <i class="ti ti-arrow-up me-1"></i>+22%
-                </span>
-              </div>
+            <div className="ms-2">
+              <p className="text-white mb-1">Total Quotations</p>
+              <h4 className="text-white">
+                {loadingQuotations ? "..." : quotationCount}
+              </h4>
             </div>
           </div>
         </div>
       </div>
-      <div class="col-xl-3 col-sm-6 col-12 d-flex">
-        <div class="card bg-info sale-widget flex-fill">
-          <div class="card-body d-flex align-items-center">
-            <span class="sale-icon bg-white text-info">
-              <i class="ti ti-brand-pocket fs-24"></i>
+
+      <div className="col-xl-3 col-sm-6 col-12 d-flex">
+        <div className="card bg-info sale-widget flex-fill">
+          <div className="card-body d-flex align-items-center">
+            <span className="sale-icon bg-white text-info">
+              <i className="ti ti-brand-pocket fs-24"></i>
             </span>
-            <div class="ms-2">
-              <p class="text-white mb-1">Total Purchase Return</p>
-              <div class="d-inline-flex align-items-center flex-wrap gap-2">
-                <h4 class="text-white">$18,458,747</h4>
-                <span class="badge badge-soft-success">
-                  <i class="ti ti-arrow-up me-1"></i>+22%
-                </span>
-              </div>
+            <div className="ms-2">
+              <p className="text-white mb-1">Total Products</p>
+              <h4 className="text-white">
+                {loadingProducts ? "..." : productCount}
+              </h4>
             </div>
           </div>
         </div>

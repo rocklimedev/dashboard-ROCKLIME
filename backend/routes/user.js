@@ -24,21 +24,21 @@ router.get(
   "/",
   auth,
   // checkPermission("view", "get_all_users", "users", "/users"),
-  role([ROLES.Admin]),
+  //role([ROLES.Admin]),
   userController.getAllUsers
 ); // View all users
 router.post(
   "/add",
   auth,
   //checkPermission("write", "create_user", "users", "/users/add"),
-  role([ROLES.Admin]),
+  // role([ROLES.Admin]),
   userController.createUser
 ); // Add a new user
 router.delete(
   "/:userId",
   auth,
   //  checkPermission("delete", "delete_user", "users", "/users/:userId"),
-  role([ROLES.Admin]),
+  // role([ROLES.Admin]),
   userController.deleteUser
 ); // Delete a user
 router.put(
