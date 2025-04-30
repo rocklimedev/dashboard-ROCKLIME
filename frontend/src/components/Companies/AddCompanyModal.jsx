@@ -23,7 +23,6 @@ const AddCompanyModal = ({ show, onClose, existingVendor }) => {
 
   useEffect(() => {
     if (existingVendor) {
-      console.log("Populating form with existingVendor:", existingVendor);
       setFormData({
         id: existingVendor.id || null,
         vendorId: existingVendor.vendorId || "",
@@ -78,7 +77,7 @@ const AddCompanyModal = ({ show, onClose, existingVendor }) => {
           brandSlug: formData.brandSlug || null,
           brandId: formData.brandId || null,
         };
-        console.log("Updating vendor with payload:", updatePayload);
+
         await updateVendor(updatePayload).unwrap();
         toast.success("Vendor updated successfully!");
       } else {
@@ -89,7 +88,7 @@ const AddCompanyModal = ({ show, onClose, existingVendor }) => {
           brandSlug: formData.brandSlug || null,
           brandId: formData.brandId || null,
         };
-        console.log("Creating vendor with payload:", createPayload);
+
         await addVendor(createPayload).unwrap();
         toast.success("Vendor added successfully!");
       }
@@ -105,7 +104,6 @@ const AddCompanyModal = ({ show, onClose, existingVendor }) => {
   };
 
   const closeModal = () => {
-    console.log("Closing modal");
     setFormData({
       id: null,
       vendorId: "",

@@ -319,8 +319,6 @@ exports.searchProducts = async (req, res) => {
       filters.categoryId = categoryId;
     }
 
-    console.log("Filters applied:", filters); // Debugging
-
     const products = await Product.findAll({ where: filters });
 
     return res.status(200).json(products);

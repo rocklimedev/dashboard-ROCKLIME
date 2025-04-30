@@ -236,7 +236,6 @@ const UserList = () => {
           isVisible={showDeleteModal}
           onConfirm={handleConfirmDelete}
           onCancel={() => {
-            console.log("Canceling delete modal");
             setShowDeleteModal(false);
             setUserToDelete(null);
           }}

@@ -23,9 +23,7 @@ const NoAccess = () => {
 
   const handleRetry = async () => {
     try {
-      console.log("Manual refetching profile...");
       const updatedProfile = await refetchProfile().unwrap();
-      console.log("Updated profile:", updatedProfile);
 
       let roleNames = updatedProfile?.user?.roles || [];
       if (typeof roleNames === "string") {
@@ -49,7 +47,6 @@ const NoAccess = () => {
 
       if (updatedProfile.token) {
         localStorage.setItem("token", updatedProfile.token);
-        console.log("Stored new token:", updatedProfile.token);
       }
 
       toast.success("Access granted! Redirecting...");

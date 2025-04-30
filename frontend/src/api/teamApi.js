@@ -37,7 +37,6 @@ export const teamApi = createApi({
           adminName,
           memberIds: members.map((m) => m.userId), // Transform members to memberIds
         };
-        console.log("RTK Query sending team update:", { teamId, body }); // Debug
         return {
           url: `/update/${teamId}`, // Correct endpoint
           method: "PUT",

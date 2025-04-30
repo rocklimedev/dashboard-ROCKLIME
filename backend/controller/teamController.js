@@ -15,8 +15,6 @@ exports.createTeam = async (req, res) => {
       });
     }
 
-    console.log("Received request body:", req.body);
-
     const admin = await User.findByPk(adminId);
     if (!admin) {
       return res
@@ -38,18 +36,11 @@ exports.createTeam = async (req, res) => {
         .json({ success: false, message: "No valid members found." });
     }
 
-    console.log(
-      "Members found:",
-      members.map((m) => m.userId)
-    );
-
     const team = await Team.create({
       teamName,
       adminId,
       adminName: admin.username,
     });
-
-    console.log("Team created:", team.id);
 
     const teamMembers = members.map((member) => ({
       teamId: team.id,
@@ -69,8 +60,6 @@ exports.createTeam = async (req, res) => {
     });
 
     await TeamMember.bulkCreate(teamMembers, { validate: true });
-
-    console.log("Team members added successfully.");
 
     return res.status(201).json({
       success: true,
@@ -112,14 +101,6 @@ exports.updateTeam = async (req, res) => {
     const { teamId } = req.params;
     const { teamName, adminId, adminName, memberIds } = req.body;
 
-    console.log("Received update request:", {
-      teamId,
-      teamName,
-      adminId,
-      adminName,
-      memberIds,
-    }); // Debug
-
     const team = await Team.findByPk(teamId);
     if (!team) {
       return res
@@ -133,7 +114,6 @@ exports.updateTeam = async (req, res) => {
     if (teamName && teamName.trim() && teamName !== team.teamName) {
       await team.update({ teamName: teamName.trim() });
       changesMade = true;
-      console.log("Updated teamName:", teamName);
     }
 
     // Update adminId and adminName if provided (optional)
@@ -149,7 +129,6 @@ exports.updateTeam = async (req, res) => {
         adminName: adminName || admin.username,
       });
       changesMade = true;
-      console.log("Updated admin:", { adminId, adminName });
     }
 
     // Update members if provided
@@ -159,11 +138,6 @@ exports.updateTeam = async (req, res) => {
         where: { userId: { [Op.in]: memberIds } },
       });
 
-      console.log(
-        "Found members:",
-        members.map((m) => m.userId)
-      );
-
       if (members.length === 0) {
         return res
           .status(400)
@@ -172,7 +146,6 @@ exports.updateTeam = async (req, res) => {
 
       // Delete existing members
       const deletedCount = await TeamMember.destroy({ where: { teamId } });
-      console.log(`Deleted ${deletedCount} existing team members`);
 
       // Create new members
       const teamMembers = members.map((member) => ({
@@ -184,7 +157,7 @@ exports.updateTeam = async (req, res) => {
       }));
 
       await TeamMember.bulkCreate(teamMembers, { validate: true });
-      console.log("Created new team members:", teamMembers.length);
+
       changesMade = true;
     }
 

@@ -60,10 +60,6 @@ const CreateProduct = () => {
   // Pre-fill form and set filtered categories in edit mode
   useEffect(() => {
     if (existingProduct && categoryData?.categories) {
-      console.log("Existing product:", existingProduct);
-      console.log("Category data:", categoryData.categories);
-      console.log("Parent categories:", parentCategoryData);
-
       // Find the category to get its parentCategoryId for UI filtering
       const selectedCategory = categoryData.categories.find(
         (cat) => cat.categoryId === existingProduct.category
@@ -105,7 +101,6 @@ const CreateProduct = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    console.log(`Handle change: ${name} = ${value}`);
 
     if (name === "category") {
       // Find the selected category to get its parentCategoryId
@@ -113,9 +108,6 @@ const CreateProduct = () => {
         (cat) => cat.categoryId === value
       );
       const parentCategoryId = selectedCategory?.parentCategoryId || "";
-
-      console.log("Selected category:", selectedCategory);
-      console.log("Setting parentCategory to:", parentCategoryId);
 
       // Log if parentCategoryId is missing
       if (!parentCategoryId && selectedCategory) {
@@ -144,10 +136,6 @@ const CreateProduct = () => {
       const matchingCategories = categoryData?.categories?.filter(
         (cat) => cat.parentCategoryId === value
       );
-      console.log(
-        "Filtered categories for parentCategory:",
-        matchingCategories
-      );
 
       setFilteredCategories(matchingCategories || []);
       setFormData((prev) => ({
@@ -166,7 +154,6 @@ const CreateProduct = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Submitting formData:", formData);
 
     // Exclude parentCategory and barcode from required fields and payload
     const requiredFields = {
@@ -191,7 +178,6 @@ const CreateProduct = () => {
     );
 
     if (emptyFields.length > 0) {
-      console.log("Empty fields:", emptyFields);
       toast.warning(
         "All required fields must be filled before submitting the form."
       );

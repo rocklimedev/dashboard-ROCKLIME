@@ -84,10 +84,6 @@ exports.updateQuotation = async (req, res) => {
     const { id } = req.params;
     const { items, ...quotationData } = req.body;
 
-    console.log("Updating quotation with ID:", id);
-    console.log("Quotation data:", quotationData);
-    console.log("Items:", items);
-
     // Validate input
     if (!id) {
       await t.rollback();
@@ -108,11 +104,9 @@ exports.updateQuotation = async (req, res) => {
       transaction: t,
     });
     if (!check) {
-      console.log("❌ Quotation not found in DB for ID:", id);
       await t.rollback();
       return res.status(404).json({ message: "Quotation not found" });
     }
-    console.log("✅ Found quotation:", check.toJSON());
 
     // Stringify products if provided
     if (quotationData.products && typeof quotationData.products !== "string") {
@@ -126,7 +120,7 @@ exports.updateQuotation = async (req, res) => {
         where: { quotationId: id },
         transaction: t,
       });
-      console.log("Update result:", updated);
+
       if (!updated[0]) {
         console.warn("No rows updated for ID:", id);
         await t.rollback();
@@ -151,10 +145,8 @@ exports.updateQuotation = async (req, res) => {
         },
         { upsert: true }
       );
-      console.log("MongoDB QuotationItem updated for ID:", id);
     } else if (items) {
       await QuotationItem.deleteOne({ quotationId: id });
-      console.log("MongoDB QuotationItem removed for ID:", id);
     }
 
     await t.commit();

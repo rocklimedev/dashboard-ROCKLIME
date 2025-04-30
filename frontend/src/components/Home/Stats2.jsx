@@ -41,12 +41,6 @@ const Stats2 = () => {
   } = useGetAllProductsQuery();
   const products = productsData?.data || [];
 
-  // Log responses for debugging
-  console.log("Customers Data:", customersData);
-  console.log("Categories Data:", categoriesData);
-  console.log("Users Data:", usersData);
-  console.log("Products Data:", productsData);
-
   // Loading and error states
   if (
     isCustomersLoading ||

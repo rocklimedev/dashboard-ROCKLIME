@@ -56,25 +56,25 @@ const AddQuotation = () => {
     useUpdateQuotationMutation();
 
   // Log fetch status for debugging
-  useEffect(() => {
-    if (isEditMode) {
-      console.log("Quotation ID from params:", id);
-      console.log("Fetch status:", {
-        isFetching,
-        isFetchSuccess,
-        fetchError,
-        existingQuotation,
-        quotationId: id,
-      });
-    }
-  }, [
-    id,
-    isEditMode,
-    isFetching,
-    isFetchSuccess,
-    fetchError,
-    existingQuotation,
-  ]);
+  // useEffect(() => {
+  //   if (isEditMode) {
+  //     console.log("Quotation ID from params:", id);
+  //     console.log("Fetch status:", {
+  //       isFetching,
+  //       isFetchSuccess,
+  //       fetchError,
+  //       existingQuotation,
+  //       quotationId: id,
+  //     });
+  //   }
+  // }, [
+  //   id,
+  //   isEditMode,
+  //   isFetching,
+  //   isFetchSuccess,
+  //   fetchError,
+  //   existingQuotation,
+  // ]);
 
   // Handle fetch errors
   useEffect(() => {
@@ -106,7 +106,6 @@ const AddQuotation = () => {
   // Pre-fill form in edit mode
   useEffect(() => {
     if (isEditMode && existingQuotation) {
-      console.log("Populating form with quotation:", existingQuotation);
       setFormData({
         ...initialFormData,
         quotationId: id,
@@ -224,7 +223,7 @@ const AddQuotation = () => {
 
   const handleCustomerChange = (e) => {
     const selectedCustomerId = e.target.value;
-    console.log("Selected Customer ID:", selectedCustomerId);
+
     setFormData((prev) => ({
       ...prev,
       customerId: selectedCustomerId,
@@ -233,8 +232,6 @@ const AddQuotation = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Submitting quotation with ID:", id);
-    console.log("Form data:", formData);
 
     if (!formData.customerId) {
       toast.error("Please select a customer.", {
@@ -272,28 +269,21 @@ const AddQuotation = () => {
       products: formData.products.length > 0 ? formData.products : [],
     };
 
-    console.log("Formatted form data for submission:", formattedFormData);
-
     try {
       if (isEditMode) {
-        console.log("Calling updateQuotation with:", {
-          id,
-          updatedQuotation: formattedFormData,
-        });
         const response = await updateQuotation({
           id,
           updatedQuotation: formattedFormData,
         }).unwrap();
-        console.log("Update response:", response);
+
         toast.success("Quotation updated successfully!", {
           position: "top-right",
           autoClose: 3000,
         });
         navigate("/quotations/list");
       } else {
-        console.log("Calling createQuotation with:", formattedFormData);
         const response = await createQuotation(formattedFormData).unwrap();
-        console.log("Create response:", response);
+
         toast.success("Quotation created successfully!", {
           position: "top-right",
           autoClose: 3000,

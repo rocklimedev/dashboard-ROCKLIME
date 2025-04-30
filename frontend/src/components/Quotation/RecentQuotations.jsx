@@ -45,7 +45,6 @@ const RecentQuotation = () => {
   const handleAddQuotation = () => navigate("/quotations/add");
 
   const handleDeleteClick = (quotation) => {
-    console.log("Opening delete modal for quotation:", quotation);
     setQuotationToDelete(quotation);
     setShowDeleteModal(true);
   };
@@ -57,7 +56,6 @@ const RecentQuotation = () => {
       return;
     }
     try {
-      console.log("Deleting quotation with ID:", quotationToDelete.quotationId);
       await deleteQuotation(quotationToDelete.quotationId).unwrap();
       toast.success("Quotation deleted successfully!");
       setShowDeleteModal(false);
@@ -77,13 +75,12 @@ const RecentQuotation = () => {
       typeof products === "string"
         ? JSON.parse(products || "[]")
         : products || [];
-    console.log("Opening product modal with products:", parsedProducts);
+
     setSelectedProducts(parsedProducts);
     setShowProductModal(true);
   };
 
   const handleCloseProductModal = () => {
-    console.log("Closing product modal");
     setShowProductModal(false);
     setSelectedProducts([]);
   };
@@ -229,7 +226,6 @@ const RecentQuotation = () => {
           isVisible={showDeleteModal}
           onConfirm={handleConfirmDelete}
           onCancel={() => {
-            console.log("Canceling delete modal");
             setShowDeleteModal(false);
             setQuotationToDelete(null);
           }}

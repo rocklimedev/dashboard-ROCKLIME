@@ -47,14 +47,6 @@ const AddNewTeam = ({ onClose, onTeamAdded, team }) => {
   const [updateTeam, { isLoading: updating }] = useUpdateTeamMutation();
 
   // Log for debugging
-  useEffect(() => {
-    console.log("Team prop:", team);
-    console.log("Team Data (API):", teamData);
-    console.log("Team Error:", teamError);
-    console.log("Team Members Data:", teamMembersData);
-    console.log("Members Error:", membersError);
-    console.log("Current members state:", members);
-  }, [team, teamData, teamError, teamMembersData, membersError, members]);
 
   // Initialize form with team data
   useEffect(() => {
@@ -129,25 +121,22 @@ const AddNewTeam = ({ onClose, onTeamAdded, team }) => {
       members,
     };
 
-    console.log("Submitting teamData:", teamData); // Debug
-
     try {
       let response;
       if (team) {
         if (!team.id) {
           throw new Error("Team ID is missing");
         }
-        console.log("Updating team with ID:", team.id);
+
         response = await updateTeam({
           teamId: team.id,
           ...teamData,
         }).unwrap();
-        console.log("Update response:", response);
+
         toast.success("Team updated successfully");
       } else {
-        console.log("Creating team");
         response = await createTeam(teamData).unwrap();
-        console.log("Create response:", response);
+
         toast.success("Team created successfully");
       }
 

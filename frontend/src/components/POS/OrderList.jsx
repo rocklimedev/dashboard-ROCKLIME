@@ -21,7 +21,6 @@ const OrderList = ({ onConvertToOrder }) => {
     error: profileError,
   } = useGetProfileQuery();
   const userId = profileData?.user?.userId;
-  console.log("User ID:", userId);
 
   const [createInvoice] = useCreateInvoiceMutation();
   const {
@@ -190,7 +189,6 @@ const OrderList = ({ onConvertToOrder }) => {
         signatureName: invoiceData.signatureName,
       };
 
-      console.log("Submitting invoice data:", invoiceDataToSubmit);
       await createInvoice(invoiceDataToSubmit).unwrap();
       onConvertToOrder(orderData);
       handleClearCart();
