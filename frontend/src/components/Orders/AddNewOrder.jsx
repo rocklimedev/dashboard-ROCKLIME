@@ -113,7 +113,7 @@ const AddNewOrder = ({ onClose, adminName, orderToEdit }) => {
         response = await createOrder(formData).unwrap();
         toast.success("Order created successfully!");
       }
-      console.log("Order response:", response);
+
       onClose();
     } catch (err) {
       console.error("Error submitting order:", err);

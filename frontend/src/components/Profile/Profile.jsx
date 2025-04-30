@@ -35,7 +35,6 @@ const Profile = () => {
   // Initialize formData and avatar from profile and localStorage
   useEffect(() => {
     if (profile?.user) {
-      console.log("Profile data:", profile);
       setFormData({
         name: profile.user.name || "",
         email: profile.user.email || "",
@@ -125,8 +124,6 @@ const Profile = () => {
       email: formData.email,
       mobileNumber: formData.mobileNumber,
     };
-
-    console.log("Updating profile with data:", updatedData);
 
     try {
       await updateProfile(updatedData).unwrap();

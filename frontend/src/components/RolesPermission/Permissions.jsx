@@ -19,8 +19,6 @@ const Permissions = () => {
   const { id: roleId } = useParams();
   const dispatch = useDispatch();
 
-  console.log("Role ID:", roleId);
-
   const {
     data: roleData,
     isLoading: isRoleLoading,
@@ -37,20 +35,9 @@ const Permissions = () => {
     refetchOnMountOrArgChange: false,
   });
 
-  console.log("Role Permissions Data:", rolePermissionsData);
-
   const permissions = Array.isArray(data?.permissions) ? data.permissions : [];
   const roleName = roleData?.roleName || "Unknown Role";
   const assignedPermissions = rolePermissionsData?.rolePermissions || [];
-
-  console.log(
-    "Permissions IDs:",
-    permissions.map((p) => p.permissionId)
-  );
-  console.log(
-    "Role Permissions IDs:",
-    assignedPermissions.map((p) => p.permissionId)
-  );
 
   const permissionTypes = useMemo(() => {
     return [...new Set(permissions.map((p) => p.api))];
@@ -87,14 +74,6 @@ const Permissions = () => {
       return;
     }
 
-    console.log("useEffect dependencies:", {
-      rolePermissionsData,
-      permissions,
-      modules,
-      assignedPermissions,
-      isUpdating,
-    });
-
     const permissionsMap = modules.reduce((acc, module) => {
       acc[module] = permissionTypes.reduce((perms, type) => {
         const permission = permissions.find(
@@ -113,7 +92,6 @@ const Permissions = () => {
 
     setPermissionsByModule((prev) => {
       if (JSON.stringify(prev) !== JSON.stringify(permissionsMap)) {
-        console.log("Updating permissionsByModule:", permissionsMap);
         return permissionsMap;
       }
       return prev;
@@ -150,7 +128,7 @@ const Permissions = () => {
           permissionId,
           isGranted: true,
         }).unwrap();
-        console.log("Assign Permission Result:", result);
+
         dispatch(
           api.util.invalidateTags([{ type: "RolePermissions", id: roleId }])
         );
@@ -164,7 +142,7 @@ const Permissions = () => {
           roleId,
           permissionId,
         }).unwrap();
-        console.log("Remove Permission Result:", result);
+
         dispatch(
           api.util.invalidateTags([{ type: "RolePermissions", id: roleId }])
         );
@@ -187,10 +165,6 @@ const Permissions = () => {
   };
 
   const getCheckboxClass = (isGranted) => {
-    console.log(
-      `Checkbox for isGranted=${isGranted}:`,
-      isGranted ? "checkbox-green" : "checkbox-yellow"
-    );
     return isGranted ? "checkbox-green" : "checkbox-yellow";
   };
 

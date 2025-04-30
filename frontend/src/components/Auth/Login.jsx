@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLoginMutation } from "../../api/authApi";
 import { ToastContainer, toast } from "react-toastify";
+import { useAuth } from "../../context/AuthContext"; // ✅ use your context
 import "react-toastify/dist/ReactToastify.css";
 import logo from "../../assets/img/logo.png";
 
@@ -10,36 +11,34 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [login, { isLoading }] = useLoginMutation();
+  const [loginMutation, { isLoading }] = useLoginMutation();
+  const { login: authLogin } = useAuth(); // ✅ renamed to avoid conflict
   const navigate = useNavigate();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await login({ email, password }).unwrap();
-      console.log("Login response:", response); // Debug
-
+      const response = await loginMutation({ email, password }).unwrap();
       const token = response.accessToken;
-      if (!token) {
-        throw new Error("No access token received");
-      }
 
-      // Store token
+      if (!token) throw new Error("No access token received");
+
+      // ✅ Store token in context
+      authLogin(token, null); // Pass token + user if available
+
+      // ✅ Optional: Save token manually depending on rememberMe
       if (rememberMe) {
         localStorage.setItem("token", token);
       } else {
         sessionStorage.setItem("token", token);
       }
-      console.log("Stored token:", token); // Debug
 
       toast.success("Login successful!", { autoClose: 1000 });
-      setTimeout(() => {
-        navigate("/", { replace: true }); // Replace history
-      }, 1000);
+      navigate("/", { replace: true });
     } catch (err) {
-      console.error("Login failed:", err); // Debug
-
+      console.error("Login failed:", err);
       const status = err?.status;
-      const message = err?.data?.message || "";
+      const message = err?.data?.message || "Invalid email or password";
 
       if (
         status === 403 ||
@@ -48,7 +47,7 @@ const Login = () => {
       ) {
         navigate("/no-access");
       } else {
-        toast.error(message || "Invalid email or password");
+        toast.error(message);
       }
     }
   };

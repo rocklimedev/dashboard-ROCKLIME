@@ -52,7 +52,6 @@ const POSWrapper = () => {
       totalAmount: quotation.finalAmount,
     };
 
-    console.log("Converted Cart Data:", cartData);
     // Dispatch or API call for updating cart
   };
 

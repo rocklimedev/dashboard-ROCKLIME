@@ -10,7 +10,7 @@ const PageWrapper = () => {
   const { data: profile, isLoading: loadingProfile } = useGetProfileQuery();
   const { data, isLoading: loadingOrders } = useGetAllOrdersQuery();
   const orders = data?.orders || [];
-  console.log(orders);
+
   const username = profile?.user?.name || "Admin";
 
   const today = new Date().toISOString().split("T")[0];
@@ -22,7 +22,6 @@ const PageWrapper = () => {
     return orderDate === today;
   });
 
-  console.log(todaysOrders);
   return (
     <div className="page-wrapper">
       <div className="content">

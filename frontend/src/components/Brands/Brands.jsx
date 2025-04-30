@@ -29,7 +29,6 @@ const Brands = () => {
 
   // Handle add brand
   const handleAddBrand = () => {
-    console.log("Adding new brand");
     setEditMode(false);
     setSelectedBrand(null);
     setShowModal(true);
@@ -37,7 +36,6 @@ const Brands = () => {
 
   // Handle edit brand
   const handleEditBrand = (brand) => {
-    console.log("Editing brand:", brand);
     setEditMode(true);
     setSelectedBrand(brand);
     setShowModal(true);
@@ -45,7 +43,6 @@ const Brands = () => {
 
   // Handle delete brand
   const handleDeleteBrand = (brand) => {
-    console.log("Opening delete modal for brand:", brand);
     setBrandToDelete(brand);
     setShowDeleteModal(true);
   };
@@ -58,7 +55,6 @@ const Brands = () => {
       return;
     }
     try {
-      console.log("Deleting brand with ID:", brandToDelete.id);
       await deleteBrand(brandToDelete.id).unwrap();
       toast.success("Brand deleted successfully!");
       // Reset to previous page if current page becomes empty
@@ -79,7 +75,6 @@ const Brands = () => {
 
   // Handle modal close
   const handleCloseModal = () => {
-    console.log("Closing AddBrand modal");
     setShowModal(false);
     setEditMode(false);
     setSelectedBrand(null);
@@ -225,7 +220,6 @@ const Brands = () => {
           isVisible={showDeleteModal}
           onConfirm={handleConfirmDelete}
           onCancel={() => {
-            console.log("Canceling delete modal");
             setShowDeleteModal(false);
             setBrandToDelete(null);
           }}

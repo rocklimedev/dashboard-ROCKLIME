@@ -44,7 +44,6 @@ const checkPermission = (
       if (
         userRoles.some((role) => role.roleName.toUpperCase() === "SUPER_ADMIN")
       ) {
-        console.log("Super Admin detected, bypassing permission check.");
         return next();
       }
 
@@ -86,13 +85,6 @@ const checkPermission = (
       );
 
       if (!hasPermission) {
-        console.log("Access forbidden: Insufficient permissions.", {
-          userId: decoded.id,
-          requiredApi,
-          requiredName,
-          requiredModule,
-          requiredRoute,
-        });
         return res
           .status(403)
           .json({ message: "Forbidden: Insufficient permissions" });

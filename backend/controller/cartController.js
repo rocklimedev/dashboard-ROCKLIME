@@ -28,8 +28,6 @@ exports.addToCart = async (req, res) => {
     for (let item of items) {
       const { productId, quantity, discount = 0, tax = 0 } = item;
 
-      console.log("Received productId:", productId); // Debugging
-
       const parsedQuantity = Number(quantity);
       if (!productId || isNaN(parsedQuantity) || parsedQuantity < 1) {
         return res.status(400).json({ message: "Invalid cart item data" });
@@ -43,8 +41,6 @@ exports.addToCart = async (req, res) => {
           .status(404)
           .json({ message: `Product not found: ${productId}` });
       }
-
-      console.log("Product found:", product.dataValues); // Debugging
 
       const sellingPrice = Number(product.sellingPrice);
       if (isNaN(sellingPrice)) {
@@ -166,7 +162,6 @@ exports.getCart = async (req, res) => {
 exports.removeFromCart = async (req, res) => {
   try {
     const { userId, productId } = req.body;
-    console.log("Remove Request:", { userId, productId });
 
     if (!userId || !productId) {
       return res.status(400).json({ message: "Invalid data" });
@@ -200,13 +195,6 @@ exports.removeFromCart = async (req, res) => {
 exports.updateCart = async (req, res) => {
   try {
     const { userId, productId, quantity, discount = 0, tax = 0 } = req.body;
-    console.log("Update Request:", {
-      userId,
-      productId,
-      quantity,
-      discount,
-      tax,
-    });
 
     if (!userId || !productId || !quantity || quantity < 1) {
       return res.status(400).json({ message: "Invalid update data" });

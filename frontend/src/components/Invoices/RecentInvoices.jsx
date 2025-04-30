@@ -106,27 +106,22 @@ const RecentInvoices = () => {
 
   // Log data for debugging
   useEffect(() => {
-    console.log("Invoices data:", invoices);
-    console.log("Customers data:", customers);
-    console.log("Addresses data:", addresses);
-    console.log("Customer map:", customerMap);
-
-    const inv803257 = invoices.find((inv) => inv.invoiceNo === "INV_803257");
-    if (inv803257) {
-      console.log("INV_803257 details:", inv803257);
-      console.log(
-        "INV_803257 customer mapping:",
-        inv803257.customerId
-          ? customerMap[inv803257.customerId]
-          : `Fallback to billTo: ${inv803257.billTo}`
-      );
-      console.log(
-        "INV_803257 shipTo mapping:",
-        inv803257.shipTo ? addressMap[inv803257.shipTo] : "No shipTo"
-      );
-    } else {
-      console.warn("INV_803257 not found in invoices");
-    }
+    // const inv803257 = invoices.find((inv) => inv.invoiceNo === "INV_803257");
+    // if (inv803257) {
+    //   console.log("INV_803257 details:", inv803257);
+    //   console.log(
+    //     "INV_803257 customer mapping:",
+    //     inv803257.customerId
+    //       ? customerMap[inv803257.customerId]
+    //       : `Fallback to billTo: ${inv803257.billTo}`
+    //   );
+    //   console.log(
+    //     "INV_803257 shipTo mapping:",
+    //     inv803257.shipTo ? addressMap[inv803257.shipTo] : "No shipTo"
+    //   );
+    // } else {
+    //   console.warn("INV_803257 not found in invoices");
+    // }
 
     const unmatchedCustomerInvoices = invoices.filter((inv) => {
       if (!inv.customerId || typeof inv.customerId !== "string") {

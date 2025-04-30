@@ -99,8 +99,7 @@ exports.getInvoiceById = async (req, res) => {
 exports.updateInvoice = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log("Request headers:", req.headers); // Debug headers
-    console.log("Update invoice payload:", req.body); // Debug payload
+
     const invoice = await Invoice.findByPk(id);
 
     if (!invoice) {
@@ -172,31 +171,25 @@ exports.updateInvoice = async (req, res) => {
         });
       }
       if (typeof product.price !== "number" || product.price < 0) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "Product price must be a non-negative number",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "Product price must be a non-negative number",
+        });
       }
       if (typeof product.quantity !== "number" || product.quantity < 1) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "Product quantity must be a positive integer",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "Product quantity must be a positive integer",
+        });
       }
     }
 
     // Validate amount
     if (typeof amount !== "number" || amount < 0) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Amount must be a non-negative number",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Amount must be a non-negative number",
+      });
     }
 
     // Update invoice

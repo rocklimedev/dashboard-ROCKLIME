@@ -35,7 +35,6 @@ export const quotationApi = createApi({
     }),
     updateQuotation: builder.mutation({
       query: ({ id, updatedQuotation }) => {
-        console.log("updateQuotation payload:", { id, updatedQuotation }); // Debug payload
         return {
           url: `/${id}`,
           method: "PUT",

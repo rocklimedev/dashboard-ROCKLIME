@@ -47,21 +47,18 @@ const CompaniesWrapper = () => {
 
   // Handle edit vendor
   const handleEditVendor = (vendor) => {
-    console.log("Editing vendor:", vendor);
     setSelectedVendor(vendor);
     setShowModal(true);
   };
 
   // Handle add vendor
   const handleAddVendor = () => {
-    console.log("Adding new vendor");
     setSelectedVendor(null);
     setShowModal(true);
   };
 
   // Handle delete vendor
   const handleDeleteVendor = (vendor) => {
-    console.log("Opening delete modal for vendor:", vendor);
     setVendorToDelete(vendor);
     setShowDeleteModal(true);
   };
@@ -74,7 +71,6 @@ const CompaniesWrapper = () => {
       return;
     }
     try {
-      console.log("Deleting vendor with ID:", vendorToDelete.id);
       await deleteVendor(vendorToDelete.id).unwrap();
       toast.success("Vendor deleted successfully!");
       // Reset to previous page if current page becomes empty
@@ -197,7 +193,6 @@ const CompaniesWrapper = () => {
             isVisible={showDeleteModal}
             onConfirm={handleConfirmDelete}
             onCancel={() => {
-              console.log("Canceling delete modal");
               setShowDeleteModal(false);
               setVendorToDelete(null);
             }}
@@ -209,7 +204,6 @@ const CompaniesWrapper = () => {
           <AddCompanyModal
             show={showModal}
             onClose={() => {
-              console.log("Closing AddCompanyModal");
               setShowModal(false);
             }}
             existingVendor={selectedVendor}

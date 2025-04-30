@@ -26,7 +26,7 @@ function App() {
   const isPOSPage = location.pathname === "/pos";
 
   const token = localStorage.getItem("token");
-  console.log(token);
+
   const { data: profileData, isLoading: isProfileLoading } =
     useGetProfileQuery();
 

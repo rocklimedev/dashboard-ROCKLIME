@@ -39,14 +39,6 @@ exports.createOrder = async (req, res) => {
     // Normalize assignedTo
     const assignedTeamId = assignedTo?.trim?.() === "" ? null : assignedTo;
 
-    // Debug log (optional)
-    console.log(
-      "assignedTo received:",
-      assignedTo,
-      "| Parsed:",
-      assignedTeamId
-    );
-
     // Check if assignedTo team exists
     if (assignedTeamId) {
       const team = await Team.findByPk(assignedTeamId);
@@ -70,8 +62,6 @@ exports.createOrder = async (req, res) => {
       description,
       invoiceId,
     });
-
-    console.log("Order created:", order);
 
     res.status(201).json({
       message: "Order created successfully",

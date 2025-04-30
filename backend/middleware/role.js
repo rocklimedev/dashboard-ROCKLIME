@@ -5,16 +5,8 @@ const role = {
     try {
       // Validate user and roleId
       if (!req.user || !req.user.roleId) {
-        console.log("Role check failed: User or roleId is undefined.");
         return res.status(403).json({ error: "User role is not defined." });
       }
-
-      console.log(
-        "User roleId:",
-        req.user.roleId,
-        "Allowed roleIds:",
-        allowedRoleIds
-      );
 
       // Check for Super Admin role
       const superAdminRole = await Role.findOne({
@@ -29,13 +21,11 @@ const role = {
       }
 
       if (req.user.roleId === superAdminRole.roleId) {
-        console.log("Super Admin detected, bypassing role check.");
         return next();
       }
 
       // Check if user's roleId exists in allowedRoleIds array
       if (!allowedRoleIds.includes(req.user.roleId)) {
-        console.log("Access forbidden: Insufficient permissions.");
         return res.status(403).json({
           error: "Access forbidden: Insufficient permissions.",
         });

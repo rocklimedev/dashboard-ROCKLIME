@@ -18,12 +18,6 @@ const EditInvoice = ({ invoice, onClose }) => {
 
   const customers = customersResponse.data || [];
 
-  // Log debugging info
-  console.log("Invoice prop:", invoice);
-  console.log("Customers:", customers);
-  console.log("Customers response:", customersResponse);
-  console.log("Customers error:", customersError);
-
   // Initialize form data with safe defaults
   const [formData, setFormData] = useState({
     invoiceNo: invoice.invoiceNo || "",
@@ -118,37 +112,24 @@ const EditInvoice = ({ invoice, onClose }) => {
     e.preventDefault();
     setError(null);
 
-    // Log validation inputs
-    console.log("Validation inputs:", {
-      customerId: formData.customerId,
-      status: formData.status,
-      invoiceDate: formData.invoiceDate,
-      products,
-    });
-
     // Validate required fields
     if (!formData.customerId) {
-      console.log("Validation failed: No customerId");
       setError("Please select a customer.");
       return;
     }
     if (!customers.find((c) => c.customerId === formData.customerId)) {
-      console.log("Validation failed: Invalid customerId");
       setError("Selected customer is invalid.");
       return;
     }
     if (!formData.status) {
-      console.log("Validation failed: No status");
       setError("Please select a status.");
       return;
     }
     if (!formData.invoiceDate) {
-      console.log("Validation failed: No invoiceDate");
       setError("Invoice date is required.");
       return;
     }
     if (products.length === 0 || products.some((p) => !p.productId)) {
-      console.log("Validation failed: Invalid products");
       setError("At least one valid product is required.");
       return;
     }
@@ -177,9 +158,8 @@ const EditInvoice = ({ invoice, onClose }) => {
     };
 
     try {
-      console.log("Submitting invoice payload:", payload);
       const response = await updateInvoice(payload).unwrap();
-      console.log("Update response:", response);
+
       onClose();
     } catch (err) {
       console.error("Failed to update invoice:", err);

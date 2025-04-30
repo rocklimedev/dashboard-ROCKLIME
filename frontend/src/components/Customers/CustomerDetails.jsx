@@ -79,12 +79,6 @@ const CustomerDetails = () => {
   const users = usersData?.data || [];
   const addresses = addressesData?.data || [];
 
-  // Log data for debugging
-  console.log("Customer:", customer);
-  console.log("Invoices:", invoices);
-  console.log("Users:", users);
-  console.log("Addresses:", addresses);
-
   // Format address for display
   const formatAddress = (shipTo) => {
     const address = addresses.find((addr) => addr.addressId === shipTo);

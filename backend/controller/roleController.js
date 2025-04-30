@@ -106,8 +106,6 @@ const checkUserRoleStatus = async () => {
         { $set: { status: "inactive" } }
       );
     }
-
-    console.log("Checked and updated user statuses.");
   } catch (error) {
     console.error("Error updating user statuses:", error);
   }
