@@ -51,20 +51,25 @@ const Stats = () => {
             ) : (
               lowStockProducts.map((product) => (
                 <div
-                  key={product.id}
+                  key={product.productId}
                   className="d-flex align-items-center justify-content-between my-3"
                 >
                   <div className="d-flex align-items-center">
                     <img
-                      src={product.imageUrl || "/assets/img/default.jpg"}
+                      src={product.images || "/assets/img/default.jpg"}
                       alt={product.name}
                       className="avatar avatar-md"
                     />
                     <div className="ms-2">
-                      <Link to={`/product/${product.id}`} className="fw-bold">
+                      <Link
+                        to={`/product/${product.productId}`}
+                        className="fw-bold"
+                      >
                         {product.name}
                       </Link>
-                      <p className="fs-13 mb-0">SKU: {product.sku}</p>
+                      <p className="fs-13 mb-0">
+                        Product Code: {product.product_code}
+                      </p>
                     </div>
                   </div>
                   <h6 className="text-orange fw-medium">{product.quantity}</h6>
@@ -81,16 +86,22 @@ const Stats = () => {
               <p>No quotations available.</p>
             ) : (
               recentQuotations.map((q) => (
-                <div key={q.id} className="d-flex justify-content-between my-3">
+                <div
+                  key={q.quotationId}
+                  className="d-flex justify-content-between my-3"
+                >
                   <div>
-                    <h6 className="fw-bold mb-1">#{q.quoteNumber}</h6>
+                    <h6 className="fw-bold mb-1">#{q.document_title}</h6>
                     <p className="fs-13 mb-0">{q.customerName}</p>
                   </div>
                   <div className="text-end">
                     <p className="fs-13 mb-1">
-                      {new Date(q.date).toLocaleDateString()}
+                      {new Date(q.quotation_date).toLocaleDateString()} -{" "}
+                      {new Date(q.due_date).toLocaleDateString()}
                     </p>
-                    <h6 className="text-primary fw-medium">${q.totalAmount}</h6>
+                    <h6 className="text-primary fw-medium">
+                      Rs {q.finalAmount}
+                    </h6>
                   </div>
                 </div>
               ))
@@ -168,17 +179,17 @@ const Stats = () => {
               lowStockProducts.slice(0, 10).map((product) => (
                 <div
                   className="d-flex justify-content-between mb-4"
-                  key={product.id}
+                  key={product.productId}
                 >
                   <div className="d-flex align-items-center">
                     <img
-                      src={product.imageUrl || "/assets/img/default.jpg"}
+                      src={product.images || "/assets/img/default.jpg"}
                       alt={product.name}
                       className="avatar avatar-md"
                     />
                     <div className="ms-2">
                       <h6 className="mb-0 fw-bold">{product.name}</h6>
-                      <p className="fs-13 mb-0">SKU: {product.sku}</p>
+                      <p className="fs-13 mb-0">SKU: {product.product_code}</p>
                     </div>
                   </div>
                   <h6 className="text-orange fw-medium">{product.quantity}</h6>
@@ -214,16 +225,22 @@ const Stats = () => {
               <p>No quotations available.</p>
             ) : (
               recentQuotations.slice(0, 10).map((q) => (
-                <div key={q.id} className="d-flex justify-content-between mb-4">
+                <div
+                  key={q.quotationId}
+                  className="d-flex justify-content-between mb-4"
+                >
                   <div>
-                    <h6 className="fw-bold mb-1">#{q.quoteNumber}</h6>
-                    <p className="fs-13 mb-0">{q.customerName}</p>
+                    <h6 className="fw-bold mb-1">#{q.document_title}</h6>
+                    <p className="fs-13 mb-0">for : {q.customerId}</p>
                   </div>
                   <div className="text-end">
                     <p className="fs-13 mb-1">
-                      {new Date(q.date).toLocaleDateString()}
+                      {new Date(q.quotation_date).toLocaleDateString()} -{" "}
+                      {new Date(q.due_date).toLocaleDateString()}
                     </p>
-                    <h6 className="text-primary fw-medium">${q.totalAmount}</h6>
+                    <h6 className="text-primary fw-medium">
+                      Rs {q.finalAmount}
+                    </h6>
                   </div>
                 </div>
               ))
@@ -233,7 +250,7 @@ const Stats = () => {
       </div>
 
       {/* Recent Orders */}
-      <div className="col-xxl-4 col-md-12 d-flex">
+      <div className="col-xxl-4 col-md-6 d-flex">
         <Card className="flex-fill">
           <Card.Header className="d-flex justify-content-between align-items-center">
             <Card.Title className="mb-0">
@@ -261,12 +278,12 @@ const Stats = () => {
                   className="d-flex justify-content-between mb-4"
                 >
                   <div>
-                    <h6 className="fw-bold mb-1">Order #{order.orderNumber}</h6>
-                    <p className="fs-13 mb-0">{order.customerName}</p>
+                    <h6 className="fw-bold mb-1">{order.title}</h6>
+                    <p className="fs-13 mb-0">for: {order.createdFor}</p>
                   </div>
                   <div className="text-end">
                     <p className="fs-13 mb-1">
-                      {new Date(order.date).toLocaleDateString()}
+                      Due on: {new Date(order.dueDate).toLocaleDateString()}
                     </p>
                     <span
                       className={`badge badge-xs ${
@@ -277,7 +294,7 @@ const Stats = () => {
                           : "bg-purple"
                       }`}
                     >
-                      {order.status}
+                      {order.status} - {order.priority}
                     </span>
                   </div>
                 </div>

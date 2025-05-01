@@ -2,9 +2,10 @@ import React, { useState } from "react";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import { useGetAllKeywordsQuery } from "../../api/keywordApi";
 import { useGetAllParentCategoriesQuery } from "../../api/parentCategoryApi";
+import { useDeleteCategoryMutation } from "../../api/categoryApi";
 import PageHeader from "../Common/PageHeader";
 import AddCategoryModal from "./AddCategoryModal";
-
+import DeleteModal from "../Common/DeleteModal";
 import DataTablePagination from "../Common/DataTablePagination";
 import Keyword from "./Keyword";
 import { AiOutlineEdit } from "react-icons/ai";
@@ -18,6 +19,25 @@ const CategoriesList = () => {
   const [categorySearchTerm, setCategorySearchTerm] = useState("");
   const [parentSearchTerm, setParentSearchTerm] = useState("");
   const [editingCategory, setEditingCategory] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState(null);
+
+  const [deleteCategory] = useDeleteCategoryMutation();
+
+  const handleDelete = async (category) => {
+    if (!category || !category.categoryId) {
+      console.error("Invalid category or category ID:", category);
+      return;
+    }
+
+    try {
+      await deleteCategory(category.categoryId).unwrap();
+      setShowDeleteModal(false);
+      setCategoryToDelete(null);
+    } catch (err) {
+      console.error("Delete failed:", err);
+    }
+  };
 
   const itemsPerPage = 20;
 
@@ -72,7 +92,10 @@ const CategoriesList = () => {
     setShowCategoryModal(true);
   };
 
-  const handleCloseCategoryModal = () => setShowCategoryModal(false);
+  const handleCloseCategoryModal = () => {
+    setShowCategoryModal(false);
+    setEditingCategory(null);
+  };
 
   const handleCloseKeywordModal = () => setShowKeywordModal(false);
 
@@ -106,7 +129,6 @@ const CategoriesList = () => {
           </select>
         </div>
 
-        {/* Search Inputs */}
         <div className="row mb-3">
           <div className="col-md-6">
             <input
@@ -148,7 +170,7 @@ const CategoriesList = () => {
                       )?.name || "N/A";
 
                     return (
-                      <tr key={category._id}>
+                      <tr key={category.categoryId}>
                         <td>{category.name}</td>
                         <td>{parentName}</td>
                         <td>
@@ -160,14 +182,27 @@ const CategoriesList = () => {
                               className="me-2 p-2"
                               title="Edit"
                               onClick={() => {
-                                setEditingCategory(category); // Set category data
-                                setShowCategoryModal(true); // Open modal
+                                setEditingCategory(category);
+                                setShowCategoryModal(true);
                               }}
                             >
                               <AiOutlineEdit />
                             </a>
-
-                            <a className="me-2 p-2" title="delete">
+                            <a
+                              className="me-2 p-2"
+                              title="Delete"
+                              onClick={() => {
+                                if (!category.categoryId) {
+                                  console.error(
+                                    "Category ID is undefined:",
+                                    category
+                                  );
+                                  return;
+                                }
+                                setCategoryToDelete(category);
+                                setShowDeleteModal(true);
+                              }}
+                            >
                               <FcFullTrash />
                             </a>
                           </div>
@@ -186,18 +221,28 @@ const CategoriesList = () => {
           </div>
         </div>
 
-        {showCategoryModal && (
-          <AddCategoryModal
-            editMode={!!editingCategory} // If editingCategory has value, it's edit mode
-            categoryData={editingCategory} // Pass category data to edit
-            onClose={() => {
-              setShowCategoryModal(false);
-              setEditingCategory(null); // Clear after close
+        {showDeleteModal && (
+          <DeleteModal
+            isVisible={showDeleteModal}
+            item={categoryToDelete}
+            itemType="Category"
+            onConfirm={() => handleDelete(categoryToDelete)}
+            onCancel={() => {
+              setShowDeleteModal(false);
+              setCategoryToDelete(null);
             }}
           />
         )}
 
-        <Keyword />
+        {showCategoryModal && (
+          <AddCategoryModal
+            editMode={!!editingCategory}
+            categoryData={editingCategory}
+            onClose={handleCloseCategoryModal}
+          />
+        )}
+
+        {showKeywordModal && <Keyword onClose={handleCloseKeywordModal} />}
       </div>
     </div>
   );

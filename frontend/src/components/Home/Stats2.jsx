@@ -132,8 +132,8 @@ const Stats2 = () => {
   // Filter top customer based on total amount spent
   const topCustomer = customers.reduce(
     (top, customer) => {
-      const totalSpent = customer.totalAmount || 0;
-      const payable = customer.paidAmount || 0;
+      const totalSpent = customer.paidAmount || 0;
+      const payable = customer.balance || 0;
       return totalSpent > top.totalSpent
         ? { ...customer, totalSpent, payable }
         : top;
@@ -172,7 +172,10 @@ const Stats2 = () => {
             {topCustomer.name ? (
               <div className="d-flex align-items-center justify-content-between border-bottom mb-3 pb-3 flex-wrap gap-2">
                 <div className="d-flex align-items-center">
-                  <Link to="#" className="avatar avatar-lg flex-shrink-0">
+                  <Link
+                    to={`/customers${topCustomer.customerId}`}
+                    className="avatar avatar-lg flex-shrink-0"
+                  >
                     <img
                       src={
                         topCustomer.avatar ||
@@ -188,17 +191,17 @@ const Stats2 = () => {
                     <div className="d-flex align-items-center item-list">
                       <p className="d-inline-flex align-items-center">
                         <i className="ti ti-map-pin me-1"></i>
-                        {topCustomer.country || "Unknown"}
+                        {topCustomer.company || "Unknown"}
                       </p>
-                      <p>{topCustomer.orders?.length || 0} Orders</p>
+                      <p>{topCustomer.email} </p>
                     </div>
                     <p className="fs-12 text-muted">
-                      Payable: ${topCustomer.payable.toLocaleString()}
+                      Payable: Rs {topCustomer.balance.toLocaleString()}
                     </p>
                   </div>
                 </div>
                 <div className="text-end">
-                  <h5>${topCustomer.totalSpent.toLocaleString()}</h5>
+                  <h5>Rs {topCustomer.paidAmount.toLocaleString()}</h5>
                 </div>
               </div>
             ) : (
@@ -364,7 +367,7 @@ const Stats2 = () => {
             {recentUsers.length > 0 ? (
               recentUsers.slice(0, 3).map((user) => (
                 <div
-                  key={user.id || user.email}
+                  key={user.userId || user.email}
                   className="d-flex align-items-center justify-content-between border-bottom mb-3 pb-3 flex-wrap gap-2"
                 >
                   <div className="d-flex align-items-center">
