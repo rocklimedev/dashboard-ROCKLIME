@@ -12,6 +12,7 @@ import StockModal from "../Common/StockModal";
 import HistoryModal from "../Common/HistoryModal";
 import { useNavigate } from "react-router-dom";
 import { Button } from "react-bootstrap";
+
 const ProductList = () => {
   const navigate = useNavigate();
   const { data, error, isLoading } = useGetAllProductsQuery();
@@ -48,7 +49,7 @@ const ProductList = () => {
     brand: null,
     sortBy: null,
     search: "",
-    company_code: "",
+    company_code: "", // Keep for compatibility, but use in search
   });
 
   const itemsPerPage = 20;
@@ -79,18 +80,12 @@ const ProductList = () => {
 
       const matchesBrand = !filters.brand || product.brandId === filters.brand;
 
+      const searchTerm = filters.search?.toLowerCase() || "";
       const matchesSearch =
-        !filters.search ||
-        (product.name &&
-          product.name.toLowerCase().includes(filters.search.toLowerCase())) ||
-        (product.product_code &&
-          product.product_code
-            .toLowerCase()
-            .includes(filters.search.toLowerCase())) ||
-        (product.company_code &&
-          product.company_code
-            .toLowerCase()
-            .includes(filters.company_code.toLowerCase()));
+        !searchTerm ||
+        (product.name?.toLowerCase() || "").includes(searchTerm) ||
+        (product.product_code?.toLowerCase() || "").includes(searchTerm) ||
+        (product.company_code?.toLowerCase() || "").includes(searchTerm);
 
       let matchesDate = true;
       if (filters.sortBy === "Last 7 Days") {
@@ -112,9 +107,9 @@ const ProductList = () => {
     });
 
     if (filters.sortBy === "Ascending") {
-      filtered.sort((a, b) => a.name.localeCompare(b.name));
+      filtered.sort((a, b) => a.name?.localeCompare(b.name || ""));
     } else if (filters.sortBy === "Descending") {
-      filtered.sort((a, b) => b.name.localeCompare(a.name));
+      filtered.sort((a, b) => b.name?.localeCompare(a.name || ""));
     } else if (filters.sortBy === "Recently Added") {
       filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     }
@@ -125,7 +120,10 @@ const ProductList = () => {
   const filteredProducts = applyFilters(customers);
 
   useEffect(() => {
-    if (currentPage >= Math.ceil(filteredProducts.length / itemsPerPage)) {
+    if (
+      filteredProducts.length > 0 &&
+      currentPage >= Math.ceil(filteredProducts.length / itemsPerPage)
+    ) {
       setCurrentPage(0);
     }
   }, [filteredProducts.length, currentPage]);
@@ -144,7 +142,7 @@ const ProductList = () => {
 
   const handleConfirmDelete = () => {
     setModalVisible(false);
-    // actual delete logic goes here
+    // Actual delete logic goes here
   };
 
   const handleStockClick = (product) => {
@@ -176,6 +174,7 @@ const ProductList = () => {
   const handleAddProduct = () => {
     navigate("/inventory/product/add");
   };
+
   const openStockModal = (product) => {
     setSelectedProduct(product);
     setStockModalVisible(true);
@@ -185,6 +184,7 @@ const ProductList = () => {
     setSelectedProduct(product);
     setHistoryModalVisible(true);
   };
+
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -199,75 +199,78 @@ const ProductList = () => {
 
           <div className="card-body p-0">
             <div className="table-responsive">
-              <table className="table datatable">
-                <thead className="thead-light">
-                  <tr>
-                    <th>Product Name</th>
-                    <th>Product Code</th>
-                    <th>Company Code</th>
-                    <th>Category</th>
-                    <th>Brand</th>
-                    <th>Stock</th>
-                    <th>Stock In/Out - History</th>
-                    <th>Created By</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentItems.map((product) => (
-                    <tr key={product.productId}>
-                      <td>{product.name}</td>
-                      <td>{product.product_code}</td>
-                      <td>{product.company_code}</td>
-                      <td>{getCategoryName(product.categoryId)}</td>
-                      <td>{getBrandsName(product.brandId)}</td>
-                      <td>{product.quantity ?? 0}</td>
-                      <td>
-                        <Button
-                          variant="outline-success"
-                          size="sm"
-                          onClick={() => openStockModal(product)}
-                          className="me-2"
-                        >
-                          Stock
-                        </Button>
-                        <Button
-                          variant="outline-info"
-                          size="sm"
-                          onClick={() => openHistoryModal(product)}
-                        >
-                          History
-                        </Button>
-                      </td>
-                      <td>
-                        {
-                          customers.find((c) => c._id === product.customerId)
-                            ?.name
-                        }
-                      </td>
-                      <div className="d-flex gap-2">
-                        <Actions
-                          onEdit={() =>
-                            navigate(
-                              `/inventory/product/edit/${product.productId}`
-                            )
-                          }
-                          onDelete={() => handleDeleteClick(product)}
-                        />
-                      </div>
+              {filteredProducts.length === 0 ? (
+                <p className="text-center mt-3">
+                  No products match your search.
+                </p>
+              ) : (
+                <table className="table datatable">
+                  <thead className="thead-light">
+                    <tr>
+                      <th>Product Name</th>
+                      <th>Product Code</th>
+                      <th>Company Code</th>
+                      <th>Category</th>
+                      <th>Brand</th>
+                      <th>Stock</th>
+                      <th>Stock In/Out - History</th>
+                      <th>Created By</th>
+                      <th>Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {currentItems.map((product) => (
+                      <tr key={product.productId}>
+                        <td>{product.name || "N/A"}</td>
+                        <td>{product.product_code || "N/A"}</td>
+                        <td>{product.company_code || "N/A"}</td>
+                        <td>{getCategoryName(product.categoryId)}</td>
+                        <td>{getBrandsName(product.brandId)}</td>
+                        <td>{product.quantity ?? 0}</td>
+                        <td>
+                          <Button
+                            variant="outline-success"
+                            size="sm"
+                            onClick={() => openStockModal(product)}
+                            className="me-2"
+                          >
+                            Stock
+                          </Button>
+                          <Button
+                            variant="outline-info"
+                            size="sm"
+                            onClick={() => openHistoryModal(product)}
+                          >
+                            History
+                          </Button>
+                        </td>
+                        <td>
+                          {customers.find((c) => c._id === product.customerId)
+                            ?.name || "Unknown"}
+                        </td>
+                        <td>
+                          <Actions
+                            viewUrl={`/product/${product.productId}`}
+                            editUrl={`/product/${product.productId}/edit`}
+                            onDelete={() => handleDeleteClick(product)}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
 
-          <DataTablePagination
-            currentPage={currentPage}
-            setCurrentPage={setCurrentPage}
-            totalItems={filteredProducts.length}
-            itemsPerPage={itemsPerPage}
-          />
+          {filteredProducts.length > 0 && (
+            <DataTablePagination
+              currentPage={currentPage}
+              setCurrentPage={setCurrentPage}
+              totalItems={filteredProducts.length}
+              itemsPerPage={itemsPerPage}
+            />
+          )}
         </div>
       </div>
 
@@ -285,7 +288,6 @@ const ProductList = () => {
           product={selectedProduct}
         />
       )}
-
       {isHistoryModalVisible && selectedProduct && (
         <HistoryModal
           show={isHistoryModalVisible}

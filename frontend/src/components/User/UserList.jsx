@@ -16,16 +16,17 @@ import {
 } from "../../api/userApi";
 import AddUser from "./AddUser";
 import DataTablePagination from "../Common/DataTablePagination";
-import DeleteModal from "../Common/DeleteModal"; // Import DeleteModal
-import { ToastContainer, toast } from "react-toastify"; // Import react-toastify
-import "react-toastify/dist/ReactToastify.css"; // Import toastify CSS
+import DeleteModal from "../Common/DeleteModal";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const UserList = () => {
   const { data, error, isLoading } = useGetAllUsersQuery();
   const users = data?.users || [];
 
-  const [reportUser] = useReportUserMutation();
-  const [inactiveUser] = useInactiveUserMutation();
+  const [reportUser, { isLoading: isReporting }] = useReportUserMutation();
+  const [inactiveUser, { isLoading: isInactivating }] =
+    useInactiveUserMutation();
   const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -33,9 +34,9 @@ const UserList = () => {
 
   const [showModal, setShowModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false); // State for DeleteModal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [userToDelete, setUserToDelete] = useState(null); // Track user to delete
+  const [userToDelete, setUserToDelete] = useState(null);
 
   // Handle add user
   const handleAddUser = () => {
@@ -132,13 +133,31 @@ const UserList = () => {
     currentPage * itemsPerPage
   );
 
-  if (isLoading) return <p>Loading...</p>;
-  if (error) return <p>Error fetching users: {JSON.stringify(error)}</p>;
-  if (users.length === 0) return <p>No users available.</p>;
+  if (isLoading) {
+    return (
+      <div className="d-flex justify-content-center">
+        <div className="spinner-border" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="alert alert-danger">
+        Error fetching users: {error.data?.message || "Unknown error"}
+      </div>
+    );
+  }
+
+  if (users.length === 0) {
+    return <div className="alert alert-info">No users available.</div>;
+  }
 
   return (
     <div className="page-wrapper">
-      <ToastContainer /> {/* Required for toasts */}
+      <ToastContainer />
       <div className="content">
         <PageHeader
           title="Users"
@@ -186,11 +205,13 @@ const UserList = () => {
                             </Dropdown.Item>
                             <Dropdown.Item
                               onClick={() => handleInactiveUser(user.userId)}
+                              disabled={isInactivating}
                             >
                               <FaBan className="me-2" /> Inactive User
                             </Dropdown.Item>
                             <Dropdown.Item
                               onClick={() => handleReportUser(user.userId)}
+                              disabled={isReporting}
                             >
                               <FaExclamationTriangle className="me-2 text-warning" />{" "}
                               Report User
@@ -198,6 +219,7 @@ const UserList = () => {
                             <Dropdown.Item
                               onClick={() => handleDeleteUser(user.userId)}
                               className="text-danger"
+                              disabled={isDeleting}
                             >
                               <FaTrash className="me-2" /> Delete
                             </Dropdown.Item>
@@ -215,6 +237,7 @@ const UserList = () => {
               totalItems={users.length}
               itemNo={itemsPerPage}
               onPageChange={handlePageChange}
+              currentPage={currentPage}
             />
           </div>
         </div>

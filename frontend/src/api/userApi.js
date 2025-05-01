@@ -14,10 +14,11 @@ export const userApi = createApi({
       return headers;
     },
   }),
-  providesTags: ["users"],
+  tagTypes: ["Users"], // Define tag type (corrected from providesTags)
   endpoints: (builder) => ({
     getProfile: builder.query({
       query: () => "/me",
+      providesTags: ["Users"],
     }),
     updateProfile: builder.mutation({
       query: (data) => ({
@@ -25,33 +26,41 @@ export const userApi = createApi({
         method: "PUT",
         body: data,
       }),
+      invalidatesTags: ["Users"],
     }),
     getAllUsers: builder.query({
       query: () => "/",
+      providesTags: ["Users"], // Tag the query for invalidation
     }),
     searchUser: builder.query({
       query: (query) => `/search?query=${query}`,
+      providesTags: ["Users"],
     }),
     getUserById: builder.query({
       query: (userId) => `/${userId}`,
+      providesTags: ["Users"],
     }),
     deleteUser: builder.mutation({
       query: (userId) => ({
         url: `/${userId}`,
         method: "DELETE",
       }),
+      invalidatesTags: ["Users"], // Invalidate to refetch users
     }),
     reportUser: builder.mutation({
       query: (userId) => ({
         url: `/report/${userId}`,
         method: "POST",
       }),
+      invalidatesTags: ["Users"],
     }),
     inactiveUser: builder.mutation({
       query: (userId) => ({
         url: `/${userId}`,
         method: "PUT",
+        body: { status: false }, // Explicitly set status to false
       }),
+      invalidatesTags: ["Users"],
     }),
     createUser: builder.mutation({
       query: (data) => ({
@@ -59,21 +68,23 @@ export const userApi = createApi({
         method: "POST",
         body: data,
       }),
+      invalidatesTags: ["Users"], // Invalidate to refetch users
     }),
     updateUser: builder.mutation({
       query: ({ userId, ...data }) => ({
         url: `/${userId}`,
         method: "PUT",
-        body: data, // This sends the updated user details
+        body: data,
       }),
+      invalidatesTags: ["Users"], // Invalidate to refetch users
     }),
-
     assignRole: builder.mutation({
-      query: ({ userId, role }) => ({
+      query: ({ userId, roleId }) => ({
         url: `/assign-role/${userId}`,
         method: "PUT",
-        body: { role },
+        body: { roleId }, // Match AddUser payload
       }),
+      invalidatesTags: ["Users"], // Invalidate to refetch users
     }),
   }),
 });
