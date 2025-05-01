@@ -13,6 +13,7 @@ export const cartApi = createApi({
       return headers;
     },
   }),
+  tagTypes: ["Carts"], // Define tag type for carts
   endpoints: (builder) => ({
     addToCart: builder.mutation({
       query: (cartData) => ({
@@ -20,20 +21,23 @@ export const cartApi = createApi({
         method: "POST",
         body: cartData,
       }),
+      invalidatesTags: ["Carts"], // Invalidate to refetch carts
     }),
     addProductToCart: builder.mutation({
       query: ({ userId, productId }) => ({
         url: "/add-to-cart",
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, productId }),
+        body: { userId, productId },
       }),
+      invalidatesTags: ["Carts"], // Invalidate to refetch carts
     }),
     getCart: builder.query({
       query: (userId) => `/${userId}`,
+      providesTags: ["Carts"], // Tag to allow invalidation
     }),
     getAllCarts: builder.query({
       query: () => "/all",
+      providesTags: ["Carts"], // Tag to allow invalidation
     }),
     removeFromCart: builder.mutation({
       query: (data) => ({
@@ -41,41 +45,45 @@ export const cartApi = createApi({
         method: "POST",
         body: data,
       }),
+      invalidatesTags: ["Carts"], // Invalidate to refetch carts
     }),
     reduceQuantity: builder.mutation({
       query: ({ userId, productId }) => ({
         url: "/reduce",
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, productId }),
+        body: { userId, productId },
       }),
+      invalidatesTags: ["Carts"], // Invalidate to refetch carts
     }),
     convertToCart: builder.mutation({
       query: (quotationId) => ({
         url: `/convert-to-cart/${quotationId}`,
         method: "POST",
       }),
+      invalidatesTags: ["Carts"], // Invalidate to refetch carts
     }),
     clearCart: builder.mutation({
-      query: (userData) => ({
+      query: ({ userId }) => ({
         url: "/clear",
         method: "POST",
-        body: userData, // send { userId: "..." }
+        body: { userId },
       }),
+      invalidatesTags: ["Carts"], // Invalidate to refetch carts
     }),
-
     updateCart: builder.mutation({
       query: (data) => ({
         url: "/update",
         method: "POST",
         body: data,
       }),
+      invalidatesTags: ["Carts"], // Invalidate to refetch carts
     }),
   }),
 });
 
 export const {
   useAddToCartMutation,
+  useAddProductToCartMutation,
   useGetCartQuery,
   useGetAllCartsQuery,
   useRemoveFromCartMutation,
@@ -83,5 +91,4 @@ export const {
   useConvertToCartMutation,
   useClearCartMutation,
   useUpdateCartMutation,
-  useAddProductToCartMutation,
 } = cartApi;

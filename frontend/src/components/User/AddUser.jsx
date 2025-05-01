@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 import {
   useCreateUserMutation,
   useUpdateUserMutation,
@@ -17,7 +18,7 @@ const AddUser = ({ onClose, userToEdit, isViewMode }) => {
     data: roles,
     isLoading: isRolesLoading,
     error: rolesError,
-  } = useGetRolesQuery(); // Fetch roles
+  } = useGetRolesQuery();
 
   const [isEditMode, setIsEditMode] = useState(false);
   const [formData, setFormData] = useState({
@@ -34,7 +35,7 @@ const AddUser = ({ onClose, userToEdit, isViewMode }) => {
     if (userToEdit) {
       setFormData({
         ...userToEdit,
-        role: userToEdit.roleId || "", // Use roleId from DB
+        role: userToEdit.roleId || "",
       });
       setIsEditMode(true);
     }
@@ -54,14 +55,14 @@ const AddUser = ({ onClose, userToEdit, isViewMode }) => {
       const selectedRoleObj = roles?.find((r) => r.roleId === formData.role);
 
       if (!selectedRoleObj) {
-        alert("Selected role is invalid.");
+        toast.error("Selected role is invalid.");
         return;
       }
 
       const userPayload = {
         ...formData,
         roles: selectedRoleObj.roleName,
-        roleId: selectedRoleObj.roleId, // ✅ Add this line
+        roleId: selectedRoleObj.roleId,
       };
 
       let user;
@@ -70,23 +71,24 @@ const AddUser = ({ onClose, userToEdit, isViewMode }) => {
           userId: userToEdit.userId,
           ...userPayload,
         }).unwrap();
-        alert("User updated successfully!");
+        toast.success("User updated successfully!");
       } else {
         user = await createUser(userPayload).unwrap();
-        alert("User added successfully!");
+        toast.success("User added successfully!");
       }
 
-      // Assign role using roleId
       await assignRole({
         userId: user.userId || userToEdit.userId,
-        roleId: selectedRoleObj.roleId, // ensure this is UUID
+        roleId: selectedRoleObj.roleId,
       }).unwrap();
-      alert("Role assigned successfully!");
+      toast.success("Role assigned successfully!");
 
       onClose();
     } catch (err) {
       console.error("Operation failed:", err);
-      alert("Failed to process the request.");
+      toast.error(
+        `Failed to process the request: ${err.data?.message || "Unknown error"}`
+      );
     }
   };
 
@@ -103,7 +105,7 @@ const AddUser = ({ onClose, userToEdit, isViewMode }) => {
                 : "Add User"}
             </h4>
             <button type="button" className="close" onClick={onClose}>
-              <span>&times;</span>
+              <span>×</span>
             </button>
           </div>
           <form onSubmit={handleSubmit}>
@@ -211,13 +213,17 @@ const AddUser = ({ onClose, userToEdit, isViewMode }) => {
                     className="btn btn-primary"
                     disabled={isCreating || isUpdating}
                   >
-                    {userToEdit
-                      ? isUpdating
-                        ? "Updating..."
-                        : "Update User"
-                      : isCreating
-                      ? "Adding..."
-                      : "Add User"}
+                    {isCreating || isUpdating ? (
+                      <span
+                        className="spinner-border spinner-border-sm"
+                        role="status"
+                        aria-hidden="true"
+                      ></span>
+                    ) : userToEdit ? (
+                      "Update User"
+                    ) : (
+                      "Add User"
+                    )}
                   </button>
                 </>
               )}
