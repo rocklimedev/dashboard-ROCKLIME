@@ -107,7 +107,7 @@ const masterRoutes = [
     ],
   },
   {
-    path: "#",
+    path: "/managerials/list",
     name: "Managerials",
     icon: <FaUserGraduate />,
     isSidebarActive: true,
