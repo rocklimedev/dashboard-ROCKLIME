@@ -4,10 +4,9 @@ import { useGetProductByIdQuery } from "../../api/productApi";
 import { useGetCategoryByIdQuery } from "../../api/categoryApi";
 import { useGetParentCategoryByIdQuery } from "../../api/parentCategoryApi";
 import { useGetBrandByIdQuery } from "../../api/brandsApi";
-import axios from "axios";
 import JsBarcode from "jsbarcode";
 import { toast } from "react-toastify";
-import Loader from "../../components/Common/Loader"; // Assuming Loader component exists
+import Loader from "../../components/Common/Loader";
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -29,31 +28,35 @@ const ProductDetails = () => {
     isLoading: isBrandLoading,
     error: brandError,
   } = useGetBrandByIdQuery(product?.brandId, { skip: !product?.brandId });
-  const [imageUrl, setImageUrl] = useState("");
   const [barcodeData, setBarcodeData] = useState("");
   const barcodeRef = useRef(null);
 
-  // Check for product image in various formats
-  const checkProductImage = async (companyCode) => {
-    if (!companyCode) {
-      setImageUrl("assets/img/products/default.jpg");
-      return;
-    }
+  // Parse images from product.images
+  const getParsedImages = (imageField) => {
+    if (!imageField) return [];
 
-    const formats = ["png", "jpg", "jpeg"];
-    for (const format of formats) {
-      const imageUrl = `https://static.cmtradingco.com/product_images/${companyCode}.${format}`;
-      try {
-        const response = await axios.head(imageUrl);
-        if (response.status === 200) {
-          setImageUrl(imageUrl);
-          return;
-        }
-      } catch (error) {
-        continue;
+    try {
+      // Handle JSON string
+      if (typeof imageField === "string") {
+        const parsed = JSON.parse(imageField);
+        if (Array.isArray(parsed))
+          return parsed.filter((img) => img && typeof img === "string");
+        if (typeof parsed === "string" && parsed.startsWith("http"))
+          return [parsed];
       }
+      // Handle array directly
+      if (Array.isArray(imageField)) {
+        return imageField.filter((img) => img && typeof img === "string");
+      }
+      return [];
+    } catch (err) {
+      console.error("Error parsing images:", err);
+      // Fallback for raw string URLs
+      if (typeof imageField === "string" && imageField.startsWith("http")) {
+        return [imageField];
+      }
+      return [];
     }
-    setImageUrl("../../assets/img/default.jpg");
   };
 
   // Generate barcode
@@ -92,19 +95,20 @@ const ProductDetails = () => {
     }
   };
 
-  // Fetch image and set barcode data
+  // Set barcode and log images
   useEffect(() => {
-    if (product?.company_code) {
-      checkProductImage(product.company_code);
-    }
     if (product?.product_code) {
       setBarcodeData(product.product_code);
+    }
+    if (product?.images) {
+      const images = getParsedImages(product.images);
+      console.log("Parsed images:", images);
     }
   }, [product]);
 
   // Generate barcode when barcodeData changes
   useEffect(() => {
-    if (barcodeData && barcodeRef.current) {
+    if (barcodeData) {
       generateBarcode(barcodeData);
     }
   }, [barcodeData]);
@@ -146,6 +150,8 @@ const ProductDetails = () => {
       </div>
     );
   }
+
+  const images = getParsedImages(product.images);
 
   return (
     <div className="page-wrapper">
@@ -253,14 +259,38 @@ const ProductDetails = () => {
               <div className="card-body">
                 <div className="slider-product-details">
                   <div className="owl-carousel owl-theme product-slide">
-                    <div className="slider-product">
-                      <img
-                        src={imageUrl}
-                        alt={product.name || "Product Image"}
-                        className="img-fluid"
-                      />
-                      <h4>{product.company_code || "Image"}</h4>
-                    </div>
+                    {images.length > 0 ? (
+                      images.map((img, idx) => (
+                        <div className="slider-product" key={idx}>
+                          <img
+                            src={img}
+                            alt={product?.name || "Product Image"}
+                            className="img-fluid"
+                            style={{
+                              maxHeight: "300px",
+                              objectFit: "contain",
+                            }}
+                            onError={(e) => {
+                              e.target.src = "../../assets/img/default.jpg";
+                            }}
+                          />
+                          <h4>{product?.company_code || `Image ${idx + 1}`}</h4>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="slider-product">
+                        <img
+                          src="../../assets/img/default.jpg"
+                          alt="No Image"
+                          className="img-fluid"
+                          style={{
+                            maxHeight: "300px",
+                            objectFit: "contain",
+                          }}
+                        />
+                        <h4>No images available</h4>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

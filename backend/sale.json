@@ -1,0 +1,122 @@
+{
+  "success": true,
+  "data": [
+    {
+      "invoiceId": "2bb13ff5-ec84-4f8c-8033-87b7092fba6d",
+      "invoiceNo": "INV_20250410_465122",
+      "createdBy": "5d5bd153-8877-4db1-a5cc-2af5c7e55d9c",
+      "quotationId": null,
+      "billTo": "DHRUV VERMA ",
+      "shipTo": "3c5c8f9c-20aa-4817-8dd9-45c594b5a8f7",
+      "amount": "258420.00",
+      "invoiceDate": "2025-04-16",
+      "dueDate": "2025-06-23",
+      "paymentMethod": "Cash",
+      "status": "",
+      "products": [
+        {
+          "price": 4650,
+          "quantity": 2,
+          "productId": "075bb868-7a3e-41d5-88aa-d79802c48f8f"
+        },
+        {
+          "price": 6450,
+          "quantity": 1,
+          "productId": "064d51e3-77bf-46d0-ae5b-82fc70d680ff"
+        },
+        {
+          "price": 228750,
+          "quantity": 1,
+          "productId": "01fb244c-aa17-4e04-a088-c9235baee82e"
+        },
+        {
+          "price": 13920,
+          "quantity": 1,
+          "productId": "0b59e7fe-ce43-42c9-9089-09dd39fe3210"
+        }
+      ],
+      "signatureName": "DHRUV VERMA",
+      "createdAt": null,
+      "updatedAt": null,
+      "customerId": "47d40cf8-8ec2-4fe6-bc52-f6a7270a7841"
+    },
+    {
+      "invoiceId": "48378cde-899c-454f-8940-d230a0221db6",
+      "invoiceNo": "INV_155169",
+      "createdBy": "5d5bd153-8877-4db1-a5cc-2af5c7e55d9c",
+      "quotationId": null,
+      "billTo": "amay",
+      "shipTo": "3c5c8f9c-20aa-4817-8dd9-45c594b5a8f7",
+      "amount": "29150.00",
+      "invoiceDate": "2025-04-11",
+      "dueDate": "2025-07-22",
+      "paymentMethod": "Cash",
+      "status": "",
+      "products": [
+        {
+          "price": 4650,
+          "quantity": 1,
+          "productId": "075bb868-7a3e-41d5-88aa-d79802c48f8f"
+        },
+        {
+          "price": 12350,
+          "quantity": 1,
+          "productId": "075f7100-89bb-4585-bda4-996db01a834b"
+        },
+        {
+          "price": 8750,
+          "quantity": 1,
+          "productId": "09fd10d3-665b-4f5a-93c1-95c28d76f7f6"
+        },
+        {
+          "price": 3400,
+          "quantity": 1,
+          "productId": "09c0ec78-c4a0-442c-9639-1da410d8f4e6"
+        }
+      ],
+      "signatureName": "amay",
+      "createdAt": "2025-04-11T06:21:09.000Z",
+      "updatedAt": "2025-04-11T06:21:09.000Z",
+      "customerId": "c5dcbf8b-f8eb-4556-8072-b3b964018f19"
+    },
+    {
+      "invoiceId": "5b9ecfdb-1b7f-4a97-bdf0-8f7a87c7efac",
+      "invoiceNo": "INV_20250410_514652",
+      "createdBy": "5d5bd153-8877-4db1-a5cc-2af5c7e55d9c",
+      "quotationId": null,
+      "billTo": "DHRUV VERMA ",
+      "shipTo": "3c5c8f9c-20aa-4817-8dd9-45c594b5a8f7",
+      "amount": "258420.00",
+      "invoiceDate": "2025-04-16",
+      "dueDate": "2025-06-23",
+      "paymentMethod": "Cash",
+      "status": "",
+      "products": [
+        {
+          "price": 4650,
+          "quantity": 2,
+          "productId": "075bb868-7a3e-41d5-88aa-d79802c48f8f"
+        },
+        {
+          "price": 6450,
+          "quantity": 1,
+          "productId": "064d51e3-77bf-46d0-ae5b-82fc70d680ff"
+        },
+        {
+          "price": 228750,
+          "quantity": 1,
+          "productId": "01fb244c-aa17-4e04-a088-c9235baee82e"
+        },
+        {
+          "price": 13920,
+          "quantity": 1,
+          "productId": "0b59e7fe-ce43-42c9-9089-09dd39fe3210"
+        }
+      ],
+      "signatureName": "DHRUV VERMA",
+      "createdAt": null,
+      "updatedAt": null,
+      "customerId": "47d40cf8-8ec2-4fe6-bc52-f6a7270a7841"
+    }
+  ]
+}

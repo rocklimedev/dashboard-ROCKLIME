@@ -2,13 +2,19 @@ import React, { useState } from "react";
 import ShowProducts from "./ShowProducts";
 import { Link } from "react-router-dom";
 import { useAddToCartMutation } from "../../api/cartApi";
-import { useGetProfileQuery } from "../../api/userApi"; // Import profile query
+import { useGetProfileQuery } from "../../api/userApi";
+import { useGetAllUsersQuery } from "../../api/userApi";
+import { useGetCustomersQuery } from "../../api/customerApi";
 
 const ShowQuotations = ({ isQuotationsLoading, quotations }) => {
   const [selectedQuotation, setSelectedQuotation] = useState(null);
-  const [addToCartMutation] = useAddToCartMutation(); // ✅ Fixing how the mutation is accessed
+  const [addToCartMutation] = useAddToCartMutation();
   const { data: profileData, isLoading: isProfileLoading } =
     useGetProfileQuery();
+
+  const { data: usersData, isLoading: isUsersLoading } = useGetAllUsersQuery();
+  const { data: customersData, isLoading: isCustomersLoading } =
+    useGetCustomersQuery();
 
   const handleConvertToOrder = (quotation) => {
     if (!quotation || !quotation.customerId) {
@@ -21,12 +27,11 @@ const ShowQuotations = ({ isQuotationsLoading, quotations }) => {
       return;
     }
 
-    // Use fetched userId
     const userId = profileData?.user?.userId;
 
     const cartData = {
       customerId: quotation.customerId,
-      userId, // ✅ Correctly setting userId
+      userId,
       items: quotation.products.map((product) => ({
         productId: product.productId,
         quantity: product.qty,
@@ -41,6 +46,20 @@ const ShowQuotations = ({ isQuotationsLoading, quotations }) => {
       .catch((error) => console.error("Error adding to cart:", error));
   };
 
+  const getUsernameById = (userId) => {
+    if (isUsersLoading) return "Loading...";
+    const user = usersData?.users?.find((user) => user.userId === userId);
+    return user?.username || "Unknown User";
+  };
+
+  const getCustomerNameById = (customerId) => {
+    if (isCustomersLoading) return "Loading...";
+    const customer = customersData?.data?.find(
+      (customer) => customer.customerId === customerId
+    );
+    return customer?.customerName || "Unknown Customer";
+  };
+
   return (
     <div className="order-body">
       {isQuotationsLoading ? (
@@ -53,7 +72,8 @@ const ShowQuotations = ({ isQuotationsLoading, quotations }) => {
                 Quotation Title: #{quotation.document_title}
               </span>
               <span className="badge bg-dark fs-12 mb-2">
-                Due Date: {quotation.due_date}
+                Due Date:
+                {quotation.due_date}
               </span>
               <div className="row g-3">
                 <div className="col-md-6">
@@ -61,11 +81,11 @@ const ShowQuotations = ({ isQuotationsLoading, quotations }) => {
                     <span className="fs-14 fw-bold text-gray-9">
                       Created By:
                     </span>{" "}
-                    {quotation.createdBy}
+                    {getUsernameById(quotation.createdBy)}
                   </p>
                   <p className="fs-15 mb-1">
                     <span className="fs-14 fw-bold text-gray-9">For:</span>{" "}
-                    {quotation.customerId}
+                    {getCustomerNameById(quotation.customerId)}
                   </p>
                 </div>
                 <div className="col-md-6">
@@ -102,9 +122,7 @@ const ShowQuotations = ({ isQuotationsLoading, quotations }) => {
 
                 <button
                   className="btn btn-md btn-teal"
-                  data-bs-toggle="modal"
-                  data-bs-target="#products"
-                  onClick={() => setSelectedQuotation(quotation)}
+                  onClick={() => setSelectedQuotation(quotation)} // Only set state to trigger ShowProducts
                 >
                   View Products
                 </button>

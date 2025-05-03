@@ -21,7 +21,8 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const UserList = () => {
-  const { data, error, isLoading } = useGetAllUsersQuery();
+  const { data, error, isLoading, isFetching, refetch } = useGetAllUsersQuery();
+  console.log("useGetAllUsersQuery:", { data, error });
   const users = data?.users || [];
 
   const [reportUser, { isLoading: isReporting }] = useReportUserMutation();
@@ -38,31 +39,26 @@ const UserList = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [userToDelete, setUserToDelete] = useState(null);
 
-  // Handle add user
   const handleAddUser = () => {
     setSelectedUser(null);
     setShowModal(true);
   };
 
-  // Handle edit user
   const handleEditUser = (user) => {
     setSelectedUser(user);
     setShowModal(true);
   };
 
-  // Handle view user
   const handleViewUser = (user) => {
     setSelectedUser(user);
     setShowViewModal(true);
   };
 
-  // Handle delete user
   const handleDeleteUser = (userId) => {
     setUserToDelete(userId);
     setShowDeleteModal(true);
   };
 
-  // Confirm deletion
   const handleConfirmDelete = async () => {
     if (!userToDelete) {
       toast.error("No user selected for deletion");
@@ -72,7 +68,6 @@ const UserList = () => {
     try {
       await deleteUser(userToDelete).unwrap();
       toast.success("User deleted successfully!");
-      // Reset to previous page if current page becomes empty
       if (paginatedUsers.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
@@ -87,7 +82,6 @@ const UserList = () => {
     }
   };
 
-  // Handle report user
   const handleReportUser = async (userId) => {
     try {
       await reportUser(userId).unwrap();
@@ -100,7 +94,6 @@ const UserList = () => {
     }
   };
 
-  // Handle inactive user
   const handleInactiveUser = async (userId) => {
     try {
       await inactiveUser(userId).unwrap();
@@ -115,25 +108,22 @@ const UserList = () => {
     }
   };
 
-  // Handle modal close
   const handleCloseModal = () => {
     setShowModal(false);
     setShowViewModal(false);
     setSelectedUser(null);
   };
 
-  // Handle page change
   const handlePageChange = (page) => {
     setCurrentPage(page);
   };
 
-  // Paginated users
   const paginatedUsers = users.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
-  if (isLoading) {
+  if (isLoading || isFetching) {
     return (
       <div className="d-flex justify-content-center">
         <div className="spinner-border" role="status">
@@ -146,7 +136,11 @@ const UserList = () => {
   if (error) {
     return (
       <div className="alert alert-danger">
-        Error fetching users: {error.data?.message || "Unknown error"}
+        Error fetching users:{" "}
+        {error.data?.message || error.message || "Unknown error"}
+        <button className="btn btn-link" onClick={refetch}>
+          Retry
+        </button>
       </div>
     );
   }
