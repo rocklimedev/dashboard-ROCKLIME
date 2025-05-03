@@ -1,17 +1,22 @@
 import React, { useState, useEffect } from "react";
+import { Button } from "react-bootstrap";
 import PageHeader from "../Common/PageHeader";
 import Actions from "../Common/Actions";
-import { useGetAllProductsQuery } from "../../api/productApi";
+import {
+  useGetAllProductsQuery,
+  useDeleteProductMutation, // Add this import
+} from "../../api/productApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
+import { useGetAllCategoriesQuery } from "../../api/categoryApi";
+import { useGetAllBrandsQuery } from "../../api/brandsApi";
 import DataTablePagination from "../Common/DataTablePagination";
 import TableHeader from "./TableHeader";
 import DeleteModal from "../Common/DeleteModal";
-import { useGetAllCategoriesQuery } from "../../api/categoryApi";
-import { useGetAllBrandsQuery } from "../../api/brandsApi";
 import StockModal from "../Common/StockModal";
 import HistoryModal from "../Common/HistoryModal";
 import { useNavigate } from "react-router-dom";
-import { Button } from "react-bootstrap";
+import { ToastContainer, toast } from "react-toastify"; // Add toast for notifications
+import "react-toastify/dist/ReactToastify.css";
 
 const ProductList = () => {
   const navigate = useNavigate();
@@ -19,6 +24,7 @@ const ProductList = () => {
   const { data: categoriesData } = useGetAllCategoriesQuery();
   const { data: brandsData } = useGetAllBrandsQuery();
   const { data: customersData } = useGetCustomersQuery();
+  const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation(); // Add mutation
 
   const products = Array.isArray(data?.data)
     ? data.data
@@ -49,7 +55,7 @@ const ProductList = () => {
     brand: null,
     sortBy: null,
     search: "",
-    company_code: "", // Keep for compatibility, but use in search
+    company_code: "",
   });
 
   const itemsPerPage = 20;
@@ -140,9 +146,29 @@ const ProductList = () => {
     setModalVisible(true);
   };
 
-  const handleConfirmDelete = () => {
-    setModalVisible(false);
-    // Actual delete logic goes here
+  const handleConfirmDelete = async () => {
+    if (!selectedProduct?.productId) {
+      toast.error("No product selected for deletion");
+      setModalVisible(false);
+      return;
+    }
+
+    try {
+      await deleteProduct(selectedProduct.productId).unwrap();
+      toast.success("Product deleted successfully!");
+      // Adjust pagination if the current page becomes empty
+      if (currentItems.length === 1 && currentPage > 0) {
+        setCurrentPage(currentPage - 1);
+      }
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      toast.error(
+        `Failed to delete product: ${error.data?.message || "Unknown error"}`
+      );
+    } finally {
+      setModalVisible(false);
+      setSelectedProduct(null);
+    }
   };
 
   const handleStockClick = (product) => {
@@ -187,6 +213,7 @@ const ProductList = () => {
 
   return (
     <div className="page-wrapper">
+      <ToastContainer />
       <div className="content">
         <PageHeader
           title="Products"
@@ -278,8 +305,13 @@ const ProductList = () => {
       <DeleteModal
         isVisible={isModalVisible}
         onConfirm={handleConfirmDelete}
-        onCancel={() => setModalVisible(false)}
-        product={selectedProduct}
+        onCancel={() => {
+          setModalVisible(false);
+          setSelectedProduct(null);
+        }}
+        item={selectedProduct}
+        itemType="Product"
+        isLoading={isDeleting}
       />
       {isStockModalVisible && selectedProduct && (
         <StockModal
