@@ -91,7 +91,7 @@ const POSProducts = ({ products = [] }) => {
                     onClick={(e) => e.preventDefault()}
                     className="pro-img"
                   >
-                    <img src={product.image || pos} alt={product.name} />
+                    <img src={product.images || pos} alt={product.name} />
                     <span
                       onClick={() => !cartLoading && handleAddToCart(product)}
                       style={{ cursor: "pointer" }}

@@ -1,10 +1,11 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { useLoginMutation } from "../../api/authApi";
 import { ToastContainer, toast } from "react-toastify";
-import { useAuth } from "../../context/AuthContext"; // ✅ use your context
+import { useAuth } from "../../context/AuthContext";
 import "react-toastify/dist/ReactToastify.css";
 import logo from "../../assets/img/logo.png";
+import { FaEnvelope, FaEye, FaEyeSlash } from "react-icons/fa";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -12,29 +13,48 @@ const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loginMutation, { isLoading }] = useLoginMutation();
-  const { login: authLogin } = useAuth(); // ✅ renamed to avoid conflict
+  const { login: authLogin, auth } = useAuth();
   const navigate = useNavigate();
+  const [loginSuccess, setLoginSuccess] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Perform login mutation
       const response = await loginMutation({ email, password }).unwrap();
       const token = response.accessToken;
 
-      if (!token) throw new Error("No access token received");
-
-      // ✅ Store token in context
-      authLogin(token, null); // Pass token + user if available
-
-      // ✅ Optional: Save token manually depending on rememberMe
-      if (rememberMe) {
-        localStorage.setItem("token", token);
-      } else {
-        sessionStorage.setItem("token", token);
+      if (!token) {
+        throw new Error("No access token received");
       }
 
+      // Log response for debugging
+      console.log("Login response:", { token, user: response.user });
+
+      // Store token in localStorage or sessionStorage first
+      if (rememberMe) {
+        localStorage.setItem("token", token);
+        sessionStorage.removeItem("token");
+      } else {
+        sessionStorage.setItem("token", token);
+        localStorage.removeItem("token");
+      }
+
+      // Update AuthContext
+      authLogin(token, response.user || null);
+
+      // Log token storage
+      console.log(
+        "Token stored in:",
+        rememberMe ? "localStorage" : "sessionStorage",
+        { token }
+      );
+
+      // Mark login as successful
+      setLoginSuccess(true);
+
+      // Show success toast
       toast.success("Login successful!", { autoClose: 1000 });
-      navigate("/", { replace: true });
     } catch (err) {
       console.error("Login failed:", err);
       const status = err?.status;
@@ -47,10 +67,24 @@ const Login = () => {
       ) {
         navigate("/no-access");
       } else {
-        toast.error(message);
+        toast.error(message, { autoClose: 3000 });
       }
     }
   };
+
+  // Navigate when auth is updated after successful login
+  useEffect(() => {
+    if (loginSuccess && auth?.token) {
+      console.log("Navigating to / with auth:", auth);
+      navigate("/", { replace: true });
+      setLoginSuccess(false);
+    }
+  }, [auth, loginSuccess, navigate]);
+
+  // Debug AuthContext state changes
+  useEffect(() => {
+    console.log("Login component mounted, AuthContext state:", auth);
+  }, [auth]);
 
   return (
     <div className="main-wrapper">
@@ -61,7 +95,11 @@ const Login = () => {
             <form onSubmit={handleSubmit}>
               <div className="login-userset">
                 <div className="login-logo logo-normal">
-                  <img src={logo} alt="Logo" />
+                  <img
+                    src={logo}
+                    alt="Logo"
+                    style={{ width: "100px", height: "auto" }}
+                  />
                 </div>
                 <div className="login-userheading">
                   <h3>Sign In</h3>
@@ -80,9 +118,10 @@ const Login = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
+                      placeholder="Enter your email"
                     />
                     <span className="input-group-text border-start-0">
-                      <i className="ti ti-mail"></i>
+                      <FaEnvelope />
                     </span>
                   </div>
                 </div>
@@ -90,23 +129,20 @@ const Login = () => {
                   <label className="form-label">
                     Password <span className="text-danger">*</span>
                   </label>
-                  <div className="pass-group input-group">
+                  <div className="input-group">
                     <input
                       type={showPassword ? "text" : "password"}
-                      className="form-control"
+                      className="form-control border-end-0"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
+                      placeholder="Enter your password"
                     />
                     <span
-                      className="input-group-text cursor-pointer"
+                      className="input-group-text border-start-0 cursor-pointer"
                       onClick={() => setShowPassword(!showPassword)}
                     >
-                      <i
-                        className={`ti ${
-                          showPassword ? "ti-eye" : "ti-eye-off"
-                        }`}
-                      ></i>
+                      {showPassword ? <FaEyeSlash /> : <FaEye />}
                     </span>
                   </div>
                 </div>
@@ -122,12 +158,12 @@ const Login = () => {
                         <span className="checkmarks"></span> Remember me
                       </label>
                       <div className="text-end">
-                        <a
+                        <Link
+                          to="/forgot-password"
                           className="text-orange fs-16 fw-medium"
-                          href="/forgot-password"
                         >
                           Forgot Password?
-                        </a>
+                        </Link>
                       </div>
                     </div>
                   </div>
@@ -135,19 +171,30 @@ const Login = () => {
                 <div className="form-login">
                   <button
                     type="submit"
-                    className="btn btn-primary w-100"
+                    className="btn btn-primary w-100 d-flex align-items-center justify-content-center"
                     disabled={isLoading}
                   >
-                    {isLoading ? "Signing In..." : "Sign In"}
+                    {isLoading ? (
+                      <>
+                        <span
+                          className="spinner-border spinner-border-sm me-2"
+                          role="status"
+                          aria-hidden="true"
+                        ></span>
+                        Signing In...
+                      </>
+                    ) : (
+                      "Sign In"
+                    )}
                   </button>
                 </div>
-                <div className="signinform">
+                <div className="signinform text-center">
                   <h4>
                     New on our platform?
-                    <a href="/signup" className="hover-a">
+                    <Link to="/signup" className="hover-a text-orange">
                       {" "}
                       Create an account
-                    </a>
+                    </Link>
                   </h4>
                 </div>
               </div>

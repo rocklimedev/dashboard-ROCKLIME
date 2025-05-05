@@ -1,0 +1,189 @@
+import React, { useState, useEffect } from "react";
+import OrderCart from "./OrderCart";
+import ProductsList from "./ProductsList";
+import Categories from "./Categories";
+import { useDispatch } from "react-redux";
+import ShowQuotations from "../POS/ShowQuotations";
+import { useGetProfileQuery } from "../../api/userApi";
+import { useGetAllQuotationsQuery } from "../../api/quotationApi";
+import { useGetCartQuery } from "../../api/cartApi";
+import { useGetAllProductsQuery } from "../../api/productApi";
+import { useGetAllBrandsQuery } from "../../api/brandsApi";
+import logo from "../../assets/img/logo.png";
+const POSWrapperNew = () => {
+  const dispatch = useDispatch();
+
+  const {
+    data: user,
+    isLoading: isUserLoading,
+    isError: isUserError,
+  } = useGetProfileQuery();
+  const { data: quotations, isLoading: isQuotationsLoading } =
+    useGetAllQuotationsQuery();
+  const { data: products, isLoading: isProductsLoading } =
+    useGetAllProductsQuery();
+  const { data: cartData, refetch: refetchCart } = useGetCartQuery();
+  const { data: brands, isLoading: isBrandsLoading } = useGetAllBrandsQuery();
+
+  const [activeTab, setActiveTab] = useState("products");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeBrand, setActiveBrand] = useState(null);
+
+  useEffect(() => {
+    refetchCart();
+  }, [cartData, refetchCart]);
+
+  const handleConvertToCart = (quotation) => {
+    if (!quotation || !Array.isArray(quotation.products)) {
+      console.error("Invalid quotation data", quotation);
+      return;
+    }
+
+    const cartData = {
+      customerId: quotation.customerId,
+      items: quotation.products.map((product) => ({
+        id: product.productId,
+        name: product.name,
+        quantity: product.quantity || 1,
+        price: product.sellingPrice,
+      })),
+      totalAmount: quotation.finalAmount,
+    };
+
+    // Dispatch or API call for updating cart
+  };
+
+  const handleBrandClick = (brand) => {
+    setActiveBrand(brand);
+  };
+
+  const filteredProducts = activeBrand
+    ? products?.filter((product) => product.brandId === activeBrand.id)
+    : products?.filter((product) =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+
+  const userName = user?.user?.name || "Guest User";
+  const userEmail = user?.user?.email || "No Email Provided";
+  const currentDate = new Date().toLocaleDateString("en-US", {
+    weekday: "short",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  const currentTime = new Date().toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "quotations":
+        return (
+          <ShowQuotations
+            isQuotationsLoading={isQuotationsLoading}
+            quotations={quotations}
+            onConvertToOrder={handleConvertToCart}
+          />
+        );
+      case "products":
+        return (
+          <div className="content-wrap">
+            <Categories />
+            <ProductsList
+              products={filteredProducts}
+              isLoading={isProductsLoading}
+            />
+          </div>
+        );
+      case "brands":
+        return (
+          <div className="brand-list">
+            {isBrandsLoading ? (
+              <p>Loading Brands...</p>
+            ) : (
+              brands?.map((brand) => (
+                <div
+                  key={brand.id}
+                  className="brand-card"
+                  onClick={() => handleBrandClick(brand)}
+                >
+                  <h5>{brand.name}</h5>
+                  <p>Total Products: {brand.totalProducts}</p>
+                </div>
+              ))
+            )}
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div class="page-wrapper pos-pg-wrapper ms-0">
+      <div class="content pos-design p-0">
+        <div class="row align-items-start pos-wrapper">
+          <div class="col-md-12 col-lg-7 col-xl-8">
+            <div class="pos-categories tabs_wrapper">
+              <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+                <div>
+                  {isUserLoading ? (
+                    <h5>Loading User...</h5>
+                  ) : isUserError ? (
+                    <h5 className="text-danger">Failed to Load User</h5>
+                  ) : (
+                    <>
+                      <h5 className="mb-1">👋 Welcome, {userName}</h5>
+                      <p className="mb-1">{userEmail}</p>
+                      <p className="text-muted">
+                        {currentDate} | {currentTime}
+                      </p>
+                    </>
+                  )}
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                  <div class="input-icon-start pos-search position-relative">
+                    <span class="input-icon-addon">
+                      <i class="ti ti-search"></i>
+                    </span>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Search Product"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                  <button
+                    className="btn btn-sm btn-dark mb-2 me-2"
+                    onClick={() => setActiveTab("brands")}
+                  >
+                    <i className="ti ti-tag me-1"></i> Brands
+                  </button>
+                  <button
+                    className="btn btn-sm btn-dark mb-2 me-2"
+                    onClick={() => setActiveTab("quotations")}
+                  >
+                    <i className="ti ti-star me-1"></i> Quotations
+                  </button>
+                  <button
+                    className="btn btn-sm btn-dark mb-2"
+                    onClick={() => setActiveTab("products")}
+                  >
+                    <i className="ti ti-box me-1"></i> Products
+                  </button>
+                </div>
+              </div>
+              {renderTabContent()}
+            </div>
+          </div>
+
+          <OrderCart onConvertToOrder={handleConvertToCart} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default POSWrapperNew;

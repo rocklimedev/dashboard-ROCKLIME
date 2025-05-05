@@ -68,6 +68,7 @@ import OrderWithInvoice from "../components/Orders/OrderWithInvoice";
 import CheckProductCodeStatus from "../components/Product/CheckProductCodeStatus";
 import NoAccess from "../components/Common/NoAccess";
 import RecentQuotation from "../components/Quotation/RecentQuotations";
+import POSWrapperNew from "../components/POS-NEW/POSWrapper";
 const masterRoutes = [
   {
     path: "/",
@@ -263,7 +264,13 @@ const masterRoutes = [
     isSidebarActive: true,
     element: <POSWrapper />,
   },
-
+  {
+    path: "/pos-new",
+    name: "POS 2",
+    icon: <FaPooStorm />,
+    isSidebarActive: true,
+    element: <POSWrapperNew />,
+  },
   {
     path: "#",
     name: "Quotations",
