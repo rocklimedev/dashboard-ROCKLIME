@@ -8,7 +8,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useGetProfileQuery } from "./api/userApi";
 import Loader from "./components/Common/Loader";
-
+import "bootstrap/dist/js/bootstrap.bundle.min.js";
 function App() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -23,7 +23,7 @@ function App() {
     "/coming-soon",
     "/no-access", // Add /no-access to allowed pages
   ].includes(location.pathname);
-  const isPOSPage = location.pathname === "/pos";
+  const isPOSPage = ["/pos", "/pos-new"].includes(location.pathname);
 
   const token = localStorage.getItem("token");
 

@@ -7,16 +7,15 @@ export const authApi = createApi({
     baseUrl: `${API_URL}/auth`,
     credentials: "include",
     prepareHeaders: (headers) => {
-      const token = localStorage.getItem("token");
-
+      const token =
+        localStorage.getItem("token") || sessionStorage.getItem("token");
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
       }
       return headers;
     },
   }),
-  tagTypes: ["Auth"],
-
+  tagTypes: ["Auth", "Users"], // Updated to match userApi
   endpoints: (builder) => ({
     register: builder.mutation({
       query: (userData) => ({
@@ -24,7 +23,7 @@ export const authApi = createApi({
         method: "POST",
         body: userData,
       }),
-      invalidatesTags: ["Auth"], // Always returns an array
+      invalidatesTags: ["Auth", "Users"],
     }),
     login: builder.mutation({
       query: (credentials) => ({
@@ -35,20 +34,19 @@ export const authApi = createApi({
           "Content-Type": "application/json",
         },
       }),
-      invalidatesTags: (result, error) => (result ? ["Auth"] : []),
+      invalidatesTags: (result, error) => (result ? ["Auth", "Users"] : []),
     }),
     logout: builder.mutation({
       query: () => ({
         url: "/logout",
         method: "POST",
-        credentials: "include", // Ensures cookies are sent
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
       }),
-      invalidatesTags: ["Auth"],
+      invalidatesTags: ["Auth", "Users"],
     }),
-
     forgotPassword: builder.mutation({
       query: (email) => ({
         url: "/forgot-password",
@@ -83,7 +81,7 @@ export const authApi = createApi({
         method: "POST",
         body: data,
       }),
-      invalidatesTags: ["Auth"], // If password changes, user data should refresh
+      invalidatesTags: ["Auth", "Users"],
     }),
   }),
 });

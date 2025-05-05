@@ -7,14 +7,15 @@ export const userApi = createApi({
     baseUrl: `${API_URL}/user`,
     credentials: "include",
     prepareHeaders: (headers) => {
-      const token = localStorage.getItem("token");
+      const token =
+        localStorage.getItem("token") || sessionStorage.getItem("token");
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
       }
       return headers;
     },
   }),
-  tagTypes: ["Users"], // Define tag type (corrected from providesTags)
+  tagTypes: ["Users"],
   endpoints: (builder) => ({
     getProfile: builder.query({
       query: () => "/me",
@@ -30,7 +31,7 @@ export const userApi = createApi({
     }),
     getAllUsers: builder.query({
       query: () => "/",
-      providesTags: ["Users"], // Tag the query for invalidation
+      providesTags: ["Users"],
     }),
     searchUser: builder.query({
       query: (query) => `/search?query=${query}`,
@@ -45,7 +46,7 @@ export const userApi = createApi({
         url: `/${userId}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Users"], // Invalidate to refetch users
+      invalidatesTags: ["Users"],
     }),
     reportUser: builder.mutation({
       query: (userId) => ({
@@ -58,7 +59,7 @@ export const userApi = createApi({
       query: (userId) => ({
         url: `/${userId}`,
         method: "PUT",
-        body: { status: false }, // Explicitly set status to false
+        body: { status: false },
       }),
       invalidatesTags: ["Users"],
     }),
@@ -68,7 +69,7 @@ export const userApi = createApi({
         method: "POST",
         body: data,
       }),
-      invalidatesTags: ["Users"], // Invalidate to refetch users
+      invalidatesTags: ["Users"],
     }),
     updateUser: builder.mutation({
       query: ({ userId, ...data }) => ({
@@ -76,15 +77,15 @@ export const userApi = createApi({
         method: "PUT",
         body: data,
       }),
-      invalidatesTags: ["Users"], // Invalidate to refetch users
+      invalidatesTags: ["Users"],
     }),
     assignRole: builder.mutation({
       query: ({ userId, roleId }) => ({
         url: `/assign-role/${userId}`,
         method: "PUT",
-        body: { roleId }, // Match AddUser payload
+        body: { roleId },
       }),
-      invalidatesTags: ["Users"], // Invalidate to refetch users
+      invalidatesTags: ["Users"],
     }),
   }),
 });

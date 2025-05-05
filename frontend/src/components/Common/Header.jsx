@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../../assets/img/logo.png";
 import { useGetProfileQuery, useGetUserByIdQuery } from "../../api/userApi";
+import { Dropdown } from "react-bootstrap"; // Import Dropdown from react-bootstrap
 import {
   FaSearch,
   FaPlusCircle,
@@ -241,47 +242,54 @@ const Header = ({ toggleSidebar }) => {
           {/* User Profile */}
           <li className="nav-item dropdown has-arrow main-drop profile-nav">
             {isLoading ? (
-              <span class="user-letter"> Loading...</span>
+              <span className="user-letter"> Loading...</span>
             ) : error ? (
-              <span class="user-letter">Error loading profile</span>
+              <span className="user-letter">Error loading profile</span>
             ) : user ? (
-              <button
-                className="dropdown-toggle nav-link"
-                data-bs-toggle="dropdown"
-              >
-                <span className="user-info">
-                  <span className="user-letter">
-                    <img
-                      src={user?.user?.profileImage || img}
-                      alt="User"
-                      className="img-fluid"
-                    />
+              <Dropdown align="end">
+                <Dropdown.Toggle
+                  id="dropdown-profile"
+                  variant="link"
+                  className="nav-link"
+                >
+                  <span className="user-info">
+                    <span className="user-letter">
+                      <img
+                        src={user?.user?.profileImage || img}
+                        alt="User"
+                        className="img-fluid"
+                      />
+                    </span>
                   </span>
-                </span>
-              </button>
-            ) : null}
-            <div className="dropdown-menu menu-drop-user">
-              <div class="profileset d-flex align-items-center">
-                <span class="user-img me-2">
-                  <img src={user?.user?.profileImage || img} alt="Img" />
-                </span>
-                <div>
-                  <h6 class="fw-medium">{user?.user?.name}</h6>
-                  <p>{user?.user?.roles}</p>
-                </div>
-              </div>
-              <Link to={`/u/${user?.user?.userId}`} className="dropdown-item">
-                <FaUserCircle /> Profile
-              </Link>
+                </Dropdown.Toggle>
 
-              <button
-                className="dropdown-item"
-                onClick={handleLogout}
-                disabled={isLoggingOut}
-              >
-                <BiLogOut /> {isLoggingOut ? "Logging out..." : "Logout"}
-              </button>
-            </div>
+                <Dropdown.Menu className="menu-drop-user">
+                  <div className="profileset d-flex align-items-center">
+                    <span className="user-img me-2">
+                      <img src={user?.user?.profileImage || img} alt="Img" />
+                    </span>
+                    <div>
+                      <h6 className="fw-medium">{user?.user?.name}</h6>
+                      <p>{user?.user?.roles}</p>
+                    </div>
+                  </div>
+                  <Link
+                    to={`/u/${user?.user?.userId}`}
+                    className="dropdown-item"
+                  >
+                    <FaUserCircle /> Profile
+                  </Link>
+
+                  <button
+                    className="dropdown-item"
+                    onClick={handleLogout}
+                    disabled={isLoggingOut}
+                  >
+                    <BiLogOut /> {isLoggingOut ? "Logging out..." : "Logout"}
+                  </button>
+                </Dropdown.Menu>
+              </Dropdown>
+            ) : null}
           </li>
         </ul>
         <div class="dropdown mobile-user-menu">
