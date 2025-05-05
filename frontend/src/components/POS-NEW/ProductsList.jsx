@@ -33,8 +33,8 @@ const ProductsList = ({ products = [] }) => {
   const categories = Array.isArray(categoriesData?.categories)
     ? categoriesData.categories
     : [];
-  const baseProducts = Array.isArray(products) ? products : [];
-
+  const baseProducts = Array.isArray(productsData) ? productsData : [];
+  console.log(baseProducts);
   const displayedProducts = baseProducts.filter((product) =>
     product.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -62,7 +62,7 @@ const ProductsList = ({ products = [] }) => {
       return;
     }
 
-    const productId = product.productId || product.id;
+    const productId = product.productId || product.productId;
     if (!productId) {
       toast.error("Invalid product ID");
       return;
@@ -121,7 +121,7 @@ const ProductsList = ({ products = [] }) => {
       {/* Product Grid */}
       <Row className="g-3">
         {currentItems.map((product) => (
-          <Col key={product.id} xs={12} sm={6} md={4} lg={3} xl={2}>
+          <Col key={product.productId} xs={12} sm={6} md={4} lg={3} xl={2}>
             <Card
               className="shadow-sm border-0 h-100"
               style={{ transition: "transform 0.2s" }}
@@ -156,7 +156,7 @@ const ProductsList = ({ products = [] }) => {
               <Card.Body>
                 <Card.Title as="h6" className="fs-14 fw-bold mb-1">
                   <a
-                    href={`/product/${product.id}`}
+                    href={`/product/${product.productId}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-decoration-none text-dark"
