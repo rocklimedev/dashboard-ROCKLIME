@@ -234,6 +234,7 @@ const ProductList = () => {
                 <table className="table datatable">
                   <thead className="thead-light">
                     <tr>
+                      <th>#</th>
                       <th>Product Name</th>
                       <th>Product Code</th>
                       <th>Company Code</th>
@@ -248,7 +249,20 @@ const ProductList = () => {
                   <tbody>
                     {currentItems.map((product) => (
                       <tr key={product.productId}>
-                        <td>{product.name || "N/A"}</td>
+                        <td>
+                          <span>
+                            <img
+                              className="img-fluid"
+                              src={product?.images}
+                              style={{
+                                maxHeight: "300px",
+                                objectFit: "contain",
+                              }}
+                              alt={product.company_code}
+                            />{" "}
+                          </span>
+                        </td>
+                        <td> {product.name || "N/A"}</td>
                         <td>{product.product_code || "N/A"}</td>
                         <td>{product.company_code || "N/A"}</td>
                         <td>{getCategoryName(product.categoryId)}</td>
@@ -293,7 +307,7 @@ const ProductList = () => {
           {filteredProducts.length > 0 && (
             <DataTablePagination
               currentPage={currentPage}
-              setCurrentPage={setCurrentPage}
+              onPageChange={setCurrentPage} // ✅ match the expected prop
               totalItems={filteredProducts.length}
               itemsPerPage={itemsPerPage}
             />
