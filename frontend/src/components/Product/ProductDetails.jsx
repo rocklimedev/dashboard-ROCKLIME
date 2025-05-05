@@ -7,7 +7,7 @@ import { useGetBrandByIdQuery } from "../../api/brandsApi";
 import JsBarcode from "jsbarcode";
 import { toast } from "react-toastify";
 import Loader from "../../components/Common/Loader";
-
+import noimage from "../../assets/img/default.png";
 const ProductDetails = () => {
   const { id } = useParams();
   const {
@@ -271,7 +271,7 @@ const ProductDetails = () => {
                               objectFit: "contain",
                             }}
                             onError={(e) => {
-                              e.target.src = "../../assets/img/default.jpg";
+                              e.target.src = noimage;
                             }}
                           />
                           <h4>{product?.company_code || `Image ${idx + 1}`}</h4>
@@ -280,7 +280,7 @@ const ProductDetails = () => {
                     ) : (
                       <div className="slider-product">
                         <img
-                          src="../../assets/img/default.jpg"
+                          src={noimage}
                           alt="No Image"
                           className="img-fluid"
                           style={{
