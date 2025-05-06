@@ -1,28 +1,37 @@
 import React from "react";
-import { useGetFilteredOrdersQuery } from "../../api/orderApi";
+import { useGetAllOrdersQuery } from "../../api/orderApi";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const OrderFilter = ({ setFilters }) => {
-  const { data: orderCountsData, isLoading: countsLoading } =
-    useGetFilteredOrdersQuery(
-      {
-        status: "",
-        priority: "",
-        important: false,
-        trash: false,
-        page: 1,
-        limit: 100, // Reduced from 1000 to improve performance
-      },
-      {
-        selectFromResult: ({ data }) => ({
-          data: data?.orders?.reduce((acc, order) => {
-            acc[order.status] = (acc[order.status] || 0) + 1;
-            return acc;
-          }, {}),
-        }),
-      }
-    );
+  const {
+    data,
+    isLoading: countsLoading,
+    isFetching: countsFetching,
+    error,
+  } = useGetAllOrdersQuery(
+    {
+      page: 1,
+      limit: 100, // Reduced for performance
+    },
+    {
+      selectFromResult: ({ data, error }) => ({
+        data: {
+          statusCounts:
+            data?.orders?.reduce((acc, order) => {
+              acc[order.status] = (acc[order.status] || 0) + 1;
+              return acc;
+            }, {}) || {},
+          priorityCounts:
+            data?.orders?.reduce((acc, order) => {
+              acc[order.priority] = (acc[order.priority] || 0) + 1;
+              return acc;
+            }, {}) || {},
+        },
+        error,
+      }),
+    }
+  );
 
   const statuses = [
     "CREATED",
@@ -36,46 +45,59 @@ const OrderFilter = ({ setFilters }) => {
     "DRAFT",
     "ONHOLD",
   ];
-
   const priorities = ["high", "medium", "low"];
+
+  // Prepare status and priority counts with fallbacks
+  const statusCounts = data?.statusCounts
+    ? Object.entries(data.statusCounts)
+    : statuses.map((status) => [status, 0]);
+  const priorityCounts = data?.priorityCounts
+    ? Object.entries(data.priorityCounts)
+    : priorities.map((priority) => [priority, 0]);
+
+  // Debugging logs
+  console.log("OrderFilter Data:", {
+    data,
+    error,
+    countsLoading,
+    countsFetching,
+    statusCounts,
+    priorityCounts,
+  });
 
   const applyFilter = (key, value) => {
     setFilters((prev) => {
-      let newFilters = { ...prev, page: 1 };
-      if (key === "status" && value === "all") {
-        newFilters = {
-          ...newFilters,
-          status: "",
-          priority: "",
-        };
-      } else if (key === "priority") {
-        newFilters = {
-          ...newFilters,
-          status: "",
-          priority: value,
-        };
-      } else {
-        newFilters = {
-          ...newFilters,
-          status: value,
-          priority: "",
-        };
-      }
+      const newFilters = {
+        ...prev,
+        page: 1,
+        status: key === "status" && value !== "all" ? value : "",
+        priority: key === "priority" ? value : "",
+      };
+      console.log("Applying Filters:", newFilters);
       return newFilters;
     });
   };
 
   const handleClearFilters = () => {
-    setFilters({
+    const defaultFilters = {
       status: "",
       priority: "",
       important: false,
       trash: false,
       page: 1,
       limit: 10,
-    });
+    };
+    setFilters(defaultFilters);
     toast.success("Filters cleared!");
+    console.log("Cleared Filters:", defaultFilters);
   };
+
+  if (error) {
+    toast.error(
+      `Failed to load order counts: ${error?.data?.message || "Unknown error"}`
+    );
+    console.error("Query Error:", error);
+  }
 
   return (
     <div className="border rounded-3 bg-white p-4 shadow-sm">
@@ -97,10 +119,19 @@ const OrderFilter = ({ setFilters }) => {
           <button
             className="btn btn-outline-primary mb-2"
             onClick={() => applyFilter("status", "all")}
+            disabled={countsLoading || countsFetching}
           >
             <i className="ti ti-inbox me-2"></i>All Orders
+            <span className="badge bg-light text-secondary ms-2">
+              {data?.statusCounts
+                ? Object.values(data.statusCounts).reduce(
+                    (sum, count) => sum + count,
+                    0
+                  )
+                : 0}
+            </span>
           </button>
-          {priorities.map((priority) => (
+          {priorityCounts.map(([priority, count]) => (
             <button
               key={priority}
               className={`btn btn-outline-${
@@ -111,9 +142,13 @@ const OrderFilter = ({ setFilters }) => {
                   : "secondary"
               } mb-2`}
               onClick={() => applyFilter("priority", priority)}
+              disabled={countsLoading || countsFetching}
             >
               <i className="ti ti-urgent me-2"></i>
               {priority.charAt(0).toUpperCase() + priority.slice(1)} Priority
+              <span className="badge bg-light text-secondary ms-2">
+                {count}
+              </span>
             </button>
           ))}
         </div>
@@ -121,7 +156,7 @@ const OrderFilter = ({ setFilters }) => {
 
       <div className="mb-4">
         <h6 className="text-muted mb-3">Filter by Status</h6>
-        {countsLoading ? (
+        {countsLoading || countsFetching ? (
           <div className="text-center">
             <div className="spinner-border spinner-border-sm" role="status">
               <span className="visually-hidden">Loading...</span>
@@ -129,7 +164,7 @@ const OrderFilter = ({ setFilters }) => {
           </div>
         ) : (
           <ul className="list-group">
-            {statuses.map((status) => (
+            {statusCounts.map(([status, count]) => (
               <li
                 key={status}
                 className="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
@@ -137,9 +172,7 @@ const OrderFilter = ({ setFilters }) => {
                 onClick={() => applyFilter("status", status)}
               >
                 {status.replace(/_/g, " ")}
-                <span className="badge bg-light text-secondary">
-                  {orderCountsData?.[status] || 0}
-                </span>
+                <span className="badge bg-light text-secondary">{count}</span>
               </li>
             ))}
           </ul>

@@ -12,14 +12,12 @@ import {
   useUpdateOrderByIdMutation,
   useDeleteOrderMutation,
 } from "../../api/orderApi";
-import { useGetTeamByIdQuery } from "../../api/teamApi";
+import { useGetAllTeamsQuery } from "../../api/teamApi";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import DatesModal from "./DateModal";
 import OrderItem from "./Orderitem";
 import { useTeamDataMap } from "../../data/useTeamDataMap";
-import { useGetAllTeamsQuery } from "../../api/teamApi";
-// Custom Hook to fetch team name by teamId
 
 const OrderWrapper = () => {
   const [activeTab, setActiveTab] = useState("orders");
@@ -33,6 +31,7 @@ const OrderWrapper = () => {
     dueDate: null,
     followupDates: [],
   });
+
   const [filters, setFilters] = useState({
     status: "",
     priority: "",
@@ -42,53 +41,79 @@ const OrderWrapper = () => {
     limit: 10,
   });
 
+  // Determine if filters are applied
   const isFiltered = useMemo(() => {
     return (
       filters.status !== "" ||
       filters.priority !== "" ||
       filters.important ||
-      filters.trash ||
-      filters.page > 1
+      filters.trash
     );
   }, [filters]);
 
+  // Clean filters for query
   const cleanFilters = useMemo(() => {
     const { status, priority, important, trash, page, limit } = filters;
-    const cleaned = { page, limit };
-    if (status) cleaned.status = status;
-    if (priority) cleaned.priority = priority;
-    if (important) cleaned.important = important;
-    if (trash) cleaned.trash = trash;
-    return cleaned;
+    return {
+      ...(status && { status }),
+      ...(priority && { priority }),
+      ...(important && { important }),
+      ...(trash && { trash }),
+      page,
+      limit,
+    };
   }, [filters]);
 
+  // Fetch orders based on filters
   const {
     data: filteredData,
     error: filteredError,
     isLoading: filteredLoading,
+    isFetching: filteredFetching,
   } = useGetFilteredOrdersQuery(cleanFilters, {
     skip: !isFiltered,
   });
-  useEffect(() => {
-    if (teamsData?.teams) {
-      const map = {};
-      teamsData.teams.forEach((team) => {
-        map[team.id] = team.teamName || "—";
-      });
-      setTeamMap(map);
-    }
-  }, [teamsData]);
+
   const {
     data: allData,
     error: allError,
     isLoading: allLoading,
-  } = useGetAllOrdersQuery({ skip: isFiltered });
+    isFetching: allFetching,
+  } = useGetAllOrdersQuery(undefined, { skip: isFiltered });
 
-  const orders = (isFiltered ? filteredData?.orders : allData?.orders) || [];
-  const totalCount =
-    (isFiltered ? filteredData?.totalCount : allData?.totalCount) || 0;
+  // Select orders and total count based on filter state
+  const orders = isFiltered
+    ? filteredData?.orders || []
+    : allData?.orders || [];
+  const totalCount = isFiltered
+    ? filteredData?.totalCount || 0
+    : allData?.totalCount || 0;
   const isLoading = isFiltered ? filteredLoading : allLoading;
+  const isFetching = isFiltered ? filteredFetching : allFetching;
   const error = isFiltered ? filteredError : allError;
+
+  // Debugging logs
+  console.log("OrderWrapper State:", {
+    filters,
+    isFiltered,
+    cleanFilters,
+    ordersCount: orders.length,
+    totalCount,
+    isLoading,
+    isFetching,
+    error,
+  });
+
+  // Update team map
+  useEffect(() => {
+    if (teamsData?.teams) {
+      const map = teamsData.teams.reduce((acc, team) => {
+        acc[team.id] = team.teamName || "—";
+        return acc;
+      }, {});
+      setTeamMap(map);
+    }
+  }, [teamsData]);
 
   const [createOrder] = useCreateOrderMutation();
   const [updateOrder] = useUpdateOrderByIdMutation();
@@ -161,14 +186,15 @@ const OrderWrapper = () => {
   };
 
   const handleClearFilters = () => {
-    setFilters({
+    const defaultFilters = {
       status: "",
       priority: "",
       important: false,
       trash: false,
       page: 1,
       limit: 10,
-    });
+    };
+    setFilters(defaultFilters);
     toast.success("Filters cleared!");
   };
 
@@ -190,13 +216,11 @@ const OrderWrapper = () => {
     const diffDays = diffTime / (1000 * 60 * 60 * 24);
     return diffDays <= 3;
   };
-  // In OrderWrapper.jsx
+
   const uniqueTeamIds = useMemo(() => {
-    const ids = new Set();
-    orders.forEach((order) => {
-      if (order.assignedTo) ids.add(order.assignedTo);
-    });
-    return Array.from(ids);
+    return Array.from(
+      new Set(orders.map((order) => order.assignedTo).filter(Boolean))
+    );
   }, [orders]);
 
   const teamDataMap = useTeamDataMap(uniqueTeamIds);
@@ -251,7 +275,7 @@ const OrderWrapper = () => {
                 <h4>All Orders</h4>
               </div>
 
-              {isLoading ? (
+              {isLoading || isFetching ? (
                 <div className="text-center">
                   <div className="spinner-border" role="status">
                     <span className="visually-hidden">Loading...</span>
@@ -259,7 +283,8 @@ const OrderWrapper = () => {
                 </div>
               ) : error ? (
                 <div className="alert alert-danger">
-                  Error loading orders: {error.message || "Unknown error"}
+                  Error loading orders:{" "}
+                  {error?.data?.message || error?.message || "Unknown error"}
                 </div>
               ) : orders.length > 0 ? (
                 <>
@@ -270,7 +295,9 @@ const OrderWrapper = () => {
                           order={order}
                           teamName={
                             order.assignedTo
-                              ? teamMap[order.assignedTo] || "—"
+                              ? teamMap[order.assignedTo] ||
+                                teamDataMap[order.assignedTo] ||
+                                "—"
                               : "—"
                           }
                           onEditClick={handleEditClick}
@@ -313,7 +340,6 @@ const OrderWrapper = () => {
           <OnHoldModal
             visible={showHoldModal}
             onClose={handleModalClose}
-            foot
             order={selectedOrder}
           />
         )}

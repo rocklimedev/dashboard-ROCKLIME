@@ -1,5 +1,15 @@
 import React from "react";
-import { FaEdit, FaOpencart, FaPause, FaTrash } from "react-icons/fa";
+import {
+  FaEdit,
+  FaOpencart,
+  FaPause,
+  FaTrash,
+  FaEllipsisH,
+  FaCalendar,
+  FaFileInvoice,
+  FaStar,
+} from "react-icons/fa";
+import { Dropdown, Button, Badge } from "react-bootstrap";
 
 const OrderItem = ({
   order,
@@ -19,78 +29,61 @@ const OrderItem = ({
     <div className="order-card card rounded-3 mb-4 flex-fill">
       <div className="card-body p-4">
         <div className="d-flex align-items-center justify-content-between mb-3">
-          <span
-            className={`badge ${
-              order.status === "Active" ? "badge-primary" : "badge-secondary"
-            }`}
-          >
+          <Badge bg={order.status === "Active" ? "primary" : "secondary"}>
             {order.status || "Unknown"}
-          </span>
-          <div className="dropdown">
-            <button
-              className="dropdown-toggle"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
+          </Badge>
+          <Dropdown>
+            <Dropdown.Toggle
+              variant="link"
+              id={`dropdown-${order.id}`}
+              className="text-dark"
               aria-label="Order actions"
             >
-              <i className="fas fa-ellipsis-h"></i>
-            </button>
-            <div className="dropdown-menu dropdown-menu-end">
-              <a
-                href={`/order/${order.id}`}
-                className="dropdown-item d-flex align-items-center"
-              >
+              <FaEllipsisH />
+            </Dropdown.Toggle>
+            <Dropdown.Menu align="end">
+              <Dropdown.Item href={`/order/${order.id}`}>
                 <FaOpencart className="me-2" /> Open Order
-              </a>
-              <button
-                className="dropdown-item d-flex align-items-center"
-                onClick={() => onEditClick(order)}
-              >
+              </Dropdown.Item>
+              <Dropdown.Item onClick={() => onEditClick(order)}>
                 <FaEdit className="me-2" /> Edit
-              </button>
-              <button
-                className="dropdown-item d-flex align-items-center"
-                onClick={() => onViewInvoice(order)}
-              >
-                <i className="fas fa-file-invoice me-2"></i> View Invoice
-              </button>
-              <button
-                className="dropdown-item d-flex align-items-center"
-                onClick={() => onHoldClick(order)}
-              >
+              </Dropdown.Item>
+              <Dropdown.Item onClick={() => onViewInvoice(order)}>
+                <FaFileInvoice className="me-2" /> View Invoice
+              </Dropdown.Item>
+              <Dropdown.Item onClick={() => onHoldClick(order)}>
                 <FaPause className="me-2" /> Hold Order
-              </button>
-              <button
-                className="dropdown-item d-flex align-items-center text-danger"
+              </Dropdown.Item>
+              <Dropdown.Item
                 onClick={() => onDeleteOrder(order.id)}
+                className="text-danger"
               >
                 <FaTrash className="me-2" /> Delete
-              </button>
-            </div>
-          </div>
+              </Dropdown.Item>
+            </Dropdown.Menu>
+          </Dropdown>
         </div>
         <div className="my-3">
           <h5 className="text-truncate mb-1">
             <a
               href={`/order/${order.id}`}
-              className="text-primary font-weight-medium text-decoration-none d-block text-truncate"
+              className="text-primary fw-medium text-decoration-none d-block text-truncate"
             >
               {order.title || "Untitled Order"} -{" "}
               {order.pipeline || "No Pipeline"}
             </a>
           </h5>
           <p className="mb-3 d-flex align-items-center text-dark date-section">
-            <i className="ti ti-calendar me-1"></i>{" "}
-            <button
-              className={`btn btn-sm ${
-                isDueDateClose(order.dueDate) ? "btn-danger" : "btn-info"
-              }`}
+            <FaCalendar className="me-1" />
+            <Button
+              size="sm"
+              variant={isDueDateClose(order.dueDate) ? "danger" : "info"}
               onClick={() =>
                 onOpenDatesModal(order.dueDate, order.followupDates)
               }
             >
               {totalDates} Date{totalDates !== 1 ? "s" : ""}
-            </button>
+            </Button>
           </p>
           <p className="description text-wrap">
             {order.description || "No description available"}
@@ -98,7 +91,7 @@ const OrderItem = ({
         </div>
         <div className="d-flex align-items-center justify-content-between border-top pt-3">
           <div className="d-flex align-items-center">
-            <a href="javascript:void(0);" className="avatar avatar-md me-2">
+            <a href="#" className="avatar avatar-md me-2">
               <img
                 src="assets/img/profiles/avatar-05.jpg"
                 alt="Profile"
@@ -106,7 +99,10 @@ const OrderItem = ({
               />
             </a>
             <span className="team-info d-flex align-items-center">
-              <i className="fas fa-square square-rotate fs-10 me-1"></i>{" "}
+              <i
+                className="fas fa-square me-1"
+                style={{ transform: "rotate(45deg)", fontSize: "10px" }}
+              ></i>
               {isTeamLoading ? (
                 <span className="text-muted">Loading...</span>
               ) : (
@@ -115,18 +111,11 @@ const OrderItem = ({
             </span>
           </div>
           <div className="d-flex align-items-center footer-icons">
-            <a href="javascript:void(0);" className="me-2">
-              <span>
-                <i className="fas fa-star text-warning"></i>
-              </span>
+            <a href="#" className="me-2">
+              <FaStar className="text-warning" />
             </a>
-            <a
-              href="javascript:void(0);"
-              onClick={() => onDeleteOrder(order.id)}
-            >
-              <span>
-                <i className="ti ti-trash text-danger"></i>
-              </span>
+            <a href="#" onClick={() => onDeleteOrder(order.id)}>
+              <FaTrash className="text-danger" />
             </a>
           </div>
         </div>

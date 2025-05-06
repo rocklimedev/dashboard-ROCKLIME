@@ -331,32 +331,11 @@ const masterRoutes = [
   },
 
   {
-    path: "/settings/general",
+    path: "/settings",
     name: "Settings",
     icon: <MdOutlineSettings />,
-    isSidebarActive: false,
-    submenu: [
-      {
-        path: "/settings/general",
-        name: "General Settings",
-        icon: <MdOutlineSettings />,
-        isSidebarActive: false,
-        element: <GeneralSettings />,
-      },
-      {
-        path: "/settings/profile",
-        name: "Profile Settings",
-        icon: <AiFillProfile />,
-        isSidebarActive: false,
-      },
-      {
-        path: "/settings/security",
-        name: "Secure Settings",
-        icon: <AiFillSecurityScan />,
-        element: <SecuritySettings />,
-        isSidebarActive: false,
-      },
-    ],
+    isSidebarActive: true,
+    element: <GeneralSettings />,
   },
   {
     path: "#",

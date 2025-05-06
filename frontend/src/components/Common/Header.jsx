@@ -1,9 +1,8 @@
 import React, { useState } from "react";
-import { useLocation } from "react-router-dom";
-import { Link, useNavigate } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 import logo from "../../assets/img/logo.png";
-import { useGetProfileQuery, useGetUserByIdQuery } from "../../api/userApi";
-import { Dropdown } from "react-bootstrap"; // Import Dropdown from react-bootstrap
+import { useGetProfileQuery } from "../../api/userApi";
+import { Dropdown, Button, Nav } from "react-bootstrap";
 import {
   FaSearch,
   FaPlusCircle,
@@ -20,27 +19,17 @@ import {
 import {
   MdCategory,
   MdOutlineShoppingBag,
-  MdOutlinePointOfSale,
-  MdSearch,
   MdPointOfSale,
-  MdKey,
   MdPermIdentity,
   MdDashboard,
 } from "react-icons/md";
-import { useLogoutMutation } from "../../api/authApi"; // Import useLogoutMutation
+import { BiCalculator, BiFullscreen, BiLogOut } from "react-icons/bi";
 import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css"; // Import Toastify CSS
-import { FcSettings } from "react-icons/fc";
-import {
-  BiCalculator,
-  BiCommand,
-  BiFullscreen,
-  BiLogOut,
-} from "react-icons/bi";
+import "react-toastify/dist/ReactToastify.css";
 import img from "../../assets/img/avatar/avatar-1.jpg";
 import SearchDropdown from "../Search/SearchDropdown";
-import { FaPerson } from "react-icons/fa6";
 import CalculatorModal from "./Calculator";
+import { useLogoutMutation } from "../../api/authApi";
 const Header = ({ toggleSidebar }) => {
   const location = useLocation();
   const currentPath = location.pathname;
@@ -53,12 +42,12 @@ const Header = ({ toggleSidebar }) => {
 
   const handleLogout = async () => {
     try {
-      await logout().unwrap(); // Call the mutation
-      localStorage.removeItem("token"); // Clear token if stored
-      toast.success("Logged out successfully!"); // Show success toast
-      navigate("/login"); // Redirect to login page
+      await logout().unwrap();
+      localStorage.removeItem("token");
+      toast.success("Logged out successfully!");
+      navigate("/login");
     } catch (error) {
-      toast.error("Logout failed. Please try again."); // Show error toast
+      toast.error("Logout failed. Please try again.");
       console.error("Logout failed", error);
     }
   };
@@ -67,6 +56,7 @@ const Header = ({ toggleSidebar }) => {
     setSidebarOpen(!isSidebarOpen);
     toggleSidebar(!isSidebarOpen);
   };
+
   const handleFullscreenToggle = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen();
@@ -76,262 +66,237 @@ const Header = ({ toggleSidebar }) => {
       setIsFullscreen(false);
     }
   };
+
   return (
     <div className="header pos-header">
-      <div className="main-header">
+      <div className="main-header d-flex align-items-center">
         {/* Logo Section */}
-        <div className="header-left active">
-          <a href="/" className="logo logo-normal">
-            <img src={logo} alt="Logo" />
-          </a>
-          <a href="/" className="logo logo-white">
-            <img src={logo} alt="Logo" />
-          </a>
-          <a href="/" className="logo-small">
-            <img src={logo} alt="Logo" />
-          </a>
+        <div className="header-left">
+          <Link to="/" className="logo">
+            <img src={logo} alt="Logo" className="img-fluid" />
+          </Link>
         </div>
 
         {/* Mobile Menu Button */}
-        <button
-          id="mobile_btn"
-          className="mobile_btn"
+        <Button
+          variant="link"
+          className="mobile_btn p-0"
           onClick={handleSidebarToggle}
+          aria-label="Toggle sidebar"
         >
           <span className="bar-icon">
             <span></span>
             <span></span>
             <span></span>
           </span>
-        </button>
+        </Button>
 
         {/* User Menu */}
-        <ul className="nav user-menu">
+        <Nav className="user-menu ms-auto d-flex align-items-center">
           {/* Search Bar */}
-          <li className="nav-item nav-searchinputs">
-            <div className="top-nav-search">
-              <button className="responsive-search">
+          <Nav.Item className="nav-searchinputs me-3">
+            <div className="top-nav-search d-flex align-items-center">
+              <Button variant="link" className="responsive-search p-0">
                 <FaSearch />
-              </button>
+              </Button>
               <SearchDropdown />
             </div>
-          </li>
+          </Nav.Item>
 
-          {/* Add New Button */}
-          <li className="nav-item dropdown link-nav">
-            <button
-              className="btn btn-primary btn-md d-inline-flex align-items-center"
-              data-bs-toggle="dropdown"
-            >
-              <FaCartPlus /> Add New
-            </button>
-            <div className="dropdown-menu dropdown-xl dropdown-menu-center">
-              <div className="row g-2">
-                {[
-                  {
-                    link: "/inventory/categories-keywords",
-                    icon: <MdCategory />,
-                    text: "Category",
-                  },
-                  {
-                    link: "/inventory/categories-keywords",
-                    icon: <MdKey />,
-                    text: "Keyword",
-                  },
-                  {
-                    link: "/inventory/product/add",
-                    icon: <FaPlusCircle />,
-                    text: "Product",
-                  },
-                  {
-                    link: "/pos",
-                    icon: <MdOutlineShoppingBag />,
-                    text: "Order",
-                  },
-                  {
-                    link: "/quotations/add",
-                    icon: <FaShoppingCart />,
-                    text: "Quotation",
-                  },
-                  {
-                    link: "/customers/list",
-                    icon: <FaClipboardList />,
-                    text: "Customer",
-                  },
-
-                  {
-                    link: "/brands/list",
-                    icon: <FaClipboardList />,
-                    text: "Brand",
-                  },
-                  {
-                    link: "/super-admin/users",
-                    icon: <FaUser />,
-                    text: "User",
-                  },
-
-                  {
-                    link: "/vendors/list",
-                    icon: <FaPerson />,
-                    text: "Vendor",
-                  },
-                  {
-                    link: "/signature",
-                    icon: <FaSignature />,
-                    text: "Signature",
-                  },
-                  {
-                    link: "/roles-permissions/list",
-                    icon: <MdPermIdentity />,
-                    text: "Roles",
-                  },
-                ].map((item, index) => (
-                  <div key={index} className="col-md-2">
-                    <Link to={item.link} className="link-item">
-                      <span className="link-icon">{item.icon}</span>
-                      <p>{item.text}</p>
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </li>
+          {/* Add New Dropdown */}
+          <Nav.Item className="dropdown link-nav me-3">
+            <Dropdown>
+              <Dropdown.Toggle
+                variant="primary"
+                className="d-flex align-items-center"
+              >
+                <FaCartPlus className="me-1" /> Add New
+              </Dropdown.Toggle>
+              <Dropdown.Menu className="p-3" style={{ minWidth: "600px" }}>
+                <div className="row g-2">
+                  {[
+                    {
+                      link: "/inventory/categories-keywords",
+                      icon: <MdCategory />,
+                      text: "Category",
+                    },
+                    {
+                      link: "/inventory/categories-keywords",
+                      icon: <FaTruck />,
+                      text: "Keyword",
+                    },
+                    {
+                      link: "/inventory/product/add",
+                      icon: <FaPlusCircle />,
+                      text: "Product",
+                    },
+                    {
+                      link: "/pos",
+                      icon: <MdOutlineShoppingBag />,
+                      text: "Order",
+                    },
+                    {
+                      link: "/quotations/add",
+                      icon: <FaShoppingCart />,
+                      text: "Quotation",
+                    },
+                    {
+                      link: "/customers/list",
+                      icon: <FaUsers />,
+                      text: "Customer",
+                    },
+                    {
+                      link: "/brands/list",
+                      icon: <FaClipboardList />,
+                      text: "Brand",
+                    },
+                    {
+                      link: "/super-admin/users",
+                      icon: <FaUser />,
+                      text: "User",
+                    },
+                    {
+                      link: "/vendors/list",
+                      icon: <FaStore />,
+                      text: "Vendor",
+                    },
+                    {
+                      link: "/signature",
+                      icon: <FaSignature />,
+                      text: "Signature",
+                    },
+                    {
+                      link: "/roles-permissions/list",
+                      icon: <MdPermIdentity />,
+                      text: "Roles",
+                    },
+                  ].map((item, index) => (
+                    <div key={index} className="col-md-3 col-6">
+                      <Link
+                        to={item.link}
+                        className="link-item d-block text-center"
+                      >
+                        <span className="link-icon d-block mb-1">
+                          {item.icon}
+                        </span>
+                        <p className="mb-0">{item.text}</p>
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              </Dropdown.Menu>
+            </Dropdown>
+          </Nav.Item>
 
           {/* POS Button */}
           {currentPath !== "/pos" && (
-            <li className="nav-item pos-nav">
-              <Link
+            <Nav.Item className="pos-nav me-3">
+              <Button
+                as={Link}
                 to="/pos"
-                className="btn btn-dark btn-md d-inline-flex align-items-center"
+                variant="dark"
+                className="d-flex align-items-center"
               >
-                <MdPointOfSale /> POS
-              </Link>
-            </li>
+                <MdPointOfSale className="me-1" /> POS
+              </Button>
+            </Nav.Item>
           )}
+
+          {/* Calculator Button */}
           {currentPath === "/pos" && (
-            <li className="nav-item nav-item-box">
-              <BiCalculator
+            <Nav.Item className="nav-item-box me-3">
+              <Button
+                variant="link"
                 onClick={() => setShowModal(true)}
-                style={{ cursor: "pointer" }}
+                className="p-0"
                 title="Open Calculator"
-              />
-            </li>
-          )}
-
-          {currentPath !== "/" && (
-            <li className="nav-item pos-nav">
-              <Link
-                to="/"
-                className="btn btn-dark btn-md d-inline-flex align-items-center"
               >
-                <MdDashboard />
-                Home
-              </Link>
-            </li>
+                <BiCalculator />
+              </Button>
+            </Nav.Item>
           )}
 
-          <li
-            className="nav-item nav-item-box"
-            onClick={handleFullscreenToggle}
-          >
-            <BiFullscreen
-              style={{ cursor: "pointer" }}
+          {/* Home Button */}
+          {currentPath !== "/" && (
+            <Nav.Item className="pos-nav me-3">
+              <Button
+                as={Link}
+                to="/"
+                variant="dark"
+                className="d-flex align-items-center"
+              >
+                <MdDashboard className="me-1" /> Home
+              </Button>
+            </Nav.Item>
+          )}
+
+          {/* Fullscreen Toggle */}
+          <Nav.Item className="nav-item-box me-3">
+            <Button
+              variant="link"
+              onClick={handleFullscreenToggle}
+              className="p-0"
               title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-            />
-          </li>
-          {/* User Profile */}
-          <li className="nav-item dropdown has-arrow main-drop profile-nav">
+            >
+              <BiFullscreen />
+            </Button>
+          </Nav.Item>
+
+          {/* User Profile Dropdown */}
+          <Nav.Item className="dropdown profile-nav">
             {isLoading ? (
-              <span className="user-letter"> Loading...</span>
+              <span className="user-letter">Loading...</span>
             ) : error ? (
               <span className="user-letter">Error loading profile</span>
             ) : user ? (
               <Dropdown align="end">
                 <Dropdown.Toggle
-                  id="dropdown-profile"
                   variant="link"
-                  className="nav-link"
+                  id="dropdown-profile"
+                  className="p-0"
                 >
                   <span className="user-info">
                     <span className="user-letter">
                       <img
                         src={user?.user?.profileImage || img}
                         alt="User"
-                        className="img-fluid"
+                        className="img-fluid rounded-circle"
+                        style={{ width: "40px", height: "40px" }}
                       />
                     </span>
                   </span>
                 </Dropdown.Toggle>
-
                 <Dropdown.Menu className="menu-drop-user">
-                  <div className="profileset d-flex align-items-center">
+                  <div className="profileset d-flex align-items-center p-2">
                     <span className="user-img me-2">
-                      <img src={user?.user?.profileImage || img} alt="Img" />
+                      <img
+                        src={user?.user?.profileImage || img}
+                        alt="User"
+                        className="img-fluid rounded-circle"
+                        style={{ width: "50px", height: "50px" }}
+                      />
                     </span>
                     <div>
-                      <h6 className="fw-medium">{user?.user?.name}</h6>
-                      <p>{user?.user?.roles}</p>
+                      <h6 className="fw-medium mb-0">{user?.user?.name}</h6>
+                      <p className="mb-0">{user?.user?.roles}</p>
                     </div>
                   </div>
-                  <Link
-                    to={`/u/${user?.user?.userId}`}
-                    className="dropdown-item"
-                  >
-                    <FaUserCircle /> Profile
-                  </Link>
-
-                  <button
-                    className="dropdown-item"
-                    onClick={handleLogout}
-                    disabled={isLoggingOut}
-                  >
-                    <BiLogOut /> {isLoggingOut ? "Logging out..." : "Logout"}
-                  </button>
+                  <Dropdown.Item as={Link} to={`/u/${user?.user?.userId}`}>
+                    <FaUserCircle className="me-2" /> Profile
+                  </Dropdown.Item>
+                  <Dropdown.Item onClick={handleLogout} disabled={isLoggingOut}>
+                    <BiLogOut className="me-2" />
+                    {isLoggingOut ? "Logging out..." : "Logout"}
+                  </Dropdown.Item>
                 </Dropdown.Menu>
               </Dropdown>
             ) : null}
-          </li>
-        </ul>
-        <div class="dropdown mobile-user-menu">
-          {isLoading ? (
-            <span class="user-letter"> Loading...</span>
-          ) : error ? (
-            <span class="user-letter">Error loading profile</span>
-          ) : user ? (
-            <button
-              className="dropdown-toggle nav-link"
-              data-bs-toggle="dropdown"
-            >
-              <span className="user-info">
-                <span className="user-letter">
-                  <img
-                    src={user?.user?.profileImage || img}
-                    alt="User"
-                    className="img-fluid"
-                  />
-                </span>
-              </span>
-            </button>
-          ) : null}
-          <div class="dropdown-menu dropdown-menu-right">
-            <Link to={`/u/${user?.user?.userId}`} className="dropdown-item">
-              <FaUserCircle /> Profile
-            </Link>
-
-            <button
-              className="dropdown-item"
-              onClick={handleLogout}
-              disabled={isLoggingOut}
-            >
-              <BiLogOut /> {isLoggingOut ? "Logging out..." : "Logout"}
-            </button>
-          </div>
-        </div>
+          </Nav.Item>
+        </Nav>
       </div>
-      {showModal && <CalculatorModal />}
-      {currentPath === "/pos" && showModal && (
-        <CalculatorModal onClose={() => setShowModal(false)} />
-      )}
+
+      {/* Calculator Modal */}
+      {showModal && <CalculatorModal onClose={() => setShowModal(false)} />}
     </div>
   );
 };

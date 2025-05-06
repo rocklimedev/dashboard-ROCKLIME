@@ -46,14 +46,14 @@ const OrderTotal = ({
         </div>
       </div>
       <div class="row gx-2">
-        <div class="col-sm-4">
+        <div class="col-sm-3">
           <a
             href="javascript:void(0);"
-            class="btn btn-teal d-flex align-items-center justify-content-center w-100 mb-2"
+            class="btn btn-danger d-flex align-items-center justify-content-center w-100 mb-2"
             data-bs-toggle="modal"
-            data-bs-target="#discount"
+            data-bs-target="#recents"
           >
-            <i class="ti ti-percentage me-2"></i>Discount
+            <i class="ti ti-refresh-dot me-2"></i>Transaction
           </a>
           <a
             href="javascript:void(0);"
@@ -75,11 +75,11 @@ const OrderTotal = ({
         <div class="col-sm-4">
           <a
             href="javascript:void(0);"
-            class="btn btn-purple d-flex align-items-center justify-content-center w-100 mb-2"
+            class="btn btn-cyan d-flex align-items-center justify-content-center w-100 mb-2"
             data-bs-toggle="modal"
-            data-bs-target="#order-tax"
+            data-bs-target="#payment-completed"
           >
-            <i class="ti ti-receipt-tax me-2"></i>Tax
+            <i class="ti ti-cash-banknote me-2"></i>Payment
           </a>
           <a
             href="javascript:void(0);"
@@ -94,32 +94,6 @@ const OrderTotal = ({
             data-bs-target="#reset"
           >
             <i class="ti ti-reload me-2"></i>Reset
-          </a>
-        </div>
-        <div class="col-sm-4">
-          <a
-            href="javascript:void(0);"
-            class="btn btn-pink d-flex align-items-center justify-content-center w-100 mb-2"
-            data-bs-toggle="modal"
-            data-bs-target="#shipping-cost"
-          >
-            <i class="ti ti-package-import me-2"></i>Shipping
-          </a>
-          <a
-            href="javascript:void(0);"
-            class="btn btn-cyan d-flex align-items-center justify-content-center w-100 mb-2"
-            data-bs-toggle="modal"
-            data-bs-target="#payment-completed"
-          >
-            <i class="ti ti-cash-banknote me-2"></i>Payment
-          </a>
-          <a
-            href="javascript:void(0);"
-            class="btn btn-danger d-flex align-items-center justify-content-center w-100 mb-2"
-            data-bs-toggle="modal"
-            data-bs-target="#recents"
-          >
-            <i class="ti ti-refresh-dot me-2"></i>Transaction
           </a>
         </div>
       </div>

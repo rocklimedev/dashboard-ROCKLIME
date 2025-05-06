@@ -86,6 +86,7 @@ const Profile = () => {
   if (!profile?.user) return <p>No user profile data available.</p>;
 
   const userId = profile.user.userId;
+  console.log(userId);
   const roleId = profile.user.roleId;
   const roleName =
     rolesData?.find((role) => role.roleId === roleId)?.roleName || "N/A";
@@ -106,7 +107,7 @@ const Profile = () => {
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-
+  console.log(formData);
   const handleSaveClick = async () => {
     if (!userId) {
       toast.error("User ID not found. Cannot update profile.");
@@ -119,7 +120,7 @@ const Profile = () => {
     }
 
     const updatedData = {
-      userId,
+      userId: userId,
       name: formData.name,
       email: formData.email,
       mobileNumber: formData.mobileNumber,

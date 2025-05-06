@@ -189,7 +189,7 @@ const OrderCart = ({ onConvertToOrder }) => {
         })),
         signatureName: invoiceData.signatureName,
       };
-
+      console.log(orderData);
       await createInvoice(invoiceDataToSubmit).unwrap();
       onConvertToOrder(orderData);
       handleClearCart();
@@ -270,13 +270,13 @@ const OrderCart = ({ onConvertToOrder }) => {
           <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
             <h5 class="d-flex align-items-center mb-0">Order Details</h5>
             <div class="badge bg-light text-gray-9 fs-12 fw-semibold py-2 border rounded">
-              Items : <span class="text-teal">3</span>
+              Items : <span class="text-teal">{totalItems}</span>
             </div>
           </div>
           <div class="product-wrap">
             {cartItems.length === 0 ? (
               <div class="empty-cart">
-                <div class="mb-1">
+                <div class="mb-1" onClick={handleClearCart}>
                   <FcEmptyTrash />
                 </div>
                 <p class="fw-bold">No Products Selected</p>
@@ -378,6 +378,24 @@ const OrderCart = ({ onConvertToOrder }) => {
           roundOff={0}
           subTotal={totalAmount}
         />
+        <InvoiceDetails
+          invoiceData={invoiceData}
+          onChange={handleInvoiceChange}
+        />
+        <PaymentMethod />
+
+        <div className="btn-row d-flex align-items-center justify-content-between gap-3">
+          <button className="btn btn-white flex-fill">
+            <i className="ti ti-printer me-2"></i>Print Order
+          </button>
+          <button
+            className="btn btn-secondary flex-fill"
+            onClick={handlePlaceOrder}
+            disabled={cartItems.length === 0 || error}
+          >
+            <i className="ti ti-shopping-cart me-2"></i>Generate Invoice
+          </button>
+        </div>
       </aside>
     </div>
   );
