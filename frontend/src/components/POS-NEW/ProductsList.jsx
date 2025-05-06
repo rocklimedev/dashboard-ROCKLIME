@@ -34,7 +34,7 @@ const ProductsList = ({ products = [] }) => {
     ? categoriesData.categories
     : [];
   const baseProducts = Array.isArray(productsData) ? productsData : [];
-  console.log(baseProducts);
+
   const displayedProducts = baseProducts.filter((product) =>
     product.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );

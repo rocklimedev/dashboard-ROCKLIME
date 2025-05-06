@@ -17,7 +17,7 @@ import HistoryModal from "../Common/HistoryModal";
 import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify"; // Add toast for notifications
 import "react-toastify/dist/ReactToastify.css";
-
+import { Link } from "react-router-dom";
 const ProductList = () => {
   const navigate = useNavigate();
   const { data, error, isLoading } = useGetAllProductsQuery();
@@ -262,7 +262,12 @@ const ProductList = () => {
                             />{" "}
                           </span>
                         </td>
-                        <td> {product.name || "N/A"}</td>
+                        <td>
+                          {" "}
+                          <Link to={`/product/${product.productId}`}>
+                            {product.name || "N/A"}
+                          </Link>
+                        </td>
                         <td>{product.product_code || "N/A"}</td>
                         <td>{product.company_code || "N/A"}</td>
                         <td>{getCategoryName(product.categoryId)}</td>

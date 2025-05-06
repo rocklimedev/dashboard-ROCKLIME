@@ -181,9 +181,8 @@ const POSWrapper = () => {
                 {renderTabContent()}
               </div>
             </div>
+            <OrderList onConvertToOrder={handleConvertToCart} />
           </div>
-
-          <OrderList onConvertToOrder={handleConvertToCart} />
         </div>
         <POSFooter />
       </div>
