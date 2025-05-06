@@ -351,16 +351,6 @@ const OrderCart = ({ onConvertToOrder }) => {
                           <td className="fs-13 fw-semibold text-gray-9 text-end">
                             ₹{item.price * item.quantity}
                           </td>
-                          <td class="text-end">
-                            <a
-                              class="btn-icon delete-icon"
-                              href="javascript:void(0);"
-                              data-bs-toggle="modal"
-                              data-bs-target="#delete"
-                            >
-                              <BiTrash />
-                            </a>
-                          </td>
                         </tr>
                       ))}
                     </tbody>

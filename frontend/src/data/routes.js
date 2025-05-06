@@ -11,7 +11,11 @@ import CustomerDetails from "../components/Customers/CustomerDetails";
 import SignatureWrapper from "../components/Signature/SignatureWrapper";
 import { RiAdminLine } from "react-icons/ri";
 import { LuUsersRound } from "react-icons/lu";
-import { PiQuestionMarkThin, PiUserListBold } from "react-icons/pi";
+import {
+  PiAddressBook,
+  PiQuestionMarkThin,
+  PiUserListBold,
+} from "react-icons/pi";
 import { LiaFileInvoiceSolid, LiaFileSignatureSolid } from "react-icons/lia";
 import OrderWrapper from "../components/Orders/OrderWrapper";
 import {
@@ -69,6 +73,7 @@ import CheckProductCodeStatus from "../components/Product/CheckProductCodeStatus
 import NoAccess from "../components/Common/NoAccess";
 import RecentQuotation from "../components/Quotation/RecentQuotations";
 import POSWrapperNew from "../components/POS-NEW/POSWrapper";
+import AddressList from "../components/Address/Address";
 const masterRoutes = [
   {
     path: "/",
@@ -126,6 +131,13 @@ const masterRoutes = [
         icon: <PiUserListBold />,
         isSidebarActive: false,
         element: <CustomerDetails />,
+      },
+      {
+        path: "/address/list",
+        name: "Address",
+        icon: <PiAddressBook />,
+        isSidebarActive: true,
+        element: <AddressList />,
       },
       {
         path: "/vendors/list",

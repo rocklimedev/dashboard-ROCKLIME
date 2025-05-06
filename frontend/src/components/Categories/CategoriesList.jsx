@@ -242,7 +242,7 @@ const CategoriesList = () => {
           />
         )}
 
-        {showKeywordModal && <Keyword onClose={handleCloseKeywordModal} />}
+        <Keyword onClose={handleCloseKeywordModal} />
       </div>
     </div>
   );
