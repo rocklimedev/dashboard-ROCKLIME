@@ -299,13 +299,7 @@ const OrderCart = ({ onConvertToOrder }) => {
                           <td>
                             <div class="d-flex align-items-center mb-1">
                               <h6 class="fs-16 fw-medium">
-                                <a
-                                  href="#"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#products"
-                                >
-                                  {item.name}
-                                </a>
+                                <a>{item.name}</a>
                               </h6>
                               <button
                                 onClick={() => handleRemoveItem(item.productId)}
