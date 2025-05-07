@@ -1,0 +1,270 @@
+/* sidebar2.css */
+
+/* Base Sidebar Styles */
+.sidebar,
+.two-col-sidebar {
+  position: fixed;
+  top: 0;
+  left: -300px;
+  width: 300px;
+  height: 100vh;
+  background: #fff;
+  transition: left 0.3s ease-in-out;
+  z-index: 1001; /* Above header (z-index: 1000) */
+  visibility: hidden;
+}
+
+.sidebar.active,
+.two-col-sidebar.active {
+  left: 0;
+  visibility: visible;
+}
+
+/* Desktop view: Show sidebar by default */
+@media (min-width: 768px) {
+  .sidebar,
+  .two-col-sidebar {
+    left: 0;
+    visibility: visible;
+  }
+}
+
+/* Horizontal Sidebar */
+.sidebar-horizontal {
+  position: relative;
+  width: 100%;
+  background: #fff;
+  z-index: 1000;
+  display: none;
+}
+
+.sidebar-horizontal.active {
+  display: block;
+}
+
+@media (max-width: 767px) {
+  .sidebar-horizontal {
+    display: none !important;
+  }
+}
+
+/* Sidebar Logo */
+.sidebar-logo {
+  padding: 15px;
+  position: relative;
+}
+
+.sidebar-close-btn {
+  background: none;
+  border: none;
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  cursor: pointer;
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .sidebar-close-btn {
+    display: block;
+  }
+}
+
+/* Sidebar Menu */
+.sidebar-menu ul,
+.tab-content ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sidebar-menu ul li,
+.tab-content ul li {
+  padding: 10px 15px;
+}
+
+.sidebar-menu ul li a,
+.tab-content ul li a {
+  color: #000;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+}
+
+.sidebar-menu ul li a i,
+.tab-content ul li a i {
+  margin-right: 10px;
+}
+
+.submenu-open {
+  display: block;
+}
+
+.submenu-closed {
+  display: none;
+}
+
+.menu-arrow {
+  margin-left: auto;
+}
+
+.menu-arrow.inside-submenu {
+  margin-left: auto;
+}
+
+/* User Profile */
+.modern-profile,
+.sidebar-scroll .text-center {
+  padding: 15px;
+}
+
+.user-profile,
+.sidebar-scroll .text-center {
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.avatar-lg {
+  display: inline-block;
+}
+
+.avatar-lg img {
+  width: 60px;
+  height: 60px;
+}
+
+.fs-14 {
+  font-size: 14px;
+}
+
+.fs-12 {
+  font-size: 12px;
+}
+
+.fw-bold {
+  font-weight: bold;
+}
+
+/* Slimscroll */
+.sidebar-inner,
+.sidebar-scroll,
+.sidebar-left {
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+}
+
+/* Two-Column Sidebar */
+.sidebar-twocol {
+  display: flex;
+  height: 100%;
+}
+
+.twocol-mini {
+  width: 60px;
+  background: #f8f9fa;
+  border-right: 1px solid #dee2e6;
+}
+
+.sidebar-left {
+  padding: 10px 0;
+}
+
+.sidebar-left .nav-pills .nav-link {
+  padding: 10px;
+  margin: 5px 0;
+  color: #000;
+  border-radius: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.sidebar-left .nav-pills .nav-link.active {
+  background: #007bff;
+  color: #fff;
+}
+
+.sidebar-right {
+  flex: 1;
+  padding: 0;
+}
+
+.tab-content ul li.menu-title {
+  padding: 10px 15px;
+  font-size: 12px;
+  color: #6c757d;
+  text-transform: uppercase;
+}
+
+.tab-content ul li a {
+  padding: 8px 15px;
+  font-size: 14px;
+}
+
+.tab-content ul li.submenu ul {
+  padding-left: 20px;
+}
+
+.tab-content ul li.submenu ul li a {
+  font-size: 13px;
+}
+
+.tab-content ul li.submenu ul li.submenu ul {
+  padding-left: 20px;
+}
+
+.tab-content ul li.submenu ul li.submenu ul li a {
+  font-size: 12px;
+}
+
+/* Active Submenu Styles */
+.subdrop {
+  font-weight: bold;
+  color: #007bff !important;
+}
+
+/* Mobile Menu Button */
+.mobile_btn {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .mobile_btn {
+    display: block;
+    margin-right: 15px;
+  }
+}
+
+.bar-icon {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 24px;
+  height: 18px;
+}
+
+.bar-icon span {
+  background: #000;
+  height: 3px;
+  width: 100%;
+  transition: all 0.3s;
+}
+
+.mobile_btn.active .bar-icon span:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+.mobile_btn.active .bar-icon span:nth-child(2) {
+  opacity: 0;
+}
+
+.mobile_btn.active .bar-icon span:nth-child(3) {
+  transform: rotate(-45deg) translate(7px, -7px);
+}
+
+/* Ensure sidebar is above content */
+@media (max-width: 767px) {
+  .sidebar.active,
+  .two-col-sidebar.active {
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+  }
+}

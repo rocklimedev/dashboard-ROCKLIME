@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronsLeft } from "react-feather"; // Feather icon component
+import { ChevronsLeft, X } from "react-feather"; // Add X icon for closing
 import masterRoutes from "../../data/routes";
 import logo from "../../assets/img/logo.png";
 import "./sidebar.css";
-const Sidebar = ({ isSidebarOpen }) => {
+
+const Sidebar = ({ isSidebarOpen, toggleSidebar }) => {
   const [openMenu, setOpenMenu] = useState(null);
 
   const toggleDropdown = (index) => {
@@ -14,18 +15,22 @@ const Sidebar = ({ isSidebarOpen }) => {
   return (
     <div className={`sidebar ${isSidebarOpen ? "active" : ""}`} id="sidebar">
       <div className="sidebar-logo">
-        <a href="/" className="logo logo-normal">
+        <Link to="/" className="logo logo-normal">
           <img src={logo} alt="Logo" />
-        </a>
-        <a href="/" className="logo logo-white">
+        </Link>
+        <Link to="/" className="logo logo-white">
           <img src={logo} alt="Logo" />
-        </a>
-        <a href="/" className="logo-small">
+        </Link>
+        <Link to="/" className="logo-small">
           <img src={logo} alt="Logo" />
-        </a>
-        <a id="toggle_btn" href="#">
-          <ChevronsLeft size={16} color="#000" />
-        </a>
+        </Link>
+        <button
+          className="sidebar-close-btn"
+          onClick={() => toggleSidebar(false)}
+          aria-label="Close sidebar"
+        >
+          <X size={16} color="#000" />
+        </button>
       </div>
 
       <div
@@ -49,7 +54,7 @@ const Sidebar = ({ isSidebarOpen }) => {
                         e.preventDefault();
                         toggleDropdown(index);
                       }}
-                      style={{ color: "#000" }} // Force icon color here if needed
+                      style={{ color: "#000" }}
                     >
                       <span style={{ color: "#000" }}>{section.icon}</span>
                       <span>{section.name}</span>
@@ -82,9 +87,8 @@ const Sidebar = ({ isSidebarOpen }) => {
                   )}
                 </li>
               ))}
-            <li class="submenu-open">
-              <h6 class="submenu-hdr">Extras</h6>
-
+            <li className="submenu-open">
+              <h6 className="submenu-hdr">Extras</h6>
               <a href="https://static.cmtradingco.com/" target="_blank">
                 <i data-feather="box"></i>
                 <span>Product Images</span>

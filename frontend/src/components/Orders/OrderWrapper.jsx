@@ -3,7 +3,6 @@ import PageHeader from "../Common/PageHeader";
 import OrderPagination from "./OrderPagination";
 import OrderFilter from "./OrderFilter";
 import AddNewOrder from "./AddNewOrder";
-import OnHoldModal from "./OnHoldOrder";
 import ShowInvoices from "./ShowInvoices";
 import {
   useGetFilteredOrdersQuery,
@@ -18,13 +17,16 @@ import "react-toastify/dist/ReactToastify.css";
 import DatesModal from "./DateModal";
 import OrderItem from "./Orderitem";
 import { useTeamDataMap } from "../../data/useTeamDataMap";
-
+import OnHoldModal from "./OnHoldOrder";
+import DeleteModal from "../Common/DeleteModal";
 const OrderWrapper = () => {
   const [activeTab, setActiveTab] = useState("orders");
   const [showModal, setShowModal] = useState(false);
   const [teamMap, setTeamMap] = useState({});
   const [showHoldModal, setShowHoldModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false); // For DeleteModal
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [orderToDelete, setOrderToDelete] = useState(null); // For DeleteModal
   const [showDatesModal, setShowDatesModal] = useState(false);
   const { data: teamsData } = useGetAllTeamsQuery();
   const [selectedDates, setSelectedDates] = useState({
@@ -128,10 +130,17 @@ const OrderWrapper = () => {
     setShowHoldModal(true);
   };
 
+  const handleDeleteClick = (orderId) => {
+    setOrderToDelete(orderId);
+    setShowDeleteModal(true);
+  };
+
   const handleModalClose = () => {
     setSelectedOrder(null);
     setShowModal(false);
     setShowHoldModal(false);
+    setShowDeleteModal(false);
+    setOrderToDelete(null);
   };
 
   const handleViewInvoice = (order) => {
@@ -144,16 +153,15 @@ const OrderWrapper = () => {
   };
 
   const handleDeleteOrder = async (orderId) => {
-    if (window.confirm("Are you sure you want to delete this order?")) {
-      try {
-        await deleteOrder(orderId).unwrap();
-        toast.success("Order deleted successfully!");
-      } catch (err) {
-        console.error("Failed to delete order:", err);
-        toast.error(
-          `Failed to delete order: ${err.data?.message || "Unknown error"}`
-        );
-      }
+    try {
+      await deleteOrder(orderId).unwrap();
+      toast.success("Order deleted successfully!");
+      handleModalClose();
+    } catch (err) {
+      console.error("Failed to delete order:", err);
+      toast.error(
+        `Failed to delete order: ${err.data?.message || "Unknown error"}`
+      );
     }
   };
 
@@ -173,6 +181,11 @@ const OrderWrapper = () => {
         `Failed to save order: ${err.data?.message || "Unknown error"}`
       );
     }
+  };
+
+  const handleConfirmHold = (reference) => {
+    // Called after OnHoldModal updates the order to ONHOLD
+    handleModalClose();
   };
 
   const handlePageChange = (page) => {
@@ -305,7 +318,7 @@ const OrderWrapper = () => {
                             onEditClick={handleEditClick}
                             onHoldClick={handleHoldClick}
                             onViewInvoice={handleViewInvoice}
-                            onDeleteOrder={handleDeleteOrder}
+                            onDeleteOrder={handleDeleteClick} // Updated to show DeleteModal
                             onOpenDatesModal={handleOpenDatesModal}
                             isDueDateClose={isDueDateClose}
                           />
@@ -341,9 +354,19 @@ const OrderWrapper = () => {
         )}
         {showHoldModal && (
           <OnHoldModal
-            visible={showHoldModal}
-            onClose={handleModalClose}
             order={selectedOrder}
+            invoice={{ amount: selectedOrder?.totalAmount || 0 }} // Dummy invoice data
+            onClose={handleModalClose}
+            onConfirm={handleConfirmHold}
+          />
+        )}
+        {showDeleteModal && (
+          <DeleteModal
+            isVisible={showDeleteModal}
+            item={orderToDelete}
+            itemType="Order"
+            onConfirm={handleDeleteOrder}
+            onCancel={handleModalClose}
           />
         )}
         {showDatesModal && (

@@ -2,17 +2,18 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Header from "./components/Common/Header";
 import Router from "./router/Router";
-import Sidebar from "./components/Common/SidebarNew";
 import Footer from "./components/Common/Footer";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useGetProfileQuery } from "./api/userApi";
 import Loader from "./components/Common/Loader";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
+import SidebarNew from "./components/Common/SidebarNew2";
 function App() {
   const location = useLocation();
   const navigate = useNavigate();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [layoutMode, setLayoutMode] = useState("vertical");
 
   const isAuthPage = [
     "/login",
@@ -21,17 +22,15 @@ function App() {
     "/forgot-password",
     "/under-maintainance",
     "/coming-soon",
-    "/no-access", // Add /no-access to allowed pages
+    "/no-access",
   ].includes(location.pathname);
   const isPOSPage = ["/pos", "/pos-new"].includes(location.pathname);
 
   const token = localStorage.getItem("token");
-  console.log(token);
   const { data: profileData, isLoading: isProfileLoading } =
     useGetProfileQuery();
 
   const userId = profileData?.user?.userId || null;
-  const roleId = profileData?.user?.roleId || null;
 
   useEffect(() => {
     if (!token && !isAuthPage) {
@@ -51,35 +50,68 @@ function App() {
       return;
     }
 
-    // If the role is USERS and user is trying to access non-no-access page
     if (roleNames.includes("USERS") && location.pathname !== "/no-access") {
       toast.warn("Access restricted. No valid role assigned.");
       navigate("/no-access");
       return;
     }
 
-    // If the role is NOT USERS but user is stuck on /no-access
     if (!roleNames.includes("USERS") && location.pathname === "/no-access") {
       navigate("/");
     }
+
+    // Set layout mode based on route
+    console.log("App: Current pathname =", location.pathname);
+    if (location.pathname === "/layout-horizontal") {
+      setLayoutMode("horizontal");
+      setSidebarOpen(false);
+    } else if (location.pathname === "/layout-two-column") {
+      setLayoutMode("two-column");
+    } else {
+      setLayoutMode("vertical");
+    }
+
+    // Reset sidebar state on auth or POS pages
+    if (isAuthPage || isPOSPage) {
+      setSidebarOpen(false);
+    }
+
+    console.log(
+      "App: Rendering sidebar =",
+      !isAuthPage && !isPOSPage,
+      "layoutMode =",
+      layoutMode,
+      "isSidebarOpen =",
+      isSidebarOpen
+    );
   }, [
     isProfileLoading,
     userId,
     profileData,
     isAuthPage,
+    isPOSPage,
     location.pathname,
     navigate,
+    layoutMode,
   ]);
+
+  const toggleSidebar = (value) => {
+    console.log("App: Toggling sidebar to", value);
+    setSidebarOpen(value);
+  };
 
   return (
     <>
       <Loader loading={isProfileLoading} />
       <div className="main-wrapper">
-        {!isAuthPage && <Header toggleSidebar={setSidebarOpen} />}
+        {!isAuthPage && (
+          <Header toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
+        )}
         {!isAuthPage && !isPOSPage && (
-          <Sidebar
+          <SidebarNew
             isSidebarOpen={isSidebarOpen}
-            toggleSidebar={setSidebarOpen}
+            toggleSidebar={toggleSidebar}
+            layoutMode={layoutMode}
           />
         )}
         <Router />

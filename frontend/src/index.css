@@ -11,15 +11,6 @@
 @import url("./assets/css/style.css");
 
 /* Sidebar styles */
-.sidebar {
-  width: 250px;
-  transition: all 0.3s ease-in-out;
-  overflow: hidden;
-}
-
-.sidebar.active {
-  width: 0;
-}
 
 /* Main content area styles */
 .main-content {

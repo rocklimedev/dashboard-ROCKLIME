@@ -1,14 +1,30 @@
-.sidebar a svg {
-  color: #000 !important;
-  fill: currentColor !important;
-  opacity: 1 !important;
-}
-.sidebar a.active svg,
-.sidebar a.subdrop svg {
-  color: #000 !important;
+/* sidebar.css */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: -250px; /* Hide sidebar off-screen by default */
+  width: 250px;
+  height: 100vh;
+  background: #fff;
+  transition: left 0.3s ease-in-out;
+  z-index: 1000;
 }
 
-/* Remove default bullets from all ul inside the sidebar */
+.sidebar.active {
+  left: 0; /* Slide in when active */
+}
+
+/* Ensure sidebar is visible on larger screens by default */
+@media (min-width: 768px) {
+  .sidebar {
+    left: 0; /* Show sidebar on desktop */
+  }
+  .sidebar.active {
+    left: 0; /* No change needed for desktop */
+  }
+}
+
+/* Remove default bullets and ensure proper styling */
 .sidebar ul,
 .sidebar-menu ul,
 .sidebar-menu ul li,
@@ -17,6 +33,39 @@
   margin: 0;
   padding: 0;
 }
+
 .sidebar-menu ul li ul li {
   padding-left: 15px;
+}
+
+/* Ensure icons are visible */
+.sidebar a svg {
+  color: #000 !important;
+  fill: currentColor !important;
+  opacity: 1 !important;
+}
+
+.sidebar a.active svg,
+.sidebar a.subdrop svg {
+  color: #000 !important;
+}
+
+/* Adjust sidebar-inner for scrollable content */
+.sidebar-inner {
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+}
+
+/* Ensure main content shifts when sidebar is open on mobile */
+.main-wrapper {
+  transition: margin-left 0.3s ease-in-out;
+}
+
+@media (max-width: 767px) {
+  .main-wrapper {
+    margin-left: 0;
+  }
+  .sidebar.active + .main-wrapper {
+    margin-left: 250px; /* Shift content when sidebar is open */
+  }
 }

@@ -34,12 +34,12 @@ router.put(
 
 // Delete an order
 router.delete(
-  "/delete/:orderId",
+  "/delete/:id",
   // checkPermission(
   //   "delete",
   //   "delete_order",
   //   "orders",
-  //   "/orders/delete/:orderId"
+  //   "/orders/delete/:id"
   // ),
   orderController.deleteOrder
 );
@@ -53,8 +53,8 @@ router.get(
 
 // Update an order by ID
 router.put(
-  "/:orderId",
-  // checkPermission("edit", "update_order_by_id", "orders", "/orders/:orderId"),
+  "/:id",
+  // checkPermission("edit", "update_order_by_id", "orders", "/orders/:id"),
   orderController.updateOrderById
 );
 
