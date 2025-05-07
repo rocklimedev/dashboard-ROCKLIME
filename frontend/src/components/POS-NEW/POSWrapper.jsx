@@ -41,8 +41,9 @@ const POSWrapperNew = () => {
 
   const [activeTab, setActiveTab] = useState("products");
   const [searchTerm, setSearchTerm] = useState("");
-  const [showClearCartModal, setShowClearCartModal] = useState(false);
+  const [showCartModal, setShowCartModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
   // Filter all invoices (no date restriction)
   const filterByTime = (items) => {
@@ -50,15 +51,22 @@ const POSWrapperNew = () => {
       console.warn("filterByTime: Items is not an array", items);
       return [];
     }
-    return items; // Return all invoices without date filtering
+    return items;
   };
 
   // Filter invoices and products
   const invoices = filterByTime(invoicesData?.data || []);
   const filteredProducts =
-    products?.data?.filter((product) =>
-      product.name.toLowerCase().includes(searchTerm.toLowerCase())
-    ) || [];
+    products?.data?.filter((product) => {
+      const matchesSearch = product.name
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      const matchesCategory =
+        selectedCategory === null ||
+        product.categoryId === selectedCategory ||
+        product.parentCategoryId === selectedCategory;
+      return matchesSearch && matchesCategory;
+    }) || [];
 
   const handleConvertToCart = async (data, clearCartFlag = false) => {
     if (!data || !Array.isArray(data.products)) {
@@ -90,13 +98,6 @@ const POSWrapperNew = () => {
       };
     });
 
-    const cartData = {
-      customerId: data.customerId,
-      items: cartItems,
-      totalAmount: data.totalAmount || data.amount || 0,
-    };
-
-    // Add products to cart via API
     try {
       if (clearCartFlag) {
         await clearCart(userId).unwrap();
@@ -112,7 +113,7 @@ const POSWrapperNew = () => {
       }
       refetchCart();
       toast.success("Invoice converted to cart successfully!");
-      console.log("Cart updated:", cartData);
+      console.log("Cart updated with items:", cartItems);
     } catch (error) {
       console.error("Failed to update cart:", error);
       toast.error(
@@ -127,7 +128,7 @@ const POSWrapperNew = () => {
     if (cartData?.items?.length > 0) {
       // Show modal if cart is not empty
       setSelectedInvoice(invoice);
-      setShowClearCartModal(true);
+      setShowCartModal(true);
     } else {
       // Proceed directly if cart is empty
       handleConvertToCart(invoice);
@@ -135,14 +136,25 @@ const POSWrapperNew = () => {
   };
 
   const handleConfirmClearCart = () => {
-    setShowClearCartModal(false);
-    handleConvertToCart(selectedInvoice, true); // Clear cart and proceed
+    setShowCartModal(false);
+    handleConvertToCart(selectedInvoice, true); // Clear cart and add invoice items
+    setSelectedInvoice(null);
   };
 
-  const handleCancelClearCart = () => {
-    setShowClearCartModal(false);
+  const handleAddToCart = async () => {
+    setShowCartModal(false);
+    await handleConvertToCart(selectedInvoice); // Add invoice items to existing cart
+    setSelectedInvoice(null);
+  };
+
+  const handleCancelCartAction = () => {
+    setShowCartModal(false);
     setSelectedInvoice(null);
     toast.info("Cart conversion cancelled");
+  };
+
+  const handleCategorySelect = (categoryId) => {
+    setSelectedCategory(categoryId);
   };
 
   const userName = user?.user?.name || "Guest User";
@@ -171,7 +183,7 @@ const POSWrapperNew = () => {
       case "products":
         return (
           <div className="content-wrap">
-            <Categories />
+            <Categories onCategorySelect={handleCategorySelect} />
             <ProductsList
               products={filteredProducts}
               isLoading={isProductsLoading}
@@ -320,24 +332,24 @@ const POSWrapperNew = () => {
             </div>
           </div>
           <OrderCart onConvertToOrder={handleInitiateConvertToCart} />
-          {/* Clear Cart Confirmation Modal */}
-          <Modal
-            show={showClearCartModal}
-            onHide={handleCancelClearCart}
-            centered
-          >
+          {/* Cart Action Confirmation Modal */}
+          <Modal show={showCartModal} onHide={handleCancelCartAction} centered>
             <Modal.Header closeButton>
-              <Modal.Title>Clear Cart Confirmation</Modal.Title>
+              <Modal.Title>Cart Action Confirmation</Modal.Title>
             </Modal.Header>
             <Modal.Body>
               Your cart already contains items. Would you like to clear the cart
-              before adding products from this invoice?
+              before adding products from this invoice, or add these products to
+              the existing cart?
             </Modal.Body>
             <Modal.Footer>
-              <Button variant="secondary" onClick={handleCancelClearCart}>
+              <Button variant="secondary" onClick={handleCancelCartAction}>
                 Cancel
               </Button>
-              <Button variant="primary" onClick={handleConfirmClearCart}>
+              <Button variant="primary" onClick={handleAddToCart}>
+                Add to Existing Cart
+              </Button>
+              <Button variant="danger" onClick={handleConfirmClearCart}>
                 Clear Cart and Proceed
               </Button>
             </Modal.Footer>

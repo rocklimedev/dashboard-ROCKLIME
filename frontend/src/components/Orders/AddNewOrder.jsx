@@ -12,8 +12,8 @@ import AddNewTeam from "./AddNewTeam";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const AddNewOrder = ({ onClose, adminName, orderToEdit }) => {
-  const isEditMode = Boolean(orderToEdit);
+const AddNewOrder = ({ onClose, adminName, order }) => {
+  const isEditMode = Boolean(order);
 
   const [createOrder] = useCreateOrderMutation();
   const [updateOrder] = useUpdateOrderByIdMutation();
@@ -51,11 +51,11 @@ const AddNewOrder = ({ onClose, adminName, orderToEdit }) => {
   });
 
   useEffect(() => {
-    if (isEditMode && orderToEdit) {
-      setFormData({ ...orderToEdit });
-      setSelectedInvoiceId(orderToEdit.invoiceId);
+    if (isEditMode && order) {
+      setFormData({ ...order });
+      setSelectedInvoiceId(order.invoiceId);
     }
-  }, [isEditMode, orderToEdit]);
+  }, [isEditMode, order]);
 
   useEffect(() => {
     if (selectedInvoice) {
@@ -105,7 +105,7 @@ const AddNewOrder = ({ onClose, adminName, orderToEdit }) => {
       let response;
       if (isEditMode) {
         response = await updateOrder({
-          id: orderToEdit._id,
+          id: order._id,
           updatedData: formData,
         }).unwrap();
         toast.success("Order updated successfully!");
