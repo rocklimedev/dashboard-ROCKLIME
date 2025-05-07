@@ -50,24 +50,18 @@ const OrderTotal = ({
           <a
             href="javascript:void(0);"
             class="btn btn-danger d-flex align-items-center justify-content-center w-100 mb-2"
-            data-bs-toggle="modal"
-            data-bs-target="#recents"
           >
             <i class="ti ti-refresh-dot me-2"></i>Transaction
           </a>
           <a
             href="javascript:void(0);"
             class="btn btn-orange d-flex align-items-center justify-content-center w-100 mb-2"
-            data-bs-toggle="modal"
-            data-bs-target="#hold-order"
           >
             <i class="ti ti-player-pause me-2"></i>Hold
           </a>
           <a
-            href="javascript:void(0);"
+            href="/orders/list"
             class="btn btn-secondary d-flex align-items-center justify-content-center w-100 mb-2"
-            data-bs-toggle="modal"
-            data-bs-target="#orders"
           >
             <i class="ti ti-shopping-cart me-2"></i>View Orders
           </a>
@@ -76,8 +70,6 @@ const OrderTotal = ({
           <a
             href="javascript:void(0);"
             class="btn btn-cyan d-flex align-items-center justify-content-center w-100 mb-2"
-            data-bs-toggle="modal"
-            data-bs-target="#payment-completed"
           >
             <i class="ti ti-cash-banknote me-2"></i>Payment
           </a>
@@ -90,8 +82,6 @@ const OrderTotal = ({
           <a
             href="javascript:void(0);"
             class="btn btn-indigo d-flex align-items-center justify-content-center w-100 mb-2"
-            data-bs-toggle="modal"
-            data-bs-target="#reset"
           >
             <i class="ti ti-reload me-2"></i>Reset
           </a>

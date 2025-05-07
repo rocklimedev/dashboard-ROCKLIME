@@ -5,19 +5,20 @@ import avatar from "../../assets/img/profiles/avatar-15.jpg";
 import PageHeader from "../Common/PageHeader";
 import AddNewTeam from "./AddNewTeam";
 import DeleteModal from "../Common/DeleteModal";
-import { Dropdown } from "react-bootstrap";
+import { Dropdown, Form } from "react-bootstrap";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./teamList.css";
+
 const TeamsList = ({ onClose, adminName }) => {
   const { data, isLoading, isError, refetch } = useGetAllTeamsQuery();
   const teams = Array.isArray(data?.teams) ? data.teams : [];
-
   const [deleteTeam, { isLoading: isDeleting }] = useDeleteTeamMutation();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showNewTeamModal, setShowNewTeamModal] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [teamToDelete, setTeamToDelete] = useState(null);
+  const [searchTerm, setSearchTerm] = useState(""); // State for search term
 
   const handleAddTeam = () => {
     setSelectedTeam(null);
@@ -43,7 +44,9 @@ const TeamsList = ({ onClose, adminName }) => {
       refetch();
     } catch (err) {
       toast.error(
-        `Error deleting team: ${err.data?.message || "Unknown error"}`
+        `Error deleting team: ${
+          err.data?.message || err.data?.error || "Unknown error"
+        }`
       );
       console.error("Error deleting team:", err);
     } finally {
@@ -51,6 +54,14 @@ const TeamsList = ({ onClose, adminName }) => {
       setTeamToDelete(null);
     }
   };
+
+  // Filter teams based on search term
+  const filteredTeams = teams.filter((team) =>
+    [team.teamName, team.adminName]
+      .join(" ")
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="page-wrapper">
@@ -70,11 +81,13 @@ const TeamsList = ({ onClose, adminName }) => {
                   <span className="btn-searchset">
                     <i className="ti ti-search fs-14"></i>
                   </span>
-                  <input
+                  <Form.Control
                     type="search"
                     className="form-control"
                     placeholder="Search teams..."
                     aria-label="Search teams"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
               </div>
@@ -117,12 +130,14 @@ const TeamsList = ({ onClose, adminName }) => {
           {isError && (
             <p className="text-center text-danger">Error fetching teams.</p>
           )}
-          {teams.length === 0 && !isLoading && (
-            <p className="text-center">No teams found.</p>
+          {filteredTeams.length === 0 && !isLoading && (
+            <p className="text-center">
+              {searchTerm ? "No teams match your search." : "No teams found."}
+            </p>
           )}
 
           <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
-            {teams.map((team) => (
+            {filteredTeams.map((team) => (
               <div key={team.id} className="col">
                 <div className="card team-card h-100">
                   <div className="card-body">

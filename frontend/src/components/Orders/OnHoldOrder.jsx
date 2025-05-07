@@ -1,69 +1,91 @@
 import React, { useState } from "react";
-
+import { Modal, Button, Form, Alert, Spinner } from "react-bootstrap";
+import { toast } from "react-toastify";
+import { useUpdateOrderByIdMutation } from "../../api/orderApi";
 const OnHoldModal = ({ order, invoice, onClose, onConfirm }) => {
   const [reference, setReference] = useState(order?.source || "");
+  const [error, setError] = useState("");
+  const [updateOrder, { isLoading }] = useUpdateOrderByIdMutation();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onConfirm(reference);
+    if (!reference.trim()) {
+      setError("Order reference is required.");
+      return;
+    }
+
+    if (!order?.id) {
+      setError("Invalid order data.");
+      toast.error("Invalid order data.");
+      return;
+    }
+
+    try {
+      await updateOrder({
+        orderId: order.id,
+        status: "ONHOLD",
+        source: reference,
+      }).unwrap();
+      toast.success("Order placed on hold successfully!");
+      onConfirm(reference); // Notify parent (e.g., clear cart)
+      onClose(); // Close modal
+    } catch (error) {
+      console.error("Failed to hold order:", error);
+      setError(error.data?.message || "Failed to place order on hold.");
+      toast.error(error.data?.message || "Failed to place order on hold.");
+    }
   };
 
   return (
-    <div className="modal fade show d-block" tabIndex="-1" role="dialog">
-      <div className="modal-dialog modal-dialog-centered">
-        <div className="modal-content">
-          <div className="modal-header">
-            <h5 className="modal-title">Hold order</h5>
-            <button
-              type="button"
-              className="close"
-              onClick={onClose}
-              aria-label="Close"
-            >
-              <span aria-hidden="true">×</span>
-            </button>
+    <Modal show centered onHide={onClose}>
+      <Modal.Header closeButton>
+        <Modal.Title>Hold Order</Modal.Title>
+      </Modal.Header>
+      <Form onSubmit={handleSubmit}>
+        <Modal.Body>
+          {error && (
+            <Alert variant="danger" dismissible onClose={() => setError("")}>
+              {error}
+            </Alert>
+          )}
+          <div className="bg-light rounded p-4 text-center mb-3">
+            <h2 className="display-1">
+              ₹{(invoice?.amount || 0).toLocaleString()}
+            </h2>
           </div>
-
-          <form onSubmit={handleSubmit}>
-            <div className="modal-body">
-              <div className="bg-light br-10 p-4 text-center mb-3">
-                <h2 className="display-1">{invoice?.amount || "₹ 0.00"}</h2>
-              </div>
-              <div className="mb-3">
-                <label className="form-label">
-                  Order Reference <span className="text-danger">*</span>
-                </label>
-                <input
-                  className="form-control"
-                  type="text"
-                  value={reference}
-                  onChange={(e) => setReference(e.target.value)}
-                  required
-                />
-              </div>
-              <p>
-                The current order will be set on hold. You can retrieve it from
-                the pending orders. A reference might help you identify it more
-                quickly.
-              </p>
-            </div>
-
-            <div className="modal-footer d-flex justify-content-end gap-2">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={onClose}
-              >
-                Cancel
-              </button>
-              <button type="submit" className="btn btn-primary">
-                Confirm
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+          <Form.Group className="mb-3">
+            <Form.Label>
+              Order Reference <span className="text-danger">*</span>
+            </Form.Label>
+            <Form.Control
+              type="text"
+              value={reference}
+              onChange={(e) => setReference(e.target.value)}
+              required
+              isInvalid={!!error}
+            />
+            <Form.Control.Feedback type="invalid">
+              {error}
+            </Form.Control.Feedback>
+          </Form.Group>
+          <p>
+            The current order will be set on hold. You can retrieve it from the
+            pending orders. A reference might help you identify it more quickly.
+          </p>
+        </Modal.Body>
+        <Modal.Footer className="d-flex justify-content-end gap-2">
+          <Button variant="secondary" onClick={onClose} disabled={isLoading}>
+            Cancel
+          </Button>
+          <Button type="submit" variant="primary" disabled={isLoading}>
+            {isLoading ? (
+              <Spinner animation="border" size="sm" className="me-2" />
+            ) : null}
+            Confirm
+          </Button>
+        </Modal.Footer>
+      </Form>
+    </Modal>
   );
 };
 

@@ -9,7 +9,7 @@ import {
   OverlayTrigger,
   Tooltip,
 } from "react-bootstrap";
-import { BsCartPlus, BsTag, BsBox } from "react-icons/bs";
+import { BsCartPlus, BsSearch } from "react-icons/bs";
 import { useGetAllProductsQuery } from "../../api/productApi";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import { useAddProductToCartMutation } from "../../api/cartApi";
@@ -17,17 +17,18 @@ import { useGetProfileQuery } from "../../api/userApi";
 import DataTablePagination from "../Common/DataTablePagination";
 import pos from "../../assets/img/products/pos-product-01.jpg";
 import { toast } from "react-toastify";
-import { BsSearch } from "react-icons/bs";
+
 const ProductsList = ({ products = [] }) => {
   const { data: productsData, error, isLoading } = useGetAllProductsQuery();
   const { data: categoriesData } = useGetAllCategoriesQuery();
   const { data: user, isLoading: userLoading } = useGetProfileQuery();
-  const [addProductToCart, { isLoading: cartLoading }] =
+  const [addProductToCart, { isLoading: mutationLoading }] =
     useAddProductToCartMutation();
 
   const userId = user?.user?.userId;
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
+  const [cartLoadingStates, setCartLoadingStates] = useState({});
   const itemsPerPage = 20;
 
   const categories = Array.isArray(categoriesData?.categories)
@@ -62,17 +63,25 @@ const ProductsList = ({ products = [] }) => {
       return;
     }
 
-    const productId = product.productId || product.productId;
+    const productId = product.productId;
     if (!productId) {
       toast.error("Invalid product ID");
       return;
     }
 
+    console.log("Adding to cart:", { userId, productId });
+
+    setCartLoadingStates((prev) => ({ ...prev, [productId]: true }));
+
     try {
-      await addProductToCart({ userId, productId }).unwrap();
+      const response = await addProductToCart({ userId, productId }).unwrap();
+      console.log("API response:", response);
       toast.success(`${product.name} added to cart!`);
     } catch (error) {
+      console.error("Add to cart error:", error);
       toast.error(`Error: ${error.data?.message || "Unknown error"}`);
+    } finally {
+      setCartLoadingStates((prev) => ({ ...prev, [productId]: false }));
     }
   };
 
@@ -189,10 +198,10 @@ const ProductsList = ({ products = [] }) => {
                     variant="outline-primary"
                     size="sm"
                     onClick={() => handleAddToCart(product)}
-                    disabled={cartLoading}
+                    disabled={cartLoadingStates[product.productId]}
                     className="w-100 d-flex align-items-center justify-content-center"
                   >
-                    {cartLoading ? (
+                    {cartLoadingStates[product.productId] ? (
                       <Spinner animation="border" size="sm" className="me-2" />
                     ) : (
                       <BsCartPlus className="me-2" />

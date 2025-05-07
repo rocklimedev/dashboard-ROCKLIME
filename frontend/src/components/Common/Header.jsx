@@ -30,11 +30,11 @@ import img from "../../assets/img/avatar/avatar-1.jpg";
 import SearchDropdown from "../Search/SearchDropdown";
 import CalculatorModal from "./Calculator";
 import { useLogoutMutation } from "../../api/authApi";
-const Header = ({ toggleSidebar }) => {
+
+const Header = ({ toggleSidebar, isSidebarOpen }) => {
   const location = useLocation();
   const currentPath = location.pathname;
   const navigate = useNavigate();
-  const [isSidebarOpen, setSidebarOpen] = useState(false);
   const { data: user, isLoading, error } = useGetProfileQuery();
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
   const [showModal, setShowModal] = useState(false);
@@ -53,8 +53,8 @@ const Header = ({ toggleSidebar }) => {
   };
 
   const handleSidebarToggle = () => {
-    setSidebarOpen(!isSidebarOpen);
-    toggleSidebar(!isSidebarOpen);
+    console.log("Header: Toggling sidebar, current state:", isSidebarOpen);
+    toggleSidebar(!isSidebarOpen); // Toggle parent state
   };
 
   const handleFullscreenToggle = () => {

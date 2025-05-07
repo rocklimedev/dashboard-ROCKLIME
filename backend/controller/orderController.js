@@ -65,7 +65,7 @@ exports.createOrder = async (req, res) => {
 
     res.status(201).json({
       message: "Order created successfully",
-      orderId: order.id,
+      id: order.id,
     });
   } catch (err) {
     console.error("Error creating order:", err);
@@ -108,8 +108,8 @@ exports.getOrderDetails = async (req, res) => {
 
 exports.updateOrderStatus = async (req, res) => {
   try {
-    const { orderId, status } = req.body;
-    const order = await Order.findByPk(orderId);
+    const { id, status } = req.body;
+    const order = await Order.findByPk(id);
 
     if (!order) return res.status(404).json({ message: "Order not found" });
 
@@ -124,12 +124,12 @@ exports.updateOrderStatus = async (req, res) => {
 
 exports.deleteOrder = async (req, res) => {
   try {
-    const { orderId } = req.params;
-    const order = await Order.findByPk(orderId);
+    const { id } = req.params;
+    const order = await Order.findByPk(id);
 
     if (!order) return res.status(404).json({ message: "Order not found" });
 
-    await OrderItem.destroy({ where: { orderId } });
+    await OrderItem.deleteOne({ orderId: id });
     await order.destroy();
 
     res.status(200).json({ message: "Order deleted successfully" });
@@ -152,8 +152,8 @@ exports.recentOrders = async (req, res) => {
 
 exports.orderById = async (req, res) => {
   try {
-    const { orderId } = req.params;
-    const order = await Order.findByPk(orderId);
+    const { id } = req.params;
+    const order = await Order.findByPk(id);
     if (!order) return res.status(404).json({ message: "Order not found" });
 
     res.status(200).json({ order });
@@ -164,9 +164,9 @@ exports.orderById = async (req, res) => {
 
 exports.updateOrderById = async (req, res) => {
   try {
-    const { orderId } = req.params;
+    const { id } = req.params;
     const updates = req.body;
-    const order = await Order.findByPk(orderId);
+    const order = await Order.findByPk(id);
     if (!order) return res.status(404).json({ message: "Order not found" });
 
     await order.update(updates);

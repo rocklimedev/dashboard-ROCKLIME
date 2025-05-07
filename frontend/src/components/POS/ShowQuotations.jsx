@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import ShowProducts from "./ShowProducts";
 import { Link } from "react-router-dom";
 import {
   Card,
@@ -13,10 +12,11 @@ import {
   Tooltip,
   Modal,
 } from "react-bootstrap";
-import { useAddToCartMutation } from "../../api/cartApi";
+import ShowProducts from "./ShowProducts";
 import { useGetProfileQuery } from "../../api/userApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
+import { toast } from "react-toastify";
 import {
   BsPerson,
   BsCalendar,
@@ -27,11 +27,13 @@ import {
   BsFileEarmarkText,
 } from "react-icons/bs";
 
-const ShowQuotations = ({ isQuotationsLoading, quotations }) => {
+const ShowQuotations = ({
+  isQuotationsLoading,
+  quotations,
+  onConvertToOrder,
+}) => {
   const [selectedQuotation, setSelectedQuotation] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
-  const [addToCartMutation, { isLoading: isCartLoading }] =
-    useAddToCartMutation();
   const { data: profileData, isLoading: isProfileLoading } =
     useGetProfileQuery();
   const { data: usersData, isLoading: isUsersLoading } = useGetAllUsersQuery();
@@ -42,37 +44,18 @@ const ShowQuotations = ({ isQuotationsLoading, quotations }) => {
     setErrorMessage(null);
     if (!quotation || !quotation.customerId) {
       setErrorMessage("Invalid quotation data.");
+      toast.error("Invalid quotation data.");
       return;
     }
 
     if (!quotation.products || quotation.products.length === 0) {
       setErrorMessage("No products found in the quotation.");
+      toast.error("No products found in the quotation.");
       return;
     }
 
-    const userId = profileData?.user?.userId;
-
-    const cartData = {
-      customerId: quotation.customerId,
-      userId,
-      items: quotation.products.map((product) => ({
-        productId: product.productId,
-        quantity: product.qty,
-        price: product.sellingPrice,
-      })),
-      totalAmount: quotation.finalAmount,
-    };
-
-    addToCartMutation(cartData)
-      .unwrap()
-      .then(() => {
-        alert("Cart successfully updated!");
-      })
-      .catch((error) => {
-        setErrorMessage(
-          error?.data?.message || "Failed to add to cart. Please try again."
-        );
-      });
+    // Call the parent component's onConvertToOrder (handleInitiateConvertToCart)
+    onConvertToOrder(quotation);
   };
 
   const getUsernameById = (userId) => {
@@ -86,7 +69,7 @@ const ShowQuotations = ({ isQuotationsLoading, quotations }) => {
     const customer = customersData?.data?.find(
       (customer) => customer.customerId === customerId
     );
-    return customer?.name || "Unknown Customer"; // Changed to `name` based on provided customer data structure
+    return customer?.name || "Unknown Customer";
   };
 
   return (
@@ -181,14 +164,10 @@ const ShowQuotations = ({ isQuotationsLoading, quotations }) => {
                   <Button
                     variant="success"
                     onClick={() => handleConvertToOrder(quotation)}
-                    disabled={isCartLoading}
+                    disabled={isProfileLoading}
                     className="d-flex align-items-center"
                   >
-                    {isCartLoading ? (
-                      <Spinner animation="border" size="sm" className="me-2" />
-                    ) : (
-                      <BsCartPlus className="me-2" />
-                    )}
+                    <BsCartPlus className="me-2" />
                     Convert
                   </Button>
                 </OverlayTrigger>

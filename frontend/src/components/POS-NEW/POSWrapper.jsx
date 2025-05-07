@@ -1,19 +1,21 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { Card, Row, Col, Button, Spinner, Alert, Modal } from "react-bootstrap";
 import OrderCart from "./OrderCart";
 import ProductsList from "./ProductsList";
 import Categories from "./Categories";
-import { useDispatch } from "react-redux";
 import ShowQuotations from "../POS/ShowQuotations";
 import { useGetProfileQuery } from "../../api/userApi";
 import { useGetAllQuotationsQuery } from "../../api/quotationApi";
-import { useGetCartQuery } from "../../api/cartApi";
+import {
+  useGetCartQuery,
+  useAddProductToCartMutation,
+  useClearCartMutation,
+} from "../../api/cartApi";
 import { useGetAllProductsQuery } from "../../api/productApi";
 import { useGetAllInvoicesQuery } from "../../api/invoiceApi";
-import logo from "../../assets/img/logo.png";
+import { toast } from "react-toastify";
 
 const POSWrapperNew = () => {
-  const dispatch = useDispatch();
-
   const {
     data: user,
     isLoading: isUserLoading,
@@ -23,76 +25,124 @@ const POSWrapperNew = () => {
     useGetAllQuotationsQuery();
   const { data: products, isLoading: isProductsLoading } =
     useGetAllProductsQuery();
-  const { data: cartData, refetch: refetchCart } = useGetCartQuery();
+  const { data: cartData, refetch: refetchCart } = useGetCartQuery(
+    user?.user?.userId,
+    {
+      skip: !user?.user?.userId,
+    }
+  );
   const {
     data: invoicesData,
     isLoading: isInvoicesLoading,
     error: invoicesError,
   } = useGetAllInvoicesQuery();
+  const [addProductToCart] = useAddProductToCartMutation();
+  const [clearCart] = useClearCartMutation();
 
   const [activeTab, setActiveTab] = useState("products");
   const [searchTerm, setSearchTerm] = useState("");
+  const [showClearCartModal, setShowClearCartModal] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
 
-  useEffect(() => {
-    refetchCart();
-  }, [cartData, refetchCart]);
-
-  // Debug invoices data
-  useEffect(() => {
-    if (invoicesData) {
-      console.log("Invoices Data:", invoicesData);
-    }
-    if (invoicesError) {
-      console.error("Invoices Error:", invoicesError);
-    }
-  }, [invoicesData, invoicesError]);
-
-  // Date filters (last 7 days, fallback to 30 days)
-  const now = new Date();
-  const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-
-  const filterByTime = (items, dateField) => {
+  // Filter all invoices (no date restriction)
+  const filterByTime = (items) => {
     if (!Array.isArray(items)) {
       console.warn("filterByTime: Items is not an array", items);
       return [];
     }
-    const weekItems = items.filter(
-      (item) => item[dateField] && new Date(item[dateField]) >= oneWeekAgo
-    );
-    return weekItems.length > 0
-      ? weekItems
-      : items.filter(
-          (item) => item[dateField] && new Date(item[dateField]) >= oneMonthAgo
-        );
+    return items; // Return all invoices without date filtering
   };
 
   // Filter invoices and products
-  const invoices = filterByTime(invoicesData?.data || [], "createdAt");
+  const invoices = filterByTime(invoicesData?.data || []);
   const filteredProducts =
     products?.data?.filter((product) =>
       product.name.toLowerCase().includes(searchTerm.toLowerCase())
     ) || [];
 
-  const handleConvertToCart = (data) => {
+  const handleConvertToCart = async (data, clearCartFlag = false) => {
     if (!data || !Array.isArray(data.products)) {
-      console.error("Invalid data for cart conversion", data);
+      toast.error("Invalid invoice data for cart conversion");
       return;
     }
 
+    const userId = user?.user?.userId;
+    if (!userId) {
+      toast.error("User not logged in");
+      return;
+    }
+
+    // Map invoice products to cart items
+    const cartItems = data.products.map((product) => {
+      const productDetails = products?.data?.find(
+        (p) => p.productId === product.productId
+      );
+
+      return {
+        id: product.productId,
+        name: product.name || productDetails?.name || "Unknown Product",
+        quantity: product.quantity || 1,
+        price:
+          product.sellingPrice ||
+          product.price ||
+          productDetails?.sellingPrice ||
+          0,
+      };
+    });
+
     const cartData = {
       customerId: data.customerId,
-      items: data.products.map((product) => ({
-        id: product.productId,
-        name: product.name,
-        quantity: product.quantity || 1,
-        price: product.sellingPrice || product.price,
-      })),
-      totalAmount: data.finalAmount || data.totalAmount || 0,
+      items: cartItems,
+      totalAmount: data.totalAmount || data.amount || 0,
     };
 
-    // Dispatch or API call for updating cart (implement as needed)
-    console.log("Converting to cart:", cartData);
+    // Add products to cart via API
+    try {
+      if (clearCartFlag) {
+        await clearCart(userId).unwrap();
+        toast.info("Cart cleared successfully");
+      }
+
+      for (const item of cartItems) {
+        await addProductToCart({
+          userId,
+          productId: item.id,
+          quantity: item.quantity,
+        }).unwrap();
+      }
+      refetchCart();
+      toast.success("Invoice converted to cart successfully!");
+      console.log("Cart updated:", cartData);
+    } catch (error) {
+      console.error("Failed to update cart:", error);
+      toast.error(
+        `Failed to convert invoice to cart: ${
+          error.data?.message || "Unknown error"
+        }`
+      );
+    }
+  };
+
+  const handleInitiateConvertToCart = (invoice) => {
+    if (cartData?.items?.length > 0) {
+      // Show modal if cart is not empty
+      setSelectedInvoice(invoice);
+      setShowClearCartModal(true);
+    } else {
+      // Proceed directly if cart is empty
+      handleConvertToCart(invoice);
+    }
+  };
+
+  const handleConfirmClearCart = () => {
+    setShowClearCartModal(false);
+    handleConvertToCart(selectedInvoice, true); // Clear cart and proceed
+  };
+
+  const handleCancelClearCart = () => {
+    setShowClearCartModal(false);
+    setSelectedInvoice(null);
+    toast.info("Cart conversion cancelled");
   };
 
   const userName = user?.user?.name || "Guest User";
@@ -115,7 +165,7 @@ const POSWrapperNew = () => {
           <ShowQuotations
             isQuotationsLoading={isQuotationsLoading}
             quotations={quotations}
-            onConvertToOrder={handleConvertToCart}
+            onConvertToOrder={handleInitiateConvertToCart}
           />
         );
       case "products":
@@ -132,57 +182,65 @@ const POSWrapperNew = () => {
         return (
           <div className="invoice-list">
             {isInvoicesLoading ? (
-              <div className="text-center">
-                <div className="spinner-border text-primary" role="status">
-                  <span className="visually-hidden">Loading...</span>
-                </div>
+              <div className="text-center py-4">
+                <Spinner animation="border" variant="primary" />
               </div>
             ) : invoicesError ? (
-              <div className="alert alert-danger" role="alert">
+              <Alert variant="danger">
                 Error loading invoices:{" "}
                 {invoicesError?.data?.message || "Unknown error"}
-              </div>
+              </Alert>
             ) : invoices.length === 0 ? (
-              <p className="text-muted text-center">
-                No invoices found for the selected period.
-              </p>
+              <p className="text-muted text-center">No invoices found.</p>
             ) : (
-              <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+              <Row xs={1} md={2} lg={3} className="g-3">
                 {invoices.map((invoice) => (
-                  <div key={invoice.invoiceId || invoice._id} className="col">
-                    <div className="card h-100 shadow-sm">
-                      <div className="card-body">
-                        <h5 className="card-title fs-6 fw-bold text-primary">
-                          Invoice #{invoice.invoiceId || invoice._id || "N/A"}
-                        </h5>
-                        <p className="card-text mb-1">
+                  <Col key={invoice.invoiceId || invoice._id}>
+                    <Card className="h-100 shadow-sm">
+                      <Card.Body>
+                        <Card.Title
+                          as="h5"
+                          className="fs-6 fw-bold text-primary"
+                        >
+                          Invoice #
+                          {invoice.invoiceNo || invoice.invoiceId || "N/A"}
+                        </Card.Title>
+                        <Card.Text className="mb-1">
                           <span className="text-orange">Customer:</span>{" "}
-                          {invoice.customerId || "Unknown"}
-                        </p>
-                        <p className="card-text mb-1">
+                          {invoice.billTo || invoice.customerId || "Unknown"}
+                        </Card.Text>
+                        <Card.Text className="mb-1">
                           <span className="text-orange">Total:</span> Rs{" "}
-                          {(invoice.totalAmount || 0).toLocaleString()}
-                        </p>
-                        <p className="card-text mb-2 text-muted fs-6">
+                          {(
+                            invoice.totalAmount ||
+                            invoice.amount ||
+                            0
+                          ).toLocaleString()}
+                        </Card.Text>
+                        <Card.Text className="mb-2 text-muted fs-6">
                           Date:{" "}
-                          {invoice.createdAt
-                            ? new Date(invoice.createdAt).toLocaleDateString()
+                          {invoice.createdAt || invoice.invoiceDate
+                            ? new Date(
+                                invoice.createdAt || invoice.invoiceDate
+                              ).toLocaleDateString()
                             : "N/A"}
-                        </p>
-                        <button
-                          className="btn btn-outline-primary btn-sm w-100"
-                          onClick={() => handleConvertToCart(invoice)}
+                        </Card.Text>
+                        <Button
+                          variant="outline-primary"
+                          size="sm"
+                          className="w-100"
+                          onClick={() => handleInitiateConvertToCart(invoice)}
                           disabled={
                             !invoice.products || invoice.products.length === 0
                           }
                         >
                           Convert to Cart
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                        </Button>
+                      </Card.Body>
+                    </Card>
+                  </Col>
                 ))}
-              </div>
+              </Row>
             )}
           </div>
         );
@@ -200,9 +258,7 @@ const POSWrapperNew = () => {
               <div className="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
                 <div>
                   {isUserLoading ? (
-                    <div className="spinner-border text-primary" role="status">
-                      <span className="visually-hidden">Loading...</span>
-                    </div>
+                    <Spinner animation="border" variant="primary" />
                   ) : isUserError ? (
                     <h5 className="text-danger">Failed to Load User</h5>
                   ) : (
@@ -231,42 +287,61 @@ const POSWrapperNew = () => {
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
                   </div>
-                  <button
-                    className={`btn btn-sm ${
-                      activeTab === "invoices"
-                        ? "btn-primary"
-                        : "btn-outline-primary"
-                    }`}
+                  <Button
+                    variant={
+                      activeTab === "invoices" ? "primary" : "outline-primary"
+                    }
+                    size="sm"
                     onClick={() => setActiveTab("invoices")}
                   >
                     <i className="ti ti-receipt me-1"></i> Invoices
-                  </button>
-                  <button
-                    className={`btn btn-sm ${
-                      activeTab === "quotations"
-                        ? "btn-primary"
-                        : "btn-outline-primary"
-                    }`}
+                  </Button>
+                  <Button
+                    variant={
+                      activeTab === "quotations" ? "primary" : "outline-primary"
+                    }
+                    size="sm"
                     onClick={() => setActiveTab("quotations")}
                   >
                     <i className="ti ti-star me-1"></i> Quotations
-                  </button>
-                  <button
-                    className={`btn btn-sm ${
-                      activeTab === "products"
-                        ? "btn-primary"
-                        : "btn-outline-primary"
-                    }`}
+                  </Button>
+                  <Button
+                    variant={
+                      activeTab === "products" ? "primary" : "outline-primary"
+                    }
+                    size="sm"
                     onClick={() => setActiveTab("products")}
                   >
                     <i className="ti ti-box me-1"></i> Products
-                  </button>
+                  </Button>
                 </div>
               </div>
               {renderTabContent()}
             </div>
           </div>
-          <OrderCart onConvertToOrder={handleConvertToCart} />
+          <OrderCart onConvertToOrder={handleInitiateConvertToCart} />
+          {/* Clear Cart Confirmation Modal */}
+          <Modal
+            show={showClearCartModal}
+            onHide={handleCancelClearCart}
+            centered
+          >
+            <Modal.Header closeButton>
+              <Modal.Title>Clear Cart Confirmation</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              Your cart already contains items. Would you like to clear the cart
+              before adding products from this invoice?
+            </Modal.Body>
+            <Modal.Footer>
+              <Button variant="secondary" onClick={handleCancelClearCart}>
+                Cancel
+              </Button>
+              <Button variant="primary" onClick={handleConfirmClearCart}>
+                Clear Cart and Proceed
+              </Button>
+            </Modal.Footer>
+          </Modal>
         </div>
       </div>
     </div>
