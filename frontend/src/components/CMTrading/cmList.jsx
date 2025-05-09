@@ -8,7 +8,7 @@ import { BiEdit, BiTrash } from "react-icons/bi";
 import { FaEye } from "react-icons/fa";
 import AddCompany from "./AddCompany";
 import DeleteModal from "../Common/DeleteModal";
-import DataTablePagination from "../Common/DataTablePagination"; // Import your pagination
+import DataTablePagination from "../Common/DataTablePagination";
 import { toast } from "react-toastify";
 
 const ViewCompany = ({ company, onClose }) => {
@@ -123,6 +123,19 @@ const CmList = () => {
 
   const companies = Array.isArray(data?.companies) ? data.companies : [];
 
+  // Format companies for tableData prop
+  const formattedCompanies = companies.map((company) => ({
+    companyId: company.companyId,
+    name: company.name,
+    address: company.address || "N/A",
+    website: company.website || "N/A",
+    slug: company.slug || "N/A",
+    createdDate: company.createdDate
+      ? new Date(company.createdDate).toLocaleDateString()
+      : "N/A",
+    parentCompanyId: company.parentCompanyId || "None",
+  }));
+
   const handleAddCompany = () => {
     setEditingCompany(null);
     setShowCompanyModal(true);
@@ -149,6 +162,9 @@ const CmList = () => {
       toast.success("Company deleted successfully!");
       setShowDeleteModal(false);
       setCompanyToDelete(null);
+      if (currentCompanies.length === 1 && currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+      }
     } catch (error) {
       toast.error(
         `Failed to delete company: ${error.data?.message || "Unknown error"}`
@@ -193,6 +209,7 @@ const CmList = () => {
           title="Companies"
           subtitle="Manage your companies"
           onAdd={handleAddCompany}
+          tableData={formattedCompanies} // Pass formatted companies to PageHeader
         />
         <div className="card">
           <div className="card-body p-0">

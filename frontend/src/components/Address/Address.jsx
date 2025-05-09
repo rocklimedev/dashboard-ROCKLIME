@@ -26,6 +26,17 @@ const AddressList = () => {
   const [selectedAddresses, setSelectedAddresses] = useState([]);
   const itemsPerPage = 20;
 
+  // Format addresses for tableData prop (optional: customize fields)
+  const formattedAddresses = addresses.map((address) => ({
+    addressId: address.addressId,
+    street: address.street || "—",
+    city: address.city,
+    state: address.state,
+    postalCode: address.postalCode,
+    country: address.country,
+    createdAt: new Date(address.createdAt).toLocaleDateString(),
+  }));
+
   const handleAddAddress = () => {
     setEditMode(false);
     setSelectedAddress(null);
@@ -110,6 +121,7 @@ const AddressList = () => {
           title="Addresses"
           subtitle="Manage user address records"
           onAdd={handleAddAddress}
+          tableData={formattedAddresses} // Pass formatted addresses to PageHeader
         />
 
         <div className="card">

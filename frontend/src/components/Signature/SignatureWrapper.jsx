@@ -1,12 +1,22 @@
 import React, { useState } from "react";
 import PageHeader from "../Common/PageHeader";
-import AddSignature from "./AddSignature"; // Import your modal
+import AddSignature from "./AddSignature";
 import { useGetAllSignaturesQuery } from "../../api/signatureApi";
 
 const SignatureWrapper = () => {
   const { data: signatures, error, isLoading } = useGetAllSignaturesQuery();
-  const [selectedSignature, setSelectedSignature] = useState(null); // for editing
-  const [modalOpen, setModalOpen] = useState(false); // modal visibility
+  const [selectedSignature, setSelectedSignature] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  // Format signatures for tableData prop
+  const formattedSignatures = (signatures || []).map((signature) => ({
+    signatureId: signature.signatureId,
+    signature_name: signature.signature_name || "N/A",
+    user_name: signature.User?.name || "N/A",
+    user_email: signature.User?.email || "N/A",
+    status: signature.mark_as_default ? "Default" : "Inactive",
+    createdAt: new Date(signature.createdAt).toLocaleString(),
+  }));
 
   const handleAdd = () => {
     setSelectedSignature(null);
@@ -25,6 +35,7 @@ const SignatureWrapper = () => {
           title="Signature"
           subtitle="List of your all Signatures."
           onAdd={handleAdd}
+          tableData={formattedSignatures} // Pass formatted signatures for Excel/PDF
         />
 
         <div className="card">
@@ -98,12 +109,11 @@ const SignatureWrapper = () => {
         </div>
       </div>
 
-      {/* Modal Component */}
       {modalOpen && (
         <AddSignature
           signatureId={selectedSignature?.signatureId}
           existingSignature={selectedSignature}
-          onClose={() => setModalOpen(false)} // optional callback
+          onClose={() => setModalOpen(false)}
         />
       )}
     </div>

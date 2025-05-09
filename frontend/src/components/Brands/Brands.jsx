@@ -10,7 +10,7 @@ import AddBrand from "./AddBrandModal";
 import DeleteModal from "../Common/DeleteModal";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import DataTablePagination from "../Common/DataTablePagination"; // Import pagination component
+import DataTablePagination from "../Common/DataTablePagination";
 
 const Brands = () => {
   const { data, error, isLoading, refetch } = useGetAllBrandsQuery();
@@ -23,9 +23,18 @@ const Brands = () => {
   const [selectedBrand, setSelectedBrand] = useState(null);
   const [brandToDelete, setBrandToDelete] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1); // Pagination state
-  const [selectedBrands, setSelectedBrands] = useState([]); // Checkbox state
-  const itemsPerPage = 20; // Matches itemNo default in DataTablePagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedBrands, setSelectedBrands] = useState([]);
+  const itemsPerPage = 20;
+
+  // Format brands for tableData prop
+  const formattedBrands = brands.map((brand) => ({
+    id: brand.id,
+    brandName: brand.brandName,
+    brandSlug: brand.brandSlug,
+    createdAt: new Date(brand.createdAt).toLocaleDateString(),
+    status: "Active", // Hardcoded to match table display; adjust if dynamic
+  }));
 
   // Handle add brand
   const handleAddBrand = () => {
@@ -57,14 +66,13 @@ const Brands = () => {
     try {
       await deleteBrand(brandToDelete.id).unwrap();
       toast.success("Brand deleted successfully!");
-      // Reset to previous page if current page becomes empty
       if (paginatedBrands.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
       setShowDeleteModal(false);
       setBrandToDelete(null);
-      setSelectedBrands([]); // Clear selections
-      refetch(); // Refresh brand list
+      setSelectedBrands([]);
+      refetch();
     } catch (err) {
       toast.error(
         `Failed to delete brand: ${err.data?.message || "Unknown error"}`
@@ -78,13 +86,13 @@ const Brands = () => {
     setShowModal(false);
     setEditMode(false);
     setSelectedBrand(null);
-    refetch(); // Refresh brand list
+    refetch();
   };
 
   // Handle page change
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
-    setSelectedBrands([]); // Clear selections on page change
+    setSelectedBrands([]);
   };
 
   // Checkbox handlers
@@ -122,6 +130,7 @@ const Brands = () => {
           title="Brands"
           subtitle="Manage your brands"
           onAdd={handleAddBrand}
+          tableData={formattedBrands} // Pass formatted brands to PageHeader
         />
 
         <div className="card">
@@ -200,7 +209,6 @@ const Brands = () => {
               </table>
             </div>
           </div>
-          {/* Pagination Component */}
           <div className="card-footer">
             <DataTablePagination
               totalItems={brands.length}
