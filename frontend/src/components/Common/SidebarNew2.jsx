@@ -6,7 +6,7 @@ import logo from "../../assets/img/logo.png";
 import logoWhite from "../../assets/img/logo-white.svg";
 import logoSmall from "../../assets/img/logo-small.png";
 import customerImg from "../../assets/img/customer/customer15.jpg";
-
+import "./sidebar.css";
 const SidebarNew = ({
   isSidebarOpen,
   toggleSidebar,
@@ -17,27 +17,15 @@ const SidebarNew = ({
   const [twoColOpenMenu, setTwoColOpenMenu] = useState({});
   const [activeTab, setActiveTab] = useState("dashboard");
 
-  useEffect(() => {
-    console.log(
-      "SidebarNew: isSidebarOpen =",
-      isSidebarOpen,
-      "layoutMode =",
-      layoutMode
-    );
-  }, [isSidebarOpen, layoutMode]);
-
   const toggleDropdown = (index) => {
-    console.log("Toggling vertical dropdown:", index);
     setOpenMenu((prevIndex) => (prevIndex === index ? null : index));
   };
 
   const toggleHorizontalDropdown = (index) => {
-    console.log("Toggling horizontal dropdown:", index);
     setHorizontalOpenMenu((prevIndex) => (prevIndex === index ? null : index));
   };
 
   const toggleTwoColDropdown = (tabId, index) => {
-    console.log("Toggling two-column dropdown:", tabId, index);
     setTwoColOpenMenu((prev) => ({
       ...prev,
       [tabId]: prev[tabId] === index ? null : index,
@@ -45,7 +33,6 @@ const SidebarNew = ({
   };
 
   const handleTabChange = (tabId) => {
-    console.log("Changing tab to:", tabId);
     setActiveTab(tabId);
   };
 
@@ -64,7 +51,6 @@ const SidebarNew = ({
         <button
           className="sidebar-close-btn"
           onClick={() => {
-            console.log("Closing sidebar");
             toggleSidebar(false);
           }}
           aria-label="Close sidebar"
@@ -76,7 +62,7 @@ const SidebarNew = ({
           href="#"
           onClick={(e) => {
             e.preventDefault();
-            console.log("Toggling sidebar via toggle_btn");
+
             toggleSidebar(!isSidebarOpen);
           }}
         >
@@ -357,7 +343,6 @@ const SidebarNew = ({
             <button
               className="sidebar-close-btn"
               onClick={() => {
-                console.log("Closing two-column sidebar");
                 toggleSidebar(false);
               }}
               aria-label="Close sidebar"

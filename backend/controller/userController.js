@@ -231,7 +231,6 @@ exports.assignRole = async (userId, role) => {
     await user.save();
     return { success: true, message: `Role ${role} assigned successfully` };
   } catch (error) {
-    console.error("Error assigning role:", error);
     return { success: false, message: "Internal server error" };
   }
 };
@@ -332,7 +331,6 @@ exports.updateUser = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("Error updating user:", err);
     res.status(500).json({ message: "Server Error", error: err.message });
   }
 };

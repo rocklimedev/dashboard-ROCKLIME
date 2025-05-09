@@ -53,7 +53,6 @@ const assignRole = async (userId, role) => {
     await user.save();
     return { success: true, message: `Role ${role} assigned successfully` };
   } catch (error) {
-    console.error("Error assigning role:", error);
     return { success: false, message: "Internal server error" };
   }
 };
@@ -83,7 +82,6 @@ const getRecentRoleToGive = async () => {
 
     return { success: true, users };
   } catch (error) {
-    console.error("Error fetching recent users for role assignment:", error);
     return { success: false, message: "Internal server error" };
   }
 };
@@ -125,7 +123,6 @@ const createRole = async (req, res) => {
 
     res.status(201).json(newRole);
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: "Error creating role" });
   }
 };
@@ -142,7 +139,6 @@ const getAllRoles = async (req, res) => {
 
     res.status(200).json(roles);
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: "Error retrieving roles" });
   }
 };
@@ -161,7 +157,6 @@ const deleteRole = async (req, res) => {
     await role.destroy();
     res.status(200).json({ message: "Role deleted successfully" });
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: "Error deleting role" });
   }
 };
@@ -200,7 +195,6 @@ const assignPermissionsToRole = async (req, res) => {
       .status(201)
       .json({ message: "Permission assigned successfully", rolePermission });
   } catch (error) {
-    console.error("Error assigning permission:", error);
     res.status(500).json({ message: "Error assigning permission to role" });
   }
 };
@@ -223,7 +217,6 @@ const getRoleById = async (req, res) => {
 
     res.status(200).json(role);
   } catch (error) {
-    console.error("Error fetching role by ID:", error);
     res.status(500).json({ message: "Error retrieving role" });
   }
 };
@@ -261,7 +254,6 @@ const removePermissionFromRole = async (req, res) => {
 
     res.status(200).json({ message: "Permissions removed successfully" });
   } catch (error) {
-    console.error("Error removing permissions:", error);
     res.status(500).json({ message: "Error removing permissions from role" });
   }
 };
@@ -296,7 +288,6 @@ const getRolePermissions = async (req, res) => {
       rolePermissions,
     });
   } catch (error) {
-    console.error("Error fetching role permissions:", error);
     res
       .status(500)
       .json({ message: "Failed to fetch role permissions", error });
@@ -339,7 +330,6 @@ const updateRolePermissions = async (req, res) => {
       permissions,
     });
   } catch (error) {
-    console.error("Error updating role permissions:", error);
     res.status(500).json({ message: "Error updating role permissions" });
   }
 };

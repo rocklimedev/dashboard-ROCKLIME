@@ -85,7 +85,6 @@ const AddUser = ({ onClose, userToEdit, isViewMode }) => {
 
       onClose();
     } catch (err) {
-      console.error("Operation failed:", err);
       toast.error(
         `Failed to process the request: ${err.data?.message || "Unknown error"}`
       );

@@ -50,7 +50,6 @@ const ProductDetails = () => {
       }
       return [];
     } catch (err) {
-      console.error("Error parsing images:", err);
       // Fallback for raw string URLs
       if (typeof imageField === "string" && imageField.startsWith("http")) {
         return [imageField];
@@ -71,7 +70,6 @@ const ProductDetails = () => {
           displayValue: true,
         });
       } catch (error) {
-        console.error("Barcode generation failed:", error);
         toast.error("Failed to generate barcode.");
       }
     }
@@ -99,10 +97,6 @@ const ProductDetails = () => {
   useEffect(() => {
     if (product?.product_code) {
       setBarcodeData(product.product_code);
-    }
-    if (product?.images) {
-      const images = getParsedImages(product.images);
-      console.log("Parsed images:", images);
     }
   }, [product]);
 

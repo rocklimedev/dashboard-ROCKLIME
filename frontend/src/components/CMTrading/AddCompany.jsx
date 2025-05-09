@@ -73,7 +73,6 @@ const AddCompany = ({ onClose, companyToEdit = null }) => {
 
       onClose();
     } catch (error) {
-      console.error("Failed to submit company:", error);
       toast.error("Failed to save company. Please try again.");
     }
   };

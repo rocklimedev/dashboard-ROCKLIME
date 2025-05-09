@@ -146,7 +146,6 @@ const AddNewTeam = ({ onClose, onTeamAdded, team }) => {
       if (typeof onTeamAdded === "function") onTeamAdded();
       onClose();
     } catch (err) {
-      console.error("Error saving team:", err);
       let errorMessage = "Please try again";
       if (err.status === 404) {
         errorMessage = "Team not found. It may have been deleted.";

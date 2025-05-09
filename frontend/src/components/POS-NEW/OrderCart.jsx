@@ -101,7 +101,6 @@ const OrderCart = ({ onConvertToOrder }) => {
       toast.success("Cart cleared!");
       refetch();
     } catch (error) {
-      console.error("Clear cart error:", error);
       toast.error(`Error: ${error.data?.message || "Failed to clear cart"}`);
     }
   };
@@ -123,7 +122,6 @@ const OrderCart = ({ onConvertToOrder }) => {
       }
       refetch();
     } catch (error) {
-      console.error("Update/Remove error:", error);
       toast.error(`Error: ${error.data?.message || "Unknown error"}`);
     }
   };
@@ -136,7 +134,6 @@ const OrderCart = ({ onConvertToOrder }) => {
       toast.success("Item removed from cart!");
       refetch();
     } catch (error) {
-      console.error("Remove error:", error);
       toast.error(`Error: ${error.data?.message || "Unknown error"}`);
     }
   };
@@ -189,7 +186,6 @@ const OrderCart = ({ onConvertToOrder }) => {
         })),
         signatureName: invoiceData.signatureName,
       };
-      console.log(orderData);
       await createInvoice(invoiceDataToSubmit).unwrap();
       onConvertToOrder(orderData);
       handleClearCart();
@@ -198,7 +194,6 @@ const OrderCart = ({ onConvertToOrder }) => {
       setInvoiceData(initialInvoiceData);
       setSelectedCustomer("");
     } catch (error) {
-      console.error("Place order error:", error);
       toast.error(
         `Failed to place order or create invoice: ${
           error.data?.message || "Unknown error"

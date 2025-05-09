@@ -29,7 +29,6 @@ const authHandler = async (socket, next) => {
     socket.user = { id: user.id, name: user.name, isAdmin }; // Attach user to socket
     next();
   } catch (err) {
-    console.error("Authentication error:", err.message);
     next(new Error("Invalid token"));
   }
 };

@@ -49,12 +49,6 @@ const checkPermission = (
 
       // Validate permission parameters
       if (!requiredApi || !requiredName || !requiredModule || !requiredRoute) {
-        console.error("Invalid permission parameters:", {
-          requiredApi,
-          requiredName,
-          requiredModule,
-          requiredRoute,
-        });
         return res
           .status(500)
           .json({ message: "Invalid permission configuration" });
@@ -92,14 +86,6 @@ const checkPermission = (
 
       next();
     } catch (error) {
-      console.error("Permission check failed:", {
-        error: error.message,
-        userId: decoded?.id,
-        requiredApi,
-        requiredName,
-        requiredModule,
-        requiredRoute,
-      });
       if (error.name === "JsonWebTokenError") {
         return res.status(401).json({ message: "Unauthorized: Invalid token" });
       }

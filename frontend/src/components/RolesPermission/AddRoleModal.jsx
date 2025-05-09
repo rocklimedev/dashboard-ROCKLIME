@@ -22,7 +22,6 @@ const AddRoleModal = ({ show, onClose }) => {
       toast.error(
         `Failed to add role: ${error.data?.message || "Please try again."}`
       );
-      console.error("Error adding role:", error);
     }
   };
 

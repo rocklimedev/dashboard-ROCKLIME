@@ -94,7 +94,6 @@ const AddCompanyModal = ({ show, onClose, existingVendor }) => {
       }
       closeModal();
     } catch (error) {
-      console.error("Error submitting vendor:", error);
       const errorMessage =
         error.data?.message ||
         error.data?.error ||

@@ -26,7 +26,6 @@ exports.createAddress = async (req, res) => {
 
     res.status(201).json(address);
   } catch (error) {
-    console.error("Error creating address:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
@@ -37,7 +36,6 @@ exports.getAllAddresses = async (req, res) => {
     const addresses = await Address.findAll({ include: User });
     res.json(addresses);
   } catch (error) {
-    console.error("Error fetching addresses:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
@@ -54,7 +52,6 @@ exports.getAddressById = async (req, res) => {
 
     res.json(address);
   } catch (error) {
-    console.error("Error fetching address:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
@@ -74,7 +71,6 @@ exports.updateAddress = async (req, res) => {
 
     res.json({ message: "Address updated successfully.", address });
   } catch (error) {
-    console.error("Error updating address:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
@@ -93,7 +89,6 @@ exports.deleteAddress = async (req, res) => {
 
     res.json({ message: "Address deleted successfully." });
   } catch (error) {
-    console.error("Error deleting address:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };

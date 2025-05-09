@@ -97,7 +97,6 @@ const Keyword = ({ onClose, showModal }) => {
         setKeywordPage(keywordPage - 1);
       }
     } catch (err) {
-      console.error("Delete failed:", err);
       toast.error(
         `Failed to delete keyword: ${err.data?.message || "Unknown error"}`
       );

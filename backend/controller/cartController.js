@@ -72,7 +72,6 @@ exports.addToCart = async (req, res) => {
     await cart.save();
     res.status(200).json({ message: "Items added to cart", cart });
   } catch (err) {
-    console.error("Error adding to cart:", err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -130,7 +129,6 @@ exports.addProductToCart = async (req, res) => {
     await cart.save();
     res.status(200).json({ message: "Product added to cart", cart });
   } catch (err) {
-    console.error("Error adding product to cart:", err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -152,7 +150,6 @@ exports.getCart = async (req, res) => {
 
     res.status(200).json({ cart });
   } catch (err) {
-    console.error("Error fetching cart:", err.message);
     res.status(500).json({ error: err.message });
   }
 };
@@ -186,7 +183,6 @@ exports.removeFromCart = async (req, res) => {
 
     res.status(200).json({ message: "Item removed from cart", cart });
   } catch (err) {
-    console.error("Error removing item:", err.message);
     res.status(500).json({ error: err.message });
   }
 };
@@ -226,7 +222,6 @@ exports.updateCart = async (req, res) => {
 
     res.status(200).json({ message: "Cart updated successfully", cart });
   } catch (err) {
-    console.error("Error updating cart:", err.message);
     res.status(500).json({ error: err.message });
   }
 };
@@ -251,7 +246,6 @@ exports.clearCart = async (req, res) => {
 
     res.status(200).json({ message: "Cart cleared successfully", cart });
   } catch (err) {
-    console.error("Error clearing cart:", err.message);
     res.status(500).json({ error: err.message });
   }
 };
@@ -312,7 +306,6 @@ exports.convertQuotationToCart = async (req, res) => {
       .status(200)
       .json({ message: "Quotation converted to cart successfully", cart });
   } catch (err) {
-    console.error("Error converting quotation to cart:", err.message);
     res.status(500).json({ error: err.message });
   }
 };
@@ -365,7 +358,6 @@ exports.getCartById = async (req, res) => {
 
     res.status(200).json({ cart });
   } catch (err) {
-    console.error("Error fetching cart:", err.message);
     res.status(500).json({ error: err.message });
   }
 };

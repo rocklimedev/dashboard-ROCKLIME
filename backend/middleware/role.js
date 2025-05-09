@@ -14,7 +14,6 @@ const role = {
       });
 
       if (!superAdminRole) {
-        console.error("Super Admin role not found in database.");
         return res
           .status(500)
           .json({ error: "Super Admin role configuration error." });
@@ -33,7 +32,6 @@ const role = {
 
       next();
     } catch (error) {
-      console.error("Error in role middleware:", error);
       res
         .status(500)
         .json({ error: "An internal error occurred in role verification." });

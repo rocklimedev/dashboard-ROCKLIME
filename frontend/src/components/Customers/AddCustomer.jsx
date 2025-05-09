@@ -244,7 +244,6 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
 
       onClose();
     } catch (err) {
-      console.error("Failed to add/update customer:", err);
       toast.error(err?.data?.message || "Failed to process request.");
     }
   };

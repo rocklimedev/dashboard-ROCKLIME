@@ -48,7 +48,6 @@ const TeamsList = ({ onClose, adminName }) => {
           err.data?.message || err.data?.error || "Unknown error"
         }`
       );
-      console.error("Error deleting team:", err);
     } finally {
       setShowDeleteModal(false);
       setTeamToDelete(null);

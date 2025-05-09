@@ -54,7 +54,6 @@ exports.createInvoice = async (req, res) => {
       data: invoice,
     });
   } catch (error) {
-    console.error("Error creating invoice:", error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -68,7 +67,6 @@ exports.getAllInvoices = async (req, res) => {
     const invoices = await Invoice.findAll();
     return res.status(200).json({ success: true, data: invoices });
   } catch (error) {
-    console.error("Error fetching invoices:", error);
     return res
       .status(500)
       .json({ success: false, message: "Internal Server Error" });
@@ -89,7 +87,6 @@ exports.getInvoiceById = async (req, res) => {
 
     return res.status(200).json({ success: true, data: invoice });
   } catch (error) {
-    console.error("Error fetching invoice:", error);
     return res
       .status(500)
       .json({ success: false, message: "Internal Server Error" });
@@ -212,7 +209,6 @@ exports.updateInvoice = async (req, res) => {
       data: invoice,
     });
   } catch (error) {
-    console.error("Error updating invoice:", error);
     return res.status(500).json({
       success: false,
       message: error.message || "Internal Server Error",
@@ -239,7 +235,6 @@ exports.deleteInvoice = async (req, res) => {
       message: "Invoice deleted successfully",
     });
   } catch (error) {
-    console.error("Error deleting invoice:", error);
     return res
       .status(500)
       .json({ success: false, message: "Internal Server Error" });

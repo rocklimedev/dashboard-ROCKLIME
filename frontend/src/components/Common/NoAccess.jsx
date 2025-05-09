@@ -30,7 +30,7 @@ const NoAccess = () => {
         try {
           roleNames = JSON.parse(roleNames);
         } catch (e) {
-          console.error("Failed to parse roles:", roleNames);
+          toast.error("Failed to parse roles:", roleNames);
           roleNames = [];
         }
       }
@@ -52,7 +52,6 @@ const NoAccess = () => {
       toast.success("Access granted! Redirecting...");
       navigate("/", { replace: true });
     } catch (error) {
-      console.error("Retry failed:", error);
       toast.error("Failed to verify access. Please try again.");
     }
   };
@@ -64,14 +63,9 @@ const NoAccess = () => {
       toast.success("Logged out successfully!");
       navigate("/login", { replace: true });
     } catch (error) {
-      console.error("Logout failed:", error);
       toast.error("Logout failed. Please try again.");
     }
   };
-
-  if (profileError) {
-    console.error("Profile fetch error:", profileError);
-  }
 
   return (
     <div className="main-wrapper">

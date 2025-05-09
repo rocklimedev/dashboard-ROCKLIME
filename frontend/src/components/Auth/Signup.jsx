@@ -43,7 +43,6 @@ const Signup = () => {
       toast.success("Registration successful!", { autoClose: 2000 });
       setTimeout(() => navigate("/login"), 2000);
     } catch (err) {
-      console.error("Registration failed:", err);
       toast.error(err?.data?.message || "Something went wrong. Try again.");
     }
   };

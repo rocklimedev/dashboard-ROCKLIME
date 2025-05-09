@@ -90,17 +90,6 @@ const OrderWrapper = () => {
   const isFetching = isFiltered ? filteredFetching : allFetching;
   const error = isFiltered ? filteredError : allError;
 
-  console.log("OrderWrapper State:", {
-    filters,
-    isFiltered,
-    cleanFilters,
-    ordersCount: orders.length,
-    totalCount,
-    isLoading,
-    isFetching,
-    error,
-  });
-
   useEffect(() => {
     if (teamsData?.teams) {
       const map = teamsData.teams.reduce((acc, team) => {
@@ -158,7 +147,6 @@ const OrderWrapper = () => {
       toast.success("Order deleted successfully!");
       handleModalClose();
     } catch (err) {
-      console.error("Failed to delete order:", err);
       toast.error(
         `Failed to delete order: ${err.data?.message || "Unknown error"}`
       );
@@ -176,7 +164,6 @@ const OrderWrapper = () => {
       }
       handleModalClose();
     } catch (err) {
-      console.error("Failed to save order:", err);
       toast.error(
         `Failed to save order: ${err.data?.message || "Unknown error"}`
       );
@@ -305,10 +292,6 @@ const OrderWrapper = () => {
                       const isTeamLoading = order.assignedTo
                         ? teamDataMap[order.assignedTo]?.isLoading || false
                         : false;
-                      console.log("OrderItem props for order", order.id, {
-                        teamName,
-                        isTeamLoading,
-                      });
                       return (
                         <div className="col-md-6" key={order.id}>
                           <OrderItem

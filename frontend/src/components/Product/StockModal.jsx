@@ -4,6 +4,7 @@ import {
   useAddStockMutation,
   useRemoveStockMutation,
 } from "../../api/productApi";
+import { toast } from "react-toastify";
 const StockModal = ({ isVisible, onClose, product }) => {
   const [quantity, setQuantity] = useState(0);
   const [type, setType] = useState("in"); // "in" or "out"
@@ -24,7 +25,7 @@ const StockModal = ({ isVisible, onClose, product }) => {
       }
       onClose();
     } catch (error) {
-      console.error("Stock update failed", error);
+      toast.error("Stock update failed", error);
     }
   };
 

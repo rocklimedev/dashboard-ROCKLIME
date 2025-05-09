@@ -74,7 +74,6 @@ exports.createTeam = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error creating team:", error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -179,7 +178,6 @@ exports.updateTeam = async (req, res) => {
       team: updatedTeam,
     });
   } catch (error) {
-    console.error("Error updating team:", error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",

@@ -69,7 +69,6 @@ const Profile = () => {
       await forgotPassword({ email: formData.email }).unwrap();
       toast.success("Password reset link sent to your email!");
     } catch (error) {
-      console.error("Error sending password reset request:", error);
       if (error.status === 404) {
         toast.error("Email not found. Please check your email address.");
       } else {
@@ -86,7 +85,7 @@ const Profile = () => {
   if (!profile?.user) return <p>No user profile data available.</p>;
 
   const userId = profile.user.userId;
-  console.log(userId);
+
   const roleId = profile.user.roleId;
   const roleName =
     rolesData?.find((role) => role.roleId === roleId)?.roleName || "N/A";
@@ -107,7 +106,6 @@ const Profile = () => {
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-  console.log(formData);
   const handleSaveClick = async () => {
     if (!userId) {
       toast.error("User ID not found. Cannot update profile.");
@@ -138,7 +136,6 @@ const Profile = () => {
         }
       }
     } catch (error) {
-      console.error("Error updating profile:", error);
       if (error.status === 404) {
         toast.error("User not found. Please check your account.");
       } else {

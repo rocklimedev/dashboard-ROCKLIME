@@ -72,7 +72,6 @@ const AddBrand = ({ onClose, existingBrand }) => {
         onClose();
       }, 2000);
     } catch (err) {
-      console.error("Failed to submit Brand:", err);
       toast.error(err?.data?.message || "Failed to submit brand. Try again.");
     }
   };

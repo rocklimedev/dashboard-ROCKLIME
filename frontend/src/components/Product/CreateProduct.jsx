@@ -231,7 +231,6 @@ const CreateProduct = () => {
         setFilteredCategories([]);
       }
     } catch (error) {
-      console.error("Error submitting product:", error);
       toast.error(
         `Error: ${
           error.data?.message ||

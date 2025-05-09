@@ -153,7 +153,7 @@ exports.updateQuotation = async (req, res) => {
     res.status(200).json({ message: "Quotation updated successfully" });
   } catch (error) {
     await t.rollback();
-    console.error("Error updating quotation:", error);
+
     res
       .status(500)
       .json({ error: "Failed to update quotation", details: error.message });
@@ -240,7 +240,6 @@ exports.exportQuotation = async (req, res) => {
     // Send file for download
     res.download(filePath, fileName, (err) => {
       if (err) {
-        console.error("Download error:", err);
         res.status(500).json({ message: "Failed to download file" });
       }
       fs.unlinkSync(filePath); // Delete file after download

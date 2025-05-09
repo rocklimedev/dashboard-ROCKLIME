@@ -69,16 +69,12 @@ const ProductsList = ({ products = [] }) => {
       return;
     }
 
-    console.log("Adding to cart:", { userId, productId });
-
     setCartLoadingStates((prev) => ({ ...prev, [productId]: true }));
 
     try {
       const response = await addProductToCart({ userId, productId }).unwrap();
-      console.log("API response:", response);
       toast.success(`${product.name} added to cart!`);
     } catch (error) {
-      console.error("Add to cart error:", error);
       toast.error(`Error: ${error.data?.message || "Unknown error"}`);
     } finally {
       setCartLoadingStates((prev) => ({ ...prev, [productId]: false }));
