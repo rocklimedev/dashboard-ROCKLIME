@@ -1,0 +1,44 @@
+[
+  {
+    "roleId": "0c3392e0-f416-407c-8699-e8638554eba9",
+    "roleName": "USERS",
+    "createdAt": "2025-03-18 09:59:47",
+    "updatedAt": "2025-03-18 09:59:47"
+  },
+  {
+    "roleId": "5bb7eed4-1106-4b93-9218-ad733cfc7b12",
+    "roleName": "DEVELOPER",
+    "createdAt": "2025-03-18 09:59:47",
+    "updatedAt": "2025-03-18 09:59:47"
+  },
+  {
+    "roleId": "c2eaf23a-765c-4ee5-91bf-cbc37fbdea21",
+    "roleName": "SUPER_ADMIN",
+    "createdAt": "2025-03-18 09:59:47",
+    "updatedAt": "2025-03-18 09:59:47"
+  },
+  {
+    "roleId": "c3893e5f-4b6c-43c5-83ec-bc74beecfb30",
+    "roleName": "SALES",
+    "createdAt": "2025-03-18 09:59:47",
+    "updatedAt": "2025-03-18 09:59:47"
+  },
+  {
+    "roleId": "cfbe02d3-c61d-4f09-9bc7-88fb2493f31d",
+    "roleName": "ACCOUNTS",
+    "createdAt": "2025-03-18 09:59:47",
+    "updatedAt": "2025-03-18 09:59:47"
+  },
+  {
+    "roleId": "faa429f2-b1c8-4534-a521-ad8f5a4104cc",
+    "roleName": "OPS",
+    "createdAt": "2025-04-24 09:39:42",
+    "updatedAt": "2025-04-24 09:39:42"
+  },
+  {
+    "roleId": "ffb71a9e-3f2e-4e26-97e4-8611591356b0",
+    "roleName": "ADMIN",
+    "createdAt": "2025-03-18 09:59:47",
+    "updatedAt": "2025-03-18 09:59:47"
+  }
+]

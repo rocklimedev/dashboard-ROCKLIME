@@ -39,6 +39,44 @@ const QuotationList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  // Define helper functions before formattedQuotations
+  const getProductCount = (products) => {
+    const parsedProducts =
+      typeof products === "string"
+        ? JSON.parse(products || "[]")
+        : products || [];
+    return parsedProducts.length;
+  };
+
+  const getCustomerName = (customerId) => {
+    const customer = customers.find((c) => c.customerId === customerId);
+    return customer ? customer.name : "Unknown";
+  };
+
+  const getUserName = (createdBy) => {
+    if (!users || users.length === 0 || !createdBy) return "Unknown";
+    const user = users.find(
+      (u) => u.userId && u.userId.trim() === createdBy.trim()
+    );
+    return user ? user.name : "Unknown";
+  };
+
+  // Format quotations for tableData prop
+  const formattedQuotations = quotations.map((quotation) => ({
+    quotationId: quotation.quotationId,
+    document_title: quotation.document_title || "N/A",
+    quotation_date: new Date(quotation.quotation_date).toLocaleDateString(),
+    due_date: new Date(quotation.due_date).toLocaleDateString(),
+    reference_number: quotation.reference_number || "N/A",
+    include_gst: quotation.include_gst ? "Yes" : "No",
+    products: getProductCount(quotation.products),
+    discountType: quotation.discountType || "N/A",
+    roundOff: quotation.roundOff || "N/A",
+    createdBy: getUserName(quotation.createdBy),
+    customer: getCustomerName(quotation.customerId),
+    finalAmount: `₹${quotation.finalAmount || 0}`,
+  }));
+
   if (isLoading) return <p>Loading quotations...</p>;
   if (isError) return <p>Error fetching quotations!</p>;
 
@@ -61,6 +99,10 @@ const QuotationList = () => {
       setShowDeleteModal(false);
       setQuotationToDelete(null);
       refetch();
+      // Adjust pagination if needed
+      if (currentQuotations.length === 1 && currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+      }
     } catch (err) {
       toast.error(
         `Failed to delete quotation: ${err.data?.message || "Unknown error"}`
@@ -70,12 +112,10 @@ const QuotationList = () => {
   };
 
   const handleOpenProductModal = (products) => {
-    // Parse products if it's a JSON string
     const parsedProducts =
       typeof products === "string"
         ? JSON.parse(products || "[]")
         : products || [];
-
     setSelectedProducts(parsedProducts);
     setShowProductModal(true);
   };
@@ -83,28 +123,6 @@ const QuotationList = () => {
   const handleCloseProductModal = () => {
     setShowProductModal(false);
     setSelectedProducts([]);
-  };
-
-  const getProductCount = (products) => {
-    // Parse products if it's a JSON string and return the length
-    const parsedProducts =
-      typeof products === "string"
-        ? JSON.parse(products || "[]")
-        : products || [];
-    return parsedProducts.length;
-  };
-
-  const getCustomerName = (customerId) => {
-    const customer = customers.find((c) => c.customerId === customerId);
-    return customer ? customer.name : "Unknown";
-  };
-
-  const getUserName = (createdBy) => {
-    if (!users || users.length === 0 || !createdBy) return "Unknown";
-    const user = users.find(
-      (u) => u.userId && u.userId.trim() === createdBy.trim()
-    );
-    return user ? user.name : "Unknown";
   };
 
   // Pagination Logic
@@ -124,6 +142,7 @@ const QuotationList = () => {
           title="Quotations"
           subtitle="Manage your quotations list"
           onAdd={handleAddQuotation}
+          tableData={formattedQuotations}
         />
         <div className="card">
           <div className="card-body p-0">

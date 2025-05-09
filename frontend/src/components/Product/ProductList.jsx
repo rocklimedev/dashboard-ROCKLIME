@@ -4,7 +4,7 @@ import PageHeader from "../Common/PageHeader";
 import Actions from "../Common/Actions";
 import {
   useGetAllProductsQuery,
-  useDeleteProductMutation, // Add this import
+  useDeleteProductMutation,
 } from "../../api/productApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
@@ -15,16 +15,17 @@ import DeleteModal from "../Common/DeleteModal";
 import StockModal from "../Common/StockModal";
 import HistoryModal from "../Common/HistoryModal";
 import { useNavigate } from "react-router-dom";
-import { ToastContainer, toast } from "react-toastify"; // Add toast for notifications
+import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Link } from "react-router-dom";
+
 const ProductList = () => {
   const navigate = useNavigate();
   const { data, error, isLoading } = useGetAllProductsQuery();
   const { data: categoriesData } = useGetAllCategoriesQuery();
   const { data: brandsData } = useGetAllBrandsQuery();
   const { data: customersData } = useGetCustomersQuery();
-  const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation(); // Add mutation
+  const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
 
   const products = Array.isArray(data?.data)
     ? data.data
@@ -125,6 +126,19 @@ const ProductList = () => {
 
   const filteredProducts = applyFilters(customers);
 
+  // Format products for tableData prop
+  const formattedProducts = filteredProducts.map((product) => ({
+    productId: product.productId,
+    name: product.name || "N/A",
+    product_code: product.product_code || "N/A",
+    company_code: product.company_code || "N/A",
+    category: getCategoryName(product.categoryId),
+    brand: getBrandsName(product.brandId),
+    quantity: product.quantity ?? 0,
+    createdBy:
+      customers.find((c) => c._id === product.customerId)?.name || "Unknown",
+  }));
+
   useEffect(() => {
     if (
       filteredProducts.length > 0 &&
@@ -156,7 +170,6 @@ const ProductList = () => {
     try {
       await deleteProduct(selectedProduct.productId).unwrap();
       toast.success("Product deleted successfully!");
-      // Adjust pagination if the current page becomes empty
       if (currentItems.length === 1 && currentPage > 0) {
         setCurrentPage(currentPage - 1);
       }
@@ -219,6 +232,7 @@ const ProductList = () => {
           title="Products"
           subtitle="Manage your product inventory"
           onAdd={handleAddProduct}
+          tableData={formattedProducts} // Pass formatted products to PageHeader
         />
 
         <div className="card">
@@ -263,7 +277,6 @@ const ProductList = () => {
                           </span>
                         </td>
                         <td>
-                          {" "}
                           <Link to={`/product/${product.productId}`}>
                             {product.name || "N/A"}
                           </Link>
@@ -312,7 +325,7 @@ const ProductList = () => {
           {filteredProducts.length > 0 && (
             <DataTablePagination
               currentPage={currentPage}
-              onPageChange={setCurrentPage} // ✅ match the expected prop
+              onPageChange={setCurrentPage}
               totalItems={filteredProducts.length}
               itemsPerPage={itemsPerPage}
             />

@@ -11,7 +11,7 @@ import { useGetCustomersQuery } from "../../api/customerApi";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
 import EditInvoice from "./EditInvoice";
 import DeleteModal from "../Common/DeleteModal";
-import DataTablePagination from "../Common/DataTablePagination"; // Import pagination component
+import DataTablePagination from "../Common/DataTablePagination";
 
 const RecentInvoices = () => {
   const {
@@ -51,8 +51,8 @@ const RecentInvoices = () => {
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1); // Pagination state
-  const itemsPerPage = 20; // Matches itemNo default in DataTablePagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
 
   // Memoized maps
   const customerMap = useMemo(() => {
@@ -104,60 +104,6 @@ const RecentInvoices = () => {
     return map;
   }, [users]);
 
-  // Log data for debugging
-  useEffect(() => {
-    // const inv803257 = invoices.find((inv) => inv.invoiceNo === "INV_803257");
-    // if (inv803257) {
-    //   console.log("INV_803257 details:", inv803257);
-    //   console.log(
-    //     "INV_803257 customer mapping:",
-    //     inv803257.customerId
-    //       ? customerMap[inv803257.customerId]
-    //       : `Fallback to billTo: ${inv803257.billTo}`
-    //   );
-    //   console.log(
-    //     "INV_803257 shipTo mapping:",
-    //     inv803257.shipTo ? addressMap[inv803257.shipTo] : "No shipTo"
-    //   );
-    // } else {
-    //   console.warn("INV_803257 not found in invoices");
-    // }
-
-    const unmatchedCustomerInvoices = invoices.filter((inv) => {
-      if (!inv.customerId || typeof inv.customerId !== "string") {
-        console.warn("Invalid invoice customerId:", inv);
-        return true;
-      }
-      return !customers.find(
-        (cust) => cust.customerId === inv.customerId.trim()
-      );
-    });
-    if (unmatchedCustomerInvoices.length > 0) {
-      console.warn(
-        "Unmatched customer IDs:",
-        unmatchedCustomerInvoices.map((inv) => ({
-          invoiceNo: inv.invoiceNo,
-          customerId: inv.customerId,
-          billTo: inv.billTo,
-        }))
-      );
-    }
-
-    const unmatchedAddressInvoices = invoices.filter(
-      (inv) =>
-        inv.shipTo && !addresses.find((addr) => addr.addressId === inv.shipTo)
-    );
-    if (unmatchedAddressInvoices.length > 0) {
-      console.warn(
-        "Unmatched shipTo address IDs:",
-        unmatchedAddressInvoices.map((inv) => ({
-          invoiceNo: inv.invoiceNo,
-          shipTo: inv.shipTo,
-        }))
-      );
-    }
-  }, [invoices, customers, addresses, customerMap, addressMap]);
-
   // Derive statuses dynamically
   const statuses = useMemo(() => {
     const invoiceStatuses = [
@@ -192,62 +138,6 @@ const RecentInvoices = () => {
       .split(" ")
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ") || "N/A";
-
-  // Checkbox handlers
-  const handleSelectAll = () => {
-    const currentPageInvoices = paginatedInvoices.map((inv) => inv.invoiceId);
-    setSelectedInvoices(
-      selectedInvoices.length === currentPageInvoices.length
-        ? []
-        : currentPageInvoices
-    );
-  };
-
-  const toggleInvoice = (id) => {
-    setSelectedInvoices((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  };
-
-  // Handle edit button click
-  const handleEditClick = (invoice) => {
-    setSelectedInvoice(invoice);
-    setShowEditModal(true);
-  };
-
-  // Handle delete button click
-  const handleDeleteClick = (invoice) => {
-    setInvoiceToDelete(invoice);
-    setShowDeleteModal(true);
-  };
-
-  // Confirm deletion
-  const confirmDelete = async (invoice) => {
-    try {
-      await deleteInvoice(invoice.invoiceId).unwrap();
-      setShowDeleteModal(false);
-      setInvoiceToDelete(null);
-      // Reset to first page if current page becomes empty
-      if (paginatedInvoices.length === 1 && currentPage > 1) {
-        setCurrentPage(currentPage - 1);
-      }
-    } catch (error) {
-      console.error("Failed to delete invoice:", error);
-      alert("Failed to delete invoice. Please try again.");
-    }
-  };
-
-  // Cancel deletion
-  const cancelDelete = () => {
-    setShowDeleteModal(false);
-    setInvoiceToDelete(null);
-  };
-
-  // Handle page change
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
-    setSelectedInvoices([]); // Clear selected invoices on page change
-  };
 
   // Filtered and sorted invoices
   const filteredInvoices = useMemo(() => {
@@ -333,6 +223,140 @@ const RecentInvoices = () => {
     addressMap,
   ]);
 
+  // Format invoices for tableData prop
+  const formattedInvoices = useMemo(() => {
+    return filteredInvoices.map((invoice) => ({
+      invoiceId: invoice.invoiceId,
+      invoiceNo: invoice.invoiceNo,
+      customer:
+        invoice.customerId && customerMap[invoice.customerId?.trim()]
+          ? customerMap[invoice.customerId.trim()]
+          : normalizeName(invoice.billTo) || "Unknown Customer",
+      billTo: normalizeName(invoice.billTo) || "N/A",
+      shipTo: invoice.shipTo
+        ? addressMap[invoice.shipTo] || "Address Not Found"
+        : customers.find((cust) => cust.customerId === invoice.customerId)
+            ?.address
+        ? Object.values(
+            customers.find((cust) => cust.customerId === invoice.customerId)
+              .address
+          )
+            .filter(Boolean)
+            .join(", ")
+        : "N/A",
+      invoiceDate:
+        invoice.invoiceDate && invoice.invoiceDate !== "0000-00-00"
+          ? new Date(invoice.invoiceDate).toLocaleDateString()
+          : "N/A",
+      dueDate:
+        invoice.dueDate && invoice.dueDate !== "0000-00-00"
+          ? new Date(invoice.dueDate).toLocaleDateString()
+          : "N/A",
+      amount: invoice.amount ? `Rs ${invoice.amount}` : "N/A",
+      createdBy: userMap[invoice.createdBy] || "Unknown User",
+      status: getInvoiceStatus(invoice),
+    }));
+  }, [
+    filteredInvoices,
+    customerMap,
+    addressMap,
+    userMap,
+    normalizeName,
+    getInvoiceStatus,
+  ]);
+
+  // Log data for debugging
+  useEffect(() => {
+    const unmatchedCustomerInvoices = invoices.filter((inv) => {
+      if (!inv.customerId || typeof inv.customerId !== "string") {
+        console.warn("Invalid invoice customerId:", inv);
+        return true;
+      }
+      return !customers.find(
+        (cust) => cust.customerId === inv.customerId.trim()
+      );
+    });
+    if (unmatchedCustomerInvoices.length > 0) {
+      console.warn(
+        "Unmatched customer IDs:",
+        unmatchedCustomerInvoices.map((inv) => ({
+          invoiceNo: inv.invoiceNo,
+          customerId: inv.customerId,
+          billTo: inv.billTo,
+        }))
+      );
+    }
+
+    const unmatchedAddressInvoices = invoices.filter(
+      (inv) =>
+        inv.shipTo && !addresses.find((addr) => addr.addressId === inv.shipTo)
+    );
+    if (unmatchedAddressInvoices.length > 0) {
+      console.warn(
+        "Unmatched shipTo address IDs:",
+        unmatchedAddressInvoices.map((inv) => ({
+          invoiceNo: inv.invoiceNo,
+          shipTo: inv.shipTo,
+        }))
+      );
+    }
+  }, [invoices, customers, addresses, customerMap, addressMap]);
+
+  // Checkbox handlers
+  const handleSelectAll = () => {
+    const currentPageInvoices = paginatedInvoices.map((inv) => inv.invoiceId);
+    setSelectedInvoices(
+      selectedInvoices.length === currentPageInvoices.length
+        ? []
+        : currentPageInvoices
+    );
+  };
+
+  const toggleInvoice = (id) => {
+    setSelectedInvoices((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  // Handle edit button click
+  const handleEditClick = (invoice) => {
+    setSelectedInvoice(invoice);
+    setShowEditModal(true);
+  };
+
+  // Handle delete button click
+  const handleDeleteClick = (invoice) => {
+    setInvoiceToDelete(invoice);
+    setShowDeleteModal(true);
+  };
+
+  // Confirm deletion
+  const confirmDelete = async (invoice) => {
+    try {
+      await deleteInvoice(invoice.invoiceId).unwrap();
+      setShowDeleteModal(false);
+      setInvoiceToDelete(null);
+      if (paginatedInvoices.length === 1 && currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+      }
+    } catch (error) {
+      console.error("Failed to delete invoice:", error);
+      alert("Failed to delete invoice. Please try again.");
+    }
+  };
+
+  // Cancel deletion
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setInvoiceToDelete(null);
+  };
+
+  // Handle page change
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    setSelectedInvoices([]);
+  };
+
   // Paginated invoices
   const paginatedInvoices = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -350,6 +374,7 @@ const RecentInvoices = () => {
         <PageHeader
           title="Recent Invoices"
           subtitle="Manage your Recent Invoices"
+          tableData={formattedInvoices}
         />
 
         {isLoading && <p className="text-center">Loading data...</p>}
@@ -677,7 +702,6 @@ const RecentInvoices = () => {
                       ))}
                     </tbody>
                   </table>
-                  {/* Pagination Component */}
                   <div className="card-footer">
                     <DataTablePagination
                       totalItems={filteredInvoices.length}
@@ -691,7 +715,6 @@ const RecentInvoices = () => {
           </div>
         </div>
 
-        {/* Edit Invoice Modal */}
         {showEditModal && selectedInvoice && (
           <EditInvoice
             invoice={selectedInvoice}
@@ -702,7 +725,6 @@ const RecentInvoices = () => {
           />
         )}
 
-        {/* Delete Confirmation Modal */}
         <DeleteModal
           item={invoiceToDelete}
           itemType="Invoice"

@@ -1,32 +1,40 @@
 import React, { useState } from "react";
-import PageHeader from "../Common/PageHeader";
-import DataTablePagination from "../Common/DataTablePagination";
-import { useGetAllKeywordsQuery } from "../../api/keywordApi";
+import { Tabs, Tab } from "react-bootstrap";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
-import { AiOutlineEdit } from "react-icons/ai";
-import { FcEmptyTrash } from "react-icons/fc";
-import { toast } from "react-toastify";
+import {
+  useGetAllKeywordsQuery,
+  useDeleteKeywordMutation,
+} from "../../api/keywordApi";
+import { useGetAllParentCategoriesQuery } from "../../api/parentCategoryApi";
+import { useDeleteCategoryMutation } from "../../api/categoryApi";
+import PageHeader from "../Common/PageHeader";
+import AddCategoryModal from "./AddCategoryModal";
 import AddKeywordModal from "./AddKeywordModal";
+import DeleteModal from "../Common/DeleteModal";
+import DataTablePagination from "../Common/DataTablePagination";
+import { AiOutlineEdit } from "react-icons/ai";
+import { FcFullTrash, FcEmptyTrash } from "react-icons/fc";
+import { toast } from "react-toastify";
 
-const Keyword = () => {
+const Keyword = ({ onClose, showModal }) => {
   const [keywordPage, setKeywordPage] = useState(1);
   const [selectedCategoryId, setSelectedCategoryId] = useState("all");
+  const [keywordToEdit, setKeywordToEdit] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [keywordToDelete, setKeywordToDelete] = useState(null);
   const itemsPerPage = 20;
-
-  const [showKeywordModal, setShowKeywordModal] = useState(false);
-  const [keywordToEdit, setKeywordToEdit] = useState(null); // ✅ Edit state
 
   const {
     data: keywordData,
     isLoading: keywordLoading,
     error: keywordError,
   } = useGetAllKeywordsQuery();
-
   const {
     data: categoryData,
     isLoading: categoryLoading,
     error: categoryError,
   } = useGetAllCategoriesQuery();
+  const [deleteKeyword] = useDeleteKeywordMutation();
 
   if (keywordLoading || categoryLoading) return <p>Loading...</p>;
   if (keywordError || categoryError) {
@@ -51,24 +59,60 @@ const Keyword = () => {
       ? keywords
       : keywords.filter((k) => k.categoryId === selectedCategoryId);
 
+  // Format keywords for tableData prop
+  const formattedKeywords = filteredKeywords.map((keyword) => ({
+    id: keyword.id,
+    keyword: keyword.keyword,
+    category: categoryMap[keyword.categoryId] || "Uncategorized",
+    createdAt: new Date(keyword.createdAt).toLocaleDateString(),
+  }));
+
   const paginated = filteredKeywords.slice(
     (keywordPage - 1) * itemsPerPage,
     keywordPage * itemsPerPage
   );
 
   const handleAddKeyword = () => {
-    setKeywordToEdit(null); // Clear edit
+    setKeywordToEdit(null);
     setShowKeywordModal(true);
-  };
-
-  const handleCloseKeywordModal = () => {
-    setShowKeywordModal(false);
-    setKeywordToEdit(null); // Reset after closing
   };
 
   const handleEdit = (keyword) => {
     setKeywordToEdit(keyword);
     setShowKeywordModal(true);
+  };
+
+  const handleDelete = async (keyword) => {
+    if (!keyword || !keyword.id) {
+      toast.error("Invalid keyword or keyword ID.");
+      return;
+    }
+
+    try {
+      await deleteKeyword(keyword.id).unwrap();
+      toast.success("Keyword deleted successfully!");
+      setShowDeleteModal(false);
+      setKeywordToDelete(null);
+      if (paginated.length === 1 && keywordPage > 1) {
+        setKeywordPage(keywordPage - 1);
+      }
+    } catch (err) {
+      console.error("Delete failed:", err);
+      toast.error(
+        `Failed to delete keyword: ${err.data?.message || "Unknown error"}`
+      );
+    }
+  };
+
+  const setShowKeywordModal = (value) => {
+    if (!value) onClose();
+    setShowModal(value);
+  };
+
+  const setShowModal = (value) => {
+    // This simulates the external showModal state update
+    // In practice, this would be handled by the parent component
+    if (typeof showModal === "function") showModal(value);
   };
 
   return (
@@ -77,6 +121,7 @@ const Keyword = () => {
         title="Keywords"
         subtitle="Manage your keywords by category"
         onAdd={handleAddKeyword}
+        tableData={formattedKeywords} // Pass formatted keywords for Excel/PDF
       />
 
       <div className="card">
@@ -136,7 +181,14 @@ const Keyword = () => {
                           >
                             <AiOutlineEdit />
                           </a>
-                          <a className="p-2" href="#">
+                          <a
+                            className="p-2"
+                            href="#"
+                            onClick={() => {
+                              setKeywordToDelete(keyword);
+                              setShowDeleteModal(true);
+                            }}
+                          >
                             <FcEmptyTrash />
                           </a>
                         </div>
@@ -156,14 +208,26 @@ const Keyword = () => {
         </div>
       </div>
 
-      {showKeywordModal && (
+      {showModal && (
         <AddKeywordModal
-          onClose={handleCloseKeywordModal}
-          editData={keywordToEdit} // ✅ Passing edit info
+          onClose={() => setShowKeywordModal(false)}
+          editData={keywordToEdit}
+        />
+      )}
+
+      {showDeleteModal && (
+        <DeleteModal
+          isVisible={showDeleteModal}
+          item={keywordToDelete}
+          itemType="Keyword"
+          onConfirm={() => handleDelete(keywordToDelete)}
+          onCancel={() => {
+            setShowDeleteModal(false);
+            setKeywordToDelete(null);
+          }}
         />
       )}
     </>
   );
 };
-
 export default Keyword;

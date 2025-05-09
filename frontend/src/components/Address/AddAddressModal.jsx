@@ -2,10 +2,10 @@ import React, { useEffect, useState } from "react";
 import {
   useCreateAddressMutation,
   useUpdateAddressMutation,
-} from "../../api/addressApi";
+} from "../../api/addressApi"; // Adjust import path as needed
 import { toast } from "react-toastify";
 import { v4 as uuidv4 } from "uuid";
-
+import { useGetAllUsersQuery } from "../../api/userApi";
 const AddAddress = ({ onClose, existingAddress }) => {
   const isEdit = !!existingAddress;
 
@@ -15,11 +15,16 @@ const AddAddress = ({ onClose, existingAddress }) => {
     state: "",
     postalCode: "",
     country: "",
-    userId: "", // you might set this dynamically or from session
+    userId: "",
   });
 
   const [createAddress, { isLoading: isCreating }] = useCreateAddressMutation();
   const [updateAddress, { isLoading: isUpdating }] = useUpdateAddressMutation();
+  const {
+    data: users,
+    isLoading: isUsersLoading,
+    error: usersError,
+  } = useGetAllUsersQuery();
 
   useEffect(() => {
     if (existingAddress) {
@@ -142,15 +147,28 @@ const AddAddress = ({ onClose, existingAddress }) => {
                 />
               </div>
               <div className="col-md-6">
-                <label className="form-label">User ID</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  name="userId"
-                  value={formData.userId}
-                  onChange={handleChange}
-                  required
-                />
+                <label className="form-label">User</label>
+                {isUsersLoading ? (
+                  <div>Loading users...</div>
+                ) : usersError ? (
+                  <div className="text-danger">Error loading users</div>
+                ) : (
+                  <select
+                    className="form-select"
+                    name="userId"
+                    value={formData.userId}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">Select a user</option>
+                    {users?.map((user) => (
+                      <option key={user.userId} value={user.userId}>
+                        {user.name || user.email || user.userId}{" "}
+                        {/* Adjust based on user data */}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
             </div>
             <div className="modal-footer">
@@ -164,7 +182,7 @@ const AddAddress = ({ onClose, existingAddress }) => {
               <button
                 type="submit"
                 className="btn btn-primary"
-                disabled={isCreating || isUpdating}
+                disabled={isCreating || isUpdating || isUsersLoading}
               >
                 {isEdit ? "Update" : "Create"}
               </button>

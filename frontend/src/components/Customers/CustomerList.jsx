@@ -10,7 +10,7 @@ import { FaEye } from "react-icons/fa";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import DeleteModal from "../Common/DeleteModal";
-import DataTablePagination from "../Common/DataTablePagination"; // Import pagination component
+import DataTablePagination from "../Common/DataTablePagination";
 
 const CustomerList = () => {
   const { data, error, isLoading } = useGetCustomersQuery();
@@ -22,8 +22,21 @@ const CustomerList = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [customerToDelete, setCustomerToDelete] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1); // Pagination state
-  const itemsPerPage = 20; // Matches itemNo default in DataTablePagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
+
+  // Format customers for tableData prop
+  const formattedCustomers = customers.map((customer) => ({
+    customerId: customer.customerId,
+    name: customer.name,
+    email: customer.email,
+    mobileNumber: customer.mobileNumber,
+    companyName: customer.companyName,
+    isVendor: customer.isVendor ? "Yes" : "No",
+    totalAmount: customer.totalAmount,
+    balance: customer.balance,
+    paidAmount: customer.paidAmount,
+  }));
 
   // Handle page change
   const handlePageChange = (pageNumber) => {
@@ -45,7 +58,7 @@ const CustomerList = () => {
 
   // Handle edit customer
   const handleEditCustomer = (customer) => {
-    setSelectedCustomer({ ...customer }); // Ensure new reference
+    setSelectedCustomer({ ...customer });
     setShowModal(true);
   };
 
@@ -65,7 +78,6 @@ const CustomerList = () => {
     try {
       await deleteCustomer(customerToDelete).unwrap();
       toast.success("Customer deleted successfully!");
-      // Reset to previous page if current page becomes empty
       if (paginatedCustomers.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
@@ -90,6 +102,7 @@ const CustomerList = () => {
             title="Customers"
             subtitle="Manage your Customers"
             onAdd={handleAddCustomer}
+            tableData={formattedCustomers} // Pass formatted customers to PageHeader
           />
 
           <div className="card">
@@ -151,7 +164,6 @@ const CustomerList = () => {
                 </table>
               </div>
             </div>
-            {/* Pagination Component */}
             <div className="card-footer">
               <DataTablePagination
                 totalItems={customers.length}
@@ -173,7 +185,7 @@ const CustomerList = () => {
 
       {showDeleteModal && (
         <DeleteModal
-          item={customerToDelete} // Pass customerId
+          item={customerToDelete}
           itemType="Customer"
           isVisible={showDeleteModal}
           onConfirm={confirmDelete}

@@ -39,6 +39,18 @@ const UserList = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [userToDelete, setUserToDelete] = useState(null);
 
+  // Format users for tableData prop
+  const formattedUsers = users.map((user) => ({
+    userId: user.userId,
+    name: user.name,
+    email: user.email,
+    username: user.username,
+    mobileNumber: user.mobileNumber,
+    roles: user.roles,
+    status: user.status ? "Active" : "Inactive",
+    createdAt: new Date(user.createdAt).toLocaleDateString(),
+  }));
+
   const handleAddUser = () => {
     setSelectedUser(null);
     setShowModal(true);
@@ -157,6 +169,7 @@ const UserList = () => {
           title="Users"
           subtitle="Manage your users"
           onAdd={handleAddUser}
+          tableData={formattedUsers} // Pass formatted users to PageHeader
         />
 
         <div className="card">

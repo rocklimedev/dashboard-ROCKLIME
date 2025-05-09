@@ -10,7 +10,7 @@ import DeleteModal from "../Common/DeleteModal";
 import ViewCompanies from "./ViewCompanies";
 import { BiEdit, BiTrash, BiShowAlt } from "react-icons/bi";
 import { toast } from "react-toastify";
-import DataTablePagination from "../Common/DataTablePagination"; // Import pagination component
+import DataTablePagination from "../Common/DataTablePagination";
 
 const CompaniesWrapper = () => {
   const {
@@ -33,8 +33,8 @@ const CompaniesWrapper = () => {
   const [vendorToDelete, setVendorToDelete] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [viewCompanyId, setViewCompanyId] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1); // Pagination state
-  const itemsPerPage = 20; // Matches itemNo default in DataTablePagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
 
   const vendors = Array.isArray(vendorsData) ? vendorsData : [];
   const brands = Array.isArray(brandsData) ? brandsData : [];
@@ -44,6 +44,15 @@ const CompaniesWrapper = () => {
     const brand = brands.find((b) => b.id === brandId);
     return brand ? brand.brandName : "Unknown";
   };
+
+  // Format vendors for tableData prop
+  const formattedVendors = vendors.map((vendor) => ({
+    vendorId: vendor.vendorId,
+    vendorName: vendor.vendorName,
+    brand: getBrandName(vendor.brandId),
+    brandSlug: vendor.brandSlug,
+    createdAt: new Date(vendor.createdAt).toLocaleDateString(),
+  }));
 
   // Handle edit vendor
   const handleEditVendor = (vendor) => {
@@ -73,7 +82,6 @@ const CompaniesWrapper = () => {
     try {
       await deleteVendor(vendorToDelete.id).unwrap();
       toast.success("Vendor deleted successfully!");
-      // Reset to previous page if current page becomes empty
       if (paginatedVendors.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
@@ -113,6 +121,7 @@ const CompaniesWrapper = () => {
           title="Vendors"
           subtitle="Manage your Vendors"
           onAdd={handleAddVendor}
+          tableData={formattedVendors} // Pass formatted vendors to PageHeader
         />
 
         <div className="card">
@@ -169,7 +178,6 @@ const CompaniesWrapper = () => {
               </table>
             </div>
           </div>
-          {/* Pagination Component */}
           <div className="card-footer">
             <DataTablePagination
               totalItems={vendors.length}
