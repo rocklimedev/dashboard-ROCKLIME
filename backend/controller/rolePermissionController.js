@@ -53,7 +53,6 @@ const assignPermissionToRole = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error assigning permission to role:", error);
     res.status(500).json({
       message: "Error assigning permission to role.",
       error: error.message,
@@ -98,7 +97,6 @@ const removePermissionFromRole = async (req, res) => {
       rolePermission: { roleId, permissionId },
     });
   } catch (error) {
-    console.error("Error removing permission from role:", error);
     res.status(500).json({
       message: "Error removing permission from role.",
       error: error.message,
@@ -167,7 +165,6 @@ const getAllRolePermissionsByRoleId = async (req, res) => {
       rolePermissions: formattedPermissions,
     });
   } catch (error) {
-    console.error("Error retrieving role permissions:", error);
     res.status(500).json({
       message: "Error retrieving role permissions.",
       error: error.message,
@@ -237,7 +234,6 @@ const getRolePermissionByRoleIdAndPermissionId = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error retrieving role permission:", error);
     res.status(500).json({
       message: "Error retrieving role permission.",
       error: error.message,
@@ -284,7 +280,6 @@ const getAllRolePermissions = async (req, res) => {
       rolePermissions: formattedPermissions,
     });
   } catch (error) {
-    console.error("Error retrieving all role permissions:", error);
     res.status(500).json({
       message: "Error retrieving all role permissions.",
       error: error.message,

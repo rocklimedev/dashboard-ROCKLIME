@@ -33,7 +33,6 @@ const StockModal = ({ show, onHide, product }) => {
         alert("Stock removed successfully!");
       }
     } catch (error) {
-      console.error("Error updating stock:", error);
       alert(error?.data?.message || "Something went wrong!");
     }
 

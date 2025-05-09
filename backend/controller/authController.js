@@ -34,7 +34,6 @@ exports.register = async (req, res) => {
     const roleData = await Roles.findOne({ where: { roleName: ROLES.Users } });
 
     if (!roleData) {
-      console.error("USERS role not found in Roles table");
       return res.status(400).json({ message: "USERS role not found" });
     }
 
@@ -47,8 +46,9 @@ exports.register = async (req, res) => {
 
     // Validate roleId
     if (!roleId) {
-      console.error("Invalid roleId:", roleId);
-      return res.status(400).json({ message: "Invalid roleId for USERS role" });
+      return res
+        .status(400)
+        .json({ message: "Invalid roleId for USERS role" }, roleId);
     }
 
     // Hash the password
@@ -81,7 +81,6 @@ exports.register = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("Register error:", err);
     res.status(500).json({ message: "Server Error", error: err.message });
   }
 };
@@ -91,20 +90,11 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    console.log("Login attempt for:", email);
-
     // Find user with case-insensitive email
     const user = await User.findOne({ where: { email: email.toLowerCase() } });
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
-
-    console.log("User found:", {
-      userId: user.userId,
-      email: user.email,
-      roles: user.roles,
-      roleId: user.roleId,
-    });
 
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -171,17 +161,12 @@ exports.login = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("Login error:", err);
     res.status(500).json({ message: "Server Error", error: err.message });
   }
 };
 // Logout
 exports.logout = async (req, res) => {
   try {
-    console.log("Logout request received:");
-    console.log("Cookies:", req.cookies);
-    console.log("Body:", req.body);
-
     // Clear the access token cookie
     res.clearCookie("accessToken", {
       httpOnly: true,
@@ -191,7 +176,6 @@ exports.logout = async (req, res) => {
 
     return res.status(200).json({ message: "Logged out successfully" });
   } catch (err) {
-    console.error("Logout error:", err);
     res.status(500).json({ message: "Server Error", error: err.message });
   }
 };

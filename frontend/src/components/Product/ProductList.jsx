@@ -174,7 +174,6 @@ const ProductList = () => {
         setCurrentPage(currentPage - 1);
       }
     } catch (error) {
-      console.error("Error deleting product:", error);
       toast.error(
         `Failed to delete product: ${error.data?.message || "Unknown error"}`
       );

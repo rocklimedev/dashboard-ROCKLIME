@@ -68,7 +68,6 @@ exports.createOrder = async (req, res) => {
       id: order.id,
     });
   } catch (err) {
-    console.error("Error creating order:", err);
     res.status(500).json({
       error: "Something went wrong while creating the order",
       details: err.message,
@@ -86,7 +85,6 @@ exports.getAllOrders = async (req, res) => {
 
     res.status(200).json({ orders });
   } catch (err) {
-    console.error("Error fetching orders:", err);
     res.status(500).json({ message: "Server Error", error: err.message });
   }
 };
@@ -297,7 +295,6 @@ exports.getFilteredOrders = async (req, res) => {
       totalCount,
     });
   } catch (err) {
-    console.error("Filter Error:", err);
     return res.status(500).json({
       error: "Failed to fetch filtered orders",
       details: err.message,

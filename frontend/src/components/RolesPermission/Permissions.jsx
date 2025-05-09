@@ -153,7 +153,6 @@ const Permissions = () => {
         );
       }
     } catch (error) {
-      console.error("Error toggling permission:", error);
       toast.error(`Failed to update ${type} permission for ${module}.`);
       setPermissionsByModule((prev) => ({
         ...prev,

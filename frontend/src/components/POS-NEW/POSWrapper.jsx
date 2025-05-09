@@ -113,9 +113,7 @@ const POSWrapperNew = () => {
       }
       refetchCart();
       toast.success("Invoice converted to cart successfully!");
-      console.log("Cart updated with items:", cartItems);
     } catch (error) {
-      console.error("Failed to update cart:", error);
       toast.error(
         `Failed to convert invoice to cart: ${
           error.data?.message || "Unknown error"

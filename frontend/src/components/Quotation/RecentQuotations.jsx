@@ -65,7 +65,6 @@ const RecentQuotation = () => {
       toast.error(
         `Failed to delete quotation: ${err.data?.message || "Unknown error"}`
       );
-      console.error("Error deleting quotation:", err);
     }
   };
 

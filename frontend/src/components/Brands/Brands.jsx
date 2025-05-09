@@ -77,7 +77,6 @@ const Brands = () => {
       toast.error(
         `Failed to delete brand: ${err.data?.message || "Unknown error"}`
       );
-      console.error("Error deleting brand:", err);
     }
   };
 

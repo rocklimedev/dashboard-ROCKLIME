@@ -91,7 +91,6 @@ const CompaniesWrapper = () => {
       toast.error(
         `Failed to delete vendor: ${err.data?.message || "Unknown error"}`
       );
-      console.error("Error deleting vendor:", err);
     }
   };
 

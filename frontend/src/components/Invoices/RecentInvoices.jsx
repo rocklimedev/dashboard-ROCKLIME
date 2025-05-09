@@ -340,7 +340,6 @@ const RecentInvoices = () => {
         setCurrentPage(currentPage - 1);
       }
     } catch (error) {
-      console.error("Failed to delete invoice:", error);
       alert("Failed to delete invoice. Please try again.");
     }
   };

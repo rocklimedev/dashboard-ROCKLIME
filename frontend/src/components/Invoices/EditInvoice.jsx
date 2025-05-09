@@ -162,7 +162,6 @@ const EditInvoice = ({ invoice, onClose }) => {
 
       onClose();
     } catch (err) {
-      console.error("Failed to update invoice:", err);
       setError(
         err.data?.message || "Failed to update invoice. Please try again."
       );

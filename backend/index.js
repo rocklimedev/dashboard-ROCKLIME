@@ -49,9 +49,6 @@ app.use(express.urlencoded({ extended: true }));
 
 // Log incoming requests for debugging
 app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  console.log("Request headers:", req.headers);
-  console.log("Raw request body:", req.body);
   next();
 });
 

@@ -91,7 +91,7 @@ const CategoriesList = () => {
 
   const handleDelete = async (category) => {
     if (!category || !category.categoryId) {
-      console.error("Invalid category or category ID:", category);
+      toast.error("Invalid category or category ID:", category);
       return;
     }
 
@@ -103,7 +103,7 @@ const CategoriesList = () => {
         setCategoryPage(categoryPage - 1);
       }
     } catch (err) {
-      console.error("Delete failed:", err);
+      toast.error("Delete failed:", err);
     }
   };
 
@@ -217,13 +217,6 @@ const CategoriesList = () => {
                                   className="me-2 p-2"
                                   title="Delete"
                                   onClick={() => {
-                                    if (!category.categoryId) {
-                                      console.error(
-                                        "Category ID is undefined:",
-                                        category
-                                      );
-                                      return;
-                                    }
                                     setCategoryToDelete(category);
                                     setShowDeleteModal(true);
                                   }}

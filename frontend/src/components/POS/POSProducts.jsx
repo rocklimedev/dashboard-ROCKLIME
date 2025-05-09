@@ -63,7 +63,6 @@ const POSProducts = ({ products = [] }) => {
       await addProductToCart({ userId, productId }).unwrap();
       toast.success(`${product.name} added to cart!`);
     } catch (error) {
-      console.error("Failed to add to cart:", error);
       toast.error(`Error: ${error.data?.message || "Unknown error"}`);
     }
   };

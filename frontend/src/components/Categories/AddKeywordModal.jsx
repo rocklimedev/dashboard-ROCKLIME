@@ -53,7 +53,6 @@ const AddKeywordModal = ({ onClose, editData }) => {
       onClose();
     } catch (err) {
       toast.error(err?.data?.message || "Failed to save keyword ❌");
-      console.error("Error saving keyword:", err);
     }
   };
 

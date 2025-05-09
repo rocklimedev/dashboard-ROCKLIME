@@ -11,22 +11,18 @@ exports.createPermission = async (req, res) => {
     const { api, name, module, route } = req.body;
 
     if (!api || !name || !module || !route) {
-      return res
-        .status(400)
-        .json({
-          message: "All fields (api, name, module, route) are required.",
-        });
+      return res.status(400).json({
+        message: "All fields (api, name, module, route) are required.",
+      });
     }
 
     const existingPermission = await Permission.findOne({
       where: { api, route, module },
     });
     if (existingPermission) {
-      return res
-        .status(400)
-        .json({
-          message: "Permission already exists for this module and route.",
-        });
+      return res.status(400).json({
+        message: "Permission already exists for this module and route.",
+      });
     }
 
     const permission = await Permission.create({ api, name, module, route });
@@ -164,7 +160,6 @@ exports.assignPermissionToRole = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error assigning permission:", error);
     res.status(500).json({
       message: "Error assigning permission.",
       error: error.message,
@@ -206,7 +201,6 @@ exports.removePermissionFromRole = async (req, res) => {
       rolePermission: { roleId, permissionId },
     });
   } catch (error) {
-    console.error("Error removing permission:", error);
     res.status(500).json({
       message: "Error removing permission.",
       error: error.message,

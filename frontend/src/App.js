@@ -27,7 +27,7 @@ function App() {
   const isPOSPage = ["/pos", "/pos-new"].includes(location.pathname);
 
   const token = localStorage.getItem("token");
-  console.log(token);
+
   const { data: profileData, isLoading: isProfileLoading } =
     useGetProfileQuery();
 
@@ -62,7 +62,7 @@ function App() {
     }
 
     // Set layout mode based on route
-    console.log("App: Current pathname =", location.pathname);
+
     if (location.pathname === "/layout-horizontal") {
       setLayoutMode("horizontal");
       setSidebarOpen(false);
@@ -76,15 +76,6 @@ function App() {
     if (isAuthPage || isPOSPage) {
       setSidebarOpen(false);
     }
-
-    console.log(
-      "App: Rendering sidebar =",
-      !isAuthPage && !isPOSPage,
-      "layoutMode =",
-      layoutMode,
-      "isSidebarOpen =",
-      isSidebarOpen
-    );
   }, [
     isProfileLoading,
     userId,
@@ -97,7 +88,6 @@ function App() {
   ]);
 
   const toggleSidebar = (value) => {
-    console.log("App: Toggling sidebar to", value);
     setSidebarOpen(value);
   };
 

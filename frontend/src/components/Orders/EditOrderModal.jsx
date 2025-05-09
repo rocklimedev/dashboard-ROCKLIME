@@ -1,6 +1,7 @@
 // src/components/Orders/Modals/EditOrderModal.jsx
 import React, { useState } from "react";
 import { useUpdateOrderByIdMutation } from "../../api/orderApi";
+import { toast } from "react-toastify";
 const EditOrderModal = ({ order, onClose }) => {
   const [formData, setFormData] = useState({ ...order });
   const [updateOrder] = useUpdateOrderByIdMutation();
@@ -15,7 +16,7 @@ const EditOrderModal = ({ order, onClose }) => {
       await updateOrder({ id: order.id, ...formData }).unwrap();
       onClose();
     } catch (err) {
-      console.error("Failed to update order:", err);
+      toast.error("Failed to update order:", err);
     }
   };
 

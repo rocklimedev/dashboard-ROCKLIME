@@ -30,7 +30,6 @@ const OnHoldModal = ({ order, invoice, onClose, onConfirm }) => {
       onConfirm(reference); // Notify parent (e.g., clear cart)
       onClose(); // Close modal
     } catch (error) {
-      console.error("Failed to hold order:", error);
       setError(error.data?.message || "Failed to place order on hold.");
       toast.error(error.data?.message || "Failed to place order on hold.");
     }

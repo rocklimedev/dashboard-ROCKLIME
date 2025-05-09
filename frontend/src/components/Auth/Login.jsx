@@ -28,9 +28,6 @@ const Login = () => {
         throw new Error("No access token received");
       }
 
-      // Log response for debugging
-      console.log("Login response:", { token, user: response.user });
-
       // Store token in localStorage or sessionStorage first
       if (rememberMe) {
         localStorage.setItem("token", token);
@@ -43,20 +40,13 @@ const Login = () => {
       // Update AuthContext
       authLogin(token, response.user || null);
 
-      // Log token storage
-      console.log(
-        "Token stored in:",
-        rememberMe ? "localStorage" : "sessionStorage",
-        { token }
-      );
-
       // Mark login as successful
       setLoginSuccess(true);
 
       // Show success toast
       toast.success("Login successful!", { autoClose: 1000 });
     } catch (err) {
-      console.error("Login failed:", err);
+      toast.err("Login failed: ", err);
       const status = err?.status;
       const message = err?.data?.message || "Invalid email or password";
 
@@ -75,16 +65,10 @@ const Login = () => {
   // Navigate when auth is updated after successful login
   useEffect(() => {
     if (loginSuccess && auth?.token) {
-      console.log("Navigating to / with auth:", auth);
       navigate("/", { replace: true });
       setLoginSuccess(false);
     }
   }, [auth, loginSuccess, navigate]);
-
-  // Debug AuthContext state changes
-  useEffect(() => {
-    console.log("Login component mounted, AuthContext state:", auth);
-  }, [auth]);
 
   return (
     <div className="main-wrapper">

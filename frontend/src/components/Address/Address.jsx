@@ -74,7 +74,6 @@ const AddressList = () => {
       toast.error(
         `Failed to delete address: ${err.data?.message || "Unknown error"}`
       );
-      console.error("Error deleting address:", err);
     }
   };
 

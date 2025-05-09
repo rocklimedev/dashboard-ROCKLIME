@@ -55,16 +55,6 @@ const OrderFilter = ({ setFilters }) => {
     ? Object.entries(data.priorityCounts)
     : priorities.map((priority) => [priority, 0]);
 
-  // Debugging logs
-  console.log("OrderFilter Data:", {
-    data,
-    error,
-    countsLoading,
-    countsFetching,
-    statusCounts,
-    priorityCounts,
-  });
-
   const applyFilter = (key, value) => {
     setFilters((prev) => {
       const newFilters = {
@@ -73,7 +63,7 @@ const OrderFilter = ({ setFilters }) => {
         status: key === "status" && value !== "all" ? value : "",
         priority: key === "priority" ? value : "",
       };
-      console.log("Applying Filters:", newFilters);
+
       return newFilters;
     });
   };
@@ -89,14 +79,12 @@ const OrderFilter = ({ setFilters }) => {
     };
     setFilters(defaultFilters);
     toast.success("Filters cleared!");
-    console.log("Cleared Filters:", defaultFilters);
   };
 
   if (error) {
     toast.error(
       `Failed to load order counts: ${error?.data?.message || "Unknown error"}`
     );
-    console.error("Query Error:", error);
   }
 
   return (

@@ -142,7 +142,6 @@ const OrderWithInvoice = () => {
         toast.success("Order deleted successfully!");
         navigate("/orders");
       } catch (err) {
-        console.error("Failed to delete order:", err);
         toast.error("Failed to delete order. Please try again.");
       }
     }
@@ -153,7 +152,6 @@ const OrderWithInvoice = () => {
       await updateOrderStatus({ id, status: "On Hold" }).unwrap();
       toast.success("Order status updated to 'On Hold'");
     } catch (err) {
-      console.error("Failed to update status:", err);
       toast.error("Failed to update order status. Please try again.");
     }
   };

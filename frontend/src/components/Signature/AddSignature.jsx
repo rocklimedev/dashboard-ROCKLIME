@@ -67,7 +67,6 @@ const AddSignature = ({ signatureId, existingSignature, onclose }) => {
         position: "top-right", // Hardcoded to avoid POSITION issue
         autoClose: 5000,
       });
-      console.error("Error saving signature:", error);
     }
   };
 

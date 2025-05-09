@@ -67,7 +67,6 @@ const RecentOrders = () => {
       toast.success("Order deleted successfully!");
     } catch (err) {
       toast.error("Error deleting order!");
-      console.error("Error deleting order:", err);
     } finally {
       setShowDeleteModal(false);
       setOrderToDelete(null);

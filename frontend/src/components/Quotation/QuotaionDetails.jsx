@@ -51,7 +51,6 @@ const QuotationsDetails = () => {
 
       toast.success("Quotation downloaded successfully!");
     } catch (error) {
-      console.error("Export failed:", error);
       toast.error("Failed to export quotation.");
     }
   };

@@ -48,12 +48,10 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
       navigate("/login");
     } catch (error) {
       toast.error("Logout failed. Please try again.");
-      console.error("Logout failed", error);
     }
   };
 
   const handleSidebarToggle = () => {
-    console.log("Header: Toggling sidebar, current state:", isSidebarOpen);
     toggleSidebar(!isSidebarOpen); // Toggle parent state
   };
 

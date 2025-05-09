@@ -82,7 +82,6 @@ const CustomerList = () => {
         setCurrentPage(currentPage - 1);
       }
     } catch (err) {
-      console.error("Error deleting customer:", err);
       toast.error("Failed to delete customer!");
     } finally {
       setShowDeleteModal(false);

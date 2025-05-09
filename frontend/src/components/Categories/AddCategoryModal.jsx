@@ -51,7 +51,6 @@ const AddCategoryModal = ({ onClose, editMode = false, categoryData = {} }) => {
       }
       onClose();
     } catch (err) {
-      console.error("Error handling category:", err);
       toast.error("Failed to process category.");
     }
   };

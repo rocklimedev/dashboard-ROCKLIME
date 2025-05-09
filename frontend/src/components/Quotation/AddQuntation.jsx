@@ -55,31 +55,9 @@ const AddQuotation = () => {
   const [updateQuotation, { isLoading: isUpdating }] =
     useUpdateQuotationMutation();
 
-  // Log fetch status for debugging
-  // useEffect(() => {
-  //   if (isEditMode) {
-  //     console.log("Quotation ID from params:", id);
-  //     console.log("Fetch status:", {
-  //       isFetching,
-  //       isFetchSuccess,
-  //       fetchError,
-  //       existingQuotation,
-  //       quotationId: id,
-  //     });
-  //   }
-  // }, [
-  //   id,
-  //   isEditMode,
-  //   isFetching,
-  //   isFetchSuccess,
-  //   fetchError,
-  //   existingQuotation,
-  // ]);
-
   // Handle fetch errors
   useEffect(() => {
     if (isEditMode && fetchError) {
-      console.error("Error fetching quotation:", fetchError);
       toast.error("Quotation not found or inaccessible. Redirecting...", {
         position: "top-right",
         autoClose: 3000,
@@ -291,7 +269,6 @@ const AddQuotation = () => {
         setFormData({ ...initialFormData, createdBy: userId });
       }
     } catch (err) {
-      console.error("Failed to process quotation:", err);
       let errorMessage = "Failed to process quotation: Unknown error";
       if (err.status === 404) {
         errorMessage = "Quotation not found. It may have been deleted.";

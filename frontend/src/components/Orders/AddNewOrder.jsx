@@ -116,7 +116,6 @@ const AddNewOrder = ({ onClose, adminName, order }) => {
 
       onClose();
     } catch (err) {
-      console.error("Error submitting order:", err);
       if (err?.status === 400) {
         toast.error(
           `Bad Request: ${err.data?.message || "Invalid data provided."}`

@@ -22,7 +22,6 @@ import "react-toastify/dist/ReactToastify.css";
 
 const UserList = () => {
   const { data, error, isLoading, isFetching, refetch } = useGetAllUsersQuery();
-  console.log("useGetAllUsersQuery:", { data, error });
   const users = data?.users || [];
 
   const [reportUser, { isLoading: isReporting }] = useReportUserMutation();
@@ -84,7 +83,6 @@ const UserList = () => {
         setCurrentPage(currentPage - 1);
       }
     } catch (error) {
-      console.error("Error deleting user:", error);
       toast.error(
         `Failed to delete user: ${error.data?.message || "Unknown error"}`
       );
@@ -99,7 +97,6 @@ const UserList = () => {
       await reportUser(userId).unwrap();
       toast.success("User reported successfully!");
     } catch (error) {
-      console.error("Error reporting user:", error);
       toast.error(
         `Failed to report user: ${error.data?.message || "Unknown error"}`
       );
@@ -111,7 +108,6 @@ const UserList = () => {
       await inactiveUser(userId).unwrap();
       toast.success("User marked as inactive!");
     } catch (error) {
-      console.error("Error marking user as inactive:", error);
       toast.error(
         `Failed to mark user as inactive: ${
           error.data?.message || "Unknown error"

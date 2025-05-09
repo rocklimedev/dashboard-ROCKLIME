@@ -11,7 +11,7 @@ import { useGetCartQuery } from "../../api/cartApi";
 import { useGetAllProductsQuery } from "../../api/productApi";
 import { useGetAllBrandsQuery } from "../../api/brandsApi";
 import logo from "../../assets/img/logo.png";
-
+import { toast } from "react-toastify";
 const POSWrapper = () => {
   const dispatch = useDispatch();
 
@@ -37,7 +37,7 @@ const POSWrapper = () => {
 
   const handleConvertToCart = (quotation) => {
     if (!quotation || !Array.isArray(quotation.products)) {
-      console.error("Invalid quotation data", quotation);
+      toast.error("Invalid quotation data", quotation);
       return;
     }
 
