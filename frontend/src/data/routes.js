@@ -10,12 +10,8 @@ import CustomerList from "../components/Customers/CustomerList";
 import CustomerDetails from "../components/Customers/CustomerDetails";
 import SignatureWrapper from "../components/Signature/SignatureWrapper";
 import { RiAdminLine } from "react-icons/ri";
-import { LuUsersRound } from "react-icons/lu";
-import {
-  PiAddressBook,
-  PiQuestionMarkThin,
-  PiUserListBold,
-} from "react-icons/pi";
+
+import { PiAddressBook, PiUserListBold } from "react-icons/pi";
 import { LiaFileInvoiceSolid, LiaFileSignatureSolid } from "react-icons/lia";
 import OrderWrapper from "../components/Orders/OrderWrapper";
 import {
@@ -25,13 +21,8 @@ import {
   MdBrandingWatermark,
   MdOutlineSettings,
 } from "react-icons/md";
-import { AiFillSecurityScan, AiOutlineProduct } from "react-icons/ai";
-import {
-  BiAccessibility,
-  BiSolidCategory,
-  BiSolidQuoteAltRight,
-  BiUserCheck,
-} from "react-icons/bi";
+import { AiOutlineProduct } from "react-icons/ai";
+import { BiAccessibility, BiSolidCategory, BiUserCheck } from "react-icons/bi";
 import { FaFileCircleCheck, FaFirstOrder, FaPooStorm } from "react-icons/fa6";
 import {
   FaRegFile,
@@ -41,7 +32,7 @@ import {
   FaFileInvoice,
   FaQuora,
 } from "react-icons/fa";
-import { AiFillProfile } from "react-icons/ai";
+
 import { CgProfile } from "react-icons/cg";
 import { IoLogOut, IoLogIn, IoHome } from "react-icons/io5";
 import Profile from "../components/Profile/Profile";
@@ -65,7 +56,6 @@ import ComingSoon from "../components/Error/ComingSoon";
 import AddQuntation from "../components/Quotation/AddQuntation";
 import { GiCorporal } from "react-icons/gi";
 import CmList from "../components/CMTrading/cmList";
-import SecuritySettings from "../components/Settings/SecuritySettings";
 import TeamsList from "../components/Orders/TeamsList";
 import InvoiceDetails from "../components/Invoices/InvoiceDetails";
 import OrderWithInvoice from "../components/Orders/OrderWithInvoice";

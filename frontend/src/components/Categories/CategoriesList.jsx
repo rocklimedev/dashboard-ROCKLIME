@@ -11,7 +11,7 @@ import DataTablePagination from "../Common/DataTablePagination";
 import Keyword from "./Keyword";
 import { AiOutlineEdit } from "react-icons/ai";
 import { FcFullTrash } from "react-icons/fc";
-
+import { toast } from "react-toastify";
 const CategoriesList = () => {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showKeywordModal, setShowKeywordModal] = useState(false);
