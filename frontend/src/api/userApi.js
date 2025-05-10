@@ -23,7 +23,7 @@ export const userApi = createApi({
     }),
     updateProfile: builder.mutation({
       query: (data) => ({
-        url: "/",
+        url: "/", // Use /user/ instead of /user/:userId
         method: "PUT",
         body: data,
       }),

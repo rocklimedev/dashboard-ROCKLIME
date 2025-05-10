@@ -1,69 +1,64 @@
 import React, { useEffect, useState } from "react";
-import {
-  useCreateAddressMutation,
-  useGetAllAddressesQuery,
-} from "../../api/addressApi";
+import { useGetAllAddressesQuery } from "../../api/addressApi";
 import { useGetProfileQuery } from "../../api/userApi";
-import { Modal, Button, Form } from "react-bootstrap";
+import { Form } from "react-bootstrap";
+import { toast } from "react-toastify";
+import AddAddress from "../Address/AddAddressModal";
 
 const InvoiceDetails = ({ invoiceData, onChange, error }) => {
   const { shipTo, invoiceDate, dueDate, signatureName, billTo } = invoiceData;
   const { data: userProfile } = useGetProfileQuery();
-  const { data: addresses, refetch } = useGetAllAddressesQuery();
-  const [createAddress] = useCreateAddressMutation();
   const userId = userProfile?.user?.userId;
+  const { data: addressesData, refetch } = useGetAllAddressesQuery(userId, {
+    skip: !userId,
+  });
 
   const [showModal, setShowModal] = useState(false);
-  const [newAddress, setNewAddress] = useState({
-    street: "",
-    city: "",
-    state: "",
-    postalCode: "",
-    country: "",
-  });
+
+  const addresses = Array.isArray(addressesData) ? addressesData : [];
 
   useEffect(() => {
     if (userId) {
-      refetch(); // Fetch latest addresses when user profile is available
+      refetch();
     }
   }, [userId, refetch]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setNewAddress((prev) => ({ ...prev, [name]: value }));
-  };
+  useEffect(() => {
+    // Debug: Log addresses and shipTo to verify data
+    console.log("Addresses:", addresses);
+    console.log("Current shipTo:", shipTo);
+  }, [addresses, shipTo]);
 
-  const handleCreateAddress = async () => {
-    if (!userId) return;
-    const response = await createAddress({ ...newAddress, userId });
-    if (response?.data) {
-      onChange("shipTo", response.data);
-      refetch();
-      setShowModal(false);
-    }
+  const handleAddressCreated = (newAddress) => {
+    onChange("shipTo", newAddress.addressId);
+    refetch();
+    setShowModal(false);
+    toast.success("Address added successfully!");
   };
 
   return (
     <div className="card payment-method p-3">
       <div className="card-body">
         <h5 className="mb-3 text-lg font-semibold">Invoice</h5>
+        {error && (
+          <div className="alert alert-danger" role="alert">
+            {error}
+          </div>
+        )}
         <div className="row g-3">
           <div className="col-md-12 position-relative">
-            <label className="form-label">Shipping Address</label>
+            <label className="form-label">Shipping Address (Optional)</label>
             <Form.Select
               className="form-control"
-              value={shipTo?.id || ""}
-              onChange={(e) => {
-                const selectedAddress = addresses?.find(
-                  (addr) => addr.id === e.target.value
-                );
-                onChange("shipTo", selectedAddress || {});
-              }}
+              value={shipTo || ""}
+              onChange={(e) => onChange("shipTo", e.target.value || null)}
             >
               <option value="">Select an Address</option>
-              {addresses?.map((addr) => (
-                <option key={addr.id} value={addr.id}>
-                  {`${addr.street}, ${addr.city}, ${addr.state}, ${addr.country}`}
+              {addresses.map((addr) => (
+                <option key={addr.addressId} value={addr.addressId}>
+                  {`${addr?.street || "Unknown"}, ${addr?.city || "Unknown"}, ${
+                    addr?.state || "Unknown"
+                  }, ${addr?.country || "Unknown"}`}
                 </option>
               ))}
             </Form.Select>
@@ -83,6 +78,7 @@ const InvoiceDetails = ({ invoiceData, onChange, error }) => {
               className="form-control"
               value={billTo || ""}
               onChange={(e) => onChange("billTo", e.target.value)}
+              placeholder="Enter billing name or address"
             />
           </div>
           <div className="col-md-6">
@@ -117,34 +113,13 @@ const InvoiceDetails = ({ invoiceData, onChange, error }) => {
         </div>
       </div>
 
-      {/* Modal for Creating Address */}
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Create New Address</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {Object.keys(newAddress).map((field) => (
-            <input
-              key={field}
-              type="text"
-              className="form-control mb-2"
-              name={field}
-              placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
-              value={newAddress[field]} // Ensure the input reflects the state
-              onChange={handleChange}
-              required
-            />
-          ))}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleCreateAddress}>
-            Save Address
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      {showModal && (
+        <AddAddress
+          onClose={() => setShowModal(false)}
+          existingAddress={null}
+          onAddressCreated={handleAddressCreated}
+        />
+      )}
     </div>
   );
 };

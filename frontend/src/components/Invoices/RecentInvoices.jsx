@@ -39,8 +39,8 @@ const RecentInvoices = () => {
   const invoices = invoiceData?.data || [];
   const customers = customerData?.data || [];
   const addresses = addressData?.data || [];
-  const users = userData?.data || [];
-
+  const users = userData?.users || [];
+  console.log(users);
   // State for filters, sorting, search, checkboxes, modals, and pagination
   const [selectedCustomer, setSelectedCustomer] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
@@ -101,6 +101,7 @@ const RecentInvoices = () => {
     users.forEach((user) => {
       map[user.userId] = user.name || "Unknown User";
     });
+    console.log(users);
     return map;
   }, [users]);
 

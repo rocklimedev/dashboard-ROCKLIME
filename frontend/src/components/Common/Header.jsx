@@ -149,7 +149,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                       text: "Brand",
                     },
                     {
-                      link: "/super-admin/users",
+                      link: "/users/list",
                       icon: <FaUser />,
                       text: "User",
                     },
@@ -159,12 +159,12 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                       text: "Vendor",
                     },
                     {
-                      link: "/signature",
+                      link: "/signature/list",
                       icon: <FaSignature />,
                       text: "Signature",
                     },
                     {
-                      link: "/roles-permissions/list",
+                      link: "/roles-permission/list",
                       icon: <MdPermIdentity />,
                       text: "Roles",
                     },

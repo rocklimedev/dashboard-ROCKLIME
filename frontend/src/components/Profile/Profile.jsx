@@ -8,6 +8,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Avatar from "react-avatar";
 import { useForgotPasswordMutation } from "../../api/authApi";
+
 const Profile = () => {
   const {
     data: profile,
@@ -25,6 +26,7 @@ const Profile = () => {
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
+    username: "",
     name: "",
     email: "",
     mobileNumber: "",
@@ -32,10 +34,23 @@ const Profile = () => {
   const [avatarUrl, setAvatarUrl] = useState("");
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
 
+  // Debug token and API response
+  useEffect(() => {
+    const token =
+      localStorage.getItem("token") || sessionStorage.getItem("token");
+    console.log("Auth token:", token);
+    console.log("useGetProfileQuery response:", {
+      data: profile,
+      error: profileError,
+    });
+  }, [profile, profileError]);
+
   // Initialize formData and avatar from profile and localStorage
   useEffect(() => {
     if (profile?.user) {
+      console.log("Profile data:", profile.user);
       setFormData({
+        username: profile.user.username || "",
         name: profile.user.name || "",
         email: profile.user.email || "",
         mobileNumber: profile.user.mobileNumber || "",
@@ -80,12 +95,20 @@ const Profile = () => {
   };
 
   if (isProfileLoading || isRolesLoading) return <p>Loading...</p>;
-  if (profileError) return <p>Error loading profile: {profileError.message}</p>;
+  if (profileError) {
+    console.error("Profile error:", profileError);
+    return (
+      <p>
+        Error loading profile:{" "}
+        {profileError?.data?.message || profileError.message || "Unknown error"}
+      </p>
+    );
+  }
   if (rolesError) return <p>Error loading roles: {rolesError.message}</p>;
   if (!profile?.user) return <p>No user profile data available.</p>;
 
   const userId = profile.user.userId;
-
+  console.log("User ID:", userId);
   const roleId = profile.user.roleId;
   const roleName =
     rolesData?.find((role) => role.roleId === roleId)?.roleName || "N/A";
@@ -96,6 +119,7 @@ const Profile = () => {
   const handleCancelClick = () => {
     setIsEditing(false);
     setFormData({
+      username: profile.user.username || "",
       name: profile.user.name || "",
       email: profile.user.email || "",
       mobileNumber: profile.user.mobileNumber || "",
@@ -106,6 +130,7 @@ const Profile = () => {
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+
   const handleSaveClick = async () => {
     if (!userId) {
       toast.error("User ID not found. Cannot update profile.");
@@ -113,19 +138,19 @@ const Profile = () => {
     }
 
     if (!formData.name || !formData.email || !formData.mobileNumber) {
-      toast.error("Please fill in all fields.");
+      toast.error("Please fill in all required fields.");
       return;
     }
 
     const updatedData = {
-      userId: userId,
+      username: formData.username,
       name: formData.name,
       email: formData.email,
       mobileNumber: formData.mobileNumber,
     };
 
     try {
-      await updateProfile(updatedData).unwrap();
+      await updateProfile(updatedData).unwrap(); // Use the simplified mutation
       toast.success("Profile updated successfully!");
       setIsEditing(false);
       if (formData.name !== profile.user.name) {
@@ -200,6 +225,24 @@ const Profile = () => {
               )}
             </div>
             <div className="row">
+              {/* Username */}
+              <div className="col-lg-6 col-sm-12">
+                <div className="mb-3">
+                  <label className="form-label">Username</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="username"
+                      className="form-control"
+                      value={formData.username}
+                      onChange={handleChange}
+                    />
+                  ) : (
+                    <p className="form-control-static">{formData.username}</p>
+                  )}
+                </div>
+              </div>
+
               {/* Name */}
               <div className="col-lg-6 col-sm-12">
                 <div className="mb-3">

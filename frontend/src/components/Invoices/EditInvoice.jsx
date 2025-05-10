@@ -1,27 +1,32 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useUpdateInvoiceMutation } from "../../api/invoiceApi";
 import { useGetAllProductsQuery } from "../../api/productApi";
 import { useGetAllAddressesQuery } from "../../api/addressApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
+import { useGetProfileQuery } from "../../api/userApi";
 
 const EditInvoice = ({ invoice, onClose }) => {
+  const { data: userProfile } = useGetProfileQuery();
+  const userId = userProfile?.user?.userId;
+
   const [updateInvoice, { isLoading: isUpdating }] = useUpdateInvoiceMutation();
-  const { data: addresses = [], isLoading: isAddressesLoading } =
-    useGetAllAddressesQuery();
+  const { data: addressesData = { data: [] }, isLoading: isAddressesLoading } =
+    useGetAllAddressesQuery(userId, { skip: !userId });
   const { data: allProducts = [], isLoading: isProductsLoading } =
     useGetAllProductsQuery();
   const {
-    data: customersResponse = {},
+    data: customersResponse = { data: [] },
     isLoading: isCustomersLoading,
     error: customersError,
   } = useGetCustomersQuery();
 
-  const customers = customersResponse.data || [];
+  const customers = customersResponse?.data || [];
+  const addresses = addressesData || [];
 
   // Initialize form data with safe defaults
   const [formData, setFormData] = useState({
     invoiceNo: invoice.invoiceNo || "",
-    customerId: invoice.customerId || customers[0]?.customerId || "",
+    customerId: invoice.customerId || "",
     billTo: invoice.billTo || "",
     shipTo: invoice.shipTo || "",
     invoiceDate:
@@ -45,6 +50,32 @@ const EditInvoice = ({ invoice, onClose }) => {
   );
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Set customerId when customers load or invoice.customerId changes
+  useEffect(() => {
+    if (customers.length > 0 && invoice.customerId) {
+      const customerExists = customers.find(
+        (c) => c.customerId === invoice.customerId
+      );
+      if (customerExists && formData.customerId !== invoice.customerId) {
+        setFormData((prev) => ({ ...prev, customerId: invoice.customerId }));
+      } else if (!customerExists && !formData.customerId) {
+        setFormData((prev) => ({
+          ...prev,
+          customerId: customers[0]?.customerId || "",
+        }));
+      }
+    }
+  }, [customers, invoice.customerId, formData.customerId]);
+
+  // Debug logging
+  useEffect(() => {
+    console.log("Invoice Prop:", invoice);
+    console.log("Customers:", customers);
+    console.log("Current customerId:", formData.customerId);
+    console.log("Addresses:", addresses);
+    console.log("Current shipTo:", formData.shipTo);
+  }, [invoice, customers, formData.customerId, addresses, formData.shipTo]);
 
   // Memoized product search results
   const searchResults = useMemo(() => {
@@ -154,14 +185,17 @@ const EditInvoice = ({ invoice, onClose }) => {
 
     const payload = {
       invoiceId: invoice.invoiceId,
-      invoiceData,
+      ...invoiceData, // Flatten invoiceData into payload
     };
+
+    console.log("Submitting Payload:", payload);
 
     try {
       const response = await updateInvoice(payload).unwrap();
-
+      console.log("Update Invoice Response:", response);
       onClose();
     } catch (err) {
+      console.error("Update Invoice Error:", err);
       setError(
         err.data?.message || "Failed to update invoice. Please try again."
       );
@@ -213,7 +247,7 @@ const EditInvoice = ({ invoice, onClose }) => {
                     <select
                       className="form-control"
                       name="customerId"
-                      value={formData.customerId}
+                      value={formData.customerId || ""}
                       onChange={handleChange}
                       required
                     >
@@ -246,18 +280,18 @@ const EditInvoice = ({ invoice, onClose }) => {
                     <select
                       className="form-control"
                       name="shipTo"
-                      value={formData.shipTo}
+                      value={formData.shipTo || ""}
                       onChange={handleChange}
                     >
                       <option value="">No Address</option>
                       {addresses.map((addr) => (
                         <option key={addr.addressId} value={addr.addressId}>
                           {[
-                            addr.street,
-                            addr.city,
-                            addr.state,
-                            addr.postalCode || addr.zip,
-                            addr.country,
+                            addr?.street,
+                            addr?.city,
+                            addr?.state,
+                            addr?.postalCode,
+                            addr?.country,
                           ]
                             .filter(Boolean)
                             .join(", ") || "Incomplete Address"}

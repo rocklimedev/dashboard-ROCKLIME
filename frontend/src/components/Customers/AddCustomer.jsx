@@ -29,6 +29,7 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
   } = useGetInvoicesByCustomerIdQuery(existingCustomer?.customerId, {
     skip: !existingCustomer?.customerId,
   });
+  console.log(invoices);
   const {
     data: vendors,
     isLoading: isVendorsLoading,
@@ -520,27 +521,147 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
 
                 {existingCustomer && (
                   <Tab eventKey="invoices" title="Invoices">
-                    <button
-                      type="button"
-                      className="btn btn-success mb-2"
-                      onClick={() => addJsonEntry("invoices")}
-                    >
-                      Add Invoice
-                    </button>
-                    {/* Add invoice list rendering if needed */}
+                    {invoices?.data?.length > 0 ? (
+                      <div className="table-responsive">
+                        <table className="table table-bordered">
+                          <thead>
+                            <tr>
+                              <th>Invoice No</th>
+                              <th>Amount</th>
+                              <th>Due Date</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {invoices.data.map((invoice, index) => (
+                              <tr key={index}>
+                                <td>
+                                  <input
+                                    type="text"
+                                    className="form-control"
+                                    value={invoice.invoiceNo || ""}
+                                    onChange={(e) =>
+                                      handleJsonChange(
+                                        "invoices",
+                                        index,
+                                        "invoiceNo",
+                                        e.target.value
+                                      )
+                                    }
+                                  />
+                                </td>
+                                <td>
+                                  <input
+                                    type="number"
+                                    className="form-control"
+                                    value={invoice.amount || "0.00"}
+                                    onChange={(e) =>
+                                      handleJsonChange(
+                                        "invoices",
+                                        index,
+                                        "amount",
+                                        e.target.value
+                                      )
+                                    }
+                                    min="0"
+                                    step="0.01"
+                                  />
+                                </td>
+                                <td>
+                                  <input
+                                    type="date"
+                                    className="form-control"
+                                    value={invoice.dueDate || ""}
+                                    onChange={(e) =>
+                                      handleJsonChange(
+                                        "invoices",
+                                        index,
+                                        "dueDate",
+                                        e.target.value
+                                      )
+                                    }
+                                  />
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <p>No invoices available.</p>
+                    )}
                   </Tab>
                 )}
 
                 {existingCustomer && (
                   <Tab eventKey="quotations" title="Quotations">
-                    <button
-                      type="button"
-                      className="btn btn-success mb-2"
-                      onClick={() => addJsonEntry("quotations")}
-                    >
-                      Add Quotation
-                    </button>
-                    {/* Add quotation list rendering if needed */}
+                    {formData.quotations.length > 0 ? (
+                      <div className="table-responsive">
+                        <table className="table table-bordered">
+                          <thead>
+                            <tr>
+                              <th>Quotation No</th>
+                              <th>Amount</th>
+                              <th>Date</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {formData.quotations.map((quotation, index) => (
+                              <tr key={index}>
+                                <td>
+                                  <input
+                                    type="text"
+                                    className="form-control"
+                                    value={quotation.quotationNo || ""}
+                                    onChange={(e) =>
+                                      handleJsonChange(
+                                        "quotations",
+                                        index,
+                                        "quotationNo",
+                                        e.target.value
+                                      )
+                                    }
+                                  />
+                                </td>
+                                <td>
+                                  <input
+                                    type="number"
+                                    className="form-control"
+                                    value={quotation.amount || "0.00"}
+                                    onChange={(e) =>
+                                      handleJsonChange(
+                                        "quotations",
+                                        index,
+                                        "amount",
+                                        e.target.value
+                                      )
+                                    }
+                                    min="0"
+                                    step="0.01"
+                                  />
+                                </td>
+                                <td>
+                                  <input
+                                    type="date"
+                                    className="form-control"
+                                    value={quotation.date || ""}
+                                    onChange={(e) =>
+                                      handleJsonChange(
+                                        "quotations",
+                                        index,
+                                        "date",
+                                        e.target.value
+                                      )
+                                    }
+                                  />
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <p>No quotations available.</p>
+                    )}
                   </Tab>
                 )}
               </Tabs>

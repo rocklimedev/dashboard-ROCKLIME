@@ -10,11 +10,20 @@ import AddCustomer from "../Customers/AddCustomer";
 import { useGetProfileQuery } from "../../api/userApi";
 import OrderTotal from "./OrderTotal";
 import PaymentMethod from "./PaymentMethod";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { useCreateInvoiceMutation } from "../../api/invoiceApi";
 import { FcEmptyTrash } from "react-icons/fc";
 import { BiTrash } from "react-icons/bi";
 import InvoiceDetails from "../POS/InvoiceDetails";
+import { v4 as uuidv4 } from "uuid";
+import { useGetAllAddressesQuery } from "../../api/addressApi";
+const generateInvoiceNumber = () => {
+  const timestamp = Date.now().toString().slice(-6);
+  const random = Math.floor(1000 + Math.random() * 9000);
+  return `INV-${timestamp}-${random}`;
+};
+
 const OrderCart = ({ onConvertToOrder }) => {
   const {
     data: profileData,
@@ -37,6 +46,12 @@ const OrderCart = ({ onConvertToOrder }) => {
     isError: customersError,
   } = useGetCustomersQuery();
 
+  const {
+    data: addressesData,
+    isLoading: addressesLoading,
+    isError: addressesError,
+  } = useGetAllAddressesQuery(userId, { skip: !userId });
+
   const [updateCart] = useUpdateCartMutation();
   const [clearCart] = useClearCartMutation();
   const [removeFromCart] = useRemoveFromCartMutation();
@@ -44,8 +59,8 @@ const OrderCart = ({ onConvertToOrder }) => {
   const initialInvoiceData = {
     invoiceDate: "",
     dueDate: "",
-    shipTo: "",
-    signatureName: "",
+    shipTo: null,
+    signatureName: "CM TRADING CO",
     billTo: "",
   };
 
@@ -53,9 +68,13 @@ const OrderCart = ({ onConvertToOrder }) => {
   const [showModal, setShowModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState("");
   const [error, setError] = useState("");
+  const [invoiceNumber, setInvoiceNumber] = useState(generateInvoiceNumber());
 
   const customers = customerData?.data || [];
   const customerList = Array.isArray(customers) ? customers : [];
+  const addresses = Array.isArray(addressesData?.data)
+    ? addressesData.data
+    : [];
   const cartItems = Array.isArray(cartData?.cart?.items)
     ? cartData.cart.items
     : [];
@@ -68,6 +87,71 @@ const OrderCart = ({ onConvertToOrder }) => {
     (acc, item) => acc + (item.price || 0) * (item.quantity || 0),
     0
   );
+
+  // Set billTo and attempt to match shipTo when customer is selected
+  useEffect(() => {
+    if (selectedCustomer && addresses.length > 0) {
+      const selectedCustomerData = customerList.find(
+        (customer) => customer.customerId === selectedCustomer
+      );
+      if (selectedCustomerData) {
+        // Default billTo to customer name, user can edit
+        setInvoiceData((prev) => ({
+          ...prev,
+          billTo: selectedCustomerData.name || "",
+          shipTo: null,
+        }));
+
+        // Match customer's address JSON to addresses table
+        if (selectedCustomerData.address) {
+          const customerAddress = selectedCustomerData.address;
+          // Normalize customer address keys (e.g., zipCode to postalCode)
+          const normalizedCustomerAddress = {
+            street: customerAddress.street || "",
+            city: customerAddress.city || "",
+            state: customerAddress.state || "",
+            postalCode:
+              customerAddress.zipCode || customerAddress.postalCode || "",
+            country: customerAddress.country || "",
+          };
+          const customerAddressString = JSON.stringify(
+            normalizedCustomerAddress
+          );
+          console.log(
+            "Normalized Customer Address:",
+            normalizedCustomerAddress
+          );
+
+          const matchingAddress = addresses.find((addr) => {
+            if (!addr.addressDetails) return false;
+            // Normalize addressDetails for comparison
+            const normalizedAddrDetails = {
+              street: addr.addressDetails.street || "",
+              city: addr.addressDetails.city || "",
+              state: addr.addressDetails.state || "",
+              postalCode: addr.addressDetails.postalCode || "",
+              country: addr.addressDetails.country || "",
+            };
+            return (
+              JSON.stringify(normalizedAddrDetails) === customerAddressString
+            );
+          });
+
+          if (matchingAddress) {
+            console.log("Matched Address:", matchingAddress);
+            setInvoiceData((prev) => ({
+              ...prev,
+              shipTo: matchingAddress.addressId,
+            }));
+          } else {
+            console.log("No matching address found for customer");
+          }
+        }
+      }
+    } else {
+      setInvoiceData(initialInvoiceData);
+    }
+  }, [selectedCustomer, customerList, addresses]);
 
   const validateDueDate = () => {
     const { invoiceDate, dueDate } = invoiceData;
@@ -99,6 +183,7 @@ const OrderCart = ({ onConvertToOrder }) => {
     try {
       await clearCart({ userId }).unwrap();
       toast.success("Cart cleared!");
+      setInvoiceNumber(generateInvoiceNumber());
       refetch();
     } catch (error) {
       toast.error(`Error: ${error.data?.message || "Failed to clear cart"}`);
@@ -149,13 +234,39 @@ const OrderCart = ({ onConvertToOrder }) => {
       return;
     }
 
+    if (!invoiceData.invoiceDate || !invoiceData.dueDate) {
+      toast.error("Please provide invoice and due dates.");
+      return;
+    }
+
+    if (!invoiceData.billTo) {
+      toast.error("Please provide a billing name or address.");
+      return;
+    }
+
+    if (error) {
+      toast.error("Please fix the errors before submitting.");
+      return;
+    }
+
     const selectedCustomerData = customerList.find(
       (customer) => customer.customerId === selectedCustomer
     );
 
+    if (!selectedCustomerData) {
+      toast.error("Selected customer not found.");
+      return;
+    }
+
+    const orderId = uuidv4();
     const orderData = {
-      createdFor: selectedCustomerData?.customerId || "",
+      id: orderId,
+      title: `Order for ${selectedCustomerData.name}`,
+      createdFor: selectedCustomerData.customerId,
       createdBy: userId,
+      status: "INVOICE",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       products: cartItems.map((item) => ({
         id: item?.productId || "",
         name: item?.name || "Unnamed Product",
@@ -164,45 +275,54 @@ const OrderCart = ({ onConvertToOrder }) => {
         total: (item?.price || 0) * (item?.quantity || 1),
       })),
       totalAmount: totalAmount || 0,
+      invoiceId: null,
     };
 
-    try {
-      const invoiceDataToSubmit = {
-        createdBy: userId,
-        customerId: selectedCustomerData.customerId,
-        billTo: invoiceData.billTo,
-        shipTo: invoiceData.shipTo,
-        amount: totalAmount,
-        orderNumber: orderData.orderNumber || "ORD123",
-        invoiceDate: invoiceData.invoiceDate,
-        dueDate: invoiceData.dueDate,
-        paymentMethod: "Cash",
-        status: "Pending",
-        orderId: orderData.orderId || "ORD123",
-        products: cartItems.map((item) => ({
+    const invoiceDataToSubmit = {
+      invoiceId: uuidv4(),
+      createdBy: userId,
+      customerId: selectedCustomerData.customerId,
+      billTo: invoiceData.billTo,
+      shipTo: invoiceData.shipTo,
+      amount: totalAmount,
+      invoiceDate: invoiceData.invoiceDate,
+      dueDate: invoiceData.dueDate,
+      paymentMethod: JSON.stringify({ method: "Cash" }),
+      status: "unpaid",
+      products: JSON.stringify(
+        cartItems.map((item) => ({
           productId: item.productId,
           quantity: item.quantity,
           price: item.price,
-        })),
-        signatureName: invoiceData.signatureName,
-      };
-      await createInvoice(invoiceDataToSubmit).unwrap();
+        }))
+      ),
+      signatureName: invoiceData.signatureName || "CM TRADING CO",
+      invoiceNo: invoiceNumber,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    try {
+      console.log("Submitting invoice data:", invoiceDataToSubmit);
+      const response = await createInvoice(invoiceDataToSubmit).unwrap();
+      orderData.invoiceId = response.invoice.invoiceId;
       onConvertToOrder(orderData);
-      handleClearCart();
+      await handleClearCart();
       toast.success("Order placed and invoice created successfully!");
-      // Reset form data
       setInvoiceData(initialInvoiceData);
       setSelectedCustomer("");
+      setInvoiceNumber(generateInvoiceNumber());
     } catch (error) {
+      console.error("Invoice creation error:", error);
       toast.error(
         `Failed to place order or create invoice: ${
-          error.data?.message || "Unknown error"
+          error.data?.message || error.status || "Unknown error"
         }`
       );
     }
   };
 
-  if (profileLoading || cartLoading) {
+  if (profileLoading || cartLoading || customersLoading || addressesLoading) {
     return (
       <div className="text-center">
         <div className="spinner-border" role="status">
@@ -212,10 +332,14 @@ const OrderCart = ({ onConvertToOrder }) => {
     );
   }
 
-  if (profileError || cartError) {
+  if (profileError || cartError || customersError || addressesError) {
     return (
       <div className="alert alert-danger">
-        Error loading cart: {profileError?.message || cartError?.message}
+        Error loading data:{" "}
+        {profileError?.message ||
+          cartError?.message ||
+          customersError?.message ||
+          addressesError?.message}
         <button className="btn btn-primary mt-2" onClick={refetch}>
           Retry
         </button>
@@ -224,76 +348,86 @@ const OrderCart = ({ onConvertToOrder }) => {
   }
 
   return (
-    <div class="col-md-12 col-lg-5 col-xl-4 ps-0 theiaStickySidebar">
-      <aside class="product-order-list">
-        <div class="customer-info">
-          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
-            <div class="d-flex align-items-center">
-              <h4 class="mb-0">New Order</h4>
-              <span class="badge badge-purple badge-xs fs-10 fw-medium ms-2">
-                #5655898
+    <div className="col-md-12 col-lg-5 col-xl-4 ps-0 theiaStickySidebar">
+      <ToastContainer />
+      <aside className="product-order-list">
+        <div className="customer-info">
+          <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+            <div className="d-flex align-items-center">
+              <h4 className="mb-0">New Order</h4>
+              <span className="badge badge-purple badge-xs fs-10 fw-medium ms-2">
+                #{invoiceNumber}
               </span>
             </div>
             <a
               href="#"
-              class="btn btn-sm btn-outline-primary shadow-primary"
-              data-bs-toggle="modal"
-              data-bs-target="#create"
+              className="btn btn-sm btn-outline-primary shadow-primary"
+              onClick={() => setShowModal(true)}
             >
               Add Customer
             </a>
           </div>
           <select
-            class="select"
+            className="form-select"
             value={selectedCustomer}
             onChange={(e) => setSelectedCustomer(e.target.value)}
+            disabled={customersLoading || customersError}
           >
+            <option value="">Select a customer</option>
             {customersLoading ? (
-              <option>Loading...</option>
+              <option disabled>Loading...</option>
             ) : customersError ? (
-              <option>Error fetching customers</option>
+              <option disabled>Error fetching customers</option>
+            ) : customerList.length === 0 ? (
+              <option disabled>No customers available</option>
             ) : (
               customerList.map((customer) => (
                 <option key={customer.customerId} value={customer.customerId}>
-                  {customer.name}
+                  {customer.name} ({customer.email})
                 </option>
               ))
             )}
           </select>
         </div>
-        <div class="product-added block-section">
-          <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
-            <h5 class="d-flex align-items-center mb-0">Order Details</h5>
-            <div class="badge bg-light text-gray-9 fs-12 fw-semibold py-2 border rounded">
-              Items : <span class="text-teal">{totalItems}</span>
+        {showModal && (
+          <AddCustomer
+            onClose={() => setShowModal(false)}
+            existingCustomer={null}
+          />
+        )}
+        <div className="product-added block-section">
+          <div className="d-flex align-items-center justify-content-between gap-3 mb-3">
+            <h5 className="d-flex align-items-center mb-0">Order Details</h5>
+            <div className="badge bg-light text-gray-9 fs-12 fw-semibold py-2 border rounded">
+              Items: <span className="text-teal">{totalItems}</span>
             </div>
           </div>
-          <div class="product-wrap">
+          <div className="product-wrap">
             {cartItems.length === 0 ? (
-              <div class="empty-cart">
-                <div class="mb-1" onClick={handleClearCart}>
+              <div className="empty-cart">
+                <div className="mb-1" onClick={handleClearCart}>
                   <FcEmptyTrash />
                 </div>
-                <p class="fw-bold">No Products Selected</p>
+                <p className="fw-bold">No Products Selected</p>
               </div>
             ) : (
-              <div class="product-list border-0 p-0">
-                <div class="table-responsive">
-                  <table class="table table-borderless">
+              <div className="product-list border-0 p-0">
+                <div className="table-responsive">
+                  <table className="table table-borderless">
                     <thead>
                       <tr>
-                        <th class="bg-transparent fw-bold">Product</th>
-                        <th class="bg-transparent fw-bold">QTY</th>
-                        <th class="bg-transparent fw-bold">Price</th>
-                        <th class="bg-transparent fw-bold text-end"></th>
+                        <th className="bg-transparent fw-bold">Product</th>
+                        <th className="bg-transparent fw-bold">QTY</th>
+                        <th className="bg-transparent fw-bold">Price</th>
+                        <th className="bg-transparent fw-bold text-end"></th>
                       </tr>
                     </thead>
                     <tbody>
                       {cartItems.map((item) => (
                         <tr key={item.productId}>
                           <td>
-                            <div class="d-flex align-items-center mb-1">
-                              <h6 class="fs-16 fw-medium">
+                            <div className="d-flex align-items-center mb-1">
+                              <h6 className="fs-16 fw-medium">
                                 <a>{item.name}</a>
                               </h6>
                               <button
@@ -360,9 +494,9 @@ const OrderCart = ({ onConvertToOrder }) => {
         <InvoiceDetails
           invoiceData={invoiceData}
           onChange={handleInvoiceChange}
+          error={error}
         />
         <PaymentMethod />
-
         <div className="btn-row d-flex align-items-center justify-content-between gap-3">
           <button className="btn btn-white flex-fill">
             <i className="ti ti-printer me-2"></i>Print Order
@@ -370,7 +504,12 @@ const OrderCart = ({ onConvertToOrder }) => {
           <button
             className="btn btn-secondary flex-fill"
             onClick={handlePlaceOrder}
-            disabled={cartItems.length === 0 || error}
+            disabled={
+              cartItems.length === 0 ||
+              error ||
+              customersLoading ||
+              addressesLoading
+            }
           >
             <i className="ti ti-shopping-cart me-2"></i>Generate Invoice
           </button>
