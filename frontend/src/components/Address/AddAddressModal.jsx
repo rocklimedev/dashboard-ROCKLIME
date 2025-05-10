@@ -160,7 +160,7 @@ const AddAddress = ({ onClose, existingAddress }) => {
                     required
                   >
                     <option value="">Select a user</option>
-                    {users?.map((user) => (
+                    {users.users?.map((user) => (
                       <option key={user.userId} value={user.userId}>
                         {user.name || user.email || user.userId}{" "}
                         {/* Adjust based on user data */}

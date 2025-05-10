@@ -82,7 +82,16 @@ const CustomerList = () => {
         setCurrentPage(currentPage - 1);
       }
     } catch (err) {
-      toast.error("Failed to delete customer!");
+      if (
+        err?.data?.message?.toLowerCase().includes("quotation") ||
+        err?.status === 400 // Optional: based on your API structure
+      ) {
+        toast.error(
+          "Cannot delete customer — quotations are associated with this customer."
+        );
+      } else {
+        toast.error("Failed to delete customer!");
+      }
     } finally {
       setShowDeleteModal(false);
       setCustomerToDelete(null);

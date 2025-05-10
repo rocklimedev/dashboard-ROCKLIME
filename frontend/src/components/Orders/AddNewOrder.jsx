@@ -19,7 +19,8 @@ const AddNewOrder = ({ onClose, adminName, order }) => {
   const [updateOrder] = useUpdateOrderByIdMutation();
 
   const { data: invoicesData, isLoading, error } = useGetAllInvoicesQuery();
-  const invoices = invoicesData?.data || [];
+  // Ensure invoices is always an array
+  const invoices = Array.isArray(invoicesData?.data) ? invoicesData.data : [];
 
   const [showNewTeamModal, setShowNewTeamModal] = useState(false);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState("");
@@ -31,7 +32,7 @@ const AddNewOrder = ({ onClose, adminName, order }) => {
   const selectedInvoice = selectedInvoiceData?.data;
 
   const { data: teamsData, refetch } = useGetAllTeamsQuery();
-  const teams = teamsData?.teams || [];
+  const teams = Array.isArray(teamsData?.teams) ? teamsData.teams : [];
 
   const [formData, setFormData] = useState({
     title: "",
@@ -53,14 +54,15 @@ const AddNewOrder = ({ onClose, adminName, order }) => {
   useEffect(() => {
     if (isEditMode && order) {
       setFormData({ ...order });
-      setSelectedInvoiceId(order.invoiceId);
+      setSelectedInvoiceId(order.invoiceId || "");
     }
   }, [isEditMode, order]);
 
   useEffect(() => {
     if (selectedInvoice) {
       // Extract only numeric part from invoiceNo
-      const numericOrderNo = selectedInvoice.invoiceNo?.replace(/\D/g, "");
+      const numericOrderNo =
+        selectedInvoice.invoiceNo?.replace(/\D/g, "") || "";
 
       setFormData((prev) => ({
         ...prev,
@@ -68,7 +70,7 @@ const AddNewOrder = ({ onClose, adminName, order }) => {
         dueDate: selectedInvoice.dueDate || "",
         createdBy: selectedInvoice.createdBy || "",
         createdFor: selectedInvoice.customerId || "",
-        orderNo: numericOrderNo || "", // set only numeric orderNo
+        orderNo: numericOrderNo,
       }));
     }
   }, [selectedInvoice, selectedInvoiceId]);
@@ -133,12 +135,18 @@ const AddNewOrder = ({ onClose, adminName, order }) => {
       <div className="modal-dialog modal-dialog-centered">
         <div className="modal-content">
           <div className="modal-header">
-            <h4>Add New Order</h4>
+            <h4>{isEditMode ? "Edit Order" : "Add New Order"}</h4>
             <button type="button" className="close" onClick={onClose}>
-              &times;
+              ×
             </button>
           </div>
           <div className="modal-body">
+            {isLoading && <p>Loading invoices...</p>}
+            {error && (
+              <p className="text-danger">
+                Error loading invoices: {error.data?.message || "Unknown error"}
+              </p>
+            )}
             <form onSubmit={handleSubmit}>
               <div className="mb-3">
                 <label className="form-label">Order Title</label>
@@ -214,7 +222,7 @@ const AddNewOrder = ({ onClose, adminName, order }) => {
                         });
                       }}
                     >
-                      &times;
+                      ×
                     </button>
                   </div>
                 ))}
@@ -239,7 +247,7 @@ const AddNewOrder = ({ onClose, adminName, order }) => {
                   name="invoiceId"
                   value={formData.invoiceId}
                   onChange={handleInvoiceSelect}
-                  disabled={isEditMode} // disable in edit mode
+                  disabled={isEditMode || isLoading}
                   required
                 >
                   <option value="">Select Invoice</option>
@@ -256,7 +264,6 @@ const AddNewOrder = ({ onClose, adminName, order }) => {
                 </select>
               </div>
 
-              {/* Render selected invoice details */}
               {selectedInvoice && (
                 <div className="border p-3 mb-3">
                   <h5>Invoice Details</h5>
@@ -270,7 +277,7 @@ const AddNewOrder = ({ onClose, adminName, order }) => {
                     <strong>Date:</strong> {selectedInvoice.invoiceDate}
                   </p>
                   <p>
-                    <strong>INVOCIE NO:</strong> {selectedInvoice.invoiceNo}
+                    <strong>Invoice No:</strong> {selectedInvoice.invoiceNo}
                   </p>
                 </div>
               )}
@@ -327,6 +334,8 @@ const AddNewOrder = ({ onClose, adminName, order }) => {
                     Partially Delivered
                   </option>
                   <option value="CANCELED">Canceled</option>
+                  <option value="DRAFT">Draft</option>
+                  <option value="ONHOLD">On Hold</option>
                 </select>
               </div>
 
@@ -347,27 +356,29 @@ const AddNewOrder = ({ onClose, adminName, order }) => {
               </div>
               <div className="mb-3">
                 <label className="form-label">Assigned To</label>
-                <button
-                  type="button"
-                  className="btn btn-primary ms-2"
-                  onClick={() => setShowNewTeamModal(true)}
-                >
-                  + New Team
-                </button>
-                <select
-                  className="form-select"
-                  name="teamId"
-                  value={formData.teamId}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="">Select Team</option>
-                  {teams.map((team) => (
-                    <option key={team.id} value={team.id}>
-                      {team.teamName}
-                    </option>
-                  ))}
-                </select>
+                <div className="d-flex align-items-center">
+                  <select
+                    className="form-select"
+                    name="teamId"
+                    value={formData.teamId}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">Select Team</option>
+                    {teams.map((team) => (
+                      <option key={team.id} value={team.id}>
+                        {team.teamName}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    className="btn btn-primary ms-2"
+                    onClick={() => setShowNewTeamModal(true)}
+                  >
+                    + New Team
+                  </button>
+                </div>
               </div>
 
               <div className="mb-3">
@@ -382,8 +393,6 @@ const AddNewOrder = ({ onClose, adminName, order }) => {
                 />
                 <small>Maximum 60 Characters</small>
               </div>
-
-              {error && <p className="text-danger">Error creating order</p>}
 
               <div className="modal-footer">
                 <button
@@ -411,7 +420,6 @@ const AddNewOrder = ({ onClose, adminName, order }) => {
           </div>
         </div>
       </div>
-      {/* New Team Modal */}
       {showNewTeamModal && (
         <AddNewTeam
           adminName={adminName}
@@ -419,6 +427,7 @@ const AddNewOrder = ({ onClose, adminName, order }) => {
           onTeamAdded={refetch}
         />
       )}
+      <ToastContainer />
     </div>
   );
 };

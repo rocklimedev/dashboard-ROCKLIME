@@ -46,7 +46,7 @@ const Login = () => {
       // Show success toast
       toast.success("Login successful!", { autoClose: 1000 });
     } catch (err) {
-      toast.err("Login failed: ", err);
+      toast.error(`Login failed: ${err?.message || "Unknown error occurred"}`);
       const status = err?.status;
       const message = err?.data?.message || "Invalid email or password";
 

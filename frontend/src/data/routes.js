@@ -264,6 +264,13 @@ const masterRoutes = [
     name: "POS",
     icon: <FaPooStorm />,
     isSidebarActive: true,
+    element: <POSWrapper />,
+  },
+  {
+    path: "/pos-new",
+    name: "POS NEW",
+    icon: <FaPooStorm />,
+    isSidebarActive: true,
     element: <POSWrapperNew />,
   },
   {
