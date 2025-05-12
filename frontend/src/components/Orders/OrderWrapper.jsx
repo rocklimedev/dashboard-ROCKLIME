@@ -229,15 +229,15 @@ const OrderWrapper = () => {
               <h6 className="mb-0">Manage everything from here</h6>
             </div>
           </div>
-          <div className="d-flex align-items-center gap-2">
-            <button className="btn btn-primary" onClick={handleOpenModal}>
-              <i className="ti ti-plus me-2"></i>New Order
-            </button>
-            <button className="btn btn-secondary" onClick={handleClearFilters}>
-              Clear Filters
-            </button>
-          </div>
+
           <ul className="nav nav-tabs">
+            <li className="nav-item">
+              <div className="d-flex align-items-center gap-2">
+                <button className="btn btn-primary" onClick={handleOpenModal}>
+                  <i className="ti ti-plus me-2"></i>New Order
+                </button>
+              </div>
+            </li>
             <li className="nav-item">
               <button
                 className={`nav-link ${activeTab === "orders" ? "active" : ""}`}

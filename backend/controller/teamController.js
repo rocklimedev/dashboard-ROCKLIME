@@ -6,7 +6,7 @@ const User = require("../models/users");
 // Create a new team with members
 exports.createTeam = async (req, res) => {
   try {
-    const { teamName, adminId, memberIds } = req.body;
+    const { teamName, adminId, members } = req.body;
 
     if (!teamName || !adminId) {
       return res.status(400).json({
@@ -22,57 +22,26 @@ exports.createTeam = async (req, res) => {
         .json({ success: false, message: "Admin not found." });
     }
 
-    const memberIdArray = Array.isArray(memberIds)
-      ? memberIds.filter(Boolean)
-      : [];
-
-    const members = memberIdArray.length
-      ? await User.findAll({ where: { userId: { [Op.in]: memberIdArray } } })
-      : [];
-
-    if (memberIdArray.length && members.length === 0) {
-      return res
-        .status(400)
-        .json({ success: false, message: "No valid members found." });
-    }
-
     const team = await Team.create({
       teamName,
       adminId,
       adminName: admin.username,
     });
 
+    // Save all members including admin
     const teamMembers = members.map((member) => ({
       teamId: team.id,
       userId: member.userId,
-      userName: member.username,
+      userName: member.userName,
       roleId: member.roleId,
       roleName: member.roleName || "Member",
     }));
 
-    // Add admin also as team member
-    teamMembers.push({
-      teamId: team.id,
-      userId: admin.userId,
-      userName: admin.username,
-      roleId: admin.roleId,
-      roleName: admin.roleName || "Admin",
-    });
+    await TeamMember.bulkCreate(teamMembers);
 
-    await TeamMember.bulkCreate(teamMembers, { validate: true });
-
-    return res.status(201).json({
-      success: true,
-      team: {
-        id: team.id,
-        teamName: team.teamName,
-        adminId: team.adminId,
-        adminName: team.adminName,
-        createdAt: team.createdAt,
-        updatedAt: team.updatedAt,
-        teammembers: teamMembers,
-      },
-    });
+    return res
+      .status(201)
+      .json({ success: true, message: "Team created", team });
   } catch (error) {
     return res.status(500).json({
       success: false,

@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useResetPasswordMutation } from "../../api/authApi";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import logo from "../../assets/img/logo.png";
+
 const ResetPassword = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -84,7 +85,7 @@ const ResetPassword = () => {
                   </div>
                 </form>
                 {/* Toast Container */}
-                <toast.Container position="top-right" autoClose={3000} />
+                <ToastContainer position="top-right" autoClose={3000} />
               </div>
             </div>
           </div>

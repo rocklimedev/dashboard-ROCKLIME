@@ -9,6 +9,7 @@ import { useGetProfileQuery } from "./api/userApi";
 import Loader from "./components/Common/Loader";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import SidebarNew from "./components/Common/SidebarNew2";
+import Sidebar from "./components/Common/SidebarNew";
 function App() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ function App() {
     "/login",
     "/signup",
     "/404",
+    "/reset-password",
     "/forgot-password",
     "/under-maintainance",
     "/coming-soon",

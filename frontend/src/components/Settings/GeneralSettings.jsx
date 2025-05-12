@@ -9,6 +9,7 @@ import {
 import "./settingsWrapper.css";
 import { logout } from "../../api/userSlice";
 import { useResetPasswordMutation } from "../../api/authApi";
+import { Link } from "react-router-dom";
 const GeneralSettings = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -96,14 +97,14 @@ const GeneralSettings = () => {
                       </p>
                     </div>
                   </div>
-                  <button
-                    className="btn btn-primary"
-                    data-bs-toggle="modal"
-                    data-bs-target="#change-password"
-                    disabled={isResettingPassword}
-                  >
-                    {isResettingPassword ? "Changing..." : "Change Password"}
-                  </button>
+                  <Link to="/forgot-password">
+                    <button
+                      className="btn btn-primary"
+                      disabled={isResettingPassword}
+                    >
+                      {isResettingPassword ? "Reseting..." : "Forgot Password"}
+                    </button>
+                  </Link>
                 </div>
 
                 {/* Phone Number Verification (Unchanged) */}
