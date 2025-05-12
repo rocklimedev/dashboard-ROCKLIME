@@ -16,7 +16,7 @@ import { BsFilter, BsSearch, BsList, BsGrid } from "react-icons/bs";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import { useGetAllParentCategoriesQuery } from "../../api/parentCategoryApi";
 
-const Categories = () => {
+const Categories = ({ onCategorySelect }) => {
   const { data: categoryData, error, isLoading } = useGetAllCategoriesQuery();
   const { data: parentData, isLoading: isParentLoading } =
     useGetAllParentCategoriesQuery();
@@ -54,7 +54,6 @@ const Categories = () => {
     ? filteredCategories
     : filteredCategories.slice(0, 10);
 
-  // Group categories into slides (e.g., 4 per slide on lg, 2 on md, 1 on sm)
   const categoriesPerSlide = {
     lg: 4,
     md: 2,
@@ -102,6 +101,8 @@ const Categories = () => {
                   onChange={(e) => {
                     setSelectedParent(e.target.value);
                     setShowAll(false);
+                    // Optionally reset category selection when parent changes
+                    onCategorySelect(null);
                   }}
                 >
                   <option value="all">All</option>
@@ -169,7 +170,6 @@ const Categories = () => {
         </Card.Body>
       </Card>
 
-      {/* Category Slider */}
       {filteredCategories.length > 0 ? (
         <Carousel
           indicators={true}
@@ -193,7 +193,11 @@ const Categories = () => {
                   >
                     <Card
                       className="shadow-sm border-0 flex-fill"
-                      style={{ transition: "transform 0.2s" }}
+                      style={{
+                        transition: "transform 0.2s",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => onCategorySelect(cat.categoryId)} // Call onCategorySelect with categoryId
                       onMouseEnter={(e) =>
                         (e.currentTarget.style.transform = "scale(1.02)")
                       }

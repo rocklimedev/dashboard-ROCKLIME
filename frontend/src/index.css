@@ -12,16 +12,6 @@
 
 /* Sidebar styles */
 
-/* Main content area styles */
-.main-content {
-  margin-left: 250px;
-  transition: all 0.3s ease-in-out;
-}
-
-.main-content.shrink {
-  margin-left: 0;
-}
-
 /* Notification badge */
 .badge-count {
   background-color: #3e64ff;

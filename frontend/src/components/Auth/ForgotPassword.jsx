@@ -1,17 +1,28 @@
-import React, { useState } from "react";
+import React from "react";
 import { useForgotPasswordMutation } from "../../api/authApi";
 import { useNavigate } from "react-router-dom";
-import { toast, ToastContainer } from "react-toastify"; // ✅ Import ToastContainer
+import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import logo from "../../assets/img/logo.png";
-
+import { useGetProfileQuery } from "../../api/userApi";
 const ForgotPassword = () => {
-  const [email, setEmail] = useState("");
   const navigate = useNavigate();
   const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
+  const {
+    data: profile,
+    isLoading: profileLoading,
+    error,
+  } = useGetProfileQuery();
+
+  const email = profile?.user?.email || "";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!email) {
+      toast.error("Email not available. Please try again.");
+      return;
+    }
+
     try {
       const response = await forgotPassword({ email }).unwrap();
       toast.success(response.message || "OTP sent successfully!");
@@ -36,7 +47,7 @@ const ForgotPassword = () => {
                     <div className="card-body p-5">
                       <div className="login-userheading">
                         <h3>Forgot password?</h3>
-                        <h4>Enter your email, and we'll send you an OTP.</h4>
+                        <h4>We'll send an OTP to your registered email.</h4>
                       </div>
                       <div className="mb-3">
                         <label className="form-label">
@@ -46,9 +57,8 @@ const ForgotPassword = () => {
                           <input
                             type="email"
                             className="form-control border-end-0"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
+                            value={profileLoading ? "Loading..." : email}
+                            disabled
                           />
                           <span className="input-group-text border-start-0">
                             <i className="ti ti-mail"></i>
@@ -59,7 +69,7 @@ const ForgotPassword = () => {
                         <button
                           type="submit"
                           className="btn btn-login"
-                          disabled={isLoading}
+                          disabled={isLoading || profileLoading || !email}
                         >
                           {isLoading ? "Sending..." : "Send OTP"}
                         </button>
@@ -67,7 +77,7 @@ const ForgotPassword = () => {
                       <div className="signinform text-center">
                         <h4>
                           Return to{" "}
-                          <a href="signin-3.html" className="hover-a">
+                          <a href="/signin" className="hover-a">
                             login
                           </a>
                         </h4>
@@ -75,7 +85,6 @@ const ForgotPassword = () => {
                     </div>
                   </div>
                 </form>
-                {/* ✅ Correct ToastContainer usage */}
                 <ToastContainer position="top-right" autoClose={3000} />
               </div>
             </div>
