@@ -10,7 +10,7 @@ import CustomerList from "../components/Customers/CustomerList";
 import CustomerDetails from "../components/Customers/CustomerDetails";
 import SignatureWrapper from "../components/Signature/SignatureWrapper";
 import { RiAdminLine } from "react-icons/ri";
-
+import hrmicon from "../assets/img/icons/hrm-icon.png";
 import { PiAddressBook, PiUserListBold } from "react-icons/pi";
 import { LiaFileInvoiceSolid, LiaFileSignatureSolid } from "react-icons/lia";
 import OrderWrapper from "../components/Orders/OrderWrapper";
@@ -26,6 +26,7 @@ import {
   BiAccessibility,
   BiSearch,
   BiSolidCategory,
+  BiUser,
   BiUserCheck,
 } from "react-icons/bi";
 import { FaFileCircleCheck, FaFirstOrder, FaPooStorm } from "react-icons/fa6";
@@ -70,6 +71,9 @@ import RecentQuotation from "../components/Quotation/RecentQuotations";
 import POSWrapperNew from "../components/POS-NEW/POSWrapper";
 import AddressList from "../components/Address/Address";
 import SearchList from "../components/Search/SearchList";
+import AttendanceWrapper from "../components/Attendance/AttendanceWrapper";
+import AttendanceList from "../components/Attendance/AttendanceList";
+import NewAddUser from "../components/User/NewAddUser";
 const masterRoutes = [
   {
     path: "/",
@@ -109,8 +113,8 @@ const masterRoutes = [
     ],
   },
   {
-    path: "/managerials/list",
-    name: "Managerials",
+    path: "#",
+    name: "Peoples",
     icon: <FaUserGraduate />,
     isSidebarActive: true,
     submenu: [
@@ -143,13 +147,6 @@ const masterRoutes = [
         element: <ComapniesWrapper />,
       },
       {
-        path: "/brands/list",
-        name: "Brands",
-        icon: <MdOutlineBrandingWatermark />,
-        isSidebarActive: true,
-        element: <Brands />,
-      },
-      {
         path: "/signature/list",
         name: "Signature",
         icon: <LiaFileSignatureSolid />,
@@ -157,11 +154,11 @@ const masterRoutes = [
         element: <SignatureWrapper />,
       },
       {
-        path: "/users/list",
-        name: "Users",
-        icon: <BiUserCheck />,
+        path: "/orders/teams",
+        name: "Teams",
+        icon: <FaTeamspeak />,
+        element: <TeamsList />,
         isSidebarActive: true,
-        element: <UserList />,
       },
       {
         path: "/companies/list",
@@ -180,7 +177,7 @@ const masterRoutes = [
     submenu: [
       {
         path: "/inventory/list",
-        name: "Inventory",
+        name: "List of Product",
         icon: <AiOutlineProduct />,
         element: <ProductList />,
         isSidebarActive: true,
@@ -198,6 +195,13 @@ const masterRoutes = [
         name: "Categories & Keywords",
         icon: <BiSolidCategory />,
         isSidebarActive: true,
+      },
+      {
+        path: "/brands/list",
+        name: "List of Brands",
+        icon: <MdOutlineBrandingWatermark />,
+        isSidebarActive: true,
+        element: <Brands />,
       },
       {
         path: "/inventory/product/add",
@@ -224,7 +228,7 @@ const masterRoutes = [
   },
   {
     path: "#",
-    name: "Orders Management",
+    name: "Sales",
     icon: <FaFirstOrderAlt />,
     isSidebarActive: true,
     submenu: [
@@ -243,15 +247,8 @@ const masterRoutes = [
         element: <OrderWithInvoice />,
       },
       {
-        path: "/orders/teams",
-        name: "Teams",
-        icon: <FaTeamspeak />,
-        element: <TeamsList />,
-        isSidebarActive: true,
-      },
-      {
         path: "/invoices/list",
-        name: "Invoices",
+        name: "List of Invoices",
         icon: <FaFileInvoice />,
         element: <RecentInvoices />,
         isSidebarActive: true,
@@ -263,28 +260,20 @@ const masterRoutes = [
         element: <InvoiceDetails />,
         isSidebarActive: false,
       },
-    ],
-  },
-  {
-    path: "/pos",
-    name: "POS",
-    icon: <FaPooStorm />,
-    isSidebarActive: true,
-    element: <POSWrapperNew />,
-  },
-  {
-    path: "/pos-new",
-    name: "POS NEW",
-    icon: <FaPooStorm />,
-    isSidebarActive: false,
-    element: <POSWrapperNew />,
-  },
-  {
-    path: "#",
-    name: "Quotations",
-    icon: <FaFileCircleCheck />,
-    isSidebarActive: true,
-    submenu: [
+      {
+        path: "/pos",
+        name: "POS",
+        icon: <FaPooStorm />,
+        isSidebarActive: true,
+        element: <POSWrapperNew />,
+      },
+      {
+        path: "/pos-new",
+        name: "POS NEW",
+        icon: <FaPooStorm />,
+        isSidebarActive: false,
+        element: <POSWrapperNew />,
+      },
       {
         path: "/quotations/list",
         name: "Quotations List",
@@ -315,9 +304,46 @@ const masterRoutes = [
       },
     ],
   },
+
+  {
+    path: "/hrm",
+    name: "HRM",
+    icon: <img src={hrmicon} />,
+    isSidebarActive: true,
+    submenu: [
+      {
+        path: "/hrm/attendance",
+        name: "Attendance",
+        icon: <img style={{ width: "20px" }} src={hrmicon} />,
+        isSidebarActive: true,
+        element: <AttendanceWrapper />,
+      },
+      {
+        path: "/hrm/attendance/list",
+        name: "Attendance List",
+        icon: <img style={{ width: "20px" }} src={hrmicon} />,
+        isSidebarActive: true,
+        element: <AttendanceList />,
+      },
+      {
+        path: "/users/list",
+        name: "Users",
+        icon: <BiUserCheck />,
+        isSidebarActive: true,
+        element: <UserList />,
+      },
+      {
+        path: "/user/add",
+        name: "User Add",
+        icon: <BiUserCheck />,
+        isSidebarActive: true,
+        element: <NewAddUser />,
+      },
+    ],
+  },
   {
     path: "#",
-    name: "Roles & Permission",
+    name: "RBAC",
     icon: <MdPermIdentity />,
     isSidebarActive: true,
     submenu: [
@@ -329,7 +355,7 @@ const masterRoutes = [
         element: <RolePermission />,
       },
       {
-        path: "roles-permission/permissions/:id",
+        path: "/roles-permission/permissions/:id",
         name: "Permission Details",
         icon: <MdPermIdentity />,
         isSidebarActive: false,
