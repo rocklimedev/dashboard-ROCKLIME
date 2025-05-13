@@ -1,15 +1,17 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { toast } from "react-toastify"; // For notifications
+import { toast } from "react-toastify";
 import {
   useDeleteUserMutation,
   useInactiveUserMutation,
-} from "../../api/userApi"; // Adjust path to your API slice
-import "./settingsWrapper.css";
-import { logout } from "../../api/userSlice";
+} from "../../api/userApi";
 import { useResetPasswordMutation } from "../../api/authApi";
+import { logout } from "../../api/userSlice";
+import { Modal, Button, Form } from "react-bootstrap";
 import { Link } from "react-router-dom";
+import "./settingsWrapper.css";
+
 const GeneralSettings = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -21,11 +23,16 @@ const GeneralSettings = () => {
     useInactiveUserMutation();
   const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
 
-  // State for password change modal
+  // State for password change
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
   });
+
+  // State for confirmation modal
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [confirmMessage, setConfirmMessage] = useState("");
 
   // Handle password change
   const handlePasswordChange = async (e) => {
@@ -34,42 +41,60 @@ const GeneralSettings = () => {
       await resetPassword(passwordData).unwrap();
       toast.success("Password changed successfully!");
       setPasswordData({ currentPassword: "", newPassword: "" });
-      // Close modal (manually or via ref if using Bootstrap)
       document.getElementById("change-password").classList.remove("show");
     } catch (error) {
       toast.error(error?.data?.message || "Failed to change password");
     }
   };
 
+  // Open confirmation modal for deactivation
+  const handleInitiateDeactivateAccount = () => {
+    setConfirmMessage("Are you sure you want to deactivate your account?");
+    setConfirmAction(() => handleDeactivateAccount);
+    setShowConfirmModal(true);
+  };
+
+  // Open confirmation modal for deletion
+  const handleInitiateDeleteAccount = () => {
+    setConfirmMessage(
+      "Are you sure you want to permanently delete your account? This action cannot be undone."
+    );
+    setConfirmAction(() => handleDeleteAccount);
+    setShowConfirmModal(true);
+  };
+
   // Handle account deactivation
   const handleDeactivateAccount = async () => {
-    if (window.confirm("Are you sure you want to deactivate your account?")) {
-      try {
-        await deactivateAccount().unwrap();
-        toast.success("Account deactivated successfully");
-        dispatch(logout()); // Clear user state
-        navigate("/login");
-      } catch (error) {
-        toast.error(error?.data?.message || "Failed to deactivate account");
-      }
+    try {
+      await deactivateAccount().unwrap();
+      toast.success("Account deactivated successfully");
+      dispatch(logout());
+      navigate("/login");
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to deactivate account");
+    } finally {
+      setShowConfirmModal(false);
     }
   };
 
   // Handle account deletion
   const handleDeleteAccount = async () => {
-    if (
-      window.confirm(
-        "Are you sure you want to permanently delete your account?"
-      )
-    ) {
-      try {
-        await deleteUser().unwrap();
-        toast.success("Account deleted successfully");
-        dispatch(logout()); // Clear user state
-        navigate("/login");
-      } catch (error) {
-        toast.error(error?.data?.message || "Failed to delete account");
-      }
+    try {
+      await deleteUser().unwrap();
+      toast.success("Account deleted successfully");
+      dispatch(logout());
+      navigate("/login");
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to delete account");
+    } finally {
+      setShowConfirmModal(false);
+    }
+  };
+
+  // Handle modal confirmation
+  const handleConfirmAction = () => {
+    if (confirmAction) {
+      confirmAction();
     }
   };
 
@@ -102,12 +127,12 @@ const GeneralSettings = () => {
                       className="btn btn-primary"
                       disabled={isResettingPassword}
                     >
-                      {isResettingPassword ? "Reseting..." : "Forgot Password"}
+                      {isResettingPassword ? "Resetting..." : "Forgot Password"}
                     </button>
                   </Link>
                 </div>
 
-                {/* Phone Number Verification (Unchanged) */}
+                {/* Phone Number Verification */}
                 <div className="d-flex align-items-center justify-content-between flex-wrap row-gap-3 border-bottom mb-3 pb-3">
                   <div className="d-flex align-items-center">
                     <span className="avatar avatar-lg border bg-light fs-24 me-2">
@@ -129,14 +154,15 @@ const GeneralSettings = () => {
                     <a
                       href="javascript:void(0);"
                       className="btn btn-primary mt-0"
-                      data-bs-toggle="modal"
-                      data-bs-target="#phone-verification"
                     >
                       Change
                     </a>
                     <a
                       href="javascript:void(0);"
                       className="btn btn-secondary ms-3"
+                      onClick={() =>
+                        toast.info("Phone number removal not implemented yet")
+                      }
                     >
                       Remove
                     </a>
@@ -161,7 +187,7 @@ const GeneralSettings = () => {
                   </div>
                   <button
                     className="btn btn-primary mt-0"
-                    onClick={handleDeactivateAccount}
+                    onClick={handleInitiateDeactivateAccount}
                     disabled={isDeactivating}
                   >
                     {isDeactivating ? "Deactivating..." : "Deactivate"}
@@ -183,7 +209,7 @@ const GeneralSettings = () => {
                   </div>
                   <button
                     className="btn btn-danger"
-                    onClick={handleDeleteAccount}
+                    onClick={handleInitiateDeleteAccount}
                     disabled={isDeleting}
                   >
                     {isDeleting ? "Deleting..." : "Delete"}
@@ -217,15 +243,11 @@ const GeneralSettings = () => {
               ></button>
             </div>
             <div className="modal-body">
-              <form onSubmit={handlePasswordChange}>
-                <div className="mb-3">
-                  <label htmlFor="currentPassword" className="form-label">
-                    Current Password
-                  </label>
-                  <input
+              <Form onSubmit={handlePasswordChange}>
+                <Form.Group className="mb-3" controlId="currentPassword">
+                  <Form.Label>Current Password</Form.Label>
+                  <Form.Control
                     type="password"
-                    className="form-control"
-                    id="currentPassword"
                     value={passwordData.currentPassword}
                     onChange={(e) =>
                       setPasswordData({
@@ -235,15 +257,11 @@ const GeneralSettings = () => {
                     }
                     required
                   />
-                </div>
-                <div className="mb-3">
-                  <label htmlFor="newPassword" className="form-label">
-                    New Password
-                  </label>
-                  <input
+                </Form.Group>
+                <Form.Group className="mb-3" controlId="newPassword">
+                  <Form.Label>New Password</Form.Label>
+                  <Form.Control
                     type="password"
-                    className="form-control"
-                    id="newPassword"
                     value={passwordData.newPassword}
                     onChange={(e) =>
                       setPasswordData({
@@ -253,19 +271,42 @@ const GeneralSettings = () => {
                     }
                     required
                   />
-                </div>
-                <button
+                </Form.Group>
+                <Button
                   type="submit"
-                  className="btn btn-primary"
+                  variant="primary"
                   disabled={isResettingPassword}
                 >
                   {isResettingPassword ? "Saving..." : "Save Changes"}
-                </button>
-              </form>
+                </Button>
+              </Form>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      <Modal
+        show={showConfirmModal}
+        onHide={() => setShowConfirmModal(false)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Confirm Action</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>{confirmMessage}</Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setShowConfirmModal(false)}
+          >
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={handleConfirmAction}>
+            Confirm
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };

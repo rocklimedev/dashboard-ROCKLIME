@@ -18,6 +18,7 @@ const brandRoutes = require("./routes/brands");
 const keywordRoutes = require("./routes/keyword");
 const productRoutes = require("./routes/products");
 const rolePermissionRoutes = require("./routes/rolePermission");
+const searchRoutes = require("./routes/search");
 const cartRoutes = require("./routes/cart");
 const companiesRoutes = require("./routes/company");
 const quotationRoutes = require("./routes/quotation");
@@ -85,7 +86,7 @@ app.use("/api/quotation", quotationRoutes);
 app.use("/api/role-permissions", rolePermissionRoutes);
 app.use("/api/invoices", invoiceRoutes);
 app.use("/api/teams", teamRoutes);
-
+app.use("/api/search", searchRoutes);
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error("Server error:", err);

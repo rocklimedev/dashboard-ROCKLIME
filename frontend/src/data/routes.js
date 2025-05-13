@@ -22,7 +22,12 @@ import {
   MdOutlineSettings,
 } from "react-icons/md";
 import { AiOutlineProduct } from "react-icons/ai";
-import { BiAccessibility, BiSolidCategory, BiUserCheck } from "react-icons/bi";
+import {
+  BiAccessibility,
+  BiSearch,
+  BiSolidCategory,
+  BiUserCheck,
+} from "react-icons/bi";
 import { FaFileCircleCheck, FaFirstOrder, FaPooStorm } from "react-icons/fa6";
 import {
   FaRegFile,
@@ -64,6 +69,7 @@ import NoAccess from "../components/Common/NoAccess";
 import RecentQuotation from "../components/Quotation/RecentQuotations";
 import POSWrapperNew from "../components/POS-NEW/POSWrapper";
 import AddressList from "../components/Address/Address";
+import SearchList from "../components/Search/SearchList";
 const masterRoutes = [
   {
     path: "/",
@@ -264,13 +270,13 @@ const masterRoutes = [
     name: "POS",
     icon: <FaPooStorm />,
     isSidebarActive: true,
-    element: <POSWrapper />,
+    element: <POSWrapperNew />,
   },
   {
     path: "/pos-new",
     name: "POS NEW",
     icon: <FaPooStorm />,
-    isSidebarActive: true,
+    isSidebarActive: false,
     element: <POSWrapperNew />,
   },
   {
@@ -344,6 +350,13 @@ const masterRoutes = [
     icon: <FaFileCircleCheck />,
     isSidebarActive: false,
     submenu: [
+      {
+        path: "/search",
+        name: "Search",
+        icon: <BiSearch />,
+        isSidebarActive: false,
+        element: <SearchList />,
+      },
       {
         path: "/u/:id",
         name: "Profile",
