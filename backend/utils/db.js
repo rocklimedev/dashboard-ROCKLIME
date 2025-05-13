@@ -23,6 +23,9 @@ const setupDB = async () => {
   try {
     await sequelize.authenticate();
     console.log("\x1b[32m%s\x1b[0m", "✓ MySQL Connected!");
+    // Initialize relationships
+    Address.belongsTo(User, { foreignKey: "userId", as: "users" });
+    User.hasOne(Address, { foreignKey: "userId", as: "addresses" });
 
     // ==============================
     // 🔥 ROLE & PERMISSION SETUP

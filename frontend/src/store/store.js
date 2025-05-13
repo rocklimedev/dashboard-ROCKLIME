@@ -21,7 +21,7 @@ import { invoiceApi } from "../api/invoiceApi";
 import { teamApi } from "../api/teamApi";
 import { rolePermissionsApi } from "../api/rolePermissionApi";
 import { searchApi } from "../api/searchApi";
-
+import { attendanceApi } from "../api/attendanceApi";
 export const store = configureStore({
   reducer: {
     [vendorApi.reducerPath]: vendorApi.reducer,
@@ -46,6 +46,7 @@ export const store = configureStore({
     [teamApi.reducerPath]: teamApi.reducer,
     [rolePermissionsApi.reducerPath]: rolePermissionsApi.reducer,
     [searchApi.reducerPath]: searchApi.reducer,
+    [attendanceApi.reducerPath]: attendanceApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -70,7 +71,8 @@ export const store = configureStore({
       invoiceApi.middleware,
       teamApi.middleware,
       rolePermissionsApi.middleware,
-      searchApi.middleware
+      searchApi.middleware,
+      attendanceApi.middleware
     ),
 });
 

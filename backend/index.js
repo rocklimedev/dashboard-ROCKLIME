@@ -13,6 +13,7 @@ const addressRoutes = require("./routes/address");
 const signatureRoutes = require("./routes/signature");
 const categoryRoutes = require("./routes/category");
 const parentCategoryRoutes = require("./routes/parentController");
+const attendanceRoutes = require("./routes/attendance");
 const customerRoutes = require("./routes/customer");
 const brandRoutes = require("./routes/brands");
 const keywordRoutes = require("./routes/keyword");
@@ -67,6 +68,7 @@ setupDB();
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/attendance", attendanceRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/order", orderRoutes);
 app.use("/api/roles", roleRoutes);

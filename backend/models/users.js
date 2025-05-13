@@ -18,11 +18,60 @@ const User = sequelize.define(
       primaryKey: true,
       defaultValue: DataTypes.UUIDV4,
     },
-    username: { type: DataTypes.STRING(50), unique: true, allowNull: false },
-    name: { type: DataTypes.STRING(100), allowNull: true },
-    email: { type: DataTypes.STRING(100), unique: true, allowNull: false },
-    mobileNumber: { type: DataTypes.STRING(20), allowNull: true },
-
+    username: {
+      type: DataTypes.STRING(50),
+      unique: true,
+      allowNull: false,
+    },
+    name: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+    },
+    email: {
+      type: DataTypes.STRING(100),
+      unique: true,
+      allowNull: false,
+    },
+    mobileNumber: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+    },
+    dateOfBirth: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+      validate: {
+        isDate: true,
+      },
+    },
+    shiftFrom: {
+      type: DataTypes.TIME,
+      allowNull: true,
+    },
+    shiftTo: {
+      type: DataTypes.TIME,
+      allowNull: true,
+    },
+    bloodGroup: {
+      type: DataTypes.ENUM("A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"),
+      allowNull: true,
+    },
+    addressId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: "addresses", // Reference table name directly
+        key: "addressId",
+      },
+      onDelete: "SET NULL",
+      onUpdate: "CASCADE",
+    },
+    emergencyNumber: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+      validate: {
+        is: /^[0-9+\-\s]*$/,
+      },
+    },
     roles: {
       type: DataTypes.STRING,
       allowNull: true,
@@ -37,17 +86,18 @@ const User = sequelize.define(
         );
       },
     },
-
     status: {
       type: DataTypes.ENUM("active", "inactive", "restricted"),
       allowNull: false,
       defaultValue: "inactive",
     },
-
-    password: { type: DataTypes.STRING, allowNull: false },
+    password: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
   },
   {
-    tableName: "users", // Force lowercase table name
+    tableName: "users",
     timestamps: true,
   }
 );
