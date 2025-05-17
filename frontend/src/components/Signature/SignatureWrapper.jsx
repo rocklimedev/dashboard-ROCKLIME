@@ -1,19 +1,26 @@
 import React, { useState } from "react";
 import PageHeader from "../Common/PageHeader";
 import AddSignature from "./AddSignature";
-import { useGetAllSignaturesQuery } from "../../api/signatureApi";
+import {
+  useGetAllSignaturesQuery,
+  useDeleteSignatureMutation,
+} from "../../api/signatureApi";
+import { toast } from "react-toastify";
 
-const SignatureWrapper = () => {
+const SignatureWrapper = ({ userId }) => {
+  // Assume userId is passed from auth context
   const { data: signatures, error, isLoading } = useGetAllSignaturesQuery();
+  const [deleteSignature, { isLoading: isDeleting }] =
+    useDeleteSignatureMutation();
   const [selectedSignature, setSelectedSignature] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
 
   // Format signatures for tableData prop
   const formattedSignatures = (signatures || []).map((signature) => ({
     signatureId: signature.signatureId,
-    signature_name: signature.signature_name || "N/A",
-    user_name: signature.User?.name || "N/A",
-    user_email: signature.User?.email || "N/A",
+    signatureName: signature.signature_name || "N/A", // Match table headers
+    userName: signature.User?.name || "N/A",
+    userEmail: signature.User?.email || "N/A",
     status: signature.mark_as_default ? "Default" : "Inactive",
     createdAt: new Date(signature.createdAt).toLocaleString(),
   }));
@@ -28,6 +35,23 @@ const SignatureWrapper = () => {
     setModalOpen(true);
   };
 
+  const handleDelete = async (signatureId) => {
+    if (window.confirm("Are you sure you want to delete this signature?")) {
+      try {
+        await deleteSignature(signatureId).unwrap();
+        toast.success("Signature deleted successfully!", {
+          position: "top-right",
+          autoClose: 5000,
+        });
+      } catch (error) {
+        toast.error(error?.data?.error || "Failed to delete signature.", {
+          position: "top-right",
+          autoClose: 5000,
+        });
+      }
+    }
+  };
+
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -35,7 +59,7 @@ const SignatureWrapper = () => {
           title="Signature"
           subtitle="List of your all Signatures."
           onAdd={handleAdd}
-          tableData={formattedSignatures} // Pass formatted signatures for Excel/PDF
+          tableData={formattedSignatures}
         />
 
         <div className="card">
@@ -45,10 +69,14 @@ const SignatureWrapper = () => {
 
           <div className="card-body p-0">
             {isLoading ? (
-              <p className="text-center py-3">Loading...</p>
+              <div className="text-center py-3">
+                <div className="spinner-border" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+              </div>
             ) : error ? (
               <p className="text-center text-danger py-3">
-                Error fetching data
+                {error?.data?.error || "Error fetching signatures"}
               </p>
             ) : (
               <div className="table-responsive">
@@ -92,10 +120,19 @@ const SignatureWrapper = () => {
                           </td>
                           <td>
                             <button
-                              className="btn btn-sm btn-primary"
+                              className="btn btn-sm btn-primary me-2"
                               onClick={() => handleEdit(signature)}
                             >
                               Edit
+                            </button>
+                            <button
+                              className="btn btn-sm btn-danger"
+                              onClick={() =>
+                                handleDelete(signature.signatureId)
+                              }
+                              disabled={isDeleting}
+                            >
+                              {isDeleting ? "Deleting..." : "Delete"}
                             </button>
                           </td>
                         </tr>
@@ -111,6 +148,7 @@ const SignatureWrapper = () => {
 
       {modalOpen && (
         <AddSignature
+          userId={userId} // Pass userId to AddSignature
           signatureId={selectedSignature?.signatureId}
           existingSignature={selectedSignature}
           onClose={() => setModalOpen(false)}

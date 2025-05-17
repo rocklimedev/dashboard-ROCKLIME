@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Dropdown } from "react-bootstrap";
 import {
   FaEye,
@@ -19,11 +19,12 @@ import DataTablePagination from "../Common/DataTablePagination";
 import DeleteModal from "../Common/DeleteModal";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
+import userimg from "../../assets/img/users/user-32.jpg";
+import { useNavigate } from "react-router-dom";
 const UserList = () => {
   const { data, error, isLoading, isFetching, refetch } = useGetAllUsersQuery();
   const users = data?.users || [];
-
+  const navigate = useNavigate();
   const [reportUser, { isLoading: isReporting }] = useReportUserMutation();
   const [inactiveUser, { isLoading: isInactivating }] =
     useInactiveUserMutation();
@@ -37,6 +38,30 @@ const UserList = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [userToDelete, setUserToDelete] = useState(null);
+
+  // Calculate stats using useMemo to avoid recalculating on every render
+  const stats = useMemo(() => {
+    if (!users.length) {
+      return {
+        totalEmployees: 0,
+        active: 0,
+        inactive: 0,
+        newJoiners: 0,
+      };
+    }
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    return {
+      totalEmployees: users.length,
+      active: users.filter((user) => user.status === "active").length,
+      inactive: users.filter((user) => user.status !== "active").length,
+      newJoiners: users.filter(
+        (user) => new Date(user.createdAt) >= thirtyDaysAgo
+      ).length,
+    };
+  }, [users]);
 
   // Format users for tableData prop
   const formattedUsers = users.map((user) => ({
@@ -165,74 +190,171 @@ const UserList = () => {
           title="Users"
           subtitle="Manage your users"
           onAdd={handleAddUser}
-          tableData={formattedUsers} // Pass formatted users to PageHeader
+          tableData={formattedUsers}
         />
-
+        <div className="row">
+          <div className="col-xl-3 col-md-6">
+            <div className="card bg-purple border-0">
+              <div className="card-body d-flex align-items-center justify-content-between">
+                <div>
+                  <p className="mb-1 text-white">Total Employees</p>
+                  <h4 className="text-white">{stats.totalEmployees}</h4>
+                </div>
+                <div>
+                  <span className="avatar avatar-lg bg-purple-900">
+                    <i className="ti ti-users-group"></i>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="col-xl-3 col-md-6">
+            <div className="card bg-teal border-0">
+              <div className="card-body d-flex align-items-center justify-content-between">
+                <div>
+                  <p className="mb-1 text-white">Active</p>
+                  <h4 className="text-white">{stats.active}</h4>
+                </div>
+                <div>
+                  <span className="avatar avatar-lg bg-teal-900">
+                    <i className="ti ti-user-star"></i>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="col-xl-3 col-md-6">
+            <div className="card bg-secondary border-0">
+              <div className="card-body d-flex align-items-center justify-content-between">
+                <div>
+                  <p className="mb-1 text-white">Inactive</p>
+                  <h4 className="text-white">{stats.inactive}</h4>
+                </div>
+                <div>
+                  <span className="avatar avatar-lg bg-secondary-900">
+                    <i className="ti ti-user-exclamation"></i>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="col-xl-3 col-md-6">
+            <div className="card bg-info border-0">
+              <div className="card-body d-flex align-items-center justify-content-between">
+                <div>
+                  <p className="mb-1 text-white">New Joiners</p>
+                  <h4 className="text-white">{stats.newJoiners}</h4>
+                </div>
+                <div>
+                  <span className="avatar avatar-lg bg-info-900">
+                    <i className="ti ti-user-check"></i>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div className="card">
           <div className="card-body p-0">
-            <div className="table-responsive">
-              <table className="table datatable">
-                <thead className="thead-light">
-                  <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Username</th>
-                    <th>Phone</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th>Created At</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedUsers.map((user) => (
-                    <tr key={user.userId}>
-                      <td>{user.name}</td>
-                      <td>{user.email}</td>
-                      <td>{user.username}</td>
-                      <td>{user.mobileNumber}</td>
-                      <td>{user.roles}</td>
-                      <td>{user.status ? "Active" : "Inactive"}</td>
-                      <td>{new Date(user.createdAt).toLocaleDateString()}</td>
-                      <td>
-                        <Dropdown>
-                          <Dropdown.Toggle variant="light" className="btn-sm">
-                            ⋮
-                          </Dropdown.Toggle>
-                          <Dropdown.Menu>
-                            <Dropdown.Item onClick={() => handleViewUser(user)}>
-                              <FaEye className="me-2" /> View
-                            </Dropdown.Item>
-                            <Dropdown.Item onClick={() => handleEditUser(user)}>
-                              <FaPen className="me-2" /> Edit
-                            </Dropdown.Item>
-                            <Dropdown.Item
-                              onClick={() => handleInactiveUser(user.userId)}
-                              disabled={isInactivating}
+            <div className="employee-grid-widget">
+              <div className="row">
+                {paginatedUsers.map((user) => (
+                  <div
+                    className="col-xxl-3 col-xl-4 col-lg-6 col-md-6"
+                    key={user.userId}
+                  >
+                    <div className="card">
+                      <div className="card-body">
+                        <div className="d-flex align-items-start justify-content-between mb-2">
+                          <div>
+                            <a
+                              href={`/user/${user.userId}`}
+                              className="avatar avatar-xl avatar-rounded border p-1 rounded-circle"
                             >
-                              <FaBan className="me-2" /> Inactive User
-                            </Dropdown.Item>
-                            <Dropdown.Item
-                              onClick={() => handleReportUser(user.userId)}
-                              disabled={isReporting}
-                            >
-                              <FaExclamationTriangle className="me-2 text-warning" />{" "}
-                              Report User
-                            </Dropdown.Item>
-                            <Dropdown.Item
-                              onClick={() => handleDeleteUser(user.userId)}
-                              className="text-danger"
-                              disabled={isDeleting}
-                            >
-                              <FaTrash className="me-2" /> Delete
-                            </Dropdown.Item>
-                          </Dropdown.Menu>
-                        </Dropdown>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                              <img
+                                src={userimg}
+                                className="img-fluid h-auto w-auto"
+                                alt="img"
+                              />
+                            </a>
+                          </div>
+                          <div className="dropdown">
+                            <Dropdown>
+                              <Dropdown.Toggle
+                                variant="light"
+                                className="btn-sm"
+                              >
+                                ⋮
+                              </Dropdown.Toggle>
+                              <Dropdown.Menu>
+                                <Dropdown.Item
+                                  onClick={navigate(`/user/${user.userId}`)}
+                                >
+                                  <FaEye className="me-2" /> View
+                                </Dropdown.Item>
+                                <Dropdown.Item
+                                  onClick={() => handleEditUser(user)}
+                                >
+                                  <FaPen className="me-2" /> Edit
+                                </Dropdown.Item>
+                                <Dropdown.Item
+                                  onClick={() =>
+                                    handleInactiveUser(user.userId)
+                                  }
+                                  disabled={isInactivating}
+                                >
+                                  <FaBan className="me-2" /> Inactive User
+                                </Dropdown.Item>
+                                <Dropdown.Item
+                                  onClick={() => handleReportUser(user.userId)}
+                                  disabled={isReporting}
+                                >
+                                  <FaExclamationTriangle className="me-2 text-warning" />{" "}
+                                  Report User
+                                </Dropdown.Item>
+                                <Dropdown.Item
+                                  onClick={() => handleDeleteUser(user.userId)}
+                                  className="text-danger"
+                                  disabled={isDeleting}
+                                >
+                                  <FaTrash className="me-2" /> Delete
+                                </Dropdown.Item>
+                              </Dropdown.Menu>
+                            </Dropdown>
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-primary mb-2">
+                            {user.username} - {user.mobileNumber || "N/A"}
+                          </p>
+                        </div>
+                        <div className="text-center mb-3">
+                          <h6 className="mb-1">
+                            <a href={`/user/${user.userId}`}>{user.name}</a>
+                          </h6>
+                          <span className="badge bg-secondary-transparent text-gray-9 fs-10 fw-medium">
+                            {user.roles.join(", ") || "N/A"}
+                          </span>
+                        </div>
+                        <div className="d-flex align-items-center justify-content-between bg-light rounded p-3">
+                          <div className="text-start">
+                            <h6 className="mb-1">Joined</h6>
+                            <p>
+                              {new Date(user.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div className="text-start">
+                            <h6 className="mb-1">Status</h6>
+                            <p>
+                              {user.status === "active" ? "Active" : "Inactive"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
           <div className="card-footer">

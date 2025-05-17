@@ -8,8 +8,8 @@ import "react-toastify/dist/ReactToastify.css";
 import { useGetProfileQuery } from "./api/userApi";
 import Loader from "./components/Common/Loader";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
+
 import SidebarNew from "./components/Common/SidebarNew2";
-import Sidebar from "./components/Common/SidebarNew";
 function App() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -29,10 +29,8 @@ function App() {
   const isPOSPage = ["/pos", "/pos-new"].includes(location.pathname);
 
   const token = localStorage.getItem("token");
-
   const { data: profileData, isLoading: isProfileLoading } =
     useGetProfileQuery();
-
   const userId = profileData?.user?.userId || null;
 
   useEffect(() => {
@@ -64,7 +62,6 @@ function App() {
     }
 
     // Set layout mode based on route
-
     if (location.pathname === "/layout-horizontal") {
       setLayoutMode("horizontal");
       setSidebarOpen(false);
@@ -74,7 +71,7 @@ function App() {
       setLayoutMode("vertical");
     }
 
-    // Reset sidebar state on auth or POS pages
+    // Reset sidebar state only for auth or POS pages
     if (isAuthPage || isPOSPage) {
       setSidebarOpen(false);
     }
@@ -86,10 +83,10 @@ function App() {
     isPOSPage,
     location.pathname,
     navigate,
-    layoutMode,
   ]);
 
   const toggleSidebar = (value) => {
+    console.log("Toggling sidebar to:", value); // Debug state change
     setSidebarOpen(value);
   };
 

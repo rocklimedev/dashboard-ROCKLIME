@@ -51,10 +51,6 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     }
   };
 
-  const handleSidebarToggle = () => {
-    toggleSidebar(!isSidebarOpen); // Toggle parent state
-  };
-
   const handleFullscreenToggle = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen();
@@ -69,7 +65,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     <div className="header pos-header">
       <div className="main-header d-flex align-items-center">
         {/* Logo Section */}
-        <div className="header-left">
+        <div className hamsters="header-left">
           <Link to="/" className="logo">
             <img src={logo} alt="Logo" className="img-fluid" />
           </Link>
@@ -79,8 +75,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
         <Button
           variant="link"
           className="mobile_btn p-0"
-          onClick={handleSidebarToggle}
-          aria-label="Toggle sidebar"
+          onClick={() => toggleSidebar(true)}
         >
           <span className="bar-icon">
             <span></span>

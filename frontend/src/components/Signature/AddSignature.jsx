@@ -5,13 +5,19 @@ import {
   useCreateSignatureMutation,
   useUpdateSignatureMutation,
 } from "../../api/signatureApi";
+import { useGetProfileQuery } from "../../api/userApi";
 
-const AddSignature = ({ signatureId, existingSignature, onclose }) => {
+const AddSignature = ({ signatureId, existingSignature, onClose }) => {
   const [signatureName, setSignatureName] = useState("");
   const [signatureImage, setSignatureImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [markAsDefault, setMarkAsDefault] = useState(false);
-  const [userId, setUserId] = useState(""); // Get this from context or props ideally
 
+  const {
+    data: profile,
+    isLoading: isProfileLoading,
+    error: profileError,
+  } = useGetProfileQuery();
   const [createSignature, { isLoading: isAdding }] =
     useCreateSignatureMutation();
   const [updateSignature, { isLoading: isUpdating }] =
@@ -19,52 +25,72 @@ const AddSignature = ({ signatureId, existingSignature, onclose }) => {
 
   useEffect(() => {
     if (signatureId && existingSignature) {
-      setSignatureName(existingSignature.signatureName);
-      setSignatureImage(null);
-      setMarkAsDefault(existingSignature.markAsDefault);
-      setUserId(existingSignature.userId);
+      setSignatureName(existingSignature.signature_name || "");
+      setMarkAsDefault(existingSignature.mark_as_default || false);
+      setImagePreview(existingSignature.signature_image || null);
     }
   }, [signatureId, existingSignature]);
 
+  useEffect(() => {
+    if (profileError) {
+      toast.error(profileError?.data?.error || "Failed to load user profile.", {
+        position: "top-right",
+        autoClose: 5000,
+      });
+    }
+  }, [profileError]);
+
   const handleClose = () => {
-    setSignatureImage(null);
     setSignatureName("");
+    setSignatureImage(null);
+    setImagePreview(null);
     setMarkAsDefault(false);
-    setUserId("");
-    onclose();
+    onClose();
   };
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
 
+    const userId = profile?.user?.userId; // Confirm nested structure
+    if (!userId) {
+      toast.error("User ID is required. Please log in again.", {
+        position: "top-right",
+        autoClose: 5000,
+      });
+      return;
+    }
+
     const formData = new FormData();
-    formData.append("signatureName", signatureName);
-    if (signatureImage) formData.append("signatureImage", signatureImage);
-    formData.append("markAsDefault", markAsDefault);
+    formData.append("signature_name", signatureName);
+    if (signatureImage) formData.append("file", signatureImage);
+    formData.append("mark_as_default", markAsDefault.toString()); // Convert to string explicitly
     formData.append("userId", userId);
+
+    console.log("Sending FormData:", {
+      signature_name: signatureName,
+      mark_as_default: markAsDefault.toString(),
+      userId,
+      file: signatureImage,
+    });
 
     try {
       if (signatureId) {
-        await updateSignature({ signatureId, body: formData }).unwrap();
+        await updateSignature({ id: signatureId, body: formData }).unwrap();
         toast.success("Signature updated successfully!", {
-          position: "top-right", // Hardcoded to avoid POSITION issue
+          position: "top-right",
           autoClose: 5000,
         });
       } else {
         await createSignature(formData).unwrap();
         toast.success("Signature added successfully!", {
-          position: "top-right", // Hardcoded to avoid POSITION issue
+          position: "top-right",
           autoClose: 5000,
         });
       }
-
-      // Reset form state
-      setSignatureName("");
-      setSignatureImage(null);
-      setMarkAsDefault(false);
+      handleClose();
     } catch (error) {
-      toast.error("Failed to save signature.", {
-        position: "top-right", // Hardcoded to avoid POSITION issue
+      toast.error(error?.data?.error || "Failed to save signature.", {
+        position: "top-right",
         autoClose: 5000,
       });
     }
@@ -73,7 +99,16 @@ const AddSignature = ({ signatureId, existingSignature, onclose }) => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      const validTypes = ["image/png", "image/jpeg", "image/jpg"];
+      if (!validTypes.includes(file.type)) {
+        toast.error("Only PNG or JPEG images are allowed.", {
+          position: "top-right",
+          autoClose: 5000,
+        });
+        return;
+      }
       setSignatureImage(file);
+      setImagePreview(URL.createObjectURL(file));
     }
   };
 
@@ -90,80 +125,88 @@ const AddSignature = ({ signatureId, existingSignature, onclose }) => {
               className="btn-close"
               onClick={handleClose}
               aria-label="Close"
-              data-bs-dismiss="modal"
             ></button>
           </div>
 
           <form onSubmit={handleFormSubmit}>
             <div className="modal-body">
-              <div className="mb-3">
-                <label className="form-label">
-                  Signature Name<span className="text-danger ms-1">*</span>
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={signatureName}
-                  onChange={(e) => setSignatureName(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="mb-3">
-                <label className="form-label">
-                  Signature Image<span className="text-danger ms-1">*</span>
-                </label>
-                <input
-                  type="file"
-                  className="form-control"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  required={!signatureId}
-                />
-              </div>
-
-              <div className="mb-3 form-check">
-                <input
-                  type="checkbox"
-                  className="form-check-input"
-                  id="defaultCheck"
-                  checked={markAsDefault}
-                  onChange={() => setMarkAsDefault(!markAsDefault)}
-                />
-                <label className="form-check-label" htmlFor="defaultCheck">
-                  Mark as Default
-                </label>
-              </div>
-
-              <div className="mb-0">
-                <div className="status-toggle modal-status d-flex justify-content-between align-items-center">
-                  <span className="status-label">
-                    Status<span className="text-danger ms-1">*</span>
-                  </span>
-                  <input
-                    type="checkbox"
-                    id="user2"
-                    className="check"
-                    checked={markAsDefault}
-                    onChange={() => setMarkAsDefault(!markAsDefault)}
-                  />
-                  <label htmlFor="user2" className="checktoggle"></label>
+              {isProfileLoading ? (
+                <div className="text-center">
+                  <div className="spinner-border" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div className="mb-3">
+                    <label className="form-label">
+                      Signature Name
+                      <span className="text-danger ms-1">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={signatureName}
+                      onChange={(e) => setSignatureName(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label">
+                      Signature Image
+                      {!signatureId && (
+                        <span className="text-danger ms-1">*</span>
+                      )}
+                    </label>
+                    <input
+                      type="file"
+                      className="form-control"
+                      accept="image/png,image/jpeg,image/jpg"
+                      onChange={handleImageChange}
+                      required={!signatureId && !imagePreview}
+                    />
+                    {imagePreview && (
+                      <div className="mt-2">
+                        <img
+                          src={imagePreview}
+                          alt="Signature Preview"
+                          style={{ maxWidth: "200px", maxHeight: "100px" }}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mb-3 form-check">
+                    <input
+                      type="checkbox"
+                      className="form-check-input"
+                      id="defaultCheck"
+                      checked={markAsDefault}
+                      onChange={() => setMarkAsDefault(!markAsDefault)}
+                    />
+                    <label className="form-check-label" htmlFor="defaultCheck">
+                      Mark as Default
+                    </label>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="modal-footer">
               <button
                 type="button"
                 className="btn me-2 btn-secondary"
-                data-bs-dismiss="modal"
+                onClick={handleClose}
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 className="btn btn-primary"
-                disabled={isAdding || isUpdating}
+                disabled={
+                  isProfileLoading || isAdding || isUpdating || profileError
+                }
               >
                 {isAdding || isUpdating
                   ? "Saving..."

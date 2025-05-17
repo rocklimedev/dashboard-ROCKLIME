@@ -30,6 +30,11 @@ const Profile = () => {
     name: "",
     email: "",
     mobileNumber: "",
+    street: "",
+    city: "",
+    state: "",
+    postalCode: "",
+    country: "",
   });
   const [avatarUrl, setAvatarUrl] = useState("");
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
@@ -54,6 +59,11 @@ const Profile = () => {
         name: profile.user.name || "",
         email: profile.user.email || "",
         mobileNumber: profile.user.mobileNumber || "",
+        street: profile.user.address?.street || "",
+        city: profile.user.address?.city || "",
+        state: profile.user.address?.state || "",
+        postalCode: profile.user.address?.postalCode || "",
+        country: profile.user.address?.country || "",
       });
       const savedAvatar = localStorage.getItem(`avatar_${profile.user.userId}`);
       if (savedAvatar) {
@@ -123,6 +133,11 @@ const Profile = () => {
       name: profile.user.name || "",
       email: profile.user.email || "",
       mobileNumber: profile.user.mobileNumber || "",
+      street: profile.user.address?.street || "",
+      city: profile.user.address?.city || "",
+      state: profile.user.address?.state || "",
+      postalCode: profile.user.address?.postalCode || "",
+      country: profile.user.address?.country || "",
     });
     setShowAvatarPicker(false);
   };
@@ -147,10 +162,17 @@ const Profile = () => {
       name: formData.name,
       email: formData.email,
       mobileNumber: formData.mobileNumber,
+      address: {
+        street: formData.street,
+        city: formData.city,
+        state: formData.state,
+        postalCode: formData.postalCode,
+        country: formData.country,
+      },
     };
 
     try {
-      await updateProfile(updatedData).unwrap(); // Use the simplified mutation
+      await updateProfile(updatedData).unwrap();
       toast.success("Profile updated successfully!");
       setIsEditing(false);
       if (formData.name !== profile.user.name) {
@@ -315,6 +337,114 @@ const Profile = () => {
                 <div className="mb-3">
                   <label className="form-label">Status</label>
                   <p className="form-control-static">{status}</p>
+                </div>
+              </div>
+
+              {/* Address Section */}
+              <div className="col-12">
+                <h5 className="mb-2 mt-4">
+                  <i className="ti ti-home text-primary me-1"></i>Address
+                  Information
+                </h5>
+              </div>
+
+              {/* Street */}
+              <div className="col-lg-6 col-sm-12">
+                <div className="mb-3">
+                  <label className="form-label">Street</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="street"
+                      className="form-control"
+                      value={formData.street}
+                      onChange={handleChange}
+                    />
+                  ) : (
+                    <p className="form-control-static">
+                      {formData.street || "N/A"}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* City */}
+              <div className="col-lg-6 col-sm-12">
+                <div className="mb-3">
+                  <label className="form-label">City</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="city"
+                      className="form-control"
+                      value={formData.city}
+                      onChange={handleChange}
+                    />
+                  ) : (
+                    <p className="form-control-static">
+                      {formData.city || "N/A"}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* State */}
+              <div className="col-lg-6 col-sm-12">
+                <div className="mb-3">
+                  <label className="form-label">State</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="state"
+                      className="form-control"
+                      value={formData.state}
+                      onChange={handleChange}
+                    />
+                  ) : (
+                    <p className="form-control-static">
+                      {formData.state || "N/A"}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Postal Code */}
+              <div className="col-lg-6 col-sm-12">
+                <div className="mb-3">
+                  <label className="form-label">Postal Code</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="postalCode"
+                      className="form-control"
+                      value={formData.postalCode}
+                      onChange={handleChange}
+                    />
+                  ) : (
+                    <p className="form-control-static">
+                      {formData.postalCode || "N/A"}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Country */}
+              <div className="col-lg-6 col-sm-12">
+                <div className="mb-3">
+                  <label className="form-label">Country</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="country"
+                      className="form-control"
+                      value={formData.country}
+                      onChange={handleChange}
+                    />
+                  ) : (
+                    <p className="form-control-static">
+                      {formData.country || "N/A"}
+                    </p>
+                  )}
                 </div>
               </div>
 
