@@ -4,7 +4,7 @@ import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import { useAddProductToCartMutation } from "../../api/cartApi";
 import { useGetProfileQuery } from "../../api/userApi";
 import DataTablePagination from "../Common/DataTablePagination";
-import pos from "../../assets/img/products/pos-product-01.jpg";
+import pos from "../../assets/img/default.png";
 import { toast } from "react-toastify";
 
 const POSProducts = ({ products = [] }) => {

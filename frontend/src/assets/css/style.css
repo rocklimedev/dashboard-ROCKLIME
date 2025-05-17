@@ -56,7 +56,7 @@ a {
   transition: all 0.5s ease;
 }
 a:hover {
-  color: #fe8510;
+  color: #e31e24;
   -webkit-transition: all 0.5s ease;
   -ms-transition: all 0.5s ease;
   transition: all 0.5s ease;
@@ -1167,7 +1167,7 @@ ul .btn-primary:not(:disabled):not(.disabled).active:focus {
   transition: all 0.2s ease;
 }
 .btn-submit:hover {
-  background: #fe8510;
+  background: #e31e24;
   color: #ffffff;
 }
 @media (max-width: 991.96px) {
@@ -1249,7 +1249,7 @@ ul .btn-primary:not(:disabled):not(.disabled).active:focus {
   transition: all 0.2s ease;
 }
 .btn-save:hover {
-  background: #fe8510;
+  background: #e31e24;
   color: #ffffff;
 }
 @media (max-width: 991.96px) {
@@ -1300,7 +1300,7 @@ ul .btn-primary:not(:disabled):not(.disabled).active:focus {
   border-radius: 8px;
 }
 .btn-send:hover {
-  background: #fe8510;
+  background: #e31e24;
   color: #ffffff;
 }
 .btn-send .send-mail {
@@ -18555,7 +18555,7 @@ div#global-loader .whirly-loader:not(:required) {
   transform: rotate(180deg);
 }
 .header-left #toggle_btn:hover {
-  background: #fe8510;
+  background: #e31e24;
 }
 .header-left.active svg {
   transform: rotate(0) !important;
@@ -18782,7 +18782,7 @@ body.mini-sidebar.expand-menu
   transform: rotate(0);
 }
 .sidebar .sidebar-logo #toggle_btn:hover {
-  background: #fe8510;
+  background: #e31e24;
 }
 .sidebar .sidebar-logo #toggle_btn.active svg {
   transform: rotate(180deg) !important;
@@ -47688,7 +47688,7 @@ body.layout-mode-rtl .user-info {
 }
 .chat-wrapper .emoj-group-list ul li.add-emoj a:hover,
 .chat-wrapper .emoj-group-list-foot ul li.add-emoj a:hover {
-  background-color: #fe8510;
+  background-color: #e31e24;
   color: #ffffff;
 }
 .chat-wrapper .chat-img {
@@ -59253,7 +59253,7 @@ label span {
 }
 
 .chat-footer .btn:hover {
-  background: #fe8510;
+  background: #e31e24;
   color: #ffffff;
 }
 

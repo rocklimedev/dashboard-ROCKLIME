@@ -26,7 +26,6 @@ import {
   BiAccessibility,
   BiSearch,
   BiSolidCategory,
-  BiUser,
   BiUserCheck,
 } from "react-icons/bi";
 import { FaFileCircleCheck, FaFirstOrder, FaPooStorm } from "react-icons/fa6";
@@ -38,11 +37,9 @@ import {
   FaFileInvoice,
   FaQuora,
 } from "react-icons/fa";
-
 import { CgProfile } from "react-icons/cg";
 import { IoLogOut, IoLogIn, IoHome } from "react-icons/io5";
 import Profile from "../components/Profile/Profile";
-import POSWrapper from "../components/POS/POSWrapper";
 import CreateProduct from "../components/Product/CreateProduct";
 import RecentOrders from "../components/Orders/RecentOrders";
 import ResetPassword from "../components/Auth/ResetPassword";
@@ -307,7 +304,7 @@ const masterRoutes = [
   },
 
   {
-    path: "/hrm",
+    path: "#",
     name: "HRM",
     icon: <img src={hrmicon} />,
     isSidebarActive: true,
