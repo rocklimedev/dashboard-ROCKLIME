@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useGetAllTeamsQuery, useDeleteTeamMutation } from "../../api/teamApi";
-import user from "../../assets/img/users/user-01.jpg";
+import user from "../../assets/img/profiles/avatar-01.jpg";
 import avatar from "../../assets/img/profiles/avatar-15.jpg";
 import PageHeader from "../Common/PageHeader";
 import AddNewTeam from "./AddNewTeam";

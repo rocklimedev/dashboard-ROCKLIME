@@ -19,7 +19,7 @@ import DataTablePagination from "../Common/DataTablePagination";
 import DeleteModal from "../Common/DeleteModal";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import userimg from "../../assets/img/users/user-32.jpg";
+import userimg from "../../assets/img/profiles/avatar-01.jpg";
 import { useNavigate } from "react-router-dom";
 const UserList = () => {
   const { data, error, isLoading, isFetching, refetch } = useGetAllUsersQuery();
