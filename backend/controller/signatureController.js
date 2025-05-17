@@ -1,8 +1,9 @@
 const Signature = require("../models/signature");
 const User = require("../models/users");
-const fs = require("fs");
 const axios = require("axios");
 const path = require("path");
+const FormData = require("form-data");
+const { validate: isUUID } = require("uuid");
 
 // 📌 Get All Signatures
 exports.getAllSignatures = async (req, res) => {
@@ -13,7 +14,8 @@ exports.getAllSignatures = async (req, res) => {
 
     res.status(200).json(signatures);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Error fetching signatures:", error.stack);
+    res.status(500).json({ error: "Failed to fetch signatures" });
   }
 };
 
@@ -21,8 +23,11 @@ exports.getAllSignatures = async (req, res) => {
 exports.getSignatureById = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!isUUID(id)) {
+      return res.status(400).json({ error: "Invalid signature ID" });
+    }
     const signature = await Signature.findByPk(id, {
-      include: [{ model: User, attributes: ["id", "name", "email"] }],
+      include: [{ model: User, attributes: ["userId", "name", "email"] }],
     });
 
     if (!signature) {
@@ -31,7 +36,8 @@ exports.getSignatureById = async (req, res) => {
 
     res.status(200).json(signature);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Error fetching signature:", error.stack);
+    res.status(500).json({ error: "Failed to fetch signature" });
   }
 };
 
@@ -39,6 +45,9 @@ exports.getSignatureById = async (req, res) => {
 exports.deleteSignature = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!isUUID(id)) {
+      return res.status(400).json({ error: "Invalid signature ID" });
+    }
     const signature = await Signature.findByPk(id);
 
     if (!signature) {
@@ -48,74 +57,139 @@ exports.deleteSignature = async (req, res) => {
     await signature.destroy();
     res.status(200).json({ message: "Signature deleted successfully" });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Error deleting signature:", error.stack);
+    res.status(500).json({ error: "Failed to delete signature" });
   }
 };
 
 // 📌 Create a Signature
 exports.createSignature = async (req, res) => {
   try {
+    console.log("Request body:", req.body);
+    console.log("Request file:", req.file);
+
     const { signature_name, mark_as_default, userId } = req.body;
 
+    // Validate inputs
+    if (!signature_name || typeof signature_name !== "string") {
+      return res.status(400).json({ error: "Signature name is required" });
+    }
+    if (mark_as_default === undefined) {
+      return res.status(400).json({ error: "Mark as default is required" });
+    }
+    const markAsDefault =
+      mark_as_default === "true" ||
+      mark_as_default === true ||
+      mark_as_default === "1";
+    if (!userId || !isUUID(userId)) {
+      return res.status(400).json({ error: "Valid user ID is required" });
+    }
     if (!req.file) {
       return res.status(400).json({ error: "Signature image is required" });
     }
 
-    // Find the user to get their name for the file name
     const user = await User.findByPk(userId);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // Determine the file extension based on the file type (png or jpeg)
     const fileExtension = path.extname(req.file.originalname).toLowerCase();
-    const fileName = `${user.name.replace(
-      /\s+/g,
-      "_"
-    )}_signature${fileExtension}`;
+    const fileName = `${user.name.replace(/\s+/g, "_")}_${
+      user.userId
+    }_signature${fileExtension}`;
 
-    // Prepare FormData for the file upload to the external server
     const formData = new FormData();
     formData.append("file", req.file.buffer, fileName);
 
-    // Upload the image to the remote server
-    const uploadResponse = await axios.post(
-      "https://static.cmtradingco.com/signatures",
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
-    );
-
-    if (uploadResponse.status !== 200) {
-      return res.status(500).json({ error: "Image upload failed" });
+    let uploadResponse;
+    try {
+      console.log("Sending request to external server:", {
+        url: "https://static.cmtradingco.com/signatures",
+        headers: formData.getHeaders(),
+        fileName,
+      });
+      uploadResponse = await axios.post(
+        "https://static.cmtradingco.com/signatures",
+        formData,
+        {
+          headers: {
+            ...formData.getHeaders(),
+            "User-Agent": "Mozilla/5.0 (Node.js Axios)", // Mimic browser
+          },
+        }
+      );
+      console.log("Upload response:", {
+        status: uploadResponse.status,
+        data: uploadResponse.data,
+      });
+    } catch (uploadError) {
+      console.error("Error uploading to external server:", {
+        message: uploadError.message,
+        status: uploadError.response?.status,
+        response: uploadError.response?.data,
+      });
+      return res.status(500).json({
+        error: `Failed to upload image: ${
+          uploadError.response?.status === 403
+            ? "Server rejected request (403 Forbidden)"
+            : uploadError.message
+        }`,
+      });
     }
 
-    const imageUrl = uploadResponse.data.url; // Assuming the URL is returned in the response
+    if (uploadResponse.status !== 200 || !uploadResponse.data) {
+      console.error("Invalid upload response:", uploadResponse.data);
+      return res
+        .status(500)
+        .json({ error: "Invalid response from image server" });
+    }
 
-    const signature = await Signature.create({
-      signature_name,
-      signature_image: imageUrl, // Save the remote URL of the image
-      mark_as_default,
-      userId,
-    });
+    // Handle potential field name variations
+    const imageUrl =
+      uploadResponse.data.url ||
+      uploadResponse.data.image_url ||
+      uploadResponse.data.SIGNATUER_IAMGE;
+    if (typeof imageUrl !== "string") {
+      console.error("Invalid image URL in response:", uploadResponse.data);
+      return res.status(500).json({ error: "Image URL is missing or invalid" });
+    }
 
-    res
-      .status(201)
-      .json({ message: "Signature created successfully", signature });
+    try {
+      const signature = await Signature.create({
+        signature_name,
+        signature_image: imageUrl,
+        mark_as_default: markAsDefault,
+        userId,
+      });
+      res
+        .status(201)
+        .json({ message: "Signature created successfully", signature });
+    } catch (dbError) {
+      console.error("Database error creating signature:", dbError.stack);
+      return res.status(500).json({
+        error: `Failed to save signature to database: ${dbError.message}`,
+      });
+    }
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Error creating signature:", error.stack);
+    res
+      .status(500)
+      .json({ error: `Failed to create signature: ${error.message}` });
   }
 };
 
 // 📌 Update a Signature
 exports.updateSignature = async (req, res) => {
   try {
+    console.log("Request body:", req.body);
+    console.log("Request file:", req.file);
+
     const { id } = req.params;
-    const { signature_name, mark_as_default, userId, signature_image } =
-      req.body;
+    const { signature_name, mark_as_default, userId } = req.body;
+
+    if (!isUUID(id)) {
+      return res.status(400).json({ error: "Invalid signature ID" });
+    }
 
     const signature = await Signature.findByPk(id);
     if (!signature) {
@@ -124,64 +198,110 @@ exports.updateSignature = async (req, res) => {
 
     const updatedFields = {
       signature_name: signature_name || signature.signature_name,
-      mark_as_default:
-        mark_as_default !== undefined
-          ? mark_as_default
-          : signature.mark_as_default,
       userId: userId || signature.userId,
     };
 
-    // If new file is uploaded, upload it to the remote server
+    if (mark_as_default !== undefined) {
+      const markAsDefault =
+        mark_as_default === "true" ||
+        mark_as_default === true ||
+        mark_as_default === "1";
+      updatedFields.mark_as_default = markAsDefault;
+    } else {
+      updatedFields.mark_as_default = signature.mark_as_default;
+    }
+
+    if (userId && !isUUID(userId)) {
+      return res.status(400).json({ error: "Valid user ID is required" });
+    }
+
     if (req.file) {
-      // Find the user to get their name for the file name
-      const user = await User.findByPk(userId);
+      const user = await User.findByPk(userId || signature.userId);
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
 
-      // Determine the file extension based on the file type (png or jpeg)
       const fileExtension = path.extname(req.file.originalname).toLowerCase();
-      const fileName = `${user.name.replace(
-        /\s+/g,
-        "_"
-      )}_signature${fileExtension}`;
+      const fileName = `${user.name.replace(/\s+/g, "_")}_${
+        user.userId
+      }_signature${fileExtension}`;
 
       const formData = new FormData();
       formData.append("file", req.file.buffer, fileName);
 
-      const uploadResponse = await axios.post(
-        "https://static.cmtradingco.com/signatures",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-
-      if (uploadResponse.status !== 200) {
-        return res.status(500).json({ error: "Image upload failed" });
+      let uploadResponse;
+      try {
+        console.log("Sending request to external server:", {
+          url: "https://static.cmtradingco.com/signatures",
+          headers: formData.getHeaders(),
+          fileName,
+        });
+        uploadResponse = await axios.post(
+          "https://static.cmtradingco.com/signatures",
+          formData,
+          {
+            headers: {
+              ...formData.getHeaders(),
+              "User-Agent": "Mozilla/5.0 (Node.js Axios)",
+            },
+          }
+        );
+        console.log("Upload response:", {
+          status: uploadResponse.status,
+          data: uploadResponse.data,
+        });
+      } catch (uploadError) {
+        console.error("Error uploading to external server:", {
+          message: uploadError.message,
+          status: uploadError.response?.status,
+          response: uploadError.response?.data,
+        });
+        return res.status(500).json({
+          error: `Failed to upload image: ${
+            uploadError.response?.status === 403
+              ? "Server rejected request (403 Forbidden)"
+              : uploadError.message
+          }`,
+        });
       }
 
-      updatedFields.signature_image = uploadResponse.data.url; // Store the returned URL
+      if (uploadResponse.status !== 200 || !uploadResponse.data) {
+        console.error("Invalid upload response:", uploadResponse.data);
+        return res
+          .status(500)
+          .json({ error: "Invalid response from image server" });
+      }
+
+      const imageUrl =
+        uploadResponse.data.url ||
+        uploadResponse.data.image_url ||
+        uploadResponse.data.SIGNATUER_IAMGE;
+      if (typeof imageUrl !== "string") {
+        console.error("Invalid image URL in response:", uploadResponse.data);
+        return res
+          .status(500)
+          .json({ error: "Image URL is missing or invalid" });
+      }
+
+      updatedFields.signature_image = imageUrl;
     }
 
-    // Optionally handle base64 image upload
-    if (signature_image && !req.file) {
-      const base64Data = signature_image.replace(
-        /^data:image\/\w+;base64,/,
-        ""
-      );
-      updatedFields.signature_image = Buffer.from(base64Data, "base64");
+    try {
+      await signature.update(updatedFields);
+      res.status(200).json({
+        message: "Signature updated successfully",
+        signature,
+      });
+    } catch (dbError) {
+      console.error("Database error updating signature:", dbError.stack);
+      return res.status(500).json({
+        error: `Failed to update signature in database: ${dbError.message}`,
+      });
     }
-
-    await signature.update(updatedFields);
-
-    res.status(200).json({
-      message: "Signature updated successfully",
-      signature,
-    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Error updating signature:", error.stack);
+    res
+      .status(500)
+      .json({ error: `Failed to update signature: ${error.message}` });
   }
 };

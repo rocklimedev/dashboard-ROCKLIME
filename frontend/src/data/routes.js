@@ -74,6 +74,7 @@ import SearchList from "../components/Search/SearchList";
 import AttendanceWrapper from "../components/Attendance/AttendanceWrapper";
 import AttendanceList from "../components/Attendance/AttendanceList";
 import NewAddUser from "../components/User/NewAddUser";
+import UserPage from "../components/User/UserPage";
 const masterRoutes = [
   {
     path: "/",
@@ -338,6 +339,13 @@ const masterRoutes = [
         icon: <BiUserCheck />,
         isSidebarActive: true,
         element: <NewAddUser />,
+      },
+      {
+        path: "/user/:userId",
+        name: "User Details",
+        icon: <BiUserCheck />,
+        isSidebarActive: false,
+        element: <UserPage />,
       },
     ],
   },
