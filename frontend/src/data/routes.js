@@ -72,11 +72,13 @@ import AttendanceWrapper from "../components/Attendance/AttendanceWrapper";
 import AttendanceList from "../components/Attendance/AttendanceList";
 import NewAddUser from "../components/User/NewAddUser";
 import UserPage from "../components/User/UserPage";
+import { RiDashboardLine } from "react-icons/ri";
+import { BsPeople } from "react-icons/bs";
 const masterRoutes = [
   {
     path: "/",
     name: "Dashboard",
-    icon: <IoHome />,
+    icon: <RiDashboardLine />,
     isSidebarActive: true,
     element: <PageWrapper />,
     submenu: [],
@@ -90,7 +92,7 @@ const masterRoutes = [
       {
         path: "/recent/recent-orders",
         name: "Recent Orders",
-        icon: <FaFirstOrderAlt />,
+        icon: <AiOutlineProduct />,
         element: <RecentOrders />,
         isSidebarActive: true,
       },
