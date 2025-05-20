@@ -17,7 +17,6 @@ import OrderWrapper from "../components/Orders/OrderWrapper";
 import {
   MdOutlineBrandingWatermark,
   MdError,
-  MdInventory,
   MdBrandingWatermark,
   MdOutlineSettings,
 } from "react-icons/md";
@@ -29,16 +28,9 @@ import {
   BiUserCheck,
 } from "react-icons/bi";
 import { FaFileCircleCheck, FaFirstOrder, FaPooStorm } from "react-icons/fa6";
-import {
-  FaRegFile,
-  FaFirstOrderAlt,
-  FaUserGraduate,
-  FaTeamspeak,
-  FaFileInvoice,
-  FaQuora,
-} from "react-icons/fa";
+import { FaRegFile, FaTeamspeak, FaFileInvoice, FaQuora } from "react-icons/fa";
 import { CgProfile } from "react-icons/cg";
-import { IoLogOut, IoLogIn, IoHome } from "react-icons/io5";
+import { IoLogOut, IoLogIn } from "react-icons/io5";
 import Profile from "../components/Profile/Profile";
 import CreateProduct from "../components/Product/CreateProduct";
 import RecentOrders from "../components/Orders/RecentOrders";
@@ -74,6 +66,10 @@ import NewAddUser from "../components/User/NewAddUser";
 import UserPage from "../components/User/UserPage";
 import { RiDashboardLine } from "react-icons/ri";
 import { BsPeople } from "react-icons/bs";
+import { MdOutlineInventory2 } from "react-icons/md";
+import { MdOutlineDiscount } from "react-icons/md";
+import { MdOutlinePeopleAlt } from "react-icons/md";
+import { TiBusinessCard } from "react-icons/ti";
 const masterRoutes = [
   {
     path: "/",
@@ -115,7 +111,7 @@ const masterRoutes = [
   {
     path: "#",
     name: "Peoples",
-    icon: <FaUserGraduate />,
+    icon: <BsPeople />,
     isSidebarActive: true,
     submenu: [
       {
@@ -172,7 +168,7 @@ const masterRoutes = [
   {
     path: "#",
     name: "Inventory",
-    icon: <MdInventory />,
+    icon: <MdOutlineInventory2 />,
     isSidebarActive: true,
     submenu: [
       {
@@ -184,7 +180,7 @@ const masterRoutes = [
       },
       {
         path: "/inventory/product/product-code-status",
-        name: "Check Product Code Status",
+        name: "Code Status",
         icon: <AiOutlineProduct />,
         element: <CheckProductCodeStatus />,
         isSidebarActive: true,
@@ -229,7 +225,7 @@ const masterRoutes = [
   {
     path: "#",
     name: "Sales",
-    icon: <FaFirstOrderAlt />,
+    icon: <MdOutlineDiscount />,
     isSidebarActive: true,
     submenu: [
       {
@@ -308,20 +304,21 @@ const masterRoutes = [
   {
     path: "#",
     name: "HRM",
-    icon: <img src={hrmicon} />,
+    // icon: <img src={hrmicon} />,
+    icon: <MdOutlinePeopleAlt />,
     isSidebarActive: true,
     submenu: [
       {
         path: "/hrm/attendance",
         name: "Attendance",
-        icon: <img style={{ width: "20px" }} src={hrmicon} />,
+        icon: <MdOutlinePeopleAlt />,
         isSidebarActive: true,
         element: <AttendanceWrapper />,
       },
       {
         path: "/hrm/attendance/list",
         name: "Attendance List",
-        icon: <img style={{ width: "20px" }} src={hrmicon} />,
+        icon: <MdOutlinePeopleAlt />,
         isSidebarActive: true,
         element: <AttendanceList />,
       },
@@ -351,7 +348,7 @@ const masterRoutes = [
   {
     path: "#",
     name: "RBAC",
-    icon: <MdPermIdentity />,
+    icon: <TiBusinessCard />,
     isSidebarActive: true,
     submenu: [
       {

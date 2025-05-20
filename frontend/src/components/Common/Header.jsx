@@ -24,6 +24,7 @@ import {
   MdDashboard,
 } from "react-icons/md";
 import { BiCalculator, BiFullscreen, BiLogOut } from "react-icons/bi";
+import { FaCirclePlus } from "react-icons/fa6";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import img from "../../assets/img/avatar/avatar-1.jpg";
@@ -103,7 +104,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                 variant="primary"
                 className="d-flex align-items-center"
               >
-                <FaCartPlus className="me-1" /> Add New
+                <FaCirclePlus className="me-1" /> Add New
               </Dropdown.Toggle>
               <Dropdown.Menu className="p-3" style={{ minWidth: "600px" }}>
                 <div className="row g-2">
@@ -254,7 +255,6 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                         src={user?.user?.profileImage || img}
                         alt="User"
                         className="img-fluid rounded-circle"
-                        style={{ width: "40px", height: "40px" }}
                       />
                     </span>
                   </span>
@@ -266,7 +266,6 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                         src={user?.user?.profileImage || img}
                         alt="User"
                         className="img-fluid rounded-circle"
-                        style={{ width: "50px", height: "50px" }}
                       />
                     </span>
                     <div>

@@ -128,15 +128,23 @@ const getAttendance = async (req, res) => {
     const query = {};
     if (userId) query.userId = userId;
     if (startDate && endDate) {
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
       query.date = {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate),
+        $gte: start,
+        $lte: end,
       };
     }
 
+    console.log("Attendance Query:", { query, startDate, endDate }); // Debug log
+
     const attendances = await Attendance.find(query)
       .sort({ date: -1 })
-      .limit(100); // Limit to prevent excessive data
+      .limit(100);
+
+    console.log("Attendance Results:", attendances); // Debug log
 
     return res.status(200).json({
       success: true,

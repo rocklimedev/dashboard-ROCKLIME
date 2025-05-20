@@ -29,7 +29,7 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar }) => {
           onClick={() => toggleSidebar(false)}
           aria-label="Close sidebar"
         >
-          <X size={16} color="#000" />
+          <X size={16} />
         </button>
       </div>
 
