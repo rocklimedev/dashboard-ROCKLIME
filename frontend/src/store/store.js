@@ -25,7 +25,6 @@ import { attendanceApi } from "../api/attendanceApi";
 export const store = configureStore({
   reducer: {
     [vendorApi.reducerPath]: vendorApi.reducer,
-    // [apiSlice.reducerPath]: apiSlice.reducer,
     [authApi.reducerPath]: authApi.reducer,
     [categoryApi.reducerPath]: categoryApi.reducer,
     [signatureApi.reducerPath]: signatureApi.reducer,
@@ -50,7 +49,6 @@ export const store = configureStore({
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
-      // apiSlice.middleware,
       vendorApi.middleware,
       authApi.middleware,
       categoryApi.middleware,

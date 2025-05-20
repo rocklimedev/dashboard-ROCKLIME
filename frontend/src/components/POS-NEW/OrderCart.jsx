@@ -117,10 +117,6 @@ const OrderCart = ({ onConvertToOrder }) => {
           const customerAddressString = JSON.stringify(
             normalizedCustomerAddress
           );
-          console.log(
-            "Normalized Customer Address:",
-            normalizedCustomerAddress
-          );
 
           const matchingAddress = addresses.find((addr) => {
             if (!addr.addressDetails) return false;
@@ -136,16 +132,6 @@ const OrderCart = ({ onConvertToOrder }) => {
               JSON.stringify(normalizedAddrDetails) === customerAddressString
             );
           });
-
-          if (matchingAddress) {
-            console.log("Matched Address:", matchingAddress);
-            setInvoiceData((prev) => ({
-              ...prev,
-              shipTo: matchingAddress.addressId,
-            }));
-          } else {
-            console.log("No matching address found for customer");
-          }
         }
       }
     } else {
@@ -303,7 +289,6 @@ const OrderCart = ({ onConvertToOrder }) => {
     };
 
     try {
-      console.log("Submitting invoice data:", invoiceDataToSubmit);
       const response = await createInvoice(invoiceDataToSubmit).unwrap();
       orderData.invoiceId = response.invoice.invoiceId;
       onConvertToOrder(orderData);

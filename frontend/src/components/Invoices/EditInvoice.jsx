@@ -192,7 +192,7 @@ const EditInvoice = ({ invoice, onClose }) => {
 
     try {
       const response = await updateInvoice(payload).unwrap();
-      console.log("Update Invoice Response:", response);
+
       onClose();
     } catch (err) {
       console.error("Update Invoice Error:", err);

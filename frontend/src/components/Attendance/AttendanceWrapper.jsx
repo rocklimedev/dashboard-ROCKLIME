@@ -355,50 +355,6 @@ const AttendanceWrapper = ({ userId }) => {
                 )}
               </div>
             </div>
-            <div>
-              <ul className="table-top-head">
-                <li className="me-2">
-                  <a
-                    href="#"
-                    onClick={exportToPDF}
-                    data-bs-toggle="tooltip"
-                    title="PDF"
-                  >
-                    <img src="assets/img/icons/pdf.svg" alt="img" />
-                  </a>
-                </li>
-                <li className="me-2">
-                  <a
-                    href="#"
-                    onClick={exportToExcel}
-                    data-bs-toggle="tooltip"
-                    title="Excel"
-                  >
-                    <img src="assets/img/icons/excel.svg" alt="img" />
-                  </a>
-                </li>
-                <li className="me-2">
-                  <a
-                    href="#"
-                    onClick={handleRefresh}
-                    data-bs-toggle="tooltip"
-                    title="Refresh"
-                  >
-                    <i className="ti ti-refresh"></i>
-                  </a>
-                </li>
-                <li className="me-2">
-                  <a
-                    href="#"
-                    data-bs-toggle="tooltip"
-                    title="Collapse"
-                    id="collapse-header"
-                  >
-                    <i className="ti ti-chevron-up"></i>
-                  </a>
-                </li>
-              </ul>
-            </div>
           </div>
         </div>
 

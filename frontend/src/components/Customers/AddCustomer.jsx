@@ -29,7 +29,7 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
   } = useGetInvoicesByCustomerIdQuery(existingCustomer?.customerId, {
     skip: !existingCustomer?.customerId,
   });
-  console.log(invoices);
+
   const {
     data: vendors,
     isLoading: isVendorsLoading,

@@ -86,7 +86,6 @@ function App() {
   ]);
 
   const toggleSidebar = (value) => {
-    console.log("Toggling sidebar to:", value); // Debug state change
     setSidebarOpen(value);
   };
 
