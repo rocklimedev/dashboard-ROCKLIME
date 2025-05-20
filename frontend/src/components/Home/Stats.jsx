@@ -72,7 +72,7 @@ const Stats = () => {
       case "lowStock":
         return (
           <div>
-            <h5>All Low Stock Products</h5>
+            <h5>Low in Stock Products</h5>
             {lowStockProducts.length === 0 ? (
               <p>No low stock products available.</p>
             ) : (
@@ -185,8 +185,8 @@ const Stats = () => {
         <div className="card flex-fill shadow-sm">
           <div className="card-header d-flex justify-content-between align-items-center">
             <h5 className="card-title mb-0">
-              <FaTriangleExclamation className="me-2 text-danger" /> Low Stock
-              Products
+              <FaTriangleExclamation className="me-2 text-danger" /> Low in
+              Stock Products
             </h5>
             <a
               href="#!"

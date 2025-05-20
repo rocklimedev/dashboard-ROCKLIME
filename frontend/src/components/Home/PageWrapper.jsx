@@ -18,7 +18,10 @@ const PageWrapper = () => {
   const orders = data?.orders || [];
 
   const userId = profile?.user?.userId;
-  const username = profile?.user?.name || "Admin";
+  // Capitalize the first letter of the name
+  const username = profile?.user?.name
+    ? profile.user.name.charAt(0).toUpperCase() + profile.user.name.slice(1)
+    : "Admin";
 
   // Fetch today's attendance for the user
   const today = new Date();
@@ -27,6 +30,7 @@ const PageWrapper = () => {
   const endDate = new Date(today.getTime() + 24 * 60 * 60 * 1000)
     .toISOString()
     .split("T")[0];
+
   const {
     data: attendance,
     isLoading: loadingAttendance,
@@ -40,6 +44,27 @@ const PageWrapper = () => {
   const hasClockedIn = attendance?.length > 0 && !!attendance[0]?.clockIn;
   const hasClockedOut = hasClockedIn && !!attendance[0]?.clockOut;
 
+  // Debug logging
+  useEffect(() => {
+    console.log("Debug Info:", {
+      userId,
+      loadingProfile,
+      loadingAttendance,
+      attendance,
+      hasClockedIn,
+      hasClockedOut,
+      attendanceError,
+    });
+  }, [
+    userId,
+    loadingProfile,
+    loadingAttendance,
+    attendance,
+    hasClockedIn,
+    hasClockedOut,
+    attendanceError,
+  ]);
+
   // Alert if user hasn't clocked in
   useEffect(() => {
     if (!loadingAttendance && !hasClockedIn && !attendanceError) {
@@ -51,6 +76,10 @@ const PageWrapper = () => {
 
   // Handle clock-in
   const handleClockIn = async () => {
+    if (!userId) {
+      toast.error("User ID is not available. Please try again.");
+      return;
+    }
     try {
       await clockIn({ userId }).unwrap();
     } catch (error) {
@@ -60,6 +89,10 @@ const PageWrapper = () => {
 
   // Handle clock-out
   const handleClockOut = async () => {
+    if (!userId) {
+      toast.error("User ID is not available. Please try again.");
+      return;
+    }
     try {
       await clockOut({ userId }).unwrap();
     } catch (error) {
@@ -92,7 +125,9 @@ const PageWrapper = () => {
             </p>
           </div>
           <div className="mt-2">
-            {!hasClockedIn ? (
+            {loadingProfile || loadingAttendance ? (
+              <span>Loading...</span>
+            ) : !hasClockedIn ? (
               <button
                 className="btn btn-primary me-2"
                 onClick={handleClockIn}
@@ -108,11 +143,13 @@ const PageWrapper = () => {
               >
                 {isClockOutLoading ? "Clocking Out..." : "Clock Out"}
               </button>
-            ) : null}
+            ) : (
+              <span>Clocked out for today</span> // Optional: Show status
+            )}
           </div>
         </div>
 
-        {!hasClockedIn && (
+        {!hasClockedIn && !loadingAttendance && (
           <Alert
             type="warning"
             message="Please clock in to start your workday!"
