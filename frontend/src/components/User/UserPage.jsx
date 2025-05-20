@@ -4,7 +4,6 @@ import { useGetUserByIdQuery } from "../../api/userApi";
 
 const UserPage = () => {
   const { userId } = useParams(); // Get userId from URL
-  console.log("userId from useParams:", userId); // Debug userId
 
   // Skip query if userId is undefined
   const {
@@ -15,7 +14,6 @@ const UserPage = () => {
     refetch,
   } = useGetUserByIdQuery(userId, { skip: !userId });
   const user = userData?.user || {};
-  console.log("userData:", userData); // Debug API response
 
   // Format roles (array or string)
   const roles = Array.isArray(user.roles)

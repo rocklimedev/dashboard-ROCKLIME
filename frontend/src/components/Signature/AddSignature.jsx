@@ -66,13 +66,6 @@ const AddSignature = ({ signatureId, existingSignature, onClose }) => {
     formData.append("mark_as_default", markAsDefault.toString()); // Convert to string explicitly
     formData.append("userId", userId);
 
-    console.log("Sending FormData:", {
-      signature_name: signatureName,
-      mark_as_default: markAsDefault.toString(),
-      userId,
-      file: signatureImage,
-    });
-
     try {
       if (signatureId) {
         await updateSignature({ id: signatureId, body: formData }).unwrap();

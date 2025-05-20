@@ -53,7 +53,6 @@ const Profile = () => {
   // Initialize formData and avatar from profile and localStorage
   useEffect(() => {
     if (profile?.user) {
-      console.log("Profile data:", profile.user);
       setFormData({
         username: profile.user.username || "",
         name: profile.user.name || "",
@@ -118,7 +117,6 @@ const Profile = () => {
   if (!profile?.user) return <p>No user profile data available.</p>;
 
   const userId = profile.user.userId;
-  console.log("User ID:", userId);
   const roleId = profile.user.roleId;
   const roleName =
     rolesData?.find((role) => role.roleId === roleId)?.roleName || "N/A";
