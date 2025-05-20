@@ -3,8 +3,6 @@ import { Link } from "react-router-dom";
 import { ChevronsLeft, X } from "react-feather";
 import masterRoutes from "../../data/routes";
 import logo from "../../assets/img/logo.png";
-import logoWhite from "../../assets/img/logo-white.svg";
-import logoSmall from "../../assets/img/logo-small.png";
 import customerImg from "../../assets/img/customer/customer15.jpg";
 import "./sidebar.css";
 const SidebarNew = ({
@@ -43,12 +41,12 @@ const SidebarNew = ({
           <img src={logo} alt="Logo" />
         </Link>
         <Link to="/" className="logo logo-white">
-          <img src={logoWhite} alt="Logo" />
+          <img src={logo} alt="Logo" />
         </Link>
         <Link to="/" className="logo-small">
-          <img src={logoSmall} alt="Logo" />
+          <img src={logo} alt="Logo" />
         </Link>
-        <button
+        {/* <button
           className="sidebar-close-btn"
           onClick={() => {
             toggleSidebar(false);
@@ -56,7 +54,7 @@ const SidebarNew = ({
           aria-label="Close sidebar"
         >
           <X size={16} color="#000" />
-        </button>
+        </button> */}
         <a
           id="toggle_btn"
           href="#"
@@ -335,12 +333,12 @@ const SidebarNew = ({
               <img src={logo} alt="Logo" />
             </Link>
             <Link to="/" className="logo logo-white">
-              <img src={logoWhite} alt="Logo" />
+              <img src={logo} alt="Logo" />
             </Link>
             <Link to="/" className="logo-small">
-              <img src={logoSmall} alt="Logo" />
+              <img src={logo} alt="Logo" />
             </Link>
-            <button
+            {/* <button
               className="sidebar-close-btn"
               onClick={() => {
                 toggleSidebar(false);
@@ -348,7 +346,7 @@ const SidebarNew = ({
               aria-label="Close sidebar"
             >
               <X size={16} color="#000" />
-            </button>
+            </button> */}
           </div>
 
           <div className="sidebar-scroll">
