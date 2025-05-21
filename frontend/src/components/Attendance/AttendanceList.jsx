@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Form, Dropdown } from "react-bootstrap";
-import { toast } from "react-toastify";
+import { toast } from "sonner"; // Changed import
 import Flatpickr from "react-flatpickr";
 import jsPDF from "jspdf";
 import * as XLSX from "xlsx";
@@ -49,7 +49,7 @@ const AttendanceList = () => {
   // Export to PDF
   const exportToPDF = () => {
     if (!allAttendance?.attendances?.length) {
-      toast.error("No data to export");
+      toast.error("No data to export"); // Sonner toast
       return;
     }
 
@@ -78,7 +78,7 @@ const AttendanceList = () => {
   // Export to Excel
   const exportToExcel = () => {
     if (!allAttendance?.attendances?.length) {
-      toast.error("No data to export");
+      toast.error("No data to export"); // Sonner toast
       return;
     }
 
@@ -113,7 +113,7 @@ const AttendanceList = () => {
     });
     setPage(1);
     refetch();
-    toast.info("Attendance data refreshed");
+    toast.info("Attendance data refreshed"); // Sonner toast
   };
 
   // Handle collapse
@@ -124,7 +124,7 @@ const AttendanceList = () => {
   // Error handling
   useEffect(() => {
     if (allAttendanceError) {
-      toast.error(allAttendanceError.message || "Failed to fetch attendance");
+      toast.error(allAttendanceError.message || "Failed to fetch attendance"); // Sonner toast
     }
   }, [allAttendanceError]);
 

@@ -10,7 +10,7 @@ import AddCustomer from "../Customers/AddCustomer";
 import { useGetProfileQuery } from "../../api/userApi";
 import OrderTotal from "./OrderTotal";
 import PaymentMethod from "./PaymentMethod";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import InvoiceDetails from "./InvoiceDetails";
 import { useCreateInvoiceMutation } from "../../api/invoiceApi";
 

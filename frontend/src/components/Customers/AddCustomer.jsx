@@ -8,8 +8,7 @@ import {
 } from "../../api/customerApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetVendorsQuery } from "../../api/vendorApi";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "sonner";
 import { Tab, Tabs } from "react-bootstrap";
 
 const AddCustomer = ({ onClose, existingCustomer }) => {

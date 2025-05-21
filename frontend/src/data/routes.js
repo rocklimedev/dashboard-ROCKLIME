@@ -10,7 +10,6 @@ import CustomerList from "../components/Customers/CustomerList";
 import CustomerDetails from "../components/Customers/CustomerDetails";
 import SignatureWrapper from "../components/Signature/SignatureWrapper";
 import { RiAdminLine } from "react-icons/ri";
-import hrmicon from "../assets/img/icons/hrm-icon.png";
 import { PiAddressBook, PiUserListBold } from "react-icons/pi";
 import { LiaFileInvoiceSolid, LiaFileSignatureSolid } from "react-icons/lia";
 import OrderWrapper from "../components/Orders/OrderWrapper";

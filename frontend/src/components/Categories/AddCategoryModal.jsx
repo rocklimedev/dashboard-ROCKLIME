@@ -3,9 +3,9 @@ import {
   useCreateCategoryMutation,
   useUpdateCategoryMutation,
 } from "../../api/categoryApi";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "sonner"; // Changed import
 import { useGetAllParentCategoriesQuery } from "../../api/parentCategoryApi.js";
+
 const AddCategoryModal = ({ onClose, editMode = false, categoryData = {} }) => {
   const [createCategory, { isLoading: isCreating, error: createError }] =
     useCreateCategoryMutation();
@@ -19,7 +19,7 @@ const AddCategoryModal = ({ onClose, editMode = false, categoryData = {} }) => {
   const [formData, setFormData] = useState({
     name: "",
     parentCategoryId: "",
-    parentCategory: "0", // Keep this state as requested
+    parentCategory: "0",
   });
 
   useEffect(() => {
@@ -44,14 +44,14 @@ const AddCategoryModal = ({ onClose, editMode = false, categoryData = {} }) => {
           id: categoryData.categoryId,
           ...formData,
         }).unwrap();
-        toast.success("Category updated successfully!");
+        toast.success("Category updated successfully!"); // Sonner toast
       } else {
         await createCategory(formData).unwrap();
-        toast.success("Category added successfully!");
+        toast.success("Category added successfully!"); // Sonner toast
       }
       onClose();
     } catch (err) {
-      toast.error("Failed to process category.");
+      toast.error("Failed to process category."); // Sonner toast
     }
   };
 

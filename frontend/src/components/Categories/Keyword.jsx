@@ -14,7 +14,7 @@ import DeleteModal from "../Common/DeleteModal";
 import DataTablePagination from "../Common/DataTablePagination";
 import { AiOutlineEdit } from "react-icons/ai";
 import { FcFullTrash, FcEmptyTrash } from "react-icons/fc";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 const Keyword = ({ onClose, showModal }) => {
   const [keywordPage, setKeywordPage] = useState(1);

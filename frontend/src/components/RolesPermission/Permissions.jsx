@@ -11,8 +11,7 @@ import {
 } from "../../api/rolePermissionApi";
 import { rolePermissionsApi as api } from "../../api/rolePermissionApi";
 import { FaArrowLeft } from "react-icons/fa";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "sonner";
 import "./permission.css";
 
 const Permissions = () => {
@@ -177,7 +176,6 @@ const Permissions = () => {
 
   return (
     <div className="page-wrapper">
-      <ToastContainer />
       <div className="content">
         <PageHeader
           title="Permissions"

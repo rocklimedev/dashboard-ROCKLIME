@@ -12,7 +12,7 @@ import {
   useUpdateOrderStatusMutation,
 } from "../../api/orderApi";
 import AddNewOrder from "./AddNewOrder";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 // Subcomponent to handle each product row
 // Subcomponent to handle each product row

@@ -1,7 +1,7 @@
 // src/components/Orders/Modals/EditOrderModal.jsx
 import React, { useState } from "react";
 import { useUpdateOrderByIdMutation } from "../../api/orderApi";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 const EditOrderModal = ({ order, onClose }) => {
   const [formData, setFormData] = useState({ ...order });
   const [updateOrder] = useUpdateOrderByIdMutation();

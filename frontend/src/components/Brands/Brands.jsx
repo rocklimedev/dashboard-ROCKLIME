@@ -8,8 +8,7 @@ import { AiOutlineEdit } from "react-icons/ai";
 import { FcEmptyTrash } from "react-icons/fc";
 import AddBrand from "./AddBrandModal";
 import DeleteModal from "../Common/DeleteModal";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "sonner";
 import DataTablePagination from "../Common/DataTablePagination";
 
 const Brands = () => {
@@ -123,7 +122,6 @@ const Brands = () => {
 
   return (
     <div className="page-wrapper">
-      <ToastContainer />
       <div className="content">
         <PageHeader
           title="Brands"

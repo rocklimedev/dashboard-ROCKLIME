@@ -1,10 +1,10 @@
 import React from "react";
 import { useForgotPasswordMutation } from "../../api/authApi";
 import { useNavigate } from "react-router-dom";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "sonner"; // Changed import
 import logo from "../../assets/img/logo.png";
 import { useGetProfileQuery } from "../../api/userApi";
+
 const ForgotPassword = () => {
   const navigate = useNavigate();
   const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
@@ -19,19 +19,18 @@ const ForgotPassword = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email) {
-      toast.error("Email not available. Please try again.");
+      toast.error("Email not available. Please try again."); // Sonner toast
       return;
     }
 
     try {
       const response = await forgotPassword({ email }).unwrap();
-      toast.success(response.message || "OTP sent successfully!");
+      toast.success(response.message || "OTP sent successfully!"); // Sonner toast
       navigate("/reset-password");
     } catch (error) {
-      toast.error(error?.data?.message || "Failed to send OTP");
+      toast.error(error?.data?.message || "Failed to send OTP"); // Sonner toast
     }
   };
-
   return (
     <div className="main-wrapper">
       <div className="account-content">
@@ -85,7 +84,6 @@ const ForgotPassword = () => {
                     </div>
                   </div>
                 </form>
-                <ToastContainer position="top-right" autoClose={3000} />
               </div>
             </div>
           </div>

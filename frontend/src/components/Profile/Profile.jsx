@@ -4,8 +4,7 @@ import {
   useUpdateProfileMutation,
 } from "../../api/userApi";
 import { useGetRolesQuery } from "../../api/rolesApi";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "sonner";
 import Avatar from "react-avatar";
 import { useForgotPasswordMutation } from "../../api/authApi";
 
@@ -486,7 +485,6 @@ const Profile = () => {
             </div>
           </div>
         </div>
-        <ToastContainer />
       </div>
     </div>
   );

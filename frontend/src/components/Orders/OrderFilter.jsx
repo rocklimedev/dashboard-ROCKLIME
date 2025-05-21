@@ -1,7 +1,6 @@
 import React from "react";
 import { useGetAllOrdersQuery } from "../../api/orderApi";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "sonner";
 
 const OrderFilter = ({ setFilters }) => {
   const {

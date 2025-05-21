@@ -10,8 +10,7 @@ import AddCustomer from "../Customers/AddCustomer";
 import { useGetProfileQuery } from "../../api/userApi";
 import OrderTotal from "./OrderTotal";
 import PaymentMethod from "./PaymentMethod";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "sonner";
 import { useCreateInvoiceMutation } from "../../api/invoiceApi";
 import { FcEmptyTrash } from "react-icons/fc";
 import { BiTrash } from "react-icons/bi";
@@ -334,7 +333,6 @@ const OrderCart = ({ onConvertToOrder }) => {
 
   return (
     <div className="col-md-12 col-lg-5 col-xl-4 ps-0 theiaStickySidebar">
-      <ToastContainer />
       <aside className="product-order-list">
         <div className="customer-info">
           <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">

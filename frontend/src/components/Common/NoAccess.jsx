@@ -1,8 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Container, Row, Col, Button } from "react-bootstrap";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "sonner";
 import { useLogoutMutation } from "../../api/authApi";
 import { useGetProfileQuery } from "../../api/userApi";
 import { BiLogOut } from "react-icons/bi";

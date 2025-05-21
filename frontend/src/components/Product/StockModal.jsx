@@ -4,7 +4,7 @@ import {
   useAddStockMutation,
   useRemoveStockMutation,
 } from "../../api/productApi";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 const StockModal = ({ isVisible, onClose, product }) => {
   const [quantity, setQuantity] = useState(0);
   const [type, setType] = useState("in"); // "in" or "out"

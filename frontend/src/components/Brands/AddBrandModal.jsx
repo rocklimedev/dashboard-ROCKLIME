@@ -4,8 +4,7 @@ import {
   useUpdateBrandMutation,
   useGetAllBrandsQuery,
 } from "../../api/brandsApi";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "sonner"; // Changed import
 
 const AddBrand = ({ onClose, existingBrand }) => {
   const [formData, setFormData] = useState({
@@ -43,7 +42,7 @@ const AddBrand = ({ onClose, existingBrand }) => {
     const { brandName, brandSlug, id } = formData;
 
     if (!brandName || !brandSlug) {
-      toast.error("Please fill in all fields.");
+      toast.error("Please fill in all fields."); // Sonner toast
       return;
     }
 
@@ -55,24 +54,24 @@ const AddBrand = ({ onClose, existingBrand }) => {
     );
 
     if (isDuplicate) {
-      toast.error("This brand slug is already taken.");
+      toast.error("This brand slug is already taken."); // Sonner toast
       return;
     }
 
     try {
       if (id) {
         await updateBrand(formData).unwrap();
-        toast.success("Brand updated successfully!", { autoClose: 2000 });
+        toast.success("Brand updated successfully!", { duration: 2000 }); // Sonner toast
       } else {
         await createBrand(formData).unwrap();
-        toast.success("Brand added successfully!", { autoClose: 2000 });
+        toast.success("Brand added successfully!", { duration: 2000 }); // Sonner toast
       }
 
       setTimeout(() => {
         onClose();
       }, 2000);
     } catch (err) {
-      toast.error(err?.data?.message || "Failed to submit brand. Try again.");
+      toast.error(err?.data?.message || "Failed to submit brand. Try again."); // Sonner toast
     }
   };
 

@@ -25,8 +25,7 @@ import {
 } from "react-icons/md";
 import { BiCalculator, BiFullscreen, BiLogOut } from "react-icons/bi";
 import { FaCirclePlus } from "react-icons/fa6";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "sonner";
 import img from "../../assets/img/avatar/avatar-1.jpg";
 import SearchDropdown from "../Search/SearchDropdown";
 import CalculatorModal from "./Calculator";
@@ -66,7 +65,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     <div className="header pos-header">
       <div className="main-header d-flex align-items-center">
         {/* Logo Section */}
-        <div className hamsters="header-left">
+        <div className="header-left">
           <Link to="/" className="logo">
             <img src={logo} alt="Logo" className="img-fluid" />
           </Link>
@@ -76,7 +75,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
         <Button
           variant="link"
           className="mobile_btn p-0"
-          onClick={() => toggleSidebar(true)}
+          onClick={() => toggleSidebar(!isSidebarOpen)} // Toggle between open and closed
         >
           <span className="bar-icon">
             <span></span>

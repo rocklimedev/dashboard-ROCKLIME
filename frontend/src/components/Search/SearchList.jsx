@@ -8,7 +8,7 @@ import {
   Col,
   Pagination,
 } from "react-bootstrap";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { Link, useLocation } from "react-router-dom";
 import { useSearchAllQuery } from "../../api/searchApi";
 const SearchList = () => {

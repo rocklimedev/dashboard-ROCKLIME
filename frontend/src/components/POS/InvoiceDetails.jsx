@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useGetAllAddressesQuery } from "../../api/addressApi";
 import { useGetProfileQuery } from "../../api/userApi";
 import { Form } from "react-bootstrap";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import AddAddress from "../Address/AddAddressModal";
 
 const InvoiceDetails = ({ invoiceData, onChange, error }) => {

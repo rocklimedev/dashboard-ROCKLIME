@@ -9,8 +9,7 @@ import {
 } from "../../api/invoiceApi";
 import { useGetAllTeamsQuery } from "../../api/teamApi";
 import AddNewTeam from "./AddNewTeam";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "sonner";
 
 const AddNewOrder = ({ onClose, adminName, order }) => {
   const isEditMode = Boolean(order);
@@ -427,7 +426,6 @@ const AddNewOrder = ({ onClose, adminName, order }) => {
           onTeamAdded={refetch}
         />
       )}
-      <ToastContainer />
     </div>
   );
 };
