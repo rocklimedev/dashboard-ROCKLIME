@@ -9,7 +9,7 @@ import { FaEye } from "react-icons/fa";
 import AddCompany from "./AddCompany";
 import DeleteModal from "../Common/DeleteModal";
 import DataTablePagination from "../Common/DataTablePagination";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 const ViewCompany = ({ company, onClose }) => {
   const modalRef = useRef(null);

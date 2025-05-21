@@ -6,8 +6,7 @@ import PageHeader from "../Common/PageHeader";
 import AddNewTeam from "./AddNewTeam";
 import DeleteModal from "../Common/DeleteModal";
 import { Dropdown, Form } from "react-bootstrap";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "sonner";
 import "./teamList.css";
 
 const TeamsList = ({ onClose, adminName }) => {
@@ -64,7 +63,6 @@ const TeamsList = ({ onClose, adminName }) => {
 
   return (
     <div className="page-wrapper">
-      <ToastContainer />
       <div className="content container-fluid">
         <PageHeader
           onAdd={handleAddTeam}

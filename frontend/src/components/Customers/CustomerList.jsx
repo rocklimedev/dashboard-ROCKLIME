@@ -7,8 +7,7 @@ import {
 import AddCustomer from "./AddCustomer";
 import { BiEdit, BiTrash } from "react-icons/bi";
 import { FaEye } from "react-icons/fa";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "sonner";
 import DeleteModal from "../Common/DeleteModal";
 import DataTablePagination from "../Common/DataTablePagination";
 
@@ -203,8 +202,6 @@ const CustomerList = () => {
           }}
         />
       )}
-
-      <ToastContainer />
     </>
   );
 };

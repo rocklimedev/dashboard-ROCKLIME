@@ -13,7 +13,7 @@ import {
 } from "../../api/cartApi";
 import { useGetAllProductsQuery } from "../../api/productApi";
 import { useGetAllInvoicesQuery } from "../../api/invoiceApi";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 const POSWrapperNew = () => {
   const {

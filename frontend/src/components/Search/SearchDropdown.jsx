@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { MdSearch } from "react-icons/md";
 import { BiCommand } from "react-icons/bi";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { Link, useNavigate } from "react-router-dom";
 import { useSearchAllQuery } from "../../api/searchApi";
 const SearchDropdown = () => {

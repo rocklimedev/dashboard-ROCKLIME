@@ -11,7 +11,8 @@ import DataTablePagination from "../Common/DataTablePagination";
 import Keyword from "./Keyword";
 import { AiOutlineEdit } from "react-icons/ai";
 import { FcFullTrash } from "react-icons/fc";
-import { toast } from "react-toastify";
+import { toast } from "sonner"; // Changed import
+
 const CategoriesList = () => {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showKeywordModal, setShowKeywordModal] = useState(false);
@@ -91,7 +92,7 @@ const CategoriesList = () => {
 
   const handleDelete = async (category) => {
     if (!category || !category.categoryId) {
-      toast.error("Invalid category or category ID:", category);
+      toast.error("Invalid category or category ID"); // Sonner toast
       return;
     }
 
@@ -102,8 +103,9 @@ const CategoriesList = () => {
       if (paginatedCategories.length === 1 && categoryPage > 1) {
         setCategoryPage(categoryPage - 1);
       }
+      toast.success("Category deleted successfully!"); // Sonner toast
     } catch (err) {
-      toast.error("Delete failed:", err);
+      toast.error(err?.data?.message || "Delete failed"); // Sonner toast
     }
   };
 

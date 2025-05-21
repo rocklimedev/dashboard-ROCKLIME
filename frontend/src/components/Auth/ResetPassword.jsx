@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useResetPasswordMutation } from "../../api/authApi";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "sonner"; // Changed import
 import logo from "../../assets/img/logo.png";
 
 const ResetPassword = () => {
@@ -14,16 +13,16 @@ const ResetPassword = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
-      toast.error("Passwords do not match");
+      toast.error("Passwords do not match"); // Sonner toast
       return;
     }
 
     try {
       const response = await resetPassword({ newPassword }).unwrap();
-      toast.success(response.message || "Password changed successfully!");
+      toast.success(response.message || "Password changed successfully!"); // Sonner toast
       navigate("/signin");
     } catch (error) {
-      toast.error(error?.data?.message || "Failed to reset password");
+      toast.error(error?.data?.message || "Failed to reset password"); // Sonner toast
     }
   };
 
@@ -85,7 +84,6 @@ const ResetPassword = () => {
                   </div>
                 </form>
                 {/* Toast Container */}
-                <ToastContainer position="top-right" autoClose={3000} />
               </div>
             </div>
           </div>

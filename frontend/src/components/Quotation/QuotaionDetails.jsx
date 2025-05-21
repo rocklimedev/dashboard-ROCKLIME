@@ -8,7 +8,7 @@ import { useGetCustomerByIdQuery } from "../../api/customerApi";
 import { useGetUserByIdQuery } from "../../api/userApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import logo from "../../assets/img/logo.png";
 
 const QuotationsDetails = () => {

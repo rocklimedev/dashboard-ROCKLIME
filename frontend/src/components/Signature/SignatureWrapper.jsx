@@ -5,7 +5,7 @@ import {
   useGetAllSignaturesQuery,
   useDeleteSignatureMutation,
 } from "../../api/signatureApi";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 const SignatureWrapper = ({ userId }) => {
   // Assume userId is passed from auth context

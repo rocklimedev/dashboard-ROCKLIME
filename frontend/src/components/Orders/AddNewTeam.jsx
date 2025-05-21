@@ -6,9 +6,7 @@ import {
   useGetTeamByIdQuery,
 } from "../../api/teamApi";
 import { useGetAllUsersQuery, useGetUserByIdQuery } from "../../api/userApi";
-import { toast } from "react-toastify";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "sonner";
 
 const AddNewTeam = ({ onClose, onTeamAdded, team }) => {
   const [teamName, setTeamName] = useState(team?.teamName || "");
@@ -185,7 +183,6 @@ const AddNewTeam = ({ onClose, onTeamAdded, team }) => {
 
   return (
     <div className="modal fade show" style={{ display: "block" }}>
-      <ToastContainer />
       <div className="modal-dialog modal-dialog-centered">
         <div className="modal-content">
           <div className="modal-header">

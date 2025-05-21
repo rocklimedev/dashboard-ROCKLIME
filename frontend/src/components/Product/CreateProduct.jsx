@@ -10,8 +10,7 @@ import { GiFeatherWound } from "react-icons/gi";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import { useGetAllParentCategoriesQuery } from "../../api/parentCategoryApi";
 import { useGetAllBrandsQuery } from "../../api/brandsApi";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "sonner";
 
 const CreateProduct = () => {
   const { id } = useParams();
@@ -709,7 +708,6 @@ const CreateProduct = () => {
               </div>
             </div>
           </div>
-          <ToastContainer />
         </form>
       </div>
     </div>

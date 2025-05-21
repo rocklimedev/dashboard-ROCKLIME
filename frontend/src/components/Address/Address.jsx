@@ -6,10 +6,9 @@ import {
 } from "../../api/addressApi";
 import { AiOutlineEdit } from "react-icons/ai";
 import { FcEmptyTrash } from "react-icons/fc";
-import AddAddress from "./AddAddressModal"; // You need to create this
+import AddAddress from "./AddAddressModal";
 import DeleteModal from "../Common/DeleteModal";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "sonner"; // Changed import
 import DataTablePagination from "../Common/DataTablePagination";
 
 const AddressList = () => {
@@ -56,13 +55,13 @@ const AddressList = () => {
 
   const handleConfirmDelete = async () => {
     if (!addressToDelete?.addressId) {
-      toast.error("No address selected for deletion");
+      toast.error("No address selected for deletion"); // Sonner toast
       setShowDeleteModal(false);
       return;
     }
     try {
       await deleteAddress(addressToDelete.addressId).unwrap();
-      toast.success("Address deleted successfully!");
+      toast.success("Address deleted successfully!"); // Sonner toast
       if (paginatedAddresses.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
@@ -73,7 +72,7 @@ const AddressList = () => {
     } catch (err) {
       toast.error(
         `Failed to delete address: ${err.data?.message || "Unknown error"}`
-      );
+      ); // Sonner toast
     }
   };
 
@@ -114,7 +113,6 @@ const AddressList = () => {
 
   return (
     <div className="page-wrapper">
-      <ToastContainer />
       <div className="content">
         <PageHeader
           title="Addresses"

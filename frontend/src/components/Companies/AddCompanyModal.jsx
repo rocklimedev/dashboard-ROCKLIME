@@ -3,8 +3,7 @@ import {
   useCreateVendorMutation,
   useUpdateVendorMutation,
 } from "../../api/vendorApi.js";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "sonner";
 import { useGetAllBrandsQuery } from "../../api/brandsApi.js";
 
 const AddCompanyModal = ({ show, onClose, existingVendor }) => {
@@ -203,7 +202,6 @@ const AddCompanyModal = ({ show, onClose, existingVendor }) => {
           </div>
         </div>
         <div className="modal-backdrop fade show" onClick={closeModal}></div>
-        <ToastContainer />
       </>
     )
   );

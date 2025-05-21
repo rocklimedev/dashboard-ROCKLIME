@@ -16,7 +16,7 @@ import ShowProducts from "./ShowProducts";
 import { useGetProfileQuery } from "../../api/userApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import {
   BsPerson,
   BsCalendar,

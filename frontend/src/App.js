@@ -3,13 +3,12 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Header from "./components/Common/Header";
 import Router from "./router/Router";
 import Footer from "./components/Common/Footer";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast, Toaster } from "sonner"; // ✅ New toast import
 import { useGetProfileQuery } from "./api/userApi";
 import Loader from "./components/Common/Loader";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
-
 import SidebarNew from "./components/Common/SidebarNew2";
+
 function App() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -35,7 +34,7 @@ function App() {
 
   useEffect(() => {
     if (!token && !isAuthPage) {
-      toast.warn("You are not authenticated. Please log in.");
+      toast.warning("You are not authenticated. Please log in.");
       navigate("/login");
     }
   }, [token, isAuthPage, navigate]);
@@ -52,7 +51,7 @@ function App() {
     }
 
     if (roleNames.includes("USERS") && location.pathname !== "/no-access") {
-      toast.warn("Access restricted. No valid role assigned.");
+      toast.warning("Access restricted. No valid role assigned.");
       navigate("/no-access");
       return;
     }
@@ -61,7 +60,6 @@ function App() {
       navigate("/");
     }
 
-    // Set layout mode based on route
     if (location.pathname === "/layout-horizontal") {
       setLayoutMode("horizontal");
       setSidebarOpen(false);
@@ -71,7 +69,6 @@ function App() {
       setLayoutMode("vertical");
     }
 
-    // Reset sidebar state only for auth or POS pages
     if (isAuthPage || isPOSPage) {
       setSidebarOpen(false);
     }
@@ -105,7 +102,7 @@ function App() {
         )}
         <Router />
         <Footer />
-        <ToastContainer position="top-right" autoClose={3000} />
+        <Toaster richColors position="top-right" /> {/* ✅ New Toaster */}
       </div>
     </>
   );

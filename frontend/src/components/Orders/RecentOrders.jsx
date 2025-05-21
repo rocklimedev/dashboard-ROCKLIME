@@ -8,8 +8,7 @@ import {
 import { useGetAllInvoicesQuery } from "../../api/invoiceApi";
 import { useGetAllTeamsQuery } from "../../api/teamApi";
 import DeleteModal from "../Common/DeleteModal";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "sonner";
 import DatesModal from "./DateModal";
 import { FaEye, FaTrash } from "react-icons/fa"; // Import icons from react-icons
 
@@ -186,7 +185,7 @@ const RecentOrders = () => {
                   ))}
                 </tbody>
               </table>
-              <ToastContainer />
+
               <DeleteModal
                 show={showDeleteModal}
                 onClose={() => setShowDeleteModal(false)}

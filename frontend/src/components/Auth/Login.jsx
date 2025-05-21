@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useLoginMutation } from "../../api/authApi";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "sonner"; // Changed import
 import { useAuth } from "../../context/AuthContext";
-import "react-toastify/dist/ReactToastify.css";
 import logo from "../../assets/img/logo.png";
 import { FaEnvelope, FaEye, FaEyeSlash } from "react-icons/fa";
 
@@ -44,9 +43,9 @@ const Login = () => {
       setLoginSuccess(true);
 
       // Show success toast
-      toast.success("Login successful!", { autoClose: 1000 });
+      toast.success("Login successful!", { duration: 1000 }); // Sonner toast
     } catch (err) {
-      toast.error(`Login failed: ${err?.message || "Unknown error occurred"}`);
+      toast.error(`Login failed: ${err?.message || "Unknown error occurred"}`); // Sonner toast
       const status = err?.status;
       const message = err?.data?.message || "Invalid email or password";
 
@@ -57,7 +56,7 @@ const Login = () => {
       ) {
         navigate("/no-access");
       } else {
-        toast.error(message, { autoClose: 3000 });
+        toast.error(message, { duration: 3000 }); // Sonner toast
       }
     }
   };
@@ -72,7 +71,6 @@ const Login = () => {
 
   return (
     <div className="main-wrapper">
-      <ToastContainer />
       <div className="account-content">
         <div className="login-wrapper bg-img">
           <div className="login-content authent-content">

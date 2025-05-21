@@ -2,10 +2,10 @@ import React, { useEffect, useState } from "react";
 import {
   useCreateAddressMutation,
   useUpdateAddressMutation,
-} from "../../api/addressApi"; // Adjust import path as needed
-import { toast } from "react-toastify";
+} from "../../api/addressApi";
 import { v4 as uuidv4 } from "uuid";
 import { useGetAllUsersQuery } from "../../api/userApi";
+import { toast } from "sonner";
 const AddAddress = ({ onClose, existingAddress }) => {
   const isEdit = !!existingAddress;
 
@@ -57,19 +57,18 @@ const AddAddress = ({ onClose, existingAddress }) => {
     try {
       if (isEdit) {
         await updateAddress(addressData).unwrap();
-        toast.success("Address updated successfully!");
+        toast.success("Address updated successfully!"); // Sonner toast
       } else {
         await createAddress(addressData).unwrap();
-        toast.success("Address created successfully!");
+        toast.success("Address created successfully!"); // Sonner toast
       }
       onClose();
     } catch (err) {
       toast.error(
         `Failed to save address: ${err?.data?.message || "Unknown error"}`
-      );
+      ); // Sonner toast
     }
   };
-
   return (
     <div
       className="modal fade show d-block"

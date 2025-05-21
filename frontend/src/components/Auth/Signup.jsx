@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useRegisterMutation } from "../../api/authApi";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "sonner"; // Changed import
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -29,24 +28,23 @@ const Signup = () => {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
-      toast.error("Passwords do not match!");
+      toast.error("Passwords do not match!"); // Sonner toast
       return;
     }
 
     if (!formData.agreeTerms) {
-      toast.error("You must agree to the terms and conditions!");
+      toast.error("You must agree to the terms and conditions!"); // Sonner toast
       return;
     }
 
     try {
       await register(formData).unwrap();
-      toast.success("Registration successful!", { autoClose: 2000 });
+      toast.success("Registration successful!", { duration: 2000 }); // Sonner toast
       setTimeout(() => navigate("/login"), 2000);
     } catch (err) {
-      toast.error(err?.data?.message || "Something went wrong. Try again.");
+      toast.error(err?.data?.message || "Something went wrong. Try again."); // Sonner toast
     }
   };
-
   return (
     <div className="main-wrapper">
       <div className="account-content">

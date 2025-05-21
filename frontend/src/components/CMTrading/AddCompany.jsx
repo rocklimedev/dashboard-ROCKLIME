@@ -4,8 +4,7 @@ import {
   useUpdateCompanyMutation,
   useGetAllCompaniesQuery,
 } from "../../api/companyApi";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "sonner";
 
 const AddCompany = ({ onClose, companyToEdit = null }) => {
   const isEditMode = !!companyToEdit;

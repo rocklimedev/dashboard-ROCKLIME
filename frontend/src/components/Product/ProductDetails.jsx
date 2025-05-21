@@ -5,7 +5,7 @@ import { useGetCategoryByIdQuery } from "../../api/categoryApi";
 import { useGetParentCategoryByIdQuery } from "../../api/parentCategoryApi";
 import { useGetBrandByIdQuery } from "../../api/brandsApi";
 import JsBarcode from "jsbarcode";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import Loader from "../../components/Common/Loader";
 import noimage from "../../assets/img/default.png";
 const ProductDetails = () => {

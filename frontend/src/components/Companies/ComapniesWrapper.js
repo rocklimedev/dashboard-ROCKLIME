@@ -9,7 +9,7 @@ import AddCompanyModal from "./AddCompanyModal";
 import DeleteModal from "../Common/DeleteModal";
 import ViewCompanies from "./ViewCompanies";
 import { BiEdit, BiTrash, BiShowAlt } from "react-icons/bi";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import DataTablePagination from "../Common/DataTablePagination";
 
 const CompaniesWrapper = () => {

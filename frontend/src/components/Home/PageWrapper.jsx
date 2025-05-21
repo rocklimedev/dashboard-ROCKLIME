@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import Alert from "./Alert";
 import Recents from "./Recents";
 import Stats from "./Stats";

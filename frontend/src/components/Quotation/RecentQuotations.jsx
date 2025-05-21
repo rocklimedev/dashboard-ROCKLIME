@@ -12,8 +12,7 @@ import Actions from "../Common/Actions";
 import ReactPaginate from "react-paginate";
 import QuotationProductModal from "./QuotationProductModal";
 import DeleteModal from "../Common/DeleteModal";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "sonner";
 
 const RecentQuotation = () => {
   const navigate = useNavigate();
@@ -117,7 +116,6 @@ const RecentQuotation = () => {
 
   return (
     <div className="page-wrapper">
-      <ToastContainer />
       <div className="content">
         <PageHeader title="Quotations" subtitle="Manage your quotations list" />
         <div className="card">

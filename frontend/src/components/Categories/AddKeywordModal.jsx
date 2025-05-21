@@ -4,8 +4,7 @@ import {
   useUpdateKeywordMutation,
 } from "../../api/keywordApi";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "sonner"; // Changed import
 
 const AddKeywordModal = ({ onClose, editData }) => {
   const isEditMode = !!editData;
@@ -45,14 +44,14 @@ const AddKeywordModal = ({ onClose, editData }) => {
     try {
       if (isEditMode) {
         await updateKeyword({ id: editData.id, ...formData }).unwrap();
-        toast.success("Keyword updated successfully! ✨");
+        toast.success("Keyword updated successfully! ✨"); // Sonner toast
       } else {
         await createKeyword(formData).unwrap();
-        toast.success("Keyword added successfully! 🎉");
+        toast.success("Keyword added successfully! 🎉"); // Sonner toast
       }
       onClose();
     } catch (err) {
-      toast.error(err?.data?.message || "Failed to save keyword ❌");
+      toast.error(err?.data?.message || "Failed to save keyword ❌"); // Sonner toast
     }
   };
 

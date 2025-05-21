@@ -5,7 +5,7 @@ import { useAddProductToCartMutation } from "../../api/cartApi";
 import { useGetProfileQuery } from "../../api/userApi";
 import DataTablePagination from "../Common/DataTablePagination";
 import pos from "../../assets/img/default.png";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 const POSProducts = ({ products = [] }) => {
   const { data: productsData, error, isLoading } = useGetAllProductsQuery();

@@ -10,8 +10,7 @@ import { useGetCustomersQuery } from "../../api/customerApi";
 import { PiPlus } from "react-icons/pi";
 import { useGetProfileQuery } from "../../api/userApi";
 import { useParams, useNavigate } from "react-router-dom";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "sonner";
 import { BiTrash } from "react-icons/bi";
 
 const AddQuotation = () => {
@@ -632,7 +631,6 @@ const AddQuotation = () => {
             </button>
           </div>
         </form>
-        <ToastContainer />
       </div>
     </div>
   );

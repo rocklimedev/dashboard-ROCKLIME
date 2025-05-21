@@ -12,8 +12,7 @@ import {
   useDeleteOrderMutation,
 } from "../../api/orderApi";
 import { useGetAllTeamsQuery } from "../../api/teamApi";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "sonner";
 import DatesModal from "./DateModal";
 import OrderItem from "./Orderitem";
 import { useTeamDataMap } from "../../data/useTeamDataMap";

@@ -17,8 +17,7 @@ import {
 import AddUser from "./AddUser";
 import DataTablePagination from "../Common/DataTablePagination";
 import DeleteModal from "../Common/DeleteModal";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "sonner";
 import userimg from "../../assets/img/profiles/avatar-01.jpg";
 import { useNavigate } from "react-router-dom";
 const UserList = () => {
@@ -184,7 +183,6 @@ const UserList = () => {
 
   return (
     <div className="page-wrapper">
-      <ToastContainer />
       <div className="content">
         <PageHeader
           title="Users"

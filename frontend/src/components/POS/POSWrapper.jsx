@@ -11,7 +11,7 @@ import { useGetCartQuery } from "../../api/cartApi";
 import { useGetAllProductsQuery } from "../../api/productApi";
 import { useGetAllBrandsQuery } from "../../api/brandsApi";
 import logo from "../../assets/img/logo.png";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 const POSWrapper = () => {
   const dispatch = useDispatch();
 

@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "sonner";
 import { useCreateRoleMutation } from "../../api/rolesApi"; // Import mutation
 
 const AddRoleModal = ({ show, onClose }) => {
@@ -86,7 +85,6 @@ const AddRoleModal = ({ show, onClose }) => {
         </div>
       </div>
       <div className="modal-backdrop fade show" onClick={handleClose}></div>
-      <ToastContainer />
     </>
   );
 };
