@@ -12,6 +12,7 @@ import { useGetAllProductsQuery } from "../../api/productApi";
 import { useGetAllBrandsQuery } from "../../api/brandsApi";
 import logo from "../../assets/img/logo.png";
 import { toast } from "sonner";
+
 const POSWrapper = () => {
   const dispatch = useDispatch();
 
@@ -20,8 +21,12 @@ const POSWrapper = () => {
     isLoading: isUserLoading,
     isError: isUserError,
   } = useGetProfileQuery();
-  const { data: quotations, isLoading: isQuotationsLoading } =
-    useGetAllQuotationsQuery();
+  const {
+    data: quotations = [],
+    isLoading: isQuotationsLoading,
+    isError: isQuotationsError,
+    error: quotationsError,
+  } = useGetAllQuotationsQuery();
   const { data: products, isLoading: isProductsLoading } =
     useGetAllProductsQuery();
   const { data: cartData, refetch: refetchCart } = useGetCartQuery();
@@ -32,12 +37,22 @@ const POSWrapper = () => {
   const [activeBrand, setActiveBrand] = useState(null);
 
   useEffect(() => {
+    if (isQuotationsError) {
+      toast.error(
+        `Failed to load quotations: ${
+          quotationsError?.message || "Unknown error"
+        }`
+      );
+    }
+  }, [isQuotationsError, quotationsError]);
+
+  useEffect(() => {
     refetchCart();
   }, [cartData, refetchCart]);
 
   const handleConvertToCart = (quotation) => {
     if (!quotation || !Array.isArray(quotation.products)) {
-      toast.error("Invalid quotation data", quotation);
+      toast.error("Invalid quotation data");
       return;
     }
 
@@ -53,6 +68,7 @@ const POSWrapper = () => {
     };
 
     // Dispatch or API call for updating cart
+    toast.success("Quotation converted to cart");
   };
 
   const handleBrandClick = (brand) => {
@@ -79,6 +95,7 @@ const POSWrapper = () => {
   });
 
   const renderTabContent = () => {
+    console.log("Active tab:", activeTab); // Debug tab state
     switch (activeTab) {
       case "quotations":
         return (

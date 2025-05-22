@@ -1,19 +1,25 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
-import { useGetProductByIdQuery } from "../../api/productApi";
+import {
+  useGetProductByIdQuery,
+  useGetAllProductsByCategoryQuery, // Correct hook
+} from "../../api/productApi";
 import { useGetCategoryByIdQuery } from "../../api/categoryApi";
 import { useGetParentCategoryByIdQuery } from "../../api/parentCategoryApi";
 import { useGetBrandByIdQuery } from "../../api/brandsApi";
 import JsBarcode from "jsbarcode";
-import { toast } from "sonner";
+import { toast } from "react-toastify";
 import Loader from "../../components/Common/Loader";
 import noimage from "../../assets/img/default.png";
+import "./productdetails.css";
+
 const ProductDetails = () => {
   const { id } = useParams();
   const {
     data: product,
     error: productError,
     isLoading: isProductLoading,
+    refetch: refetchProduct,
   } = useGetProductByIdQuery(id);
   const { data: categoryData, isLoading: isCategoryLoading } =
     useGetCategoryByIdQuery(product?.categoryId, {
@@ -28,15 +34,25 @@ const ProductDetails = () => {
     isLoading: isBrandLoading,
     error: brandError,
   } = useGetBrandByIdQuery(product?.brandId, { skip: !product?.brandId });
+  const {
+    data: recommendedProducts,
+    isLoading: isRecommendedLoading,
+    error: recommendedError,
+  } = useGetAllProductsByCategoryQuery(product?.categoryId, {
+    skip: !product?.categoryId,
+  });
+
   const [barcodeData, setBarcodeData] = useState("");
+  const [selectedImage, setSelectedImage] = useState(0);
+  const [quantity, setQuantity] = useState(1);
+  const [zoomStyle, setZoomStyle] = useState({});
   const barcodeRef = useRef(null);
+  const mainImageRef = useRef(null);
 
   // Parse images from product.images
   const getParsedImages = (imageField) => {
     if (!imageField) return [];
-
     try {
-      // Handle JSON string
       if (typeof imageField === "string") {
         const parsed = JSON.parse(imageField);
         if (Array.isArray(parsed))
@@ -44,13 +60,11 @@ const ProductDetails = () => {
         if (typeof parsed === "string" && parsed.startsWith("http"))
           return [parsed];
       }
-      // Handle array directly
       if (Array.isArray(imageField)) {
         return imageField.filter((img) => img && typeof img === "string");
       }
       return [];
     } catch (err) {
-      // Fallback for raw string URLs
       if (typeof imageField === "string" && imageField.startsWith("http")) {
         return [imageField];
       }
@@ -93,12 +107,57 @@ const ProductDetails = () => {
     }
   };
 
-  // Set barcode and log images
+  // Add to cart handler
+  const handleAddToCart = () => {
+    toast.success(`${product.name} (Quantity: ${quantity}) added to cart!`);
+    // Implement cart logic here
+  };
+
+  // Buy now handler
+  const handleBuyNow = () => {
+    toast.success(
+      `Proceeding to checkout for ${product.name} (Quantity: ${quantity})`
+    );
+    // Implement checkout logic here
+  };
+
+  // Image zoom handler
+  const handleMouseMove = (e) => {
+    const { left, top, width, height } =
+      mainImageRef.current.getBoundingClientRect();
+    const x = e.clientX - left;
+    const y = e.clientY - top;
+    const xPercent = (x / width) * 100;
+    const yPercent = (y / height) * 100;
+
+    setZoomStyle({
+      transformOrigin: `${xPercent}% ${yPercent}%`,
+      transform: "scale(2)",
+    });
+  };
+
+  const handleMouseLeave = () => {
+    setZoomStyle({});
+  };
+
+  // Set barcode and handle errors
   useEffect(() => {
     if (product?.product_code) {
       setBarcodeData(product.product_code);
     }
-  }, [product]);
+    if (brandError) {
+      toast.error("Failed to load brand information.");
+    }
+    if (recommendedError) {
+      toast.error(
+        recommendedError.status === 401 || recommendedError.status === 403
+          ? "Unauthorized to view recommended products."
+          : recommendedError.status === 404
+          ? "No recommended products found."
+          : "Failed to load recommended products."
+      );
+    }
+  }, [product, brandError, recommendedError]);
 
   // Generate barcode when barcodeData changes
   useEffect(() => {
@@ -106,13 +165,6 @@ const ProductDetails = () => {
       generateBarcode(barcodeData);
     }
   }, [barcodeData]);
-
-  // Handle brand error
-  useEffect(() => {
-    if (brandError) {
-      toast.error("Failed to load brand information.");
-    }
-  }, [brandError]);
 
   if (
     isProductLoading ||
@@ -127,9 +179,16 @@ const ProductDetails = () => {
     return (
       <div className="page-wrapper">
         <div className="content text-center">
-          <p className="text-danger">
+          <p className="error-message">
             Error: {productError.message || "Failed to load product"}
           </p>
+          <button
+            className="btn-retry"
+            onClick={refetchProduct}
+            aria-label="Retry loading product"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );
@@ -139,7 +198,7 @@ const ProductDetails = () => {
     return (
       <div className="page-wrapper">
         <div className="content text-center">
-          <p>Product not found.</p>
+          <p className="error-message">Product not found.</p>
         </div>
       </div>
     );
@@ -150,146 +209,182 @@ const ProductDetails = () => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        <div className="page-header">
-          <div className="page-title">
-            <h4>Product Details</h4>
-            <h6>Full details of {product.name || "product"}</h6>
+        <div className="product-container">
+          {/* Left Side - Product Images */}
+          <div className="product-gallery">
+            <div className="main-image-wrapper" ref={mainImageRef}>
+              <img
+                src={images[selectedImage] || noimage}
+                alt={product.name || "Product Image"}
+                className="main-image"
+                onMouseMove={handleMouseMove}
+                onMouseLeave={handleMouseLeave}
+                style={zoomStyle}
+                onError={(e) => (e.target.src = noimage)}
+              />
+            </div>
+            <div className="thumbnail-gallery">
+              {images.length > 0 ? (
+                images.map((img, idx) => (
+                  <img
+                    key={idx}
+                    src={img}
+                    alt={`Thumbnail ${idx + 1}`}
+                    className={`thumbnail ${
+                      selectedImage === idx ? "active" : ""
+                    }`}
+                    onClick={() => setSelectedImage(idx)}
+                    onError={(e) => (e.target.src = noimage)}
+                    tabIndex={0}
+                    onKeyPress={(e) =>
+                      e.key === "Enter" && setSelectedImage(idx)
+                    }
+                  />
+                ))
+              ) : (
+                <img
+                  src={noimage}
+                  alt="No Image"
+                  className="thumbnail"
+                  tabIndex={0}
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Middle - Product Details */}
+          <div className="product-info">
+            <h1 className="product-title">{product.name || "N/A"}</h1>
+            <p className="brand">Brand: {brandData?.brandName || "N/A"}</p>
+            <p className="price">
+              {product.sellingPrice
+                ? `₹${Number(product.sellingPrice).toFixed(2)}`
+                : "N/A"}
+            </p>
+            <p className="tax">
+              Tax:{" "}
+              {product.tax ? `${Number(product.tax).toFixed(2)}%` : "0.00%"}
+            </p>
+            <p className="stock">
+              {product.quantity > 0
+                ? `In Stock: ${product.quantity}`
+                : "Out of Stock"}
+            </p>
+            <p className="description">
+              {product.description || "No description available"}
+            </p>
+            <div className="barcode-section">
+              <svg ref={barcodeRef} aria-hidden="true" />
+              <button
+                className="btn btn-print"
+                onClick={handlePrint}
+                aria-label="Print barcode"
+                disabled={!barcodeData}
+              >
+                Print Barcode
+              </button>
+            </div>
+            <ul className="product-details-list">
+              <li>
+                <strong>Category:</strong>{" "}
+                {parentCategoryData?.data?.name ||
+                  categoryData?.category?.name ||
+                  "N/A"}
+              </li>
+              <li>
+                <strong>Sub Category:</strong>{" "}
+                {categoryData?.category?.name || "None"}
+              </li>
+              <li>
+                <strong>Product Code:</strong> {product.product_code || "N/A"}
+              </li>
+              <li>
+                <strong>Product Group:</strong> {product.productGroup || "N/A"}
+              </li>
+              <li>
+                <strong>Product Segment:</strong>{" "}
+                {product.product_segment || "N/A"}
+              </li>
+              <li>
+                <strong>Alert Quantity:</strong> {product.alert_quantity || "0"}
+              </li>
+            </ul>
+          </div>
+
+          {/* Right Side - Action Panel */}
+          <div className="action-panel">
+            <div className="action-panel-inner">
+              <div className="quantity-selector">
+                <label htmlFor="quantity">Quantity:</label>
+                <input
+                  type="number"
+                  id="quantity"
+                  value={quantity}
+                  onChange={(e) =>
+                    setQuantity(Math.max(1, parseInt(e.target.value) || 1))
+                  }
+                  min="1"
+                  max={product.quantity || 1}
+                  className="quantity-input"
+                  aria-label="Select quantity"
+                />
+              </div>
+              <button
+                className="btn btn-add-to-cart"
+                onClick={handleAddToCart}
+                disabled={product.quantity <= 0}
+                aria-label="Add to cart"
+              >
+                Add to Cart
+              </button>
+              <button
+                className="btn btn-buy-now"
+                onClick={handleBuyNow}
+                disabled={product.quantity <= 0}
+                aria-label="Buy now"
+              >
+                Buy Now
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className="row">
-          {/* Left Side - Product Details */}
-          <div className="col-lg-8 col-sm-12">
-            <div className="card">
-              <div className="card-body">
-                <div className="bar-code-view" aria-label="Product barcode">
-                  <svg ref={barcodeRef} aria-hidden="true" />
-                  <button
-                    className="printimg"
-                    onClick={handlePrint}
-                    aria-label="Print barcode"
-                    disabled={!barcodeData}
+        {/* Recommended Products Section */}
+        <div className="recommended-products">
+          <h2>Recommended Products</h2>
+          {isRecommendedLoading ? (
+            <Loader loading={true} />
+          ) : recommendedProducts?.length > 0 ? (
+            <div className="recommended-grid">
+              {recommendedProducts
+                .filter(
+                  (recProduct) => recProduct.productId !== product.productId
+                )
+                .slice(0, 4)
+                .map((recProduct) => (
+                  <div
+                    key={recProduct.productId}
+                    className="recommended-product"
                   >
-                    <img src="assets/img/icons/printer.svg" alt="Print" />
-                  </button>
-                </div>
-                <div className="productdetails">
-                  <ul className="product-bar">
-                    <li>
-                      <h4>Product</h4>
-                      <h6>{product.name || "N/A"}</h6>
-                    </li>
-                    <li>
-                      <h4>Product Group</h4>
-                      <h6>{product.productGroup || "N/A"}</h6>
-                    </li>
-                    <li>
-                      <h4>Product Segment</h4>
-                      <h6>{product.product_segment || "N/A"}</h6>
-                    </li>
-                    <li>
-                      <h4>Company Code</h4>
-                      <h6>{product.company_code || "N/A"}</h6>
-                    </li>
-                    <li>
-                      <h4>Product Code</h4>
-                      <h6>{product.product_code || "N/A"}</h6>
-                    </li>
-                    <li>
-                      <h4>Category</h4>
-                      <h6>
-                        {parentCategoryData?.data?.name ||
-                          categoryData?.category?.name ||
-                          "N/A"}
-                      </h6>
-                    </li>
-                    <li>
-                      <h4>Sub Category</h4>
-                      <h6>{categoryData?.category?.name || "None"}</h6>
-                    </li>
-                    <li>
-                      <h4>Brand</h4>
-                      <h6>{brandData?.brandName || "N/A"}</h6>
-                    </li>
-                    <li>
-                      <h4>Tax</h4>
-                      <h6>
-                        {product.tax
-                          ? `${Number(product.tax).toFixed(2)}%`
-                          : "0.00%"}
-                      </h6>
-                    </li>
-                    <li>
-                      <h4>Price</h4>
-                      <h6>
-                        {product.sellingPrice
-                          ? `₹${Number(product.sellingPrice).toFixed(2)}`
-                          : "N/A"}
-                      </h6>
-                    </li>
-                    <li>
-                      <h4>Stock Quantity</h4>
-                      <h6>{product.quantity || "0"}</h6>
-                    </li>
-                    <li>
-                      <h4>Alert Quantity</h4>
-                      <h6>{product.alert_quantity || "0"}</h6>
-                    </li>
-                    <li>
-                      <h4>Description</h4>
-                      <h6>
-                        {product.description || "No description available"}
-                      </h6>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Side - Product Images */}
-          <div className="col-lg-4 col-sm-12">
-            <div className="card">
-              <div className="card-body">
-                <div className="slider-product-details">
-                  <div className="owl-carousel owl-theme product-slide">
-                    {images.length > 0 ? (
-                      images.map((img, idx) => (
-                        <div className="slider-product" key={idx}>
-                          <img
-                            src={img}
-                            alt={product?.name || "Product Image"}
-                            className="img-fluid"
-                            style={{
-                              maxHeight: "300px",
-                              objectFit: "contain",
-                            }}
-                            onError={(e) => {
-                              e.target.src = noimage;
-                            }}
-                          />
-                          <h4>{product?.company_code || `Image ${idx + 1}`}</h4>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="slider-product">
-                        <img
-                          src={noimage}
-                          alt="No Image"
-                          className="img-fluid"
-                          style={{
-                            maxHeight: "300px",
-                            objectFit: "contain",
-                          }}
-                        />
-                        <h4>No images available</h4>
-                      </div>
-                    )}
+                    <a
+                      href={`/product/${recProduct.productId}`}
+                      aria-label={`View ${recProduct.name}`}
+                    >
+                      <img
+                        src={getParsedImages(recProduct.images)[0] || noimage}
+                        alt={recProduct.name}
+                        className="recommended-image"
+                        onError={(e) => (e.target.src = noimage)}
+                      />
+                      <h5>{recProduct.name}</h5>
+                      <p>₹{Number(recProduct.sellingPrice).toFixed(2)}</p>
+                    </a>
                   </div>
-                </div>
-              </div>
+                ))}
             </div>
-          </div>
+          ) : (
+            <p>No recommended products available.</p>
+          )}
         </div>
       </div>
     </div>

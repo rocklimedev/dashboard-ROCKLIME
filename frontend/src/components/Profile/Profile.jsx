@@ -43,13 +43,20 @@ const Profile = () => {
     const token =
       localStorage.getItem("token") || sessionStorage.getItem("token");
     console.log("Auth token:", token);
+    if (!token) {
+      toast.error("No authentication token found. Redirecting to login...");
+      window.location.href = "/login";
+    }
     console.log("useGetProfileQuery response:", {
       data: profile,
       error: profileError,
+      status: profileError?.status,
+      endpoint: profileError?.originalStatus,
+      url: profileError?.data?.url || "N/A",
     });
   }, [profile, profileError]);
 
-  // Initialize formData and avatar from profile and localStorage
+  // Initialize formData and avatar
   useEffect(() => {
     if (profile?.user) {
       setFormData({
@@ -64,11 +71,7 @@ const Profile = () => {
         country: profile.user.address?.country || "",
       });
       const savedAvatar = localStorage.getItem(`avatar_${profile.user.userId}`);
-      if (savedAvatar) {
-        setAvatarUrl(savedAvatar);
-      } else {
-        setAvatarUrl(profile.user.name || profile.user.email);
-      }
+      setAvatarUrl(savedAvatar || profile.user.name || profile.user.email);
     }
   }, [profile]);
 
@@ -105,12 +108,17 @@ const Profile = () => {
   if (isProfileLoading || isRolesLoading) return <p>Loading...</p>;
   if (profileError) {
     console.error("Profile error:", profileError);
-    return (
-      <p>
-        Error loading profile:{" "}
-        {profileError?.data?.message || profileError.message || "Unknown error"}
-      </p>
-    );
+    let errorMessage = "Unknown error";
+    if (profileError.status === 404) {
+      errorMessage =
+        "User profile not found. Please check your account or contact support.";
+    } else if (profileError.status === 401) {
+      errorMessage = "Unauthorized. Please log in again.";
+    } else {
+      errorMessage =
+        profileError?.data?.message || profileError.message || "Unknown error";
+    }
+    return <p>Error loading profile: {errorMessage}</p>;
   }
   if (rolesError) return <p>Error loading roles: {rolesError.message}</p>;
   if (!profile?.user) return <p>No user profile data available.</p>;
@@ -154,19 +162,42 @@ const Profile = () => {
       return;
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+
+    // Validate phone number (basic example)
+    const phoneRegex = /^[0-9]{10}$/;
+    if (!phoneRegex.test(formData.mobileNumber)) {
+      toast.error("Please enter a valid 10-digit phone number.");
+      return;
+    }
+
     const updatedData = {
       username: formData.username,
       name: formData.name,
       email: formData.email,
       mobileNumber: formData.mobileNumber,
-      address: {
-        street: formData.street,
-        city: formData.city,
-        state: formData.state,
-        postalCode: formData.postalCode,
-        country: formData.country,
-      },
     };
+
+    const hasAddress =
+      formData.street ||
+      formData.city ||
+      formData.state ||
+      formData.postalCode ||
+      formData.country;
+    if (hasAddress) {
+      updatedData.address = {
+        street: formData.street || "",
+        city: formData.city || "",
+        state: formData.state || "",
+        postalCode: formData.postalCode || "",
+        country: formData.country || "",
+      };
+    }
 
     try {
       await updateProfile(updatedData).unwrap();
@@ -191,11 +222,11 @@ const Profile = () => {
   };
 
   const avatarOptions = [
-    formData.name || formData.email,
+    formData.name || "User",
+    formData.email || "Email",
     "John Doe",
     "Jane Smith",
     "User One",
-    "User Two",
   ];
 
   return (
@@ -315,7 +346,7 @@ const Profile = () => {
                     />
                   ) : (
                     <p className="form-control-static">
-                      {formData.mobileNumber}
+                      {formData.mobileNumber || "N/A"}
                     </p>
                   )}
                 </div>

@@ -1,11 +1,21 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { API_URL } from "../data/config";
+
 export const productApi = createApi({
   reducerPath: "productApi",
-  baseQuery: fetchBaseQuery({ baseUrl: `${API_URL}/products` }), // Change the base URL if needed
+  baseQuery: fetchBaseQuery({
+    baseUrl: `${API_URL}/products`,
+    prepareHeaders: (headers, { getState }) => {
+      // Add authentication token if required
+      const token = getState().auth?.token; // Adjust based on your auth state
+      if (token) {
+        headers.set("Authorization", `Bearer ${token}`);
+      }
+      return headers;
+    },
+  }),
   tagTypes: ["Product"],
   endpoints: (builder) => ({
-    // Create Product
     createProduct: builder.mutation({
       query: (productData) => ({
         url: "/",
@@ -15,19 +25,16 @@ export const productApi = createApi({
       invalidatesTags: ["Product"],
     }),
 
-    // Get All Products
     getAllProducts: builder.query({
       query: () => "/",
       providesTags: ["Product"],
     }),
 
-    // Get Product by ID
     getProductById: builder.query({
       query: (productId) => `/${productId}`,
       providesTags: ["Product"],
     }),
 
-    // Update Product
     updateProduct: builder.mutation({
       query: ({ productId, updatedData }) => ({
         url: `/${productId}`,
@@ -37,7 +44,6 @@ export const productApi = createApi({
       invalidatesTags: ["Product"],
     }),
 
-    // Delete Product
     deleteProduct: builder.mutation({
       query: (productId) => ({
         url: `/${productId}`,
@@ -46,7 +52,6 @@ export const productApi = createApi({
       invalidatesTags: ["Product"],
     }),
 
-    // Inventory Management: Add Stock
     addStock: builder.mutation({
       query: ({ productId, quantity }) => ({
         url: `/${productId}/add-stock`,
@@ -56,7 +61,6 @@ export const productApi = createApi({
       invalidatesTags: ["Product"],
     }),
 
-    // Inventory Management: Remove Stock
     removeStock: builder.mutation({
       query: ({ productId, quantity }) => ({
         url: `/${productId}/remove-stock`,
@@ -66,24 +70,32 @@ export const productApi = createApi({
       invalidatesTags: ["Product"],
     }),
 
-    // Get Low Stock Products
+    getAllProductsByCategory: builder.query({
+      query: (categoryId) => ({
+        url: `/category/${categoryId}`,
+        method: "GET",
+      }),
+      providesTags: ["Product"],
+    }),
+
     getLowStockProducts: builder.query({
       query: (threshold = 10) => `/low-stock?threshold=${threshold}`,
       providesTags: ["Product"],
     }),
 
-    // Get Inventory History by Product ID
     getHistoryByProductId: builder.query({
-      query: (productId) => `/${productId}/history`, // Assuming your API follows this route
+      query: (productId) => `/${productId}/history`,
       providesTags: ["Product"],
     }),
+
     getAllProductCodes: builder.query({
       query: () => "/search/get-product-codes",
       providesTags: ["Product"],
     }),
+
     searchProducts: builder.query({
       query: (params) => {
-        const queryString = new URLSearchParams(params).toString(); // Convert params object to query string
+        const queryString = new URLSearchParams(params).toString();
         return `/search/all?${queryString}`;
       },
       providesTags: ["Product"],
@@ -101,6 +113,7 @@ export const {
   useRemoveStockMutation,
   useGetLowStockProductsQuery,
   useGetHistoryByProductIdQuery,
-  useSearchProductsQuery, // ✅ Added hook for fetching history
+  useSearchProductsQuery,
   useGetAllProductCodesQuery,
+  useGetAllProductsByCategoryQuery,
 } = productApi;

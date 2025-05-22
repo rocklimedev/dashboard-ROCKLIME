@@ -201,7 +201,7 @@ const ProductsList = ({ isAdmin = false }) => {
     brands,
   });
 
-  const itemsPerPage = 12;
+  const itemsPerPage = 20;
 
   const getBrandsName = (brandId) => {
     if (!brandId) return "NOT BRANDED";
@@ -471,12 +471,10 @@ const ProductsList = ({ isAdmin = false }) => {
                         onClick={(e) => e.preventDefault()}
                         className="text-decoration-none"
                       >
-                        {getCategoryName(product.categoryId)}
+                        {getBrandsName(product.brandId)}
                       </Link>
                     </Card.Text>
-                    <Card.Text className="fs-13 text-muted mb-2">
-                      <strong>Brand:</strong> {getBrandsName(product.brandId)}
-                    </Card.Text>
+
                     <div className="d-flex align-items-center justify-content-between mb-2">
                       <span className="text-teal fs-14 fw-bold">
                         {formatPrice(product.sellingPrice)}

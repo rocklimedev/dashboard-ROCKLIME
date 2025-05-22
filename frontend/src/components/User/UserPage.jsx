@@ -112,7 +112,7 @@ const UserPage = () => {
       <div className="content">
         <div className="page-header">
           <div>
-            <Link to="/users" className="d-inline-flex align-items-center">
+            <Link to="/users/list" className="d-inline-flex align-items-center">
               <i className="ti ti-chevron-left me-2"></i>Back to List
             </Link>
           </div>
@@ -156,7 +156,7 @@ const UserPage = () => {
                   </span>
                 </div>
                 <div>
-                  <Link to={`/users/${userId}/edit`} className="btn btn-white">
+                  <Link to={`/user/${userId}/edit`} className="btn btn-white">
                     Edit Profile
                   </Link>
                 </div>
