@@ -6,11 +6,10 @@ const Footer = () => {
   return (
     <div className="footer d-flex align-items-center justify-content-center border-top bg-white p-3">
       <p className="mb-0 text-gray-9 text-center">
-        © {currentYear} Rocklime. All Rights Reserved | Designed &amp; Developed
-        by{" "}
+        © {currentYear} CM Trading Co. All Rights Reserved | Powered by{" "}
         <a
-          href="https://rocklime.com"
-          className="text-primary"
+          href="https://www.rocklime.com/"
+          className="rocklime-link"
           target="_blank"
           rel="noopener noreferrer"
         >

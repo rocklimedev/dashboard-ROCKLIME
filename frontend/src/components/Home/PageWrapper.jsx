@@ -68,7 +68,7 @@ const PageWrapper = () => {
   // Alert if user hasn't clocked in
   useEffect(() => {
     if (!loadingAttendance && !hasClockedIn && !attendanceError) {
-      toast.warn("You haven't clocked in today!", {
+      toast.warning("You haven't clocked in today!", {
         toastId: "clockInReminder",
       });
     }

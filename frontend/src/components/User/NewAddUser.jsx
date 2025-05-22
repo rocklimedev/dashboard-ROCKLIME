@@ -7,10 +7,24 @@ import {
   useCreateUserMutation,
   useUpdateUserMutation,
   useAssignRoleMutation,
+  useGetUserByIdQuery,
 } from "../../api/userApi";
 import { useGetRolesQuery } from "../../api/rolesApi";
 import { useCreateAddressMutation } from "../../api/addressApi";
-const NewAddUser = ({ userToEdit, onClose }) => {
+import { useParams } from "react-router-dom";
+
+const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
+  const { id } = useParams(); // Get the user ID from the URL (e.g., /u/:id/edit)
+
+  // Fetch user data if userToEdit is not provided (e.g., when navigating via route)
+  const {
+    data: fetchedUser,
+    isLoading: isFetchingUser,
+    error: fetchUserError,
+  } = useGetUserByIdQuery(id, { skip: !id || !!propUserToEdit });
+
+  const userToEdit = propUserToEdit || fetchedUser?.user;
+
   const [createUser, { isLoading: isCreating, error: createError }] =
     useCreateUserMutation();
   const [updateUser, { isLoading: isUpdating, error: updateError }] =
@@ -39,14 +53,14 @@ const NewAddUser = ({ userToEdit, onClose }) => {
     country: "",
     state: "",
     city: "",
-    postalCode: "", // Changed from zipcode to match addresses table
+    postalCode: "",
     emergencyNumber: "",
     role: "",
     status: "inactive",
     password: "",
     avatar: null,
     about: "",
-    addressId: null, // Added to store addressId
+    addressId: null,
   });
 
   useEffect(() => {
@@ -74,6 +88,8 @@ const NewAddUser = ({ userToEdit, onClose }) => {
         addressId: userToEdit.addressId || null,
       });
       setIsEditMode(true);
+    } else {
+      setIsEditMode(false);
     }
   }, [userToEdit]);
 
@@ -86,7 +102,9 @@ const NewAddUser = ({ userToEdit, onClose }) => {
       toast.error(rolesError?.data?.message || "Failed to load roles");
     if (addressError)
       toast.error(addressError?.data?.message || "Failed to save address");
-  }, [createError, updateError, rolesError, addressError]);
+    if (fetchUserError)
+      toast.error(fetchUserError?.data?.message || "Failed to fetch user data");
+  }, [createError, updateError, rolesError, addressError, fetchUserError]);
 
   const handleChange = (e) => {
     const { name, value, type, checked, files } = e.target;
@@ -114,7 +132,6 @@ const NewAddUser = ({ userToEdit, onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Validate required fields
       const requiredFields = ["username", "email", "name", "role"];
       if (!isEditMode) requiredFields.push("password");
       for (const field of requiredFields) {
@@ -126,7 +143,6 @@ const NewAddUser = ({ userToEdit, onClose }) => {
         }
       }
 
-      // Validate shift times
       if (formData.shiftFrom && formData.shiftTo) {
         const from = new Date(`1970-01-01T${formData.shiftFrom}`);
         const to = new Date(`1970-01-01T${formData.shiftTo}`);
@@ -136,14 +152,12 @@ const NewAddUser = ({ userToEdit, onClose }) => {
         }
       }
 
-      // Validate role
       const selectedRoleObj = roles?.find((r) => r.roleName === formData.role);
       if (!selectedRoleObj) {
         toast.error("Selected role is invalid");
         return;
       }
 
-      // Handle address
       let addressId = formData.addressId;
       if (
         formData.street ||
@@ -158,7 +172,7 @@ const NewAddUser = ({ userToEdit, onClose }) => {
           state: formData.state,
           city: formData.city,
           postalCode: formData.postalCode,
-          userId: userToEdit?.userId || null, // Set userId for new address
+          userId: userToEdit?.userId || null,
         };
         const addressResponse = await addAddress({
           addressId: isEditMode ? addressId : undefined,
@@ -167,7 +181,6 @@ const NewAddUser = ({ userToEdit, onClose }) => {
         addressId = addressResponse.data.addressId;
       }
 
-      // Handle avatar upload
       let avatarUrl = formData.avatar;
       if (formData.avatar instanceof File) {
         const formDataUpload = new FormData();
@@ -212,7 +225,6 @@ const NewAddUser = ({ userToEdit, onClose }) => {
       } else {
         user = await createUser(userPayload).unwrap();
         toast.success("User added successfully!");
-        // Update address with userId for new user
         if (addressId) {
           await addAddress({
             addressId,
@@ -270,6 +282,29 @@ const NewAddUser = ({ userToEdit, onClose }) => {
   const handleCollapse = () => {
     setIsCollapsed((prev) => !prev);
   };
+
+  if (isFetchingUser) {
+    return (
+      <div className="page-wrapper">
+        <div className="content text-center">
+          <p>Loading user data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (fetchUserError && id) {
+    return (
+      <div className="page-wrapper">
+        <div className="content text-center">
+          <p className="text-danger">Error loading user data.</p>
+          <Button variant="secondary" onClick={onClose}>
+            Go Back
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page-wrapper">

@@ -29,7 +29,17 @@ router.get(
   // ),
   productController.getProductById
 );
-
+router.get(
+  "/category/:categoryId",
+  // role.check(ROLES.Admin),
+  // checkPermission(
+  //   "view",
+  //   "view_product_by_category",
+  //   "products",
+  //   "/products/category/:categoryId"
+  // ),
+  productController.getProductsByCategory
+);
 router.put(
   "/:productId",
   //role.check(ROLES.Admin), // Only Admins can edit products

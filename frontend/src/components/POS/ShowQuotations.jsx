@@ -54,7 +54,6 @@ const ShowQuotations = ({
       return;
     }
 
-    // Call the parent component's onConvertToOrder (handleInitiateConvertToCart)
     onConvertToOrder(quotation);
   };
 
@@ -71,6 +70,8 @@ const ShowQuotations = ({
     );
     return customer?.name || "Unknown Customer";
   };
+
+  console.log("Quotations:", quotations); // Debug quotations data
 
   return (
     <div className="order-body py-4">
@@ -178,7 +179,13 @@ const ShowQuotations = ({
                 >
                   <Button
                     variant="outline-info"
-                    onClick={() => setSelectedQuotation(quotation)}
+                    onClick={() => {
+                      console.log(
+                        "Opening products for quotation:",
+                        quotation.quotationId
+                      );
+                      setSelectedQuotation(quotation);
+                    }}
                     className="d-flex align-items-center"
                   >
                     <BsEye className="me-2" />
@@ -211,9 +218,13 @@ const ShowQuotations = ({
       {selectedQuotation && (
         <Modal
           show={!!selectedQuotation}
-          onHide={() => setSelectedQuotation(null)}
+          onHide={() => {
+            console.log("Closing quotation modal");
+            setSelectedQuotation(null);
+          }}
           size="lg"
           centered
+          className="modal-quotations"
         >
           <Modal.Header closeButton>
             <Modal.Title>

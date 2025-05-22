@@ -20,6 +20,7 @@ import DeleteModal from "../Common/DeleteModal";
 import { toast } from "sonner";
 import userimg from "../../assets/img/profiles/avatar-01.jpg";
 import { useNavigate } from "react-router-dom";
+
 const UserList = () => {
   const { data, error, isLoading, isFetching, refetch } = useGetAllUsersQuery();
   const users = data?.users || [];
@@ -80,13 +81,11 @@ const UserList = () => {
   };
 
   const handleEditUser = (user) => {
-    setSelectedUser(user);
-    setShowModal(true);
+    navigate(`/user/${user.userId}/edit`); // Navigate to /u/:id/edit
   };
 
   const handleViewUser = (user) => {
-    setSelectedUser(user);
-    setShowViewModal(true);
+    navigate(`/user/${user.userId}`); // Navigate to /u/:id
   };
 
   const handleDeleteUser = (userId) => {
@@ -266,7 +265,7 @@ const UserList = () => {
                         <div className="d-flex align-items-start justify-content-between mb-2">
                           <div>
                             <a
-                              href={`/user/${user.userId}`}
+                              href={`/user/${user.userId}`} // Fixed link to /u/:id
                               className="avatar avatar-xl avatar-rounded border p-1 rounded-circle"
                             >
                               <img
@@ -286,7 +285,7 @@ const UserList = () => {
                               </Dropdown.Toggle>
                               <Dropdown.Menu>
                                 <Dropdown.Item
-                                  onClick={navigate(`/user/${user.userId}`)}
+                                  onClick={() => handleViewUser(user)}
                                 >
                                   <FaEye className="me-2" /> View
                                 </Dropdown.Item>
@@ -328,7 +327,8 @@ const UserList = () => {
                         </div>
                         <div className="text-center mb-3">
                           <h6 className="mb-1">
-                            <a href={`/user/${user.userId}`}>{user.name}</a>
+                            <a href={`/user/${user.userId}`}>{user.name}</a>{" "}
+                            {/* Fixed link to /u/:id */}
                           </h6>
                           <span className="badge bg-secondary-transparent text-gray-9 fs-10 fw-medium">
                             {user.roles.join(", ") || "N/A"}

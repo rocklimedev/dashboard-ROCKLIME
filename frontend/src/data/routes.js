@@ -24,6 +24,7 @@ import {
   BiAccessibility,
   BiSearch,
   BiSolidCategory,
+  BiUser,
   BiUserCheck,
 } from "react-icons/bi";
 import { FaFileCircleCheck, FaFirstOrder, FaPooStorm } from "react-icons/fa6";
@@ -341,6 +342,13 @@ const masterRoutes = [
         icon: <BiUserCheck />,
         isSidebarActive: false,
         element: <UserPage />,
+      },
+      {
+        path: "/user/:userId/edit",
+        name: "User Edit",
+        icon: <BiUserCheck />,
+        isSidebarActive: false,
+        element: <NewAddUser />,
       },
     ],
   },
