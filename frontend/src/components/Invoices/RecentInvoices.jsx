@@ -1,17 +1,28 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import PageHeader from "../Common/PageHeader";
-import { useGetAllAddressesQuery } from "../../api/addressApi";
-import { useGetAllUsersQuery } from "../../api/userApi";
+import {
+  Container,
+  Row,
+  Col,
+  Card,
+  Button,
+  Dropdown,
+  Form,
+  Spinner,
+  Alert,
+} from "react-bootstrap";
 import {
   useGetAllInvoicesQuery,
   useDeleteInvoiceMutation,
 } from "../../api/invoiceApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
-import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
+import { useGetAllAddressesQuery } from "../../api/addressApi";
+import { useGetAllUsersQuery } from "../../api/userApi";
+import { FaEye, FaEdit, FaTrash, FaSearch } from "react-icons/fa";
 import EditInvoice from "./EditInvoice";
 import DeleteModal from "../Common/DeleteModal";
 import DataTablePagination from "../Common/DataTablePagination";
+import "./recentinvoices.css";
 
 const RecentInvoices = () => {
   const {
@@ -41,7 +52,7 @@ const RecentInvoices = () => {
   const addresses = addressData?.data || [];
   const users = userData?.users || [];
 
-  // State for filters, sorting, search, checkboxes, modals, and pagination
+  // State management
   const [selectedCustomer, setSelectedCustomer] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
   const [sortBy, setSortBy] = useState("Recently Added");
@@ -52,7 +63,7 @@ const RecentInvoices = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
+  const itemsPerPage = 12;
 
   // Memoized maps
   const customerMap = useMemo(() => {
@@ -60,8 +71,6 @@ const RecentInvoices = () => {
     customers.forEach((cust) => {
       if (cust.customerId && typeof cust.customerId === "string") {
         map[cust.customerId.trim()] = cust.name || "Unnamed Customer";
-      } else {
-        console.warn("Invalid customerId:", cust);
       }
     });
     return map;
@@ -69,29 +78,18 @@ const RecentInvoices = () => {
 
   const addressMap = useMemo(() => {
     const map = {};
-    if (addresses.length === 0) {
-      console.warn("No addresses available in addressMap");
-    }
     addresses.forEach((addr) => {
-      const hasNullFields =
-        addr.state === null ||
-        addr.postalCode === null ||
-        addr.country === null;
-      if (hasNullFields) {
-        map[addr.addressId] = "N/A";
-      } else {
-        const addressParts = [
-          addr.street,
-          addr.city,
-          addr.state,
-          addr.postalCode || addr.zip,
-          addr.country,
-        ].filter((part) => part != null && part !== "");
-        map[addr.addressId] =
-          addressParts.length > 0
-            ? addressParts.join(", ")
-            : "Incomplete Address";
-      }
+      const addressParts = [
+        addr.street,
+        addr.city,
+        addr.state,
+        addr.postalCode || addr.zip,
+        addr.country,
+      ].filter((part) => part != null && part !== "");
+      map[addr.addressId] =
+        addressParts.length > 0
+          ? addressParts.join(", ")
+          : "Incomplete Address";
     });
     return map;
   }, [addresses]);
@@ -104,7 +102,6 @@ const RecentInvoices = () => {
     return map;
   }, [users]);
 
-  // Derive statuses dynamically
   const statuses = useMemo(() => {
     const invoiceStatuses = [
       ...new Set(invoices.map((inv) => inv.status).filter(Boolean)),
@@ -112,13 +109,16 @@ const RecentInvoices = () => {
     const customerStatuses = [
       ...new Set(customers.map((cust) => cust.invoiceStatus).filter(Boolean)),
     ];
-    const combined = [...new Set([...invoiceStatuses, ...customerStatuses])];
-    return combined.length > 0
-      ? combined
-      : ["Paid", "Unpaid", "Overdue", "Draft"];
+    return (
+      [...new Set([...invoiceStatuses, ...customerStatuses])] || [
+        "Paid",
+        "Unpaid",
+        "Overdue",
+        "Draft",
+      ]
+    );
   }, [invoices, customers]);
 
-  // Get invoice status with fallback
   const getInvoiceStatus = (invoice) => {
     if (invoice.status && invoice.status !== "N/A" && invoice.status !== "")
       return invoice.status;
@@ -130,7 +130,6 @@ const RecentInvoices = () => {
     return customer?.invoiceStatus || "Unknown";
   };
 
-  // Normalize names for display
   const normalizeName = (name) =>
     name
       ?.toLowerCase()
@@ -179,14 +178,12 @@ const RecentInvoices = () => {
         result.sort((a, b) => a.invoiceNo.localeCompare(b.invoiceNo));
         break;
       case "Descending":
-        result.sort((a, b) => b.invoiceNo.localeCompare(b.invoiceNo));
+        result.sort((a, b) => b.invoiceNo.localeCompare(a.invoiceNo));
         break;
       case "Recently Added":
-        result.sort((a, b) => {
-          const dateA = a.invoiceDate ? new Date(a.invoiceDate) : new Date(0);
-          const dateB = b.invoiceDate ? new Date(b.invoiceDate) : new Date(0);
-          return dateB - dateA;
-        });
+        result.sort(
+          (a, b) => new Date(b.invoiceDate) - new Date(a.invoiceDate)
+        );
         break;
       case "Last 7 Days":
         const sevenDaysAgo = new Date();
@@ -223,86 +220,14 @@ const RecentInvoices = () => {
     addressMap,
   ]);
 
-  // Format invoices for tableData prop
-  const formattedInvoices = useMemo(() => {
-    return filteredInvoices.map((invoice) => ({
-      invoiceId: invoice.invoiceId,
-      invoiceNo: invoice.invoiceNo,
-      customer:
-        invoice.customerId && customerMap[invoice.customerId?.trim()]
-          ? customerMap[invoice.customerId.trim()]
-          : normalizeName(invoice.billTo) || "Unknown Customer",
-      billTo: normalizeName(invoice.billTo) || "N/A",
-      shipTo: invoice.shipTo
-        ? addressMap[invoice.shipTo] || "Address Not Found"
-        : customers.find((cust) => cust.customerId === invoice.customerId)
-            ?.address
-        ? Object.values(
-            customers.find((cust) => cust.customerId === invoice.customerId)
-              .address
-          )
-            .filter(Boolean)
-            .join(", ")
-        : "N/A",
-      invoiceDate:
-        invoice.invoiceDate && invoice.invoiceDate !== "0000-00-00"
-          ? new Date(invoice.invoiceDate).toLocaleDateString()
-          : "N/A",
-      dueDate:
-        invoice.dueDate && invoice.dueDate !== "0000-00-00"
-          ? new Date(invoice.dueDate).toLocaleDateString()
-          : "N/A",
-      amount: invoice.amount ? `Rs ${invoice.amount}` : "N/A",
-      createdBy: userMap[invoice.createdBy] || "Unknown User",
-      status: getInvoiceStatus(invoice),
-    }));
-  }, [
-    filteredInvoices,
-    customerMap,
-    addressMap,
-    userMap,
-    normalizeName,
-    getInvoiceStatus,
-  ]);
+  // Paginated invoices
+  const paginatedInvoices = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredInvoices.slice(startIndex, endIndex);
+  }, [filteredInvoices, currentPage, itemsPerPage]);
 
-  // Log data for debugging
-  useEffect(() => {
-    const unmatchedCustomerInvoices = invoices.filter((inv) => {
-      if (!inv.customerId || typeof inv.customerId !== "string") {
-        console.warn("Invalid invoice customerId:", inv);
-        return true;
-      }
-      return !customers.find(
-        (cust) => cust.customerId === inv.customerId.trim()
-      );
-    });
-    if (unmatchedCustomerInvoices.length > 0) {
-      console.warn(
-        "Unmatched customer IDs:",
-        unmatchedCustomerInvoices.map((inv) => ({
-          invoiceNo: inv.invoiceNo,
-          customerId: inv.customerId,
-          billTo: inv.billTo,
-        }))
-      );
-    }
-
-    const unmatchedAddressInvoices = invoices.filter(
-      (inv) =>
-        inv.shipTo && !addresses.find((addr) => addr.addressId === inv.shipTo)
-    );
-    if (unmatchedAddressInvoices.length > 0) {
-      console.warn(
-        "Unmatched shipTo address IDs:",
-        unmatchedAddressInvoices.map((inv) => ({
-          invoiceNo: inv.invoiceNo,
-          shipTo: inv.shipTo,
-        }))
-      );
-    }
-  }, [invoices, customers, addresses, customerMap, addressMap]);
-
-  // Checkbox handlers
+  // Handlers
   const handleSelectAll = () => {
     const currentPageInvoices = paginatedInvoices.map((inv) => inv.invoiceId);
     setSelectedInvoices(
@@ -318,19 +243,16 @@ const RecentInvoices = () => {
     );
   };
 
-  // Handle edit button click
   const handleEditClick = (invoice) => {
     setSelectedInvoice(invoice);
     setShowEditModal(true);
   };
 
-  // Handle delete button click
   const handleDeleteClick = (invoice) => {
     setInvoiceToDelete(invoice);
     setShowDeleteModal(true);
   };
 
-  // Confirm deletion
   const confirmDelete = async (invoice) => {
     try {
       await deleteInvoice(invoice.invoiceId).unwrap();
@@ -344,393 +266,247 @@ const RecentInvoices = () => {
     }
   };
 
-  // Cancel deletion
   const cancelDelete = () => {
     setShowDeleteModal(false);
     setInvoiceToDelete(null);
   };
 
-  // Handle page change
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
     setSelectedInvoices([]);
   };
-
-  // Paginated invoices
-  const paginatedInvoices = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filteredInvoices.slice(startIndex, endIndex);
-  }, [filteredInvoices, currentPage, itemsPerPage]);
 
   const isLoading =
     invoiceLoading || customerLoading || addressLoading || userLoading;
   const hasError = invoiceError || customerError || addressError || userError;
 
   return (
-    <div className="page-wrapper">
+    <div className="page-wrapper notes-page-wrapper">
       <div className="content">
-        <PageHeader
-          title="Recent Invoices"
-          subtitle="Manage your Recent Invoices"
-          tableData={formattedInvoices}
-        />
+        <Container fluid className="recent-invoices-container">
+          <h1 className="page-title">Recent Invoices</h1>
+          <p className="page-subtitle">Manage your recent invoices</p>
 
-        {isLoading && <p className="text-center">Loading data...</p>}
-        {hasError && (
-          <p className="text-danger text-center">
-            Error loading data: {JSON.stringify(hasError)}. Please try again.
-          </p>
-        )}
-
-        <div className="card">
-          <div className="card-header d-flex align-items-center justify-content-between flex-wrap row-gap-3">
-            <div className="search-set">
-              <div className="search-input">
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Search by invoice, customer, bill to, or address..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <span className="btn-searchset">
-                  <i className="ti ti-search fs-14 feather-search"></i>
-                </span>
-              </div>
+          {isLoading && (
+            <div className="text-center my-5">
+              <Spinner
+                animation="border"
+                variant="primary"
+                role="status"
+                aria-label="Loading invoices"
+              />
+              <p>Loading invoices...</p>
             </div>
+          )}
+          {hasError && (
+            <Alert variant="danger" role="alert" className="my-4">
+              Error loading data: {JSON.stringify(hasError)}. Please try again.
+            </Alert>
+          )}
 
-            <div className="d-flex table-dropdown my-xl-auto right-content align-items-center flex-wrap row-gap-3">
-              <div className="dropdown me-2">
-                <a
-                  href="#"
-                  className="dropdown-toggle btn btn-white btn-md d-inline-flex align-items-center"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
-                >
-                  {selectedCustomer
-                    ? customerMap[selectedCustomer] || "Unknown Customer"
-                    : "Customer"}
-                </a>
-                <ul className="dropdown-menu dropdown-menu-end p-3">
-                  <li>
-                    <a
-                      className="dropdown-item rounded-1"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setSelectedCustomer("");
-                      }}
-                    >
+          <div className="filters-section mb-4">
+            <Row className="align-items-center">
+              <Col md={6} lg={4} className="mb-3">
+                <div className="search-input-wrapper">
+                  <FaSearch className="search-icon" />
+                  <Form.Control
+                    type="text"
+                    placeholder="Search invoices, customers, or addresses..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    aria-label="Search invoices"
+                  />
+                </div>
+              </Col>
+              <Col md={6} lg={4} className="mb-3">
+                <Dropdown>
+                  <Dropdown.Toggle variant="outline-primary" className="w-100">
+                    {selectedCustomer
+                      ? customerMap[selectedCustomer] || "Unknown Customer"
+                      : "All Customers"}
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu>
+                    <Dropdown.Item onClick={() => setSelectedCustomer("")}>
                       All Customers
-                    </a>
-                  </li>
-                  {customers.map((cust) => (
-                    <li key={cust.customerId || `cust-${Math.random()}`}>
-                      <a
-                        className="dropdown-item rounded-1"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setSelectedCustomer(cust.customerId);
-                        }}
+                    </Dropdown.Item>
+                    {customers.map((cust) => (
+                      <Dropdown.Item
+                        key={cust.customerId}
+                        onClick={() => setSelectedCustomer(cust.customerId)}
                       >
                         {cust.name || "Unnamed Customer"}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="dropdown me-2">
-                <a
-                  href="#"
-                  className="dropdown-toggle btn btn-white btn-md d-inline-flex align-items-center"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
-                >
-                  {selectedStatus || "Status"}
-                </a>
-                <ul className="dropdown-menu dropdown-menu-end p-3">
-                  <li>
-                    <a
-                      className="dropdown-item rounded-1"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setSelectedStatus("");
-                      }}
-                    >
+                      </Dropdown.Item>
+                    ))}
+                  </Dropdown.Menu>
+                </Dropdown>
+              </Col>
+              <Col md={6} lg={2} className="mb-3">
+                <Dropdown>
+                  <Dropdown.Toggle variant="outline-primary" className="w-100">
+                    {selectedStatus || "All Statuses"}
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu>
+                    <Dropdown.Item onClick={() => setSelectedStatus("")}>
                       All Statuses
-                    </a>
-                  </li>
-                  {statuses.map((status) => (
-                    <li key={status}>
-                      <a
-                        className="dropdown-item rounded-1"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setSelectedStatus(status);
-                        }}
+                    </Dropdown.Item>
+                    {statuses.map((status) => (
+                      <Dropdown.Item
+                        key={status}
+                        onClick={() => setSelectedStatus(status)}
                       >
                         {status}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="dropdown">
-                <a
-                  href="#"
-                  className="dropdown-toggle btn btn-white btn-md d-inline-flex align-items-center"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
-                >
-                  Sort By: {sortBy}
-                </a>
-                <ul className="dropdown-menu dropdown-menu-end p-3">
-                  {[
-                    "Recently Added",
-                    "Ascending",
-                    "Descending",
-                    "Last Month",
-                    "Last 7 Days",
-                  ].map((sort) => (
-                    <li key={sort}>
-                      <a
-                        className="dropdown-item rounded-1"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setSortBy(sort);
-                        }}
-                      >
+                      </Dropdown.Item>
+                    ))}
+                  </Dropdown.Menu>
+                </Dropdown>
+              </Col>
+              <Col md={6} lg={2} className="mb-3">
+                <Dropdown>
+                  <Dropdown.Toggle variant="outline-primary" className="w-100">
+                    Sort By: {sortBy}
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu>
+                    {[
+                      "Recently Added",
+                      "Ascending",
+                      "Descending",
+                      "Last Month",
+                      "Last 7 Days",
+                    ].map((sort) => (
+                      <Dropdown.Item key={sort} onClick={() => setSortBy(sort)}>
                         {sort}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
+                      </Dropdown.Item>
+                    ))}
+                  </Dropdown.Menu>
+                </Dropdown>
+              </Col>
+            </Row>
           </div>
 
-          <div className="card-body p-0">
-            <div className="table-responsive">
-              {isLoading ? (
-                <p className="text-center">Loading...</p>
-              ) : hasError ? (
-                <p className="text-danger text-center">
-                  Error loading data. Please try again.
-                </p>
-              ) : filteredInvoices.length === 0 ? (
-                <p className="text-center">No invoices found.</p>
-              ) : (
-                <>
-                  <table className="table datatable">
-                    <thead className="thead-light">
-                      <tr>
-                        <th className="no-sort">
-                          <label className="checkboxs">
-                            <input
-                              type="checkbox"
-                              id="select-all"
-                              checked={
-                                selectedInvoices.length ===
-                                paginatedInvoices.length
-                              }
-                              onChange={handleSelectAll}
-                            />
-                            <span className="checkmarks"></span>
-                          </label>
-                        </th>
-                        <th>Invoice No</th>
-                        <th>Customer</th>
-                        <th>Bill To</th>
-                        <th>Ship To</th>
-                        <th>Invoice Date</th>
-                        <th>Due Date</th>
-                        <th>Amount</th>
-                        <th>Created By</th>
-                        <th>Status</th>
-                        <th className="no-sort">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {paginatedInvoices.map((invoice) => (
-                        <tr key={invoice.invoiceId}>
-                          <td>
-                            <input
-                              type="checkbox"
-                              aria-label="Select invoice"
-                              checked={selectedInvoices.includes(
-                                invoice.invoiceId
-                              )}
-                              onChange={() => toggleInvoice(invoice.invoiceId)}
-                            />
-                          </td>
-                          <td>
-                            <Link
-                              to={`/invoice/${invoice.invoiceId}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="invoice-link"
-                            >
-                              {invoice.invoiceNo}
-                            </Link>
-                          </td>
-                          <td
-                            className={
-                              !invoice.customerId ||
-                              !customerMap[invoice.customerId?.trim()]
-                                ? "text-warning"
-                                : ""
-                            }
-                            title={
-                              !invoice.customerId
-                                ? "Missing customerId"
-                                : !customerMap[invoice.customerId?.trim()]
-                                ? `Customer ID ${invoice.customerId} not found`
-                                : undefined
-                            }
+          {filteredInvoices.length === 0 ? (
+            <Alert variant="info" className="text-center">
+              No invoices found.
+            </Alert>
+          ) : (
+            <Row>
+              {paginatedInvoices.map((invoice) => (
+                <Col md={6} lg={4} key={invoice.invoiceId} className="mb-4">
+                  <Card className="invoice-card shadow-sm">
+                    <Card.Body>
+                      <div className="d-flex justify-content-between align-items-center mb-3">
+                        <h5 className="card-title">
+                          <Link
+                            to={`/invoice/${invoice.invoiceId}`}
+                            className="invoice-link"
                           >
-                            {invoice.customerId &&
-                            customerMap[invoice.customerId?.trim()]
-                              ? customerMap[invoice.customerId.trim()]
-                              : normalizeName(invoice.billTo) ||
-                                "Unknown Customer"}
-                          </td>
-                          <td>{normalizeName(invoice.billTo) || "N/A"}</td>
-                          <td
-                            className={
-                              invoice.shipTo && !addressMap[invoice.shipTo]
-                                ? "text-warning"
-                                : ""
-                            }
-                            title={
-                              invoice.shipTo && !addressMap[invoice.shipTo]
-                                ? `Address ID ${invoice.shipTo} not found`
-                                : undefined
-                            }
-                          >
-                            {invoice.shipTo
-                              ? addressMap[invoice.shipTo] ||
-                                "Address Not Found"
-                              : customers.find(
-                                  (cust) =>
-                                    cust.customerId === invoice.customerId
-                                )?.address
-                              ? Object.values(
-                                  customers.find(
-                                    (cust) =>
-                                      cust.customerId === invoice.customerId
-                                  ).address
-                                )
-                                  .filter(Boolean)
-                                  .join(", ")
-                              : "N/A"}
-                          </td>
-                          <td>
-                            {invoice.invoiceDate &&
-                            invoice.invoiceDate !== "0000-00-00"
-                              ? new Date(
-                                  invoice.invoiceDate
-                                ).toLocaleDateString()
-                              : "N/A"}
-                          </td>
-                          <td>
-                            {invoice.dueDate && invoice.dueDate !== "0000-00-00"
-                              ? new Date(invoice.dueDate).toLocaleDateString()
-                              : "N/A"}
-                          </td>
-                          <td>
-                            {invoice.amount ? `Rs ${invoice.amount}` : "N/A"}
-                          </td>
-                          <td
-                            className={
-                              !userMap[invoice.createdBy] ? "text-warning" : ""
-                            }
-                          >
-                            {userMap[invoice.createdBy] || "Unknown User"}
-                          </td>
-                          <td>
-                            <span
-                              className={`badge ${
-                                getInvoiceStatus(invoice) === "Paid"
-                                  ? "badge-soft-success"
-                                  : getInvoiceStatus(invoice) === "Unpaid"
-                                  ? "badge-soft-danger"
-                                  : getInvoiceStatus(invoice) === "Draft"
-                                  ? "badge-soft-info"
-                                  : getInvoiceStatus(invoice) === "Overdue"
-                                  ? "badge-soft-danger"
-                                  : "badge-soft-warning"
-                              }`}
-                            >
-                              <i className="ti ti-point-filled me-1"></i>
-                              {getInvoiceStatus(invoice)}
-                            </span>
-                          </td>
-                          <td className="action-buttons">
-                            <Link
-                              to={`/invoice/${invoice.invoiceId}`}
-                              className="btn btn-icon btn-sm btn-light me-1"
-                              title="View Invoice"
-                              data-bs-toggle="tooltip"
-                              data-bs-placement="top"
-                            >
-                              <FaEye />
-                            </Link>
-                            <button
-                              className="btn btn-icon btn-sm btn-primary me-1"
-                              title="Edit Invoice"
-                              onClick={() => handleEditClick(invoice)}
-                              data-bs-toggle="tooltip"
-                              data-bs-placement="top"
-                            >
-                              <FaEdit />
-                            </button>
-                            <button
-                              className="btn btn-icon btn-sm btn-danger"
-                              title="Delete Invoice"
-                              onClick={() => handleDeleteClick(invoice)}
-                              disabled={isDeleting}
-                              data-bs-toggle="tooltip"
-                              data-bs-placement="top"
-                            >
-                              <FaTrash />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  <div className="card-footer">
-                    <DataTablePagination
-                      totalItems={filteredInvoices.length}
-                      itemNo={itemsPerPage}
-                      onPageChange={handlePageChange}
-                    />
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
+                            #{invoice.invoiceNo}
+                          </Link>
+                        </h5>
+                        <Form.Check
+                          type="checkbox"
+                          checked={selectedInvoices.includes(invoice.invoiceId)}
+                          onChange={() => toggleInvoice(invoice.invoiceId)}
+                          aria-label={`Select invoice ${invoice.invoiceNo}`}
+                        />
+                      </div>
+                      <p className="card-text">
+                        <strong>Customer:</strong>{" "}
+                        {invoice.customerId &&
+                        customerMap[invoice.customerId?.trim()]
+                          ? customerMap[invoice.customerId.trim()]
+                          : normalizeName(invoice.billTo) || "Unknown Customer"}
+                      </p>
+                      <p className="card-text">
+                        <strong>Amount:</strong>{" "}
+                        {invoice.amount ? `Rs ${invoice.amount}` : "N/A"}
+                      </p>
+                      <p className="card-text">
+                        <strong>Invoice Date:</strong>{" "}
+                        {invoice.invoiceDate &&
+                        invoice.invoiceDate !== "0000-00-00"
+                          ? new Date(invoice.invoiceDate).toLocaleDateString()
+                          : "N/A"}
+                      </p>
+                      <p className="card-text">
+                        <strong>Due Date:</strong>{" "}
+                        {invoice.dueDate && invoice.dueDate !== "0000-00-00"
+                          ? new Date(invoice.dueDate).toLocaleDateString()
+                          : "N/A"}
+                      </p>
+                      <p className="card-text">
+                        <strong>Status:</strong>{" "}
+                        <span
+                          className={`status-badge status-${getInvoiceStatus(
+                            invoice
+                          ).toLowerCase()}`}
+                        >
+                          {getInvoiceStatus(invoice)}
+                        </span>
+                      </p>
+                      <div className="action-buttons mt-3">
+                        <Button
+                          variant="outline-primary"
+                          size="sm"
+                          as={Link}
+                          to={`/invoice/${invoice.invoiceId}`}
+                          title="View Invoice"
+                          aria-label={`View invoice ${invoice.invoiceNo}`}
+                        >
+                          <FaEye />
+                        </Button>
+                        <Button
+                          variant="outline-primary"
+                          size="sm"
+                          onClick={() => handleEditClick(invoice)}
+                          title="Edit Invoice"
+                          aria-label={`Edit invoice ${invoice.invoiceNo}`}
+                        >
+                          <FaEdit />
+                        </Button>
+                        <Button
+                          variant="outline-danger"
+                          size="sm"
+                          onClick={() => handleDeleteClick(invoice)}
+                          disabled={isDeleting}
+                          title="Delete Invoice"
+                          aria-label={`Delete invoice ${invoice.invoiceNo}`}
+                        >
+                          <FaTrash />
+                        </Button>
+                      </div>
+                    </Card.Body>
+                  </Card>
+                </Col>
+              ))}
+            </Row>
+          )}
 
-        {showEditModal && selectedInvoice && (
-          <EditInvoice
-            invoice={selectedInvoice}
-            onClose={() => {
-              setShowEditModal(false);
-              setSelectedInvoice(null);
-            }}
+          <div className="pagination-section mt-4">
+            <DataTablePagination
+              totalItems={filteredInvoices.length}
+              itemNo={itemsPerPage}
+              onPageChange={handlePageChange}
+            />
+          </div>
+
+          {showEditModal && selectedInvoice && (
+            <EditInvoice
+              invoice={selectedInvoice}
+              onClose={() => {
+                setShowEditModal(false);
+                setSelectedInvoice(null);
+              }}
+            />
+          )}
+
+          <DeleteModal
+            item={invoiceToDelete}
+            itemType="Invoice"
+            onConfirm={confirmDelete}
+            onCancel={cancelDelete}
+            isVisible={showDeleteModal}
           />
-        )}
-
-        <DeleteModal
-          item={invoiceToDelete}
-          itemType="Invoice"
-          onConfirm={confirmDelete}
-          onCancel={cancelDelete}
-          isVisible={showDeleteModal}
-        />
+        </Container>
       </div>
     </div>
   );

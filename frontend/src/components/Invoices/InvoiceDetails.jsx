@@ -4,7 +4,7 @@ import { useGetInvoiceByIdQuery } from "../../api/invoiceApi";
 import { useGetQuotationByIdQuery } from "../../api/quotationApi";
 import { useGetAddressByIdQuery } from "../../api/addressApi";
 import { useGetUserByIdQuery } from "../../api/userApi";
-import { useGetProductByIdQuery } from "../../api/productApi"; // Import product query
+import { useGetProductByIdQuery } from "../../api/productApi";
 import { globalStyles, componentStyles } from "./styles";
 
 // Subcomponent for each product row
@@ -39,6 +39,22 @@ const InvoiceDetails = () => {
   const { data, isLoading, isError } = useGetInvoiceByIdQuery(invoiceId);
   const invoice = data?.data || {};
 
+  // Parse products if it's a string
+  let products = invoice.products || [];
+  if (typeof products === "string") {
+    try {
+      products = JSON.parse(products);
+    } catch (e) {
+      console.error("Failed to parse products JSON:", e);
+      products = [];
+    }
+  }
+
+  // Ensure products is an array
+  if (!Array.isArray(products)) {
+    products = [];
+  }
+
   const {
     invoiceNo = "",
     createdBy = "",
@@ -50,9 +66,19 @@ const InvoiceDetails = () => {
     dueDate = "",
     paymentMethod = "",
     status = "Unknown",
-    products = [],
     signatureName = "",
   } = invoice || {};
+
+  // Debugging logs
+  console.log("Invoice:", invoice);
+  console.log(
+    "Products:",
+    products,
+    "Type:",
+    typeof products,
+    "IsArray:",
+    Array.isArray(products)
+  );
 
   const { data: createdByUser } = useGetUserByIdQuery(createdBy, {
     skip: !createdBy,
@@ -117,6 +143,7 @@ const InvoiceDetails = () => {
       </div>
     );
 
+  // Calculations
   const subTotal = products.reduce(
     (sum, p) => sum + (p.price || 0) * (p.quantity || 0),
     0
