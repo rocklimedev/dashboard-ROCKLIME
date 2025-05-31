@@ -1,6 +1,19 @@
-import React from "react";
+import React, { useState } from "react";
 import { useParams } from "react-router-dom";
-import PageHeader from "../Common/PageHeader";
+import {
+  Container,
+  Row,
+  Col,
+  Card,
+  Table,
+  Badge,
+  Spinner,
+  Alert,
+  Button,
+  Accordion,
+  OverlayTrigger,
+  Tooltip,
+} from "react-bootstrap";
 import {
   useGetCustomerByIdQuery,
   useGetInvoicesByCustomerIdQuery,
@@ -8,18 +21,22 @@ import {
 import { useGetAllUsersQuery } from "../../api/userApi";
 import { useGetAllAddressesQuery } from "../../api/addressApi";
 import {
-  FaReceipt,
-  FaMoneyBillAlt,
-  FaArchive,
-  FaBan,
-  FaRegEdit,
-  FaSyncAlt,
+  FaEye,
+  FaTrash,
+  FaUser,
+  FaEnvelope,
+  FaPhone,
+  FaBuilding,
+  FaGlobe,
+  FaMapMarkerAlt,
 } from "react-icons/fa";
+import "./customerdetails.css";
 
 const CustomerDetails = () => {
   const { id } = useParams();
+  const [activeAccordion, setActiveAccordion] = useState("0");
 
-  // Fetch customer details
+  // Fetch data
   const {
     data: customerData,
     error: customerError,
@@ -27,68 +44,87 @@ const CustomerDetails = () => {
   } = useGetCustomerByIdQuery(id);
   const customer = customerData?.data;
 
-  // Fetch invoices by customerId
   const {
-    data: invoicesByCustomerData,
+    data: invoicesData,
     error: invoiceError,
     isLoading: isInvoiceLoading,
   } = useGetInvoicesByCustomerIdQuery(customer?.customerId, {
     skip: !customer?.customerId,
   });
 
-  // Fetch all users to map createdBy to username
   const {
     data: usersData,
     error: usersError,
     isLoading: isUsersLoading,
   } = useGetAllUsersQuery();
-
-  // Fetch all addresses to map shipTo to address
   const {
     data: addressesData,
     error: addressesError,
     isLoading: isAddressesLoading,
   } = useGetAllAddressesQuery();
 
-  // Loading and error handling
+  // Loading state
   if (
     isCustomerLoading ||
     isInvoiceLoading ||
     isUsersLoading ||
     isAddressesLoading
   ) {
-    return <p>Loading customer details...</p>;
-  }
-  if (customerError || invoiceError || usersError || addressesError) {
     return (
-      <p>
-        Error fetching data:{" "}
-        {customerError?.data?.message ||
-          invoiceError?.data?.message ||
-          usersError?.data?.message ||
-          addressesError?.data?.message ||
-          "Unknown error"}
-      </p>
+      <Container className="text-center my-5">
+        <Spinner
+          animation="border"
+          variant="primary"
+          role="status"
+          aria-label="Loading"
+        />
+        <p className="mt-3">Loading customer details...</p>
+      </Container>
     );
   }
-  if (!customer) {
-    return <p>No customer data found.</p>;
+
+  // Error state
+  if (customerError || invoiceError || usersError || addressesError) {
+    return (
+      <Container className="my-5">
+        <Alert variant="danger" role="alert">
+          Error:{" "}
+          {customerError?.data?.message ||
+            invoiceError?.data?.message ||
+            usersError?.data?.message ||
+            addressesError?.data?.message ||
+            "Unknown error"}
+        </Alert>
+      </Container>
+    );
   }
 
-  const invoices = invoicesByCustomerData?.data || [];
+  // No customer data
+  if (!customer) {
+    return (
+      <Container className="my-5">
+        <Alert variant="warning" role="alert">
+          No customer data found.
+        </Alert>
+      </Container>
+    );
+  }
+
+  const invoices = invoicesData?.data || [];
   const users = usersData?.data || [];
   const addresses = addressesData?.data || [];
 
-  // Format address for display
+  // Helper functions
   const formatAddress = (shipTo) => {
     const address = addresses.find((addr) => addr.addressId === shipTo);
     if (!address) return "No address available";
     const { street, city, state, postalCode, country } = address;
-    const parts = [street, city, state, postalCode, country].filter(Boolean);
-    return parts.length > 0 ? parts.join(", ") : "No address available";
+    return (
+      [street, city, state, postalCode, country].filter(Boolean).join(", ") ||
+      "No address available"
+    );
   };
 
-  // Map userId to username
   const getUsername = (userId) => {
     const user = users.find((u) => u.userId === userId);
     return user ? user.username || user.name || "Unknown User" : "Unknown User";
@@ -96,195 +132,189 @@ const CustomerDetails = () => {
 
   return (
     <div className="page-wrapper">
-      <div className="content container-fluid">
-        <PageHeader title="Customer Details" />
+      <div className="content">
+        <Container fluid className="customer-details-container">
+          <h1 className="page-title mb-4">{customer.name}</h1>
 
-        <div className="card customer-details-group">
-          <div className="card-body">
-            <div className="row align-items-center">
-              <div className="col-xl-3 col-lg-4 col-md-6 col-12">
-                <div className="customer-details">
-                  <div className="d-flex align-items-center">
-                    <div className="customer-details-cont">
-                      <h6>Name</h6>
-                      <p>{customer.name}</p>
+          {/* Accordion for Customer Info and Invoices */}
+          <Accordion
+            activeKey={activeAccordion}
+            onSelect={(key) => setActiveAccordion(key)}
+            className="customer-accordion"
+          >
+            {/* Customer Information */}
+            <Accordion.Item eventKey="0">
+              <Accordion.Header>
+                <FaUser className="me-2" /> Customer Information
+              </Accordion.Header>
+              <Accordion.Body>
+                <Card className="customer-card shadow-sm">
+                  <Card.Body>
+                    <Row>
+                      <Col md={6} lg={4} className="mb-3">
+                        <div className="customer-info d-flex align-items-center">
+                          <FaEnvelope className="info-icon me-3" />
+                          <div>
+                            <h6 className="info-label">Email</h6>
+                            <p>{customer.email}</p>
+                          </div>
+                        </div>
+                      </Col>
+                      <Col md={6} lg={4} className="mb-3">
+                        <div className="customer-info d-flex align-items-center">
+                          <FaPhone className="info-icon me-3" />
+                          <div>
+                            <h6 className="info-label">Phone</h6>
+                            <p>{customer.mobileNumber}</p>
+                          </div>
+                        </div>
+                      </Col>
+                      <Col md={6} lg={4} className="mb-3">
+                        <div className="customer-info d-flex align-items-center">
+                          <FaBuilding className="info-icon me-3" />
+                          <div>
+                            <h6 className="info-label">Company</h6>
+                            <p>{customer.companyName || "N/A"}</p>
+                          </div>
+                        </div>
+                      </Col>
+                      <Col md={6} lg={4} className="mb-3">
+                        <div className="customer-info d-flex align-items-center">
+                          <FaGlobe className="info-icon me-3" />
+                          <div>
+                            <h6 className="info-label">Website</h6>
+                            <p>{customer.website || "N/A"}</p>
+                          </div>
+                        </div>
+                      </Col>
+                      <Col md={6} lg={4} className="mb-3">
+                        <div className="customer-info d-flex align-items-center">
+                          <FaMapMarkerAlt className="info-icon me-3" />
+                          <div>
+                            <h6 className="info-label">Address</h6>
+                            <p>{formatAddress(customer.address)}</p>
+                          </div>
+                        </div>
+                      </Col>
+                    </Row>
+                  </Card.Body>
+                </Card>
+              </Accordion.Body>
+            </Accordion.Item>
+
+            {/* Invoices */}
+            <Accordion.Item eventKey="1">
+              <Accordion.Header>
+                <FaEye className="me-2" /> Invoices
+              </Accordion.Header>
+              <Accordion.Body>
+                <Card className="shadow-sm">
+                  <Card.Body>
+                    <div className="table-responsive">
+                      <Table hover className="customer-table">
+                        <thead>
+                          <tr>
+                            <th>
+                              <input
+                                type="checkbox"
+                                aria-label="Select all invoices"
+                              />
+                            </th>
+                            <th>Invoice No</th>
+                            <th>Bill To</th>
+                            <th>Ship To</th>
+                            <th>Invoice Date</th>
+                            <th>Due Date</th>
+                            <th>Amount</th>
+                            <th>Created By</th>
+                            <th>Status</th>
+                            <th className="text-end">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {invoices.map((invoice) => (
+                            <tr key={invoice.invoiceId}>
+                              <td>
+                                <input
+                                  type="checkbox"
+                                  aria-label={`Select invoice ${invoice.invoiceNo}`}
+                                />
+                              </td>
+                              <td>
+                                <a
+                                  href={`/invoice/${invoice.invoiceId}`}
+                                  className="invoice-link"
+                                >
+                                  {invoice.invoiceNo}
+                                </a>
+                              </td>
+                              <td>{invoice.billTo}</td>
+                              <td>{formatAddress(invoice.shipTo)}</td>
+                              <td>
+                                {new Date(
+                                  invoice.invoiceDate
+                                ).toLocaleDateString()}
+                              </td>
+                              <td>
+                                {new Date(invoice.dueDate).toLocaleDateString()}
+                              </td>
+                              <td>${invoice.amount}</td>
+                              <td>{getUsername(invoice.createdBy)}</td>
+                              <td>
+                                <Badge
+                                  bg={
+                                    invoice.status === "Paid"
+                                      ? "success"
+                                      : invoice.status === "Unpaid"
+                                      ? "danger"
+                                      : "warning"
+                                  }
+                                >
+                                  {invoice.status}
+                                </Badge>
+                              </td>
+                              <td className="text-end">
+                                <OverlayTrigger
+                                  overlay={<Tooltip>View Invoice</Tooltip>}
+                                >
+                                  <Button
+                                    variant="outline-primary"
+                                    size="sm"
+                                    href={`invoices/${invoice.invoiceId}`}
+                                    target="_blank"
+                                    className="me-2 action-btn"
+                                    aria-label={`View invoice ${invoice.invoiceNo}`}
+                                  >
+                                    <FaEye />
+                                  </Button>
+                                </OverlayTrigger>
+                                <OverlayTrigger
+                                  overlay={<Tooltip>Delete Invoice</Tooltip>}
+                                >
+                                  <Button
+                                    variant="outline-danger"
+                                    size="sm"
+                                    href="#"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#delete"
+                                    className="action-btn"
+                                    aria-label={`Delete invoice ${invoice.invoiceNo}`}
+                                  >
+                                    <FaTrash />
+                                  </Button>
+                                </OverlayTrigger>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </Table>
                     </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="col-xl-3 col-lg-4 col-md-6 col-12">
-                <div className="customer-details">
-                  <div className="d-flex align-items-center">
-                    <span className="customer-widget-icon d-inline-flex">
-                      <i className="fe fe-mail"></i>
-                    </span>
-                    <div className="customer-details-cont">
-                      <h6>Email Address</h6>
-                      <p>{customer.email}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="col-xl-3 col-lg-4 col-md-6 col-12">
-                <div className="customer-details">
-                  <div className="d-flex align-items-center">
-                    <span className="customer-widget-icon d-inline-flex">
-                      <i className="fe fe-phone"></i>
-                    </span>
-                    <div className="customer-details-cont">
-                      <h6>Phone Number</h6>
-                      <p>{customer.mobileNumber}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="col-xl-3 col-lg-4 col-md-6 col-12">
-                <div className="customer-details">
-                  <div className="d-flex align-items-center">
-                    <span className="customer-widget-icon d-inline-flex">
-                      <i className="fe fe-briefcase"></i>
-                    </span>
-                    <div className="customer-details-cont">
-                      <h6>Company Name</h6>
-                      <p>{customer.companyName || "N/A"}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="col-xl-3 col-lg-4 col-md-6 col-12">
-                <div className="customer-details">
-                  <div className="d-flex align-items-center">
-                    <span className="customer-widget-icon d-inline-flex">
-                      <i className="fe fe-globe"></i>
-                    </span>
-                    <div className="customer-details-cont">
-                      <h6>Website</h6>
-                      <p>{customer.website || "N/A"}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="col-xl-3 col-lg-4 col-md-6 col-12">
-                <div className="customer-details">
-                  <div className="d-flex align-items-center">
-                    <span className="customer-widget-icon d-inline-flex">
-                      <i className="fe fe-map-pin"></i>
-                    </span>
-                    <div className="customer-details-cont">
-                      <h6>Address</h6>
-                      <p>{formatAddress(customer.address)}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="row">
-          <div className="col-sm-12">
-            <div className="card-table">
-              <div className="card-body">
-                <div className="table-responsive">
-                  <table className="table table-stripped table-hover datatable">
-                    <thead className="thead-light">
-                      <tr>
-                        <th>
-                          <label className="custom_check">
-                            <input type="checkbox" name="invoice" />
-                            <span className="checkmark"></span>
-                          </label>
-                        </th>
-                        <th>Invoice No</th>
-                        <th>Customer</th>
-                        <th>Bill To</th>
-                        <th>Ship To</th>
-                        <th>Invoice Date</th>
-                        <th>Due Date</th>
-                        <th>Amount</th>
-                        <th>Created By</th>
-                        <th>Status</th>
-                        <th className="text-end">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {invoices.map((invoice) => (
-                        <tr key={invoice.invoiceId}>
-                          <td>
-                            <label className="checkboxs">
-                              <input type="checkbox" />
-                              <span className="checkmarks"></span>
-                            </label>
-                          </td>
-                          <td>
-                            <a href={`/invoice/${invoice.invoiceId}`}>
-                              {invoice.invoiceNo}
-                            </a>
-                          </td>
-                          <td>{customer.name}</td>
-                          <td>{invoice.billTo}</td>
-                          <td>{formatAddress(invoice.shipTo)}</td>
-                          <td>
-                            {new Date(invoice.invoiceDate).toLocaleDateString()}
-                          </td>
-                          <td>
-                            {new Date(invoice.dueDate).toLocaleDateString()}
-                          </td>
-                          <td>${invoice.amount}</td>
-                          <td>{getUsername(invoice.createdBy)}</td>
-                          <td>
-                            <span
-                              className={`badge ${
-                                invoice.status === "Paid"
-                                  ? "badge-soft-success"
-                                  : invoice.status === "Unpaid"
-                                  ? "badge-soft-danger"
-                                  : "badge-soft-warning"
-                              } badge-xs shadow-none`}
-                            >
-                              <i className="ti ti-point-filled me-1"></i>
-                              {invoice.status}
-                            </span>
-                          </td>
-                          <td className="d-flex">
-                            <div className="edit-delete-action d-flex align-items-center justify-content-center">
-                              <a
-                                className="me-2 p-2 d-flex align-items-center justify-content-between border rounded"
-                                target="_blank"
-                                href={`invoices/${invoice.invoiceId}`}
-                              >
-                                <i
-                                  data-feather="eye"
-                                  className="feather-eye"
-                                ></i>
-                              </a>
-                              <a
-                                className="p-2 d-flex align-items-center justify-content-between border rounded"
-                                href="#"
-                                data-bs-toggle="modal"
-                                data-bs-target="#delete"
-                              >
-                                <i
-                                  data-feather="trash-2"
-                                  className="feather-trash-2"
-                                ></i>
-                              </a>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+                  </Card.Body>
+                </Card>
+              </Accordion.Body>
+            </Accordion.Item>
+          </Accordion>
+        </Container>
       </div>
     </div>
   );

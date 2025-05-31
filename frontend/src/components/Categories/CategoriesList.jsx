@@ -11,7 +11,7 @@ import DataTablePagination from "../Common/DataTablePagination";
 import Keyword from "./Keyword";
 import { AiOutlineEdit } from "react-icons/ai";
 import { FcFullTrash } from "react-icons/fc";
-import { toast } from "sonner"; // Changed import
+import { toast } from "sonner";
 
 const CategoriesList = () => {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -68,7 +68,6 @@ const CategoriesList = () => {
     return categoryNameMatch && parentNameMatch && matchesParentId;
   });
 
-  // Define itemsPerPage before paginatedCategories
   const itemsPerPage = 20;
 
   const formattedCategories = filteredCategories.map((category) => ({
@@ -92,7 +91,7 @@ const CategoriesList = () => {
 
   const handleDelete = async (category) => {
     if (!category || !category.categoryId) {
-      toast.error("Invalid category or category ID"); // Sonner toast
+      toast.error("Invalid category or category ID");
       return;
     }
 
@@ -103,9 +102,9 @@ const CategoriesList = () => {
       if (paginatedCategories.length === 1 && categoryPage > 1) {
         setCategoryPage(categoryPage - 1);
       }
-      toast.success("Category deleted successfully!"); // Sonner toast
+      toast.success("Category deleted successfully!");
     } catch (err) {
-      toast.error(err?.data?.message || "Delete failed"); // Sonner toast
+      toast.error(err?.data?.message || "Delete failed");
     }
   };
 
@@ -175,78 +174,86 @@ const CategoriesList = () => {
               </div>
             </div>
 
-            <div className="card">
-              <div className="card-body p-0">
-                <div className="table-responsive">
-                  <table className="table datatable">
-                    <thead className="thead-light">
-                      <tr>
-                        <th>Category</th>
-                        <th>Parent Category</th>
-                        <th>Created On</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {paginatedCategories.map((category) => {
-                        const parentName =
-                          parentCategories.find(
-                            (p) => p.id === category.parentCategoryId
-                          )?.name || "N/A";
-
-                        return (
-                          <tr key={category.categoryId}>
-                            <td>{category.name}</td>
-                            <td>{parentName}</td>
-                            <td>
-                              {new Date(
-                                category.createdAt
-                              ).toLocaleDateString()}
-                            </td>
-                            <td className="action-table-data">
-                              <div className="edit-delete-action">
-                                <a
-                                  className="me-2 p-2"
-                                  title="Edit"
-                                  onClick={() => {
-                                    setEditingCategory(category);
-                                    setShowCategoryModal(true);
-                                  }}
-                                >
-                                  <AiOutlineEdit />
-                                </a>
-                                <a
-                                  className="me-2 p-2"
-                                  title="Delete"
-                                  onClick={() => {
-                                    setCategoryToDelete(category);
-                                    setShowDeleteModal(true);
-                                  }}
-                                >
-                                  <FcFullTrash />
-                                </a>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                      {paginatedCategories.length === 0 && (
-                        <tr>
-                          <td colSpan="4" className="text-center">
-                            No categories found.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                  <DataTablePagination
-                    totalItems={filteredCategories.length}
-                    itemNo={itemsPerPage}
-                    onPageChange={setCategoryPage}
-                  />
+            <div className="row">
+              {/* Add Category Card */}
+              <div className="col-md-4 col-lg-3 mb-3">
+                <div
+                  className="card h-100 d-flex align-items-center justify-content-center"
+                  style={{ cursor: "pointer" }}
+                  onClick={handleAddCategory}
+                >
+                  <div className="card-body text-center">
+                    <h5 className="card-title">Add New Category</h5>
+                    <p className="card-text">
+                      Click here to create a new category
+                    </p>
+                    <button className="btn btn-primary">Add Category</button>
+                  </div>
                 </div>
               </div>
+
+              {/* Category Cards */}
+              {paginatedCategories.map((category) => {
+                const parentName =
+                  parentCategories.find(
+                    (p) => p.id === category.parentCategoryId
+                  )?.name || "N/A";
+
+                return (
+                  <div
+                    key={category.categoryId}
+                    className="col-md-4 col-lg-3 mb-3"
+                  >
+                    <div className="card h-100">
+                      <div className="card-body">
+                        <h5 className="card-title">{category.name}</h5>
+                        <p className="card-text">
+                          <strong>Parent Category:</strong> {parentName}
+                          <br />
+                          <strong>Created On:</strong>{" "}
+                          {new Date(category.createdAt).toLocaleDateString()}
+                        </p>
+                        <div className="d-flex justify-content-end">
+                          <a
+                            className="me-2"
+                            title="Edit"
+                            onClick={() => {
+                              setEditingCategory(category);
+                              setShowCategoryModal(true);
+                            }}
+                            style={{ cursor: "pointer" }}
+                          >
+                            <AiOutlineEdit size={20} />
+                          </a>
+                          <a
+                            title="Delete"
+                            onClick={() => {
+                              setCategoryToDelete(category);
+                              setShowDeleteModal(true);
+                            }}
+                            style={{ cursor: "pointer" }}
+                          >
+                            <FcFullTrash size={20} />
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {paginatedCategories.length === 0 && (
+                <div className="col-12">
+                  <p className="text-center">No categories found.</p>
+                </div>
+              )}
             </div>
+
+            <DataTablePagination
+              totalItems={filteredCategories.length}
+              itemNo={itemsPerPage}
+              onPageChange={setCategoryPage}
+            />
           </Tab>
 
           <Tab eventKey="keywords" title="Keywords">

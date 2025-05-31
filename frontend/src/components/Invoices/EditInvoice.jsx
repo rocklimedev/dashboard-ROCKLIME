@@ -21,9 +21,16 @@ const EditInvoice = ({ invoice, onClose }) => {
   } = useGetCustomersQuery();
 
   const customers = customersResponse?.data || [];
-  const addresses = addressesData || [];
+  const addresses = useMemo(
+    () =>
+      Array.isArray(addressesData?.data)
+        ? addressesData.data
+        : Array.isArray(addressesData)
+        ? addressesData
+        : [],
+    [addressesData]
+  );
 
-  // Initialize form data with safe defaults
   const [formData, setFormData] = useState({
     invoiceNo: invoice.invoiceNo || "",
     customerId: invoice.customerId || "",
@@ -38,20 +45,46 @@ const EditInvoice = ({ invoice, onClose }) => {
         ? new Date(invoice.dueDate).toISOString().split("T")[0]
         : "",
     amount: parseFloat(invoice.amount) || 0,
-    paymentMethod: invoice.paymentMethod || "",
+    paymentMethod: invoice.paymentMethod
+      ? typeof invoice.paymentMethod === "string" &&
+        invoice.paymentMethod.startsWith("{")
+        ? JSON.parse(invoice.paymentMethod).method
+        : invoice.paymentMethod
+      : "",
     status: invoice.status || "Draft",
     signatureName: invoice.signatureName || "",
   });
 
-  const [products, setProducts] = useState(
-    invoice.products && invoice.products.length > 0
-      ? invoice.products
-      : [{ productId: "", price: 0, quantity: 1 }]
-  );
+  const [products, setProducts] = useState(() => {
+    let initialProducts = [];
+
+    if (invoice?.products) {
+      try {
+        const parsedProducts =
+          typeof invoice.products === "string"
+            ? JSON.parse(invoice.products)
+            : invoice.products;
+
+        if (Array.isArray(parsedProducts) && parsedProducts.length > 0) {
+          initialProducts = parsedProducts
+            .filter((prod) => prod.productId)
+            .map((prod) => ({
+              productId: prod.productId || "",
+              price: parseFloat(prod.price) || 0,
+              quantity: parseInt(prod.quantity) || 1,
+            }));
+        }
+      } catch (err) {
+        console.error("Failed to parse invoice.products:", err);
+      }
+    }
+
+    return initialProducts;
+  });
+
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Set customerId when customers load or invoice.customerId changes
   useEffect(() => {
     if (customers.length > 0 && invoice.customerId) {
       const customerExists = customers.find(
@@ -68,16 +101,24 @@ const EditInvoice = ({ invoice, onClose }) => {
     }
   }, [customers, invoice.customerId, formData.customerId]);
 
-  // Debug logging
   useEffect(() => {
     console.log("Invoice Prop:", invoice);
+    console.log("Invoice.products Type:", typeof invoice.products);
+    console.log("Invoice.products Value:", invoice.products);
+    console.log("Products State:", products);
     console.log("Customers:", customers);
     console.log("Current customerId:", formData.customerId);
     console.log("Addresses:", addresses);
     console.log("Current shipTo:", formData.shipTo);
-  }, [invoice, customers, formData.customerId, addresses, formData.shipTo]);
+  }, [
+    invoice,
+    products,
+    customers,
+    formData.customerId,
+    addresses,
+    formData.shipTo,
+  ]);
 
-  // Memoized product search results
   const searchResults = useMemo(() => {
     if (!searchTerm) return [];
     return allProducts
@@ -87,14 +128,12 @@ const EditInvoice = ({ invoice, onClose }) => {
       .slice(0, 10);
   }, [searchTerm, allProducts]);
 
-  // Handle form input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setError(null);
   };
 
-  // Handle product field changes
   const handleProductChange = (index, field, value) => {
     const updatedProducts = [...products];
     updatedProducts[index] = { ...updatedProducts[index], [field]: value };
@@ -102,27 +141,34 @@ const EditInvoice = ({ invoice, onClose }) => {
     updateTotalAmount(updatedProducts);
   };
 
-  // Add a product from search results
   const handleAddProduct = (product) => {
+    if (!product.productId) {
+      setError("Cannot add product: Invalid product ID.");
+      return;
+    }
     const newProduct = {
       productId: product.productId,
       price: parseFloat(product.sellingPrice) || 0,
       quantity: 1,
     };
-    const updatedProducts = [...products, newProduct];
+    const updatedProducts = products.some((p) => !p.productId)
+      ? products.filter((p) => p.productId).concat(newProduct)
+      : [...products, newProduct];
     setProducts(updatedProducts);
     updateTotalAmount(updatedProducts);
     setSearchTerm("");
   };
 
-  // Remove a product
   const handleRemoveProduct = (index) => {
+    if (products.length === 1 && products[0].productId) {
+      setError("At least one product is required.");
+      return;
+    }
     const updatedProducts = products.filter((_, i) => i !== index);
     setProducts(updatedProducts);
     updateTotalAmount(updatedProducts);
   };
 
-  // Calculate total amount based on products
   const updateTotalAmount = (updatedProducts) => {
     const total = updatedProducts.reduce(
       (sum, prod) =>
@@ -132,13 +178,11 @@ const EditInvoice = ({ invoice, onClose }) => {
     setFormData((prev) => ({ ...prev, amount: total.toFixed(2) }));
   };
 
-  // Get product name by ID
   const getProductName = (productId) => {
     const product = allProducts.find((p) => p.productId === productId);
     return product ? product.name : "Unknown Product";
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
@@ -148,8 +192,18 @@ const EditInvoice = ({ invoice, onClose }) => {
       setError("Please select a customer.");
       return;
     }
-    if (!customers.find((c) => c.customerId === formData.customerId)) {
-      setError("Selected customer is invalid.");
+    const customer = customers.find(
+      (c) => c.customerId === formData.customerId
+    );
+    if (!customer) {
+      setError("Selected customer is invalid or not found.");
+      return;
+    }
+    if (
+      formData.shipTo &&
+      !addresses.find((a) => a.addressId === formData.shipTo)
+    ) {
+      setError("Selected shipping address is invalid.");
       return;
     }
     if (!formData.status) {
@@ -160,44 +214,65 @@ const EditInvoice = ({ invoice, onClose }) => {
       setError("Invoice date is required.");
       return;
     }
-    if (products.length === 0 || products.some((p) => !p.productId)) {
-      setError("At least one valid product is required.");
+    if (products.length === 0) {
+      setError("Please add at least one product.");
+      return;
+    }
+    if (products.some((p) => !p.productId || p.productId.trim() === "")) {
+      setError("All products must have a valid product ID.");
+      return;
+    }
+    if (
+      products.some(
+        (p) => !allProducts.find((prod) => prod.productId === p.productId)
+      )
+    ) {
+      setError("One or more selected products are invalid or not found.");
       return;
     }
 
-    // Construct invoiceData
     const invoiceData = {
       customerId: formData.customerId,
       billTo: formData.billTo || null,
       shipTo: formData.shipTo || null,
-      invoiceDate: formData.invoiceDate,
-      dueDate: formData.dueDate || null,
+      invoiceDate: formData.invoiceDate
+        ? new Date(formData.invoiceDate).toISOString()
+        : null,
+      dueDate: formData.dueDate
+        ? new Date(formData.dueDate).toISOString()
+        : null,
       amount: parseFloat(formData.amount) || 0,
-      paymentMethod: formData.paymentMethod || null,
+      paymentMethod: formData.paymentMethod
+        ? JSON.stringify({ method: formData.paymentMethod })
+        : null,
       status: formData.status,
       signatureName: formData.signatureName || null,
-      products: products.map((prod) => ({
-        productId: prod.productId,
-        price: parseFloat(prod.price) || 0,
-        quantity: parseInt(prod.quantity) || 1,
-      })),
+      products: JSON.stringify(
+        products.map((prod) => ({
+          productId: prod.productId,
+          price: parseFloat(prod.price) || 0,
+          quantity: parseInt(prod.quantity) || 1,
+        }))
+      ),
     };
 
     const payload = {
       invoiceId: invoice.invoiceId,
-      ...invoiceData, // Flatten invoiceData into payload
+      ...invoiceData,
     };
 
     console.log("Submitting Payload:", payload);
 
     try {
       const response = await updateInvoice(payload).unwrap();
-
+      console.log("Update Invoice Response:", response);
       onClose();
     } catch (err) {
-      console.error("Update Invoice Error:", err);
+      console.error("Update Invoice Error:", err, "Response Data:", err.data);
       setError(
-        err.data?.message || "Failed to update invoice. Please try again."
+        err.data?.message ||
+          err.data?.errors?.join(", ") ||
+          "Failed to update invoice. Please try again."
       );
     }
   };
@@ -407,6 +482,11 @@ const EditInvoice = ({ invoice, onClose }) => {
               <h6 className="mt-4">Products</h6>
               {isProductsLoading ? (
                 <div>Loading products...</div>
+              ) : products.length === 0 ||
+                products.every((p) => !p.productId) ? (
+                <div className="alert alert-warning">
+                  Please add at least one product.
+                </div>
               ) : (
                 <table className="table table-bordered">
                   <thead>
@@ -418,50 +498,52 @@ const EditInvoice = ({ invoice, onClose }) => {
                     </tr>
                   </thead>
                   <tbody>
-                    {products.map((prod, index) => (
-                      <tr key={index}>
-                        <td>{getProductName(prod.productId)}</td>
-                        <td>
-                          <input
-                            type="number"
-                            className="form-control"
-                            value={prod.price}
-                            onChange={(e) =>
-                              handleProductChange(
-                                index,
-                                "price",
-                                e.target.value
-                              )
-                            }
-                            min="0"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            className="form-control"
-                            value={prod.quantity}
-                            onChange={(e) =>
-                              handleProductChange(
-                                index,
-                                "quantity",
-                                e.target.value
-                              )
-                            }
-                            min="1"
-                          />
-                        </td>
-                        <td>
-                          <button
-                            type="button"
-                            className="btn btn-danger"
-                            onClick={() => handleRemoveProduct(index)}
-                          >
-                            Remove
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                    {products
+                      .filter((prod) => prod.productId)
+                      .map((prod, index) => (
+                        <tr key={index}>
+                          <td>{getProductName(prod.productId)}</td>
+                          <td>
+                            <input
+                              type="number"
+                              className="form-control"
+                              value={prod.price}
+                              onChange={(e) =>
+                                handleProductChange(
+                                  index,
+                                  "price",
+                                  e.target.value
+                                )
+                              }
+                              min="0"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              className="form-control"
+                              value={prod.quantity}
+                              onChange={(e) =>
+                                handleProductChange(
+                                  index,
+                                  "quantity",
+                                  e.target.value
+                                )
+                              }
+                              min="1"
+                            />
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              className="btn btn-danger"
+                              onClick={() => handleRemoveProduct(index)}
+                            >
+                              Remove
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
                   </tbody>
                 </table>
               )}
@@ -480,7 +562,9 @@ const EditInvoice = ({ invoice, onClose }) => {
                     isUpdating ||
                     isCustomersLoading ||
                     isProductsLoading ||
-                    customers.length === 0
+                    customers.length === 0 ||
+                    products.length === 0 ||
+                    products.some((p) => !p.productId)
                   }
                 >
                   {isUpdating ? "Updating..." : "Update Invoice"}

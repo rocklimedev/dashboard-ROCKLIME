@@ -1,19 +1,15 @@
 import React, { useState } from "react";
-import { Tabs, Tab } from "react-bootstrap";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import {
   useGetAllKeywordsQuery,
   useDeleteKeywordMutation,
 } from "../../api/keywordApi";
-import { useGetAllParentCategoriesQuery } from "../../api/parentCategoryApi";
-import { useDeleteCategoryMutation } from "../../api/categoryApi";
 import PageHeader from "../Common/PageHeader";
-import AddCategoryModal from "./AddCategoryModal";
 import AddKeywordModal from "./AddKeywordModal";
 import DeleteModal from "../Common/DeleteModal";
 import DataTablePagination from "../Common/DataTablePagination";
 import { AiOutlineEdit } from "react-icons/ai";
-import { FcFullTrash, FcEmptyTrash } from "react-icons/fc";
+import { FcEmptyTrash } from "react-icons/fc";
 import { toast } from "sonner";
 
 const Keyword = ({ onClose, showModal }) => {
@@ -59,7 +55,6 @@ const Keyword = ({ onClose, showModal }) => {
       ? keywords
       : keywords.filter((k) => k.categoryId === selectedCategoryId);
 
-  // Format keywords for tableData prop
   const formattedKeywords = filteredKeywords.map((keyword) => ({
     id: keyword.id,
     keyword: keyword.keyword,
@@ -120,12 +115,12 @@ const Keyword = ({ onClose, showModal }) => {
         title="Keywords"
         subtitle="Manage your keywords by category"
         onAdd={handleAddKeyword}
-        tableData={formattedKeywords} // Pass formatted keywords for Excel/PDF
+        tableData={formattedKeywords}
       />
 
       <div className="card">
         <div className="card-header d-flex justify-content-between align-items-center">
-          <h5 className="mb-0">Keywords Table</h5>
+          <h5 className="mb-0">Keywords</h5>
           <select
             className="form-select w-auto"
             value={selectedCategoryId}
@@ -143,67 +138,77 @@ const Keyword = ({ onClose, showModal }) => {
           </select>
         </div>
 
-        <div className="card-body p-0">
-          <div className="table-responsive">
-            <table className="table datatable">
-              <thead className="thead-light">
-                <tr>
-                  <th>Keyword</th>
-                  <th>Category</th>
-                  <th>Created On</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginated.length === 0 ? (
-                  <tr>
-                    <td colSpan="4" className="text-center">
-                      No keywords found for selected category.
-                    </td>
-                  </tr>
-                ) : (
-                  paginated.map((keyword) => (
-                    <tr key={keyword.id}>
-                      <td>{keyword.keyword}</td>
-                      <td>
-                        {categoryMap[keyword.categoryId] || "Uncategorized"}
-                      </td>
-                      <td>
-                        {new Date(keyword.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="action-table-data">
-                        <div className="edit-delete-action">
-                          <a
-                            className="me-2 p-2"
-                            href="#"
-                            onClick={() => handleEdit(keyword)}
-                          >
-                            <AiOutlineEdit />
-                          </a>
-                          <a
-                            className="p-2"
-                            href="#"
-                            onClick={() => {
-                              setKeywordToDelete(keyword);
-                              setShowDeleteModal(true);
-                            }}
-                          >
-                            <FcEmptyTrash />
-                          </a>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+        <div className="card-body">
+          <div className="row">
+            {/* Add Keyword Card */}
+            <div className="col-md-4 col-lg-3 mb-3">
+              <div
+                className="card h-100 d-flex align-items-center justify-content-center"
+                style={{ cursor: "pointer" }}
+                onClick={handleAddKeyword}
+              >
+                <div className="card-body text-center">
+                  <h5 className="card-title">Add New Keyword</h5>
+                  <p className="card-text">
+                    Click here to create a new keyword
+                  </p>
+                  <button className="btn btn-primary">Add Keyword</button>
+                </div>
+              </div>
+            </div>
 
-            <DataTablePagination
-              totalItems={filteredKeywords.length}
-              itemNo={itemsPerPage}
-              onPageChange={setKeywordPage}
-            />
+            {/* Keyword Cards */}
+            {paginated.map((keyword) => (
+              <div key={keyword.id} className="col-md-4 col-lg-3 mb-3">
+                <div className="card h-100">
+                  <div className="card-body">
+                    <h5 className="card-title">{keyword.keyword}</h5>
+                    <p className="card-text">
+                      <strong>Category:</strong>{" "}
+                      {categoryMap[keyword.categoryId] || "Uncategorized"}
+                      <br />
+                      <strong>Created On:</strong>{" "}
+                      {new Date(keyword.createdAt).toLocaleDateString()}
+                    </p>
+                    <div className="d-flex justify-content-end">
+                      <a
+                        className="me-2"
+                        title="Edit"
+                        onClick={() => handleEdit(keyword)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <AiOutlineEdit size={20} />
+                      </a>
+                      <a
+                        title="Delete"
+                        onClick={() => {
+                          setKeywordToDelete(keyword);
+                          setShowDeleteModal(true);
+                        }}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <FcEmptyTrash size={20} />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {paginated.length === 0 && (
+              <div className="col-12">
+                <p className="text-center">
+                  No keywords found for selected category.
+                </p>
+              </div>
+            )}
           </div>
+
+          <DataTablePagination
+            totalItems={filteredKeywords.length}
+            itemNo={itemsPerPage}
+            onPageChange={setKeywordPage}
+          />
         </div>
       </div>
 
@@ -229,4 +234,5 @@ const Keyword = ({ onClose, showModal }) => {
     </>
   );
 };
+
 export default Keyword;

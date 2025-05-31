@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import {
   useGetCartQuery,
@@ -17,6 +17,7 @@ import { BiTrash } from "react-icons/bi";
 import InvoiceDetails from "../POS/InvoiceDetails";
 import { v4 as uuidv4 } from "uuid";
 import { useGetAllAddressesQuery } from "../../api/addressApi";
+
 const generateInvoiceNumber = () => {
   const timestamp = Date.now().toString().slice(-6);
   const random = Math.floor(1000 + Math.random() * 9000);
@@ -49,6 +50,7 @@ const OrderCart = ({ onConvertToOrder }) => {
     data: addressesData,
     isLoading: addressesLoading,
     isError: addressesError,
+    refetch: refetchAddresses,
   } = useGetAllAddressesQuery(userId, { skip: !userId });
 
   const [updateCart] = useUpdateCartMutation();
@@ -70,13 +72,28 @@ const OrderCart = ({ onConvertToOrder }) => {
   const [invoiceNumber, setInvoiceNumber] = useState(generateInvoiceNumber());
 
   const customers = customerData?.data || [];
-  const customerList = Array.isArray(customers) ? customers : [];
-  const addresses = Array.isArray(addressesData?.data)
-    ? addressesData.data
-    : [];
-  const cartItems = Array.isArray(cartData?.cart?.items)
-    ? cartData.cart.items
-    : [];
+  const customerList = useMemo(
+    () => (Array.isArray(customers) ? customers : []),
+    [customers]
+  );
+  const addresses = useMemo(
+    () =>
+      Array.isArray(addressesData?.data)
+        ? addressesData.data
+        : Array.isArray(addressesData)
+        ? addressesData
+        : [],
+    [addressesData]
+  );
+  const cartItems = useMemo(
+    () => (Array.isArray(cartData?.cart?.items) ? cartData.cart.items : []),
+    [cartData]
+  );
+
+  useEffect(() => {
+    console.log("OrderCart addressesData:", addressesData);
+    console.log("OrderCart addresses:", addresses);
+  }, [addressesData, addresses]);
 
   const totalItems = cartItems.reduce(
     (acc, item) => acc + (item.quantity || 0),
@@ -87,54 +104,53 @@ const OrderCart = ({ onConvertToOrder }) => {
     0
   );
 
-  // Set billTo and attempt to match shipTo when customer is selected
   useEffect(() => {
     if (selectedCustomer && addresses.length > 0) {
       const selectedCustomerData = customerList.find(
         (customer) => customer.customerId === selectedCustomer
       );
       if (selectedCustomerData) {
-        // Default billTo to customer name, user can edit
-        setInvoiceData((prev) => ({
-          ...prev,
-          billTo: selectedCustomerData.name || "",
-          shipTo: null,
-        }));
+        setInvoiceData((prev) => {
+          const newBillTo = selectedCustomerData.name || prev.billTo;
+          let newShipTo = null;
 
-        // Match customer's address JSON to addresses table
-        if (selectedCustomerData.address) {
-          const customerAddress = selectedCustomerData.address;
-          // Normalize customer address keys (e.g., zipCode to postalCode)
-          const normalizedCustomerAddress = {
-            street: customerAddress.street || "",
-            city: customerAddress.city || "",
-            state: customerAddress.state || "",
-            postalCode:
-              customerAddress.zipCode || customerAddress.postalCode || "",
-            country: customerAddress.country || "",
-          };
-          const customerAddressString = JSON.stringify(
-            normalizedCustomerAddress
-          );
+          if (selectedCustomerData.address) {
+            const customerAddress = selectedCustomerData.address;
+            const matchingAddress = addresses.find((addr) => {
+              const addrDetails = addr.addressDetails || addr;
+              return (
+                addrDetails.street === customerAddress.street &&
+                addrDetails.city === customerAddress.city &&
+                addrDetails.state === customerAddress.state &&
+                (addrDetails.postalCode === customerAddress.zipCode ||
+                  addrDetails.postalCode === customerAddress.postalCode) &&
+                addrDetails.country === customerAddress.country
+              );
+            });
 
-          const matchingAddress = addresses.find((addr) => {
-            if (!addr.addressDetails) return false;
-            // Normalize addressDetails for comparison
-            const normalizedAddrDetails = {
-              street: addr.addressDetails.street || "",
-              city: addr.addressDetails.city || "",
-              state: addr.addressDetails.state || "",
-              postalCode: addr.addressDetails.postalCode || "",
-              country: addr.addressDetails.country || "",
-            };
-            return (
-              JSON.stringify(normalizedAddrDetails) === customerAddressString
-            );
-          });
-        }
+            if (matchingAddress && matchingAddress.addressId) {
+              newShipTo = matchingAddress.addressId;
+              console.log("Matched shipTo:", newShipTo);
+            } else {
+              console.log(
+                "No matching address found for customer:",
+                selectedCustomerData
+              );
+            }
+          }
+
+          if (newBillTo !== prev.billTo || newShipTo !== prev.shipTo) {
+            return { ...prev, billTo: newBillTo, shipTo: newShipTo };
+          }
+          return prev;
+        });
       }
-    } else {
-      setInvoiceData(initialInvoiceData);
+    } else if (selectedCustomer && addresses.length === 0) {
+      console.log("No addresses available for customer:", selectedCustomer);
+      setInvoiceData((prev) => ({
+        ...prev,
+        shipTo: null,
+      }));
     }
   }, [selectedCustomer, customerList, addresses]);
 
@@ -229,6 +245,29 @@ const OrderCart = ({ onConvertToOrder }) => {
       return;
     }
 
+    try {
+      await refetchAddresses();
+    } catch (err) {
+      console.error("Failed to refetch addresses:", err);
+      toast.error("Failed to load addresses. Please try again.");
+      return;
+    }
+
+    if (
+      invoiceData.shipTo &&
+      !addresses.find((addr) => addr.addressId === invoiceData.shipTo)
+    ) {
+      console.log("Invalid shipTo:", invoiceData.shipTo);
+      console.log(
+        "Available addressIds:",
+        addresses.map((addr) => addr.addressId)
+      );
+      toast.error(
+        "Invalid shipping address selected. Please select a valid address or clear the selection."
+      );
+      return;
+    }
+
     if (error) {
       toast.error("Please fix the errors before submitting.");
       return;
@@ -288,8 +327,25 @@ const OrderCart = ({ onConvertToOrder }) => {
     };
 
     try {
+      console.log("Submitting invoice data:", invoiceDataToSubmit);
       const response = await createInvoice(invoiceDataToSubmit).unwrap();
-      orderData.invoiceId = response.invoice.invoiceId;
+      console.log("Create Invoice Response:", response);
+
+      const invoiceId =
+        response?.invoice?.invoiceId ||
+        response?.invoiceId ||
+        response?.data?.invoiceId ||
+        response?.data?.invoice?.invoiceId;
+
+      if (!invoiceId) {
+        throw new Error(
+          `Invalid response structure: invoiceId not found in response: ${JSON.stringify(
+            response
+          )}`
+        );
+      }
+
+      orderData.invoiceId = invoiceId;
       onConvertToOrder(orderData);
       await handleClearCart();
       toast.success("Order placed and invoice created successfully!");
@@ -300,7 +356,7 @@ const OrderCart = ({ onConvertToOrder }) => {
       console.error("Invoice creation error:", error);
       toast.error(
         `Failed to place order or create invoice: ${
-          error.data?.message || error.status || "Unknown error"
+          error.data?.message || error.message || "Unknown error"
         }`
       );
     }
@@ -491,7 +547,8 @@ const OrderCart = ({ onConvertToOrder }) => {
               cartItems.length === 0 ||
               error ||
               customersLoading ||
-              addressesLoading
+              addressesLoading ||
+              !addressesData
             }
           >
             <i className="ti ti-shopping-cart me-2"></i>Generate Invoice

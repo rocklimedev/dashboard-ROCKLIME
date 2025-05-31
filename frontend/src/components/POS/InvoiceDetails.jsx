@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useGetAllAddressesQuery } from "../../api/addressApi";
 import { useGetProfileQuery } from "../../api/userApi";
 import { Form } from "react-bootstrap";
@@ -15,7 +15,15 @@ const InvoiceDetails = ({ invoiceData, onChange, error }) => {
 
   const [showModal, setShowModal] = useState(false);
 
-  const addresses = Array.isArray(addressesData) ? addressesData : [];
+  const addresses = useMemo(
+    () =>
+      Array.isArray(addressesData?.data)
+        ? addressesData.data
+        : Array.isArray(addressesData)
+        ? addressesData
+        : [],
+    [addressesData]
+  );
 
   useEffect(() => {
     if (userId) {
@@ -24,16 +32,21 @@ const InvoiceDetails = ({ invoiceData, onChange, error }) => {
   }, [userId, refetch]);
 
   useEffect(() => {
-    // Debug: Log addresses and shipTo to verify data
     console.log("Addresses:", addresses);
     console.log("Current shipTo:", shipTo);
   }, [addresses, shipTo]);
 
   const handleAddressCreated = (newAddress) => {
-    onChange("shipTo", newAddress.addressId);
-    refetch();
-    setShowModal(false);
-    toast.success("Address added successfully!");
+    console.log("New address created:", newAddress);
+    if (newAddress?.addressId) {
+      onChange("shipTo", newAddress.addressId);
+      refetch();
+      setShowModal(false);
+      toast.success("Address added successfully!");
+    } else {
+      console.error("Invalid new address:", newAddress);
+      toast.error("Failed to add address. Please try again.");
+    }
   };
 
   return (
@@ -51,16 +64,33 @@ const InvoiceDetails = ({ invoiceData, onChange, error }) => {
             <Form.Select
               className="form-control"
               value={shipTo || ""}
-              onChange={(e) => onChange("shipTo", e.target.value || null)}
+              onChange={(e) => {
+                const value = e.target.value || null;
+                console.log("Form.Select shipTo changed to:", value);
+                onChange("shipTo", value);
+              }}
             >
               <option value="">Select an Address</option>
-              {addresses.map((addr) => (
-                <option key={addr.addressId} value={addr.addressId}>
-                  {`${addr?.street || "Unknown"}, ${addr?.city || "Unknown"}, ${
-                    addr?.state || "Unknown"
-                  }, ${addr?.country || "Unknown"}`}
-                </option>
-              ))}
+              {addresses.length === 0 ? (
+                <option disabled>No addresses available</option>
+              ) : (
+                addresses.map((addr) => (
+                  <option key={addr.addressId} value={addr.addressId}>
+                    {`${
+                      addr?.addressDetails?.street || addr?.street || "Unknown"
+                    }, 
+                      ${addr?.addressDetails?.city || addr?.city || "Unknown"}, 
+                      ${
+                        addr?.addressDetails?.state || addr?.state || "Unknown"
+                      }, 
+                      ${
+                        addr?.addressDetails?.country ||
+                        addr?.country ||
+                        "Unknown"
+                      }`}
+                  </option>
+                ))
+              )}
             </Form.Select>
             <button
               className="btn btn-sm btn-primary mt-2"
