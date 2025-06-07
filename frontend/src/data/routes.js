@@ -71,7 +71,6 @@ import { MdOutlineInventory2 } from "react-icons/md";
 import { MdOutlineDiscount } from "react-icons/md";
 import { MdOutlinePeopleAlt } from "react-icons/md";
 import { TiBusinessCard } from "react-icons/ti";
-import Chat from "../components/Chat/ChatWrapper";
 import NewProductWrapper from "../components/Product/NewProductWrapper";
 const masterRoutes = [
   {
@@ -276,13 +275,6 @@ const masterRoutes = [
     isSidebarActive: true,
   },
 
-  {
-    path: "/messages",
-    name: "Messages",
-    icon: <BiMessage />,
-    isSidebarActive: true,
-    element: <Chat />,
-  },
   {
     path: "/settings",
     name: "Settings",
