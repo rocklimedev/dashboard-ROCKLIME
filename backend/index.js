@@ -4,7 +4,6 @@ const socketio = require("socket.io");
 const express = require("express");
 const cors = require("cors");
 const db = require("./config/database");
-const messageRoutes = require("./routes/messages"); // Add message routes
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
 const vendorRoutes = require("./routes/vendor");
@@ -93,7 +92,6 @@ app.use("/api/role-permissions", rolePermissionRoutes);
 app.use("/api/invoices", invoiceRoutes);
 app.use("/api/teams", teamRoutes);
 app.use("/api/search", searchRoutes);
-app.use("/api/messages", messageRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
