@@ -6,19 +6,20 @@ import {
   useDeleteSignatureMutation,
 } from "../../api/signatureApi";
 import { toast } from "sonner";
+import { AiOutlineEdit } from "react-icons/ai";
+import { FcEmptyTrash } from "react-icons/fc";
 
-const SignatureWrapper = ({ userId }) => {
-  // Assume userId is passed from auth context
+const SignatureWrapper = () => {
   const { data: signatures, error, isLoading } = useGetAllSignaturesQuery();
   const [deleteSignature, { isLoading: isDeleting }] =
     useDeleteSignatureMutation();
   const [selectedSignature, setSelectedSignature] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
 
-  // Format signatures for tableData prop
+  // Format signatures for tableData prop (if used in PageHeader)
   const formattedSignatures = (signatures || []).map((signature) => ({
     signatureId: signature.signatureId,
-    signatureName: signature.signature_name || "N/A", // Match table headers
+    signatureName: signature.signature_name || "N/A",
     userName: signature.User?.name || "N/A",
     userEmail: signature.User?.email || "N/A",
     status: signature.mark_as_default ? "Default" : "Inactive",
@@ -61,96 +62,68 @@ const SignatureWrapper = ({ userId }) => {
           onAdd={handleAdd}
           tableData={formattedSignatures}
         />
-
         <div className="card">
-          <div className="card-header d-flex align-items-center justify-content-between flex-wrap row-gap-3">
-            <h4 className="mb-0">Signature List</h4>
-          </div>
-
-          <div className="card-body p-0">
-            {isLoading ? (
-              <div className="text-center py-3">
-                <div className="spinner-border" role="status">
-                  <span className="visually-hidden">Loading...</span>
-                </div>
-              </div>
-            ) : error ? (
-              <p className="text-center text-danger py-3">
-                {error?.data?.error || "Error fetching signatures"}
+          <div className="card-body-2 p-0">
+            {isLoading && <p className="loading-text">Loading signatures...</p>}
+            {error && (
+              <p className="error-text">
+                Failed to load signatures:{" "}
+                {error?.data?.error || "Unknown error"}
               </p>
-            ) : (
-              <div className="table-responsive">
-                {signatures && signatures.length === 0 ? (
-                  <p className="text-center py-3">No records found</p>
-                ) : (
-                  <table className="table datatable">
-                    <thead className="thead-light">
-                      <tr>
-                        <th>Signature ID</th>
-                        <th>Signature Name</th>
-                        <th>User Name</th>
-                        <th>User Email</th>
-                        <th>Status</th>
-                        <th>Date Created</th>
-                        <th>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {signatures?.map((signature) => (
-                        <tr key={signature.signatureId}>
-                          <td>{signature.signatureId}</td>
-                          <td>{signature.signature_name}</td>
-                          <td>{signature.User?.name || "N/A"}</td>
-                          <td>{signature.User?.email || "N/A"}</td>
-                          <td>
-                            <span
-                              className={`badge ${
-                                signature.mark_as_default
-                                  ? "bg-success"
-                                  : "bg-secondary"
-                              }`}
-                            >
-                              {signature.mark_as_default
-                                ? "Default"
-                                : "Inactive"}
-                            </span>
-                          </td>
-                          <td>
-                            {new Date(signature.createdAt).toLocaleString()}
-                          </td>
-                          <td>
-                            <button
-                              className="btn btn-sm btn-primary me-2"
-                              onClick={() => handleEdit(signature)}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              className="btn btn-sm btn-danger"
-                              onClick={() =>
-                                handleDelete(signature.signatureId)
-                              }
-                              disabled={isDeleting}
-                            >
-                              {isDeleting ? "Deleting..." : "Delete"}
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
             )}
+            {!isLoading && !error && signatures?.length === 0 && (
+              <p className="no-data">No signatures found.</p>
+            )}
+            <div className="signatures-grid">
+              {signatures?.map((signature) => (
+                <div className="signature" key={signature.signatureId}>
+                  <div className="signature-content">
+                    <img
+                      src={signature.signature_image}
+                      alt={`Signature of ${signature.signature_name}`}
+                      className="signature-image"
+                    />
+                    <div className="signature-details">
+                      <h4>{signature.signature_name || "N/A"}</h4>
+                      <p>By: {signature.User?.name || "N/A"}</p>
+                      <span
+                        className={`badge ${
+                          signature.mark_as_default
+                            ? "bg-success"
+                            : "bg-secondary"
+                        }`}
+                      >
+                        {signature.mark_as_default ? "Default" : "Inactive"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="actions">
+                    <button
+                      className="action-button"
+                      onClick={() => handleEdit(signature)}
+                      aria-label={`Edit signature ${signature.signature_name}`}
+                      disabled={isDeleting}
+                    >
+                      <AiOutlineEdit />
+                    </button>
+                    <button
+                      className="action-button"
+                      onClick={() => handleDelete(signature.signatureId)}
+                      aria-label={`Delete signature ${signature.signature_name}`}
+                      disabled={isDeleting}
+                    >
+                      <FcEmptyTrash />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
-
       {modalOpen && (
         <AddSignature
-          userId={userId} // Pass userId to AddSignature
-          signatureId={selectedSignature?.signatureId}
-          existingSignature={selectedSignature}
+          signature={selectedSignature}
           onClose={() => setModalOpen(false)}
         />
       )}

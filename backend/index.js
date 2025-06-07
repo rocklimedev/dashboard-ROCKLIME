@@ -1,8 +1,10 @@
+// server.js (updated)
 require("dotenv").config();
 const socketio = require("socket.io");
 const express = require("express");
 const cors = require("cors");
 const db = require("./config/database");
+const messageRoutes = require("./routes/messages"); // Add message routes
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
 const vendorRoutes = require("./routes/vendor");
@@ -37,6 +39,7 @@ const corsOptions = {
   origin: [
     "http://localhost:3000",
     "http://localhost:3001",
+    "http://localhost:3002",
     "https://dashboard-rocklime.vercel.app",
   ],
   credentials: true,
@@ -51,6 +54,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Log incoming requests for debugging
 app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
   next();
 });
 
@@ -89,6 +93,8 @@ app.use("/api/role-permissions", rolePermissionRoutes);
 app.use("/api/invoices", invoiceRoutes);
 app.use("/api/teams", teamRoutes);
 app.use("/api/search", searchRoutes);
+app.use("/api/messages", messageRoutes);
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error("Server error:", err);
@@ -110,5 +116,7 @@ const server = app.listen(keys.port, async () => {
 });
 
 // Initialize Socket
-const io = socketio(server);
+const io = socketio(server, {
+  cors: corsOptions, // Use same CORS options for Socket.io
+});
 require("./socket")(io);

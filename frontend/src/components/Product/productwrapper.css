@@ -1,0 +1,87 @@
+/* Reset default margins and ensure content fits within viewport */
+
+.product-main-wrapper {
+  width: 100%;
+  max-height: 50vh; /* Limit height for responsiveness */
+  object-fit: cover; /* Ensure the image scales properly */
+  border-radius: 12px;
+}
+
+.categories-wrapper {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(200px, 1fr)
+  ); /* Responsive grid */
+  gap: 1.5rem; /* Space between cards */
+  width: 100%;
+  padding: 1rem 0;
+}
+
+.categories-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  background: #f9f9f9;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Slightly stronger shadow */
+  border-radius: 12px;
+  padding: 1rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease; /* Smooth hover effect */
+}
+
+.categories-card:hover {
+  transform: translateY(-5px); /* Lift effect on hover */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.categories-img {
+  width: 100%;
+  height: auto;
+  max-height: 200px; /* Limit image height */
+  object-fit: cover; /* Ensure images scale properly */
+  border-radius: 8px;
+}
+
+.categories-text {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif; /* Fallback fonts */
+  font-weight: 500;
+  font-size: 1rem; /* Relative unit */
+  line-height: 1.2;
+  color: #202020;
+  text-align: center;
+  margin-top: 0.75rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .product-main-wrapper {
+    max-height: 40vh; /* Smaller hero image on mobile */
+  }
+
+  .categories-wrapper {
+    grid-template-columns: repeat(
+      auto-fit,
+      minmax(150px, 1fr)
+    ); /* Smaller cards on mobile */
+    gap: 1rem;
+  }
+
+  .categories-text {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-wrapper {
+    padding: 0.5rem;
+  }
+
+  .product-main-wrapper {
+    max-height: 30vh;
+  }
+
+  .categories-card {
+    padding: 0.75rem;
+  }
+}
