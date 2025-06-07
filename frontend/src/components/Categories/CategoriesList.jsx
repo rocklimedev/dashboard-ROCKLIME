@@ -208,10 +208,9 @@ const CategoriesList = () => {
                       <div className="card-body">
                         <h5 className="card-title">{category.name}</h5>
                         <p className="card-text">
-                          <strong>Parent Category:</strong> {parentName}
-                          <br />
-                          <strong>Created On:</strong>{" "}
-                          {new Date(category.createdAt).toLocaleDateString()}
+                          <strong style={{ color: "#25D366" }}>
+                            {parentName}
+                          </strong>
                         </p>
                         <div className="d-flex justify-content-end">
                           <a

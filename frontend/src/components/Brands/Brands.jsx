@@ -129,82 +129,19 @@ const Brands = () => {
           onAdd={handleAddBrand}
           tableData={formattedBrands} // Pass formatted brands to PageHeader
         />
-
         <div className="card">
-          <div className="card-body p-0">
-            <div className="table-responsive">
-              <table className="table datatable">
-                <thead className="thead-light">
-                  <tr>
-                    <th className="no-sort">
-                      <label className="checkboxs">
-                        <input
-                          type="checkbox"
-                          id="select-all"
-                          checked={
-                            selectedBrands.length === paginatedBrands.length &&
-                            paginatedBrands.length > 0
-                          }
-                          onChange={handleSelectAll}
-                        />
-                        <span className="checkmarks"></span>
-                      </label>
-                    </th>
-                    <th>Brand</th>
-                    <th>Brand Slug</th>
-                    <th>Created Date</th>
-                    <th>Status</th>
-                    <th className="no-sort"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedBrands.map((brand) => (
-                    <tr key={brand.id}>
-                      <td>
-                        <label className="checkboxs">
-                          <input
-                            type="checkbox"
-                            checked={selectedBrands.includes(brand.id)}
-                            onChange={() => toggleBrand(brand.id)}
-                          />
-                          <span className="checkmarks"></span>
-                        </label>
-                      </td>
-                      <td>
-                        <div className="d-flex align-items-center">
-                          <a href="javascript:void(0);">{brand.brandName}</a>
-                        </div>
-                      </td>
-                      <td>{brand.brandSlug}</td>
-                      <td>{new Date(brand.createdAt).toLocaleDateString()}</td>
-                      <td>
-                        <span className="badge table-badge bg-success fw-medium fs-10">
-                          Active
-                        </span>
-                      </td>
-                      <td className="action-table-data">
-                        <div className="edit-delete-action">
-                          <a
-                            className="me-2 p-2"
-                            onClick={() => handleEditBrand(brand)}
-                            aria-label="Edit brand"
-                          >
-                            <AiOutlineEdit />
-                          </a>
-                          <a
-                            className="p-2"
-                            onClick={() => handleDeleteBrand(brand)}
-                            aria-label="Delete brand"
-                          >
-                            <FcEmptyTrash />
-                          </a>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          <div className="card-body-2 p-0">
+            {paginatedBrands.map((brand) => (
+              <div className="card-list" key={brand.id}>
+                <div className="card-content">
+                  <span>{brand.brandName}</span>
+                  <div className="actions">
+                    <AiOutlineEdit onClick={() => handleEditBrand(brand)} />
+                    <FcEmptyTrash onClick={() => handleDeleteBrand(brand)} />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
           <div className="card-footer">
             <DataTablePagination

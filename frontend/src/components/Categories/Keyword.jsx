@@ -164,11 +164,9 @@ const Keyword = ({ onClose, showModal }) => {
                   <div className="card-body">
                     <h5 className="card-title">{keyword.keyword}</h5>
                     <p className="card-text">
-                      <strong>Category:</strong>{" "}
-                      {categoryMap[keyword.categoryId] || "Uncategorized"}
-                      <br />
-                      <strong>Created On:</strong>{" "}
-                      {new Date(keyword.createdAt).toLocaleDateString()}
+                      <strong style={{ color: "#25D366" }}>
+                        {categoryMap[keyword.categoryId] || "Uncategorized"}
+                      </strong>
                     </p>
                     <div className="d-flex justify-content-end">
                       <a

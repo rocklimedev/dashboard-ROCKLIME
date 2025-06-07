@@ -22,6 +22,7 @@ import {
 import { AiOutlineProduct } from "react-icons/ai";
 import {
   BiAccessibility,
+  BiMessage,
   BiSearch,
   BiSolidCategory,
   BiUser,
@@ -70,6 +71,8 @@ import { MdOutlineInventory2 } from "react-icons/md";
 import { MdOutlineDiscount } from "react-icons/md";
 import { MdOutlinePeopleAlt } from "react-icons/md";
 import { TiBusinessCard } from "react-icons/ti";
+import Chat from "../components/Chat/ChatWrapper";
+import NewProductWrapper from "../components/Product/NewProductWrapper";
 const masterRoutes = [
   {
     path: "/",
@@ -81,103 +84,10 @@ const masterRoutes = [
   },
   {
     path: "#",
-    name: "Latests",
-    icon: <RiAdminLine />,
-    isSidebarActive: true,
-    submenu: [
-      {
-        path: "/recent/recent-orders",
-        name: "Recent Orders",
-        icon: <AiOutlineProduct />,
-        element: <RecentOrders />,
-        isSidebarActive: true,
-      },
-      {
-        path: "/recent/invoices",
-        name: "Recent Invoices",
-        icon: <LiaFileInvoiceSolid />,
-        isSidebarActive: true,
-        element: <RecentInvoices />,
-      },
-      {
-        path: "/recent/quotations",
-        name: "Recent Quotations",
-        icon: <FaQuora />,
-        isSidebarActive: true,
-        element: <RecentQuotation />,
-      },
-    ],
-  },
-  {
-    path: "#",
-    name: "Peoples",
-    icon: <BsPeople />,
-    isSidebarActive: true,
-    submenu: [
-      {
-        path: "/customers/list",
-        name: "Customers",
-        icon: <PiUserListBold />,
-        isSidebarActive: true,
-        element: <CustomerList />,
-      },
-      {
-        path: "/customer/:id",
-        name: "Customer Details",
-        icon: <PiUserListBold />,
-        isSidebarActive: false,
-        element: <CustomerDetails />,
-      },
-      {
-        path: "/address/list",
-        name: "Address",
-        icon: <PiAddressBook />,
-        isSidebarActive: true,
-        element: <AddressList />,
-      },
-      {
-        path: "/vendors/list",
-        name: "Vendors",
-        icon: <MdBrandingWatermark />,
-        isSidebarActive: true,
-        element: <ComapniesWrapper />,
-      },
-      {
-        path: "/signature/list",
-        name: "Signature",
-        icon: <LiaFileSignatureSolid />,
-        isSidebarActive: true,
-        element: <SignatureWrapper />,
-      },
-      {
-        path: "/orders/teams",
-        name: "Teams",
-        icon: <FaTeamspeak />,
-        element: <TeamsList />,
-        isSidebarActive: true,
-      },
-      {
-        path: "/companies/list",
-        name: "Companies",
-        icon: <GiCorporal />,
-        isSidebarActive: true,
-        element: <CmList />,
-      },
-    ],
-  },
-  {
-    path: "#",
     name: "Inventory",
     icon: <MdOutlineInventory2 />,
     isSidebarActive: true,
     submenu: [
-      {
-        path: "/inventory/list",
-        name: "List of Product",
-        icon: <AiOutlineProduct />,
-        element: <ProductList />,
-        isSidebarActive: true,
-      },
       {
         path: "/inventory/product/product-code-status",
         name: "Code Status",
@@ -224,7 +134,7 @@ const masterRoutes = [
   },
   {
     path: "#",
-    name: "Sales",
+    name: "Orders",
     icon: <MdOutlineDiscount />,
     isSidebarActive: true,
     submenu: [
@@ -303,6 +213,85 @@ const masterRoutes = [
 
   {
     path: "#",
+    name: "Customers",
+    icon: <BsPeople />,
+    isSidebarActive: true,
+    submenu: [
+      {
+        path: "/customers/list",
+        name: "Customers",
+        icon: <PiUserListBold />,
+        isSidebarActive: true,
+        element: <CustomerList />,
+      },
+      {
+        path: "/customer/:id",
+        name: "Customer Details",
+        icon: <PiUserListBold />,
+        isSidebarActive: false,
+        element: <CustomerDetails />,
+      },
+      {
+        path: "/address/list",
+        name: "Address",
+        icon: <PiAddressBook />,
+        isSidebarActive: true,
+        element: <AddressList />,
+      },
+      {
+        path: "/vendors/list",
+        name: "Vendors",
+        icon: <MdBrandingWatermark />,
+        isSidebarActive: true,
+        element: <ComapniesWrapper />,
+      },
+      {
+        path: "/signature/list",
+        name: "Signature",
+        icon: <LiaFileSignatureSolid />,
+        isSidebarActive: true,
+        element: <SignatureWrapper />,
+      },
+      {
+        path: "/orders/teams",
+        name: "Teams",
+        icon: <FaTeamspeak />,
+        element: <TeamsList />,
+        isSidebarActive: true,
+      },
+      {
+        path: "/companies/list",
+        name: "Companies",
+        icon: <GiCorporal />,
+        isSidebarActive: true,
+        element: <CmList />,
+      },
+    ],
+  },
+  {
+    path: "/inventory/list",
+    name: "Products",
+    icon: <AiOutlineProduct />,
+    element: <NewProductWrapper />,
+    isSidebarActive: true,
+  },
+
+  {
+    path: "/messages",
+    name: "Messages",
+    icon: <BiMessage />,
+    isSidebarActive: true,
+    element: <Chat />,
+  },
+  {
+    path: "/settings",
+    name: "Settings",
+    icon: <MdOutlineSettings />,
+    isSidebarActive: true,
+    element: <GeneralSettings />,
+  },
+  {
+    path: "#",
     name: "HRM",
     // icon: <img src={hrmicon} />,
     icon: <MdOutlinePeopleAlt />,
@@ -375,11 +364,33 @@ const masterRoutes = [
     ],
   },
   {
-    path: "/settings",
-    name: "Settings",
-    icon: <MdOutlineSettings />,
+    path: "#",
+    name: "Latests",
+    icon: <RiAdminLine />,
     isSidebarActive: true,
-    element: <GeneralSettings />,
+    submenu: [
+      {
+        path: "/recent/recent-orders",
+        name: "Recent Orders",
+        icon: <AiOutlineProduct />,
+        element: <RecentOrders />,
+        isSidebarActive: true,
+      },
+      {
+        path: "/recent/invoices",
+        name: "Recent Invoices",
+        icon: <LiaFileInvoiceSolid />,
+        isSidebarActive: true,
+        element: <RecentInvoices />,
+      },
+      {
+        path: "/recent/quotations",
+        name: "Recent Quotations",
+        icon: <FaQuora />,
+        isSidebarActive: true,
+        element: <RecentQuotation />,
+      },
+    ],
   },
   {
     path: "#",

@@ -120,82 +120,26 @@ const AddressList = () => {
           onAdd={handleAddAddress}
           tableData={formattedAddresses} // Pass formatted addresses to PageHeader
         />
-
         <div className="card">
-          <div className="card-body p-0">
-            <div className="table-responsive">
-              <table className="table datatable">
-                <thead className="thead-light">
-                  <tr>
-                    <th>
-                      <label className="checkboxs">
-                        <input
-                          type="checkbox"
-                          checked={
-                            selectedAddresses.length ===
-                              paginatedAddresses.length &&
-                            paginatedAddresses.length > 0
-                          }
-                          onChange={handleSelectAll}
-                        />
-                        <span className="checkmarks"></span>
-                      </label>
-                    </th>
-                    <th>Street</th>
-                    <th>City</th>
-                    <th>State</th>
-                    <th>Postal Code</th>
-                    <th>Country</th>
-                    <th>Created</th>
-                    <th className="no-sort"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedAddresses.map((address) => (
-                    <tr key={address.addressId}>
-                      <td>
-                        <label className="checkboxs">
-                          <input
-                            type="checkbox"
-                            checked={selectedAddresses.includes(
-                              address.addressId
-                            )}
-                            onChange={() => toggleAddress(address.addressId)}
-                          />
-                          <span className="checkmarks"></span>
-                        </label>
-                      </td>
-                      <td>{address.street || "—"}</td>
-                      <td>{address.city}</td>
-                      <td>{address.state}</td>
-                      <td>{address.postalCode}</td>
-                      <td>{address.country}</td>
-                      <td>
-                        {new Date(address.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="action-table-data">
-                        <div className="edit-delete-action">
-                          <a
-                            className="me-2 p-2"
-                            onClick={() => handleEditAddress(address)}
-                            aria-label="Edit address"
-                          >
-                            <AiOutlineEdit />
-                          </a>
-                          <a
-                            className="p-2"
-                            onClick={() => handleDeleteAddress(address)}
-                            aria-label="Delete address"
-                          >
-                            <FcEmptyTrash />
-                          </a>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          <div className="card-body-2 p-0">
+            {paginatedAddresses.map((address) => (
+              <div className="card-list" key={address.addressId}>
+                <div className="card-content">
+                  <span>
+                    {address.street || "—"} {address.city} {address.state}{" "}
+                    {address.postalCode} {address.country}
+                  </span>
+
+                  <div className="actions">
+                    <AiOutlineEdit onClick={() => handleEditAddress(address)} />
+
+                    <FcEmptyTrash
+                      onClick={() => handleDeleteAddress(address)}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
           <div className="card-footer">
             <DataTablePagination

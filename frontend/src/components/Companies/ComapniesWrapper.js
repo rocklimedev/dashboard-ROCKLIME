@@ -122,60 +122,25 @@ const CompaniesWrapper = () => {
           onAdd={handleAddVendor}
           tableData={formattedVendors} // Pass formatted vendors to PageHeader
         />
-
         <div className="card">
-          <div className="card-body p-0">
-            <div className="table-responsive">
-              <table className="table datatable">
-                <thead className="thead-light">
-                  <tr>
-                    <th>Vendor ID</th>
-                    <th>Vendor Name</th>
-                    <th>Brand</th>
-                    <th>Brand Slug</th>
-                    <th>Created Date</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedVendors.map((vendor) => (
-                    <tr key={vendor.id}>
-                      <td>{vendor.vendorId}</td>
-                      <td>{vendor.vendorName}</td>
-                      <td>{getBrandName(vendor.brandId)}</td>
-                      <td>{vendor.brandSlug}</td>
-                      <td>{new Date(vendor.createdAt).toLocaleDateString()}</td>
-                      <td>
-                        <div className="d-flex gap-2">
-                          <button
-                            className="btn btn-sm btn-info"
-                            onClick={() => setViewCompanyId(vendor.id)}
-                            aria-label="View vendor"
-                          >
-                            <BiShowAlt />
-                          </button>
-                          <button
-                            className="btn btn-sm btn-warning"
-                            onClick={() => handleEditVendor(vendor)}
-                            aria-label="Edit vendor"
-                          >
-                            <BiEdit />
-                          </button>
-                          <button
-                            className="btn btn-sm btn-danger"
-                            onClick={() => handleDeleteVendor(vendor)}
-                            aria-label="Delete vendor"
-                            disabled={isDeleting}
-                          >
-                            <BiTrash />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          <div className="card-body-2 p-0">
+            {paginatedVendors.map((vendor) => (
+              <div className="card-list" key={vendor.id}>
+                <div className="card-content">
+                  <span>
+                    {vendor.vendorName} -{getBrandName(vendor.brandId)}
+                  </span>
+
+                  <div className="actions">
+                    <BiShowAlt onClick={() => setViewCompanyId(vendor.id)} />
+
+                    <BiEdit onClick={() => handleEditVendor(vendor)} />
+
+                    <BiTrash onClick={() => handleDeleteVendor(vendor)} />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
           <div className="card-footer">
             <DataTablePagination
@@ -185,38 +150,37 @@ const CompaniesWrapper = () => {
             />
           </div>
         </div>
-
-        {viewCompanyId && (
-          <ViewCompanies
-            companyId={viewCompanyId}
-            onClose={() => setViewCompanyId(null)}
-          />
-        )}
-
-        {showDeleteModal && (
-          <DeleteModal
-            item={vendorToDelete}
-            itemType="Vendor"
-            isVisible={showDeleteModal}
-            onConfirm={handleConfirmDelete}
-            onCancel={() => {
-              setShowDeleteModal(false);
-              setVendorToDelete(null);
-            }}
-            isLoading={isDeleting}
-          />
-        )}
-
-        {showModal && (
-          <AddCompanyModal
-            show={showModal}
-            onClose={() => {
-              setShowModal(false);
-            }}
-            existingVendor={selectedVendor}
-          />
-        )}
       </div>
+      {viewCompanyId && (
+        <ViewCompanies
+          companyId={viewCompanyId}
+          onClose={() => setViewCompanyId(null)}
+        />
+      )}
+
+      {showDeleteModal && (
+        <DeleteModal
+          item={vendorToDelete}
+          itemType="Vendor"
+          isVisible={showDeleteModal}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => {
+            setShowDeleteModal(false);
+            setVendorToDelete(null);
+          }}
+          isLoading={isDeleting}
+        />
+      )}
+
+      {showModal && (
+        <AddCompanyModal
+          show={showModal}
+          onClose={() => {
+            setShowModal(false);
+          }}
+          existingVendor={selectedVendor}
+        />
+      )}
     </div>
   );
 };
