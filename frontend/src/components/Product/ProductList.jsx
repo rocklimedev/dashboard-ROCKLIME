@@ -4,13 +4,21 @@ import {
   Row,
   Col,
   Form,
+  Input,
+  Select,
   Button,
-  Spinner,
-  OverlayTrigger,
+  Spin,
   Tooltip,
   Badge,
-} from "react-bootstrap";
-import { BsCartPlus, BsSearch } from "react-icons/bs";
+  Dropdown,
+  Menu,
+  Pagination,
+} from "antd";
+import {
+  ShoppingCartOutlined,
+  SearchOutlined,
+  MoreOutlined,
+} from "@ant-design/icons";
 import {
   useGetAllProductsQuery,
   useDeleteProductMutation,
@@ -24,46 +32,70 @@ import {
   useRemoveFromCartMutation,
 } from "../../api/cartApi";
 import { useGetProfileQuery } from "../../api/userApi";
-import DataTablePagination from "../Common/DataTablePagination";
-import Actions from "../Common/Actions";
-import DeleteModal from "../Common/DeleteModal";
-import StockModal from "../Common/StockModal";
-import HistoryModal from "../Common/HistoryModal";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import pos from "../../assets/img/default.png";
+import DeleteModal from "../Common/DeleteModal";
+import HistoryModal from "../Common/HistoryModal";
+import StockModal from "../Common/StockModal";
+const { Option } = Select;
 
 // Minimal Cart Component
 const Cart = ({ cartItems, onRemoveFromCart }) => {
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <div className="cart-container position-fixed top-0 end-0 p-3">
-      <Badge bg="primary" className="p-2">
-        Cart: {totalItems} item{totalItems !== 1 ? "s" : ""}
+    <div
+      style={{
+        position: "fixed",
+        top: 16,
+        right: 16,
+        zIndex: 1000,
+        padding: 16,
+      }}
+    >
+      <Badge count={totalItems}>
+        <Button type="primary" icon={<ShoppingCartOutlined />}>
+          Cart: {totalItems} item{totalItems !== 1 ? "s" : ""}
+        </Button>
       </Badge>
       {cartItems.length > 0 && (
-        <div className="cart-dropdown bg-light p-3 border rounded mt-2">
+        <div
+          style={{
+            background: "#fff",
+            padding: 16,
+            border: "1px solid #d9d9d9",
+            borderRadius: 4,
+            marginTop: 8,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+          }}
+        >
           <h5>Cart</h5>
           {cartItems.map((item) => (
             <div
               key={item.productId}
-              className="d-flex justify-content-between mb-2"
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginBottom: 8,
+              }}
             >
               <span>
                 {item.name} (x{item.quantity})
               </span>
               <Button
-                variant="outline-danger"
-                size="sm"
+                type="link"
+                danger
                 onClick={() => onRemoveFromCart(item.productId)}
               >
                 Remove
               </Button>
             </div>
           ))}
-          <Link to="/cart" className="btn btn-success btn-sm w-100 mt-2">
-            View Cart
+          <Link to="/cart">
+            <Button type="primary" block style={{ marginTop: 8 }}>
+              View Cart
+            </Button>
           </Link>
         </div>
       )}
@@ -74,82 +106,76 @@ const Cart = ({ cartItems, onRemoveFromCart }) => {
 // TableHeader Component
 const TableHeader = ({ filters, setFilters, additionalSortOptions = [] }) => {
   return (
-    <Form className="mb-4">
-      <Row>
-        <Col xs={12} md={4}>
-          <Form.Group controlId="search-products">
-            <Form.Label className="d-flex align-items-center">
-              <BsSearch className="me-2 text-muted" />
-              Search Products
-            </Form.Label>
-            <Form.Control
-              type="text"
+    <Form layout="vertical" style={{ marginBottom: 24 }}>
+      <Row gutter={[16, 16]}>
+        <Col xs={24} md={8}>
+          <Form.Item label="Search Products">
+            <Input
+              prefix={<SearchOutlined />}
               placeholder="Search by product name or code..."
               value={filters.search}
               onChange={(e) =>
                 setFilters({ ...filters, search: e.target.value })
               }
             />
-          </Form.Group>
+          </Form.Item>
         </Col>
-        <Col xs={12} md={3}>
-          <Form.Group controlId="filter-category">
-            <Form.Label>Category</Form.Label>
-            <Form.Select
-              value={filters.category || ""}
-              onChange={(e) =>
-                setFilters({ ...filters, category: e.target.value || null })
+        <Col xs={24} md={6}>
+          <Form.Item label="Category">
+            <Select
+              value={filters.category || undefined}
+              onChange={(value) =>
+                setFilters({ ...filters, category: value || null })
               }
+              allowClear
+              placeholder="All Categories"
             >
-              <option value="">All Categories</option>
               {filters.categories?.map((cat) => (
-                <option key={cat.categoryId} value={cat.categoryId}>
+                <Option key={cat.categoryId} value={cat.categoryId}>
                   {cat.name}
-                </option>
+                </Option>
               ))}
-            </Form.Select>
-          </Form.Group>
+            </Select>
+          </Form.Item>
         </Col>
-        <Col xs={12} md={3}>
-          <Form.Group controlId="filter-brand">
-            <Form.Label>Brand</Form.Label>
-            <Form.Select
-              value={filters.brand || ""}
-              onChange={(e) =>
-                setFilters({ ...filters, brand: e.target.value || null })
+        <Col xs={24} md={6}>
+          <Form.Item label="Brand">
+            <Select
+              value={filters.brand || undefined}
+              onChange={(value) =>
+                setFilters({ ...filters, brand: value || null })
               }
+              allowClear
+              placeholder="All Brands"
             >
-              <option value="">All Brands</option>
               {filters.brands?.map((brand) => (
-                <option key={brand.id} value={brand.id}>
+                <Option key={brand.id} value={brand.id}>
                   {brand.brandName}
-                </option>
+                </Option>
               ))}
-            </Form.Select>
-          </Form.Group>
+            </Select>
+          </Form.Item>
         </Col>
-        <Col xs={12} md={2}>
-          <Form.Group controlId="sort-by">
-            <Form.Label>Sort By</Form.Label>
-            <Form.Select
-              value={filters.sortBy || ""}
-              onChange={(e) =>
-                setFilters({ ...filters, sortBy: e.target.value || null })
+        <Col xs={24} md={4}>
+          <Form.Item label="Sort By">
+            <Select
+              value={filters.sortBy || undefined}
+              onChange={(value) =>
+                setFilters({ ...filters, sortBy: value || null })
               }
+              allowClear
+              placeholder="Default"
             >
-              <option value="">Default</option>
-              <option value="Ascending">Name: A-Z</option>
-              <option value="Descending">Name: Z-A</option>
-              <option value="Recently Added">Recently Added</option>
-              <option value="Price Low to High">Price: Low to High</option>
-              <option value="Price High to Low">Price: High to Low</option>
+              <Option value="Ascending">Name: A-Z</Option>
+              <Option value="Descending">Name: Z-A</Option>
+              <Option value="Recently Added">Recently Added</Option>
+              <Option value="Price Low to High">Price: Low to High</Option>
+              <Option value="Price High to Low">Price: High to Low</Option>
               {additionalSortOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
+                <Option key={option.value}>{option.label}</Option>
               ))}
-            </Form.Select>
-          </Form.Group>
+            </Select>
+          </Form.Item>
         </Col>
       </Row>
     </Form>
@@ -182,7 +208,7 @@ const ProductsList = ({ isAdmin = false }) => {
     : [];
   const cartItems = Array.isArray(cartData?.items) ? cartData.items : [];
 
-  const [currentPage, setCurrentPage] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const [isModalVisible, setModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isStockModalVisible, setStockModalVisible] = useState(false);
@@ -214,7 +240,6 @@ const ProductsList = ({ isAdmin = false }) => {
     return category ? category.name : "Uncategorized";
   };
 
-  // Helper function to format price safely
   const formatPrice = (price) => {
     if (price === null || price === undefined || isNaN(Number(price))) {
       return "N/A";
@@ -261,7 +286,7 @@ const ProductsList = ({ isAdmin = false }) => {
     if (filters.sortBy === "Ascending") {
       filtered.sort((a, b) => a.name?.localeCompare(b.name || ""));
     } else if (filters.sortBy === "Descending") {
-      filtered.sort((a, b) => b.name?.localeCompare(a.name || ""));
+      filtered.sort((a, b) => b.name?.localeCompare(b.name || ""));
     } else if (filters.sortBy === "Recently Added") {
       filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     } else if (filters.sortBy === "Price Low to High") {
@@ -279,7 +304,7 @@ const ProductsList = ({ isAdmin = false }) => {
 
   const filteredProducts = applyFilters(customers);
 
-  const offset = currentPage * itemsPerPage;
+  const offset = (currentPage - 1) * itemsPerPage;
   const currentItems = filteredProducts.slice(offset, offset + itemsPerPage);
 
   const handleDeleteClick = (product) => {
@@ -297,7 +322,7 @@ const ProductsList = ({ isAdmin = false }) => {
     try {
       await deleteProduct(selectedProduct.productId).unwrap();
       toast.success("Product deleted successfully!");
-      if (currentItems.length === 1 && currentPage > 0) {
+      if (currentItems.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
     } catch (error) {
@@ -376,9 +401,9 @@ const ProductsList = ({ isAdmin = false }) => {
   useEffect(() => {
     if (
       filteredProducts.length > 0 &&
-      currentPage >= Math.ceil(filteredProducts.length / itemsPerPage)
+      currentPage > Math.ceil(filteredProducts.length / itemsPerPage)
     ) {
-      setCurrentPage(0);
+      setCurrentPage(1);
     }
   }, [filteredProducts.length, currentPage]);
 
@@ -388,16 +413,16 @@ const ProductsList = ({ isAdmin = false }) => {
 
   if (isLoading || userLoading) {
     return (
-      <div className="text-center py-4">
-        <Spinner animation="border" variant="primary" />
-        <p className="mt-2">Loading products...</p>
+      <div style={{ textAlign: "center", padding: 32 }}>
+        <Spin size="large" />
+        <p style={{ marginTop: 16 }}>Loading products...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-center py-4 text-danger">
+      <div style={{ textAlign: "center", padding: 32, color: "#ff4d4f" }}>
         Error fetching products: {error?.data?.message || "Unknown error"}
       </div>
     );
@@ -405,181 +430,214 @@ const ProductsList = ({ isAdmin = false }) => {
 
   if (!filteredProducts.length) {
     return (
-      <div className="text-center py-4 text-muted">No products available.</div>
+      <div style={{ textAlign: "center", padding: 32, color: "#8c8c8c" }}>
+        No products available.
+      </div>
     );
   }
 
   return (
     <div className="page-wrapper">
       <div className="content">
-        <Cart cartItems={cartItems} onRemoveFromCart={handleRemoveFromCart} />
-        <div className="products-list py-4">
-          <TableHeader
-            filters={filters}
-            setFilters={setFilters}
-            additionalSortOptions={[
-              { value: "Price Low to High", label: "Price: Low to High" },
-              { value: "Price High to Low", label: "Price: High to Low" },
-            ]}
-          />
-          <Row className="g-3">
-            {currentItems.map((product) => (
-              <Col key={product.productId} xs={12} sm={6} md={4} lg={3} xl={2}>
-                <Card
-                  className="shadow-sm border-0 h-100"
-                  style={{ transition: "transform 0.2s" }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.transform = "scale(1.02)")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.transform = "scale(1)")
-                  }
-                >
-                  <div
-                    className="product-image-container"
-                    style={{
-                      height: "150px",
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      overflow: "hidden",
-                    }}
-                  >
-                    <Card.Img
-                      src={product?.images || pos}
-                      alt={product.name}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        objectPosition: "center",
-                      }}
-                    />
-                  </div>
-                  <Card.Body>
-                    <Card.Title as="h6" className="fs-14 fw-bold mb-1">
-                      <Link
-                        to={`/product/${product.productId}`}
-                        className="text-decoration-none text-dark"
-                      >
-                        {product.name || "N/A"}
-                      </Link>
-                    </Card.Title>
-                    <Card.Text className="fs-13 text-muted mb-2">
-                      <Link
-                        to="#"
-                        onClick={(e) => e.preventDefault()}
-                        className="text-decoration-none"
-                      >
-                        {getBrandsName(product.brandId)}
-                      </Link>
-                    </Card.Text>
-
-                    <div className="d-flex align-items-center justify-content-between mb-2">
-                      <span className="text-teal fs-14 fw-bold">
-                        {formatPrice(product.sellingPrice)}
-                      </span>
-                      <span className="text-pink fs-13">
-                        {product.quantity ?? 0} Pcs
-                      </span>
-                    </div>
-                    <OverlayTrigger
-                      placement="top"
-                      overlay={<Tooltip>Add to Cart</Tooltip>}
-                    >
-                      <Button
-                        variant="outline-primary"
-                        size="sm"
-                        onClick={() => handleAddToCart(product)}
-                        disabled={
-                          cartLoadingStates[product.productId] ||
-                          product.quantity <= 0
-                        }
-                        className="w-100 d-flex align-items-center justify-content-center"
-                      >
-                        {cartLoadingStates[product.productId] ? (
-                          <Spinner
-                            animation="border"
-                            size="sm"
-                            className="me-2"
-                          />
-                        ) : (
-                          <BsCartPlus className="me-2" />
-                        )}
-                        {product.quantity <= 0 ? "Out of Stock" : "Add to Cart"}
-                      </Button>
-                    </OverlayTrigger>
-                    {isAdmin && (
-                      <div className="mt-2">
-                        <Button
-                          variant="outline-success"
-                          size="sm"
-                          onClick={() => handleStockClick(product)}
-                          className="w-100 mb-2"
-                        >
-                          Manage Stock
-                        </Button>
-                        <Button
-                          variant="outline-info"
-                          size="sm"
-                          onClick={() => handleHistoryClick(product)}
-                          className="w-100 mb-2"
-                        >
-                          View History
-                        </Button>
-                        <Actions
-                          viewUrl={`/product/${product.productId}`}
-                          editUrl={`/product/${product.productId}/edit`}
-                          onDelete={() => handleDeleteClick(product)}
-                        />
-                      </div>
-                    )}
-                  </Card.Body>
-                </Card>
-              </Col>
-            ))}
-          </Row>
-          <div className="mt-4">
-            <DataTablePagination
-              totalItems={filteredProducts.length}
-              itemNo={itemsPerPage}
-              onPageChange={(selectedPage) => setCurrentPage(selectedPage - 1)}
+        <div style={{ padding: 24 }}>
+          <Cart cartItems={cartItems} onRemoveFromCart={handleRemoveFromCart} />
+          <div>
+            <TableHeader
+              filters={filters}
+              setFilters={setFilters}
+              additionalSortOptions={[
+                { value: "Price Low to High", label: "Price: Low to High" },
+                { value: "Price High to Low", label: "Price: High to Low" },
+              ]}
             />
+            <Row gutter={[16, 16]}>
+              {currentItems.map((product) => {
+                const menu = (
+                  <Menu>
+                    <Menu.Item key="view">
+                      <Link to={`/product/${product.productId}`}>View</Link>
+                    </Menu.Item>
+                    <Menu.Item key="edit">
+                      <Link to={`/product/${product.productId}/edit`}>
+                        Edit
+                      </Link>
+                    </Menu.Item>
+                    <Menu.Item
+                      key="manage-stock"
+                      onClick={() => handleStockClick(product)}
+                    >
+                      Manage Stock
+                    </Menu.Item>
+                    <Menu.Item
+                      key="view-history"
+                      onClick={() => handleHistoryClick(product)}
+                    >
+                      View History
+                    </Menu.Item>
+                    <Menu.Item
+                      key="delete"
+                      onClick={() => handleDeleteClick(product)}
+                    >
+                      Delete
+                    </Menu.Item>
+                  </Menu>
+                );
+
+                return (
+                  <Col
+                    key={product.productId}
+                    xs={24}
+                    sm={12}
+                    md={8}
+                    lg={6}
+                    xl={4}
+                  >
+                    <Card
+                      hoverable
+                      cover={
+                        <div
+                          style={{
+                            height: 150,
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            overflow: "hidden",
+                          }}
+                        >
+                          <img
+                            src={product?.images || pos}
+                            alt={product.name}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                              objectPosition: "center",
+                            }}
+                          />
+                        </div>
+                      }
+                      actions={[
+                        <Tooltip title="Add to Cart" key="add-to-cart">
+                          <Button
+                            type="primary"
+                            icon={
+                              cartLoadingStates[product.productId] ? (
+                                <Spin size="small" />
+                              ) : (
+                                <ShoppingCartOutlined />
+                              )
+                            }
+                            onClick={() => handleAddToCart(product)}
+                            disabled={
+                              cartLoadingStates[product.productId] ||
+                              product.quantity <= 0
+                            }
+                            block
+                          >
+                            {product.quantity <= 0
+                              ? "Out of Stock"
+                              : "Add to Cart"}
+                          </Button>
+                        </Tooltip>,
+                      ]}
+                    >
+                      <Card.Meta
+                        title={
+                          <Link
+                            to={`/product/${product.productId}`}
+                            style={{ color: "#000" }}
+                          >
+                            {product.name || "N/A"}
+                          </Link>
+                        }
+                        description={
+                          <>
+                            <div>
+                              <Link
+                                to="#"
+                                onClick={(e) => e.preventDefault()}
+                                style={{ color: "#8c8c8c" }}
+                              >
+                                {getBrandsName(product.brandId)}
+                              </Link>
+                            </div>
+                            <div
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                marginTop: 8,
+                              }}
+                            >
+                              <span
+                                style={{ color: "#13c2c2", fontWeight: "bold" }}
+                              >
+                                {formatPrice(product.sellingPrice)}
+                              </span>
+                              <span style={{ color: "#eb2f96" }}>
+                                {product.quantity ?? 0} Pcs
+                              </span>
+                            </div>
+                          </>
+                        }
+                      />
+                      <Dropdown overlay={menu} trigger={["click"]}>
+                        <Button
+                          type="text"
+                          style={{ position: "absolute", top: 8, right: 8 }}
+                          icon={<MoreOutlined />}
+                        />
+                      </Dropdown>
+                    </Card>
+                  </Col>
+                );
+              })}
+            </Row>
+            <div style={{ marginTop: 24, textAlign: "center" }}>
+              <Pagination
+                current={currentPage}
+                total={filteredProducts.length}
+                pageSize={itemsPerPage}
+                onChange={(page) => setCurrentPage(page)}
+                showSizeChanger={false}
+              />
+            </div>
           </div>
+
+          {isAdmin && (
+            <>
+              <DeleteModal
+                isVisible={isModalVisible}
+                onConfirm={handleConfirmDelete}
+                onCancel={() => {
+                  setModalVisible(false);
+                  setSelectedProduct(null);
+                }}
+                item={selectedProduct}
+                itemType="Product"
+                isLoading={isDeleting}
+              />
+              {isStockModalVisible && selectedProduct && (
+                <StockModal
+                  show={isStockModalVisible}
+                  onHide={() => setStockModalVisible(false)}
+                  product={selectedProduct}
+                  onSubmit={handleStockSubmit}
+                />
+              )}
+              {isHistoryModalVisible && selectedProduct && (
+                <HistoryModal
+                  show={isHistoryModalVisible}
+                  onHide={() => setHistoryModalVisible(false)}
+                  product={selectedProduct}
+                  stockHistory={
+                    stockHistoryMap[selectedProduct.productId] || []
+                  }
+                />
+              )}
+            </>
+          )}
         </div>
       </div>
-
-      {isAdmin && (
-        <>
-          <DeleteModal
-            isVisible={isModalVisible}
-            onConfirm={handleConfirmDelete}
-            onCancel={() => {
-              setModalVisible(false);
-              setSelectedProduct(null);
-            }}
-            item={selectedProduct}
-            itemType="Product"
-            isLoading={isDeleting}
-          />
-          {isStockModalVisible && selectedProduct && (
-            <StockModal
-              show={isStockModalVisible}
-              onHide={() => setStockModalVisible(false)}
-              product={selectedProduct}
-              onSubmit={handleStockSubmit}
-            />
-          )}
-          {isHistoryModalVisible && selectedProduct && (
-            <HistoryModal
-              show={isHistoryModalVisible}
-              onHide={() => setHistoryModalVisible(false)}
-              product={selectedProduct}
-              stockHistory={stockHistoryMap[selectedProduct.productId] || []}
-            />
-          )}
-        </>
-      )}
     </div>
   );
 };

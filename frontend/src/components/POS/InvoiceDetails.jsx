@@ -37,7 +37,6 @@ const InvoiceDetails = ({ invoiceData, onChange, error }) => {
   }, [addresses, shipTo]);
 
   const handleAddressCreated = (newAddress) => {
-    console.log("New address created:", newAddress);
     if (newAddress?.addressId) {
       onChange("shipTo", newAddress.addressId);
       refetch();
@@ -66,7 +65,6 @@ const InvoiceDetails = ({ invoiceData, onChange, error }) => {
               value={shipTo || ""}
               onChange={(e) => {
                 const value = e.target.value || null;
-                console.log("Form.Select shipTo changed to:", value);
                 onChange("shipTo", value);
               }}
             >

@@ -95,7 +95,6 @@ const POSWrapper = () => {
   });
 
   const renderTabContent = () => {
-    console.log("Active tab:", activeTab); // Debug tab state
     switch (activeTab) {
       case "quotations":
         return (
