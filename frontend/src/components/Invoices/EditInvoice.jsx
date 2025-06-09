@@ -261,8 +261,6 @@ const EditInvoice = ({ invoice, onClose }) => {
       ...invoiceData,
     };
 
-    console.log("Submitting Payload:", payload);
-
     try {
       const response = await updateInvoice(payload).unwrap();
       console.log("Update Invoice Response:", response);

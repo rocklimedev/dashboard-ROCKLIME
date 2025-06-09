@@ -22,10 +22,9 @@ import {
 import { AiOutlineProduct } from "react-icons/ai";
 import {
   BiAccessibility,
-  BiMessage,
+  BiCart,
   BiSearch,
   BiSolidCategory,
-  BiUser,
   BiUserCheck,
 } from "react-icons/bi";
 import { FaFileCircleCheck, FaFirstOrder, FaPooStorm } from "react-icons/fa6";
@@ -72,6 +71,7 @@ import { MdOutlineDiscount } from "react-icons/md";
 import { MdOutlinePeopleAlt } from "react-icons/md";
 import { TiBusinessCard } from "react-icons/ti";
 import NewProductWrapper from "../components/Product/NewProductWrapper";
+import Cart from "../components/POS-NEW/Cart";
 const masterRoutes = [
   {
     path: "/",
@@ -87,6 +87,13 @@ const masterRoutes = [
     icon: <MdOutlineInventory2 />,
     isSidebarActive: true,
     submenu: [
+      {
+        path: "/inventory/products",
+        name: "Products",
+        icon: <AiOutlineProduct />,
+        element: <ProductList />,
+        isSidebarActive: true,
+      },
       {
         path: "/inventory/product/product-code-status",
         name: "Code Status",
@@ -383,6 +390,13 @@ const masterRoutes = [
         element: <RecentQuotation />,
       },
     ],
+  },
+  {
+    path: "/cart",
+    name: "Cart",
+    icon: <BiCart />,
+    isSidebarActive: true,
+    element: <Cart />,
   },
   {
     path: "#",

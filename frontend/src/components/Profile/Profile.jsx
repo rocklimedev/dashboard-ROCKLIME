@@ -42,7 +42,7 @@ const Profile = () => {
   useEffect(() => {
     const token =
       localStorage.getItem("token") || sessionStorage.getItem("token");
-    console.log("Auth token:", token);
+
     if (!token) {
       toast.error("No authentication token found. Redirecting to login...");
       window.location.href = "/login";

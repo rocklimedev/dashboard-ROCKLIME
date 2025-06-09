@@ -71,8 +71,6 @@ const ShowQuotations = ({
     return customer?.name || "Unknown Customer";
   };
 
-  console.log("Quotations:", quotations); // Debug quotations data
-
   return (
     <div className="order-body py-4">
       {errorMessage && (
@@ -180,10 +178,6 @@ const ShowQuotations = ({
                   <Button
                     variant="outline-info"
                     onClick={() => {
-                      console.log(
-                        "Opening products for quotation:",
-                        quotation.quotationId
-                      );
                       setSelectedQuotation(quotation);
                     }}
                     className="d-flex align-items-center"
@@ -219,7 +213,6 @@ const ShowQuotations = ({
         <Modal
           show={!!selectedQuotation}
           onHide={() => {
-            console.log("Closing quotation modal");
             setSelectedQuotation(null);
           }}
           size="lg"
