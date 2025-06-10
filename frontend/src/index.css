@@ -612,3 +612,123 @@
     font-size: var(--font-size-xs, 12px);
   }
 }
+.cm-table-wrapper {
+  margin-top: var(--spacing-md);
+  overflow-x: auto;
+}
+
+.cm-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 12px;
+  background: transparent;
+}
+
+.cm-table thead {
+  background-color: #bd1414;
+  color: white;
+  height: 72px;
+  border-radius: 12px;
+}
+
+.cm-table thead th {
+  padding: 16px;
+  font-weight: 600;
+  font-size: 16px;
+  text-align: left;
+}
+
+.cm-table tbody tr {
+  background-color: #f9f9f9;
+  border-radius: 12px;
+  height: 63px;
+  transition: background-color 0.2s ease;
+}
+
+.cm-table tbody tr:hover {
+  background: rgba(255, 69, 0, 0.1);
+}
+
+.cm-table td {
+  padding: 16px;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+}
+
+.action-icon {
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--primary-color);
+  transition: color 0.2s ease;
+}
+
+.action-icon:hover {
+  color: var(--primary-hover);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .cm-table thead {
+    display: none;
+  }
+
+  .cm-table tr {
+    display: block;
+    margin-bottom: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 12px;
+  }
+
+  .cm-table td {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px;
+    font-size: 14px;
+  }
+
+  .cm-table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    margin-right: 8px;
+    color: var(--text-primary);
+  }
+
+  .cm-table td[data-label="Actions"]::before {
+    content: "Actions";
+  }
+}
+.product-card {
+  /* Ensure the card fits within its container and is responsive */
+  width: 100%;
+  max-width: 260px; /* Slightly adjusted from 256.9px for simplicity */
+  background: #f9f9f9;
+  box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  overflow: hidden; /* Prevent content from overflowing */
+}
+
+/* Ensure the card's cover (image container) is properly styled */
+.ant-card-cover {
+  position: relative;
+  width: 100%;
+  height: 150px; /* Match the height from your JSX for consistency */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.product-image-container {
+  /* Remove absolute positioning to respect the card's cover layout */
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Ensure the image covers the area without distortion */
+  object-position: center;
+  border-radius: 12px 12px 0 0; /* Match card's border-radius for top corners */
+}

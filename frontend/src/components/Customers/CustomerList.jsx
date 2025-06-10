@@ -112,65 +112,62 @@ const CustomerList = () => {
             tableData={formattedCustomers} // Pass formatted customers to PageHeader
           />
 
-          <div className="card">
-            <div className="card-body p-0">
-              <div className="table-responsive">
-                <table className="table datatable">
-                  <thead>
-                    <tr>
-                      <th>Customer</th>
-                      <th>Email</th>
-                      <th>Phone</th>
-                      <th>Company</th>
-                      <th>Is Vendor</th>
-                      <th>Total Amount</th>
-                      <th>Balance</th>
-                      <th>Paid Amount</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedCustomers.map((customer) => (
-                      <tr key={customer.customerId}>
-                        <td>{customer.name}</td>
-                        <td>{customer.email}</td>
-                        <td>{customer.mobileNumber}</td>
-                        <td>{customer.companyName}</td>
-                        <td>{customer?.isVendor ? "Yes" : "No"}</td>
-                        <td>{customer.totalAmount}</td>
-                        <td>{customer.balance}</td>
-                        <td>{customer.paidAmount}</td>
-                        <td>
-                          <div className="edit-delete-action">
-                            <a
-                              href={`/customer/${customer.customerId}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <FaEye />
-                            </a>
-                            <a
-                              className="me-2 p-2"
-                              href="javascript:void(0);"
-                              onClick={() => handleEditCustomer(customer)}
-                            >
-                              <BiEdit />
-                            </a>
-                            <a
-                              className="p-2"
-                              href="javascript:void(0);"
-                              onClick={() => handleDelete(customer.customerId)}
-                            >
-                              <BiTrash />
-                            </a>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+          <div className="cm-table-wrapper">
+            <table className="cm-table">
+              <thead>
+                <tr>
+                  <th>Customer</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Company</th>
+                  <th>Is Vendor</th>
+                  <th>Total Amount</th>
+                  <th>Balance</th>
+                  <th>Paid Amount</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedCustomers.map((customer) => (
+                  <tr key={customer.customerId}>
+                    <td>{customer.name}</td>
+                    <td>{customer.email}</td>
+                    <td>{customer.mobileNumber}</td>
+                    <td>{customer.companyName}</td>
+                    <td>{customer?.isVendor ? "Yes" : "No"}</td>
+                    <td>{customer.totalAmount}</td>
+                    <td>{customer.balance}</td>
+                    <td>{customer.paidAmount}</td>
+                    <td>
+                      <div className="edit-delete-action">
+                        <a
+                          href={`/customer/${customer.customerId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <FaEye />
+                        </a>
+                        <a
+                          className="me-2 p-2"
+                          href="javascript:void(0);"
+                          onClick={() => handleEditCustomer(customer)}
+                        >
+                          <BiEdit />
+                        </a>
+                        <a
+                          className="p-2"
+                          href="javascript:void(0);"
+                          onClick={() => handleDelete(customer.customerId)}
+                        >
+                          <BiTrash />
+                        </a>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
             <div className="card-footer">
               <DataTablePagination
                 totalItems={customers.length}

@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { Modal, Table, Pagination } from "react-bootstrap";
 import { useGetAllProductCodesQuery } from "../../api/productApi";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
+import { Link } from "react-router-dom";
 
 // Define styles object for professional look
 const styles = {
@@ -375,7 +376,11 @@ const CheckProductCodeStatus = () => {
                     {paginatedProducts.map((product, idx) => (
                       <tr key={product.id}>
                         <td>{(page - 1) * pageSize + idx + 1}</td>
-                        <td>{product.name}</td>
+                        <td>
+                          <Link to={`/product/${product.productId}`}>
+                            {product.name}
+                          </Link>
+                        </td>
                         <td>{product.product_code}</td>
                       </tr>
                     ))}

@@ -211,70 +211,66 @@ const CmList = () => {
           onAdd={handleAddCompany}
           tableData={formattedCompanies} // Pass formatted companies to PageHeader
         />
-        <div className="card">
-          <div className="card-body p-0">
-            <div className="table-responsive">
-              <table className="table datatable">
-                <thead className="thead-light">
-                  <tr>
-                    <th>Company Name</th>
-                    <th>Address</th>
-                    <th>Website</th>
-                    <th>Slug</th>
-                    <th>Created Date</th>
-                    <th>Parent Company</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentCompanies.map((company) => (
-                    <tr key={company.companyId}>
-                      <td>{company.name}</td>
-                      <td>{company.address || "N/A"}</td>
-                      <td>{company.website || "N/A"}</td>
-                      <td>{company.slug || "N/A"}</td>
-                      <td>
-                        {company.createdDate
-                          ? new Date(company.createdDate).toLocaleDateString()
-                          : "N/A"}
-                      </td>
-                      <td>{company.parentCompanyId || "None"}</td>
-                      <td>
-                        <div className="edit-delete-action">
-                          <a
-                            className="me-2 p-2"
-                            href="javascript:void(0);"
-                            onClick={() => handleViewCompany(company)}
-                          >
-                            <FaEye />
-                          </a>
-                          <a
-                            className="me-2 p-2"
-                            onClick={() => handleEditCompany(company)}
-                          >
-                            <BiEdit />
-                          </a>
-                          <a
-                            className="p-2"
-                            onClick={() => handleDeleteCompany(company)}
-                          >
-                            <BiTrash />
-                          </a>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {currentCompanies.length === 0 && (
-                    <tr>
-                      <td colSpan="7" className="text-center">
-                        No companies found.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+        <div className="cm-table-wrapper">
+          <table className="cm-table">
+            <thead>
+              <tr>
+                <th>Company Name</th>
+                <th>Address</th>
+                <th>Website</th>
+                <th>Slug</th>
+                <th>Created Date</th>
+                <th>Parent Company</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentCompanies.map((company) => (
+                <tr key={company.companyId}>
+                  <td>{company.name}</td>
+                  <td>{company.address || "N/A"}</td>
+                  <td>{company.website || "N/A"}</td>
+                  <td>{company.slug || "N/A"}</td>
+                  <td>
+                    {company.createdDate
+                      ? new Date(company.createdDate).toLocaleDateString()
+                      : "N/A"}
+                  </td>
+                  <td>{company.parentCompanyId || "None"}</td>
+                  <td>
+                    <div className="edit-delete-action">
+                      <a
+                        className="me-2 p-2"
+                        href="javascript:void(0);"
+                        onClick={() => handleViewCompany(company)}
+                      >
+                        <FaEye />
+                      </a>
+                      <a
+                        className="me-2 p-2"
+                        onClick={() => handleEditCompany(company)}
+                      >
+                        <BiEdit />
+                      </a>
+                      <a
+                        className="p-2"
+                        onClick={() => handleDeleteCompany(company)}
+                      >
+                        <BiTrash />
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {currentCompanies.length === 0 && (
+                <tr>
+                  <td colSpan="7" className="text-center">
+                    No companies found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
 
         {/* Pagination */}

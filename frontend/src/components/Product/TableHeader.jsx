@@ -1,206 +1,81 @@
-import React from "react";
-import { useGetAllProductsQuery } from "../../api/productApi";
-import { useGetAllBrandsQuery } from "../../api/brandsApi";
-import { useGetAllCategoriesQuery } from "../../api/categoryApi";
-import { useGetCustomersQuery } from "../../api/customerApi";
-
-const TableHeader = ({ filters, setFilters }) => {
-  const { data: customersData } = useGetCustomersQuery();
-  const { data: categoriesData } = useGetAllCategoriesQuery();
-  const { data: brandsData } = useGetAllBrandsQuery();
-  const { data: productsData } = useGetAllProductsQuery();
-
-  const handleFilterChange = (field, value) => {
-    const updatedFilters = { ...filters, [field]: value };
-    setFilters(updatedFilters);
-  };
-
-  const handleClearFilter = (field) => {
-    handleFilterChange(field, field === "search" ? "" : null);
-  };
-
-  const handleSearchChange = (e) => {
-    handleFilterChange("search", e.target.value);
-  };
-
-  const handleCompanyCodeChange = (e) => {
-    handleFilterChange("company_code", e.target.value);
-  };
-
-  const createdByList = [
-    ...new Set(
-      productsData?.data
-        ?.map((p) => {
-          const customer = customersData?.data?.find(
-            (c) => c._id === p.customerId
-          );
-          return customer?.name;
-        })
-        .filter(Boolean)
-    ),
-  ];
-
+import { Form, Row, Col, Input, Select } from "antd";
+import { SearchOutlined } from "@ant-design/icons";
+const { Option } = Select;
+const TableHeader = ({ filters, setFilters, additionalSortOptions = [] }) => {
   return (
-    <div className="card-header d-flex align-items-center justify-content-between flex-wrap row-gap-3">
-      {/* ===== SEARCH BOX ===== */}
-      <div className="search-set">
-        <div className="search-input">
-          <span className="btn-searchset">
-            <i className="ti ti-search fs-14 feather-search"></i>
-          </span>
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Search products, Company Code, etc..."
-            value={filters.search || ""}
-            onChange={handleSearchChange}
-          />
-          {filters.search && (
-            <i
-              className="ti ti-x fs-16 position-absolute end-0 me-3 mt-2 cursor-pointer"
-              onClick={() => handleClearFilter("search")}
-            ></i>
-          )}
-        </div>
-      </div>
-
-      <div className="d-flex table-dropdown my-xl-auto right-content align-items-center flex-wrap row-gap-3">
-        {/* ===== BRAND FILTER ===== */}
-        <div className="dropdown position-relative me-2">
-          <a
-            href="#"
-            className="dropdown-toggle btn btn-white btn-md d-inline-flex align-items-center"
-            data-bs-toggle="dropdown"
-          >
-            Brand
-          </a>
-          <ul className="dropdown-menu dropdown-menu-end p-3">
-            {brandsData?.map((brand) => (
-              <li key={brand.id}>
-                <a
-                  href="#"
-                  onClick={() => handleFilterChange("brand", brand.id)} // Use brand id
-                  className="dropdown-item rounded-1"
-                >
+    <Form layout="vertical" style={{ marginBottom: 24 }}>
+      <Row gutter={[16, 16]}>
+        <Col xs={24} md={8}>
+          <Form.Item label="Search Products">
+            <Input
+              prefix={<SearchOutlined />}
+              placeholder="Search by product name or code..."
+              value={filters.search}
+              onChange={(e) =>
+                setFilters({ ...filters, search: e.target.value })
+              }
+            />
+          </Form.Item>
+        </Col>
+        <Col xs={24} md={6}>
+          <Form.Item label="Category">
+            <Select
+              value={filters.category || undefined}
+              onChange={(value) =>
+                setFilters({ ...filters, category: value || null })
+              }
+              allowClear
+              placeholder="All Categories"
+            >
+              {filters.categories?.map((cat) => (
+                <Option key={cat.categoryId} value={cat.categoryId}>
+                  {cat.name}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+        </Col>
+        <Col xs={24} md={6}>
+          <Form.Item label="Brand">
+            <Select
+              value={filters.brand || undefined}
+              onChange={(value) =>
+                setFilters({ ...filters, brand: value || null })
+              }
+              allowClear
+              placeholder="All Brands"
+            >
+              {filters.brands?.map((brand) => (
+                <Option key={brand.id} value={brand.id}>
                   {brand.brandName}
-                </a>
-              </li>
-            ))}
-          </ul>
-          {filters.brand && (
-            <div className="position-absolute top-0 start-100 translate-middle badge bg-primary text-white px-2 py-1 rounded-pill d-flex align-items-center">
-              <span className="me-1">
-                {brandsData?.find((b) => b.id === filters.brand)?.brandName ||
-                  filters.brand}
-              </span>
-              <i
-                className="ti ti-x cursor-pointer"
-                onClick={() => handleClearFilter("brand")}
-              ></i>
-            </div>
-          )}
-        </div>
-
-        {/* ===== COMPANY CODE FILTER ===== */}
-        <div className="dropdown position-relative me-2">
-          <a
-            href="#"
-            className="dropdown-toggle btn btn-white btn-md d-inline-flex align-items-center"
-            data-bs-toggle="dropdown"
-          >
-            Company Code
-          </a>
-          <ul className="dropdown-menu dropdown-menu-end p-3">
-            {productsData?.data?.map((product) => (
-              <li key={product.company_code}>
-                <a
-                  href="#"
-                  onClick={() =>
-                    handleFilterChange("company_code", product.company_code)
-                  } // Use company_code
-                  className="dropdown-item rounded-1"
-                >
-                  {product.company_code}
-                </a>
-              </li>
-            ))}
-          </ul>
-          {filters.company_code && (
-            <div className="position-absolute top-0 start-100 translate-middle badge bg-primary text-white px-2 py-1 rounded-pill d-flex align-items-center">
-              <span className="me-1">{filters.company_code}</span>
-              <i
-                className="ti ti-x cursor-pointer"
-                onClick={() => handleClearFilter("company_code")}
-              ></i>
-            </div>
-          )}
-        </div>
-
-        {/* ===== CREATED BY FILTER ===== */}
-        <div className="dropdown position-relative me-2">
-          <a
-            href="#"
-            className="dropdown-toggle btn btn-white btn-md d-inline-flex align-items-center"
-            data-bs-toggle="dropdown"
-          >
-            Created By
-          </a>
-          <ul className="dropdown-menu dropdown-menu-end p-3">
-            {createdByList?.map((name, i) => (
-              <li key={i}>
-                <a
-                  href="#"
-                  onClick={() => handleFilterChange("createdBy", name)}
-                  className="dropdown-item rounded-1"
-                >
-                  {name}
-                </a>
-              </li>
-            ))}
-          </ul>
-          {filters.createdBy && (
-            <div className="position-absolute top-0 start-100 translate-middle badge bg-primary text-white px-2 py-1 rounded-pill d-flex align-items-center">
-              <span className="me-1">{filters.createdBy}</span>
-              <i
-                className="ti ti-x cursor-pointer"
-                onClick={() => handleClearFilter("createdBy")}
-              ></i>
-            </div>
-          )}
-        </div>
-
-        {/* ===== SORT BY ===== */}
-        <div className="dropdown">
-          <a
-            href="#"
-            className="dropdown-toggle btn btn-white btn-md d-inline-flex align-items-center"
-            data-bs-toggle="dropdown"
-          >
-            Sort By: {filters.sortBy || "Last 7 Days"}
-          </a>
-          <ul className="dropdown-menu dropdown-menu-end p-3">
-            {[
-              "Recently Added",
-              "Ascending",
-              "Descending",
-              "Last Month",
-              "Last 7 Days",
-            ].map((option, i) => (
-              <li key={i}>
-                <a
-                  href="#"
-                  onClick={() => handleFilterChange("sortBy", option)}
-                  className="dropdown-item rounded-1"
-                >
-                  {option}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    </div>
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+        </Col>
+        <Col xs={24} md={4}>
+          <Form.Item label="Sort By">
+            <Select
+              value={filters.sortBy || undefined}
+              onChange={(value) =>
+                setFilters({ ...filters, sortBy: value || null })
+              }
+              allowClear
+              placeholder="Default"
+            >
+              <Option value="Ascending">Name: A-Z</Option>
+              <Option value="Descending">Name: Z-A</Option>
+              <Option value="Recently Added">Recently Added</Option>
+              <Option value="Price Low to High">Price: Low to High</Option>
+              <Option value="Price High to Low">Price: High to Low</Option>
+              {additionalSortOptions.map((option) => (
+                <Option key={option.value}>{option.label}</Option>
+              ))}
+            </Select>
+          </Form.Item>
+        </Col>
+      </Row>
+    </Form>
   );
 };
-
 export default TableHeader;

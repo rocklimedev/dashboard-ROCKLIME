@@ -38,149 +38,12 @@ import pos from "../../assets/img/default.png";
 import DeleteModal from "../Common/DeleteModal";
 import HistoryModal from "../Common/HistoryModal";
 import StockModal from "../Common/StockModal";
-const { Option } = Select;
+import Cart from "./Cart";
+import TableHeader from "./TableHeader";
 
 // Minimal Cart Component
-const Cart = ({ cartItems, onRemoveFromCart }) => {
-  const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-
-  return (
-    <div
-      style={{
-        position: "fixed",
-        top: 16,
-        right: 16,
-        zIndex: 1000,
-        padding: 16,
-      }}
-    >
-      <Badge count={totalItems}>
-        <Button type="primary" icon={<ShoppingCartOutlined />}>
-          Cart: {totalItems} item{totalItems !== 1 ? "s" : ""}
-        </Button>
-      </Badge>
-      {cartItems.length > 0 && (
-        <div
-          style={{
-            background: "#fff",
-            padding: 16,
-            border: "1px solid #d9d9d9",
-            borderRadius: 4,
-            marginTop: 8,
-            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-          }}
-        >
-          <h5>Cart</h5>
-          {cartItems.map((item) => (
-            <div
-              key={item.productId}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginBottom: 8,
-              }}
-            >
-              <span>
-                {item.name} (x{item.quantity})
-              </span>
-              <Button
-                type="link"
-                danger
-                onClick={() => onRemoveFromCart(item.productId)}
-              >
-                Remove
-              </Button>
-            </div>
-          ))}
-          <Link to="/cart">
-            <Button type="primary" block style={{ marginTop: 8 }}>
-              View Cart
-            </Button>
-          </Link>
-        </div>
-      )}
-    </div>
-  );
-};
 
 // TableHeader Component
-const TableHeader = ({ filters, setFilters, additionalSortOptions = [] }) => {
-  return (
-    <Form layout="vertical" style={{ marginBottom: 24 }}>
-      <Row gutter={[16, 16]}>
-        <Col xs={24} md={8}>
-          <Form.Item label="Search Products">
-            <Input
-              prefix={<SearchOutlined />}
-              placeholder="Search by product name or code..."
-              value={filters.search}
-              onChange={(e) =>
-                setFilters({ ...filters, search: e.target.value })
-              }
-            />
-          </Form.Item>
-        </Col>
-        <Col xs={24} md={6}>
-          <Form.Item label="Category">
-            <Select
-              value={filters.category || undefined}
-              onChange={(value) =>
-                setFilters({ ...filters, category: value || null })
-              }
-              allowClear
-              placeholder="All Categories"
-            >
-              {filters.categories?.map((cat) => (
-                <Option key={cat.categoryId} value={cat.categoryId}>
-                  {cat.name}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-        </Col>
-        <Col xs={24} md={6}>
-          <Form.Item label="Brand">
-            <Select
-              value={filters.brand || undefined}
-              onChange={(value) =>
-                setFilters({ ...filters, brand: value || null })
-              }
-              allowClear
-              placeholder="All Brands"
-            >
-              {filters.brands?.map((brand) => (
-                <Option key={brand.id} value={brand.id}>
-                  {brand.brandName}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-        </Col>
-        <Col xs={24} md={4}>
-          <Form.Item label="Sort By">
-            <Select
-              value={filters.sortBy || undefined}
-              onChange={(value) =>
-                setFilters({ ...filters, sortBy: value || null })
-              }
-              allowClear
-              placeholder="Default"
-            >
-              <Option value="Ascending">Name: A-Z</Option>
-              <Option value="Descending">Name: Z-A</Option>
-              <Option value="Recently Added">Recently Added</Option>
-              <Option value="Price Low to High">Price: Low to High</Option>
-              <Option value="Price High to Low">Price: High to Low</Option>
-              {additionalSortOptions.map((option) => (
-                <Option key={option.value}>{option.label}</Option>
-              ))}
-            </Select>
-          </Form.Item>
-        </Col>
-      </Row>
-    </Form>
-  );
-};
 
 const ProductsList = ({ isAdmin = false }) => {
   const { data: productsData, error, isLoading } = useGetAllProductsQuery();
@@ -494,6 +357,7 @@ const ProductsList = ({ isAdmin = false }) => {
                   >
                     <Card
                       hoverable
+                      className="product-card"
                       cover={
                         <div
                           style={{
@@ -513,6 +377,7 @@ const ProductsList = ({ isAdmin = false }) => {
                               objectFit: "cover",
                               objectPosition: "center",
                             }}
+                            className="product-image-container"
                           />
                         </div>
                       }
