@@ -72,6 +72,7 @@ import { MdOutlinePeopleAlt } from "react-icons/md";
 import { TiBusinessCard } from "react-icons/ti";
 import NewProductWrapper from "../components/Product/NewProductWrapper";
 import Cart from "../components/POS-NEW/Cart";
+import CompaniesWrapper from "../components/Companies/ComapniesWrapper";
 const masterRoutes = [
   {
     path: "/",
@@ -362,35 +363,35 @@ const masterRoutes = [
       },
     ],
   },
-  {
-    path: "#",
-    name: "Latests",
-    icon: <RiAdminLine />,
-    isSidebarActive: true,
-    submenu: [
-      {
-        path: "/recent/recent-orders",
-        name: "Recent Orders",
-        icon: <AiOutlineProduct />,
-        element: <RecentOrders />,
-        isSidebarActive: true,
-      },
-      {
-        path: "/recent/invoices",
-        name: "Recent Invoices",
-        icon: <LiaFileInvoiceSolid />,
-        isSidebarActive: true,
-        element: <RecentInvoices />,
-      },
-      {
-        path: "/recent/quotations",
-        name: "Recent Quotations",
-        icon: <FaQuora />,
-        isSidebarActive: true,
-        element: <RecentQuotation />,
-      },
-    ],
-  },
+  // {
+  //   path: "#",
+  //   name: "Latests",
+  //   icon: <RiAdminLine />,
+  //   isSidebarActive: true,
+  //   submenu: [
+  //     {
+  //       path: "/recent/recent-orders",
+  //       name: "Recent Orders",
+  //       icon: <AiOutlineProduct />,
+  //       element: <RecentOrders />,
+  //       isSidebarActive: true,
+  //     },
+  //     {
+  //       path: "/recent/invoices",
+  //       name: "Recent Invoices",
+  //       icon: <LiaFileInvoiceSolid />,
+  //       isSidebarActive: true,
+  //       element: <RecentInvoices />,
+  //     },
+  //     {
+  //       path: "/recent/quotations",
+  //       name: "Recent Quotations",
+  //       icon: <FaQuora />,
+  //       isSidebarActive: true,
+  //       element: <RecentQuotation />,
+  //     },
+  //   ],
+  // },
   {
     path: "/cart",
     name: "Cart",

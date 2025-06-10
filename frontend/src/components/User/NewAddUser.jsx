@@ -14,16 +14,17 @@ import { useCreateAddressMutation } from "../../api/addressApi";
 import { useParams } from "react-router-dom";
 
 const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
-  const { id } = useParams(); // Get the user ID from the URL (e.g., /u/:id/edit)
+  const { userId } = useParams(); // Get the user userId from the URL (e.g., /u/:userId/edit)
 
   // Fetch user data if userToEdit is not provided (e.g., when navigating via route)
   const {
     data: fetchedUser,
     isLoading: isFetchingUser,
     error: fetchUserError,
-  } = useGetUserByIdQuery(id, { skip: !id || !!propUserToEdit });
+  } = useGetUserByIdQuery(userId, { skip: !userId || !!propUserToEdit });
 
-  const userToEdit = propUserToEdit || fetchedUser?.user;
+  // Use propUserToEdit if provided, otherwise use fetchedUser?.data (adjust based on API response structure)
+  const userToEdit = propUserToEdit || fetchedUser?.data || fetchedUser?.user;
 
   const [createUser, { isLoading: isCreating, error: createError }] =
     useCreateUserMutation();
@@ -63,16 +64,30 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
     addressId: null,
   });
 
+  // Populate formData when userToEdit changes
   useEffect(() => {
+    console.log("userToEdit:", userToEdit); // Debug: Log userToEdit
     if (userToEdit) {
       setFormData({
         username: userToEdit.username || "",
         name: userToEdit.name || "",
         email: userToEdit.email || "",
         mobileNumber: userToEdit.mobileNumber || "",
-        dateOfBirth: userToEdit.dateOfBirth || "",
-        shiftFrom: userToEdit.shiftFrom || "",
-        shiftTo: userToEdit.shiftTo || "",
+        dateOfBirth: userToEdit.dateOfBirth
+          ? new Date(userToEdit.dateOfBirth).toISOString().split("T")[0]
+          : "",
+        shiftFrom: userToEdit.shiftFrom
+          ? new Date(`1970-01-01T${userToEdit.shiftFrom}`).toLocaleTimeString(
+              "en-US",
+              { hour12: false }
+            )
+          : "",
+        shiftTo: userToEdit.shiftTo
+          ? new Date(`1970-01-01T${userToEdit.shiftTo}`).toLocaleTimeString(
+              "en-US",
+              { hour12: false }
+            )
+          : "",
         bloodGroup: userToEdit.bloodGroup || "",
         street: userToEdit.address?.street || "",
         country: userToEdit.address?.country || "",
@@ -80,8 +95,10 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
         city: userToEdit.address?.city || "",
         postalCode: userToEdit.address?.postalCode || "",
         emergencyNumber: userToEdit.emergencyNumber || "",
-        role: userToEdit.roles?.[0] || "",
-        status: userToEdit.status || "inactive",
+        role: userToEdit.roles?.[0]?.roleName || userToEdit.role || "",
+        status: ["active", "inactive", "restricted"].includes(userToEdit.status)
+          ? userToEdit.status
+          : "inactive",
         password: "",
         avatar: userToEdit.avatar || null,
         about: userToEdit.about || "",
@@ -91,8 +108,10 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
     } else {
       setIsEditMode(false);
     }
+    console.log("formData after useEffect:", formData); // Debug: Log formData
   }, [userToEdit]);
 
+  // Handle errors with toast notifications
   useEffect(() => {
     if (createError)
       toast.error(createError?.data?.message || "Failed to create user");
@@ -283,17 +302,20 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
     setIsCollapsed((prev) => !prev);
   };
 
-  if (isFetchingUser) {
+  // Handle loading state for fetching user or roles
+  if (isFetchingUser || isRolesLoading) {
     return (
       <div className="page-wrapper">
         <div className="content text-center">
-          <p>Loading user data...</p>
+          <p>Loading {isFetchingUser ? "user data" : "roles"}...</p>
         </div>
       </div>
     );
   }
 
-  if (fetchUserError && id) {
+  // Handle error state for fetching user
+  if (fetchUserError && userId) {
+    console.log("fetchUserError:", fetchUserError); // Debug: Log error
     return (
       <div className="page-wrapper">
         <div className="content text-center">
@@ -333,7 +355,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
                 onClick={handleCollapse}
                 data-bs-toggle="tooltip"
                 title={isCollapsed ? "Expand" : "Collapse"}
-                id="collapse-header"
+                userId="collapse-header"
               >
                 <i
                   className={
@@ -354,10 +376,10 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
           onSubmit={handleSubmit}
           style={{ display: isCollapsed ? "none" : "block" }}
         >
-          <div className="accordions-items-seperate" id="accordionExample">
+          <div className="accordions-items-seperate" userId="accordionExample">
             {/* Employee Information */}
             <div className="accordion-item border mb-4">
-              <h2 className="accordion-header" id="headingOne">
+              <h2 className="accordion-header" userId="headingOne">
                 <div
                   className="accordion-button bg-white"
                   data-bs-toggle="collapse"
@@ -371,7 +393,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
                 </div>
               </h2>
               <div
-                id="collapseOne"
+                userId="collapseOne"
                 className="accordion-collapse collapse show"
                 aria-labelledby="headingOne"
                 data-bs-parent="#accordionExample"
@@ -440,7 +462,11 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
                         <div className="mb-3">
                           <label className="form-label">Date of Birth</label>
                           <Flatpickr
-                            value={formData.dateOfBirth}
+                            value={
+                              formData.dateOfBirth
+                                ? new Date(formData.dateOfBirth)
+                                : ""
+                            }
                             onChange={(dates) =>
                               handleDateChange("dateOfBirth", dates)
                             }
@@ -454,7 +480,11 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
                         <div className="mb-3">
                           <label className="form-label">Shift From</label>
                           <Flatpickr
-                            value={formData.shiftFrom}
+                            value={
+                              formData.shiftFrom
+                                ? new Date(`1970-01-01T${formData.shiftFrom}`)
+                                : ""
+                            }
                             onChange={(dates) =>
                               handleTimeChange("shiftFrom", dates)
                             }
@@ -473,7 +503,11 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
                         <div className="mb-3">
                           <label className="form-label">Shift To</label>
                           <Flatpickr
-                            value={formData.shiftTo}
+                            value={
+                              formData.shiftTo
+                                ? new Date(`1970-01-01T${formData.shiftTo}`)
+                                : ""
+                            }
                             onChange={(dates) =>
                               handleTimeChange("shiftTo", dates)
                             }
@@ -592,7 +626,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
 
             {/* Address Information */}
             <div className="accordion-item border mb-4">
-              <h2 className="accordion-header" id="headingThree">
+              <h2 className="accordion-header" userId="headingThree">
                 <div
                   className="accordion-button bg-white"
                   data-bs-toggle="collapse"
@@ -606,7 +640,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
                 </div>
               </h2>
               <div
-                id="collapseThree"
+                userId="collapseThree"
                 className="accordion-collapse collapse show"
                 aria-labelledby="headingThree"
                 data-bs-parent="#accordionExample"

@@ -12,7 +12,7 @@ import { BiEdit, BiTrash, BiShowAlt } from "react-icons/bi";
 import { toast } from "sonner";
 import DataTablePagination from "../Common/DataTablePagination";
 
-const CompaniesWrapper = () => {
+const NewCompaniesWrapper = () => {
   const {
     data: vendorsData,
     error: vendorsError,
@@ -214,4 +214,4 @@ const CompaniesWrapper = () => {
   );
 };
 
-export default CompaniesWrapper;
+export default NewCompaniesWrapper;
