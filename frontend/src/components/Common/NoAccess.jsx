@@ -6,7 +6,7 @@ import { useLogoutMutation } from "../../api/authApi";
 import { useGetProfileQuery } from "../../api/userApi";
 import { BiLogOut } from "react-icons/bi";
 import "./NoAccess.css";
-
+import { useGetRolesQuery } from "../../api/rolesApi";
 const NoAccess = () => {
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
   const navigate = useNavigate();
@@ -14,36 +14,61 @@ const NoAccess = () => {
     data: profileData,
     refetch: refetchProfile,
     error: profileError,
-    isFetching,
+    isFetching: isFetchingProfile,
   } = useGetProfileQuery(undefined, {
     refetchOnMountOrArgChange: false, // No refetch automatically
     skip: true, // Don't auto-fetch at all
   });
+  const {
+    data: rolesData,
+    isLoading: isLoadingRoles,
+    error: rolesError,
+  } = useGetRolesQuery();
 
   const handleRetry = async () => {
     try {
+      // Fetch updated profile
       const updatedProfile = await refetchProfile().unwrap();
+      const user = updatedProfile?.user;
 
-      let roleNames = updatedProfile?.user?.roles || [];
+      // Check if user exists and is active
+      if (!user || !user.isActive) {
+        toast.error(
+          "Your account is not active. Please contact an administrator."
+        );
+        return;
+      }
+
+      // Parse user roles
+      let roleNames = user?.roles || [];
       if (typeof roleNames === "string") {
         try {
           roleNames = JSON.parse(roleNames);
         } catch (e) {
-          toast.error("Failed to parse roles:", roleNames);
-          roleNames = [];
+          toast.error("Failed to parse user roles.");
+          return;
         }
       }
 
-      const accessGrantingRoles = ["ADMIN", "MANAGER", "EDITOR"];
+      // Get access-granting roles (exclude USER)
+      const accessGrantingRoles =
+        rolesData
+          ?.filter((role) => role.name !== "USERS")
+          ?.map((role) => role.name) || [];
+
+      // Check if user has an access-granting role
       const hasAccess = roleNames.some((role) =>
         accessGrantingRoles.includes(role?.trim())
       );
 
       if (!hasAccess) {
-        toast.error("Access still denied. Please contact an administrator.");
+        toast.error(
+          "No valid roles assigned. Please contact an administrator."
+        );
         return;
       }
 
+      // Store token if provided
       if (updatedProfile.token) {
         localStorage.setItem("token", updatedProfile.token);
       }
@@ -81,11 +106,16 @@ const NoAccess = () => {
               <p className="text-muted">
                 Please contact an administrator to assign you a role.
               </p>
+              {rolesError && (
+                <p className="text-danger">
+                  Failed to load roles. Please try again.
+                </p>
+              )}
               <div className="d-flex justify-content-center gap-3 mt-4">
                 <Button
                   variant="primary"
                   onClick={handleRetry}
-                  disabled={isLoggingOut}
+                  disabled={isLoggingOut || isFetchingProfile || isLoadingRoles}
                 >
                   Retry
                 </Button>

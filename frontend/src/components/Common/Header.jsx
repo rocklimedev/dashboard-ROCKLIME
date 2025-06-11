@@ -97,7 +97,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
           </Nav.Item>
 
           {/* Add New Dropdown */}
-          <Nav.Item className="dropdown link-nav me-3">
+          {/* <Nav.Item className="dropdown link-nav me-3">
             <Dropdown>
               <Dropdown.Toggle
                 variant="primary"
@@ -179,10 +179,10 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                 </div>
               </Dropdown.Menu>
             </Dropdown>
-          </Nav.Item>
+          </Nav.Item> */}
 
           {/* POS Button */}
-          {currentPath !== "/pos" && (
+          {/* {currentPath !== "/pos" && (
             <Nav.Item className="pos-nav me-3">
               <Button
                 as={Link}
@@ -193,10 +193,10 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                 <MdPointOfSale className="me-1" /> POS
               </Button>
             </Nav.Item>
-          )}
+          )} */}
 
           {/* Calculator Button */}
-          {currentPath === "/pos" && (
+          {/* {currentPath === "/pos" && (
             <Nav.Item className="nav-item-box me-3">
               <Button
                 variant="link"
@@ -207,10 +207,10 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                 <BiCalculator />
               </Button>
             </Nav.Item>
-          )}
+          )} */}
 
           {/* Home Button */}
-          {currentPath !== "/" && (
+          {/* {currentPath !== "/" && (
             <Nav.Item className="pos-nav me-3">
               <Button
                 as={Link}
@@ -221,7 +221,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                 <MdDashboard className="me-1" /> Home
               </Button>
             </Nav.Item>
-          )}
+          )} */}
 
           {/* Fullscreen Toggle */}
           <Nav.Item className="nav-item-box me-3">
