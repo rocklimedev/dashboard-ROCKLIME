@@ -44,7 +44,6 @@
 }
 
 .categories-text {
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif; /* Fallback fonts */
   font-weight: 500;
   font-size: 1rem; /* Relative unit */
   line-height: 1.2;
