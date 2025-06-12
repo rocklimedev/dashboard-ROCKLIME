@@ -73,6 +73,8 @@ import { TiBusinessCard } from "react-icons/ti";
 import NewProductWrapper from "../components/Product/NewProductWrapper";
 import Cart from "../components/POS-NEW/Cart";
 import CompaniesWrapper from "../components/Companies/ComapniesWrapper";
+import Product from "../components/Product/Product";
+import ProductWrapper from "../components/Product/ProductWrapper";
 const masterRoutes = [
   {
     path: "/",
@@ -276,11 +278,34 @@ const masterRoutes = [
     ],
   },
   {
-    path: "/inventory/list",
+    path: "#",
     name: "Products",
     icon: <AiOutlineProduct />,
     element: <NewProductWrapper />,
     isSidebarActive: true,
+    submenu: [
+      {
+        path: "/inventory/list",
+        name: "Products",
+        icon: <AiOutlineProduct />,
+        element: <NewProductWrapper />,
+        isSidebarActive: true,
+      },
+      {
+        path: "/inventory/list/:id",
+        name: "Catregory filtered Products",
+        icon: <AiOutlineProduct />,
+        element: <ProductWrapper />,
+        isSidebarActive: true,
+      },
+      {
+        path: "/inventory/all-products/",
+        name: "Products",
+        icon: <AiOutlineProduct />,
+        element: <Product />,
+        isSidebarActive: true,
+      },
+    ],
   },
 
   {
