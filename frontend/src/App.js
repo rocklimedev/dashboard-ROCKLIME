@@ -28,10 +28,12 @@ function App() {
   const isPOSPage = ["/pos", "/pos-new"].includes(location.pathname);
 
   const token = localStorage.getItem("token");
+  console.log(token);
   const { data: profileData, isLoading: isProfileLoading } =
     useGetProfileQuery();
+  console.log(profileData);
   const userId = profileData?.user?.userId || null;
-
+  console.log(userId);
   useEffect(() => {
     if (!token && !isAuthPage) {
       toast.warning("You are not authenticated. Please log in.");

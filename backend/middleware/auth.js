@@ -4,7 +4,6 @@ const { secret, tokenLife } = require("../config/keys").jwt;
 
 const auth = (req, res, next) => {
   const authHeader = req.headers["authorization"];
-
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ error: "Authorization header is missing." });
   }
@@ -12,12 +11,10 @@ const auth = (req, res, next) => {
   const token = authHeader.split(" ")[1];
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    if (!decoded.roleId) {
-      return res.status(403).json({ error: "Unauthorized: Missing roleId." });
+    const decoded = jwt.verify(token, secret);
+    if (!decoded.roles || decoded.roles.length === 0) {
+      return res.status(403).json({ error: "Unauthorized: Missing roles." });
     }
-
     req.user = decoded;
     next();
   } catch (error) {
@@ -28,11 +25,11 @@ const auth = (req, res, next) => {
 const generateToken = (user) => {
   const payload = {
     userId: user.userId,
-    roleId: user.roleId,
+    roles: user.roles || ["USERS"], // Use roles array, default to ["USERS"]
     email: user.email,
     iat: Math.floor(Date.now() / 1000),
   };
-
   return jwt.sign(payload, secret, { expiresIn: tokenLife });
 };
+
 module.exports = { auth, generateToken };

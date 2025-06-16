@@ -18,12 +18,12 @@ const Invoice = sequelize.define(
     },
     invoiceNo: {
       type: DataTypes.STRING,
-      allowNull: true, // ← change this
+      allowNull: true,
       unique: true,
     },
-
     createdBy: {
       type: DataTypes.UUID,
+      allowNull: true, // Align with schema
       references: {
         model: User,
         key: "userId",
@@ -31,11 +31,19 @@ const Invoice = sequelize.define(
     },
     quotationId: {
       type: DataTypes.UUID,
+      allowNull: true,
       references: {
         model: Quotation,
         key: "quotationId",
       },
-      allowNull: true,
+    },
+    customerId: {
+      type: DataTypes.UUID,
+      allowNull: true, // Add missing field
+      references: {
+        model: Customer,
+        key: "customerId",
+      },
     },
     billTo: {
       type: DataTypes.STRING(255),
@@ -43,11 +51,11 @@ const Invoice = sequelize.define(
     },
     shipTo: {
       type: DataTypes.UUID,
+      allowNull: true, // Align with schema
       references: {
         model: Address,
         key: "addressId",
       },
-      allowNull: false,
     },
     amount: {
       type: DataTypes.DECIMAL(10, 2),
@@ -92,19 +100,18 @@ const Invoice = sequelize.define(
 );
 
 Invoice.beforeCreate(async (invoice, options) => {
-  let unique = false;
-
-  while (!unique) {
-    const randomNumber = crypto.randomInt(100000, 999999); // More secure RNG
-    const generatedNo = `INV_${randomNumber}`;
-
-    const existing = await Invoice.findOne({
-      where: { invoiceNo: generatedNo },
-    });
-
-    if (!existing) {
-      invoice.invoiceNo = generatedNo;
-      unique = true;
+  if (!invoice.invoiceNo) {
+    let unique = false;
+    while (!unique) {
+      const randomNumber = crypto.randomInt(100000, 999999);
+      const generatedNo = `INV_${randomNumber}`;
+      const existing = await Invoice.findOne({
+        where: { invoiceNo: generatedNo },
+      });
+      if (!existing) {
+        invoice.invoiceNo = generatedNo;
+        unique = true;
+      }
     }
   }
 });
