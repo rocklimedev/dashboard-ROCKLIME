@@ -24,9 +24,9 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
-import "antd/dist/reset.css"; // Use Ant Design's reset CSS for v5
+import "antd/dist/reset.css";
 import noimage from "../../assets/img/default.png";
-import "./productdetails.css"; // Keep for Swiper and barcode styling, adjust as needed
+import "./productdetails.css";
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -59,28 +59,30 @@ const ProductDetails = () => {
 
   const [barcodeData, setBarcodeData] = useState("");
   const [quantity, setQuantity] = useState(1);
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
   const barcodeRef = useRef(null);
+  const swiperRef = useRef(null);
 
-  // Parse images from product.images
+  // Parse images with simplified logic
   const getParsedImages = (imageField) => {
-    if (!imageField) return [];
+    if (!imageField) return [noimage];
     try {
       if (typeof imageField === "string") {
         const parsed = JSON.parse(imageField);
-        if (Array.isArray(parsed))
-          return parsed.filter((img) => img && typeof img === "string");
-        if (typeof parsed === "string" && parsed.startsWith("http"))
-          return [parsed];
+        return Array.isArray(parsed)
+          ? parsed.filter((img) => img && typeof img === "string")
+          : parsed.startsWith("http")
+          ? [parsed]
+          : [noimage];
       }
-      if (Array.isArray(imageField)) {
-        return imageField.filter((img) => img && typeof img === "string");
-      }
-      return [];
-    } catch (err) {
-      if (typeof imageField === "string" && imageField.startsWith("http")) {
-        return [imageField];
-      }
-      return [];
+      return Array.isArray(imageField)
+        ? imageField.filter((img) => img && typeof img === "string")
+        : [noimage];
+    } catch {
+      return typeof imageField === "string" && imageField.startsWith("http")
+        ? [imageField]
+        : [noimage];
     }
   };
 
@@ -109,7 +111,7 @@ const ProductDetails = () => {
       printWindow.document.write(`
         <html>
           <body onload="window.print();window.close()">
-            <img src="${canvas.toDataURL()}" />
+            <img src="${canvas.toDataURL()}" alt="Product Barcode" />
           </body>
         </html>
       `);
@@ -119,16 +121,40 @@ const ProductDetails = () => {
     }
   };
 
-  // Add to cart handler
-  const handleAddToCart = () => {
-    toast.success(`${product.name} (Quantity: ${quantity}) added to cart!`);
-    // Implement cart logic here
+  // Add to cart handler with loading state
+  const handleAddToCart = async () => {
+    setIsAddingToCart(true);
+    try {
+      // Simulate API call for adding to cart
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      toast.success(`${product.name} (Quantity: ${quantity}) added to cart!`);
+    } catch {
+      toast.error("Failed to add to cart.");
+    } finally {
+      setIsAddingToCart(false);
+    }
+  };
+
+  // Handle thumbnail click
+  const handleThumbnailClick = (index) => {
+    setActiveSlide(index);
+    if (swiperRef.current?.swiper) {
+      swiperRef.current.swiper.slideTo(index);
+    }
+  };
+
+  // Handle quantity change
+  const handleQuantityChange = (value) => {
+    if (value >= 1 && value <= (product.quantity || 1)) {
+      setQuantity(value);
+    }
   };
 
   // Set barcode and handle errors
   useEffect(() => {
     if (product?.product_code) {
       setBarcodeData(product.product_code);
+      generateBarcode(product.product_code);
     }
     if (brandError) {
       toast.error("Failed to load brand information.");
@@ -143,13 +169,6 @@ const ProductDetails = () => {
       );
     }
   }, [product, brandError, recommendedError]);
-
-  // Generate barcode when barcodeData changes
-  useEffect(() => {
-    if (barcodeData) {
-      generateBarcode(barcodeData);
-    }
-  }, [barcodeData]);
 
   if (
     isProductLoading ||
@@ -185,214 +204,275 @@ const ProductDetails = () => {
 
   return (
     <div className="page-wrapper">
-      <div className="content">
-        <div style={{ padding: "20px" }}>
-          {/* Breadcrumbs */}
+      <div className="content container">
+        {/* Breadcrumbs */}
+        <div className="main__breadcrumbs breadcrumbs">
           <Breadcrumb
             items={[
-              { title: <a href="/">Home</a> },
-              { title: <a href="/shop">Shop</a> },
-              { title: product.name || "N/A" },
+              {
+                title: <a href="/">Home</a>,
+                className: "breadcrumbs__list-link",
+              },
+              {
+                title: <a href="/shop">Shop</a>,
+                className: "breadcrumbs__list-link",
+              },
+              {
+                title: product.name || "N/A",
+                className: "breadcrumbs__list-text",
+              },
             ]}
-            style={{ marginBottom: "20px" }}
+            className="breadcrumbs__list"
           />
+        </div>
 
-          {/* Product Section */}
-          <Row gutter={[16, 16]}>
-            {/* Product Gallery */}
-            <Col xs={24} md={12}>
-              <Swiper
-                modules={[Navigation]}
-                navigation={{
-                  prevEl: ".product-swiper__prev",
-                  nextEl: ".product-swiper__next",
-                }}
-                className="product-swiper"
-                spaceBetween={10}
-                slidesPerView={1}
-              >
-                {images.length > 0 ? (
-                  images.map((img, idx) => (
-                    <SwiperSlide key={idx}>
+        {/* Product Section */}
+        <section className="main__product product">
+          <div className="product__inner">
+            <Row gutter={[40, 40]} className="product__wrap">
+              {/* Product Gallery */}
+              <Col xs={24} md={12} className="product__wrapper">
+                <Swiper
+                  modules={[Navigation]}
+                  navigation={{
+                    prevEl: ".product-swiper__prev",
+                    nextEl: ".product-swiper__next",
+                  }}
+                  className="product__swiper product-swiper swiper"
+                  spaceBetween={10}
+                  slidesPerView={1}
+                  onSwiper={(swiper) => (swiperRef.current = swiper)}
+                  onSlideChange={(swiper) => setActiveSlide(swiper.activeIndex)}
+                >
+                  {images.map((img, idx) => (
+                    <SwiperSlide
+                      key={idx}
+                      className="product-swiper__slide product-slide swiper-slide"
+                    >
                       <img
                         src={img}
-                        alt={`Product Image ${idx + 1}`}
-                        style={{
-                          width: "100%",
-                          height: "auto",
-                          objectFit: "contain",
-                        }}
+                        alt={`Product Image ${idx + 1} for ${product.name}`}
+                        className="product-slide__img"
                         onError={(e) => (e.target.src = noimage)}
                       />
                     </SwiperSlide>
-                  ))
-                ) : (
-                  <SwiperSlide>
-                    <img
-                      src={noimage}
-                      alt="No Image"
-                      style={{
-                        width: "100%",
-                        height: "auto",
-                        objectFit: "contain",
-                      }}
-                    />
-                  </SwiperSlide>
-                )}
-                <div className="product-swiper__prev" style={{ zIndex: 10 }}>
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 12 12"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
+                  ))}
+                  <div
+                    className="product-swiper__prev"
+                    role="button"
+                    aria-label="Previous slide"
                   >
-                    <path
-                      d="M2.5 6H9M6.5 3L9.14645 5.64645C9.34171 5.84171 9.34171 6.15829 9.14645 6.35355L6.5 9"
-                      stroke="white"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </div>
-                <div className="product-swiper__next" style={{ zIndex: 10 }}>
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 12 12"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 12 12"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M9 6H2.5M5.5 9L2.85355 6.35355C2.65829 6.15829 2.65829 5.84171 2.85355 5.64645L5.5 3"
+                        stroke="white"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </div>
+                  <div
+                    className="product-swiper__next"
+                    role="button"
+                    aria-label="Next slide"
                   >
-                    <path
-                      d="M2.5 6H9M6.5 3L9.14645 5.64645C9.34171 5.84171 9.34171 6.15829 9.14645 6.35355L6.5 9"
-                      stroke="white"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </div>
-              </Swiper>
-              <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
-                {images.length > 0 ? (
-                  images.map((img, idx) => (
-                    <img
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 12 12"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M2.5 6H9M6.5 3L9.14645 5.64645C9.34171 5.84171 9.34171 6.15829 9.14645 6.35355L6.5 9"
+                        stroke="white"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </div>
+                </Swiper>
+                <div className="product__images product-images">
+                  {images.map((img, idx) => (
+                    <div
                       key={idx}
-                      src={img}
-                      alt={`Thumbnail ${idx + 1}`}
-                      style={{
-                        width: "60px",
-                        height: "60px",
-                        objectFit: "cover",
-                        cursor: "pointer",
-                        border:
-                          idx === 0 ? "2px solid #1890ff" : "1px solid #d9d9d9",
-                      }}
-                      onError={(e) => (e.target.src = noimage)}
-                    />
-                  ))
-                ) : (
-                  <img
-                    src={noimage}
-                    alt="No Image"
-                    style={{
-                      width: "60px",
-                      height: "60px",
-                      objectFit: "cover",
-                      border: "1px solid #d9d9d9",
-                    }}
+                      className={`product-images__img ${
+                        activeSlide === idx ? "product-images__img--active" : ""
+                      }`}
+                      onClick={() => handleThumbnailClick(idx)}
+                      role="button"
+                      aria-label={`View image ${idx + 1}`}
+                    >
+                      <img
+                        src={img}
+                        alt={`Thumbnail ${idx + 1} for ${product.name}`}
+                        className="product-images__img-image"
+                        onError={(e) => (e.target.src = noimage)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </Col>
+
+              {/* Product Content */}
+              <Col xs={24} md={12} className="product__content product-content">
+                <div className="product-content__box product-content-box">
+                  <Rate
+                    value={5}
+                    disabled
+                    className="product-content-box__stars stars"
+                    style={{ fontSize: 14 }}
                   />
-                )}
-              </div>
-            </Col>
-
-            {/* Product Content */}
-            <Col xs={24} md={12}>
-              <Rate value={5} disabled style={{ marginBottom: "8px" }} />
-              <p style={{ marginBottom: "8px" }}>2 reviews</p>
-              <h2 style={{ fontSize: "24px", marginBottom: "16px" }}>
-                {product.name || "N/A"}
-              </h2>
-              <div style={{ marginBottom: "16px" }}>
-                {product.mrp && product.mrp !== product.sellingPrice && (
-                  <span
-                    style={{
-                      textDecoration: "line-through",
-                      marginRight: "8px",
-                    }}
-                  >
-                    ₹{Number(product.mrp).toFixed(2)}
+                  <span className="product-content-box__text">2 reviews</span>
+                </div>
+                <h1 className="product-content__title">
+                  {product.name || "N/A"}
+                </h1>
+                <div className="product-content__price">
+                  {product.mrp && product.mrp !== product.sellingPrice && (
+                    <span className="product-content__price-del">
+                      ₹{Number(product.mrp).toFixed(2)}
+                    </span>
+                  )}
+                  <span className="product-content__price-current">
+                    ₹{Number(product.sellingPrice).toFixed(2) || "N/A"}
                   </span>
-                )}
-                <span style={{ fontSize: "18px", color: "#1890ff" }}>
-                  ₹{Number(product.sellingPrice).toFixed(2) || "N/A"}
-                </span>
-              </div>
-              <p style={{ marginBottom: "16px" }}>
-                {product.description || "No description available"}
-              </p>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "16px",
-                  marginBottom: "16px",
-                }}
-              >
-                <span>Quantity:</span>
-                <InputNumber
-                  min={1}
-                  max={product.quantity || 1}
-                  value={quantity}
-                  onChange={setQuantity}
-                />
-                <Button
-                  type="primary"
-                  onClick={handleAddToCart}
-                  disabled={product.quantity <= 0}
-                >
-                  Add to Cart
-                </Button>
-              </div>
-              <div style={{ marginBottom: "16px" }}>
-                <svg
-                  ref={barcodeRef}
-                  style={{ marginRight: "16px" }}
-                  aria-hidden="true"
-                />
-                <Button onClick={handlePrint} disabled={!barcodeData}>
-                  Print Barcode
-                </Button>
-              </div>
-              <ul style={{ listStyle: "none", padding: 0 }}>
-                <li>SKU: {product.product_code || "N/A"}</li>
-                <li>
-                  Category:{" "}
-                  {parentCategoryData?.data?.name ||
-                    categoryData?.category?.name ||
-                    "N/A"}
-                </li>
-                <li>Tags: {brandData?.brandName || "N/A"}</li>
-              </ul>
-            </Col>
-          </Row>
+                </div>
+                <p className="product-content__text">
+                  {product.description || "No description available"}
+                </p>
+                <div className="product-content__quantity product-content-quantity">
+                  <div className="product-content-quantity__box product-content-quantity-box">
+                    <span className="product-content-quantity-box__text">
+                      Quantity:
+                    </span>
+                    <div className="product-content-quantity-box__row">
+                      <button
+                        className="product-content-quantity-box__row-btn"
+                        onClick={() => handleQuantityChange(quantity - 1)}
+                        disabled={quantity <= 1}
+                        aria-label="Decrease quantity"
+                      >
+                        <svg
+                          width="18"
+                          height="18"
+                          viewBox="0 0 18 18"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M4 9H14"
+                            stroke="white"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                      </button>
+                      <InputNumber
+                        min={1}
+                        max={product.quantity || 1}
+                        value={quantity}
+                        onChange={handleQuantityChange}
+                        className="product-content-quantity-box__row-input"
+                        aria-label="Quantity"
+                      />
+                      <button
+                        className="product-content-quantity-box__row-btn"
+                        onClick={() => handleQuantityChange(quantity + 1)}
+                        disabled={quantity >= (product.quantity || 1)}
+                        aria-label="Increase quantity"
+                      >
+                        <svg
+                          width="18"
+                          height="18"
+                          viewBox="0 0 18 18"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M4 9H14M9 4V14"
+                            stroke="white"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <Button
+                    className="product-content-quantity__btn"
+                    onClick={handleAddToCart}
+                    disabled={product.quantity <= 0 || isAddingToCart}
+                    loading={isAddingToCart}
+                  >
+                    Add to Cart
+                  </Button>
+                </div>
+                <div className="barcode-section">
+                  <svg
+                    ref={barcodeRef}
+                    aria-label={`Barcode for ${product.name}`}
+                    role="img"
+                  />
+                  <Button
+                    className="btn btn-print"
+                    onClick={handlePrint}
+                    disabled={!barcodeData}
+                  >
+                    Print Barcode
+                  </Button>
+                </div>
+                <ul className="product-content__list">
+                  <li className="product-content__list-item">
+                    <span>SKU:</span> {product.product_code || "N/A"}
+                  </li>
+                  <li className="product-content__list-item">
+                    <span>Category:</span>{" "}
+                    {parentCategoryData?.data?.name ||
+                      categoryData?.category?.name ||
+                      "N/A"}
+                  </li>
+                  <li className="product-content__list-item">
+                    <span>Tags:</span> {brandData?.brandName || "N/A"}
+                  </li>
+                </ul>
+              </Col>
+            </Row>
+          </div>
+        </section>
 
-          {/* Product Info Tabs */}
+        {/* Product Info Tabs */}
+        <section className="main__product-info product-info">
           <Tabs
             defaultActiveKey="1"
+            className="product-info__tabs tabs"
             items={[
               {
                 key: "1",
                 label: "Description",
+                className: "tabs__btn",
                 children: (
-                  <div>
-                    <h2 style={{ fontSize: "20px", marginBottom: "16px" }}>
+                  <div className="product-info__inner">
+                    <h2 className="blog-section-box-content__title">
                       Description
                     </h2>
-                    <p>{product.description || "No description available"}</p>
-                    <ul style={{ listStyle: "none", padding: 0 }}>
-                      <li>Product Code: {product.product_code || "N/A"}</li>
-                      <li>Product Group: {product.productGroup || "N/A"}</li>
-                      <li>
+                    <p className="blog-section-box-content__text">
+                      {product.description || "No description available"}
+                    </p>
+                    <ul className="blog-section-box-content__list">
+                      <li className="blog-section-box-content__list-item">
+                        Product Code: {product.product_code || "N/A"}
+                      </li>
+                      <li className="blog-section-box-content__list-item">
+                        Product Group: {product.productGroup || "N/A"}
+                      </li>
+                      <li className="blog-section-box-content__list-item">
                         Product Segment: {product.product_segment || "N/A"}
                       </li>
                     </ul>
@@ -402,144 +482,180 @@ const ProductDetails = () => {
               {
                 key: "2",
                 label: "Additional Information",
-                children: <p>Additional information content goes here.</p>,
+                className: "tabs__btn",
+                children: (
+                  <div className="product-info__inner">
+                    <h2 className="blog-section-box-content__title">
+                      Additional Information
+                    </h2>
+                    <p className="blog-section-box-content__text">
+                      {product.additionalInfo ||
+                        "No additional information available."}
+                    </p>
+                  </div>
+                ),
               },
               {
                 key: "3",
-                label: "Reviews (2)",
-                children: <p>Reviews content goes here.</p>,
+                label: (
+                  <span>
+                    Reviews <span>(2)</span>
+                  </span>
+                ),
+                className: "tabs__btn",
+                children: (
+                  <div className="product-info__inner">
+                    <h2 className="blog-section-box-content__title">Reviews</h2>
+                    <p className="blog-section-box-content__text">
+                      No reviews yet. Be the first to review this product!
+                    </p>
+                  </div>
+                ),
               },
             ]}
-            style={{ marginTop: "24px" }}
           />
+        </section>
 
-          {/* Related Products Section */}
-          <div style={{ marginTop: "40px" }}>
-            <h2 style={{ fontSize: "24px", marginBottom: "16px" }}>
-              Related Products
-            </h2>
-            {isRecommendedLoading ? (
-              <Spin size="large" />
-            ) : recommendedProducts?.length > 0 ? (
-              <Swiper
-                modules={[Navigation]}
-                navigation={{
-                  prevEl: ".shop-section__buttons-prev",
-                  nextEl: ".shop-section__buttons-next",
-                }}
-                spaceBetween={20}
-                slidesPerView={3}
-                breakpoints={{
-                  640: { slidesPerView: 1 },
-                  768: { slidesPerView: 2 },
-                  1024: { slidesPerView: 3 },
-                }}
+        {/* Related Products Section */}
+        <section className="main__shop-section shop-section">
+          <div className="shop-section__top shop-section-top">
+            <h2 className="shop-section-top__title">Related Products</h2>
+            <div className="shop-section__buttons swiper-buttons">
+              <div
+                className="shop-section__buttons-prev"
+                role="button"
+                aria-label="Previous related product"
               >
-                {recommendedProducts
-                  .filter(
-                    (recProduct) => recProduct.productId !== product.productId
-                  )
-                  .slice(0, 4)
-                  .map((recProduct) => (
-                    <SwiperSlide key={recProduct.productId}>
-                      <Card
-                        cover={
-                          <img
-                            src={
-                              getParsedImages(recProduct.images)[0] || noimage
-                            }
-                            alt={recProduct.name}
-                            onError={(e) => (e.target.src = noimage)}
-                            style={{ height: "200px", objectFit: "cover" }}
-                          />
-                        }
-                        actions={[
-                          <Button
-                            type="link"
-                            onClick={() =>
-                              toast.success(`${recProduct.name} added to cart!`)
-                            }
-                          >
-                            Add to Cart
-                          </Button>,
-                        ]}
-                      >
-                        <Card.Meta
-                          title={
-                            <a href={`/product/${recProduct.productId}`}>
-                              {recProduct.name}
-                            </a>
-                          }
-                          description={
-                            <>
-                              <p>{categoryData?.category?.name || "N/A"}</p>
-                              <div>
-                                {recProduct.mrp &&
-                                  recProduct.mrp !==
-                                    recProduct.sellingPrice && (
-                                    <span
-                                      style={{
-                                        textDecoration: "line-through",
-                                        marginRight: "8px",
-                                      }}
-                                    >
-                                      ₹{Number(recProduct.mrp).toFixed(2)}
-                                    </span>
-                                  )}
-                                <span>
-                                  ₹{Number(recProduct.sellingPrice).toFixed(2)}
-                                </span>
-                              </div>
-                            </>
-                          }
-                        />
-                      </Card>
-                    </SwiperSlide>
-                  ))}
-                <div
-                  className="shop-section__buttons-prev"
-                  style={{ zIndex: 10 }}
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
                 >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 12 12"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M2.5 6H9M6.5 3L9.14645 5.64645C9.34171 5.84171 9.34171 6.15829 9.14645 6.35355L6.5 9"
-                      stroke="#fff"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </div>
-                <div
-                  className="shop-section__buttons-next"
-                  style={{ zIndex: 10 }}
+                  <path
+                    d="M9 6H2.5M5.5 9L2.85355 6.35355C2.65829 6.15829 2.65829 5.84171 2.85355 5.64645L5.5 3"
+                    stroke="white"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </div>
+              <div
+                className="shop-section__buttons-next"
+                role="button"
+                aria-label="Next related product"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
                 >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 12 12"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M2.5 6H9M6.5 3L9.14645 5.64645C9.34171 5.84171 9.34171 6.15829 9.14645 6.35355L6.5 9"
-                      stroke="#fff"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </div>
-              </Swiper>
-            ) : (
-              <p>No related products available.</p>
-            )}
+                  <path
+                    d="M2.5 6H9M6.5 3L9.14645 5.64645C9.34171 5.84171 9.34171 6.15829 9.14645 6.35355L6.5 9"
+                    stroke="white"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </div>
+            </div>
           </div>
-        </div>
+          {isRecommendedLoading ? (
+            <Spin size="large" />
+          ) : recommendedProducts?.length > 1 ? (
+            <Swiper
+              modules={[Navigation]}
+              navigation={{
+                prevEl: ".shop-section__buttons-prev",
+                nextEl: ".shop-section__buttons-next",
+              }}
+              className="shop-section__swiper shop-section-swiper swiper"
+              spaceBetween={20}
+              slidesPerView={3}
+              breakpoints={{
+                0: { slidesPerView: 1 },
+                640: { slidesPerView: 2 },
+                1024: { slidesPerView: 3 },
+              }}
+            >
+              {recommendedProducts
+                .filter(
+                  (recProduct) => recProduct.productId !== product.productId
+                )
+                .slice(0, 4)
+                .map((recProduct) => (
+                  <SwiperSlide
+                    key={recProduct.productId}
+                    className="shop-section-swiper__slide shop-section-slide swiper-slide"
+                  >
+                    <Card
+                      className="shop__card card"
+                      cover={
+                        <div className="card-box__poster">
+                          <img
+                            src={getParsedImages(recProduct.images)[0]}
+                            alt={recProduct.name}
+                            className="card-box__poster-img"
+                            onError={(e) => (e.target.src = noimage)}
+                          />
+                          {recProduct.mrp &&
+                            recProduct.mrp !== recProduct.sellingPrice && (
+                              <span className="card-box__poster-suptext">
+                                Sale
+                              </span>
+                            )}
+                        </div>
+                      }
+                      actions={[
+                        <Button
+                          className="card__link"
+                          onClick={() =>
+                            toast.success(`${recProduct.name} added to cart!`)
+                          }
+                        >
+                          Add to Cart
+                        </Button>,
+                      ]}
+                    >
+                      <Card.Meta
+                        title={
+                          <a
+                            href={`/product/${recProduct.productId}`}
+                            className="card__title"
+                          >
+                            {recProduct.name}
+                          </a>
+                        }
+                        description={
+                          <div className="card__subtext">
+                            <p>{categoryData?.category?.name || "N/A"}</p>
+                            <div className="card__price card-price">
+                              {recProduct.mrp &&
+                                recProduct.mrp !== recProduct.sellingPrice && (
+                                  <span className="card-price__past">
+                                    ₹{Number(recProduct.mrp).toFixed(2)}
+                                  </span>
+                                )}
+                              <span className="card-price__current">
+                                ₹{Number(recProduct.sellingPrice).toFixed(2)}
+                              </span>
+                            </div>
+                          </div>
+                        }
+                      />
+                    </Card>
+                  </SwiperSlide>
+                ))}
+            </Swiper>
+          ) : (
+            <p className="blog-section-box-content__text">
+              No related products available.
+            </p>
+          )}
+        </section>
       </div>
     </div>
   );

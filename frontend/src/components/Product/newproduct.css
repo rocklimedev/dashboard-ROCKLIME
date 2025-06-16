@@ -1,0 +1,22 @@
+.product-image-card {
+  position: relative; /* Changed from absolute to prevent layout issues */
+  width: 746px;
+  height: 750px;
+  border-radius: 12px;
+}
+
+/* Removed the incorrect 'button .add-to-cart-button' selector */
+.add-to-cart-button {
+  position: relative; /* Changed from absolute to prevent overlap issues */
+  width: 226px;
+  height: 52px;
+  background: #bd1414;
+  mix-blend-mode: normal;
+  border-radius: 12px;
+}
+.product-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* Adjust spacing as needed */
+}

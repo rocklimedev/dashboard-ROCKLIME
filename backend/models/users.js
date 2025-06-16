@@ -1,5 +1,5 @@
 const { DataTypes, Op } = require("sequelize");
-const sequelize = require("../config/database"); // Sequelize instance
+const sequelize = require("../config/database");
 
 const ROLES = {
   Admin: "ADMIN",
@@ -59,7 +59,7 @@ const User = sequelize.define(
       type: DataTypes.UUID,
       allowNull: true,
       references: {
-        model: "addresses", // Reference table name directly
+        model: "addresses",
         key: "addressId",
       },
       onDelete: "SET NULL",
@@ -72,8 +72,18 @@ const User = sequelize.define(
         is: /^[0-9+\-\s]*$/,
       },
     },
+    roleId: {
+      type: DataTypes.UUID, // Match Role model's primary key type
+      allowNull: false,
+      references: {
+        model: "roles",
+        key: "roleId",
+      },
+      onDelete: "RESTRICT",
+      onUpdate: "CASCADE",
+    },
     roles: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING, // Keep for backward compatibility or remove if roleId is used
       allowNull: true,
       defaultValue: ROLES.Users,
       get() {
@@ -109,7 +119,6 @@ User.beforeCreate(async (user, options) => {
       where: { roles: { [Op.like]: `%${ROLES.SuperAdmin}%` } },
       transaction: options.transaction,
     });
-
     if (existingSuperAdmin) {
       throw new Error("A SuperAdmin already exists");
     }

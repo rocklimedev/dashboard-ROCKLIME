@@ -4,26 +4,32 @@ import Alert from "./Alert";
 import Recents from "./Recents";
 import Stats from "./Stats";
 import Stats2 from "./Stats2";
-import { useGetAllOrdersQuery } from "../../api/orderApi";
-import { useGetProfileQuery } from "../../api/userApi";
 import {
   useClockInMutation,
   useClockOutMutation,
   useGetAttendanceQuery,
 } from "../../api/attendanceApi";
+import { useGetProfileQuery } from "../../api/userApi";
+import { useGetAllOrdersQuery } from "../../api/orderApi";
 
 const PageWrapper = () => {
-  const { data: profile, isLoading: loadingProfile } = useGetProfileQuery();
+  // Move all Hooks to the top level
+  const {
+    data: profile,
+    isLoading: loadingProfile,
+    error: profileError,
+  } = useGetProfileQuery();
   const { data, isLoading: loadingOrders } = useGetAllOrdersQuery();
-  const orders = data?.orders || [];
+  const [clockIn, { isLoading: isClockInLoading }] = useClockInMutation();
+  const [clockOut, { isLoading: isClockOutLoading }] = useClockOutMutation();
 
+  // Define userId and username early
   const userId = profile?.user?.userId;
-  // Capitalize the first letter of the name
   const username = profile?.user?.name
     ? profile.user.name.charAt(0).toUpperCase() + profile.user.name.slice(1)
     : "Admin";
 
-  // Fetch today's attendance for the user
+  // Define date variables early
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const startDate = today.toISOString().split("T")[0];
@@ -31,22 +37,40 @@ const PageWrapper = () => {
     .toISOString()
     .split("T")[0];
 
+  // Attendance query
   const {
     data: attendance,
     isLoading: loadingAttendance,
     error: attendanceError,
-  } = useGetAttendanceQuery({ userId, startDate, endDate }, { skip: !userId });
+  } = useGetAttendanceQuery(
+    { userId, startDate, endDate },
+    { skip: !userId || loadingProfile || !!profileError }
+  );
 
-  const [clockIn, { isLoading: isClockInLoading }] = useClockInMutation();
-  const [clockOut, { isLoading: isClockOutLoading }] = useClockOutMutation();
-
-  // Check if user has clocked in and out today
+  // Define derived state
+  const orders = data?.orders || [];
   const hasClockedIn = attendance?.length > 0 && !!attendance[0]?.clockIn;
   const hasClockedOut = hasClockedIn && !!attendance[0]?.clockOut;
+
+  // Profile error toast
+  useEffect(() => {
+    if (profileError) {
+      const message =
+        profileError.status === 403 &&
+        profileError.data?.error.includes("roleId")
+          ? "Missing role information. Please contact support."
+          : profileError.status === 401 || profileError.status === 403
+          ? "Session expired. Please log in again."
+          : "Failed to load profile.";
+      toast.error(message, { toastId: "profileError" });
+    }
+  }, [profileError]);
 
   // Debug logging
   useEffect(() => {
     console.log("Debug Info:", {
+      profile,
+      profileError,
       userId,
       loadingProfile,
       loadingAttendance,
@@ -56,6 +80,8 @@ const PageWrapper = () => {
       attendanceError,
     });
   }, [
+    profile,
+    profileError,
     userId,
     loadingProfile,
     loadingAttendance,
@@ -65,38 +91,73 @@ const PageWrapper = () => {
     attendanceError,
   ]);
 
-  // Alert if user hasn't clocked in
+  // Clock-in reminder toast
   useEffect(() => {
-    if (!loadingAttendance && !hasClockedIn && !attendanceError) {
+    if (
+      !loadingAttendance &&
+      !hasClockedIn &&
+      !attendanceError &&
+      userId &&
+      !profileError
+    ) {
       toast.warning("You haven't clocked in today!", {
         toastId: "clockInReminder",
       });
     }
-  }, [loadingAttendance, hasClockedIn, attendanceError]);
+  }, [loadingAttendance, hasClockedIn, attendanceError, userId, profileError]);
 
-  // Handle clock-in
+  // Handle early returns
+  if (profileError) {
+    return (
+      <div className="page-wrapper">
+        <Alert
+          type="danger"
+          message={
+            profileError.status === 403 &&
+            profileError.data?.error.includes("roleId")
+              ? "Missing role information. Please contact support."
+              : profileError.status === 401 || profileError.status === 403
+              ? "Session expired. Please log in again."
+              : "Failed to load user profile."
+          }
+        />
+      </div>
+    );
+  }
+
+  if (!loadingProfile && !profile) {
+    return (
+      <div className="page-wrapper">
+        <Alert
+          type="warning"
+          message="User profile not found. Please log in again."
+        />
+      </div>
+    );
+  }
+
+  // Clock-in/out handlers
   const handleClockIn = async () => {
     if (!userId) {
-      toast.error("User ID is not available. Please try again.");
+      toast.error("User ID is not available.");
       return;
     }
     try {
       await clockIn({ userId }).unwrap();
     } catch (error) {
-      // Error handled by transformErrorResponse in attendanceApi
+      // Error handled by transformErrorResponse
     }
   };
 
-  // Handle clock-out
   const handleClockOut = async () => {
     if (!userId) {
-      toast.error("User ID is not available. Please try again.");
+      toast.error("User ID is not available.");
       return;
     }
     try {
       await clockOut({ userId }).unwrap();
     } catch (error) {
-      // Error handled by transformErrorResponse in attendanceApi
+      // Error handled by transformErrorResponse
     }
   };
 
@@ -127,6 +188,8 @@ const PageWrapper = () => {
           <div className="mt-2">
             {loadingProfile || loadingAttendance ? (
               <span>Loading...</span>
+            ) : !userId ? (
+              <span>User profile not loaded</span>
             ) : !hasClockedIn ? (
               <button
                 className="btn btn-primary me-2"
@@ -144,12 +207,11 @@ const PageWrapper = () => {
                 {isClockOutLoading ? "Clocking Out..." : "Clock Out"}
               </button>
             ) : (
-              <span>Clocked out for today</span> // Optional: Show status
+              <span>Clocked out for today</span>
             )}
           </div>
         </div>
-
-        {!hasClockedIn && !loadingAttendance && (
+        {!hasClockedIn && !loadingAttendance && userId && (
           <Alert
             type="warning"
             message="Please clock in to start your workday!"

@@ -75,6 +75,7 @@ import Cart from "../components/POS-NEW/Cart";
 import CompaniesWrapper from "../components/Companies/ComapniesWrapper";
 import Product from "../components/Product/Product";
 import ProductWrapper from "../components/Product/ProductWrapper";
+import NewProductDetails from "../components/Product/NewProductDetails";
 const masterRoutes = [
   {
     path: "/",
@@ -303,6 +304,13 @@ const masterRoutes = [
         name: "Products",
         icon: <AiOutlineProduct />,
         element: <Product />,
+        isSidebarActive: true,
+      },
+      {
+        path: "/inventory/new-product/:id",
+        name: "Products",
+        icon: <AiOutlineProduct />,
+        element: <NewProductDetails />,
         isSidebarActive: true,
       },
     ],
