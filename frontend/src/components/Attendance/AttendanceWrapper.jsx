@@ -262,9 +262,9 @@ const AttendanceWrapper = ({ userId }) => {
     }
 
     return (
-      <div className="table-responsive">
-        <table className="table datatable">
-          <thead className="thead-light">
+      <div className="cm-table-wrapper">
+        <table className="cm-table">
+          <thead>
             <tr>
               <th>Date</th>
               <th>Status</th>
@@ -343,18 +343,14 @@ const AttendanceWrapper = ({ userId }) => {
       <div className="content">
         <div className="row">
           <div className="col-xl-8 col-lg-12 d-flex">
-            <div className="card w-100">
-              <div className="card-body">
-                <h5 className="border-bottom pb-3 mb-3">
-                  Days Overview This Month
-                </h5>
-                {isUserAttendanceLoading ? (
-                  <Spinner animation="border" variant="primary" />
-                ) : (
-                  renderOverview()
-                )}
-              </div>
-            </div>
+            <h5 className="border-bottom pb-3 mb-3">
+              Days Overview This Month
+            </h5>
+            {isUserAttendanceLoading ? (
+              <Spinner animation="border" variant="primary" />
+            ) : (
+              renderOverview()
+            )}
           </div>
         </div>
 

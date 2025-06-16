@@ -88,67 +88,62 @@ const PermissionsTable = ({ permissions }) => {
         ))}
       </div>
 
-      <div className="card-body p-0">
-        <div className="table-responsive">
-          <table className="table datatable">
-            <thead className="thead-light">
-              <tr>
-                <th className="no-sort">
-                  <div className="form-check form-check-md">
-                    <input
-                      className="form-check-input"
-                      type="checkbox"
-                      id="select-all"
-                    />
-                  </div>
-                </th>
-                <th>Route</th>
-                <th>Name</th>
-                <th>API</th>
-                <th>Created Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.keys(filteredPermissions).length ? (
-                Object.entries(filteredPermissions).map(([module, perms]) => (
-                  <React.Fragment key={module}>
-                    {/* Module Header */}
-                    <tr className="table-active">
-                      <td colSpan="5">
-                        <strong>{module}</strong>
+      <div className="cm-table-wrapper">
+        <table className="cm-table">
+          <thead>
+            <tr>
+              <th className="no-sort">
+                <div className="form-check form-check-md">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="select-all"
+                  />
+                </div>
+              </th>
+              <th>Route</th>
+              <th>Name</th>
+              <th>API</th>
+              <th>Created Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Object.keys(filteredPermissions).length ? (
+              Object.entries(filteredPermissions).map(([module, perms]) => (
+                <React.Fragment key={module}>
+                  {/* Module Header */}
+                  <tr className="table-active">
+                    <td colSpan="5">
+                      <strong>{module}</strong>
+                    </td>
+                  </tr>
+                  {/* Module Permissions */}
+                  {perms.map((permission) => (
+                    <tr key={permission.permissionId}>
+                      <td>
+                        <div className="form-check form-check-md">
+                          <input className="form-check-input" type="checkbox" />
+                        </div>
+                      </td>
+                      <td>{permission.route}</td>
+                      <td>{permission.name}</td>
+                      <td>{permission.api}</td>
+                      <td>
+                        {new Date(permission.createdAt).toLocaleDateString()}
                       </td>
                     </tr>
-                    {/* Module Permissions */}
-                    {perms.map((permission) => (
-                      <tr key={permission.permissionId}>
-                        <td>
-                          <div className="form-check form-check-md">
-                            <input
-                              className="form-check-input"
-                              type="checkbox"
-                            />
-                          </div>
-                        </td>
-                        <td>{permission.route}</td>
-                        <td>{permission.name}</td>
-                        <td>{permission.api}</td>
-                        <td>
-                          {new Date(permission.createdAt).toLocaleDateString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </React.Fragment>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="5" className="text-center">
-                    No records found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                  ))}
+                </React.Fragment>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="5" className="text-center">
+                  No records found
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
