@@ -4,7 +4,7 @@ import {
   Container,
   Row,
   Col,
-  Card,
+  Table,
   Button,
   Dropdown,
   Form,
@@ -281,7 +281,7 @@ const RecentInvoices = () => {
   const hasError = invoiceError || customerError || addressError || userError;
 
   return (
-    <div className="page-wrapper notes-page-wrapper">
+    <div className="page-wrapper ">
       <div className="content">
         <Container fluid className="recent-invoices-container">
           <h1 className="page-title">Recent Invoices</h1>
@@ -388,53 +388,69 @@ const RecentInvoices = () => {
               No invoices found.
             </Alert>
           ) : (
-            <Row>
-              {paginatedInvoices.map((invoice) => (
-                <Col md={6} lg={4} key={invoice.invoiceId} className="mb-4">
-                  <Card className="invoice-card shadow-sm">
-                    <Card.Body>
-                      <div className="d-flex justify-content-between align-items-center mb-3">
-                        <h5 className="card-title">
-                          <Link
-                            to={`/invoice/${invoice.invoiceId}`}
-                            className="invoice-link"
-                          >
-                            #{invoice.invoiceNo}
-                          </Link>
-                        </h5>
+            <div className="cm-table-wrapper">
+              <table className="cm-table">
+                <thead>
+                  <tr>
+                    <th>
+                      <Form.Check
+                        type="checkbox"
+                        checked={
+                          selectedInvoices.length ===
+                            paginatedInvoices.length &&
+                          paginatedInvoices.length > 0
+                        }
+                        onChange={handleSelectAll}
+                        aria-label="Select all invoices"
+                      />
+                    </th>
+                    <th>Invoice #</th>
+                    <th>Customer</th>
+                    <th>Amount</th>
+                    <th>Invoice Date</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedInvoices.map((invoice) => (
+                    <tr key={invoice.invoiceId}>
+                      <td>
                         <Form.Check
                           type="checkbox"
                           checked={selectedInvoices.includes(invoice.invoiceId)}
                           onChange={() => toggleInvoice(invoice.invoiceId)}
                           aria-label={`Select invoice ${invoice.invoiceNo}`}
                         />
-                      </div>
-                      <p className="card-text">
-                        <strong>Customer:</strong>{" "}
+                      </td>
+                      <td>
+                        <Link
+                          to={`/invoice/${invoice.invoiceId}`}
+                          className="invoice-link"
+                        >
+                          #{invoice.invoiceNo}
+                        </Link>
+                      </td>
+                      <td>
                         {invoice.customerId &&
                         customerMap[invoice.customerId?.trim()]
                           ? customerMap[invoice.customerId.trim()]
                           : normalizeName(invoice.billTo) || "Unknown Customer"}
-                      </p>
-                      <p className="card-text">
-                        <strong>Amount:</strong>{" "}
-                        {invoice.amount ? `Rs ${invoice.amount}` : "N/A"}
-                      </p>
-                      <p className="card-text">
-                        <strong>Invoice Date:</strong>{" "}
+                      </td>
+                      <td>{invoice.amount ? `Rs ${invoice.amount}` : "N/A"}</td>
+                      <td>
                         {invoice.invoiceDate &&
                         invoice.invoiceDate !== "0000-00-00"
                           ? new Date(invoice.invoiceDate).toLocaleDateString()
                           : "N/A"}
-                      </p>
-                      <p className="card-text">
-                        <strong>Due Date:</strong>{" "}
+                      </td>
+                      <td>
                         {invoice.dueDate && invoice.dueDate !== "0000-00-00"
                           ? new Date(invoice.dueDate).toLocaleDateString()
                           : "N/A"}
-                      </p>
-                      <p className="card-text">
-                        <strong>Status:</strong>{" "}
+                      </td>
+                      <td>
                         <span
                           className={`status-badge status-${getInvoiceStatus(
                             invoice
@@ -442,43 +458,47 @@ const RecentInvoices = () => {
                         >
                           {getInvoiceStatus(invoice)}
                         </span>
-                      </p>
-                      <div className="action-buttons mt-3">
-                        <Button
-                          variant="outline-primary"
-                          size="sm"
-                          as={Link}
-                          to={`/invoice/${invoice.invoiceId}`}
-                          title="View Invoice"
-                          aria-label={`View invoice ${invoice.invoiceNo}`}
-                        >
-                          <FaEye />
-                        </Button>
-                        <Button
-                          variant="outline-primary"
-                          size="sm"
-                          onClick={() => handleEditClick(invoice)}
-                          title="Edit Invoice"
-                          aria-label={`Edit invoice ${invoice.invoiceNo}`}
-                        >
-                          <FaEdit />
-                        </Button>
-                        <Button
-                          variant="outline-danger"
-                          size="sm"
-                          onClick={() => handleDeleteClick(invoice)}
-                          disabled={isDeleting}
-                          title="Delete Invoice"
-                          aria-label={`Delete invoice ${invoice.invoiceNo}`}
-                        >
-                          <FaTrash />
-                        </Button>
-                      </div>
-                    </Card.Body>
-                  </Card>
-                </Col>
-              ))}
-            </Row>
+                      </td>
+                      <td>
+                        <div className="action-buttons">
+                          <Button
+                            variant="outline-primary"
+                            size="sm"
+                            as={Link}
+                            to={`/invoice/${invoice.invoiceId}`}
+                            title="View Invoice"
+                            aria-label={`View invoice ${invoice.invoiceNo}`}
+                            className="me-1"
+                          >
+                            <FaEye />
+                          </Button>
+                          <Button
+                            variant="outline-primary"
+                            size="sm"
+                            onClick={() => handleEditClick(invoice)}
+                            title="Edit Invoice"
+                            aria-label={`Edit invoice ${invoice.invoiceNo}`}
+                            className="me-1"
+                          >
+                            <FaEdit />
+                          </Button>
+                          <Button
+                            variant="outline-danger"
+                            size="sm"
+                            onClick={() => handleDeleteClick(invoice)}
+                            disabled={isDeleting}
+                            title="Delete Invoice"
+                            aria-label={`Delete invoice ${invoice.invoiceNo}`}
+                          >
+                            <FaTrash />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
 
           <div className="pagination-section mt-4">

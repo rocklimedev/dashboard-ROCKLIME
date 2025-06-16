@@ -184,73 +184,69 @@ const Permissions = () => {
         <a href="/roles-permission/list" className="btn btn-secondary">
           <FaArrowLeft className="me-2" /> Back to Roles & Permissions
         </a>
-        <div className="card mt-4">
-          <div className="card-header">
-            <div className="table-top mb-0 d-flex justify-content-between">
-              <div className="search-set">
-                <div className="search-input">
-                  <span className="btn-searchset">
-                    <i className="ti ti-search fs-14 feather-search"></i>
-                  </span>
-                </div>
-              </div>
-              <div className="d-flex align-items-center">
-                <p className="mb-0 fw-medium text-gray-9 me-1">Role:</p>
-                <p>{roleName}</p>
+
+        <div className="card-header">
+          <div className="table-top mb-0 d-flex justify-content-between">
+            <div className="search-set">
+              <div className="search-input">
+                <span className="btn-searchset">
+                  <i className="ti ti-search fs-14 feather-search"></i>
+                </span>
               </div>
             </div>
+            <div className="d-flex align-items-center">
+              <p className="mb-0 fw-medium text-gray-9 me-1">Role:</p>
+              <p>{roleName}</p>
+            </div>
           </div>
-          <div className="card-body p-0">
-            <div className="table-responsive">
-              <table className="table datatable">
-                <thead className="thead-light">
-                  <tr>
-                    <th>Modules</th>
+        </div>
+
+        <div className="cm-table-wrapper">
+          <table className="cm-table">
+            <thead>
+              <tr>
+                <th>Modules</th>
+                {permissionTypes.map((type) => (
+                  <th key={type}>
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {modules.length > 0 ? (
+                Object.entries(permissionsByModule).map(([module, perms]) => (
+                  <tr key={module}>
+                    <td>{module}</td>
                     {permissionTypes.map((type) => (
-                      <th key={type}>
-                        {type.charAt(0).toUpperCase() + type.slice(1)}
-                      </th>
+                      <td key={type}>
+                        <input
+                          type="checkbox"
+                          checked={perms[type] || false}
+                          onChange={(e) =>
+                            handlePermissionChange(
+                              module,
+                              type,
+                              e.target.checked
+                            )
+                          }
+                          className={`permission-checkbox ${getCheckboxClass(
+                            perms[type]
+                          )}`}
+                        />
+                      </td>
                     ))}
                   </tr>
-                </thead>
-                <tbody>
-                  {modules.length > 0 ? (
-                    Object.entries(permissionsByModule).map(
-                      ([module, perms]) => (
-                        <tr key={module}>
-                          <td>{module}</td>
-                          {permissionTypes.map((type) => (
-                            <td key={type}>
-                              <input
-                                type="checkbox"
-                                checked={perms[type] || false}
-                                onChange={(e) =>
-                                  handlePermissionChange(
-                                    module,
-                                    type,
-                                    e.target.checked
-                                  )
-                                }
-                                className={`permission-checkbox ${getCheckboxClass(
-                                  perms[type]
-                                )}`}
-                              />
-                            </td>
-                          ))}
-                        </tr>
-                      )
-                    )
-                  ) : (
-                    <tr>
-                      <td colSpan={permissionTypes.length + 1}>
-                        No permissions available
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={permissionTypes.length + 1}>
+                    No permissions available
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

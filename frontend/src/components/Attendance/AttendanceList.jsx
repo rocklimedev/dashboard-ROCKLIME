@@ -150,9 +150,12 @@ const AttendanceList = () => {
     }
 
     return (
-      <div className="table-responsive">
-        <table className="table datatable">
-          <thead className="thead-light">
+      <div
+        className="cm-table-wrapper"
+        style={{ display: isTableCollapsed ? "none" : "block" }}
+      >
+        <table className="cm-table">
+          <thead>
             <tr>
               <th>Employee</th>
               <th>Status</th>
@@ -349,12 +352,7 @@ const AttendanceList = () => {
               </Dropdown>
             </div>
           </div>
-          <div
-            className="card-body p-0"
-            style={{ display: isTableCollapsed ? "none" : "block" }}
-          >
-            {renderTable()}
-          </div>
+          {renderTable()}
         </div>
       </div>
     </div>
