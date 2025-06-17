@@ -41,6 +41,7 @@ const corsOptions = {
     "http://localhost:3002",
     "http://localhost:3003",
     "https://dashboard-rocklime.vercel.app",
+    "https://cmtradingco.vercel.app/",
   ],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
