@@ -18036,7 +18036,7 @@ div#global-loader .whirly-loader:not(:required) {
   background: #e31e24;
   border: 2px solid #fdb;
 }
-.sidebar .sidebar-menu > ul > li.submenu ul li a::after,
+/* .sidebar .sidebar-menu > ul > li.submenu ul li a::after,
 .settings-sidebar .sidebar-menu > ul > li.submenu ul li a::after {
   content: "";
   background: rgba(50, 71, 92, 0.38);
@@ -18047,7 +18047,7 @@ div#global-loader .whirly-loader:not(:required) {
   position: absolute;
   top: 16px;
   left: 16px;
-}
+} */
 .sidebar .sidebar-menu > ul > li.submenu ul li a:hover,
 .settings-sidebar .sidebar-menu > ul > li.submenu ul li a:hover {
   color: #e31e24;

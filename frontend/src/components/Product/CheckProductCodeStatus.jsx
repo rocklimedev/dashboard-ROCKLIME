@@ -338,8 +338,8 @@ const CheckProductCodeStatus = () => {
                         </span>
                       </div>
                       {cat.parentcategories && (
-                        <small style={styles.categoryParent}>
-                          Parent: {cat.parentcategories.name}
+                        <small style={{ color: "#25D366" }}>
+                          {cat.parentcategories.name}
                         </small>
                       )}
                     </div>
