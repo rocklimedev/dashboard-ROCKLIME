@@ -76,6 +76,7 @@ import CompaniesWrapper from "../components/Companies/ComapniesWrapper";
 import Product from "../components/Product/Product";
 import ProductWrapper from "../components/Product/ProductWrapper";
 import NewProductDetails from "../components/Product/NewProductDetails";
+import ProductListByCategory from "../components/Product/ProductListByCategory";
 const masterRoutes = [
   {
     path: "/",
@@ -290,6 +291,13 @@ const masterRoutes = [
         name: "Products",
         icon: <AiOutlineProduct />,
         element: <NewProductWrapper />,
+        isSidebarActive: true,
+      },
+      {
+        path: "/products/:categoryId",
+        name: "Catregory filtered Products",
+        icon: <AiOutlineProduct />,
+        element: <ProductListByCategory />,
         isSidebarActive: true,
       },
       {

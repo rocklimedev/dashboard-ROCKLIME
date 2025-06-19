@@ -5,13 +5,24 @@ import fittings from "../../assets/img/products/cp_fittings.png";
 import wellness from "../../assets/img/products/wellness.jpg";
 import adhesive from "../../assets/img/products/adhesive.jpg";
 import "./productwrapper.css";
+import { Link } from "react-router-dom";
 const NewProductWrapper = () => {
   // Define categories data for better maintainability
   const categories = [
-    { name: "Surfaces", image: surfaces, alt: "Surface products" },
-    { name: "CP Fittings", image: fittings, alt: "CP fittings products" },
-    { name: "Wellness", image: wellness, alt: "Wellness products" },
-    { name: "Adhesive", image: adhesive, alt: "Adhesive products" },
+    {
+      name: "Surfaces",
+      image: surfaces,
+      alt: "Surface products",
+      url: "/inventory/list/:id",
+    },
+    {
+      name: "CP Fittings",
+      image: fittings,
+      alt: "CP fittings products",
+      url: "#",
+    },
+    { name: "Wellness", image: wellness, alt: "Wellness products", url: "#" },
+    { name: "Adhesive", image: adhesive, alt: "Adhesive products", url: "#" },
   ];
 
   return (
@@ -27,12 +38,14 @@ const NewProductWrapper = () => {
         <div className="categories-wrapper">
           {categories.map((category, index) => (
             <div key={index} className="categories-card">
-              <img
-                src={category.image}
-                alt={category.alt}
-                className="categories-img"
-              />
-              <h2 className="categories-text">{category.name}</h2>
+              <Link to={category.url}>
+                <img
+                  src={category.image}
+                  alt={category.alt}
+                  className="categories-img"
+                />
+                <h2 className="categories-text">{category.name}</h2>
+              </Link>
             </div>
           ))}
         </div>

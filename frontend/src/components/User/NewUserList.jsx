@@ -21,7 +21,7 @@ import { toast } from "sonner";
 import userimg from "../../assets/img/profiles/avatar-01.jpg";
 import { useNavigate } from "react-router-dom";
 
-const UserList = () => {
+const NewUserList = () => {
   const { data, error, isLoading, isFetching, refetch } = useGetAllUsersQuery();
   const users = data?.users || [];
   const navigate = useNavigate();
@@ -81,11 +81,11 @@ const UserList = () => {
   };
 
   const handleEditUser = (user) => {
-    navigate(`/user/${user.userId}/edit`);
+    navigate(`/user/${user.userId}/edit`); // Navigate to /u/:id/edit
   };
 
   const handleViewUser = (user) => {
-    navigate(`/user/${user.userId}`);
+    navigate(`/user/${user.userId}`); // Navigate to /u/:id
   };
 
   const handleDeleteUser = (userId) => {
@@ -251,110 +251,120 @@ const UserList = () => {
             </div>
           </div>
         </div>
-        <div className="cm-table-wrapper">
-          <table className="cm-table">
-            <thead>
-              <tr>
-                <th>Avatar</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Username</th>
-                <th>Mobile Number</th>
-                <th>Roles</th>
-                <th>Status</th>
-                <th>Joined</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedUsers.map((user) => (
-                <tr key={user.userId}>
-                  <td>
-                    <a
-                      href={`/user/${user.userId}`}
-                      className="avatar avatar-sm avatar-rounded border p-1 rounded-circle"
-                    >
-                      <img
-                        src={userimg}
-                        className="img-fluid h-auto w-auto"
-                        alt={`${user.name}'s avatar`}
-                      />
-                    </a>
-                  </td>
-                  <td>
-                    <a href={`/user/${user.userId}`}>{user.name}</a>
-                  </td>
-                  <td>{user.email}</td>
-                  <td>{user.username}</td>
-                  <td>{user.mobileNumber || "N/A"}</td>
-                  <td>{user.roles.join(", ") || "N/A"}</td>
-                  <td>
-                    <span
-                      className={`badge ${
-                        user.status === "active"
-                          ? "bg-success-transparent"
-                          : "bg-danger-transparent"
-                      }`}
-                    >
-                      {user.status === "active" ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-                  <td>{new Date(user.createdAt).toLocaleDateString()}</td>
-                  <td>
-                    <Dropdown>
-                      <Dropdown.Toggle
-                        variant="light"
-                        className="btn-sm"
-                        aria-label="User actions"
-                      >
-                        ⋮
-                      </Dropdown.Toggle>
-                      <Dropdown.Menu>
-                        <Dropdown.Item onClick={() => handleViewUser(user)}>
-                          <FaEye className="me-2" /> View
-                        </Dropdown.Item>
-                        <Dropdown.Item onClick={() => handleEditUser(user)}>
-                          <FaPen className="me-2" /> Edit
-                        </Dropdown.Item>
-                        <Dropdown.Item
-                          onClick={() => handleInactiveUser(user.userId)}
-                          disabled={isInactivating}
-                        >
-                          <FaBan className="me-2" /> Inactive User
-                        </Dropdown.Item>
-                        <Dropdown.Item
-                          onClick={() => handleReportUser(user)}
-                          disabled={isReporting}
-                        >
-                          <FaExclamationTriangle className="me-2 text-warning" />{" "}
-                          Report User
-                        </Dropdown.Item>
-                        <Dropdown.Item
-                          onClick={() => handleDeleteUser(user.userId)}
-                          className="text-danger"
-                          disabled={isDeleting}
-                        >
-                          <FaTrash className="me-2" /> Delete
-                        </Dropdown.Item>
-                      </Dropdown.Menu>
-                    </Dropdown>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="card-footer">
-          <DataTablePagination
-            totalItems={users.length}
-            itemNo={itemsPerPage}
-            onPageChange={handlePageChange}
-            currentPage={currentPage}
-          />
+        <div className="card">
+          <div className="card-body p-0">
+            <div className="employee-grid-widget">
+              <div className="row">
+                {paginatedUsers.map((user) => (
+                  <div
+                    className="col-xxl-3 col-xl-4 col-lg-6 col-md-6"
+                    key={user.userId}
+                  >
+                    <div className="card">
+                      <div className="card-body">
+                        <div className="d-flex align-items-start justify-content-between mb-2">
+                          <div>
+                            <a
+                              href={`/user/${user.userId}`} // Fixed link to /u/:id
+                              className="avatar avatar-xl avatar-rounded border p-1 rounded-circle"
+                            >
+                              <img
+                                src={userimg}
+                                className="img-fluid h-auto w-auto"
+                                alt="img"
+                              />
+                            </a>
+                          </div>
+                          <div className="dropdown">
+                            <Dropdown>
+                              <Dropdown.Toggle
+                                variant="light"
+                                className="btn-sm"
+                              >
+                                ⋮
+                              </Dropdown.Toggle>
+                              <Dropdown.Menu>
+                                <Dropdown.Item
+                                  onClick={() => handleViewUser(user)}
+                                >
+                                  <FaEye className="me-2" /> View
+                                </Dropdown.Item>
+                                <Dropdown.Item
+                                  onClick={() => handleEditUser(user)}
+                                >
+                                  <FaPen className="me-2" /> Edit
+                                </Dropdown.Item>
+                                <Dropdown.Item
+                                  onClick={() =>
+                                    handleInactiveUser(user.userId)
+                                  }
+                                  disabled={isInactivating}
+                                >
+                                  <FaBan className="me-2" /> Inactive User
+                                </Dropdown.Item>
+                                <Dropdown.Item
+                                  onClick={() => handleReportUser(user.userId)}
+                                  disabled={isReporting}
+                                >
+                                  <FaExclamationTriangle className="me-2 text-warning" />{" "}
+                                  Report User
+                                </Dropdown.Item>
+                                <Dropdown.Item
+                                  onClick={() => handleDeleteUser(user.userId)}
+                                  className="text-danger"
+                                  disabled={isDeleting}
+                                >
+                                  <FaTrash className="me-2" /> Delete
+                                </Dropdown.Item>
+                              </Dropdown.Menu>
+                            </Dropdown>
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-primary mb-2">
+                            {user.username} - {user.mobileNumber || "N/A"}
+                          </p>
+                        </div>
+                        <div className="text-center mb-3">
+                          <h6 className="mb-1">
+                            <a href={`/user/${user.userId}`}>{user.name}</a>{" "}
+                            {/* Fixed link to /u/:id */}
+                          </h6>
+                          <span className="badge bg-secondary-transparent text-gray-9 fs-10 fw-medium">
+                            {user.roles.join(", ") || "N/A"}
+                          </span>
+                        </div>
+                        <div className="d-flex align-items-center justify-content-between bg-light rounded p-3">
+                          <div className="text-start">
+                            <h6 className="mb-1">Joined</h6>
+                            <p>
+                              {new Date(user.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div className="text-start">
+                            <h6 className="mb-1">Status</h6>
+                            <p>
+                              {user.status === "active" ? "Active" : "Inactive"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="card-footer">
+            <DataTablePagination
+              totalItems={users.length}
+              itemNo={itemsPerPage}
+              onPageChange={handlePageChange}
+              currentPage={currentPage}
+            />
+          </div>
         </div>
       </div>
-
       {showModal && (
         <AddUser onClose={handleCloseModal} userToEdit={selectedUser} />
       )}
@@ -382,4 +392,4 @@ const UserList = () => {
   );
 };
 
-export default UserList;
+export default NewUserList;
