@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Card,
   Row,
@@ -13,11 +13,13 @@ import {
   Dropdown,
   Menu,
   Pagination,
+  Empty,
 } from "antd";
 import {
   ShoppingCartOutlined,
   SearchOutlined,
   MoreOutlined,
+  FilterOutlined,
 } from "@ant-design/icons";
 import {
   useGetAllProductsQuery,
@@ -38,12 +40,10 @@ import pos from "../../assets/img/default.png";
 import DeleteModal from "../Common/DeleteModal";
 import HistoryModal from "../Common/HistoryModal";
 import StockModal from "../Common/StockModal";
-import Cart from "./Cart";
-import TableHeader from "./TableHeader";
+import Cart from "./Cart"; // Import the modal-based Cart component
+import "./productlist.css"; // Import custom CSS
 
-// Minimal Cart Component
-
-// TableHeader Component
+const { Option } = Select;
 
 const ProductsList = ({ isAdmin = false }) => {
   const { data: productsData, error, isLoading } = useGetAllProductsQuery();
@@ -57,27 +57,43 @@ const ProductsList = ({ isAdmin = false }) => {
   const [removeFromCart] = useRemoveFromCartMutation();
 
   const userId = user?.user?.userId;
-  const products = Array.isArray(productsData?.data)
-    ? productsData.data
-    : Array.isArray(productsData)
-    ? productsData
-    : [];
-  const categories = Array.isArray(categoriesData?.categories)
-    ? categoriesData.categories
-    : [];
-  const brands = Array.isArray(brandsData) ? brandsData : [];
-  const customers = Array.isArray(customersData?.data)
-    ? customersData.data
-    : [];
-  const cartItems = Array.isArray(cartData?.items) ? cartData.items : [];
+  const products = useMemo(
+    () =>
+      Array.isArray(productsData?.data)
+        ? productsData.data
+        : Array.isArray(productsData)
+        ? productsData
+        : [],
+    [productsData]
+  );
+  const categories = useMemo(
+    () =>
+      Array.isArray(categoriesData?.categories)
+        ? categoriesData.categories
+        : [],
+    [categoriesData]
+  );
+  const brands = useMemo(
+    () => (Array.isArray(brandsData) ? brandsData : []),
+    [brandsData]
+  );
+  const customers = useMemo(
+    () => (Array.isArray(customersData?.data) ? customersData.data : []),
+    [customersData]
+  );
+  const cartItems = useMemo(
+    () => (Array.isArray(cartData?.items) ? cartData.items : []),
+    [cartData]
+  );
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [isModalVisible, setModalVisible] = useState(false);
+  const [isDeleteModalVisible, setDeleteModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isStockModalVisible, setStockModalVisible] = useState(false);
   const [isHistoryModalVisible, setHistoryModalVisible] = useState(false);
   const [stockHistoryMap, setStockHistoryMap] = useState({});
   const [cartLoadingStates, setCartLoadingStates] = useState({});
+  const [form] = Form.useForm();
 
   const [filters, setFilters] = useState({
     createdBy: null,
@@ -86,16 +102,14 @@ const ProductsList = ({ isAdmin = false }) => {
     sortBy: null,
     search: "",
     company_code: "",
-    categories,
-    brands,
   });
 
-  const itemsPerPage = 20;
+  const itemsPerPage = 30;
 
   const getBrandsName = (brandId) => {
-    if (!brandId) return "NOT BRANDED";
+    if (!brandId) return "Not Branded";
     const brand = brands.find((b) => b.id === brandId);
-    return brand ? brand.brandName : "NOT BRANDED";
+    return brand ? brand.brandName : "Not Branded";
   };
 
   const getCategoryName = (categoryId) => {
@@ -110,75 +124,79 @@ const ProductsList = ({ isAdmin = false }) => {
     return `₹${Number(price).toFixed(2)}`;
   };
 
-  const applyFilters = (customers = []) => {
-    if (!products) return [];
+  const applyFilters = useMemo(() => {
+    return (products, customers) => {
+      if (!products) return [];
 
-    let filtered = products.filter((product) => {
-      const customer = customers.find((c) => c._id === product.customerId);
-      const createdByName = customer?.name || "";
-      const matchesCreator =
-        !filters.createdBy || createdByName === filters.createdBy;
-      const matchesCategory =
-        !filters.category || product.categoryId === filters.category;
-      const matchesBrand = !filters.brand || product.brandId === filters.brand;
-      const searchTerm = filters.search?.toLowerCase() || "";
-      const matchesSearch =
-        !searchTerm ||
-        (product.name?.toLowerCase() || "").includes(searchTerm) ||
-        (product.product_code?.toLowerCase() || "").includes(searchTerm) ||
-        (product.company_code?.toLowerCase() || "").includes(searchTerm);
-      let matchesDate = true;
-      if (filters.sortBy === "Last 7 Days") {
-        const daysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-        matchesDate = new Date(product.createdAt) >= daysAgo;
-      } else if (filters.sortBy === "Last Month") {
-        const oneMonthAgo = new Date();
-        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-        matchesDate = new Date(product.createdAt) >= oneMonthAgo;
+      let filtered = products.filter((product) => {
+        const customer = customers.find((c) => c._id === product.customerId);
+        const createdByName = customer?.name || "";
+        const matchesCreator =
+          !filters.createdBy || createdByName === filters.createdBy;
+        const matchesCategory =
+          !filters.category || product.categoryId === filters.category;
+        const matchesBrand =
+          !filters.brand || product.brandId === filters.brand;
+        const searchTerm = filters.search?.toLowerCase() || "";
+        const matchesSearch =
+          !searchTerm ||
+          (product.name?.toLowerCase() || "").includes(searchTerm) ||
+          (product.product_code?.toLowerCase() || "").includes(searchTerm) ||
+          (product.company_code?.toLowerCase() || "").includes(searchTerm);
+        let matchesDate = true;
+        if (filters.sortBy === "Last 7 Days") {
+          const daysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+          matchesDate = new Date(product.createdAt) >= daysAgo;
+        } else if (filters.sortBy === "Last Month") {
+          const oneMonthAgo = new Date();
+          oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+          matchesDate = new Date(product.createdAt) >= oneMonthAgo;
+        }
+
+        return (
+          matchesCreator &&
+          matchesCategory &&
+          matchesBrand &&
+          matchesSearch &&
+          matchesDate
+        );
+      });
+
+      if (filters.sortBy === "Ascending") {
+        filtered.sort((a, b) => a.name?.localeCompare(b.name || ""));
+      } else if (filters.sortBy === "Descending") {
+        filtered.sort((a, b) => b.name?.localeCompare(b.name || ""));
+      } else if (filters.sortBy === "Recently Added") {
+        filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      } else if (filters.sortBy === "Price Low to High") {
+        filtered.sort(
+          (a, b) =>
+            (Number(a.sellingPrice) || 0) - (Number(b.sellingPrice) || 0)
+        );
+      } else if (filters.sortBy === "Price High to Low") {
+        filtered.sort(
+          (a, b) =>
+            (Number(b.sellingPrice) || 0) - (Number(a.sellingPrice) || 0)
+        );
       }
 
-      return (
-        matchesCreator &&
-        matchesCategory &&
-        matchesBrand &&
-        matchesSearch &&
-        matchesDate
-      );
-    });
+      return filtered;
+    };
+  }, [filters]);
 
-    if (filters.sortBy === "Ascending") {
-      filtered.sort((a, b) => a.name?.localeCompare(b.name || ""));
-    } else if (filters.sortBy === "Descending") {
-      filtered.sort((a, b) => b.name?.localeCompare(b.name || ""));
-    } else if (filters.sortBy === "Recently Added") {
-      filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    } else if (filters.sortBy === "Price Low to High") {
-      filtered.sort(
-        (a, b) => (Number(a.sellingPrice) || 0) - (Number(b.sellingPrice) || 0)
-      );
-    } else if (filters.sortBy === "Price High to Low") {
-      filtered.sort(
-        (a, b) => (Number(b.sellingPrice) || 0) - (Number(a.sellingPrice) || 0)
-      );
-    }
-
-    return filtered;
-  };
-
-  const filteredProducts = applyFilters(customers);
-
+  const filteredProducts = applyFilters(products, customers);
   const offset = (currentPage - 1) * itemsPerPage;
   const currentItems = filteredProducts.slice(offset, offset + itemsPerPage);
 
   const handleDeleteClick = (product) => {
     setSelectedProduct(product);
-    setModalVisible(true);
+    setDeleteModalVisible(true);
   };
 
   const handleConfirmDelete = async () => {
     if (!selectedProduct?.productId) {
       toast.error("No product selected for deletion");
-      setModalVisible(false);
+      setDeleteModalVisible(false);
       return;
     }
 
@@ -193,7 +211,7 @@ const ProductsList = ({ isAdmin = false }) => {
         `Failed to delete product: ${error.data?.message || "Unknown error"}`
       );
     } finally {
-      setModalVisible(false);
+      setDeleteModalVisible(false);
       setSelectedProduct(null);
     }
   };
@@ -226,7 +244,7 @@ const ProductsList = ({ isAdmin = false }) => {
 
   const handleRemoveFromCart = async (productId) => {
     try {
-      await removeFromCart(productId).unwrap();
+      await removeFromCart({ userId, productId }).unwrap();
       toast.success("Item removed from cart!");
     } catch (error) {
       toast.error(
@@ -261,6 +279,24 @@ const ProductsList = ({ isAdmin = false }) => {
     setStockModalVisible(false);
   };
 
+  const handleFilterChange = (changedFields) => {
+    setFilters((prev) => ({ ...prev, ...changedFields }));
+    setCurrentPage(1); // Reset to first page on filter change
+  };
+
+  const handleResetFilters = () => {
+    form.resetFields();
+    setFilters({
+      createdBy: null,
+      category: null,
+      brand: null,
+      sortBy: null,
+      search: "",
+      company_code: "",
+    });
+    setCurrentPage(1);
+  };
+
   useEffect(() => {
     if (
       filteredProducts.length > 0 &&
@@ -270,31 +306,46 @@ const ProductsList = ({ isAdmin = false }) => {
     }
   }, [filteredProducts.length, currentPage]);
 
-  useEffect(() => {
-    setFilters((prev) => ({ ...prev, categories, brands }));
-  }, [categories, brands]);
+  const menu = (product) => (
+    <Menu>
+      <Menu.Item key="view">
+        <Link to={`/product/${product.productId}`}>View</Link>
+      </Menu.Item>
+      <Menu.Item key="edit">
+        <Link to={`/product/${product.productId}/edit`}>Edit</Link>
+      </Menu.Item>
+      <Menu.Item key="manage-stock" onClick={() => handleStockClick(product)}>
+        Manage Stock
+      </Menu.Item>
+      <Menu.Item key="view-history" onClick={() => handleHistoryClick(product)}>
+        View History
+      </Menu.Item>
+      <Menu.Item key="delete" onClick={() => handleDeleteClick(product)}>
+        Delete
+      </Menu.Item>
+    </Menu>
+  );
+
+  const handleConvertToOrder = (orderData) => {
+    console.log("Order converted:", orderData);
+    // Add logic to handle order conversion
+  };
 
   if (isLoading || userLoading) {
     return (
-      <div style={{ textAlign: "center", padding: 32 }}>
+      <div className="loading-container">
         <Spin size="large" />
-        <p style={{ marginTop: 16 }}>Loading products...</p>
+        <p>Loading products...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={{ textAlign: "center", padding: 32, color: "#ff4d4f" }}>
-        Error fetching products: {error?.data?.message || "Unknown error"}
-      </div>
-    );
-  }
-
-  if (!filteredProducts.length) {
-    return (
-      <div style={{ textAlign: "center", padding: 32, color: "#8c8c8c" }}>
-        No products available.
+      <div className="error-container">
+        <Empty
+          description={`Error: ${error?.data?.message || "Unknown error"}`}
+        />
       </div>
     );
   }
@@ -302,87 +353,111 @@ const ProductsList = ({ isAdmin = false }) => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        <div style={{ padding: 24 }}>
-          <Cart cartItems={cartItems} onRemoveFromCart={handleRemoveFromCart} />
-          <div>
-            <TableHeader
-              filters={filters}
-              setFilters={setFilters}
-              additionalSortOptions={[
-                { value: "Price Low to High", label: "Price: Low to High" },
-                { value: "Price High to Low", label: "Price: High to Low" },
-              ]}
+        <div className="products-list-wrapper">
+          <div className="content">
+            <Cart
+              cartItems={cartItems}
+              onRemoveFromCart={handleRemoveFromCart}
+              onConvertToOrder={handleConvertToOrder}
             />
-            <Row gutter={[16, 16]}>
-              {currentItems.map((product) => {
-                const menu = (
-                  <Menu>
-                    <Menu.Item key="view">
-                      <Link to={`/product/${product.productId}`}>View</Link>
-                    </Menu.Item>
-                    <Menu.Item key="edit">
-                      <Link to={`/product/${product.productId}/edit`}>
-                        Edit
-                      </Link>
-                    </Menu.Item>
-                    <Menu.Item
-                      key="manage-stock"
-                      onClick={() => handleStockClick(product)}
-                    >
-                      Manage Stock
-                    </Menu.Item>
-                    <Menu.Item
-                      key="view-history"
-                      onClick={() => handleHistoryClick(product)}
-                    >
-                      View History
-                    </Menu.Item>
-                    <Menu.Item
-                      key="delete"
-                      onClick={() => handleDeleteClick(product)}
-                    >
-                      Delete
-                    </Menu.Item>
-                  </Menu>
-                );
-
-                return (
-                  <Col
-                    key={product.productId}
-                    xs={24}
-                    sm={12}
-                    md={8}
-                    lg={6}
-                    xl={4}
+            <div className="filter-section">
+              <Form
+                form={form}
+                layout="inline"
+                onValuesChange={(_, values) => handleFilterChange(values)}
+                className="filter-form"
+              >
+                <Form.Item name="search" className="filter-item">
+                  <Input
+                    prefix={<SearchOutlined />}
+                    placeholder="Search products..."
+                    allowClear
+                  />
+                </Form.Item>
+                <Form.Item name="category" className="filter-item">
+                  <Select
+                    placeholder="Select Category"
+                    allowClear
+                    style={{ minWidth: 150 }}
                   >
-                    <Card
-                      hoverable
-                      className="product-card"
-                      cover={
-                        <div
-                          style={{
-                            height: 150,
-                            display: "flex",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            overflow: "hidden",
-                          }}
-                        >
-                          <img
-                            src={product?.images || pos}
-                            alt={product.name}
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              objectFit: "cover",
-                              objectPosition: "center",
-                            }}
-                            className="product-image-container"
-                          />
-                        </div>
-                      }
-                      actions={[
-                        <Tooltip title="Add to Cart" key="add-to-cart">
+                    {categories.map((cat) => (
+                      <Option key={cat.categoryId} value={cat.categoryId}>
+                        {cat.name}
+                      </Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+                <Form.Item name="brand" className="filter-item">
+                  <Select
+                    placeholder="Select Brand"
+                    allowClear
+                    style={{ minWidth: 150 }}
+                  >
+                    {brands.map((brand) => (
+                      <Option key={brand.id} value={brand.id}>
+                        {brand.brandName}
+                      </Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+                <Form.Item name="sortBy" className="filter-item">
+                  <Select
+                    placeholder="Sort By"
+                    allowClear
+                    style={{ minWidth: 150 }}
+                  >
+                    <Option value="Ascending">Name: A-Z</Option>
+                    <Option value="Descending">Name: Z-A</Option>
+                    <Option value="Recently Added">Recently Added</Option>
+                    <Option value="Price Low to High">
+                      Price: Low to High
+                    </Option>
+                    <Option value="Price High to Low">
+                      Price: High to Low
+                    </Option>
+                    <Option value="Last 7 Days">Last 7 Days</Option>
+                    <Option value="Last Month">Last Month</Option>
+                  </Select>
+                </Form.Item>
+                <Form.Item>
+                  <Button type="default" onClick={handleResetFilters}>
+                    Reset Filters
+                  </Button>
+                </Form.Item>
+              </Form>
+            </div>
+            {filteredProducts.length === 0 ? (
+              <div className="empty-container">
+                <Empty description="No products match the filters." />
+              </div>
+            ) : (
+              <>
+                <Row gutter={[16, 16]} className="products-grid">
+                  {currentItems.map((product) => (
+                    <Col
+                      key={product.productId}
+                      xs={24}
+                      sm={12}
+                      md={8}
+                      lg={6}
+                      xl={4}
+                    >
+                      <Card
+                        hoverable
+                        className="product-card"
+                        cover={
+                          <div className="product-image-wrapper">
+                            <img
+                              src={product?.images?.[0] || pos}
+                              alt={product.name || "Product"}
+                              className="product-image"
+                            />
+                            {product.quantity <= 0 && (
+                              <div className="out-of-stock">Out of Stock</div>
+                            )}
+                          </div>
+                        }
+                        actions={[
                           <Button
                             type="primary"
                             icon={
@@ -398,109 +473,99 @@ const ProductsList = ({ isAdmin = false }) => {
                               product.quantity <= 0
                             }
                             block
+                            className="add-to-cart-btn"
                           >
                             {product.quantity <= 0
                               ? "Out of Stock"
                               : "Add to Cart"}
-                          </Button>
-                        </Tooltip>,
-                      ]}
-                    >
-                      <Card.Meta
-                        title={
-                          <Link
-                            to={`/product/${product.productId}`}
-                            style={{ color: "#000" }}
-                          >
-                            {product.name || "N/A"}
-                          </Link>
-                        }
-                        description={
-                          <>
-                            <div>
-                              <Link
-                                to="#"
-                                onClick={(e) => e.preventDefault()}
-                                style={{ color: "#8c8c8c" }}
-                              >
-                                {getBrandsName(product.brandId)}
-                              </Link>
-                            </div>
-                            <div
-                              style={{
-                                display: "flex",
-                                justifyContent: "space-between",
-                                marginTop: 8,
-                              }}
+                          </Button>,
+                        ]}
+                      >
+                        <Card.Meta
+                          title={
+                            <Link
+                              to={`/product/${product.productId}`}
+                              className="product-title"
                             >
-                              <span
-                                style={{ color: "#13c2c2", fontWeight: "bold" }}
-                              >
-                                {formatPrice(product.sellingPrice)}
-                              </span>
-                              <span style={{ color: "#eb2f96" }}>
-                                {product.quantity ?? 0} Pcs
-                              </span>
+                              {product.name || "N/A"}
+                            </Link>
+                          }
+                          description={
+                            <div>
+                              <div className="product-brand">
+                                {getBrandsName(product.brandId)}
+                              </div>
+                              <div className="product-price-stock">
+                                <span className="product-price">
+                                  {formatPrice(product.sellingPrice)}
+                                </span>
+                                <span className="product-stock">
+                                  {product.quantity ?? 0} in stock
+                                </span>
+                              </div>
                             </div>
-                          </>
-                        }
-                      />
-                      <Dropdown overlay={menu} trigger={["click"]}>
-                        <Button
-                          type="text"
-                          style={{ position: "absolute", top: 8, right: 8 }}
-                          icon={<MoreOutlined />}
+                          }
                         />
-                      </Dropdown>
-                    </Card>
-                  </Col>
-                );
-              })}
-            </Row>
-            <div style={{ marginTop: 24, textAlign: "center" }}>
-              <Pagination
-                current={currentPage}
-                total={filteredProducts.length}
-                pageSize={itemsPerPage}
-                onChange={(page) => setCurrentPage(page)}
-                showSizeChanger={false}
-              />
-            </div>
+                        {isAdmin && (
+                          <Dropdown overlay={menu(product)} trigger={["click"]}>
+                            <Button
+                              type="text"
+                              className="more-options-btn"
+                              icon={<MoreOutlined />}
+                              aria-label="More options"
+                            />
+                          </Dropdown>
+                        )}
+                      </Card>
+                    </Col>
+                  ))}
+                </Row>
+                <div className="pagination-container">
+                  <Pagination
+                    current={currentPage}
+                    total={filteredProducts.length}
+                    pageSize={itemsPerPage}
+                    onChange={(page) => setCurrentPage(page)}
+                    showSizeChanger={false}
+                    showQuickJumper
+                  />
+                </div>
+              </>
+            )}
+            {isAdmin && (
+              <>
+                <DeleteModal
+                  isVisible={isDeleteModalVisible}
+                  onConfirm={handleConfirmDelete}
+                  onCancel={() => {
+                    setDeleteModalVisible(false);
+                    setSelectedProduct(null);
+                  }}
+                  item={selectedProduct}
+                  itemType="Product"
+                  isLoading={isDeleting}
+                />
+                {isStockModalVisible && selectedProduct && (
+                  <StockModal
+                    show={isStockModalVisible}
+                    onHide={() => setStockModalVisible(false)}
+                    product={selectedProduct}
+                    onSubmit={handleStockSubmit}
+                  />
+                )}
+                {isHistoryModalVisible && selectedProduct && (
+                  <HistoryModal
+                    show={isHistoryModalVisible}
+                    onHide={() => setHistoryModalVisible(false)}
+                    product={selectedProduct}
+                    stockHistory={
+                      stockHistoryMap[selectedProduct.productId] || []
+                    }
+                  />
+                )}
+              </>
+            )}
           </div>
-
-          {isAdmin && (
-            <>
-              <DeleteModal
-                isVisible={isModalVisible}
-                onConfirm={handleConfirmDelete}
-                onCancel={() => {
-                  setModalVisible(false);
-                  setSelectedProduct(null);
-                }}
-                item={selectedProduct}
-                itemType="Product"
-                isLoading={isDeleting}
-              />
-              {isStockModalVisible && selectedProduct && (
-                <StockModal
-                  show={isStockModalVisible}
-                  onHide={() => setStockModalVisible(false)}
-                  product={selectedProduct}
-                  onSubmit={handleStockSubmit}
-                />
-              )}
-              {isHistoryModalVisible && selectedProduct && (
-                <HistoryModal
-                  show={isHistoryModalVisible}
-                  onHide={() => setHistoryModalVisible(false)}
-                  product={selectedProduct}
-                  stockHistory={
-                    stockHistoryMap[selectedProduct.productId] || []
-                  }
-                />
-              )}
-            </>
-          )}
         </div>
       </div>
     </div>

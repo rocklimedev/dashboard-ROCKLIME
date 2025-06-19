@@ -1,0 +1,46 @@
+/* Cart.css */
+.cart-modal .ant-modal-content {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.cart-modal .ant-modal-header {
+  background: #f0f2f5;
+  border-bottom: 1px solid #d9d9d9;
+}
+
+.cart-modal .ant-modal-body {
+  padding: 0;
+}
+
+.cart-modal .ant-steps {
+  padding: 16px;
+  background: #fff;
+}
+
+.cart-modal .ant-card {
+  border: none;
+  box-shadow: none;
+}
+
+.cart-modal .ant-btn-primary {
+  background: #1890ff;
+  border-color: #1890ff;
+}
+
+.cart-modal .ant-btn-primary:hover,
+.cart-modal .ant-btn-primary:focus {
+  background: #40a9ff;
+  border-color: #40a9ff;
+}
+
+/* Floating button */
+.ant-btn-primary .anticon-shopping-cart {
+  font-size: 18px;
+  margin-right: 8px;
+}
+
+.ant-badge-count {
+  background: #ff4d4f;
+  color: #fff;
+}

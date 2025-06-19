@@ -2,10 +2,14 @@ import React, { useState } from "react";
 import { Tabs, Tab } from "react-bootstrap";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import { useGetAllKeywordsQuery } from "../../api/keywordApi";
-import { useGetAllParentCategoriesQuery } from "../../api/parentCategoryApi";
+import {
+  useGetAllParentCategoriesQuery,
+  useDeleteParentCategoryMutation,
+} from "../../api/parentCategoryApi";
 import { useDeleteCategoryMutation } from "../../api/categoryApi";
 import PageHeader from "../Common/PageHeader";
 import AddCategoryModal from "./AddCategoryModal";
+import AddParentCategoryModal from "./AddParentCategoryModal"; // Assume this exists
 import DeleteModal from "../Common/DeleteModal";
 import DataTablePagination from "../Common/DataTablePagination";
 import Keyword from "./Keyword";
@@ -16,16 +20,22 @@ import { toast } from "sonner";
 const CategoriesList = () => {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showKeywordModal, setShowKeywordModal] = useState(false);
+  const [showParentCategoryModal, setShowParentCategoryModal] = useState(false); // New state for parent category modal
   const [selectedParentId, setSelectedParentId] = useState(null);
   const [categoryPage, setCategoryPage] = useState(1);
+  const [parentCategoryPage, setParentCategoryPage] = useState(1); // New state for parent category pagination
   const [categorySearchTerm, setCategorySearchTerm] = useState("");
   const [parentSearchTerm, setParentSearchTerm] = useState("");
+  const [parentCategorySearchTerm, setParentCategorySearchTerm] = useState(""); // New state for parent category search
   const [editingCategory, setEditingCategory] = useState(null);
+  const [editingParentCategory, setEditingParentCategory] = useState(null); // New state for editing parent category
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState(null);
+  const [itemToDelete, setItemToDelete] = useState(null); // Generalized item to delete (category or parent category)
+  const [deleteItemType, setDeleteItemType] = useState(null); // Type of item to delete ("Category" or "ParentCategory")
   const [activeTab, setActiveTab] = useState("categories");
 
   const [deleteCategory] = useDeleteCategoryMutation();
+  const [deleteParentCategory] = useDeleteParentCategoryMutation(); // New mutation for deleting parent categories
 
   const {
     data: categoryData,
@@ -51,6 +61,7 @@ const CategoriesList = () => {
     ? parentCategoryData.data
     : [];
 
+  // Filter categories
   const filteredCategories = categories.filter((c) => {
     const categoryNameMatch = c.name
       .toLowerCase()
@@ -60,16 +71,20 @@ const CategoriesList = () => {
     const parentNameMatch = parentName
       .toLowerCase()
       .includes(parentSearchTerm.toLowerCase());
-
     const matchesParentId = selectedParentId
       ? c.parentCategoryId === selectedParentId
       : true;
-
     return categoryNameMatch && parentNameMatch && matchesParentId;
   });
 
+  // Filter parent categories
+  const filteredParentCategories = parentCategories.filter((pc) =>
+    pc.name.toLowerCase().includes(parentCategorySearchTerm.toLowerCase())
+  );
+
   const itemsPerPage = 20;
 
+  // Format categories for export
   const formattedCategories = filteredCategories.map((category) => ({
     categoryId: category.categoryId,
     name: category.name,
@@ -79,38 +94,67 @@ const CategoriesList = () => {
     createdAt: new Date(category.createdAt).toLocaleDateString(),
   }));
 
+  // Paginate categories
   const paginatedCategories = filteredCategories.slice(
     (categoryPage - 1) * itemsPerPage,
     categoryPage * itemsPerPage
   );
 
+  // Paginate parent categories
+  const paginatedParentCategories = filteredParentCategories.slice(
+    (parentCategoryPage - 1) * itemsPerPage,
+    parentCategoryPage * itemsPerPage
+  );
+
+  // Handlers for categories
   const handleAddCategory = () => {
     setEditingCategory(null);
     setShowCategoryModal(true);
   };
 
-  const handleDelete = async (category) => {
-    if (!category || !category.categoryId) {
-      toast.error("Invalid category or category ID");
+  // Handlers for parent categories
+  const handleAddParentCategory = () => {
+    setEditingParentCategory(null);
+    setShowParentCategoryModal(true);
+  };
+
+  const handleDelete = async (item, itemType) => {
+    if (!item || !item.id) {
+      toast.error(`Invalid ${itemType.toLowerCase()} or ID`);
       return;
     }
 
     try {
-      await deleteCategory(category.categoryId).unwrap();
-      setShowDeleteModal(false);
-      setCategoryToDelete(null);
-      if (paginatedCategories.length === 1 && categoryPage > 1) {
-        setCategoryPage(categoryPage - 1);
+      if (itemType === "Category") {
+        await deleteCategory(item.categoryId).unwrap();
+        if (paginatedCategories.length === 1 && categoryPage > 1) {
+          setCategoryPage(categoryPage - 1);
+        }
+      } else if (itemType === "ParentCategory") {
+        await deleteParentCategory(item.id).unwrap();
+        if (paginatedParentCategories.length === 1 && parentCategoryPage > 1) {
+          setParentCategoryPage(parentCategoryPage - 1);
+        }
       }
-      toast.success("Category deleted successfully!");
+      setShowDeleteModal(false);
+      setItemToDelete(null);
+      setDeleteItemType(null);
+      toast.success(`${itemType} deleted successfully!`);
     } catch (err) {
-      toast.error(err?.data?.message || "Delete failed");
+      toast.error(
+        err?.data?.message || `Delete ${itemType.toLowerCase()} failed`
+      );
     }
   };
 
   const handleCloseCategoryModal = () => {
     setShowCategoryModal(false);
     setEditingCategory(null);
+  };
+
+  const handleCloseParentCategoryModal = () => {
+    setShowParentCategoryModal(false);
+    setEditingParentCategory(null);
   };
 
   const handleCloseKeywordModal = () => setShowKeywordModal(false);
@@ -227,7 +271,8 @@ const CategoriesList = () => {
                           <a
                             title="Delete"
                             onClick={() => {
-                              setCategoryToDelete(category);
+                              setItemToDelete(category);
+                              setDeleteItemType("Category");
                               setShowDeleteModal(true);
                             }}
                             style={{ cursor: "pointer" }}
@@ -261,17 +306,117 @@ const CategoriesList = () => {
               showModal={showKeywordModal}
             />
           </Tab>
+
+          <Tab eventKey="parentCategories" title="Parent Categories">
+            <PageHeader
+              title="Parent Categories"
+              subtitle="Manage your parent categories"
+              onAdd={handleAddParentCategory}
+              tableData={filteredParentCategories.map((pc) => ({
+                id: pc.id,
+                name: pc.name,
+                createdAt: new Date(pc.createdAt).toLocaleDateString(),
+              }))}
+            />
+
+            <div className="row mb-3">
+              <div className="col-md-6">
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Search Parent Category..."
+                  value={parentCategorySearchTerm}
+                  onChange={(e) => setParentCategorySearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="row">
+              {/* Add Parent Category Card */}
+              <div className="col-md-4 col-lg-3 mb-3">
+                <div
+                  className="card h-100 d-flex align-items-center justify-content-center"
+                  style={{ cursor: "pointer" }}
+                  onClick={handleAddParentCategory}
+                >
+                  <div className="card-body text-center">
+                    <h5 className="card-title">Add New Parent Category</h5>
+                    <p className="card-text">
+                      Click here to create a new parent category
+                    </p>
+                    <button className="btn btn-primary">
+                      Add Parent Category
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Parent Category Cards */}
+              {paginatedParentCategories.map((parentCategory) => (
+                <div key={parentCategory.id} className="col-md-4 col-lg-3 mb-3">
+                  <div className="card h-100">
+                    <div className="card-body">
+                      <h5 className="card-title">{parentCategory.name}</h5>
+                      <p className="card-text">
+                        Created:{" "}
+                        {new Date(
+                          parentCategory.createdAt
+                        ).toLocaleDateString()}
+                      </p>
+                      <div className="d-flex justify-content-end">
+                        <a
+                          className="me-2"
+                          title="Edit"
+                          onClick={() => {
+                            setEditingParentCategory(parentCategory);
+                            setShowParentCategoryModal(true);
+                          }}
+                          style={{ cursor: "pointer" }}
+                        >
+                          <AiOutlineEdit size={20} />
+                        </a>
+                        <a
+                          title="Delete"
+                          onClick={() => {
+                            setItemToDelete(parentCategory);
+                            setDeleteItemType("ParentCategory");
+                            setShowDeleteModal(true);
+                          }}
+                          style={{ cursor: "pointer" }}
+                        >
+                          <FcFullTrash size={20} />
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {paginatedParentCategories.length === 0 && (
+                <div className="col-12">
+                  <p className="text-center">No parent categories found.</p>
+                </div>
+              )}
+            </div>
+
+            <DataTablePagination
+              totalItems={filteredParentCategories.length}
+              itemNo={itemsPerPage}
+              onPageChange={setParentCategoryPage}
+            />
+          </Tab>
         </Tabs>
 
         {showDeleteModal && (
           <DeleteModal
             isVisible={showDeleteModal}
-            item={categoryToDelete}
-            itemType="Category"
-            onConfirm={() => handleDelete(categoryToDelete)}
+            item={itemToDelete}
+            itemType={deleteItemType}
+            onConfirm={() => handleDelete(itemToDelete, deleteItemType)}
             onCancel={() => {
               setShowDeleteModal(false);
-              setCategoryToDelete(null);
+              setItemToDelete(null);
+              setDeleteItemType(null);
             }}
           />
         )}
@@ -281,6 +426,14 @@ const CategoriesList = () => {
             editMode={!!editingCategory}
             categoryData={editingCategory}
             onClose={handleCloseCategoryModal}
+          />
+        )}
+
+        {showParentCategoryModal && (
+          <AddParentCategoryModal
+            editMode={!!editingParentCategory}
+            parentCategoryData={editingParentCategory}
+            onClose={handleCloseParentCategoryModal}
           />
         )}
       </div>

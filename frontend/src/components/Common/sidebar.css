@@ -25,28 +25,44 @@
 }
 
 /* Remove default bullets and ensure proper styling */
+[class*="sidebar"] ul,
+[class*="sidebar"] li,
 .sidebar ul,
 .sidebar-menu ul,
 .sidebar-menu ul li,
-.sidebar-menu ul li ul {
+.sidebar-menu ul li ul,
+.two-col-sidebar ul,
+.two-col-sidebar ul li,
+.two-col-sidebar ul li ul,
+.sidebar-horizontal ul,
+.sidebar-horizontal ul li,
+.sidebar-horizontal ul li ul {
   list-style-type: none !important;
   margin: 0;
   padding: 0;
 }
 
-.sidebar-menu ul li ul li {
-  padding-left: 15px;
+.sidebar-menu ul li ul li,
+.two-col-sidebar ul li ul li,
+.sidebar-horizontal ul li ul li {
+  padding-left: 15px; /* Indent nested items */
 }
 
 /* Ensure icons are visible */
-.sidebar a svg {
+.sidebar a svg,
+.two-col-sidebar a svg,
+.sidebar-horizontal a svg {
   color: #000 !important;
   fill: currentColor !important;
   opacity: 1 !important;
 }
 
 .sidebar a.active svg,
-.sidebar a.subdrop svg {
+.sidebar a.subdrop svg,
+.two-col-sidebar a.active svg,
+.two-col-sidebar a.subdrop svg,
+.sidebar-horizontal a.active svg,
+.sidebar-horizontal a.subdrop svg {
   color: #000 !important;
 }
 
