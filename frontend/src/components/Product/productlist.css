@@ -86,7 +86,7 @@
 .product-title {
   font-size: 16px;
   font-weight: 600;
-  color: #1890ff;
+  color: grey;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -95,7 +95,7 @@
 }
 
 .product-title:hover {
-  color: #40a9ff;
+  color: grey;
 }
 
 .product-details {
@@ -127,15 +127,15 @@
 }
 
 .add-to-cart-btn {
-  background: #1890ff;
-  border-color: #1890ff;
+  background: #e31e24;
+  border-color: #e31e24;
   font-weight: 500;
 }
 
 .add-to-cart-btn:hover,
 .add-to-cart-btn:focus {
-  background: #40a9ff;
-  border-color: #40a9ff;
+  background: grey;
+  border-color: grey;
 }
 
 .add-to-cart-btn:disabled {

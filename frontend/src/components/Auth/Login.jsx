@@ -80,7 +80,7 @@ const Login = () => {
                   <img
                     src={logo}
                     alt="Logo"
-                    style={{ width: "100px", height: "auto" }}
+                    style={{ width: "177px", height: "auto" }}
                   />
                 </div>
                 <div className="login-userheading">

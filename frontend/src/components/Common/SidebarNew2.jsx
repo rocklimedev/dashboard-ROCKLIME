@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ChevronsLeft, X } from "react-feather";
 import masterRoutes from "../../data/routes";
 import logo from "../../assets/img/logo.png";
+import logo_small from "../../assets/img/fav_icon.png";
 import customerImg from "../../assets/img/customer/customer15.jpg";
 import "./sidebar.css";
 const SidebarNew = ({
@@ -41,10 +42,10 @@ const SidebarNew = ({
           <img src={logo} alt="Logo" />
         </Link>
         <Link to="/" className="logo logo-white">
-          <img src={logo} alt="Logo" />
+          <img src={logo_small} alt="Logo" />
         </Link>
         <Link to="/" className="logo-small">
-          <img src={logo} alt="Logo" />
+          <img src={logo_small} alt="Logo" />
         </Link>
         {/* <button
           className="sidebar-close-btn"

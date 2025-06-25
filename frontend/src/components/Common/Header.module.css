@@ -1,19 +1,102 @@
-.mobile_btn {
-  background: transparent;
-  border: none;
-  padding: 10px;
-  cursor: pointer;
-  display: none; /* Hidden on desktop */
+/* Header.module.css */
+.mainHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 15px;
 }
-@media (max-width: 991px) {
-  .mobile_btn {
-    display: block; /* Show on mobile */
-  }
+
+.mobileBtn {
+  padding: 0 !important;
 }
-.mobile_btn svg {
-  color: #333;
-  transition: color 0.3s;
+
+.mobileBtn .bar-icon {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 18px;
 }
-.mobile_btn:hover svg {
-  color: #007bff;
+
+.mobileBtn .bar-icon span {
+  display: block;
+  width: 24px;
+  height: 3px;
+  background: #000;
+}
+
+.userMenu {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+.navSearchInputs {
+  margin-right: 15px;
+}
+
+.responsiveSearch {
+  padding: 0 !important;
+}
+
+.navItemBox {
+  margin-right: 15px;
+}
+
+.fullscreenBtn {
+  padding: 0 !important;
+}
+
+.dropdownProfileNav {
+  position: relative;
+}
+
+.dropdownToggle {
+  padding: 0 !important;
+  border: none !important;
+  background: none !important;
+}
+
+/* Hide any potential AntD arrow or pseudo-element */
+.dropdownToggle::after,
+.dropdownToggle::before,
+:global(.ant-dropdown-trigger)::after,
+:global(.ant-dropdown-trigger)::before {
+  display: none !important;
+}
+
+/* Style the dropdown overlay */
+.dropdownOverlay :global(.ant-dropdown-menu) {
+  padding: 8px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Style menu items */
+.dropdownOverlay :global(.ant-dropdown-menu-item) {
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+}
+
+/* Style profile header */
+.dropdownOverlay :global(.ant-dropdown-menu-item.profileset) {
+  flex-direction: row;
+}
+
+/* Ensure links in menu items are styled correctly */
+.dropdownOverlay :global(.ant-dropdown-menu-item a) {
+  color: #000;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+}
+
+.dropdownOverlay :global(.ant-dropdown-menu-item a:hover) {
+  color: #1890ff; /* AntD primary color */
+}
+
+/* Disabled menu item */
+.dropdownOverlay :global(.ant-dropdown-menu-item-disabled) {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

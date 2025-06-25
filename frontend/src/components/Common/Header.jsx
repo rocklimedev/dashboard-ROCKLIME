@@ -2,34 +2,15 @@ import React, { useState } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import logo from "../../assets/img/logo.png";
 import { useGetProfileQuery } from "../../api/userApi";
-import { Dropdown, Button, Nav } from "react-bootstrap";
-import {
-  FaSearch,
-  FaPlusCircle,
-  FaShoppingCart,
-  FaUsers,
-  FaUser,
-  FaTruck,
-  FaClipboardList,
-  FaStore,
-  FaCartPlus,
-  FaUserCircle,
-  FaSignature,
-} from "react-icons/fa";
-import {
-  MdCategory,
-  MdOutlineShoppingBag,
-  MdPointOfSale,
-  MdPermIdentity,
-  MdDashboard,
-} from "react-icons/md";
-import { BiCalculator, BiFullscreen, BiLogOut } from "react-icons/bi";
-import { FaCirclePlus } from "react-icons/fa6";
+import { Dropdown, Button, Menu } from "antd";
+import { FaSearch, FaUserCircle } from "react-icons/fa";
+import { BiFullscreen, BiLogOut } from "react-icons/bi";
 import { toast } from "sonner";
-import img from "../../assets/img/avatar/avatar-1.jpg";
+import Avatar from "react-avatar";
 import SearchDropdown from "../Search/SearchDropdown";
 import CalculatorModal from "./Calculator";
 import { useLogoutMutation } from "../../api/authApi";
+import styles from "./Header.module.css";
 
 const Header = ({ toggleSidebar, isSidebarOpen }) => {
   const location = useLocation();
@@ -61,9 +42,42 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     }
   };
 
+  // Define the dropdown menu for the user profile
+  const userMenu = (
+    <Menu className="menu-drop-user">
+      <Menu.Item
+        key="profile-header"
+        className="profileset d-flex align-items-center p-2"
+      >
+        <span className="user-img me-2">
+          <Avatar
+            name={user?.user?.name}
+            src={user?.user?.profileImage}
+            size="50"
+            round={true}
+            className="img-fluid"
+          />
+        </span>
+        <div>
+          <h6 className="fw-medium mb-0">{user?.user?.name}</h6>
+          <p className="mb-0">{user?.user?.roles}</p>
+        </div>
+      </Menu.Item>
+      <Menu.Item key="profile">
+        <Link to={`/u/${user?.user?.userId}`}>
+          <FaUserCircle className="me-2" /> Profile
+        </Link>
+      </Menu.Item>
+      <Menu.Item key="logout" onClick={handleLogout} disabled={isLoggingOut}>
+        <BiLogOut className="me-2" />
+        {isLoggingOut ? "Logging out..." : "Logout"}
+      </Menu.Item>
+    </Menu>
+  );
+
   return (
     <div className="header pos-header">
-      <div className="main-header d-flex align-items-center">
+      <div className={styles.mainHeader}>
         {/* Logo Section */}
         <div className="header-left">
           <Link to="/" className="logo">
@@ -73,9 +87,9 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
 
         {/* Mobile Menu Button */}
         <Button
-          variant="link"
-          className="mobile_btn p-0"
-          onClick={() => toggleSidebar(!isSidebarOpen)} // Toggle between open and closed
+          type="link"
+          className={styles.mobileBtn}
+          onClick={() => toggleSidebar(!isSidebarOpen)}
         >
           <span className="bar-icon">
             <span></span>
@@ -85,78 +99,59 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
         </Button>
 
         {/* User Menu */}
-        <Nav className="user-menu ms-auto d-flex align-items-center">
+        <div className={styles.userMenu}>
           {/* Search Bar */}
-          <Nav.Item className="nav-searchinputs me-3">
+          <div className={styles.navSearchInputs}>
             <div className="top-nav-search d-flex align-items-center">
-              <Button variant="link" className="responsive-search p-0">
+              <Button type="link" className={styles.responsiveSearch}>
                 <FaSearch />
               </Button>
               <SearchDropdown />
             </div>
-          </Nav.Item>
+          </div>
 
           {/* Fullscreen Toggle */}
-          <Nav.Item className="nav-item-box me-3">
+          <div className={styles.navItemBox}>
             <Button
-              variant="link"
+              type="link"
               onClick={handleFullscreenToggle}
-              className="p-0"
+              className={styles.fullscreenBtn}
               title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
             >
               <BiFullscreen />
             </Button>
-          </Nav.Item>
+          </div>
 
           {/* User Profile Dropdown */}
-          <Nav.Item className="dropdown profile-nav">
+          <div className={styles.dropdownProfileNav}>
             {isLoading ? (
               <span className="user-letter">Loading...</span>
             ) : error ? (
               <span className="user-letter">Error loading profile</span>
             ) : user ? (
-              <Dropdown align="end">
-                <Dropdown.Toggle
-                  variant="link"
-                  id="dropdown-profile"
-                  className="p-0"
-                >
+              <Dropdown
+                overlay={userMenu}
+                trigger={["click"]}
+                overlayClassName={styles.dropdownOverlay}
+                arrow={false}
+              >
+                <div className={styles.dropdownToggle}>
                   <span className="user-info">
                     <span className="user-letter">
-                      <img
-                        src={user?.user?.profileImage || img}
-                        alt="User"
-                        className="img-fluid rounded-circle"
+                      <Avatar
+                        name={user?.user?.name}
+                        src={user?.user?.profileImage}
+                        size="40"
+                        round={true}
+                        className="img-fluid"
                       />
                     </span>
                   </span>
-                </Dropdown.Toggle>
-                <Dropdown.Menu className="menu-drop-user">
-                  <div className="profileset d-flex align-items-center p-2">
-                    <span className="user-img me-2">
-                      <img
-                        src={user?.user?.profileImage || img}
-                        alt="User"
-                        className="img-fluid rounded-circle"
-                      />
-                    </span>
-                    <div>
-                      <h6 className="fw-medium mb-0">{user?.user?.name}</h6>
-                      <p className="mb-0">{user?.user?.roles}</p>
-                    </div>
-                  </div>
-                  <Dropdown.Item as={Link} to={`/u/${user?.user?.userId}`}>
-                    <FaUserCircle className="me-2" /> Profile
-                  </Dropdown.Item>
-                  <Dropdown.Item onClick={handleLogout} disabled={isLoggingOut}>
-                    <BiLogOut className="me-2" />
-                    {isLoggingOut ? "Logging out..." : "Logout"}
-                  </Dropdown.Item>
-                </Dropdown.Menu>
+                </div>
               </Dropdown>
             ) : null}
-          </Nav.Item>
-        </Nav>
+          </div>
+        </div>
       </div>
 
       {/* Calculator Modal */}
