@@ -374,19 +374,6 @@ const ProductsList = ({ isAdmin = false }) => {
                     allowClear
                   />
                 </Form.Item>
-                <Form.Item name="category" className="filter-item">
-                  <Select
-                    placeholder="Select Category"
-                    allowClear
-                    style={{ minWidth: 150 }}
-                  >
-                    {categories.map((cat) => (
-                      <Option key={cat.categoryId} value={cat.categoryId}>
-                        {cat.name}
-                      </Option>
-                    ))}
-                  </Select>
-                </Form.Item>
                 <Form.Item name="brand" className="filter-item">
                   <Select
                     placeholder="Select Brand"
@@ -396,6 +383,19 @@ const ProductsList = ({ isAdmin = false }) => {
                     {brands.map((brand) => (
                       <Option key={brand.id} value={brand.id}>
                         {brand.brandName}
+                      </Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+                <Form.Item name="category" className="filter-item">
+                  <Select
+                    placeholder="Select Category"
+                    allowClear
+                    style={{ minWidth: 150 }}
+                  >
+                    {categories.map((cat) => (
+                      <Option key={cat.categoryId} value={cat.categoryId}>
+                        {cat.name}
                       </Option>
                     ))}
                   </Select>

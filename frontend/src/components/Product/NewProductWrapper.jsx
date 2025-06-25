@@ -1,9 +1,9 @@
 import React from "react";
 import mainWrapper from "../../assets/img/products/product_page_title.png";
-import surfaces from "../../assets/img/products/surfaces.jpg";
-import fittings from "../../assets/img/products/cp_fittings.png";
-import wellness from "../../assets/img/products/wellness.jpg";
-import adhesive from "../../assets/img/products/adhesive.jpg";
+import surfaces from "../../assets/img/icons/products/surfaces.png";
+import fittings from "../../assets/img/icons/products/sanitary.png";
+import wellness from "../../assets/img/icons/products/wellness.png";
+import adhesive from "../../assets/img/icons/products/adhessive.png";
 import "./productwrapper.css";
 import { Link } from "react-router-dom";
 const NewProductWrapper = () => {
@@ -28,12 +28,6 @@ const NewProductWrapper = () => {
   return (
     <section className="page-wrapper">
       <div className="content">
-        {/* Hero image with proper alt text */}
-        <img
-          src={mainWrapper}
-          alt="Product page banner"
-          className="product-main-wrapper"
-        />
         {/* Categories grid for responsive layout */}
         <div className="categories-wrapper">
           {categories.map((category, index) => (

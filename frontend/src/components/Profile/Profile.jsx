@@ -1,12 +1,47 @@
 import React, { useState, useEffect } from "react";
 import {
+  Card,
+  Tabs,
+  Button,
+  Input,
+  Form,
+  Row,
+  Col,
+  Avatar as AntAvatar,
+  Spin,
+  Alert,
+  Table,
+  Badge,
+  Collapse,
+  Space,
+  Typography,
+} from "antd";
+import {
+  UserOutlined,
+  EditOutlined,
+  LockOutlined,
+  FileTextOutlined,
+  ShoppingCartOutlined,
+  TeamOutlined,
+  FileDoneOutlined,
+} from "@ant-design/icons";
+import {
   useGetProfileQuery,
   useUpdateProfileMutation,
 } from "../../api/userApi";
 import { useGetRolesQuery } from "../../api/rolesApi";
+import { useForgotPasswordMutation } from "../../api/authApi";
 import { toast } from "sonner";
 import Avatar from "react-avatar";
-import { useForgotPasswordMutation } from "../../api/authApi";
+import { useGetQuotationByIdQuery } from "../../api/quotationApi";
+import { useGetInvoicesByCustomerIdQuery } from "../../api/customerApi";
+import { useGetTeamByIdQuery } from "../../api/teamApi";
+import { useGetInvoiceByIdQuery } from "../../api/invoiceApi";
+// Placeholder API hooks (replace with actual implementations)
+
+const { Title, Text } = Typography;
+const { TabPane } = Tabs;
+const { Panel } = Collapse;
 
 const Profile = () => {
   const {
@@ -23,57 +58,70 @@ const Profile = () => {
   const [forgotPassword, { isLoading: isResetting }] =
     useForgotPasswordMutation();
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    username: "",
-    name: "",
-    email: "",
-    mobileNumber: "",
-    street: "",
-    city: "",
-    state: "",
-    postalCode: "",
-    country: "",
+  // Placeholder queries for new data
+  const {
+    data: quotationsData,
+    isLoading: isQuotationsLoading,
+    error: quotationsError,
+  } = useGetQuotationByIdQuery(profile?.user?.userId, {
+    skip: !profile?.user?.userId,
   });
+  const {
+    data: invoicesData,
+    isLoading: isInvoicesLoading,
+    error: invoicesError,
+  } = useGetInvoiceByIdQuery(profile?.user?.userId, {
+    skip: !profile?.user?.userId,
+  });
+  const {
+    data: teamsData,
+    isLoading: isTeamsLoading,
+    error: teamsError,
+  } = useGetTeamByIdQuery(profile?.user?.userId, {
+    skip: !profile?.user?.userId,
+  });
+  const {
+    data: ordersData,
+    isLoading: isOrdersLoading,
+    error: ordersError,
+  } = useGetInvoicesByCustomerIdQuery(profile?.user?.userId, {
+    skip: !profile?.user?.userId,
+  });
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [form] = Form.useForm();
   const [avatarUrl, setAvatarUrl] = useState("");
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
 
-  // Debug token and API response
+  // Debug token
   useEffect(() => {
     const token =
       localStorage.getItem("token") || sessionStorage.getItem("token");
-
     if (!token) {
       toast.error("No authentication token found. Redirecting to login...");
       window.location.href = "/login";
     }
-    console.log("useGetProfileQuery response:", {
-      data: profile,
-      error: profileError,
-      status: profileError?.status,
-      endpoint: profileError?.originalStatus,
-      url: profileError?.data?.url || "N/A",
-    });
-  }, [profile, profileError]);
+  }, []);
 
-  // Initialize formData and avatar
+  // Initialize form data
   useEffect(() => {
     if (profile?.user) {
-      setFormData({
-        username: profile.user.username || "",
-        name: profile.user.name || "",
-        email: profile.user.email || "",
-        mobileNumber: profile.user.mobileNumber || "",
-        street: profile.user.address?.street || "",
-        city: profile.user.address?.city || "",
-        state: profile.user.address?.state || "",
-        postalCode: profile.user.address?.postalCode || "",
-        country: profile.user.address?.country || "",
+      const user = profile.user;
+      form.setFieldsValue({
+        username: user.username || "",
+        name: user.name || "",
+        email: user.email || "",
+        mobileNumber: user.mobileNumber || "",
+        street: user.address?.street || "",
+        city: user.address?.city || "",
+        state: user.address?.state || "",
+        postalCode: user.address?.postalCode || "",
+        country: user.address?.country || "",
       });
-      const savedAvatar = localStorage.getItem(`avatar_${profile.user.userId}`);
-      setAvatarUrl(savedAvatar || profile.user.name || profile.user.email);
+      const savedAvatar = localStorage.getItem(`avatar_${user.userId}`);
+      setAvatarUrl(savedAvatar || user.name || user.email);
     }
-  }, [profile]);
+  }, [profile, form]);
 
   // Handle avatar selection
   const handleAvatarSelect = (avatar) => {
@@ -86,439 +134,612 @@ const Profile = () => {
 
   // Handle forgot password
   const handleForgotPassword = async () => {
-    if (!formData.email) {
-      toast.error("Email is required to reset password.");
-      return;
-    }
+    const email = form.getFieldValue("email");
+    if (!email) return toast.error("Email is required to reset password.");
 
     try {
-      await forgotPassword({ email: formData.email }).unwrap();
+      await forgotPassword({ email }).unwrap();
       toast.success("Password reset link sent to your email!");
     } catch (error) {
-      if (error.status === 404) {
-        toast.error("Email not found. Please check your email address.");
-      } else {
-        toast.error(
-          `Failed to send reset link: ${error.data?.error || "Unknown error"}`
-        );
-      }
+      toast.error(
+        `Failed to send reset link: ${error.data?.error || "Unknown error"}`
+      );
     }
   };
 
-  if (isProfileLoading || isRolesLoading) return <p>Loading...</p>;
-  if (profileError) {
-    console.error("Profile error:", profileError);
-    let errorMessage = "Unknown error";
-    if (profileError.status === 404) {
-      errorMessage =
-        "User profile not found. Please check your account or contact support.";
-    } else if (profileError.status === 401) {
-      errorMessage = "Unauthorized. Please log in again.";
-    } else {
-      errorMessage =
-        profileError?.data?.message || profileError.message || "Unknown error";
-    }
-    return <p>Error loading profile: {errorMessage}</p>;
-  }
-  if (rolesError) return <p>Error loading roles: {rolesError.message}</p>;
-  if (!profile?.user) return <p>No user profile data available.</p>;
-
-  const userId = profile.user.userId;
-  const roleId = profile.user.roleId;
-  const roleName =
-    rolesData?.find((role) => role.roleId === roleId)?.roleName || "N/A";
-  const status = profile.user.status || "N/A";
-
-  const handleEditClick = () => setIsEditing(true);
-
-  const handleCancelClick = () => {
-    setIsEditing(false);
-    setFormData({
-      username: profile.user.username || "",
-      name: profile.user.name || "",
-      email: profile.user.email || "",
-      mobileNumber: profile.user.mobileNumber || "",
-      street: profile.user.address?.street || "",
-      city: profile.user.address?.city || "",
-      state: profile.user.address?.state || "",
-      postalCode: profile.user.address?.postalCode || "",
-      country: profile.user.address?.country || "",
-    });
-    setShowAvatarPicker(false);
-  };
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSaveClick = async () => {
-    if (!userId) {
-      toast.error("User ID not found. Cannot update profile.");
-      return;
-    }
-
-    if (!formData.name || !formData.email || !formData.mobileNumber) {
-      toast.error("Please fill in all required fields.");
-      return;
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      toast.error("Please enter a valid email address.");
-      return;
-    }
-
-    // Validate phone number (basic example)
-    const phoneRegex = /^[0-9]{10}$/;
-    if (!phoneRegex.test(formData.mobileNumber)) {
-      toast.error("Please enter a valid 10-digit phone number.");
-      return;
-    }
+  // Handle profile update
+  const handleSave = async (values) => {
+    if (!profile?.user?.userId) return toast.error("User ID not found.");
 
     const updatedData = {
-      username: formData.username,
-      name: formData.name,
-      email: formData.email,
-      mobileNumber: formData.mobileNumber,
+      username: values.username,
+      name: values.name,
+      email: values.email,
+      mobileNumber: values.mobileNumber,
+      address: {
+        street: values.street || "",
+        city: values.city || "",
+        state: values.state || "",
+        postalCode: values.postalCode || "",
+        country: values.country || "",
+      },
     };
-
-    const hasAddress =
-      formData.street ||
-      formData.city ||
-      formData.state ||
-      formData.postalCode ||
-      formData.country;
-    if (hasAddress) {
-      updatedData.address = {
-        street: formData.street || "",
-        city: formData.city || "",
-        state: formData.state || "",
-        postalCode: formData.postalCode || "",
-        country: formData.country || "",
-      };
-    }
 
     try {
       await updateProfile(updatedData).unwrap();
       toast.success("Profile updated successfully!");
       setIsEditing(false);
-      if (formData.name !== profile.user.name) {
-        const savedAvatar = localStorage.getItem(`avatar_${userId}`);
+      if (values.name !== profile.user.name) {
+        const savedAvatar = localStorage.getItem(
+          `avatar_${profile.user.userId}`
+        );
         if (!savedAvatar) {
-          setAvatarUrl(formData.name);
-          localStorage.setItem(`avatar_${userId}`, formData.name);
+          setAvatarUrl(values.name);
+          localStorage.setItem(`avatar_${profile.user.userId}`, values.name);
         }
       }
     } catch (error) {
-      if (error.status === 404) {
-        toast.error("User not found. Please check your account.");
-      } else {
-        toast.error(
-          `Failed to update profile: ${error.data?.message || "Unknown error"}`
-        );
-      }
+      toast.error(
+        `Failed to update profile: ${error.data?.message || "Unknown error"}`
+      );
     }
   };
 
-  const avatarOptions = [
-    formData.name || "User",
-    formData.email || "Email",
-    "John Doe",
-    "Jane Smith",
-    "User One",
+  // Table columns for quotations, invoices, teams, and orders
+  const quotationColumns = [
+    { title: "Quotation ID", dataIndex: "quotationId", key: "quotationId" },
+    { title: "Customer", dataIndex: "customerName", key: "customerName" },
+    {
+      title: "Amount",
+      dataIndex: "amount",
+      key: "amount",
+      render: (text) => `₹${text}`,
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      render: (text) => <Badge status="processing" text={text} />,
+    },
   ];
+
+  const invoiceColumns = [
+    { title: "Invoice ID", dataIndex: "invoiceId", key: "invoiceId" },
+    { title: "Customer", dataIndex: "customerName", key: "customerName" },
+    {
+      title: "Amount",
+      dataIndex: "amount",
+      key: "amount",
+      render: (text) => `₹${text}`,
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      render: (text) => <Badge status="success" text={text} />,
+    },
+  ];
+
+  const teamColumns = [
+    { title: "Team Name", dataIndex: "teamName", key: "teamName" },
+    { title: "Role", dataIndex: "role", key: "role" },
+    { title: "Members", dataIndex: "memberCount", key: "memberCount" },
+  ];
+
+  const orderColumns = [
+    { title: "Order ID", dataIndex: "orderId", key: "orderId" },
+    { title: "Customer", dataIndex: "customerName", key: "customerName" },
+    {
+      title: "Total",
+      dataIndex: "totalAmount",
+      key: "totalAmount",
+      render: (text) => `₹${text}`,
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      render: (text) => <Badge status="warning" text={text} />,
+    },
+  ];
+
+  if (isProfileLoading || isRolesLoading)
+    return (
+      <Spin size="large" style={{ display: "block", margin: "50px auto" }} />
+    );
+  if (profileError)
+    return (
+      <Alert
+        message="Error loading profile"
+        description={profileError?.data?.message || "Unknown error"}
+        type="error"
+        showIcon
+      />
+    );
+  if (rolesError)
+    return (
+      <Alert
+        message="Error loading roles"
+        description={rolesError.message}
+        type="error"
+        showIcon
+      />
+    );
+  if (!profile?.user)
+    return (
+      <Alert message="No user profile data available" type="warning" showIcon />
+    );
+
+  const user = profile.user;
+  const roleName =
+    rolesData?.find((role) => role.roleId === user.roleId)?.roleName || "N/A";
 
   return (
     <div className="page-wrapper">
       <div className="content">
-        <div className="card">
-          <div className="card-header">
-            <h4>Profile</h4>
-          </div>
-          <div className="card-body profile-body">
-            <h5 className="mb-2">
-              <i className="ti ti-user text-primary me-1"></i>Basic Information
-            </h5>
-            <div className="profile-pic-upload image-field">
-              <div className="profile-pic p-2 position-relative">
-                <Avatar
-                  name={avatarUrl}
-                  size="100"
-                  round={true}
-                  className="object-fit-cover h-100 rounded-1"
+        <Row gutter={[16, 16]}>
+          {/* Profile Card */}
+          <Col xs={24} lg={8}>
+            <Card
+              style={{
+                borderRadius: 8,
+                boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+              }}
+              bodyStyle={{ padding: 24 }}
+            >
+              <Space
+                direction="vertical"
+                size="large"
+                style={{ width: "100%", textAlign: "center" }}
+              >
+                <AntAvatar
+                  icon={<UserOutlined />}
+                  size={100}
+                  src={avatarUrl}
+                  style={{ backgroundColor: "#1890ff" }}
                 />
                 {isEditing && (
-                  <button
-                    className="btn btn-sm btn-primary position-absolute bottom-0 end-0 m-1"
+                  <Button
+                    type="link"
                     onClick={() => setShowAvatarPicker(!showAvatarPicker)}
                   >
                     Change Avatar
-                  </button>
+                  </Button>
                 )}
-              </div>
-              {isEditing && showAvatarPicker && (
-                <div className="avatar-picker mt-2">
-                  <div className="d-flex flex-wrap gap-2">
-                    {avatarOptions.map((option, index) => (
-                      <div
+                {isEditing && showAvatarPicker && (
+                  <Space wrap>
+                    {[
+                      "User",
+                      user.name,
+                      user.email,
+                      "John Doe",
+                      "Jane Smith",
+                    ].map((option, index) => (
+                      <AntAvatar
                         key={index}
-                        className="avatar-option"
-                        onClick={() => handleAvatarSelect(option)}
+                        size={40}
                         style={{ cursor: "pointer" }}
+                        onClick={() => handleAvatarSelect(option)}
                       >
-                        <Avatar name={option} size="50" round={true} />
-                      </div>
+                        {option}
+                      </AntAvatar>
                     ))}
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="row">
-              {/* Username */}
-              <div className="col-lg-6 col-sm-12">
-                <div className="mb-3">
-                  <label className="form-label">Username</label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      name="username"
-                      className="form-control"
-                      value={formData.username}
-                      onChange={handleChange}
-                    />
-                  ) : (
-                    <p className="form-control-static">{formData.username}</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Name */}
-              <div className="col-lg-6 col-sm-12">
-                <div className="mb-3">
-                  <label className="form-label">Name</label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      name="name"
-                      className="form-control"
-                      value={formData.name}
-                      onChange={handleChange}
-                      required
-                    />
-                  ) : (
-                    <p className="form-control-static">{formData.name}</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Email */}
-              <div className="col-lg-6 col-sm-12">
-                <div className="mb-3">
-                  <label className="form-label">Email</label>
-                  {isEditing ? (
-                    <input
-                      type="email"
-                      name="email"
-                      className="form-control"
-                      value={formData.email}
-                      onChange={handleChange}
-                      required
-                    />
-                  ) : (
-                    <p className="form-control-static">{formData.email}</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Phone Number */}
-              <div className="col-lg-6 col-sm-12">
-                <div className="mb-3">
-                  <label className="form-label">Phone Number</label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      name="mobileNumber"
-                      className="form-control"
-                      value={formData.mobileNumber}
-                      onChange={handleChange}
-                      required
-                    />
-                  ) : (
-                    <p className="form-control-static">
-                      {formData.mobileNumber || "N/A"}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Role (Non-Editable) */}
-              <div className="col-lg-6 col-sm-12">
-                <div className="mb-3">
-                  <label className="form-label">Role</label>
-                  <p className="form-control-static">{roleName}</p>
-                </div>
-              </div>
-
-              {/* Status (Non-Editable) */}
-              <div className="col-lg-6 col-sm-12">
-                <div className="mb-3">
-                  <label className="form-label">Status</label>
-                  <p className="form-control-static">{status}</p>
-                </div>
-              </div>
-
-              {/* Address Section */}
-              <div className="col-12">
-                <h5 className="mb-2 mt-4">
-                  <i className="ti ti-home text-primary me-1"></i>Address
-                  Information
-                </h5>
-              </div>
-
-              {/* Street */}
-              <div className="col-lg-6 col-sm-12">
-                <div className="mb-3">
-                  <label className="form-label">Street</label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      name="street"
-                      className="form-control"
-                      value={formData.street}
-                      onChange={handleChange}
-                    />
-                  ) : (
-                    <p className="form-control-static">
-                      {formData.street || "N/A"}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* City */}
-              <div className="col-lg-6 col-sm-12">
-                <div className="mb-3">
-                  <label className="form-label">City</label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      name="city"
-                      className="form-control"
-                      value={formData.city}
-                      onChange={handleChange}
-                    />
-                  ) : (
-                    <p className="form-control-static">
-                      {formData.city || "N/A"}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* State */}
-              <div className="col-lg-6 col-sm-12">
-                <div className="mb-3">
-                  <label className="form-label">State</label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      name="state"
-                      className="form-control"
-                      value={formData.state}
-                      onChange={handleChange}
-                    />
-                  ) : (
-                    <p className="form-control-static">
-                      {formData.state || "N/A"}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Postal Code */}
-              <div className="col-lg-6 col-sm-12">
-                <div className="mb-3">
-                  <label className="form-label">Postal Code</label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      name="postalCode"
-                      className="form-control"
-                      value={formData.postalCode}
-                      onChange={handleChange}
-                    />
-                  ) : (
-                    <p className="form-control-static">
-                      {formData.postalCode || "N/A"}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Country */}
-              <div className="col-lg-6 col-sm-12">
-                <div className="mb-3">
-                  <label className="form-label">Country</label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      name="country"
-                      className="form-control"
-                      value={formData.country}
-                      onChange={handleChange}
-                    />
-                  ) : (
-                    <p className="form-control-static">
-                      {formData.country || "N/A"}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="col-12 d-flex justify-content-end align-items-center">
-                {isEditing ? (
-                  <>
-                    <button
-                      className="btn btn-success shadow-none me-2"
-                      onClick={handleSaveClick}
-                      disabled={isUpdating}
-                    >
-                      {isUpdating ? "Saving..." : "Save"}
-                    </button>
-                    <button
-                      className="btn btn-secondary shadow-none"
-                      onClick={handleCancelClick}
-                      disabled={isUpdating}
-                    >
-                      Cancel
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      className="btn btn-primary shadow-none me-2"
-                      onClick={handleEditClick}
+                  </Space>
+                )}
+                <Title level={4}>{user.name}</Title>
+                <Text type="secondary">{user.email}</Text>
+                <Badge
+                  count={roleName}
+                  style={{ backgroundColor: "#52c41a" }}
+                />
+                <Text>Status: {user.status || "N/A"}</Text>
+                {!isEditing && (
+                  <Space>
+                    <Button
+                      type="primary"
+                      icon={<EditOutlined />}
+                      onClick={() => setIsEditing(true)}
                     >
                       Edit Profile
-                    </button>
-                    <button
-                      className="btn btn-outline-warning shadow-none"
+                    </Button>
+                    <Button
+                      icon={<LockOutlined />}
                       onClick={handleForgotPassword}
-                      disabled={isResetting}
+                      loading={isResetting}
                     >
-                      {isResetting ? "Sending..." : "Reset Password"}
-                    </button>
-                  </>
+                      Reset Password
+                    </Button>
+                  </Space>
                 )}
-              </div>
-            </div>
-          </div>
-        </div>
+              </Space>
+            </Card>
+          </Col>
+
+          {/* Profile Details and Tabs */}
+          <Col xs={24} lg={16}>
+            <Card
+              style={{
+                borderRadius: 8,
+                boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+              }}
+              bodyStyle={{ padding: 0 }}
+            >
+              <Tabs defaultActiveKey="1" style={{ padding: 24 }}>
+                {/* Profile Information */}
+                <TabPane tab="Profile" key="1">
+                  {isEditing ? (
+                    <Form
+                      form={form}
+                      layout="vertical"
+                      onFinish={handleSave}
+                      style={{ padding: 16 }}
+                    >
+                      <Row gutter={[16, 16]}>
+                        <Col xs={24} sm={12}>
+                          <Form.Item
+                            label="Username"
+                            name="username"
+                            rules={[
+                              {
+                                required: true,
+                                message: "Username is required",
+                              },
+                            ]}
+                          >
+                            <Input />
+                          </Form.Item>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <Form.Item
+                            label="Name"
+                            name="name"
+                            rules={[
+                              { required: true, message: "Name is required" },
+                            ]}
+                          >
+                            <Input />
+                          </Form.Item>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <Form.Item
+                            label="Email"
+                            name="email"
+                            rules={[
+                              { required: true, message: "Email is required" },
+                              {
+                                type: "email",
+                                message: "Invalid email format",
+                              },
+                            ]}
+                          >
+                            <Input />
+                          </Form.Item>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <Form.Item
+                            label="Phone Number"
+                            name="mobileNumber"
+                            rules={[
+                              {
+                                required: true,
+                                message: "Phone number is required",
+                              },
+                              {
+                                pattern: /^[0-9]{10}$/,
+                                message: "Invalid phone number",
+                              },
+                            ]}
+                          >
+                            <Input />
+                          </Form.Item>
+                        </Col>
+                        <Col xs={24}>
+                          <Title level={5}>Address Information</Title>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <Form.Item label="Street" name="street">
+                            <Input />
+                          </Form.Item>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <Form.Item label="City" name="city">
+                            <Input />
+                          </Form.Item>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <Form.Item label="State" name="state">
+                            <Input />
+                          </Form.Item>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <Form.Item label="Postal Code" name="postalCode">
+                            <Input />
+                          </Form.Item>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <Form.Item label="Country" name="country">
+                            <Input />
+                          </Form.Item>
+                        </Col>
+                        <Col xs={24}>
+                          <Space>
+                            <Button
+                              type="primary"
+                              htmlType="submit"
+                              loading={isUpdating}
+                            >
+                              Save
+                            </Button>
+                            <Button onClick={() => setIsEditing(false)}>
+                              Cancel
+                            </Button>
+                          </Space>
+                        </Col>
+                      </Row>
+                    </Form>
+                  ) : (
+                    <Row gutter={[16, 16]} style={{ padding: 16 }}>
+                      <Col xs={24} sm={12}>
+                        <Text strong>Username:</Text>{" "}
+                        <Text>{user.username}</Text>
+                      </Col>
+                      <Col xs={24} sm={12}>
+                        <Text strong>Name:</Text> <Text>{user.name}</Text>
+                      </Col>
+                      <Col xs={24} sm={12}>
+                        <Text strong>Email:</Text> <Text>{user.email}</Text>
+                      </Col>
+                      <Col xs={24} sm={12}>
+                        <Text strong>Phone:</Text>{" "}
+                        <Text>{user.mobileNumber || "N/A"}</Text>
+                      </Col>
+                      <Col xs={24}>
+                        <Title level={5}>Address Information</Title>
+                      </Col>
+                      <Col xs={24} sm={12}>
+                        <Text strong>Street:</Text>{" "}
+                        <Text>{user.address?.street || "N/A"}</Text>
+                      </Col>
+                      <Col xs={24} sm={12}>
+                        <Text strong>City:</Text>{" "}
+                        <Text>{user.address?.city || "N/A"}</Text>
+                      </Col>
+                      <Col xs={24} sm={12}>
+                        <Text strong>State:</Text>{" "}
+                        <Text>{user.address?.state || "N/A"}</Text>
+                      </Col>
+                      <Col xs={24} sm={12}>
+                        <Text strong>Postal Code:</Text>{" "}
+                        <Text>{user.address?.postalCode || "N/A"}</Text>
+                      </Col>
+                      <Col xs={24} sm={12}>
+                        <Text strong>Country:</Text>{" "}
+                        <Text>{user.address?.country || "N/A"}</Text>
+                      </Col>
+                    </Row>
+                  )}
+                </TabPane>
+
+                {/* Quotations */}
+                <TabPane
+                  tab={
+                    <span>
+                      <FileTextOutlined /> Quotations
+                    </span>
+                  }
+                  key="2"
+                >
+                  {isQuotationsLoading ? (
+                    <Spin />
+                  ) : quotationsError ? (
+                    <Alert
+                      message="Error loading quotations"
+                      description={quotationsError.message}
+                      type="error"
+                    />
+                  ) : (
+                    <Table
+                      columns={quotationColumns}
+                      dataSource={quotationsData?.data || []}
+                      rowKey="quotationId"
+                      pagination={{ pageSize: 5 }}
+                    />
+                  )}
+                </TabPane>
+
+                {/* Invoices */}
+                <TabPane
+                  tab={
+                    <span>
+                      <FileDoneOutlined /> Invoices
+                    </span>
+                  }
+                  key="3"
+                >
+                  {isInvoicesLoading ? (
+                    <Spin />
+                  ) : invoicesError ? (
+                    <Alert
+                      message="Error loading invoices"
+                      description={invoicesError.message}
+                      type="error"
+                    />
+                  ) : (
+                    <Table
+                      columns={invoiceColumns}
+                      dataSource={invoicesData?.data || []}
+                      rowKey="invoiceId"
+                      pagination={{ pageSize: 5 }}
+                    />
+                  )}
+                </TabPane>
+
+                {/* Teams */}
+                <TabPane
+                  tab={
+                    <span>
+                      <TeamOutlined /> Teams
+                    </span>
+                  }
+                  key="4"
+                >
+                  {isTeamsLoading ? (
+                    <Spin />
+                  ) : teamsError ? (
+                    <Alert
+                      message="Error loading teams"
+                      description={teamsError.message}
+                      type="error"
+                    />
+                  ) : (
+                    <Table
+                      columns={teamColumns}
+                      dataSource={teamsData?.data || []}
+                      rowKey="teamId"
+                      pagination={{ pageSize: 5 }}
+                    />
+                  )}
+                </TabPane>
+
+                {/* Orders */}
+                <TabPane
+                  tab={
+                    <span>
+                      <ShoppingCartOutlined /> Orders
+                    </span>
+                  }
+                  key="5"
+                >
+                  {isOrdersLoading ? (
+                    <Spin />
+                  ) : ordersError ? (
+                    <Alert
+                      message="Error loading orders"
+                      description={ordersError.message}
+                      type="error"
+                    />
+                  ) : (
+                    <Table
+                      columns={orderColumns}
+                      dataSource={ordersData?.data || []}
+                      rowKey="orderId"
+                      pagination={{ pageSize: 5 }}
+                    />
+                  )}
+                </TabPane>
+              </Tabs>
+            </Card>
+          </Col>
+        </Row>
       </div>
+
+      {/* Custom CSS */}
+      <style jsx>{`
+        .page-wrapper {
+          background: #f5f7fa;
+          min-height: 100vh;
+        }
+        .ant-card {
+          border-radius: 8px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        .ant-tabs-nav {
+          padding: 0 24px;
+        }
+        .ant-tabs-tab {
+          font-weight: 500;
+        }
+        .ant-table {
+          border-radius: 8px;
+          overflow: hidden;
+        }
+      `}</style>
     </div>
   );
+};
+
+// Placeholder API hooks (replace with actual API endpoints)
+const placeholderApi = {
+  useGetUserQuotationsQuery: () => ({
+    data: {
+      data: [
+        {
+          quotationId: "Q001",
+          customerName: "John Doe",
+          amount: 5000,
+          status: "Pending",
+        },
+        {
+          quotationId: "Q002",
+          customerName: "Jane Smith",
+          amount: 7500,
+          status: "Approved",
+        },
+      ],
+    },
+    isLoading: false,
+    error: null,
+  }),
+  useGetUserInvoicesQuery: () => ({
+    data: {
+      data: [
+        {
+          invoiceId: "INV001",
+          customerName: "John Doe",
+          amount: 4500,
+          status: "Paid",
+        },
+        {
+          invoiceId: "INV002",
+          customerName: "Jane Smith",
+          amount: 6000,
+          status: "Unpaid",
+        },
+      ],
+    },
+    isLoading: false,
+    error: null,
+  }),
+  useGetUserTeamsQuery: () => ({
+    data: {
+      data: [
+        {
+          teamId: "T001",
+          teamName: "Sales Team",
+          role: "Manager",
+          memberCount: 5,
+        },
+        {
+          teamId: "T002",
+          teamName: "Support Team",
+          role: "Member",
+          memberCount: 8,
+        },
+      ],
+    },
+    isLoading: false,
+    error: null,
+  }),
+  useGetAssignedOrdersQuery: () => ({
+    data: {
+      data: [
+        {
+          orderId: "ORD001",
+          customerName: "John Doe",
+          totalAmount: 3000,
+          status: "Processing",
+        },
+        {
+          orderId: "ORD002",
+          customerName: "Jane Smith",
+          totalAmount: 4000,
+          status: "Delivered",
+        },
+      ],
+    },
+    isLoading: false,
+    error: null,
+  }),
 };
 
 export default Profile;

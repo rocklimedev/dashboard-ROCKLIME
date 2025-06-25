@@ -181,11 +181,6 @@ const SearchDropdown = () => {
             <MdSearch />
           </span>
         </div>
-        <span className="input-group-text">
-          <kbd className="d-flex align-items-center">
-            <BiCommand />K
-          </kbd>
-        </span>
       </div>
       <div
         className="dropdown-menu search-dropdown"

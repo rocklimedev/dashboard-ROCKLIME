@@ -181,7 +181,7 @@ const SidebarNew = ({
                 <li>
                   <a href="https://static.cmtradingco.com/" target="_blank">
                     <i className="ti ti-box"></i>
-                    <span>Product Images</span>
+                    <span> Product Images</span>
                   </a>
                 </li>
               </ul>

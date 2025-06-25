@@ -1,12 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
 import {
-  Steps,
   Card,
   Select,
   Button,
   Modal,
-  Table,
-  InputNumber,
   Spin,
   Alert,
   Space,
@@ -14,15 +11,15 @@ import {
   Divider,
   Empty,
   Badge,
+  Row,
+  Col,
+  Image,
 } from "antd";
 import {
   ShoppingCartOutlined,
   UserAddOutlined,
-  FileTextOutlined,
-  CreditCardOutlined,
-  CheckCircleOutlined,
   DeleteOutlined,
-  PrinterOutlined,
+  CheckCircleOutlined,
 } from "@ant-design/icons";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import {
@@ -31,17 +28,19 @@ import {
   useClearCartMutation,
   useRemoveFromCartMutation,
 } from "../../api/cartApi";
-import AddCustomer from "../Customers/AddCustomer";
 import { useGetProfileQuery } from "../../api/userApi";
+import { useCreateInvoiceMutation } from "../../api/invoiceApi";
+import { useGetAllAddressesQuery } from "../../api/addressApi";
+import AddCustomer from "../Customers/AddCustomer";
 import OrderTotal from "./OrderTotal";
 import PaymentMethod from "./PaymentMethod";
-import { toast } from "sonner";
-import { useCreateInvoiceMutation } from "../../api/invoiceApi";
 import InvoiceDetails from "../POS/InvoiceDetails";
+import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
-import { useGetAllAddressesQuery } from "../../api/addressApi";
 import { FcEmptyTrash } from "react-icons/fc";
-const { Step } = Steps;
+import { BiTrash } from "react-icons/bi";
+import "./cart.css";
+
 const { Title, Text } = Typography;
 const { Option } = Select;
 
@@ -52,7 +51,6 @@ const generateInvoiceNumber = () => {
 };
 
 const Cart = ({ onConvertToOrder }) => {
-  const [currentStep, setCurrentStep] = useState(0);
   const {
     data: profileData,
     isLoading: profileLoading,
@@ -60,7 +58,6 @@ const Cart = ({ onConvertToOrder }) => {
   } = useGetProfileQuery();
   const userId = profileData?.user?.userId;
 
-  const [createInvoice] = useCreateInvoiceMutation();
   const {
     data: cartData,
     isLoading: cartLoading,
@@ -84,20 +81,19 @@ const Cart = ({ onConvertToOrder }) => {
   const [updateCart] = useUpdateCartMutation();
   const [clearCart] = useClearCartMutation();
   const [removeFromCart] = useRemoveFromCartMutation();
+  const [createInvoice] = useCreateInvoiceMutation();
 
-  const initialInvoiceData = {
-    invoiceDate: "",
+  const [selectedCustomer, setSelectedCustomer] = useState("");
+  const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
+  const [invoiceNumber, setInvoiceNumber] = useState(generateInvoiceNumber());
+  const [invoiceData, setInvoiceData] = useState({
+    invoiceDate: new Date().toISOString().split("T")[0],
     dueDate: "",
+    billTo: "",
     shipTo: null,
     signatureName: "CM TRADING CO",
-    billTo: "",
-  };
-
-  const [invoiceData, setInvoiceData] = useState(initialInvoiceData);
-  const [showModal, setShowModal] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState("");
+  });
   const [error, setError] = useState("");
-  const [invoiceNumber, setInvoiceNumber] = useState(generateInvoiceNumber());
 
   const customers = customerData?.data || [];
   const customerList = useMemo(
@@ -122,10 +118,14 @@ const Cart = ({ onConvertToOrder }) => {
     (acc, item) => acc + (item.quantity || 0),
     0
   );
-  const totalAmount = cartItems.reduce(
+  const subTotal = cartItems.reduce(
     (acc, item) => acc + (item.price || 0) * (item.quantity || 0),
     0
   );
+  const shipping = 40;
+  const tax = 25;
+  const discount = 15;
+  const totalAmount = subTotal + shipping + tax - discount;
 
   useEffect(() => {
     if (selectedCustomer && addresses.length > 0) {
@@ -136,7 +136,6 @@ const Cart = ({ onConvertToOrder }) => {
         setInvoiceData((prev) => {
           const newBillTo = selectedCustomerData.name || prev.billTo;
           let newShipTo = null;
-
           if (selectedCustomerData.address) {
             const customerAddress = selectedCustomerData.address;
             const matchingAddress = addresses.find((addr) => {
@@ -150,27 +149,17 @@ const Cart = ({ onConvertToOrder }) => {
                 addrDetails.country === customerAddress.country
               );
             });
-
             if (matchingAddress && matchingAddress.addressId) {
               newShipTo = matchingAddress.addressId;
             }
           }
-
-          if (newBillTo !== prev.billTo || newShipTo !== prev.shipTo) {
-            return { ...prev, billTo: newBillTo, shipTo: newShipTo };
-          }
-          return prev;
+          return { ...prev, billTo: newBillTo, shipTo: newShipTo };
         });
       }
-    } else if (selectedCustomer && addresses.length === 0) {
-      setInvoiceData((prev) => ({
-        ...prev,
-        shipTo: null,
-      }));
     }
   }, [selectedCustomer, customerList, addresses]);
 
-  const validateDueDate = () => {
+  useEffect(() => {
     const { invoiceDate, dueDate } = invoiceData;
     if (invoiceDate && dueDate) {
       const invoice = new Date(invoiceDate);
@@ -181,10 +170,6 @@ const Cart = ({ onConvertToOrder }) => {
         setError("");
       }
     }
-  };
-
-  useEffect(() => {
-    validateDueDate();
   }, [invoiceData.invoiceDate, invoiceData.dueDate]);
 
   const handleInvoiceChange = (key, value) => {
@@ -192,10 +177,7 @@ const Cart = ({ onConvertToOrder }) => {
   };
 
   const handleClearCart = async () => {
-    if (!userId) {
-      toast.error("User not logged in!");
-      return;
-    }
+    if (!userId) return toast.error("User not logged in!");
     try {
       await clearCart({ userId }).unwrap();
       toast.success("Cart cleared!");
@@ -238,49 +220,32 @@ const Cart = ({ onConvertToOrder }) => {
   };
 
   const handlePlaceOrder = async () => {
-    if (!selectedCustomer) {
-      toast.error("Please select a customer before placing an order.");
-      return;
-    }
-    if (!userId) {
-      toast.error("User not logged in!");
-      return;
-    }
-    if (!invoiceData.invoiceDate || !invoiceData.dueDate) {
-      toast.error("Please provide invoice and due dates.");
-      return;
-    }
-    if (!invoiceData.billTo) {
-      toast.error("Please provide a billing name or address.");
-      return;
-    }
+    if (!selectedCustomer) return toast.error("Please select a customer.");
+    if (!userId) return toast.error("User not logged in!");
+    if (!invoiceData.invoiceDate || !invoiceData.dueDate)
+      return toast.error("Please provide invoice and due dates.");
+    if (!invoiceData.billTo)
+      return toast.error("Please provide a billing name.");
+    if (error) return toast.error("Please fix the errors before submitting.");
+
     try {
       await refetchAddresses();
     } catch (err) {
-      toast.error("Failed to load addresses. Please try again.");
-      return;
+      return toast.error("Failed to load addresses. Please try again.");
     }
+
     if (
       invoiceData.shipTo &&
       !addresses.find((addr) => addr.addressId === invoiceData.shipTo)
     ) {
-      toast.error(
-        "Invalid shipping address selected. Please select a valid address or clear the selection."
-      );
-      return;
-    }
-    if (error) {
-      toast.error("Please fix the errors before submitting.");
-      return;
+      return toast.error("Invalid shipping address selected.");
     }
 
     const selectedCustomerData = customerList.find(
       (customer) => customer.customerId === selectedCustomer
     );
-    if (!selectedCustomerData) {
-      toast.error("Selected customer not found.");
-      return;
-    }
+    if (!selectedCustomerData)
+      return toast.error("Selected customer not found.");
 
     const orderId = uuidv4();
     const orderData = {
@@ -335,250 +300,34 @@ const Cart = ({ onConvertToOrder }) => {
         response?.data?.invoice?.invoiceId;
 
       if (!invoiceId) {
-        throw new Error(
-          `Invalid response structure: invoiceId not found in response: ${JSON.stringify(
-            response
-          )}`
-        );
+        throw new Error("Invalid response structure: invoiceId not found.");
       }
 
       orderData.invoiceId = invoiceId;
       onConvertToOrder(orderData);
       await handleClearCart();
-      toast.success("Order placed");
-      setInvoiceData(initialInvoiceData);
+      toast.success("Order placed successfully!");
+      setInvoiceData({
+        invoiceDate: new Date().toISOString().split("T")[0],
+        dueDate: "",
+        billTo: "",
+        shipTo: null,
+        signatureName: "CM TRADING CO",
+      });
       setSelectedCustomer("");
       setInvoiceNumber(generateInvoiceNumber());
-      setCurrentStep(0);
     } catch (error) {
       toast.error(
-        `Failed to place order or create invoice: ${
+        `Failed to place order: ${
           error.data?.message || error.message || "Unknown error"
         }`
       );
     }
   };
 
-  const handleNext = () => {
-    if (currentStep === 0 && !selectedCustomer) {
-      toast.error("Please select a customer to proceed.");
-      return;
-    }
-    if (currentStep === 1 && cartItems.length === 0) {
-      toast.error("Please add items to the cart to proceed.");
-      return;
-    }
-    if (
-      currentStep === 2 &&
-      (!invoiceData.invoiceDate || !invoiceData.dueDate || error)
-    ) {
-      toast.error("Please complete invoice details to proceed.");
-      return;
-    }
-    setCurrentStep(currentStep + 1);
-  };
-
-  const handlePrev = () => {
-    setCurrentStep(currentStep - 1);
-  };
-
-  const columns = [
-    {
-      title: "Product",
-      dataIndex: "name",
-      key: "name",
-      render: (text, record) => (
-        <Space>
-          <Text>{text}</Text>
-          <Button
-            type="text"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => handleRemoveItem(record.productId)}
-          />
-        </Space>
-      ),
-    },
-    {
-      title: "Quantity",
-      key: "quantity",
-      render: (_, record) => (
-        <InputNumber
-          min={0}
-          value={record.quantity}
-          onChange={(value) => handleUpdateQuantity(record.productId, value)}
-          style={{ width: 80 }}
-        />
-      ),
-    },
-    {
-      title: "Price",
-      key: "price",
-      render: (_, record) => (
-        <Text>₹{(record.price * record.quantity).toFixed(2)}</Text>
-      ),
-      align: "right",
-    },
-  ];
-
-  const steps = [
-    {
-      title: "Select Customer",
-      icon: <UserAddOutlined />,
-      content: (
-        <Card>
-          <Space direction="vertical" style={{ width: "100%" }}>
-            <Title level={4}>
-              New Order{" "}
-              <Badge
-                count={`#${invoiceNumber}`}
-                style={{ backgroundColor: "#722ed1" }}
-              />
-            </Title>
-            <Select
-              style={{ width: "100%" }}
-              value={selectedCustomer}
-              onChange={setSelectedCustomer}
-              placeholder="Select a customer"
-              loading={customersLoading}
-              disabled={customersLoading || customersError}
-            >
-              {customersLoading ? (
-                <Option disabled>Loading...</Option>
-              ) : customersError ? (
-                <Option disabled>Error fetching customers</Option>
-              ) : customerList.length === 0 ? (
-                <Option disabled>No customers available</Option>
-              ) : (
-                customerList.map((customer) => (
-                  <Option key={customer.customerId} value={customer.customerId}>
-                    {customer.name} ({customer.email})
-                  </Option>
-                ))
-              )}
-            </Select>
-            <Button
-              type="link"
-              icon={<UserAddOutlined />}
-              onClick={() => setShowModal(true)}
-            >
-              Add New Customer
-            </Button>
-          </Space>
-        </Card>
-      ),
-    },
-    {
-      title: "Cart Items",
-      icon: <ShoppingCartOutlined />,
-      content: (
-        <Card>
-          <Space direction="vertical" style={{ width: "100%" }}>
-            <Space style={{ width: "100%", justifyContent: "space-between" }}>
-              <Title level={4}>Order Details</Title>
-              <Badge
-                count={totalItems}
-                showZero
-                style={{ backgroundColor: "#13c2c2" }}
-              />
-            </Space>
-            {cartItems.length === 0 ? (
-              <Empty
-                description="No Products Selected"
-                image={<FcEmptyTrash style={{ fontSize: 48 }} />}
-              >
-                <Button type="primary" onClick={handleClearCart}>
-                  Clear Cart
-                </Button>
-              </Empty>
-            ) : (
-              <Table
-                dataSource={cartItems}
-                columns={columns}
-                rowKey="productId"
-                pagination={false}
-                bordered
-              />
-            )}
-            <OrderTotal
-              shipping={40}
-              tax={25}
-              coupon={25}
-              discount={15}
-              roundOff={0}
-              subTotal={totalAmount}
-            />
-          </Space>
-        </Card>
-      ),
-    },
-    {
-      title: "Invoice Details",
-      icon: <FileTextOutlined />,
-      content: (
-        <Card>
-          <InvoiceDetails
-            invoiceData={invoiceData}
-            onChange={handleInvoiceChange}
-            error={error}
-          />
-        </Card>
-      ),
-    },
-    {
-      title: "Payment Method",
-      icon: <CreditCardOutlined />,
-      content: (
-        <Card>
-          <PaymentMethod />
-        </Card>
-      ),
-    },
-    {
-      title: "Confirm Order",
-      icon: <CheckCircleOutlined />,
-      content: (
-        <Card>
-          <Space direction="vertical" style={{ width: "100%" }}>
-            <Title level={4}>Order Summary</Title>
-            <Text>
-              Customer:{" "}
-              {
-                customerList.find((c) => c.customerId === selectedCustomer)
-                  ?.name
-              }
-            </Text>
-            <Text>Invoice Number: {invoiceNumber}</Text>
-            <Text>Total Items: {totalItems}</Text>
-            <Text>Total Amount: ₹{totalAmount.toFixed(2)}</Text>
-            <Divider />
-            <Button
-              type="primary"
-              icon={<CheckCircleOutlined />}
-              onClick={handlePlaceOrder}
-              disabled={
-                cartItems.length === 0 ||
-                error ||
-                customersLoading ||
-                addressesLoading ||
-                !addressesData
-              }
-              block
-            >
-              Generate Invoice
-            </Button>
-            <Button type="default" icon={<PrinterOutlined />} block>
-              Print Order
-            </Button>
-          </Space>
-        </Card>
-      ),
-    },
-  ];
-
   if (profileLoading || cartLoading || customersLoading || addressesLoading) {
     return (
-      <div style={{ textAlign: "center", padding: 50 }}>
+      <div className="cart-loading">
         <Spin size="large" />
       </div>
     );
@@ -606,32 +355,205 @@ const Cart = ({ onConvertToOrder }) => {
   }
 
   return (
-    <div style={{ padding: 24, maxWidth: 600, margin: "0 auto" }}>
-      <Steps current={currentStep} style={{ marginBottom: 24 }}>
-        {steps.map((step) => (
-          <Step key={step.title} title={step.title} icon={step.icon} />
-        ))}
-      </Steps>
-      <div style={{ marginBottom: 24 }}>{steps[currentStep].content}</div>
-      <Space>
-        {currentStep > 0 && <Button onClick={handlePrev}>Previous</Button>}
-        {currentStep < steps.length - 1 && (
-          <Button type="primary" onClick={handleNext}>
-            Next
-          </Button>
-        )}
-      </Space>
-      <Modal
-        title="Add Customer"
-        open={showModal}
-        onCancel={() => setShowModal(false)}
-        footer={null}
-      >
-        <AddCustomer
-          onClose={() => setShowModal(false)}
-          existingCustomer={null}
-        />
-      </Modal>
+    <div className="page-wrapper">
+      <div className="content">
+        <div className="cart-container">
+          <Row gutter={[24, 24]}>
+            {/* Cart Items */}
+            <Col xs={24} lg={16}>
+              <Card className="cart-items-card">
+                <Space
+                  direction="vertical"
+                  style={{ width: "100%" }}
+                  className="cart-header"
+                >
+                  <Space
+                    align="center"
+                    style={{ justifyContent: "space-between", width: "100%" }}
+                  >
+                    <Title level={3}>
+                      Your Cart <ShoppingCartOutlined /> ({totalItems} items)
+                    </Title>
+                    <Button type="link" danger onClick={handleClearCart}>
+                      Clear Cart
+                    </Button>
+                  </Space>
+                  <Divider />
+                </Space>
+
+                {cartItems.length === 0 ? (
+                  <Empty
+                    description="Your cart is empty"
+                    image={<FcEmptyTrash style={{ fontSize: 64 }} />}
+                    className="empty-cart"
+                  />
+                ) : (
+                  <div className="cart-items-list">
+                    {cartItems.map((item) => (
+                      <div key={item.productId} className="cart-item">
+                        <Row gutter={[16, 16]} align="middle">
+                          <Col xs={6} sm={4}>
+                            <Image
+                              src={
+                                item.image || "https://via.placeholder.com/100"
+                              }
+                              alt={item.name}
+                              width={80}
+                              height={80}
+                              className="cart-item-image"
+                            />
+                          </Col>
+                          <Col xs={18} sm={10}>
+                            <Text strong>{item.name}</Text>
+                            <Text type="secondary" block>
+                              Price: ₹{item.price.toFixed(2)}
+                            </Text>
+                          </Col>
+                          <Col xs={12} sm={6}>
+                            <Space>
+                              <Button
+                                size="small"
+                                onClick={() =>
+                                  handleUpdateQuantity(
+                                    item.productId,
+                                    item.quantity - 1
+                                  )
+                                }
+                                disabled={item.quantity <= 1}
+                              >
+                                -
+                              </Button>
+                              <Text>{item.quantity}</Text>
+                              <Button
+                                size="small"
+                                onClick={() =>
+                                  handleUpdateQuantity(
+                                    item.productId,
+                                    item.quantity + 1
+                                  )
+                                }
+                              >
+                                +
+                              </Button>
+                            </Space>
+                          </Col>
+                          <Col xs={12} sm={4} style={{ textAlign: "right" }}>
+                            <Text strong>
+                              ₹{(item.price * item.quantity).toFixed(2)}
+                            </Text>
+                            <Button
+                              type="text"
+                              danger
+                              icon={<BiTrash />}
+                              onClick={() => handleRemoveItem(item.productId)}
+                              className="remove-item"
+                            />
+                          </Col>
+                        </Row>
+                        <Divider />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+            </Col>
+
+            {/* Cart Summary */}
+            <Col xs={24} lg={8}>
+              <Card
+                className="cart-summary-card"
+                style={{ position: "sticky", top: 24 }}
+              >
+                <Title level={4}>Order Summary</Title>
+                <Divider />
+                <OrderTotal
+                  shipping={shipping}
+                  tax={tax}
+                  coupon={0}
+                  discount={discount}
+                  roundOff={0}
+                  subTotal={subTotal}
+                />
+                <Divider />
+                <Text strong>Select Customer</Text>
+                <Select
+                  className="customer-select"
+                  value={selectedCustomer}
+                  onChange={setSelectedCustomer}
+                  placeholder="Select a customer"
+                  loading={customersLoading}
+                  disabled={customersLoading || customersError}
+                >
+                  {customersLoading ? (
+                    <Option disabled>Loading...</Option>
+                  ) : customersError ? (
+                    <Option disabled>Error fetching customers</Option>
+                  ) : customerList.length === 0 ? (
+                    <Option disabled>No customers available</Option>
+                  ) : (
+                    customerList.map((customer) => (
+                      <Option
+                        key={customer.customerId}
+                        value={customer.customerId}
+                      >
+                        {customer.name} ({customer.email})
+                      </Option>
+                    ))
+                  )}
+                </Select>
+                <Button
+                  type="link"
+                  icon={<UserAddOutlined />}
+                  onClick={() => setShowAddCustomerModal(true)}
+                  style={{ padding: 0, marginTop: 8 }}
+                >
+                  Add New Customer
+                </Button>
+                <Divider />
+                <InvoiceDetails
+                  invoiceData={invoiceData}
+                  onChange={handleInvoiceChange}
+                  error={error}
+                />
+                <Divider />
+                <PaymentMethod />
+                <Divider />
+                <Text strong>Invoice #: {invoiceNumber}</Text>
+                <Divider />
+                <Button
+                  type="primary"
+                  icon={<CheckCircleOutlined />}
+                  onClick={handlePlaceOrder}
+                  disabled={
+                    cartItems.length === 0 ||
+                    !selectedCustomer ||
+                    error ||
+                    !invoiceData.invoiceDate ||
+                    !invoiceData.dueDate
+                  }
+                  block
+                  size="large"
+                  className="checkout-button"
+                >
+                  Proceed to Checkout
+                </Button>
+              </Card>
+            </Col>
+          </Row>
+
+          <Modal
+            title="Add Customer"
+            open={showAddCustomerModal}
+            onCancel={() => setShowAddCustomerModal(false)}
+            footer={null}
+          >
+            <AddCustomer
+              onClose={() => setShowAddCustomerModal(false)}
+              existingCustomer={null}
+            />
+          </Modal>
+        </div>
+      </div>
     </div>
   );
 };
