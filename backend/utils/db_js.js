@@ -140,7 +140,7 @@ const setupDB = async () => {
       through: BrandParentCategory,
       foreignKey: "brandId",
       otherKey: "parentCategoryId",
-      as: "parentcategories",
+      as: "parentCategories",
     });
     ParentCategory.belongsToMany(Brand, {
       through: BrandParentCategory,
@@ -153,7 +153,7 @@ const setupDB = async () => {
     Category.belongsTo(Brand, { foreignKey: "brandId", as: "brand" });
     Category.belongsTo(ParentCategory, {
       foreignKey: "parentCategoryId",
-      as: "parentcategories",
+      as: "parentCategories",
     });
     Brand.hasMany(Category, { foreignKey: "brandId", as: "categories" });
     ParentCategory.hasMany(Category, {

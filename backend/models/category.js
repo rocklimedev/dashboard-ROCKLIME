@@ -1,36 +1,46 @@
+// models/Category.js
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
-const { v4: uuidv4 } = require("uuid"); // Importing UUID library
-const Vendor = require("./vendor");
+const { v4: uuidv4 } = require("uuid");
 const ParentCategory = require("./parentCategory");
+const Brand = require("./brand");
 const Category = sequelize.define(
   "Category",
   {
     categoryId: {
-      type: DataTypes.UUID, // Changed to UUID
+      type: DataTypes.UUID,
       primaryKey: true,
-      defaultValue: uuidv4, // Auto-generate UUID
+      defaultValue: uuidv4,
     },
     name: {
       type: DataTypes.STRING(100),
       allowNull: false,
-      unique: true,
     },
-    parentCategory: {
-      type: DataTypes.BOOLEAN,
+    slug: {
+      type: DataTypes.STRING(255),
       allowNull: false,
     },
-    parentCategoryId: {
+
+    brandId: {
       type: DataTypes.UUID,
+      allowNull: false,
       references: {
-        model: ParentCategory,
+        model: Brand,
         key: "id",
       },
-      allowNull: true, // Can be null for parent categories
+    },
+
+    parentCategoryId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: {
+        model: ParentCategory, // ✅ this uses the actual model
+        key: "id",
+      },
     },
   },
   {
-    tableName: "categories", // Force lowercase table name
+    tableName: "categories",
     timestamps: true,
   }
 );

@@ -85,3 +85,113 @@
     margin-left: 250px; /* Shift content when sidebar is open */
   }
 }
+/* sidebar.css */
+
+/* Your existing scrollbar styles ... */
+
+/* General scrollbar styling for WebKit browsers */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+  border-radius: 50px !important;
+}
+
+::-webkit-scrollbar-track {
+  background: #a6aaaf; /* Grey track */
+}
+
+/* Default grey scrollbar thumb for sidebar */
+.sidebar-inner::-webkit-scrollbar {
+  background: #888888; /* Medium grey thumb for sidebar */
+  border-radius: 50px !important;
+}
+
+.sidebar-inner::-webkit-scrollbar-thumb:hover {
+  background: #555555; /* Darker grey on hover */
+}
+
+/* Firefox scrollbar styling for sidebar */
+.sidebar-inner {
+  scrollbar-color: #888888 #a6aaaf; /* Grey thumb, grey track */
+  scrollbar-width: thin;
+}
+
+/* Theme-specific scrollbar thumb colors for other contexts */
+[data-color="lunargreen"] ::-webkit-scrollbar-thumb {
+  background: #d63031; /* Red for lunargreen theme */
+}
+
+[data-color="brightblue"] ::-webkit-scrollbar-thumb {
+  background: #009688; /* Teal for brightblue */
+}
+
+[data-color="lavendar"] ::-webkit-scrollbar-thumb {
+  background: #6c5ce7; /* Purple for lavendar */
+}
+
+[data-color="magenta"] ::-webkit-scrollbar {
+  background: #0984e3; /* Blue for magenta */
+}
+
+[data-color="chromeyellow"] ::-webkit-scrollbar {
+  background: #00b894; /* Green for chromeyellow */
+}
+
+[data-color="orange"] ::-webkit-scrollbar {
+  background: #e04f16; /* Orange for orange */
+}
+
+[data-color="all"] ::-webkit-scrollbar {
+  background: var(--primary-rgb-picr); /* Custom variable for 'all' theme */
+}
+
+/* Optionally apply to other scrollable areas in sidebar */
+.sidebar-scroll::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+  border-radius: 50px !important;
+}
+
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: #a6aaaf;
+}
+
+.sidebar-scroll::-webkit-scrollbar {
+  background: #888888; /* Grey thumb */
+  border-radius: 50px !important;
+}
+
+.sidebar-scroll::-webkit {
+  background: #555555; /* Darker grey on hover */
+}
+
+.sidebar-scroll {
+  scrollbar-color: #888888 #a6aaaf; /* Grey thumb and track for Firefox */
+  scrollbar-width: thin;
+}
+
+.sidebar-left.slimscroll::-webkit {
+  width: 5px;
+  height: 5px;
+  border-radius: 50px !important;
+}
+
+.sidebar-left.slimscroll::-webkit {
+  background: #a6aaaf;
+}
+
+.sidebar-left.slimscroll::-webkit {
+  background: #888888; /* Grey thumb */
+  border-radius: 50px !important;
+}
+
+.sidebar-left.slimscroll::-webkit {
+  background: #555555; /* Darker grey on hover */
+}
+
+.sidebar-left.slimscroll {
+  scrollbar-color: #888888 #a6aaaf; /* Grey thumb and track for Firefox */
+  scrollbar-width: thin;
+}
+
+/* Your existing sidebar styles ... */

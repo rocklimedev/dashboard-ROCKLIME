@@ -21,14 +21,6 @@ const ParentCategory = sequelize.define(
       allowNull: false,
       unique: true,
     },
-    brandId: {
-      type: DataTypes.UUID,
-      allowNull: false,
-      references: {
-        model: "brands", // References the 'brands' table
-        key: "id",
-      },
-    },
   },
   {
     tableName: "parentcategories",

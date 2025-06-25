@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import logo from "../../assets/img/logo-small.png";
+import logo from "../../assets/img/fav_icon.png";
 const ComingSoon = () => {
   // Set target date (Change this to your desired launch date)
   const targetDate = new Date("2025-06-01T00:00:00").getTime();

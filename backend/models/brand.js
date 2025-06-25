@@ -1,3 +1,4 @@
+// models/Brand.js
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
 const { v4: uuidv4 } = require("uuid");
@@ -10,18 +11,19 @@ const Brand = sequelize.define(
       defaultValue: uuidv4,
       primaryKey: true,
     },
-    brandSlug: {
-      type: DataTypes.STRING,
-      unique: true,
-      allowNull: false,
-    },
     brandName: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(100),
       allowNull: false,
+      unique: true,
+    },
+    brandSlug: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      unique: true,
     },
   },
   {
-    tableName: "brands", // Force lowercase table name
+    tableName: "brands",
     timestamps: true,
   }
 );
