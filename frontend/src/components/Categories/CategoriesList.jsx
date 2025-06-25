@@ -173,6 +173,104 @@ const CategoriesList = () => {
           id="categories-keywords-tabs"
           className="mb-3"
         >
+          <Tab eventKey="parentCategories" title="Parent Categories">
+            <PageHeader
+              title="Parent Categories"
+              subtitle="Manage your parent categories"
+              onAdd={handleAddParentCategory}
+              tableData={filteredParentCategories.map((pc) => ({
+                id: pc.id,
+                name: pc.name,
+                createdAt: new Date(pc.createdAt).toLocaleDateString(),
+              }))}
+            />
+
+            <div className="row mb-3">
+              <div className="col-md-6">
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Search Parent Category..."
+                  value={parentCategorySearchTerm}
+                  onChange={(e) => setParentCategorySearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="row">
+              {/* Add Parent Category Card */}
+              <div className="col-md-4 col-lg-3 mb-3">
+                <div
+                  className="card h-100 d-flex align-items-center justify-content-center"
+                  style={{ cursor: "pointer" }}
+                  onClick={handleAddParentCategory}
+                >
+                  <div className="card-body text-center">
+                    <h5 className="card-title">Add New Parent Category</h5>
+                    <p className="card-text">
+                      Click here to create a new parent category
+                    </p>
+                    <button className="btn btn-primary">
+                      Add Parent Category
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Parent Category Cards */}
+              {paginatedParentCategories.map((parentCategory) => (
+                <div key={parentCategory.id} className="col-md-4 col-lg-3 mb-3">
+                  <div className="card h-100">
+                    <div className="card-body">
+                      <h5 className="card-title">{parentCategory.name}</h5>
+                      <p className="card-text">
+                        Created:{" "}
+                        {new Date(
+                          parentCategory.createdAt
+                        ).toLocaleDateString()}
+                      </p>
+                      <div className="d-flex justify-content-end">
+                        <a
+                          className="me-2"
+                          title="Edit"
+                          onClick={() => {
+                            setEditingParentCategory(parentCategory);
+                            setShowParentCategoryModal(true);
+                          }}
+                          style={{ cursor: "pointer" }}
+                        >
+                          <AiOutlineEdit size={20} />
+                        </a>
+                        <a
+                          title="Delete"
+                          onClick={() => {
+                            setItemToDelete(parentCategory);
+                            setDeleteItemType("ParentCategory");
+                            setShowDeleteModal(true);
+                          }}
+                          style={{ cursor: "pointer" }}
+                        >
+                          <FcFullTrash size={20} />
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {paginatedParentCategories.length === 0 && (
+                <div className="col-12">
+                  <p className="text-center">No parent categories found.</p>
+                </div>
+              )}
+            </div>
+
+            <DataTablePagination
+              totalItems={filteredParentCategories.length}
+              itemNo={itemsPerPage}
+              onPageChange={setParentCategoryPage}
+            />
+          </Tab>
           <Tab eventKey="categories" title="Categories">
             <PageHeader
               title="Categories"
@@ -304,105 +402,6 @@ const CategoriesList = () => {
             <Keyword
               onClose={handleCloseKeywordModal}
               showModal={showKeywordModal}
-            />
-          </Tab>
-
-          <Tab eventKey="parentCategories" title="Parent Categories">
-            <PageHeader
-              title="Parent Categories"
-              subtitle="Manage your parent categories"
-              onAdd={handleAddParentCategory}
-              tableData={filteredParentCategories.map((pc) => ({
-                id: pc.id,
-                name: pc.name,
-                createdAt: new Date(pc.createdAt).toLocaleDateString(),
-              }))}
-            />
-
-            <div className="row mb-3">
-              <div className="col-md-6">
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Search Parent Category..."
-                  value={parentCategorySearchTerm}
-                  onChange={(e) => setParentCategorySearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="row">
-              {/* Add Parent Category Card */}
-              <div className="col-md-4 col-lg-3 mb-3">
-                <div
-                  className="card h-100 d-flex align-items-center justify-content-center"
-                  style={{ cursor: "pointer" }}
-                  onClick={handleAddParentCategory}
-                >
-                  <div className="card-body text-center">
-                    <h5 className="card-title">Add New Parent Category</h5>
-                    <p className="card-text">
-                      Click here to create a new parent category
-                    </p>
-                    <button className="btn btn-primary">
-                      Add Parent Category
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Parent Category Cards */}
-              {paginatedParentCategories.map((parentCategory) => (
-                <div key={parentCategory.id} className="col-md-4 col-lg-3 mb-3">
-                  <div className="card h-100">
-                    <div className="card-body">
-                      <h5 className="card-title">{parentCategory.name}</h5>
-                      <p className="card-text">
-                        Created:{" "}
-                        {new Date(
-                          parentCategory.createdAt
-                        ).toLocaleDateString()}
-                      </p>
-                      <div className="d-flex justify-content-end">
-                        <a
-                          className="me-2"
-                          title="Edit"
-                          onClick={() => {
-                            setEditingParentCategory(parentCategory);
-                            setShowParentCategoryModal(true);
-                          }}
-                          style={{ cursor: "pointer" }}
-                        >
-                          <AiOutlineEdit size={20} />
-                        </a>
-                        <a
-                          title="Delete"
-                          onClick={() => {
-                            setItemToDelete(parentCategory);
-                            setDeleteItemType("ParentCategory");
-                            setShowDeleteModal(true);
-                          }}
-                          style={{ cursor: "pointer" }}
-                        >
-                          <FcFullTrash size={20} />
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {paginatedParentCategories.length === 0 && (
-                <div className="col-12">
-                  <p className="text-center">No parent categories found.</p>
-                </div>
-              )}
-            </div>
-
-            <DataTablePagination
-              totalItems={filteredParentCategories.length}
-              itemNo={itemsPerPage}
-              onPageChange={setParentCategoryPage}
             />
           </Tab>
         </Tabs>

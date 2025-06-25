@@ -1,6 +1,6 @@
 /* InvoiceDetails.css */
 .invoice-container {
-  padding: 30px;
+  padding: 20px;
   background: #f8f9fa;
   min-height: 100vh;
 }
@@ -15,7 +15,7 @@
   max-width: 800px;
   margin: 0 auto;
   background: #ffffff;
-  border-radius: 10px;
+  border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   padding: 20px;
   cursor: move;
@@ -83,9 +83,15 @@
   font-weight: 600;
 }
 
+.status-unknown {
+  color: #6c757d;
+  font-weight: 600;
+}
+
 .invoice-table {
-  border-collapse: collapse;
   width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
 }
 
 .invoice-table th,
@@ -110,6 +116,7 @@
   margin-top: 20px;
   padding: 15px;
   border-top: 2px solid #e9ecef;
+  text-align: right;
 }
 
 .invoice-summary p {
@@ -147,6 +154,7 @@
 
 .invoice-signature {
   margin-top: 20px;
+  text-align: right;
 }
 
 .invoice-signature p {
@@ -159,6 +167,11 @@
   font-size: 1rem;
   color: #1a3c34;
   margin: 5px 0 0;
+}
+
+.error {
+  color: #dc3545;
+  text-align: center;
 }
 
 /* Print styles */

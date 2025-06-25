@@ -10,14 +10,14 @@ const DataTablePagination = ({ totalItems, itemNo = 20, onPageChange }) => {
 
   return (
     <ReactPaginate
-      previousLabel={"Previous"}
-      nextLabel={"Next"}
+      previousLabel={"<"}
+      nextLabel={">"}
       breakLabel={"..."}
       pageCount={pageCount}
       marginPagesDisplayed={2}
       pageRangeDisplayed={3}
       onPageChange={handlePageClick}
-      containerClassName={"pagination justify-content-end mb-0"}
+      containerClassName={"pagination"}
       pageClassName={"page-item"}
       pageLinkClassName={"page-link"}
       previousClassName={"page-item"}

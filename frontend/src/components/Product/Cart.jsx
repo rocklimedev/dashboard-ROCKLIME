@@ -1,65 +1,122 @@
-import { Badge, Button } from "antd";
+import React, { useMemo } from "react";
+import { Badge, Button, Modal, Space, Typography, Divider } from "antd";
+import { ShoppingCartOutlined, DeleteOutlined } from "@ant-design/icons";
 import { Link } from "react-router-dom";
-import { ShoppingCartOutlined } from "@ant-design/icons";
-const Cart = ({ cartItems, onRemoveFromCart }) => {
-  const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+import { useGetCartQuery, useRemoveFromCartMutation } from "../../api/cartApi";
+import { useGetProfileQuery } from "../../api/userApi";
+import { toast } from "sonner";
+
+const { Text } = Typography;
+
+const FloatingCart = () => {
+  const {
+    data: profileData,
+    isLoading: profileLoading,
+    error: profileError,
+  } = useGetProfileQuery();
+  const userId = profileData?.user?.userId;
+
+  const {
+    data: cartData,
+    isLoading: cartLoading,
+    isError: cartError,
+    refetch,
+  } = useGetCartQuery(userId, { skip: !userId });
+
+  const [removeFromCart] = useRemoveFromCartMutation();
+
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+
+  const cartItems = useMemo(
+    () => (Array.isArray(cartData?.cart?.items) ? cartData.cart.items : []),
+    [cartData]
+  );
+
+  const totalItems = cartItems.reduce(
+    (sum, item) => sum + (item.quantity || 0),
+    0
+  );
+
+  const handleRemoveItem = async (productId) => {
+    if (!userId) return toast.error("User not logged in!");
+    try {
+      await removeFromCart({ userId, productId }).unwrap();
+      toast.success("Item removed from cart!");
+      refetch();
+    } catch (error) {
+      toast.error(`Error: ${error.data?.message || "Unknown error"}`);
+    }
+  };
+
+  if (profileLoading || cartLoading) {
+    return null; // Don't render while loading
+  }
+
+  if (profileError || cartError) {
+    return null; // Silently fail, as this is a floating button
+  }
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        top: 16,
-        right: 16,
-        zIndex: 1000,
-        padding: 16,
-      }}
-    >
-      <Badge count={totalItems}>
-        <Button type="primary" icon={<ShoppingCartOutlined />}>
-          Cart: {totalItems} item{totalItems !== 1 ? "s" : ""}
-        </Button>
-      </Badge>
-      {cartItems.length > 0 && (
-        <div
-          style={{
-            background: "#fff",
-            padding: 16,
-            border: "1px solid #d9d9d9",
-            borderRadius: 4,
-            marginTop: 8,
-            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-          }}
-        >
-          <h5>Cart</h5>
-          {cartItems.map((item) => (
-            <div
-              key={item.productId}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginBottom: 8,
-              }}
-            >
-              <span>
-                {item.name} (x{item.quantity})
-              </span>
+    <>
+      <div className="floating-cart">
+        <Badge count={totalItems} style={{ backgroundColor: "#ff4d4f" }}>
+          <Button
+            type="primary"
+            icon={<ShoppingCartOutlined />}
+            onClick={() => setIsModalOpen(true)}
+          >
+            {totalItems}
+          </Button>
+        </Badge>
+      </div>
+      <Modal
+        title={
+          <Space>
+            <ShoppingCartOutlined />
+            <Text strong>Your Cart ({totalItems} items)</Text>
+          </Space>
+        }
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        footer={null}
+        className="cart-modal"
+      >
+        {cartItems.length === 0 ? (
+          <Text type="secondary">Your cart is empty</Text>
+        ) : (
+          <div className="cart-modal-content">
+            {cartItems.map((item) => (
+              <div key={item.productId} className="cart-modal-item">
+                <Space direction="vertical" style={{ flex: 1 }}>
+                  <Text strong>{item.name}</Text>
+                  <Text type="secondary">Qty: {item.quantity}</Text>
+                  <Text>₹{(item.price * item.quantity).toFixed(2)}</Text>
+                </Space>
+                <Button
+                  type="link"
+                  danger
+                  icon={<DeleteOutlined />}
+                  onClick={() => handleRemoveItem(item.productId)}
+                >
+                  Remove
+                </Button>
+              </div>
+            ))}
+            <Divider />
+            <Link to="/cart">
               <Button
-                type="link"
-                danger
-                onClick={() => onRemoveFromCart(item.productId)}
+                type="primary"
+                block
+                onClick={() => setIsModalOpen(false)}
               >
-                Remove
+                View Cart
               </Button>
-            </div>
-          ))}
-          <Link to="/cart">
-            <Button type="primary" block style={{ marginTop: 8 }}>
-              View Cart
-            </Button>
-          </Link>
-        </div>
-      )}
-    </div>
+            </Link>
+          </div>
+        )}
+      </Modal>
+    </>
   );
 };
-export default Cart;
+
+export default FloatingCart;

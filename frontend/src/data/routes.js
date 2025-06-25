@@ -77,6 +77,7 @@ import Product from "../components/Product/Product";
 import ProductWrapper from "../components/Product/ProductWrapper";
 import NewProductDetails from "../components/Product/NewProductDetails";
 import ProductListByCategory from "../components/Product/ProductListByCategory";
+import NewOrderWrapper from "../components/Orders/NewOrderWrapper";
 const masterRoutes = [
   {
     path: "/",
@@ -124,7 +125,7 @@ const masterRoutes = [
         path: "/inventory/product/add",
         name: "Create Product",
         icon: <AiOutlineProduct />,
-        isSidebarActive: true,
+        isSidebarActive: false,
         element: <CreateProduct />,
       },
       {
@@ -165,7 +166,7 @@ const masterRoutes = [
       },
       {
         path: "/invoices/list",
-        name: "List of Invoices",
+        name: "Invoices",
         icon: <FaFileInvoice />,
         element: <RecentInvoices />,
         isSidebarActive: true,
@@ -181,7 +182,7 @@ const masterRoutes = [
         path: "/pos",
         name: "POS",
         icon: <FaPooStorm />,
-        isSidebarActive: true,
+        isSidebarActive: false,
         element: <POSWrapperNew />,
       },
       {
@@ -210,7 +211,7 @@ const masterRoutes = [
         name: "Add Quotations",
         icon: <FaRegFile />,
         element: <AddQuntation />,
-        isSidebarActive: true,
+        isSidebarActive: false,
       },
       {
         path: "/quotations/:id/edit",
@@ -323,7 +324,13 @@ const masterRoutes = [
       },
     ],
   },
-
+  {
+    path: "/new-order",
+    name: "orders",
+    icon: <MdOutlineSettings />,
+    isSidebarActive: true,
+    element: <NewOrderWrapper />,
+  },
   {
     path: "/settings",
     name: "Settings",
@@ -333,21 +340,21 @@ const masterRoutes = [
   },
   {
     path: "#",
-    name: "HRM",
+    name: "Team",
     // icon: <img src={hrmicon} />,
     icon: <MdOutlinePeopleAlt />,
     isSidebarActive: true,
     submenu: [
       {
         path: "/hrm/attendance",
-        name: "Attendance",
+        name: "HRMS",
         icon: <MdOutlinePeopleAlt />,
         isSidebarActive: true,
         element: <AttendanceWrapper />,
       },
       {
         path: "/hrm/attendance/list",
-        name: "Attendance List",
+        name: "Employee",
         icon: <MdOutlinePeopleAlt />,
         isSidebarActive: true,
         element: <AttendanceList />,
@@ -361,7 +368,7 @@ const masterRoutes = [
       },
       {
         path: "/user/add",
-        name: "User Add",
+        name: "Create User",
         icon: <BiUserCheck />,
         isSidebarActive: true,
         element: <NewAddUser />,

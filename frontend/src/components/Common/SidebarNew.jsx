@@ -91,7 +91,7 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar }) => {
               <h6 className="submenu-hdr">Extras</h6>
               <a href="https://static.cmtradingco.com/" target="_blank">
                 <i data-feather="box"></i>
-                <span>Product Images</span>
+                <span> Product Images</span>
               </a>
             </li>
           </ul>
