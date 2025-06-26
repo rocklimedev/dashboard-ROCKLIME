@@ -69,4 +69,9 @@ router.get(
   // checkPermission("view", "get_filtered_orders", "orders", "/orders/filter"),
   orderController.getFilteredOrders
 );
+router.put(
+  "/update-team",
+  // checkPermission("edit", "update_order_team", "orders", "/orders/update-team"),
+  orderController.updateOrderTeam
+);
 module.exports = router;

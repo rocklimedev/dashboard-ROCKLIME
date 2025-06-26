@@ -61,7 +61,7 @@ const FloatingCart = () => {
       <div className="floating-cart">
         <Badge count={totalItems} style={{ backgroundColor: "#ff4d4f" }}>
           <Button
-            type="primary"
+            style={{ color: "grey" }}
             icon={<ShoppingCartOutlined />}
             onClick={() => setIsModalOpen(true)}
           >

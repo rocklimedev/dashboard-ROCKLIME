@@ -2,7 +2,7 @@ const Order = require("../models/orders");
 const OrderItem = require("../models/orderItem");
 const Team = require("../models/team");
 // Ensure Team and Order models are imported
-
+const Invoice = require("../models/invoice");
 const { Op } = require("sequelize");
 
 const Quotation = require("../models/quotation");
@@ -22,6 +22,7 @@ exports.createOrder = async (req, res) => {
       priority,
       description,
       invoiceId,
+      orderNo,
     } = req.body;
 
     // Required fields validation
@@ -31,19 +32,45 @@ exports.createOrder = async (req, res) => {
       });
     }
 
-    // Parse followupDates safely
+    // Validate invoiceId
+    const invoice = await Invoice.findByPk(invoiceId);
+    if (!invoice) {
+      return res.status(400).json({ message: "Invalid or missing invoiceId" });
+    }
+
+    // Validate dueDate
+    if (dueDate && new Date(dueDate).toString() === "Invalid Date") {
+      return res.status(400).json({ message: "Invalid dueDate format" });
+    }
+
+    // Parse and validate followupDates
     const parsedFollowupDates = Array.isArray(followupDates)
-      ? followupDates
+      ? followupDates.filter(
+          (date) => date && new Date(date).toString() !== "Invalid Date"
+        )
       : [];
 
-    // Normalize assignedTo
+    // Normalize and validate assignedTo
     const assignedTeamId = assignedTo?.trim?.() === "" ? null : assignedTo;
-
-    // Check if assignedTo team exists
     if (assignedTeamId) {
       const team = await Team.findByPk(assignedTeamId);
       if (!team) {
-        return res.status(400).json({ error: "Assigned team not found." });
+        return res.status(400).json({ message: "Assigned team not found" });
+      }
+    }
+
+    // Validate orderNo if provided
+    if (orderNo && isNaN(parseInt(orderNo))) {
+      return res
+        .status(400)
+        .json({ message: "orderNo must be a valid number" });
+    }
+    if (orderNo) {
+      const existingOrder = await Order.findOne({
+        where: { orderNo: parseInt(orderNo) },
+      });
+      if (existingOrder) {
+        return res.status(400).json({ message: "Order number already exists" });
       }
     }
 
@@ -61,6 +88,7 @@ exports.createOrder = async (req, res) => {
       priority,
       description,
       invoiceId,
+      orderNo: orderNo ? parseInt(orderNo) : null,
     });
 
     res.status(201).json({
@@ -68,22 +96,17 @@ exports.createOrder = async (req, res) => {
       id: order.id,
     });
   } catch (err) {
+    console.error("Create order error:", err.message, err.stack);
     res.status(500).json({
-      error: "Something went wrong while creating the order",
+      message: "Something went wrong while creating the order",
       details: err.message,
     });
   }
 };
-
 exports.getAllOrders = async (req, res) => {
   try {
     const orders = await Order.findAll();
-
-    if (!orders || orders.length === 0) {
-      return res.status(404).json({ message: "No orders found" });
-    }
-
-    res.status(200).json({ orders });
+    res.status(200).json({ orders, totalCount: orders.length });
   } catch (err) {
     res.status(500).json({ message: "Server Error", error: err.message });
   }
@@ -299,5 +322,25 @@ exports.getFilteredOrders = async (req, res) => {
       error: "Failed to fetch filtered orders",
       details: err.message,
     });
+  }
+};
+exports.updateOrderTeam = async (req, res) => {
+  try {
+    const { id, assignedTo } = req.body;
+    const order = await Order.findByPk(id);
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    if (assignedTo) {
+      const team = await Team.findByPk(assignedTo);
+      if (!team)
+        return res.status(400).json({ error: "Assigned team not found" });
+    }
+
+    order.assignedTo = assignedTo || null;
+    await order.save();
+
+    res.status(200).json({ message: "Order team updated", order });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };

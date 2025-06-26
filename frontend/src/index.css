@@ -12,6 +12,123 @@
 @import url("https://fonts.cdnfonts.com/css/neuropol-2");
 /* header.css */
 
+.order-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.create-button {
+  padding: 6px 12px;
+  background-color: #c72c41;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.create-button:hover {
+  background-color: #a12434;
+}
+
+.ordertable-lable,
+.order-table-content {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+}
+
+.badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  display: inline-block;
+}
+
+.new-order {
+  background-color: #cce5ff;
+  color: #004085;
+}
+
+.inproduction {
+  background-color: #ffe5b5;
+  color: #856404;
+}
+
+.shipped {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.cancelled {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.rejected {
+  background-color: #f5c6cb;
+  color: #721c24;
+}
+
+.draft {
+  background-color: #e2e3e5;
+  color: #383d41;
+}
+
+.shipping-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+}
+
+.standard {
+  background-color: #cce5ff;
+  color: #004085;
+}
+
+.priority {
+  background-color: #ffe5b5;
+  color: #856404;
+}
+
+.express {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.edit {
+  cursor: pointer;
+  color: #007bff;
+}
+
+.pagination {
+  text-align: center;
+  padding: 10px;
+  margin-top: 20px;
+}
+
+.pagination button {
+  padding: 5px 10px;
+  margin: 0 5px;
+  border: 1px solid #ddd;
+  background: #fff;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.pagination button:disabled {
+  cursor: not-allowed;
+  color: #ccc;
+}
+
+.pagination button:hover:not(:disabled) {
+  background-color: #f0f0f0;
+}
+
 .rocklime-link {
   color: #ed7c2f !important;
   font-family: "neuropol", sans-serif !important;
