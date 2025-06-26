@@ -324,13 +324,14 @@ const masterRoutes = [
       },
     ],
   },
-  {
-    path: "/new-order",
-    name: "orders",
-    icon: <MdOutlineSettings />,
-    isSidebarActive: true,
-    element: <NewOrderWrapper />,
-  },
+
+  // {
+  //   path: "/new-order",
+  //   name: "orders",
+  //   icon: <MdOutlineSettings />,
+  //   isSidebarActive: true,
+  //   element: <NewOrderWrapper />,
+  // },
   {
     path: "/settings",
     name: "Settings",

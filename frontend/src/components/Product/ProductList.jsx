@@ -35,14 +35,14 @@ import {
 } from "../../api/cartApi";
 import { useGetProfileQuery } from "../../api/userApi";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import pos from "../../assets/img/default.png";
 import DeleteModal from "../Common/DeleteModal";
 import HistoryModal from "../Common/HistoryModal";
 import StockModal from "../Common/StockModal";
-import Cart from "./Cart"; // Import the modal-based Cart component
-import "./productlist.css"; // Import custom CSS
-
+import Cart from "./Cart";
+import "./productlist.css";
+import PageHeader from "../Common/PageHeader";
 const { Option } = Select;
 
 const ProductsList = ({ isAdmin = false }) => {
@@ -55,8 +55,9 @@ const ProductsList = ({ isAdmin = false }) => {
   const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
   const [addToCart, { isLoading: isAddingToCart }] = useAddToCartMutation();
   const [removeFromCart] = useRemoveFromCartMutation();
-
+  const navigate = useNavigate();
   const userId = user?.user?.userId;
+
   const products = useMemo(
     () =>
       Array.isArray(productsData?.data)
@@ -107,80 +108,80 @@ const ProductsList = ({ isAdmin = false }) => {
   const itemsPerPage = 30;
 
   const getBrandsName = (brandId) => {
-    if (!brandId) return "Not Branded";
-    const brand = brands.find((b) => b.id === brandId);
-    return brand ? brand.brandName : "Not Branded";
+    return brandId
+      ? brands.find((b) => b.id === brandId)?.brandName || "Not Branded"
+      : "Not Branded";
   };
 
   const getCategoryName = (categoryId) => {
-    const category = categories.find((cat) => cat.categoryId === categoryId);
-    return category ? category.name : "Uncategorized";
+    return categoryId
+      ? categories.find((cat) => cat.categoryId === categoryId)?.name ||
+          "Uncategorized"
+      : "Uncategorized";
   };
 
   const formatPrice = (price) => {
-    if (price === null || price === undefined || isNaN(Number(price))) {
-      return "N/A";
-    }
-    return `₹${Number(price).toFixed(2)}`;
+    return price !== null && !isNaN(Number(price))
+      ? `₹${Number(price).toFixed(2)}`
+      : "N/A";
   };
 
   const applyFilters = useMemo(() => {
     return (products, customers) => {
       if (!products) return [];
-
-      let filtered = products.filter((product) => {
-        const customer = customers.find((c) => c._id === product.customerId);
-        const createdByName = customer?.name || "";
-        const matchesCreator =
-          !filters.createdBy || createdByName === filters.createdBy;
-        const matchesCategory =
-          !filters.category || product.categoryId === filters.category;
-        const matchesBrand =
-          !filters.brand || product.brandId === filters.brand;
-        const searchTerm = filters.search?.toLowerCase() || "";
-        const matchesSearch =
-          !searchTerm ||
-          (product.name?.toLowerCase() || "").includes(searchTerm) ||
-          (product.product_code?.toLowerCase() || "").includes(searchTerm) ||
-          (product.company_code?.toLowerCase() || "").includes(searchTerm);
-        let matchesDate = true;
-        if (filters.sortBy === "Last 7 Days") {
-          const daysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-          matchesDate = new Date(product.createdAt) >= daysAgo;
-        } else if (filters.sortBy === "Last Month") {
-          const oneMonthAgo = new Date();
-          oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-          matchesDate = new Date(product.createdAt) >= oneMonthAgo;
-        }
-
-        return (
-          matchesCreator &&
-          matchesCategory &&
-          matchesBrand &&
-          matchesSearch &&
-          matchesDate
-        );
-      });
-
-      if (filters.sortBy === "Ascending") {
-        filtered.sort((a, b) => a.name?.localeCompare(b.name || ""));
-      } else if (filters.sortBy === "Descending") {
-        filtered.sort((a, b) => b.name?.localeCompare(b.name || ""));
-      } else if (filters.sortBy === "Recently Added") {
-        filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      } else if (filters.sortBy === "Price Low to High") {
-        filtered.sort(
-          (a, b) =>
-            (Number(a.sellingPrice) || 0) - (Number(b.sellingPrice) || 0)
-        );
-      } else if (filters.sortBy === "Price High to Low") {
-        filtered.sort(
-          (a, b) =>
-            (Number(b.sellingPrice) || 0) - (Number(a.sellingPrice) || 0)
-        );
-      }
-
-      return filtered;
+      return products
+        .filter((product) => {
+          const customer = customers.find((c) => c._id === product.customerId);
+          const createdByName = customer?.name || "";
+          const matchesCreator =
+            !filters.createdBy || createdByName === filters.createdBy;
+          const matchesCategory =
+            !filters.category || product.categoryId === filters.category;
+          const matchesBrand =
+            !filters.brand || product.brandId === filters.brand;
+          const searchTerm = filters.search?.toLowerCase() || "";
+          const matchesSearch =
+            !searchTerm ||
+            product.name?.toLowerCase().includes(searchTerm) ||
+            product.product_code?.toLowerCase().includes(searchTerm) ||
+            product.company_code?.toLowerCase().includes(searchTerm);
+          let matchesDate = true;
+          if (filters.sortBy === "Last 7 Days") {
+            const daysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+            matchesDate = new Date(product.createdAt) >= daysAgo;
+          } else if (filters.sortBy === "Last Month") {
+            const oneMonthAgo = new Date();
+            oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+            matchesDate = new Date(product.createdAt) >= oneMonthAgo;
+          }
+          return (
+            matchesCreator &&
+            matchesCategory &&
+            matchesBrand &&
+            matchesSearch &&
+            matchesDate
+          );
+        })
+        .sort((a, b) => {
+          switch (filters.sortBy) {
+            case "Ascending":
+              return a.name?.localeCompare(b.name || "") || 0;
+            case "Descending":
+              return b.name?.localeCompare(a.name || "") || 0;
+            case "Recently Added":
+              return new Date(b.createdAt) - new Date(a.createdAt);
+            case "Price Low to High":
+              return (
+                (Number(a.sellingPrice) || 0) - (Number(b.sellingPrice) || 0)
+              );
+            case "Price High to Low":
+              return (
+                (Number(b.sellingPrice) || 0) - (Number(a.sellingPrice) || 0)
+              );
+            default:
+              return 0;
+          }
+        });
     };
   }, [filters]);
 
@@ -188,6 +189,7 @@ const ProductsList = ({ isAdmin = false }) => {
   const offset = (currentPage - 1) * itemsPerPage;
   const currentItems = filteredProducts.slice(offset, offset + itemsPerPage);
 
+  const handleAddProduct = () => navigate("/inventory/product/add");
   const handleDeleteClick = (product) => {
     setSelectedProduct(product);
     setDeleteModalVisible(true);
@@ -199,13 +201,11 @@ const ProductsList = ({ isAdmin = false }) => {
       setDeleteModalVisible(false);
       return;
     }
-
     try {
       await deleteProduct(selectedProduct.productId).unwrap();
       toast.success("Product deleted successfully!");
-      if (currentItems.length === 1 && currentPage > 1) {
+      if (currentItems.length === 1 && currentPage > 1)
         setCurrentPage(currentPage - 1);
-      }
     } catch (error) {
       toast.error(
         `Failed to delete product: ${error.data?.message || "Unknown error"}`
@@ -221,24 +221,20 @@ const ProductsList = ({ isAdmin = false }) => {
       toast.error("User not logged in!");
       return;
     }
-
-    const productId = product.productId;
-    if (!productId) {
-      toast.error("Invalid product ID");
-      return;
-    }
-
-    setCartLoadingStates((prev) => ({ ...prev, [productId]: true }));
-
+    setCartLoadingStates((prev) => ({ ...prev, [product.productId]: true }));
     try {
-      await addToCart({ userId, productId, quantity: 1 }).unwrap();
+      await addToCart({
+        userId,
+        productId: product.productId,
+        quantity: 1,
+      }).unwrap();
       toast.success(`${product.name} added to cart!`);
     } catch (error) {
       toast.error(
         `Failed to add to cart: ${error.data?.message || "Unknown error"}`
       );
     } finally {
-      setCartLoadingStates((prev) => ({ ...prev, [productId]: false }));
+      setCartLoadingStates((prev) => ({ ...prev, [product.productId]: false }));
     }
   };
 
@@ -264,24 +260,22 @@ const ProductsList = ({ isAdmin = false }) => {
   };
 
   const handleStockSubmit = (stockData) => {
-    const updatedStock = {
-      ...stockData,
-      productId: selectedProduct.productId,
-      date: new Date(),
-    };
-
     setStockHistoryMap((prev) => {
       const productId = selectedProduct.productId;
-      const newHistory = [...(prev[productId] || []), updatedStock];
-      return { ...prev, [productId]: newHistory };
+      return {
+        ...prev,
+        [productId]: [
+          ...(prev[productId] || []),
+          { ...stockData, date: new Date(), productId },
+        ],
+      };
     });
-
     setStockModalVisible(false);
   };
 
   const handleFilterChange = (changedFields) => {
     setFilters((prev) => ({ ...prev, ...changedFields }));
-    setCurrentPage(1); // Reset to first page on filter change
+    setCurrentPage(1);
   };
 
   const handleResetFilters = () => {
@@ -296,15 +290,6 @@ const ProductsList = ({ isAdmin = false }) => {
     });
     setCurrentPage(1);
   };
-
-  useEffect(() => {
-    if (
-      filteredProducts.length > 0 &&
-      currentPage > Math.ceil(filteredProducts.length / itemsPerPage)
-    ) {
-      setCurrentPage(1);
-    }
-  }, [filteredProducts.length, currentPage]);
 
   const menu = (product) => (
     <Menu>
@@ -328,21 +313,21 @@ const ProductsList = ({ isAdmin = false }) => {
 
   const handleConvertToOrder = (orderData) => {
     console.log("Order converted:", orderData);
-    // Add logic to handle order conversion
+    // Implement order conversion logic
   };
 
   if (isLoading || userLoading) {
     return (
-      <div className="loading-container">
+      <div className="loading-container text-center py-5">
         <Spin size="large" />
-        <p>Loading products...</p>
+        <p className="mt-2">Loading products...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="error-container">
+      <div className="error-container text-center py-5">
         <Empty
           description={`Error: ${error?.data?.message || "Unknown error"}`}
         />
@@ -353,221 +338,237 @@ const ProductsList = ({ isAdmin = false }) => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        <div className="products-list-wrapper">
-          <div className="content">
-            <Cart
-              cartItems={cartItems}
-              onRemoveFromCart={handleRemoveFromCart}
-              onConvertToOrder={handleConvertToOrder}
-            />
-            <div className="filter-section">
-              <Form
-                form={form}
-                layout="inline"
-                onValuesChange={(_, values) => handleFilterChange(values)}
-                className="filter-form"
+        <PageHeader
+          title="Shop Products"
+          subtitle="Explore our latest collection"
+          onAdd={isAdmin ? handleAddProduct : null}
+          extra={
+            <Button
+              style={{ color: "#c72c41" }}
+              icon={<ShoppingCartOutlined />}
+              onClick={() => document.getElementById("cart-modal").click()}
+            >
+              Cart ({cartItems.length})
+            </Button>
+          }
+        />
+        <Cart
+          cartItems={cartItems}
+          onRemoveFromCart={handleRemoveFromCart}
+          onConvertToOrder={handleConvertToOrder}
+        />
+        <div className="filter-bar sticky-top bg-white p-3 shadow-sm">
+          <Form
+            form={form}
+            layout="inline"
+            onValuesChange={(_, values) => handleFilterChange(values)}
+            className="filter-form"
+          >
+            <Form.Item name="search" className="filter-item">
+              <Input
+                prefix={<SearchOutlined />}
+                placeholder="Search products..."
+                allowClear
+                size="large"
+              />
+            </Form.Item>
+            <Form.Item name="brand" className="filter-item">
+              <Select
+                placeholder="Filter by Brand"
+                allowClear
+                size="large"
+                style={{ minWidth: 180 }}
               >
-                <Form.Item name="search" className="filter-item">
-                  <Input
-                    prefix={<SearchOutlined />}
-                    placeholder="Search products..."
-                    allowClear
-                  />
-                </Form.Item>
-                <Form.Item name="brand" className="filter-item">
-                  <Select
-                    placeholder="Select Brand"
-                    allowClear
-                    style={{ minWidth: 150 }}
-                  >
-                    {brands.map((brand) => (
-                      <Option key={brand.id} value={brand.id}>
-                        {brand.brandName}
-                      </Option>
-                    ))}
-                  </Select>
-                </Form.Item>
-                <Form.Item name="category" className="filter-item">
-                  <Select
-                    placeholder="Select Category"
-                    allowClear
-                    style={{ minWidth: 150 }}
-                  >
-                    {categories.map((cat) => (
-                      <Option key={cat.categoryId} value={cat.categoryId}>
-                        {cat.name}
-                      </Option>
-                    ))}
-                  </Select>
-                </Form.Item>
-                <Form.Item name="sortBy" className="filter-item">
-                  <Select
-                    placeholder="Sort By"
-                    allowClear
-                    style={{ minWidth: 150 }}
-                  >
-                    <Option value="Ascending">Name: A-Z</Option>
-                    <Option value="Descending">Name: Z-A</Option>
-                    <Option value="Recently Added">Recently Added</Option>
-                    <Option value="Price Low to High">
-                      Price: Low to High
-                    </Option>
-                    <Option value="Price High to Low">
-                      Price: High to Low
-                    </Option>
-                    <Option value="Last 7 Days">Last 7 Days</Option>
-                    <Option value="Last Month">Last Month</Option>
-                  </Select>
-                </Form.Item>
-                <Form.Item>
-                  <Button type="default" onClick={handleResetFilters}>
-                    Reset Filters
-                  </Button>
-                </Form.Item>
-              </Form>
-            </div>
-            {filteredProducts.length === 0 ? (
-              <div className="empty-container">
-                <Empty description="No products match the filters." />
-              </div>
-            ) : (
-              <>
-                <Row gutter={[16, 16]} className="products-grid">
-                  {currentItems.map((product) => (
-                    <Col
-                      key={product.productId}
-                      xs={24}
-                      sm={12}
-                      md={8}
-                      lg={6}
-                      xl={4}
-                    >
-                      <Card
-                        hoverable
-                        className="product-card"
-                        cover={
-                          <div className="product-image-wrapper">
-                            <img
-                              src={product?.images?.[0] || pos}
-                              alt={product.name || "Product"}
-                              className="product-image"
-                            />
-                            {product.quantity <= 0 && (
-                              <div className="out-of-stock">Out of Stock</div>
-                            )}
-                          </div>
-                        }
-                        actions={[
-                          <Button
-                            type="primary"
-                            icon={
-                              cartLoadingStates[product.productId] ? (
-                                <Spin size="small" />
-                              ) : (
-                                <ShoppingCartOutlined />
-                              )
-                            }
-                            onClick={() => handleAddToCart(product)}
-                            disabled={
-                              cartLoadingStates[product.productId] ||
-                              product.quantity <= 0
-                            }
-                            block
-                            className="add-to-cart-btn"
-                          >
-                            {product.quantity <= 0
-                              ? "Out of Stock"
-                              : "Add to Cart"}
-                          </Button>,
-                        ]}
-                      >
-                        <Card.Meta
-                          title={
-                            <Link
-                              to={`/product/${product.productId}`}
-                              className="product-title"
-                            >
-                              {product.name || "N/A"}
-                            </Link>
-                          }
-                          description={
-                            <div>
-                              <div className="product-brand">
-                                {getBrandsName(product.brandId)}
-                              </div>
-                              <div className="product-price-stock">
-                                <span className="product-price">
-                                  {formatPrice(product.sellingPrice)}
-                                </span>
-                                <span className="product-stock">
-                                  {product.quantity ?? 0} in stock
-                                </span>
-                              </div>
-                            </div>
-                          }
-                        />
-                        {isAdmin && (
-                          <Dropdown overlay={menu(product)} trigger={["click"]}>
-                            <Button
-                              type="text"
-                              className="more-options-btn"
-                              icon={<MoreOutlined />}
-                              aria-label="More options"
-                            />
-                          </Dropdown>
-                        )}
-                      </Card>
-                    </Col>
-                  ))}
-                </Row>
-                <div className="pagination-container">
-                  <Pagination
-                    current={currentPage}
-                    total={filteredProducts.length}
-                    pageSize={itemsPerPage}
-                    onChange={(page) => setCurrentPage(page)}
-                    showSizeChanger={false}
-                    showQuickJumper
-                  />
-                </div>
-              </>
-            )}
-            {isAdmin && (
-              <>
-                <DeleteModal
-                  isVisible={isDeleteModalVisible}
-                  onConfirm={handleConfirmDelete}
-                  onCancel={() => {
-                    setDeleteModalVisible(false);
-                    setSelectedProduct(null);
-                  }}
-                  item={selectedProduct}
-                  itemType="Product"
-                  isLoading={isDeleting}
-                />
-                {isStockModalVisible && selectedProduct && (
-                  <StockModal
-                    show={isStockModalVisible}
-                    onHide={() => setStockModalVisible(false)}
-                    product={selectedProduct}
-                    onSubmit={handleStockSubmit}
-                  />
-                )}
-                {isHistoryModalVisible && selectedProduct && (
-                  <HistoryModal
-                    show={isHistoryModalVisible}
-                    onHide={() => setHistoryModalVisible(false)}
-                    product={selectedProduct}
-                    stockHistory={
-                      stockHistoryMap[selectedProduct.productId] || []
-                    }
-                  />
-                )}
-              </>
-            )}
-          </div>
+                {brands.map((brand) => (
+                  <Option key={brand.id} value={brand.id}>
+                    {brand.brandName}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+            <Form.Item name="category" className="filter-item">
+              <Select
+                placeholder="Filter by Category"
+                allowClear
+                size="large"
+                style={{ minWidth: 180 }}
+              >
+                {categories.map((cat) => (
+                  <Option key={cat.categoryId} value={cat.categoryId}>
+                    {cat.name}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+            <Form.Item name="sortBy" className="filter-item">
+              <Select
+                placeholder="Sort by"
+                allowClear
+                size="large"
+                style={{ minWidth: 180 }}
+              >
+                <Option value="Ascending">Name: A-Z</Option>
+                <Option value="Descending">Name: Z-A</Option>
+                <Option value="Recently Added">Recently Added</Option>
+                <Option value="Price Low to High">Price: Low to High</Option>
+                <Option value="Price High to Low">Price: High to Low</Option>
+                <Option value="Last 7 Days">Last 7 Days</Option>
+                <Option value="Last Month">Last Month</Option>
+              </Select>
+            </Form.Item>
+            <Form.Item>
+              <Button type="default" size="large" onClick={handleResetFilters}>
+                <FilterOutlined /> Reset Filters
+              </Button>
+            </Form.Item>
+          </Form>
         </div>
+        {filteredProducts.length === 0 ? (
+          <div className="empty-container text-center py-5">
+            <Empty description="No products match the filters." />
+          </div>
+        ) : (
+          <div className="products-section">
+            <Row gutter={[24, 24]} justify="center">
+              {currentItems.map((product) => (
+                <Col
+                  key={product.productId}
+                  xs={24}
+                  sm={12}
+                  md={8}
+                  lg={6}
+                  xl={4}
+                >
+                  <Card
+                    hoverable
+                    className="ecommerce-product-card"
+                    cover={
+                      <div className="product-image-wrapper">
+                        <img
+                          src={product?.images?.[0] || pos}
+                          alt={product.name || "Product"}
+                          className="product-image"
+                        />
+                        {product.quantity <= 0 && (
+                          <Badge
+                            count="Out of Stock"
+                            className="out-of-stock-badge"
+                          />
+                        )}
+                      </div>
+                    }
+                  >
+                    <Card.Meta
+                      title={
+                        <Link
+                          to={`/product/${product.productId}`}
+                          className="product-title"
+                        >
+                          {product.name || "N/A"}
+                        </Link>
+                      }
+                      description={
+                        <div className="product-details">
+                          <div className="product-brand">
+                            {getBrandsName(product.brandId)}
+                          </div>
+                          <div className="product-price">
+                            {formatPrice(product.sellingPrice)}
+                          </div>
+                          <div className="product-stock">
+                            {product.quantity > 0
+                              ? `${product.quantity} in stock`
+                              : "Out of Stock"}
+                          </div>
+                        </div>
+                      }
+                    />
+                    <div className="product-actions">
+                      <Button
+                        style={{ color: "#c72c41" }}
+                        icon={
+                          cartLoadingStates[product.productId] ? (
+                            <Spin size="small" />
+                          ) : (
+                            <ShoppingCartOutlined />
+                          )
+                        }
+                        onClick={() => handleAddToCart(product)}
+                        disabled={
+                          cartLoadingStates[product.productId] ||
+                          product.quantity <= 0
+                        }
+                        block
+                        size="large"
+                      >
+                        {product.quantity <= 0 ? "Out of Stock" : "Add to Cart"}
+                      </Button>
+                      {isAdmin && (
+                        <Dropdown overlay={menu(product)} trigger={["click"]}>
+                          <Button
+                            type="text"
+                            icon={<MoreOutlined />}
+                            size="large"
+                            className="more-options-btn"
+                          />
+                        </Dropdown>
+                      )}
+                    </div>
+                  </Card>
+                </Col>
+              ))}
+            </Row>
+            <div className="pagination-container text-center mt-4">
+              <Pagination
+                current={currentPage}
+                total={filteredProducts.length}
+                pageSize={itemsPerPage}
+                onChange={(page) => setCurrentPage(page)}
+                showSizeChanger={false}
+                showQuickJumper
+                size="small"
+              />
+            </div>
+          </div>
+        )}
       </div>
+      <button
+        id="cart-modal"
+        data-bs-toggle="modal"
+        data-bs-target="#cartModal"
+        style={{ display: "none" }}
+      ></button>
+      {isAdmin && (
+        <>
+          <DeleteModal
+            isVisible={isDeleteModalVisible}
+            onConfirm={handleConfirmDelete}
+            onCancel={() => {
+              setDeleteModalVisible(false);
+              setSelectedProduct(null);
+            }}
+            item={selectedProduct}
+            itemType="Product"
+            isLoading={isDeleting}
+          />
+          {isStockModalVisible && selectedProduct && (
+            <StockModal
+              show={isStockModalVisible}
+              onHide={() => setStockModalVisible(false)}
+              product={selectedProduct}
+              onSubmit={handleStockSubmit}
+            />
+          )}
+          {isHistoryModalVisible && selectedProduct && (
+            <HistoryModal
+              show={isHistoryModalVisible}
+              onHide={() => setHistoryModalVisible(false)}
+              product={selectedProduct}
+              stockHistory={stockHistoryMap[selectedProduct.productId] || []}
+            />
+          )}
+        </>
+      )}
     </div>
   );
 };

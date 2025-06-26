@@ -334,10 +334,10 @@ const SidebarNew = ({
               <img src={logo} alt="Logo" />
             </Link>
             <Link to="/" className="logo logo-white">
-              <img src={logo} alt="Logo" />
+              <img src={logo_small} alt="Logo" />
             </Link>
             <Link to="/" className="logo-small">
-              <img src={logo} alt="Logo" />
+              <img src={logo_small} alt="Logo" />
             </Link>
             {/* <button
               className="sidebar-close-btn"

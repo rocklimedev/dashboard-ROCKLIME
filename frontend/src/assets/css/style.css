@@ -12919,7 +12919,6 @@ table.dataTable {
   border-radius: 8px;
 }
 
-
 .swal2-header .swal2-title {
   font-size: 18px;
 }
@@ -12960,8 +12959,6 @@ table.dataTable {
 .input-group .scanner-set:hover {
   background: #212b36;
 }
-
-
 
 .swal2-header .swal2-title {
   font-size: 18px;
@@ -51170,12 +51167,6 @@ span.badge.badges-warning {
   -webkit-justify-content: center;
   -ms-flex-pack: center;
   flex-direction: column;
-}
-.product-details:hover {
-  background: #6938ef;
-}
-.product-details:hover h6 {
-  color: #ffffff;
 }
 .product-details.active {
   background-color: #6938ef !important;

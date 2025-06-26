@@ -222,8 +222,8 @@ const OrderWrapper = () => {
     <div className="page-wrapper notes-page-wrapper">
       <div className="content">
         <div className="page-header page-add-notes border-0 flex-sm-row flex-column">
-          <div className="add-item d-flex">
-            <div className="page-title">
+          <div className="order-table">
+            <div className="order-header">
               <h4>Orders & Invoices</h4>
               <h6 className="mb-0">Manage everything from here</h6>
             </div>
@@ -232,7 +232,7 @@ const OrderWrapper = () => {
           <ul className="nav nav-tabs">
             <li className="nav-item">
               <div className="d-flex align-items-center gap-2">
-                <button className="btn btn-primary" onClick={handleOpenModal}>
+                <button className="create-button" onClick={handleOpenModal}>
                   <i className="ti ti-plus me-2"></i>New Order
                 </button>
               </div>
@@ -281,32 +281,71 @@ const OrderWrapper = () => {
                 </div>
               ) : orders.length > 0 ? (
                 <>
-                  <div className="row">
-                    {orders.map((order) => {
-                      const teamName = order.assignedTo
-                        ? teamMap[order.assignedTo] ||
-                          teamDataMap[order.assignedTo]?.teamName ||
-                          "—"
-                        : "—";
-                      const isTeamLoading = order.assignedTo
-                        ? teamDataMap[order.assignedTo]?.isLoading || false
-                        : false;
-                      return (
-                        <div className="col-md-6" key={order.id}>
-                          <OrderItem
-                            order={order}
-                            teamName={teamName}
-                            isTeamLoading={isTeamLoading}
-                            onEditClick={handleEditClick}
-                            onHoldClick={handleHoldClick}
-                            onViewInvoice={handleViewInvoice}
-                            onDeleteOrder={handleDeleteClick} // Updated to show DeleteModal
-                            onOpenDatesModal={handleOpenDatesModal}
-                            isDueDateClose={isDueDateClose}
-                          />
-                        </div>
-                      );
-                    })}
+                  <div className="table-responsive">
+                    <table className="table table-hover table-bordered">
+                      <thead className="table-light">
+                        <tr>
+                          <th>Title</th>
+                          <th>Status</th>
+                          <th>Due Date</th>
+                          <th>Priority</th>
+                          <th>Team</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {orders.map((order) => {
+                          const teamName = order.assignedTo
+                            ? teamMap[order.assignedTo] ||
+                              teamDataMap[order.assignedTo]?.teamName ||
+                              "—"
+                            : "—";
+                          const isTeamLoading = order.assignedTo
+                            ? teamDataMap[order.assignedTo]?.isLoading || false
+                            : false;
+
+                          return (
+                            <tr key={order.id}>
+                              <td>{order.title}</td>
+                              <td>{order.status}</td>
+                              <td>
+                                {order.dueDate
+                                  ? new Date(order.dueDate).toLocaleDateString()
+                                  : "—"}
+                              </td>
+                              <td>{order.priority}</td>
+                              <td>{isTeamLoading ? "Loading..." : teamName}</td>
+                              <td className="d-flex gap-2">
+                                <button
+                                  className="btn btn-sm btn-primary"
+                                  onClick={() => handleEditClick(order)}
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  className="btn btn-sm btn-warning"
+                                  onClick={() => handleHoldClick(order)}
+                                >
+                                  Hold
+                                </button>
+                                <button
+                                  className="btn btn-sm btn-success"
+                                  onClick={() => handleViewInvoice(order)}
+                                >
+                                  View Invoice
+                                </button>
+                                <button
+                                  className="btn btn-sm btn-danger"
+                                  onClick={() => handleDeleteClick(order.id)}
+                                >
+                                  Delete
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                   {totalCount > filters.limit && (
                     <OrderPagination

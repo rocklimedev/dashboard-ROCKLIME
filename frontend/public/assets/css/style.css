@@ -3717,7 +3717,7 @@ button:focus {
   margin-inline-start: 0.25rem;
   vertical-align: 0;
   content: "\f078";
-  font-family: "Font Awesome 5 Free";
+  font-family: "Lato";
   border: 0;
   font-size: 0.6rem;
   font-weight: 600;
@@ -3778,7 +3778,7 @@ button:focus {
   margin-inline-start: 0.25rem;
   vertical-align: 0;
   content: "\f078";
-  font-family: "Font Awesome 5 Free";
+  font-family: "Lato";
   border: 0;
   font-size: 0.6rem;
   font-weight: 600;
@@ -3789,7 +3789,7 @@ button:focus {
   margin-inline-start: 0.25rem;
   vertical-align: 0;
   content: "\f077";
-  font-family: "Font Awesome 5 Free";
+  font-family: "Lato";
   border: 0;
   font-size: 0.6rem;
   font-weight: 600;
@@ -3800,7 +3800,7 @@ button:focus {
   margin-inline-start: 0.25rem;
   vertical-align: 0;
   content: "\f054";
-  font-family: "Font Awesome 5 Free";
+  font-family: "Lato";
   border: 0;
   font-size: 0.6rem;
   font-weight: 600;
@@ -3811,7 +3811,7 @@ button:focus {
   margin-inline-start: 0.25rem;
   vertical-align: 0;
   content: "\f053";
-  font-family: "Font Awesome 5 Free";
+  font-family: "Lato";
   border: 0;
   font-size: 0.6rem;
   font-weight: 600;
@@ -12441,7 +12441,7 @@ table.dataTable > thead .sorting_asc_disabled:after,
 table.dataTable > thead .sorting_desc_disabled:after {
   right: 0.5em !important;
   content: "\f107" !important;
-  font-family: "Font Awesome 5 Free";
+  font-family: "Lato";
   bottom: 12px !important;
   color: #babfc7 !important;
   font-size: 12px !important;
@@ -12456,7 +12456,7 @@ table.dataTable > thead .sorting_asc_disabled:before,
 table.dataTable > thead .sorting_desc_disabled:before {
   right: 0.5em !important;
   content: "\f106" !important;
-  font-family: "Font Awesome 5 Free";
+  font-family: "Lato";
   top: 12px !important;
   color: #babfc7 !important;
   font-size: 12px !important;
@@ -12919,23 +12919,6 @@ table.dataTable {
   border-radius: 8px;
 }
 
-::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-  border-radius: 50px !important;
-}
-
-::-webkit-scrollbar-track {
-  background: #a6aaaf;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #e31e24;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #a6aaaf;
-}
 
 .swal2-header .swal2-title {
   font-size: 18px;
@@ -12978,23 +12961,7 @@ table.dataTable {
   background: #212b36;
 }
 
-::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-  border-radius: 50px !important;
-}
 
-::-webkit-scrollbar-track {
-  background: #a6aaaf;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #e31e24;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #a6aaaf;
-}
 
 .swal2-header .swal2-title {
   font-size: 18px;
@@ -17948,7 +17915,7 @@ div#global-loader .whirly-loader:not(:required) {
 }
 .sidebar .sidebar-menu > ul > li > a:hover,
 .settings-sidebar .sidebar-menu > ul > li > a:hover {
-  background: rgba(254, 159, 67, 0.08);
+  background: rgba(227, 30, 36, 0.08);
   color: #e31e24;
   border-radius: 5px;
 }
@@ -17967,7 +17934,7 @@ div#global-loader .whirly-loader:not(:required) {
 }
 .sidebar .sidebar-menu > ul > li > a.active,
 .settings-sidebar .sidebar-menu > ul > li > a.active {
-  background: rgba(254, 159, 67, 0.08);
+  background: rgba(227, 30, 36, 0.08);
   color: #e31e24;
   border-radius: 5px;
 }
@@ -18000,7 +17967,7 @@ div#global-loader .whirly-loader:not(:required) {
 }
 .sidebar .sidebar-menu > ul > li.active a,
 .settings-sidebar .sidebar-menu > ul > li.active a {
-  background: rgba(254, 159, 67, 0.08);
+  background: rgba(227, 30, 36, 0.08);
   border-radius: 5px;
 }
 .sidebar .sidebar-menu > ul > li.active a img,
@@ -18036,7 +18003,7 @@ div#global-loader .whirly-loader:not(:required) {
   background: #e31e24;
   border: 2px solid #fdb;
 }
-.sidebar .sidebar-menu > ul > li.submenu ul li a::after,
+/* .sidebar .sidebar-menu > ul > li.submenu ul li a::after,
 .settings-sidebar .sidebar-menu > ul > li.submenu ul li a::after {
   content: "";
   background: rgba(50, 71, 92, 0.38);
@@ -18047,7 +18014,7 @@ div#global-loader .whirly-loader:not(:required) {
   position: absolute;
   top: 16px;
   left: 16px;
-}
+} */
 .sidebar .sidebar-menu > ul > li.submenu ul li a:hover,
 .settings-sidebar .sidebar-menu > ul > li.submenu ul li a:hover {
   color: #e31e24;
@@ -18119,7 +18086,7 @@ div#global-loader .whirly-loader:not(:required) {
 }
 .sidebar .sidebar-menu > ul > li.submenu-open ul > li.active a,
 .settings-sidebar .sidebar-menu > ul > li.submenu-open ul > li.active a {
-  background: rgba(254, 159, 67, 0.08);
+  background: rgba(227, 30, 36, 0.08);
   border-radius: 5px;
   color: #e31e24;
 }
@@ -18448,7 +18415,7 @@ div#global-loader .whirly-loader:not(:required) {
   -o-transition: -o-transform 0.15s;
   transition: transform 0.15s;
   display: inline-block;
-  font-family: "Font Awesome 5 Free";
+  font-family: "Lato";
   text-rendering: auto;
   line-height: 40px;
   font-size: 18px;
@@ -36900,7 +36867,7 @@ body.mini-sidebar.expand-menu
   -o-transition: -o-transform 0.15s;
   transition: transform 0.15s;
   display: inline-block;
-  font-family: "Font Awesome 5 Free";
+  font-family: "Lato";
   text-rendering: auto;
   line-height: 40px;
   font-size: 12px;
@@ -37998,7 +37965,7 @@ body.layout-mode-rtl .user-info {
   ~ label
   .checkboxs-theme::before {
   content: "\f00c";
-  font-family: "Font Awesome 5 Free";
+  font-family: "Lato";
   color: #fff;
   font-weight: 700;
   font-size: 10px;
@@ -38790,9 +38757,7 @@ body.layout-mode-rtl .user-info {
   background: #d63031;
   border-color: #d63031;
 }
-[data-color="lunargreen"] ::-webkit-scrollbar-thumb {
-  background: #d63031;
-}
+
 [data-color="lunargreen"] .link-item:hover {
   background: rgba(214, 48, 49, 0.1);
 }
@@ -39223,9 +39188,7 @@ body.layout-mode-rtl .user-info {
   background: #009688;
   border-color: #009688;
 }
-[data-color="brightblue"] ::-webkit-scrollbar-thumb {
-  background: #009688;
-}
+
 [data-color="brightblue"] .link-item:hover {
   background: rgba(0, 150, 136, 0.1);
 }
@@ -39656,9 +39619,7 @@ body.layout-mode-rtl .user-info {
   background: #d63031;
   border-color: #d63031;
 }
-[data-color="lunargreen"] ::-webkit-scrollbar-thumb {
-  background: #d63031;
-}
+
 [data-color="lunargreen"] .link-item:hover {
   background: rgba(214, 48, 49, 0.1);
 }
@@ -40089,9 +40050,7 @@ body.layout-mode-rtl .user-info {
   background: #6c5ce7;
   border-color: #6c5ce7;
 }
-[data-color="lavendar"] ::-webkit-scrollbar-thumb {
-  background: #6c5ce7;
-}
+
 [data-color="lavendar"] .link-item:hover {
   background: rgba(108, 92, 231, 0.1);
 }
@@ -40522,9 +40481,7 @@ body.layout-mode-rtl .user-info {
   background: #0984e3;
   border-color: #0984e3;
 }
-[data-color="magenta"] ::-webkit-scrollbar-thumb {
-  background: #0984e3;
-}
+
 [data-color="magenta"] .link-item:hover {
   background: rgba(9, 132, 227, 0.1);
 }
@@ -40955,9 +40912,7 @@ body.layout-mode-rtl .user-info {
   background: #00b894;
   border-color: #00b894;
 }
-[data-color="chromeyellow"] ::-webkit-scrollbar-thumb {
-  background: #00b894;
-}
+
 [data-color="chromeyellow"] .link-item:hover {
   background: rgba(0, 184, 148, 0.1);
 }
@@ -41388,9 +41343,7 @@ body.layout-mode-rtl .user-info {
   background: #e04f16;
   border-color: #e04f16;
 }
-[data-color="orange"] ::-webkit-scrollbar-thumb {
-  background: #e04f16;
-}
+
 [data-color="orange"] .link-item:hover {
   background: rgba(224, 79, 22, 0.1);
 }
@@ -41814,9 +41767,7 @@ body.layout-mode-rtl .user-info {
   background: var(--primary-rgb-picr);
   border-color: var(--primary-rgb-picr);
 }
-[data-color="all"] ::-webkit-scrollbar-thumb {
-  background: var(--primary-rgb-picr);
-}
+
 [data-color="all"] .link-item:hover {
   background: rgba(var(--primary-rgb-picr), 0.1);
 }
@@ -45567,8 +45518,8 @@ body.layout-mode-rtl .user-info {
   -ms-transition: ease all 0.5s;
 }
 .main-chat-blk .sidebar .user-list li a:hover {
-  background-color: rgba(254, 159, 67, 0.08);
-  border: 1px solid rgba(254, 159, 67, 0.08);
+  background-color: rgba(227, 30, 36, 0.08);
+  border: 1px solid rgba(227, 30, 36, 0.08);
   transition: ease all 0.5s;
   -webkit-transition: ease all 0.5s;
   -ms-transition: ease all 0.5s;
@@ -50905,7 +50856,7 @@ span.badge.badges-warning {
   top: 2px;
   right: 5px;
   content: "\f054";
-  font-family: "Font Awesome 5 Free";
+  font-family: "Lato";
   font-style: normal;
   font-weight: 900;
   font-size: 10px;
@@ -50913,7 +50864,7 @@ span.badge.badges-warning {
 }
 .owl-product .owl-nav button.owl-prev span:before {
   content: "\f053";
-  font-family: "Font Awesome 5 Free";
+  font-family: "Lato";
   font-style: normal;
   font-weight: 900;
   font-size: 10px;
@@ -55974,7 +55925,7 @@ textarea {
   top: -8px;
   right: -8px;
   content: "\f058";
-  font-family: "Font Awesome 5 Free";
+  font-family: "Lato";
   font-weight: 900;
   color: #4ecd7e;
   width: 22px;
