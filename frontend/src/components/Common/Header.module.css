@@ -1,4 +1,3 @@
-/* Header.module.css */
 .mainHeader {
   display: flex;
   align-items: center;
@@ -8,6 +7,13 @@
 
 .mobileBtn {
   padding: 0 !important;
+  display: none; /* Hidden by default */
+}
+
+@media (max-width: 767px) {
+  .mobileBtn {
+    display: block; /* Show hamburger menu on mobile */
+  }
 }
 
 .mobileBtn .bar-icon {
@@ -92,7 +98,7 @@
 }
 
 .dropdownOverlay :global(.ant-dropdown-menu-item a:hover) {
-  color: #1890ff; /* AntD primary color */
+  color: #1890ff;
 }
 
 /* Disabled menu item */

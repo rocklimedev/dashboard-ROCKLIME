@@ -87,10 +87,19 @@ export const userApi = createApi({
       }),
       invalidatesTags: ["Users"],
     }),
+    updateProductFeatured: builder.mutation({
+      query: ({ productId, isFeatured }) => ({
+        url: `/products/${productId}/featured`,
+        method: "PATCH",
+        body: { isFeatured },
+      }),
+      invalidatesTags: ["Products"], // Refetch products after update
+    }),
   }),
 });
 
 export const {
+  useUpdateProductFeaturedMutation,
   useGetProfileQuery,
   useUpdateProfileMutation,
   useGetAllUsersQuery,

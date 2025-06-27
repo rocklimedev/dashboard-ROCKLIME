@@ -391,3 +391,34 @@ exports.getAllProductCodes = async (req, res) => {
     });
   }
 };
+
+// Update isFeatured status of a product
+exports.updateProductFeatured = async (req, res) => {
+  const { productId } = req.params;
+  const { isFeatured } = req.body;
+
+  try {
+    // Validate input
+    if (typeof isFeatured !== "boolean") {
+      return res.status(400).json({ message: "isFeatured must be a boolean" });
+    }
+
+    // Find the product
+    const product = await Product.findOne({ where: { productId } });
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    // Update isFeatured
+    product.isFeatured = isFeatured;
+    await product.save();
+
+    return res.status(200).json({
+      message: "Product featured status updated successfully",
+      product,
+    });
+  } catch (error) {
+    console.error("Error updating product featured status:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};

@@ -1,26 +1,31 @@
-.card {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  padding: 20px;
+/* Container for the profile page */
+
+/* Main content container */
+.content.container {
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-.card-header {
-  border-bottom: 2px solid #007bff;
-  padding-bottom: 10px;
-  margin-bottom: 20px;
+/* Profile header */
+.profile-header {
+  margin-bottom: 24px;
+  text-align: center;
 }
 
-.card-header h4 {
-  margin: 0;
+.profile-title {
+  font-size: 28px;
+  font-weight: 700;
   color: #333;
+  margin-bottom: 8px;
 }
 
-.profile-body h5 {
-  font-size: 18px;
-  font-weight: bold;
-  color: #007bff;
-  margin-bottom: 15px;
+/* Profile card */
+.profile-card {
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+  background: #fff;
+  text-align: center;
 }
 
 .profile-pic-upload {
@@ -35,66 +40,258 @@
   border-radius: 50%;
   overflow: hidden;
   border: 3px solid #007bff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
 }
 
-.profile-pic img {
+.profile-pic .ant-avatar {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
+.change-avatar-btn {
+  margin-top: 10px;
+  color: #007bff;
+  font-weight: 500;
 }
 
-.col-lg-6 {
-  width: 48%;
+.change-avatar-btn:hover {
+  color: #0056b3;
 }
 
-@media (max-width: 768px) {
-  .col-lg-6 {
-    width: 100%;
-  }
+.profile-info {
+  margin-top: 16px;
 }
 
-.mb-3 {
-  margin-bottom: 15px;
+.profile-info .ant-typography {
+  margin-bottom: 8px;
+}
+
+.profile-role .ant-badge-count {
+  background: #52c41a;
+  color: #fff;
+  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: 12px;
+}
+
+.profile-status,
+.profile-dates {
+  display: block;
+  color: #595959;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.profile-actions {
+  margin-top: 16px;
+}
+
+/* Profile details card */
+.profile-details-card {
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  background: #fff;
+}
+
+/* Tabs */
+.profile-tabs .ant-tabs-nav {
+  padding: 0 24px;
+  border-bottom: 2px solid #007bff;
+  background: #fff;
+}
+
+.profile-tabs .ant-tabs-tab {
+  font-weight: 500;
+  color: #333;
+  padding: 12px 16px;
+  font-size: 16px;
+}
+
+.profile-tabs .ant-tabs-tab:hover,
+.profile-tabs .ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #007bff;
+}
+
+.profile-tabs .ant-tabs-ink-bar {
+  background: #007bff;
+}
+
+/* Form and static display */
+.profile-body {
+  padding: 24px;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #007bff;
+  margin-bottom: 16px;
+}
+
+.info-section {
+  background: #fafafa;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
 }
 
 .form-label {
-  font-weight: bold;
-  color: #555;
-}
-
-.form-control {
-  border: 1px solid #ddd;
-  padding: 8px;
-  border-radius: 4px;
-  width: 100%;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+  display: block;
 }
 
 .form-control-static {
   background: #f8f9fa;
-  padding: 8px 12px;
+  padding: 10px 12px;
   border-radius: 4px;
   border: 1px solid #ddd;
+  font-size: 14px;
+  color: #333;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
 }
 
+.profile-form .ant-form-item-label > label {
+  font-weight: 600;
+  color: #333;
+}
+
+.profile-form .ant-input,
+.profile-form .ant-select-selector,
+.profile-form .ant-picker {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 10px;
+  font-size: 14px;
+  height: 40px;
+}
+
+.profile-form .ant-input:focus,
+.profile-form .ant-select-selector:focus,
+.profile-form .ant-picker:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+}
+
+.form-actions {
+  margin-top: 16px;
+}
+
+/* Buttons */
 .btn {
-  padding: 10px 15px;
-  border-radius: 5px;
-  font-weight: bold;
-  transition: 0.3s ease;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.3s ease;
 }
 
-.btn-success {
-  background: #28a745;
+.btn-primary {
+  background: #007bff;
   color: #fff;
+  border: none;
+}
+
+.btn-primary:hover {
+  background: #0056b3;
+  transform: translateY(-1px);
 }
 
 .btn-secondary {
   background: #6c757d;
   color: #fff;
+  border: none;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
+  transform: translateY(-1px);
+}
+
+/* Table */
+.profile-table.ant-table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.profile-table .ant-table-thead > tr > th {
+  background: #f8f9fa;
+  color: #333;
+  font-weight: 600;
+  border-bottom: 2px solid #007bff;
+  padding: 12px;
+}
+
+.profile-table .ant-table-tbody > tr > td {
+  padding: 12px;
+  font-size: 14px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .page-wrapper {
+    padding: 10px;
+  }
+
+  .profile-header {
+    text-align: left;
+  }
+
+  .profile-title {
+    font-size: 24px;
+  }
+
+  .profile-tabs .ant-tabs-nav {
+    padding: 0 10px;
+  }
+
+  .profile-tabs .ant-tabs-tab {
+    font-size: 14px;
+    padding: 8px 12px;
+  }
+
+  .profile-pic {
+    width: 100px;
+    height: 100px;
+  }
+
+  .profile-card,
+  .profile-details-card {
+    padding: 16px;
+  }
+
+  .profile-body {
+    padding: 16px;
+  }
+
+  .section-title {
+    font-size: 16px;
+  }
+
+  .form-control-static,
+  .profile-form .ant-input,
+  .profile-form .ant-select-selector,
+  .profile-form .ant-picker {
+    font-size: 13px;
+    height: 36px;
+  }
+}
+
+@media (max-width: 576px) {
+  .profile-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .btn {
+    width: 100%;
+    text-align: center;
+  }
 }
