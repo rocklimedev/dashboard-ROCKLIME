@@ -20,6 +20,8 @@ import {
   SearchOutlined,
   MoreOutlined,
   FilterOutlined,
+  HeartOutlined,
+  HeartFilled,
 } from "@ant-design/icons";
 import {
   useGetAllProductsQuery,
@@ -28,6 +30,7 @@ import {
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import { useGetAllBrandsQuery } from "../../api/brandsApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
+import { useUpdateProductFeaturedMutation } from "../../api/userApi";
 import {
   useAddToCartMutation,
   useGetCartQuery,
@@ -43,6 +46,7 @@ import StockModal from "../Common/StockModal";
 import Cart from "./Cart";
 import "./productlist.css";
 import PageHeader from "../Common/PageHeader";
+import { useAddProductToCartMutation } from "../../api/cartApi";
 const { Option } = Select;
 
 const ProductsList = ({ isAdmin = false }) => {
@@ -52,8 +56,12 @@ const ProductsList = ({ isAdmin = false }) => {
   const { data: customersData } = useGetCustomersQuery();
   const { data: cartData } = useGetCartQuery();
   const { data: user, isLoading: userLoading } = useGetProfileQuery();
+  const [updateProductFeatured, { isLoading: isUpdatingFeatured }] =
+    useUpdateProductFeaturedMutation(); // Add mutation hook
+  // State for heart button loading
   const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
-  const [addToCart, { isLoading: isAddingToCart }] = useAddToCartMutation();
+  const [addProductToCart, { isLoading: mutationLoading }] =
+    useAddProductToCartMutation();
   const [removeFromCart] = useRemoveFromCartMutation();
   const navigate = useNavigate();
   const userId = user?.user?.userId;
@@ -94,6 +102,7 @@ const ProductsList = ({ isAdmin = false }) => {
   const [isHistoryModalVisible, setHistoryModalVisible] = useState(false);
   const [stockHistoryMap, setStockHistoryMap] = useState({});
   const [cartLoadingStates, setCartLoadingStates] = useState({});
+  const [featuredLoadingStates, setFeaturedLoadingStates] = useState({});
   const [form] = Form.useForm();
 
   const [filters, setFilters] = useState({
@@ -215,29 +224,65 @@ const ProductsList = ({ isAdmin = false }) => {
       setSelectedProduct(null);
     }
   };
+  const handleToggleFeatured = async (product) => {
+    if (!userId) {
+      toast.error("User not logged in!");
+      return;
+    }
 
+    const productId = product.productId;
+    if (!productId) {
+      toast.error("Invalid product ID");
+      return;
+    }
+
+    const newIsFeatured = !product.isFeatured; // Toggle the isFeatured state
+
+    setFeaturedLoadingStates((prev) => ({ ...prev, [productId]: true }));
+
+    try {
+      await updateProductFeatured({
+        productId,
+        isFeatured: newIsFeatured,
+      }).unwrap();
+      toast.success(
+        newIsFeatured
+          ? `${product.name} marked as featured!`
+          : `${product.name} unmarked as featured!`
+      );
+    } catch (error) {
+      toast.error(
+        `Failed to update featured status: ${
+          error.data?.message || "Unknown error"
+        }`
+      );
+    } finally {
+      setFeaturedLoadingStates((prev) => ({ ...prev, [productId]: false }));
+    }
+  };
   const handleAddToCart = async (product) => {
     if (!userId) {
       toast.error("User not logged in!");
       return;
     }
-    setCartLoadingStates((prev) => ({ ...prev, [product.productId]: true }));
+
+    const productId = product.productId;
+    if (!productId) {
+      toast.error("Invalid product ID");
+      return;
+    }
+
+    setCartLoadingStates((prev) => ({ ...prev, [productId]: true }));
+
     try {
-      await addToCart({
-        userId,
-        productId: product.productId,
-        quantity: 1,
-      }).unwrap();
+      const response = await addProductToCart({ userId, productId }).unwrap();
       toast.success(`${product.name} added to cart!`);
     } catch (error) {
-      toast.error(
-        `Failed to add to cart: ${error.data?.message || "Unknown error"}`
-      );
+      toast.error(`Error: ${error.data?.message || "Unknown error"}`);
     } finally {
-      setCartLoadingStates((prev) => ({ ...prev, [product.productId]: false }));
+      setCartLoadingStates((prev) => ({ ...prev, [productId]: false }));
     }
   };
-
   const handleRemoveFromCart = async (productId) => {
     try {
       await removeFromCart({ userId, productId }).unwrap();
@@ -341,7 +386,7 @@ const ProductsList = ({ isAdmin = false }) => {
         <PageHeader
           title="Shop Products"
           subtitle="Explore our latest collection"
-          onAdd={isAdmin ? handleAddProduct : null}
+          onAdd={handleAddProduct}
           extra={
             <Button
               style={{ color: "#c72c41" }}
@@ -443,18 +488,35 @@ const ProductsList = ({ isAdmin = false }) => {
                     hoverable
                     className="ecommerce-product-card"
                     cover={
-                      <div className="product-image-wrapper">
-                        <img
-                          src={product?.images?.[0] || pos}
-                          alt={product.name || "Product"}
-                          className="product-image"
-                        />
-                        {product.quantity <= 0 && (
-                          <Badge
-                            count="Out of Stock"
-                            className="out-of-stock-badge"
+                      <div className="product-image-container">
+                        <div className="product-image-wrapper">
+                          <img
+                            src={product?.images?.[0] || pos}
+                            alt={product.name || "Product"}
+                            className="product-image"
                           />
-                        )}
+                          <Button
+                            type="text"
+                            icon={
+                              featuredLoadingStates[product.productId] ? (
+                                <Spin size="small" />
+                              ) : product.isFeatured ? (
+                                <HeartFilled style={{ color: "#ff4d4f" }} />
+                              ) : (
+                                <HeartOutlined style={{ color: "#ff4d4f" }} />
+                              )
+                            }
+                            onClick={() => handleToggleFeatured(product)}
+                            className="heart-button"
+                            disabled={featuredLoadingStates[product.productId]}
+                          />
+                          {product.quantity <= 0 && (
+                            <Badge
+                              count="Out of Stock"
+                              className="out-of-stock-badge"
+                            />
+                          )}
+                        </div>
                       </div>
                     }
                   >
@@ -484,35 +546,39 @@ const ProductsList = ({ isAdmin = false }) => {
                       }
                     />
                     <div className="product-actions">
-                      <Button
-                        style={{ color: "#c72c41" }}
-                        icon={
-                          cartLoadingStates[product.productId] ? (
-                            <Spin size="small" />
-                          ) : (
-                            <ShoppingCartOutlined />
-                          )
-                        }
-                        onClick={() => handleAddToCart(product)}
-                        disabled={
-                          cartLoadingStates[product.productId] ||
-                          product.quantity <= 0
-                        }
-                        block
-                        size="large"
+                      <Tooltip
+                        title={product.quantity <= 0 ? "Out of stock" : ""}
                       >
-                        {product.quantity <= 0 ? "Out of Stock" : "Add to Cart"}
-                      </Button>
-                      {isAdmin && (
-                        <Dropdown overlay={menu(product)} trigger={["click"]}>
-                          <Button
-                            type="text"
-                            icon={<MoreOutlined />}
-                            size="large"
-                            className="more-options-btn"
-                          />
-                        </Dropdown>
-                      )}
+                        <Button
+                          style={{ color: "#c72c41" }}
+                          icon={
+                            cartLoadingStates[product.productId] ? (
+                              <Spin size="small" />
+                            ) : (
+                              <ShoppingCartOutlined />
+                            )
+                          }
+                          onClick={() => handleAddToCart(product)}
+                          disabled={
+                            cartLoadingStates[product.productId] ||
+                            (product.quantity ?? 0) <= 0
+                          }
+                          block
+                          size="large"
+                        >
+                          {product.quantity <= 0
+                            ? "Out of Stock"
+                            : "Add to Cart"}
+                        </Button>
+                      </Tooltip>
+                      <Dropdown overlay={menu(product)} trigger={["click"]}>
+                        <Button
+                          type="text"
+                          icon={<MoreOutlined />}
+                          size="large"
+                          className="more-options-btn"
+                        />
+                      </Dropdown>
                     </div>
                   </Card>
                 </Col>

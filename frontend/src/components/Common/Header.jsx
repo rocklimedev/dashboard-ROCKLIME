@@ -79,11 +79,6 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     <div className="header pos-header">
       <div className={styles.mainHeader}>
         {/* Logo Section */}
-        <div className="header-left">
-          <Link to="/" className="logo">
-            <img src={logo} alt="Logo" className="img-fluid" />
-          </Link>
-        </div>
 
         {/* Mobile Menu Button */}
         <Button

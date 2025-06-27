@@ -1,0 +1,113 @@
+/* Container for the entire pagination section */
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  margin-top: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  font-size: 14px;
+  color: #595959; /* Ant Design's default text color */
+}
+
+/* Info text (e.g., "Showing 1 to 20 of 100 results") */
+.pagination-info {
+  flex: 1;
+  font-size: 14px;
+  color: #595959;
+}
+
+/* Container for pagination buttons */
+.pagination-buttons {
+  display: flex;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  gap: 8px; /* Space between buttons */
+}
+
+/* Individual page item */
+.page-item {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Page link (button) */
+.page-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #d9d9d9; /* Ant Design border color */
+  border-radius: 4px;
+  background: #fff;
+  color: #595959;
+  font-size: 14px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+/* Hover effect for page links */
+.page-link:hover {
+  border-color: #1890ff; /* Ant Design primary color */
+  color: #1890ff;
+  background: #e6f7ff; /* Light blue background on hover */
+}
+
+/* Active page */
+.page-item.active .page-link {
+  border-color: #1890ff;
+  background: #1890ff;
+  color: #fff;
+  font-weight: 500;
+}
+
+/* Disabled state (e.g., for Previous/Next when on first/last page) */
+.page-item.disabled .page-link {
+  border-color: #d9d9d9;
+  background: #f5f5f5;
+  color: #bfbfbf;
+  cursor: not-allowed;
+}
+
+/* Previous and Next buttons */
+.previous-link,
+.next-link {
+  font-size: 16px; /* Slightly larger for arrows */
+}
+
+/* Break label (e.g., "...") */
+.break-link {
+  border: none;
+  background: none;
+  color: #595959;
+  cursor: default;
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+  .pagination {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .pagination-info {
+    text-align: center;
+    width: 100%;
+  }
+
+  .pagination-buttons {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .page-link {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+}

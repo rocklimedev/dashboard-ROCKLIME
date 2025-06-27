@@ -115,5 +115,5 @@ router.get(
 // ✅ Unique Route for Product Codes
 // This will ensure that it is not mistaken for a product ID route
 router.get("/search/get-product-codes", productController.getAllProductCodes);
-
+router.patch("/:productId/featured", productController.updateProductFeatured);
 module.exports = router;

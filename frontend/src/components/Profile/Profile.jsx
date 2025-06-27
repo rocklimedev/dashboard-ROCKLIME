@@ -12,9 +12,12 @@ import {
   Alert,
   Table,
   Badge,
-  Collapse,
   Space,
   Typography,
+  DatePicker,
+  TimePicker,
+  Select,
+  Upload,
 } from "antd";
 import {
   UserOutlined,
@@ -24,6 +27,7 @@ import {
   ShoppingCartOutlined,
   TeamOutlined,
   FileDoneOutlined,
+  UploadOutlined,
 } from "@ant-design/icons";
 import {
   useGetProfileQuery,
@@ -31,17 +35,17 @@ import {
 } from "../../api/userApi";
 import { useGetRolesQuery } from "../../api/rolesApi";
 import { useForgotPasswordMutation } from "../../api/authApi";
-import { toast } from "sonner";
-import Avatar from "react-avatar";
 import { useGetQuotationByIdQuery } from "../../api/quotationApi";
 import { useGetInvoicesByCustomerIdQuery } from "../../api/customerApi";
 import { useGetTeamByIdQuery } from "../../api/teamApi";
 import { useGetInvoiceByIdQuery } from "../../api/invoiceApi";
-// Placeholder API hooks (replace with actual implementations)
+import moment from "moment";
+import { toast } from "sonner";
+import "./profile.css";
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
-const { Panel } = Collapse;
+const { Option } = Select;
 
 const Profile = () => {
   const {
@@ -58,7 +62,6 @@ const Profile = () => {
   const [forgotPassword, { isLoading: isResetting }] =
     useForgotPasswordMutation();
 
-  // Placeholder queries for new data
   const {
     data: quotationsData,
     isLoading: isQuotationsLoading,
@@ -90,8 +93,7 @@ const Profile = () => {
 
   const [isEditing, setIsEditing] = useState(false);
   const [form] = Form.useForm();
-  const [avatarUrl, setAvatarUrl] = useState("");
-  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(null);
 
   // Debug token
   useEffect(() => {
@@ -112,24 +114,30 @@ const Profile = () => {
         name: user.name || "",
         email: user.email || "",
         mobileNumber: user.mobileNumber || "",
+        dateOfBirth: user.dateOfBirth ? moment(user.dateOfBirth) : null,
+        shiftFrom: user.shiftFrom ? moment(user.shiftFrom, "HH:mm:ss") : null,
+        shiftTo: user.shiftTo ? moment(user.shiftTo, "HH:mm:ss") : null,
+        bloodGroup: user.bloodGroup || null,
+        emergencyNumber: user.emergencyNumber || "",
         street: user.address?.street || "",
         city: user.address?.city || "",
         state: user.address?.state || "",
         postalCode: user.address?.postalCode || "",
         country: user.address?.country || "",
       });
-      const savedAvatar = localStorage.getItem(`avatar_${user.userId}`);
-      setAvatarUrl(savedAvatar || user.name || user.email);
+      setAvatarUrl(user.avatarUrl || null);
     }
   }, [profile, form]);
 
-  // Handle avatar selection
-  const handleAvatarSelect = (avatar) => {
-    setAvatarUrl(avatar);
-    if (profile?.user?.userId) {
-      localStorage.setItem(`avatar_${profile.user.userId}`, avatar);
+  // Handle avatar upload
+  const handleAvatarUpload = ({ file }) => {
+    if (file.status === "done") {
+      setAvatarUrl(file.response.url);
+      localStorage.setItem(`avatar_${profile.user.userId}`, file.response.url);
+      toast.success("Avatar uploaded successfully!");
+    } else if (file.status === "error") {
+      toast.error("Failed to upload avatar.");
     }
-    setShowAvatarPicker(false);
   };
 
   // Handle forgot password
@@ -156,6 +164,17 @@ const Profile = () => {
       name: values.name,
       email: values.email,
       mobileNumber: values.mobileNumber,
+      dateOfBirth: values.dateOfBirth
+        ? moment(values.dateOfBirth).format("YYYY-MM-DD")
+        : null,
+      shiftFrom: values.shiftFrom
+        ? moment(values.shiftFrom).format("HH:mm:ss")
+        : null,
+      shiftTo: values.shiftTo
+        ? moment(values.shiftTo).format("HH:mm:ss")
+        : null,
+      bloodGroup: values.bloodGroup || null,
+      emergencyNumber: values.emergencyNumber || null,
       address: {
         street: values.street || "",
         city: values.city || "",
@@ -163,21 +182,13 @@ const Profile = () => {
         postalCode: values.postalCode || "",
         country: values.country || "",
       },
+      avatarUrl: avatarUrl || null,
     };
 
     try {
       await updateProfile(updatedData).unwrap();
       toast.success("Profile updated successfully!");
       setIsEditing(false);
-      if (values.name !== profile.user.name) {
-        const savedAvatar = localStorage.getItem(
-          `avatar_${profile.user.userId}`
-        );
-        if (!savedAvatar) {
-          setAvatarUrl(values.name);
-          localStorage.setItem(`avatar_${profile.user.userId}`, values.name);
-        }
-      }
     } catch (error) {
       toast.error(
         `Failed to update profile: ${error.data?.message || "Unknown error"}`
@@ -185,7 +196,7 @@ const Profile = () => {
     }
   };
 
-  // Table columns for quotations, invoices, teams, and orders
+  // Table columns
   const quotationColumns = [
     { title: "Quotation ID", dataIndex: "quotationId", key: "quotationId" },
     { title: "Customer", dataIndex: "customerName", key: "customerName" },
@@ -277,250 +288,470 @@ const Profile = () => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        <Row gutter={[16, 16]}>
+        <Row gutter={[24, 24]}>
           {/* Profile Card */}
           <Col xs={24} lg={8}>
-            <Card
-              style={{
-                borderRadius: 8,
-                boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-              }}
-              bodyStyle={{ padding: 24 }}
-            >
-              <Space
-                direction="vertical"
-                size="large"
-                style={{ width: "100%", textAlign: "center" }}
-              >
-                <AntAvatar
-                  icon={<UserOutlined />}
-                  size={100}
-                  src={avatarUrl}
-                  style={{ backgroundColor: "#1890ff" }}
-                />
-                {isEditing && (
+            <Card className="profile-card">
+              <div className="profile-pic-upload">
+                <div className="profile-pic">
+                  <AntAvatar
+                    icon={<UserOutlined />}
+                    size={120}
+                    src={avatarUrl}
+                    style={{ backgroundColor: "#1890ff" }}
+                  />
+                </div>
+              </div>
+              {isEditing && (
+                <Upload
+                  name="avatar"
+                  action="/api/upload/avatar" // Replace with your backend upload endpoint
+                  showUploadList={false}
+                  onChange={handleAvatarUpload}
+                >
                   <Button
                     type="link"
-                    onClick={() => setShowAvatarPicker(!showAvatarPicker)}
+                    icon={<UploadOutlined />}
+                    className="change-avatar-btn"
                   >
                     Change Avatar
                   </Button>
-                )}
-                {isEditing && showAvatarPicker && (
-                  <Space wrap>
-                    {[
-                      "User",
-                      user.name,
-                      user.email,
-                      "John Doe",
-                      "Jane Smith",
-                    ].map((option, index) => (
-                      <AntAvatar
-                        key={index}
-                        size={40}
-                        style={{ cursor: "pointer" }}
-                        onClick={() => handleAvatarSelect(option)}
-                      >
-                        {option}
-                      </AntAvatar>
-                    ))}
-                  </Space>
-                )}
+                </Upload>
+              )}
+              <div className="profile-info text-center">
                 <Title level={4}>{user.name}</Title>
                 <Text type="secondary">{user.email}</Text>
-                <Badge
-                  count={roleName}
-                  style={{ backgroundColor: "#52c41a" }}
-                />
-                <Text>Status: {user.status || "N/A"}</Text>
-                {!isEditing && (
-                  <Space>
-                    <Button
-                      type="primary"
-                      icon={<EditOutlined />}
-                      onClick={() => setIsEditing(true)}
-                    >
-                      Edit Profile
-                    </Button>
-                    <Button
-                      icon={<LockOutlined />}
-                      onClick={handleForgotPassword}
-                      loading={isResetting}
-                    >
-                      Reset Password
-                    </Button>
-                  </Space>
-                )}
-              </Space>
+                <div className="profile-role">
+                  <Badge count={roleName} className="role-badge" />
+                </div>
+                <Text className="profile-status">
+                  Status: {user.status || "Active"}
+                </Text>
+                <Text className="profile-dates">
+                  Joined: {moment(user.createdAt).format("DD MMM YYYY")}
+                </Text>
+                <Space className="profile-actions">
+                  <Button
+                    type="primary"
+                    icon={<EditOutlined />}
+                    onClick={() => setIsEditing(true)}
+                    className="btn btn-primary"
+                    disabled={isEditing}
+                  >
+                    Edit Profile
+                  </Button>
+                  <Button
+                    icon={<LockOutlined />}
+                    onClick={handleForgotPassword}
+                    loading={isResetting}
+                    className="btn btn-secondary"
+                  >
+                    Reset Password
+                  </Button>
+                </Space>
+              </div>
             </Card>
           </Col>
 
           {/* Profile Details and Tabs */}
           <Col xs={24} lg={16}>
-            <Card
-              style={{
-                borderRadius: 8,
-                boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-              }}
-              bodyStyle={{ padding: 0 }}
-            >
-              <Tabs defaultActiveKey="1" style={{ padding: 24 }}>
-                {/* Profile Information */}
-                <TabPane tab="Profile" key="1">
+            <Card className="profile-details-card">
+              <Tabs defaultActiveKey="1" className="profile-tabs">
+                <TabPane
+                  tab={
+                    <span>
+                      <UserOutlined /> Profile
+                    </span>
+                  }
+                  key="1"
+                >
                   {isEditing ? (
                     <Form
                       form={form}
                       layout="vertical"
                       onFinish={handleSave}
-                      style={{ padding: 16 }}
+                      className="profile-form"
                     >
-                      <Row gutter={[16, 16]}>
-                        <Col xs={24} sm={12}>
-                          <Form.Item
-                            label="Username"
-                            name="username"
-                            rules={[
-                              {
-                                required: true,
-                                message: "Username is required",
-                              },
-                            ]}
-                          >
-                            <Input />
-                          </Form.Item>
-                        </Col>
-                        <Col xs={24} sm={12}>
-                          <Form.Item
-                            label="Name"
-                            name="name"
-                            rules={[
-                              { required: true, message: "Name is required" },
-                            ]}
-                          >
-                            <Input />
-                          </Form.Item>
-                        </Col>
-                        <Col xs={24} sm={12}>
-                          <Form.Item
-                            label="Email"
-                            name="email"
-                            rules={[
-                              { required: true, message: "Email is required" },
-                              {
-                                type: "email",
-                                message: "Invalid email format",
-                              },
-                            ]}
-                          >
-                            <Input />
-                          </Form.Item>
-                        </Col>
-                        <Col xs={24} sm={12}>
-                          <Form.Item
-                            label="Phone Number"
-                            name="mobileNumber"
-                            rules={[
-                              {
-                                required: true,
-                                message: "Phone number is required",
-                              },
-                              {
-                                pattern: /^[0-9]{10}$/,
-                                message: "Invalid phone number",
-                              },
-                            ]}
-                          >
-                            <Input />
-                          </Form.Item>
-                        </Col>
-                        <Col xs={24}>
-                          <Title level={5}>Address Information</Title>
-                        </Col>
-                        <Col xs={24} sm={12}>
-                          <Form.Item label="Street" name="street">
-                            <Input />
-                          </Form.Item>
-                        </Col>
-                        <Col xs={24} sm={12}>
-                          <Form.Item label="City" name="city">
-                            <Input />
-                          </Form.Item>
-                        </Col>
-                        <Col xs={24} sm={12}>
-                          <Form.Item label="State" name="state">
-                            <Input />
-                          </Form.Item>
-                        </Col>
-                        <Col xs={24} sm={12}>
-                          <Form.Item label="Postal Code" name="postalCode">
-                            <Input />
-                          </Form.Item>
-                        </Col>
-                        <Col xs={24} sm={12}>
-                          <Form.Item label="Country" name="country">
-                            <Input />
-                          </Form.Item>
-                        </Col>
-                        <Col xs={24}>
-                          <Space>
-                            <Button
-                              type="primary"
-                              htmlType="submit"
-                              loading={isUpdating}
+                      <div className="profile-body">
+                        <Title level={5} className="section-title">
+                          Personal Information
+                        </Title>
+                        <Row gutter={[16, 16]}>
+                          <Col xs={24} sm={12}>
+                            <Form.Item
+                              label={
+                                <span className="form-label">Username</span>
+                              }
+                              name="username"
+                              rules={[
+                                {
+                                  required: true,
+                                  message: "Username is required",
+                                },
+                                {
+                                  max: 50,
+                                  message:
+                                    "Username cannot exceed 50 characters",
+                                },
+                              ]}
                             >
-                              Save
-                            </Button>
-                            <Button onClick={() => setIsEditing(false)}>
-                              Cancel
-                            </Button>
-                          </Space>
-                        </Col>
-                      </Row>
+                              <Input className="form-control" />
+                            </Form.Item>
+                          </Col>
+                          <Col xs={24} sm={12}>
+                            <Form.Item
+                              label={<span className="form-label">Name</span>}
+                              name="name"
+                              rules={[
+                                { required: true, message: "Name is required" },
+                                {
+                                  max: 100,
+                                  message: "Name cannot exceed 100 characters",
+                                },
+                              ]}
+                            >
+                              <Input className="form-control" />
+                            </Form.Item>
+                          </Col>
+                          <Col xs={24} sm={12}>
+                            <Form.Item
+                              label={<span className="form-label">Email</span>}
+                              name="email"
+                              rules={[
+                                {
+                                  required: true,
+                                  message: "Email is required",
+                                },
+                                {
+                                  type: "email",
+                                  message: "Invalid email format",
+                                },
+                                {
+                                  max: 100,
+                                  message: "Email cannot exceed 100 characters",
+                                },
+                              ]}
+                            >
+                              <Input className="form-control" />
+                            </Form.Item>
+                          </Col>
+                          <Col xs={24} sm={12}>
+                            <Form.Item
+                              label={
+                                <span className="form-label">Phone Number</span>
+                              }
+                              name="mobileNumber"
+                              rules={[
+                                {
+                                  pattern: /^[0-9]{10}$/,
+                                  message: "Phone number must be 10 digits",
+                                },
+                              ]}
+                            >
+                              <Input className="form-control" />
+                            </Form.Item>
+                          </Col>
+                          <Col xs={24} sm={12}>
+                            <Form.Item
+                              label={
+                                <span className="form-label">
+                                  Date of Birth
+                                </span>
+                              }
+                              name="dateOfBirth"
+                            >
+                              <DatePicker
+                                className="form-control"
+                                style={{ width: "100%" }}
+                              />
+                            </Form.Item>
+                          </Col>
+                          <Col xs={24} sm={12}>
+                            <Form.Item
+                              label={
+                                <span className="form-label">Blood Group</span>
+                              }
+                              name="bloodGroup"
+                            >
+                              <Select
+                                allowClear
+                                placeholder="Select blood group"
+                                className="form-control"
+                              >
+                                {[
+                                  "A+",
+                                  "A-",
+                                  "B+",
+                                  "B-",
+                                  "AB+",
+                                  "AB-",
+                                  "O+",
+                                  "O-",
+                                ].map((group) => (
+                                  <Option key={group} value={group}>
+                                    {group}
+                                  </Option>
+                                ))}
+                              </Select>
+                            </Form.Item>
+                          </Col>
+                          <Col xs={24} sm={12}>
+                            <Form.Item
+                              label={
+                                <span className="form-label">
+                                  Emergency Contact
+                                </span>
+                              }
+                              name="emergencyNumber"
+                              rules={[
+                                {
+                                  pattern: /^[0-9]{10}$/,
+                                  message: "Emergency number must be 10 digits",
+                                },
+                              ]}
+                            >
+                              <Input className="form-control" />
+                            </Form.Item>
+                          </Col>
+                          <Col xs={24}>
+                            <Title level={5} className="section-title">
+                              Work Information
+                            </Title>
+                          </Col>
+                          <Col xs={24} sm={12}>
+                            <Form.Item
+                              label={
+                                <span className="form-label">Shift Start</span>
+                              }
+                              name="shiftFrom"
+                            >
+                              <TimePicker
+                                format="HH:mm"
+                                className="form-control"
+                                style={{ width: "100%" }}
+                              />
+                            </Form.Item>
+                          </Col>
+                          <Col xs={24} sm={12}>
+                            <Form.Item
+                              label={
+                                <span className="form-label">Shift End</span>
+                              }
+                              name="shiftTo"
+                            >
+                              <TimePicker
+                                format="HH:mm"
+                                className="form-control"
+                                style={{ width: "100%" }}
+                              />
+                            </Form.Item>
+                          </Col>
+                          <Col xs={24}>
+                            <Title level={5} className="section-title">
+                              Address Information
+                            </Title>
+                          </Col>
+                          <Col xs={24} sm={12}>
+                            <Form.Item
+                              label={<span className="form-label">Street</span>}
+                              name="street"
+                            >
+                              <Input className="form-control" />
+                            </Form.Item>
+                          </Col>
+                          <Col xs={24} sm={12}>
+                            <Form.Item
+                              label={<span className="form-label">City</span>}
+                              name="city"
+                            >
+                              <Input className="form-control" />
+                            </Form.Item>
+                          </Col>
+                          <Col xs={24} sm={12}>
+                            <Form.Item
+                              label={<span className="form-label">State</span>}
+                              name="state"
+                            >
+                              <Input className="form-control" />
+                            </Form.Item>
+                          </Col>
+                          <Col xs={24} sm={12}>
+                            <Form.Item
+                              label={
+                                <span className="form-label">Postal Code</span>
+                              }
+                              name="postalCode"
+                            >
+                              <Input className="form-control" />
+                            </Form.Item>
+                          </Col>
+                          <Col xs={24} sm={12}>
+                            <Form.Item
+                              label={
+                                <span className="form-label">Country</span>
+                              }
+                              name="country"
+                            >
+                              <Input className="form-control" />
+                            </Form.Item>
+                          </Col>
+                          <Col xs={24}>
+                            <Space className="form-actions">
+                              <Button
+                                type="primary"
+                                htmlType="submit"
+                                loading={isUpdating}
+                                className="btn btn-success"
+                              >
+                                Save Changes
+                              </Button>
+                              <Button
+                                onClick={() => setIsEditing(false)}
+                                className="btn btn-secondary"
+                              >
+                                Cancel
+                              </Button>
+                            </Space>
+                          </Col>
+                        </Row>
+                      </div>
                     </Form>
                   ) : (
-                    <Row gutter={[16, 16]} style={{ padding: 16 }}>
-                      <Col xs={24} sm={12}>
-                        <Text strong>Username:</Text>{" "}
-                        <Text>{user.username}</Text>
-                      </Col>
-                      <Col xs={24} sm={12}>
-                        <Text strong>Name:</Text> <Text>{user.name}</Text>
-                      </Col>
-                      <Col xs={24} sm={12}>
-                        <Text strong>Email:</Text> <Text>{user.email}</Text>
-                      </Col>
-                      <Col xs={24} sm={12}>
-                        <Text strong>Phone:</Text>{" "}
-                        <Text>{user.mobileNumber || "N/A"}</Text>
-                      </Col>
-                      <Col xs={24}>
-                        <Title level={5}>Address Information</Title>
-                      </Col>
-                      <Col xs={24} sm={12}>
-                        <Text strong>Street:</Text>{" "}
-                        <Text>{user.address?.street || "N/A"}</Text>
-                      </Col>
-                      <Col xs={24} sm={12}>
-                        <Text strong>City:</Text>{" "}
-                        <Text>{user.address?.city || "N/A"}</Text>
-                      </Col>
-                      <Col xs={24} sm={12}>
-                        <Text strong>State:</Text>{" "}
-                        <Text>{user.address?.state || "N/A"}</Text>
-                      </Col>
-                      <Col xs={24} sm={12}>
-                        <Text strong>Postal Code:</Text>{" "}
-                        <Text>{user.address?.postalCode || "N/A"}</Text>
-                      </Col>
-                      <Col xs={24} sm={12}>
-                        <Text strong>Country:</Text>{" "}
-                        <Text>{user.address?.country || "N/A"}</Text>
-                      </Col>
-                    </Row>
+                    <div className="profile-body">
+                      <Title level={5} className="section-title">
+                        Personal Information
+                      </Title>
+                      <Row gutter={[16, 16]} className="info-section">
+                        <Col xs={24} sm={12}>
+                          <Text strong className="form-label">
+                            Username:
+                          </Text>
+                          <div className="form-control-static">
+                            {user.username}
+                          </div>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <Text strong className="form-label">
+                            Name:
+                          </Text>
+                          <div className="form-control-static">{user.name}</div>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <Text strong className="form-label">
+                            Email:
+                          </Text>
+                          <div className="form-control-static">
+                            {user.email}
+                          </div>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <Text strong className="form-label">
+                            Phone:
+                          </Text>
+                          <div className="form-control-static">
+                            {user.mobileNumber || "N/A"}
+                          </div>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <Text strong className="form-label">
+                            Date of Birth:
+                          </Text>
+                          <div className="form-control-static">
+                            {user.dateOfBirth
+                              ? moment(user.dateOfBirth).format("DD MMM YYYY")
+                              : "N/A"}
+                          </div>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <Text strong className="form-label">
+                            Blood Group:
+                          </Text>
+                          <div className="form-control-static">
+                            {user.bloodGroup || "N/A"}
+                          </div>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <Text strong className="form-label">
+                            Emergency Contact:
+                          </Text>
+                          <div className="form-control-static">
+                            {user.emergencyNumber || "N/A"}
+                          </div>
+                        </Col>
+                      </Row>
+                      <Title level={5} className="section-title">
+                        Work Information
+                      </Title>
+                      <Row gutter={[16, 16]} className="info-section">
+                        <Col xs={24} sm={12}>
+                          <Text strong className="form-label">
+                            Roles:
+                          </Text>
+                          <div className="form-control-static">{roleName}</div>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <Text strong className="form-label">
+                            Shift:
+                          </Text>
+                          <div className="form-control-static">
+                            {user.shiftFrom && user.shiftTo
+                              ? `${moment(user.shiftFrom, "HH:mm:ss").format(
+                                  "HH:mm"
+                                )} - ${moment(user.shiftTo, "HH:mm:ss").format(
+                                  "HH:mm"
+                                )}`
+                              : "N/A"}
+                          </div>
+                        </Col>
+                      </Row>
+                      <Title level={5} className="section-title">
+                        Address Information
+                      </Title>
+                      <Row gutter={[16, 16]} className="info-section">
+                        <Col xs={24} sm={12}>
+                          <Text strong className="form-label">
+                            Street:
+                          </Text>
+                          <div className="form-control-static">
+                            {user.address?.street || "N/A"}
+                          </div>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <Text strong className="form-label">
+                            City:
+                          </Text>
+                          <div className="form-control-static">
+                            {user.address?.city || "N/A"}
+                          </div>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <Text strong className="form-label">
+                            State:
+                          </Text>
+                          <div className="form-control-static">
+                            {user.address?.state || "N/A"}
+                          </div>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <Text strong className="form-label">
+                            Postal Code:
+                          </Text>
+                          <div className="form-control-static">
+                            {user.address?.postalCode || "N/A"}
+                          </div>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <Text strong className="form-label">
+                            Country:
+                          </Text>
+                          <div className="form-control-static">
+                            {user.address?.country || "N/A"}
+                          </div>
+                        </Col>
+                      </Row>
+                    </div>
                   )}
                 </TabPane>
-
-                {/* Quotations */}
                 <TabPane
                   tab={
                     <span>
@@ -543,11 +774,10 @@ const Profile = () => {
                       dataSource={quotationsData?.data || []}
                       rowKey="quotationId"
                       pagination={{ pageSize: 5 }}
+                      className="profile-table"
                     />
                   )}
                 </TabPane>
-
-                {/* Invoices */}
                 <TabPane
                   tab={
                     <span>
@@ -570,11 +800,10 @@ const Profile = () => {
                       dataSource={invoicesData?.data || []}
                       rowKey="invoiceId"
                       pagination={{ pageSize: 5 }}
+                      className="profile-table"
                     />
                   )}
                 </TabPane>
-
-                {/* Teams */}
                 <TabPane
                   tab={
                     <span>
@@ -597,11 +826,10 @@ const Profile = () => {
                       dataSource={teamsData?.data || []}
                       rowKey="teamId"
                       pagination={{ pageSize: 5 }}
+                      className="profile-table"
                     />
                   )}
                 </TabPane>
-
-                {/* Orders */}
                 <TabPane
                   tab={
                     <span>
@@ -624,6 +852,7 @@ const Profile = () => {
                       dataSource={ordersData?.data || []}
                       rowKey="orderId"
                       pagination={{ pageSize: 5 }}
+                      className="profile-table"
                     />
                   )}
                 </TabPane>
@@ -632,114 +861,8 @@ const Profile = () => {
           </Col>
         </Row>
       </div>
-
-      {/* Custom CSS */}
-      <style jsx>{`
-        .page-wrapper {
-          background: #f5f7fa;
-          min-height: 100vh;
-        }
-        .ant-card {
-          border-radius: 8px;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        }
-        .ant-tabs-nav {
-          padding: 0 24px;
-        }
-        .ant-tabs-tab {
-          font-weight: 500;
-        }
-        .ant-table {
-          border-radius: 8px;
-          overflow: hidden;
-        }
-      `}</style>
     </div>
   );
-};
-
-// Placeholder API hooks (replace with actual API endpoints)
-const placeholderApi = {
-  useGetUserQuotationsQuery: () => ({
-    data: {
-      data: [
-        {
-          quotationId: "Q001",
-          customerName: "John Doe",
-          amount: 5000,
-          status: "Pending",
-        },
-        {
-          quotationId: "Q002",
-          customerName: "Jane Smith",
-          amount: 7500,
-          status: "Approved",
-        },
-      ],
-    },
-    isLoading: false,
-    error: null,
-  }),
-  useGetUserInvoicesQuery: () => ({
-    data: {
-      data: [
-        {
-          invoiceId: "INV001",
-          customerName: "John Doe",
-          amount: 4500,
-          status: "Paid",
-        },
-        {
-          invoiceId: "INV002",
-          customerName: "Jane Smith",
-          amount: 6000,
-          status: "Unpaid",
-        },
-      ],
-    },
-    isLoading: false,
-    error: null,
-  }),
-  useGetUserTeamsQuery: () => ({
-    data: {
-      data: [
-        {
-          teamId: "T001",
-          teamName: "Sales Team",
-          role: "Manager",
-          memberCount: 5,
-        },
-        {
-          teamId: "T002",
-          teamName: "Support Team",
-          role: "Member",
-          memberCount: 8,
-        },
-      ],
-    },
-    isLoading: false,
-    error: null,
-  }),
-  useGetAssignedOrdersQuery: () => ({
-    data: {
-      data: [
-        {
-          orderId: "ORD001",
-          customerName: "John Doe",
-          totalAmount: 3000,
-          status: "Processing",
-        },
-        {
-          orderId: "ORD002",
-          customerName: "Jane Smith",
-          totalAmount: 4000,
-          status: "Delivered",
-        },
-      ],
-    },
-    isLoading: false,
-    error: null,
-  }),
 };
 
 export default Profile;

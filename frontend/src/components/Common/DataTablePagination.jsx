@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import ReactPaginate from "react-paginate";
-
+import "./pagination.css";
 const DataTablePagination = ({ totalItems, itemNo = 20, onPageChange }) => {
   const pageCount = Math.ceil(totalItems / itemNo);
   const [currentPage, setCurrentPage] = useState(0); // Zero-based index for react-paginate
