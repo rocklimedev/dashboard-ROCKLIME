@@ -8,7 +8,6 @@ import { BiFullscreen, BiLogOut } from "react-icons/bi";
 import { toast } from "sonner";
 import Avatar from "react-avatar";
 import SearchDropdown from "../Search/SearchDropdown";
-import CalculatorModal from "./Calculator";
 import { useLogoutMutation } from "../../api/authApi";
 import styles from "./Header.module.css";
 
@@ -148,9 +147,6 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
           </div>
         </div>
       </div>
-
-      {/* Calculator Modal */}
-      {showModal && <CalculatorModal onClose={() => setShowModal(false)} />}
     </div>
   );
 };

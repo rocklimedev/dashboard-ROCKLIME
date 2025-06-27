@@ -1,22 +1,8 @@
-import ForgotPassword from "../components/Auth/ForgotPassword";
-import Login from "../components/Auth/Login";
-import Signup from "../components/Auth/Signup";
-import CategoriesList from "../components/Categories/CategoriesList";
-import Error404 from "../components/Error/Error404";
-import PageWrapper from "../components/Home/PageWrapper";
-import ComapniesWrapper from "../components/Companies/ComapniesWrapper";
-import ProductList from "../components/Product/ProductList";
-import CustomerList from "../components/Customers/CustomerList";
-import CustomerDetails from "../components/Customers/CustomerDetails";
-import SignatureWrapper from "../components/Signature/SignatureWrapper";
-import { RiAdminLine } from "react-icons/ri";
-import { PiAddressBook, PiUserListBold } from "react-icons/pi";
-import { LiaFileInvoiceSolid, LiaFileSignatureSolid } from "react-icons/lia";
-import OrderWrapper from "../components/Orders/OrderWrapper";
+import { PiAddressBook, PiUserList } from "react-icons/pi";
+import { LiaFileSignatureSolid } from "react-icons/lia";
 import {
   MdOutlineBrandingWatermark,
   MdError,
-  MdBrandingWatermark,
   MdOutlineSettings,
 } from "react-icons/md";
 import { AiOutlineProduct } from "react-icons/ai";
@@ -24,39 +10,57 @@ import {
   BiAccessibility,
   BiCart,
   BiSearch,
-  BiSolidCategory,
-  BiUserCheck,
+  BiCategory,
+  BiUser,
 } from "react-icons/bi";
-import { FaFileCircleCheck, FaFirstOrder, FaPooStorm } from "react-icons/fa6";
-import { FaRegFile, FaTeamspeak, FaFileInvoice, FaQuora } from "react-icons/fa";
+import { FaFileCircleCheck } from "react-icons/fa6";
+import { FaPhone } from "react-icons/fa";
 import { CgProfile } from "react-icons/cg";
 import { IoLogOut, IoLogIn } from "react-icons/io5";
+import { GiSuitcase } from "react-icons/gi";
+import { MdOutlinePerson } from "react-icons/md";
+import { RiDashboardLine } from "react-icons/ri";
+import {
+  MdOutlineInventory2,
+  MdOutlineDiscount,
+  MdOutlinePeopleAlt,
+} from "react-icons/md";
+import { TiBusinessCard } from "react-icons/ti";
+import { TbShoppingCart } from "react-icons/tb";
+import { IoPricetagOutline } from "react-icons/io5";
+import { FaFileInvoice } from "react-icons/fa6";
+import { RiFileListLine } from "react-icons/ri";
+
+import ForgotPassword from "../components/Auth/ForgotPassword";
+import Login from "../components/Auth/Login";
+import Signup from "../components/Auth/Signup";
+import CategoriesList from "../components/Categories/CategoriesList";
+import Error404 from "../components/Error/Error404";
+import PageWrapper from "../components/Home/PageWrapper";
+import ProductList from "../components/Product/ProductList";
+import CustomerList from "../components/Customers/CustomerList";
+import CustomerDetails from "../components/Customers/CustomerDetails";
+import SignatureWrapper from "../components/Signature/SignatureWrapper";
+import OrderWrapper from "../components/Orders/OrderWrapper";
 import Profile from "../components/Profile/Profile";
 import CreateProduct from "../components/Product/CreateProduct";
-import RecentOrders from "../components/Orders/RecentOrders";
 import ResetPassword from "../components/Auth/ResetPassword";
 import QuotationList from "../components/Quotation/QuotationList";
 import RecentInvoices from "../components/Invoices/RecentInvoices";
-import { MdPermIdentity } from "react-icons/md";
 import RolePermission from "../components/RolesPermission/RolePermission";
 import Permissions from "../components/RolesPermission/Permissions";
 import Error500 from "../components/Error/Error500";
 import Brands from "../components/Brands/Brands";
-import QuotaionDetails from "../components/Quotation/QuotaionDetails";
 import ProductDetails from "../components/Product/ProductDetails";
 import UserList from "../components/User/UserList";
 import GeneralSettings from "../components/Settings/GeneralSettings";
-import UnderMaintanance from "../components/Error/UnderMaintanance";
 import ComingSoon from "../components/Error/ComingSoon";
-import AddQuntation from "../components/Quotation/AddQuntation";
-import { GiCorporal } from "react-icons/gi";
 import CmList from "../components/CMTrading/cmList";
 import TeamsList from "../components/Orders/TeamsList";
 import InvoiceDetails from "../components/Invoices/InvoiceDetails";
 import OrderWithInvoice from "../components/Orders/OrderWithInvoice";
 import CheckProductCodeStatus from "../components/Product/CheckProductCodeStatus";
 import NoAccess from "../components/Common/NoAccess";
-import RecentQuotation from "../components/Quotation/RecentQuotations";
 import POSWrapperNew from "../components/POS-NEW/POSWrapper";
 import AddressList from "../components/Address/Address";
 import SearchList from "../components/Search/SearchList";
@@ -64,20 +68,17 @@ import AttendanceWrapper from "../components/Attendance/AttendanceWrapper";
 import AttendanceList from "../components/Attendance/AttendanceList";
 import NewAddUser from "../components/User/NewAddUser";
 import UserPage from "../components/User/UserPage";
-import { RiDashboardLine } from "react-icons/ri";
-import { BsPeople } from "react-icons/bs";
-import { MdOutlineInventory2 } from "react-icons/md";
-import { MdOutlineDiscount } from "react-icons/md";
-import { MdOutlinePeopleAlt } from "react-icons/md";
-import { TiBusinessCard } from "react-icons/ti";
 import NewProductWrapper from "../components/Product/NewProductWrapper";
 import Cart from "../components/POS-NEW/Cart";
-import CompaniesWrapper from "../components/Companies/ComapniesWrapper";
 import Product from "../components/Product/Product";
 import ProductWrapper from "../components/Product/ProductWrapper";
 import NewProductDetails from "../components/Product/NewProductDetails";
 import ProductListByCategory from "../components/Product/ProductListByCategory";
-import NewOrderWrapper from "../components/Orders/NewOrderWrapper";
+import AddQuotation from "../components/Quotation/AddQuntation";
+import CompaniesWrapper from "../components/Companies/ComapniesWrapper";
+import QuotationsDetails from "../components/Quotation/QuotaionDetails";
+import UnderMaintanance from "../components/Error/UnderMaintanance";
+
 const masterRoutes = [
   {
     path: "/",
@@ -103,7 +104,7 @@ const masterRoutes = [
       {
         path: "/inventory/product/product-code-status",
         name: "Code Status",
-        icon: <AiOutlineProduct />,
+        icon: <RiFileListLine />,
         element: <CheckProductCodeStatus />,
         isSidebarActive: true,
       },
@@ -111,7 +112,7 @@ const masterRoutes = [
         path: "/inventory/categories-keywords",
         element: <CategoriesList />,
         name: "Categories & Keywords",
-        icon: <BiSolidCategory />,
+        icon: <BiCategory />,
         isSidebarActive: true,
       },
       {
@@ -153,14 +154,14 @@ const masterRoutes = [
       {
         path: "/orders/list",
         name: "Orders",
-        icon: <FaFirstOrder />,
+        icon: <RiFileListLine />,
         isSidebarActive: true,
         element: <OrderWrapper />,
       },
       {
         path: "/order/:id",
         name: "Order Details",
-        icon: <FaFirstOrder />,
+        icon: <RiFileListLine />,
         isSidebarActive: false,
         element: <OrderWithInvoice />,
       },
@@ -172,7 +173,7 @@ const masterRoutes = [
         isSidebarActive: true,
       },
       {
-        path: "/invoice/:invoiceId",
+        path: "/invoices/:invoiceId",
         name: "Invoices",
         icon: <FaFileInvoice />,
         element: <InvoiceDetails />,
@@ -181,65 +182,64 @@ const masterRoutes = [
       {
         path: "/pos",
         name: "POS",
-        icon: <FaPooStorm />,
+        icon: <TbShoppingCart />,
         isSidebarActive: false,
         element: <POSWrapperNew />,
       },
       {
         path: "/pos-new",
         name: "POS NEW",
-        icon: <FaPooStorm />,
+        icon: <TbShoppingCart />,
         isSidebarActive: false,
         element: <POSWrapperNew />,
       },
       {
         path: "/quotations/list",
         name: "Quotations List",
-        icon: <FaRegFile />,
+        icon: <IoPricetagOutline />,
         isSidebarActive: true,
         element: <QuotationList />,
       },
       {
         path: "/quotations/:id",
         name: "Quotations Details",
-        icon: <FaRegFile />,
+        icon: <IoPricetagOutline />,
         isSidebarActive: false,
-        element: <QuotaionDetails />,
+        element: <QuotationsDetails />,
       },
       {
         path: "/quotations/add",
         name: "Add Quotations",
-        icon: <FaRegFile />,
-        element: <AddQuntation />,
+        icon: <IoPricetagOutline />,
+        element: <AddQuotation />,
         isSidebarActive: false,
       },
       {
         path: "/quotations/:id/edit",
         name: "Edit Quotations",
-        icon: <FaRegFile />,
-        element: <AddQuntation />,
+        icon: <IoPricetagOutline />,
+        element: <AddQuotation />,
         isSidebarActive: false,
       },
     ],
   },
-
   {
     path: "#",
     name: "Customers",
-    icon: <BsPeople />,
+    icon: <MdOutlinePeopleAlt />,
     isSidebarActive: true,
     submenu: [
       {
         path: "/customers/list",
         name: "Customers",
-        icon: <PiUserListBold />,
+        icon: <PiUserList />,
         isSidebarActive: true,
         element: <CustomerList />,
       },
       {
         path: "/customer/:id",
         name: "Customer Details",
-        icon: <PiUserListBold />,
+        icon: <PiUserList />,
         isSidebarActive: false,
         element: <CustomerDetails />,
       },
@@ -253,9 +253,9 @@ const masterRoutes = [
       {
         path: "/vendors/list",
         name: "Vendors",
-        icon: <MdBrandingWatermark />,
+        icon: <MdOutlineBrandingWatermark />,
         isSidebarActive: true,
-        element: <ComapniesWrapper />,
+        element: <CompaniesWrapper />,
       },
       {
         path: "/signature/list",
@@ -267,14 +267,14 @@ const masterRoutes = [
       {
         path: "/orders/teams",
         name: "Teams",
-        icon: <FaTeamspeak />,
+        icon: <FaPhone />,
         element: <TeamsList />,
         isSidebarActive: true,
       },
       {
         path: "/companies/list",
         name: "Companies",
-        icon: <GiCorporal />,
+        icon: <GiSuitcase />,
         isSidebarActive: true,
         element: <CmList />,
       },
@@ -296,15 +296,15 @@ const masterRoutes = [
       },
       {
         path: "/products/:categoryId",
-        name: "Catregory filtered Products",
-        icon: <AiOutlineProduct />,
+        name: "Category filtered Products",
+        icon: <BiCategory />,
         element: <ProductListByCategory />,
         isSidebarActive: true,
       },
       {
         path: "/inventory/list/:id",
-        name: "Catregory filtered Products",
-        icon: <AiOutlineProduct />,
+        name: "Category filtered Products",
+        icon: <BiCategory />,
         element: <ProductWrapper />,
         isSidebarActive: true,
       },
@@ -324,14 +324,6 @@ const masterRoutes = [
       },
     ],
   },
-
-  // {
-  //   path: "/new-order",
-  //   name: "orders",
-  //   icon: <MdOutlineSettings />,
-  //   isSidebarActive: true,
-  //   element: <NewOrderWrapper />,
-  // },
   {
     path: "/settings",
     name: "Settings",
@@ -342,7 +334,6 @@ const masterRoutes = [
   {
     path: "#",
     name: "Team",
-    // icon: <img src={hrmicon} />,
     icon: <MdOutlinePeopleAlt />,
     isSidebarActive: true,
     submenu: [
@@ -363,84 +354,40 @@ const masterRoutes = [
       {
         path: "/users/list",
         name: "Users",
-        icon: <BiUserCheck />,
+        icon: <BiUser />,
         isSidebarActive: true,
         element: <UserList />,
       },
       {
         path: "/user/add",
         name: "Create User",
-        icon: <BiUserCheck />,
+        icon: <BiUser />,
         isSidebarActive: true,
         element: <NewAddUser />,
       },
       {
         path: "/user/:userId",
         name: "User Details",
-        icon: <BiUserCheck />,
+        icon: <BiUser />,
         isSidebarActive: false,
         element: <UserPage />,
       },
       {
         path: "/user/:userId/edit",
         name: "User Edit",
-        icon: <BiUserCheck />,
+        icon: <BiUser />,
         isSidebarActive: false,
         element: <NewAddUser />,
       },
     ],
   },
   {
-    path: "#",
+    path: "/roles-permission/list",
     name: "RBAC",
     icon: <TiBusinessCard />,
+    element: <RolePermission />,
     isSidebarActive: true,
-    submenu: [
-      {
-        path: "/roles-permission/list",
-        name: "Roles Permission List",
-        icon: <MdPermIdentity />,
-        isSidebarActive: true,
-        element: <RolePermission />,
-      },
-      {
-        path: "/roles-permission/permissions/:id",
-        name: "Permission Details",
-        icon: <MdPermIdentity />,
-        isSidebarActive: false,
-        element: <Permissions />,
-      },
-    ],
   },
-  // {
-  //   path: "#",
-  //   name: "Latests",
-  //   icon: <RiAdminLine />,
-  //   isSidebarActive: true,
-  //   submenu: [
-  //     {
-  //       path: "/recent/recent-orders",
-  //       name: "Recent Orders",
-  //       icon: <AiOutlineProduct />,
-  //       element: <RecentOrders />,
-  //       isSidebarActive: true,
-  //     },
-  //     {
-  //       path: "/recent/invoices",
-  //       name: "Recent Invoices",
-  //       icon: <LiaFileInvoiceSolid />,
-  //       isSidebarActive: true,
-  //       element: <RecentInvoices />,
-  //     },
-  //     {
-  //       path: "/recent/quotations",
-  //       name: "Recent Quotations",
-  //       icon: <FaQuora />,
-  //       isSidebarActive: true,
-  //       element: <RecentQuotation />,
-  //     },
-  //   ],
-  // },
   {
     path: "/cart",
     name: "Cart",
@@ -454,6 +401,13 @@ const masterRoutes = [
     icon: <FaFileCircleCheck />,
     isSidebarActive: false,
     submenu: [
+      {
+        path: "/roles-permission/permissions/:id",
+        name: "Permission Details",
+        icon: <MdOutlinePerson />,
+        isSidebarActive: false,
+        element: <Permissions />,
+      },
       {
         path: "/search",
         name: "Search",
@@ -524,8 +478,8 @@ const masterRoutes = [
         element: <Error500 />,
       },
       {
-        path: "/under-maintainance",
-        name: "Under Maintance",
+        path: "/under-maintenance",
+        name: "Under Maintenance",
         icon: <MdError />,
         isSidebarActive: false,
         element: <UnderMaintanance />,
