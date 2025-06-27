@@ -66,7 +66,6 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
 
   // Populate formData when userToEdit changes
   useEffect(() => {
-    console.log("userToEdit:", userToEdit); // Debug: Log userToEdit
     if (userToEdit) {
       setFormData({
         username: userToEdit.username || "",
@@ -108,7 +107,6 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
     } else {
       setIsEditMode(false);
     }
-    console.log("formData after useEffect:", formData); // Debug: Log formData
   }, [userToEdit]);
 
   // Handle errors with toast notifications
@@ -315,7 +313,6 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
 
   // Handle error state for fetching user
   if (fetchUserError && userId) {
-    console.log("fetchUserError:", fetchUserError); // Debug: Log error
     return (
       <div className="page-wrapper">
         <div className="content text-center">
