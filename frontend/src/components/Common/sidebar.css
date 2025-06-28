@@ -1,107 +1,55 @@
-/* sidebar.css */
-
-/* General sidebar styling */
+/* GENERAL SIDEBAR */
 .sidebar {
   position: fixed;
   top: 0;
-  left: -250px; /* Hide sidebar off-screen by default */
+  left: -250px; /* hidden by default */
   width: 250px;
   height: 100vh;
   background: #fff;
-  transition: left 0.3s ease-in-out;
+  transition: left 0.3s ease;
   z-index: 1000;
 }
 
+/* When active, slide into view */
 .sidebar.active {
-  left: 0; /* Slide in when active */
+  left: 0;
 }
 
-/* Ensure sidebar is visible on larger screens by default */
+/* On larger screens, always visible */
 @media (min-width: 768px) {
   .sidebar {
-    left: 0; /* Show sidebar on desktop */
-  }
-  .sidebar.active {
-    left: 0; /* No change needed for desktop */
+    left: 0;
   }
 }
 
-/* Shift main content when sidebar is open on mobile */
-
-/* Ensure sidebar is above other content */
-.sidebar {
-  z-index: 1000;
+/* PUSH MAIN CONTENT on mobile when sidebar is open */
+@media (max-width: 767.98px) {
+  body.sidebar-open {
+    overflow: hidden; /* prevent background scroll */
+  }
 }
 
-/* Remove default bullets and ensure proper styling */
-[class*="sidebar"] ul,
-[class*="sidebar"] li,
-.sidebar ul,
-.sidebar-menu ul,
-.sidebar-menu ul li,
-.sidebar-menu ul li ul,
-.two-col-sidebar ul,
-.two-col-sidebar ul li,
-.two-col-sidebar ul li ul,
-.sidebar-horizontal ul,
-.sidebar-horizontal ul li,
-.sidebar-horizontal ul li ul {
-  list-style-type: none !important;
-  margin: 0;
-  padding: 0;
+/* OVERLAY for mobile when sidebar is open */
+.sidebar-overlay {
+  display: none;
 }
 
-.sidebar-menu ul li ul li,
-.two-col-sidebar ul li ul li,
-.sidebar-horizontal ul li ul li {
-  padding-left: 15px; /* Indent nested items */
-}
-
-/* Ensure icons are visible */
-.sidebar a svg,
-.two-col-sidebar a svg,
-.sidebar-horizontal a svg {
-  color: #000 !important;
-  fill: currentColor !important;
-  opacity: 1 !important;
-}
-
-.sidebar a.active svg,
-.sidebar a.subdrop svg,
-.two-col-sidebar a.active svg,
-.two-col-sidebar a.subdrop svg,
-.sidebar-horizontal a.active svg,
-.sidebar-horizontal a.subdrop svg {
-  color: #000 !important;
-}
-
-/* Adjust sidebar-inner for scrollable content */
-.sidebar-inner {
-  max-height: calc(100vh - 120px);
-  overflow-y: auto;
-}
-
-/* Scrollbar styling */
-.sidebar-inner::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-  border-radius: 50px !important;
-}
-
-.sidebar-inner::-webkit-scrollbar-track {
-  background: #a6aaaf;
-}
-
-.sidebar-inner::-webkit-scrollbar-thumb {
-  background: #888888;
-  border-radius: 50px !important;
-}
-
-.sidebar-inner::-webkit-scrollbar-thumb:hover {
-  background: #555555;
-}
-
-.sidebar-inner {
-  scrollbar-color: #888888 #a6aaaf;
-  scrollbar-width: thin;
+@media (max-width: 767.98px) {
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+  .sidebar.active + .sidebar-overlay {
+    opacity: 1;
+    pointer-events: all;
+  }
 }

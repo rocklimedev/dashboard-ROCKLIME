@@ -1,14 +1,12 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom"; // Import useNavigate for navigation
 import PageHeader from "../Common/PageHeader";
 import OrderPagination from "./OrderPagination";
 import OrderFilter from "./OrderFilter";
-import AddNewOrder from "./AddNewOrder";
 import ShowInvoices from "./ShowInvoices";
 import {
   useGetFilteredOrdersQuery,
   useGetAllOrdersQuery,
-  useCreateOrderMutation,
-  useUpdateOrderByIdMutation,
   useDeleteOrderMutation,
 } from "../../api/orderApi";
 import { useGetAllTeamsQuery } from "../../api/teamApi";
@@ -18,21 +16,22 @@ import OrderItem from "./Orderitem";
 import { useTeamDataMap } from "../../data/useTeamDataMap";
 import OnHoldModal from "./OnHoldOrder";
 import DeleteModal from "../Common/DeleteModal";
+
 const OrderWrapper = () => {
+  const navigate = useNavigate(); // Initialize useNavigate
   const [activeTab, setActiveTab] = useState("orders");
-  const [showModal, setShowModal] = useState(false);
   const [teamMap, setTeamMap] = useState({});
   const [showHoldModal, setShowHoldModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false); // For DeleteModal
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [orderToDelete, setOrderToDelete] = useState(null); // For DeleteModal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null); // Used for OnHoldModal
+  const [orderToDelete, setOrderToDelete] = useState(null);
   const [showDatesModal, setShowDatesModal] = useState(false);
-  const { data: teamsData } = useGetAllTeamsQuery();
   const [selectedDates, setSelectedDates] = useState({
     dueDate: null,
     followupDates: [],
   });
 
+  const { data: teamsData } = useGetAllTeamsQuery();
   const [filters, setFilters] = useState({
     status: "",
     priority: "",
@@ -99,18 +98,14 @@ const OrderWrapper = () => {
     }
   }, [teamsData]);
 
-  const [createOrder] = useCreateOrderMutation();
-  const [updateOrder] = useUpdateOrderByIdMutation();
   const [deleteOrder] = useDeleteOrderMutation();
 
-  const handleOpenModal = () => {
-    setSelectedOrder(null);
-    setShowModal(true);
+  const handleOpenAddOrder = () => {
+    navigate("/order/add"); // Navigate to AddNewOrder page
   };
 
   const handleEditClick = (order) => {
-    setSelectedOrder(order);
-    setShowModal(true);
+    navigate(`/orders/${order.id}/edit`, { state: { order } }); // Navigate to edit page with order data
   };
 
   const handleHoldClick = (order) => {
@@ -125,7 +120,6 @@ const OrderWrapper = () => {
 
   const handleModalClose = () => {
     setSelectedOrder(null);
-    setShowModal(false);
     setShowHoldModal(false);
     setShowDeleteModal(false);
     setOrderToDelete(null);
@@ -152,25 +146,7 @@ const OrderWrapper = () => {
     }
   };
 
-  const handleSaveOrder = async (orderData) => {
-    try {
-      if (selectedOrder) {
-        await updateOrder({ id: selectedOrder.id, ...orderData }).unwrap();
-        toast.success("Order updated successfully!");
-      } else {
-        await createOrder(orderData).unwrap();
-        toast.success("Order created successfully!");
-      }
-      handleModalClose();
-    } catch (err) {
-      toast.error(
-        `Failed to save order: ${err.data?.message || "Unknown error"}`
-      );
-    }
-  };
-
-  const handleConfirmHold = (reference) => {
-    // Called after OnHoldModal updates the order to ONHOLD
+  const handleConfirmHold = () => {
     handleModalClose();
   };
 
@@ -232,7 +208,7 @@ const OrderWrapper = () => {
           <ul className="nav nav-tabs">
             <li className="nav-item">
               <div className="d-flex align-items-center gap-2">
-                <button className="create-button" onClick={handleOpenModal}>
+                <button className="create-button" onClick={handleOpenAddOrder}>
                   <i className="ti ti-plus me-2"></i>New Order
                 </button>
               </div>
@@ -365,18 +341,10 @@ const OrderWrapper = () => {
           <ShowInvoices />
         )}
 
-        {showModal && (
-          <AddNewOrder
-            visible={showModal}
-            onClose={handleModalClose}
-            order={selectedOrder}
-            onSave={handleSaveOrder}
-          />
-        )}
         {showHoldModal && (
           <OnHoldModal
             order={selectedOrder}
-            invoice={{ amount: selectedOrder?.totalAmount || 0 }} // Dummy invoice data
+            invoice={{ amount: selectedOrder?.totalAmount || 0 }}
             onClose={handleModalClose}
             onConfirm={handleConfirmHold}
           />

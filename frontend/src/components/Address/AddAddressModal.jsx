@@ -58,7 +58,7 @@ const AddAddress = ({ onClose, existingAddress }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: "" })); // Clear error on change
+    setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const handleSubmit = async (e) => {
@@ -97,7 +97,7 @@ const AddAddress = ({ onClose, existingAddress }) => {
       }
       onClose();
     } catch (err) {
-      console.error("Address save error:", err); // Debug log
+      console.error("Address save error:", err);
       toast.error(
         `Failed to save address: ${
           err?.data?.message || err.message || "Unknown error"

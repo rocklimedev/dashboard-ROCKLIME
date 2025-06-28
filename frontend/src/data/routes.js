@@ -78,6 +78,7 @@ import AddQuotation from "../components/Quotation/AddQuntation";
 import CompaniesWrapper from "../components/Companies/ComapniesWrapper";
 import QuotationsDetails from "../components/Quotation/QuotaionDetails";
 import UnderMaintanance from "../components/Error/UnderMaintanance";
+import AddNewOrder from "../components/Orders/AddNewOrder";
 
 const masterRoutes = [
   {
@@ -164,6 +165,13 @@ const masterRoutes = [
         icon: <RiFileListLine />,
         isSidebarActive: false,
         element: <OrderWithInvoice />,
+      },
+      {
+        path: "/order/add",
+        name: "Add Order",
+        icon: <RiFileListLine />,
+        isSidebarActive: false,
+        element: <AddNewOrder />,
       },
       {
         path: "/invoices/list",

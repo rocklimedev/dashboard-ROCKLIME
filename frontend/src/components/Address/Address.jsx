@@ -8,7 +8,7 @@ import { AiOutlineEdit } from "react-icons/ai";
 import { FcEmptyTrash } from "react-icons/fc";
 import AddAddress from "./AddAddressModal";
 import DeleteModal from "../Common/DeleteModal";
-import { toast } from "sonner"; // Changed import
+import { toast } from "sonner";
 import DataTablePagination from "../Common/DataTablePagination";
 
 const AddressList = () => {
