@@ -604,36 +604,33 @@ const ProductsList = ({ isAdmin = false }) => {
         data-bs-target="#cartModal"
         style={{ display: "none" }}
       ></button>
-      {isAdmin && (
-        <>
-          <DeleteModal
-            isVisible={isDeleteModalVisible}
-            onConfirm={handleConfirmDelete}
-            onCancel={() => {
-              setDeleteModalVisible(false);
-              setSelectedProduct(null);
-            }}
-            item={selectedProduct}
-            itemType="Product"
-            isLoading={isDeleting}
-          />
-          {isStockModalVisible && selectedProduct && (
-            <StockModal
-              show={isStockModalVisible}
-              onHide={() => setStockModalVisible(false)}
-              product={selectedProduct}
-              onSubmit={handleStockSubmit}
-            />
-          )}
-          {isHistoryModalVisible && selectedProduct && (
-            <HistoryModal
-              show={isHistoryModalVisible}
-              onHide={() => setHistoryModalVisible(false)}
-              product={selectedProduct}
-              stockHistory={stockHistoryMap[selectedProduct.productId] || []}
-            />
-          )}
-        </>
+
+      <DeleteModal
+        isVisible={isDeleteModalVisible}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => {
+          setDeleteModalVisible(false);
+          setSelectedProduct(null);
+        }}
+        item={selectedProduct}
+        itemType="Product"
+        isLoading={isDeleting}
+      />
+      {isStockModalVisible && selectedProduct && (
+        <StockModal
+          show={isStockModalVisible}
+          onHide={() => setStockModalVisible(false)}
+          product={selectedProduct}
+          onSubmit={handleStockSubmit}
+        />
+      )}
+      {isHistoryModalVisible && selectedProduct && (
+        <HistoryModal
+          show={isHistoryModalVisible}
+          onHide={() => setHistoryModalVisible(false)}
+          product={selectedProduct}
+          stockHistory={stockHistoryMap[selectedProduct.productId] || []}
+        />
       )}
     </div>
   );

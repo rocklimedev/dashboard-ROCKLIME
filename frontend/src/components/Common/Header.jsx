@@ -1,25 +1,25 @@
 import React, { useState } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
-import logo from "../../assets/img/logo.png";
-import { useGetProfileQuery } from "../../api/userApi";
+import { useGetProfileQuery } from "../../api/userApi"; // Assuming these are correctly set up
 import { Dropdown, Button, Menu } from "antd";
 import { FaSearch, FaUserCircle } from "react-icons/fa";
 import { BiFullscreen, BiLogOut } from "react-icons/bi";
 import { toast } from "sonner";
 import Avatar from "react-avatar";
-import SearchDropdown from "../Search/SearchDropdown";
+import SearchDropdown from "../Search/SearchDropdown"; // Assuming this is the same as in the original
+import logo from "../../assets/img/logo.png";
+import logo_small from "../../assets/img/fav_icon.png";
+// Assuming additional CSS for HTML styles
 import { useLogoutMutation } from "../../api/authApi";
-import styles from "./Header.module.css";
 
 const Header = ({ toggleSidebar, isSidebarOpen }) => {
   const location = useLocation();
-  const currentPath = location.pathname;
   const navigate = useNavigate();
   const { data: user, isLoading, error } = useGetProfileQuery();
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
-  const [showModal, setShowModal] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  // Handle logout
   const handleLogout = async () => {
     try {
       await logout().unwrap();
@@ -31,6 +31,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     }
   };
 
+  // Handle fullscreen toggle
   const handleFullscreenToggle = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen();
@@ -41,33 +42,48 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     }
   };
 
-  // Define the dropdown menu for the user profile
+  // User profile dropdown menu
   const userMenu = (
-    <Menu className="menu-drop-user">
+    <Menu className={`shadow-sm rounded menu-drop-user`}>
       <Menu.Item
         key="profile-header"
-        className="profileset d-flex align-items-center p-2"
+        className="d-flex align-items-center p-3 profileset"
       >
-        <span className="user-img me-2">
-          <Avatar
-            name={user?.user?.name}
-            src={user?.user?.profileImage}
-            size="50"
-            round={true}
-            className="img-fluid"
-          />
-        </span>
+        <Avatar
+          name={user?.user?.name || "John Smilga"}
+          src={user?.user?.profileImage || "/assets/img/profiles/avator1.jpg"}
+          size="50"
+          round={true}
+          className="me-2"
+        />
         <div>
-          <h6 className="fw-medium mb-0">{user?.user?.name}</h6>
-          <p className="mb-0">{user?.user?.roles}</p>
+          <h6 className="fw-medium mb-0">
+            {user?.user?.name || "John Smilga"}
+          </h6>
+          <p className="mb-0">{user?.user?.roles || "Admin"}</p>
         </div>
       </Menu.Item>
+      <Menu.Divider />
       <Menu.Item key="profile">
-        <Link to={`/u/${user?.user?.userId}`}>
-          <FaUserCircle className="me-2" /> Profile
+        <Link
+          to={`/u/${user?.user?.userId || "profile"}`}
+          className="d-flex align-items-center"
+        >
+          <FaUserCircle className="me-2" /> My Profile
         </Link>
       </Menu.Item>
-      <Menu.Item key="logout" onClick={handleLogout} disabled={isLoggingOut}>
+      <Menu.Item key="settings">
+        <Link to="/settings" className="d-flex align-items-center">
+          <i className="ti ti-settings-2 me-2" /> Settings
+        </Link>
+      </Menu.Item>
+      <Menu.Divider />
+      <Menu.Item
+        key="logout"
+        onClick={handleLogout}
+        disabled={isLoggingOut}
+        className="d-flex align-items-center logout pb-0"
+      >
         <BiLogOut className="me-2" />
         {isLoggingOut ? "Logging out..." : "Logout"}
       </Menu.Item>
@@ -75,15 +91,28 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
   );
 
   return (
-    <div className="header pos-header">
-      <div className={styles.mainHeader}>
-        {/* Logo Section */}
+    <div className="header">
+      <div className="main-header">
+        {/* Logo */}
+        <div className="header-left active">
+          <Link to="/" className="logo logo-normal">
+            <img src={logo} alt="Logo" />
+          </Link>
+          <Link to="/" className="logo logo-white">
+            <img src={logo_small} alt="Logo" />
+          </Link>
+          <Link to="/" className="logo-small">
+            <img src={logo_small} alt="Logo" />
+          </Link>
+        </div>
 
-        {/* Mobile Menu Button */}
+        {/* Mobile Menu Toggle */}
         <Button
           type="link"
-          className={styles.mobileBtn}
+          className="mobile_btn d-md-none"
           onClick={() => toggleSidebar(!isSidebarOpen)}
+          aria-label="Toggle sidebar"
+          id="mobile_btn"
         >
           <span className="bar-icon">
             <span></span>
@@ -92,59 +121,99 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
           </span>
         </Button>
 
-        {/* User Menu */}
-        <div className={styles.userMenu}>
-          {/* Search Bar */}
-          <div className={styles.navSearchInputs}>
-            <div className="top-nav-search d-flex align-items-center">
-              <Button type="link" className={styles.responsiveSearch}>
+        {/* Header Menu */}
+        <ul className="nav user-menu">
+          {/* Search */}
+          <li className="nav-item nav-searchinputs">
+            <div className="top-nav-search">
+              <Button
+                type="link"
+                className="responsive-search d-md-none"
+                aria-label="Search"
+              >
                 <FaSearch />
               </Button>
-              <SearchDropdown />
+              <div className="d-none d-md-block">
+                <SearchDropdown />
+              </div>
             </div>
-          </div>
+          </li>
 
-          {/* Fullscreen Toggle */}
-          <div className={styles.navItemBox}>
+          {/* Fullscreen */}
+          <li className="nav-item nav-item-box">
             <Button
               type="link"
+              id="btnFullscreen"
               onClick={handleFullscreenToggle}
-              className={styles.fullscreenBtn}
               title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+              aria-label={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
             >
               <BiFullscreen />
             </Button>
-          </div>
+          </li>
 
-          {/* User Profile Dropdown */}
-          <div className={styles.dropdownProfileNav}>
+          {/* Settings */}
+          <li className="nav-item nav-item-box">
+            <Link to="/settings">
+              <i className="ti ti-settings" />
+            </Link>
+          </li>
+
+          {/* User Profile */}
+          <li className="nav-item dropdown has-arrow main-drop profile-nav">
             {isLoading ? (
-              <span className="user-letter">Loading...</span>
+              <span className="text-muted">Loading...</span>
             ) : error ? (
-              <span className="user-letter">Error loading profile</span>
+              <span className="text-danger">Error loading profile</span>
             ) : user ? (
-              <Dropdown
-                overlay={userMenu}
-                trigger={["click"]}
-                overlayClassName={styles.dropdownOverlay}
-                arrow={false}
-              >
-                <div className={styles.dropdownToggle}>
-                  <span className="user-info">
+              <Dropdown overlay={userMenu} trigger={["click"]}>
+                <Link to="#" className="nav-link userset">
+                  <span className="user-info p-0">
                     <span className="user-letter">
                       <Avatar
-                        name={user?.user?.name}
-                        src={user?.user?.profileImage}
+                        name={user?.user?.name || "John Smilga"}
+                        src={
+                          user?.user?.profileImage ||
+                          "/assets/img/profiles/avator1.jpg"
+                        }
                         size="40"
                         round={true}
                         className="img-fluid"
                       />
                     </span>
                   </span>
-                </div>
+                </Link>
               </Dropdown>
             ) : null}
-          </div>
+          </li>
+        </ul>
+
+        {/* Mobile User Menu */}
+        <div className="dropdown mobile-user-menu">
+          <Dropdown
+            overlay={
+              <Menu className="dropdown-menu dropdown-menu-right">
+                <Menu.Item key="profile">
+                  <Link to="/profile">My Profile</Link>
+                </Menu.Item>
+                <Menu.Item key="settings">
+                  <Link to="/settings">Settings</Link>
+                </Menu.Item>
+                <Menu.Item
+                  key="logout"
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                >
+                  {isLoggingOut ? "Logging out..." : "Logout"}
+                </Menu.Item>
+              </Menu>
+            }
+            trigger={["click"]}
+          >
+            <Link to="#" className="nav-link dropdown-toggle">
+              <i className="fa fa-ellipsis-v" />
+            </Link>
+          </Dropdown>
         </div>
       </div>
     </div>

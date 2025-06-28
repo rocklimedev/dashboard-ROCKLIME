@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   useCreateOrderMutation,
   useUpdateOrderByIdMutation,
@@ -11,25 +12,21 @@ import { useGetAllTeamsQuery } from "../../api/teamApi";
 import AddNewTeam from "./AddNewTeam";
 import { toast } from "sonner";
 
-const AddNewOrder = ({ onClose, adminName, order }) => {
+const AddNewOrder = ({ adminName, order }) => {
   const isEditMode = Boolean(order);
+  const navigate = useNavigate();
 
   const [createOrder] = useCreateOrderMutation();
   const [updateOrder] = useUpdateOrderByIdMutation();
-
   const { data: invoicesData, isLoading, error } = useGetAllInvoicesQuery();
-  // Ensure invoices is always an array
   const invoices = Array.isArray(invoicesData?.data) ? invoicesData.data : [];
-
   const [showNewTeamModal, setShowNewTeamModal] = useState(false);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState("");
-
   const { data: selectedInvoiceData } = useGetInvoiceByIdQuery(
     selectedInvoiceId,
     { skip: !selectedInvoiceId }
   );
   const selectedInvoice = selectedInvoiceData?.data;
-
   const { data: teamsData, refetch } = useGetAllTeamsQuery();
   const teams = Array.isArray(teamsData?.teams) ? teamsData.teams : [];
 
@@ -59,10 +56,8 @@ const AddNewOrder = ({ onClose, adminName, order }) => {
 
   useEffect(() => {
     if (selectedInvoice) {
-      // Extract only numeric part from invoiceNo
       const numericOrderNo =
         selectedInvoice.invoiceNo?.replace(/\D/g, "") || "";
-
       setFormData((prev) => ({
         ...prev,
         invoiceId: selectedInvoiceId,
@@ -96,12 +91,10 @@ const AddNewOrder = ({ onClose, adminName, order }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!formData.title || !formData.pipeline || !formData.dueDate) {
       toast.error("Please fill all required fields.");
       return;
     }
-
     try {
       let response;
       if (isEditMode) {
@@ -114,8 +107,7 @@ const AddNewOrder = ({ onClose, adminName, order }) => {
         response = await createOrder(formData).unwrap();
         toast.success("Order created successfully!");
       }
-
-      onClose();
+      navigate("/orders/list");
     } catch (err) {
       if (err?.status === 400) {
         toast.error(
@@ -129,281 +121,330 @@ const AddNewOrder = ({ onClose, adminName, order }) => {
     }
   };
 
+  const handleCancel = () => {
+    navigate("/orders/list");
+  };
+
   return (
-    <div className="modal fade show" style={{ display: "block" }}>
-      <div className="modal-dialog modal-dialog-centered">
-        <div className="modal-content">
-          <div className="modal-header">
-            <h4>{isEditMode ? "Edit Order" : "Add New Order"}</h4>
-            <button type="button" className="close" onClick={onClose}>
-              ×
-            </button>
+    <div className="page-wrapper">
+      <div className="content">
+        <div className="card shadow-sm border-0">
+          <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h4 className="mb-0">
+              {isEditMode ? "Edit Order" : "Add New Order"}
+            </h4>
           </div>
-          <div className="modal-body">
-            {isLoading && <p>Loading invoices...</p>}
+          <div className="card-body p-4">
+            {isLoading && <p className="text-muted">Loading invoices...</p>}
             {error && (
               <p className="text-danger">
                 Error loading invoices: {error.data?.message || "Unknown error"}
               </p>
             )}
             <form onSubmit={handleSubmit}>
-              <div className="mb-3">
-                <label className="form-label">Order Title</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <div className="mb-3">
-                <label className="form-label">Pipeline</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  name="pipeline"
-                  value={formData.pipeline}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="mb-3">
-                <label className="form-label">Source</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  name="source"
-                  value={formData.source}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <div className="mb-3">
-                <label className="form-label">Due Date</label>
-                <input
-                  type="date"
-                  className="form-control"
-                  name="dueDate"
-                  value={formData.dueDate}
-                  onChange={handleChange}
-                  required
-                />
+              <div className="row mb-4">
+                <div className="col-md-6 mb-3">
+                  <label className="form-label fw-bold">
+                    Order Title <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleChange}
+                    required
+                    placeholder="Enter order title"
+                  />
+                </div>
+                <div className="col-md-6 mb-3">
+                  <label className="form-label fw-bold">
+                    Pipeline <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="pipeline"
+                    value={formData.pipeline}
+                    onChange={handleChange}
+                    required
+                    placeholder="Enter pipeline"
+                  />
+                </div>
               </div>
 
-              <div className="mb-3">
-                <label className="form-label">Follow-up Dates</label>
-                {formData.followupDates.map((date, index) => (
-                  <div key={index} className="d-flex align-items-center mb-2">
-                    <input
-                      type="date"
-                      className="form-control"
-                      value={date}
-                      onChange={(e) => {
-                        const updatedDates = [...formData.followupDates];
-                        updatedDates[index] = e.target.value;
-                        setFormData({
-                          ...formData,
-                          followupDates: updatedDates,
-                        });
-                      }}
-                    />
-                    <button
-                      type="button"
-                      className="btn btn-danger ms-2"
-                      onClick={() => {
-                        const updatedDates = formData.followupDates.filter(
-                          (_, i) => i !== index
-                        );
-                        setFormData({
-                          ...formData,
-                          followupDates: updatedDates,
-                        });
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  className="btn btn-primary mt-2"
-                  onClick={() =>
-                    setFormData({
-                      ...formData,
-                      followupDates: [...formData.followupDates, ""],
-                    })
-                  }
-                >
-                  + Add Follow-up Date
-                </button>
+              <div className="row mb-4">
+                <div className="col-md-6 mb-3">
+                  <label className="form-label fw-bold">
+                    Source <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="source"
+                    value={formData.source}
+                    onChange={handleChange}
+                    required
+                    placeholder="Enter source"
+                  />
+                </div>
+                <div className="col-md-6 mb-3">
+                  <label className="form-label fw-bold">
+                    Due Date <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    name="dueDate"
+                    value={formData.dueDate}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
               </div>
 
-              <div className="mb-3">
-                <label className="form-label">Invoice</label>
-                <select
-                  className="form-select"
-                  name="invoiceId"
-                  value={formData.invoiceId}
-                  onChange={handleInvoiceSelect}
-                  disabled={isEditMode || isLoading}
-                  required
-                >
-                  <option value="">Select Invoice</option>
-                  {invoices.length > 0 ? (
-                    invoices.map((invoice) => (
-                      <option key={invoice.invoiceId} value={invoice.invoiceId}>
-                        {invoice.billTo} - {invoice.amount} (
-                        {invoice.invoiceDate})
-                      </option>
-                    ))
-                  ) : (
-                    <option disabled>No Invoices Available</option>
-                  )}
-                </select>
+              <div className="row mb-4">
+                <div className="col-md-6 mb-3">
+                  <label className="form-label fw-bold">
+                    Invoice <span className="text-danger">*</span>
+                  </label>
+                  <select
+                    className="form-select"
+                    name="invoiceId"
+                    value={formData.invoiceId}
+                    onChange={handleInvoiceSelect}
+                    disabled={isEditMode || isLoading}
+                    required
+                  >
+                    <option value="">Select Invoice</option>
+                    {invoices.length > 0 ? (
+                      invoices.map((invoice) => (
+                        <option
+                          key={invoice.invoiceId}
+                          value={invoice.invoiceId}
+                        >
+                          {invoice.billTo} - {invoice.amount} (
+                          {invoice.invoiceDate})
+                        </option>
+                      ))
+                    ) : (
+                      <option disabled>No Invoices Available</option>
+                    )}
+                  </select>
+                </div>
+                <div className="col-md-6 mb-3">
+                  <label className="form-label fw-bold">Order No</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="orderNo"
+                    value={formData.orderNo}
+                    readOnly
+                    placeholder="Auto-generated"
+                  />
+                </div>
               </div>
 
               {selectedInvoice && (
-                <div className="border p-3 mb-3">
-                  <h5>Invoice Details</h5>
-                  <p>
-                    <strong>Bill To:</strong> {selectedInvoice.billTo}
-                  </p>
-                  <p>
-                    <strong>Amount:</strong> {selectedInvoice.amount}
-                  </p>
-                  <p>
-                    <strong>Date:</strong> {selectedInvoice.invoiceDate}
-                  </p>
-                  <p>
-                    <strong>Invoice No:</strong> {selectedInvoice.invoiceNo}
-                  </p>
+                <div className="border p-3 mb-4 rounded bg-light">
+                  <h5 className="fw-bold">Invoice Details</h5>
+                  <div className="row">
+                    <div className="col-md-6">
+                      <p>
+                        <strong>Bill To:</strong> {selectedInvoice.billTo}
+                      </p>
+                      <p>
+                        <strong>Amount:</strong> {selectedInvoice.amount}
+                      </p>
+                    </div>
+                    <div className="col-md-6">
+                      <p>
+                        <strong>Date:</strong> {selectedInvoice.invoiceDate}
+                      </p>
+                      <p>
+                        <strong>Invoice No:</strong> {selectedInvoice.invoiceNo}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
 
-              <div className="mb-3">
-                <label className="form-label">Order No</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  name="orderNo"
-                  value={formData.orderNo}
-                  readOnly
-                />
+              <div className="row mb-4">
+                <div className="col-md-6 mb-3">
+                  <label className="form-label fw-bold">Customer</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="createdFor"
+                    value={formData.createdFor}
+                    readOnly
+                    placeholder="Auto-filled from invoice"
+                  />
+                </div>
+                <div className="col-md-6 mb-3">
+                  <label className="form-label fw-bold">Created By</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="createdBy"
+                    value={formData.createdBy}
+                    readOnly
+                    placeholder="Auto-filled from invoice"
+                  />
+                </div>
               </div>
 
-              <div className="mb-3">
-                <label className="form-label">Customer</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  name="createdFor"
-                  value={formData.createdFor}
-                  readOnly
-                />
-              </div>
-
-              <div className="mb-3">
-                <label className="form-label">Created By</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  name="createdBy"
-                  value={formData.createdBy}
-                  readOnly
-                />
-              </div>
-
-              <div className="mb-3">
-                <label className="form-label">Status</label>
-                <select
-                  className="form-select"
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="CREATED">Created</option>
-                  <option value="PREPARING">Preparing</option>
-                  <option value="CHECKING">Checking</option>
-                  <option value="INVOICE">Invoice</option>
-                  <option value="DISPATCHED">Dispatched</option>
-                  <option value="DELIVERED">Delivered</option>
-                  <option value="PARTIALLY_DELIVERED">
-                    Partially Delivered
-                  </option>
-                  <option value="CANCELED">Canceled</option>
-                  <option value="DRAFT">Draft</option>
-                  <option value="ONHOLD">On Hold</option>
-                </select>
-              </div>
-
-              <div className="mb-3">
-                <label className="form-label">Priority</label>
-                <select
-                  className="form-select"
-                  name="priority"
-                  value={formData.priority}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="">Select</option>
-                  <option value="high">High</option>
-                  <option value="medium">Medium</option>
-                  <option value="low">Low</option>
-                </select>
-              </div>
-              <div className="mb-3">
-                <label className="form-label">Assigned To</label>
-                <div className="d-flex align-items-center">
+              <div className="row mb-4">
+                <div className="col-md-6 mb-3">
+                  <label className="form-label fw-bold">
+                    Status <span className="text-danger">*</span>
+                  </label>
                   <select
                     className="form-select"
-                    name="teamId"
-                    value={formData.teamId}
+                    name="status"
+                    value={formData.status}
                     onChange={handleChange}
                     required
                   >
-                    <option value="">Select Team</option>
-                    {teams.map((team) => (
-                      <option key={team.id} value={team.id}>
-                        {team.teamName}
-                      </option>
-                    ))}
+                    <option value="CREATED">Created</option>
+                    <option value="PREPARING">Preparing</option>
+                    <option value="CHECKING">Checking</option>
+                    <option value="INVOICE">Invoice</option>
+                    <option value="DISPATCHED">Dispatched</option>
+                    <option value="DELIVERED">Delivered</option>
+                    <option value="PARTIALLY_DELIVERED">
+                      Partially Delivered
+                    </option>
+                    <option value="CANCELED">Canceled</option>
+                    <option value="DRAFT">Draft</option>
+                    <option value="ONHOLD">On Hold</option>
                   </select>
+                </div>
+                <div className="col-md-6 mb-3">
+                  <label className="form-label fw-bold">
+                    Priority <span className="text-danger">*</span>
+                  </label>
+                  <select
+                    className="form-select"
+                    name="priority"
+                    value={formData.priority}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">Select</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="row mb-4">
+                <div className="col-md-6 mb-3">
+                  <label className="form-label fw-bold">
+                    Assigned To <span className="text-danger">*</span>
+                  </label>
+                  <div className="d-flex align-items-center">
+                    <select
+                      className="form-select"
+                      name="teamId"
+                      value={formData.teamId}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="">Select Team</option>
+                      {teams.map((team) => (
+                        <option key={team.id} value={team.id}>
+                          {team.teamName}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      className="btn btn-outline-primary ms-2"
+                      onClick={() => setShowNewTeamModal(true)}
+                    >
+                      + New Team
+                    </button>
+                  </div>
+                </div>
+                <div className="col-md-6 mb-3">
+                  <label className="form-label fw-bold">Follow-up Dates</label>
+                  {formData.followupDates.map((date, index) => (
+                    <div key={index} className="d-flex align-items-center mb-2">
+                      <input
+                        type="date"
+                        className="form-control"
+                        value={date}
+                        onChange={(e) => {
+                          const updatedDates = [...formData.followupDates];
+                          updatedDates[index] = e.target.value;
+                          setFormData({
+                            ...formData,
+                            followupDates: updatedDates,
+                          });
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-outline-danger ms-2"
+                        onClick={() => {
+                          const updatedDates = formData.followupDates.filter(
+                            (_, i) => i !== index
+                          );
+                          setFormData({
+                            ...formData,
+                            followupDates: updatedDates,
+                          });
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
                   <button
                     type="button"
-                    className="btn btn-primary ms-2"
-                    onClick={() => setShowNewTeamModal(true)}
+                    className="btn btn-outline-primary mt-2"
+                    onClick={() =>
+                      setFormData({
+                        ...formData,
+                        followupDates: [...formData.followupDates, ""],
+                      })
+                    }
                   >
-                    + New Team
+                    + Add Follow-up Date
                   </button>
                 </div>
               </div>
 
-              <div className="mb-3">
-                <label className="form-label">Description</label>
+              <div className="mb-4">
+                <label className="form-label fw-bold">
+                  Description <span className="text-danger">*</span>
+                </label>
                 <textarea
                   className="form-control"
                   name="description"
                   value={formData.description}
                   onChange={handleChange}
                   maxLength="60"
+                  rows="4"
                   required
+                  placeholder="Enter description (max 60 characters)"
                 />
-                <small>Maximum 60 Characters</small>
+                <small className="text-muted">Maximum 60 Characters</small>
               </div>
 
-              <div className="modal-footer">
+              <div className="d-flex justify-content-end gap-2">
                 <button
                   type="button"
-                  className="btn btn-secondary"
-                  onClick={onClose}
+                  className="btn btn-outline-secondary px-4"
+                  onClick={handleCancel}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="btn btn-primary"
+                  className="btn btn-primary px-4"
                   disabled={isLoading}
                 >
                   {isLoading
@@ -418,14 +459,14 @@ const AddNewOrder = ({ onClose, adminName, order }) => {
             </form>
           </div>
         </div>
+        {showNewTeamModal && (
+          <AddNewTeam
+            adminName={adminName}
+            onClose={() => setShowNewTeamModal(false)}
+            onTeamAdded={refetch}
+          />
+        )}
       </div>
-      {showNewTeamModal && (
-        <AddNewTeam
-          adminName={adminName}
-          onClose={() => setShowNewTeamModal(false)}
-          onTeamAdded={refetch}
-        />
-      )}
     </div>
   );
 };

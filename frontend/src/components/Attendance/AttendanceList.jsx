@@ -17,7 +17,6 @@ const AttendanceList = () => {
   const [isTableCollapsed, setIsTableCollapsed] = useState(false);
   const limit = 10;
 
-  // Fetch attendance data
   const {
     data: allAttendance,
     isLoading: isAllAttendanceLoading,
@@ -32,13 +31,11 @@ const AttendanceList = () => {
     endDate: filters.date,
   });
 
-  // Handle filter changes
   const handleFilterChange = (name, value) => {
     setFilters((prev) => ({ ...prev, [name]: value }));
     setPage(1);
   };
 
-  // Handle date change
   const handleDateChange = (selectedDates) => {
     const date = selectedDates[0]
       ? moment(selectedDates[0]).format("YYYY-MM-DD")
@@ -46,10 +43,9 @@ const AttendanceList = () => {
     handleFilterChange("date", date);
   };
 
-  // Export to PDF
   const exportToPDF = () => {
     if (!allAttendance?.attendances?.length) {
-      toast.error("No data to export"); // Sonner toast
+      toast.error("No data to export");
       return;
     }
 

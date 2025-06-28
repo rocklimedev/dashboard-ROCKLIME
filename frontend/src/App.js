@@ -37,6 +37,13 @@ function App() {
       navigate("/login");
     }
   }, [token, isAuthPage, navigate]);
+  useEffect(() => {
+    if (isSidebarOpen) {
+      document.body.classList.add("sidebar-open");
+    } else {
+      document.body.classList.remove("sidebar-open");
+    }
+  }, [isSidebarOpen]);
 
   useEffect(() => {
     if (isProfileLoading || isAuthPage) return;
@@ -98,6 +105,12 @@ function App() {
             toggleSidebar={toggleSidebar}
             layoutMode={layoutMode}
           />
+        )}
+        {!isAuthPage && !isPOSPage && isSidebarOpen && (
+          <div
+            className="sidebar-overlay"
+            onClick={() => setSidebarOpen(false)}
+          ></div>
         )}
         <Router />
         <Footer />
