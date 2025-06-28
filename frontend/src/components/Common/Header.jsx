@@ -152,13 +152,6 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
             </Button>
           </li>
 
-          {/* Settings */}
-          <li className="nav-item nav-item-box">
-            <Link to="/settings">
-              <i className="ti ti-settings" />
-            </Link>
-          </li>
-
           {/* User Profile */}
           <li className="nav-item dropdown has-arrow main-drop profile-nav">
             {isLoading ? (

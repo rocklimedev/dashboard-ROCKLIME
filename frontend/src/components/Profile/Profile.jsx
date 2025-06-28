@@ -289,72 +289,8 @@ const Profile = () => {
     <div className="page-wrapper">
       <div className="content">
         <Row gutter={[24, 24]}>
-          {/* Profile Card */}
-          <Col xs={24} lg={8}>
-            <Card className="profile-card">
-              <div className="profile-pic-upload">
-                <div className="profile-pic">
-                  <AntAvatar
-                    icon={<UserOutlined />}
-                    size={120}
-                    src={avatarUrl}
-                    style={{ backgroundColor: "#1890ff" }}
-                  />
-                </div>
-              </div>
-              {isEditing && (
-                <Upload
-                  name="avatar"
-                  action="/api/upload/avatar" // Replace with your backend upload endpoint
-                  showUploadList={false}
-                  onChange={handleAvatarUpload}
-                >
-                  <Button
-                    type="link"
-                    icon={<UploadOutlined />}
-                    className="change-avatar-btn"
-                  >
-                    Change Avatar
-                  </Button>
-                </Upload>
-              )}
-              <div className="profile-info text-center">
-                <Title level={4}>{user.name}</Title>
-                <Text type="secondary">{user.email}</Text>
-                <div className="profile-role">
-                  <Badge count={roleName} className="role-badge" />
-                </div>
-                <Text className="profile-status">
-                  Status: {user.status || "Active"}
-                </Text>
-                <Text className="profile-dates">
-                  Joined: {moment(user.createdAt).format("DD MMM YYYY")}
-                </Text>
-                <Space className="profile-actions">
-                  <Button
-                    type="primary"
-                    icon={<EditOutlined />}
-                    onClick={() => setIsEditing(true)}
-                    className="btn btn-primary"
-                    disabled={isEditing}
-                  >
-                    Edit Profile
-                  </Button>
-                  <Button
-                    icon={<LockOutlined />}
-                    onClick={handleForgotPassword}
-                    loading={isResetting}
-                    className="btn btn-secondary"
-                  >
-                    Reset Password
-                  </Button>
-                </Space>
-              </div>
-            </Card>
-          </Col>
-
           {/* Profile Details and Tabs */}
-          <Col xs={24} lg={16}>
+          <Col xs={24} lg={24}>
             <Card className="profile-details-card">
               <Tabs defaultActiveKey="1" className="profile-tabs">
                 <TabPane

@@ -140,69 +140,6 @@ const GeneralSettings = () => {
   // Render content based on active section
   const renderContent = () => {
     switch (activeSection) {
-      case "Profile":
-        return (
-          <div className="card flex-fill mb-0">
-            <div className="card-body">
-              <h5 className="fs-16 fw-medium mb-3">Profile Details</h5>
-              <Form onSubmit={handleProfileUpdate}>
-                <Form.Group className="mb-3" controlId="profileName">
-                  <Form.Label>Name</Form.Label>
-                  <Form.Control
-                    type="text"
-                    value={profileData.name}
-                    onChange={(e) =>
-                      setProfileData({ ...profileData, name: e.target.value })
-                    }
-                    required
-                  />
-                </Form.Group>
-                <Form.Group className="mb-3" controlId="profileEmail">
-                  <Form.Label>Email</Form.Label>
-                  <Form.Control
-                    type="email"
-                    value={profileData.email}
-                    onChange={(e) =>
-                      setProfileData({ ...profileData, email: e.target.value })
-                    }
-                    required
-                  />
-                </Form.Group>
-                <Form.Group className="mb-3" controlId="profilePicture">
-                  <Form.Label>Profile Picture</Form.Label>
-                  <Form.Control
-                    type="file"
-                    onChange={(e) =>
-                      setProfileData({
-                        ...profileData,
-                        profilePicture: e.target.files[0],
-                      })
-                    }
-                  />
-                  {profileData.profilePicture && (
-                    <img
-                      src={
-                        typeof profileData.profilePicture === "string"
-                          ? profileData.profilePicture
-                          : URL.createObjectURL(profileData.profilePicture)
-                      }
-                      alt="Profile"
-                      className="mt-2"
-                      style={{
-                        width: "100px",
-                        height: "100px",
-                        borderRadius: "50%",
-                      }}
-                    />
-                  )}
-                </Form.Group>
-                <Button type="submit" variant="primary">
-                  Save Profile
-                </Button>
-              </Form>
-            </div>
-          </div>
-        );
       case "Security":
         return (
           <div className="card flex-fill mb-0">
@@ -350,14 +287,6 @@ const GeneralSettings = () => {
           {/* Sidebar */}
           <div className="settings-sidebar">
             <ul className="nav flex-column">
-              <li
-                className={`nav-item ${
-                  activeSection === "Profile" ? "active" : ""
-                }`}
-                onClick={() => setActiveSection("Profile")}
-              >
-                <i className="ti ti-user me-2"></i> Profile
-              </li>
               <li
                 className={`nav-item ${
                   activeSection === "Security" ? "active" : ""

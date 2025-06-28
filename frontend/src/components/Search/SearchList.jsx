@@ -265,15 +265,6 @@ const SearchList = () => {
           </div>
         </div>
       </div>
-      <div className="footer d-sm-flex align-items-center justify-content-between border-top bg-white p-3">
-        <p className="mb-0">2014 - 2025 © DreamsPOS. All Right Reserved</p>
-        <p>
-          Designed & Developed by{" "}
-          <a href="javascript:void(0);" className="text-primary">
-            Dreams
-          </a>
-        </p>
-      </div>
     </div>
   );
 };
