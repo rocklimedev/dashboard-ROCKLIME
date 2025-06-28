@@ -80,7 +80,7 @@ const styles = {
     fontSize: "12px",
     padding: "4px 8px",
     borderRadius: "12px",
-    backgroundColor: "#007bff",
+    backgroundColor: "#333",
     color: "#fff",
   },
   categoryParent: {

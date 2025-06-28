@@ -30,7 +30,7 @@ import { TbShoppingCart } from "react-icons/tb";
 import { IoPricetagOutline } from "react-icons/io5";
 import { FaFileInvoice } from "react-icons/fa6";
 import { RiFileListLine } from "react-icons/ri";
-
+import { FaExternalLinkAlt } from "react-icons/fa";
 import ForgotPassword from "../components/Auth/ForgotPassword";
 import Login from "../components/Auth/Login";
 import Signup from "../components/Auth/Signup";
@@ -112,13 +112,13 @@ const masterRoutes = [
       {
         path: "/inventory/categories-keywords",
         element: <CategoriesList />,
-        name: "Categories & Keywords",
+        name: "Categories",
         icon: <BiCategory />,
         isSidebarActive: true,
       },
       {
         path: "/brands/list",
-        name: "List of Brands",
+        name: "Brands",
         icon: <MdOutlineBrandingWatermark />,
         isSidebarActive: true,
         element: <Brands />,
@@ -203,7 +203,7 @@ const masterRoutes = [
       },
       {
         path: "/quotations/list",
-        name: "Quotations List",
+        name: "Quotations",
         icon: <IoPricetagOutline />,
         isSidebarActive: true,
         element: <QuotationList />,
@@ -288,57 +288,57 @@ const masterRoutes = [
       },
     ],
   },
-  {
-    path: "#",
-    name: "Products",
-    icon: <AiOutlineProduct />,
-    element: <NewProductWrapper />,
-    isSidebarActive: true,
-    submenu: [
-      {
-        path: "/inventory/list",
-        name: "Products",
-        icon: <AiOutlineProduct />,
-        element: <NewProductWrapper />,
-        isSidebarActive: true,
-      },
-      {
-        path: "/products/:categoryId",
-        name: "Category filtered Products",
-        icon: <BiCategory />,
-        element: <ProductListByCategory />,
-        isSidebarActive: true,
-      },
-      {
-        path: "/inventory/list/:id",
-        name: "Category filtered Products",
-        icon: <BiCategory />,
-        element: <ProductWrapper />,
-        isSidebarActive: true,
-      },
-      {
-        path: "/inventory/all-products/",
-        name: "Products",
-        icon: <AiOutlineProduct />,
-        element: <Product />,
-        isSidebarActive: true,
-      },
-      {
-        path: "/inventory/new-product/:id",
-        name: "Products",
-        icon: <AiOutlineProduct />,
-        element: <NewProductDetails />,
-        isSidebarActive: true,
-      },
-    ],
-  },
-  {
-    path: "/settings",
-    name: "Settings",
-    icon: <MdOutlineSettings />,
-    isSidebarActive: true,
-    element: <GeneralSettings />,
-  },
+  // {
+  //   path: "#",
+  //   name: "Products",
+  //   icon: <AiOutlineProduct />,
+  //   element: <NewProductWrapper />,
+  //   isSidebarActive: true,
+  //   submenu: [
+  //     {
+  //       path: "/inventory/list",
+  //       name: "Products",
+  //       icon: <AiOutlineProduct />,
+  //       element: <NewProductWrapper />,
+  //       isSidebarActive: true,
+  //     },
+  //     {
+  //       path: "/products/:categoryId",
+  //       name: "Category filtered Products",
+  //       icon: <BiCategory />,
+  //       element: <ProductListByCategory />,
+  //       isSidebarActive: true,
+  //     },
+  //     {
+  //       path: "/inventory/list/:id",
+  //       name: "Category filtered Products",
+  //       icon: <BiCategory />,
+  //       element: <ProductWrapper />,
+  //       isSidebarActive: true,
+  //     },
+  //     {
+  //       path: "/inventory/all-products/",
+  //       name: "Products",
+  //       icon: <AiOutlineProduct />,
+  //       element: <Product />,
+  //       isSidebarActive: true,
+  //     },
+  //     {
+  //       path: "/inventory/new-product/:id",
+  //       name: "Products",
+  //       icon: <AiOutlineProduct />,
+  //       element: <NewProductDetails />,
+  //       isSidebarActive: true,
+  //     },
+  //   ],
+  // },
+  // {
+  //   path: "/settings",
+  //   name: "Settings",
+  //   icon: <MdOutlineSettings />,
+  //   isSidebarActive: true,
+  //   element: <GeneralSettings />,
+  // },
   {
     path: "#",
     name: "Team",

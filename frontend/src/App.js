@@ -28,6 +28,7 @@ function App() {
   const isPOSPage = ["/pos", "/pos-new"].includes(location.pathname);
 
   const token = localStorage.getItem("token");
+  console.log(token);
   const { data: profileData, isLoading: isProfileLoading } =
     useGetProfileQuery();
   const userId = profileData?.user?.userId || null;
