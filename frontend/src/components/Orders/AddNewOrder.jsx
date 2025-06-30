@@ -40,7 +40,7 @@ const AddNewOrder = ({ adminName, order }) => {
     dueDate: "",
     followupDates: [],
     source: "",
-    orderNo: "",
+
     teamId: "",
     priority: "",
     description: "",
@@ -64,7 +64,6 @@ const AddNewOrder = ({ adminName, order }) => {
         dueDate: selectedInvoice.dueDate || "",
         createdBy: selectedInvoice.createdBy || "",
         createdFor: selectedInvoice.customerId || "",
-        orderNo: numericOrderNo,
       }));
     }
   }, [selectedInvoice, selectedInvoiceId]);
@@ -231,17 +230,6 @@ const AddNewOrder = ({ adminName, order }) => {
                       <option disabled>No Invoices Available</option>
                     )}
                   </select>
-                </div>
-                <div className="col-md-6 mb-3">
-                  <label className="form-label fw-bold">Order No</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="orderNo"
-                    value={formData.orderNo}
-                    readOnly
-                    placeholder="Auto-generated"
-                  />
                 </div>
               </div>
 

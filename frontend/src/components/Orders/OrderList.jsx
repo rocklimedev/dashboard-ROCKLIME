@@ -1,5 +1,5 @@
 import React from "react";
-import OrderItem from "./Orderitem"; // Note: Ensure this is the correct import (case-sensitive)
+import OrderItem from "./Orderitem"; // Ensure this is the correct import (case-sensitive)
 import OrderPagination from "./OrderPagination";
 
 const OrderList = ({
@@ -36,34 +36,49 @@ const OrderList = ({
         </div>
       ) : orders.length > 0 ? (
         <>
-          <div className="row">
-            {orders.map((order) => (
-              <div className="col-md-4 d-flex" key={order.id}>
-                <OrderItem
-                  order={order}
-                  teamName={
-                    order.assignedTo &&
-                    teamDataMap &&
-                    teamDataMap[order.assignedTo]
-                      ? teamDataMap[order.assignedTo].teamName
-                      : "Unassigned"
-                  }
-                  isTeamLoading={
-                    order.assignedTo &&
-                    teamDataMap &&
-                    teamDataMap[order.assignedTo]
-                      ? teamDataMap[order.assignedTo].isLoading
-                      : false
-                  }
-                  onEditClick={onEditClick}
-                  onHoldClick={onHoldClick}
-                  onViewInvoice={onViewInvoice}
-                  onDeleteOrder={onDeleteOrder}
-                  onOpenDatesModal={onOpenDatesModal}
-                  isDueDateClose={isDueDateClose}
-                />
-              </div>
-            ))}
+          <div className="table-responsive">
+            <table className="table table-striped table-hover">
+              <thead>
+                <tr>
+                  <th>ORDER ID</th>
+                  <th>STATUS</th>
+                  <th>ITEM</th>
+                  <th>ORDER NUMBER</th>
+                  <th>CUSTOMER NAME</th>
+                  <th>SHIPPING SERVICE</th>
+                  <th>TRACKING CODE</th>
+                  <th>ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map((order) => (
+                  <OrderItem
+                    key={order.id}
+                    order={order}
+                    teamName={
+                      order.assignedTo &&
+                      teamDataMap &&
+                      teamDataMap[order.assignedTo]
+                        ? teamDataMap[order.assignedTo].teamName
+                        : "Unassigned"
+                    }
+                    isTeamLoading={
+                      order.assignedTo &&
+                      teamDataMap &&
+                      teamDataMap[order.assignedTo]
+                        ? teamDataMap[order.assignedTo].isLoading
+                        : false
+                    }
+                    onEditClick={onEditClick}
+                    onHoldClick={onHoldClick}
+                    onViewInvoice={onViewInvoice}
+                    onDeleteOrder={onDeleteOrder}
+                    onOpenDatesModal={onOpenDatesModal}
+                    isDueDateClose={isDueDateClose}
+                  />
+                ))}
+              </tbody>
+            </table>
           </div>
           {totalCount > pageSize && (
             <OrderPagination

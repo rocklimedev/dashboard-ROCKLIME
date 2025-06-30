@@ -1,12 +1,33 @@
 import React, { useState, useEffect } from "react";
-import { Form, Dropdown } from "react-bootstrap";
-import { toast } from "sonner"; // Changed import
-import Flatpickr from "react-flatpickr";
+import {
+  Input,
+  Select,
+  Button,
+  Table,
+  Card,
+  Avatar,
+  Tooltip,
+  Space,
+  Typography,
+  DatePicker,
+} from "antd";
+import {
+  SearchOutlined,
+  DownloadOutlined,
+  ReloadOutlined,
+  UpOutlined,
+  DownOutlined,
+} from "@ant-design/icons";
+import { toast } from "react-toastify"; // Use react-toastify as per API
+import moment from "moment";
 import jsPDF from "jspdf";
 import * as XLSX from "xlsx";
-import moment from "moment";
 import { useGetAllAttendanceQuery } from "../../api/attendanceApi";
+import "./attendancelist.css";
+import { Pagination as AntdPagination } from "antd";
+const { Option } = Select;
 
+const { Title, Text } = Typography;
 const AttendanceList = () => {
   const [filters, setFilters] = useState({
     search: "",
@@ -36,11 +57,9 @@ const AttendanceList = () => {
     setPage(1);
   };
 
-  const handleDateChange = (selectedDates) => {
-    const date = selectedDates[0]
-      ? moment(selectedDates[0]).format("YYYY-MM-DD")
-      : "";
-    handleFilterChange("date", date);
+  const handleDateChange = (date) => {
+    const formattedDate = date ? moment(date).format("YYYY-MM-DD") : "";
+    handleFilterChange("date", formattedDate);
   };
 
   const exportToPDF = () => {
@@ -50,7 +69,9 @@ const AttendanceList = () => {
     }
 
     const doc = new jsPDF();
+    doc.setFontSize(16);
     doc.text("Attendance Report", 20, 10);
+    doc.setFontSize(12);
     let y = 20;
     allAttendance.attendances.forEach((att, index) => {
       const clockIn = att.clockIn
@@ -62,7 +83,7 @@ const AttendanceList = () => {
       doc.text(
         `${index + 1}. ${att.user?.name || "Unknown"} - ${
           att.status
-        } - Clock In: ${clockIn}`,
+        } - Clock In: ${clockIn} - Clock Out: ${clockOut}`,
         20,
         y
       );
@@ -71,10 +92,9 @@ const AttendanceList = () => {
     doc.save("attendance-report.pdf");
   };
 
-  // Export to Excel
   const exportToExcel = () => {
     if (!allAttendance?.attendances?.length) {
-      toast.error("No data to export"); // Sonner toast
+      toast.error("No data to export");
       return;
     }
 
@@ -91,7 +111,14 @@ const AttendanceList = () => {
       Production: att.production || "N/A",
       Break: att.break || "N/A",
       Overtime: att.overtime || "N/A",
-      "Total Hours": att.totalHours || "N/A",
+      "Total Hours":
+        att.totalHours ||
+        (att.clockIn && att.clockOut
+          ? (
+              (new Date(att.clockOut) - new Date(att.clockIn)) /
+              (1000 * 60 * 60)
+            ).toFixed(2) + "h"
+          : "N/A"),
     }));
 
     const ws = XLSX.utils.json_to_sheet(data);
@@ -100,7 +127,6 @@ const AttendanceList = () => {
     XLSX.writeFile(wb, "attendance-report.xlsx");
   };
 
-  // Handle refresh
   const handleRefresh = () => {
     setFilters({
       search: "",
@@ -109,247 +135,199 @@ const AttendanceList = () => {
     });
     setPage(1);
     refetch();
-    toast.info("Attendance data refreshed"); // Sonner toast
+    toast.info("Attendance data refreshed");
   };
 
-  // Handle collapse
   const handleCollapse = () => {
     setIsTableCollapsed((prev) => !prev);
   };
 
-  // Error handling
   useEffect(() => {
     if (allAttendanceError) {
-      toast.error(allAttendanceError.message || "Failed to fetch attendance"); // Sonner toast
+      toast.error(allAttendanceError.message || "Failed to fetch attendance");
     }
   }, [allAttendanceError]);
 
-  // Render table
-  const renderTable = () => {
-    if (isAllAttendanceLoading) {
-      return (
-        <div className="text-center py-4">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
+  const columns = [
+    {
+      title: "Employee",
+      dataIndex: "user",
+      key: "employee",
+      render: (user) => (
+        <Space>
+          <Avatar
+            src={user?.avatar || "assets/img/users/user-01.jpg"}
+            size={40}
+          />
+          <div>
+            <Text strong>{user?.name || "Unknown"}</Text>
+            <br />
+            <Text type="secondary">{user?.roles?.join(", ") || "N/A"}</Text>
           </div>
-          <p>Loading attendance...</p>
-        </div>
-      );
-    }
-
-    if (!allAttendance?.attendances?.length) {
-      return (
-        <div className="text-center py-4 text-muted">
-          No attendance records found.
-        </div>
-      );
-    }
-
-    return (
-      <div
-        className="cm-table-wrapper"
-        style={{ display: isTableCollapsed ? "none" : "block" }}
-      >
-        <table className="cm-table">
-          <thead>
-            <tr>
-              <th>Employee</th>
-              <th>Status</th>
-              <th>Clock In</th>
-              <th>Clock Out</th>
-              <th>Production</th>
-              <th>Break</th>
-              <th>Overtime</th>
-              <th>Total Hours</th>
-            </tr>
-          </thead>
-          <tbody>
-            {allAttendance.attendances.map((att) => {
-              const clockIn = att.clockIn ? new Date(att.clockIn) : null;
-              const clockOut = att.clockOut ? new Date(att.clockOut) : null;
-              const totalHours =
-                clockIn && clockOut
-                  ? ((clockOut - clockIn) / (1000 * 60 * 60)).toFixed(2) + "h"
-                  : "N/A";
-              // Use stored fields or calculate placeholders
-              const production =
-                att.production ||
-                (totalHours !== "N/A" ? totalHours : "0h 00m");
-              const breakTime = att.break || "0h 00m";
-              const overtime = att.overtime || "0h 00m";
-
-              return (
-                <tr key={att._id}>
-                  <td>
-                    <div className="d-flex align-items-center">
-                      <a href="#" className="avatar avatar-md me-2">
-                        <img
-                          src={
-                            att.user?.avatar || "assets/img/users/user-01.jpg"
-                          }
-                          alt="product"
-                        />
-                      </a>
-                      <div>
-                        <h6>
-                          <a href="#">{att.user?.name || "Unknown"}</a>
-                        </h6>
-                        <span>{att.user?.roles?.join(", ") || "N/A"}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <span
-                      className={`badge badge-${
-                        att.status === "present"
-                          ? "success"
-                          : att.status === "late"
-                          ? "warning"
-                          : "danger"
-                      } d-inline-flex align-items-center badge-xs`}
-                    >
-                      <i className="ti ti-point-filled me-1"></i>
-                      {att.status.charAt(0).toUpperCase() + att.status.slice(1)}
-                    </span>
-                  </td>
-                  <td>{clockIn ? clockIn.toLocaleTimeString() : "N/A"}</td>
-                  <td>{clockOut ? clockOut.toLocaleTimeString() : "N/A"}</td>
-                  <td>{production}</td>
-                  <td>{breakTime}</td>
-                  <td>{overtime}</td>
-                  <td>{totalHours}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    );
-  };
+        </Space>
+      ),
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      render: (status) => (
+        <span
+          className={`badge badge-${
+            status === "present"
+              ? "success"
+              : status === "late"
+              ? "warning"
+              : "danger"
+          }`}
+        >
+          {status.charAt(0).toUpperCase() + status.slice(1)}
+        </span>
+      ),
+    },
+    {
+      title: "Clock In",
+      dataIndex: "clockIn",
+      key: "clockIn",
+      render: (clockIn) =>
+        clockIn ? new Date(clockIn).toLocaleTimeString() : "N/A",
+    },
+    {
+      title: "Clock Out",
+      dataIndex: "clockOut",
+      key: "clockOut",
+      render: (clockOut) =>
+        clockOut ? new Date(clockOut).toLocaleTimeString() : "N/A",
+    },
+    {
+      title: "Production",
+      dataIndex: "production",
+      key: "production",
+      render: (production, record) => {
+        const totalHours =
+          record.clockIn && record.clockOut
+            ? (
+                (new Date(record.clockOut) - new Date(record.clockIn)) /
+                (1000 * 60 * 60)
+              ).toFixed(2) + "h"
+            : "N/A";
+        return production || totalHours;
+      },
+    },
+    {
+      title: "Break",
+      dataIndex: "break",
+      key: "break",
+      render: (breakTime) => breakTime || "0h 00m",
+    },
+    {
+      title: "Overtime",
+      dataIndex: "overtime",
+      key: "overtime",
+      render: (overtime) => overtime || "0h 00m",
+    },
+    {
+      title: "Total Hours",
+      key: "totalHours",
+      render: (_, record) =>
+        record.clockIn && record.clockOut
+          ? (
+              (new Date(record.clockOut) - new Date(record.clockIn)) /
+              (1000 * 60 * 60)
+            ).toFixed(2) + "h"
+          : record.totalHours || "N/A",
+    },
+  ];
 
   return (
     <div className="page-wrapper">
-      <div className="content">
+      <div className="content container-fluid">
         <div className="page-header">
-          <div className="add-item d-flex">
-            <div className="page-title">
-              <h4>Attendance</h4>
-              <h6>Manage your Attendance</h6>
-            </div>
+          <div className="add-item">
+            <Title level={4}>Attendance</Title>
+            <Text>Manage your Attendance</Text>
           </div>
-          <ul className="table-top-head">
-            <li className="me-2">
-              <a
-                href="#"
-                onClick={exportToPDF}
-                data-bs-toggle="tooltip"
-                title="PDF"
-              >
-                <img src="assets/img/icons/pdf.svg" alt="img" />
-              </a>
-            </li>
-            <li className="me-2">
-              <a
-                href="#"
-                onClick={exportToExcel}
-                data-bs-toggle="tooltip"
-                title="Excel"
-              >
-                <img src="assets/img/icons/excel.svg" alt="img" />
-              </a>
-            </li>
-            <li className="me-2">
-              <a
-                href="#"
-                onClick={handleRefresh}
-                data-bs-toggle="tooltip"
-                title="Refresh"
-              >
-                <i className="ti ti-refresh"></i>
-              </a>
-            </li>
-            <li className="me-2">
-              <a
-                href="#"
+          <Space>
+            <Tooltip title="Export to PDF">
+              <Button icon={<DownloadOutlined />} onClick={exportToPDF} />
+            </Tooltip>
+            <Tooltip title="Export to Excel">
+              <Button icon={<DownloadOutlined />} onClick={exportToExcel} />
+            </Tooltip>
+            <Tooltip title="Refresh">
+              <Button icon={<ReloadOutlined />} onClick={handleRefresh} />
+            </Tooltip>
+            <Tooltip title={isTableCollapsed ? "Expand" : "Collapse"}>
+              <Button
+                icon={isTableCollapsed ? <DownOutlined /> : <UpOutlined />}
                 onClick={handleCollapse}
-                data-bs-toggle="tooltip"
-                title={isTableCollapsed ? "Expand" : "Collapse"}
-                id="collapse-header"
-              >
-                <i
-                  className={
-                    isTableCollapsed ? "ti ti-chevron-down" : "ti ti-chevron-up"
-                  }
-                ></i>
-              </a>
-            </li>
-          </ul>
+              />
+            </Tooltip>
+          </Space>
         </div>
 
-        <div className="card">
-          <div className="card-header d-flex align-items-center justify-content-between flex-wrap row-gap-3">
-            <div className="search-set">
-              <div className="search-input">
-                <Form.Control
-                  type="text"
-                  placeholder="Search by employee name"
-                  value={filters.search}
-                  onChange={(e) => handleFilterChange("search", e.target.value)}
-                />
-                <span className="btn-searchset">
-                  <i className="ti ti-search fs-14 feather-search"></i>
-                </span>
-              </div>
-            </div>
-            <div className="d-flex table-dropdown my-xl-auto right-content align-items-center flex-wrap row-gap-3">
-              <div className="me-2 date-select-small">
-                <div className="input-addon-left position-relative">
-                  <Flatpickr
-                    value={filters.date}
-                    onChange={handleDateChange}
-                    options={{ dateFormat: "Y-m-d" }}
-                    className="form-control datetimepicker"
-                    placeholder="Select Date"
+        <Card className="attendance-card">
+          <Space
+            direction="horizontal"
+            size="middle"
+            style={{
+              width: "100%",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+            }}
+          >
+            <Input
+              prefix={<SearchOutlined />}
+              placeholder
+              markedlydown="Search by employee name"
+              value={filters.search}
+              onChange={(e) => handleFilterChange("search", e.target.value)}
+              style={{ width: 300, borderRadius: 20 }}
+            />
+            <Space>
+              <DatePicker
+                value={filters.date ? moment(filters.date) : null}
+                onChange={handleDateChange}
+                format="YYYY-MM-DD"
+                style={{ borderRadius: 20 }}
+              />
+              <Select
+                value={filters.status || "All"}
+                onChange={(value) => handleFilterChange("status", value)}
+                style={{ width: 150, borderRadius: 20 }}
+              >
+                <Option value="">All</Option>
+                <Option value="present">Present</Option>
+                <Option value="absent">Absent</Option>
+                <Option value="late">Late</Option>
+              </Select>
+            </Space>
+          </Space>
+
+          {!isTableCollapsed && (
+            <>
+              <Table
+                columns={columns}
+                dataSource={allAttendance?.attendances || []}
+                loading={isAllAttendanceLoading}
+                pagination={false}
+                rowKey="_id"
+                className="attendance-table"
+              />
+              {allAttendance?.meta?.total > limit && (
+                <div style={{ textAlign: "right", marginTop: 16 }}>
+                  <AntdPagination
+                    current={page}
+                    pageSize={limit}
+                    total={allAttendance?.meta?.total || 0}
+                    onChange={setPage}
+                    showSizeChanger={false}
                   />
-                  <span className="cus-icon">
-                    <i data-feather="calendar" className="feather-clock"></i>
-                  </span>
                 </div>
-              </div>
-              <Dropdown>
-                <Dropdown.Toggle
-                  variant="white"
-                  className="btn btn-md d-inline-flex align-items-center"
-                >
-                  Select Status: {filters.status || "All"}
-                </Dropdown.Toggle>
-                <Dropdown.Menu>
-                  <Dropdown.Item
-                    onClick={() => handleFilterChange("status", "")}
-                  >
-                    All
-                  </Dropdown.Item>
-                  <Dropdown.Item
-                    onClick={() => handleFilterChange("status", "present")}
-                  >
-                    Present
-                  </Dropdown.Item>
-                  <Dropdown.Item
-                    onClick={() => handleFilterChange("status", "absent")}
-                  >
-                    Absent
-                  </Dropdown.Item>
-                  <Dropdown.Item
-                    onClick={() => handleFilterChange("status", "late")}
-                  >
-                    Late
-                  </Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown>
-            </div>
-          </div>
-          {renderTable()}
-        </div>
+              )}
+            </>
+          )}
+        </Card>
       </div>
     </div>
   );

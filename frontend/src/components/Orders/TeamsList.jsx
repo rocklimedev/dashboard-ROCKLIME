@@ -5,9 +5,28 @@ import avatar from "../../assets/img/profiles/avatar-15.jpg";
 import PageHeader from "../Common/PageHeader";
 import AddNewTeam from "./AddNewTeam";
 import DeleteModal from "../Common/DeleteModal";
-import { Dropdown, Form } from "react-bootstrap";
+import {
+  Input,
+  Select,
+  Button,
+  Card,
+  Avatar,
+  Tooltip,
+  Space,
+  Typography,
+} from "antd";
+import {
+  SearchOutlined,
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  MoreOutlined,
+} from "@ant-design/icons";
 import { toast } from "sonner";
 import "./teamList.css";
+
+const { Option } = Select;
+const { Text, Title } = Typography;
 
 const TeamsList = ({ onClose, adminName }) => {
   const { data, isLoading, isError, refetch } = useGetAllTeamsQuery();
@@ -17,7 +36,7 @@ const TeamsList = ({ onClose, adminName }) => {
   const [showNewTeamModal, setShowNewTeamModal] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [teamToDelete, setTeamToDelete] = useState(null);
-  const [searchTerm, setSearchTerm] = useState(""); // State for search term
+  const [searchTerm, setSearchTerm] = useState("");
 
   const handleAddTeam = () => {
     setSelectedTeam(null);
@@ -53,7 +72,6 @@ const TeamsList = ({ onClose, adminName }) => {
     }
   };
 
-  // Filter teams based on search term
   const filteredTeams = teams.filter((team) =>
     [team.teamName, team.adminName]
       .join(" ")
@@ -70,57 +88,50 @@ const TeamsList = ({ onClose, adminName }) => {
           subtitle="Manage your teams & team-members"
         />
 
-        <div className="card mb-4">
-          <div className="card-body">
-            <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
-              <div className="search-set">
-                <div className="search-input">
-                  <span className="btn-searchset">
-                    <i className="ti ti-search fs-14"></i>
-                  </span>
-                  <Form.Control
-                    type="search"
-                    className="form-control"
-                    placeholder="Search teams..."
-                    aria-label="Search teams"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="d-flex align-items-center gap-2">
-                <Dropdown>
-                  <Dropdown.Toggle
-                    variant="light"
-                    className="btn btn-outline-secondary btn-md"
-                  >
-                    Select Status
-                  </Dropdown.Toggle>
-                  <Dropdown.Menu align="end">
-                    <Dropdown.Item>Active</Dropdown.Item>
-                    <Dropdown.Item>Inactive</Dropdown.Item>
-                    <Dropdown.Item>New Joiners</Dropdown.Item>
-                  </Dropdown.Menu>
-                </Dropdown>
-                <Dropdown>
-                  <Dropdown.Toggle
-                    variant="light"
-                    className="btn btn-outline-secondary btn-md"
-                  >
-                    Sort By: Last 7 Days
-                  </Dropdown.Toggle>
-                  <Dropdown.Menu align="end">
-                    <Dropdown.Item>Recently Added</Dropdown.Item>
-                    <Dropdown.Item>Ascending</Dropdown.Item>
-                    <Dropdown.Item>Descending</Dropdown.Item>
-                    <Dropdown.Item>Last Month</Dropdown.Item>
-                    <Dropdown.Item>Last 7 Days</Dropdown.Item>
-                  </Dropdown.Menu>
-                </Dropdown>
-              </div>
+        <Card className="filter-card">
+          <Space
+            direction="horizontal"
+            size="middle"
+            style={{
+              width: "100%",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+            }}
+          >
+            <div className="search-input">
+              <Input
+                prefix={<SearchOutlined />}
+                placeholder="Search teams..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{ width: 300, borderRadius: 20 }}
+              />
             </div>
-          </div>
-        </div>
+            <Space>
+              <Select
+                defaultValue="All Status"
+                style={{ width: 150 }}
+                dropdownStyle={{ borderRadius: 8 }}
+              >
+                <Option value="all">All Status</Option>
+                <Option value="active">Active</Option>
+                <Option value="inactive">Inactive</Option>
+                <Option value="new">New Joiners</Option>
+              </Select>
+              <Select
+                defaultValue="Last 7 Days"
+                style={{ width: 150 }}
+                dropdownStyle={{ borderRadius: 8 }}
+              >
+                <Option value="recent">Recently Added</Option>
+                <Option value="asc">Ascending</Option>
+                <Option value="desc">Descending</Option>
+                <Option value="last-month">Last Month</Option>
+                <Option value="last-7-days">Last 7 Days</Option>
+              </Select>
+            </Space>
+          </Space>
+        </Card>
 
         <div className="employee-grid-widget">
           {isLoading && <p className="text-center">Loading teams...</p>}
@@ -133,76 +144,73 @@ const TeamsList = ({ onClose, adminName }) => {
             </p>
           )}
 
-          <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+          <div className="row row-cells-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
             {filteredTeams.map((team) => (
               <div key={team.id} className="col">
-                <div className="card team-card h-100">
-                  <div className="card-body">
-                    <div className="d-flex align-items-center justify-content-between mb-3">
-                      <h5 className="team-name d-flex align-items-center mb-0">
-                        <i className="ti ti-point-filled text-success me-2"></i>
+                <Card className="team-card" hoverable>
+                  <div className="card-content">
+                    <div className="card-header">
+                      <Title level={5} className="team-name">
+                        <span className="status-dot"></span>
                         {team.teamName}
-                      </h5>
-                      <Dropdown>
-                        <Dropdown.Toggle
-                          variant="light"
-                          className="border-0 p-0"
-                          aria-label="Team actions"
-                        >
-                          <i className="bi bi-three-dots-vertical fs-18"></i>
-                        </Dropdown.Toggle>
-                        <Dropdown.Menu align="end">
-                          <Dropdown.Item onClick={() => handleEditTeam(team)}>
-                            <i className="bi bi-pencil me-2"></i> Edit
-                          </Dropdown.Item>
-                          <Dropdown.Item onClick={() => handleDeleteTeam(team)}>
-                            <i className="bi bi-trash me-2"></i> Delete
-                          </Dropdown.Item>
-                        </Dropdown.Menu>
-                      </Dropdown>
+                      </Title>
+                      <Select
+                        value="Actions"
+                        style={{ width: 50 }}
+                        bordered={false}
+                        dropdownStyle={{ borderRadius: 8 }}
+                      >
+                        <Option onClick={() => handleEditTeam(team)}>
+                          <EditOutlined /> Edit
+                        </Option>
+                        <Option onClick={() => handleDeleteTeam(team)}>
+                          <DeleteOutlined /> Delete
+                        </Option>
+                      </Select>
                     </div>
-                    <div className="admin-info text-center mb-4">
-                      <div className="avatar avatar-lg mb-2">
-                        <img
-                          src={team.adminImage || user}
-                          alt={team.adminName}
-                          className="rounded-circle"
-                        />
-                      </div>
-                      <h6 className="mb-0">{team.adminName}</h6>
+                    <div className="admin-info text-center">
+                      <Avatar src={team.adminImage || user} size={60} />
+                      <Text strong>{team.adminName}</Text>
                     </div>
-                    <div className="d-flex align-items-center justify-content-between">
-                      <p className="mb-0">
+                    <div className="card-footer">
+                      <Text>
                         Total Members: {team.teammembers?.length || 0}
-                      </p>
-                      <div className="avatar-list-stacked d-flex">
+                      </Text>
+                      <Space className="avatar-list-stacked">
                         {team.teammembers
                           ?.slice(0, 3)
                           .map((teammember, index) => (
-                            <span
-                              key={index}
-                              className="avatar avatar-sm avatar-rounded"
-                              title={teammember.userName}
-                            >
-                              <img
+                            <Tooltip key={index} title={teammember.userName}>
+                              <Avatar
                                 src={teammember.userImage || avatar}
-                                alt={teammember.userName}
-                                className="border border-white"
+                                size={30}
                               />
-                            </span>
+                            </Tooltip>
                           ))}
                         {team.teammembers?.length > 3 && (
-                          <span className="avatar avatar-sm avatar-rounded text-fixed-white fs-12 fw-medium">
-                            <img src={avatar} alt="More members" />
-                            <span className="more-members">
+                          <Tooltip
+                            title={`+${
+                              team.teammembers.length - 3
+                            } more members`}
+                          >
+                            <Avatar
+                              size={30}
+                              style={{
+                                backgroundColor: "#6c757d",
+                                color: "#fff",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                            >
                               +{team.teammembers.length - 3}
-                            </span>
-                          </span>
+                            </Avatar>
+                          </Tooltip>
                         )}
-                      </div>
+                      </Space>
                     </div>
                   </div>
-                </div>
+                </Card>
               </div>
             ))}
           </div>

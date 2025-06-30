@@ -30,7 +30,7 @@ import {
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import { useGetAllBrandsQuery } from "../../api/brandsApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
-import { useUpdateProductFeaturedMutation } from "../../api/userApi";
+import { useUpdateProductFeaturedMutation } from "../../api/productApi";
 import {
   useAddToCartMutation,
   useGetCartQuery,
@@ -49,7 +49,7 @@ import PageHeader from "../Common/PageHeader";
 import { useAddProductToCartMutation } from "../../api/cartApi";
 const { Option } = Select;
 
-const ProductsList = ({ isAdmin = false }) => {
+const ProductsList = () => {
   const { data: productsData, error, isLoading } = useGetAllProductsQuery();
   const { data: categoriesData } = useGetAllCategoriesQuery();
   const { data: brandsData } = useGetAllBrandsQuery();
@@ -384,7 +384,7 @@ const ProductsList = ({ isAdmin = false }) => {
     <div className="page-wrapper">
       <div className="content">
         <PageHeader
-          title="Shop Products"
+          title="Products"
           subtitle="Explore our latest collection"
           onAdd={handleAddProduct}
           extra={
@@ -397,6 +397,9 @@ const ProductsList = ({ isAdmin = false }) => {
             </Button>
           }
         />
+        <Button onClick={() => navigate("/inventory/product/add")}>
+          Test Navigation
+        </Button>
         <Cart
           cartItems={cartItems}
           onRemoveFromCart={handleRemoveFromCart}

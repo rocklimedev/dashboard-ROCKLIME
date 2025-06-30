@@ -138,7 +138,7 @@ const masterRoutes = [
         element: <ProductDetails />,
       },
       {
-        path: "/product/:id/edit",
+        path: "/product/:productId/edit",
         name: "Product Edit",
         icon: <AiOutlineProduct />,
         isSidebarActive: false,
@@ -181,7 +181,7 @@ const masterRoutes = [
         isSidebarActive: true,
       },
       {
-        path: "/invoices/:invoiceId",
+        path: "/invoice/:invoiceId",
         name: "Invoices",
         icon: <FaFileInvoice />,
         element: <InvoiceDetails />,

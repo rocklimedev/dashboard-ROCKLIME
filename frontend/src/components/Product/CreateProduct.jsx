@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import React, { useEffect, useState, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa";
 import {
   useCreateProductMutation,
@@ -7,20 +7,26 @@ import {
   useGetProductByIdQuery,
 } from "../../api/productApi";
 import { GiFeatherWound } from "react-icons/gi";
+import { FiImage, FiPlusCircle, FiLifeBuoy } from "react-icons/fi";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import { useGetAllParentCategoriesQuery } from "../../api/parentCategoryApi";
 import { useGetAllBrandsQuery } from "../../api/brandsApi";
+import { useGetProfileQuery } from "../../api/userApi"; // Added to fetch user_id
 import { toast } from "sonner";
+import { useDropzone } from "react-dropzone";
 
 const CreateProduct = () => {
-  const { id } = useParams();
-  const isEditMode = Boolean(id);
+  const { productId } = useParams();
+  const navigate = useNavigate();
+  const isEditMode = Boolean(productId);
   const [filteredCategories, setFilteredCategories] = useState([]);
+  const [newImages, setNewImages] = useState([]); // { file, preview }
+  const [existingImages, setExistingImages] = useState([]); // Image URLs
+  const [imagesToDelete, setImagesToDelete] = useState([]); // Images to delete
 
+  // Fetch product, categories, parent categories, brands, and user
   const { data: existingProduct, isLoading: isFetching } =
-    useGetProductByIdQuery(id, {
-      skip: !isEditMode,
-    });
+    useGetProductByIdQuery(productId, { skip: !isEditMode });
   const {
     data: categoryData = { categories: [] },
     isLoading: isCategoryLoading,
@@ -28,11 +34,13 @@ const CreateProduct = () => {
   const { data: parentCategories, isLoading: isParentCategoryLoading } =
     useGetAllParentCategoriesQuery();
   const { data: brands, isLoading: isBrandLoading } = useGetAllBrandsQuery();
+  const { data: user, isLoading: isUserLoading } = useGetProfileQuery(); // Fetch user for user_id
 
   const parentCategoryData = Array.isArray(parentCategories?.data)
     ? parentCategories.data
     : [];
   const brandData = Array.isArray(brands) ? brands : [];
+  const userId = user?.user?.userId; // Get user_id from profile
 
   const initialFormData = {
     name: "",
@@ -50,6 +58,8 @@ const CreateProduct = () => {
     quantity: "",
     alertQuantity: "",
     tax: "",
+    discountType: "", // Added for schema
+    barcode: "", // Added for schema
   };
 
   const [formData, setFormData] = useState(initialFormData);
@@ -58,11 +68,11 @@ const CreateProduct = () => {
   const [updateProduct, { isLoading: isUpdating, error }] =
     useUpdateProductMutation();
 
-  // Pre-fill form and set filtered categories in edit mode
+  // Pre-fill form and images in edit mode
   useEffect(() => {
     if (existingProduct && categoryData?.categories) {
       const selectedCategory = categoryData.categories.find(
-        (cat) => cat.categoryId === existingProduct.category
+        (cat) => cat.categoryId === existingProduct.categoryId
       );
       const parentCategoryId = selectedCategory?.parentCategoryId || "";
 
@@ -79,24 +89,29 @@ const CreateProduct = () => {
 
       setFormData({
         name: existingProduct.name || "",
-        productSegment: existingProduct.productSegment || "",
+        productSegment: existingProduct.product_segment || "",
         productGroup: existingProduct.productGroup || "",
         product_code: existingProduct.product_code || "",
         company_code: existingProduct.company_code || "",
         sellingPrice: existingProduct.sellingPrice || "",
         purchasingPrice: existingProduct.purchasingPrice || "",
-        category: existingProduct.category || "",
+        category: existingProduct.categoryId || "",
         parentCategory: parentCategoryId,
-        brand: existingProduct.brand || "",
-        isFeatured: existingProduct.isFeatured?.toString() || "",
+        brand: existingProduct.brandId || "",
+        isFeatured: existingProduct.isFeatured?.toString() || "false",
         description: existingProduct.description || "",
         quantity: existingProduct.quantity || "",
-        alertQuantity: existingProduct.alertQuantity || "",
+        alertQuantity: existingProduct.alert_quantity || "",
         tax: existingProduct.tax || "",
+        discountType: existingProduct.discountType || "", // Added
+        barcode: existingProduct.barcode || "", // Added
       });
+
+      setExistingImages(existingProduct.images || []);
     }
   }, [existingProduct, categoryData, parentCategoryData]);
 
+  // Handle form input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -145,12 +160,70 @@ const CreateProduct = () => {
     }));
   };
 
+  // Handle image drop
+  const onDrop = useCallback(
+    (acceptedFiles, rejectedFiles) => {
+      if (rejectedFiles.length > 0) {
+        rejectedFiles.forEach((file) => {
+          if (file.errors.some((e) => e.code === "file-too-large")) {
+            toast.warning(`File "${file.file.name}" exceeds 5MB limit.`);
+          } else if (file.errors.some((e) => e.code === "file-invalid-type")) {
+            toast.warning(`File "${file.file.name}" is not an image.`);
+          }
+        });
+        return;
+      }
+
+      if (existingImages.length + newImages.length + acceptedFiles.length > 5) {
+        toast.warning("You can upload a maximum of 5 images.");
+        return;
+      }
+
+      const newFiles = acceptedFiles.map((file) => ({
+        file,
+        preview: URL.createObjectURL(file),
+      }));
+      setNewImages((prev) => [...prev, ...newFiles]);
+    },
+    [existingImages, newImages]
+  );
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    accept: { "image/*": [".jpeg", ".jpg", ".png", ".gif"] },
+    maxFiles: 5 - (existingImages.length + newImages.length),
+    maxSize: 5 * 1024 * 1024, // 5MB
+    onDrop,
+  });
+
+  // Handle image deletion
+  const handleDeleteImage = (imageUrl) => {
+    setExistingImages((prev) => prev.filter((img) => img !== imageUrl));
+    setImagesToDelete((prev) => [...prev, imageUrl]);
+  };
+
+  const handleDeleteNewImage = (preview) => {
+    setNewImages((prev) => {
+      const updated = prev.filter((img) => img.preview !== preview);
+      prev
+        .filter((img) => img.preview === preview)
+        .forEach((img) => URL.revokeObjectURL(img.preview));
+      return updated;
+    });
+  };
+
+  // Clean up preview URLs
+  useEffect(() => {
+    return () => {
+      newImages.forEach((img) => URL.revokeObjectURL(img.preview));
+    };
+  }, [newImages]);
+
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     const requiredFields = {
       name: formData.name,
-      productSegment: formData.productSegment,
       productGroup: formData.productGroup,
       product_code: formData.product_code,
       company_code: formData.company_code,
@@ -159,10 +232,7 @@ const CreateProduct = () => {
       category: formData.category,
       brand: formData.brand,
       isFeatured: formData.isFeatured,
-      description: formData.description,
       quantity: formData.quantity,
-      alertQuantity: formData.alertQuantity,
-      tax: formData.tax,
     };
 
     const emptyFields = Object.entries(requiredFields).filter(
@@ -193,40 +263,67 @@ const CreateProduct = () => {
       }
     }
 
-    const sanitizedData = {
-      name: formData.name,
-      productSegment: formData.productSegment,
-      productGroup: formData.productGroup,
-      product_code: formData.product_code,
-      company_code: formData.company_code,
-      sellingPrice: formData.sellingPrice.replace(/,/g, ""),
-      purchasingPrice: formData.purchasingPrice.replace(/,/g, ""),
-      categoryId: formData.category,
-      brandId: formData.brand,
-      isFeatured: formData.isFeatured === "true",
-      description: formData.description,
-      quantity: Number(formData.quantity) || 0,
-      alertQuantity: Number(formData.alertQuantity) || 0,
-      tax: formData.tax,
-    };
+    const formDataToSend = new FormData();
+    formDataToSend.append("name", formData.name);
+    formDataToSend.append("product_segment", formData.productSegment);
+    formDataToSend.append("productGroup", formData.productGroup);
+    formDataToSend.append("product_code", formData.product_code);
+    formDataToSend.append("company_code", formData.company_code);
+    formDataToSend.append(
+      "sellingPrice",
+      formData.sellingPrice.replace(/,/g, "")
+    );
+    formDataToSend.append(
+      "purchasingPrice",
+      formData.purchasingPrice.replace(/,/g, "")
+    );
+    formDataToSend.append("categoryId", formData.category);
+    formDataToSend.append("brandId", formData.brand);
+    formDataToSend.append("isFeatured", formData.isFeatured === "true");
+    formDataToSend.append("description", formData.description);
+    formDataToSend.append("quantity", Number(formData.quantity) || 0);
+    formDataToSend.append(
+      "alert_quantity",
+      Number(formData.alertQuantity) || 0
+    );
+    formDataToSend.append("tax", formData.tax ? Number(formData.tax) : "");
+    formDataToSend.append("discountType", formData.discountType || "");
+    formDataToSend.append("barcode", formData.barcode || "");
+    formDataToSend.append("user_id", userId || "");
+
+    newImages.forEach((image) => {
+      formDataToSend.append("images", image.file);
+    });
+
+    if (isEditMode && imagesToDelete.length > 0) {
+      formDataToSend.append("imagesToDelete", JSON.stringify(imagesToDelete));
+    }
 
     try {
       if (isEditMode) {
-        await updateProduct({ id, ...sanitizedData }).unwrap();
+        await updateProduct({ productId, formData: formDataToSend }).unwrap();
         toast.success("Product updated successfully!");
+        navigate("/inventory/list");
       } else {
-        await createProduct(sanitizedData).unwrap();
+        await createProduct(formDataToSend).unwrap();
         toast.success("Product created successfully!");
         setFormData(initialFormData);
         setFilteredCategories([]);
+        setNewImages([]);
+        navigate("/inventory/list");
       }
     } catch (error) {
-      toast.error(
-        `Error: ${
-          error.data?.message ||
-          "Something went wrong while saving the product."
-        }`
-      );
+      const message =
+        error.data?.message || "Something went wrong while saving the product.";
+      if (
+        message.includes("product_code") ||
+        message.includes("company_code") ||
+        message.includes("barcode")
+      ) {
+        toast.error(`Error: ${message} (must be unique)`);
+      } else {
+        toast.error(`Error: ${message}`);
+      }
     }
   };
 
@@ -234,7 +331,8 @@ const CreateProduct = () => {
     isFetching ||
     isCategoryLoading ||
     isParentCategoryLoading ||
-    isBrandLoading
+    isBrandLoading ||
+    isUserLoading
   ) {
     return <p className="text-center">Loading product details...</p>;
   }
@@ -291,16 +389,13 @@ const CreateProduct = () => {
                   </div>
                   <div className="col-md-6 col-12">
                     <div className="form-group">
-                      <label className="form-label">
-                        Product Segment <span className="text-danger">*</span>
-                      </label>
+                      <label className="form-label">Product Segment</label>
                       <input
                         type="text"
                         className="form-control"
                         name="productSegment"
                         value={formData.productSegment}
                         onChange={handleChange}
-                        required
                       />
                     </div>
                   </div>
@@ -351,34 +446,29 @@ const CreateProduct = () => {
                   </div>
                   <div className="col-md-6 col-12">
                     <div className="form-group">
-                      <label className="form-label">
-                        Selling Price <span className="text-danger">*</span>
-                      </label>
+                      <label className="form-label">Barcode</label>
                       <input
-                        type="number"
-                        step="0.01"
+                        type="text"
                         className="form-control"
-                        name="sellingPrice"
-                        value={formData.sellingPrice}
+                        name="barcode"
+                        value={formData.barcode}
                         onChange={handleChange}
-                        required
                       />
                     </div>
                   </div>
                   <div className="col-md-6 col-12">
                     <div className="form-group">
-                      <label className="form-label">
-                        Purchasing Price <span className="text-danger">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
+                      <label className="form-label">Discount Type</label>
+                      <select
                         className="form-control"
-                        name="purchasingPrice"
-                        value={formData.purchasingPrice}
+                        name="discountType"
+                        value={formData.discountType}
                         onChange={handleChange}
-                        required
-                      />
+                      >
+                        <option value="">Select Discount Type</option>
+                        <option value="percent">Percent</option>
+                        <option value="fixed">Fixed</option>
+                      </select>
                     </div>
                   </div>
                   <div className="col-md-6 col-12">
@@ -489,12 +579,44 @@ const CreateProduct = () => {
             <div className="card">
               <div className="card-header">
                 <h5 className="card-title d-flex align-items-center">
-                  <i data-feather="life-buoy" className="text-primary me-2"></i>
+                  <FiLifeBuoy className="text-primary me-2" />
                   Pricing & Stocks
                 </h5>
               </div>
               <div className="card-body">
                 <div className="row g-3">
+                  <div className="col-md-4 col-12">
+                    <div className="form-group">
+                      <label className="form-label">
+                        Selling Price <span className="text-danger">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        className="form-control"
+                        name="sellingPrice"
+                        value={formData.sellingPrice}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="col-md-4 col-12">
+                    <div className="form-group">
+                      <label className="form-label">
+                        Purchasing Price <span className="text-danger">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        className="form-control"
+                        name="purchasingPrice"
+                        value={formData.purchasingPrice}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+                  </div>
                   <div className="col-md-4 col-12">
                     <div className="form-group">
                       <label className="form-label">
@@ -513,9 +635,7 @@ const CreateProduct = () => {
                   </div>
                   <div className="col-md-4 col-12">
                     <div className="form-group">
-                      <label className="form-label">
-                        Alert Quantity <span className="text-danger">*</span>
-                      </label>
+                      <label className="form-label">Alert Quantity</label>
                       <input
                         type="number"
                         className="form-control"
@@ -523,29 +643,22 @@ const CreateProduct = () => {
                         value={formData.alertQuantity}
                         onChange={handleChange}
                         min="0"
-                        required
                       />
                     </div>
                   </div>
                   <div className="col-md-4 col-12">
                     <div className="form-group">
-                      <label className="form-label">
-                        Tax <span className="text-danger">*</span>
-                      </label>
-                      <select
+                      <label className="form-label">Tax (%)</label>
+                      <input
+                        type="number"
+                        step="0.01"
                         className="form-control"
                         name="tax"
                         value={formData.tax}
                         onChange={handleChange}
-                        required
-                      >
-                        <option value="">Select Tax</option>
-                        <option value="IGST (8%)">IGST (8%)</option>
-                        <option value="GST (5%)">GST (5%)</option>
-                        <option value="SGST (4%)">SGST (4%)</option>
-                        <option value="CGST (16%)">CGST (16%)</option>
-                        <option value="GST (18%)">GST (18%)</option>
-                      </select>
+                        min="0"
+                        max="100"
+                      />
                     </div>
                   </div>
                 </div>
@@ -558,7 +671,7 @@ const CreateProduct = () => {
             <div className="card">
               <div className="card-header">
                 <h5 className="card-title d-flex align-items-center">
-                  <i data-feather="image" className="text-primary me-2"></i>
+                  <FiImage className="text-primary me-2" />
                   Images
                 </h5>
               </div>
@@ -567,15 +680,84 @@ const CreateProduct = () => {
                   <div className="col-12">
                     <div className="form-group">
                       <label className="form-label">Upload Images</label>
-                      <div className="image-upload">
-                        <input type="file" multiple className="form-control" />
-                        <div className="image-preview text-center py-4">
-                          <i
-                            data-feather="plus-circle"
-                            className="text-muted"
-                          ></i>
-                          <p className="mb-0">Add Images</p>
-                        </div>
+                      <div
+                        {...getRootProps()}
+                        className={`image-upload border rounded p-4 text-center ${
+                          isDragActive ? "bg-light" : ""
+                        }`}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <input {...getInputProps()} />
+                        {isDragActive ? (
+                          <p>Drop the images here...</p>
+                        ) : (
+                          <div>
+                            <FiPlusCircle
+                              className="text-muted mb-2"
+                              size={24}
+                            />
+                            <p className="mb-0">
+                              Drag & drop images or click to upload
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                      <small className="form-text text-muted">
+                        Upload up to 5 images (JPEG, PNG, GIF, max 5MB each).
+                      </small>
+                      <div className="image-preview-container row g-2 mt-2">
+                        {existingImages.map((image, index) => (
+                          <div
+                            key={`existing-${index}`}
+                            className="col-md-3 col-6 position-relative"
+                          >
+                            <img
+                              src={image}
+                              alt="Existing product"
+                              className="img-fluid rounded"
+                              style={{
+                                width: "100%",
+                                height: "100px",
+                                objectFit: "cover",
+                              }}
+                            />
+                            <button
+                              type="button"
+                              className="btn btn-danger btn-sm position-absolute"
+                              style={{ top: "5px", right: "5px" }}
+                              onClick={() => handleDeleteImage(image)}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                        {newImages.map((image, index) => (
+                          <div
+                            key={`new-${index}`}
+                            className="col-md-3 col-6 position-relative"
+                          >
+                            <img
+                              src={image.preview}
+                              alt="New upload"
+                              className="img-fluid rounded"
+                              style={{
+                                width: "100%",
+                                height: "100px",
+                                objectFit: "cover",
+                              }}
+                            />
+                            <button
+                              type="button"
+                              className="btn btn-danger btn-sm position-absolute"
+                              style={{ top: "5px", right: "5px" }}
+                              onClick={() =>
+                                handleDeleteNewImage(image.preview)
+                              }
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
