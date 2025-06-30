@@ -1,6 +1,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { toast } from "react-toastify";
+import { toast } from "sonner"; // Change import to sonner
 import { API_URL } from "../data/config";
+
 export const attendanceApi = createApi({
   reducerPath: "attendanceApi",
   baseQuery: fetchBaseQuery({
@@ -19,12 +20,12 @@ export const attendanceApi = createApi({
         if (!response.success) {
           throw new Error(response.message || "Failed to clock in");
         }
-        toast.success(response.message);
+        toast.success(response.message); // Use sonner toast
         return response.data;
       },
       transformErrorResponse: (error) => {
         const message = error.data?.message || "Failed to clock in";
-        toast.error(message);
+        toast.error(message); // Use sonner toast
         return { message };
       },
       invalidatesTags: ["Attendance"], // Invalidate cache to refresh attendance data
@@ -41,12 +42,12 @@ export const attendanceApi = createApi({
         if (!response.success) {
           throw new Error(response.message || "Failed to clock out");
         }
-        toast.success(response.message);
+        toast.success(response.message); // Use sonner toast
         return response.data;
       },
       transformErrorResponse: (error) => {
         const message = error.data?.message || "Failed to clock out";
-        toast.error(message);
+        toast.error(message); // Use sonner toast
         return { message };
       },
       invalidatesTags: ["Attendance"], // Invalidate cache to refresh attendance data
@@ -66,7 +67,7 @@ export const attendanceApi = createApi({
       },
       transformErrorResponse: (error) => {
         const message = error.data?.message || "Failed to fetch attendance";
-        toast.error(message);
+        toast.error(message); // Use sonner toast
         return { message };
       },
       providesTags: ["Attendance"], // Cache attendance data
@@ -89,7 +90,7 @@ export const attendanceApi = createApi({
       },
       transformErrorResponse: (error) => {
         const message = error.data?.message || "Failed to fetch all attendance";
-        toast.error(message);
+        toast.error(message); // Use sonner toast
         return { message };
       },
       providesTags: ["Attendance"], // Cache attendance data

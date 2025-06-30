@@ -1,0 +1,90 @@
+.attendance-card {
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+}
+
+.attendance-table {
+  margin-top: 16px;
+}
+
+.attendance-table .ant-table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.attendance-table .ant-table-thead > tr > th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #495057;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.attendance-table .ant-table-tbody > tr:hover > td {
+  background-color: #f1f3f5;
+}
+
+.badge-success {
+  background-color: #d4edda;
+  color: #155724;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.badge-warning {
+  background-color: #fff3cd;
+  color: #856404;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.badge-danger {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.ant-input-affix-wrapper {
+  border-radius: 20px !important;
+}
+
+.ant-select-selector,
+.ant-picker {
+  border-radius: 20px !important;
+}
+
+.ant-btn {
+  border-radius: 20px;
+}
+
+.text-center {
+  text-align: center;
+  padding: 20px;
+  color: #6c757d;
+  font-size: 16px;
+}
+
+.text-danger {
+  color: #ff4d4f;
+}
+
+@media (max-width: 768px) {
+  .ant-space-horizontal {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .ant-input-affix-wrapper {
+    width: 100% !important;
+  }
+}

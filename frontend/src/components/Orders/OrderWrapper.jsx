@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; // Import useNavigate for navigation
+import { useNavigate } from "react-router-dom";
 import PageHeader from "../Common/PageHeader";
 import OrderPagination from "./OrderPagination";
 import OrderFilter from "./OrderFilter";
@@ -12,18 +12,19 @@ import {
 import { useGetAllTeamsQuery } from "../../api/teamApi";
 import { toast } from "sonner";
 import DatesModal from "./DateModal";
-import OrderItem from "./Orderitem";
 import { useTeamDataMap } from "../../data/useTeamDataMap";
 import OnHoldModal from "./OnHoldOrder";
 import DeleteModal from "../Common/DeleteModal";
+import { FaEdit, FaPause, FaFileInvoice, FaTrash } from "react-icons/fa"; // Icons
+import { Tooltip } from "react-tooltip"; // Tooltip component
 
 const OrderWrapper = () => {
-  const navigate = useNavigate(); // Initialize useNavigate
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("orders");
   const [teamMap, setTeamMap] = useState({});
   const [showHoldModal, setShowHoldModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState(null); // Used for OnHoldModal
+  const [selectedOrder, setSelectedOrder] = useState(null);
   const [orderToDelete, setOrderToDelete] = useState(null);
   const [showDatesModal, setShowDatesModal] = useState(false);
   const [selectedDates, setSelectedDates] = useState({
@@ -67,9 +68,7 @@ const OrderWrapper = () => {
     error: filteredError,
     isLoading: filteredLoading,
     isFetching: filteredFetching,
-  } = useGetFilteredOrdersQuery(cleanFilters, {
-    skip: !isFiltered,
-  });
+  } = useGetFilteredOrdersQuery(cleanFilters, { skip: !isFiltered });
 
   const {
     data: allData,
@@ -101,11 +100,11 @@ const OrderWrapper = () => {
   const [deleteOrder] = useDeleteOrderMutation();
 
   const handleOpenAddOrder = () => {
-    navigate("/order/add"); // Navigate to AddNewOrder page
+    navigate("/order/add");
   };
 
   const handleEditClick = (order) => {
-    navigate(`/orders/${order.id}/edit`, { state: { order } }); // Navigate to edit page with order data
+    navigate(`/orders/${order.id}/edit`, { state: { order } });
   };
 
   const handleHoldClick = (order) => {
@@ -257,16 +256,21 @@ const OrderWrapper = () => {
                 </div>
               ) : orders.length > 0 ? (
                 <>
-                  <div className="table-responsive">
-                    <table className="table table-hover table-bordered">
-                      <thead className="table-light">
+                  <div className="cm-table-wrapper">
+                    <table className="cm-table professional-table">
+                      <thead>
                         <tr>
-                          <th>Title</th>
-                          <th>Status</th>
-                          <th>Due Date</th>
-                          <th>Priority</th>
-                          <th>Team</th>
-                          <th>Actions</th>
+                          <th className="checkbox-column">
+                            <input type="checkbox" />
+                          </th>
+                          <th>ORDER ID</th>
+                          <th>STATUS</th>
+                          <th>TITLE</th>
+                          <th>CUSTOMER NAME</th>
+                          <th>PRIORITY</th>
+                          <th>TEAM</th>
+                          <th>DUE DATE</th>
+                          <th>ACTIONS</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -279,43 +283,95 @@ const OrderWrapper = () => {
                           const isTeamLoading = order.assignedTo
                             ? teamDataMap[order.assignedTo]?.isLoading || false
                             : false;
+                          const customerName = order.createdFor || "N/A";
+                          const statusClass = order.status
+                            .toLowerCase()
+                            .replace("_", "-");
+                          const dueDateClass = isDueDateClose(order.dueDate)
+                            ? "due-date-close"
+                            : "";
 
                           return (
                             <tr key={order.id}>
-                              <td>{order.title}</td>
-                              <td>{order.status}</td>
-                              <td>
-                                {order.dueDate
-                                  ? new Date(order.dueDate).toLocaleDateString()
-                                  : "—"}
+                              <td className="checkbox-column">
+                                <input type="checkbox" />
                               </td>
-                              <td>{order.priority}</td>
+                              <td>{order.id}</td>
+                              <td>
+                                <span className={`status-badge ${statusClass}`}>
+                                  {order.status}
+                                </span>
+                              </td>
+                              <td>{order.title || "N/A"}</td>
+                              <td>{customerName}</td>
+                              <td>
+                                <span
+                                  className={`priority-badge ${
+                                    order.priority?.toLowerCase() || "medium"
+                                  }`}
+                                >
+                                  {order.priority || "Medium"}
+                                </span>
+                              </td>
                               <td>{isTeamLoading ? "Loading..." : teamName}</td>
-                              <td className="d-flex gap-2">
-                                <button
-                                  className="btn btn-sm btn-primary"
-                                  onClick={() => handleEditClick(order)}
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  className="btn btn-sm btn-warning"
-                                  onClick={() => handleHoldClick(order)}
-                                >
-                                  Hold
-                                </button>
-                                <button
-                                  className="btn btn-sm btn-success"
-                                  onClick={() => handleViewInvoice(order)}
-                                >
-                                  View Invoice
-                                </button>
-                                <button
-                                  className="btn btn-sm btn-danger"
-                                  onClick={() => handleDeleteClick(order.id)}
-                                >
-                                  Delete
-                                </button>
+                              <td className={dueDateClass}>
+                                {order.dueDate ? (
+                                  <span
+                                    className="due-date-link"
+                                    onClick={() =>
+                                      handleOpenDatesModal(
+                                        order.dueDate,
+                                        order.followupDates || []
+                                      )
+                                    }
+                                  >
+                                    {new Date(
+                                      order.dueDate
+                                    ).toLocaleDateString()}
+                                  </span>
+                                ) : (
+                                  "—"
+                                )}
+                              </td>
+                              <td className="action-column">
+                                <div className="action-buttons">
+                                  <button
+                                    className="btn btn-icon btn-primary"
+                                    onClick={() => handleEditClick(order)}
+                                    data-tooltip-id={`edit-${order.id}`}
+                                    data-tooltip-content="Edit Order"
+                                  >
+                                    <FaEdit />
+                                  </button>
+                                  <button
+                                    className="btn btn-icon btn-warning"
+                                    onClick={() => handleHoldClick(order)}
+                                    data-tooltip-id={`hold-${order.id}`}
+                                    data-tooltip-content="Put Order on Hold"
+                                  >
+                                    <FaPause />
+                                  </button>
+                                  <button
+                                    className="btn btn-icon btn-success"
+                                    onClick={() => handleViewInvoice(order)}
+                                    data-tooltip-id={`invoice-${order.id}`}
+                                    data-tooltip-content="View Invoice"
+                                  >
+                                    <FaFileInvoice />
+                                  </button>
+                                  <button
+                                    className="btn btn-icon btn-danger"
+                                    onClick={() => handleDeleteClick(order.id)}
+                                    data-tooltip-id={`delete-${order.id}`}
+                                    data-tooltip-content="Delete Order"
+                                  >
+                                    <FaTrash />
+                                  </button>
+                                  <Tooltip id={`edit-${order.id}`} />
+                                  <Tooltip id={`hold-${order.id}`} />
+                                  <Tooltip id={`invoice-${order.id}`} />
+                                  <Tooltip id={`delete-${order.id}`} />
+                                </div>
                               </td>
                             </tr>
                           );
@@ -333,7 +389,7 @@ const OrderWrapper = () => {
                   )}
                 </>
               ) : (
-                <p>No orders found.</p>
+                <p className="no-data">No orders found.</p>
               )}
             </div>
           </div>

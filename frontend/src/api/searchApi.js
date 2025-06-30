@@ -1,6 +1,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { toast } from "react-toastify";
+import { toast } from "sonner"; // Change import to sonner
 import { API_URL } from "../data/config";
+
 // Define the search API slice
 export const searchApi = createApi({
   reducerPath: "searchApi",
@@ -42,7 +43,7 @@ export const searchApi = createApi({
       transformErrorResponse: (error) => {
         const message =
           error.data?.message || "An error occurred during search";
-        toast.error(message);
+        toast.error(message); // Use sonner toast
         return { message };
       },
     }),

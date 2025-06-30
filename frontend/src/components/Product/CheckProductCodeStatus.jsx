@@ -4,7 +4,7 @@ import { useGetAllProductCodesQuery } from "../../api/productApi";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import { Link } from "react-router-dom";
 
-// Define styles object for professional look
+// Define styles
 const styles = {
   searchCard: {
     borderRadius: "8px",
@@ -16,7 +16,7 @@ const styles = {
   searchInputWrapper: {
     position: "relative",
     maxWidth: "400px",
-    margin: "0 auto",
+    margin: "0 auto 15px",
   },
   searchInput: {
     borderRadius: "20px",
@@ -121,15 +121,21 @@ const CheckProductCodeStatus = () => {
   } = useGetAllCategoriesQuery();
 
   const [searchCode, setSearchCode] = useState("");
+  const [searchCategory, setSearchCategory] = useState("");
+  const [selectedFilterCategory, setSelectedFilterCategory] = useState("");
   const [filteredProduct, setFilteredProduct] = useState(null);
   const [productNotFound, setProductNotFound] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [productPage, setProductPage] = useState(1);
+  const [categoryPage, setCategoryPage] = useState(1);
+  const productPageSize = 25;
+  const categoryPageSize = 30;
   const [showModal, setShowModal] = useState(false);
-  const [page, setPage] = useState(1);
-  const pageSize = 25;
 
   const products = Array.isArray(productData?.data) ? productData.data : [];
-  const categories = categoryData?.categories || [];
+  const categories = Array.isArray(categoryData?.categories)
+    ? categoryData.categories
+    : [];
 
   // Category ID to name mapping
   const categoryMap = useMemo(() => {
@@ -140,75 +146,158 @@ const CheckProductCodeStatus = () => {
     return map;
   }, [categories]);
 
-  const handleSearch = () => {
-    const result = products.find(
-      (p) => p.product_code?.toLowerCase() === searchCode.trim().toLowerCase()
+  // Filter categories by search term
+  const filteredCategories = useMemo(() => {
+    return categories.filter(
+      (cat) =>
+        cat.name.toLowerCase().includes(searchCategory.toLowerCase()) ||
+        (cat.parentcategories?.name || "")
+          .toLowerCase()
+          .includes(searchCategory.toLowerCase())
     );
-    setFilteredProduct(result || null);
-    setProductNotFound(!result);
+  }, [categories, searchCategory]);
+
+  // Paginate categories
+  const paginatedCategories = filteredCategories.slice(
+    (categoryPage - 1) * categoryPageSize,
+    categoryPage * categoryPageSize
+  );
+  const totalCategoryPages = Math.ceil(
+    filteredCategories.length / categoryPageSize
+  );
+
+  // Filter products by product code and selected category
+  const handleSearch = () => {
+    let result = products;
+    if (searchCode) {
+      result = result.filter((p) =>
+        p.product_code?.toLowerCase().includes(searchCode.trim().toLowerCase())
+      );
+    }
+    if (selectedFilterCategory) {
+      result = result.filter((p) => p.categoryId === selectedFilterCategory);
+    }
+    setFilteredProduct(result.length > 0 ? result[0] : null);
+    setProductNotFound(result.length === 0);
   };
 
   const handleCategoryClick = (categoryId) => {
     setSelectedCategory(categoryId);
     setShowModal(true);
-    setPage(1);
+    setProductPage(1);
   };
 
+  // Paginate products in modal
   const filteredCategoryProducts = products.filter(
     (p) => p.categoryId === selectedCategory
   );
-
   const paginatedProducts = filteredCategoryProducts.slice(
-    (page - 1) * pageSize,
-    page * pageSize
+    (productPage - 1) * productPageSize,
+    productPage * productPageSize
+  );
+  const totalProductPages = Math.ceil(
+    filteredCategoryProducts.length / productPageSize
   );
 
-  const totalPages = Math.ceil(filteredCategoryProducts.length / pageSize);
-
-  // Condensed pagination logic
-  const getPaginationItems = () => {
-    const maxPagesToShow = 5; // Show current page + 2 before + 2 after
+  // Pagination for categories
+  const getCategoryPaginationItems = () => {
+    const maxPagesToShow = 5;
     const items = [];
 
-    // Always show first page
     items.push(
-      <Pagination.Item key={1} active={1 === page} onClick={() => setPage(1)}>
+      <Pagination.Item
+        key={1}
+        active={1 === categoryPage}
+        onClick={() => setCategoryPage(1)}
+      >
         {1}
       </Pagination.Item>
     );
 
-    // Add ellipsis if there's a gap after the first page
-    if (page > maxPagesToShow - 1) {
-      items.push(<Pagination.Ellipsis key="start-ellipsis" />);
+    if (categoryPage > maxPagesToShow - 1) {
+      items.push(<Pagination.Ellipsis key="category-start-ellipsis" />);
     }
 
-    // Calculate the range of pages to show
-    const startPage = Math.max(2, page - 2);
-    const endPage = Math.min(totalPages - 1, page + 2);
+    const startPage = Math.max(2, categoryPage - 2);
+    const endPage = Math.min(totalCategoryPages - 1, categoryPage + 2);
 
-    // Add pages around the current page
     for (let i = startPage; i <= endPage; i++) {
       items.push(
-        <Pagination.Item key={i} active={i === page} onClick={() => setPage(i)}>
+        <Pagination.Item
+          key={i}
+          active={i === categoryPage}
+          onClick={() => setCategoryPage(i)}
+        >
           {i}
         </Pagination.Item>
       );
     }
 
-    // Add ellipsis if there's a gap before the last page
-    if (endPage < totalPages - 1) {
-      items.push(<Pagination.Ellipsis key="end-ellipsis" />);
+    if (endPage < totalCategoryPages - 1) {
+      items.push(<Pagination.Ellipsis key="category-end-ellipsis" />);
     }
 
-    // Always show last page if there are 2 or more pages
-    if (totalPages > 1) {
+    if (totalCategoryPages > 1) {
       items.push(
         <Pagination.Item
-          key={totalPages}
-          active={totalPages === page}
-          onClick={() => setPage(totalPages)}
+          key={totalCategoryPages}
+          active={totalCategoryPages === categoryPage}
+          onClick={() => setCategoryPage(totalCategoryPages)}
         >
-          {totalPages}
+          {totalCategoryPages}
+        </Pagination.Item>
+      );
+    }
+
+    return items;
+  };
+
+  // Pagination for products
+  const getProductPaginationItems = () => {
+    const maxPagesToShow = 5;
+    const items = [];
+
+    items.push(
+      <Pagination.Item
+        key={1}
+        active={1 === productPage}
+        onClick={() => setProductPage(1)}
+      >
+        {1}
+      </Pagination.Item>
+    );
+
+    if (productPage > maxPagesToShow - 1) {
+      items.push(<Pagination.Ellipsis key="product-start-ellipsis" />);
+    }
+
+    const startPage = Math.max(2, productPage - 2);
+    const endPage = Math.min(totalProductPages - 1, productPage + 2);
+
+    for (let i = startPage; i <= endPage; i++) {
+      items.push(
+        <Pagination.Item
+          key={i}
+          active={i === productPage}
+          onClick={() => setProductPage(i)}
+        >
+          {i}
+        </Pagination.Item>
+      );
+    }
+
+    if (endPage < totalProductPages - 1) {
+      items.push(<Pagination.Ellipsis key="product-end-ellipsis" />);
+    }
+
+    if (totalProductPages > 1) {
+      items.push(
+        <Pagination.Item
+          key={totalProductPages}
+          active={totalProductPages === productPage}
+          onClick={() => setProductPage(totalProductPages)}
+        >
+          {totalProductPages}
         </Pagination.Item>
       );
     }
@@ -218,7 +307,7 @@ const CheckProductCodeStatus = () => {
 
   if (productsLoading || categoriesLoading) {
     return (
-      <div style={styles.pageWrapper}>
+      <div className="page-wrapper">
         <div className="content text-center">
           <p>Loading products and categories...</p>
         </div>
@@ -228,7 +317,7 @@ const CheckProductCodeStatus = () => {
 
   if (productsError || categoriesError) {
     return (
-      <div>
+      <div className="page-wrapper">
         <div className="content text-center">
           <p className="text-danger">Error fetching data.</p>
         </div>
@@ -252,7 +341,7 @@ const CheckProductCodeStatus = () => {
 
         {/* Search Box */}
         <div className="card" style={styles.searchCard}>
-          <div className="card-body p-4 text-center">
+          <div className="card-body p-4">
             <div style={styles.searchInputWrapper}>
               <span style={styles.searchIcon}>
                 <i className="ti ti-search"></i>
@@ -260,13 +349,44 @@ const CheckProductCodeStatus = () => {
               <input
                 type="text"
                 className="form-control"
-                placeholder="Enter Product Code"
+                placeholder="Search Product Code"
                 value={searchCode}
                 onChange={(e) => setSearchCode(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 style={styles.searchInput}
                 aria-label="Search product code"
               />
+            </div>
+            <div style={styles.searchInputWrapper}>
+              <span style={styles.searchIcon}>
+                <i className="ti ti-filter"></i>
+              </span>
+              <select
+                className="form-control"
+                value={selectedFilterCategory}
+                onChange={(e) => setSelectedFilterCategory(e.target.value)}
+                style={styles.searchInput}
+                aria-label="Filter by category"
+              >
+                <option value="">All Categories</option>
+                {categories.map((cat) => (
+                  <option key={cat.categoryId} value={cat.categoryId}>
+                    {cat.name}{" "}
+                    {cat.parentcategories?.name
+                      ? `(${cat.parentcategories.name})`
+                      : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="text-center">
+              <button
+                className="btn btn-primary"
+                onClick={handleSearch}
+                disabled={!searchCode && !selectedFilterCategory}
+              >
+                Search
+              </button>
             </div>
 
             {/* Result display */}
@@ -283,20 +403,28 @@ const CheckProductCodeStatus = () => {
                   <strong>Category:</strong>{" "}
                   {categoryMap[filteredProduct.categoryId] || "Unknown"}
                 </p>
+                <Link
+                  to={`/product/${filteredProduct.productId}/edit`}
+                  className="btn btn-sm btn-outline-primary mt-2"
+                >
+                  Edit Product
+                </Link>
               </div>
             )}
 
-            {!filteredProduct && searchCode && productNotFound && (
-              <div style={styles.resultSection}>
-                <h5 style={styles.resultTitle}>
-                  <i className="ti ti-x me-2 text-danger"></i>No Product Found
-                </h5>
-                <p className="text-success" style={styles.resultText}>
-                  <i className="ti ti-check me-2"></i>Product Code is available
-                  to use.
-                </p>
-              </div>
-            )}
+            {!filteredProduct &&
+              (searchCode || selectedFilterCategory) &&
+              productNotFound && (
+                <div style={styles.resultSection}>
+                  <h5 style={styles.resultTitle}>
+                    <i className="ti ti-x me-2 text-danger"></i>No Product Found
+                  </h5>
+                  <p className="text-success" style={styles.resultText}>
+                    <i className="ti ti-check me-2"></i>Product Code is
+                    available to use.
+                  </p>
+                </div>
+              )}
           </div>
         </div>
 
@@ -306,9 +434,23 @@ const CheckProductCodeStatus = () => {
             <h5 className="mb-3" style={styles.pageTitle}>
               Explore Products by Category
             </h5>
-            <div className="row">
-              {categories.length > 0 ? (
-                categories.map((cat) => (
+            <div style={styles.searchInputWrapper}>
+              <span style={styles.searchIcon}>
+                <i className="ti ti-search"></i>
+              </span>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Search Categories"
+                value={searchCategory}
+                onChange={(e) => setSearchCategory(e.target.value)}
+                style={styles.searchInput}
+                aria-label="Search categories"
+              />
+            </div>
+            <div className="row mt-3">
+              {paginatedCategories.length > 0 ? (
+                paginatedCategories.map((cat) => (
                   <div
                     key={cat.categoryId}
                     className="col-lg-4 col-md-6 col-sm-12 mb-3"
@@ -338,7 +480,7 @@ const CheckProductCodeStatus = () => {
                         </span>
                       </div>
                       {cat.parentcategories && (
-                        <small style={{ color: "#25D366" }}>
+                        <small style={styles.categoryParent}>
                           {cat.parentcategories.name}
                         </small>
                       )}
@@ -347,18 +489,40 @@ const CheckProductCodeStatus = () => {
                 ))
               ) : (
                 <p className="text-center text-muted">
-                  No categories available.
+                  No categories match your search.
                 </p>
               )}
             </div>
+            {totalCategoryPages > 1 && (
+              <Pagination
+                className="justify-content-center"
+                style={styles.pagination}
+              >
+                <Pagination.Prev
+                  onClick={() =>
+                    setCategoryPage((prev) => Math.max(1, prev - 1))
+                  }
+                  disabled={categoryPage === 1}
+                />
+                {getCategoryPaginationItems()}
+                <Pagination.Next
+                  onClick={() =>
+                    setCategoryPage((prev) =>
+                      Math.min(totalCategoryPages, prev + 1)
+                    )
+                  }
+                  disabled={categoryPage === totalCategoryPages}
+                />
+              </Pagination>
+            )}
           </div>
         </div>
 
-        {/* Modal */}
+        {/* Modal for Category Products */}
         <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
           <Modal.Header closeButton style={styles.modalHeader}>
             <Modal.Title style={styles.modalTitle}>
-              Products in Selected Category
+              Products in {categoryMap[selectedCategory] || "Selected Category"}
             </Modal.Title>
           </Modal.Header>
           <Modal.Body>
@@ -370,38 +534,49 @@ const CheckProductCodeStatus = () => {
                       <th>#</th>
                       <th>Name</th>
                       <th>Product Code</th>
+                      <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     {paginatedProducts.map((product, idx) => (
-                      <tr key={product.id}>
-                        <td>{(page - 1) * pageSize + idx + 1}</td>
+                      <tr key={product.productId}>
+                        <td>{(productPage - 1) * productPageSize + idx + 1}</td>
+                        <td>{product.name}</td>
+                        <td>{product.product_code}</td>
                         <td>
-                          <Link to={`/product/${product.productId}`}>
-                            {product.name}
+                          <Link
+                            to={`/product/${product.productId}/edit`}
+                            className="btn btn-sm btn-outline-primary"
+                          >
+                            Edit
                           </Link>
                         </td>
-                        <td>{product.product_code}</td>
                       </tr>
                     ))}
                   </tbody>
                 </Table>
-                <Pagination
-                  className="justify-content-center"
-                  style={styles.pagination}
-                >
-                  <Pagination.Prev
-                    onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                    disabled={page === 1}
-                  />
-                  {getPaginationItems()}
-                  <Pagination.Next
-                    onClick={() =>
-                      setPage((prev) => Math.min(totalPages, prev + 1))
-                    }
-                    disabled={page === totalPages}
-                  />
-                </Pagination>
+                {totalProductPages > 1 && (
+                  <Pagination
+                    className="justify-content-center"
+                    style={styles.pagination}
+                  >
+                    <Pagination.Prev
+                      onClick={() =>
+                        setProductPage((prev) => Math.max(1, prev - 1))
+                      }
+                      disabled={productPage === 1}
+                    />
+                    {getProductPaginationItems()}
+                    <Pagination.Next
+                      onClick={() =>
+                        setProductPage((prev) =>
+                          Math.min(totalProductPages, prev + 1)
+                        )
+                      }
+                      disabled={productPage === totalProductPages}
+                    />
+                  </Pagination>
+                )}
               </>
             ) : (
               <p className="text-center">

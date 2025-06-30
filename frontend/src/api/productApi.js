@@ -100,10 +100,19 @@ export const productApi = createApi({
       },
       providesTags: ["Product"],
     }),
+    updateProductFeatured: builder.mutation({
+      query: ({ productId, isFeatured }) => ({
+        url: `/${productId}/featured`,
+        method: "PATCH",
+        body: { isFeatured },
+      }),
+      invalidatesTags: ["Products"], // Refetch products after update
+    }),
   }),
 });
 
 export const {
+  useUpdateProductFeaturedMutation,
   useCreateProductMutation,
   useGetAllProductsQuery,
   useGetProductByIdQuery,

@@ -11,7 +11,207 @@
 @import url("./assets/css/style.css");
 @import url("https://fonts.cdnfonts.com/css/neuropol-2");
 /* header.css */
+/* Professional Table Styling */
+.image-upload {
+  border: 2px dashed #ccc;
+  border-radius: 4px;
+  padding: 20px;
+  text-align: center;
+  transition: background-color 0.2s;
+}
+.image-upload.bg-light {
+  background-color: #f8f9fa;
+}
+.image-preview-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.image-preview-container img {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+.image-preview-container .btn-danger {
+  padding: 0 6px;
+  line-height: 1.5;
+}
+.professional-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
 
+.professional-table th,
+.professional-table td {
+  padding: 12px 15px;
+  text-align: left;
+  font-size: 14px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.professional-table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #495057;
+}
+
+.professional-table tr:hover {
+  background-color: #f1f3f5;
+}
+
+.checkbox-column {
+  width: 40px;
+  text-align: center;
+}
+
+.action-column {
+  width: 180px;
+  text-align: center;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.btn-icon {
+  padding: 8px;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.btn-icon svg {
+  font-size: 16px;
+}
+
+.btn-primary {
+  background-color: #007bff;
+  border: none;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background-color: #0056b3;
+}
+
+.btn-warning {
+  background-color: #ffc107;
+  border: none;
+  color: #212529;
+}
+
+.btn-warning:hover {
+  background-color: #e0a800;
+}
+
+.btn-success {
+  background-color: #28a745;
+  border: none;
+  color: #fff;
+}
+
+.btn-success:hover {
+  background-color: #218838;
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  border: none;
+  color: #fff;
+}
+
+.btn-danger:hover {
+  background-color: #c82333;
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.status-badge.created {
+  background-color: #e7f3ff;
+  color: #007bff;
+}
+
+.status-badge.pending {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.status-badge.completed {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.priority-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.priority-badge.high {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.priority-badge.medium {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.priority-badge.low {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.due-date-close {
+  color: #dc3545;
+  font-weight: 600;
+}
+
+.due-date-link {
+  cursor: pointer;
+  color: #007bff;
+  text-decoration: underline;
+}
+
+.due-date-link:hover {
+  color: #0056b3;
+}
+
+.no-data {
+  text-align: center;
+  padding: 20px;
+  color: #6c757d;
+  font-size: 16px;
+}
+
+/* Tooltip Styling */
+.react-tooltip {
+  background-color: #343a40;
+  color: #fff;
+  font-size: 12px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  z-index: 1000;
+}
 .order-table {
   width: 100%;
   border-collapse: collapse;
