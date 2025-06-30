@@ -1,297 +1,103 @@
-/* Container for the profile page */
-
-/* Main content container */
-.content.container {
-  max-width: 1200px;
-  margin: 0 auto;
+.ecommerce-profile-wrapper {
+  padding: 20px;
+  background-color: #f5f5f5;
+  min-height: 100vh;
 }
 
-/* Profile header */
-.profile-header {
-  margin-bottom: 24px;
-  text-align: center;
-}
-
-.profile-title {
-  font-size: 28px;
-  font-weight: 700;
-  color: #333;
-  margin-bottom: 8px;
-}
-
-/* Profile card */
-.profile-card {
+.sidebar-card {
   border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  padding: 24px;
-  background: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   text-align: center;
+  padding: 20px;
+  background: #fff;
 }
 
-.profile-pic-upload {
-  display: flex;
-  justify-content: center;
+.profile-summary {
   margin-bottom: 20px;
 }
 
-.profile-pic {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 3px solid #007bff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto;
+.profile-avatar {
+  border: 3px solid #e31e24;
+  margin-bottom: 10px;
 }
 
-.profile-pic .ant-avatar {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.change-avatar-btn {
-  margin-top: 10px;
-  color: #007bff;
-  font-weight: 500;
-}
-
-.change-avatar-btn:hover {
-  color: #0056b3;
-}
-
-.profile-info {
-  margin-top: 16px;
-}
-
-.profile-info .ant-typography {
-  margin-bottom: 8px;
-}
-
-.profile-role .ant-badge-count {
-  background: #52c41a;
-  color: #fff;
-  font-weight: 500;
-  padding: 4px 12px;
-  border-radius: 12px;
-}
-
-.profile-status,
-.profile-dates {
-  display: block;
-  color: #595959;
+.avatar-upload-btn {
+  color: #e31e24;
   font-size: 14px;
-  margin-bottom: 8px;
 }
 
-.profile-actions {
-  margin-top: 16px;
-}
-
-/* Profile details card */
-.profile-details-card {
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  background: #fff;
-}
-
-/* Tabs */
-.profile-tabs .ant-tabs-nav {
-  padding: 0 24px;
-  border-bottom: 2px solid #007bff;
-  background: #fff;
-}
-
-.profile-tabs .ant-tabs-tab {
-  font-weight: 500;
+.profile-name {
+  margin: 10px 0 5px;
   color: #333;
-  padding: 12px 16px;
+}
+
+.profile-email {
+  color: #777;
+  font-size: 14px;
+}
+
+.profile-menu {
+  border: none !important;
+}
+
+.profile-menu .ant-menu-item {
   font-size: 16px;
-}
-
-.profile-tabs .ant-tabs-tab:hover,
-.profile-tabs .ant-tabs-tab-active .ant-tabs-tab-btn {
-  color: #007bff;
-}
-
-.profile-tabs .ant-tabs-ink-bar {
-  background: #007bff;
-}
-
-/* Form and static display */
-.profile-body {
-  padding: 24px;
-}
-
-.section-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #007bff;
-  margin-bottom: 16px;
-}
-
-.info-section {
-  background: #fafafa;
-  padding: 16px;
+  padding: 10px 20px;
+  margin: 5px 0;
   border-radius: 8px;
-  margin-bottom: 24px;
+  transition: all 0.3s;
 }
 
-.form-label {
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 8px;
-  display: block;
+.profile-menu .ant-menu-item:hover,
+.profile-menu .ant-menu-item-selected {
+  background-color: #e6f7ff;
+  color: #e31e24;
 }
 
-.form-control-static {
-  background: #f8f9fa;
-  padding: 10px 12px;
-  border-radius: 4px;
-  border: 1px solid #ddd;
-  font-size: 14px;
-  color: #333;
-  min-height: 40px;
+.content-card {
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  background: #fff;
+}
+
+.profile-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
+  margin-bottom: 20px;
 }
 
 .profile-form .ant-form-item-label > label {
-  font-weight: 600;
+  font-weight: 500;
   color: #333;
 }
 
-.profile-form .ant-input,
-.profile-form .ant-select-selector,
-.profile-form .ant-picker {
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 10px;
-  font-size: 14px;
-  height: 40px;
+.profile-table {
+  margin-top: 20px;
 }
 
-.profile-form .ant-input:focus,
-.profile-form .ant-select-selector:focus,
-.profile-form .ant-picker:focus {
-  border-color: #007bff;
-  box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
-}
-
-.form-actions {
-  margin-top: 16px;
-}
-
-/* Buttons */
-.btn {
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 14px;
-  transition: all 0.3s ease;
-}
-
-.btn-primary {
-  background: #007bff;
-  color: #fff;
-  border: none;
-}
-
-.btn-primary:hover {
-  background: #0056b3;
-  transform: translateY(-1px);
-}
-
-.btn-secondary {
-  background: #6c757d;
-  color: #fff;
-  border: none;
-}
-
-.btn-secondary:hover {
-  background: #5a6268;
-  transform: translateY(-1px);
-}
-
-/* Table */
-.profile-table.ant-table {
+.profile-table .ant-table {
   border-radius: 8px;
   overflow: hidden;
 }
 
 .profile-table .ant-table-thead > tr > th {
-  background: #f8f9fa;
-  color: #333;
-  font-weight: 600;
-  border-bottom: 2px solid #007bff;
-  padding: 12px;
+  background: #e31e24;
+  color: #fff;
 }
 
-.profile-table .ant-table-tbody > tr > td {
-  padding: 12px;
-  font-size: 14px;
-}
-
-/* Responsive adjustments */
 @media (max-width: 768px) {
-  .page-wrapper {
-    padding: 10px;
+  .sidebar-card {
+    margin-bottom: 16px;
   }
 
-  .profile-header {
-    text-align: left;
-  }
-
-  .profile-title {
-    font-size: 24px;
-  }
-
-  .profile-tabs .ant-tabs-nav {
-    padding: 0 10px;
-  }
-
-  .profile-tabs .ant-tabs-tab {
+  .profile-menu .ant-menu-item {
     font-size: 14px;
-    padding: 8px 12px;
+    padding: 8px 16px;
   }
 
-  .profile-pic {
-    width: 100px;
-    height: 100px;
-  }
-
-  .profile-card,
-  .profile-details-card {
+  .content-card {
     padding: 16px;
-  }
-
-  .profile-body {
-    padding: 16px;
-  }
-
-  .section-title {
-    font-size: 16px;
-  }
-
-  .form-control-static,
-  .profile-form .ant-input,
-  .profile-form .ant-select-selector,
-  .profile-form .ant-picker {
-    font-size: 13px;
-    height: 36px;
-  }
-}
-
-@media (max-width: 576px) {
-  .profile-actions {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .btn {
-    width: 100%;
-    text-align: center;
   }
 }

@@ -32,7 +32,7 @@ import { useGetAllBrandsQuery } from "../../api/brandsApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import { useUpdateProductFeaturedMutation } from "../../api/productApi";
 import {
-  useAddToCartMutation,
+  useAddProductToCartMutation,
   useGetCartQuery,
   useRemoveFromCartMutation,
 } from "../../api/cartApi";
@@ -46,7 +46,7 @@ import StockModal from "../Common/StockModal";
 import Cart from "./Cart";
 import "./productlist.css";
 import PageHeader from "../Common/PageHeader";
-import { useAddProductToCartMutation } from "../../api/cartApi";
+
 const { Option } = Select;
 
 const ProductsList = () => {
@@ -57,8 +57,7 @@ const ProductsList = () => {
   const { data: cartData } = useGetCartQuery();
   const { data: user, isLoading: userLoading } = useGetProfileQuery();
   const [updateProductFeatured, { isLoading: isUpdatingFeatured }] =
-    useUpdateProductFeaturedMutation(); // Add mutation hook
-  // State for heart button loading
+    useUpdateProductFeaturedMutation();
   const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
   const [addProductToCart, { isLoading: mutationLoading }] =
     useAddProductToCartMutation();
@@ -236,17 +235,15 @@ const ProductsList = () => {
       return;
     }
 
-    const newIsFeatured = !product.isFeatured; // Toggle the isFeatured state
-
     setFeaturedLoadingStates((prev) => ({ ...prev, [productId]: true }));
 
     try {
       await updateProductFeatured({
         productId,
-        isFeatured: newIsFeatured,
+        isFeatured: !product.isFeatured,
       }).unwrap();
       toast.success(
-        newIsFeatured
+        !product.isFeatured
           ? `${product.name} marked as featured!`
           : `${product.name} unmarked as featured!`
       );
@@ -397,9 +394,6 @@ const ProductsList = () => {
             </Button>
           }
         />
-        <Button onClick={() => navigate("/inventory/product/add")}>
-          Test Navigation
-        </Button>
         <Cart
           cartItems={cartItems}
           onRemoveFromCart={handleRemoveFromCart}

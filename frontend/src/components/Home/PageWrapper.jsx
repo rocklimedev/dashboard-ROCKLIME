@@ -104,7 +104,7 @@ const PageWrapper = () => {
   );
 
   const orders = ordersData?.orders || [];
-  const productCount = productsData?.data?.length || 0;
+  const productCount = productsData?.length || 0;
   const quotationCount = quotationData?.length || 0;
   const invoiceCount = invoiceData?.data?.length || 0;
   const orderCount = orders.length;
@@ -457,22 +457,6 @@ const PageWrapper = () => {
                 loading: isProductsLoading,
                 icon: <FaBox />,
                 max: maxCounts.products,
-              },
-              {
-                count: totalRevenue,
-                label: "Total Revenue",
-                loading: loadingOrders,
-                icon: <FaRupeeSign />,
-                max: maxCounts.revenue,
-                format: (val) => `Rs ${val.toLocaleString()}`,
-              },
-              {
-                count: avgOrderValue,
-                label: "Avg Order Value",
-                loading: loadingOrders,
-                icon: <FaRupeeSign />,
-                max: maxCounts.avgOrder,
-                format: (val) => `Rs ${val}`,
               },
             ].map(({ count, label, loading, icon, max, format }, index) => (
               <div key={index} className="card stat">
