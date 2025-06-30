@@ -9,6 +9,7 @@ import Avatar from "react-avatar";
 import SearchDropdown from "../Search/SearchDropdown"; // Assuming this is the same as in the original
 import logo from "../../assets/img/logo.png";
 import logo_small from "../../assets/img/fav_icon.png";
+import { CgShoppingCart } from "react-icons/cg";
 // Assuming additional CSS for HTML styles
 import { useLogoutMutation } from "../../api/authApi";
 
@@ -150,6 +151,11 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
             >
               <BiFullscreen />
             </Button>
+          </li>
+          <li className="nav-item nav-item-box">
+            <Link to="/cart">
+              <CgShoppingCart />
+            </Link>
           </li>
 
           {/* User Profile */}
