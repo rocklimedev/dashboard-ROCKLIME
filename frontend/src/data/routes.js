@@ -400,7 +400,7 @@ const masterRoutes = [
     path: "/cart",
     name: "Cart",
     icon: <BiCart />,
-    isSidebarActive: true,
+    isSidebarActive: false,
     element: <Cart />,
   },
   {
