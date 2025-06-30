@@ -124,7 +124,7 @@
 }
 
 .product-title:hover {
-  color: #007bff;
+  color: #e31e24;
 }
 
 .product-details {
@@ -191,8 +191,8 @@
 }
 
 .pagination-container .ant-pagination-item-active {
-  border-color: #007bff;
-  background: #007bff;
+  border-color: #e31e24;
+  background: #e31e24;
 }
 
 .pagination-container .ant-pagination-item-active a {
