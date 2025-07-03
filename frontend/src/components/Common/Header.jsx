@@ -144,7 +144,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
               <CgShoppingCart />
             </Link>
           </li>
-          <li className="nav-item dropdown has-arrow main-drop profile-nav">
+          <li className="nav-item dropdown main-drop profile-nav">
             {isLoading ? (
               <span className="text-muted">Loading...</span>
             ) : error ? (
