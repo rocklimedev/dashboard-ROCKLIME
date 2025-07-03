@@ -144,67 +144,6 @@ const AddNewOrder = ({ adminName, order }) => {
               <div className="row mb-4">
                 <div className="col-md-6 mb-3">
                   <label className="form-label fw-bold">
-                    Order Title <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="title"
-                    value={formData.title}
-                    onChange={handleChange}
-                    required
-                    placeholder="Enter order title"
-                  />
-                </div>
-                <div className="col-md-6 mb-3">
-                  <label className="form-label fw-bold">
-                    Pipeline <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="pipeline"
-                    value={formData.pipeline}
-                    onChange={handleChange}
-                    required
-                    placeholder="Enter pipeline"
-                  />
-                </div>
-              </div>
-
-              <div className="row mb-4">
-                <div className="col-md-6 mb-3">
-                  <label className="form-label fw-bold">
-                    Source <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="source"
-                    value={formData.source}
-                    onChange={handleChange}
-                    required
-                    placeholder="Enter source"
-                  />
-                </div>
-                <div className="col-md-6 mb-3">
-                  <label className="form-label fw-bold">
-                    Due Date <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    name="dueDate"
-                    value={formData.dueDate}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="row mb-4">
-                <div className="col-md-6 mb-3">
-                  <label className="form-label fw-bold">
                     Invoice <span className="text-danger">*</span>
                   </label>
                   <select
@@ -256,7 +195,35 @@ const AddNewOrder = ({ adminName, order }) => {
                   </div>
                 </div>
               )}
-
+              <div className="row mb-4">
+                <div className="col-md-6 mb-3">
+                  <label className="form-label fw-bold">
+                    Source <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="source"
+                    value={formData.source}
+                    onChange={handleChange}
+                    required
+                    placeholder="Enter source"
+                  />
+                </div>
+                <div className="col-md-6 mb-3">
+                  <label className="form-label fw-bold">
+                    Due Date <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    name="dueDate"
+                    value={formData.dueDate}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+              </div>
               <div className="row mb-4">
                 <div className="col-md-6 mb-3">
                   <label className="form-label fw-bold">Customer</label>
@@ -278,6 +245,37 @@ const AddNewOrder = ({ adminName, order }) => {
                     value={formData.createdBy}
                     readOnly
                     placeholder="Auto-filled from invoice"
+                  />
+                </div>
+              </div>
+
+              <div className="row mb-4">
+                <div className="col-md-6 mb-3">
+                  <label className="form-label fw-bold">
+                    Order Title <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleChange}
+                    required
+                    placeholder="Enter order title"
+                  />
+                </div>
+                <div className="col-md-6 mb-3">
+                  <label className="form-label fw-bold">
+                    Pipeline <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="pipeline"
+                    value={formData.pipeline}
+                    onChange={handleChange}
+                    required
+                    placeholder="Enter pipeline"
                   />
                 </div>
               </div>

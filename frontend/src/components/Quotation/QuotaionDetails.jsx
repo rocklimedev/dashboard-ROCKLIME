@@ -82,7 +82,6 @@ const QuotationsDetails = () => {
         pdf.save(`quotation_${id}.pdf`);
         toast.success("Quotation exported as PDF successfully!");
       } else if (exportFormat === "excel") {
-        // First, try the backend API export
         try {
           const blob = await exportQuotation(id).unwrap();
           if (blob) {
@@ -104,9 +103,7 @@ const QuotationsDetails = () => {
           );
         }
 
-        // Fallback: Use the template to export the quotation data
         try {
-          // Fetch and read the template file
           const response = await fetch(sampleQuotationTemplate);
           if (!response.ok) {
             throw new Error("Failed to fetch the Excel template.");
@@ -116,7 +113,6 @@ const QuotationsDetails = () => {
           const sheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[sheetName];
 
-          // Calculate totals
           const products = Array.isArray(quotation.products)
             ? quotation.products
             : [];
@@ -130,91 +126,61 @@ const QuotationsDetails = () => {
               : 0;
           const finalTotal = subtotal + gstAmount;
 
-          // Populate customer details and date (based on template structure)
-          worksheet["A5"] = { v: getCustomerName(quotation.customerId) }; // M/s (Customer Name)
-          worksheet["A6"] = { v: customer?.address || "Address not available" }; // Address
+          worksheet["A5"] = { v: getCustomerName(quotation.customerId) };
+          worksheet["A6"] = { v: customer?.address || "Address not available" };
           worksheet["F5"] = {
             v: quotation.quotation_date
               ? new Date(quotation.quotation_date).toLocaleDateString()
               : "N/A",
-          }; // Date
+          };
 
-          // Populate product table (starting at row 9, columns A to I)
-          const startRow = 9; // Data starts at row 9 (after headers at row 8)
+          const startRow = 9;
           products.forEach((product, index) => {
             const row = startRow + index;
-            // Use XLSX.utils.sheet_add_aoa for better control over cell updates
             XLSX.utils.sheet_add_aoa(
               worksheet,
               [
                 [
-                  index + 1, // S.No
-                  "", // Product Image (skip, as Excel doesn't render images easily)
-                  product.name || "N/A", // Product Name
-                  product.productCode || "N/A", // Product Code
-                  product.sellingPrice ? Number(product.sellingPrice) : 0, // MRP (number)
-                  product.discount || 0, // Discount (number)
-                  product.rate || product.sellingPrice || 0, // Rate (number)
-                  product.qty || product.quantity || 0, // Unit
-                  product.total ? Number(product.total) : 0, // Total (number)
+                  index + 1,
+                  "",
+                  product.name || "N/A",
+                  product.productCode || "N/A",
+                  product.sellingPrice ? Number(product.sellingPrice) : 0,
+                  product.discount || 0,
+                  product.rate || product.sellingPrice || 0,
+                  product.qty || product.quantity || 0,
+                  product.total ? Number(product.total) : 0,
                 ],
               ],
               { origin: `A${row}` }
             );
 
-            // Apply currency formatting to MRP, Rate, and Total
             ["E", "G", "I"].forEach((col) => {
               const cell = `${col}${row}`;
-              worksheet[cell].z = "₹#,##0.00"; // Apply currency format
+              worksheet[cell].z = "₹#,##0.00";
             });
 
-            // Apply percentage or currency formatting to Discount
             const discountCell = `F${row}`;
             if (product.discount) {
-              if (product.discountType === "percent") {
-                worksheet[discountCell].z = "0.00%"; // Percentage format
-              } else {
-                worksheet[discountCell].z = "₹#,##0.00"; // Currency format
-              }
+              worksheet[discountCell].z =
+                product.discountType === "percent" ? "0.00%" : "₹#,##0.00";
             }
           });
 
-          // Clear extra rows in the product table
           const maxRows = startRow + (products.length || 1);
           for (let row = maxRows; row < startRow + 50; row++) {
-            if (products.length === 0 && row === startRow) {
-              XLSX.utils.sheet_add_aoa(
-                worksheet,
-                [
-                  [
-                    "No products available for this quotation.",
-                    "",
-                    "",
-                    "",
-                    "",
-                    "",
-                    "",
-                    "",
-                    "",
-                  ],
-                ],
-                { origin: `A${row}` }
-              );
-            } else {
-              XLSX.utils.sheet_add_aoa(
-                worksheet,
-                [[null, null, null, null, null, null, null, null, null]],
-                { origin: `A${row}` }
-              );
-            }
+            XLSX.utils.sheet_add_aoa(
+              worksheet,
+              [[null, null, null, null, null, null, null, null, null]],
+              { origin: `A${row}` }
+            );
           }
 
-          // Populate totals (adjust row numbers based on template)
           const totalsStartRow = startRow + (products.length || 1) + 1;
           XLSX.utils.sheet_add_aoa(
             worksheet,
             [
-              ["", "", "", "", "", "", "", "Subtotal", subtotal], // Subtotal
+              ["", "", "", "", "", "", "", "Subtotal", subtotal],
               [
                 "",
                 "",
@@ -227,13 +193,12 @@ const QuotationsDetails = () => {
                   ? `GST (${quotation.gst_value}%)`
                   : "",
                 quotation.include_gst && quotation.gst_value ? gstAmount : "",
-              ], // GST
-              ["", "", "", "", "", "", "", "Total", finalTotal], // Total
+              ],
+              ["", "", "", "", "", "", "", "Total", finalTotal],
             ],
             { origin: `A${totalsStartRow}` }
           );
 
-          // Apply currency formatting to totals
           ["I"].forEach((col) => {
             for (let row = totalsStartRow; row <= totalsStartRow + 2; row++) {
               const cell = `${col}${row}`;
@@ -243,7 +208,6 @@ const QuotationsDetails = () => {
             }
           });
 
-          // Write the updated workbook to a new file
           XLSX.writeFile(workbook, `quotation_${id}.xlsx`);
           toast.success("Quotation exported as Excel successfully!");
         } catch (error) {
@@ -305,146 +269,188 @@ const QuotationsDetails = () => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        <div className="page-header d-flex justify-content-between align-items-center">
-          <div className="d-flex align-items-center">
-            <h4 className="mb-0">Quotation Details</h4>
+        {/* Other Details Section */}
+        <div className="card mb-4">
+          <div className="card-body">
+            <div className="row">
+              <div className="col-md-6">
+                <p>
+                  <strong>Quotation ID:</strong> {quotation.quotationId}
+                </p>
+                <p>
+                  <strong>Customer:</strong>{" "}
+                  {getCustomerName(quotation.customerId)}
+                </p>
+                <p>
+                  <strong>Created By:</strong>{" "}
+                  {getUserName(quotation.createdBy)}
+                </p>
+              </div>
+              <div className="col-md-6">
+                <p>
+                  <strong>Quotation Date:</strong>{" "}
+                  {quotation.quotation_date
+                    ? new Date(quotation.quotation_date).toLocaleDateString()
+                    : "N/A"}
+                </p>
+                <p>
+                  <strong>Due Date:</strong>{" "}
+                  {quotation.due_date
+                    ? new Date(quotation.due_date).toLocaleDateString()
+                    : "N/A"}
+                </p>
+                <p>
+                  <strong>Reference Number:</strong>{" "}
+                  {quotation.reference_number || "N/A"}
+                </p>
+              </div>
+            </div>
           </div>
-          <a href="/quotations/list" className="btn btn-primary">
-            <i data-feather="arrow-left" className="me-2"></i>Back to Quotations
-          </a>
         </div>
 
-        {/* Quotation formatted as per the sample for PDF export */}
-        <div className="quotation-container" ref={quotationRef}>
-          <div className="quotation-header text-center">
-            <h2 className="company-name">
-              <img src={logo} alt="Company Logo" />
-            </h2>
-          </div>
-          <div className="row">
-            <div className="col">
-              <h3 className="quotation-title">ESTIMATE / QUOTATION</h3>
-            </div>
-            <div className="col">
-              <p className="company-details">GROHE / AMERICAN STANDARD</p>
-            </div>
-          </div>
-          <div className="row customer-details">
-            <div className="col-md-8">
-              <p>
-                <strong>M/s:</strong> {getCustomerName(quotation.customerId)}
-              </p>
-              <p>
-                <strong>Address:</strong>{" "}
-                {customer?.address ? customer.address : "Address not available"}
-              </p>
-            </div>
-            <div className="col-md-4 text-end">
-              <p>
-                <strong>Date:</strong>{" "}
-                {quotation.quotation_date
-                  ? new Date(quotation.quotation_date).toLocaleDateString()
-                  : "N/A"}
-              </p>
-            </div>
-          </div>
+        {/* Quotation Area Section */}
+        <div className="card">
+          <div className="card-body">
+            <div className="quotation-container" ref={quotationRef}>
+              <div className="quotation-header text-center">
+                <img src={logo} alt="Company Logo" className="company-logo" />
+                <h2 className="company-name">GROHE / AMERICAN STANDARD</h2>
+                <h3 className="quotation-title">ESTIMATE / QUOTATION</h3>
+              </div>
+              <div className="row customer-details">
+                <div className="col-md-8">
+                  <p>
+                    <strong>M/s:</strong>{" "}
+                    {getCustomerName(quotation.customerId)}
+                  </p>
+                  <p>
+                    <strong>Address:</strong>{" "}
+                    {quotation.shipTo || "Address not available"}
+                  </p>
+                </div>
+                <div className="col-md-4 text-end">
+                  <p>
+                    <strong>Date:</strong>{" "}
+                    {quotation.quotation_date
+                      ? new Date(quotation.quotation_date).toLocaleDateString()
+                      : "N/A"}
+                  </p>
+                  <p>
+                    <strong>Quotation No:</strong> {quotation.quotationId}
+                  </p>
+                </div>
+              </div>
 
-          <table className="table table-bordered quotation-table">
-            <thead>
-              <tr>
-                <th>S.No</th>
-                <th>Product Image</th>
-                <th>Product Name</th>
-                <th>Product Code</th>
-                <th>MRP</th>
-                <th>Discount</th>
-                <th>Rate</th>
-                <th>Unit</th>
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.length > 0 ? (
-                products.map((product, index) => (
-                  <tr key={index}>
-                    <td>{index + 1}</td>
-                    <td>
-                      {product.image ? (
-                        <img
-                          src={product.image}
-                          alt={product.name || "Product"}
-                          className="product-image"
-                        />
-                      ) : (
-                        "N/A"
-                      )}
-                    </td>
-                    <td>{product.name || "N/A"}</td>
-                    <td>{product.productCode || "N/A"}</td>
-                    <td>
-                      {product.sellingPrice
-                        ? `₹${Number(product.sellingPrice).toFixed(2)}`
-                        : "N/A"}
-                    </td>
-                    <td>
-                      {product.discount
-                        ? `${
-                            product.discountType === "percent"
-                              ? `${product.discount}%`
-                              : `₹${Number(product.discount).toFixed(2)}`
-                          }`
-                        : "N/A"}
-                    </td>
-                    <td>
-                      {product.rate
-                        ? `₹${Number(product.rate).toFixed(2)}`
-                        : product.sellingPrice
-                        ? `₹${Number(product.sellingPrice).toFixed(2)}`
-                        : "N/A"}
-                    </td>
-                    <td>{product.qty || product.quantity || "N/A"}</td>
-                    <td>
-                      {product.total
-                        ? `₹${Number(product.total).toFixed(2)}`
-                        : "N/A"}
-                    </td>
+              <table className="table table-bordered quotation-table">
+                <thead>
+                  <tr>
+                    <th>S.No</th>
+                    <th>Product Image</th>
+                    <th>Product Name</th>
+                    <th>Product Code</th>
+                    <th>MRP</th>
+                    <th>Discount</th>
+                    <th>Rate</th>
+                    <th>Unit</th>
+                    <th>Total</th>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="9" className="text-center">
-                    No products available for this quotation.
-                  </td>
-                </tr>
+                </thead>
+                <tbody>
+                  {products.length > 0 ? (
+                    products.map((product, index) => (
+                      <tr key={index}>
+                        <td>{index + 1}</td>
+                        <td>
+                          {product.image ? (
+                            <img
+                              src={product.image}
+                              alt={product.name || "Product"}
+                              className="product-image"
+                            />
+                          ) : (
+                            "N/A"
+                          )}
+                        </td>
+                        <td>{product.name || "N/A"}</td>
+                        <td>{product.productCode || "N/A"}</td>
+                        <td>
+                          {product.sellingPrice
+                            ? `₹${Number(product.sellingPrice).toFixed(2)}`
+                            : "N/A"}
+                        </td>
+                        <td>
+                          {product.discount
+                            ? `${
+                                product.discountType === "percent"
+                                  ? `${product.discount}%`
+                                  : `₹${Number(product.discount).toFixed(2)}`
+                              }`
+                            : "N/A"}
+                        </td>
+                        <td>
+                          {product.rate
+                            ? `₹${Number(product.rate).toFixed(2)}`
+                            : product.sellingPrice
+                            ? `₹${Number(product.sellingPrice).toFixed(2)}`
+                            : "N/A"}
+                        </td>
+                        <td>{product.qty || product.quantity || "N/A"}</td>
+                        <td>
+                          {product.total
+                            ? `₹${Number(product.total).toFixed(2)}`
+                            : "N/A"}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="9" className="text-center">
+                        No products available for this quotation.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colSpan="8" className="text-end">
+                      <strong>Subtotal:</strong>
+                    </td>
+                    <td>₹{subtotal.toFixed(2)}</td>
+                  </tr>
+                  {quotation.include_gst && quotation.gst_value && (
+                    <tr>
+                      <td colSpan="8" className="text-end">
+                        <strong>GST ({quotation.gst_value}%):</strong>
+                      </td>
+                      <td>₹{gstAmount.toFixed(2)}</td>
+                    </tr>
+                  )}
+                  <tr>
+                    <td colSpan="8" className="text-end">
+                      <strong>Total:</strong>
+                    </td>
+                    <td>₹{finalTotal.toFixed(2)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+
+              {/* Terms and Conditions (Optional, based on sample image) */}
+              {quotation.terms && (
+                <div className="terms-conditions mt-4">
+                  <h5>Terms & Conditions</h5>
+                  <ul>
+                    {quotation.terms.split("\n").map((term, index) => (
+                      <li key={index}>{term}</li>
+                    ))}
+                  </ul>
+                </div>
               )}
-            </tbody>
-            <tfoot>
-              <tr>
-                <td colSpan="8" className="text-end">
-                  <strong>Subtotal:</strong>
-                </td>
-                <td>₹{subtotal.toFixed(2)}</td>
-              </tr>
-              {quotation.include_gst && quotation.gst_value && (
-                <tr>
-                  <td colSpan="8" className="text-end">
-                    <strong>GST ({quotation.gst_value}%):</strong>
-                  </td>
-                  <td>₹{gstAmount.toFixed(2)}</td>
-                </tr>
-              )}
-              <tr>
-                <td colSpan="8" className="text-end">
-                  <strong>Total:</strong>
-                </td>
-                <td>₹{finalTotal.toFixed(2)}</td>
-              </tr>
-            </tfoot>
-          </table>
+            </div>
+          </div>
         </div>
 
         {/* Export Options */}
-        <div className="d-flex justify-content-center align-items-center mb-4">
+        <div className="d-flex justify-content-center align-items-center mb-4 mt-4">
           <div className="d-flex align-items-center me-2">
             <select
               className="form-select me-2"

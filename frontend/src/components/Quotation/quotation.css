@@ -1,33 +1,54 @@
-/* QuotationsDetails.css */
+.card {
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  background: #f8f9fa;
+  padding: 10px 15px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.card-header h4 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.card-body {
+  padding: 15px;
+}
+
 .quotation-container {
   padding: 20px;
   border: 1px solid #ddd;
-  border-radius: 4px;
-  background-color: #fff;
-  margin-bottom: 20px;
+  border-radius: 5px;
+  background: #fff;
 }
 
 .quotation-header {
   margin-bottom: 20px;
 }
 
+.company-logo {
+  max-width: 150px;
+  margin-bottom: 10px;
+}
+
 .company-name {
-  font-size: 24px;
+  font-size: 1.5rem;
   font-weight: bold;
-  color: #d32f2f; /* Red color to match the sample */
+  color: #1a3c34;
   margin: 0;
 }
 
 .quotation-title {
-  font-size: 18px;
-  font-weight: bold;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #1a3c34;
   margin: 5px 0;
-}
-
-.company-details {
-  font-size: 14px;
-  color: #555;
-  margin: 0;
 }
 
 .customer-details {
@@ -36,33 +57,99 @@
 
 .customer-details p {
   margin: 5px 0;
-  font-size: 14px;
+  font-size: 0.9rem;
 }
 
 .quotation-table {
   width: 100%;
   border-collapse: collapse;
+  margin-bottom: 20px;
 }
 
 .quotation-table th,
 .quotation-table td {
+  padding: 10px;
+  text-align: left;
   border: 1px solid #ddd;
-  padding: 8px;
-  text-align: center;
-  font-size: 14px;
 }
 
 .quotation-table th {
-  background-color: #f5f5f5;
-  font-weight: bold;
+  background: #f1f3f5;
+  font-weight: 600;
+  color: #1a3c34;
 }
 
-.quotation-table .product-image {
-  width: 50px;
-  height: 50px;
-  object-fit: contain;
+.quotation-table td {
+  font-size: 0.9rem;
+  color: #2c3e50;
 }
 
-.quotation-table tfoot td {
-  font-weight: bold;
+.product-image {
+  max-width: 50px;
+  max-height: 50px;
+}
+
+.terms-conditions h5 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a3c34;
+  margin-bottom: 10px;
+}
+
+.terms-conditions ul {
+  list-style: disc;
+  padding-left: 20px;
+  font-size: 0.9rem;
+  color: #2c3e50;
+}
+
+.terms-conditions li {
+  margin-bottom: 5px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .card-body {
+    padding: 10px;
+  }
+
+  .quotation-table th,
+  .quotation-table td {
+    font-size: 0.85rem;
+    padding: 8px;
+  }
+
+  .customer-details {
+    flex-direction: column;
+    text-align: left;
+  }
+
+  .customer-details .col-md-4 {
+    text-align: left;
+    margin-top: 10px;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .page-wrapper {
+    padding: 0;
+    background: none;
+  }
+
+  .card-header,
+  .card {
+    border: none;
+    box-shadow: none;
+  }
+
+  .quotation-container {
+    border: none;
+    padding: 0;
+  }
+
+  .btn,
+  .page-header a {
+    display: none;
+  }
 }

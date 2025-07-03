@@ -15,21 +15,20 @@ import AddNewOrder from "./AddNewOrder";
 import { toast } from "sonner";
 
 // Subcomponent to handle each product row
-// Subcomponent to handle each product row
 const ProductRow = ({ product, index }) => {
   const { data, isLoading, error } = useGetProductByIdQuery(product.productId, {
     skip: !product.productId,
   });
 
   const productName = data?.name || "N/A";
-  const sellingPrice = parseFloat(data?.sellingPrice) || product.price; // Fallback to invoice price if not available
+  const sellingPrice = parseFloat(data?.sellingPrice) || product.price || 0; // Fallback to product.price or 0
 
   return (
     <tr key={product.productId || index}>
       <td>{index + 1}</td>
       <td>{productName}</td>
       <td>{product.quantity || 0}</td>
-      <td>{sellingPrice.toFixed(2) || 0}</td>
+      <td>{sellingPrice.toFixed(2)}</td>
       <td>{((product.quantity || 0) * sellingPrice).toFixed(2)}</td>
     </tr>
   );
@@ -43,7 +42,7 @@ const OrderWithInvoice = () => {
   const [deleteOrder] = useDeleteOrderMutation();
   const [updateOrderStatus] = useUpdateOrderStatusMutation();
   const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [selectedOrder, setSelectedOrder] = setSelectedOrder(null);
 
   const {
     data: orderData,
@@ -60,10 +59,11 @@ const OrderWithInvoice = () => {
     error: invoiceError,
   } = useGetInvoiceByIdQuery(invoiceId, { skip: !invoiceId });
 
+  // Ensure invoice and products are handled safely
   const invoice = invoiceData?.data || {};
-  const products = invoice?.products || [];
-  const customers = customerData?.data || [];
+  const products = Array.isArray(invoice?.products) ? invoice.products : [];
 
+  const customers = customerData?.data || [];
   const {
     data: teamData,
     isLoading: teamLoading,
@@ -104,8 +104,6 @@ const OrderWithInvoice = () => {
   }, [teamData]);
 
   // Team members
-  // Team members
-  // Team members
   const normalizedTeamMembers = useMemo(() => {
     const teamIds = order.assignedTo
       ? order.assignedTo.split(",").map((id) => id.trim())
@@ -126,10 +124,11 @@ const OrderWithInvoice = () => {
           })),
         };
       })
-      .filter((team) => team !== null); // Remove invalid teams
+      .filter((team) => team !== null);
 
     return teams;
   }, [order.assignedTo, teamData]);
+
   const handleEditOrder = () => {
     setSelectedOrder(order);
     setShowEditModal(true);
@@ -162,6 +161,30 @@ const OrderWithInvoice = () => {
     setSelectedOrder(null);
     setShowEditModal(false);
   };
+
+  // Debug logs to verify data
+  console.log("Invoice Data:", invoiceData);
+  console.log("Products:", products);
+
+  if (orderLoading || invoiceLoading || teamLoading) {
+    return (
+      <div className="page-wrapper notes-page-wrapper">
+        <div className="content text-center">
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (orderError || invoiceError || teamError) {
+    return (
+      <div className="page-wrapper notes-page-wrapper">
+        <div className="content text-center">
+          <p className="text-danger">Error loading data. Please try again.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page-wrapper notes-page-wrapper">

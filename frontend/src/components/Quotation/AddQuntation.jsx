@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { FaArrowLeft } from "react-icons/fa";
 import {
   useCreateQuotationMutation,
@@ -7,11 +7,164 @@ import {
 } from "../../api/quotationApi";
 import { useGetAllProductsQuery } from "../../api/productApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
-import { PiPlus } from "react-icons/pi";
+import {
+  useGetAllAddressesQuery,
+  useCreateAddressMutation,
+} from "../../api/addressApi";
 import { useGetProfileQuery } from "../../api/userApi";
+import { PiPlus } from "react-icons/pi";
+import { BiTrash } from "react-icons/bi";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { BiTrash } from "react-icons/bi";
+import { debounce } from "lodash";
+
+// Modal component for creating new addresses
+const AddAddressModal = ({ show, onClose, onSave }) => {
+  const [addressData, setAddressData] = useState({
+    name: "",
+    street: "",
+    city: "",
+    state: "",
+    country: "",
+    postalCode: "",
+  });
+
+  const [createAddress, { isLoading: isCreatingAddress }] =
+    useCreateAddressMutation();
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setAddressData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const newAddress = await createAddress(addressData).unwrap();
+      toast.success("Address created successfully!");
+      onSave(newAddress.data.addressId);
+      setAddressData({
+        name: "",
+        street: "",
+        city: "",
+        state: "",
+        country: "",
+        postalCode: "",
+      });
+      onClose();
+    } catch (err) {
+      toast.error(
+        `Failed to create address: ${err.data?.message || "Unknown error"}`
+      );
+    }
+  };
+
+  if (!show) return null;
+
+  return (
+    <div
+      className="modal"
+      style={{ display: "block", background: "rgba(0,0,0,0.5)" }}
+    >
+      <div className="modal-dialog">
+        <div className="modal-content">
+          <div className="modal-header">
+            <h5 className="modal-title">Add New Address</h5>
+            <button
+              type="button"
+              className="btn-close"
+              onClick={onClose}
+            ></button>
+          </div>
+          <form onSubmit={handleSubmit}>
+            <div className="modal-body">
+              <div className="mb-3">
+                <label className="form-label">Name</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  name="name"
+                  value={addressData.name}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="mb-3">
+                <label className="form-label">Street *</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  name="street"
+                  value={addressData.street}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="mb-3">
+                <label className="form-label">City *</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  name="city"
+                  value={addressData.city}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="mb-3">
+                <label className="form-label">State</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  name="state"
+                  value={addressData.state}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="mb-3">
+                <label className="form-label">Country *</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  name="country"
+                  value={addressData.country}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="mb-3">
+                <label className="form-label">Postal Code</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  name="postalCode"
+                  value={addressData.postalCode}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={onClose}
+                disabled={isCreatingAddress}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={isCreatingAddress}
+              >
+                {isCreatingAddress ? "Saving..." : "Save Address"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const AddQuotation = () => {
   const { id } = useParams();
@@ -27,6 +180,16 @@ const AddQuotation = () => {
   const userId = userData?.user?.userId || "nill";
   const { data: customersData } = useGetCustomersQuery();
   const customers = customersData?.data || [];
+  const { data: addressesData, isLoading: isAddressesLoading } =
+    useGetAllAddressesQuery();
+
+  const addresses = Array.isArray(addressesData) ? addressesData : [];
+  const { data: products, isLoading: isProductsLoading } =
+    useGetAllProductsQuery();
+  const [createQuotation, { isLoading: isCreating }] =
+    useCreateQuotationMutation();
+  const [updateQuotation, { isLoading: isUpdating }] =
+    useUpdateQuotationMutation();
 
   const initialFormData = {
     document_title: "",
@@ -42,17 +205,15 @@ const AddQuotation = () => {
     signature_name: "",
     signature_image: "",
     customerId: "",
+
+    shipTo: "",
     createdBy: userId,
   };
 
   const [formData, setFormData] = useState(initialFormData);
   const [productSearch, setProductSearch] = useState("");
-  const { data: products, isLoading: isProductsLoading } =
-    useGetAllProductsQuery();
-  const [createQuotation, { isLoading: isCreating }] =
-    useCreateQuotationMutation();
-  const [updateQuotation, { isLoading: isUpdating }] =
-    useUpdateQuotationMutation();
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [addressType, setAddressType] = useState(""); // "billTo" or "shipTo"
 
   // Handle fetch errors
   useEffect(() => {
@@ -64,7 +225,6 @@ const AddQuotation = () => {
       setTimeout(() => navigate("/quotations/list"), 2000);
     }
     if (isEditMode && isFetchSuccess && !existingQuotation) {
-      console.warn("No quotation data found for ID:", id);
       toast.error("Quotation not found. Redirecting to quotations list...", {
         position: "top-right",
         autoClose: 3000,
@@ -104,6 +264,8 @@ const AddQuotation = () => {
         signature_name: existingQuotation.signature_name || "",
         signature_image: existingQuotation.signature_image || "",
         customerId: existingQuotation.customerId || "",
+
+        shipTo: existingQuotation.shipTo || "",
         createdBy: userId,
         products:
           existingQuotation.products?.map((p) => ({
@@ -119,6 +281,14 @@ const AddQuotation = () => {
       });
     }
   }, [existingQuotation, userId, isEditMode]);
+
+  // Debounced product search
+  const debouncedSearch = useCallback(
+    debounce((value) => {
+      setProductSearch(value);
+    }, 300),
+    []
+  );
 
   // Add product to quotation
   const addProduct = (product) => {
@@ -138,6 +308,7 @@ const AddQuotation = () => {
         },
       ],
     }));
+    setProductSearch("");
     toast.success("Product added successfully!");
   };
 
@@ -198,12 +369,22 @@ const AddQuotation = () => {
     });
   };
 
-  const handleCustomerChange = (e) => {
-    const selectedCustomerId = e.target.value;
-
+  const handleAddressChange = (e, type) => {
     setFormData((prev) => ({
       ...prev,
-      customerId: selectedCustomerId,
+      [type]: e.target.value,
+    }));
+  };
+
+  const handleAddAddress = (type) => {
+    setAddressType(type);
+    setShowAddressModal(true);
+  };
+
+  const handleAddressSave = (newAddressId) => {
+    setFormData((prev) => ({
+      ...prev,
+      [addressType]: newAddressId,
     }));
   };
 
@@ -211,22 +392,15 @@ const AddQuotation = () => {
     e.preventDefault();
 
     if (!formData.customerId) {
-      toast.error("Please select a customer.", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error("Please select a customer.");
       return;
     }
 
     if (isEditMode && (!existingQuotation || isFetching)) {
-      toast.error("Quotation data is still loading or not found.", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error("Quotation data is still loading or not found.");
       return;
     }
 
-    // Format products for backend
     const formattedProducts = formData.products.map((product) => ({
       productId: product.id || product.productId || null,
       quantity: Number(product.qty) || 1,
@@ -244,27 +418,21 @@ const AddQuotation = () => {
         : Number(formData.finalAmount),
       items: formattedProducts,
       products: formData.products.length > 0 ? formData.products : [],
+
+      shipTo: formData.shipTo || null,
     };
 
     try {
       if (isEditMode) {
-        const response = await updateQuotation({
+        await updateQuotation({
           id,
           updatedQuotation: formattedFormData,
         }).unwrap();
-
-        toast.success("Quotation updated successfully!", {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.success("Quotation updated successfully!");
         navigate("/quotations/list");
       } else {
-        const response = await createQuotation(formattedFormData).unwrap();
-
-        toast.success("Quotation created successfully!", {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        await createQuotation(formattedFormData).unwrap();
+        toast.success("Quotation created successfully!");
         setFormData({ ...initialFormData, createdBy: userId });
       }
     } catch (err) {
@@ -278,10 +446,7 @@ const AddQuotation = () => {
       } else if (err.data?.message) {
         errorMessage = `Failed to process quotation: ${err.data.message}`;
       }
-      toast.error(errorMessage, {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error(errorMessage);
       if (err.status === 404) {
         setTimeout(() => navigate("/quotations/list"), 2000);
       }
@@ -289,10 +454,14 @@ const AddQuotation = () => {
   };
 
   const filteredProducts = products
-    ?.filter((product) =>
-      product.name.toLowerCase().includes(productSearch.toLowerCase())
+    ?.filter(
+      (product) =>
+        product.name.toLowerCase().includes(productSearch.toLowerCase()) ||
+        product.product_code
+          ?.toLowerCase()
+          .includes(productSearch.toLowerCase())
     )
-    .slice(0, 3);
+    .slice(0, 5); // Increased to show more results
 
   if (isFetching) {
     return (
@@ -325,20 +494,18 @@ const AddQuotation = () => {
           <div className="row">
             <div className="col-md-6">
               <div className="mb-3">
-                <label className="form-label">Customer*</label>
+                <label className="form-label">Customer *</label>
                 <div className="row">
                   <div className="col-lg-10 col-sm-10 col-10">
                     <select
                       className="form-control"
                       name="customerId"
                       value={formData.customerId}
-                      onChange={handleCustomerChange}
+                      onChange={(e) => handleChange(e)}
                       required
                     >
                       <option value="">Select</option>
-                      {isProductsLoading ? (
-                        <option>Loading...</option>
-                      ) : customers.length === 0 ? (
+                      {customers.length === 0 ? (
                         <option>No customers available</option>
                       ) : (
                         customers.map((customer) => (
@@ -365,7 +532,49 @@ const AddQuotation = () => {
           </div>
           <div className="row">
             <div className="col-md-6">
-              <label className="form-label">Document Title *</label>
+              <div className="mb-3">
+                <label className="form-label">Shipping Address</label>
+                <div className="row">
+                  <div className="col-lg-10 col-sm-10 col-10">
+                    <select
+                      className="form-control"
+                      name="shipTo"
+                      value={formData.shipTo}
+                      onChange={(e) => handleAddressChange(e, "shipTo")}
+                    >
+                      <option value="">Select</option>
+                      {isAddressesLoading ? (
+                        <option>Loading...</option>
+                      ) : addresses.length === 0 ? (
+                        <option>No addresses available</option>
+                      ) : (
+                        addresses.map((address) => (
+                          <option
+                            key={address.addressId}
+                            value={address.addressId}
+                          >
+                            {address.name ||
+                              `${address.street}, ${address.city}`}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                  </div>
+                  <div className="col-lg-2 col-sm-2 col-2 p-0">
+                    <div className="add-icon tab">
+                      <a
+                        className="bg-dark text-white p-2 rounded"
+                        onClick={() => handleAddAddress("shipTo")}
+                      >
+                        <PiPlus />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="col-md-6">
+              <label className="form-label">Quotation Title *</label>
               <input
                 type="text"
                 className="form-control"
@@ -375,6 +584,8 @@ const AddQuotation = () => {
                 required
               />
             </div>
+          </div>
+          <div className="row mt-3">
             <div className="col-md-6">
               <label className="form-label">Quotation Date *</label>
               <input
@@ -386,9 +597,6 @@ const AddQuotation = () => {
                 required
               />
             </div>
-          </div>
-
-          <div className="row mt-3">
             <div className="col-md-6">
               <label className="form-label">Due Date *</label>
               <input
@@ -400,6 +608,8 @@ const AddQuotation = () => {
                 required
               />
             </div>
+          </div>
+          <div className="row mt-3">
             <div className="col-md-6">
               <label className="form-label">Reference Number</label>
               <input
@@ -410,34 +620,43 @@ const AddQuotation = () => {
                 onChange={handleChange}
               />
             </div>
-          </div>
-          <div className="row">
-            <div className="col-lg-12">
-              <div className="mb-3">
-                <label className="form-label">Search Product</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Enter product name"
-                  value={productSearch}
-                  onChange={(e) => setProductSearch(e.target.value)}
-                />
-                {productSearch && (
-                  <ul className="list-group mt-2">
-                    {filteredProducts?.map((product) => (
+            <div className="col-md-6">
+              <label className="form-label">Search Product</label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Search by product name or code"
+                onChange={(e) => debouncedSearch(e.target.value)}
+              />
+              {productSearch && (
+                <ul
+                  className="list-group mt-2"
+                  style={{ maxHeight: "200px", overflowY: "auto" }}
+                >
+                  {isProductsLoading ? (
+                    <li className="list-group-item">Loading products...</li>
+                  ) : filteredProducts?.length > 0 ? (
+                    filteredProducts.map((product) => (
                       <li
                         key={product.id}
-                        className="list-group-item list-group-item-action"
+                        className="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
                         onClick={() => addProduct(product)}
+                        style={{ cursor: "pointer" }}
                       >
-                        {product.name} - ${product.sellingPrice}
+                        <span>
+                          {product.name} ({product.product_code})
+                        </span>
+                        <span>₹{product.sellingPrice}</span>
                       </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+                    ))
+                  ) : (
+                    <li className="list-group-item">No products found</li>
+                  )}
+                </ul>
+              )}
             </div>
-
+          </div>
+          <div className="row mt-3">
             <div className="col-lg-12">
               <div className="table-responsive">
                 <table className="table">
@@ -445,10 +664,10 @@ const AddQuotation = () => {
                     <tr>
                       <th>Product</th>
                       <th>Qty</th>
-                      <th>Selling Price ($)</th>
-                      <th>Discount ($)</th>
+                      <th>Selling Price (₹)</th>
+                      <th>Discount (₹)</th>
                       <th>Tax (%)</th>
-                      <th>Total ($)</th>
+                      <th>Total (₹)</th>
                       <th>Action</th>
                     </tr>
                   </thead>
@@ -540,7 +759,7 @@ const AddQuotation = () => {
               />
             </div>
             <div className="col-md-4">
-              <label className="form-label">GST Value</label>
+              <label className="form-label">GST Value (%)</label>
               <input
                 type="number"
                 className="form-control"
@@ -563,7 +782,6 @@ const AddQuotation = () => {
               </select>
             </div>
           </div>
-
           <div className="row mt-3">
             <div className="col-md-6">
               <label className="form-label">Round Off</label>
@@ -572,9 +790,7 @@ const AddQuotation = () => {
                 className="form-control"
                 name="roundOff"
                 value={formData.roundOff}
-                onChange={(e) =>
-                  setFormData({ ...formData, roundOff: e.target.value })
-                }
+                onChange={handleChange}
               />
             </div>
             <div className="col-md-6">
@@ -588,7 +804,6 @@ const AddQuotation = () => {
               />
             </div>
           </div>
-
           <div className="row mt-3">
             <div className="col-md-6">
               <label className="form-label">Signature Name</label>
@@ -611,7 +826,6 @@ const AddQuotation = () => {
               />
             </div>
           </div>
-
           <div className="modal-footer mt-4">
             <button
               type="button"
@@ -631,6 +845,11 @@ const AddQuotation = () => {
             </button>
           </div>
         </form>
+        <AddAddressModal
+          show={showAddressModal}
+          onClose={() => setShowAddressModal(false)}
+          onSave={handleAddressSave}
+        />
       </div>
     </div>
   );

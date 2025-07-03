@@ -1,5 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Modal, Button, Form, Col, Row, Table } from "react-bootstrap";
+import { useGetAllAddressesQuery } from "../../api/addressApi";
+import { useGetProfileQuery } from "../../api/userApi";
 
 const CreateInvoiceFromQuotation = ({
   quotation,
@@ -8,6 +10,22 @@ const CreateInvoiceFromQuotation = ({
   customerMap,
   addressMap,
 }) => {
+  const { data: userProfile } = useGetProfileQuery();
+  const userId = userProfile?.user?.userId;
+
+  const { data: addressesData = { data: [] }, isLoading: isAddressesLoading } =
+    useGetAllAddressesQuery(userId, { skip: !userId });
+
+  const addresses = useMemo(
+    () =>
+      Array.isArray(addressesData?.data)
+        ? addressesData.data
+        : Array.isArray(addressesData)
+        ? addressesData
+        : [],
+    [addressesData]
+  );
+
   const [formData, setFormData] = useState({
     customerId: quotation.customerId || "",
     billTo: quotation.document_title || "",
@@ -22,9 +40,27 @@ const CreateInvoiceFromQuotation = ({
     status: "Draft",
     quotationId: quotation.quotationId,
     referenceNumber: quotation.reference_number || "",
+    paymentMethod: "",
+    invoiceNo: `INV_${new Date()
+      .toISOString()
+      .split("T")[0]
+      .replace(/-/g, "")}_${Math.random().toString(36).substr(2, 5)}`, // Auto-generated unique invoice number
+    signatureName: quotation.signature_name || "CM TRADING CO",
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (addresses.length > 0 && !formData.shipTo) {
+      const defaultAddress =
+        addresses.find((a) => a.addressId === quotation.shipTo) || addresses[0];
+      setFormData((prev) => ({
+        ...prev,
+        shipTo: defaultAddress?.addressId || "",
+      }));
+    }
+  }, [addresses, quotation.shipTo, formData.shipTo]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -32,9 +68,9 @@ const CreateInvoiceFromQuotation = ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+    setError(null);
   };
 
-  // Calculate total amount including GST and round-off
   const calculateTotal = () => {
     const subtotal = formData.products.reduce(
       (sum, item) => sum + parseFloat(item.total || 0),
@@ -49,32 +85,72 @@ const CreateInvoiceFromQuotation = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError(null);
+
+    const validProducts = formData.products.filter(
+      (p) => p.name && p.qty && p.sellingPrice && p.total
+    );
+    if (!formData.customerId) {
+      setError("Please select a customer.");
+      setIsSubmitting(false);
+      return;
+    }
+    if (validProducts.length === 0) {
+      setError("Please ensure at least one product is valid.");
+      setIsSubmitting(false);
+      return;
+    }
+    if (new Date(formData.dueDate) < new Date(formData.invoiceDate)) {
+      setError("Due date cannot be earlier than invoice date.");
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const invoiceData = {
         customerId: formData.customerId,
         billTo: formData.billTo,
-        shipTo: formData.shipTo,
+        shipTo: formData.shipTo || null,
         amount: calculateTotal(),
         invoiceDate: formData.invoiceDate,
         dueDate: formData.dueDate,
         status: formData.status,
-        items: formData.products.map((product) => ({
+        items: validProducts.map((product) => ({
           name: product.name,
-          qty: product.qty,
-          sellingPrice: product.sellingPrice,
-          total: product.total,
-          tax: product.tax,
+          qty: parseInt(product.qty) || 1,
+          sellingPrice: parseFloat(product.sellingPrice) || 0,
+          total: parseFloat(product.total) || 0,
+          tax: product.tax || 0,
         })),
+        paymentMethod: formData.paymentMethod
+          ? JSON.stringify({ method: formData.paymentMethod })
+          : null,
         includeGst: formData.includeGst,
         gstValue: formData.gstValue,
         roundOff: formData.roundOff,
         quotationId: formData.quotationId,
         referenceNumber: formData.referenceNumber,
+        invoiceNo: formData.invoiceNo,
+        signatureName: formData.signatureName,
+        createdBy: userId,
       };
+
+      console.log("Submitting Payload:", invoiceData);
       await createInvoice(invoiceData).unwrap();
       onClose();
     } catch (error) {
-      alert("Failed to create invoice. Please try again.");
+      console.error(
+        "Create Invoice Error:",
+        error,
+        "Full Response:",
+        error.response ? error.response.data : error.data
+      );
+      setError(
+        error.response?.data?.message ||
+          error.data?.message ||
+          error.data?.errors?.join(", ") ||
+          "Failed to create invoice. Please check server logs."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -88,6 +164,7 @@ const CreateInvoiceFromQuotation = ({
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
+        {error && <div className="alert alert-danger">{error}</div>}
         <Form onSubmit={handleSubmit}>
           <Row>
             <Col md={6}>
@@ -109,15 +186,32 @@ const CreateInvoiceFromQuotation = ({
             <Col md={6}>
               <Form.Group className="mb-3">
                 <Form.Label>Shipping Address</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="shipTo"
-                  value={
-                    addressMap[formData.shipTo] || formData.shipTo || "N/A"
-                  }
-                  onChange={handleChange}
-                  readOnly
-                />
+                {isAddressesLoading ? (
+                  <div>Loading addresses...</div>
+                ) : addresses.length === 0 ? (
+                  <div className="text-warning">No addresses available</div>
+                ) : (
+                  <Form.Select
+                    name="shipTo"
+                    value={formData.shipTo || ""}
+                    onChange={handleChange}
+                  >
+                    <option value="">Select Address</option>
+                    {addresses.map((addr) => (
+                      <option key={addr.addressId} value={addr.addressId}>
+                        {[
+                          addr?.street,
+                          addr?.city,
+                          addr?.state,
+                          addr?.postalCode,
+                          addr?.country,
+                        ]
+                          .filter(Boolean)
+                          .join(", ") || "Incomplete Address"}
+                      </option>
+                    ))}
+                  </Form.Select>
+                )}
               </Form.Group>
             </Col>
           </Row>
@@ -136,6 +230,21 @@ const CreateInvoiceFromQuotation = ({
             </Col>
             <Col md={6}>
               <Form.Group className="mb-3">
+                <Form.Label>Invoice Number</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="invoiceNo"
+                  value={formData.invoiceNo}
+                  onChange={handleChange}
+                  required
+                  readOnly // Auto-generated, can be edited if needed
+                />
+              </Form.Group>
+            </Col>
+          </Row>
+          <Row>
+            <Col md={6}>
+              <Form.Group className="mb-3">
                 <Form.Label>Invoice Date</Form.Label>
                 <Form.Control
                   type="date"
@@ -146,8 +255,6 @@ const CreateInvoiceFromQuotation = ({
                 />
               </Form.Group>
             </Col>
-          </Row>
-          <Row>
             <Col md={6}>
               <Form.Group className="mb-3">
                 <Form.Label>Due Date</Form.Label>
@@ -160,6 +267,8 @@ const CreateInvoiceFromQuotation = ({
                 />
               </Form.Group>
             </Col>
+          </Row>
+          <Row>
             <Col md={6}>
               <Form.Group className="mb-3">
                 <Form.Label>Status</Form.Label>
@@ -169,9 +278,26 @@ const CreateInvoiceFromQuotation = ({
                   onChange={handleChange}
                 >
                   <option value="Draft">Draft</option>
-                  <option value="Unpaid">Unpaid</option>
-                  <option value="Paid">Paid</option>
-                  <option value="Overdue">Overdue</option>
+                  <option value="unpaid">Unpaid</option>
+                  <option value="paid">Paid</option>
+                  <option value="partially paid">Partially Paid</option>
+                  <option value="void">Void</option>
+                  <option value="refund">Refund</option>
+                </Form.Select>
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>Payment Method</Form.Label>
+                <Form.Select
+                  name="paymentMethod"
+                  value={formData.paymentMethod}
+                  onChange={handleChange}
+                >
+                  <option value="">Select Method</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Credit Card">Credit Card</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
                 </Form.Select>
               </Form.Group>
             </Col>
@@ -217,6 +343,19 @@ const CreateInvoiceFromQuotation = ({
                 />
               </Form.Group>
             </Col>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>Signature Name</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="signatureName"
+                  value={formData.signatureName}
+                  onChange={handleChange}
+                />
+              </Form.Group>
+            </Col>
+          </Row>
+          <Row>
             <Col md={6}>
               <Form.Group className="mb-3">
                 <Form.Label>Total Amount</Form.Label>

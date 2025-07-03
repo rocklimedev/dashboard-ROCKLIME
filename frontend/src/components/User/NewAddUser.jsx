@@ -10,20 +10,22 @@ import {
   useGetUserByIdQuery,
 } from "../../api/userApi";
 import { useGetRolesQuery } from "../../api/rolesApi";
-import { useCreateAddressMutation } from "../../api/addressApi";
+import {
+  useCreateAddressMutation,
+  useUpdateAddressMutation,
+} from "../../api/addressApi";
 import { useParams } from "react-router-dom";
 
 const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
-  const { userId } = useParams(); // Get the user userId from the URL (e.g., /u/:userId/edit)
-
-  // Fetch user data if userToEdit is not provided (e.g., when navigating via route)
+  const { userId } = useParams();
   const {
     data: fetchedUser,
     isLoading: isFetchingUser,
     error: fetchUserError,
   } = useGetUserByIdQuery(userId, { skip: !userId || !!propUserToEdit });
 
-  // Use propUserToEdit if provided, otherwise use fetchedUser?.data (adjust based on API response structure)
+  // Adjust based on actual API response structure
+
   const userToEdit = propUserToEdit || fetchedUser?.data || fetchedUser?.user;
 
   const [createUser, { isLoading: isCreating, error: createError }] =
@@ -31,8 +33,14 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
   const [updateUser, { isLoading: isUpdating, error: updateError }] =
     useUpdateUserMutation();
   const [assignRole] = useAssignRoleMutation();
-  const [addAddress, { isLoading: isAddressLoading, error: addressError }] =
-    useCreateAddressMutation();
+  const [
+    createAddress,
+    { isLoading: isAddressCreating, error: addressCreateError },
+  ] = useCreateAddressMutation();
+  const [
+    updateAddress,
+    { isLoading: isAddressUpdating, error: addressUpdateError },
+  ] = useUpdateAddressMutation();
   const {
     data: roles,
     isLoading: isRolesLoading,
@@ -56,7 +64,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
     city: "",
     postalCode: "",
     emergencyNumber: "",
-    role: "",
+    roleId: "", // Changed from role to roleId to match backend
     status: "inactive",
     password: "",
     avatar: null,
@@ -64,7 +72,6 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
     addressId: null,
   });
 
-  // Populate formData when userToEdit changes
   useEffect(() => {
     if (userToEdit) {
       setFormData({
@@ -78,13 +85,17 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
         shiftFrom: userToEdit.shiftFrom
           ? new Date(`1970-01-01T${userToEdit.shiftFrom}`).toLocaleTimeString(
               "en-US",
-              { hour12: false }
+              {
+                hour12: false,
+              }
             )
           : "",
         shiftTo: userToEdit.shiftTo
           ? new Date(`1970-01-01T${userToEdit.shiftTo}`).toLocaleTimeString(
               "en-US",
-              { hour12: false }
+              {
+                hour12: false,
+              }
             )
           : "",
         bloodGroup: userToEdit.bloodGroup || "",
@@ -94,7 +105,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
         city: userToEdit.address?.city || "",
         postalCode: userToEdit.address?.postalCode || "",
         emergencyNumber: userToEdit.emergencyNumber || "",
-        role: userToEdit.roles?.[0]?.roleName || userToEdit.role || "",
+        roleId: userToEdit.roleId || "", // Use roleId from backend
         status: ["active", "inactive", "restricted"].includes(userToEdit.status)
           ? userToEdit.status
           : "inactive",
@@ -109,7 +120,6 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
     }
   }, [userToEdit]);
 
-  // Handle errors with toast notifications
   useEffect(() => {
     if (createError)
       toast.error(createError?.data?.message || "Failed to create user");
@@ -117,11 +127,24 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
       toast.error(updateError?.data?.message || "Failed to update user");
     if (rolesError)
       toast.error(rolesError?.data?.message || "Failed to load roles");
-    if (addressError)
-      toast.error(addressError?.data?.message || "Failed to save address");
+    if (addressCreateError)
+      toast.error(
+        addressCreateError?.data?.message || "Failed to create address"
+      );
+    if (addressUpdateError)
+      toast.error(
+        addressUpdateError?.data?.message || "Failed to update address"
+      );
     if (fetchUserError)
       toast.error(fetchUserError?.data?.message || "Failed to fetch user data");
-  }, [createError, updateError, rolesError, addressError, fetchUserError]);
+  }, [
+    createError,
+    updateError,
+    rolesError,
+    addressCreateError,
+    addressUpdateError,
+    fetchUserError,
+  ]);
 
   const handleChange = (e) => {
     const { name, value, type, checked, files } = e.target;
@@ -149,7 +172,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const requiredFields = ["username", "email", "name", "role"];
+      const requiredFields = ["username", "email", "name", "roleId"];
       if (!isEditMode) requiredFields.push("password");
       for (const field of requiredFields) {
         if (!formData[field]) {
@@ -169,7 +192,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
         }
       }
 
-      const selectedRoleObj = roles?.find((r) => r.roleName === formData.role);
+      const selectedRoleObj = roles?.find((r) => r.roleId === formData.roleId);
       if (!selectedRoleObj) {
         toast.error("Selected role is invalid");
         return;
@@ -191,11 +214,19 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
           postalCode: formData.postalCode,
           userId: userToEdit?.userId || null,
         };
-        const addressResponse = await addAddress({
-          addressId: isEditMode ? addressId : undefined,
-          ...addressPayload,
-        }).unwrap();
-        addressId = addressResponse.data.addressId;
+
+        let addressResponse;
+        if (isEditMode && addressId) {
+          // Update existing address
+          addressResponse = await updateAddress({
+            addressId,
+            ...addressPayload,
+          }).unwrap();
+        } else {
+          // Create new address
+          addressResponse = await createAddress(addressPayload).unwrap();
+        }
+        addressId = addressResponse.addressId; // Backend returns addressId
       }
 
       let avatarUrl = formData.avatar;
@@ -225,42 +256,26 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
         bloodGroup: formData.bloodGroup || null,
         addressId: addressId || null,
         emergencyNumber: formData.emergencyNumber || null,
-        roles: [formData.role],
+        roleId: selectedRoleObj.roleId, // Use roleId instead of roles array
         status: formData.status,
         password: formData.password || undefined,
         avatar: avatarUrl || null,
         about: formData.about || null,
       };
 
-      let user;
+      let userResponse;
       if (isEditMode) {
-        user = await updateUser({
+        userResponse = await updateUser({
           userId: userToEdit.userId,
           ...userPayload,
         }).unwrap();
         toast.success("User updated successfully!");
       } else {
-        user = await createUser(userPayload).unwrap();
+        userResponse = await createUser(userPayload).unwrap();
         toast.success("User added successfully!");
-        if (addressId) {
-          await addAddress({
-            addressId,
-            userId: user.userId,
-            street: formData.street,
-            country: formData.country,
-            state: formData.state,
-            city: formData.city,
-            postalCode: formData.postalCode,
-          }).unwrap();
-        }
       }
 
-      await assignRole({
-        userId: user.userId || userToEdit.userId,
-        roleId: selectedRoleObj.roleId,
-      }).unwrap();
-      toast.success("Role assigned successfully!");
-
+      // Role assignment is handled by updateUser/createUser in the backend, so no need for separate assignRole call
       onClose();
     } catch (err) {
       toast.error(
@@ -285,7 +300,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
       city: "",
       postalCode: "",
       emergencyNumber: "",
-      role: "",
+      roleId: "",
       status: "inactive",
       password: "",
       avatar: null,
@@ -300,7 +315,6 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
     setIsCollapsed((prev) => !prev);
   };
 
-  // Handle loading state for fetching user or roles
   if (isFetchingUser || isRolesLoading) {
     return (
       <div className="page-wrapper">
@@ -311,7 +325,6 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
     );
   }
 
-  // Handle error state for fetching user
   if (fetchUserError && userId) {
     return (
       <div className="page-wrapper">
@@ -352,7 +365,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
                 onClick={handleCollapse}
                 data-bs-toggle="tooltip"
                 title={isCollapsed ? "Expand" : "Collapse"}
-                userId="collapse-header"
+                id="collapse-header"
               >
                 <i
                   className={
@@ -363,7 +376,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
             </li>
           </ul>
           <div className="page-btn">
-            <a href="/employees-list" className="btn btn-secondary">
+            <a href="/users/list" className="btn btn-secondary">
               <i data-feather="arrow-left" className="me-2"></i>Back to List
             </a>
           </div>
@@ -373,10 +386,10 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
           onSubmit={handleSubmit}
           style={{ display: isCollapsed ? "none" : "block" }}
         >
-          <div className="accordions-items-seperate" userId="accordionExample">
+          <div className="accordions-items-seperate" id="accordionExample">
             {/* Employee Information */}
             <div className="accordion-item border mb-4">
-              <h2 className="accordion-header" userId="headingOne">
+              <h2 className="accordion-header" id="headingOne">
                 <div
                   className="accordion-button bg-white"
                   data-bs-toggle="collapse"
@@ -390,7 +403,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
                 </div>
               </h2>
               <div
-                userId="collapseOne"
+                id="collapseOne"
                 className="accordion-collapse collapse show"
                 aria-labelledby="headingOne"
                 data-bs-parent="#accordionExample"
@@ -551,15 +564,15 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
                             Role<span className="text-danger ms-1">*</span>
                           </label>
                           <Form.Select
-                            name="role"
-                            value={formData.role}
+                            name="roleId"
+                            value={formData.roleId}
                             onChange={handleChange}
                             disabled={isRolesLoading}
                             required
                           >
                             <option value="">Select</option>
                             {roles?.map((role) => (
-                              <option key={role.roleId} value={role.roleName}>
+                              <option key={role.roleId} value={role.roleId}>
                                 {role.roleName}
                               </option>
                             ))}
@@ -623,7 +636,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
 
             {/* Address Information */}
             <div className="accordion-item border mb-4">
-              <h2 className="accordion-header" userId="headingThree">
+              <h2 className="accordion-header" id="headingThree">
                 <div
                   className="accordion-button bg-white"
                   data-bs-toggle="collapse"
@@ -637,7 +650,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
                 </div>
               </h2>
               <div
-                userId="collapseThree"
+                id="collapseThree"
                 className="accordion-collapse collapse show"
                 aria-labelledby="headingThree"
                 data-bs-parent="#accordionExample"
@@ -722,7 +735,12 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
               variant="secondary"
               className="me-2"
               onClick={onClose}
-              disabled={isCreating || isUpdating || isAddressLoading}
+              disabled={
+                isCreating ||
+                isUpdating ||
+                isAddressCreating ||
+                isAddressUpdating
+              }
             >
               Cancel
             </Button>
@@ -730,10 +748,17 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
               type="submit"
               variant="primary"
               disabled={
-                isCreating || isUpdating || isAddressLoading || isRolesLoading
+                isCreating ||
+                isUpdating ||
+                isAddressCreating ||
+                isAddressUpdating ||
+                isRolesLoading
               }
             >
-              {isCreating || isUpdating || isAddressLoading
+              {isCreating ||
+              isUpdating ||
+              isAddressCreating ||
+              isAddressUpdating
                 ? "Saving..."
                 : isEditMode
                 ? "Update Employee"

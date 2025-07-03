@@ -122,6 +122,10 @@ const setupDB = async () => {
       allowNull: true,
     });
     Quotation.hasOne(Invoice, { foreignKey: "quotationId" });
+    Quotation.belongsTo(Address, {
+      foreignKey: "shipTo",
+      as: "shippingAddress",
+    });
 
     // ==============================
     // 🔥 BRAND & VENDOR RELATIONSHIPS
@@ -162,7 +166,7 @@ const setupDB = async () => {
     });
 
     // Team ↔ Order
-    Team.hasMany(Order, { foreign某种: "assignedTo" });
+    Team.hasMany(Order, { foreignKey: "assignedTo" });
     Order.belongsTo(Team, { foreignKey: "assignedTo" });
 
     // Keyword ↔ Category

@@ -2,6 +2,26 @@ const { Op } = require("sequelize");
 const User = require("../models/users");
 const Roles = require("../models/roles");
 const bcrypt = require("bcrypt");
+
+// Helper function to exclude sensitive fields
+const excludeSensitiveFields = {
+  attributes: {
+    exclude: ["password", "createdAt", "updatedAt"],
+  },
+};
+
+// Middleware to check if user is authorized (e.g., Admin or SuperAdmin)
+const isAdminOrSuperAdmin = async (req, res, next) => {
+  const user = await User.findByPk(req.user.userId, excludeSensitiveFields);
+  if (!user || !["ADMIN", "SUPER_ADMIN"].includes(user.roles)) {
+    return res
+      .status(403)
+      .json({ message: "Unauthorized: Admin access required" });
+  }
+  next();
+};
+
+// Create User
 exports.createUser = async (req, res) => {
   try {
     const {
@@ -10,57 +30,60 @@ exports.createUser = async (req, res) => {
       email,
       password,
       mobileNumber,
-      roleId: roleId,
+      roleId,
+      dateOfBirth,
+      bloodGroup,
+      emergencyNumber,
+      shiftFrom,
+      shiftTo,
+      addressId,
     } = req.body;
 
-    // Check if the user already exists
-    const existingUser = await User.findOne({
-      where: {
-        [Op.or]: [{ username }, { email }],
-      },
-    });
+    // Validate required fields
+    if (!username || !email || !password || !roleId) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
 
+    // Check for duplicate username or email
+    const existingUser = await User.findOne({
+      where: { [Op.or]: [{ username }, { email }] },
+    });
     if (existingUser) {
       return res
         .status(400)
         .json({ message: "Username or Email already exists" });
     }
 
-    // Fetch role data using roleId
+    // Validate roleId
     const roleData = await Roles.findOne({ where: { roleId } });
-
     if (!roleData) {
       return res.status(400).json({ message: "Invalid role specified" });
     }
 
-    const roleName = roleData.roleName;
-
-    // Hash the password before saving (best practice)
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create the new user
+    // Create user
     const newUser = await User.create({
       username,
       name,
       email,
-      password: hashedPassword, // Store hashed password
+      password: hashedPassword,
       mobileNumber,
-      roles: roleName, // Store role name
-      roleId, // Store role ID
+      dateOfBirth,
+      bloodGroup,
+      emergencyNumber,
+      shiftFrom,
+      shiftTo,
+      addressId,
+      roleId,
+      roles: roleData.roleName, // Store roleName for backward compatibility
+      status: roleData.roleName === "Users" ? "inactive" : "active",
     });
 
     res.status(201).json({
       message: "User created successfully",
-      user: {
-        userId: newUser.userId,
-        username: newUser.username,
-        name: newUser.name,
-        email: newUser.email,
-        mobileNumber: newUser.mobileNumber,
-        roles: newUser.role,
-        roleId: newUser.roleId,
-        createdAt: newUser.createdAt,
-      },
+      user: await User.findByPk(newUser.userId, excludeSensitiveFields),
     });
   } catch (err) {
     res.status(500).json({ message: "Server Error", error: err.message });
@@ -70,11 +93,10 @@ exports.createUser = async (req, res) => {
 // Get Profile
 exports.getProfile = async (req, res) => {
   try {
-    const user = await User.findByPk(req.user.userId);
+    const user = await User.findByPk(req.user.userId, excludeSensitiveFields);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-
     res.status(200).json({ user });
   } catch (err) {
     res.status(500).json({ message: "Server Error", error: err.message });
@@ -84,9 +106,10 @@ exports.getProfile = async (req, res) => {
 // Search User
 exports.searchUser = async (req, res) => {
   try {
-    const { query } = req.query;
+    const { query, page = 1, limit = 10 } = req.query;
+    const offset = (page - 1) * limit;
 
-    const users = await User.findAll({
+    const users = await User.findAndCountAll({
       where: {
         [Op.or]: [
           { username: { [Op.like]: `%${query}%` } },
@@ -94,9 +117,17 @@ exports.searchUser = async (req, res) => {
           { email: { [Op.like]: `%${query}%` } },
         ],
       },
+      ...excludeSensitiveFields,
+      limit,
+      offset,
     });
 
-    res.status(200).json({ users });
+    res.status(200).json({
+      users: users.rows,
+      total: users.count,
+      page: parseInt(page),
+      totalPages: Math.ceil(users.count / limit),
+    });
   } catch (err) {
     res.status(500).json({ message: "Server Error", error: err.message });
   }
@@ -105,20 +136,54 @@ exports.searchUser = async (req, res) => {
 // Update Profile
 exports.updateProfile = async (req, res) => {
   try {
-    const { username, name, email, mobileNumber } = req.body;
+    const {
+      username,
+      name,
+      email,
+      mobileNumber,
+      dateOfBirth,
+      bloodGroup,
+      emergencyNumber,
+      shiftFrom,
+      shiftTo,
+      addressId,
+    } = req.body;
 
-    const user = await User.findByPk(req.userId);
+    const user = await User.findByPk(req.user.userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // Check for duplicate username or email
+    const existingUser = await User.findOne({
+      where: {
+        [Op.or]: [{ username }, { email }],
+        userId: { [Op.ne]: user.userId },
+      },
+    });
+    if (existingUser) {
+      return res
+        .status(400)
+        .json({ message: "Username or Email already exists" });
+    }
+
+    // Update fields
     user.username = username || user.username;
     user.name = name || user.name;
     user.email = email || user.email;
     user.mobileNumber = mobileNumber || user.mobileNumber;
+    user.dateOfBirth = dateOfBirth || user.dateOfBirth;
+    user.bloodGroup = bloodGroup || user.bloodGroup;
+    user.emergencyNumber = emergencyNumber || user.emergencyNumber;
+    user.shiftFrom = shiftFrom || user.shiftFrom;
+    user.shiftTo = shiftTo || user.shiftTo;
+    user.addressId = addressId || user.addressId;
 
     await user.save();
-    res.status(200).json({ message: "Profile updated successfully", user });
+    res.status(200).json({
+      message: "Profile updated successfully",
+      user: await User.findByPk(user.userId, excludeSensitiveFields),
+    });
   } catch (err) {
     res.status(500).json({ message: "Server Error", error: err.message });
   }
@@ -128,14 +193,13 @@ exports.updateProfile = async (req, res) => {
 exports.reportUser = async (req, res) => {
   try {
     const { userId, reason } = req.body;
-
     const user = await User.findByPk(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Handle reporting logic (simplified for now)
-    // e.g., store the reason in a reports table or send email notification
+    // TODO: Implement actual reporting logic (e.g., save to a reports table or send notification)
+    // Example: await Reports.create({ userId, reportedBy: req.user.userId, reason });
 
     res.status(200).json({ message: "User reported successfully" });
   } catch (err) {
@@ -147,7 +211,6 @@ exports.reportUser = async (req, res) => {
 exports.deleteUser = async (req, res) => {
   try {
     const { userId } = req.params;
-
     const user = await User.findByPk(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -163,8 +226,21 @@ exports.deleteUser = async (req, res) => {
 // Get All Users
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.findAll();
-    res.status(200).json({ users });
+    const { page = 1, limit = 10 } = req.query;
+    const offset = (page - 1) * limit;
+
+    const users = await User.findAndCountAll({
+      ...excludeSensitiveFields,
+      limit,
+      offset,
+    });
+
+    res.status(200).json({
+      users: users.rows,
+      total: users.count,
+      page: parseInt(page),
+      totalPages: Math.ceil(users.count / limit),
+    });
   } catch (err) {
     res.status(500).json({ message: "Server Error", error: err.message });
   }
@@ -173,12 +249,121 @@ exports.getAllUsers = async (req, res) => {
 // Get User by ID
 exports.getUserById = async (req, res) => {
   try {
-    const user = await User.findByPk(req.params.userId);
+    const user = await User.findByPk(req.params.userId, excludeSensitiveFields);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.status(200).json({ user });
+  } catch (err) {
+    res.status(500).json({ message: "Server Error", error: err.message });
+  }
+};
+
+// Update User
+exports.updateUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const {
+      username,
+      name,
+      email,
+      mobileNumber,
+      roleId,
+      dateOfBirth,
+      bloodGroup,
+      emergencyNumber,
+      shiftFrom,
+      shiftTo,
+      addressId,
+    } = req.body;
+
+    const user = await User.findByPk(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.status(200).json({ user });
+    // Check for duplicate username or email
+    const existingUser = await User.findOne({
+      where: {
+        [Op.or]: [{ username }, { email }],
+        userId: { [Op.ne]: userId },
+      },
+    });
+    if (existingUser) {
+      return res
+        .status(400)
+        .json({ message: "Username or Email already exists" });
+    }
+
+    // Update basic fields
+    user.username = username || user.username;
+    user.name = name || user.name;
+    user.email = email || user.email;
+    user.mobileNumber = mobileNumber || user.mobileNumber;
+    user.dateOfBirth = dateOfBirth || user.dateOfBirth;
+    user.bloodGroup = bloodGroup || user.bloodGroup;
+    user.emergencyNumber = emergencyNumber || user.emergencyNumber;
+    user.shiftFrom = shiftFrom || user.shiftFrom;
+    user.shiftTo = shiftTo || user.shiftTo;
+    user.addressId = addressId || user.addressId;
+
+    // Handle role update
+    if (roleId) {
+      const roleData = await Roles.findOne({ where: { roleId } });
+      if (!roleData) {
+        return res.status(400).json({ message: "Invalid role specified" });
+      }
+
+      // Check for existing SuperAdmin
+      if (roleData.roleName === "SUPER_ADMIN") {
+        const existingSuperAdmin = await User.findOne({
+          where: {
+            roles: { [Op.like]: `%SUPER_ADMIN%` },
+            userId: { [Op.ne]: userId },
+          },
+        });
+        if (existingSuperAdmin) {
+          return res
+            .status(400)
+            .json({ message: "A SuperAdmin already exists" });
+        }
+      }
+
+      // Update roles and status
+      let userRoles = user.getDataValue("roles")?.split(",") || [];
+      if (!userRoles.includes(roleData.roleName)) {
+        userRoles.push(roleData.roleName);
+      }
+      user.roles = userRoles.join(",");
+      user.roleId = roleData.roleId;
+      user.status = roleData.roleName === "Users" ? "inactive" : "active";
+    }
+
+    await user.save();
+    res.status(200).json({
+      message: "User updated successfully",
+      user: await User.findByPk(user.userId, excludeSensitiveFields),
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Server Error", error: err.message });
+  }
+};
+
+// Change Status to Inactive
+exports.changeStatusToInactive = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.status = "inactive";
+    await user.save();
+    res.status(200).json({
+      message: "User status updated to inactive",
+      user: await User.findByPk(user.userId, excludeSensitiveFields),
+    });
   } catch (err) {
     res.status(500).json({ message: "Server Error", error: err.message });
   }
@@ -232,125 +417,5 @@ exports.assignRole = async (userId, role) => {
     return { success: true, message: `Role ${role} assigned successfully` };
   } catch (error) {
     return { success: false, message: "Internal server error" };
-  }
-};
-
-// Update User
-
-exports.updateUser = async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const { username, name, email, mobileNumber, role, roleId } = req.body;
-
-    // Find the user by ID
-    const user = await User.findByPk(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    // Check if username or email is already taken (excluding the current user)
-    const existingUser = await User.findOne({
-      where: {
-        [Op.or]: [{ username }, { email }],
-        userId: { [Op.ne]: userId },
-      },
-    });
-
-    if (existingUser) {
-      return res
-        .status(400)
-        .json({ message: "Username or Email already exists" });
-    }
-
-    // Update basic details
-    user.username = username || user.username;
-    user.name = name || user.name;
-    user.email = email || user.email;
-    user.mobileNumber = mobileNumber || user.mobileNumber;
-
-    // Handle role updates if either role or roleId is provided
-    if (role || roleId) {
-      let roleData;
-
-      if (roleId) {
-        roleData = await Roles.findOne({ where: { roleId } });
-      } else {
-        roleData = await Roles.findOne({ where: { roleName: role } });
-      }
-
-      if (!roleData) {
-        return res.status(400).json({ message: "Invalid role specified" });
-      }
-
-      const roleNameToAssign = roleData.roleName;
-
-      // Prevent multiple SuperAdmins
-      if (roleNameToAssign === "SuperAdmin") {
-        const existingSuperAdmin = await User.findOne({
-          where: {
-            roles: { [Op.substring]: "SuperAdmin" },
-            userId: { [Op.ne]: userId },
-          },
-        });
-
-        if (existingSuperAdmin) {
-          return res
-            .status(400)
-            .json({ message: "A SuperAdmin already exists" });
-        }
-      }
-
-      // Convert roles string to array and ensure role isn't duplicated
-      let userRoles =
-        typeof user.roles === "string" ? user.roles.split(",") : [];
-      if (!userRoles.includes(roleNameToAssign)) {
-        userRoles.push(roleNameToAssign);
-      }
-
-      // Set updated roles and roleId
-      user.roles = userRoles.join(",");
-      user.roleId = roleData.roleId;
-      user.status = roleNameToAssign === "Users" ? "inactive" : "active";
-    }
-
-    // Save the updated user
-    await user.save();
-
-    res.status(200).json({
-      message: "User updated successfully",
-      user: {
-        userId: user.userId,
-        username: user.username,
-        name: user.name,
-        email: user.email,
-        mobileNumber: user.mobileNumber,
-        roles: user.roles,
-        roleId: user.roleId,
-        status: user.status,
-        updatedAt: user.updatedAt,
-      },
-    });
-  } catch (err) {
-    res.status(500).json({ message: "Server Error", error: err.message });
-  }
-};
-
-exports.changeStatusToInactive = async (req, res) => {
-  try {
-    const { userId } = req.params;
-
-    // Find user by ID
-    const user = await User.findByPk(userId);
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    // Update status to inactive
-    await user.update({ status: "inactive" });
-
-    res.json({ message: "User status updated to inactive", user });
-  } catch (err) {
-    res.status(500).json({ message: "Server Error", error: err.message });
   }
 };
