@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useGetAllUsersQuery } from "../../api/userApi";
 import PageHeader from "../Common/PageHeader";
 import OrderPagination from "./OrderPagination";
 import OrderFilter from "./OrderFilter";
@@ -10,18 +11,20 @@ import {
   useDeleteOrderMutation,
 } from "../../api/orderApi";
 import { useGetAllTeamsQuery } from "../../api/teamApi";
+import { useGetCustomersQuery } from "../../api/customerApi";
 import { toast } from "sonner";
 import DatesModal from "./DateModal";
-import { useTeamDataMap } from "../../data/useTeamDataMap";
 import OnHoldModal from "./OnHoldOrder";
 import DeleteModal from "../Common/DeleteModal";
-import { FaEdit, FaPause, FaFileInvoice, FaTrash } from "react-icons/fa"; // Icons
-import { Tooltip } from "react-tooltip"; // Tooltip component
-
+import { FaEdit, FaPause, FaFileInvoice, FaTrash } from "react-icons/fa";
+import { Tooltip } from "react-tooltip";
+import { Link } from "react-router-dom";
 const OrderWrapper = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("orders");
   const [teamMap, setTeamMap] = useState({});
+  const [customerMap, setCustomerMap] = useState({});
+  const [userMap, setUserMap] = useState({}); // Added for user mapping
   const [showHoldModal, setShowHoldModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -33,31 +36,28 @@ const OrderWrapper = () => {
   });
 
   const { data: teamsData } = useGetAllTeamsQuery();
+  const { data: customersData } = useGetCustomersQuery();
+  const { data: usersData } = useGetAllUsersQuery(); // Fetch users
   const [filters, setFilters] = useState({
     status: "",
     priority: "",
-    important: false,
-    trash: false,
+    source: "",
     page: 1,
     limit: 10,
   });
 
   const isFiltered = useMemo(() => {
     return (
-      filters.status !== "" ||
-      filters.priority !== "" ||
-      filters.important ||
-      filters.trash
+      filters.status !== "" || filters.priority !== "" || filters.source !== ""
     );
   }, [filters]);
 
   const cleanFilters = useMemo(() => {
-    const { status, priority, important, trash, page, limit } = filters;
+    const { status, priority, source, page, limit } = filters;
     return {
       ...(status && { status }),
       ...(priority && { priority }),
-      ...(important && { important }),
-      ...(trash && { trash }),
+      ...(source && { source }),
       page,
       limit,
     };
@@ -96,6 +96,26 @@ const OrderWrapper = () => {
       setTeamMap(map);
     }
   }, [teamsData]);
+
+  useEffect(() => {
+    if (customersData?.data) {
+      const map = customersData.data.reduce((acc, customer) => {
+        acc[customer.customerId] = customer.name || "—";
+        return acc;
+      }, {});
+      setCustomerMap(map);
+    }
+  }, [customersData]);
+
+  useEffect(() => {
+    if (usersData?.users) {
+      const map = usersData.users.reduce((acc, user) => {
+        acc[user.userId] = user.username || user.name || "—"; // Prefer username, fallback to name
+        return acc;
+      }, {});
+      setUserMap(map);
+    }
+  }, [usersData]);
 
   const [deleteOrder] = useDeleteOrderMutation();
 
@@ -157,8 +177,7 @@ const OrderWrapper = () => {
     const defaultFilters = {
       status: "",
       priority: "",
-      important: false,
-      trash: false,
+      source: "",
       page: 1,
       limit: 10,
     };
@@ -185,54 +204,33 @@ const OrderWrapper = () => {
     return diffDays <= 3;
   };
 
-  const uniqueTeamIds = useMemo(() => {
-    return Array.from(
-      new Set(orders.map((order) => order.assignedTo).filter(Boolean))
-    );
-  }, [orders]);
-
-  const teamDataMap = useTeamDataMap(uniqueTeamIds);
-
   return (
-    <div className="page-wrapper notes-page-wrapper">
+    <div className="page-wrapper">
       <div className="content">
-        <div className="page-header page-add-notes border-0 flex-sm-row flex-column">
-          <div className="order-table">
-            <div className="order-header">
-              <h4>Orders & Invoices</h4>
-              <h6 className="mb-0">Manage everything from here</h6>
-            </div>
-          </div>
+        <PageHeader
+          title="Order"
+          subtitle="Manage your Orders & Invoices list"
+          onAdd={handleOpenAddOrder}
+        />
 
-          <ul className="nav nav-tabs">
-            <li className="nav-item">
-              <div className="d-flex align-items-center gap-2">
-                <button className="create-button" onClick={handleOpenAddOrder}>
-                  <i className="ti ti-plus me-2"></i>New Order
-                </button>
-              </div>
-            </li>
-            <li className="nav-item">
-              <button
-                className={`nav-link ${activeTab === "orders" ? "active" : ""}`}
-                onClick={() => setActiveTab("orders")}
-              >
-                Orders
-              </button>
-            </li>
-            <li className="nav-item">
-              <button
-                className={`nav-link ${
-                  activeTab === "invoices" ? "active" : ""
-                }`}
-                onClick={() => setActiveTab("invoices")}
-              >
-                Invoices
-              </button>
-            </li>
-          </ul>
-        </div>
-
+        <ul>
+          <li className="nav-item">
+            <button
+              className={`nav-link ${activeTab === "orders" ? "active" : ""}`}
+              onClick={() => setActiveTab("orders")}
+            >
+              Orders
+            </button>
+          </li>
+          <li className="nav-item">
+            <button
+              className={`nav-link ${activeTab === "invoices" ? "active" : ""}`}
+              onClick={() => setActiveTab("invoices")}
+            >
+              Invoices
+            </button>
+          </li>
+        </ul>
         {activeTab === "orders" ? (
           <div className="row">
             <div className="col-xl-3 col-md-12 sidebars-right theiaStickySidebar section-bulk-widget">
@@ -257,18 +255,20 @@ const OrderWrapper = () => {
               ) : orders.length > 0 ? (
                 <>
                   <div className="cm-table-wrapper">
-                    <table className="cm-table professional-table">
+                    <table className="cm-table">
                       <thead>
                         <tr>
                           <th className="checkbox-column">
                             <input type="checkbox" />
                           </th>
-                          <th>ORDER ID</th>
                           <th>STATUS</th>
                           <th>TITLE</th>
-                          <th>CUSTOMER NAME</th>
+                          <th>CUSTOMER</th>
                           <th>PRIORITY</th>
                           <th>TEAM</th>
+                          <th>SOURCE</th>
+                          <th>CREATED BY</th>
+                          <th>CREATED AT</th>
                           <th>DUE DATE</th>
                           <th>ACTIONS</th>
                         </tr>
@@ -276,17 +276,17 @@ const OrderWrapper = () => {
                       <tbody>
                         {orders.map((order) => {
                           const teamName = order.assignedTo
-                            ? teamMap[order.assignedTo] ||
-                              teamDataMap[order.assignedTo]?.teamName ||
-                              "—"
+                            ? teamMap[order.assignedTo] || "—"
                             : "—";
-                          const isTeamLoading = order.assignedTo
-                            ? teamDataMap[order.assignedTo]?.isLoading || false
-                            : false;
-                          const customerName = order.createdFor || "N/A";
+                          const customerName = order.createdFor
+                            ? customerMap[order.createdFor] || "Loading..."
+                            : "N/A";
+                          const createdByName = order.createdBy
+                            ? userMap[order.createdBy] || "Loading..."
+                            : "N/A";
                           const statusClass = order.status
-                            .toLowerCase()
-                            .replace("_", "-");
+                            ? order.status.toLowerCase().replace("_", "-")
+                            : "";
                           const dueDateClass = isDueDateClose(order.dueDate)
                             ? "due-date-close"
                             : "";
@@ -296,13 +296,17 @@ const OrderWrapper = () => {
                               <td className="checkbox-column">
                                 <input type="checkbox" />
                               </td>
-                              <td>{order.id}</td>
                               <td>
                                 <span className={`status-badge ${statusClass}`}>
-                                  {order.status}
+                                  {order.status || "CREATED"}
                                 </span>
                               </td>
-                              <td>{order.title || "N/A"}</td>
+                              <td>
+                                <Link to={`/order/${order.id}`}>
+                                  {" "}
+                                  {order.title}
+                                </Link>
+                              </td>
                               <td>{customerName}</td>
                               <td>
                                 <span
@@ -313,7 +317,16 @@ const OrderWrapper = () => {
                                   {order.priority || "Medium"}
                                 </span>
                               </td>
-                              <td>{isTeamLoading ? "Loading..." : teamName}</td>
+                              <td>{teamName}</td>
+                              <td>{order.source || "—"}</td>
+                              <td>{createdByName}</td>
+                              <td>
+                                {order.createdAt
+                                  ? new Date(
+                                      order.createdAt
+                                    ).toLocaleDateString()
+                                  : "—"}
+                              </td>
                               <td className={dueDateClass}>
                                 {order.dueDate ? (
                                   <span

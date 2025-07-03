@@ -79,6 +79,7 @@ import CompaniesWrapper from "../components/Companies/ComapniesWrapper";
 import QuotationsDetails from "../components/Quotation/QuotaionDetails";
 import UnderMaintanance from "../components/Error/UnderMaintanance";
 import AddNewOrder from "../components/Orders/AddNewOrder";
+import NewUserList from "../components/User/NewUserList";
 
 const masterRoutes = [
   {
@@ -332,13 +333,13 @@ const masterRoutes = [
   //     },
   //   ],
   // },
-  // {
-  //   path: "/settings",
-  //   name: "Settings",
-  //   icon: <MdOutlineSettings />,
-  //   isSidebarActive: true,
-  //   element: <GeneralSettings />,
-  // },
+  {
+    path: "/settings",
+    name: "Settings",
+    icon: <MdOutlineSettings />,
+    isSidebarActive: false,
+    element: <GeneralSettings />,
+  },
   {
     path: "#",
     name: "Team",

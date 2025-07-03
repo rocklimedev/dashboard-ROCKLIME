@@ -1,16 +1,15 @@
 import React, { useState } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
-import { useGetProfileQuery } from "../../api/userApi"; // Assuming these are correctly set up
+import { useGetProfileQuery } from "../../api/userApi";
 import { Dropdown, Button, Menu } from "antd";
 import { FaSearch, FaUserCircle } from "react-icons/fa";
 import { BiFullscreen, BiLogOut } from "react-icons/bi";
 import { toast } from "sonner";
 import Avatar from "react-avatar";
-import SearchDropdown from "../Search/SearchDropdown"; // Assuming this is the same as in the original
+import SearchDropdown from "../Search/SearchDropdown";
 import logo from "../../assets/img/logo.png";
 import logo_small from "../../assets/img/fav_icon.png";
 import { CgShoppingCart } from "react-icons/cg";
-// Assuming additional CSS for HTML styles
 import { useLogoutMutation } from "../../api/authApi";
 
 const Header = ({ toggleSidebar, isSidebarOpen }) => {
@@ -20,7 +19,6 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Handle logout
   const handleLogout = async () => {
     try {
       await logout().unwrap();
@@ -32,7 +30,6 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     }
   };
 
-  // Handle fullscreen toggle
   const handleFullscreenToggle = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen();
@@ -43,9 +40,8 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     }
   };
 
-  // User profile dropdown menu
   const userMenu = (
-    <Menu className={`shadow-sm rounded menu-drop-user`}>
+    <Menu className="shadow-sm rounded menu-drop-user" style={{ zIndex: 1000 }}>
       <Menu.Item
         key="profile-header"
         className="d-flex align-items-center p-3 profileset"
@@ -61,22 +57,19 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
           <h6 className="fw-medium mb-0">
             {user?.user?.name || "John Smilga"}
           </h6>
-          <p className="mb-0">{user?.user?.roles || "Admin"}</p>
+          <p className="mb-0">{user?.user?.roles?.join(", ") || "Admin"}</p>
         </div>
       </Menu.Item>
       <Menu.Divider />
       <Menu.Item key="profile">
-        <Link
-          to={`/u/${user?.user?.userId || "profile"}`}
-          className="d-flex align-items-center"
-        >
+        <div onClick={() => navigate(`/u/${user?.user?.userId || "profile"}`)}>
           <FaUserCircle className="me-2" /> My Profile
-        </Link>
+        </div>
       </Menu.Item>
       <Menu.Item key="settings">
-        <Link to="/settings" className="d-flex align-items-center">
+        <div onClick={() => navigate("/settings")}>
           <i className="ti ti-settings-2 me-2" /> Settings
-        </Link>
+        </div>
       </Menu.Item>
       <Menu.Divider />
       <Menu.Item
@@ -94,7 +87,6 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
   return (
     <div className="header">
       <div className="main-header">
-        {/* Logo */}
         <div className="header-left active">
           <Link to="/" className="logo logo-normal">
             <img src={logo} alt="Logo" />
@@ -107,7 +99,6 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
           </Link>
         </div>
 
-        {/* Mobile Menu Toggle */}
         <Button
           type="link"
           className="mobile_btn d-md-none"
@@ -122,9 +113,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
           </span>
         </Button>
 
-        {/* Header Menu */}
         <ul className="nav user-menu">
-          {/* Search */}
           <li className="nav-item nav-searchinputs">
             <div className="top-nav-search">
               <Button
@@ -139,8 +128,6 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
               </div>
             </div>
           </li>
-
-          {/* Fullscreen */}
           <li className="nav-item nav-item-box">
             <Button
               type="link"
@@ -157,8 +144,6 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
               <CgShoppingCart />
             </Link>
           </li>
-
-          {/* User Profile */}
           <li className="nav-item dropdown has-arrow main-drop profile-nav">
             {isLoading ? (
               <span className="text-muted">Loading...</span>
@@ -166,7 +151,11 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
               <span className="text-danger">Error loading profile</span>
             ) : user ? (
               <Dropdown overlay={userMenu} trigger={["click"]}>
-                <Link to="#" className="nav-link userset">
+                <a
+                  href="#"
+                  className="nav-link userset"
+                  onClick={(e) => e.preventDefault()}
+                >
                   <span className="user-info p-0">
                     <span className="user-letter">
                       <Avatar
@@ -181,22 +170,21 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                       />
                     </span>
                   </span>
-                </Link>
+                </a>
               </Dropdown>
             ) : null}
           </li>
         </ul>
 
-        {/* Mobile User Menu */}
         <div className="dropdown mobile-user-menu">
           <Dropdown
             overlay={
               <Menu className="dropdown-menu dropdown-menu-right">
                 <Menu.Item key="profile">
-                  <Link to="/profile">My Profile</Link>
+                  <div onClick={() => navigate("/profile")}>My Profile</div>
                 </Menu.Item>
                 <Menu.Item key="settings">
-                  <Link to="/settings">Settings</Link>
+                  <div onClick={() => navigate("/settings")}>Settings</div>
                 </Menu.Item>
                 <Menu.Item
                   key="logout"
@@ -209,9 +197,13 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
             }
             trigger={["click"]}
           >
-            <Link to="#" className="nav-link dropdown-toggle">
+            <a
+              href="#"
+              className="nav-link dropdown-toggle"
+              onClick={(e) => e.preventDefault()}
+            >
               <i className="fa fa-ellipsis-v" />
-            </Link>
+            </a>
           </Dropdown>
         </div>
       </div>

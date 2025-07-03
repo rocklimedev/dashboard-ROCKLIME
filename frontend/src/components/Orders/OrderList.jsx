@@ -1,5 +1,5 @@
 import React from "react";
-import OrderItem from "./Orderitem"; // Ensure this is the correct import (case-sensitive)
+import OrderItem from "./OrderItem"; // Ensure correct case
 import OrderPagination from "./OrderPagination";
 
 const OrderList = ({
@@ -41,12 +41,12 @@ const OrderList = ({
               <thead>
                 <tr>
                   <th>ORDER ID</th>
+                  <th>TITLE</th>
                   <th>STATUS</th>
-                  <th>ITEM</th>
-                  <th>ORDER NUMBER</th>
-                  <th>CUSTOMER NAME</th>
-                  <th>SHIPPING SERVICE</th>
-                  <th>TRACKING CODE</th>
+                  <th>CUSTOMER</th>
+                  <th>PRIORITY</th>
+                  <th>DUE DATE</th>
+                  <th>TEAM</th>
                   <th>ACTIONS</th>
                 </tr>
               </thead>
@@ -56,17 +56,13 @@ const OrderList = ({
                     key={order.id}
                     order={order}
                     teamName={
-                      order.assignedTo &&
-                      teamDataMap &&
-                      teamDataMap[order.assignedTo]
-                        ? teamDataMap[order.assignedTo].teamName
+                      order.TeamId && teamDataMap && teamDataMap[order.TeamId]
+                        ? teamDataMap[order.TeamId].teamName
                         : "Unassigned"
                     }
                     isTeamLoading={
-                      order.assignedTo &&
-                      teamDataMap &&
-                      teamDataMap[order.assignedTo]
-                        ? teamDataMap[order.assignedTo].isLoading
+                      order.TeamId && teamDataMap && teamDataMap[order.TeamId]
+                        ? teamDataMap[order.TeamId].isLoading
                         : false
                     }
                     onEditClick={onEditClick}

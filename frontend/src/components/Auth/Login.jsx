@@ -173,7 +173,7 @@ const Login = () => {
                 <div className="signinform text-center">
                   <h4>
                     New on our platform?
-                    <Link to="/signup" className="hover-a text-orange">
+                    <Link to="/signup" className="hover-a">
                       {" "}
                       Create an account
                     </Link>

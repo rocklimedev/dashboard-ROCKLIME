@@ -2,6 +2,7 @@ const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
 const User = require("./users");
 const Customer = require("./customers");
+const Address = require("./address"); // Import Address model
 const { v4: uuidv4 } = require("uuid");
 
 const Quotation = sequelize.define(
@@ -56,7 +57,7 @@ const Quotation = sequelize.define(
     },
     createdBy: {
       type: DataTypes.UUID,
-      allowNull: true, // Allow null to avoid foreign key conflict
+      allowNull: true,
       references: {
         model: User,
         key: "userId",
@@ -66,17 +67,28 @@ const Quotation = sequelize.define(
     },
     customerId: {
       type: DataTypes.UUID,
-      allowNull: false, // It cannot be null
+      allowNull: false,
       references: {
         model: Customer,
         key: "customerId",
       },
-      onDelete: "RESTRICT", // Prevent deletion if referenced
+      onDelete: "RESTRICT",
+      onUpdate: "CASCADE",
+    },
+
+    shipTo: {
+      type: DataTypes.UUID,
+      allowNull: true, // Optional, as shipping address may not always be required
+      references: {
+        model: Address,
+        key: "addressId",
+      },
+      onDelete: "SET NULL",
       onUpdate: "CASCADE",
     },
   },
   {
-    tableName: "quotations", // Force lowercase table name
+    tableName: "quotations",
     timestamps: true,
   }
 );

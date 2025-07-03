@@ -160,13 +160,31 @@ const SidebarNew = ({
                   )}
                 </li>
               ))}
-            <li className="submenu-open">
-              <h6 className="submenu-hdr">Extras</h6>
-              <ul>
+            <li className="submenu">
+              <a
+                href="#"
+                className={openMenu === "extras" ? "subdrop active" : ""}
+                onClick={(e) => {
+                  e.preventDefault();
+                  toggleDropdown("extras");
+                }}
+              >
+                <i className="ti ti-layout-grid fs-16 me-2"></i>
+                <span>Extras</span>
+                <span className="menu-arrow"></span>
+              </a>
+              <ul
+                className={
+                  openMenu === "extras" ? "submenu-open" : "submenu-closed"
+                }
+              >
                 <li>
-                  <a href="https://static.cmtradingco.com/" target="_blank">
-                    <i className="ti ti-box"></i>
-                    <span> Product Images</span>
+                  <a
+                    href="https://static.cmtradingco.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Product Images
                   </a>
                 </li>
               </ul>

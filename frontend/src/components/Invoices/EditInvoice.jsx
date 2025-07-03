@@ -67,7 +67,7 @@ const EditInvoice = ({ invoice, onClose }) => {
 
         if (Array.isArray(parsedProducts) && parsedProducts.length > 0) {
           initialProducts = parsedProducts
-            .filter((prod) => prod.productId)
+            .filter((prod) => prod.productId && prod.productId.trim() !== "")
             .map((prod) => ({
               productId: prod.productId || "",
               price: parseFloat(prod.price) || 0,
@@ -136,13 +136,17 @@ const EditInvoice = ({ invoice, onClose }) => {
 
   const handleProductChange = (index, field, value) => {
     const updatedProducts = [...products];
-    updatedProducts[index] = { ...updatedProducts[index], [field]: value };
+    updatedProducts[index] = {
+      ...updatedProducts[index],
+      [field]:
+        field === "quantity" ? parseInt(value) || 1 : parseFloat(value) || 0,
+    };
     setProducts(updatedProducts);
     updateTotalAmount(updatedProducts);
   };
 
   const handleAddProduct = (product) => {
-    if (!product.productId) {
+    if (!product.productId || product.productId.trim() === "") {
       setError("Cannot add product: Invalid product ID.");
       return;
     }
@@ -152,7 +156,9 @@ const EditInvoice = ({ invoice, onClose }) => {
       quantity: 1,
     };
     const updatedProducts = products.some((p) => !p.productId)
-      ? products.filter((p) => p.productId).concat(newProduct)
+      ? products
+          .filter((p) => p.productId && p.productId.trim() !== "")
+          .concat(newProduct)
       : [...products, newProduct];
     setProducts(updatedProducts);
     updateTotalAmount(updatedProducts);
@@ -160,7 +166,7 @@ const EditInvoice = ({ invoice, onClose }) => {
   };
 
   const handleRemoveProduct = (index) => {
-    if (products.length === 1 && products[0].productId) {
+    if (products.length <= 1 && products.every((p) => p.productId)) {
       setError("At least one product is required.");
       return;
     }
@@ -214,16 +220,15 @@ const EditInvoice = ({ invoice, onClose }) => {
       setError("Invoice date is required.");
       return;
     }
-    if (products.length === 0) {
-      setError("Please add at least one product.");
-      return;
-    }
-    if (products.some((p) => !p.productId || p.productId.trim() === "")) {
-      setError("All products must have a valid product ID.");
+    const validProducts = products.filter(
+      (p) => p.productId && p.productId.trim() !== ""
+    );
+    if (validProducts.length === 0) {
+      setError("Please add at least one valid product.");
       return;
     }
     if (
-      products.some(
+      validProducts.some(
         (p) => !allProducts.find((prod) => prod.productId === p.productId)
       )
     ) {
@@ -247,13 +252,11 @@ const EditInvoice = ({ invoice, onClose }) => {
         : null,
       status: formData.status,
       signatureName: formData.signatureName || null,
-      products: JSON.stringify(
-        products.map((prod) => ({
-          productId: prod.productId,
-          price: parseFloat(prod.price) || 0,
-          quantity: parseInt(prod.quantity) || 1,
-        }))
-      ),
+      products: validProducts.map((prod) => ({
+        productId: prod.productId,
+        price: parseFloat(prod.price) || 0,
+        quantity: parseInt(prod.quantity) || 1,
+      })),
     };
 
     const payload = {
@@ -261,6 +264,7 @@ const EditInvoice = ({ invoice, onClose }) => {
       ...invoiceData,
     };
 
+    console.log("Submitting Payload:", payload); // Debug payload
     try {
       const response = await updateInvoice(payload).unwrap();
       console.log("Update Invoice Response:", response);
@@ -481,7 +485,9 @@ const EditInvoice = ({ invoice, onClose }) => {
               {isProductsLoading ? (
                 <div>Loading products...</div>
               ) : products.length === 0 ||
-                products.every((p) => !p.productId) ? (
+                products.every(
+                  (p) => !p.productId || p.productId.trim() === ""
+                ) ? (
                 <div className="alert alert-warning">
                   Please add at least one product.
                 </div>
@@ -497,7 +503,9 @@ const EditInvoice = ({ invoice, onClose }) => {
                   </thead>
                   <tbody>
                     {products
-                      .filter((prod) => prod.productId)
+                      .filter(
+                        (prod) => prod.productId && prod.productId.trim() !== ""
+                      )
                       .map((prod, index) => (
                         <tr key={index}>
                           <td>{getProductName(prod.productId)}</td>
@@ -562,7 +570,9 @@ const EditInvoice = ({ invoice, onClose }) => {
                     isProductsLoading ||
                     customers.length === 0 ||
                     products.length === 0 ||
-                    products.some((p) => !p.productId)
+                    products.every(
+                      (p) => !p.productId || p.productId.trim() === ""
+                    )
                   }
                 >
                   {isUpdating ? "Updating..." : "Update Invoice"}
