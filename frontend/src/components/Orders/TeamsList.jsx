@@ -20,15 +20,13 @@ import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  MoreOutlined,
 } from "@ant-design/icons";
 import { toast } from "sonner";
-import "./teamList.css";
 
 const { Option } = Select;
 const { Text, Title } = Typography;
 
-const TeamsList = ({ onClose, adminName }) => {
+const TeamsList = ({ adminName }) => {
   const { data, isLoading, isError, refetch } = useGetAllTeamsQuery();
   const teams = Array.isArray(data?.teams) ? data.teams : [];
   const [deleteTeam, { isLoading: isDeleting }] = useDeleteTeamMutation();
@@ -98,31 +96,22 @@ const TeamsList = ({ onClose, adminName }) => {
               flexWrap: "wrap",
             }}
           >
-            <div className="search-input">
-              <Input
-                prefix={<SearchOutlined />}
-                placeholder="Search teams..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                style={{ width: 300, borderRadius: 20 }}
-              />
-            </div>
+            <Input
+              prefix={<SearchOutlined />}
+              placeholder="Search teams..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{ width: 300 }}
+              className="search-input"
+            />
             <Space>
-              <Select
-                defaultValue="All Status"
-                style={{ width: 150 }}
-                dropdownStyle={{ borderRadius: 8 }}
-              >
+              <Select defaultValue="All Status" style={{ width: 150 }}>
                 <Option value="all">All Status</Option>
                 <Option value="active">Active</Option>
                 <Option value="inactive">Inactive</Option>
                 <Option value="new">New Joiners</Option>
               </Select>
-              <Select
-                defaultValue="Last 7 Days"
-                style={{ width: 150 }}
-                dropdownStyle={{ borderRadius: 8 }}
-              >
+              <Select defaultValue="Last 7 Days" style={{ width: 150 }}>
                 <Option value="recent">Recently Added</Option>
                 <Option value="asc">Ascending</Option>
                 <Option value="desc">Descending</Option>
@@ -144,7 +133,7 @@ const TeamsList = ({ onClose, adminName }) => {
             </p>
           )}
 
-          <div className="row row-cells-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+          <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
             {filteredTeams.map((team) => (
               <div key={team.id} className="col">
                 <Card className="team-card" hoverable>
@@ -155,15 +144,20 @@ const TeamsList = ({ onClose, adminName }) => {
                         {team.teamName}
                       </Title>
                       <Select
-                        value="Actions"
-                        style={{ width: 50 }}
+                        defaultValue="Actions"
+                        style={{ width: 120 }}
                         bordered={false}
-                        dropdownStyle={{ borderRadius: 8 }}
                       >
-                        <Option onClick={() => handleEditTeam(team)}>
+                        <Option
+                          value="edit"
+                          onClick={() => handleEditTeam(team)}
+                        >
                           <EditOutlined /> Edit
                         </Option>
-                        <Option onClick={() => handleDeleteTeam(team)}>
+                        <Option
+                          value="delete"
+                          onClick={() => handleDeleteTeam(team)}
+                        >
                           <DeleteOutlined /> Delete
                         </Option>
                       </Select>
@@ -217,13 +211,12 @@ const TeamsList = ({ onClose, adminName }) => {
         </div>
       </div>
 
-      {showNewTeamModal && (
-        <AddNewTeam
-          team={selectedTeam}
-          onClose={() => setShowNewTeamModal(false)}
-          onTeamAdded={refetch}
-        />
-      )}
+      <AddNewTeam
+        team={selectedTeam}
+        visible={showNewTeamModal}
+        onClose={() => setShowNewTeamModal(false)}
+        onTeamAdded={refetch}
+      />
       {showDeleteModal && (
         <DeleteModal
           item={teamToDelete}
