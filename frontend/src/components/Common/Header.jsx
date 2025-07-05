@@ -181,7 +181,13 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
             overlay={
               <Menu className="dropdown-menu dropdown-menu-right">
                 <Menu.Item key="profile">
-                  <div onClick={() => navigate("/profile")}>My Profile</div>
+                  <div
+                    onClick={() =>
+                      navigate(`/u/${user?.user?.userId || "profile"}`)
+                    }
+                  >
+                    My Profile
+                  </div>
                 </Menu.Item>
                 <Menu.Item key="settings">
                   <div onClick={() => navigate("/settings")}>Settings</div>

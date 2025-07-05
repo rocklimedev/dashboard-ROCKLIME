@@ -6,13 +6,16 @@ import {
   useGetTeamByIdQuery,
 } from "../../api/teamApi";
 import { useGetAllUsersQuery, useGetUserByIdQuery } from "../../api/userApi";
+import { Modal, Form, Input, Select, Button, List, message } from "antd";
 import { toast } from "sonner";
+import "./teamList.css";
 
-const AddNewTeam = ({ onClose, onTeamAdded, team }) => {
-  const [teamName, setTeamName] = useState(team?.teamName || "");
-  const [selectedUserId, setSelectedUserId] = useState("");
+const { Option } = Select;
+
+const AddNewTeam = ({ onClose, onTeamAdded, team, visible }) => {
+  const [form] = Form.useForm();
   const [members, setMembers] = useState([]);
-  const [adminId, setAdminId] = useState(team?.adminId || "");
+  const [selectedUserId, setSelectedUserId] = useState("");
 
   // Fetch all users
   const { data: usersData } = useGetAllUsersQuery();
@@ -24,142 +27,95 @@ const AddNewTeam = ({ onClose, onTeamAdded, team }) => {
   });
 
   // Fetch team details when editing
-  const {
-    data: teamData,
-    isLoading: isTeamLoading,
-    error: teamError,
-  } = useGetTeamByIdQuery(team?.id, {
-    skip: !team?.id,
-  });
+  const { data: teamData, isLoading: isTeamLoading } = useGetTeamByIdQuery(
+    team?.id,
+    { skip: !team?.id }
+  );
 
   // Fetch team members when editing
-  const {
-    data: teamMembersData,
-    isLoading: isMembersLoading,
-    error: membersError,
-  } = useGetTeamMembersQuery(team?.id, {
-    skip: !team?.id,
-  });
+  const { data: teamMembersData, isLoading: isMembersLoading } =
+    useGetTeamMembersQuery(team?.id, { skip: !team?.id });
 
   const [createTeam, { isLoading: creating }] = useCreateTeamMutation();
   const [updateTeam, { isLoading: updating }] = useUpdateTeamMutation();
 
-  // Log for debugging
-
   // Initialize form with team data
   useEffect(() => {
-    if (team) {
-      if (!team.id) {
-        toast.error("Invalid team ID. Cannot edit team.");
-        onClose();
-        return;
-      }
-
-      const sourceTeam = teamData?.team || team;
-      setTeamName(sourceTeam.teamName || "");
-      setAdminId(sourceTeam.adminId || "");
-
-      if (teamMembersData?.members) {
-        setMembers(
-          teamMembersData.members.map((member) => ({
+    if (team && teamData?.team) {
+      form.setFieldsValue({
+        teamName: teamData.team.teamName || team.teamName || "",
+        adminId: teamData.team.adminId || team.adminId || "",
+      });
+      setMembers(
+        teamMembersData?.members?.map((member) => ({
+          userId: member.userId,
+          userName: member.userName,
+          roleId: member.roleId,
+          roleName: member.roleName || "No Role",
+        })) ||
+          team.teammembers?.map((member) => ({
             userId: member.userId,
             userName: member.userName,
             roleId: member.roleId,
             roleName: member.roleName || "No Role",
-          }))
-        );
-      } else {
-        const sourceMembers = Array.isArray(sourceTeam.teammembers)
-          ? sourceTeam.teammembers.map((member) => ({
-              userId: member.userId,
-              userName: member.userName,
-              roleId: member.roleId,
-              roleName: member.roleName || "No Role",
-            }))
-          : [];
-        setMembers(sourceMembers);
-      }
+          })) ||
+          []
+      );
     } else {
-      setTeamName("");
-      setAdminId("");
+      form.resetFields();
       setMembers([]);
     }
-  }, [team, teamData, teamMembersData]);
+  }, [team, teamData, teamMembersData, form]);
 
-  // Handle team not found error
-  useEffect(() => {
-    if (teamError?.status === 404) {
-      toast.error("Team not found. It may have been deleted.");
-      onClose();
-    }
-  }, [teamError, onClose]);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!teamName.trim()) {
-      toast.error("Team name is required");
-      return;
-    }
-    if (!adminId) {
-      toast.error("Admin must be selected");
+  const handleSubmit = async (values) => {
+    if (!members.length && !team) {
+      message.error("At least one team member is required for a new team");
       return;
     }
 
-    const adminUser = users.find((user) => user.userId === adminId);
+    const adminUser = users.find((user) => user.userId === values.adminId);
     if (!adminUser) {
-      toast.error("Admin user not found");
+      message.error("Admin user not found");
       return;
     }
 
-    const teamData = {
-      teamName,
-      adminId,
+    const teamDataPayload = {
+      teamName: values.teamName,
+      adminId: values.adminId,
       adminName: adminUser?.name || "Unknown",
       members,
     };
 
     try {
-      let response;
       if (team) {
-        if (!team.id) {
-          throw new Error("Team ID is missing");
-        }
-
-        response = await updateTeam({
+        await updateTeam({
           teamId: team.id,
-          ...teamData,
+          ...teamDataPayload,
         }).unwrap();
-
         toast.success("Team updated successfully");
       } else {
-        response = await createTeam(teamData).unwrap();
-
+        await createTeam(teamDataPayload).unwrap();
         toast.success("Team created successfully");
       }
-
-      setTeamName("");
+      form.resetFields();
       setMembers([]);
-      setAdminId("");
-      if (typeof onTeamAdded === "function") onTeamAdded();
+      onTeamAdded?.();
       onClose();
     } catch (err) {
-      let errorMessage = "Please try again";
-      if (err.status === 404) {
-        errorMessage = "Team not found. It may have been deleted.";
-      } else if (err.status === 400) {
-        errorMessage = err.data?.message || "Invalid data provided";
-      } else if (err.data?.message) {
-        errorMessage = err.data.message;
-      }
-      toast.error(`Error saving team: ${errorMessage}`);
+      toast.error(
+        `Error saving team: ${
+          err.data?.message || err.status === 404
+            ? "Team not found"
+            : "Please try again"
+        }`
+      );
     }
   };
 
   const addMember = () => {
     if (userDetails?.user) {
       if (members.some((member) => member.userId === selectedUserId)) {
-        toast.warning("User is already a team member");
+        message.warning("User is already a team member");
         return;
       }
       setMembers((prev) => [
@@ -172,130 +128,118 @@ const AddNewTeam = ({ onClose, onTeamAdded, team }) => {
         },
       ]);
       setSelectedUserId("");
-      toast.success("Member added successfully");
+      message.success("Member added successfully");
     }
   };
 
   const removeMember = (id) => {
     setMembers(members.filter((member) => member.userId !== id));
-    toast.info("Member removed");
+    message.info("Member removed");
   };
 
   return (
-    <div className="modal fade show" style={{ display: "block" }}>
-      <div className="modal-dialog modal-dialog-centered">
-        <div className="modal-content">
-          <div className="modal-header">
-            <h5>{team ? "Edit Team" : "Add New Team"}</h5>
-            <button type="button" className="close" onClick={onClose}>
-              ×
-            </button>
-          </div>
-          <div className="modal-body">
-            {(isTeamLoading || isMembersLoading) && team ? (
-              <p>Loading team data...</p>
-            ) : teamError && team ? (
-              <p className="text-danger">
-                Error loading team data. Please try again later.
-              </p>
-            ) : (
-              <form onSubmit={handleSubmit}>
-                <div className="form-group">
-                  <label htmlFor="teamName">Team Name</label>
-                  <input
-                    type="text"
-                    id="teamName"
-                    className="form-control"
-                    value={teamName}
-                    onChange={(e) => setTeamName(e.target.value)}
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="adminId">Admin</label>
-                  <select
-                    id="adminId"
-                    className="form-control"
-                    value={adminId}
-                    onChange={(e) => setAdminId(e.target.value)}
+    <Modal
+      title={team ? "Edit Team" : "Add New Team"}
+      open={visible}
+      onCancel={onClose}
+      footer={null}
+      centered
+      className="add-team-modal"
+    >
+      {(isTeamLoading || isMembersLoading) && team ? (
+        <p>Loading team data...</p>
+      ) : (
+        <Form form={form} onFinish={handleSubmit} layout="vertical">
+          <Form.Item
+            label="Team Name"
+            name="teamName"
+            rules={[{ required: true, message: "Team name is required" }]}
+          >
+            <Input placeholder="Enter team name" />
+          </Form.Item>
+          <Form.Item
+            label="Admin"
+            name="adminId"
+            rules={[{ required: true, message: "Admin must be selected" }]}
+          >
+            <Select placeholder="Select Admin">
+              {users.map((user) => (
+                <Option key={user.userId} value={user.userId}>
+                  {user.name}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item label="Team Members">
+            <div style={{ display: "flex", gap: "8px" }}>
+              <Select
+                style={{ flex: 1 }}
+                value={selectedUserId}
+                onChange={setSelectedUserId}
+                placeholder="Select Member"
+              >
+                <Option value="">Select Member</Option>
+                {users.map((user) => (
+                  <Option key={user.userId} value={user.userId}>
+                    {user.name}
+                  </Option>
+                ))}
+              </Select>
+              <Button
+                type="primary"
+                onClick={addMember}
+                disabled={!selectedUserId}
+              >
+                Add
+              </Button>
+            </div>
+          </Form.Item>
+          <List
+            dataSource={members}
+            renderItem={(member) => (
+              <List.Item
+                actions={[
+                  <Button
+                    type="link"
+                    danger
+                    onClick={() => removeMember(member.userId)}
                   >
-                    <option value="">Select Admin</option>
-                    {users.map((user) => (
-                      <option key={user.userId} value={user.userId}>
-                        {user.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label htmlFor="members">Team Members</label>
-                  <select
-                    id="members"
-                    className="form-control"
-                    value={selectedUserId}
-                    onChange={(e) => setSelectedUserId(e.target.value)}
-                  >
-                    <option value="">Select Member</option>
-                    {users.map((user) => (
-                      <option key={user.userId} value={user.userId}>
-                        {user.name}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={addMember}
-                    className="btn btn-primary mt-2"
-                  >
-                    Add Member
-                  </button>
-                </div>
-                <div className="members-list mt-2">
-                  {members.map((member) => (
-                    <div
-                      key={member.userId}
-                      className="d-flex justify-content-between"
-                    >
-                      <span>
-                        {member.userName} - {member.roleName}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => removeMember(member.userId)}
-                        className="btn btn-danger btn-sm"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <div className="modal-footer">
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={onClose}
-                  >
-                    Close
-                  </button>
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={creating || updating}
-                  >
-                    {team
-                      ? updating
-                        ? "Updating..."
-                        : "Update"
-                      : creating
-                      ? "Creating..."
-                      : "Create"}
-                  </button>
-                </div>
-              </form>
+                    Remove
+                  </Button>,
+                ]}
+              >
+                {member.userName} - {member.roleName}
+              </List.Item>
             )}
-          </div>
-        </div>
-      </div>
-    </div>
+            style={{ marginBottom: "16px" }}
+          />
+          <Form.Item>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "8px",
+              }}
+            >
+              <Button onClick={onClose}>Cancel</Button>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={creating || updating}
+              >
+                {team
+                  ? updating
+                    ? "Updating..."
+                    : "Update"
+                  : creating
+                  ? "Creating..."
+                  : "Create"}
+              </Button>
+            </div>
+          </Form.Item>
+        </Form>
+      )}
+    </Modal>
   );
 };
 
