@@ -9,27 +9,30 @@ import { globalStyles, componentStyles } from "./styles";
 
 // Subcomponent for each product row
 const ProductRow = ({ product, index }) => {
-  const { data, isLoading, isError } = useGetProductByIdQuery(
+  const { data, isLoading, isError, error } = useGetProductByIdQuery(
     product.productId,
-    {
-      skip: !product.productId,
-    }
+    { skip: !product.productId }
   );
 
+  // Log errors for debugging
+  if (isError) {
+    console.log(`Product Query Error for ID ${product.productId}:`, error);
+  }
+
   const prod = data || {};
-  const productName = data?.name || "N/A";
+  const productName = prod.name || "Unknown Product";
+  const productCode = prod.product_code || "—";
+  const price = parseFloat(product.price || prod.sellingPrice || 0);
+  const quantity = parseInt(product.quantity || 0);
+
   return (
-    <tr key={product.productId || index}>
+    <tr key={product.productId || index} style={componentStyles.tableRow}>
       <td>{index + 1}</td>
-      <td>{productName || "Unknown Product"}</td>
-      <td>{prod.product_code || "—"}</td>
-      <td>{product.quantity || 0}</td>
-      <td>{product.price ? product.price.toFixed(2) : "0.00"}</td>
-      <td>
-        {product.price && product.quantity
-          ? (product.price * product.quantity).toFixed(2)
-          : "0.00"}
-      </td>
+      <td>{isLoading ? "Loading..." : productName}</td>
+      <td>{productCode}</td>
+      <td>{quantity}</td>
+      <td>₹{price.toFixed(2)}</td>
+      <td>₹{(price * quantity).toFixed(2)}</td>
     </tr>
   );
 };
@@ -55,43 +58,43 @@ const InvoiceDetails = () => {
     products = [];
   }
 
+  // Parse paymentMethod if it's a string
+  let paymentMethodParsed = invoice.paymentMethod || "N/A";
+  if (typeof invoice.paymentMethod === "string") {
+    try {
+      paymentMethodParsed = JSON.parse(invoice.paymentMethod)?.method || "N/A";
+    } catch (e) {
+      console.error("Failed to parse paymentMethod JSON:", e);
+      paymentMethodParsed = "N/A";
+    }
+  }
+
   const {
-    invoiceNo = "",
+    invoiceNo = "N/A",
     createdBy = "",
     quotationId = null,
-    billTo = "",
+    billTo = "N/A",
     shipTo = "",
     amount = "0.00",
     invoiceDate = "",
     dueDate = "",
-    paymentMethod = "",
     status = "Unknown",
     signatureName = "",
-  } = invoice || {};
+  } = invoice;
 
-  // Debugging logs
-  console.log("Invoice:", invoice);
-  console.log(
-    "Products:",
-    products,
-    "Type:",
-    typeof products,
-    "IsArray:",
-    Array.isArray(products)
-  );
-
-  const { data: createdByUser } = useGetUserByIdQuery(createdBy, {
-    skip: !createdBy,
-  });
-
-  const { data: quotation } = useGetQuotationByIdQuery(quotationId, {
-    skip: !quotationId,
-  });
-
-  const { data: shipToAddress, isLoading: isAddressLoading } =
-    useGetAddressByIdQuery(shipTo, {
-      skip: !shipTo,
-    });
+  // Fetch additional data
+  const {
+    data: createdByUser,
+    isLoading: isUserLoading,
+    isError: isUserError,
+  } = useGetUserByIdQuery(createdBy, { skip: !createdBy });
+  const { data: quotation, isLoading: isQuotationLoading } =
+    useGetQuotationByIdQuery(quotationId, { skip: !quotationId });
+  const {
+    data: shipToAddress,
+    isLoading: isAddressLoading,
+    isError: isAddressError,
+  } = useGetAddressByIdQuery(shipTo, { skip: !shipTo });
 
   // State for drag functionality
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -122,30 +125,9 @@ const InvoiceDetails = () => {
     setIsDragging(false);
   };
 
-  if (isLoading || isAddressLoading)
-    return (
-      <div style={{ textAlign: "center", padding: "20px" }}>
-        Loading invoice...
-      </div>
-    );
-
-  if (isError)
-    return (
-      <div style={{ textAlign: "center", padding: "20px", color: "red" }}>
-        Error fetching invoice details.
-      </div>
-    );
-
-  if (products.length === 0)
-    return (
-      <div style={{ textAlign: "center", padding: "20px" }}>
-        No products found in this invoice.
-      </div>
-    );
-
   // Calculations
   const subTotal = products.reduce(
-    (sum, p) => sum + (p.price || 0) * (p.quantity || 0),
+    (sum, p) => sum + parseFloat(p.price || 0) * parseInt(p.quantity || 0),
     0
   );
   const vat = subTotal * 0.18;
@@ -157,6 +139,7 @@ const InvoiceDetails = () => {
       })} only`
     : "Amount not available";
 
+  // Terms and Conditions
   const termsList = [
     "Payment is due within 15 days from the invoice date.",
     "Late payment may incur additional charges.",
@@ -165,38 +148,91 @@ const InvoiceDetails = () => {
     "Please verify all details and contact us in case of any discrepancies.",
   ];
 
+  // Debug styles and address
+  console.log("globalStyles:", globalStyles);
+  console.log("componentStyles:", componentStyles);
+  console.log("ShipTo Address:", shipToAddress);
+
+  // Loading and Error States
+  if (isLoading || isAddressLoading || isUserLoading || isQuotationLoading) {
+    return (
+      <div style={{ textAlign: "center", padding: "20px" }}>
+        Loading invoice...
+      </div>
+    );
+  }
+
+  if (isError || isAddressError || isUserError) {
+    return (
+      <div style={{ textAlign: "center", padding: "20px", color: "red" }}>
+        Error fetching invoice details.
+      </div>
+    );
+  }
+
+  if (products.length === 0) {
+    return (
+      <div style={{ textAlign: "center", padding: "20px" }}>
+        No products found in this invoice.
+      </div>
+    );
+  }
+
   return (
     <div
       className="page-wrapper"
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
     >
-      <style>{globalStyles}</style>
-      <div style={{ top: "100px", left: "30px" }}>
+      <style>
+        {`
+          ${globalStyles}
+          .draggable-content {
+            transform: translate(${position.x}px, ${position.y}px);
+          }
+          @media print {
+            .btn, .page-header { display: none; }
+            .draggable-content { transform: none !important; position: static !important; }
+          }
+        `}
+      </style>
+      <div style={{ position: "absolute", top: "20px", left: "20px" }}>
         <Link to="/invoices" className="btn btn-primary">
           <i className="me-2" data-feather="arrow-left"></i>Back to Invoices
         </Link>
+        <button
+          className="btn btn-secondary"
+          style={{ marginLeft: "10px" }}
+          onClick={() => window.print()}
+        >
+          Print Invoice
+        </button>
       </div>
       <div
-        className="content"
+        className="content draggable-content"
         style={{
-          transform: `translate(${position.x}px, ${position.y}px)`,
+          maxWidth: "800px",
+          margin: "0 auto",
+          background: "#fff",
+          padding: "30px",
+          borderRadius: "8px",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
         }}
       >
         <div className="page-header" onMouseDown={handleMouseDown}>
-          <div
-            className="add-item d-flex justify-between items-center"
-            style={componentStyles.addItem}
-          >
-            <h4 style={componentStyles.headerTitle}>Invoice Details</h4>
-          </div>
+          <h3 style={{ ...componentStyles.headerTitle, textAlign: "center" }}>
+            Invoice #{invoiceNo}
+          </h3>
         </div>
 
-        <div className="invoice-box" style={componentStyles.invoiceBox}>
-          <h5 style={componentStyles.invoiceTitle}>Invoice #{invoiceNo}</h5>
-          <div style={componentStyles.dateSection}>
+        {/* Invoice Details Section */}
+        <div style={{ marginBottom: "30px" }}>
+          <h4 style={{ ...componentStyles.sectionTitle, fontSize: "18px" }}>
+            Invoice Details
+          </h4>
+          <div style={{ ...componentStyles.dateSection, marginBottom: "20px" }}>
             <p style={componentStyles.dateItem}>
-              <strong>Date:</strong>{" "}
+              <strong>Invoice Date:</strong>{" "}
               {invoiceDate
                 ? new Date(invoiceDate).toLocaleDateString()
                 : "Not available"}
@@ -207,44 +243,31 @@ const InvoiceDetails = () => {
                 ? new Date(dueDate).toLocaleDateString()
                 : "Not available"}
             </p>
+            <p style={componentStyles.dateItem}>
+              <strong>Status:</strong>{" "}
+              <span
+                style={{
+                  color: status === "Paid" ? "green" : "red",
+                  fontWeight: "bold",
+                }}
+              >
+                {status}
+              </span>
+            </p>
           </div>
 
-          <div className="row mt-4" style={componentStyles.addressRow}>
-            <div className="col-md-6" style={componentStyles.addressCol}>
-              <h6 style={componentStyles.addressTitle}>Bill To</h6>
-              <p style={componentStyles.addressText}>
-                {billTo || createdByUser?.data?.name || "Unknown"}
-              </p>
-              <p style={componentStyles.addressText}>
-                {createdByUser?.data?.email || "Not available"}
-              </p>
-            </div>
-            <div className="col-md-6" style={componentStyles.addressCol}>
-              <h6 style={componentStyles.addressTitle}>Ship To</h6>
-              <p style={componentStyles.addressText}>
-                {shipToAddress?.data?.street
-                  ? `${shipToAddress.data.street}, ${shipToAddress.data.city}`
-                  : "Not available"}
-              </p>
-              <p style={componentStyles.addressText}>
-                {shipToAddress?.data?.state && shipToAddress?.data?.country
-                  ? `${shipToAddress.data.state}, ${
-                      shipToAddress.data.country
-                    } - ${shipToAddress.data.postalCode || "Not available"}`
-                  : "Not available"}
-              </p>
-            </div>
-          </div>
-
-          <table className="table mt-4" style={componentStyles.table}>
-            <thead>
+          <table
+            className="table"
+            style={{ ...componentStyles.table, marginBottom: "20px" }}
+          >
+            <thead style={{ backgroundColor: "#f1f1f1" }}>
               <tr>
                 <th>#</th>
                 <th>Item Name</th>
                 <th>Product Code</th>
                 <th>Qty</th>
-                <th>Rate</th>
-                <th>Amount</th>
+                <th>Rate (₹)</th>
+                <th>Amount (₹)</th>
               </tr>
             </thead>
             <tbody>
@@ -256,21 +279,109 @@ const InvoiceDetails = () => {
                 />
               ))}
             </tbody>
+            <tfoot>
+              <tr>
+                <td
+                  colSpan="5"
+                  style={{ textAlign: "right", fontWeight: "bold" }}
+                >
+                  Subtotal:
+                </td>
+                <td>₹{subTotal.toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td
+                  colSpan="5"
+                  style={{ textAlign: "right", fontWeight: "bold" }}
+                >
+                  VAT (18%):
+                </td>
+                <td>₹{vat.toFixed(2)}</td>
+              </tr>
+              {parseFloat(amount) !== subTotal + vat && (
+                <tr>
+                  <td
+                    colSpan="5"
+                    style={{ textAlign: "right", fontWeight: "bold" }}
+                  >
+                    Additional Fees:
+                  </td>
+                  <td>₹{(parseFloat(amount) - (subTotal + vat)).toFixed(2)}</td>
+                </tr>
+              )}
+              <tr>
+                <td
+                  colSpan="5"
+                  style={{ textAlign: "right", fontWeight: "bold" }}
+                >
+                  Total:
+                </td>
+                <td style={{ fontWeight: "bold" }}>₹{total.toFixed(2)}</td>
+              </tr>
+            </tfoot>
           </table>
 
-          <div style={componentStyles.summarySection}>
+          <p style={{ ...componentStyles.amountInWords, textAlign: "right" }}>
+            <em>{amountInWords}</em>
+          </p>
+        </div>
+
+        {/* Miscellaneous Section */}
+        <div>
+          <h4 style={{ ...componentStyles.sectionTitle, fontSize: "18px" }}>
+            Miscellaneous
+          </h4>
+          <div
+            className="row"
+            style={{ ...componentStyles.addressRow, marginBottom: "20px" }}
+          >
+            <div className="col-md-6" style={componentStyles.addressCol}>
+              <h6 style={componentStyles.addressTitle}>Bill To</h6>
+              <p style={componentStyles.addressText}>{billTo}</p>
+              <p style={componentStyles.addressText}>
+                {createdByUser?.data?.email || "Not available"}
+              </p>
+            </div>
+            <div className="col-md-6" style={componentStyles.addressCol}>
+              <h6 style={componentStyles.addressTitle}>Ship To</h6>
+              {isAddressLoading ? (
+                <p style={componentStyles.addressText}>Loading address...</p>
+              ) : isAddressError ? (
+                <p style={{ ...componentStyles.addressText, color: "red" }}>
+                  Error fetching address
+                </p>
+              ) : shipToAddress?.data ? (
+                <>
+                  <p style={componentStyles.addressText}>
+                    {shipToAddress.data.street || "N/A"},{" "}
+                    {shipToAddress.data.city || "N/A"}
+                  </p>
+                  <p style={componentStyles.addressText}>
+                    {shipToAddress.data.state || "N/A"},{" "}
+                    {shipToAddress.data.country || "N/A"} -{" "}
+                    {shipToAddress.data.postalCode || "N/A"}
+                  </p>
+                </>
+              ) : (
+                <p style={componentStyles.addressText}>Not available</p>
+              )}
+            </div>
+          </div>
+
+          <div style={{ marginBottom: "20px" }}>
             <p style={componentStyles.summaryItem}>
-              <strong>Subtotal:</strong> ₹{subTotal.toFixed(2)}
+              <strong>Created By:</strong>{" "}
+              {createdByUser?.data?.name || "Unknown"}
             </p>
             <p style={componentStyles.summaryItem}>
-              <strong>VAT (18%):</strong> ₹{vat.toFixed(2)}
+              <strong>Payment Method:</strong> {paymentMethodParsed}
             </p>
-            <p style={componentStyles.totalItem}>
-              <strong>Total:</strong> ₹{total.toFixed(2)}
-            </p>
-            <p style={componentStyles.amountInWords}>
-              <em>{amountInWords}</em>
-            </p>
+            {quotationId && (
+              <p style={componentStyles.summaryItem}>
+                <strong>Quotation ID:</strong>{" "}
+                {quotation?.data?.quotationNo || quotationId}
+              </p>
+            )}
           </div>
 
           <div style={componentStyles.termsSection}>
@@ -285,7 +396,12 @@ const InvoiceDetails = () => {
           </div>
 
           {signatureName && (
-            <div style={componentStyles.signatureSection}>
+            <div
+              style={{
+                ...componentStyles.signatureSection,
+                textAlign: "right",
+              }}
+            >
               <p style={componentStyles.signatureLabel}>Authorized Signatory</p>
               <h6 style={componentStyles.signatureName}>{signatureName}</h6>
             </div>

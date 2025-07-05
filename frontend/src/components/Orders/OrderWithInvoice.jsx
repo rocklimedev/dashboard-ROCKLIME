@@ -16,20 +16,31 @@ import { toast } from "sonner";
 
 // Subcomponent to handle each product row
 const ProductRow = ({ product, index }) => {
-  const { data, isLoading, error } = useGetProductByIdQuery(product.productId, {
-    skip: !product.productId,
-  });
+  const { data, isLoading, isError, error } = useGetProductByIdQuery(
+    product.productId,
+    { skip: !product.productId }
+  );
 
-  const productName = data?.name || "N/A";
-  const sellingPrice = parseFloat(data?.sellingPrice) || product.price || 0; // Fallback to product.price or 0
+  // Log error for debugging
+  if (isError) {
+    console.log(`Product Query Error for ID ${product.productId}:`, error);
+  }
+
+  // Assume data structure: { name, product_code, sellingPrice }
+  const prod = data || {};
+  const productName = prod.name || "Unknown Product";
+  const productCode = prod.product_code || "—";
+  const price = parseFloat(product.price || prod.sellingPrice || 0);
+  const quantity = parseInt(product.quantity || 0);
 
   return (
     <tr key={product.productId || index}>
       <td>{index + 1}</td>
-      <td>{productName}</td>
-      <td>{product.quantity || 0}</td>
-      <td>{sellingPrice.toFixed(2)}</td>
-      <td>{((product.quantity || 0) * sellingPrice).toFixed(2)}</td>
+      <td>{isLoading ? "Loading..." : productName}</td>
+      <td>{productCode}</td>
+      <td>{quantity}</td>
+      <td>{price.toFixed(2)}</td>
+      <td>{(price * quantity).toFixed(2)}</td>
     </tr>
   );
 };
@@ -42,7 +53,7 @@ const OrderWithInvoice = () => {
   const [deleteOrder] = useDeleteOrderMutation();
   const [updateOrderStatus] = useUpdateOrderStatusMutation();
   const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedOrder, setSelectedOrder] = setSelectedOrder(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
   const {
     data: orderData,
@@ -59,9 +70,19 @@ const OrderWithInvoice = () => {
     error: invoiceError,
   } = useGetInvoiceByIdQuery(invoiceId, { skip: !invoiceId });
 
-  // Ensure invoice and products are handled safely
+  // Parse products JSON string into an array
   const invoice = invoiceData?.data || {};
-  const products = Array.isArray(invoice?.products) ? invoice.products : [];
+  const products = useMemo(() => {
+    if (typeof invoice?.products === "string") {
+      try {
+        return JSON.parse(invoice.products) || [];
+      } catch (e) {
+        console.error("Error parsing invoice.products:", e);
+        return [];
+      }
+    }
+    return Array.isArray(invoice?.products) ? invoice.products : [];
+  }, [invoice?.products]);
 
   const customers = customerData?.data || [];
   const {
@@ -139,7 +160,7 @@ const OrderWithInvoice = () => {
       try {
         await deleteOrder(id).unwrap();
         toast.success("Order deleted successfully!");
-        navigate("/orders");
+        navigate("/orders/list");
       } catch (err) {
         toast.error("Failed to delete order. Please try again.");
       }
@@ -164,7 +185,7 @@ const OrderWithInvoice = () => {
 
   // Debug logs to verify data
   console.log("Invoice Data:", invoiceData);
-  console.log("Products:", products);
+  console.log("Parsed Products:", products);
 
   if (orderLoading || invoiceLoading || teamLoading) {
     return (
@@ -224,75 +245,69 @@ const OrderWithInvoice = () => {
                   </Dropdown.Menu>
                 </Dropdown>
               </div>
-              <div className="card-body">
-                {orderLoading ? (
-                  <p>Loading Order...</p>
-                ) : orderError ? (
-                  <p className="text-danger">Error fetching order details</p>
-                ) : (
-                  <div className="row">
-                    <div className="col-6 mb-3">
-                      <small className="text-muted">Title</small>
-                      <p className="fw-semibold">{order.title || "N/A"}</p>
-                    </div>
-                    <div className="col-6 mb-3">
-                      <small className="text-muted">Status</small>
-                      <span className="badge bg-info">
-                        {order.status || "N/A"}
-                      </span>
-                    </div>
-                    <div className="col-6 mb-3">
-                      <small className="text-muted">Customer</small>
-                      <p>
-                        {order.createdFor
-                          ? customerMap[order.createdFor] || "Unknown Customer"
-                          : "N/A"}
-                      </p>
-                    </div>
-                    <div className="col-6 mb-3">
-                      <small className="text-muted">Created By</small>
-                      <p>
-                        {order.createdBy
-                          ? userMap[order.createdBy] || "Unknown User"
-                          : "N/A"}
-                      </p>
-                    </div>
-                    <div className="col-6 mb-3">
-                      <small className="text-muted">Due Date</small>
-                      <p>
-                        {order.dueDate
-                          ? new Date(order.dueDate).toLocaleDateString()
-                          : "N/A"}
-                      </p>
-                    </div>
-                    <div className="col-6 mb-3">
-                      <small className="text-muted">Priority</small>
-                      <span className="badge bg-warning text-dark">
-                        {order.priority || "N/A"}
-                      </span>
-                    </div>
-                    <div className="col-12 mb-3">
-                      <small className="text-muted">Description</small>
-                      <p>{order.description || "N/A"}</p>
-                    </div>
-                    <div className="col-6 mb-3">
-                      <small className="text-muted">Assigned To</small>
-                      <p>
-                        {order.assignedTo
-                          ? teamMap[order.assignedTo] || "Unknown Team"
-                          : "N/A"}
-                      </p>
-                    </div>
-                    <div className="col-6 mb-3">
-                      <small className="text-muted">Pipeline</small>
-                      <p>{order.pipeline || "N/A"}</p>
-                    </div>
-                    <div className="col-6 mb-3">
-                      <small className="text-muted">Source</small>
-                      <p>{order.source || "N/A"}</p>
-                    </div>
+              <div className="card30ody">
+                <div className="row">
+                  <div className="col-6 mb-3">
+                    <small className="text-muted">Title</small>
+                    <p className="fw-semibold">{order.title || "N/A"}</p>
                   </div>
-                )}
+                  <div className="col-6 mb-3">
+                    <small className="text-muted">Status</small>
+                    <span className="badge bg-info">
+                      {order.status || "N/A"}
+                    </span>
+                  </div>
+                  <div className="col-6 mb-3">
+                    <small className="text-muted">Customer</small>
+                    <p>
+                      {order.createdFor
+                        ? customerMap[order.createdFor] || "Unknown Customer"
+                        : "N/A"}
+                    </p>
+                  </div>
+                  <div className="col-6 mb-3">
+                    <small className="text-muted">Created By</small>
+                    <p>
+                      {order.createdBy
+                        ? userMap[order.createdBy] || "Unknown User"
+                        : "N/A"}
+                    </p>
+                  </div>
+                  <div className="col-6 mb-3">
+                    <small className="text-muted">Due Date</small>
+                    <p>
+                      {order.dueDate
+                        ? new Date(order.dueDate).toLocaleDateString()
+                        : "N/A"}
+                    </p>
+                  </div>
+                  <div className="col-6 mb-3">
+                    <small className="text-muted">Priority</small>
+                    <span className="badge bg-warning text-dark">
+                      {order.priority || "N/A"}
+                    </span>
+                  </div>
+                  <div className="col-12 mb-3">
+                    <small className="text-muted">Description</small>
+                    <p>{order.description || "N/A"}</p>
+                  </div>
+                  <div className="col-6 mb-3">
+                    <small className="text-muted">Assigned To</small>
+                    <p>
+                      {order.assignedTo
+                        ? teamMap[order.assignedTo] || "Unknown Team"
+                        : "N/A"}
+                    </p>
+                  </div>
+                  <div className="col-6 mb-3">
+                    <small className="text-muted">Pipeline</small>
+                    <p>{order.pipeline || "N/A"}</p>
+                  </div>
+                  <div className="col-6 mb-3">
+                    <small className="text-muted">Source</small>
+                    <p>{order.source || "N/A"}</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -373,7 +388,11 @@ const OrderWithInvoice = () => {
                     </div>
                     <div className="col-6 mb-3">
                       <small className="text-muted">Payment Mode</small>
-                      <p>{invoice.paymentMethod || "N/A"}</p>
+                      <p>
+                        {invoice.paymentMethod
+                          ? JSON.parse(invoice.paymentMethod)?.method || "N/A"
+                          : "N/A"}
+                      </p>
                     </div>
                   </div>
                 )}
@@ -413,6 +432,7 @@ const OrderWithInvoice = () => {
                     <tr>
                       <th>#</th>
                       <th>Product Name</th>
+                      <th>Product Code</th>
                       <th>Quantity</th>
                       <th>Unit Price (₹)</th>
                       <th>Total Price (₹)</th>
@@ -427,6 +447,25 @@ const OrderWithInvoice = () => {
                       />
                     ))}
                   </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colSpan="5" className="text-end fw-bold">
+                        Total:
+                      </td>
+                      <td className="fw-bold">
+                        ₹
+                        {products
+                          .reduce(
+                            (sum, product) =>
+                              sum +
+                              parseFloat(product.price || 0) *
+                                parseInt(product.quantity || 0),
+                            0
+                          )
+                          .toFixed(2)}
+                      </td>
+                    </tr>
+                  </tfoot>
                 </table>
               </div>
             ) : (
@@ -482,9 +521,9 @@ const OrderWithInvoice = () => {
       </div>
       {showEditModal && (
         <AddNewOrder
-          show={showEditModal}
-          handleClose={handleModalClose}
-          order={selectedOrder}
+          adminName="Admin" // Replace with dynamic admin name if available
+          orderId={selectedOrder?._id}
+          onClose={handleModalClose}
         />
       )}
     </div>

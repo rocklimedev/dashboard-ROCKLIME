@@ -124,7 +124,7 @@ const OrderWrapper = () => {
   };
 
   const handleEditClick = (order) => {
-    navigate(`/orders/${order.id}/edit`, { state: { order } });
+    navigate(`/order/${order.id}/edit`, { state: { order } });
   };
 
   const handleHoldClick = (order) => {
