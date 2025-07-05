@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   useCreateOrderMutation,
   useUpdateOrderByIdMutation,
+  useOrderByIdQuery,
 } from "../../api/orderApi";
 import {
   useGetAllInvoicesQuery,
@@ -12,13 +13,29 @@ import { useGetAllTeamsQuery } from "../../api/teamApi";
 import AddNewTeam from "./AddNewTeam";
 import { toast } from "sonner";
 
-const AddNewOrder = ({ adminName, order }) => {
-  const isEditMode = Boolean(order);
+const AddNewOrder = ({ adminName }) => {
+  const { id } = useParams();
+  const isEditMode = Boolean(id); // Use id to determine edit mode
   const navigate = useNavigate();
+
+  // Fetch order details if in edit mode
+  const {
+    data: orderData,
+    isLoading: isOrderLoading,
+    error: orderError,
+  } = useOrderByIdQuery(
+    id,
+    { skip: !isEditMode } // Skip query if not in edit mode
+  );
+  const order = orderData?.order;
 
   const [createOrder] = useCreateOrderMutation();
   const [updateOrder] = useUpdateOrderByIdMutation();
-  const { data: invoicesData, isLoading, error } = useGetAllInvoicesQuery();
+  const {
+    data: invoicesData,
+    isLoading: isInvoicesLoading,
+    error: invoicesError,
+  } = useGetAllInvoicesQuery();
   const invoices = Array.isArray(invoicesData?.data) ? invoicesData.data : [];
   const [showNewTeamModal, setShowNewTeamModal] = useState(false);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState("");
@@ -40,30 +57,33 @@ const AddNewOrder = ({ adminName, order }) => {
     dueDate: "",
     followupDates: [],
     source: "",
-
     teamId: "",
     priority: "",
     description: "",
     invoiceId: "",
   });
 
+  // Populate formData when order data is fetched in edit mode
   useEffect(() => {
     if (isEditMode && order) {
-      setFormData({ ...order });
+      setFormData({
+        ...formData,
+        ...order,
+        followupDates: order.followupDates || [], // Ensure followupDates is an array
+      });
       setSelectedInvoiceId(order.invoiceId || "");
     }
   }, [isEditMode, order]);
 
+  // Update formData when invoice data is fetched
   useEffect(() => {
     if (selectedInvoice) {
-      const numericOrderNo =
-        selectedInvoice.invoiceNo?.replace(/\D/g, "") || "";
       setFormData((prev) => ({
         ...prev,
         invoiceId: selectedInvoiceId,
-        dueDate: selectedInvoice.dueDate || "",
-        createdBy: selectedInvoice.createdBy || "",
-        createdFor: selectedInvoice.customerId || "",
+        dueDate: selectedInvoice.dueDate || prev.dueDate,
+        createdBy: selectedInvoice.createdBy || prev.createdBy,
+        createdFor: selectedInvoice.customerId || prev.createdFor,
       }));
     }
   }, [selectedInvoice, selectedInvoiceId]);
@@ -98,7 +118,7 @@ const AddNewOrder = ({ adminName, order }) => {
       let response;
       if (isEditMode) {
         response = await updateOrder({
-          id: order._id,
+          id: id, // Use id for update
           updatedData: formData,
         }).unwrap();
         toast.success("Order updated successfully!");
@@ -134,10 +154,22 @@ const AddNewOrder = ({ adminName, order }) => {
             </h4>
           </div>
           <div className="card-body p-4">
-            {isLoading && <p className="text-muted">Loading invoices...</p>}
-            {error && (
+            {isOrderLoading && (
+              <p className="text-muted">Loading order details...</p>
+            )}
+            {orderError && (
               <p className="text-danger">
-                Error loading invoices: {error.data?.message || "Unknown error"}
+                Error loading order:{" "}
+                {orderError.data?.message || "Unknown error"}
+              </p>
+            )}
+            {isInvoicesLoading && (
+              <p className="text-muted">Loading invoices...</p>
+            )}
+            {invoicesError && (
+              <p className="text-danger">
+                Error loading invoices:{" "}
+                {invoicesError.data?.message || "Unknown error"}
               </p>
             )}
             <form onSubmit={handleSubmit}>
@@ -151,7 +183,7 @@ const AddNewOrder = ({ adminName, order }) => {
                     name="invoiceId"
                     value={formData.invoiceId}
                     onChange={handleInvoiceSelect}
-                    disabled={isEditMode || isLoading}
+                    disabled={isEditMode || isInvoicesLoading}
                     required
                   >
                     <option value="">Select Invoice</option>
@@ -431,9 +463,9 @@ const AddNewOrder = ({ adminName, order }) => {
                 <button
                   type="submit"
                   className="btn btn-primary px-4"
-                  disabled={isLoading}
+                  disabled={isOrderLoading || isInvoicesLoading}
                 >
-                  {isLoading
+                  {isOrderLoading || isInvoicesLoading
                     ? isEditMode
                       ? "Updating..."
                       : "Creating..."

@@ -175,6 +175,12 @@ const masterRoutes = [
         element: <AddNewOrder />,
       },
       {
+        path: "/order/:id/edit",
+        icon: <RiDashboardLine />,
+        isSidebarActive: false,
+        element: <AddNewOrder />,
+      },
+      {
         path: "/invoices/list",
         name: "Invoices",
         icon: <FaFileInvoice />,
