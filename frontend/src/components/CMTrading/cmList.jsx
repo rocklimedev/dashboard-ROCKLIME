@@ -238,26 +238,22 @@ const CmList = () => {
                   </td>
                   <td>{company.parentCompanyId || "None"}</td>
                   <td>
-                    <div className="edit-delete-action">
-                      <a
-                        className="me-2 p-2"
+                    <div className="actions">
+                      <FaEye
+                        className="action-icon"
                         href="javascript:void(0);"
                         onClick={() => handleViewCompany(company)}
-                      >
-                        <FaEye />
-                      </a>
-                      <a
-                        className="me-2 p-2"
+                      />
+
+                      <BiEdit
+                        className="action-icon"
                         onClick={() => handleEditCompany(company)}
-                      >
-                        <BiEdit />
-                      </a>
-                      <a
-                        className="p-2"
+                      />
+
+                      <BiTrash
+                        className="action-icon"
                         onClick={() => handleDeleteCompany(company)}
-                      >
-                        <BiTrash />
-                      </a>
+                      />
                     </div>
                   </td>
                 </tr>

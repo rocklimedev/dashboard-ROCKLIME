@@ -77,6 +77,15 @@ const TeamsList = ({ adminName }) => {
       .includes(searchTerm.toLowerCase())
   );
 
+  // Handle action selection
+  const handleActionSelect = (value, team) => {
+    if (value === "edit") {
+      handleEditTeam(team);
+    } else if (value === "delete") {
+      handleDeleteTeam(team);
+    }
+  };
+
   return (
     <div className="page-wrapper">
       <div className="content container-fluid">
@@ -107,7 +116,7 @@ const TeamsList = ({ adminName }) => {
             <Space>
               <Select defaultValue="All Status" style={{ width: 150 }}>
                 <Option value="all">All Status</Option>
-                <Option value="active">Active</Option>
+                <Option value="active Juno/active">Active</Option>
                 <Option value="inactive">Inactive</Option>
                 <Option value="new">New Joiners</Option>
               </Select>
@@ -144,20 +153,14 @@ const TeamsList = ({ adminName }) => {
                         {team.teamName}
                       </Title>
                       <Select
-                        defaultValue="Actions"
                         style={{ width: 120 }}
                         bordered={false}
+                        onChange={(value) => handleActionSelect(value, team)}
                       >
-                        <Option
-                          value="edit"
-                          onClick={() => handleEditTeam(team)}
-                        >
+                        <Option value="edit">
                           <EditOutlined /> Edit
                         </Option>
-                        <Option
-                          value="delete"
-                          onClick={() => handleDeleteTeam(team)}
-                        >
+                        <Option value="delete">
                           <DeleteOutlined /> Delete
                         </Option>
                       </Select>

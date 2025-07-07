@@ -191,14 +191,14 @@ const UserList = () => {
         />
         <div className="row">
           <div className="col-xl-3 col-md-6">
-            <div className="card bg-purple border-0">
+            <div className="card  border-0" style={{ backgroundColor: "red" }}>
               <div className="card-body d-flex align-items-center justify-content-between">
                 <div>
                   <p className="mb-1 text-white">Total Employees</p>
                   <h4 className="text-white">{stats.totalEmployees}</h4>
                 </div>
                 <div>
-                  <span className="avatar avatar-lg bg-purple-900">
+                  <span className="avatar avatar-lg">
                     <i className="ti ti-users-group"></i>
                   </span>
                 </div>
@@ -206,7 +206,7 @@ const UserList = () => {
             </div>
           </div>
           <div className="col-xl-3 col-md-6">
-            <div className="card bg-teal border-0">
+            <div className="card  border-0" style={{ backgroundColor: "red" }}>
               <div className="card-body d-flex align-items-center justify-content-between">
                 <div>
                   <p className="mb-1 text-white">Active</p>
@@ -221,7 +221,7 @@ const UserList = () => {
             </div>
           </div>
           <div className="col-xl-3 col-md-6">
-            <div className="card bg-secondary border-0">
+            <div className="card  border-0" style={{ backgroundColor: "red" }}>
               <div className="card-body d-flex align-items-center justify-content-between">
                 <div>
                   <p className="mb-1 text-white">Inactive</p>
@@ -236,7 +236,7 @@ const UserList = () => {
             </div>
           </div>
           <div className="col-xl-3 col-md-6">
-            <div className="card bg-info border-0">
+            <div className="card  border-0" style={{ backgroundColor: "red" }}>
               <div className="card-body d-flex align-items-center justify-content-between">
                 <div>
                   <p className="mb-1 text-white">New Joiners</p>

@@ -223,6 +223,7 @@ const ProductsList = () => {
       setSelectedProduct(null);
     }
   };
+
   const handleToggleFeatured = async (product) => {
     if (!userId) {
       toast.error("User not logged in!");
@@ -257,6 +258,7 @@ const ProductsList = () => {
       setFeaturedLoadingStates((prev) => ({ ...prev, [productId]: false }));
     }
   };
+
   const handleAddToCart = async (product) => {
     if (!userId) {
       toast.error("User not logged in!");
@@ -272,7 +274,7 @@ const ProductsList = () => {
     setCartLoadingStates((prev) => ({ ...prev, [productId]: true }));
 
     try {
-      const response = await addProductToCart({ userId, productId }).unwrap();
+      await addProductToCart({ userId, productId }).unwrap();
       toast.success(`${product.name} added to cart!`);
     } catch (error) {
       toast.error(`Error: ${error.data?.message || "Unknown error"}`);
@@ -280,6 +282,7 @@ const ProductsList = () => {
       setCartLoadingStates((prev) => ({ ...prev, [productId]: false }));
     }
   };
+
   const handleRemoveFromCart = async (productId) => {
     try {
       await removeFromCart({ userId, productId }).unwrap();
@@ -490,7 +493,7 @@ const ProductsList = () => {
                           <img
                             src={product?.images?.[0] || pos}
                             alt={product.name || "Product"}
-                            className="product-image"
+                            className="product-image-card"
                           />
                           <Button
                             type="text"
@@ -508,7 +511,7 @@ const ProductsList = () => {
                             disabled={featuredLoadingStates[product.productId]}
                           />
                           {product.quantity <= 0 && (
-                            <Badge
+                            <badge
                               count="Out of Stock"
                               className="out-of-stock-badge"
                             />

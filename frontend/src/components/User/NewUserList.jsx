@@ -191,14 +191,14 @@ const NewUserList = () => {
         />
         <div className="row">
           <div className="col-xl-3 col-md-6">
-            <div className="card bg-purple border-0">
+            <div className="card stats-card total-employees">
               <div className="card-body d-flex align-items-center justify-content-between">
                 <div>
                   <p className="mb-1 text-white">Total Employees</p>
                   <h4 className="text-white">{stats.totalEmployees}</h4>
                 </div>
                 <div>
-                  <span className="avatar avatar-lg bg-purple-900">
+                  <span className="avatar avatar-lg">
                     <i className="ti ti-users-group"></i>
                   </span>
                 </div>
@@ -206,14 +206,14 @@ const NewUserList = () => {
             </div>
           </div>
           <div className="col-xl-3 col-md-6">
-            <div className="card bg-teal border-0">
+            <div className="card stats-card active">
               <div className="card-body d-flex align-items-center justify-content-between">
                 <div>
                   <p className="mb-1 text-white">Active</p>
                   <h4 className="text-white">{stats.active}</h4>
                 </div>
                 <div>
-                  <span className="avatar avatar-lg bg-teal-900">
+                  <span className="avatar avatar-lg">
                     <i className="ti ti-user-star"></i>
                   </span>
                 </div>
@@ -221,14 +221,14 @@ const NewUserList = () => {
             </div>
           </div>
           <div className="col-xl-3 col-md-6">
-            <div className="card bg-secondary border-0">
+            <div className="card stats-card inactive">
               <div className="card-body d-flex align-items-center justify-content-between">
                 <div>
                   <p className="mb-1 text-white">Inactive</p>
                   <h4 className="text-white">{stats.inactive}</h4>
                 </div>
                 <div>
-                  <span className="avatar avatar-lg bg-secondary-900">
+                  <span className="avatar avatar-lg">
                     <i className="ti ti-user-exclamation"></i>
                   </span>
                 </div>
@@ -236,14 +236,14 @@ const NewUserList = () => {
             </div>
           </div>
           <div className="col-xl-3 col-md-6">
-            <div className="card bg-info border-0">
+            <div className="card stats-card new-joiners">
               <div className="card-body d-flex align-items-center justify-content-between">
                 <div>
                   <p className="mb-1 text-white">New Joiners</p>
                   <h4 className="text-white">{stats.newJoiners}</h4>
                 </div>
                 <div>
-                  <span className="avatar avatar-lg bg-info-900">
+                  <span className="avatar avatar-lg">
                     <i className="ti ti-user-check"></i>
                   </span>
                 </div>
@@ -265,7 +265,7 @@ const NewUserList = () => {
                         <div className="d-flex align-items-start justify-content-between mb-2">
                           <div>
                             <a
-                              href={`/user/${user.userId}`} // Fixed link to /u/:id
+                              href={`/user/${user.userId}`}
                               className="avatar avatar-xl avatar-rounded border p-1 rounded-circle"
                             >
                               <img
@@ -327,8 +327,7 @@ const NewUserList = () => {
                         </div>
                         <div className="text-center mb-3">
                           <h6 className="mb-1">
-                            <a href={`/user/${user.userId}`}>{user.name}</a>{" "}
-                            {/* Fixed link to /u/:id */}
+                            <a href={`/user/${user.userId}`}>{user.name}</a>
                           </h6>
                           <span className="badge bg-secondary-transparent text-gray-9 fs-10 fw-medium">
                             {user.roles.join(", ") || "N/A"}

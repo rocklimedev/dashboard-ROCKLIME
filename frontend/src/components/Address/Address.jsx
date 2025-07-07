@@ -10,7 +10,8 @@ import AddAddress from "./AddAddressModal";
 import DeleteModal from "../Common/DeleteModal";
 import { toast } from "sonner";
 import DataTablePagination from "../Common/DataTablePagination";
-
+import Avatar from "react-avatar";
+import { Tooltip } from "antd";
 const AddressList = () => {
   const { data, error, isLoading, refetch } = useGetAllAddressesQuery();
   const [deleteAddress, { isLoading: isDeleting }] = useDeleteAddressMutation();
@@ -124,15 +125,24 @@ const AddressList = () => {
           <div className="card-body-2 p-0">
             {paginatedAddresses.map((address) => (
               <div className="card-list" key={address.addressId}>
-                <div className="card-content">
-                  <span>
-                    {address.street || "—"} {address.city} {address.state}{" "}
-                    {address.postalCode} {address.country}
-                  </span>
+                <div className="card-content" key={address.addressId}>
+                  <div className="left-section">
+                    <Tooltip title={address.name || "No Name"}>
+                      <Avatar name={address.name || "NA"} round size="35" />
+                    </Tooltip>
+
+                    <div className="address-info">
+                      <div className="line-1">
+                        {address.street || "—"} {address.city} {address.state}
+                      </div>
+                      <div className="line-2">
+                        {address.postalCode} {address.country}
+                      </div>
+                    </div>
+                  </div>
 
                   <div className="actions">
                     <AiOutlineEdit onClick={() => handleEditAddress(address)} />
-
                     <FcEmptyTrash
                       onClick={() => handleDeleteAddress(address)}
                     />
