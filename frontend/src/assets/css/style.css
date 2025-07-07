@@ -1459,8 +1459,6 @@ button:focus {
   color: #ffffff !important;
 }
 .btn.btn-secondary {
-  background-color: #092c4c !important;
-  border: 1px solid #092c4c !important;
   color: #ffffff;
   box-shadow: 0 4px 20px rgba(9, 44, 76, 0.15);
 }

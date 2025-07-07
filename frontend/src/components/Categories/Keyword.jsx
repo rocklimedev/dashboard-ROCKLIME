@@ -11,7 +11,7 @@ import DataTablePagination from "../Common/DataTablePagination";
 import { AiOutlineEdit } from "react-icons/ai";
 import { FcEmptyTrash } from "react-icons/fc";
 import { toast } from "sonner";
-
+import { BiTrash } from "react-icons/bi";
 const Keyword = ({ onClose, showModal }) => {
   const [keywordPage, setKeywordPage] = useState(1);
   const [selectedCategoryId, setSelectedCategoryId] = useState("all");
@@ -185,7 +185,7 @@ const Keyword = ({ onClose, showModal }) => {
                         }}
                         style={{ cursor: "pointer" }}
                       >
-                        <FcEmptyTrash size={20} />
+                        <BiTrash size={20} />
                       </a>
                     </div>
                   </div>

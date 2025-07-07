@@ -1,14 +1,9 @@
 import React from "react";
-import {
-  AiOutlinePlusCircle,
-  AiOutlineFilePdf,
-  AiOutlineFileExcel,
-} from "react-icons/ai";
-import { FcCollapse } from "react-icons/fc";
 import { jsPDF } from "jspdf";
 import * as XLSX from "xlsx";
-import "bootstrap/dist/js/bootstrap.bundle.min.js";
-
+import { FileAddFilled, PlusCircleFilled } from "@ant-design/icons";
+import { FilePdfFilled } from "@ant-design/icons";
+import { FileExcelFilled } from "@ant-design/icons";
 const PageHeader = ({ title, subtitle, onAdd, tableData = [] }) => {
   // Function to handle downloading PDF
   const handleDownloadPDF = () => {
@@ -86,7 +81,7 @@ const PageHeader = ({ title, subtitle, onAdd, tableData = [] }) => {
       <ul className="table-top-head">
         <li title="Download PDF" onClick={handleDownloadPDF}>
           <a data-bs-toggle="tooltip" data-bs-placement="top" title="PDF">
-            <AiOutlineFilePdf
+            <FilePdfFilled
               size={22}
               className="text-red-500 hover:text-red-700"
             />
@@ -94,22 +89,9 @@ const PageHeader = ({ title, subtitle, onAdd, tableData = [] }) => {
         </li>
         <li title="Download Excel" onClick={handleDownloadExcel}>
           <a data-bs-toggle="tooltip" data-bs-placement="top" title="Excel">
-            <AiOutlineFileExcel
+            <FileExcelFilled
               size={22}
               className="text-green-500 hover:text-green-700"
-            />
-          </a>
-        </li>
-        <li title="Collapse" onClick={handleCollapse}>
-          <a
-            data-bs-toggle="tooltip"
-            data-bs-placement="top"
-            title="Collapse"
-            id="collapse-header"
-          >
-            <FcCollapse
-              size={22}
-              className="text-gray-500 hover:text-gray-700"
             />
           </a>
         </li>
@@ -117,7 +99,7 @@ const PageHeader = ({ title, subtitle, onAdd, tableData = [] }) => {
       <div className="page-btn">
         {onAdd && (
           <button onClick={onAdd} className="btn btn-primary">
-            <AiOutlinePlusCircle size={20} />
+            <FileAddFilled size={20} />
             Add {title}
           </button>
         )}

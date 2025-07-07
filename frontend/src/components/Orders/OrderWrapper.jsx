@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useGetAllUsersQuery } from "../../api/userApi";
 import PageHeader from "../Common/PageHeader";
 import OrderPagination from "./OrderPagination";
-import OrderFilter from "./OrderFilter";
+import OrderFilter from "./OrderFilter"; // Assuming this is in the same directory
 import ShowInvoices from "./ShowInvoices";
 import {
   useGetFilteredOrdersQuery,
@@ -19,12 +19,13 @@ import DeleteModal from "../Common/DeleteModal";
 import { FaEdit, FaPause, FaFileInvoice, FaTrash } from "react-icons/fa";
 import { Tooltip } from "react-tooltip";
 import { Link } from "react-router-dom";
+
 const OrderWrapper = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("orders");
   const [teamMap, setTeamMap] = useState({});
   const [customerMap, setCustomerMap] = useState({});
-  const [userMap, setUserMap] = useState({}); // Added for user mapping
+  const [userMap, setUserMap] = useState({});
   const [showHoldModal, setShowHoldModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -37,7 +38,7 @@ const OrderWrapper = () => {
 
   const { data: teamsData } = useGetAllTeamsQuery();
   const { data: customersData } = useGetCustomersQuery();
-  const { data: usersData } = useGetAllUsersQuery(); // Fetch users
+  const { data: usersData } = useGetAllUsersQuery();
   const [filters, setFilters] = useState({
     status: "",
     priority: "",
@@ -110,7 +111,7 @@ const OrderWrapper = () => {
   useEffect(() => {
     if (usersData?.users) {
       const map = usersData.users.reduce((acc, user) => {
-        acc[user.userId] = user.username || user.name || "—"; // Prefer username, fallback to name
+        acc[user.userId] = user.username || user.name || "—";
         return acc;
       }, {});
       setUserMap(map);
@@ -212,8 +213,7 @@ const OrderWrapper = () => {
           subtitle="Manage your Orders & Invoices list"
           onAdd={handleOpenAddOrder}
         />
-
-        <ul>
+        <ul className="nav nav-tabs">
           <li className="nav-item">
             <button
               className={`nav-link ${activeTab === "orders" ? "active" : ""}`}
@@ -232,18 +232,20 @@ const OrderWrapper = () => {
           </li>
         </ul>
         {activeTab === "orders" ? (
-          <div className="row">
-            <div className="col-xl-3 col-md-12 sidebars-right theiaStickySidebar section-bulk-widget">
-              <OrderFilter setFilters={setFilters} />
+          <div className="orders-section">
+            <div className="filter-section">
+              <OrderFilter
+                setFilters={setFilters}
+                onClear={handleClearFilters}
+              />
             </div>
-            <div className="col-xl-9 budget-role-notes">
+            <div className="orders-table-section">
               <div className="border-bottom mb-4 pb-4">
                 <h4>All Orders</h4>
               </div>
-
               {isLoading || isFetching ? (
                 <div className="text-center">
-                  <div className="spinner-border" role="status">
+                  <div className="spinner-border text-primary" role="status">
                     <span className="visually-hidden">Loading...</span>
                   </div>
                 </div>
@@ -303,7 +305,6 @@ const OrderWrapper = () => {
                               </td>
                               <td>
                                 <Link to={`/order/${order.id}`}>
-                                  {" "}
                                   {order.title}
                                 </Link>
                               </td>
@@ -349,7 +350,7 @@ const OrderWrapper = () => {
                               <td className="action-column">
                                 <div className="action-buttons">
                                   <button
-                                    className="btn btn-icon btn-primary"
+                                    className="btn btn-icon btn-red btn-edit"
                                     onClick={() => handleEditClick(order)}
                                     data-tooltip-id={`edit-${order.id}`}
                                     data-tooltip-content="Edit Order"
@@ -357,7 +358,7 @@ const OrderWrapper = () => {
                                     <FaEdit />
                                   </button>
                                   <button
-                                    className="btn btn-icon btn-warning"
+                                    className="btn btn-icon btn-red btn-hold"
                                     onClick={() => handleHoldClick(order)}
                                     data-tooltip-id={`hold-${order.id}`}
                                     data-tooltip-content="Put Order on Hold"
@@ -365,7 +366,7 @@ const OrderWrapper = () => {
                                     <FaPause />
                                   </button>
                                   <button
-                                    className="btn btn-icon btn-success"
+                                    className="btn btn-icon btn-red btn-invoice"
                                     onClick={() => handleViewInvoice(order)}
                                     data-tooltip-id={`invoice-${order.id}`}
                                     data-tooltip-content="View Invoice"
@@ -373,7 +374,7 @@ const OrderWrapper = () => {
                                     <FaFileInvoice />
                                   </button>
                                   <button
-                                    className="btn btn-icon btn-danger"
+                                    className="btn btn-icon btn-red btn-delete"
                                     onClick={() => handleDeleteClick(order.id)}
                                     data-tooltip-id={`delete-${order.id}`}
                                     data-tooltip-content="Delete Order"

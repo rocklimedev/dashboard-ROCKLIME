@@ -303,14 +303,14 @@ const CreateProduct = () => {
       if (isEditMode) {
         await updateProduct({ productId, formData: formDataToSend }).unwrap();
         toast.success("Product updated successfully!");
-        navigate("/inventory/list");
+        navigate("/inventory/products");
       } else {
         await createProduct(formDataToSend).unwrap();
         toast.success("Product created successfully!");
         setFormData(initialFormData);
         setFilteredCategories([]);
         setNewImages([]);
-        navigate("/inventory/list");
+        navigate("/inventory/products");
       }
     } catch (error) {
       const message =
@@ -352,7 +352,7 @@ const CreateProduct = () => {
             </div>
           </div>
           <div className="page-btn">
-            <a href="/inventory/list" className="btn btn-secondary">
+            <a href="/inventory/products" className="btn btn-secondary">
               <FaArrowLeft className="me-2" /> Back to Products
             </a>
           </div>

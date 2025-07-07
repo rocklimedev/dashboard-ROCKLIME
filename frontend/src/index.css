@@ -688,11 +688,13 @@
 }
 /* Container for the entire component */
 
-/* Card body for the grid of cards */
+/* Page wrapper */
+
+/* Card body for single-column layout */
 .card-body-2 {
   padding: 16px;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 12px;
 }
 
@@ -703,9 +705,6 @@
   padding: 12px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
 }
 
 .card-list:hover {
@@ -736,14 +735,21 @@
   justify-content: flex-end;
 }
 
-.card-content .actions svg {
+.card-content .actions .action-icon {
   cursor: pointer;
   font-size: 16px;
   color: #747474;
+  transition: color 0.3s ease, transform 0.3s ease;
 }
 
-.card-content .actions svg:hover {
-  color: #333;
+.card-content .actions .edit-icon:hover {
+  color: #27ae60; /* Green for edit */
+  transform: scale(1.1);
+}
+
+.card-content .actions .delete-icon:hover {
+  color: #d63031; /* Red for delete */
+  transform: scale(1.1);
 }
 
 /* Card footer for pagination */
@@ -755,20 +761,13 @@
   justify-content: flex-end;
 }
 
-/* Checkbox styling */
-.card-list input[type="checkbox"] {
-  margin-bottom: 6px;
-  cursor: pointer;
-}
-
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .page-wrapper {
     padding: 12px;
   }
 
-  .card-body {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  .card-body-2 {
     gap: 10px;
   }
 
@@ -781,11 +780,20 @@
     line-height: 18px;
   }
 
-  .card-content .actions svg {
+  .card-content .actions .action-icon {
     font-size: 14px;
   }
 }
 
+@media (max-width: 576px) {
+  .card-content span {
+    font-size: 13px;
+  }
+
+  .card-content .actions .action-icon {
+    font-size: 13px;
+  }
+}
 /* Loading and error states */
 .loading,
 .error {
@@ -1020,32 +1028,315 @@
     content: "Actions";
   }
 }
-.product-card {
-  /* Ensure the card fits within its container and is responsive */
-  width: 100%;
-  max-width: 260px; /* Slightly adjusted from 256.9px for simplicity */
+
+/* Nav tabs */
+.nav-tabs {
+  border-bottom: 2px solid #e0e0e0;
+  margin-bottom: 20px;
+}
+
+.nav-tabs .nav-link {
+  font-size: 16px;
+  font-weight: 500;
+  color: #666;
+  padding: 10px 20px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  transition: color 0.3s ease, border-color 0.3s ease;
+}
+
+.nav-tabs .nav-link.active {
+  color: #d63031;
+  border-bottom: 2px solid #d63031;
+}
+
+.nav-tabs .nav-link:hover {
+  color: #27ae60;
+}
+
+/* Filter section */
+.filter-section {
+  margin-bottom: 20px;
+  padding: 15px;
   background: #f9f9f9;
-  box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.08);
-  border-radius: 12px;
-  overflow: hidden; /* Prevent content from overflowing */
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-/* Ensure the card's cover (image container) is properly styled */
-.ant-card-cover {
-  position: relative;
-  width: 100%;
-  height: 150px; /* Match the height from your JSX for consistency */
+.filter-form {
   display: flex;
-  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
   align-items: center;
-  overflow: hidden;
 }
 
-.product-image-container {
-  /* Remove absolute positioning to respect the card's cover layout */
+.filter-item {
+  flex: 1;
+  min-width: 200px;
+}
+
+.filter-input-wrapper {
+  position: relative;
+}
+
+.filter-input {
   width: 100%;
-  height: 100%;
-  object-fit: cover; /* Ensure the image covers the area without distortion */
-  object-position: center;
-  border-radius: 12px 12px 0 0; /* Match card's border-radius for top corners */
+  border-radius: 20px;
+  padding: 10px 10px 10px 40px;
+  height: 40px;
+  font-size: 14px;
+  border: 1px solid #ddd;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+  background: #fff;
+  transition: border-color 0.3s ease;
+}
+
+.filter-input:focus {
+  border-color: #d63031;
+  outline: none;
+}
+
+.filter-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #666;
+  font-size: 14px;
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-red {
+  background: #d63031;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-weight: 500;
+  transition: background 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.btn-red:hover {
+  background: linear-gradient(90deg, #d63031 0%, #27ae60 100%);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  transform: scale(1.05);
+}
+
+.btn-outline-red {
+  border: 1px solid #d63031;
+  color: #d63031;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-weight: 500;
+  transition: background 0.3s ease, color 0.3s ease, box-shadow 0.3s ease,
+    transform 0.3s ease;
+}
+
+.btn-outline-red:hover {
+  background: linear-gradient(90deg, #d63031 0%, #27ae60 100%);
+  color: #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  transform: scale(1.05);
+}
+
+/* Orders table section */
+.orders-table-section {
+  padding: 0 15px;
+}
+
+.orders-table-section h4 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+}
+
+.checkbox-column {
+  width: 50px;
+}
+
+.action-column {
+  width: 150px;
+}
+
+/* Status and priority badges */
+.status-badge,
+.priority-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.status-badge.created {
+  background: #007bff;
+  color: #fff;
+}
+
+.status-badge.completed {
+  background: #28a745;
+  color: #fff;
+}
+
+.priority-badge.low {
+  background: #17a2b8;
+  color: #fff;
+}
+
+.priority-badge.medium {
+  background: #ffc107;
+  color: #333;
+}
+
+.priority-badge.high {
+  background: #dc3545;
+  color: #fff;
+}
+
+/* Due date */
+.due-date-close {
+  color: #dc3545;
+  font-weight: 500;
+}
+
+.due-date-link {
+  cursor: pointer;
+  color: #007bff;
+  text-decoration: underline;
+}
+
+.due-date-link:hover {
+  color: #0056b3;
+}
+
+/* Action buttons */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-icon {
+  padding: 6px;
+  border-radius: 6px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.btn-edit {
+  background: #007bff;
+}
+
+.btn-edit:hover {
+  background: linear-gradient(90deg, #007bff 0%, #27ae60 100%);
+}
+
+.btn-hold {
+  background: #ffc107;
+  color: #333;
+}
+
+.btn-hold:hover {
+  background: linear-gradient(90deg, #ffc107 0%, #27ae60 100%);
+  color: #fff;
+}
+
+.btn-invoice {
+  background: #28a745;
+}
+
+.btn-invoice:hover {
+  background: linear-gradient(90deg, #28a745 0%, #27ae60 100%);
+}
+
+.btn-delete {
+  background: #dc3545;
+}
+
+.btn-delete:hover {
+  background: linear-gradient(90deg, #dc3545 0%, #27ae60 100%);
+}
+
+/* No data message */
+.no-data {
+  text-align: center;
+  color: #666;
+  font-size: 16px;
+  padding: 20px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .page-wrapper {
+    padding: 10px;
+  }
+
+  .content {
+    padding: 15px;
+  }
+
+  .filter-section {
+    padding: 10px;
+  }
+
+  .filter-item {
+    min-width: 100%;
+  }
+
+  .filter-input {
+    font-size: 12px;
+    height: 36px;
+  }
+
+  .filter-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .btn-red,
+  .btn-outline-red {
+    width: 100%;
+  }
+
+  .cm-table {
+    font-size: 12px;
+  }
+
+  .cm-table th,
+  .cm-table td {
+    padding: 8px;
+  }
+
+  .action-buttons {
+    flex-wrap: wrap;
+  }
+
+  .btn-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 576px) {
+  .nav-tabs .nav-link {
+    font-size: 14px;
+    padding: 8px 15px;
+  }
+
+  .orders-table-section h4 {
+    font-size: 18px;
+  }
+
+  .no-data {
+    font-size: 14px;
+  }
 }

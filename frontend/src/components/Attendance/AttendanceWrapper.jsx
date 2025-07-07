@@ -180,63 +180,65 @@ const AttendanceWrapper = ({ userId }) => {
 
   // Render overview
   const renderOverview = () => (
-    <div className="row gy-3">
-      <div className="col-lg-2 col-md-3 col-sm-4 text-center">
-        <div>
-          <span className="d-flex align-items-center justify-content-center avatar avatar-xl bg-primary-transparent fw-bold fs-20 mb-2 mx-auto">
-            {overview.totalWorkingDays}
-          </span>
-          <p className="fs-14">
-            Total Working <br /> Days
-          </p>
+    <div className="row">
+      <div className="col-xl-3 col-md-6">
+        <div className="card bg-purple border-0">
+          <div className="card-body d-flex align-items-center justify-content-between">
+            <div>
+              <p className="mb-1 text-white">Total Employees</p>
+              <h4 className="text-white"></h4>
+            </div>
+            <div>
+              <span className="avatar avatar-lg bg-purple-900">
+                <i className="ti ti-users-group"></i>
+              </span>
+            </div>
+          </div>
         </div>
       </div>
-      <div className="col-lg-2 col-md-3 col-sm-4 text-center">
-        <div>
-          <span className="d-flex align-items-center justify-content-center avatar avatar-xl bg-danger-transparent fw-bold fs-20 mb-2 mx-auto">
-            {overview.absentDays}
-          </span>
-          <p className="fs-14">
-            Absent <br /> Days
-          </p>
+      <div className="col-xl-3 col-md-6">
+        <div className="card bg-teal border-0">
+          <div className="card-body d-flex align-items-center justify-content-between">
+            <div>
+              <p className="mb-1 text-white">Active</p>
+              <h4 className="text-white"></h4>
+            </div>
+            <div>
+              <span className="avatar avatar-lg bg-teal-900">
+                <i className="ti ti-user-star"></i>
+              </span>
+            </div>
+          </div>
         </div>
       </div>
-      <div className="col-lg-2 col-md-3 col-sm-4 text-center">
-        <div>
-          <span className="d-flex align-items-center justify-content-center avatar avatar-xl bg-purple-transparent text-purple fw-bold fs-20 mb-2 mx-auto">
-            {overview.presentDays}
-          </span>
-          <p className="fs-14">
-            Present <br /> Days
-          </p>
+      <div className="col-xl-3 col-md-6">
+        <div className="card bg-secondary border-0">
+          <div className="card-body d-flex align-items-center justify-content-between">
+            <div>
+              <p className="mb-1 text-white">Inactive</p>
+              <h4 className="text-white"></h4>
+            </div>
+            <div>
+              <span className="avatar avatar-lg bg-secondary-900">
+                <i className="ti ti-user-exclamation"></i>
+              </span>
+            </div>
+          </div>
         </div>
       </div>
-      <div className="col-lg-2 col-md-3 col-sm-4 text-center">
-        <div>
-          <span className="d-flex align-items-center justify-content-center avatar avatar-xl bg-warning-transparent fw-bold fs-20 mb-2 mx-auto">
-            {overview.halfDays}
-          </span>
-          <p className="fs-14">
-            Half <br /> Days
-          </p>
-        </div>
-      </div>
-      <div className="col-lg-2 col-md-3 col-sm-4 text-center">
-        <div>
-          <span className="d-flex align-items-center justify-content-center avatar avatar-xl bg-cyan-transparent text-cyan fw-bold fs-20 mb-2 mx-auto">
-            {overview.lateDays}
-          </span>
-          <p className="fs-14">
-            Late <br /> Days
-          </p>
-        </div>
-      </div>
-      <div className="col-lg-2 col-md-3 col-sm-4 text-center">
-        <div>
-          <span className="d-flex align-items-center justify-content-center avatar avatar-xl bg-success-transparent text-success fw-bold fs-20 mb-2 mx-auto">
-            {overview.holidays}
-          </span>
-          <p className="fs-14">Holidays</p>
+      <div className="col-xl-3 col-md-6">
+        <div className="card bg-info border-0">
+          <div className="card-body d-flex align-items-center justify-content-between">
+            <div>
+              <p className="mb-1 text-white">New Joiners</p>
+              <h4 className="text-white"></h4>
+            </div>
+            <div>
+              <span className="avatar avatar-lg bg-info-900">
+                <i className="ti ti-user-check"></i>
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -341,18 +343,11 @@ const AttendanceWrapper = ({ userId }) => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        <div className="row">
-          <div className="col-xl-8 col-lg-12 d-flex">
-            <h5 className="border-bottom pb-3 mb-3">
-              Days Overview This Month
-            </h5>
-            {isUserAttendanceLoading ? (
-              <Spinner animation="border" variant="primary" />
-            ) : (
-              renderOverview()
-            )}
-          </div>
-        </div>
+        {isUserAttendanceLoading ? (
+          <Spinner animation="border" variant="primary" />
+        ) : (
+          renderOverview()
+        )}
 
         <div className="card">
           <div className="card-header d-flex align-items-center justify-content-between flex-wrap row-gap-3">
@@ -426,7 +421,7 @@ const AttendanceWrapper = ({ userId }) => {
               </Dropdown>
             </div>
           </div>
-          <div className="card-body p-0">{renderTable()}</div>
+          {renderTable()}
         </div>
       </div>
     </div>

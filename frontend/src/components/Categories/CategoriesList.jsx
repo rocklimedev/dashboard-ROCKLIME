@@ -9,33 +9,33 @@ import {
 import { useDeleteCategoryMutation } from "../../api/categoryApi";
 import PageHeader from "../Common/PageHeader";
 import AddCategoryModal from "./AddCategoryModal";
-import AddParentCategoryModal from "./AddParentCategoryModal"; // Assume this exists
+import AddParentCategoryModal from "./AddParentCategoryModal";
 import DeleteModal from "../Common/DeleteModal";
 import DataTablePagination from "../Common/DataTablePagination";
 import Keyword from "./Keyword";
 import { AiOutlineEdit } from "react-icons/ai";
-import { FcFullTrash } from "react-icons/fc";
+import { BiTrash } from "react-icons/bi";
 import { toast } from "sonner";
 
 const CategoriesList = () => {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showKeywordModal, setShowKeywordModal] = useState(false);
-  const [showParentCategoryModal, setShowParentCategoryModal] = useState(false); // New state for parent category modal
+  const [showParentCategoryModal, setShowParentCategoryModal] = useState(false);
   const [selectedParentId, setSelectedParentId] = useState(null);
   const [categoryPage, setCategoryPage] = useState(1);
-  const [parentCategoryPage, setParentCategoryPage] = useState(1); // New state for parent category pagination
+  const [parentCategoryPage, setParentCategoryPage] = useState(1);
   const [categorySearchTerm, setCategorySearchTerm] = useState("");
   const [parentSearchTerm, setParentSearchTerm] = useState("");
-  const [parentCategorySearchTerm, setParentCategorySearchTerm] = useState(""); // New state for parent category search
+  const [parentCategorySearchTerm, setParentCategorySearchTerm] = useState("");
   const [editingCategory, setEditingCategory] = useState(null);
-  const [editingParentCategory, setEditingParentCategory] = useState(null); // New state for editing parent category
+  const [editingParentCategory, setEditingParentCategory] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState(null); // Generalized item to delete (category or parent category)
-  const [deleteItemType, setDeleteItemType] = useState(null); // Type of item to delete ("Category" or "ParentCategory")
+  const [itemToDelete, setItemToDelete] = useState(null);
+  const [deleteItemType, setDeleteItemType] = useState(null);
   const [activeTab, setActiveTab] = useState("categories");
 
   const [deleteCategory] = useDeleteCategoryMutation();
-  const [deleteParentCategory] = useDeleteParentCategoryMutation(); // New mutation for deleting parent categories
+  const [deleteParentCategory] = useDeleteParentCategoryMutation();
 
   const {
     data: categoryData,
@@ -61,7 +61,6 @@ const CategoriesList = () => {
     ? parentCategoryData.data
     : [];
 
-  // Filter categories
   const filteredCategories = categories.filter((c) => {
     const categoryNameMatch = c.name
       .toLowerCase()
@@ -77,14 +76,12 @@ const CategoriesList = () => {
     return categoryNameMatch && parentNameMatch && matchesParentId;
   });
 
-  // Filter parent categories
   const filteredParentCategories = parentCategories.filter((pc) =>
     pc.name.toLowerCase().includes(parentCategorySearchTerm.toLowerCase())
   );
 
   const itemsPerPage = 20;
 
-  // Format categories for export
   const formattedCategories = filteredCategories.map((category) => ({
     categoryId: category.categoryId,
     name: category.name,
@@ -94,25 +91,21 @@ const CategoriesList = () => {
     createdAt: new Date(category.createdAt).toLocaleDateString(),
   }));
 
-  // Paginate categories
   const paginatedCategories = filteredCategories.slice(
     (categoryPage - 1) * itemsPerPage,
     categoryPage * itemsPerPage
   );
 
-  // Paginate parent categories
   const paginatedParentCategories = filteredParentCategories.slice(
     (parentCategoryPage - 1) * itemsPerPage,
     parentCategoryPage * itemsPerPage
   );
 
-  // Handlers for categories
   const handleAddCategory = () => {
     setEditingCategory(null);
     setShowCategoryModal(true);
   };
 
-  // Handlers for parent categories
   const handleAddParentCategory = () => {
     setEditingParentCategory(null);
     setShowParentCategoryModal(true);
@@ -197,20 +190,20 @@ const CategoriesList = () => {
               </div>
             </div>
 
-            <div className="row">
+            <div className="row g-3">
               {/* Add Parent Category Card */}
-              <div className="col-md-4 col-lg-3 mb-3">
+              <div className="col-md-4 col-lg-3">
                 <div
-                  className="card h-100 d-flex align-items-center justify-content-center"
+                  className="card h-100 add-card"
                   style={{ cursor: "pointer" }}
                   onClick={handleAddParentCategory}
                 >
-                  <div className="card-body text-center">
+                  <div className="card-body text-center d-flex flex-column justify-content-center">
                     <h5 className="card-title">Add New Parent Category</h5>
                     <p className="card-text">
                       Click here to create a new parent category
                     </p>
-                    <button className="btn btn-primary">
+                    <button className="btn btn-primary mt-2">
                       Add Parent Category
                     </button>
                   </div>
@@ -219,17 +212,19 @@ const CategoriesList = () => {
 
               {/* Parent Category Cards */}
               {paginatedParentCategories.map((parentCategory) => (
-                <div key={parentCategory.id} className="col-md-4 col-lg-3 mb-3">
+                <div key={parentCategory.id} className="col-md-4 col-lg-3">
                   <div className="card h-100">
-                    <div className="card-body">
-                      <h5 className="card-title">{parentCategory.name}</h5>
+                    <div className="card-body d-flex flex-column">
+                      <h5 className="card-title text-truncate">
+                        {parentCategory.name}
+                      </h5>
                       <p className="card-text">
                         Created:{" "}
                         {new Date(
                           parentCategory.createdAt
                         ).toLocaleDateString()}
                       </p>
-                      <div className="d-flex justify-content-end">
+                      <div className=" d-flex justify-content-end">
                         <a
                           className="me-2"
                           title="Edit"
@@ -250,7 +245,7 @@ const CategoriesList = () => {
                           }}
                           style={{ cursor: "pointer" }}
                         >
-                          <FcFullTrash size={20} />
+                          <BiTrash size={20} />
                         </a>
                       </div>
                     </div>
@@ -271,6 +266,7 @@ const CategoriesList = () => {
               onPageChange={setParentCategoryPage}
             />
           </Tab>
+
           <Tab eventKey="categories" title="Categories">
             <PageHeader
               title="Categories"
@@ -316,20 +312,22 @@ const CategoriesList = () => {
               </div>
             </div>
 
-            <div className="row">
+            <div className="row g-3">
               {/* Add Category Card */}
-              <div className="col-md-4 col-lg-3 mb-3">
+              <div className="col-md-4 col-lg-3">
                 <div
-                  className="card h-100 d-flex align-items-center justify-content-center"
+                  className="card h-100 add-card"
                   style={{ cursor: "pointer" }}
                   onClick={handleAddCategory}
                 >
-                  <div className="card-body text-center">
+                  <div className="card-body text-center d-flex flex-column justify-content-center">
                     <h5 className="card-title">Add New Category</h5>
                     <p className="card-text">
                       Click here to create a new category
                     </p>
-                    <button className="btn btn-primary">Add Category</button>
+                    <button className="btn btn-primary mt-2">
+                      Add Category
+                    </button>
                   </div>
                 </div>
               </div>
@@ -342,19 +340,18 @@ const CategoriesList = () => {
                   )?.name || "N/A";
 
                 return (
-                  <div
-                    key={category.categoryId}
-                    className="col-md-4 col-lg-3 mb-3"
-                  >
+                  <div key={category.categoryId} className="col-md-4 col-lg-3">
                     <div className="card h-100">
-                      <div className="card-body">
-                        <h5 className="card-title">{category.name}</h5>
+                      <div className="card-body d-flex flex-column">
+                        <h5 className="card-title text-truncate">
+                          {category.name}
+                        </h5>
                         <p className="card-text">
                           <strong style={{ color: "#25D366" }}>
                             {parentName}
                           </strong>
                         </p>
-                        <div className="d-flex justify-content-end">
+                        <div className=" d-flex justify-content-end">
                           <a
                             className="me-2"
                             title="Edit"
@@ -375,7 +372,7 @@ const CategoriesList = () => {
                             }}
                             style={{ cursor: "pointer" }}
                           >
-                            <FcFullTrash size={20} />
+                            <BiTrash size={20} />
                           </a>
                         </div>
                       </div>

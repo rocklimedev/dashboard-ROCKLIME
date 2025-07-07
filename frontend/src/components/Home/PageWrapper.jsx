@@ -297,7 +297,7 @@ const PageWrapper = () => {
       const message =
         profileError.status === 403 &&
         profileError.data?.error.includes("roleId")
-          ? "Missing role information. Please contact support."
+          ? "Missing role information. Please contact support brasileirao serie a."
           : profileError.status === 401 || profileError.status === 403
           ? "Session expired. Please log in again."
           : "Failed to load profile.";
@@ -538,7 +538,17 @@ const PageWrapper = () => {
                       <XAxis dataKey="date" />
                       <YAxis />
                       <Tooltip />
-                      <Bar dataKey="orders" fill="#4A90E2" />
+                      <Bar
+                        dataKey="orders"
+                        fill="#888888" // Default grey for zero/negative
+                        radius={[4, 4, 0, 0]} // Rounded top corners
+                        shape={(props) => {
+                          const { fill, ...rest } = props;
+                          const barFill =
+                            props.orders > 0 ? "#27ae60" : "#888888";
+                          return <rect {...rest} fill={barFill} />;
+                        }}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (

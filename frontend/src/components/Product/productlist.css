@@ -55,22 +55,24 @@
 
 .product-image-wrapper {
   width: 100%;
-  height: 200px; /* Fixed height for consistency */
+  height: 240px; /* Increased from 200px to 240px */
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  border-bottom: 1px solid #f0f0f0;
+  background-color: #fdfdfd;
 }
 
-.product-image {
+.product-image-card {
   width: 100%;
   height: 100%;
-  object-fit: contain; /* Ensure image fits without zooming */
+  object-fit: contain; /* Use contain to preserve aspect ratio */
   object-position: center;
   transition: transform 0.3s ease;
 }
 
-.ecommerce-product-card:hover .product-image {
+.ecommerce-product-card:hover .product-image-card {
   transform: scale(1.05); /* Subtle zoom effect on hover */
 }
 
@@ -101,7 +103,7 @@
   line-height: 32px;
   text-align: center;
   background: rgba(255, 255, 255, 0.9);
-  border-radius: 50%;
+  border-radius: 50 VENUSaur;
 }
 
 .heart-button:hover {
@@ -129,6 +131,7 @@
   margin-top: 8px;
 }
 
+/* Removed hover effect to prevent purple color change */
 .product-brand {
   font-size: 13px;
   color: #666;

@@ -4,8 +4,7 @@ import {
   useGetAllBrandsQuery,
   useDeleteBrandMutation,
 } from "../../api/brandsApi";
-import { AiOutlineEdit } from "react-icons/ai";
-import { FcEmptyTrash } from "react-icons/fc";
+import { AiOutlineEdit, AiOutlineDelete } from "react-icons/ai";
 import AddBrand from "./AddBrandModal";
 import DeleteModal from "../Common/DeleteModal";
 import { toast } from "sonner";
@@ -16,14 +15,13 @@ const Brands = () => {
   const [deleteBrand, { isLoading: isDeleting }] = useDeleteBrandMutation();
   const brands = Array.isArray(data) ? data : [];
 
-  // State for modals, selected brand, deletion, pagination, and checkboxes
+  // State for modals, selected brand, deletion, and pagination
   const [showModal, setShowModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [selectedBrand, setSelectedBrand] = useState(null);
   const [brandToDelete, setBrandToDelete] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedBrands, setSelectedBrands] = useState([]);
   const itemsPerPage = 20;
 
   // Format brands for tableData prop
@@ -32,7 +30,7 @@ const Brands = () => {
     brandName: brand.brandName,
     brandSlug: brand.brandSlug,
     createdAt: new Date(brand.createdAt).toLocaleDateString(),
-    status: "Active", // Hardcoded to match table display; adjust if dynamic
+    status: "Active", // Hardcoded; adjust if dynamic status is available
   }));
 
   // Handle add brand
@@ -70,7 +68,6 @@ const Brands = () => {
       }
       setShowDeleteModal(false);
       setBrandToDelete(null);
-      setSelectedBrands([]);
       refetch();
     } catch (err) {
       toast.error(
@@ -90,35 +87,48 @@ const Brands = () => {
   // Handle page change
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
-    setSelectedBrands([]);
-  };
-
-  // Checkbox handlers
-  const handleSelectAll = () => {
-    const currentPageBrandIds = paginatedBrands.map((brand) => brand.id);
-    setSelectedBrands(
-      selectedBrands.length === currentPageBrandIds.length
-        ? []
-        : currentPageBrandIds
-    );
-  };
-
-  const toggleBrand = (id) => {
-    setSelectedBrands((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
   };
 
   // Paginated brands
-  const paginatedBrands = (() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return brands.slice(startIndex, endIndex);
-  })();
+  const paginatedBrands = brands.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
-  if (isLoading) return <p>Loading...</p>;
-  if (error) return <p>Error fetching brands: {JSON.stringify(error)}</p>;
-  if (brands.length === 0) return <p>No brands available.</p>;
+  if (isLoading) {
+    return (
+      <div className="page-wrapper">
+        <div className="content text-center">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <p className="mt-2">Loading brands...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="page-wrapper">
+        <div className="content text-center">
+          <p className="text-danger">
+            Error fetching brands: {JSON.stringify(error)}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (brands.length === 0) {
+    return (
+      <div className="page-wrapper">
+        <div className="content text-center">
+          <p>No brands available.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page-wrapper">
@@ -127,17 +137,25 @@ const Brands = () => {
           title="Brands"
           subtitle="Manage your brands"
           onAdd={handleAddBrand}
-          tableData={formattedBrands} // Pass formatted brands to PageHeader
+          tableData={formattedBrands}
         />
         <div className="card">
-          <div className="card-body-2 p-0">
+          <div className="card-body-2">
             {paginatedBrands.map((brand) => (
               <div className="card-list" key={brand.id}>
                 <div className="card-content">
                   <span>{brand.brandName}</span>
                   <div className="actions">
-                    <AiOutlineEdit onClick={() => handleEditBrand(brand)} />
-                    <FcEmptyTrash onClick={() => handleDeleteBrand(brand)} />
+                    <AiOutlineEdit
+                      className="action-icon edit-icon"
+                      onClick={() => handleEditBrand(brand)}
+                      aria-label={`Edit ${brand.brandName}`}
+                    />
+                    <AiOutlineDelete
+                      className="action-icon delete-icon"
+                      onClick={() => handleDeleteBrand(brand)}
+                      aria-label={`Delete ${brand.brandName}`}
+                    />
                   </div>
                 </div>
               </div>

@@ -342,51 +342,64 @@ const CheckProductCodeStatus = () => {
         {/* Search Box */}
         <div className="card" style={styles.searchCard}>
           <div className="card-body p-4">
-            <div style={styles.searchInputWrapper}>
-              <span style={styles.searchIcon}>
-                <i className="ti ti-search"></i>
-              </span>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Search Product Code"
-                value={searchCode}
-                onChange={(e) => setSearchCode(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                style={styles.searchInput}
-                aria-label="Search product code"
-              />
-            </div>
-            <div style={styles.searchInputWrapper}>
-              <span style={styles.searchIcon}>
-                <i className="ti ti-filter"></i>
-              </span>
-              <select
-                className="form-control"
-                value={selectedFilterCategory}
-                onChange={(e) => setSelectedFilterCategory(e.target.value)}
-                style={styles.searchInput}
-                aria-label="Filter by category"
+            <div
+              style={{
+                display: "flex",
+                gap: "15px",
+                flexWrap: "wrap",
+                justifyContent: "center",
+              }}
+            >
+              <div
+                style={{
+                  ...styles.searchInputWrapper,
+                  flex: "1 1 300px",
+                  maxWidth: "400px",
+                }}
               >
-                <option value="">All Categories</option>
-                {categories.map((cat) => (
-                  <option key={cat.categoryId} value={cat.categoryId}>
-                    {cat.name}{" "}
-                    {cat.parentcategories?.name
-                      ? `(${cat.parentcategories.name})`
-                      : ""}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="text-center">
-              <button
-                className="btn btn-primary"
-                onClick={handleSearch}
-                disabled={!searchCode && !selectedFilterCategory}
+                <span style={styles.searchIcon}>
+                  <i className="ti ti-search"></i>
+                </span>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Search Product Code"
+                  value={searchCode}
+                  onChange={(e) => setSearchCode(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                  style={styles.searchInput}
+                  aria-label="Search product code"
+                />
+              </div>
+
+              <div
+                style={{
+                  ...styles.searchInputWrapper,
+                  flex: "1 1 300px",
+                  maxWidth: "400px",
+                }}
               >
-                Search
-              </button>
+                <span style={styles.searchIcon}>
+                  <i className="ti ti-filter"></i>
+                </span>
+                <select
+                  className="form-control"
+                  value={selectedFilterCategory}
+                  onChange={(e) => setSelectedFilterCategory(e.target.value)}
+                  style={styles.searchInput}
+                  aria-label="Filter by category"
+                >
+                  <option value="">All Categories</option>
+                  {categories.map((cat) => (
+                    <option key={cat.categoryId} value={cat.categoryId}>
+                      {cat.name}{" "}
+                      {cat.parentcategories?.name
+                        ? `(${cat.parentcategories.name})`
+                        : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {/* Result display */}
@@ -434,20 +447,6 @@ const CheckProductCodeStatus = () => {
             <h5 className="mb-3" style={styles.pageTitle}>
               Explore Products by Category
             </h5>
-            <div style={styles.searchInputWrapper}>
-              <span style={styles.searchIcon}>
-                <i className="ti ti-search"></i>
-              </span>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Search Categories"
-                value={searchCategory}
-                onChange={(e) => setSearchCategory(e.target.value)}
-                style={styles.searchInput}
-                aria-label="Search categories"
-              />
-            </div>
             <div className="row mt-3">
               {paginatedCategories.length > 0 ? (
                 paginatedCategories.map((cat) => (
