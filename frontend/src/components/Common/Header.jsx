@@ -12,6 +12,34 @@ import logo_small from "../../assets/img/fav_icon.png";
 import { CgShoppingCart } from "react-icons/cg";
 import { useLogoutMutation } from "../../api/authApi";
 
+// Add custom CSS to ensure avatar is circular
+const styles = `
+  .circular-avatar {
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 50% !important;
+    object-fit: cover;
+    display: inline-block;
+    overflow: hidden;
+  }
+  .avatar-container {
+    width: 40px;
+    height: 40px;
+    display: inline-block;
+  }
+  .menu-avatar-container {
+    width: 50px;
+    height: 50px;
+    display: inline-block;
+  }
+`;
+
+// Inject styles into the document
+const styleSheet = document.createElement("style");
+styleSheet.type = "text/css";
+styleSheet.innerText = styles;
+document.head.appendChild(styleSheet);
+
 const Header = ({ toggleSidebar, isSidebarOpen }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -46,13 +74,15 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
         key="profile-header"
         className="d-flex align-items-center p-3 profileset"
       >
-        <Avatar
-          name={user?.user?.name || "John Smilga"}
-          src={user?.user?.profileImage || "/assets/img/profiles/avator1.jpg"}
-          size="50"
-          round={true}
-          className="me-2"
-        />
+        <span className="menu-avatar-container me-2">
+          <Avatar
+            name={user?.user?.name || "John Smilga"}
+            src={user?.user?.profileImage || "/assets/img/profiles/avator1.jpg"}
+            size="50"
+            round={true}
+            className="circular-avatar"
+          />
+        </span>
         <div>
           <h6 className="fw-medium mb-0">
             {user?.user?.name || "John Smilga"}
@@ -157,7 +187,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                   onClick={(e) => e.preventDefault()}
                 >
                   <span className="user-info p-0">
-                    <span className="user-letter">
+                    <span className="user-letter avatar-container">
                       <Avatar
                         name={user?.user?.name || "John Smilga"}
                         src={
@@ -166,7 +196,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                         }
                         size="40"
                         round={true}
-                        className="img-fluid"
+                        className="circular-avatar"
                       />
                     </span>
                   </span>
