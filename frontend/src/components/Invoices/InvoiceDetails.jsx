@@ -184,20 +184,8 @@ const InvoiceDetails = () => {
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
     >
-      <style>
-        {`
-          ${globalStyles}
-          .draggable-content {
-            transform: translate(${position.x}px, ${position.y}px);
-          }
-          @media print {
-            .btn, .page-header { display: none; }
-            .draggable-content { transform: none !important; position: static !important; }
-          }
-        `}
-      </style>
       <div style={{ position: "absolute", top: "20px", left: "20px" }}>
-        <Link to="/invoices" className="btn btn-primary">
+        <Link to="/invoices/list" className="btn btn-primary">
           <i className="me-2" data-feather="arrow-left"></i>Back to Invoices
         </Link>
         <button

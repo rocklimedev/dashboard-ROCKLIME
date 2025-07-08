@@ -332,6 +332,7 @@ const OrderWrapper = () => {
                                 {order.dueDate ? (
                                   <span
                                     className="due-date-link"
+                                    style={{ color: "#e31e24" }}
                                     onClick={() =>
                                       handleOpenDatesModal(
                                         order.dueDate,
