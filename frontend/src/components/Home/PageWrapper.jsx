@@ -406,19 +406,19 @@ const PageWrapper = () => {
                 <span>User profile not loaded</span>
               ) : !hasClockedIn ? (
                 <button
-                  className="btn btn-red"
+                  className="btn btn-clock-in" // Changed from btn-red to btn-clock-in
                   onClick={handleClockIn}
                   disabled={isClockInLoading || isClockOutLoading}
-                  aria-label="In"
+                  aria-label="Clock In"
                 >
                   {isClockInLoading ? "Clocking In..." : "In"}
                 </button>
               ) : !hasClockedOut ? (
                 <button
-                  className="btn btn-red"
+                  className="btn btn-clock-out" // Changed from btn-red to btn-clock-out
                   onClick={handleClockOut}
                   disabled={isClockInLoading || isClockOutLoading}
-                  aria-label="Out"
+                  aria-label="Clock Out"
                 >
                   {isClockOutLoading ? "Clocking Out..." : "Out"}
                 </button>

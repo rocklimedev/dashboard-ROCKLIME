@@ -33,7 +33,7 @@
 }
 
 .search-input-wrapper .form-control:focus {
-  border-color: #17a2b8;
+  border-color: #e31e24;
   box-shadow: 0 0 5px rgba(23, 162, 184, 0.2);
 }
 
@@ -55,7 +55,7 @@
 }
 
 .invoice-link {
-  color: #17a2b8;
+  color: #e31e24;
   text-decoration: none;
   font-weight: 600;
 }

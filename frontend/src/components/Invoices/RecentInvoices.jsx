@@ -6,7 +6,6 @@ import {
   Col,
   Table,
   Button,
-  Dropdown,
   Form,
   Spinner,
   Alert,
@@ -29,14 +28,18 @@ import {
   FaSearch,
   FaFileInvoice,
 } from "react-icons/fa";
+import { Select } from "antd"; // Import Ant Design Select
 import EditInvoice from "./EditInvoice";
 import CreateInvoiceFromQuotation from "./CreateInvoiceFromQuotation";
 import DeleteModal from "../Common/DeleteModal";
 import DataTablePagination from "../Common/DataTablePagination";
 import "./recentinvoices.css";
 
+// Destructure Option from Select for cleaner code
+const { Option } = Select;
+
 const RecentInvoices = () => {
-  // Queries
+  // Queries (unchanged)
   const {
     data: invoiceData,
     isLoading: invoiceLoading,
@@ -66,27 +69,26 @@ const RecentInvoices = () => {
     useCreateInvoiceMutation();
   const [deleteInvoice, { isLoading: isDeleting }] = useDeleteInvoiceMutation();
 
-  // Log quotation data for debugging
+  // Log quotation data for debugging (unchanged)
   useEffect(() => {
     console.log("Quotation Data:", quotationData);
   }, [quotationData]);
 
-  // Data assignments
+  // Data assignments (unchanged)
   const invoices = invoiceData?.data || [];
   const customers = customerData?.data || [];
   const addresses = addressData?.data || [];
   const users = userData?.users || [];
-  // Handle case where quotationData is an array directly
   const quotations = Array.isArray(quotationData)
     ? quotationData
     : quotationData?.data || [];
 
-  // Log quotations to confirm assignment
+  // Log quotations to confirm assignment (unchanged)
   useEffect(() => {
     console.log("Quotations:", quotations);
   }, [quotations]);
 
-  // State management
+  // State management (unchanged)
   const [selectedCustomer, setSelectedCustomer] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
   const [sortBy, setSortBy] = useState("Recently Added");
@@ -102,7 +104,7 @@ const RecentInvoices = () => {
   const [selectedQuotation, setSelectedQuotation] = useState(null);
   const itemsPerPage = 12;
 
-  // Memoized maps
+  // Memoized maps (unchanged)
   const customerMap = useMemo(() => {
     const map = {};
     customers.forEach((cust) => {
@@ -175,7 +177,7 @@ const RecentInvoices = () => {
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ") || "N/A";
 
-  // Filtered and sorted invoices
+  // Filtered and sorted invoices (unchanged)
   const filteredInvoices = useMemo(() => {
     let result = [...invoices];
     if (selectedCustomer) {
@@ -211,7 +213,7 @@ const RecentInvoices = () => {
         result.sort((a, b) => a.invoiceNo.localeCompare(b.invoiceNo));
         break;
       case "Descending":
-        result.sort((a, b) => b.invoiceNo.localeCompare(b.invoiceNo));
+        result.sort((a, b) => b.invoiceNo.localeCompare(a.invoiceNo));
         break;
       case "Recently Added":
         result.sort(
@@ -252,7 +254,7 @@ const RecentInvoices = () => {
     addressMap,
   ]);
 
-  // Filtered and sorted quotations
+  // Filtered and sorted quotations (unchanged)
   const filteredQuotations = useMemo(() => {
     let result = [...quotations];
     if (selectedCustomer) {
@@ -325,20 +327,19 @@ const RecentInvoices = () => {
     return result;
   }, [quotations, selectedCustomer, sortBy, searchQuery, customerMap]);
 
-  // Paginated invoices
+  // Paginated invoices (unchanged)
   const paginatedInvoices = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return filteredInvoices.slice(startIndex, endIndex);
   }, [filteredInvoices, currentPage]);
 
-  // Paginated quotations
+  // Paginated quotations (unchanged)
   const paginatedQuotations = useMemo(() => {
     const startIndex = (currentQuotationPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     const paginated = filteredQuotations.slice(startIndex, endIndex);
     console.log("Paginated Quotations:", paginated);
-    // Reset page if out of bounds
     if (
       paginated.length === 0 &&
       filteredQuotations.length > 0 &&
@@ -349,7 +350,7 @@ const RecentInvoices = () => {
     return paginated;
   }, [filteredQuotations, currentQuotationPage]);
 
-  // Handlers
+  // Handlers (unchanged)
   const handleSelectAll = () => {
     const currentPageInvoices = paginatedInvoices.map((inv) => inv.invoiceId);
     setSelectedInvoices(
@@ -469,77 +470,70 @@ const RecentInvoices = () => {
                 </div>
               </Col>
               <Col md={6} lg={4} className="mb-3">
-                <Dropdown>
-                  <Dropdown.Toggle variant="outline-primary" className="w-100">
-                    {selectedCustomer
-                      ? customerMap[selectedCustomer] || "Unknown Customer"
-                      : "All Customers"}
-                  </Dropdown.Toggle>
-                  <Dropdown.Menu>
-                    <Dropdown.Item onClick={() => setSelectedCustomer("")}>
-                      All Customers
-                    </Dropdown.Item>
-                    {customers.map((cust) => (
-                      <Dropdown.Item
-                        key={cust.customerId}
-                        onClick={() => setSelectedCustomer(cust.customerId)}
-                      >
-                        {cust.name || "Unnamed Customer"}
-                      </Dropdown.Item>
-                    ))}
-                  </Dropdown.Menu>
-                </Dropdown>
+                <Select
+                  style={{ width: "100%" }}
+                  placeholder="All Customers"
+                  value={selectedCustomer || undefined}
+                  onChange={(value) => setSelectedCustomer(value)}
+                  allowClear
+                  showSearch
+                  optionFilterProp="children"
+                  filterOption={(input, option) =>
+                    option.children.toLowerCase().includes(input.toLowerCase())
+                  }
+                >
+                  <Option value="">All Customers</Option>
+                  {customers.map((cust) => (
+                    <Option key={cust.customerId} value={cust.customerId}>
+                      {cust.name || "Unnamed Customer"}
+                    </Option>
+                  ))}
+                </Select>
               </Col>
               <Col md={6} lg={2} className="mb-3">
-                <Dropdown>
-                  <Dropdown.Toggle variant="outline-primary" className="w-100">
-                    {selectedStatus || "All Statuses"}
-                  </Dropdown.Toggle>
-                  <Dropdown.Menu>
-                    <Dropdown.Item onClick={() => setSelectedStatus("")}>
-                      All Statuses
-                    </Dropdown.Item>
-                    {statuses.map((status) => (
-                      <Dropdown.Item
-                        key={status}
-                        onClick={() => setSelectedStatus(status)}
-                      >
-                        {status}
-                      </Dropdown.Item>
-                    ))}
-                  </Dropdown.Menu>
-                </Dropdown>
+                <Select
+                  style={{ width: "100%" }}
+                  placeholder="All Statuses"
+                  value={selectedStatus || undefined}
+                  onChange={(value) => setSelectedStatus(value)}
+                  allowClear
+                >
+                  <Option value="">All Statuses</Option>
+                  {statuses.map((status) => (
+                    <Option key={status} value={status}>
+                      {status}
+                    </Option>
+                  ))}
+                </Select>
               </Col>
               <Col md={6} lg={2} className="mb-3">
-                <Dropdown>
-                  <Dropdown.Toggle variant="outline-primary" className="w-100">
-                    Sort By: {sortBy}
-                  </Dropdown.Toggle>
-                  <Dropdown.Menu>
-                    {[
-                      "Recently Added",
-                      "Ascending",
-                      "Descending",
-                      "Last Month",
-                      "Last 7 Days",
-                    ].map((sort) => (
-                      <Dropdown.Item key={sort} onClick={() => setSortBy(sort)}>
-                        {sort}
-                      </Dropdown.Item>
-                    ))}
-                  </Dropdown.Menu>
-                </Dropdown>
+                <Select
+                  style={{ width: "100%" }}
+                  value={sortBy}
+                  onChange={(value) => setSortBy(value)}
+                >
+                  {[
+                    "Recently Added",
+                    "Ascending",
+                    "Descending",
+                    "Last Month",
+                    "Last 7 Days",
+                  ].map((sort) => (
+                    <Option key={sort} value={sort}>
+                      {sort}
+                    </Option>
+                  ))}
+                </Select>
               </Col>
             </Row>
           </div>
 
-          {/* Tabs for Invoices and Quotations */}
+          {/* Tabs for Invoices and Quotations (unchanged) */}
           <Tabs
             defaultActiveKey="invoices"
             id="invoices-quotations-tabs"
             className="mb-4"
           >
-            {/* Invoices Tab */}
             <Tab eventKey="invoices" title="Invoices">
               <h2 className="section-title mt-3">Invoices</h2>
               {filteredInvoices.length === 0 ? (
@@ -676,7 +670,6 @@ const RecentInvoices = () => {
               </div>
             </Tab>
 
-            {/* Quotations Tab */}
             <Tab eventKey="quotations" title="Quotations">
               <h2 className="section-title mt-3">Quotations</h2>
               {quotations.length === 0 && !isLoading && !quotationError ? (

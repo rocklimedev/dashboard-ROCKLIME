@@ -176,6 +176,7 @@ const QuotationList = () => {
                         onClick={() =>
                           handleOpenProductModal(quotation.products)
                         }
+                        style={{ color: "#e31e24" }}
                         aria-label="View products"
                       >
                         View Products ({getProductCount(quotation.products)})

@@ -23,40 +23,45 @@
   margin: 5px 0 0;
 }
 
-.dashboard-actions .btn {
-  padding: 10px 20px;
-  margin-left: 15px;
+/* Base button styles (if not already defined) */
+.btn {
+  padding: 8px 16px;
   border: none;
-  border-radius: 8px;
-  background: #ccc;
+  border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
-  transition: background 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-.dashboard-actions .btn:hover {
-  background: #b0b0b0;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  transform: scale(1.05);
+/* Clock In button (Green) */
+.btn-clock-in {
+  background-color: #27ae60; /* Green color */
+  color: white;
 }
 
-.btn-red {
-  background: #d63031;
-  color: #fff;
-  transition: background 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+.btn-clock-in:hover:not(:disabled) {
+  background-color: #2e8b57; /* Darker green with a greyish tone */
+  color: #d3d3d3; /* Light grey text on hover */
 }
 
-.btn-red:hover {
-  background: linear-gradient(90deg, #d63031 0%, #27ae60 100%);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  transform: scale(1.05);
+/* Clock Out button (Red) */
+.btn-clock-out {
+  background-color: #e74c3c; /* Red color */
+  color: white;
 }
 
-.btn-red:disabled {
-  background: #e07b7b;
+.btn-clock-out:hover:not(:disabled) {
+  background-color: #c0392b; /* Darker red with a greyish tone */
+  color: #d3d3d3; /* Light grey text on hover */
+}
+
+/* Disabled state for both buttons */
+.btn-clock-in:disabled,
+.btn-clock-out:disabled {
+  background-color: #ccc;
   cursor: not-allowed;
+  color: #666;
 }
-
 /* Summary cards */
 .summary-cards {
   display: grid;

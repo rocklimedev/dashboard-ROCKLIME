@@ -276,7 +276,6 @@ const CategoriesList = () => {
             />
 
             <div className="mb-4">
-              <label className="form-label">Filter by Parent Category:</label>
               <select
                 className="form-select"
                 value={selectedParentId || ""}

@@ -191,7 +191,10 @@ const UserList = () => {
         />
         <div className="row">
           <div className="col-xl-3 col-md-6">
-            <div className="card  border-0" style={{ backgroundColor: "red" }}>
+            <div
+              className="card  border-0"
+              style={{ backgroundColor: "#e31e24" }}
+            >
               <div className="card-body d-flex align-items-center justify-content-between">
                 <div>
                   <p className="mb-1 text-white">Total Employees</p>
@@ -206,7 +209,10 @@ const UserList = () => {
             </div>
           </div>
           <div className="col-xl-3 col-md-6">
-            <div className="card  border-0" style={{ backgroundColor: "red" }}>
+            <div
+              className="card  border-0"
+              style={{ backgroundColor: "#e31e24" }}
+            >
               <div className="card-body d-flex align-items-center justify-content-between">
                 <div>
                   <p className="mb-1 text-white">Active</p>
@@ -221,7 +227,10 @@ const UserList = () => {
             </div>
           </div>
           <div className="col-xl-3 col-md-6">
-            <div className="card  border-0" style={{ backgroundColor: "red" }}>
+            <div
+              className="card  border-0"
+              style={{ backgroundColor: "#e31e24" }}
+            >
               <div className="card-body d-flex align-items-center justify-content-between">
                 <div>
                   <p className="mb-1 text-white">Inactive</p>
@@ -236,7 +245,10 @@ const UserList = () => {
             </div>
           </div>
           <div className="col-xl-3 col-md-6">
-            <div className="card  border-0" style={{ backgroundColor: "red" }}>
+            <div
+              className="card  border-0"
+              style={{ backgroundColor: "#e31e24" }}
+            >
               <div className="card-body d-flex align-items-center justify-content-between">
                 <div>
                   <p className="mb-1 text-white">New Joiners</p>
