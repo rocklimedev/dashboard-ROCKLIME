@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import PageHeader from "../Common/PageHeader";
-import { useGetRolesQuery } from "../../api/rolesApi"; // Removed useCreateRoleMutation
+import { useGetRolesQuery } from "../../api/rolesApi";
 import { useGetAllPermissionsQuery } from "../../api/permissionApi";
 import PermissionsTable from "./PermissionsTable";
 import AddRoleModal from "./AddRoleModal";
+import DeleteModal from "../Common/DeleteModal";
 import { Tabs, Tab } from "react-bootstrap";
+
 const RolePermission = () => {
   const { data: roles, isLoading, isError } = useGetRolesQuery();
   const {
@@ -12,8 +14,13 @@ const RolePermission = () => {
     isLoading: isPermissionsLoading,
     isError: isPermissionsError,
   } = useGetAllPermissionsQuery();
+
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState("roles");
+
+  // ✅ Delete modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedRole, setSelectedRole] = useState(null);
 
   const handleOpenRoleModal = () => {
     setShowModal(true);
@@ -21,6 +28,23 @@ const RolePermission = () => {
 
   const handleCloseRoleModal = () => {
     setShowModal(false);
+  };
+
+  // ✅ Delete modal handlers
+  const handleOpenDeleteModal = (role) => {
+    setSelectedRole(role);
+    setShowDeleteModal(true);
+  };
+
+  const handleCancelDelete = () => {
+    setSelectedRole(null);
+    setShowDeleteModal(false);
+  };
+
+  const handleConfirmDelete = (role) => {
+    // TODO: Replace with your delete mutation logic (e.g. useDeleteRoleMutation)
+    console.log("Deleting role:", role);
+    setShowDeleteModal(false);
   };
 
   const permissions = Array.isArray(permissionsData?.permissions)
@@ -84,6 +108,10 @@ const RolePermission = () => {
                           </a>
                           <a
                             href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleOpenDeleteModal(role);
+                            }}
                             className="d-flex align-items-center p-2 border rounded"
                           >
                             <i className="ti ti-trash"></i>
@@ -96,6 +124,7 @@ const RolePermission = () => {
               </table>
             </div>
           </Tab>
+
           <Tab eventKey="permissions" title="Permissions">
             <PageHeader
               title="Permissions"
@@ -104,7 +133,16 @@ const RolePermission = () => {
             <PermissionsTable permissions={permissions} />
           </Tab>
         </Tabs>
+
+        {/* ✅ Modals */}
         <AddRoleModal show={showModal} onClose={handleCloseRoleModal} />
+        <DeleteModal
+          item={selectedRole}
+          itemType="Role"
+          isVisible={showDeleteModal}
+          onConfirm={handleConfirmDelete}
+          onCancel={handleCancelDelete}
+        />
       </div>
     </div>
   );

@@ -14,6 +14,7 @@ import {
   Menu,
   Pagination,
   Empty,
+  Table,
 } from "antd";
 import {
   ShoppingCartOutlined,
@@ -26,11 +27,11 @@ import {
 import {
   useGetAllProductsQuery,
   useDeleteProductMutation,
+  useUpdateProductFeaturedMutation,
 } from "../../api/productApi";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import { useGetAllBrandsQuery } from "../../api/brandsApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
-import { useUpdateProductFeaturedMutation } from "../../api/productApi";
 import {
   useAddProductToCartMutation,
   useGetCartQuery,
@@ -64,6 +65,9 @@ const ProductsList = () => {
   const [removeFromCart] = useRemoveFromCartMutation();
   const navigate = useNavigate();
   const userId = user?.user?.userId;
+
+  // State for view mode (CardView or ListView)
+  const [viewMode, setViewMode] = useState("card");
 
   const products = useMemo(
     () =>
@@ -162,12 +166,15 @@ const ProductsList = () => {
             oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
             matchesDate = new Date(product.createdAt) >= oneMonthAgo;
           }
+          const matchesFeatured =
+            filters.sortBy !== "Featured" || product.isFeatured === true;
           return (
             matchesCreator &&
             matchesCategory &&
             matchesBrand &&
             matchesSearch &&
-            matchesDate
+            matchesDate &&
+            matchesFeatured
           );
         })
         .sort((a, b) => {
@@ -186,6 +193,13 @@ const ProductsList = () => {
               return (
                 (Number(b.sellingPrice) || 0) - (Number(a.sellingPrice) || 0)
               );
+            case "Featured":
+              // Prioritize featured products, then sort by name within featured
+              return (
+                b.isFeatured - a.isFeatured ||
+                a.name?.localeCompare(b.name || "") ||
+                0
+              );
             default:
               return 0;
           }
@@ -194,6 +208,24 @@ const ProductsList = () => {
   }, [filters]);
 
   const filteredProducts = applyFilters(products, customers);
+
+  // Preprocess tableData for PDF/Excel export
+  const formattedTableData = useMemo(
+    () =>
+      filteredProducts.map((product) => ({
+        Name: product.name || "N/A",
+        Brand: getBrandsName(product.brandId),
+        Category: getCategoryName(product.categoryId),
+        Price: formatPrice(product.sellingPrice),
+        Stock:
+          product.quantity > 0
+            ? `${product.quantity} in stock`
+            : "Out of Stock",
+        Featured: product.isFeatured ? "Yes" : "No",
+      })),
+    [filteredProducts, getBrandsName, getCategoryName, formatPrice]
+  );
+
   const offset = (currentPage - 1) * itemsPerPage;
   const currentItems = filteredProducts.slice(offset, offset + itemsPerPage);
 
@@ -361,6 +393,105 @@ const ProductsList = () => {
     // Implement order conversion logic
   };
 
+  // Table columns for ListView
+  const columns = [
+    {
+      title: "Image",
+      dataIndex: "images",
+      key: "images",
+      render: (images) => (
+        <img
+          src={images?.[0] || pos}
+          alt="Product"
+          style={{ width: 50, height: 50, objectFit: "cover" }}
+        />
+      ),
+      width: 80,
+    },
+    {
+      title: "Name",
+      dataIndex: "name",
+      key: "name",
+      render: (text, record) => (
+        <Link to={`/product/${record.productId}`}>{text || "N/A"}</Link>
+      ),
+    },
+    {
+      title: "Brand",
+      dataIndex: "brandId",
+      key: "brand",
+      render: (brandId) => getBrandsName(brandId),
+    },
+    {
+      title: "Category",
+      dataIndex: "categoryId",
+      key: "category",
+      render: (categoryId) => getCategoryName(categoryId),
+    },
+    {
+      title: "Price",
+      dataIndex: "sellingPrice",
+      key: "sellingPrice",
+      render: (price) => formatPrice(price),
+    },
+    {
+      title: "Stock",
+      dataIndex: "quantity",
+      key: "quantity",
+      render: (quantity) =>
+        quantity > 0 ? `${quantity} in stock` : "Out of Stock",
+    },
+    {
+      title: "Featured",
+      key: "featured",
+      render: (_, record) => (
+        <Button
+          type="text"
+          icon={
+            featuredLoadingStates[record.productId] ? (
+              <Spin size="small" />
+            ) : record.isFeatured ? (
+              <HeartFilled style={{ color: "#ff4d4f" }} />
+            ) : (
+              <HeartOutlined style={{ color: "#ff4d4f" }} />
+            )
+          }
+          onClick={() => handleToggleFeatured(record)}
+          disabled={featuredLoadingStates[record.productId]}
+        />
+      ),
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      render: (_, record) => (
+        <div style={{ display: "flex", gap: 8 }}>
+          <Tooltip title={record.quantity <= 0 ? "Out of stock" : ""}>
+            <Button
+              icon={
+                cartLoadingStates[record.productId] ? (
+                  <Spin size="small" />
+                ) : (
+                  <ShoppingCartOutlined />
+                )
+              }
+              onClick={() => handleAddToCart(record)}
+              disabled={
+                cartLoadingStates[record.productId] ||
+                (record.quantity ?? 0) <= 0
+              }
+            >
+              Add to Cart
+            </Button>
+          </Tooltip>
+          <Dropdown overlay={menu(record)} trigger={["click"]}>
+            <Button type="text" icon={<MoreOutlined />} />
+          </Dropdown>
+        </div>
+      ),
+    },
+  ];
+
   if (isLoading || userLoading) {
     return (
       <div className="loading-container text-center py-5">
@@ -387,15 +518,14 @@ const ProductsList = () => {
           title="Products"
           subtitle="Explore our latest collection"
           onAdd={handleAddProduct}
-          extra={
-            <Button
-              style={{ color: "#c72c41" }}
-              icon={<ShoppingCartOutlined />}
-              onClick={() => document.getElementById("cart-modal").click()}
-            >
-              Cart ({cartItems.length})
-            </Button>
-          }
+          tableData={formattedTableData} // Pass formatted data for export
+          extra={{
+            viewMode,
+            onViewToggle: (checked) => setViewMode(checked ? "card" : "list"),
+            showViewToggle: true,
+            cartItems,
+            onCartClick: () => document.getElementById("cart-modal").click(),
+          }}
         />
         <Cart
           cartItems={cartItems}
@@ -459,6 +589,7 @@ const ProductsList = () => {
                 <Option value="Price High to Low">Price: High to Low</Option>
                 <Option value="Last 7 Days">Last 7 Days</Option>
                 <Option value="Last Month">Last Month</Option>
+                <Option value="Featured">Featured</Option> {/* New Option */}
               </Select>
             </Form.Item>
             <Form.Item>
@@ -472,7 +603,7 @@ const ProductsList = () => {
           <div className="empty-container text-center py-5">
             <Empty description="No products match the filters." />
           </div>
-        ) : (
+        ) : viewMode === "card" ? (
           <div className="products-section">
             <Row gutter={[24, 24]} justify="center">
               {currentItems.map((product) => (
@@ -511,7 +642,7 @@ const ProductsList = () => {
                             disabled={featuredLoadingStates[product.productId]}
                           />
                           {product.quantity <= 0 && (
-                            <badge
+                            <Badge
                               count="Out of Stock"
                               className="out-of-stock-badge"
                             />
@@ -584,6 +715,27 @@ const ProductsList = () => {
                 </Col>
               ))}
             </Row>
+            <div className="pagination-container text-center mt-4">
+              <Pagination
+                current={currentPage}
+                total={filteredProducts.length}
+                pageSize={itemsPerPage}
+                onChange={(page) => setCurrentPage(page)}
+                showSizeChanger={false}
+                showQuickJumper
+                size="small"
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="products-section">
+            <Table
+              columns={columns}
+              dataSource={currentItems}
+              rowKey="productId"
+              pagination={false}
+              scroll={{ x: true }}
+            />
             <div className="pagination-container text-center mt-4">
               <Pagination
                 current={currentPage}

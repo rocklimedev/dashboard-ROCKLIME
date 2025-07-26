@@ -30,6 +30,7 @@ const connectMongoDB = require("./config/dbMongo");
 const setupDB = require("./utils/db");
 const helmet = require("helmet");
 const keys = require("./config/keys");
+const otpRoutes = require("./routes/otp");
 
 const app = express();
 
@@ -87,6 +88,7 @@ app.use("/api/customers", customerRoutes);
 app.use("/api/brands", brandRoutes);
 app.use("/api/keyword", keywordRoutes);
 app.use("/api/products", productRoutes);
+app.use("/api/otp", otpRoutes);
 app.use("/api/carts", cartRoutes);
 app.use("/api/companies", companiesRoutes);
 app.use("/api/quotation", quotationRoutes);

@@ -1,10 +1,22 @@
 import React from "react";
 import { jsPDF } from "jspdf";
 import * as XLSX from "xlsx";
-import { FileAddFilled, PlusCircleFilled } from "@ant-design/icons";
-import { FilePdfFilled } from "@ant-design/icons";
-import { FileExcelFilled } from "@ant-design/icons";
-const PageHeader = ({ title, subtitle, onAdd, tableData = [] }) => {
+import {
+  FileAddFilled,
+  FilePdfFilled,
+  FileExcelFilled,
+  AppstoreOutlined,
+  UnorderedListOutlined,
+} from "@ant-design/icons";
+import { Button, Switch, Tooltip } from "antd";
+import { ShoppingCartOutlined } from "@ant-design/icons";
+const PageHeader = ({
+  title,
+  subtitle,
+  onAdd,
+  tableData = [],
+  extra = {}, // Accept extra prop with view toggle attributes
+}) => {
   // Function to handle downloading PDF
   const handleDownloadPDF = () => {
     const doc = new jsPDF();
@@ -62,13 +74,14 @@ const PageHeader = ({ title, subtitle, onAdd, tableData = [] }) => {
     XLSX.writeFile(workbook, `${title}.xlsx`);
   };
 
-  // Function to handle collapsing
-  const handleCollapse = () => {
-    const element = document.getElementById("collapse-header");
-    if (element) {
-      element.classList.toggle("collapsed");
-    }
-  };
+  // Destructure extra prop for view toggle attributes
+  const {
+    viewMode,
+    onViewToggle,
+    showViewToggle = false,
+    cartItems = [],
+    onCartClick,
+  } = extra;
 
   return (
     <div className="page-header">
@@ -78,7 +91,7 @@ const PageHeader = ({ title, subtitle, onAdd, tableData = [] }) => {
           {subtitle && <h6>{subtitle}</h6>}
         </div>
       </div>
-      <ul className="table-top-head">
+      <ul className="table-top-head d-flex align-items-center">
         <li title="Download PDF" onClick={handleDownloadPDF}>
           <a data-bs-toggle="tooltip" data-bs-placement="top" title="PDF">
             <FilePdfFilled
@@ -95,6 +108,36 @@ const PageHeader = ({ title, subtitle, onAdd, tableData = [] }) => {
             />
           </a>
         </li>
+        {showViewToggle && (
+          <li>
+            <Tooltip
+              title={
+                viewMode === "card"
+                  ? "Switch to List View"
+                  : "Switch to Card View"
+              }
+            >
+              <Switch
+                checkedChildren={<AppstoreOutlined />}
+                unCheckedChildren={<UnorderedListOutlined />}
+                checked={viewMode === "card"}
+                onChange={onViewToggle}
+                className="view-toggle-switch"
+              />
+            </Tooltip>
+          </li>
+        )}
+        {onCartClick && (
+          <li>
+            <Button
+              style={{ color: "#c72c41" }}
+              icon={<ShoppingCartOutlined />}
+              onClick={onCartClick}
+            >
+              Cart ({cartItems.length})
+            </Button>
+          </li>
+        )}
       </ul>
       <div className="page-btn">
         {onAdd && (
