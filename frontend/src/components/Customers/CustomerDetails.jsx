@@ -280,7 +280,7 @@ const CustomerDetails = () => {
                                   <Button
                                     variant="outline-primary"
                                     size="sm"
-                                    href={`invoices/${invoice.invoiceId}`}
+                                    href={`/invoice/${invoice.invoiceId}`}
                                     target="_blank"
                                     className="me-2 action-btn"
                                     aria-label={`View invoice ${invoice.invoiceNo}`}

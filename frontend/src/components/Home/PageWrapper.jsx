@@ -1,18 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
-import {
-  FaChartBar,
-  FaFileInvoice,
-  FaBox,
-  FaDollarSign,
-  FaTriangleExclamation,
-} from "react-icons/fa6";
+import { FaChartBar, FaFileInvoice, FaBox } from "react-icons/fa6";
 import {
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
   Tooltip,
   BarChart,
   Bar,
@@ -105,6 +96,7 @@ const PageWrapper = () => {
 
   const orders = ordersData?.orders || [];
   const productCount = productsData?.length || 0;
+
   const quotationCount = quotationData?.length || 0;
   const invoiceCount = invoiceData?.data?.length || 0;
   const orderCount = orders.length;
@@ -185,7 +177,7 @@ const PageWrapper = () => {
 
   // Low stock products
   const lowStockProducts = useMemo(
-    () => filteredProducts.filter((p) => p.quantity < p.alertQuantity),
+    () => productsData.filter((p) => p.quantity < p.alert_quantity),
     [filteredProducts]
   );
 
@@ -573,15 +565,6 @@ const PageWrapper = () => {
                 ))}
                 {!lowStockProducts.length && <li>No low stock products.</li>}
               </ul>
-              <button
-                className="btn btn-red"
-                onClick={() =>
-                  toast.info("Add functionality to be implemented")
-                }
-                aria-label="Add low stock product"
-              >
-                Add
-              </button>
             </div>
           </section>
 
