@@ -95,15 +95,16 @@ const PageWrapper = () => {
   );
 
   const orders = ordersData?.orders || [];
-  const productCount = productsData?.length || 0;
-
-  const quotationCount = quotationData?.length || 0;
-  const invoiceCount = invoiceData?.data?.length || 0;
-  const orderCount = orders.length;
+  const products = Array.isArray(productsData)
+    ? productsData
+    : productsData?.data || [];
   const customers = customersData?.data || [];
   const categories = categoriesData?.categories || [];
   const users = usersData?.users || [];
-  const products = productsData?.data || [];
+  const productCount = products.length;
+  const quotationCount = quotationData?.length || 0;
+  const invoiceCount = invoiceData?.data?.length || 0;
+  const orderCount = orders.length;
 
   // Attendance query
   const {
@@ -150,6 +151,7 @@ const PageWrapper = () => {
 
   // Filter data by time
   const filterByTime = (items, dateField) => {
+    if (!Array.isArray(items)) return [];
     const weekItems = items.filter(
       (item) => new Date(item[dateField]) >= oneWeekAgo
     );
@@ -177,8 +179,8 @@ const PageWrapper = () => {
 
   // Low stock products
   const lowStockProducts = useMemo(
-    () => productsData.filter((p) => p.quantity < p.alert_quantity),
-    [filteredProducts]
+    () => (products || []).filter((p) => p.quantity < p.alert_quantity),
+    [products]
   );
 
   // Toggle checkbox for low stock products
@@ -289,7 +291,7 @@ const PageWrapper = () => {
       const message =
         profileError.status === 403 &&
         profileError.data?.error.includes("roleId")
-          ? "Missing role information. Please contact support brasileirao serie a."
+          ? "Missing role information. Please contact support."
           : profileError.status === 401 || profileError.status === 403
           ? "Session expired. Please log in again."
           : "Failed to load profile.";
@@ -398,7 +400,7 @@ const PageWrapper = () => {
                 <span>User profile not loaded</span>
               ) : !hasClockedIn ? (
                 <button
-                  className="btn btn-clock-in" // Changed from btn-red to btn-clock-in
+                  className="btn btn-clock-in"
                   onClick={handleClockIn}
                   disabled={isClockInLoading || isClockOutLoading}
                   aria-label="Clock In"
@@ -407,7 +409,7 @@ const PageWrapper = () => {
                 </button>
               ) : !hasClockedOut ? (
                 <button
-                  className="btn btn-clock-out" // Changed from btn-red to btn-clock-out
+                  className="btn btn-clock-out"
                   onClick={handleClockOut}
                   disabled={isClockInLoading || isClockOutLoading}
                   aria-label="Clock Out"
@@ -450,11 +452,11 @@ const PageWrapper = () => {
                 icon: <FaBox />,
                 max: maxCounts.products,
               },
-            ].map(({ count, label, loading, icon, max, format }, index) => (
+            ].map(({ count, label, loading, icon, max }, index) => (
               <div key={index} className="card stat">
                 <div className="stat-header">
                   {icon}
-                  <h3>{loading ? "..." : format ? format(count) : count}</h3>
+                  <h3>{loading ? "..." : count}</h3>
                 </div>
                 <p>{label}</p>
                 <div
@@ -532,8 +534,8 @@ const PageWrapper = () => {
                       <Tooltip />
                       <Bar
                         dataKey="orders"
-                        fill="#888888" // Default grey for zero/negative
-                        radius={[4, 4, 0, 0]} // Rounded top corners
+                        fill="#888888"
+                        radius={[4, 4, 0, 0]}
                         shape={(props) => {
                           const { fill, ...rest } = props;
                           const barFill =
@@ -552,18 +554,21 @@ const PageWrapper = () => {
             <div className="card low-stock">
               <h4>Low in Stock</h4>
               <ul>
-                {lowStockProducts.slice(0, 4).map((product) => (
-                  <li key={product._id}>
-                    <input
-                      type="checkbox"
-                      checked={!!checkedProducts[product._id]}
-                      onChange={() => toggleProductCheck(product._id)}
-                      aria-label={`Select ${product.name}`}
-                    />
-                    {product.name} (Qty: {product.quantity})
-                  </li>
-                ))}
-                {!lowStockProducts.length && <li>No low stock products.</li>}
+                {lowStockProducts.length > 0 ? (
+                  lowStockProducts.slice(0, 4).map((product) => (
+                    <li key={product._id}>
+                      <input
+                        type="checkbox"
+                        checked={!!checkedProducts[product._id]}
+                        onChange={() => toggleProductCheck(product._id)}
+                        aria-label={`Select ${product.name}`}
+                      />
+                      {product.name} (Qty: {product.quantity})
+                    </li>
+                  ))
+                ) : (
+                  <li>No low stock products.</li>
+                )}
               </ul>
             </div>
           </section>
