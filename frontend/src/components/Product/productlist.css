@@ -45,7 +45,6 @@
   transform: translateY(-5px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
-
 /* Image container */
 .product-image-container {
   width: 100%;
@@ -53,25 +52,30 @@
   background: #f9f9f9; /* Light background for images */
 }
 
+/* Image wrapper */
 .product-image-wrapper {
   width: 100%;
-  height: 240px; /* Increased from 200px to 240px */
+  height: 240px; /* Keep the height as desired */
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: center; /* Center vertically */
+  justify-content: center; /* Center horizontally */
   overflow: hidden;
   border-bottom: 1px solid #f0f0f0;
   background-color: #fdfdfd;
 }
 
+/* Product image */
 .product-image-card {
-  width: 100%;
-  height: 100%;
-  object-fit: contain; /* Use contain to preserve aspect ratio */
-  object-position: center;
+  max-width: 100%;
+  max-height: 100%; /* Ensure the image doesn't exceed the container height */
+  width: auto; /* Allow the image to scale naturally */
+  height: auto; /* Maintain aspect ratio */
+  object-fit: contain; /* Preserve aspect ratio without stretching */
+  object-position: center; /* Center the image */
   transition: transform 0.3s ease;
 }
 
+/* Hover effect */
 .ecommerce-product-card:hover .product-image-card {
   transform: scale(1.05); /* Subtle zoom effect on hover */
 }
