@@ -219,7 +219,7 @@ const UserList = () => {
                   <h4 className="text-white">{stats.active}</h4>
                 </div>
                 <div>
-                  <span className="avatar avatar-lg bg-teal-900">
+                  <span className="avatar avatar-lg">
                     <i className="ti ti-user-star"></i>
                   </span>
                 </div>
@@ -237,7 +237,7 @@ const UserList = () => {
                   <h4 className="text-white">{stats.inactive}</h4>
                 </div>
                 <div>
-                  <span className="avatar avatar-lg bg-secondary-900">
+                  <span className="avatar avatar-lg">
                     <i className="ti ti-user-exclamation"></i>
                   </span>
                 </div>
@@ -255,7 +255,7 @@ const UserList = () => {
                   <h4 className="text-white">{stats.newJoiners}</h4>
                 </div>
                 <div>
-                  <span className="avatar avatar-lg bg-info-900">
+                  <span className="avatar avatar-lg">
                     <i className="ti ti-user-check"></i>
                   </span>
                 </div>

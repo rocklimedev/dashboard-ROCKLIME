@@ -182,14 +182,14 @@ const AttendanceWrapper = ({ userId }) => {
   const renderOverview = () => (
     <div className="row">
       <div className="col-xl-3 col-md-6">
-        <div className="card bg-purple border-0">
+        <div className="card border-0" style={{ background: "#e31e24" }}>
           <div className="card-body d-flex align-items-center justify-content-between">
             <div>
               <p className="mb-1 text-white">Total Employees</p>
               <h4 className="text-white"></h4>
             </div>
             <div>
-              <span className="avatar avatar-lg bg-purple-900">
+              <span className="avatar avatar-lg ">
                 <i className="ti ti-users-group"></i>
               </span>
             </div>
@@ -197,14 +197,14 @@ const AttendanceWrapper = ({ userId }) => {
         </div>
       </div>
       <div className="col-xl-3 col-md-6">
-        <div className="card bg-teal border-0">
+        <div className="card border-0" style={{ background: "#e31e24" }}>
           <div className="card-body d-flex align-items-center justify-content-between">
             <div>
               <p className="mb-1 text-white">Active</p>
               <h4 className="text-white"></h4>
             </div>
             <div>
-              <span className="avatar avatar-lg bg-teal-900">
+              <span className="avatar avatar-lg ">
                 <i className="ti ti-user-star"></i>
               </span>
             </div>
@@ -212,14 +212,14 @@ const AttendanceWrapper = ({ userId }) => {
         </div>
       </div>
       <div className="col-xl-3 col-md-6">
-        <div className="card bg-secondary border-0">
+        <div className="card border-0" style={{ background: "#e31e24" }}>
           <div className="card-body d-flex align-items-center justify-content-between">
             <div>
               <p className="mb-1 text-white">Inactive</p>
               <h4 className="text-white"></h4>
             </div>
             <div>
-              <span className="avatar avatar-lg bg-secondary-900">
+              <span className="avatar avatar-lg">
                 <i className="ti ti-user-exclamation"></i>
               </span>
             </div>
@@ -227,14 +227,14 @@ const AttendanceWrapper = ({ userId }) => {
         </div>
       </div>
       <div className="col-xl-3 col-md-6">
-        <div className="card bg-info border-0">
+        <div className="card border-0" style={{ background: "#e31e24" }}>
           <div className="card-body d-flex align-items-center justify-content-between">
             <div>
               <p className="mb-1 text-white">New Joiners</p>
               <h4 className="text-white"></h4>
             </div>
             <div>
-              <span className="avatar avatar-lg bg-info-900">
+              <span className="avatar avatar-lg ">
                 <i className="ti ti-user-check"></i>
               </span>
             </div>

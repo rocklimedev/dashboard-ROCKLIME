@@ -425,6 +425,7 @@ const PageWrapper = () => {
           <section className="summary-cards">
             {[
               {
+                link: "/orders/list",
                 count: orderCount,
                 label: "Total Orders",
                 loading: loadingOrders,
@@ -432,6 +433,7 @@ const PageWrapper = () => {
                 max: maxCounts.orders,
               },
               {
+                link: "/invoices/list",
                 count: invoiceCount,
                 label: "Invoices",
                 loading: loadingInvoices,
@@ -439,6 +441,7 @@ const PageWrapper = () => {
                 max: maxCounts.invoices,
               },
               {
+                link: "/quotations/list",
                 count: quotationCount,
                 label: "Total Quotations",
                 loading: loadingQuotations,
@@ -446,19 +449,22 @@ const PageWrapper = () => {
                 max: maxCounts.quotations,
               },
               {
+                link: "/inventory/products",
                 count: productCount,
                 label: "Total Products",
                 loading: isProductsLoading,
                 icon: <FaBox />,
                 max: maxCounts.products,
               },
-            ].map(({ count, label, loading, icon, max }, index) => (
+            ].map(({ count, label, loading, icon, max, link }, index) => (
               <div key={index} className="card stat">
                 <div className="stat-header">
                   {icon}
                   <h3>{loading ? "..." : count}</h3>
                 </div>
-                <p>{label}</p>
+                <p>
+                  <a href={link}> {label}</a>
+                </p>
                 <div
                   className="bar"
                   style={{ width: `${(count / max) * 100}%` }}

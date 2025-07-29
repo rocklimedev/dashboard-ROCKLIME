@@ -3,8 +3,9 @@ import { Modal, Table, Pagination } from "react-bootstrap";
 import { useGetAllProductCodesQuery } from "../../api/productApi";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import { Link } from "react-router-dom";
+import "./checkproductcodestatus.css"; // Import the CSS file
 
-// Define styles
+// Define inline styles (only those not handled by CSS)
 const styles = {
   searchCard: {
     borderRadius: "8px",
@@ -58,18 +59,6 @@ const styles = {
     padding: "20px",
     marginBottom: "20px",
   },
-  categoryBox: {
-    border: "1px solid #e0e0e0",
-    borderRadius: "8px",
-    padding: "15px",
-    backgroundColor: "#fff",
-    transition: "transform 0.2s, box-shadow 0.2s",
-    cursor: "pointer",
-  },
-  categoryBoxHover: {
-    transform: "translateY(-3px)",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-  },
   categoryTitle: {
     fontSize: "16px",
     fontWeight: "500",
@@ -99,7 +88,6 @@ const styles = {
     fontWeight: "500",
     color: "#fff",
   },
-
   table: {
     fontSize: "14px",
     borderRadius: "8px",
@@ -107,6 +95,15 @@ const styles = {
   },
   pagination: {
     marginTop: "20px",
+  },
+  pageTitle: {
+    fontSize: "24px",
+    fontWeight: "600",
+    color: "#333",
+  },
+  pageSubtitle: {
+    fontSize: "14px",
+    color: "#666",
   },
 };
 
@@ -458,17 +455,13 @@ const CheckProductCodeStatus = () => {
                   >
                     <div
                       className="category-box"
-                      style={styles.categoryBox}
+                      style={{
+                        border: "1px solid #e0e0e0",
+                        borderRadius: "8px",
+                        padding: "15px",
+                        backgroundColor: "#fff",
+                      }}
                       onClick={() => handleCategoryClick(cat.categoryId)}
-                      onMouseEnter={(e) =>
-                        Object.assign(
-                          e.currentTarget.style,
-                          styles.categoryBoxHover
-                        )
-                      }
-                      onMouseLeave={(e) =>
-                        Object.assign(e.currentTarget.style, styles.categoryBox)
-                      }
                     >
                       <div className="d-flex justify-content-between align-items-center">
                         <h6 style={styles.categoryTitle}>{cat.name}</h6>
