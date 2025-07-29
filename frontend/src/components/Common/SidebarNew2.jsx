@@ -63,7 +63,7 @@ const SidebarNew = ({
             toggleSidebar(!isSidebarOpen);
           }}
         >
-          <ChevronsLeft size={16} color="#000" />
+          <ChevronsLeft size={16} color="#fff" />
         </a>
       </div>
 

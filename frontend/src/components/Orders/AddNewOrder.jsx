@@ -149,7 +149,7 @@ const AddNewOrder = ({ adminName }) => {
       <div className="content">
         <div className="card shadow-sm border-0">
           <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-            <h4 className="mb-0">
+            <h4 className="mb-0" style={{ color: "#fff" }}>
               {isEditMode ? "Edit Order" : "Add New Order"}
             </h4>
           </div>

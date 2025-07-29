@@ -81,6 +81,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
             size="50"
             round={true}
             className="circular-avatar"
+            color="#e31e24" // Add red background
           />
         </span>
         <div>
@@ -197,6 +198,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                         size="40"
                         round={true}
                         className="circular-avatar"
+                        color="#e31e24" // Add red background
                       />
                     </span>
                   </span>
