@@ -1,28 +1,21 @@
 import React, { useState, useEffect, useMemo } from "react";
 import {
-  Card,
-  Row,
-  Col,
   Form,
   Input,
   Select,
   Button,
   Spin,
-  Tooltip,
-  Badge,
-  Dropdown,
-  Menu,
   Pagination,
   Empty,
   Table,
 } from "antd";
 import {
-  ShoppingCartOutlined,
   SearchOutlined,
-  MoreOutlined,
   FilterOutlined,
   HeartOutlined,
   HeartFilled,
+  ShoppingCartOutlined,
+  MoreOutlined,
 } from "@ant-design/icons";
 import {
   useGetAllProductsQuery,
@@ -40,13 +33,15 @@ import {
 import { useGetProfileQuery } from "../../api/userApi";
 import { toast } from "sonner";
 import { Link, useNavigate } from "react-router-dom";
-import pos from "../../assets/img/default.png";
 import DeleteModal from "../Common/DeleteModal";
 import HistoryModal from "../Common/HistoryModal";
 import StockModal from "../Common/StockModal";
 import Cart from "./Cart";
+import ProductCard from "./ProductCard";
 import "./productlist.css";
 import PageHeader from "../Common/PageHeader";
+import { Tooltip, Dropdown, Menu } from "antd";
+import pos from "../../assets/img/default.png";
 
 const { Option } = Select;
 
@@ -66,38 +61,7 @@ const ProductsList = () => {
   const navigate = useNavigate();
   const userId = user?.user?.userId;
 
-  // State for view mode (CardView or ListView)
   const [viewMode, setViewMode] = useState("card");
-
-  const products = useMemo(
-    () =>
-      Array.isArray(productsData?.data)
-        ? productsData.data
-        : Array.isArray(productsData)
-        ? productsData
-        : [],
-    [productsData]
-  );
-  const categories = useMemo(
-    () =>
-      Array.isArray(categoriesData?.categories)
-        ? categoriesData.categories
-        : [],
-    [categoriesData]
-  );
-  const brands = useMemo(
-    () => (Array.isArray(brandsData) ? brandsData : []),
-    [brandsData]
-  );
-  const customers = useMemo(
-    () => (Array.isArray(customersData?.data) ? customersData.data : []),
-    [customersData]
-  );
-  const cartItems = useMemo(
-    () => (Array.isArray(cartData?.items) ? cartData.items : []),
-    [cartData]
-  );
-
   const [currentPage, setCurrentPage] = useState(1);
   const [isDeleteModalVisible, setDeleteModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -137,6 +101,35 @@ const ProductsList = () => {
       ? `₹${Number(price).toFixed(2)}`
       : "N/A";
   };
+
+  const products = useMemo(
+    () =>
+      Array.isArray(productsData?.data)
+        ? productsData.data
+        : Array.isArray(productsData)
+        ? productsData
+        : [],
+    [productsData]
+  );
+  const categories = useMemo(
+    () =>
+      Array.isArray(categoriesData?.categories)
+        ? categoriesData.categories
+        : [],
+    [categoriesData]
+  );
+  const brands = useMemo(
+    () => (Array.isArray(brandsData) ? brandsData : []),
+    [brandsData]
+  );
+  const customers = useMemo(
+    () => (Array.isArray(customersData?.data) ? customersData.data : []),
+    [customersData]
+  );
+  const cartItems = useMemo(
+    () => (Array.isArray(cartData?.items) ? cartData.items : []),
+    [cartData]
+  );
 
   const applyFilters = useMemo(() => {
     return (products, customers) => {
@@ -194,7 +187,6 @@ const ProductsList = () => {
                 (Number(b.sellingPrice) || 0) - (Number(a.sellingPrice) || 0)
               );
             case "Featured":
-              // Prioritize featured products, then sort by name within featured
               return (
                 b.isFeatured - a.isFeatured ||
                 a.name?.localeCompare(b.name || "") ||
@@ -209,7 +201,6 @@ const ProductsList = () => {
 
   const filteredProducts = applyFilters(products, customers);
 
-  // Preprocess tableData for PDF/Excel export
   const formattedTableData = useMemo(
     () =>
       filteredProducts.map((product) => ({
@@ -306,7 +297,11 @@ const ProductsList = () => {
     setCartLoadingStates((prev) => ({ ...prev, [productId]: true }));
 
     try {
-      await addProductToCart({ userId, productId }).unwrap();
+      await addProductToCart({
+        userId,
+        productId,
+        quantity: product.quantity || 1, // Use quantity from ProductCard
+      }).unwrap();
       toast.success(`${product.name} added to cart!`);
     } catch (error) {
       toast.error(`Error: ${error.data?.message || "Unknown error"}`);
@@ -393,7 +388,6 @@ const ProductsList = () => {
     // Implement order conversion logic
   };
 
-  // Table columns for ListView
   const columns = [
     {
       title: "Image",
@@ -518,7 +512,7 @@ const ProductsList = () => {
           title="Products"
           subtitle="Explore our latest collection"
           onAdd={handleAddProduct}
-          tableData={formattedTableData} // Pass formatted data for export
+          tableData={formattedTableData}
           extra={{
             viewMode,
             onViewToggle: (checked) => setViewMode(checked ? "card" : "list"),
@@ -589,7 +583,7 @@ const ProductsList = () => {
                 <Option value="Price High to Low">Price: High to Low</Option>
                 <Option value="Last 7 Days">Last 7 Days</Option>
                 <Option value="Last Month">Last Month</Option>
-                <Option value="Featured">Featured</Option> {/* New Option */}
+                <Option value="Featured">Featured</Option>
               </Select>
             </Form.Item>
             <Form.Item>
@@ -605,116 +599,26 @@ const ProductsList = () => {
           </div>
         ) : viewMode === "card" ? (
           <div className="products-section">
-            <Row gutter={[24, 24]} justify="center">
+            <div className="row">
               {currentItems.map((product) => (
-                <Col
+                <div
                   key={product.productId}
-                  xs={24}
-                  sm={12}
-                  md={8}
-                  lg={6}
-                  xl={4}
+                  className="col-sm-6 col-md-6 col-lg-6 col-xl-4 col-xxl-3"
                 >
-                  <Card
-                    hoverable
-                    className="ecommerce-product-card"
-                    cover={
-                      <div className="product-image-container">
-                        <div className="product-image-wrapper">
-                          <img
-                            src={product?.images?.[0] || pos}
-                            alt={product.name || "Product"}
-                            className="product-image-card"
-                          />
-                          <Button
-                            type="text"
-                            icon={
-                              featuredLoadingStates[product.productId] ? (
-                                <Spin size="small" />
-                              ) : product.isFeatured ? (
-                                <HeartFilled style={{ color: "#ff4d4f" }} />
-                              ) : (
-                                <HeartOutlined style={{ color: "#ff4d4f" }} />
-                              )
-                            }
-                            onClick={() => handleToggleFeatured(product)}
-                            className="heart-button"
-                            disabled={featuredLoadingStates[product.productId]}
-                          />
-                          {product.quantity <= 0 && (
-                            <Badge
-                              count="Out of Stock"
-                              className="out-of-stock-badge"
-                            />
-                          )}
-                        </div>
-                      </div>
-                    }
-                  >
-                    <Card.Meta
-                      title={
-                        <Link
-                          to={`/product/${product.productId}`}
-                          className="product-title"
-                        >
-                          {product.name || "N/A"}
-                        </Link>
-                      }
-                      description={
-                        <div className="product-details">
-                          <div className="product-brand">
-                            {getBrandsName(product.brandId)}
-                          </div>
-                          <div className="product-price">
-                            {formatPrice(product.sellingPrice)}
-                          </div>
-                          <div className="product-stock">
-                            {product.quantity > 0
-                              ? `${product.quantity} in stock`
-                              : "Out of Stock"}
-                          </div>
-                        </div>
-                      }
-                    />
-                    <div className="product-actions">
-                      <Tooltip
-                        title={product.quantity <= 0 ? "Out of stock" : ""}
-                      >
-                        <Button
-                          style={{ color: "#c72c41" }}
-                          icon={
-                            cartLoadingStates[product.productId] ? (
-                              <Spin size="small" />
-                            ) : (
-                              <ShoppingCartOutlined />
-                            )
-                          }
-                          onClick={() => handleAddToCart(product)}
-                          disabled={
-                            cartLoadingStates[product.productId] ||
-                            (product.quantity ?? 0) <= 0
-                          }
-                          block
-                          size="large"
-                        >
-                          {product.quantity <= 0
-                            ? "Out of Stock"
-                            : "Add to Cart"}
-                        </Button>
-                      </Tooltip>
-                      <Dropdown overlay={menu(product)} trigger={["click"]}>
-                        <Button
-                          type="text"
-                          icon={<MoreOutlined />}
-                          size="large"
-                          className="more-options-btn"
-                        />
-                      </Dropdown>
-                    </div>
-                  </Card>
-                </Col>
+                  <ProductCard
+                    product={product}
+                    getBrandsName={getBrandsName}
+                    getCategoryName={getCategoryName}
+                    formatPrice={formatPrice}
+                    handleAddToCart={handleAddToCart}
+                    handleToggleFeatured={handleToggleFeatured}
+                    cartLoadingStates={cartLoadingStates}
+                    featuredLoadingStates={featuredLoadingStates}
+                    menu={menu}
+                  />
+                </div>
               ))}
-            </Row>
+            </div>
             <div className="pagination-container text-center mt-4">
               <Pagination
                 current={currentPage}

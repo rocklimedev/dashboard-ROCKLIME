@@ -5,94 +5,97 @@
   align-items: center;
   padding: 16px 0;
   margin-top: 16px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
+  font-family: "Lato";
   font-size: 14px;
-  color: #595959; /* Ant Design's default text color */
+  color: #444;
 }
 
-/* Info text (e.g., "Showing 1 to 20 of 100 results") */
+/* Info text */
 .pagination-info {
   flex: 1;
   font-size: 14px;
-  color: #595959;
+  color: #666;
 }
 
-/* Container for pagination buttons */
+/* Pagination Buttons Container */
 .pagination-buttons {
   display: flex;
   list-style: none;
   padding: 0;
   margin: 0;
-  gap: 8px; /* Space between buttons */
+  gap: 6px;
 }
 
-/* Individual page item */
+/* Individual Page Item */
 .page-item {
   display: inline-flex;
   align-items: center;
 }
 
-/* Page link (button) */
+/* Page Link */
 .page-link {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  background: #fff;
+  color: #333;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: 1px solid #d9d9d9; /* Ant Design border color */
-  border-radius: 4px;
-  background: #fff;
-  color: #595959;
-  font-size: 14px;
-  text-decoration: none;
-  cursor: pointer;
-  transition: all 0.3s;
 }
 
-/* Hover effect for page links */
+/* Hover Effect */
 .page-link:hover {
-  border-color: #1890ff; /* Ant Design primary color */
-  color: #1890ff;
-  background: #e6f7ff; /* Light blue background on hover */
+  border-color: #e31e24;
+  background-color: #fbeaea;
+  color: #e31e24;
 }
 
-/* Active page */
+/* Active Page */
 .page-item.active .page-link {
-  border-color: #1890ff;
-  background: #1890ff;
+  background-color: #e31e24;
   color: #fff;
-  font-weight: 500;
+  border-color: #e31e24;
+  font-weight: 600;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Disabled state (e.g., for Previous/Next when on first/last page) */
+/* Disabled State */
 .page-item.disabled .page-link {
-  border-color: #d9d9d9;
-  background: #f5f5f5;
-  color: #bfbfbf;
+  background-color: #f0f0f0;
+  color: #bbb;
+  border-color: #ddd;
   cursor: not-allowed;
 }
 
-/* Previous and Next buttons */
+/* Arrow Buttons */
 .previous-link,
 .next-link {
-  font-size: 16px; /* Slightly larger for arrows */
+  font-size: 16px;
+  padding: 0 8px;
 }
 
-/* Break label (e.g., "...") */
+/* Break Label */
 .break-link {
   border: none;
-  background: none;
-  color: #595959;
+  background: transparent;
+  color: #888;
+  font-weight: 500;
   cursor: default;
+  padding: 0 6px;
 }
 
-/* Responsive adjustments */
+/* Responsive Adjustments */
 @media (max-width: 576px) {
   .pagination {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+    align-items: stretch;
+    gap: 10px;
   }
 
   .pagination-info {
@@ -103,11 +106,12 @@
   .pagination-buttons {
     justify-content: center;
     flex-wrap: wrap;
+    gap: 4px;
   }
 
   .page-link {
-    width: 28px;
-    height: 28px;
-    font-size: 12px;
+    width: 30px;
+    height: 30px;
+    font-size: 13px;
   }
 }

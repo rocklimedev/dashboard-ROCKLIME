@@ -89,7 +89,7 @@ const styles = {
     marginTop: "5px",
   },
   modalHeader: {
-    backgroundColor: "#007bff",
+    backgroundColor: "#e31e24",
     color: "#fff",
     borderTopLeftRadius: "8px",
     borderTopRightRadius: "8px",
@@ -97,7 +97,9 @@ const styles = {
   modalTitle: {
     fontSize: "18px",
     fontWeight: "500",
+    color: "#fff",
   },
+
   table: {
     fontSize: "14px",
     borderRadius: "8px",
@@ -519,7 +521,7 @@ const CheckProductCodeStatus = () => {
 
         {/* Modal for Category Products */}
         <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
-          <Modal.Header closeButton style={styles.modalHeader}>
+          <Modal.Header style={styles.modalHeader}>
             <Modal.Title style={styles.modalTitle}>
               Products in {categoryMap[selectedCategory] || "Selected Category"}
             </Modal.Title>
