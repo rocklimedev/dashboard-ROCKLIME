@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import {
   useGetProductByIdQuery,
   useGetAllProductsByCategoryQuery,
@@ -9,154 +9,23 @@ import { useGetParentCategoryByIdQuery } from "../../api/parentCategoryApi";
 import { useGetBrandByIdQuery } from "../../api/brandsApi";
 import JsBarcode from "jsbarcode";
 import { toast } from "react-toastify";
-import {
-  Breadcrumb,
-  Button,
-  InputNumber,
-  Rate,
-  Spin,
-  Tabs,
-  Row,
-  Col,
-  Card,
-  Typography,
-  Divider,
-  Space,
-} from "antd";
+import { Breadcrumb, Button, InputNumber, Rate, Spin, Tabs } from "antd";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Autoplay } from "swiper/modules";
 import { LazyLoadImage } from "react-lazy-load-image-component";
-import { ShareAltOutlined, ShoppingCartOutlined } from "@ant-design/icons";
+import { ShoppingCartOutlined } from "@ant-design/icons";
 import {
   FacebookShareButton,
   TwitterShareButton,
   WhatsappShareButton,
 } from "react-share";
-import styled from "styled-components";
+import ProductCard from "./ProductCard";
+import "./productdetails.css";
 import "swiper/css";
 import "swiper/css/navigation";
-import "antd/dist/reset.css";
 import "react-lazy-load-image-component/src/effects/blur.css";
 import noimage from "../../assets/img/default.png";
-
-const { Title, Text, Paragraph } = Typography;
-
-// Styled Components
-const PageWrapper = styled.div`
-  padding: 20px;
-  background-color: #f5f5f5;
-  min-height: 100vh;
-`;
-
-const ProductContainer = styled.div`
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-`;
-
-const BreadcrumbStyled = styled(Breadcrumb)`
-  margin-bottom: 20px;
-  font-size: 14px;
-  .ant-breadcrumb-link a {
-    color: #e31e24;
-    &:hover {
-      color: #e31e24;
-    }
-  }
-`;
-
-const ProductImageWrapper = styled.div`
-  .swiper {
-    border-radius: 8px;
-    overflow: hidden;
-    margin-bottom: 16px;
-  }
-  .swiper-slide img {
-    width: 100%;
-    height: 400px;
-    object-fit: contain;
-    background: #fff;
-  }
-  .swiper-button-prev,
-  .swiper-button-next {
-    background: #e31e24;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    color: #fff;
-    &:after {
-      font-size: 16px;
-    }
-    &:hover {
-      background: #e31e24;
-    }
-  }
-`;
-
-const ThumbnailWrapper = styled.div`
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  flex-wrap: wrap;
-`;
-
-const ThumbnailImage = styled.img`
-  width: 80px;
-  height: 80px;
-  object-fit: cover;
-  border-radius: 4px;
-  cursor: pointer;
-  border: ${(props) =>
-    props.active ? "2px solid #e31e24" : "2px solid transparent"};
-  transition: border 0.3s ease;
-`;
-
-const ProductContent = styled.div`
-  padding: 20px;
-`;
-
-const PriceWrapper = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 16px 0;
-`;
-
-const QuantityWrapper = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-`;
-
-const BarcodeWrapper = styled.div`
-  margin: 20px 0;
-  svg {
-    max-width: 200px;
-    height: auto;
-  }
-`;
-
-const SocialShareWrapper = styled.div`
-  margin-top: 20px;
-  display: flex;
-  gap: 12px;
-`;
-
-const RelatedProductsWrapper = styled.div`
-  margin-top: 40px;
-  .swiper {
-    padding: 10px 0;
-  }
-  .swiper-slide {
-    display: flex;
-    justify-content: center;
-  }
-`;
+import { Menu } from "antd";
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -252,7 +121,7 @@ const ProductDetails = () => {
   };
 
   // Add to cart handler
-  const handleAddToCart = async () => {
+  const handleAddToCart = async (product) => {
     setIsAddingToCart(true);
     try {
       await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API call
@@ -278,6 +147,25 @@ const ProductDetails = () => {
       setQuantity(value);
     }
   };
+
+  // Dummy functions for ProductCard (replace with actual implementations)
+  const getBrandsName = (brandId) => brandData?.brandName || "Not Branded";
+  const getCategoryName = (categoryId) =>
+    categoryData?.category?.name || "Uncategorized";
+  const formatPrice = (price) =>
+    price !== null && !isNaN(Number(price))
+      ? `₹${Number(price).toFixed(2)}`
+      : "N/A";
+  const handleToggleFeatured = (product) => {
+    toast.info(`Toggled featured status for ${product.name}`);
+  };
+  const menu = (product) => (
+    <Menu>
+      <Menu.Item key="view">
+        <Link to={`/product/${product.productId}`}>View</Link>
+      </Menu.Item>
+    </Menu>
+  );
 
   // Effect for barcode and error handling
   useEffect(() => {
@@ -306,32 +194,46 @@ const ProductDetails = () => {
     isBrandLoading
   ) {
     return (
-      <Spin size="large" style={{ display: "block", margin: "50px auto" }} />
+      <div className="loading-container">
+        <Spin size="large" />
+      </div>
     );
   }
 
   if (productError) {
     return (
-      <ProductContainer>
-        <Text type="danger">
-          Error: {productError.message || "Failed to load product"}
-        </Text>
-        <Button
-          type="primary"
-          onClick={refetchProduct}
-          style={{ marginTop: 16 }}
-        >
-          Retry
-        </Button>
-      </ProductContainer>
+      <div className="main__product product">
+        <div className="container">
+          <div className="product__inner">
+            <div className="product__wrapper">
+              <p className="error-text">
+                Error: {productError.message || "Failed to load product"}
+              </p>
+              <Button
+                type="primary"
+                onClick={refetchProduct}
+                className="btn btn-primary"
+              >
+                Retry
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
     );
   }
 
   if (!product) {
     return (
-      <ProductContainer>
-        <Text>Product not found.</Text>
-      </ProductContainer>
+      <div className="main__product product">
+        <div className="container">
+          <div className="product__inner">
+            <div className="product__wrapper">
+              <p className="error-text">Product not found.</p>
+            </div>
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -342,24 +244,51 @@ const ProductDetails = () => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        <ProductContainer>
-          {/* Breadcrumbs */}
-          <BreadcrumbStyled
+        {/* Breadcrumbs */}
+        <div className="main__breadcrumbs breadcrumbs">
+          <Breadcrumb
+            className="breadcrumbs__list"
             items={[
-              { title: <a href="/">Home</a> },
-              { title: <a href="/inventory/products">Shop</a> },
-              { title: product.name || "N/A" },
+              {
+                title: (
+                  <Link to="/" className="breadcrumbs__list-link">
+                    Home
+                  </Link>
+                ),
+              },
+              {
+                title: (
+                  <Link
+                    to="/inventory/products"
+                    className="breadcrumbs__list-link"
+                  >
+                    Shop
+                  </Link>
+                ),
+              },
+              {
+                title: (
+                  <span className="breadcrumbs__list-text">
+                    {product.name || "N/A"}
+                  </span>
+                ),
+              },
             ]}
           />
+        </div>
 
-          {/* Product Section */}
-          <Row gutter={[24, 24]}>
+        {/* Product Section */}
+        <div className="main__product product">
+          <div className="product__inner">
             {/* Product Gallery */}
-            <Col xs={24} md={12}>
-              <ProductImageWrapper>
+            <div className="product__wrapper">
+              <div className="product__swiper product-swiper swiper">
                 <Swiper
                   modules={[Navigation, Autoplay]}
-                  navigation
+                  navigation={{
+                    prevEl: ".product-swiper__prev",
+                    nextEl: ".product-swiper__next",
+                  }}
                   autoplay={{ delay: 5000, disableOnInteraction: true }}
                   spaceBetween={10}
                   slidesPerView={1}
@@ -367,154 +296,278 @@ const ProductDetails = () => {
                   onSlideChange={(swiper) => setActiveSlide(swiper.activeIndex)}
                 >
                   {images.map((img, idx) => (
-                    <SwiperSlide key={idx}>
+                    <SwiperSlide
+                      key={idx}
+                      className="product-slide swiper-slide"
+                    >
                       <LazyLoadImage
                         src={img}
                         alt={`Product Image ${idx + 1} for ${product.name}`}
                         effect="blur"
                         placeholderSrc={noimage}
-                        style={{ width: "100%", height: "400px" }}
+                        className="product-slide__img"
+                        onError={(e) => (e.target.src = noimage)}
                       />
                     </SwiperSlide>
                   ))}
                 </Swiper>
-                <ThumbnailWrapper>
-                  {images.map((img, idx) => (
-                    <ThumbnailImage
-                      key={idx}
+                <div className="product-swiper__prev">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M15 18l-6-6 6-6" />
+                  </svg>
+                </div>
+                <div className="product-swiper__next">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M9 18l6-6-6-6" />
+                  </svg>
+                </div>
+              </div>
+              <div className="product__images product-images">
+                {images.map((img, idx) => (
+                  <div
+                    key={idx}
+                    className={`product-images__img ${
+                      activeSlide === idx ? "product-images__img--active" : ""
+                    }`}
+                    onClick={() => handleThumbnailClick(idx)}
+                  >
+                    <LazyLoadImage
                       src={img}
                       alt={`Thumbnail ${idx + 1}`}
-                      active={activeSlide === idx}
-                      onClick={() => handleThumbnailClick(idx)}
+                      className="product-images__img-image"
                       onError={(e) => (e.target.src = noimage)}
                     />
-                  ))}
-                </ThumbnailWrapper>
-              </ProductImageWrapper>
-            </Col>
+                  </div>
+                ))}
+              </div>
+            </div>
 
             {/* Product Content */}
-            <Col xs={24} md={12}>
-              <ProductContent>
-                <Space
-                  direction="vertical"
-                  size="middle"
-                  style={{ width: "100%" }}
-                >
-                  <Space align="center">
-                    <Rate disabled defaultValue={5} style={{ fontSize: 14 }} />
-                    <Text type="secondary">(2 reviews)</Text>
-                  </Space>
-                  <Title level={2}>{product.name || "N/A"}</Title>
-                  <PriceWrapper>
-                    {product.mrp && product.mrp !== product.sellingPrice && (
-                      <Text delete style={{ fontSize: 18, color: "#999" }}>
-                        ₹{Number(product.mrp).toFixed(2)}
-                      </Text>
-                    )}
-                    <Text strong style={{ fontSize: 24, color: "#e31e24" }}>
-                      ₹{Number(product.sellingPrice).toFixed(2) || "N/A"}
-                    </Text>
-                  </PriceWrapper>
-                  <Paragraph>
-                    {product.description || "No description available"}
-                  </Paragraph>
-                  <QuantityWrapper>
-                    <Text strong>Quantity:</Text>
-                    <InputNumber
+            <div className="product__content product-content">
+              <h1 className="product-content__title">
+                {product.name || "N/A"}
+              </h1>
+              <div className="product-content__price">
+                {product.mrp && product.mrp !== product.sellingPrice && (
+                  <span className="product-content__price-del">
+                    ₹{Number(product.mrp).toFixed(2)}
+                  </span>
+                )}
+                <span className="product-content__price-current">
+                  ₹{Number(product.sellingPrice).toFixed(2) || "N/A"}
+                </span>
+              </div>
+              <p className="product-content__text">
+                {product.description || "No description available"}
+              </p>
+              <div className="product-content__quantity product-content-quantity">
+                <div className="product-content-quantity__box product-content-quantity-box">
+                  <span className="product-content-quantity-box__text">
+                    Quantity:
+                  </span>
+                  <div className="product-content-quantity-box__row">
+                    <button
+                      className="product-content-quantity-box__row-btn"
+                      onClick={() => handleQuantityChange(quantity - 1)}
+                      disabled={quantity <= 1}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M5 12h14" />
+                      </svg>
+                    </button>
+                    <input
+                      type="number"
+                      className="product-content-quantity-box__row-input"
+                      value={quantity}
+                      onChange={(e) =>
+                        handleQuantityChange(Number(e.target.value))
+                      }
                       min={1}
                       max={product.quantity || 1}
-                      value={quantity}
-                      onChange={handleQuantityChange}
-                      style={{ width: 80 }}
                     />
-                    <Button
-                      type="primary"
-                      icon={<ShoppingCartOutlined />}
-                      onClick={handleAddToCart}
-                      disabled={product.quantity <= 0 || isAddingToCart}
-                      loading={isAddingToCart}
+                    <button
+                      className="product-content-quantity-box__row-btn"
+                      onClick={() => handleQuantityChange(quantity + 1)}
+                      disabled={quantity >= (product.quantity || 1)}
                     >
-                      Add to Cart
-                    </Button>
-                  </QuantityWrapper>
-                  <BarcodeWrapper>
-                    <svg
-                      ref={barcodeRef}
-                      aria-label={`Barcode for ${product.name}`}
-                    />
-                    <Button onClick={handlePrint} disabled={!barcodeData}>
-                      Print Barcode
-                    </Button>
-                  </BarcodeWrapper>
-                  <Space direction="vertical">
-                    <Text>
-                      <strong>SKU:</strong> {product.product_code || "N/A"}
-                    </Text>
-                    <Text>
-                      <strong>Category:</strong>{" "}
-                      {parentCategoryData?.data?.name ||
-                        categoryData?.category?.name ||
-                        "N/A"}
-                    </Text>
-                    <Text>
-                      <strong>Brand:</strong> {brandData?.brandName || "N/A"}
-                    </Text>
-                  </Space>
-                </Space>
-              </ProductContent>
-            </Col>
-          </Row>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M12 5v14m-7-7h14" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <Button
+                  className="product-content-quantity__btn"
+                  icon={<ShoppingCartOutlined />}
+                  onClick={() => handleAddToCart(product)}
+                  disabled={product.quantity <= 0 || isAddingToCart}
+                  loading={isAddingToCart}
+                >
+                  Add to Cart
+                </Button>
+              </div>
+              <div className="barcode-section">
+                <svg
+                  ref={barcodeRef}
+                  aria-label={`Barcode for ${product.name}`}
+                />
+                <button
+                  className="btn btn-print"
+                  onClick={handlePrint}
+                  disabled={!barcodeData}
+                >
+                  Print Barcode
+                </button>
+              </div>
+              <ul className="product-content__list">
+                <li className="product-content__list-item">
+                  <span>SKU:</span> {product.product_code || "N/A"}
+                </li>
+                <li className="product-content__list-item">
+                  <span>Category:</span>{" "}
+                  {parentCategoryData?.data?.name ||
+                    categoryData?.category?.name ||
+                    "N/A"}
+                </li>
+                <li className="product-content__list-item">
+                  <span>Brand:</span> {brandData?.brandName || "N/A"}
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
 
-          {/* Product Info Tabs */}
-          <Divider />
-          <Tabs
-            defaultActiveKey="1"
-            items={[
-              {
-                key: "1",
-                label: "Description",
-                children: (
-                  <Space direction="vertical" size="middle">
-                    <Title level={4}>Description</Title>
-                    <Paragraph>
-                      {product.description || "No description available"}
-                    </Paragraph>
-                    <ul>
-                      <li>Product Code: {product.product_code || "N/A"}</li>
-                      <li>Product Group: {product.productGroup || "N/A"}</li>
-                      <li>
-                        Product Segment: {product.product_segment || "N/A"}
-                      </li>
-                    </ul>
-                  </Space>
-                ),
-              },
-              {
-                key: "2",
-                label: "Additional Information",
-                children: (
-                  <Space direction="vertical" size="middle">
-                    <Title level={4}>Additional Information</Title>
-                    <Paragraph>
-                      {product.additionalInfo ||
-                        "No additional information available."}
-                    </Paragraph>
-                  </Space>
-                ),
-              },
-            ]}
-          />
+        {/* Product Info Tabs */}
+        <div className="main__product-info product-info">
+          <div className="container">
+            <Tabs
+              defaultActiveKey="1"
+              className="tabs"
+              items={[
+                {
+                  key: "1",
+                  label: <span className="tabs__btn">Description</span>,
+                  children: (
+                    <div className="product-info__inner">
+                      <h4 className="blog-section-box-content__title">
+                        Description
+                      </h4>
+                      <p className="blog-section-box-content__text">
+                        {product.description || "No description available"}
+                      </p>
+                      <ul className="blog-section-box-content__list">
+                        <li className="blog-section-box-content__list-item">
+                          Product Code: {product.product_code || "N/A"}
+                        </li>
+                        <li className="blog-section-box-content__list-item">
+                          Product Group: {product.productGroup || "N/A"}
+                        </li>
+                        <li className="blog-section-box-content__list-item">
+                          Product Segment: {product.product_segment || "N/A"}
+                        </li>
+                      </ul>
+                    </div>
+                  ),
+                },
+                {
+                  key: "2",
+                  label: (
+                    <span className="tabs__btn">Additional Information</span>
+                  ),
+                  children: (
+                    <div className="product-info__inner">
+                      <h4 className="blog-section-box-content__title">
+                        Additional Information
+                      </h4>
+                      <p className="blog-section-box-content__text">
+                        {product.additionalInfo ||
+                          "No additional information available."}
+                      </p>
+                    </div>
+                  ),
+                },
+              ]}
+            />
+          </div>
+        </div>
 
-          {/* Related Products Section */}
-          <RelatedProductsWrapper>
-            <Title level={3}>Related Products</Title>
+        {/* Related Products Section */}
+        <div className="main__shop-section shop-section">
+          <div className="container">
+            <div className="shop-section__top shop-section-top">
+              <h3 className="shop-section-top__title">Related Products</h3>
+              <div className="shop-section__buttons swiper-buttons">
+                <div className="shop-section__buttons-prev">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M15 18l-6-6 6-6" />
+                  </svg>
+                </div>
+                <div className="shop-section__buttons-next">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M9 18l6-6-6-6" />
+                  </svg>
+                </div>
+              </div>
+            </div>
             {isRecommendedLoading ? (
-              <Spin size="large" />
+              <div className="loading-container">
+                <Spin size="large" />
+              </div>
             ) : recommendedProducts?.length > 1 ? (
               <Swiper
                 modules={[Navigation]}
-                navigation
+                navigation={{
+                  prevEl: ".shop-section__buttons-prev",
+                  nextEl: ".shop-section__buttons-next",
+                }}
                 spaceBetween={20}
                 slidesPerView={3}
                 breakpoints={{
@@ -522,6 +575,7 @@ const ProductDetails = () => {
                   640: { slidesPerView: 2 },
                   1024: { slidesPerView: 3 },
                 }}
+                className="shop-section__swiper shop-section-swiper swiper"
               >
                 {recommendedProducts
                   .filter(
@@ -529,86 +583,31 @@ const ProductDetails = () => {
                   )
                   .slice(0, 4)
                   .map((recProduct) => (
-                    <SwiperSlide key={recProduct.productId}>
-                      <Card
-                        hoverable
-                        cover={
-                          <div style={{ position: "relative" }}>
-                            <LazyLoadImage
-                              src={getParsedImages(recProduct.images)[0]}
-                              alt={recProduct.name}
-                              effect="blur"
-                              placeholderSrc={noimage}
-                              style={{
-                                width: "100%",
-                                height: "200px",
-                                objectFit: "contain",
-                              }}
-                            />
-                            {recProduct.mrp &&
-                              recProduct.mrp !== recProduct.sellingPrice && (
-                                <Text
-                                  style={{
-                                    position: "absolute",
-                                    top: 10,
-                                    left: 10,
-                                    background: "#e31e24",
-                                    color: "#fff",
-                                    padding: "4px 8px",
-                                    borderRadius: 4,
-                                  }}
-                                >
-                                  Sale
-                                </Text>
-                              )}
-                          </div>
-                        }
-                        actions={[
-                          <Button
-                            type="primary"
-                            onClick={() =>
-                              toast.success(`${recProduct.name} added to cart!`)
-                            }
-                          >
-                            Add to Cart
-                          </Button>,
-                        ]}
-                      >
-                        <Card.Meta
-                          title={
-                            <a href={`/product/${recProduct.productId}`}>
-                              {recProduct.name}
-                            </a>
-                          }
-                          description={
-                            <Space direction="vertical">
-                              <Text>
-                                {categoryData?.category?.name || "N/A"}
-                              </Text>
-                              <Space>
-                                {recProduct.mrp &&
-                                  recProduct.mrp !==
-                                    recProduct.sellingPrice && (
-                                    <Text delete>
-                                      ₹{Number(recProduct.mrp).toFixed(2)}
-                                    </Text>
-                                  )}
-                                <Text strong>
-                                  ₹{Number(recProduct.sellingPrice).toFixed(2)}
-                                </Text>
-                              </Space>
-                            </Space>
-                          }
-                        />
-                      </Card>
+                    <SwiperSlide
+                      key={recProduct.productId}
+                      className="shop-section-swiper__slide shop-section-slide swiper-slide"
+                    >
+                      <ProductCard
+                        product={recProduct}
+                        getBrandsName={getBrandsName}
+                        getCategoryName={getCategoryName}
+                        formatPrice={formatPrice}
+                        handleAddToCart={handleAddToCart}
+                        handleToggleFeatured={handleToggleFeatured}
+                        cartLoadingStates={{}}
+                        featuredLoadingStates={{}}
+                        menu={menu}
+                      />
                     </SwiperSlide>
                   ))}
               </Swiper>
             ) : (
-              <Paragraph>No related products available.</Paragraph>
+              <p className="blog-section-box-content__text">
+                No related products available.
+              </p>
             )}
-          </RelatedProductsWrapper>
-        </ProductContainer>
+          </div>
+        </div>
       </div>
     </div>
   );
