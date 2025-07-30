@@ -478,7 +478,14 @@ const ProductsList = () => {
                 </div>
               ))}
             </div>
-            <div className="pagination-container text-center mt-4">
+            <div
+              className="pagination-container text-center mt-4"
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                marginTop: "16px",
+              }}
+            >
               <Pagination
                 current={currentPage}
                 total={filteredProducts.length}
@@ -499,7 +506,14 @@ const ProductsList = () => {
               pagination={false}
               scroll={{ x: true }}
             />
-            <div className="pagination-container text-center mt-4">
+            <div
+              className="pagination-container"
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                marginTop: "16px",
+              }}
+            >
               <Pagination
                 current={currentPage}
                 total={filteredProducts.length}
