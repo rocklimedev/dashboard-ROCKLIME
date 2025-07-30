@@ -7,11 +7,13 @@ const Brand = require("./brand");
 const Category = sequelize.define(
   "Category",
   {
+    // change defaultValue for categoryId to DataTypes.UUIDV4
     categoryId: {
       type: DataTypes.UUID,
       primaryKey: true,
-      defaultValue: uuidv4,
+      defaultValue: DataTypes.UUIDV4, // ✅
     },
+
     name: {
       type: DataTypes.STRING(100),
       allowNull: false,

@@ -70,4 +70,12 @@ router.delete(
   parentCategoryController.deleteParentCategory
 );
 
+// ...
+router.get(
+  "/:id/with-brands",
+  // role.check(ROLES.SALES),
+  // checkPermission("view", "get_parent_category_with_brands", "parentcategories", "/parent-categories/:id/with-brands"),
+  parentCategoryController.getParentCategoryWithBrandsAndCounts
+);
+
 module.exports = router;

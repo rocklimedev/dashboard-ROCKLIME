@@ -1,17 +1,19 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   Form,
   Input,
-  Select,
-  Button,
   Spin,
   Pagination,
   Empty,
   Table,
+  Button,
+  Tooltip,
+  Dropdown,
+  Menu,
 } from "antd";
 import {
   SearchOutlined,
-  FilterOutlined,
   HeartOutlined,
   HeartFilled,
   ShoppingCartOutlined,
@@ -22,8 +24,11 @@ import {
   useDeleteProductMutation,
   useUpdateProductFeaturedMutation,
 } from "../../api/productApi";
-import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import { useGetAllBrandsQuery } from "../../api/brandsApi";
+import {
+  useGetBrandParentCategoryByIdQuery,
+  useGetBrandParentCategoriesQuery,
+} from "../../api/brandParentCategoryApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import {
   useAddProductToCartMutation,
@@ -32,23 +37,27 @@ import {
 } from "../../api/cartApi";
 import { useGetProfileQuery } from "../../api/userApi";
 import { toast } from "sonner";
-import { Link, useNavigate } from "react-router-dom";
 import DeleteModal from "../Common/DeleteModal";
 import HistoryModal from "../Common/HistoryModal";
 import StockModal from "../Common/StockModal";
-import Cart from "./Cart";
 import ProductCard from "./ProductCard";
-import "./productlist.css";
 import PageHeader from "../Common/PageHeader";
-import { Tooltip, Dropdown, Menu } from "antd";
+import "./productlist.css";
 import pos from "../../assets/img/default.png";
 
-const { Option } = Select;
-
 const ProductsList = () => {
+  const { id: brandId, bpcId } = useParams();
+  const navigate = useNavigate();
   const { data: productsData, error, isLoading } = useGetAllProductsQuery();
-  const { data: categoriesData } = useGetAllCategoriesQuery();
   const { data: brandsData } = useGetAllBrandsQuery();
+  const { data: bpcData } = useGetBrandParentCategoryByIdQuery(bpcId, {
+    skip: !bpcId,
+  });
+  const {
+    data: categoriesData,
+    isLoading: categoriesLoading,
+    error: categoriesError,
+  } = useGetBrandParentCategoriesQuery();
   const { data: customersData } = useGetCustomersQuery();
   const { data: cartData } = useGetCartQuery();
   const { data: user, isLoading: userLoading } = useGetProfileQuery();
@@ -58,9 +67,8 @@ const ProductsList = () => {
   const [addProductToCart, { isLoading: mutationLoading }] =
     useAddProductToCartMutation();
   const [removeFromCart] = useRemoveFromCartMutation();
-  const navigate = useNavigate();
-  const userId = user?.user?.userId;
 
+  const userId = user?.user?.userId;
   const [viewMode, setViewMode] = useState("card");
   const [currentPage, setCurrentPage] = useState(1);
   const [isDeleteModalVisible, setDeleteModalVisible] = useState(false);
@@ -71,27 +79,19 @@ const ProductsList = () => {
   const [cartLoadingStates, setCartLoadingStates] = useState({});
   const [featuredLoadingStates, setFeaturedLoadingStates] = useState({});
   const [form] = Form.useForm();
-
-  const [filters, setFilters] = useState({
-    createdBy: null,
-    category: null,
-    brand: null,
-    sortBy: null,
-    search: "",
-    company_code: "",
-  });
+  const [search, setSearch] = useState("");
 
   const itemsPerPage = 30;
 
   const getBrandsName = (brandId) => {
     return brandId
-      ? brands.find((b) => b.id === brandId)?.brandName || "Not Branded"
+      ? brandsData?.find((b) => b.id === brandId)?.brandName || "Not Branded"
       : "Not Branded";
   };
 
   const getCategoryName = (categoryId) => {
     return categoryId
-      ? categories.find((cat) => cat.categoryId === categoryId)?.name ||
+      ? categoriesData?.find((c) => c.id === categoryId)?.name ||
           "Uncategorized"
       : "Uncategorized";
   };
@@ -103,20 +103,8 @@ const ProductsList = () => {
   };
 
   const products = useMemo(
-    () =>
-      Array.isArray(productsData?.data)
-        ? productsData.data
-        : Array.isArray(productsData)
-        ? productsData
-        : [],
+    () => (Array.isArray(productsData) ? productsData : []),
     [productsData]
-  );
-  const categories = useMemo(
-    () =>
-      Array.isArray(categoriesData?.categories)
-        ? categoriesData.categories
-        : [],
-    [categoriesData]
   );
   const brands = useMemo(
     () => (Array.isArray(brandsData) ? brandsData : []),
@@ -131,82 +119,29 @@ const ProductsList = () => {
     [cartData]
   );
 
-  const applyFilters = useMemo(() => {
-    return (products, customers) => {
-      if (!products) return [];
-      return products
-        .filter((product) => {
-          const customer = customers.find((c) => c._id === product.customerId);
-          const createdByName = customer?.name || "";
-          const matchesCreator =
-            !filters.createdBy || createdByName === filters.createdBy;
-          const matchesCategory =
-            !filters.category || product.categoryId === filters.category;
-          const matchesBrand =
-            !filters.brand || product.brandId === filters.brand;
-          const searchTerm = filters.search?.toLowerCase() || "";
-          const matchesSearch =
-            !searchTerm ||
-            product.name?.toLowerCase().includes(searchTerm) ||
-            product.product_code?.toLowerCase().includes(searchTerm) ||
-            product.company_code?.toLowerCase().includes(searchTerm);
-          let matchesDate = true;
-          if (filters.sortBy === "Last 7 Days") {
-            const daysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-            matchesDate = new Date(product.createdAt) >= daysAgo;
-          } else if (filters.sortBy === "Last Month") {
-            const oneMonthAgo = new Date();
-            oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-            matchesDate = new Date(product.createdAt) >= oneMonthAgo;
-          }
-          const matchesFeatured =
-            filters.sortBy !== "Featured" || product.isFeatured === true;
-          return (
-            matchesCreator &&
-            matchesCategory &&
-            matchesBrand &&
-            matchesSearch &&
-            matchesDate &&
-            matchesFeatured
-          );
-        })
-        .sort((a, b) => {
-          switch (filters.sortBy) {
-            case "Ascending":
-              return a.name?.localeCompare(b.name || "") || 0;
-            case "Descending":
-              return b.name?.localeCompare(a.name || "") || 0;
-            case "Recently Added":
-              return new Date(b.createdAt) - new Date(a.createdAt);
-            case "Price Low to High":
-              return (
-                (Number(a.sellingPrice) || 0) - (Number(b.sellingPrice) || 0)
-              );
-            case "Price High to Low":
-              return (
-                (Number(b.sellingPrice) || 0) - (Number(a.sellingPrice) || 0)
-              );
-            case "Featured":
-              return (
-                b.isFeatured - a.isFeatured ||
-                a.name?.localeCompare(b.name || "") ||
-                0
-              );
-            default:
-              return 0;
-          }
-        });
-    };
-  }, [filters]);
-
-  const filteredProducts = applyFilters(products, customers);
+  const filteredProducts = useMemo(() => {
+    return products.filter((product) => {
+      const matchesFilter = brandId
+        ? String(product.brandId) === String(brandId)
+        : bpcId
+        ? String(product.categoryId) === String(bpcId)
+        : true;
+      const searchTerm = search.toLowerCase();
+      return (
+        matchesFilter &&
+        (!searchTerm ||
+          product.name?.toLowerCase().includes(searchTerm) ||
+          product.product_code?.toLowerCase().includes(searchTerm) ||
+          product.company_code?.toLowerCase().includes(searchTerm))
+      );
+    });
+  }, [products, brandId, bpcId, search]);
 
   const formattedTableData = useMemo(
     () =>
       filteredProducts.map((product) => ({
         Name: product.name || "N/A",
         Brand: getBrandsName(product.brandId),
-        Category: getCategoryName(product.categoryId),
         Price: formatPrice(product.sellingPrice),
         Stock:
           product.quantity > 0
@@ -214,7 +149,7 @@ const ProductsList = () => {
             : "Out of Stock",
         Featured: product.isFeatured ? "Yes" : "No",
       })),
-    [filteredProducts, getBrandsName, getCategoryName, formatPrice]
+    [filteredProducts, getBrandsName, formatPrice]
   );
 
   const offset = (currentPage - 1) * itemsPerPage;
@@ -252,15 +187,8 @@ const ProductsList = () => {
       toast.error("User not logged in!");
       return;
     }
-
     const productId = product.productId;
-    if (!productId) {
-      toast.error("Invalid product ID");
-      return;
-    }
-
     setFeaturedLoadingStates((prev) => ({ ...prev, [productId]: true }));
-
     try {
       await updateProductFeatured({
         productId,
@@ -287,20 +215,13 @@ const ProductsList = () => {
       toast.error("User not logged in!");
       return;
     }
-
     const productId = product.productId;
-    if (!productId) {
-      toast.error("Invalid product ID");
-      return;
-    }
-
     setCartLoadingStates((prev) => ({ ...prev, [productId]: true }));
-
     try {
       await addProductToCart({
         userId,
         productId,
-        quantity: product.quantity || 1, // Use quantity from ProductCard
+        quantity: product.quantity || 1,
       }).unwrap();
       toast.success(`${product.name} added to cart!`);
     } catch (error) {
@@ -345,21 +266,8 @@ const ProductsList = () => {
     setStockModalVisible(false);
   };
 
-  const handleFilterChange = (changedFields) => {
-    setFilters((prev) => ({ ...prev, ...changedFields }));
-    setCurrentPage(1);
-  };
-
-  const handleResetFilters = () => {
-    form.resetFields();
-    setFilters({
-      createdBy: null,
-      category: null,
-      brand: null,
-      sortBy: null,
-      search: "",
-      company_code: "",
-    });
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
     setCurrentPage(1);
   };
 
@@ -382,11 +290,6 @@ const ProductsList = () => {
       </Menu.Item>
     </Menu>
   );
-
-  const handleConvertToOrder = (orderData) => {
-    console.log("Order converted:", orderData);
-    // Implement order conversion logic
-  };
 
   const columns = [
     {
@@ -415,12 +318,6 @@ const ProductsList = () => {
       dataIndex: "brandId",
       key: "brand",
       render: (brandId) => getBrandsName(brandId),
-    },
-    {
-      title: "Category",
-      dataIndex: "categoryId",
-      key: "category",
-      render: (categoryId) => getCategoryName(categoryId),
     },
     {
       title: "Price",
@@ -486,30 +383,40 @@ const ProductsList = () => {
     },
   ];
 
-  if (isLoading || userLoading) {
+  if (isLoading || userLoading || categoriesLoading) {
     return (
       <div className="loading-container text-center py-5">
         <Spin size="large" />
-        <p className="mt-2">Loading products...</p>
+        <p>Loading products...</p>
       </div>
     );
   }
 
-  if (error) {
+  if (error || categoriesError) {
     return (
       <div className="error-container text-center py-5">
         <Empty
-          description={`Error: ${error?.data?.message || "Unknown error"}`}
+          description={`Error: ${
+            error?.data?.message ||
+            categoriesError?.data?.message ||
+            "Unknown error"
+          }`}
         />
       </div>
     );
   }
 
+  const pageTitle = brandId
+    ? `Products by ${getBrandsName(brandId)}`
+    : bpcId
+    ? `Products in ${bpcData?.name || "Category"}`
+    : "All Products";
+
   return (
     <div className="page-wrapper">
       <div className="content">
         <PageHeader
-          title="Products"
+          title={pageTitle}
           subtitle="Explore our latest collection"
           onAdd={handleAddProduct}
           tableData={formattedTableData}
@@ -520,82 +427,34 @@ const ProductsList = () => {
             cartItems,
             onCartClick: () => document.getElementById("cart-modal").click(),
           }}
-        />
-        <Cart
-          cartItems={cartItems}
-          onRemoveFromCart={handleRemoveFromCart}
-          onConvertToOrder={handleConvertToOrder}
+          exportOptions={{ pdf: false, excel: false }}
         />
         <div className="filter-bar sticky-top bg-white p-3 shadow-sm">
-          <Form
-            form={form}
-            layout="inline"
-            onValuesChange={(_, values) => handleFilterChange(values)}
-            className="filter-form"
-          >
-            <Form.Item name="search" className="filter-item">
+          <Form layout="inline" form={form} className="filter-form">
+            <Form.Item className="filter-item">
               <Input
                 prefix={<SearchOutlined />}
                 placeholder="Search products..."
                 allowClear
                 size="large"
+                onChange={handleSearchChange}
               />
-            </Form.Item>
-            <Form.Item name="brand" className="filter-item">
-              <Select
-                placeholder="Filter by Brand"
-                allowClear
-                size="large"
-                style={{ minWidth: 180 }}
-              >
-                {brands.map((brand) => (
-                  <Option key={brand.id} value={brand.id}>
-                    {brand.brandName}
-                  </Option>
-                ))}
-              </Select>
-            </Form.Item>
-            <Form.Item name="category" className="filter-item">
-              <Select
-                placeholder="Filter by Category"
-                allowClear
-                size="large"
-                style={{ minWidth: 180 }}
-              >
-                {categories.map((cat) => (
-                  <Option key={cat.categoryId} value={cat.categoryId}>
-                    {cat.name}
-                  </Option>
-                ))}
-              </Select>
-            </Form.Item>
-            <Form.Item name="sortBy" className="filter-item">
-              <Select
-                placeholder="Sort by"
-                allowClear
-                size="large"
-                style={{ minWidth: 180 }}
-              >
-                <Option value="Ascending">Name: A-Z</Option>
-                <Option value="Descending">Name: Z-A</Option>
-                <Option value="Recently Added">Recently Added</Option>
-                <Option value="Price Low to High">Price: Low to High</Option>
-                <Option value="Price High to Low">Price: High to Low</Option>
-                <Option value="Last 7 Days">Last 7 Days</Option>
-                <Option value="Last Month">Last Month</Option>
-                <Option value="Featured">Featured</Option>
-              </Select>
-            </Form.Item>
-            <Form.Item>
-              <Button type="default" size="large" onClick={handleResetFilters}>
-                <FilterOutlined /> Reset Filters
-              </Button>
             </Form.Item>
           </Form>
         </div>
         {filteredProducts.length === 0 ? (
           <div className="empty-container text-center py-5">
-            <Empty description="No products match the filters." />
+            <Empty
+              description={
+                brandId
+                  ? `No products found for brand ${getBrandsName(brandId)}.`
+                  : bpcId
+                  ? `No products found for category ${
+                      bpcData?.name || "this category"
+                    }.`
+                  : "No products available."
+              }
+            />
           </div>
         ) : viewMode === "card" ? (
           <div className="products-section">
@@ -603,7 +462,7 @@ const ProductsList = () => {
               {currentItems.map((product) => (
                 <div
                   key={product.productId}
-                  className="col-sm-6 col-md-6 col-lg-6 col-xl-4 col-xxl-3"
+                  className="col-6 col-md-4 col-lg-3 col-xl-3 col-xxl-2"
                 >
                   <ProductCard
                     product={product}

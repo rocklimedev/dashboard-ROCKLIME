@@ -10,12 +10,14 @@ import {
 } from "@ant-design/icons";
 import { Button, Switch, Tooltip } from "antd";
 import { ShoppingCartOutlined } from "@ant-design/icons";
+
 const PageHeader = ({
   title,
   subtitle,
   onAdd,
   tableData = [],
-  extra = {}, // Accept extra prop with view toggle attributes
+  extra = {},
+  exportOptions = { pdf: true, excel: true }, // New prop to control export options
 }) => {
   // Function to handle downloading PDF
   const handleDownloadPDF = () => {
@@ -92,22 +94,26 @@ const PageHeader = ({
         </div>
       </div>
       <ul className="table-top-head d-flex align-items-center">
-        <li title="Download PDF" onClick={handleDownloadPDF}>
-          <a data-bs-toggle="tooltip" data-bs-placement="top" title="PDF">
-            <FilePdfFilled
-              size={22}
-              className="text-red-500 hover:text-red-700"
-            />
-          </a>
-        </li>
-        <li title="Download Excel" onClick={handleDownloadExcel}>
-          <a data-bs-toggle="tooltip" data-bs-placement="top" title="Excel">
-            <FileExcelFilled
-              size={22}
-              className="text-green-500 hover:text-green-700"
-            />
-          </a>
-        </li>
+        {exportOptions.pdf && (
+          <li title="Download PDF" onClick={handleDownloadPDF}>
+            <a data-bs-toggle="tooltip" data-bs-placement="top" title="PDF">
+              <FilePdfFilled
+                size={22}
+                className="text-red-500 hover:text-red-700"
+              />
+            </a>
+          </li>
+        )}
+        {exportOptions.excel && (
+          <li title="Download Excel" onClick={handleDownloadExcel}>
+            <a data-bs-toggle="tooltip" data-bs-placement="top" title="Excel">
+              <FileExcelFilled
+                size={22}
+                className="text-green-500 hover:text-green-700"
+              />
+            </a>
+          </li>
+        )}
         {showViewToggle && (
           <li>
             <Tooltip

@@ -20,7 +20,7 @@ const Keyword = require("../models/keyword");
 const TeamMember = require("../models/teamMember");
 const ParentCategory = require("../models/parentCategory");
 const BrandParentCategory = require("../models/brandParentCategory");
-
+const BrandParentCategoryBrand = require("../models/brandParentCategoryBrand");
 const setupDB = async () => {
   try {
     await sequelize.authenticate();
@@ -151,6 +151,31 @@ const setupDB = async () => {
       foreignKey: "parentCategoryId",
       otherKey: "brandId",
       as: "brands",
+    });
+
+    // BrandParentCategory ↔ Brand (M:N)
+    BrandParentCategory.belongsToMany(Brand, {
+      through: BrandParentCategoryBrand,
+      foreignKey: "brandParentCategoryId",
+      otherKey: "brandId",
+      as: "brands",
+    });
+
+    Brand.belongsToMany(BrandParentCategory, {
+      through: BrandParentCategoryBrand,
+      foreignKey: "brandId",
+      otherKey: "brandParentCategoryId",
+      as: "brandParentCategories",
+    });
+
+    // BrandParentCategory ↔ ParentCategory (1:M)
+    BrandParentCategory.hasMany(ParentCategory, {
+      foreignKey: "brandParentCategoryId",
+      as: "parentCategories",
+    });
+    ParentCategory.belongsTo(BrandParentCategory, {
+      foreignKey: "brandParentCategoryId",
+      as: "brandParentCategory",
     });
 
     // Category relationships

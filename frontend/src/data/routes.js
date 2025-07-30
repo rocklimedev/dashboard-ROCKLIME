@@ -80,6 +80,8 @@ import QuotationsDetails from "../components/Quotation/QuotaionDetails";
 import UnderMaintanance from "../components/Error/UnderMaintanance";
 import AddNewOrder from "../components/Orders/AddNewOrder";
 import NewUserList from "../components/User/NewUserList";
+import CategoryManagement from "../components/Categories/CategoryManagement";
+import BrandSelection from "../components/Product/BrandSelection";
 
 const masterRoutes = [
   {
@@ -92,15 +94,30 @@ const masterRoutes = [
   },
   {
     path: "#",
-    name: "Inventory",
+    name: "Products",
     icon: <MdOutlineInventory2 />,
     isSidebarActive: true,
     submenu: [
       {
-        path: "/inventory/products",
+        path: "/products/brand/:id",
         name: "Products",
         icon: <AiOutlineProduct />,
         element: <ProductList />,
+        isSidebarActive: false,
+      },
+      {
+        path: "/brand-parent-categories/:bpcId",
+        name: "Products",
+        icon: <AiOutlineProduct />,
+        element: <BrandSelection />,
+        isSidebarActive: false,
+      },
+
+      {
+        path: "/inventory/products",
+        name: "Products",
+        icon: <AiOutlineProduct />,
+        element: <Product />,
         isSidebarActive: true,
       },
       {
@@ -113,6 +130,13 @@ const masterRoutes = [
       {
         path: "/inventory/categories-keywords",
         element: <CategoriesList />,
+        name: "Categories",
+        icon: <BiCategory />,
+        isSidebarActive: true,
+      },
+      {
+        path: "/inventory/categories-management",
+        element: <CategoryManagement />,
         name: "Categories",
         icon: <BiCategory />,
         isSidebarActive: true,
