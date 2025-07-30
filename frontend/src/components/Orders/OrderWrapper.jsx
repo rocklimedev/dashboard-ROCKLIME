@@ -1,24 +1,24 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useGetAllUsersQuery } from "../../api/userApi";
-import PageHeader from "../Common/PageHeader";
-import OrderPagination from "./OrderPagination";
-import OrderFilter from "./OrderFilter"; // Assuming this is in the same directory
-import ShowInvoices from "./ShowInvoices";
+import { useGetAllTeamsQuery } from "../../api/teamApi";
+import { useGetCustomersQuery } from "../../api/customerApi";
 import {
   useGetFilteredOrdersQuery,
   useGetAllOrdersQuery,
   useDeleteOrderMutation,
 } from "../../api/orderApi";
-import { useGetAllTeamsQuery } from "../../api/teamApi";
-import { useGetCustomersQuery } from "../../api/customerApi";
 import { toast } from "sonner";
+import { FaEdit, FaPause, FaFileInvoice, FaTrash } from "react-icons/fa";
+import { Tooltip } from "react-tooltip";
+import PageHeader from "../Common/PageHeader";
+import OrderFilter from "./OrderFilter";
+import OrderPagination from "./OrderPagination";
+import ShowInvoices from "./ShowInvoices";
+import QuotationList from "../Quotation/QuotationList";
 import DatesModal from "./DateModal";
 import OnHoldModal from "./OnHoldOrder";
 import DeleteModal from "../Common/DeleteModal";
-import { FaEdit, FaPause, FaFileInvoice, FaTrash } from "react-icons/fa";
-import { Tooltip } from "react-tooltip";
-import { Link } from "react-router-dom";
 
 const OrderWrapper = () => {
   const navigate = useNavigate();
@@ -36,9 +36,6 @@ const OrderWrapper = () => {
     followupDates: [],
   });
 
-  const { data: teamsData } = useGetAllTeamsQuery();
-  const { data: customersData } = useGetCustomersQuery();
-  const { data: usersData } = useGetAllUsersQuery();
   const [filters, setFilters] = useState({
     status: "",
     priority: "",
@@ -47,12 +44,19 @@ const OrderWrapper = () => {
     limit: 10,
   });
 
+  // Fetch data from APIs
+  const { data: teamsData } = useGetAllTeamsQuery();
+  const { data: customersData } = useGetCustomersQuery();
+  const { data: usersData } = useGetAllUsersQuery();
+
+  // Compute filtered state
   const isFiltered = useMemo(() => {
     return (
       filters.status !== "" || filters.priority !== "" || filters.source !== ""
     );
   }, [filters]);
 
+  // Clean filters for API query
   const cleanFilters = useMemo(() => {
     const { status, priority, source, page, limit } = filters;
     return {
@@ -64,6 +68,7 @@ const OrderWrapper = () => {
     };
   }, [filters]);
 
+  // Fetch orders based on filters
   const {
     data: filteredData,
     error: filteredError,
@@ -76,7 +81,10 @@ const OrderWrapper = () => {
     error: allError,
     isLoading: allLoading,
     isFetching: allFetching,
-  } = useGetAllOrdersQuery(undefined, { skip: isFiltered });
+  } = useGetAllOrdersQuery(
+    { page: filters.page, limit: filters.limit },
+    { skip: isFiltered }
+  );
 
   const orders = isFiltered
     ? filteredData?.orders || []
@@ -88,6 +96,7 @@ const OrderWrapper = () => {
   const isFetching = isFiltered ? filteredFetching : allFetching;
   const error = isFiltered ? filteredError : allError;
 
+  // Map teams, customers, and users for quick lookup
   useEffect(() => {
     if (teamsData?.teams) {
       const map = teamsData.teams.reduce((acc, team) => {
@@ -120,6 +129,7 @@ const OrderWrapper = () => {
 
   const [deleteOrder] = useDeleteOrderMutation();
 
+  // Handlers
   const handleOpenAddOrder = () => {
     navigate("/order/add");
   };
@@ -168,6 +178,7 @@ const OrderWrapper = () => {
 
   const handleConfirmHold = () => {
     handleModalClose();
+    toast.success("Order placed on hold!");
   };
 
   const handlePageChange = (page) => {
@@ -175,14 +186,13 @@ const OrderWrapper = () => {
   };
 
   const handleClearFilters = () => {
-    const defaultFilters = {
+    setFilters({
       status: "",
       priority: "",
       source: "",
       page: 1,
       limit: 10,
-    };
-    setFilters(defaultFilters);
+    });
     toast.success("Filters cleared!");
   };
 
@@ -208,12 +218,8 @@ const OrderWrapper = () => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        <PageHeader
-          title="Order"
-          subtitle="Manage your Orders & Invoices list"
-          onAdd={handleOpenAddOrder}
-        />
-        <ul className="nav nav-tabs">
+        {/* Tabs */}
+        <ul className="nav nav-tabs mb-4">
           <li className="nav-item">
             <button
               className={`nav-link ${activeTab === "orders" ? "active" : ""}`}
@@ -230,188 +236,217 @@ const OrderWrapper = () => {
               Invoices
             </button>
           </li>
+          <li className="nav-item">
+            <button
+              className={`nav-link ${
+                activeTab === "quotations" ? "active" : ""
+              }`}
+              onClick={() => setActiveTab("quotations")}
+            >
+              Quotations
+            </button>
+          </li>
         </ul>
-        {activeTab === "orders" ? (
-          <div className="orders-section">
-            <div className="filter-section">
-              <OrderFilter
-                setFilters={setFilters}
-                onClear={handleClearFilters}
-              />
-            </div>
-            <div className="orders-table-section">
-              <div className="border-bottom mb-4 pb-4">
-                <h4>All Orders</h4>
-              </div>
-              {isLoading || isFetching ? (
-                <div className="text-center">
-                  <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Loading...</span>
-                  </div>
-                </div>
-              ) : error ? (
-                <div className="alert alert-danger">
-                  Error loading orders:{" "}
-                  {error?.data?.message || error?.message || "Unknown error"}
-                </div>
-              ) : orders.length > 0 ? (
-                <>
-                  <div className="cm-table-wrapper">
-                    <table className="cm-table">
-                      <thead>
-                        <tr>
-                          <th className="checkbox-column">
-                            <input type="checkbox" />
-                          </th>
-                          <th>STATUS</th>
-                          <th>TITLE</th>
-                          <th>CUSTOMER</th>
-                          <th>PRIORITY</th>
-                          <th>TEAM</th>
-                          <th>SOURCE</th>
-                          <th>CREATED BY</th>
-                          <th>CREATED AT</th>
-                          <th>DUE DATE</th>
-                          <th>ACTIONS</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {orders.map((order) => {
-                          const teamName = order.assignedTo
-                            ? teamMap[order.assignedTo] || "—"
-                            : "—";
-                          const customerName = order.createdFor
-                            ? customerMap[order.createdFor] || "Loading..."
-                            : "N/A";
-                          const createdByName = order.createdBy
-                            ? userMap[order.createdBy] || "Loading..."
-                            : "N/A";
-                          const statusClass = order.status
-                            ? order.status.toLowerCase().replace("_", "-")
-                            : "";
-                          const dueDateClass = isDueDateClose(order.dueDate)
-                            ? "due-date-close"
-                            : "";
 
-                          return (
-                            <tr key={order.id}>
-                              <td className="checkbox-column">
-                                <input type="checkbox" />
-                              </td>
-                              <td>
-                                <span className={`status-badge ${statusClass}`}>
-                                  {order.status || "CREATED"}
-                                </span>
-                              </td>
-                              <td>
-                                <Link to={`/order/${order.id}`}>
-                                  {order.title}
-                                </Link>
-                              </td>
-                              <td>{customerName}</td>
-                              <td>
-                                <span
-                                  className={`priority-badge ${
-                                    order.priority?.toLowerCase() || "medium"
-                                  }`}
-                                >
-                                  {order.priority || "Medium"}
-                                </span>
-                              </td>
-                              <td>{teamName}</td>
-                              <td>{order.source || "—"}</td>
-                              <td>{createdByName}</td>
-                              <td>
-                                {order.createdAt
-                                  ? new Date(
-                                      order.createdAt
-                                    ).toLocaleDateString()
-                                  : "—"}
-                              </td>
-                              <td className={dueDateClass}>
-                                {order.dueDate ? (
-                                  <span
-                                    className="due-date-link"
-                                    style={{ color: "#e31e24" }}
-                                    onClick={() =>
-                                      handleOpenDatesModal(
-                                        order.dueDate,
-                                        order.followupDates || []
-                                      )
-                                    }
-                                  >
-                                    {new Date(
-                                      order.dueDate
-                                    ).toLocaleDateString()}
-                                  </span>
-                                ) : (
-                                  "—"
-                                )}
-                              </td>
-                              <td className="action-column">
-                                <div className="action-buttons">
-                                  <button
-                                    className="btn btn-icon btn-red btn-edit"
-                                    onClick={() => handleEditClick(order)}
-                                    data-tooltip-id={`edit-${order.id}`}
-                                    data-tooltip-content="Edit Order"
-                                  >
-                                    <FaEdit />
-                                  </button>
-                                  <button
-                                    className="btn btn-icon btn-red btn-hold"
-                                    onClick={() => handleHoldClick(order)}
-                                    data-tooltip-id={`hold-${order.id}`}
-                                    data-tooltip-content="Put Order on Hold"
-                                  >
-                                    <FaPause />
-                                  </button>
-                                  <button
-                                    className="btn btn-icon btn-red btn-invoice"
-                                    onClick={() => handleViewInvoice(order)}
-                                    data-tooltip-id={`invoice-${order.id}`}
-                                    data-tooltip-content="View Invoice"
-                                  >
-                                    <FaFileInvoice />
-                                  </button>
-                                  <button
-                                    className="btn btn-icon btn-red btn-delete"
-                                    onClick={() => handleDeleteClick(order.id)}
-                                    data-tooltip-id={`delete-${order.id}`}
-                                    data-tooltip-content="Delete Order"
-                                  >
-                                    <FaTrash />
-                                  </button>
-                                  <Tooltip id={`edit-${order.id}`} />
-                                  <Tooltip id={`hold-${order.id}`} />
-                                  <Tooltip id={`invoice-${order.id}`} />
-                                  <Tooltip id={`delete-${order.id}`} />
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+        {activeTab === "orders" ? (
+          <>
+            <PageHeader
+              title="Order"
+              subtitle="Manage your Orders, Invoices & Quotations list"
+              onAdd={handleOpenAddOrder}
+            />
+            <div className="orders-section">
+              <div className="filter-section mb-4">
+                <OrderFilter
+                  filters={filters}
+                  setFilters={setFilters}
+                  onClear={handleClearFilters}
+                />
+              </div>
+              <div className="orders-table-section">
+                <div className="border-bottom mb-4 pb-2">
+                  <h4>All Orders</h4>
+                </div>
+                {isLoading || isFetching ? (
+                  <div className="text-center">
+                    <div className="spinner-border text-primary" role="status">
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
                   </div>
-                  {totalCount > filters.limit && (
-                    <OrderPagination
-                      currentPage={filters.page}
-                      totalCount={totalCount}
-                      pageSize={filters.limit}
-                      onPageChange={handlePageChange}
-                    />
-                  )}
-                </>
-              ) : (
-                <p className="no-data">No orders found.</p>
-              )}
+                ) : error ? (
+                  <div className="alert alert-danger">
+                    Error loading orders:{" "}
+                    {error?.data?.message || error?.message || "Unknown error"}
+                  </div>
+                ) : orders.length > 0 ? (
+                  <>
+                    <div className="cm-table-wrapper">
+                      <table className="cm-table table table-striped">
+                        <thead>
+                          <tr>
+                            <th className="checkbox-column">
+                              <input type="checkbox" />
+                            </th>
+                            <th>STATUS</th>
+                            <th>TITLE</th>
+                            <th>CUSTOMER</th>
+                            <th>PRIORITY</th>
+                            <th>TEAM</th>
+                            <th>SOURCE</th>
+                            <th>CREATED BY</th>
+                            <th>CREATED AT</th>
+                            <th>DUE DATE</th>
+                            <th>ACTIONS</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {orders.map((order) => {
+                            const teamName = order.assignedTo
+                              ? teamMap[order.assignedTo] || "—"
+                              : "—";
+                            const customerName = order.createdFor
+                              ? customerMap[order.createdFor] || "Loading..."
+                              : "N/A";
+                            const createdByName = order.createdBy
+                              ? userMap[order.createdBy] || "Loading..."
+                              : "N/A";
+                            const statusClass = order.status
+                              ? order.status.toLowerCase().replace("_", "-")
+                              : "";
+                            const dueDateClass = isDueDateClose(order.dueDate)
+                              ? "due-date-close"
+                              : "";
+
+                            return (
+                              <tr key={order.id}>
+                                <td className="checkbox-column">
+                                  <input type="checkbox" />
+                                </td>
+                                <td>
+                                  <span
+                                    className={`status-badge ${statusClass}`}
+                                  >
+                                    {order.status || "CREATED"}
+                                  </span>
+                                </td>
+                                <td>
+                                  <Link to={`/order/${order.id}`}>
+                                    {order.title}
+                                  </Link>
+                                </td>
+                                <td>{customerName}</td>
+                                <td>
+                                  <span
+                                    className={`priority-badge ${
+                                      order.priority?.toLowerCase() || "medium"
+                                    }`}
+                                  >
+                                    {order.priority || "Medium"}
+                                  </span>
+                                </td>
+                                <td>{teamName}</td>
+                                <td>{order.source || "—"}</td>
+                                <td>{createdByName}</td>
+                                <td>
+                                  {order.createdAt
+                                    ? new Date(
+                                        order.createdAt
+                                      ).toLocaleDateString()
+                                    : "—"}
+                                </td>
+                                <td className={dueDateClass}>
+                                  {order.dueDate ? (
+                                    <span
+                                      className="due-date-link"
+                                      style={{
+                                        color: "#e31e24",
+                                        cursor: "pointer",
+                                      }}
+                                      onClick={() =>
+                                        handleOpenDatesModal(
+                                          order.dueDate,
+                                          order.followupDates || []
+                                        )
+                                      }
+                                    >
+                                      {new Date(
+                                        order.dueDate
+                                      ).toLocaleDateString()}
+                                    </span>
+                                  ) : (
+                                    "—"
+                                  )}
+                                </td>
+                                <td className="action-column">
+                                  <div className="action-buttons d-flex gap-2">
+                                    <button
+                                      className="btn btn-icon btn-sm btn-outline-primary"
+                                      onClick={() => handleEditClick(order)}
+                                      data-tooltip-id={`edit-${order.id}`}
+                                      data-tooltip-content="Edit Order"
+                                    >
+                                      <FaEdit />
+                                    </button>
+                                    <button
+                                      className="btn btn-icon btn-sm btn-outline-warning"
+                                      onClick={() => handleHoldClick(order)}
+                                      data-tooltip-id={`hold-${order.id}`}
+                                      data-tooltip-content="Put Order on Hold"
+                                    >
+                                      <FaPause />
+                                    </button>
+                                    <button
+                                      className="btn btn-icon btn-sm btn-outline-info"
+                                      onClick={() => handleViewInvoice(order)}
+                                      data-tooltip-id={`invoice-${order.id}`}
+                                      data-tooltip-content="View Invoice"
+                                    >
+                                      <FaFileInvoice />
+                                    </button>
+                                    <button
+                                      className="btn btn-icon btn-sm btn-outline-danger"
+                                      onClick={() =>
+                                        handleDeleteClick(order.id)
+                                      }
+                                      data-tooltip-id={`delete-${order.id}`}
+                                      data-tooltip-content="Delete Order"
+                                    >
+                                      <FaTrash />
+                                    </button>
+                                    <Tooltip id={`edit-${order.id}`} />
+                                    <Tooltip id={`hold-${order.id}`} />
+                                    <Tooltip id={`invoice-${order.id}`} />
+                                    <Tooltip id={`delete-${order.id}`} />
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    {totalCount > filters.limit && (
+                      <OrderPagination
+                        currentPage={filters.page}
+                        totalCount={totalCount}
+                        pageSize={filters.limit}
+                        onPageChange={handlePageChange}
+                      />
+                    )}
+                  </>
+                ) : (
+                  <p className="no-data text-muted">No orders found.</p>
+                )}
+              </div>
             </div>
-          </div>
-        ) : (
+          </>
+        ) : activeTab === "invoices" ? (
           <ShowInvoices />
+        ) : (
+          <QuotationList />
         )}
 
+        {/* Modals */}
         {showHoldModal && (
           <OnHoldModal
             order={selectedOrder}

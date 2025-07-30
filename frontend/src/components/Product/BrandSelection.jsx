@@ -52,11 +52,6 @@ const BrandSelection = () => {
     <section className="page-wrapper">
       <div className="content">
         <div className="banner-container">
-          <img
-            src={mainWrapper}
-            alt={`${bpc?.name} banner`}
-            className="banner-image"
-          />
           <div className="banner-overlay">
             <h2 className="banner-title">{bpc?.name || "Brands"}</h2>
             <p className="banner-subtitle">

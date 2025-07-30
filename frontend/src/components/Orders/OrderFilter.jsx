@@ -1,7 +1,7 @@
 import React from "react";
-import { FaSearch, FaTimes } from "react-icons/fa";
+import { FaTimes } from "react-icons/fa";
 
-const OrderFilter = ({ setFilters, onClear }) => {
+const OrderFilter = ({ filters, setFilters, onClear }) => {
   const handleFilterChange = (field) => (e) => {
     setFilters((prev) => ({
       ...prev,
@@ -11,14 +11,12 @@ const OrderFilter = ({ setFilters, onClear }) => {
   };
 
   return (
-    <div className="filter-form">
+    <div className="filter-form d-flex align-items-center gap-3">
       <div className="filter-item">
         <div className="filter-input-wrapper">
-          <span className="filter-icon">
-            <FaSearch />
-          </span>
           <select
-            className="filter-input"
+            className="filter-input form-select"
+            value={filters.status}
             onChange={handleFilterChange("status")}
             aria-label="Filter by status"
           >
@@ -32,11 +30,9 @@ const OrderFilter = ({ setFilters, onClear }) => {
       </div>
       <div className="filter-item">
         <div className="filter-input-wrapper">
-          <span className="filter-icon">
-            <FaSearch />
-          </span>
           <select
-            className="filter-input"
+            className="filter-input form-select"
+            value={filters.priority}
             onChange={handleFilterChange("priority")}
             aria-label="Filter by priority"
           >
@@ -49,11 +45,9 @@ const OrderFilter = ({ setFilters, onClear }) => {
       </div>
       <div className="filter-item">
         <div className="filter-input-wrapper">
-          <span className="filter-icon">
-            <FaSearch />
-          </span>
           <select
-            className="filter-input"
+            className="filter-input form-select"
+            value={filters.source}
             onChange={handleFilterChange("source")}
             aria-label="Filter by source"
           >
@@ -65,12 +59,6 @@ const OrderFilter = ({ setFilters, onClear }) => {
         </div>
       </div>
       <div className="filter-buttons">
-        <button
-          className="btn btn-red btn-filter"
-          onClick={() => setFilters((prev) => ({ ...prev }))}
-        >
-          <FaSearch className="me-2" /> Search
-        </button>
         <button className="btn btn-outline-red btn-clear" onClick={onClear}>
           <FaTimes className="me-2" /> Clear Filters
         </button>

@@ -81,11 +81,6 @@ const Product = () => {
     <section className="page-wrapper">
       <div className="content">
         <div className="banner-container">
-          <img
-            src={mainWrapper}
-            alt="Product page banner"
-            className="banner-image"
-          />
           <div className="banner-overlay">
             <h2 className="banner-title">Our Products</h2>
             <p className="banner-subtitle">

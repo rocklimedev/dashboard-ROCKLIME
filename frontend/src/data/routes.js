@@ -198,13 +198,13 @@ const masterRoutes = [
         isSidebarActive: false,
         element: <AddNewOrder />,
       },
-      {
-        path: "/invoices/list",
-        name: "Invoices",
-        icon: <FaFileInvoice />,
-        element: <RecentInvoices />,
-        isSidebarActive: true,
-      },
+      // {
+      //   path: "/invoices/list",
+      //   name: "Invoices",
+      //   icon: <FaFileInvoice />,
+      //   element: <RecentInvoices />,
+      //   isSidebarActive: true,
+      // },
       {
         path: "/invoice/:invoiceId",
         name: "Invoices",
@@ -226,13 +226,13 @@ const masterRoutes = [
         isSidebarActive: false,
         element: <POSWrapperNew />,
       },
-      {
-        path: "/quotations/list",
-        name: "Quotations",
-        icon: <IoPricetagOutline />,
-        isSidebarActive: true,
-        element: <QuotationList />,
-      },
+      // {
+      //   path: "/quotations/list",
+      //   name: "Quotations",
+      //   icon: <IoPricetagOutline />,
+      //   isSidebarActive: true,
+      //   element: <QuotationList />,
+      // },
       {
         path: "/quotations/:id",
         name: "Quotations Details",
