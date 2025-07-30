@@ -1,30 +1,28 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
-const { v4: uuidv4 } = require("uuid");
-// Many-to-many between Brand and ParentCategory
+
 const BrandParentCategory = sequelize.define(
   "BrandParentCategory",
   {
-    brandId: {
+    id: {
       type: DataTypes.UUID,
-      references: {
-        model: "brands",
-        key: "id",
-      },
+      defaultValue: DataTypes.UUIDV4, // ✅ prefer this
       primaryKey: true,
     },
-    parentCategoryId: {
-      type: DataTypes.UUID,
-      references: {
-        model: "parentcategories",
-        key: "id",
-      },
-      primaryKey: true,
+    name: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      unique: true,
+    },
+    slug: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      unique: true,
     },
   },
   {
     tableName: "brand_parentcategories",
-    timestamps: false,
+    timestamps: true,
   }
 );
 

@@ -4606,10 +4606,6 @@ fieldset:disabled .btn {
   float: right;
   padding-left: var(--bs-breadcrumb-item-padding-x);
   color: var(--bs-breadcrumb-divider-color);
-  content: var(
-    --bs-breadcrumb-divider,
-    "https://dreamspos.dreamstechnologies.com/"
-  );
 }
 .breadcrumb-item.active {
   color: var(--bs-breadcrumb-item-active-color);

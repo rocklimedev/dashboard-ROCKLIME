@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Spin, Empty } from "antd";
-import { useGetAllCategoriesQuery } from "../../api/categoryApi";
+import { useGetBrandParentCategoriesQuery } from "../../api/brandParentCategoryApi";
 import mainWrapper from "../../assets/img/products/product_page_title.png";
 import surfaces from "../../assets/img/products/surfaces.jpg";
 import fittings from "../../assets/img/products/cp_fittings.png";
@@ -10,28 +10,51 @@ import adhesive from "../../assets/img/products/adhesive.jpg";
 import "./productwrapper.css";
 
 const Product = () => {
-  const { data: categoriesData, isLoading, error } = useGetAllCategoriesQuery();
-  const fallbackImages = [surfaces, fittings, wellness, adhesive];
+  const {
+    data: bpcList,
+    isLoading,
+    error,
+  } = useGetBrandParentCategoriesQuery();
 
-  // Normalize categories data
-  const categories = useMemo(() => {
-    const cats = Array.isArray(categoriesData?.categories)
-      ? categoriesData.categories
-      : [];
-    return cats.map((cat, index) => ({
-      categoryId: cat.categoryId,
-      name: cat.name,
-      image: cat.imageUrl || fallbackImages[index % fallbackImages.length],
-      alt: `${cat.name} products`,
-      url: `/products/${cat.categoryId}`,
-    }));
-  }, [categoriesData]);
+  const imageBySlug = {
+    surface: surfaces,
+    adhesive: adhesive,
+    wellness: wellness,
+    cp_fitting: fittings,
+  };
+
+  const desiredOrder = ["cp_fitting", "wellness", "adhesive", "surface"];
+
+  const cards = useMemo(() => {
+    const list = Array.isArray(bpcList) ? bpcList : [];
+    const sorted = [...list].sort((a, b) => {
+      const ai = desiredOrder.indexOf((a.slug || "").toLowerCase());
+      const bi = desiredOrder.indexOf((b.slug || "").toLowerCase());
+      if (ai !== -1 && bi !== -1) return ai - bi;
+      if (ai !== -1) return -1;
+      if (bi !== -1) return 1;
+      return (a.name || "").localeCompare(b.name || "");
+    });
+
+    return sorted.map((bpc) => {
+      const slug = (bpc.slug || "").toLowerCase();
+      const image = imageBySlug[slug] || surfaces;
+      return {
+        id: bpc.id,
+        name: bpc.name,
+        slug: bpc.slug,
+        image,
+        alt: `${bpc.name} products`,
+        url: `/brand-parent-categories/${bpc.id}`, // Points to BrandSelection
+      };
+    });
+  }, [bpcList]);
 
   if (isLoading) {
     return (
       <div className="loading-container">
         <Spin size="large" />
-        <p>Loading categories...</p>
+        <p>Loading product groups...</p>
       </div>
     );
   }
@@ -46,10 +69,10 @@ const Product = () => {
     );
   }
 
-  if (categories.length === 0) {
+  if (!cards.length) {
     return (
       <div className="empty-container">
-        <Empty description="No categories available." />
+        <Empty description="No product groups available." />
       </div>
     );
   }
@@ -71,16 +94,17 @@ const Product = () => {
             </p>
           </div>
         </div>
+
         <div className="categories-wrapper">
-          {categories.map((category) => (
-            <div key={category.categoryId} className="categories-card">
-              <Link to={category.url}>
+          {cards.map((card) => (
+            <div key={card.id} className="categories-card">
+              <Link to={card.url}>
                 <img
-                  src={category.image}
-                  alt={category.alt}
+                  src={card.image}
+                  alt={card.alt}
                   className="categories-img"
                 />
-                <h2 className="categories-text">{category.name}</h2>
+                <h2 className="categories-text">{card.name}</h2>
               </Link>
             </div>
           ))}

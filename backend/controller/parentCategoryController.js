@@ -1,5 +1,6 @@
 const ParentCategory = require("../models/parentCategory");
-
+const Brand = require("../models/brand");
+const Category = require("../models/category");
 // ✅ Create Parent Category
 exports.createParentCategory = async (req, res) => {
   try {
@@ -29,7 +30,9 @@ exports.getParentCategoryById = async (req, res) => {
     const category = await ParentCategory.findByPk(id);
 
     if (!category) {
-      return res.status(404).json({ success: false, message: "Category not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Category not found" });
     }
 
     res.status(200).json({ success: true, data: category });
@@ -46,7 +49,9 @@ exports.updateParentCategory = async (req, res) => {
 
     const category = await ParentCategory.findByPk(id);
     if (!category) {
-      return res.status(404).json({ success: false, message: "Category not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Category not found" });
     }
 
     category.name = name || category.name;
@@ -66,11 +71,45 @@ exports.deleteParentCategory = async (req, res) => {
 
     const category = await ParentCategory.findByPk(id);
     if (!category) {
-      return res.status(404).json({ success: false, message: "Category not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Category not found" });
     }
 
     await category.destroy();
-    res.status(200).json({ success: true, message: "Category deleted successfully" });
+    res
+      .status(200)
+      .json({ success: true, message: "Category deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.getParentCategoryWithBrandsAndCounts = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const parent = await ParentCategory.findByPk(id, {
+      include: [
+        { model: Brand, as: "brands", through: { attributes: [] } },
+        { model: Category, as: "categories" },
+      ],
+    });
+    if (!parent)
+      return res
+        .status(404)
+        .json({ success: false, message: "Category not found" });
+
+    const count = parent.categories?.length || 0;
+    return res.status(200).json({
+      success: true,
+      data: {
+        id: parent.id,
+        name: parent.name,
+        slug: parent.slug,
+        brands: parent.brands,
+        categoriesCount: count,
+      },
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

@@ -1,47 +1,57 @@
 const express = require("express");
 const categoryController = require("../controller/categoryController");
 const checkPermission = require("../middleware/permission");
-const role = require("../middleware/role"); // Role-based access middleware
+const role = require("../middleware/role");
 const { ROLES } = require("../config/constant");
 
 const router = express.Router();
 
-// Only Admin and SuperAdmin can create a category
+// Create category (expects { name, brandId, parentCategoryId, keywords? })
 router.post(
   "/",
-  // role.check(ROLES.Admin), // Only Admins can create categories
-  //checkPermission("write", "create_category", "categories", "/category"),
+  // role.check(ROLES.Admin),
+  // checkPermission("write", "create_category", "categories", "/category"),
   categoryController.createCategory
 );
 
-// All users can view categories
+// All categories (with brand, parent, keywords)
 router.get(
   "/all",
-  // role.check(ROLES.Users), // Minimum role required is Users
-  //  checkPermission("view", "get_all_categories", "categories", "/category/all"),
+  // role.check(ROLES.Users),
+  // checkPermission("view", "get_all_categories", "categories", "/category/all"),
   categoryController.getAllCategories
 );
 
-// All users can view a specific category
+// Category by ID
 router.get(
   "/:id",
-  //  role.check(ROLES.Users),
+  // role.check(ROLES.Users),
   // checkPermission("view", "get_category_by_id", "categories", "/category/:id"),
   categoryController.getCategoryById
 );
 
-// Only Admin and Sales can edit a category
+// Update category (optionally replace keywords by sending `keywords: []`)
 router.put(
   "/:id",
-  // role.check(ROLES.Admin), // Only Admin can edit categories
+  // role.check(ROLES.Admin),
   // checkPermission("edit", "update_category", "categories", "/category/:id"),
   categoryController.updateCategory
 );
 
-// Only SuperAdmin can delete a category
+// Replace only keywords for a category
+router.put(
+  "/:id/keywords",
+  // role.check(ROLES.Admin),
+  // checkPermission("edit", "replace_keywords", "categories", "/category/:id/keywords"),
+  categoryController.replaceCategoryKeywords
+);
+
+// List categories for a brand within a given parent-category
+
+// Delete category
 router.delete(
   "/:id",
-  // role.check(ROLES.SuperAdmin), // Only SuperAdmin can delete categories
+  // role.check(ROLES.SuperAdmin),
   // checkPermission("delete", "delete_category", "categories", "/category/:id"),
   categoryController.deleteCategory
 );

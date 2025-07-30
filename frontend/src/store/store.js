@@ -22,8 +22,10 @@ import { teamApi } from "../api/teamApi";
 import { rolePermissionsApi } from "../api/rolePermissionApi";
 import { searchApi } from "../api/searchApi";
 import { attendanceApi } from "../api/attendanceApi";
+import { brandParentCategoryApi } from "../api/brandParentCategoryApi";
 export const store = configureStore({
   reducer: {
+    [brandParentCategoryApi.reducerPath]: brandParentCategoryApi.reducer,
     [vendorApi.reducerPath]: vendorApi.reducer,
     [authApi.reducerPath]: authApi.reducer,
     [categoryApi.reducerPath]: categoryApi.reducer,
@@ -50,6 +52,7 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
       vendorApi.middleware,
+      brandParentCategoryApi.middleware,
       authApi.middleware,
       categoryApi.middleware,
       signatureApi.middleware,
