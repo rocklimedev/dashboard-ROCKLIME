@@ -125,22 +125,16 @@ const masterRoutes = [
         name: "Code Status",
         icon: <RiFileListLine />,
         element: <CheckProductCodeStatus />,
-        isSidebarActive: true,
+        isSidebarActive: false,
       },
       {
         path: "/inventory/categories-keywords",
-        element: <CategoriesList />,
-        name: "Categories",
-        icon: <BiCategory />,
-        isSidebarActive: true,
-      },
-      {
-        path: "/inventory/categories-management",
         element: <CategoryManagement />,
         name: "Categories",
         icon: <BiCategory />,
         isSidebarActive: true,
       },
+
       {
         path: "/brands/list",
         name: "Brands",
