@@ -45,48 +45,6 @@ const OrderTotal = ({
           </table>
         </div>
       </div>
-      <div class="row gx-2">
-        <div class="col-sm-3">
-          <a
-            href="javascript:void(0);"
-            class="btn btn-danger d-flex align-items-center justify-content-center w-100 mb-2"
-          >
-            <i class="ti ti-refresh-dot me-2"></i>Transaction
-          </a>
-          <a
-            href="javascript:void(0);"
-            class="btn btn-orange d-flex align-items-center justify-content-center w-100 mb-2"
-          >
-            <i class="ti ti-player-pause me-2"></i>Hold
-          </a>
-          <a
-            href="/orders/list"
-            class="btn btn-secondary d-flex align-items-center justify-content-center w-100 mb-2"
-          >
-            <i class="ti ti-shopping-cart me-2"></i>View Orders
-          </a>
-        </div>
-        <div class="col-sm-4">
-          <a
-            href="javascript:void(0);"
-            class="btn btn-cyan d-flex align-items-center justify-content-center w-100 mb-2"
-          >
-            <i class="ti ti-cash-banknote me-2"></i>Payment
-          </a>
-          <a
-            href="javascript:void(0);"
-            class="btn btn-info d-flex align-items-center justify-content-center w-100 mb-2"
-          >
-            <i class="ti ti-trash me-2"></i>Void
-          </a>
-          <a
-            href="javascript:void(0);"
-            class="btn btn-indigo d-flex align-items-center justify-content-center w-100 mb-2"
-          >
-            <i class="ti ti-reload me-2"></i>Reset
-          </a>
-        </div>
-      </div>
     </div>
   );
 };

@@ -523,41 +523,6 @@ const ShowInvoices = () => {
   return (
     <div className="content">
       <div className="card">
-        <div className="card-header d-flex align-items-center justify-content-between flex-wrap row-gap-3">
-          <h4>Invoices</h4>
-          <div className="d-flex align-items-center flex-wrap row-gap-3">
-            <div className="d-flex align-items-center me-3">
-              <p className="mb-0 me-3 pe-3 border-end fs-14">
-                Total Invoices:{" "}
-                <span className="text-dark">{invoices.length}</span>
-              </p>
-              <p className="mb-0 me-3 pe-3 border-end fs-14">
-                Paid:{" "}
-                <span className="text-dark">{groupedInvoices.Paid.length}</span>
-              </p>
-              <p className="mb-0 fs-14">
-                Unpaid:{" "}
-                <span className="text-dark">
-                  {groupedInvoices.Unpaid.length}
-                </span>
-              </p>
-            </div>
-            <div className="input-icon-start position-relative">
-              <span className="input-icon-addon">
-                <FaSearch />
-              </span>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Search Invoice"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                aria-label="Search invoices"
-              />
-            </div>
-          </div>
-        </div>
-
         <div className="card-body">
           <div className="row">
             <div className="col-lg-4">
@@ -582,7 +547,7 @@ const ShowInvoices = () => {
                         aria-selected={activeTab === status}
                         onClick={() => setActiveTab(status)}
                       >
-                        {status}
+                        {status} ({groupedInvoices[status].length})
                       </button>
                     </li>
                   ))}
@@ -614,6 +579,19 @@ const ShowInvoices = () => {
                   <span className="input-icon-addon">
                     <i className="ti ti-calendar text-gray-9"></i>
                   </span>
+                </div>
+                <div className="input-icon-start position-relative">
+                  <span className="input-icon-addon">
+                    <FaSearch />
+                  </span>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Search Invoice"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    aria-label="Search invoices"
+                  />
                 </div>
                 <div className="me-2" style={{ width: "120px" }}>
                   <Select

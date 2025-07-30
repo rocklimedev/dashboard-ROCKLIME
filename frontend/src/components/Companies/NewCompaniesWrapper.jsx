@@ -1,14 +1,14 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   useGetVendorsQuery,
   useDeleteVendorMutation,
 } from "../../api/vendorApi";
 import { useGetAllBrandsQuery } from "../../api/brandsApi";
-import PageHeader from "../Common/PageHeader";
 import AddCompanyModal from "./AddCompanyModal";
 import DeleteModal from "../Common/DeleteModal";
 import ViewCompanies from "./ViewCompanies";
 import { BiEdit, BiTrash, BiShowAlt } from "react-icons/bi";
+import { FaSearch } from "react-icons/fa";
 import { toast } from "sonner";
 import DataTablePagination from "../Common/DataTablePagination";
 
@@ -18,13 +18,11 @@ const NewCompaniesWrapper = () => {
     error: vendorsError,
     isLoading: vendorsLoading,
   } = useGetVendorsQuery();
-
   const {
     data: brandsData,
     error: brandsError,
     isLoading: brandsLoading,
   } = useGetAllBrandsQuery();
-
   const [deleteVendor, { isLoading: isDeleting }] = useDeleteVendorMutation();
 
   // State management
@@ -34,6 +32,9 @@ const NewCompaniesWrapper = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [viewCompanyId, setViewCompanyId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("Recently Added");
+  const [activeTab, setActiveTab] = useState("All");
   const itemsPerPage = 20;
 
   // Handle data
@@ -49,21 +50,60 @@ const NewCompaniesWrapper = () => {
     [brands]
   );
 
-  // Format vendors for table
-  const formattedVendors = vendors.map((vendor) => ({
-    id: vendor.id,
-    vendorId: vendor.vendorId,
-    vendorName: vendor.vendorName,
-    brand: getBrandName(vendor.brandId),
-    createdAt: new Date(vendor.createdAt).toLocaleDateString(),
-  }));
+  // Memoized grouped vendors for tab-based filtering
+  const groupedVendors = useMemo(
+    () => ({
+      All: vendors,
+      Active: vendors.filter((v) => v.isActive !== false), // Assuming isActive boolean
+      Inactive: vendors.filter((v) => v.isActive === false),
+    }),
+    [vendors]
+  );
 
-  // Pagination
-  const paginatedVendors = (() => {
+  // Filtered and sorted vendors
+  const filteredVendors = useMemo(() => {
+    let result = groupedVendors[activeTab] || [];
+
+    // Apply search filter
+    if (searchTerm.trim()) {
+      result = result.filter((v) =>
+        [v.vendorName, v.vendorId, getBrandName(v.brandId)]
+          .filter(Boolean)
+          .some((field) =>
+            field.toLowerCase().includes(searchTerm.toLowerCase())
+          )
+      );
+    }
+
+    // Apply sorting
+    switch (sortBy) {
+      case "Ascending":
+        result = [...result].sort((a, b) =>
+          a.vendorName.localeCompare(b.vendorName)
+        );
+        break;
+      case "Descending":
+        result = [...result].sort((a, b) =>
+          b.vendorName.localeCompare(a.vendorName)
+        );
+        break;
+      case "Recently Added":
+        result = [...result].sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
+        break;
+      default:
+        break;
+    }
+
+    return result;
+  }, [groupedVendors, activeTab, searchTerm, sortBy, getBrandName]);
+
+  // Paginated vendors
+  const paginatedVendors = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return formattedVendors.slice(startIndex, endIndex);
-  })();
+    return filteredVendors.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredVendors, currentPage]);
 
   // Handlers
   const handleEditVendor = useCallback((vendor) => {
@@ -106,79 +146,245 @@ const NewCompaniesWrapper = () => {
     setCurrentPage(pageNumber);
   }, []);
 
+  const clearFilters = useCallback(() => {
+    setSearchTerm("");
+    setSortBy("Recently Added");
+    setActiveTab("All");
+    setCurrentPage(1);
+    toast.success("Filters cleared!");
+  }, []);
+
   // Loading and error states
-  if (vendorsLoading || brandsLoading)
-    return <div className="loading">Loading...</div>;
-  if (vendorsError || brandsError) {
-    toast.error(
-      `Error fetching data: ${JSON.stringify(vendorsError || brandsError)}`
-    );
+  if (vendorsLoading || brandsLoading) {
     return (
-      <div className="error">
-        Error loading vendors. Please try again later.
+      <div className="content">
+        <div className="card">
+          <div className="card-body text-center">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+            <p>Loading vendors...</p>
+          </div>
+        </div>
       </div>
     );
   }
-  if (vendors.length === 0)
-    return <div className="empty">No vendors available.</div>;
+
+  if (vendorsError || brandsError) {
+    return (
+      <div className="content">
+        <div className="card">
+          <div className="card-body">
+            <div className="alert alert-danger" role="alert">
+              Error loading vendors:{" "}
+              {JSON.stringify(vendorsError || brandsError)}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page-wrapper">
       <div className="content">
-        <PageHeader
-          title="Vendors"
-          subtitle="Manage your Vendors"
-          onAdd={handleAddVendor}
-          tableData={formattedVendors}
-        />
-        <div className="cm-table-wrapper">
-          <table className="cm-table">
-            <thead>
-              <tr>
-                <th>Vendors Name</th>
-                <th>Vendor ID</th>
-                <th>Brand</th>
-                <th>Date</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {paginatedVendors.map((vendor) => (
-                <tr key={vendor.id}>
-                  <td data-label="Vendor Name">{vendor.vendorName}</td>
-                  <td data-label="Vendor ID">{vendor.vendorId}</td>
-                  <td data-label="Brand">{vendor.brand}</td>
-                  <td data-label="Date">{vendor.createdAt}</td>
-                  <td data-label="Actions">
-                    <div className="actions">
-                      <BiShowAlt
-                        aria-label={`View ${vendor.vendorName}`}
-                        onClick={() => setViewCompanyId(vendor.id)}
-                        className="action-icon"
-                      />
-                      <BiEdit
-                        aria-label={`Edit ${vendor.vendorName}`}
-                        onClick={() => handleEditVendor(vendor)}
-                        className="action-icon"
-                      />
-                      <BiTrash
-                        aria-label={`Delete ${vendor.vendorName}`}
-                        onClick={() => handleDeleteVendor(vendor)}
-                        className="action-icon"
-                      />
+        <div className="card">
+          <div className="card-body">
+            <div className="row">
+              <div className="col-lg-4">
+                <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
+                  <h6 className="me-2">Status</h6>
+                  <ul
+                    className="nav nav-pills border d-inline-flex p-1 rounded bg-light todo-tabs"
+                    id="pills-tab"
+                    role="tablist"
+                  >
+                    {Object.keys(groupedVendors).map((status) => (
+                      <li className="nav-item" role="presentation" key={status}>
+                        <button
+                          className={`nav-link btn btn-sm btn-icon py-3 d-flex align-items-center justify-content-center w-auto ${
+                            activeTab === status ? "active" : ""
+                          }`}
+                          id={`tab-${status}`}
+                          data-bs-toggle="pill"
+                          data-bs-target={`#pills-${status}`}
+                          type="button"
+                          role="tab"
+                          aria-selected={activeTab === status}
+                          onClick={() => setActiveTab(status)}
+                        >
+                          {status} ({groupedVendors[status].length})
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="d-flex align-items-center ms-3">
+                    <p className="mb-0 me-3 pe-3 border-end fs-14">
+                      Total Vendors:{" "}
+                      <span className="text-dark">{vendors.length}</span>
+                    </p>
+                    <p className="mb-0 me-3 pe-3 border-end fs-14">
+                      Active:{" "}
+                      <span className="text-dark">
+                        {groupedVendors.Active.length}
+                      </span>
+                    </p>
+                    <p className="mb-0 fs-14">
+                      Inactive:{" "}
+                      <span className="text-dark">
+                        {groupedVendors.Inactive.length}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="col-lg-8">
+                <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
+                  <div className="d-flex align-items-center border p-2 rounded">
+                    <span className="d-inline-flex me-2">Sort By: </span>
+                    <div className="dropdown">
+                      <a
+                        href="#"
+                        className="dropdown-toggle btn btn-white d-inline-flex align-items-center border-0 bg-transparent p-0 text-dark"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
+                      >
+                        {sortBy}
+                      </a>
+                      <ul className="dropdown-menu dropdown-menu-end p-3">
+                        {["Recently Added", "Ascending", "Descending"].map(
+                          (option) => (
+                            <li key={option}>
+                              <a
+                                href="#"
+                                className="dropdown-item rounded-1"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setSortBy(option);
+                                }}
+                              >
+                                {option}
+                              </a>
+                            </li>
+                          )
+                        )}
+                      </ul>
                     </div>
-                  </td>
-                </tr>
+                  </div>
+                  <div className="input-icon-start position-relative">
+                    <span className="input-icon-addon">
+                      <FaSearch />
+                    </span>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Search Vendors"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      aria-label="Search vendors"
+                    />
+                  </div>
+                  <button
+                    className="btn btn-outline-secondary ms-2"
+                    onClick={clearFilters}
+                  >
+                    Clear Filters
+                  </button>
+                  <button
+                    className="btn btn-outline-primary ms-2"
+                    onClick={handleAddVendor}
+                  >
+                    Add Vendor
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="tab-content" id="pills-tabContent">
+              {Object.entries(groupedVendors).map(([status, list]) => (
+                <div
+                  className={`tab-pane fade ${
+                    activeTab === status ? "show active" : ""
+                  }`}
+                  id={`pills-${status}`}
+                  role="tabpanel"
+                  aria-labelledby={`tab-${status}`}
+                  key={status}
+                >
+                  {paginatedVendors.length === 0 ? (
+                    <p className="text-muted">
+                      No {status.toLowerCase()} vendors match the applied
+                      filters
+                    </p>
+                  ) : (
+                    <div className="table-responsive">
+                      <table className="table table-hover">
+                        <thead>
+                          <tr>
+                            <th>Vendor Name</th>
+                            <th>Vendor ID</th>
+                            <th>Brand</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {paginatedVendors.map((vendor) => (
+                            <tr key={vendor.id}>
+                              <td data-label="Vendor Name">
+                                {vendor.vendorName || "N/A"}
+                              </td>
+                              <td data-label="Vendor ID">
+                                {vendor.vendorId || "N/A"}
+                              </td>
+                              <td data-label="Brand">
+                                {getBrandName(vendor.brandId)}
+                              </td>
+                              <td data-label="Date">
+                                {vendor.createdAt
+                                  ? new Date(
+                                      vendor.createdAt
+                                    ).toLocaleDateString()
+                                  : "N/A"}
+                              </td>
+                              <td data-label="Actions">
+                                <div className="actions d-flex gap-2">
+                                  <BiShowAlt
+                                    aria-label={`View ${vendor.vendorName}`}
+                                    onClick={() => setViewCompanyId(vendor.id)}
+                                    className="action-icon"
+                                  />
+                                  <BiEdit
+                                    aria-label={`Edit ${vendor.vendorName}`}
+                                    onClick={() => handleEditVendor(vendor)}
+                                    className="action-icon"
+                                  />
+                                  <BiTrash
+                                    aria-label={`Delete ${vendor.vendorName}`}
+                                    onClick={() => handleDeleteVendor(vendor)}
+                                    className="action-icon"
+                                  />
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {filteredVendors.length > itemsPerPage && (
+                        <div className="pagination-section mt-4">
+                          <DataTablePagination
+                            currentPage={currentPage}
+                            totalItems={filteredVendors.length}
+                            itemsPerPage={itemsPerPage}
+                            onPageChange={handlePageChange}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               ))}
-            </tbody>
-          </table>
-          <DataTablePagination
-            currentPage={currentPage}
-            totalItems={vendors.length}
-            itemsPerPage={itemsPerPage}
-            onPageChange={handlePageChange}
-          />
+            </div>
+          </div>
         </div>
 
         {viewCompanyId && (

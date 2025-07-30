@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import {
   Card,
-  Select,
   Button,
   Modal,
   Spin,
@@ -13,6 +12,8 @@ import {
   Badge,
   Row,
   Col,
+  Tabs,
+  Select,
 } from "antd";
 import {
   ShoppingCartOutlined,
@@ -46,6 +47,7 @@ import "react-lazy-load-image-component/src/effects/blur.css";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
+const { TabPane } = Tabs;
 
 // Styled Components
 const PageWrapper = styled.div`
@@ -161,7 +163,9 @@ const Cart = ({ onConvertToOrder }) => {
   const [removeFromCart] = useRemoveFromCartMutation();
   const [createInvoice] = useCreateInvoiceMutation();
 
+  const [activeTab, setActiveTab] = useState("cart");
   const [selectedCustomer, setSelectedCustomer] = useState("");
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("Cash");
   const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
   const [showClearCartModal, setShowClearCartModal] = useState(false);
   const [invoiceNumber, setInvoiceNumber] = useState(generateInvoiceNumber());
@@ -229,7 +233,7 @@ const Cart = ({ onConvertToOrder }) => {
                 addrDetails.city === customerAddress.city &&
                 addrDetails.state === customerAddress.state &&
                 (addrDetails.postalCode === customerAddress.zipCode ||
-                  addrDetails.postalCode === customerAddress.post邮Code) &&
+                  addrDetails.postalCode === customerAddress.postalCode) &&
                 addrDetails.country === customerAddress.country
               );
             });
@@ -268,6 +272,7 @@ const Cart = ({ onConvertToOrder }) => {
       setInvoiceNumber(generateInvoiceNumber());
       refetch();
       setShowClearCartModal(false);
+      setActiveTab("cart");
     } catch (error) {
       toast.error(`Error: ${error.data?.message || "Failed to clear cart"}`);
     }
@@ -318,6 +323,8 @@ const Cart = ({ onConvertToOrder }) => {
     if (!invoiceData.billTo)
       return toast.error("Please provide a billing name.");
     if (error) return toast.error("Please fix the errors before submitting.");
+    if (!selectedPaymentMethod)
+      return toast.error("Please select a payment method.");
 
     try {
       await refetchAddresses();
@@ -367,8 +374,8 @@ const Cart = ({ onConvertToOrder }) => {
       amount: totalAmount,
       invoiceDate: invoiceData.invoiceDate,
       dueDate: invoiceData.dueDate,
-      paymentMethod: JSON.stringify({ method: "Cash" }),
-      status: "unpaid",
+      paymentMethod: JSON.stringify({ method: selectedPaymentMethod }),
+      status: selectedPaymentMethod === "Pay Later" ? "unpaid" : "paid",
       products: JSON.stringify(
         cartItems.map((item) => ({
           productId: item.productId,
@@ -415,7 +422,9 @@ const Cart = ({ onConvertToOrder }) => {
         signatureName: "CM TRADING CO",
       });
       setSelectedCustomer("");
+      setSelectedPaymentMethod("Cash");
       setInvoiceNumber(generateInvoiceNumber());
+      setActiveTab("cart");
     } catch (error) {
       toast.error(
         `Failed to place order: ${
@@ -425,7 +434,7 @@ const Cart = ({ onConvertToOrder }) => {
     }
   };
 
-  if (profileLoading || cartLoading || customersLoading || addressesLoading) {
+  if (profileLoading || cartLoading) {
     return (
       <PageWrapper>
         <Spin size="large" style={{ display: "block", margin: "50px auto" }} />
@@ -433,7 +442,7 @@ const Cart = ({ onConvertToOrder }) => {
     );
   }
 
-  if (profileError || cartError || customersError || addressesError) {
+  if (profileError || cartError) {
     return (
       <PageWrapper>
         <Alert
@@ -441,8 +450,6 @@ const Cart = ({ onConvertToOrder }) => {
           description={
             profileError?.message ||
             cartError?.message ||
-            customersError?.message ||
-            addressesError?.message ||
             "An unexpected error occurred"
           }
           type="error"
@@ -460,241 +467,344 @@ const Cart = ({ onConvertToOrder }) => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        <Row gutter={[24, 24]}>
-          {/* Cart Items */}
-          <Col xs={24} lg={16}>
-            <CartItemsCard>
-              <CartHeader>
-                <Space
-                  align="center"
-                  style={{ justifyContent: "space-between", width: "100%" }}
-                >
-                  <Title level={3}>
-                    Your Cart <ShoppingCartOutlined /> ({totalItems} items)
-                  </Title>
-                  <Button
-                    type="link"
-                    danger
-                    onClick={() => setShowClearCartModal(true)}
-                    disabled={cartItems.length === 0}
-                    aria-label="Clear cart"
-                  >
-                    Clear Cart
-                  </Button>
-                </Space>
-                <Divider />
-              </CartHeader>
-
-              {cartItems.length === 0 ? (
-                <EmptyCartWrapper>
-                  <Empty
-                    description="Your cart is empty"
-                    image={<FcEmptyTrash style={{ fontSize: 64 }} />}
-                  />
-                  <Button
-                    type="primary"
-                    icon={<ArrowLeftOutlined />}
-                    href="/shop"
-                    style={{ marginTop: 16 }}
-                  >
-                    Continue Shopping
-                  </Button>
-                </EmptyCartWrapper>
-              ) : (
-                <div>
-                  {cartItems.map((item) => (
-                    <CartItem key={item.productId}>
-                      <Row gutter={[16, 16]} align="middle">
-                        <Col xs={6} sm={4}>
-                          <CartItemImage
-                            src={
-                              item.image || "https://via.placeholder.com/100"
-                            }
-                            alt={item.name}
-                            width={80}
-                            height={80}
-                            effect="blur"
-                            placeholderSrc="https://via.placeholder.com/100"
-                          />
-                        </Col>
-                        <Col xs={18} sm={10}>
-                          <Text strong>{item.name}</Text>
-                          <Text type="secondary" block>
-                            Price: ₹{item.price?.toFixed(2) || "0.00"}
-                          </Text>
-                        </Col>
-                        <Col xs={12} sm={6}>
-                          <Space>
-                            <QuantityButton
-                              size="small"
-                              onClick={() =>
-                                handleUpdateQuantity(
-                                  item.productId,
-                                  item.quantity - 1
-                                )
-                              }
-                              disabled={
-                                item.quantity <= 1 ||
-                                updatingItems[item.productId]
-                              }
-                              loading={updatingItems[item.productId]}
-                              aria-label={`Decrease quantity of ${item.name}`}
-                            >
-                              -
-                            </QuantityButton>
-                            <Text>{item.quantity}</Text>
-                            <QuantityButton
-                              size="small"
-                              onClick={() =>
-                                handleUpdateQuantity(
-                                  item.productId,
-                                  item.quantity + 1
-                                )
-                              }
-                              disabled={updatingItems[item.productId]}
-                              loading={updatingItems[item.productId]}
-                              aria-label={`Increase quantity of ${item.name}`}
-                            >
-                              +
-                            </QuantityButton>
-                          </Space>
-                        </Col>
-                        <Col xs={12} sm={4} style={{ textAlign: "right" }}>
-                          <Text strong>
-                            ₹{(item.price * item.quantity).toFixed(2)}
-                          </Text>
-                          <RemoveButton
-                            type="text"
-                            danger
-                            icon={<BiTrash />}
-                            onClick={() => handleRemoveItem(item.productId)}
-                            disabled={updatingItems[item.productId]}
-                            loading={updatingItems[item.productId]}
-                            aria-label={`Remove ${item.name} from cart`}
-                          />
-                        </Col>
-                      </Row>
+        <CartContainer>
+          <Tabs
+            activeKey={activeTab}
+            onChange={setActiveTab}
+            type="card"
+            style={{ marginBottom: 24 }}
+          >
+            {/* Cart Tab */}
+            <TabPane
+              tab={
+                <span>
+                  <ShoppingCartOutlined /> Cart ({totalItems})
+                </span>
+              }
+              key="cart"
+            >
+              <Row gutter={[24, 24]}>
+                <Col xs={24} lg={16}>
+                  <CartItemsCard>
+                    <CartHeader>
+                      <Space
+                        align="center"
+                        style={{
+                          justifyContent: "space-between",
+                          width: "100%",
+                        }}
+                      >
+                        <Title level={3}>
+                          Your Cart <ShoppingCartOutlined /> ({totalItems}{" "}
+                          items)
+                        </Title>
+                        <Button
+                          type="link"
+                          danger
+                          onClick={() => setShowClearCartModal(true)}
+                          disabled={cartItems.length === 0}
+                          aria-label="Clear cart"
+                        >
+                          Clear Cart
+                        </Button>
+                      </Space>
                       <Divider />
-                    </CartItem>
-                  ))}
-                </div>
-              )}
-            </CartItemsCard>
-          </Col>
+                    </CartHeader>
 
-          {/* Cart Summary */}
-          <Col xs={24} lg={8}>
-            <CartSummaryCard>
-              <Title level={4}>Order Summary</Title>
-              <Divider />
-              <OrderTotal
-                shipping={shipping}
-                tax={tax}
-                coupon={0}
-                discount={discount}
-                roundOff={0}
-                subTotal={subTotal}
-              />
-              <Divider />
-              <Text strong>Select Customer</Text>
-              <CustomerSelect
-                value={selectedCustomer}
-                onChange={setSelectedCustomer}
-                placeholder="Select a customer"
-                loading={customersLoading}
-                disabled={customersLoading || customersError}
-                aria-label="Select customer"
-              >
-                {customersLoading ? (
-                  <Option disabled>Loading...</Option>
-                ) : customersError ? (
-                  <Option disabled>Error fetching customers</Option>
-                ) : customerList.length === 0 ? (
-                  <Option disabled>No customers available</Option>
-                ) : (
-                  customerList.map((customer) => (
-                    <Option
-                      key={customer.customerId}
-                      value={customer.customerId}
+                    {cartItems.length === 0 ? (
+                      <EmptyCartWrapper>
+                        <Empty
+                          description="Your cart is empty"
+                          image={<FcEmptyTrash style={{ fontSize: 64 }} />}
+                        />
+                        <Button
+                          type="primary"
+                          icon={<ArrowLeftOutlined />}
+                          href="/shop"
+                          style={{ marginTop: 16 }}
+                          aria-label="Continue shopping"
+                        >
+                          Continue Shopping
+                        </Button>
+                      </EmptyCartWrapper>
+                    ) : (
+                      <div>
+                        {cartItems.map((item) => (
+                          <CartItem key={item.productId}>
+                            <Row gutter={[16, 16]} align="middle">
+                              <Col xs={6} sm={4}>
+                                <CartItemImage
+                                  src={
+                                    item.image ||
+                                    "https://via.placeholder.com/100"
+                                  }
+                                  alt={item.name}
+                                  width={80}
+                                  height={80}
+                                  effect="blur"
+                                  placeholderSrc="https://via.placeholder.com/100"
+                                />
+                              </Col>
+                              <Col xs={18} sm={10}>
+                                <Text strong>{item.name}</Text>
+                                <Text type="secondary" block>
+                                  Price: ₹{item.price?.toFixed(2) || "0.00"}
+                                </Text>
+                              </Col>
+                              <Col xs={12} sm={6}>
+                                <Space>
+                                  <QuantityButton
+                                    size="small"
+                                    onClick={() =>
+                                      handleUpdateQuantity(
+                                        item.productId,
+                                        item.quantity - 1
+                                      )
+                                    }
+                                    disabled={
+                                      item.quantity <= 1 ||
+                                      updatingItems[item.productId]
+                                    }
+                                    loading={updatingItems[item.productId]}
+                                    aria-label={`Decrease quantity of ${item.name}`}
+                                  >
+                                    -
+                                  </QuantityButton>
+                                  <Text>{item.quantity}</Text>
+                                  <QuantityButton
+                                    size="small"
+                                    onClick={() =>
+                                      handleUpdateQuantity(
+                                        item.productId,
+                                        item.quantity + 1
+                                      )
+                                    }
+                                    disabled={updatingItems[item.productId]}
+                                    loading={updatingItems[item.productId]}
+                                    aria-label={`Increase quantity of ${item.name}`}
+                                  >
+                                    +
+                                  </QuantityButton>
+                                </Space>
+                              </Col>
+                              <Col
+                                xs={12}
+                                sm={4}
+                                style={{ textAlign: "right" }}
+                              >
+                                <Text strong>
+                                  ₹{(item.price * item.quantity).toFixed(2)}
+                                </Text>
+                                <RemoveButton
+                                  type="text"
+                                  danger
+                                  icon={<BiTrash />}
+                                  onClick={() =>
+                                    handleRemoveItem(item.productId)
+                                  }
+                                  disabled={updatingItems[item.productId]}
+                                  loading={updatingItems[item.productId]}
+                                  aria-label={`Remove ${item.name} from cart`}
+                                />
+                              </Col>
+                            </Row>
+                            <Divider />
+                          </CartItem>
+                        ))}
+                      </div>
+                    )}
+                  </CartItemsCard>
+                </Col>
+                <Col xs={24} lg={8}>
+                  <CartSummaryCard>
+                    <Title level={4}>Order Summary</Title>
+                    <Divider />
+                    <OrderTotal
+                      shipping={shipping}
+                      tax={tax}
+                      coupon={0}
+                      discount={discount}
+                      roundOff={0}
+                      subTotal={subTotal}
+                    />
+                    <Divider />
+                    <CheckoutButton
+                      type="primary"
+                      icon={<CheckCircleOutlined />}
+                      onClick={() => setActiveTab("checkout")}
+                      disabled={cartItems.length === 0}
+                      block
+                      size="large"
+                      aria-label="Proceed to checkout"
                     >
-                      {customer.name} ({customer.email})
-                    </Option>
-                  ))
-                )}
-              </CustomerSelect>
-              <Button
-                type="link"
-                icon={<UserAddOutlined />}
-                onClick={() => setShowAddCustomerModal(true)}
-                style={{ padding: 0, marginTop: 8 }}
-                aria-label="Add new customer"
-              >
-                Add New Customer
-              </Button>
-              <Divider />
-              <InvoiceDetails
-                invoiceData={invoiceData}
-                onChange={handleInvoiceChange}
-                error={error}
-              />
-              <Divider />
-              <PaymentMethod />
-              <Divider />
-              <Text strong>Invoice #: {invoiceNumber}</Text>
-              <Divider />
-              <CheckoutButton
-                type="primary"
-                icon={<CheckCircleOutlined />}
-                onClick={handlePlaceOrder}
-                disabled={
-                  cartItems.length === 0 ||
-                  !selectedCustomer ||
-                  error ||
-                  !invoiceData.invoiceDate ||
-                  !invoiceData.dueDate
-                }
-                block
-                size="large"
-                aria-label="Proceed to checkout"
-              >
-                Proceed to Checkout
-              </CheckoutButton>
-              <Button
-                type="default"
-                href="/inventory/products"
-                block
-                style={{ marginTop: 8 }}
-                aria-label="Continue shopping"
-              >
-                Continue Shopping
-              </Button>
-            </CartSummaryCard>
-          </Col>
-        </Row>
+                      Proceed to Checkout
+                    </CheckoutButton>
+                    <Button
+                      type="default"
+                      href="/inventory/products"
+                      block
+                      style={{ marginTop: 8 }}
+                      aria-label="Continue shopping"
+                    >
+                      Continue Shopping
+                    </Button>
+                  </CartSummaryCard>
+                </Col>
+              </Row>
+            </TabPane>
 
-        <Modal
-          title="Add Customer"
-          open={showAddCustomerModal}
-          onCancel={() => setShowAddCustomerModal(false)}
-          footer={null}
-        >
-          <AddCustomer
-            onClose={() => setShowAddCustomerModal(false)}
-            existingCustomer={null}
-          />
-        </Modal>
+            {/* Checkout Tab */}
+            <TabPane
+              tab={
+                <span>
+                  <CheckCircleOutlined /> Checkout
+                </span>
+              }
+              key="checkout"
+            >
+              <Row gutter={[24, 24]} justify="center">
+                <Col xs={24} lg={8}>
+                  <CartSummaryCard>
+                    <Title level={3}>Checkout</Title>
+                    <Divider />
+                    {cartItems.length === 0 ? (
+                      <EmptyCartWrapper>
+                        <Empty
+                          description="Your cart is empty"
+                          image={<FcEmptyTrash style={{ fontSize: 64 }} />}
+                        />
+                        <Button
+                          type="primary"
+                          icon={<ArrowLeftOutlined />}
+                          onClick={() => setActiveTab("cart")}
+                          style={{ marginTop: 16 }}
+                          aria-label="Back to cart"
+                        >
+                          Back to Cart
+                        </Button>
+                      </EmptyCartWrapper>
+                    ) : (
+                      <>
+                        <Text strong>Select Customer</Text>
+                        <CustomerSelect
+                          value={selectedCustomer}
+                          onChange={setSelectedCustomer}
+                          placeholder="Select a customer"
+                          loading={customersLoading}
+                          disabled={customersLoading || customersError}
+                          aria-label="Select customer"
+                        >
+                          {customersLoading ? (
+                            <Option disabled>Loading...</Option>
+                          ) : customersError ? (
+                            <Option disabled>Error fetching customers</Option>
+                          ) : customerList.length === 0 ? (
+                            <Option disabled>No customers available</Option>
+                          ) : (
+                            customerList.map((customer) => (
+                              <Option
+                                key={customer.customerId}
+                                value={customer.customerId}
+                              >
+                                {customer.name} ({customer.email})
+                              </Option>
+                            ))
+                          )}
+                        </CustomerSelect>
+                        <Button
+                          type="link"
+                          icon={<UserAddOutlined />}
+                          onClick={() => setShowAddCustomerModal(true)}
+                          style={{ padding: 0, marginTop: 8 }}
+                          aria-label="Add new customer"
+                        >
+                          Add New Customer
+                        </Button>
+                        <Divider />
+                        <InvoiceDetails
+                          invoiceData={invoiceData}
+                          onChange={handleInvoiceChange}
+                          error={error}
+                        />
+                        <Divider />
+                        <PaymentMethod
+                          subTotal={totalAmount}
+                          selectedMethod={selectedPaymentMethod}
+                          onSelectMethod={setSelectedPaymentMethod}
+                        />
+                        <Divider />
+                        <Text strong>Invoice #: {invoiceNumber}</Text>
+                        <Divider />
+                        <OrderTotal
+                          shipping={shipping}
+                          tax={tax}
+                          coupon={0}
+                          discount={discount}
+                          roundOff={0}
+                          subTotal={subTotal}
+                        />
+                        <Divider />
+                        <CheckoutButton
+                          type="primary"
+                          icon={<CheckCircleOutlined />}
+                          onClick={handlePlaceOrder}
+                          disabled={
+                            cartItems.length === 0 ||
+                            !selectedCustomer ||
+                            error ||
+                            !invoiceData.invoiceDate ||
+                            !invoiceData.dueDate ||
+                            !selectedPaymentMethod
+                          }
+                          block
+                          size="large"
+                          aria-label="Place order"
+                        >
+                          Place Order
+                        </CheckoutButton>
+                        <Button
+                          type="default"
+                          onClick={() => setActiveTab("cart")}
+                          block
+                          style={{ marginTop: 8 }}
+                          aria-label="Back to cart"
+                        >
+                          Back to Cart
+                        </Button>
+                      </>
+                    )}
+                  </CartSummaryCard>
+                </Col>
+              </Row>
+            </TabPane>
+          </Tabs>
 
-        <Modal
-          title="Confirm Clear Cart"
-          open={showClearCartModal}
-          onOk={handleClearCart}
-          onCancel={() => setShowClearCartModal(false)}
-          okText="Clear"
-          okButtonProps={{ danger: true }}
-          cancelText="Cancel"
-        >
-          <Text>Are you sure you want to clear all items from your cart?</Text>
-        </Modal>
+          <Modal
+            title="Add Customer"
+            open={showAddCustomerModal}
+            onCancel={() => setShowAddCustomerModal(false)}
+            footer={null}
+          >
+            <AddCustomer
+              onClose={() => setShowAddCustomerModal(false)}
+              existingCustomer={null}
+            />
+          </Modal>
+
+          <Modal
+            title="Confirm Clear Cart"
+            open={showClearCartModal}
+            onOk={handleClearCart}
+            onCancel={() => setShowClearCartModal(false)}
+            okText="Clear"
+            okButtonProps={{ danger: true }}
+            cancelText="Cancel"
+          >
+            <Text>
+              Are you sure you want to clear all items from your cart?
+            </Text>
+          </Modal>
+        </CartContainer>
       </div>
     </div>
   );

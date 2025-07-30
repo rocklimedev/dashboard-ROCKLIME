@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
-import PageHeader from "../Common/PageHeader";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   useGetAllCompaniesQuery,
   useDeleteCompanyMutation,
 } from "../../api/companyApi";
 import { BiEdit, BiTrash } from "react-icons/bi";
-import { FaEye } from "react-icons/fa";
+import { FaEye, FaSearch } from "react-icons/fa";
 import AddCompany from "./AddCompany";
 import DeleteModal from "../Common/DeleteModal";
 import DataTablePagination from "../Common/DataTablePagination";
@@ -54,7 +53,7 @@ const ViewCompany = ({ company, onClose }) => {
             <div className="row">
               <div className="col-md-6">
                 <p>
-                  <strong>Company Name:</strong> {company.name}
+                  <strong>Company Name:</strong> {company.name || "N/A"}
                 </p>
                 <p>
                   <strong>Address:</strong> {company.address || "N/A"}
@@ -116,26 +115,66 @@ const CmList = () => {
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [companyToDelete, setCompanyToDelete] = useState(null);
   const [editingCompany, setEditingCompany] = useState(null);
-
-  // Pagination states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("Recently Added");
+  const [activeTab, setActiveTab] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
   const companies = Array.isArray(data?.companies) ? data.companies : [];
 
-  // Format companies for tableData prop
-  const formattedCompanies = companies.map((company) => ({
-    companyId: company.companyId,
-    name: company.name,
-    address: company.address || "N/A",
-    website: company.website || "N/A",
-    slug: company.slug || "N/A",
-    createdDate: company.createdDate
-      ? new Date(company.createdDate).toLocaleDateString()
-      : "N/A",
-    parentCompanyId: company.parentCompanyId || "None",
-  }));
+  // Memoized grouped companies for tab-based filtering
+  const groupedCompanies = useMemo(
+    () => ({
+      All: companies,
+      Active: companies.filter((c) => c.status?.toLowerCase() === "active"),
+      Inactive: companies.filter((c) => c.status?.toLowerCase() === "inactive"),
+    }),
+    [companies]
+  );
 
+  // Filtered and sorted companies
+  const filteredCompanies = useMemo(() => {
+    let result = groupedCompanies[activeTab] || [];
+
+    // Apply search filter
+    if (searchTerm.trim()) {
+      result = result.filter((c) =>
+        [c.name, c.address, c.website, c.slug]
+          .filter(Boolean)
+          .some((field) =>
+            field.toLowerCase().includes(searchTerm.toLowerCase())
+          )
+      );
+    }
+
+    // Apply sorting
+    switch (sortBy) {
+      case "Ascending":
+        result = [...result].sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case "Descending":
+        result = [...result].sort((a, b) => b.name.localeCompare(a.name));
+        break;
+      case "Recently Added":
+        result = [...result].sort(
+          (a, b) => new Date(b.createdDate) - new Date(a.createdDate)
+        );
+        break;
+      default:
+        break;
+    }
+
+    return result;
+  }, [groupedCompanies, activeTab, searchTerm, sortBy]);
+
+  // Paginated companies
+  const currentCompanies = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredCompanies.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredCompanies, currentPage]);
+
+  // Handlers
   const handleAddCompany = () => {
     setEditingCompany(null);
     setShowCompanyModal(true);
@@ -156,15 +195,20 @@ const CmList = () => {
     setShowDeleteModal(true);
   };
 
-  const handleConfirmDelete = async (company) => {
-    try {
-      await deleteCompany(company.companyId).unwrap();
-      toast.success("Company deleted successfully!");
+  const handleConfirmDelete = async () => {
+    if (!companyToDelete?.companyId) {
+      toast.error("No company selected for deletion");
       setShowDeleteModal(false);
-      setCompanyToDelete(null);
+      return;
+    }
+    try {
+      await deleteCompany(companyToDelete.companyId).unwrap();
+      toast.success("Company deleted successfully!");
       if (currentCompanies.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
+      setShowDeleteModal(false);
+      setCompanyToDelete(null);
     } catch (error) {
       toast.error(
         `Failed to delete company: ${error.data?.message || "Unknown error"}`
@@ -191,113 +235,247 @@ const CmList = () => {
     setCurrentPage(page);
   };
 
-  // Calculate the companies to show on current page
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentCompanies = companies.slice(indexOfFirstItem, indexOfLastItem);
+  const clearFilters = () => {
+    setSearchTerm("");
+    setSortBy("Recently Added");
+    setActiveTab("All");
+    setCurrentPage(1);
+    toast.success("Filters cleared!");
+  };
 
-  if (isLoading) return <p>Loading...</p>;
-  if (error)
+  if (isLoading) {
     return (
-      <p>Error loading companies: {error.data?.message || "Unknown error"}</p>
+      <div className="content">
+        <div className="card">
+          <div className="card-body text-center">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+            <p>Loading companies...</p>
+          </div>
+        </div>
+      </div>
     );
+  }
+
+  if (error) {
+    return (
+      <div className="content">
+        <div className="card">
+          <div className="card-body">
+            <div className="alert alert-danger" role="alert">
+              Error loading companies: {error.data?.message || "Unknown error"}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page-wrapper">
       <div className="content">
-        <PageHeader
-          title="Companies"
-          subtitle="Manage your companies"
-          onAdd={handleAddCompany}
-          tableData={formattedCompanies} // Pass formatted companies to PageHeader
-        />
-        <div className="cm-table-wrapper">
-          <table className="cm-table">
-            <thead>
-              <tr>
-                <th>Company Name</th>
-                <th>Address</th>
-                <th>Website</th>
-                <th>Slug</th>
-                <th>Created Date</th>
-                <th>Parent Company</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentCompanies.map((company) => (
-                <tr key={company.companyId}>
-                  <td>{company.name}</td>
-                  <td>{company.address || "N/A"}</td>
-                  <td>{company.website || "N/A"}</td>
-                  <td>{company.slug || "N/A"}</td>
-                  <td>
-                    {company.createdDate
-                      ? new Date(company.createdDate).toLocaleDateString()
-                      : "N/A"}
-                  </td>
-                  <td>{company.parentCompanyId || "None"}</td>
-                  <td>
-                    <div className="actions">
-                      <FaEye
-                        className="action-icon"
-                        href="javascript:void(0);"
-                        onClick={() => handleViewCompany(company)}
-                      />
-
-                      <BiEdit
-                        className="action-icon"
-                        onClick={() => handleEditCompany(company)}
-                      />
-
-                      <BiTrash
-                        className="action-icon"
-                        onClick={() => handleDeleteCompany(company)}
-                      />
+        <div className="card">
+          <div className="card-body">
+            <div className="row">
+              <div className="col-lg-4">
+                <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
+                  <h6 className="me-2">Status</h6>
+                  <ul
+                    className="nav nav-pills border d-inline-flex p-1 rounded bg-light todo-tabs"
+                    id="pills-tab"
+                    role="tablist"
+                  >
+                    {Object.keys(groupedCompanies).map((status) => (
+                      <li className="nav-item" role="presentation" key={status}>
+                        <button
+                          className={`nav-link btn btn-sm btn-icon py-3 d-flex align-items-center justify-content-center w-auto ${
+                            activeTab === status ? "active" : ""
+                          }`}
+                          id={`tab-${status}`}
+                          data-bs-toggle="pill"
+                          data-bs-target={`#pills-${status}`}
+                          type="button"
+                          role="tab"
+                          aria-selected={activeTab === status}
+                          onClick={() => setActiveTab(status)}
+                        >
+                          {status} ({groupedCompanies[status].length})
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <div className="col-lg-8">
+                <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
+                  <div className="d-flex align-items-center border p-2 rounded">
+                    <span className="d-inline-flex me-2">Sort By: </span>
+                    <div className="dropdown">
+                      <a
+                        href="#"
+                        className="dropdown-toggle btn btn-white d-inline-flex align-items-center border-0 bg-transparent p-0 text-dark"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
+                      >
+                        {sortBy}
+                      </a>
+                      <ul className="dropdown-menu dropdown-menu-end p-3">
+                        {["Recently Added", "Ascending", "Descending"].map(
+                          (option) => (
+                            <li key={option}>
+                              <a
+                                href="#"
+                                className="dropdown-item rounded-1"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setSortBy(option);
+                                }}
+                              >
+                                {option}
+                              </a>
+                            </li>
+                          )
+                        )}
+                      </ul>
                     </div>
-                  </td>
-                </tr>
+                  </div>
+                  <div className="input-icon-start position-relative">
+                    <span className="input-icon-addon">
+                      <FaSearch />
+                    </span>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Search Companies"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      aria-label="Search companies"
+                    />
+                  </div>
+                  <button
+                    className="btn btn-outline-secondary ms-2"
+                    onClick={clearFilters}
+                  >
+                    Clear Filters
+                  </button>
+                  <button
+                    className="btn btn-outline-primary ms-2"
+                    onClick={handleAddCompany}
+                  >
+                    Add Company
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="tab-content" id="pills-tabContent">
+              {Object.entries(groupedCompanies).map(([status, list]) => (
+                <div
+                  className={`tab-pane fade ${
+                    activeTab === status ? "show active" : ""
+                  }`}
+                  id={`pills-${status}`}
+                  role="tabpanel"
+                  aria-labelledby={`tab-${status}`}
+                  key={status}
+                >
+                  {currentCompanies.length === 0 ? (
+                    <p className="text-muted">
+                      No {status.toLowerCase()} companies match the applied
+                      filters
+                    </p>
+                  ) : (
+                    <div className="table-responsive">
+                      <table className="table table-hover">
+                        <thead>
+                          <tr>
+                            <th>Company Name</th>
+                            <th>Address</th>
+                            <th>Website</th>
+                            <th>Slug</th>
+                            <th>Created Date</th>
+                            <th>Parent Company</th>
+                            <th>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {currentCompanies.map((company) => (
+                            <tr key={company.companyId}>
+                              <td>{company.name || "N/A"}</td>
+                              <td>{company.address || "N/A"}</td>
+                              <td>{company.website || "N/A"}</td>
+                              <td>{company.slug || "N/A"}</td>
+                              <td>
+                                {company.createdDate
+                                  ? new Date(
+                                      company.createdDate
+                                    ).toLocaleDateString()
+                                  : "N/A"}
+                              </td>
+                              <td>{company.parentCompanyId || "None"}</td>
+                              <td>
+                                <div className="actions d-flex gap-2">
+                                  <FaEye
+                                    className="action-icon"
+                                    onClick={() => handleViewCompany(company)}
+                                    aria-label={`View ${company.name}`}
+                                  />
+                                  <BiEdit
+                                    className="action-icon"
+                                    onClick={() => handleEditCompany(company)}
+                                    aria-label={`Edit ${company.name}`}
+                                  />
+                                  <BiTrash
+                                    className="action-icon"
+                                    onClick={() => handleDeleteCompany(company)}
+                                    aria-label={`Delete ${company.name}`}
+                                  />
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {filteredCompanies.length > itemsPerPage && (
+                        <div className="pagination-section mt-4">
+                          <DataTablePagination
+                            totalItems={filteredCompanies.length}
+                            itemNo={itemsPerPage}
+                            onPageChange={handlePageChange}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               ))}
-              {currentCompanies.length === 0 && (
-                <tr>
-                  <td colSpan="7" className="text-center">
-                    No companies found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+            </div>
+          </div>
         </div>
 
-        {/* Pagination */}
-        <div className="d-flex justify-content-end my-3">
-          <DataTablePagination
-            totalItems={companies.length}
-            itemNo={itemsPerPage}
-            onPageChange={handlePageChange}
+        {/* Modals */}
+        {showCompanyModal && (
+          <AddCompany
+            onClose={handleCloseCompanyModal}
+            companyToEdit={editingCompany}
           />
-        </div>
+        )}
+        {showViewModal && (
+          <ViewCompany
+            company={selectedCompany}
+            onClose={handleCloseViewModal}
+          />
+        )}
+        {showDeleteModal && (
+          <DeleteModal
+            item={companyToDelete}
+            itemType="Company"
+            onConfirm={handleConfirmDelete}
+            onCancel={handleCancelDelete}
+            isVisible={showDeleteModal}
+          />
+        )}
       </div>
-
-      {/* Modals */}
-      {showCompanyModal && (
-        <AddCompany
-          onClose={handleCloseCompanyModal}
-          companyToEdit={editingCompany}
-        />
-      )}
-      {showViewModal && (
-        <ViewCompany company={selectedCompany} onClose={handleCloseViewModal} />
-      )}
-      {showDeleteModal && (
-        <DeleteModal
-          item={companyToDelete}
-          itemType="Company"
-          onConfirm={handleConfirmDelete}
-          onCancel={handleCancelDelete}
-          isVisible={showDeleteModal}
-        />
-      )}
     </div>
   );
 };
