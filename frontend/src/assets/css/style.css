@@ -18128,7 +18128,7 @@ div#global-loader .whirly-loader:not(:required) {
 }
 .sidebar .sidebar-menu > ul > li > a:hover,
 .settings-sidebar .sidebar-menu > ul > li > a:hover {
-  background: rgba(227, 30, 36, 0.08);
+  background: #D3D3D3;
   color: #e31e24;
   border-radius: 5px;
 }
@@ -18147,7 +18147,7 @@ div#global-loader .whirly-loader:not(:required) {
 }
 .sidebar .sidebar-menu > ul > li > a.active,
 .settings-sidebar .sidebar-menu > ul > li > a.active {
-  background: rgba(227, 30, 36, 0.08);
+  background: #D3D3D3;
   color: #e31e24;
   border-radius: 5px;
 }
@@ -18180,7 +18180,7 @@ div#global-loader .whirly-loader:not(:required) {
 }
 .sidebar .sidebar-menu > ul > li.active a,
 .settings-sidebar .sidebar-menu > ul > li.active a {
-  background: rgba(227, 30, 36, 0.08);
+  background: #D3D3D3;
   border-radius: 5px;
 }
 .sidebar .sidebar-menu > ul > li.active a img,
@@ -18299,7 +18299,7 @@ div#global-loader .whirly-loader:not(:required) {
 }
 .sidebar .sidebar-menu > ul > li.submenu-open ul > li.active a,
 .settings-sidebar .sidebar-menu > ul > li.submenu-open ul > li.active a {
-  background: rgba(227, 30, 36, 0.08);
+  background: #D3D3D3;
   border-radius: 5px;
   color: #e31e24;
 }

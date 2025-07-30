@@ -133,99 +133,96 @@ const QuotationList = () => {
   };
 
   return (
-    <div className="page-wrapper">
-      <div className="content">
-        <PageHeader
-          title="Quotations"
-          subtitle="Manage your quotations list"
-          onAdd={handleAddQuotation}
-          tableData={formattedQuotations}
-        />
-        <div className="cm-table-wrapper quotation-table-container">
-          <table className="cm-table">
-            <thead>
-              <tr>
-                <th>Quotation Title</th>
-                <th>Quotation Date</th>
-                <th>Due Date</th>
-                <th>Reference Number</th>
-                <th>Include GST</th>
-                <th>Products</th>
-                <th>Discount Type</th>
-                <th>Round Off</th>
-                <th>Created By</th>
-                <th>Customer</th>
-                <th>Final Amount</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentQuotations.length > 0 ? (
-                currentQuotations.map((quotation) => (
-                  <tr key={quotation.quotationId}>
-                    <td>{quotation.document_title}</td>
-                    <td>
-                      {new Date(quotation.quotation_date).toLocaleDateString()}
-                    </td>
-                    <td>{new Date(quotation.due_date).toLocaleDateString()}</td>
-                    <td>{quotation.reference_number}</td>
-                    <td>{quotation.include_gst ? "Yes" : "No"}</td>
-                    <td>
-                      <button
-                        className="btn btn-link"
-                        onClick={() =>
-                          handleOpenProductModal(quotation.products)
-                        }
-                        style={{ color: "#e31e24" }}
-                        aria-label="View products"
-                      >
-                        View Products ({getProductCount(quotation.products)})
-                      </button>
-                    </td>
-                    <td>{quotation.discountType}</td>
-                    <td>{quotation.roundOff}</td>
-                    <td>{getUserName(quotation.createdBy)}</td>
-                    <td>{getCustomerName(quotation.customerId)}</td>
-                    <td>₹{quotation.finalAmount}</td>
-                    <td>
-                      <Actions
-                        viewUrl={`/quotations/${quotation.quotationId}`}
-                        editUrl={`/quotations/${quotation.quotationId}/edit`}
-                        onDelete={() => handleDeleteClick(quotation)}
-                      />
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="12" className="text-center">
-                    No quotations available
+    <>
+      <PageHeader
+        title="Quotations"
+        subtitle="Manage your quotations list"
+        onAdd={handleAddQuotation}
+        tableData={formattedQuotations}
+      />
+      <div className="cm-table-wrapper quotation-table-container">
+        <table className="cm-table">
+          <thead>
+            <tr>
+              <th>Quotation Title</th>
+              <th>Quotation Date</th>
+              <th>Due Date</th>
+              <th>Reference Number</th>
+              <th>Include GST</th>
+              <th>Products</th>
+              <th>Discount Type</th>
+              <th>Round Off</th>
+              <th>Created By</th>
+              <th>Customer</th>
+              <th>Final Amount</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {currentQuotations.length > 0 ? (
+              currentQuotations.map((quotation) => (
+                <tr key={quotation.quotationId}>
+                  <td>{quotation.document_title}</td>
+                  <td>
+                    {new Date(quotation.quotation_date).toLocaleDateString()}
+                  </td>
+                  <td>{new Date(quotation.due_date).toLocaleDateString()}</td>
+                  <td>{quotation.reference_number}</td>
+                  <td>{quotation.include_gst ? "Yes" : "No"}</td>
+                  <td>
+                    <button
+                      className="btn btn-link"
+                      onClick={() => handleOpenProductModal(quotation.products)}
+                      style={{ color: "#e31e24" }}
+                      aria-label="View products"
+                    >
+                      View Products ({getProductCount(quotation.products)})
+                    </button>
+                  </td>
+                  <td>{quotation.discountType}</td>
+                  <td>{quotation.roundOff}</td>
+                  <td>{getUserName(quotation.createdBy)}</td>
+                  <td>{getCustomerName(quotation.customerId)}</td>
+                  <td>₹{quotation.finalAmount}</td>
+                  <td>
+                    <Actions
+                      viewUrl={`/quotations/${quotation.quotationId}`}
+                      editUrl={`/quotations/${quotation.quotationId}/edit`}
+                      onDelete={() => handleDeleteClick(quotation)}
+                    />
                   </td>
                 </tr>
-              )}
-            </tbody>
-          </table>
-          <ReactPaginate
-            previousLabel={"Previous"}
-            nextLabel={"Next"}
-            breakLabel={"..."}
-            pageCount={Math.ceil(quotations.length / itemsPerPage)}
-            marginPagesDisplayed={2}
-            pageRangeDisplayed={3}
-            onPageChange={handlePageChange}
-            containerClassName={"pagination justify-content-end mb-0"}
-            pageClassName={"page-item"}
-            pageLinkClassName={"page-link"}
-            previousClassName={"page-item"}
-            previousLinkClassName={"page-link"}
-            nextClassName={"page-item"}
-            nextLinkClassName={"page-link"}
-            breakClassName={"page-item"}
-            breakLinkClassName={"page-link"}
-            activeClassName={"active"}
-          />
-        </div>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="12" className="text-center">
+                  No quotations available
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+        <ReactPaginate
+          previousLabel={"Previous"}
+          nextLabel={"Next"}
+          breakLabel={"..."}
+          pageCount={Math.ceil(quotations.length / itemsPerPage)}
+          marginPagesDisplayed={2}
+          pageRangeDisplayed={3}
+          onPageChange={handlePageChange}
+          containerClassName={"pagination justify-content-end mb-0"}
+          pageClassName={"page-item"}
+          pageLinkClassName={"page-link"}
+          previousClassName={"page-item"}
+          previousLinkClassName={"page-link"}
+          nextClassName={"page-item"}
+          nextLinkClassName={"page-link"}
+          breakClassName={"page-item"}
+          breakLinkClassName={"page-link"}
+          activeClassName={"active"}
+        />
       </div>
+
       <QuotationProductModal
         show={showProductModal}
         onHide={handleCloseProductModal}
@@ -244,7 +241,7 @@ const QuotationList = () => {
           isLoading={isDeleting}
         />
       )}
-    </div>
+    </>
   );
 };
 

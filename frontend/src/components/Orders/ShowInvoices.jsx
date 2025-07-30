@@ -1,42 +1,221 @@
-import React, { useState, useMemo } from "react";
-import { useGetAllInvoicesQuery } from "../../api/invoiceApi";
-import DatePicker from "react-datepicker"; // Add react-datepicker for date inputs
-import "react-datepicker/dist/react-datepicker.css"; // Import datepicker styles
-import { format, subDays } from "date-fns"; // For date manipulation
+import React, { useEffect, useState, useMemo } from "react";
+import { Link } from "react-router-dom";
+import { Button, Form, Spinner, Alert } from "react-bootstrap";
+import {
+  useGetAllInvoicesQuery,
+  useDeleteInvoiceMutation,
+  useCreateInvoiceMutation,
+  useChangeInvoiceStatusMutation,
+} from "../../api/invoiceApi";
+import { useGetAllQuotationsQuery } from "../../api/quotationApi";
+import { useGetCustomersQuery } from "../../api/customerApi";
+import { useGetAllAddressesQuery } from "../../api/addressApi";
+import { useGetAllUsersQuery } from "../../api/userApi";
+import {
+  FaEye,
+  FaEdit,
+  FaTrash,
+  FaSearch,
+  FaFileInvoice,
+  FaPen,
+} from "react-icons/fa";
+import { Select } from "antd";
+import EditInvoice from "../Invoices/EditInvoice";
+import CreateInvoiceFromQuotation from "../Invoices/CreateInvoiceFromQuotation";
+import DeleteModal from "../Common/DeleteModal";
+import DataTablePagination from "../Common/DataTablePagination";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { format, subDays } from "date-fns";
+
+// Destructure Option from Select
+const { Option } = Select;
 
 const ShowInvoices = () => {
-  const { data: invoicesData, isLoading, isError } = useGetAllInvoicesQuery();
-  const invoices = invoicesData?.data || [];
+  // Queries
+  const {
+    data: invoiceData,
+    isLoading: invoiceLoading,
+    error: invoiceError,
+  } = useGetAllInvoicesQuery();
+  const {
+    data: customerData,
+    isLoading: customerLoading,
+    error: customerError,
+  } = useGetCustomersQuery();
+  const {
+    data: addressData,
+    isLoading: addressLoading,
+    error: addressError,
+  } = useGetAllAddressesQuery();
+  const {
+    data: userData,
+    isLoading: userLoading,
+    error: userError,
+  } = useGetAllUsersQuery();
+  const {
+    data: quotationData,
+    isLoading: quotationLoading,
+    error: quotationError,
+  } = useGetAllQuotationsQuery();
+  const [createInvoice, { isLoading: isCreatingInvoice }] =
+    useCreateInvoiceMutation();
+  const [deleteInvoice, { isLoading: isDeleting }] = useDeleteInvoiceMutation();
+  const [changeInvoiceStatus, { isLoading: isChangingStatus }] =
+    useChangeInvoiceStatusMutation();
 
-  // State for filters
+  // Data assignments
+  const invoices = invoiceData?.data || [];
+  const customers = customerData?.data || [];
+  const addresses = addressData?.data || [];
+  const users = userData?.users || [];
+  const quotations = Array.isArray(quotationData)
+    ? quotationData
+    : quotationData?.data || [];
+
+  // State management
   const [searchTerm, setSearchTerm] = useState("");
   const [createdDate, setCreatedDate] = useState(null);
   const [dueDate, setDueDate] = useState(null);
-  const [selectedStatus, setSelectedStatus] = useState(""); // For dropdown status
-  const [sortBy, setSortBy] = useState("Created Date");
+  const [selectedStatus, setSelectedStatus] = useState("");
+  const [sortBy, setSortBy] = useState("Recently Added");
   const [activeTab, setActiveTab] = useState("All");
+  const [selectedCustomer, setSelectedCustomer] = useState("");
+  const [selectedInvoices, setSelectedInvoices] = useState([]);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [invoiceToDelete, setInvoiceToDelete] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [currentQuotationPage, setCurrentQuotationPage] = useState(1);
+  const [showCreateInvoiceModal, setShowCreateInvoiceModal] = useState(false);
+  const [selectedQuotation, setSelectedQuotation] = useState(null);
+  const [editingStatusInvoiceId, setEditingStatusInvoiceId] = useState(null);
+  const itemsPerPage = 12;
+
+  // Memoized maps
+  const customerMap = useMemo(() => {
+    const map = {};
+    customers.forEach((cust) => {
+      if (cust.customerId && typeof cust.customerId === "string") {
+        map[cust.customerId.trim()] = cust.name || "Unnamed Customer";
+      }
+    });
+    return map;
+  }, [customers]);
+
+  const addressMap = useMemo(() => {
+    const map = {};
+    addresses.forEach((addr) => {
+      const addressParts = [
+        addr.street,
+        addr.city,
+        addr.state,
+        addr.postalCode || addr.zip,
+        addr.country,
+      ].filter((part) => part != null && part !== "");
+      map[addr.addressId] =
+        addressParts.length > 0
+          ? addressParts.join(", ")
+          : "Incomplete Address";
+    });
+    return map;
+  }, [addresses]);
+
+  const userMap = useMemo(() => {
+    const map = {};
+    users.forEach((user) => {
+      map[user.userId] = user.name || "Unknown User";
+    });
+    return map;
+  }, [users]);
+
+  // Define valid statuses
+  const statuses = ["paid", "unpaid", "partially paid", "void", "refund"];
+
+  const getInvoiceStatus = (invoice) => {
+    const validStatuses = statuses;
+    const invoiceStatus = invoice.status ? invoice.status.toLowerCase() : null;
+    if (validStatuses.includes(invoiceStatus)) {
+      return invoiceStatus;
+    }
+    if (!invoice.customerId || typeof invoice.customerId !== "string") {
+      return "unpaid";
+    }
+    const customer = customers.find(
+      (cust) => cust.customerId === invoice.customerId.trim()
+    );
+    const customerStatus = customer?.invoiceStatus
+      ? customer?.invoiceStatus.toLowerCase()
+      : null;
+    return validStatuses.includes(customerStatus) ? customerStatus : "unpaid";
+  };
+
+  const normalizeName = (name) =>
+    name
+      ?.toLowerCase()
+      .trim()
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ") || "N/A";
+
+  // Handle status change
+  const handleStatusChange = async (invoiceId, newStatus) => {
+    try {
+      await changeInvoiceStatus({
+        invoiceId,
+        status: newStatus.toLowerCase(),
+      }).unwrap();
+      setEditingStatusInvoiceId(null);
+    } catch (error) {
+      alert("Failed to update invoice status. Please try again.");
+      console.error("Status update error:", error);
+    }
+  };
 
   // Memoized grouped invoices for tab-based filtering
   const groupedInvoices = useMemo(
     () => ({
       All: invoices,
-      Paid: invoices.filter((inv) => inv.status === "Paid"),
-      Unpaid: invoices.filter((inv) => inv.status === "Unpaid"),
-      Overdue: invoices.filter((inv) => inv.status === "Overdue"),
+      Paid: invoices.filter((inv) => getInvoiceStatus(inv) === "paid"),
+      Unpaid: invoices.filter((inv) => getInvoiceStatus(inv) === "unpaid"),
+      Overdue: invoices.filter((inv) =>
+        ["partially paid", "void", "refund"].includes(getInvoiceStatus(inv))
+      ),
     }),
     [invoices]
   );
 
-  // Memoized filtered invoices based on all filters
+  // Filtered and sorted invoices
   const filteredInvoices = useMemo(() => {
     let result = groupedInvoices[activeTab] || [];
 
     // Apply search filter
     if (searchTerm.trim()) {
+      result = result.filter((inv) => {
+        const customerName =
+          inv.customerId && customerMap[inv.customerId?.trim()]
+            ? customerMap[inv.customerId.trim()]
+            : normalizeName(inv.billTo);
+        return (
+          inv.invoiceNo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          inv.billTo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (inv.shipTo &&
+            addressMap[inv.shipTo]
+              ?.toLowerCase()
+              .includes(searchTerm.toLowerCase()))
+        );
+      });
+    }
+
+    // Apply customer filter
+    if (selectedCustomer) {
       result = result.filter(
         (inv) =>
-          inv.invoiceNo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          inv.billTo?.toLowerCase().includes(searchTerm.toLowerCase())
+          inv.customerId &&
+          typeof inv.customerId === "string" &&
+          inv.customerId.trim() === selectedCustomer
       );
     }
 
@@ -51,31 +230,64 @@ const ShowInvoices = () => {
     // Apply due date filter
     if (dueDate) {
       result = result.filter((inv) => {
-        const invDueDate = new Date(inv.dueDate || inv.invoiceDate); // Fallback to invoiceDate if dueDate is not provided
+        const invDueDate = new Date(inv.dueDate || inv.invoiceDate);
         return invDueDate.toDateString() === dueDate.toDateString();
       });
     }
 
-    // Apply status filter from dropdown (if not empty)
+    // Apply status filter from dropdown
     if (selectedStatus) {
-      result = result.filter((inv) => inv.status === selectedStatus);
+      result = result.filter(
+        (inv) => getInvoiceStatus(inv) === selectedStatus.toLowerCase()
+      );
     }
 
     // Apply sorting
-    result = [...result].sort((a, b) => {
-      if (sortBy === "Created Date") {
-        return new Date(b.invoiceDate) - new Date(a.invoiceDate); // Newest first
-      } else if (sortBy === "Due Date") {
-        return (
-          new Date(b.dueDate || b.invoiceDate) -
-          new Date(a.dueDate || a.invoiceDate)
+    switch (sortBy) {
+      case "Ascending":
+        result = [...result].sort((a, b) =>
+          a.invoiceNo.localeCompare(b.invoiceNo)
         );
-      } else if (sortBy === "Last 7 Days") {
-        const last7Days = subDays(new Date(), 7);
-        return result.filter((inv) => new Date(inv.invoiceDate) >= last7Days);
-      }
-      return 0;
-    });
+        break;
+      case "Descending":
+        result = [...result].sort((a, b) =>
+          b.invoiceNo.localeCompare(a.invoiceNo)
+        );
+        break;
+      case "Recently Added":
+      case "Created Date":
+        result = [...result].sort(
+          (a, b) => new Date(b.invoiceDate) - new Date(a.invoiceDate)
+        );
+        break;
+      case "Due Date":
+        result = [...result].sort(
+          (a, b) =>
+            new Date(b.dueDate || b.invoiceDate) -
+            new Date(a.dueDate || a.invoiceDate)
+        );
+        break;
+      case "Last 7 Days":
+        const sevenDaysAgo = subDays(new Date(), 7);
+        result = result.filter(
+          (inv) => new Date(inv.invoiceDate) >= sevenDaysAgo
+        );
+        result = [...result].sort(
+          (a, b) => new Date(b.invoiceDate) - new Date(a.invoiceDate)
+        );
+        break;
+      case "Last Month":
+        const oneMonthAgo = subDays(new Date(), 30);
+        result = result.filter(
+          (inv) => new Date(inv.invoiceDate) >= oneMonthAgo
+        );
+        result = [...result].sort(
+          (a, b) => new Date(b.invoiceDate) - new Date(a.invoiceDate)
+        );
+        break;
+      default:
+        break;
+    }
 
     return result;
   }, [
@@ -86,24 +298,226 @@ const ShowInvoices = () => {
     dueDate,
     selectedStatus,
     sortBy,
+    selectedCustomer,
+    customerMap,
+    addressMap,
   ]);
 
-  // Handle clearing all filters
+  // Filtered and sorted quotations
+  const filteredQuotations = useMemo(() => {
+    let result = [...quotations];
+    if (selectedCustomer) {
+      result = result.filter(
+        (quo) =>
+          quo.customerId &&
+          typeof quo.customerId === "string" &&
+          quo.customerId.trim() === selectedCustomer
+      );
+    }
+    if (searchTerm) {
+      result = result.filter((quo) => {
+        const customerName =
+          quo.customerId && customerMap[quo.customerId?.trim()]
+            ? customerMap[quo.customerId.trim()]
+            : normalizeName(quo.document_title);
+        return (
+          (quo.reference_number || "")
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          (quo.document_title || "")
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          customerName.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      });
+    }
+    switch (sortBy) {
+      case "Ascending":
+        result.sort((a, b) =>
+          (a.reference_number || "").localeCompare(b.reference_number || "")
+        );
+        break;
+      case "Descending":
+        result.sort((a, b) =>
+          (b.reference_number || "").localeCompare(a.reference_number || "")
+        );
+        break;
+      case "Recently Added":
+      case "Created Date":
+        result.sort(
+          (a, b) => new Date(b.quotation_date) - new Date(a.quotation_date)
+        );
+        break;
+      case "Last 7 Days":
+        const sevenDaysAgo = subDays(new Date(), 7);
+        result = result.filter(
+          (quo) =>
+            quo.quotation_date && new Date(quo.quotation_date) >= sevenDaysAgo
+        );
+        result.sort(
+          (a, b) => new Date(b.quotation_date) - new Date(a.quotation_date)
+        );
+        break;
+      case "Last Month":
+        const oneMonthAgo = subDays(new Date(), 30);
+        result = result.filter(
+          (quo) =>
+            quo.quotation_date && new Date(quo.quotation_date) >= oneMonthAgo
+        );
+        result.sort(
+          (a, b) => new Date(b.quotation_date) - new Date(a.quotation_date)
+        );
+        break;
+      default:
+        break;
+    }
+    return result;
+  }, [quotations, selectedCustomer, sortBy, searchTerm, customerMap]);
+
+  // Paginated invoices
+  const paginatedInvoices = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredInvoices.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredInvoices, currentPage]);
+
+  // Paginated quotations
+  const paginatedQuotations = useMemo(() => {
+    const startIndex = (currentQuotationPage - 1) * itemsPerPage;
+    const paginated = filteredQuotations.slice(
+      startIndex,
+      startIndex + itemsPerPage
+    );
+    if (
+      paginated.length === 0 &&
+      filteredQuotations.length > 0 &&
+      currentQuotationPage > 1
+    ) {
+      setCurrentQuotationPage(1);
+    }
+    return paginated;
+  }, [filteredQuotations, currentQuotationPage]);
+
+  // Handlers
+  const handleSelectAll = () => {
+    const currentPageInvoices = paginatedInvoices.map((inv) => inv.invoiceId);
+    setSelectedInvoices(
+      selectedInvoices.length === currentPageInvoices.length
+        ? []
+        : currentPageInvoices
+    );
+  };
+
+  const toggleInvoice = (id) => {
+    setSelectedInvoices((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleEditClick = (invoice) => {
+    setSelectedInvoice(invoice);
+    setShowEditModal(true);
+  };
+
+  const handleDeleteClick = (invoice) => {
+    setInvoiceToDelete(invoice);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async (invoice) => {
+    try {
+      await deleteInvoice(invoice.invoiceId).unwrap();
+      setShowDeleteModal(false);
+      setInvoiceToDelete(null);
+      if (paginatedInvoices.length === 1 && currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+      }
+    } catch (error) {
+      alert("Failed to delete invoice. Please try again.");
+    }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setInvoiceToDelete(null);
+  };
+
+  const handleConvertToInvoice = (quotation) => {
+    setSelectedQuotation(quotation);
+    setShowCreateInvoiceModal(true);
+  };
+
+  const handleCreateInvoiceClose = () => {
+    setShowCreateInvoiceModal(false);
+    setSelectedQuotation(null);
+  };
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    setSelectedInvoices([]);
+  };
+
+  const handleQuotationPageChange = (pageNumber) => {
+    setCurrentQuotationPage(pageNumber);
+  };
+
   const clearFilters = () => {
     setSearchTerm("");
     setCreatedDate(null);
     setDueDate(null);
     setSelectedStatus("");
-    setSortBy("Created Date");
+    setSortBy("Recently Added");
     setActiveTab("All");
+    setSelectedCustomer("");
+    setCurrentPage(1);
+    setCurrentQuotationPage(1);
   };
 
+  const isLoading =
+    invoiceLoading ||
+    customerLoading ||
+    addressLoading ||
+    userLoading ||
+    quotationLoading;
+  const hasError =
+    invoiceError ||
+    customerError ||
+    addressError ||
+    userError ||
+    quotationError;
+
   if (isLoading) {
-    return <p>Loading invoices...</p>;
+    return (
+      <div className="content">
+        <div className="card">
+          <div className="card-body text-center">
+            <Spinner
+              animation="border"
+              variant="primary"
+              role="status"
+              aria-label="Loading data"
+            />
+            <p>Loading data...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  if (isError) {
-    return <p className="text-danger">Failed to load invoices</p>;
+  if (hasError) {
+    return (
+      <div className="content">
+        <div className="card">
+          <div className="card-body">
+            <Alert variant="danger" role="alert">
+              Error loading data: {JSON.stringify(hasError)}. Please try again.
+              {quotationError && (
+                <p>Quotation Error: {JSON.stringify(quotationError)}</p>
+              )}
+            </Alert>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -130,7 +544,7 @@ const ShowInvoices = () => {
             </div>
             <div className="input-icon-start position-relative">
               <span className="input-icon-addon">
-                <i className="ti ti-search"></i>
+                <FaSearch />
               </span>
               <input
                 type="text"
@@ -138,6 +552,7 @@ const ShowInvoices = () => {
                 placeholder="Search Invoice"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                aria-label="Search invoices"
               />
             </div>
           </div>
@@ -153,7 +568,7 @@ const ShowInvoices = () => {
                   id="pills-tab"
                   role="tablist"
                 >
-                  {Object.keys(groupedInvoices).map((status, index) => (
+                  {Object.keys(groupedInvoices).map((status) => (
                     <li className="nav-item" role="presentation" key={status}>
                       <button
                         className={`nav-link btn btn-sm btn-icon py-3 d-flex align-items-center justify-content-center w-auto ${
@@ -200,31 +615,30 @@ const ShowInvoices = () => {
                     <i className="ti ti-calendar text-gray-9"></i>
                   </span>
                 </div>
-                <div className="dropdown me-2">
-                  <a
-                    href="#"
-                    className="dropdown-toggle btn btn-white d-inline-flex align-items-center p-2"
-                    data-bs-toggle="dropdown"
+                <div className="me-2" style={{ width: "120px" }}>
+                  <Select
+                    style={{ width: "100%" }}
+                    placeholder="All Customers"
+                    value={selectedCustomer || undefined}
+                    onChange={(value) => setSelectedCustomer(value)}
+                    allowClear
+                    showSearch
+                    optionFilterProp="children"
+                    filterOption={(input, option) =>
+                      option.children
+                        .toLowerCase()
+                        .includes(input.toLowerCase())
+                    }
                   >
-                    {selectedStatus || "Select Status"}
-                  </a>
-                  <ul className="dropdown-menu dropdown-menu-end p-3">
-                    {["", "Paid", "Unpaid", "Overdue"].map((status) => (
-                      <li key={status || "none"}>
-                        <a
-                          href="#"
-                          className="dropdown-item rounded-1"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setSelectedStatus(status);
-                          }}
-                        >
-                          {status || "All"}
-                        </a>
-                      </li>
+                    <Option value="">All Customers</Option>
+                    {customers.map((cust) => (
+                      <Option key={cust.customerId} value={cust.customerId}>
+                        {cust.name || "Unnamed Customer"}
+                      </Option>
                     ))}
-                  </ul>
+                  </Select>
                 </div>
+
                 <div className="d-flex align-items-center border p-2 rounded">
                   <span className="d-inline-flex me-2">Sort By: </span>
                   <div className="dropdown">
@@ -232,26 +646,33 @@ const ShowInvoices = () => {
                       href="#"
                       className="dropdown-toggle btn btn-white d-inline-flex align-items-center border-0 bg-transparent p-0 text-dark"
                       data-bs-toggle="dropdown"
+                      aria-expanded="false"
                     >
                       {sortBy}
                     </a>
                     <ul className="dropdown-menu dropdown-menu-end p-3">
-                      {["Created Date", "Due Date", "Last 7 Days"].map(
-                        (option) => (
-                          <li key={option}>
-                            <a
-                              href="#"
-                              className="dropdown-item rounded-1"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                setSortBy(option);
-                              }}
-                            >
-                              {option}
-                            </a>
-                          </li>
-                        )
-                      )}
+                      {[
+                        "Recently Added",
+                        "Ascending",
+                        "Descending",
+                        "Last 7 Days",
+                        "Last Month",
+                        "Created Date",
+                        "Due Date",
+                      ].map((option) => (
+                        <li key={option}>
+                          <a
+                            href="#"
+                            className="dropdown-item rounded-1"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setSortBy(option);
+                            }}
+                          >
+                            {option}
+                          </a>
+                        </li>
+                      ))}
                     </ul>
                   </div>
                 </div>
@@ -265,7 +686,7 @@ const ShowInvoices = () => {
             </div>
           </div>
           <div className="tab-content" id="pills-tabContent">
-            {Object.entries(groupedInvoices).map(([status, list], index) => (
+            {Object.entries(groupedInvoices).map(([status, list]) => (
               <div
                 className={`tab-pane fade ${
                   activeTab === status ? "show active" : ""
@@ -287,15 +708,29 @@ const ShowInvoices = () => {
                           <th>Invoice #</th>
                           <th>Client</th>
                           <th>Amount</th>
+                          <th>Invoice Date</th>
+                          <th>Due Date</th>
                           <th>Status</th>
-                          <th>Date</th>
+                          <th>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredInvoices.map((inv) => (
+                        {paginatedInvoices.map((inv) => (
                           <tr key={inv.invoiceId}>
-                            <td>{inv.invoiceNo || "N/A"}</td>
-                            <td>{inv.billTo || "Unknown"}</td>
+                            <td>
+                              <Link
+                                to={`/invoice/${inv.invoiceId}`}
+                                className="invoice-link"
+                              >
+                                #{inv.invoiceNo || "N/A"}
+                              </Link>
+                            </td>
+                            <td>
+                              {inv.customerId &&
+                              customerMap[inv.customerId?.trim()]
+                                ? customerMap[inv.customerId.trim()]
+                                : normalizeName(inv.billTo) || "Unknown"}
+                            </td>
                             <td>
                               ₹
                               {parseFloat(inv.amount || 0).toLocaleString(
@@ -303,31 +738,168 @@ const ShowInvoices = () => {
                               )}
                             </td>
                             <td>
-                              <span
-                                className={`badge ${
-                                  inv.status === "Paid"
-                                    ? "bg-success"
-                                    : inv.status === "Unpaid"
-                                    ? "bg-warning"
-                                    : inv.status === "Overdue"
-                                    ? "bg-danger"
-                                    : "bg-secondary"
-                                }`}
-                              >
-                                {inv.status || "Unknown"}
-                              </span>
-                            </td>
-                            <td>
-                              {inv.invoiceDate
+                              {inv.invoiceDate &&
+                              inv.invoiceDate !== "0000-00-00"
                                 ? new Date(inv.invoiceDate).toLocaleDateString(
                                     "en-IN"
                                   )
                                 : "N/A"}
                             </td>
+                            <td>
+                              {inv.dueDate && inv.dueDate !== "0000-00-00"
+                                ? new Date(inv.dueDate).toLocaleDateString(
+                                    "en-IN"
+                                  )
+                                : "N/A"}
+                            </td>
+                            <td
+                              style={{ position: "relative" }}
+                              onMouseEnter={() =>
+                                setEditingStatusInvoiceId(inv.invoiceId)
+                              }
+                              onMouseLeave={() =>
+                                setEditingStatusInvoiceId(null)
+                              }
+                            >
+                              {editingStatusInvoiceId === inv.invoiceId ? (
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "5px",
+                                  }}
+                                >
+                                  <span
+                                    className={`badge ${
+                                      getInvoiceStatus(inv) === "paid"
+                                        ? "bg-success"
+                                        : getInvoiceStatus(inv) === "unpaid"
+                                        ? "bg-warning"
+                                        : [
+                                            "partially paid",
+                                            "void",
+                                            "refund",
+                                          ].includes(getInvoiceStatus(inv))
+                                        ? "bg-danger"
+                                        : "bg-secondary"
+                                    }`}
+                                  >
+                                    {getInvoiceStatus(inv)}
+                                  </span>
+                                  <Button
+                                    variant="outline-primary"
+                                    size="sm"
+                                    onClick={() =>
+                                      setEditingStatusInvoiceId(
+                                        editingStatusInvoiceId === inv.invoiceId
+                                          ? null
+                                          : inv.invoiceId
+                                      )
+                                    }
+                                    style={{
+                                      padding: "2px 6px",
+                                      fontSize: "12px",
+                                    }}
+                                    aria-label={`Edit status for invoice ${inv.invoiceNo}`}
+                                  >
+                                    <FaPen />
+                                  </Button>
+                                  {editingStatusInvoiceId === inv.invoiceId && (
+                                    <Select
+                                      style={{
+                                        width: "120px",
+                                        position: "absolute",
+                                        top: "100%",
+                                        left: 0,
+                                        zIndex: 1000,
+                                      }}
+                                      value={getInvoiceStatus(inv)}
+                                      onChange={(value) =>
+                                        handleStatusChange(inv.invoiceId, value)
+                                      }
+                                      onBlur={() =>
+                                        setEditingStatusInvoiceId(null)
+                                      }
+                                      open
+                                      autoFocus
+                                      disabled={isChangingStatus}
+                                    >
+                                      {statuses.map((status) => (
+                                        <Option key={status} value={status}>
+                                          {status.charAt(0).toUpperCase() +
+                                            status.slice(1)}
+                                        </Option>
+                                      ))}
+                                    </Select>
+                                  )}
+                                </div>
+                              ) : (
+                                <span
+                                  className={`badge ${
+                                    getInvoiceStatus(inv) === "paid"
+                                      ? "bg-success"
+                                      : getInvoiceStatus(inv) === "unpaid"
+                                      ? "bg-warning"
+                                      : [
+                                          "partially paid",
+                                          "void",
+                                          "refund",
+                                        ].includes(getInvoiceStatus(inv))
+                                      ? "bg-danger"
+                                      : "bg-secondary"
+                                  }`}
+                                >
+                                  {getInvoiceStatus(inv)}
+                                </span>
+                              )}
+                            </td>
+                            <td>
+                              <div className="action-buttons">
+                                <Button
+                                  variant="outline-primary"
+                                  size="sm"
+                                  as={Link}
+                                  to={`/invoice/${inv.invoiceId}`}
+                                  title="View Invoice"
+                                  aria-label={`View invoice ${inv.invoiceNo}`}
+                                  className="me-1"
+                                >
+                                  <FaEye />
+                                </Button>
+                                <Button
+                                  variant="outline-primary"
+                                  size="sm"
+                                  onClick={() => handleEditClick(inv)}
+                                  title="Edit Invoice"
+                                  aria-label={`Edit invoice ${inv.invoiceNo}`}
+                                  className="me-1"
+                                >
+                                  <FaEdit />
+                                </Button>
+                                <Button
+                                  variant="outline-danger"
+                                  size="sm"
+                                  onClick={() => handleDeleteClick(inv)}
+                                  disabled={isDeleting}
+                                  title="Delete Invoice"
+                                  aria-label={`Delete invoice ${inv.invoiceNo}`}
+                                >
+                                  <FaTrash />
+                                </Button>
+                              </div>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
+                    <div className="pagination-section mt-4">
+                      <DataTablePagination
+                        totalItems={filteredInvoices.length}
+                        itemNo={itemsPerPage}
+                        onPageChange={handlePageChange}
+                        currentPage={currentPage}
+                      />
+                    </div>
                   </div>
                 )}
               </div>
@@ -335,6 +907,34 @@ const ShowInvoices = () => {
           </div>
         </div>
       </div>
+
+      {showEditModal && selectedInvoice && (
+        <EditInvoice
+          invoice={selectedInvoice}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedInvoice(null);
+          }}
+        />
+      )}
+
+      {showCreateInvoiceModal && selectedQuotation && (
+        <CreateInvoiceFromQuotation
+          quotation={selectedQuotation}
+          onClose={handleCreateInvoiceClose}
+          createInvoice={createInvoice}
+          customerMap={customerMap}
+          addressMap={addressMap}
+        />
+      )}
+
+      <DeleteModal
+        item={invoiceToDelete}
+        itemType="Invoice"
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+        isVisible={showDeleteModal}
+      />
     </div>
   );
 };
