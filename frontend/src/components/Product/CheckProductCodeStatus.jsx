@@ -1,11 +1,11 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Modal, Table, Pagination } from "react-bootstrap";
 import { useGetAllProductCodesQuery } from "../../api/productApi";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import { Link } from "react-router-dom";
 import "./checkproductcodestatus.css"; // Import the CSS file
 
-// Define inline styles (only those not handled by CSS)
+// Define inline styles (unchanged)
 const styles = {
   searchCard: {
     borderRadius: "8px",
@@ -121,7 +121,6 @@ const CheckProductCodeStatus = () => {
 
   const [searchCode, setSearchCode] = useState("");
   const [searchCategory, setSearchCategory] = useState("");
-  const [selectedFilterCategory, setSelectedFilterCategory] = useState("");
   const [filteredProduct, setFilteredProduct] = useState(null);
   const [productNotFound, setProductNotFound] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -165,16 +164,13 @@ const CheckProductCodeStatus = () => {
     filteredCategories.length / categoryPageSize
   );
 
-  // Filter products by product code and selected category
+  // Filter products by product code only
   const handleSearch = () => {
     let result = products;
     if (searchCode) {
       result = result.filter((p) =>
         p.product_code?.toLowerCase().includes(searchCode.trim().toLowerCase())
       );
-    }
-    if (selectedFilterCategory) {
-      result = result.filter((p) => p.categoryId === selectedFilterCategory);
     }
     setFilteredProduct(result.length > 0 ? result[0] : null);
     setProductNotFound(result.length === 0);
@@ -347,6 +343,7 @@ const CheckProductCodeStatus = () => {
                 gap: "15px",
                 flexWrap: "wrap",
                 justifyContent: "center",
+                alignItems: "center",
               }}
             >
               <div
@@ -371,34 +368,13 @@ const CheckProductCodeStatus = () => {
                 />
               </div>
 
-              <div
-                style={{
-                  ...styles.searchInputWrapper,
-                  flex: "1 1 300px",
-                  maxWidth: "400px",
-                }}
+              <button
+                className="btn btn-primary"
+                onClick={handleSearch}
+                style={{ height: "40px", borderRadius: "20px" }}
               >
-                <span style={styles.searchIcon}>
-                  <i className="ti ti-filter"></i>
-                </span>
-                <select
-                  className="form-control"
-                  value={selectedFilterCategory}
-                  onChange={(e) => setSelectedFilterCategory(e.target.value)}
-                  style={styles.searchInput}
-                  aria-label="Filter by category"
-                >
-                  <option value="">All Categories</option>
-                  {categories.map((cat) => (
-                    <option key={cat.categoryId} value={cat.categoryId}>
-                      {cat.name}{" "}
-                      {cat.parentcategories?.name
-                        ? `(${cat.parentcategories.name})`
-                        : ""}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                Search
+              </button>
             </div>
 
             {/* Result display */}
@@ -424,19 +400,17 @@ const CheckProductCodeStatus = () => {
               </div>
             )}
 
-            {!filteredProduct &&
-              (searchCode || selectedFilterCategory) &&
-              productNotFound && (
-                <div style={styles.resultSection}>
-                  <h5 style={styles.resultTitle}>
-                    <i className="ti ti-x me-2 text-danger"></i>No Product Found
-                  </h5>
-                  <p className="text-success" style={styles.resultText}>
-                    <i className="ti ti-check me-2"></i>Product Code is
-                    available to use.
-                  </p>
-                </div>
-              )}
+            {!filteredProduct && searchCode && productNotFound && (
+              <div style={styles.resultSection}>
+                <h5 style={styles.resultTitle}>
+                  <i className="ti ti-x me-2 text-danger"></i>No Product Found
+                </h5>
+                <p className="text-success" style={styles.resultText}>
+                  <i className="ti ti-check me-2"></i>Product Code is available
+                  to use.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -446,6 +420,26 @@ const CheckProductCodeStatus = () => {
             <h5 className="mb-3" style={styles.pageTitle}>
               Explore Products by Category
             </h5>
+            <div
+              style={{
+                ...styles.searchInputWrapper,
+                maxWidth: "400px",
+                marginBottom: "20px",
+              }}
+            >
+              <span style={styles.searchIcon}>
+                <i className="ti ti-search"></i>
+              </span>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Search Categories"
+                value={searchCategory}
+                onChange={(e) => setSearchCategory(e.target.value)}
+                style={styles.searchInput}
+                aria-label="Search categories"
+              />
+            </div>
             <div className="row mt-3">
               {paginatedCategories.length > 0 ? (
                 paginatedCategories.map((cat) => (
@@ -460,6 +454,7 @@ const CheckProductCodeStatus = () => {
                         borderRadius: "8px",
                         padding: "15px",
                         backgroundColor: "#fff",
+                        cursor: "pointer",
                       }}
                       onClick={() => handleCategoryClick(cat.categoryId)}
                     >

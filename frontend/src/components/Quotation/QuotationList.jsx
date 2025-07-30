@@ -141,7 +141,7 @@ const QuotationList = () => {
           onAdd={handleAddQuotation}
           tableData={formattedQuotations}
         />
-        <div className="cm-table-wrapper">
+        <div className="cm-table-wrapper quotation-table-container">
           <table className="cm-table">
             <thead>
               <tr>

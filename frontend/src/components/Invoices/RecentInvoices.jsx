@@ -16,6 +16,7 @@ import {
   useGetAllInvoicesQuery,
   useDeleteInvoiceMutation,
   useCreateInvoiceMutation,
+  useChangeInvoiceStatusMutation,
 } from "../../api/invoiceApi";
 import { useGetAllQuotationsQuery } from "../../api/quotationApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
@@ -27,19 +28,20 @@ import {
   FaTrash,
   FaSearch,
   FaFileInvoice,
+  FaPen,
 } from "react-icons/fa";
-import { Select } from "antd"; // Import Ant Design Select
+import { Select } from "antd";
 import EditInvoice from "./EditInvoice";
 import CreateInvoiceFromQuotation from "./CreateInvoiceFromQuotation";
 import DeleteModal from "../Common/DeleteModal";
 import DataTablePagination from "../Common/DataTablePagination";
 import "./recentinvoices.css";
 
-// Destructure Option from Select for cleaner code
+// Destructure Option from Select
 const { Option } = Select;
 
 const RecentInvoices = () => {
-  // Queries (unchanged)
+  // Queries
   const {
     data: invoiceData,
     isLoading: invoiceLoading,
@@ -68,13 +70,15 @@ const RecentInvoices = () => {
   const [createInvoice, { isLoading: isCreatingInvoice }] =
     useCreateInvoiceMutation();
   const [deleteInvoice, { isLoading: isDeleting }] = useDeleteInvoiceMutation();
+  const [changeInvoiceStatus, { isLoading: isChangingStatus }] =
+    useChangeInvoiceStatusMutation();
 
-  // Log quotation data for debugging (unchanged)
+  // Log quotation data for debugging
   useEffect(() => {
     console.log("Quotation Data:", quotationData);
   }, [quotationData]);
 
-  // Data assignments (unchanged)
+  // Data assignments
   const invoices = invoiceData?.data || [];
   const customers = customerData?.data || [];
   const addresses = addressData?.data || [];
@@ -83,12 +87,12 @@ const RecentInvoices = () => {
     ? quotationData
     : quotationData?.data || [];
 
-  // Log quotations to confirm assignment (unchanged)
+  // Log quotations
   useEffect(() => {
     console.log("Quotations:", quotations);
   }, [quotations]);
 
-  // State management (unchanged)
+  // State management
   const [selectedCustomer, setSelectedCustomer] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
   const [sortBy, setSortBy] = useState("Recently Added");
@@ -102,9 +106,10 @@ const RecentInvoices = () => {
   const [currentQuotationPage, setCurrentQuotationPage] = useState(1);
   const [showCreateInvoiceModal, setShowCreateInvoiceModal] = useState(false);
   const [selectedQuotation, setSelectedQuotation] = useState(null);
+  const [editingStatusInvoiceId, setEditingStatusInvoiceId] = useState(null);
   const itemsPerPage = 12;
 
-  // Memoized maps (unchanged)
+  // Memoized maps
   const customerMap = useMemo(() => {
     const map = {};
     customers.forEach((cust) => {
@@ -141,32 +146,25 @@ const RecentInvoices = () => {
     return map;
   }, [users]);
 
-  const statuses = useMemo(() => {
-    const invoiceStatuses = [
-      ...new Set(invoices.map((inv) => inv.status).filter(Boolean)),
-    ];
-    const customerStatuses = [
-      ...new Set(customers.map((cust) => cust.invoiceStatus).filter(Boolean)),
-    ];
-    return (
-      [...new Set([...invoiceStatuses, ...customerStatuses])] || [
-        "Paid",
-        "Unpaid",
-        "Overdue",
-        "Draft",
-      ]
-    );
-  }, [invoices, customers]);
+  // Define valid statuses as per backend controller
+  const statuses = ["paid", "unpaid", "partially paid", "void", "refund"];
 
   const getInvoiceStatus = (invoice) => {
-    if (invoice.status && invoice.status !== "N/A" && invoice.status !== "")
-      return invoice.status;
-    if (!invoice.customerId || typeof invoice.customerId !== "string")
-      return "Unknown";
+    const validStatuses = statuses;
+    const invoiceStatus = invoice.status ? invoice.status.toLowerCase() : null;
+    if (validStatuses.includes(invoiceStatus)) {
+      return invoiceStatus;
+    }
+    if (!invoice.customerId || typeof invoice.customerId !== "string") {
+      return "unpaid"; // Default to unpaid if no valid status
+    }
     const customer = customers.find(
       (cust) => cust.customerId === invoice.customerId.trim()
     );
-    return customer?.invoiceStatus || "Unknown";
+    const customerStatus = customer?.invoiceStatus
+      ? customer?.invoiceStatus.toLowerCase()
+      : null;
+    return validStatuses.includes(customerStatus) ? customerStatus : "unpaid";
   };
 
   const normalizeName = (name) =>
@@ -177,7 +175,21 @@ const RecentInvoices = () => {
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ") || "N/A";
 
-  // Filtered and sorted invoices (unchanged)
+  // Handle status change
+  const handleStatusChange = async (invoiceId, newStatus) => {
+    try {
+      await changeInvoiceStatus({
+        invoiceId,
+        status: newStatus.toLowerCase(),
+      }).unwrap();
+      setEditingStatusInvoiceId(null); // Close dropdown after success
+    } catch (error) {
+      alert("Failed to update invoice status. Please try again.");
+      console.error("Status update error:", error);
+    }
+  };
+
+  // Filtered and sorted invoices
   const filteredInvoices = useMemo(() => {
     let result = [...invoices];
     if (selectedCustomer) {
@@ -189,7 +201,9 @@ const RecentInvoices = () => {
       );
     }
     if (selectedStatus) {
-      result = result.filter((inv) => getInvoiceStatus(inv) === selectedStatus);
+      result = result.filter(
+        (inv) => getInvoiceStatus(inv) === selectedStatus.toLowerCase()
+      );
     }
     if (searchQuery) {
       result = result.filter((inv) => {
@@ -254,7 +268,7 @@ const RecentInvoices = () => {
     addressMap,
   ]);
 
-  // Filtered and sorted quotations (unchanged)
+  // Filtered and sorted quotations
   const filteredQuotations = useMemo(() => {
     let result = [...quotations];
     if (selectedCustomer) {
@@ -327,14 +341,14 @@ const RecentInvoices = () => {
     return result;
   }, [quotations, selectedCustomer, sortBy, searchQuery, customerMap]);
 
-  // Paginated invoices (unchanged)
+  // Paginated invoices
   const paginatedInvoices = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return filteredInvoices.slice(startIndex, endIndex);
   }, [filteredInvoices, currentPage]);
 
-  // Paginated quotations (unchanged)
+  // Paginated quotations
   const paginatedQuotations = useMemo(() => {
     const startIndex = (currentQuotationPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
@@ -350,7 +364,7 @@ const RecentInvoices = () => {
     return paginated;
   }, [filteredQuotations, currentQuotationPage]);
 
-  // Handlers (unchanged)
+  // Handlers
   const handleSelectAll = () => {
     const currentPageInvoices = paginatedInvoices.map((inv) => inv.invoiceId);
     setSelectedInvoices(
@@ -528,7 +542,6 @@ const RecentInvoices = () => {
             </Row>
           </div>
 
-          {/* Tabs for Invoices and Quotations (unchanged) */}
           <Tabs
             defaultActiveKey="invoices"
             id="invoices-quotations-tabs"
@@ -610,14 +623,88 @@ const RecentInvoices = () => {
                               ? new Date(invoice.dueDate).toLocaleDateString()
                               : "N/A"}
                           </td>
-                          <td>
-                            <span
-                              className={`status-badge status-${getInvoiceStatus(
-                                invoice
-                              ).toLowerCase()}`}
-                            >
-                              {getInvoiceStatus(invoice)}
-                            </span>
+                          <td
+                            style={{ position: "relative" }}
+                            onMouseEnter={() =>
+                              setEditingStatusInvoiceId(invoice.invoiceId)
+                            }
+                            onMouseLeave={() => setEditingStatusInvoiceId(null)}
+                          >
+                            {editingStatusInvoiceId === invoice.invoiceId ? (
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "5px",
+                                }}
+                              >
+                                <span
+                                  className={`status-badge status-${getInvoiceStatus(
+                                    invoice
+                                  ).toLowerCase()}`}
+                                >
+                                  {getInvoiceStatus(invoice)}
+                                </span>
+                                <Button
+                                  variant="outline-primary"
+                                  size="sm"
+                                  onClick={() =>
+                                    setEditingStatusInvoiceId(
+                                      editingStatusInvoiceId ===
+                                        invoice.invoiceId
+                                        ? null
+                                        : invoice.invoiceId
+                                    )
+                                  }
+                                  style={{
+                                    padding: "2px 6px",
+                                    fontSize: "12px",
+                                  }}
+                                  aria-label={`Edit status for invoice ${invoice.invoiceNo}`}
+                                >
+                                  <FaPen />
+                                </Button>
+                                {editingStatusInvoiceId ===
+                                  invoice.invoiceId && (
+                                  <Select
+                                    style={{
+                                      width: "120px",
+                                      position: "absolute",
+                                      top: "100%",
+                                      left: 0,
+                                      zIndex: 1000,
+                                    }}
+                                    value={getInvoiceStatus(invoice)}
+                                    onChange={(value) =>
+                                      handleStatusChange(
+                                        invoice.invoiceId,
+                                        value
+                                      )
+                                    }
+                                    onBlur={() =>
+                                      setEditingStatusInvoiceId(null)
+                                    }
+                                    open
+                                    autoFocus
+                                    disabled={isChangingStatus}
+                                  >
+                                    {statuses.map((status) => (
+                                      <Option key={status} value={status}>
+                                        {status}
+                                      </Option>
+                                    ))}
+                                  </Select>
+                                )}
+                              </div>
+                            ) : (
+                              <span
+                                className={`status-badge status-${getInvoiceStatus(
+                                  invoice
+                                ).toLowerCase()}`}
+                              >
+                                {getInvoiceStatus(invoice)}
+                              </span>
+                            )}
                           </td>
                           <td>
                             <div className="action-buttons">

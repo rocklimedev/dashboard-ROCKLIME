@@ -36,5 +36,5 @@ router.delete(
   // checkPermission("delete", "delete_invoice", "invoices", "/invoices/:id"),
   invoiceController.deleteInvoice
 );
-
+router.patch("/:id/status", invoiceController.changeInvoiceStatus);
 module.exports = router;

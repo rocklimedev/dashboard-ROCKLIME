@@ -46,6 +46,17 @@ export const invoiceApi = createApi({
       }),
       invalidatesTags: ["Invoices"], // Invalidate to refetch invoices
     }),
+    changeInvoiceStatus: builder.mutation({
+      query: ({ invoiceId, status }) => ({
+        url: `/${invoiceId}/status`,
+        method: "PATCH",
+        body: { status },
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Invoices", id },
+        "Invoices",
+      ], // Refresh specific invoice and list
+    }),
   }),
 });
 
@@ -55,4 +66,5 @@ export const {
   useGetInvoiceByIdQuery,
   useUpdateInvoiceMutation,
   useDeleteInvoiceMutation,
+  useChangeInvoiceStatusMutation,
 } = invoiceApi;

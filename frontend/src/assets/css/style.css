@@ -14274,6 +14274,7 @@ td .checkboxs .checkmarks::after {
   margin-right: 0;
 }
 .table-top-head li {
+  margin-top: 10px;
   margin-right: 8px;
   flex-shrink: 0;
 }
