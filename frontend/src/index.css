@@ -1340,3 +1340,68 @@
     font-size: 14px;
   }
 }
+.quotation-table-container {
+  overflow-x: auto; /* Enable horizontal scrolling on small screens */
+  max-width: 100%; /* Ensure it fits within the parent container */
+}
+
+.quotation-table-container .cm-table {
+  width: 100%; /* Full width of the container */
+  min-width: 800px; /* Minimum width to ensure all columns are visible */
+  border-collapse: collapse;
+  table-layout: auto; /* Allow columns to adjust dynamically */
+}
+
+.quotation-table-container .cm-table th,
+.quotation-table-container .cm-table td {
+  padding: 8px;
+  text-align: left;
+  white-space: nowrap; /* Prevent text wrapping */
+}
+
+.quotation-table-container .cm-table th {
+  background-color: #f5f5f5;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .quotation-table-container .cm-table th,
+  .quotation-table-container .cm-table td {
+    padding: 6px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 768px) {
+  .quotation-table-container .cm-table th,
+  .quotation-table-container .cm-table td {
+    padding: 4px;
+    font-size: 12px;
+  }
+
+  .quotation-table-container .cm-table th:nth-child(n+6),
+  .quotation-table-container .cm-table td:nth-child(n+6) {
+    display: none; /* Hide less critical columns on small screens */
+  }
+}
+
+@media (max-width: 480px) {
+  .quotation-table-container .cm-table th,
+  .quotation-table-container .cm-table td {
+    padding: 3px;
+    font-size: 10px;
+  }
+
+  .quotation-table-container .cm-table th:nth-child(n+4),
+  .quotation-table-container .cm-table td:nth-child(n+4) {
+    display: none; /* Hide more columns on very small screens */
+  }
+}
+
+/* Ensure pagination fits */
+.quotation-table-container .pagination {
+  margin-top: 10px;
+}

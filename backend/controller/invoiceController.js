@@ -240,3 +240,57 @@ exports.deleteInvoice = async (req, res) => {
       .json({ success: false, message: "Internal Server Error" });
   }
 };
+// Change invoice status
+exports.changeInvoiceStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    // Find the invoice
+    const invoice = await Invoice.findByPk(id);
+
+    if (!invoice) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Invoice not found" });
+    }
+
+    // Validate status
+    if (!status) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Status is required" });
+    }
+
+    // Optional: Validate status against allowed values
+    const validStatuses = [
+      "paid",
+      "unpaid",
+      "partially paid",
+      "void",
+      "refund",
+    ]; // Adjust based on your requirements
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid status. Allowed values are: ${validStatuses.join(
+          ", "
+        )}`,
+      });
+    }
+
+    // Update status
+    await invoice.update({ status });
+
+    return res.status(200).json({
+      success: true,
+      message: "Invoice status updated successfully",
+      data: invoice,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
