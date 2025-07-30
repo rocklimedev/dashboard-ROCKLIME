@@ -9,16 +9,20 @@ import {
   useDeleteOrderMutation,
 } from "../../api/orderApi";
 import { toast } from "sonner";
-import { FaEdit, FaPause, FaFileInvoice, FaTrash } from "react-icons/fa";
+import {
+  FaEdit,
+  FaPause,
+  FaFileInvoice,
+  FaTrash,
+  FaSearch,
+} from "react-icons/fa";
 import { Tooltip } from "react-tooltip";
-import PageHeader from "../Common/PageHeader";
-import OrderFilter from "./OrderFilter";
-import OrderPagination from "./OrderPagination";
 import ShowInvoices from "./ShowInvoices";
 import QuotationList from "../Quotation/QuotationList";
 import DatesModal from "./DateModal";
 import OnHoldModal from "./OnHoldOrder";
 import DeleteModal from "../Common/DeleteModal";
+import OrderPagination from "./OrderPagination";
 
 const OrderWrapper = () => {
   const navigate = useNavigate();
@@ -35,6 +39,8 @@ const OrderWrapper = () => {
     dueDate: null,
     followupDates: [],
   });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("Recently Added");
 
   const [filters, setFilters] = useState({
     status: "",
@@ -52,9 +58,12 @@ const OrderWrapper = () => {
   // Compute filtered state
   const isFiltered = useMemo(() => {
     return (
-      filters.status !== "" || filters.priority !== "" || filters.source !== ""
+      filters.status !== "" ||
+      filters.priority !== "" ||
+      filters.source !== "" ||
+      searchTerm.trim() !== ""
     );
-  }, [filters]);
+  }, [filters, searchTerm]);
 
   // Clean filters for API query
   const cleanFilters = useMemo(() => {
@@ -63,10 +72,11 @@ const OrderWrapper = () => {
       ...(status && { status }),
       ...(priority && { priority }),
       ...(source && { source }),
+      ...(searchTerm && { search: searchTerm }),
       page,
       limit,
     };
-  }, [filters]);
+  }, [filters, searchTerm]);
 
   // Fetch orders based on filters
   const {
@@ -128,6 +138,83 @@ const OrderWrapper = () => {
   }, [usersData]);
 
   const [deleteOrder] = useDeleteOrderMutation();
+
+  // Memoized grouped orders for tab-based filtering
+  const groupedOrders = useMemo(
+    () => ({
+      All: orders,
+      Completed: orders.filter((ord) => ord.status === "COMPLETED"),
+      Pending: orders.filter((ord) => ord.status === "PENDING"),
+      OnHold: orders.filter((ord) => ord.status === "ON_HOLD"),
+    }),
+    [orders]
+  );
+
+  // Filtered and sorted orders
+  const filteredOrders = useMemo(() => {
+    let result = groupedOrders[filters.status || "All"] || [];
+
+    // Apply search filter
+    if (searchTerm.trim()) {
+      result = result.filter((ord) => {
+        const customerName = ord.createdFor
+          ? customerMap[ord.createdFor] || "—"
+          : "N/A";
+        return (
+          ord.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          ord.source?.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      });
+    }
+
+    // Apply priority filter
+    if (filters.priority) {
+      result = result.filter(
+        (ord) => ord.priority?.toLowerCase() === filters.priority.toLowerCase()
+      );
+    }
+
+    // Apply source filter
+    if (filters.source) {
+      result = result.filter(
+        (ord) => ord.source?.toLowerCase() === filters.source.toLowerCase()
+      );
+    }
+
+    // Apply sorting
+    switch (sortBy) {
+      case "Ascending":
+        result = [...result].sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case "Descending":
+        result = [...result].sort((a, b) => b.title.localeCompare(a.title));
+        break;
+      case "Recently Added":
+        result = [...result].sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
+        break;
+      default:
+        break;
+    }
+
+    return result;
+  }, [
+    groupedOrders,
+    filters.status,
+    filters.priority,
+    filters.source,
+    searchTerm,
+    sortBy,
+    customerMap,
+  ]);
+
+  // Paginated orders
+  const paginatedOrders = useMemo(() => {
+    const startIndex = (filters.page - 1) * filters.limit;
+    return filteredOrders.slice(startIndex, startIndex + filters.limit);
+  }, [filteredOrders, filters.page, filters.limit]);
 
   // Handlers
   const handleOpenAddOrder = () => {
@@ -193,6 +280,8 @@ const OrderWrapper = () => {
       page: 1,
       limit: 10,
     });
+    setSearchTerm("");
+    setSortBy("Recently Added");
     toast.success("Filters cleared!");
   };
 
@@ -249,197 +338,300 @@ const OrderWrapper = () => {
         </ul>
 
         {activeTab === "orders" ? (
-          <>
-            <PageHeader
-              title="Order"
-              subtitle="Manage your Orders, Invoices & Quotations list"
-              onAdd={handleOpenAddOrder}
-            />
-            <div className="orders-section">
-              <div className="filter-section mb-4">
-                <OrderFilter
-                  filters={filters}
-                  setFilters={setFilters}
-                  onClear={handleClearFilters}
-                />
-              </div>
-              <div className="orders-table-section">
-                <div className="border-bottom mb-4 pb-2">
-                  <h4>All Orders</h4>
+          <div className="content">
+            <div className="card">
+              <div className="card-body">
+                <div className="row">
+                  <div className="col-lg-4">
+                    <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
+                      <h6 className="me-2">Status</h6>
+                      <ul
+                        className="nav nav-pills border d-inline-flex p-1 rounded bg-light todo-tabs"
+                        id="pills-tab"
+                        role="tablist"
+                      >
+                        {Object.keys(groupedOrders).map((status) => (
+                          <li
+                            className="nav-item"
+                            role="presentation"
+                            key={status}
+                          >
+                            <button
+                              className={`nav-link btn btn-sm btn-icon py-3 d-flex align-items-center justify-content-center w-auto ${
+                                (filters.status || "All") === status
+                                  ? "active"
+                                  : ""
+                              }`}
+                              id={`tab-${status}`}
+                              data-bs-toggle="pill"
+                              data-bs-target={`#pills-${status}`}
+                              type="button"
+                              role="tab"
+                              aria-selected={
+                                (filters.status || "All") === status
+                              }
+                              onClick={() =>
+                                setFilters((prev) => ({
+                                  ...prev,
+                                  status: status === "All" ? "" : status,
+                                }))
+                              }
+                            >
+                              {status} ({groupedOrders[status].length})
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                  <div className="col-lg-8">
+                    <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
+                      <div className="d-flex align-items-center border p-2 rounded">
+                        <span className="d-inline-flex me-2">Sort By: </span>
+                        <div className="dropdown">
+                          <a
+                            href="#"
+                            className="dropdown-toggle btn btn-white d-inline-flex align-items-center border-0 bg-transparent p-0 text-dark"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false"
+                          >
+                            {sortBy}
+                          </a>
+                          <ul className="dropdown-menu dropdown-menu-end p-3">
+                            {["Recently Added", "Ascending", "Descending"].map(
+                              (option) => (
+                                <li key={option}>
+                                  <a
+                                    href="#"
+                                    className="dropdown-item rounded-1"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      setSortBy(option);
+                                    }}
+                                  >
+                                    {option}
+                                  </a>
+                                </li>
+                              )
+                            )}
+                          </ul>
+                        </div>
+                      </div>
+                      <div className="input-icon-start position-relative">
+                        <span className="input-icon-addon">
+                          <FaSearch />
+                        </span>
+                        <input
+                          type="text"
+                          className="form-control"
+                          placeholder="Search Orders"
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          aria-label="Search orders"
+                        />
+                      </div>
+                      <button
+                        className="btn btn-outline-secondary ms-2"
+                        onClick={handleClearFilters}
+                      >
+                        Clear Filters
+                      </button>
+                      <button
+                        className="btn btn-outline-primary ms-2"
+                        onClick={handleOpenAddOrder}
+                      >
+                        Add Order
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                {isLoading || isFetching ? (
-                  <div className="text-center">
-                    <div className="spinner-border text-primary" role="status">
-                      <span className="visually-hidden">Loading...</span>
-                    </div>
-                  </div>
-                ) : error ? (
-                  <div className="alert alert-danger">
-                    Error loading orders:{" "}
-                    {error?.data?.message || error?.message || "Unknown error"}
-                  </div>
-                ) : orders.length > 0 ? (
-                  <>
-                    <div className="cm-table-wrapper">
-                      <table className="cm-table table table-striped">
-                        <thead>
-                          <tr>
-                            <th className="checkbox-column">
-                              <input type="checkbox" />
-                            </th>
-                            <th>STATUS</th>
-                            <th>TITLE</th>
-                            <th>CUSTOMER</th>
-                            <th>PRIORITY</th>
-                            <th>TEAM</th>
-                            <th>SOURCE</th>
-                            <th>CREATED BY</th>
-                            <th>CREATED AT</th>
-                            <th>DUE DATE</th>
-                            <th>ACTIONS</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {orders.map((order) => {
-                            const teamName = order.assignedTo
-                              ? teamMap[order.assignedTo] || "—"
-                              : "—";
-                            const customerName = order.createdFor
-                              ? customerMap[order.createdFor] || "Loading..."
-                              : "N/A";
-                            const createdByName = order.createdBy
-                              ? userMap[order.createdBy] || "Loading..."
-                              : "N/A";
-                            const statusClass = order.status
-                              ? order.status.toLowerCase().replace("_", "-")
-                              : "";
-                            const dueDateClass = isDueDateClose(order.dueDate)
-                              ? "due-date-close"
-                              : "";
-
-                            return (
-                              <tr key={order.id}>
-                                <td className="checkbox-column">
+                <div className="tab-content" id="pills-tabContent">
+                  {Object.entries(groupedOrders).map(([status, list]) => (
+                    <div
+                      className={`tab-pane fade ${
+                        (filters.status || "All") === status
+                          ? "show active"
+                          : ""
+                      }`}
+                      id={`pills-${status}`}
+                      role="tabpanel"
+                      aria-labelledby={`tab-${status}`}
+                      key={status}
+                    >
+                      {paginatedOrders.length === 0 ? (
+                        <p className="text-muted">
+                          No {status.toLowerCase()} orders match the applied
+                          filters
+                        </p>
+                      ) : (
+                        <div className="table-responsive">
+                          <table className="table table-hover">
+                            <thead>
+                              <tr>
+                                <th className="checkbox-column">
                                   <input type="checkbox" />
-                                </td>
-                                <td>
-                                  <span
-                                    className={`status-badge ${statusClass}`}
-                                  >
-                                    {order.status || "CREATED"}
-                                  </span>
-                                </td>
-                                <td>
-                                  <Link to={`/order/${order.id}`}>
-                                    {order.title}
-                                  </Link>
-                                </td>
-                                <td>{customerName}</td>
-                                <td>
-                                  <span
-                                    className={`priority-badge ${
-                                      order.priority?.toLowerCase() || "medium"
-                                    }`}
-                                  >
-                                    {order.priority || "Medium"}
-                                  </span>
-                                </td>
-                                <td>{teamName}</td>
-                                <td>{order.source || "—"}</td>
-                                <td>{createdByName}</td>
-                                <td>
-                                  {order.createdAt
-                                    ? new Date(
-                                        order.createdAt
-                                      ).toLocaleDateString()
-                                    : "—"}
-                                </td>
-                                <td className={dueDateClass}>
-                                  {order.dueDate ? (
-                                    <span
-                                      className="due-date-link"
-                                      style={{
-                                        color: "#e31e24",
-                                        cursor: "pointer",
-                                      }}
-                                      onClick={() =>
-                                        handleOpenDatesModal(
-                                          order.dueDate,
-                                          order.followupDates || []
-                                        )
-                                      }
-                                    >
-                                      {new Date(
-                                        order.dueDate
-                                      ).toLocaleDateString()}
-                                    </span>
-                                  ) : (
-                                    "—"
-                                  )}
-                                </td>
-                                <td className="action-column">
-                                  <div className="action-buttons d-flex gap-2">
-                                    <button
-                                      className="btn btn-icon btn-sm btn-outline-primary"
-                                      onClick={() => handleEditClick(order)}
-                                      data-tooltip-id={`edit-${order.id}`}
-                                      data-tooltip-content="Edit Order"
-                                    >
-                                      <FaEdit />
-                                    </button>
-                                    <button
-                                      className="btn btn-icon btn-sm btn-outline-warning"
-                                      onClick={() => handleHoldClick(order)}
-                                      data-tooltip-id={`hold-${order.id}`}
-                                      data-tooltip-content="Put Order on Hold"
-                                    >
-                                      <FaPause />
-                                    </button>
-                                    <button
-                                      className="btn btn-icon btn-sm btn-outline-info"
-                                      onClick={() => handleViewInvoice(order)}
-                                      data-tooltip-id={`invoice-${order.id}`}
-                                      data-tooltip-content="View Invoice"
-                                    >
-                                      <FaFileInvoice />
-                                    </button>
-                                    <button
-                                      className="btn btn-icon btn-sm btn-outline-danger"
-                                      onClick={() =>
-                                        handleDeleteClick(order.id)
-                                      }
-                                      data-tooltip-id={`delete-${order.id}`}
-                                      data-tooltip-content="Delete Order"
-                                    >
-                                      <FaTrash />
-                                    </button>
-                                    <Tooltip id={`edit-${order.id}`} />
-                                    <Tooltip id={`hold-${order.id}`} />
-                                    <Tooltip id={`invoice-${order.id}`} />
-                                    <Tooltip id={`delete-${order.id}`} />
-                                  </div>
-                                </td>
+                                </th>
+                                <th>STATUS</th>
+                                <th>TITLE</th>
+                                <th>CUSTOMER</th>
+                                <th>PRIORITY</th>
+                                <th>TEAM</th>
+                                <th>SOURCE</th>
+                                <th>CREATED BY</th>
+                                <th>CREATED AT</th>
+                                <th>DUE DATE</th>
+                                <th>ACTIONS</th>
                               </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+                            </thead>
+                            <tbody>
+                              {paginatedOrders.map((order) => {
+                                const teamName = order.assignedTo
+                                  ? teamMap[order.assignedTo] || "—"
+                                  : "—";
+                                const customerName = order.createdFor
+                                  ? customerMap[order.createdFor] ||
+                                    "Loading..."
+                                  : "N/A";
+                                const createdByName = order.createdBy
+                                  ? userMap[order.createdBy] || "Loading..."
+                                  : "N/A";
+                                const statusClass = order.status
+                                  ? order.status.toLowerCase().replace("_", "-")
+                                  : "";
+                                const dueDateClass = isDueDateClose(
+                                  order.dueDate
+                                )
+                                  ? "due-date-close"
+                                  : "";
+
+                                return (
+                                  <tr key={order.id}>
+                                    <td className="checkbox-column">
+                                      <input type="checkbox" />
+                                    </td>
+                                    <td>
+                                      <span
+                                        className={`status-badge ${statusClass}`}
+                                      >
+                                        {order.status || "CREATED"}
+                                      </span>
+                                    </td>
+                                    <td>
+                                      <Link to={`/order/${order.id}`}>
+                                        {order.title}
+                                      </Link>
+                                    </td>
+                                    <td>{customerName}</td>
+                                    <td>
+                                      <span
+                                        className={`priority-badge ${
+                                          order.priority?.toLowerCase() ||
+                                          "medium"
+                                        }`}
+                                      >
+                                        {order.priority || "Medium"}
+                                      </span>
+                                    </td>
+                                    <td>{teamName}</td>
+                                    <td>{order.source || "—"}</td>
+                                    <td>{createdByName}</td>
+                                    <td>
+                                      {order.createdAt
+                                        ? new Date(
+                                            order.createdAt
+                                          ).toLocaleDateString()
+                                        : "—"}
+                                    </td>
+                                    <td className={dueDateClass}>
+                                      {order.dueDate ? (
+                                        <span
+                                          className="due-date-link"
+                                          style={{
+                                            color: "#e31e24",
+                                            cursor: "pointer",
+                                          }}
+                                          onClick={() =>
+                                            handleOpenDatesModal(
+                                              order.dueDate,
+                                              order.followupDates || []
+                                            )
+                                          }
+                                        >
+                                          {new Date(
+                                            order.dueDate
+                                          ).toLocaleDateString()}
+                                        </span>
+                                      ) : (
+                                        "—"
+                                      )}
+                                    </td>
+                                    <td className="action-column">
+                                      <div className="action-buttons d-flex gap-2">
+                                        <button
+                                          className="btn btn-icon btn-sm btn-outline-primary"
+                                          onClick={() => handleEditClick(order)}
+                                          data-tooltip-id={`edit-${order.id}`}
+                                          data-tooltip-content="Edit Order"
+                                        >
+                                          <FaEdit />
+                                        </button>
+                                        <button
+                                          className="btn btn-icon btn-sm btn-outline-warning"
+                                          onClick={() => handleHoldClick(order)}
+                                          data-tooltip-id={`hold-${order.id}`}
+                                          data-tooltip-content="Put Order on Hold"
+                                        >
+                                          <FaPause />
+                                        </button>
+                                        <button
+                                          className="btn btn-icon btn-sm btn-outline-info"
+                                          onClick={() =>
+                                            handleViewInvoice(order)
+                                          }
+                                          data-tooltip-id={`invoice-${order.id}`}
+                                          data-tooltip-content="View Invoice"
+                                        >
+                                          <FaFileInvoice />
+                                        </button>
+                                        <button
+                                          className="btn btn-icon btn-sm btn-outline-danger"
+                                          onClick={() =>
+                                            handleDeleteClick(order.id)
+                                          }
+                                          data-tooltip-id={`delete-${order.id}`}
+                                          data-tooltip-content="Delete Order"
+                                        >
+                                          <FaTrash />
+                                        </button>
+                                        <Tooltip id={`edit-${order.id}`} />
+                                        <Tooltip id={`hold-${order.id}`} />
+                                        <Tooltip id={`invoice-${order.id}`} />
+                                        <Tooltip id={`delete-${order.id}`} />
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                          {totalCount > filters.limit && (
+                            <div className="pagination-section mt-4">
+                              <OrderPagination
+                                currentPage={filters.page}
+                                totalCount={totalCount}
+                                pageSize={filters.limit}
+                                onPageChange={handlePageChange}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    {totalCount > filters.limit && (
-                      <OrderPagination
-                        currentPage={filters.page}
-                        totalCount={totalCount}
-                        pageSize={filters.limit}
-                        onPageChange={handlePageChange}
-                      />
-                    )}
-                  </>
-                ) : (
-                  <p className="no-data text-muted">No orders found.</p>
-                )}
+                  ))}
+                </div>
               </div>
             </div>
-          </>
+          </div>
         ) : activeTab === "invoices" ? (
           <ShowInvoices />
         ) : (

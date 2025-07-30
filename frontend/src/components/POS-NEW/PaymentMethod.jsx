@@ -1,4 +1,5 @@
 import React from "react";
+import { Button, Space, Card } from "antd";
 import {
   FaMoneyBillAlt, // Cash
   FaCreditCard, // Card
@@ -11,77 +12,66 @@ import {
   FaExternalLinkAlt, // External
   FaEquals, // Split Bill
 } from "react-icons/fa";
+import styled from "styled-components";
+import PropTypes from "prop-types";
 
-const PaymentMethod = ({ subTotal }) => {
+const PaymentButton = styled(Button)`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 50px;
+  width: 100%;
+  margin-bottom: 8px;
+  font-size: 16px;
+  .anticon {
+    margin-right: 8px;
+  }
+`;
+
+const PaymentMethod = ({ subTotal, selectedMethod, onSelectMethod }) => {
   const methods = [
-    {
-      icon: <FaMoneyBillAlt className="me-2" />,
-      label: "Cash",
-      target: "#payment-cash",
-    },
-    {
-      icon: <FaCreditCard className="me-2" />,
-      label: "Card",
-      target: "#payment-card",
-    },
-    {
-      icon: <FaStar className="me-2" />,
-      label: "Points",
-      target: "#payment-points",
-    },
-    {
-      icon: <FaUniversity className="me-2" />,
-      label: "Deposit",
-      target: "#payment-deposit",
-    },
-    {
-      icon: <FaRegFileAlt className="me-2" />,
-      label: "Cheque",
-      target: "#payment-cheque",
-    },
-    {
-      icon: <FaGift className="me-2" />,
-      label: "Gift Card",
-      target: "#gift-payment",
-    },
-    {
-      icon: <FaQrcode className="me-2" />,
-      label: "Scan",
-      target: "#scan-payment",
-    },
-    { icon: <FaClock className="me-2" />, label: "Pay Later" },
-    { icon: <FaExternalLinkAlt className="me-2" />, label: "External" },
-    {
-      icon: <FaEquals className="me-2" />,
-      label: "Split Bill",
-      target: "#split-payment",
-    },
+    { icon: <FaMoneyBillAlt />, label: "Cash" },
+    { icon: <FaCreditCard />, label: "Card" },
+    { icon: <FaStar />, label: "Points" },
+    { icon: <FaUniversity />, label: "Deposit" },
+    { icon: <FaRegFileAlt />, label: "Cheque" },
+    { icon: <FaGift />, label: "Gift Card" },
+    { icon: <FaQrcode />, label: "Scan" },
+    { icon: <FaClock />, label: "Pay Later" },
+    { icon: <FaExternalLinkAlt />, label: "External" },
+    { icon: <FaEquals />, label: "Split Bill" },
   ];
+
   return (
-    <div class="block-section payment-method">
-      <h5 class="mb-2">Select Payment</h5>
-      <div class="row align-items-center justify-content-center methods g-2 mb-4">
-        {methods.map(({ icon, label, target }, index) => (
-          <div key={index} class="col-sm-6 col-md-4 col-xl d-flex">
-            <a
-              href="javascript:void(0);"
-              class="payment-item flex-fill"
-              data-bs-toggle="modal"
-              data-bs-target="#payment-cash"
-            >
-              {icon}
-              <p class="fw-medium">{label}</p>
-            </a>
-          </div>
+    <Card title="Select Payment Method" bordered={false}>
+      <Space direction="vertical" style={{ width: "100%" }} size="small">
+        {methods.map(({ icon, label }, index) => (
+          <PaymentButton
+            key={index}
+            type={selectedMethod === label ? "primary" : "default"}
+            onClick={() => onSelectMethod(label)}
+            icon={icon}
+            aria-label={`Select ${label} payment method`}
+          >
+            {label}
+          </PaymentButton>
         ))}
-      </div>
-      <div class="btn-block m-0">
-        <a class="btn btn-teal w-100" href="javascript:void(0);">
-          {subTotal}
-        </a>
-      </div>
-    </div>
+        <PaymentButton type="primary" disabled>
+          Total: ₹{subTotal.toFixed(2)}
+        </PaymentButton>
+      </Space>
+    </Card>
   );
+};
+
+PaymentMethod.propTypes = {
+  subTotal: PropTypes.number.isRequired,
+  selectedMethod: PropTypes.string,
+  onSelectMethod: PropTypes.func.isRequired,
+};
+
+PaymentMethod.defaultProps = {
+  selectedMethod: "Cash",
 };
 
 export default PaymentMethod;

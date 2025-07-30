@@ -184,216 +184,224 @@ const InvoiceDetails = () => {
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
     >
-      <div style={{ position: "absolute", top: "20px", left: "20px" }}>
-        <Link to="/invoices/list" className="btn btn-primary">
-          <i className="me-2" data-feather="arrow-left"></i>Back to Invoices
-        </Link>
-        <button
-          className="btn btn-secondary"
-          style={{ marginLeft: "10px" }}
-          onClick={() => window.print()}
-        >
-          Print Invoice
-        </button>
-      </div>
-      <div
-        className="content draggable-content"
-        style={{
-          maxWidth: "800px",
-          margin: "0 auto",
-          background: "#fff",
-          padding: "30px",
-          borderRadius: "8px",
-          boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-        }}
-      >
-        <div className="page-header" onMouseDown={handleMouseDown}>
-          <h3 style={{ ...componentStyles.headerTitle, textAlign: "center" }}>
-            Invoice #{invoiceNo}
-          </h3>
+      <div className="content">
+        <div style={{ position: "absolute", top: "20px", left: "20px" }}>
+          <Link to="/invoices/list" className="btn btn-primary">
+            <i className="me-2" data-feather="arrow-left"></i>Back to Invoices
+          </Link>
+          <button
+            className="btn btn-secondary"
+            style={{ marginLeft: "10px" }}
+            onClick={() => window.print()}
+          >
+            Print Invoice
+          </button>
         </div>
-
-        {/* Invoice Details Section */}
-        <div style={{ marginBottom: "30px" }}>
-          <h4 style={{ ...componentStyles.sectionTitle, fontSize: "18px" }}>
-            Invoice Details
-          </h4>
-          <div style={{ ...componentStyles.dateSection, marginBottom: "20px" }}>
-            <p style={componentStyles.dateItem}>
-              <strong>Invoice Date:</strong>{" "}
-              {invoiceDate
-                ? new Date(invoiceDate).toLocaleDateString()
-                : "Not available"}
-            </p>
-            <p style={componentStyles.dateItem}>
-              <strong>Due Date:</strong>{" "}
-              {dueDate
-                ? new Date(dueDate).toLocaleDateString()
-                : "Not available"}
-            </p>
-            <p style={componentStyles.dateItem}>
-              <strong>Status:</strong>{" "}
-              <span
-                style={{
-                  color: status === "Paid" ? "green" : "red",
-                  fontWeight: "bold",
-                }}
-              >
-                {status}
-              </span>
-            </p>
+        <div
+          className="draggable-content"
+          style={{
+            maxWidth: "800px",
+            margin: "0 auto",
+            background: "#fff",
+            padding: "30px",
+            borderRadius: "8px",
+            boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+          }}
+        >
+          <div className="page-header" onMouseDown={handleMouseDown}>
+            <h3 style={{ ...componentStyles.headerTitle, textAlign: "center" }}>
+              Invoice #{invoiceNo}
+            </h3>
           </div>
 
-          <table
-            className="table"
-            style={{ ...componentStyles.table, marginBottom: "20px" }}
-          >
-            <thead style={{ backgroundColor: "#f1f1f1" }}>
-              <tr>
-                <th>#</th>
-                <th>Item Name</th>
-                <th>Product Code</th>
-                <th>Qty</th>
-                <th>Rate (₹)</th>
-                <th>Amount (₹)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.map((product, idx) => (
-                <ProductRow
-                  key={product.productId || idx}
-                  product={product}
-                  index={idx}
-                />
-              ))}
-            </tbody>
-            <tfoot>
-              <tr>
-                <td
-                  colSpan="5"
-                  style={{ textAlign: "right", fontWeight: "bold" }}
+          {/* Invoice Details Section */}
+          <div style={{ marginBottom: "30px" }}>
+            <h4 style={{ ...componentStyles.sectionTitle, fontSize: "18px" }}>
+              Invoice Details
+            </h4>
+            <div
+              style={{ ...componentStyles.dateSection, marginBottom: "20px" }}
+            >
+              <p style={componentStyles.dateItem}>
+                <strong>Invoice Date:</strong>{" "}
+                {invoiceDate
+                  ? new Date(invoiceDate).toLocaleDateString()
+                  : "Not available"}
+              </p>
+              <p style={componentStyles.dateItem}>
+                <strong>Due Date:</strong>{" "}
+                {dueDate
+                  ? new Date(dueDate).toLocaleDateString()
+                  : "Not available"}
+              </p>
+              <p style={componentStyles.dateItem}>
+                <strong>Status:</strong>{" "}
+                <span
+                  style={{
+                    color: status === "Paid" ? "green" : "red",
+                    fontWeight: "bold",
+                  }}
                 >
-                  Subtotal:
-                </td>
-                <td>₹{subTotal.toFixed(2)}</td>
-              </tr>
-              <tr>
-                <td
-                  colSpan="5"
-                  style={{ textAlign: "right", fontWeight: "bold" }}
-                >
-                  VAT (18%):
-                </td>
-                <td>₹{vat.toFixed(2)}</td>
-              </tr>
-              {parseFloat(amount) !== subTotal + vat && (
+                  {status}
+                </span>
+              </p>
+            </div>
+
+            <table
+              className="table"
+              style={{ ...componentStyles.table, marginBottom: "20px" }}
+            >
+              <thead style={{ backgroundColor: "#f1f1f1" }}>
+                <tr>
+                  <th>#</th>
+                  <th>Item Name</th>
+                  <th>Product Code</th>
+                  <th>Qty</th>
+                  <th>Rate (₹)</th>
+                  <th>Amount (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {products.map((product, idx) => (
+                  <ProductRow
+                    key={product.productId || idx}
+                    product={product}
+                    index={idx}
+                  />
+                ))}
+              </tbody>
+              <tfoot>
                 <tr>
                   <td
                     colSpan="5"
                     style={{ textAlign: "right", fontWeight: "bold" }}
                   >
-                    Additional Fees:
+                    Subtotal:
                   </td>
-                  <td>₹{(parseFloat(amount) - (subTotal + vat)).toFixed(2)}</td>
+                  <td>₹{subTotal.toFixed(2)}</td>
                 </tr>
-              )}
-              <tr>
-                <td
-                  colSpan="5"
-                  style={{ textAlign: "right", fontWeight: "bold" }}
-                >
-                  Total:
-                </td>
-                <td style={{ fontWeight: "bold" }}>₹{total.toFixed(2)}</td>
-              </tr>
-            </tfoot>
-          </table>
+                <tr>
+                  <td
+                    colSpan="5"
+                    style={{ textAlign: "right", fontWeight: "bold" }}
+                  >
+                    VAT (18%):
+                  </td>
+                  <td>₹{vat.toFixed(2)}</td>
+                </tr>
+                {parseFloat(amount) !== subTotal + vat && (
+                  <tr>
+                    <td
+                      colSpan="5"
+                      style={{ textAlign: "right", fontWeight: "bold" }}
+                    >
+                      Additional Fees:
+                    </td>
+                    <td>
+                      ₹{(parseFloat(amount) - (subTotal + vat)).toFixed(2)}
+                    </td>
+                  </tr>
+                )}
+                <tr>
+                  <td
+                    colSpan="5"
+                    style={{ textAlign: "right", fontWeight: "bold" }}
+                  >
+                    Total:
+                  </td>
+                  <td style={{ fontWeight: "bold" }}>₹{total.toFixed(2)}</td>
+                </tr>
+              </tfoot>
+            </table>
 
-          <p style={{ ...componentStyles.amountInWords, textAlign: "right" }}>
-            <em>{amountInWords}</em>
-          </p>
-        </div>
-
-        {/* Miscellaneous Section */}
-        <div>
-          <h4 style={{ ...componentStyles.sectionTitle, fontSize: "18px" }}>
-            Miscellaneous
-          </h4>
-          <div
-            className="row"
-            style={{ ...componentStyles.addressRow, marginBottom: "20px" }}
-          >
-            <div className="col-md-6" style={componentStyles.addressCol}>
-              <h6 style={componentStyles.addressTitle}>Bill To</h6>
-              <p style={componentStyles.addressText}>{billTo}</p>
-              <p style={componentStyles.addressText}>
-                {createdByUser?.data?.email || "Not available"}
-              </p>
-            </div>
-            <div className="col-md-6" style={componentStyles.addressCol}>
-              <h6 style={componentStyles.addressTitle}>Ship To</h6>
-              {isAddressLoading ? (
-                <p style={componentStyles.addressText}>Loading address...</p>
-              ) : isAddressError ? (
-                <p style={{ ...componentStyles.addressText, color: "red" }}>
-                  Error fetching address
-                </p>
-              ) : shipToAddress?.data ? (
-                <>
-                  <p style={componentStyles.addressText}>
-                    {shipToAddress.data.street || "N/A"},{" "}
-                    {shipToAddress.data.city || "N/A"}
-                  </p>
-                  <p style={componentStyles.addressText}>
-                    {shipToAddress.data.state || "N/A"},{" "}
-                    {shipToAddress.data.country || "N/A"} -{" "}
-                    {shipToAddress.data.postalCode || "N/A"}
-                  </p>
-                </>
-              ) : (
-                <p style={componentStyles.addressText}>Not available</p>
-              )}
-            </div>
+            <p style={{ ...componentStyles.amountInWords, textAlign: "right" }}>
+              <em>{amountInWords}</em>
+            </p>
           </div>
 
-          <div style={{ marginBottom: "20px" }}>
-            <p style={componentStyles.summaryItem}>
-              <strong>Created By:</strong>{" "}
-              {createdByUser?.data?.name || "Unknown"}
-            </p>
-            <p style={componentStyles.summaryItem}>
-              <strong>Payment Method:</strong> {paymentMethodParsed}
-            </p>
-            {quotationId && (
+          {/* Miscellaneous Section */}
+          <div>
+            <h4 style={{ ...componentStyles.sectionTitle, fontSize: "18px" }}>
+              Miscellaneous
+            </h4>
+            <div
+              className="row"
+              style={{ ...componentStyles.addressRow, marginBottom: "20px" }}
+            >
+              <div className="col-md-6" style={componentStyles.addressCol}>
+                <h6 style={componentStyles.addressTitle}>Bill To</h6>
+                <p style={componentStyles.addressText}>{billTo}</p>
+                <p style={componentStyles.addressText}>
+                  {createdByUser?.data?.email || "Not available"}
+                </p>
+              </div>
+              <div className="col-md-6" style={componentStyles.addressCol}>
+                <h6 style={componentStyles.addressTitle}>Ship To</h6>
+                {isAddressLoading ? (
+                  <p style={componentStyles.addressText}>Loading address...</p>
+                ) : isAddressError ? (
+                  <p style={{ ...componentStyles.addressText, color: "red" }}>
+                    Error fetching address
+                  </p>
+                ) : shipToAddress?.data ? (
+                  <>
+                    <p style={componentStyles.addressText}>
+                      {shipToAddress.data.street || "N/A"},{" "}
+                      {shipToAddress.data.city || "N/A"}
+                    </p>
+                    <p style={componentStyles.addressText}>
+                      {shipToAddress.data.state || "N/A"},{" "}
+                      {shipToAddress.data.country || "N/A"} -{" "}
+                      {shipToAddress.data.postalCode || "N/A"}
+                    </p>
+                  </>
+                ) : (
+                  <p style={componentStyles.addressText}>Not available</p>
+                )}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: "20px" }}>
               <p style={componentStyles.summaryItem}>
-                <strong>Quotation ID:</strong>{" "}
-                {quotation?.data?.quotationNo || quotationId}
+                <strong>Created By:</strong>{" "}
+                {createdByUser?.data?.name || "Unknown"}
               </p>
+              <p style={componentStyles.summaryItem}>
+                <strong>Payment Method:</strong> {paymentMethodParsed}
+              </p>
+              {quotationId && (
+                <p style={componentStyles.summaryItem}>
+                  <strong>Quotation ID:</strong>{" "}
+                  {quotation?.data?.quotationNo || quotationId}
+                </p>
+              )}
+            </div>
+
+            <div style={componentStyles.termsSection}>
+              <h6 style={componentStyles.termsTitle}>Terms & Conditions</h6>
+              <ul style={componentStyles.termsList}>
+                {termsList.map((term, idx) => (
+                  <li key={idx} style={componentStyles.termsItem}>
+                    {term}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {signatureName && (
+              <div
+                style={{
+                  ...componentStyles.signatureSection,
+                  textAlign: "right",
+                }}
+              >
+                <p style={componentStyles.signatureLabel}>
+                  Authorized Signatory
+                </p>
+                <h6 style={componentStyles.signatureName}>{signatureName}</h6>
+              </div>
             )}
           </div>
-
-          <div style={componentStyles.termsSection}>
-            <h6 style={componentStyles.termsTitle}>Terms & Conditions</h6>
-            <ul style={componentStyles.termsList}>
-              {termsList.map((term, idx) => (
-                <li key={idx} style={componentStyles.termsItem}>
-                  {term}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {signatureName && (
-            <div
-              style={{
-                ...componentStyles.signatureSection,
-                textAlign: "right",
-              }}
-            >
-              <p style={componentStyles.signatureLabel}>Authorized Signatory</p>
-              <h6 style={componentStyles.signatureName}>{signatureName}</h6>
-            </div>
-          )}
         </div>
       </div>
     </div>

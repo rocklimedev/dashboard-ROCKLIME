@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import { Form, Dropdown, Spinner } from "react-bootstrap";
+import React, { useState, useEffect, useMemo } from "react";
 import { toast } from "react-toastify";
 import {
   useClockInMutation,
@@ -7,13 +6,17 @@ import {
   useGetAllAttendanceQuery,
   useGetAttendanceQuery,
 } from "../../api/attendanceApi";
+import { FaSearch } from "react-icons/fa";
 import jsPDF from "jspdf";
 import * as XLSX from "xlsx";
 import moment from "moment";
+import DataTablePagination from "../Common/DataTablePagination";
 
 const AttendanceWrapper = ({ userId }) => {
   const [filters, setFilters] = useState({
     status: "",
+    search: "",
+    sortBy: "Recently Added",
     startDate: moment().startOf("month").format("YYYY-MM-DD"),
     endDate: moment().endOf("month").format("YYYY-MM-DD"),
   });
@@ -30,7 +33,9 @@ const AttendanceWrapper = ({ userId }) => {
   } = useGetAllAttendanceQuery({
     page,
     limit,
-    ...filters,
+    status: filters.status,
+    startDate: filters.startDate,
+    endDate: filters.endDate,
   });
   const {
     data: userAttendance,
@@ -41,19 +46,78 @@ const AttendanceWrapper = ({ userId }) => {
     { skip: !userId }
   );
 
+  // Memoized grouped attendance for tab-based filtering
+  const groupedAttendance = useMemo(
+    () => ({
+      All: allAttendance?.attendances || [],
+      Present:
+        allAttendance?.attendances?.filter(
+          (att) => att.status?.toLowerCase() === "present"
+        ) || [],
+      Absent:
+        allAttendance?.attendances?.filter(
+          (att) => att.status?.toLowerCase() === "absent"
+        ) || [],
+    }),
+    [allAttendance?.attendances]
+  );
+
+  // Filtered and sorted attendance
+  const filteredAttendance = useMemo(() => {
+    let result = groupedAttendance[filters.status || "All"] || [];
+
+    // Apply search filter
+    if (filters.search.trim()) {
+      result = result.filter((att) =>
+        [att.user?.name, att.user?.email]
+          .filter(Boolean)
+          .some((field) =>
+            field.toLowerCase().includes(filters.search.toLowerCase())
+          )
+      );
+    }
+
+    // Apply sorting
+    switch (filters.sortBy) {
+      case "Ascending":
+        result = [...result].sort((a, b) =>
+          (a.user?.name || "").localeCompare(b.user?.name || "")
+        );
+        break;
+      case "Descending":
+        result = [...result].sort((a, b) =>
+          (b.user?.name || "").localeCompare(a.user?.name || "")
+        );
+        break;
+      case "Recently Added":
+        result = [...result].sort(
+          (a, b) => new Date(b.date) - new Date(a.date)
+        );
+        break;
+      default:
+        break;
+    }
+
+    return result;
+  }, [groupedAttendance, filters.status, filters.search, filters.sortBy]);
+
+  // Paginated attendance
+  const paginatedAttendance = useMemo(() => {
+    const startIndex = (page - 1) * limit;
+    return filteredAttendance.slice(startIndex, startIndex + limit);
+  }, [filteredAttendance, page]);
+
   // Calculate overview metrics
   const calculateOverview = () => {
-    if (!userAttendance)
+    if (!userAttendance) {
       return {
-        totalWorkingDays: 0,
-        absentDays: 0,
+        totalDays: 0,
         presentDays: 0,
-        halfDays: 0,
-        lateDays: 0,
-        holidays: 0,
+        absentDays: 0,
       };
+    }
 
-    const totalWorkingDays =
+    const totalDays =
       moment(filters.endDate).diff(moment(filters.startDate), "days") + 1;
     const presentDays = userAttendance.filter(
       (att) => att.status === "present"
@@ -61,18 +125,11 @@ const AttendanceWrapper = ({ userId }) => {
     const absentDays = userAttendance.filter(
       (att) => att.status === "absent"
     ).length;
-    // Placeholder logic for halfDays, lateDays, holidays (adjust based on your data)
-    const halfDays = 0; // Add logic if half-day status exists
-    const lateDays = 0; // Add logic if late status exists
-    const holidays = 0; // Fetch holidays from another API or config
 
     return {
-      totalWorkingDays,
-      absentDays,
+      totalDays,
       presentDays,
-      halfDays,
-      lateDays,
-      holidays,
+      absentDays,
     };
   };
 
@@ -88,8 +145,11 @@ const AttendanceWrapper = ({ userId }) => {
   const handleClockIn = async () => {
     try {
       await clockIn({ userId }).unwrap();
+      toast.success("Clocked in successfully!");
     } catch (error) {
-      // Error handled by transformErrorResponse
+      toast.error(
+        `Failed to clock in: ${error.data?.message || "Unknown error"}`
+      );
     }
   };
 
@@ -97,14 +157,17 @@ const AttendanceWrapper = ({ userId }) => {
   const handleClockOut = async () => {
     try {
       await clockOut({ userId }).unwrap();
+      toast.success("Clocked out successfully!");
     } catch (error) {
-      // Error handled by transformErrorResponse
+      toast.error(
+        `Failed to clock out: ${error.data?.message || "Unknown error"}`
+      );
     }
   };
 
   // Export to PDF
   const exportToPDF = () => {
-    if (!allAttendance?.attendances?.length) {
+    if (!filteredAttendance.length) {
       toast.error("No data to export");
       return;
     }
@@ -112,12 +175,14 @@ const AttendanceWrapper = ({ userId }) => {
     const doc = new jsPDF();
     doc.text("Attendance Report", 20, 10);
     let y = 20;
-    allAttendance.attendances.forEach((att, index) => {
+    filteredAttendance.forEach((att, index) => {
       doc.text(
         `${index + 1}. ${new Date(att.date).toLocaleDateString()} - ${
           att.status
         } - Clock In: ${
           att.clockIn ? new Date(att.clockIn).toLocaleTimeString() : "N/A"
+        } - Clock Out: ${
+          att.clockOut ? new Date(att.clockOut).toLocaleTimeString() : "N/A"
         }`,
         20,
         y
@@ -129,12 +194,12 @@ const AttendanceWrapper = ({ userId }) => {
 
   // Export to Excel
   const exportToExcel = () => {
-    if (!allAttendance?.attendances?.length) {
+    if (!filteredAttendance.length) {
       toast.error("No data to export");
       return;
     }
 
-    const data = allAttendance.attendances.map((att) => ({
+    const data = filteredAttendance.map((att) => ({
       Date: new Date(att.date).toLocaleDateString(),
       Status: att.status,
       "Clock In": att.clockIn
@@ -153,15 +218,17 @@ const AttendanceWrapper = ({ userId }) => {
     XLSX.writeFile(wb, "attendance-report.xlsx");
   };
 
-  // Handle refresh
-  const handleRefresh = () => {
+  // Handle clear filters
+  const clearFilters = () => {
     setFilters({
       status: "",
+      search: "",
+      sortBy: "Recently Added",
       startDate: moment().startOf("month").format("YYYY-MM-DD"),
       endDate: moment().endOf("month").format("YYYY-MM-DD"),
     });
     setPage(1);
-    toast.info("Attendance data refreshed");
+    toast.info("Filters cleared!");
   };
 
   // Error handling
@@ -180,67 +247,16 @@ const AttendanceWrapper = ({ userId }) => {
 
   // Render overview
   const renderOverview = () => (
-    <div className="row">
-      <div className="col-xl-3 col-md-6">
-        <div className="card border-0" style={{ background: "#e31e24" }}>
-          <div className="card-body d-flex align-items-center justify-content-between">
-            <div>
-              <p className="mb-1 text-white">Total Employees</p>
-              <h4 className="text-white"></h4>
-            </div>
-            <div>
-              <span className="avatar avatar-lg ">
-                <i className="ti ti-users-group"></i>
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="col-xl-3 col-md-6">
-        <div className="card border-0" style={{ background: "#e31e24" }}>
-          <div className="card-body d-flex align-items-center justify-content-between">
-            <div>
-              <p className="mb-1 text-white">Active</p>
-              <h4 className="text-white"></h4>
-            </div>
-            <div>
-              <span className="avatar avatar-lg ">
-                <i className="ti ti-user-star"></i>
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="col-xl-3 col-md-6">
-        <div className="card border-0" style={{ background: "#e31e24" }}>
-          <div className="card-body d-flex align-items-center justify-content-between">
-            <div>
-              <p className="mb-1 text-white">Inactive</p>
-              <h4 className="text-white"></h4>
-            </div>
-            <div>
-              <span className="avatar avatar-lg">
-                <i className="ti ti-user-exclamation"></i>
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="col-xl-3 col-md-6">
-        <div className="card border-0" style={{ background: "#e31e24" }}>
-          <div className="card-body d-flex align-items-center justify-content-between">
-            <div>
-              <p className="mb-1 text-white">New Joiners</p>
-              <h4 className="text-white"></h4>
-            </div>
-            <div>
-              <span className="avatar avatar-lg ">
-                <i className="ti ti-user-check"></i>
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
+      <p className="mb-0 me-3 pe-3 border-end fs-14">
+        Total Days: <span className="text-dark">{overview.totalDays}</span>
+      </p>
+      <p className="mb-0 me-3 pe-3 border-end fs-14">
+        Present: <span className="text-dark">{overview.presentDays}</span>
+      </p>
+      <p className="mb-0 fs-14">
+        Absent: <span className="text-dark">{overview.absentDays}</span>
+      </p>
     </div>
   );
 
@@ -249,13 +265,15 @@ const AttendanceWrapper = ({ userId }) => {
     if (isAllAttendanceLoading) {
       return (
         <div className="text-center py-4">
-          <Spinner animation="border" variant="primary" />
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
           <p>Loading attendance...</p>
         </div>
       );
     }
 
-    if (!allAttendance?.attendances?.length) {
+    if (!paginatedAttendance.length) {
       return (
         <div className="text-center py-4 text-muted">
           No attendance records found.
@@ -264,8 +282,8 @@ const AttendanceWrapper = ({ userId }) => {
     }
 
     return (
-      <div className="cm-table-wrapper">
-        <table className="cm-table">
+      <div className="table-responsive">
+        <table className="table table-hover">
           <thead>
             <tr>
               <th>Date</th>
@@ -280,7 +298,7 @@ const AttendanceWrapper = ({ userId }) => {
             </tr>
           </thead>
           <tbody>
-            {allAttendance.attendances.map((att) => {
+            {paginatedAttendance.map((att) => {
               const clockIn = att.clockIn ? new Date(att.clockIn) : null;
               const clockOut = att.clockOut ? new Date(att.clockOut) : null;
               const totalHours =
@@ -336,6 +354,15 @@ const AttendanceWrapper = ({ userId }) => {
             })}
           </tbody>
         </table>
+        {filteredAttendance.length > limit && (
+          <div className="pagination-section mt-4">
+            <DataTablePagination
+              totalItems={filteredAttendance.length}
+              itemNo={limit}
+              onPageChange={setPage}
+            />
+          </div>
+        )}
       </div>
     );
   };
@@ -343,85 +370,156 @@ const AttendanceWrapper = ({ userId }) => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        {isUserAttendanceLoading ? (
-          <Spinner animation="border" variant="primary" />
-        ) : (
-          renderOverview()
-        )}
-
         <div className="card">
-          <div className="card-header d-flex align-items-center justify-content-between flex-wrap row-gap-3">
-            <div className="search-set">
-              <div className="search-input">
-                <Form.Control
-                  type="text"
-                  placeholder="Search"
-                  onChange={(e) => handleFilterChange("search", e.target.value)}
-                />
-                <span className="btn-searchset">
-                  <i className="ti ti-search fs-14 feather-search"></i>
-                </span>
+          <div className="card-body">
+            <div className="row">
+              <div className="col-lg-4">
+                <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
+                  <h6 className="me-2">Status</h6>
+                  <ul
+                    className="nav nav-pills border d-inline-flex p-1 rounded bg-light todo-tabs"
+                    id="pills-tab"
+                    role="tablist"
+                  >
+                    {Object.keys(groupedAttendance).map((status) => (
+                      <li className="nav-item" role="presentation" key={status}>
+                        <button
+                          className={`nav-link btn btn-sm btn-icon py-3 d-flex align-items-center justify-content-center w-auto ${
+                            (filters.status || "All") === status ? "active" : ""
+                          }`}
+                          id={`tab-${status}`}
+                          data-bs-toggle="pill"
+                          data-bs-target={`#pills-${status}`}
+                          type="button"
+                          role="tab"
+                          aria-selected={(filters.status || "All") === status}
+                          onClick={() =>
+                            handleFilterChange(
+                              "status",
+                              status === "All" ? "" : status.toLowerCase()
+                            )
+                          }
+                        >
+                          {status} ({groupedAttendance[status].length})
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <div className="col-lg-8">
+                <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
+                  <div className="d-flex align-items-center border p-2 rounded">
+                    <span className="d-inline-flex me-2">Sort By: </span>
+                    <div className="dropdown">
+                      <a
+                        href="#"
+                        className="dropdown-toggle btn btn-white d-inline-flex align-items-center border-0 bg-transparent p-0 text-dark"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
+                      >
+                        {filters.sortBy}
+                      </a>
+                      <ul className="dropdown-menu dropdown-menu-end p-3">
+                        {["Recently Added", "Ascending", "Descending"].map(
+                          (option) => (
+                            <li key={option}>
+                              <a
+                                href="#"
+                                className="dropdown-item rounded-1"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handleFilterChange("sortBy", option);
+                                }}
+                              >
+                                {option}
+                              </a>
+                            </li>
+                          )
+                        )}
+                      </ul>
+                    </div>
+                  </div>
+                  <div className="input-icon-start position-relative">
+                    <span className="input-icon-addon">
+                      <FaSearch />
+                    </span>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Search Attendance"
+                      value={filters.search}
+                      onChange={(e) =>
+                        handleFilterChange("search", e.target.value)
+                      }
+                      aria-label="Search attendance"
+                    />
+                  </div>
+                  <button
+                    className="btn btn-outline-secondary ms-2"
+                    onClick={clearFilters}
+                  >
+                    Clear Filters
+                  </button>
+                  <button
+                    className="btn btn-outline-primary ms-2"
+                    onClick={handleClockIn}
+                    disabled={isClockInLoading}
+                  >
+                    {isClockInLoading ? (
+                      <span
+                        className="spinner-border spinner-border-sm"
+                        role="status"
+                      />
+                    ) : (
+                      "Clock In"
+                    )}
+                  </button>
+                  <button
+                    className="btn btn-outline-primary ms-2"
+                    onClick={handleClockOut}
+                    disabled={isClockOutLoading}
+                  >
+                    {isClockOutLoading ? (
+                      <span
+                        className="spinner-border spinner-border-sm"
+                        role="status"
+                      />
+                    ) : (
+                      "Clock Out"
+                    )}
+                  </button>
+                  <button
+                    className="btn btn-outline-primary ms-2"
+                    onClick={exportToPDF}
+                  >
+                    Export to PDF
+                  </button>
+                  <button
+                    className="btn btn-outline-primary ms-2"
+                    onClick={exportToExcel}
+                  >
+                    Export to Excel
+                  </button>
+                </div>
               </div>
             </div>
-            <div className="d-flex table-dropdown my-xl-auto right-content align-items-center flex-wrap row-gap-3">
-              <Dropdown>
-                <Dropdown.Toggle
-                  variant="white"
-                  className="btn btn-md d-inline-flex align-items-center"
+            <div className="tab-content" id="pills-tabContent">
+              {Object.keys(groupedAttendance).map((status) => (
+                <div
+                  className={`tab-pane fade ${
+                    (filters.status || "All") === status ? "show active" : ""
+                  }`}
+                  id={`pills-${status}`}
+                  role="tabpanel"
+                  aria-labelledby={`tab-${status}`}
+                  key={status}
                 >
-                  Select Status: {filters.status || "All"}
-                </Dropdown.Toggle>
-                <Dropdown.Menu>
-                  <Dropdown.Item
-                    onClick={() => handleFilterChange("status", "")}
-                  >
-                    All
-                  </Dropdown.Item>
-                  <Dropdown.Item
-                    onClick={() => handleFilterChange("status", "present")}
-                  >
-                    Present
-                  </Dropdown.Item>
-                  <Dropdown.Item
-                    onClick={() => handleFilterChange("status", "absent")}
-                  >
-                    Absent
-                  </Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown>
-              <Dropdown>
-                <Dropdown.Toggle
-                  variant="white"
-                  className="btn btn-md d-inline-flex align-items-center"
-                >
-                  Sort By: {filters.sortBy || "Last 7 Days"}
-                </Dropdown.Toggle>
-                <Dropdown.Menu>
-                  <Dropdown.Item
-                    onClick={() => handleFilterChange("sortBy", "Last 7 Days")}
-                  >
-                    Last 7 Days
-                  </Dropdown.Item>
-                  <Dropdown.Item
-                    onClick={() => handleFilterChange("sortBy", "Last Month")}
-                  >
-                    Last Month
-                  </Dropdown.Item>
-                  <Dropdown.Item
-                    onClick={() => handleFilterChange("sortBy", "Ascending")}
-                  >
-                    Ascending
-                  </Dropdown.Item>
-                  <Dropdown.Item
-                    onClick={() => handleFilterChange("sortBy", "Descending")}
-                  >
-                    Descending
-                  </Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown>
+                  {renderTable()}
+                </div>
+              ))}
             </div>
           </div>
-          {renderTable()}
         </div>
       </div>
     </div>
