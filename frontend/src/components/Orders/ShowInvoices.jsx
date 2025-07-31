@@ -521,7 +521,7 @@ const ShowInvoices = () => {
   }
 
   return (
-    <div className="content">
+    <>
       <div className="card">
         <PageHeader title="Invoices" subtitle="Manage your Invoices" />
         <div className="card-body">
@@ -557,7 +557,7 @@ const ShowInvoices = () => {
             </div>
             <div className="col-lg-8">
               <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
-                <div className="input-icon w-120 position-relative me-2">
+                {/* <div className="input-icon w-120 position-relative me-2">
                   <DatePicker
                     selected={createdDate}
                     onChange={(date) => setCreatedDate(date)}
@@ -580,7 +580,7 @@ const ShowInvoices = () => {
                   <span className="input-icon-addon">
                     <i className="ti ti-calendar text-gray-9"></i>
                   </span>
-                </div>
+                </div> */}
                 <div className="input-icon-start position-relative">
                   <span className="input-icon-addon">
                     <FaSearch />
@@ -594,7 +594,7 @@ const ShowInvoices = () => {
                     aria-label="Search invoices"
                   />
                 </div>
-                <div className="me-2" style={{ width: "120px" }}>
+                {/* <div className="me-2" style={{ width: "120px" }}>
                   <Select
                     style={{ width: "100%" }}
                     placeholder="All Customers"
@@ -654,7 +654,7 @@ const ShowInvoices = () => {
                       ))}
                     </ul>
                   </div>
-                </div>
+                </div> */}
                 <button
                   className="btn btn-outline-secondary ms-2"
                   onClick={clearFilters}
@@ -832,8 +832,8 @@ const ShowInvoices = () => {
                                 </span>
                               )}
                             </td>
-                            <td>
-                              <div className="action-buttons">
+                            <td className="action-column">
+                              <div className="action-buttons d-flex gap-2">
                                 <Button
                                   variant="outline-primary"
                                   size="sm"
@@ -841,7 +841,7 @@ const ShowInvoices = () => {
                                   to={`/invoice/${inv.invoiceId}`}
                                   title="View Invoice"
                                   aria-label={`View invoice ${inv.invoiceNo}`}
-                                  className="me-1"
+                                  className="btn btn-icon btn-sm btn-outline-primary"
                                 >
                                   <FaEye />
                                 </Button>
@@ -851,7 +851,7 @@ const ShowInvoices = () => {
                                   onClick={() => handleEditClick(inv)}
                                   title="Edit Invoice"
                                   aria-label={`Edit invoice ${inv.invoiceNo}`}
-                                  className="me-1"
+                                  className="btn btn-icon btn-sm btn-outline-warning"
                                 >
                                   <FaEdit />
                                 </Button>
@@ -860,7 +860,7 @@ const ShowInvoices = () => {
                                   size="sm"
                                   onClick={() => handleDeleteClick(inv)}
                                   disabled={isDeleting}
-                                  title="Delete Invoice"
+                                  className="btn btn-icon btn-sm btn-outline-danger"
                                   aria-label={`Delete invoice ${inv.invoiceNo}`}
                                 >
                                   <FaTrash />
@@ -914,7 +914,7 @@ const ShowInvoices = () => {
         onCancel={cancelDelete}
         isVisible={showDeleteModal}
       />
-    </div>
+    </>
   );
 };
 

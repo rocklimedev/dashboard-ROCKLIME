@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import ReactPaginate from "react-paginate";
 import Actions from "../Common/Actions";
 import PageHeader from "../Common/PageHeader";
+import { Button } from "react-bootstrap";
+import { FaEye, FaTrash, FaEdit } from "react-icons/fa";
 const QuotationList = () => {
   const navigate = useNavigate();
   const {
@@ -211,7 +213,7 @@ const QuotationList = () => {
   }
 
   return (
-    <div className="content">
+    <>
       <div className="card">
         <PageHeader
           title="Quotations"
@@ -251,7 +253,7 @@ const QuotationList = () => {
             </div>
             <div className="col-lg-8">
               <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
-                <div className="d-flex align-items-center border p-2 rounded">
+                {/* <div className="d-flex align-items-center border p-2 rounded">
                   <span className="d-inline-flex me-2">Sort By: </span>
                   <div className="dropdown">
                     <a
@@ -281,7 +283,7 @@ const QuotationList = () => {
                       )}
                     </ul>
                   </div>
-                </div>
+                </div> */}
                 <div className="input-icon-start position-relative">
                   <span className="input-icon-addon">
                     <FaSearch />
@@ -373,12 +375,37 @@ const QuotationList = () => {
                             <td>{getUserName(quotation.createdBy)}</td>
                             <td>{getCustomerName(quotation.customerId)}</td>
                             <td>₹{quotation.finalAmount || 0}</td>
-                            <td>
-                              <Actions
-                                viewUrl={`/quotations/${quotation.quotationId}`}
-                                editUrl={`/quotations/${quotation.quotationId}/edit`}
-                                onDelete={() => handleDeleteClick(quotation)}
-                              />
+                            <td className="action-column">
+                              <div className="action-buttons d-flex gap-2">
+                                <Button
+                                  variant="outline-primary"
+                                  size="sm"
+                                  as={Link}
+                                  to={`/quotations/${quotation.quotationId}`}
+                                  title="View Quotation"
+                                  className="btn btn-icon btn-sm btn-outline-primary"
+                                >
+                                  <FaEye />
+                                </Button>
+                                <Button
+                                  variant="outline-primary"
+                                  size="sm"
+                                  to={`/quotations/${quotation.quotationId}/edit`}
+                                  title="Edit Quotation"
+                                  className="btn btn-icon btn-sm btn-outline-warning"
+                                >
+                                  <FaEdit />
+                                </Button>
+                                <Button
+                                  variant="outline-danger"
+                                  size="sm"
+                                  onClick={() => handleDeleteClick(quotation)}
+                                  disabled={isDeleting}
+                                  className="btn btn-icon btn-sm btn-outline-danger"
+                                >
+                                  <FaTrash />
+                                </Button>
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -437,7 +464,7 @@ const QuotationList = () => {
           isLoading={isDeleting}
         />
       )}
-    </div>
+    </>
   );
 };
 
