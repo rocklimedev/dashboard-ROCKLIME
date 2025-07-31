@@ -11,7 +11,7 @@ import jsPDF from "jspdf";
 import * as XLSX from "xlsx";
 import moment from "moment";
 import DataTablePagination from "../Common/DataTablePagination";
-
+import PageHeader from "../Common/PageHeader";
 const AttendanceWrapper = ({ userId }) => {
   const [filters, setFilters] = useState({
     status: "",
@@ -371,6 +371,7 @@ const AttendanceWrapper = ({ userId }) => {
     <div className="page-wrapper">
       <div className="content">
         <div className="card">
+          <PageHeader title="Attendence" subtitle="Manage your Attendance" />
           <div className="card-body">
             <div className="row">
               <div className="col-lg-4">

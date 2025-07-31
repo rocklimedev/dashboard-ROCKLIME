@@ -12,6 +12,7 @@ import DeleteModal from "../Common/DeleteModal";
 import { toast } from "sonner";
 import ReactPaginate from "react-paginate";
 import Actions from "../Common/Actions";
+import PageHeader from "../Common/PageHeader";
 const QuotationList = () => {
   const navigate = useNavigate();
   const {
@@ -212,6 +213,11 @@ const QuotationList = () => {
   return (
     <div className="content">
       <div className="card">
+        <PageHeader
+          title="Quotations"
+          subtitle="Manage your Quotations"
+          onAdd={handleAddQuotation}
+        />
         <div className="card-body">
           <div className="row">
             <div className="col-lg-4">
@@ -294,12 +300,6 @@ const QuotationList = () => {
                   onClick={clearFilters}
                 >
                   Clear Filters
-                </button>
-                <button
-                  className="btn btn-outline-primary ms-2"
-                  onClick={handleAddQuotation}
-                >
-                  Add Quotation
                 </button>
               </div>
             </div>

@@ -23,7 +23,7 @@ import DatesModal from "./DateModal";
 import OnHoldModal from "./OnHoldOrder";
 import DeleteModal from "../Common/DeleteModal";
 import OrderPagination from "./OrderPagination";
-
+import PageHeader from "../Common/PageHeader";
 const OrderWrapper = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("orders");
@@ -340,6 +340,12 @@ const OrderWrapper = () => {
         {activeTab === "orders" ? (
           <div className="content">
             <div className="card">
+              <PageHeader
+                title="Orders"
+                subtitle="Manage your Orders"
+                onAdd={handleOpenAddOrder}
+              />
+
               <div className="card-body">
                 <div className="row">
                   <div className="col-lg-4">
@@ -435,12 +441,6 @@ const OrderWrapper = () => {
                         onClick={handleClearFilters}
                       >
                         Clear Filters
-                      </button>
-                      <button
-                        className="btn btn-outline-primary ms-2"
-                        onClick={handleOpenAddOrder}
-                      >
-                        Add Order
                       </button>
                     </div>
                   </div>

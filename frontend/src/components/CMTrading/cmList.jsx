@@ -9,7 +9,7 @@ import AddCompany from "./AddCompany";
 import DeleteModal from "../Common/DeleteModal";
 import DataTablePagination from "../Common/DataTablePagination";
 import { toast } from "sonner";
-
+import PageHeader from "../Common/PageHeader";
 const ViewCompany = ({ company, onClose }) => {
   const modalRef = useRef(null);
 
@@ -276,6 +276,11 @@ const CmList = () => {
     <div className="page-wrapper">
       <div className="content">
         <div className="card">
+          <PageHeader
+            title="Companies"
+            subtitle="Manage your Companies"
+            onAdd={handleAddCompany}
+          />
           <div className="card-body">
             <div className="row">
               <div className="col-lg-4">
@@ -358,12 +363,6 @@ const CmList = () => {
                     onClick={clearFilters}
                   >
                     Clear Filters
-                  </button>
-                  <button
-                    className="btn btn-outline-primary ms-2"
-                    onClick={handleAddCompany}
-                  >
-                    Add Company
                   </button>
                 </div>
               </div>
