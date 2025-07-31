@@ -389,7 +389,7 @@ const OrderWrapper = () => {
                 </div>
                 <div className="col-lg-8">
                   <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
-                    <div className="d-flex align-items-center border p-2 rounded">
+                    {/* <div className="d-flex align-items-center border p-2 rounded">
                       <span className="d-inline-flex me-2">Sort By: </span>
                       <div className="dropdown">
                         <a
@@ -419,7 +419,7 @@ const OrderWrapper = () => {
                           )}
                         </ul>
                       </div>
-                    </div>
+                    </div> */}
                     <div className="input-icon-start position-relative">
                       <span className="input-icon-addon">
                         <FaSearch />
@@ -570,7 +570,7 @@ const OrderWrapper = () => {
                                         <FaPause />
                                       </button>
                                       <button
-                                        className="btn btn-icon btn-sm btn-outline-info"
+                                        className="btn btn-icon btn-sm btn-outline-secondary"
                                         onClick={() => handleViewInvoice(order)}
                                         data-tooltip-id={`invoice-${order.id}`}
                                         data-tooltip-content="View Invoice"

@@ -146,7 +146,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
 
         <ul className="nav user-menu">
           <li className="nav-item nav-searchinputs">
-            <div className="top-nav-search">
+            {/* <div className="top-nav-search">
               <Button
                 type="link"
                 className="responsive-search d-md-none"
@@ -157,7 +157,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
               <div className="d-none d-md-block">
                 <SearchDropdown />
               </div>
-            </div>
+            </div> */}
           </li>
           <li className="nav-item nav-item-box">
             <Button
