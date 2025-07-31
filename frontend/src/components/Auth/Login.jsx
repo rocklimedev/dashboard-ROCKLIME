@@ -86,7 +86,7 @@ const Login = () => {
                 <div className="login-userheading">
                   <h3>Sign In</h3>
                   <h4 className="fs-16">
-                    Access the Rocklime panel using your email and passcode.
+                    Access the panel using your email and passcode.
                   </h4>
                 </div>
                 <div className="mb-3">

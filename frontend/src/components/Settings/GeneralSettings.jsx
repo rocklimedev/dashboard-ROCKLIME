@@ -180,7 +180,7 @@ const GeneralSettings = () => {
                     </p>
                   </div>
                 </div>
-                <div classNameName="d-flex align-items-center">
+                <div className="d-flex align-items-center">
                   <span className="fs-20 text-success me-3">
                     <i className="ti ti-circle-check-filled"></i>
                   </span>
