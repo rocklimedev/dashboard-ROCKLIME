@@ -327,7 +327,7 @@ const Cart = ({ onConvertToOrder }) => {
       return toast.error("Please select a payment method.");
 
     try {
-      await refetchAddresses();
+      await refetchAddresses().unwrap();
     } catch (err) {
       return toast.error("Failed to load addresses. Please try again.");
     }
@@ -402,16 +402,7 @@ const Cart = ({ onConvertToOrder }) => {
       }
 
       orderData.invoiceId = invoiceId;
-      if (typeof onConvertToOrder === "function") {
-        onConvertToOrder(orderData);
-      } else {
-        console.warn(
-          "onConvertToOrder is not a function. Skipping order conversion."
-        );
-        toast.info(
-          "Order created but not converted. Please check parent component configuration."
-        );
-      }
+      onConvertToOrder(orderData);
       await handleClearCart();
       toast.success("Order placed successfully!");
       setInvoiceData({
@@ -466,18 +457,21 @@ const Cart = ({ onConvertToOrder }) => {
 
   return (
     <div className="page-wrapper">
-      <div className="content">
+      <PageWrapper>
         <CartContainer>
           <Tabs
             activeKey={activeTab}
             onChange={setActiveTab}
             type="card"
             style={{ marginBottom: 24 }}
+            role="tablist"
           >
-            {/* Cart Tab */}
             <TabPane
               tab={
-                <span>
+                <span
+                  role="tab"
+                  aria-label={`Cart tab with ${totalItems} items`}
+                >
                   <ShoppingCartOutlined /> Cart ({totalItems})
                 </span>
               }
@@ -653,17 +647,16 @@ const Cart = ({ onConvertToOrder }) => {
               </Row>
             </TabPane>
 
-            {/* Checkout Tab */}
             <TabPane
               tab={
-                <span>
+                <span role="tab" aria-label="Checkout tab">
                   <CheckCircleOutlined /> Checkout
                 </span>
               }
               key="checkout"
             >
               <Row gutter={[24, 24]} justify="center">
-                <Col xs={24} lg={8}>
+                <Col xs={24} lg={16}>
                   <CartSummaryCard>
                     <Title level={3}>Checkout</Title>
                     <Divider />
@@ -727,52 +720,56 @@ const Cart = ({ onConvertToOrder }) => {
                           error={error}
                         />
                         <Divider />
-                        <PaymentMethod
-                          subTotal={totalAmount}
-                          selectedMethod={selectedPaymentMethod}
-                          onSelectMethod={setSelectedPaymentMethod}
-                        />
-                        <Divider />
-                        <Text strong>Invoice #: {invoiceNumber}</Text>
-                        <Divider />
-                        <OrderTotal
-                          shipping={shipping}
-                          tax={tax}
-                          coupon={0}
-                          discount={discount}
-                          roundOff={0}
-                          subTotal={subTotal}
-                        />
-                        <Divider />
-                        <CheckoutButton
-                          type="primary"
-                          icon={<CheckCircleOutlined />}
-                          onClick={handlePlaceOrder}
-                          disabled={
-                            cartItems.length === 0 ||
-                            !selectedCustomer ||
-                            error ||
-                            !invoiceData.invoiceDate ||
-                            !invoiceData.dueDate ||
-                            !selectedPaymentMethod
-                          }
-                          block
-                          size="large"
-                          aria-label="Place order"
-                        >
-                          Place Order
-                        </CheckoutButton>
-                        <Button
-                          type="default"
-                          onClick={() => setActiveTab("cart")}
-                          block
-                          style={{ marginTop: 8 }}
-                          aria-label="Back to cart"
-                        >
-                          Back to Cart
-                        </Button>
                       </>
                     )}
+                  </CartSummaryCard>
+                </Col>
+                <Col xs={24} lg={8}>
+                  <CartSummaryCard>
+                    <PaymentMethod
+                      subTotal={totalAmount}
+                      selectedMethod={selectedPaymentMethod}
+                      onSelectMethod={setSelectedPaymentMethod}
+                    />
+                    <Divider />
+                    <Text strong>Invoice #: {invoiceNumber}</Text>
+                    <Divider />
+                    <OrderTotal
+                      shipping={shipping}
+                      tax={tax}
+                      coupon={0}
+                      discount={discount}
+                      roundOff={0}
+                      subTotal={subTotal}
+                    />
+                    <Divider />
+                    <CheckoutButton
+                      type="primary"
+                      icon={<CheckCircleOutlined />}
+                      onClick={handlePlaceOrder}
+                      disabled={
+                        cartItems.length === 0 ||
+                        !selectedCustomer ||
+                        error ||
+                        !invoiceData.invoiceDate ||
+                        !invoiceData.dueDate ||
+                        !selectedPaymentMethod
+                      }
+                      block
+                      size="large"
+                      aria-label="Place order"
+                    >
+                      Place Order
+                    </CheckoutButton>
+                    <Button
+                      type="default"
+                      onClick={() => setActiveTab("cart")}
+                      block
+                      style={{ marginTop: 8 }}
+                      aria-label="Back to cart"
+                    >
+                      Back to Cart
+                    </Button>
                   </CartSummaryCard>
                 </Col>
               </Row>
@@ -805,7 +802,7 @@ const Cart = ({ onConvertToOrder }) => {
             </Text>
           </Modal>
         </CartContainer>
-      </div>
+      </PageWrapper>
     </div>
   );
 };
@@ -815,8 +812,8 @@ Cart.propTypes = {
 };
 
 Cart.defaultProps = {
-  onConvertToOrder: () => {
-    console.warn("onConvertToOrder not provided. Order data:", {});
+  onConvertToOrder: (orderData) => {
+    console.warn("onConvertToOrder not provided. Order data:", orderData);
   },
 };
 
