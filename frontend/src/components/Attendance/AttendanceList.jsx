@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Input,
   Select,
@@ -9,8 +9,9 @@ import {
   Tooltip,
   Space,
   Typography,
-  DatePicker,
+  Alert,
 } from "antd";
+import { Spinner } from "react-bootstrap";
 import {
   SearchOutlined,
   DownloadOutlined,
@@ -18,52 +19,180 @@ import {
   UpOutlined,
   DownOutlined,
 } from "@ant-design/icons";
-import { toast } from "react-toastify"; // Use react-toastify as per API
+import { toast } from "react-toastify";
 import moment from "moment";
 import jsPDF from "jspdf";
 import * as XLSX from "xlsx";
 import { useGetAllAttendanceQuery } from "../../api/attendanceApi";
+import PageHeader from "../Common/PageHeader";
+import DataTablePagination from "../Common/DataTablePagination";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { subDays } from "date-fns";
 import "./attendancelist.css";
-import { Pagination as AntdPagination } from "antd";
+
 const { Option } = Select;
+const { Text } = Typography;
 
-const { Title, Text } = Typography;
 const AttendanceList = () => {
-  const [filters, setFilters] = useState({
-    search: "",
-    status: "",
-    date: moment().format("YYYY-MM-DD"),
-  });
-  const [page, setPage] = useState(1);
+  // State management
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("");
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [sortBy, setSortBy] = useState("Recently Added");
+  const [activeTab, setActiveTab] = useState("All");
+  const [currentPage, setCurrentPage] = useState(1);
   const [isTableCollapsed, setIsTableCollapsed] = useState(false);
-  const limit = 10;
+  const itemsPerPage = 12;
 
+  // Query
   const {
     data: allAttendance,
     isLoading: isAllAttendanceLoading,
     error: allAttendanceError,
     refetch,
   } = useGetAllAttendanceQuery({
-    page,
-    limit,
-    search: filters.search,
-    status: filters.status,
-    startDate: filters.date,
-    endDate: filters.date,
+    page: currentPage,
+    limit: itemsPerPage,
+    search: searchTerm,
+    status: selectedStatus,
+    startDate: selectedDate ? moment(selectedDate).format("YYYY-MM-DD") : "",
+    endDate: selectedDate ? moment(selectedDate).format("YYYY-MM-DD") : "",
   });
 
-  const handleFilterChange = (name, value) => {
-    setFilters((prev) => ({ ...prev, [name]: value }));
-    setPage(1);
+  const attendances = allAttendance?.attendances || [];
+
+  // Memoized grouped attendances for tab-based filtering
+  const groupedAttendances = useMemo(
+    () => ({
+      All: attendances,
+      Present: attendances.filter(
+        (att) => att.status?.toLowerCase() === "present"
+      ),
+      Absent: attendances.filter(
+        (att) => att.status?.toLowerCase() === "absent"
+      ),
+      Late: attendances.filter((att) => att.status?.toLowerCase() === "late"),
+    }),
+    [attendances]
+  );
+
+  // Filtered and sorted attendances
+  const filteredAttendances = useMemo(() => {
+    let result = groupedAttendances[activeTab] || [];
+
+    // Apply search filter
+    if (searchTerm.trim()) {
+      result = result.filter((att) =>
+        att.user?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Apply date filter
+    if (selectedDate) {
+      result = result.filter((att) => {
+        const attDate = new Date(att.clockIn || att.createdDate);
+        return attDate.toDateString() === selectedDate.toDateString();
+      });
+    }
+
+    // Apply status filter from dropdown
+    if (selectedStatus) {
+      result = result.filter(
+        (att) => att.status?.toLowerCase() === selectedStatus.toLowerCase()
+      );
+    }
+
+    // Apply sorting
+    switch (sortBy) {
+      case "Ascending":
+        result = [...result].sort((a, b) =>
+          a.user?.name?.localeCompare(b.user?.name || "")
+        );
+        break;
+      case "Descending":
+        result = [...result].sort((a, b) =>
+          b.user?.name?.localeCompare(a.user?.name || "")
+        );
+        break;
+      case "Recently Added":
+      case "Created Date":
+        result = [...result].sort(
+          (a, b) =>
+            new Date(b.clockIn || b.createdDate) -
+            new Date(a.clockIn || a.createdDate)
+        );
+        break;
+      case "Last 7 Days":
+        const sevenDaysAgo = subDays(new Date(), 7);
+        result = result.filter(
+          (att) => new Date(att.clockIn || att.createdDate) >= sevenDaysAgo
+        );
+        result = [...result].sort(
+          (a, b) =>
+            new Date(b.clockIn || b.createdDate) -
+            new Date(a.clockIn || a.createdDate)
+        );
+        break;
+      case "Last Month":
+        const oneMonthAgo = subDays(new Date(), 30);
+        result = result.filter(
+          (att) => new Date(att.clockIn || att.createdDate) >= oneMonthAgo
+        );
+        result = [...result].sort(
+          (a, b) =>
+            new Date(b.clockIn || b.createdDate) -
+            new Date(a.clockIn || a.createdDate)
+        );
+        break;
+      default:
+        break;
+    }
+
+    return result;
+  }, [
+    groupedAttendances,
+    activeTab,
+    searchTerm,
+    selectedDate,
+    selectedStatus,
+    sortBy,
+  ]);
+
+  // Paginated attendances
+  const paginatedAttendances = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredAttendances.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredAttendances, currentPage]);
+
+  // Handlers
+  const handleDateChange = (date) => {
+    setSelectedDate(date);
+    setCurrentPage(1);
   };
 
-  const handleDateChange = (date) => {
-    const formattedDate = date ? moment(date).format("YYYY-MM-DD") : "";
-    handleFilterChange("date", formattedDate);
+  const clearFilters = () => {
+    setSearchTerm("");
+    setSelectedDate(null);
+    setSelectedStatus("");
+    setSortBy("Recently Added");
+    setActiveTab("All");
+    setCurrentPage(1);
+    toast.info("Filters cleared");
+  };
+
+  const handleRefresh = () => {
+    clearFilters();
+    refetch();
+    toast.info("Attendance data refreshed");
+  };
+
+  const handleCollapse = () => {
+    setIsTableCollapsed((prev) => !prev);
   };
 
   const exportToPDF = () => {
-    if (!allAttendance?.attendances?.length) {
+    if (!filteredAttendances.length) {
       toast.error("No data to export");
       return;
     }
@@ -73,7 +202,7 @@ const AttendanceList = () => {
     doc.text("Attendance Report", 20, 10);
     doc.setFontSize(12);
     let y = 20;
-    allAttendance.attendances.forEach((att, index) => {
+    filteredAttendances.forEach((att, index) => {
       const clockIn = att.clockIn
         ? new Date(att.clockIn).toLocaleTimeString()
         : "N/A";
@@ -93,12 +222,12 @@ const AttendanceList = () => {
   };
 
   const exportToExcel = () => {
-    if (!allAttendance?.attendances?.length) {
+    if (!filteredAttendances.length) {
       toast.error("No data to export");
       return;
     }
 
-    const data = allAttendance.attendances.map((att) => ({
+    const data = filteredAttendances.map((att) => ({
       Employee: att.user?.name || "Unknown",
       Role: att.user?.roles?.join(", ") || "N/A",
       Status: att.status,
@@ -109,8 +238,8 @@ const AttendanceList = () => {
         ? new Date(att.clockOut).toLocaleTimeString()
         : "N/A",
       Production: att.production || "N/A",
-      Break: att.break || "N/A",
-      Overtime: att.overtime || "N/A",
+      Break: att.break || "0h 00m",
+      Overtime: att.overtime || "0h 00m",
       "Total Hours":
         att.totalHours ||
         (att.clockIn && att.clockOut
@@ -126,27 +255,6 @@ const AttendanceList = () => {
     XLSX.utils.book_append_sheet(wb, ws, "Attendance");
     XLSX.writeFile(wb, "attendance-report.xlsx");
   };
-
-  const handleRefresh = () => {
-    setFilters({
-      search: "",
-      status: "",
-      date: moment().format("YYYY-MM-DD"),
-    });
-    setPage(1);
-    refetch();
-    toast.info("Attendance data refreshed");
-  };
-
-  const handleCollapse = () => {
-    setIsTableCollapsed((prev) => !prev);
-  };
-
-  useEffect(() => {
-    if (allAttendanceError) {
-      toast.error(allAttendanceError.message || "Failed to fetch attendance");
-    }
-  }, [allAttendanceError]);
 
   const columns = [
     {
@@ -173,12 +281,12 @@ const AttendanceList = () => {
       key: "status",
       render: (status) => (
         <span
-          className={`badge badge-${
+          className={`badge ${
             status === "present"
-              ? "success"
+              ? "bg-success"
               : status === "late"
-              ? "warning"
-              : "danger"
+              ? "bg-warning"
+              : "bg-danger"
           }`}
         >
           {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -239,95 +347,242 @@ const AttendanceList = () => {
     },
   ];
 
+  if (isAllAttendanceLoading) {
+    return (
+      <div className="content">
+        <div className="card">
+          <div className="card-body text-center">
+            <Spinner
+              animation="border"
+              variant="primary"
+              role="status"
+              aria-label="Loading data"
+            />
+            <p>Loading attendance data...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (allAttendanceError) {
+    return (
+      <div className="content">
+        <div className="card">
+          <div className="card-body">
+            <Alert variant="danger" role="alert">
+              Error loading attendance: {JSON.stringify(allAttendanceError)}.
+              Please try again.
+            </Alert>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="page-wrapper">
-      <div className="content container-fluid">
-        <div className="page-header">
-          <div className="add-item">
-            <Title level={4}>Attendance</Title>
-            <Text>Manage your Attendance</Text>
-          </div>
-          <Space>
-            <Tooltip title="Export to PDF">
-              <Button icon={<DownloadOutlined />} onClick={exportToPDF} />
-            </Tooltip>
-            <Tooltip title="Export to Excel">
-              <Button icon={<DownloadOutlined />} onClick={exportToExcel} />
-            </Tooltip>
-            <Tooltip title="Refresh">
-              <Button icon={<ReloadOutlined />} onClick={handleRefresh} />
-            </Tooltip>
-            <Tooltip title={isTableCollapsed ? "Expand" : "Collapse"}>
-              <Button
-                icon={isTableCollapsed ? <DownOutlined /> : <UpOutlined />}
-                onClick={handleCollapse}
-              />
-            </Tooltip>
-          </Space>
-        </div>
-
-        <Card className="attendance-card">
-          <Space
-            direction="horizontal"
-            size="middle"
-            style={{
-              width: "100%",
-              justifyContent: "space-between",
-              flexWrap: "wrap",
-            }}
-          >
-            <Input
-              prefix={<SearchOutlined />}
-              placeholder
-              markedlydown="Search by employee name"
-              value={filters.search}
-              onChange={(e) => handleFilterChange("search", e.target.value)}
-              style={{ width: 300, borderRadius: 20 }}
-            />
-            <Space>
-              <DatePicker
-                value={filters.date ? moment(filters.date) : null}
-                onChange={handleDateChange}
-                format="YYYY-MM-DD"
-                style={{ borderRadius: 20 }}
-              />
-              <Select
-                value={filters.status || "All"}
-                onChange={(value) => handleFilterChange("status", value)}
-                style={{ width: 150, borderRadius: 20 }}
-              >
-                <Option value="">All</Option>
-                <Option value="present">Present</Option>
-                <Option value="absent">Absent</Option>
-                <Option value="late">Late</Option>
-              </Select>
-            </Space>
-          </Space>
-
-          {!isTableCollapsed && (
-            <>
-              <Table
-                columns={columns}
-                dataSource={allAttendance?.attendances || []}
-                loading={isAllAttendanceLoading}
-                pagination={false}
-                rowKey="_id"
-                className="attendance-table"
-              />
-              {allAttendance?.meta?.total > limit && (
-                <div style={{ textAlign: "right", marginTop: 16 }}>
-                  <AntdPagination
-                    current={page}
-                    pageSize={limit}
-                    total={allAttendance?.meta?.total || 0}
-                    onChange={setPage}
-                    showSizeChanger={false}
-                  />
+      <div className="content">
+        <div className="card">
+          <PageHeader
+            title="Attendance"
+            subtitle="Manage your Attendance"
+            onAdd={null} // No add button for attendance
+          />
+          <div className="card-body">
+            <div className="row">
+              <div className="col-lg-4">
+                <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
+                  <h6 className="me-2">Status</h6>
+                  <ul
+                    className="nav nav-pills border d-inline-flex p-1 rounded bg-light todo-tabs"
+                    id="pills-tab"
+                    role="tablist"
+                  >
+                    {Object.keys(groupedAttendances).map((status) => (
+                      <li className="nav-item" role="presentation" key={status}>
+                        <button
+                          className={`nav-link btn btn-sm btn-icon py-3 d-flex align-items-center justify-content-center w-auto ${
+                            activeTab === status ? "active" : ""
+                          }`}
+                          id={`tab-${status}`}
+                          data-bs-toggle="pill"
+                          data-bs-target={`#pills-${status}`}
+                          type="button"
+                          role="tab"
+                          aria-selected={activeTab === status}
+                          onClick={() => setActiveTab(status)}
+                        >
+                          {status} ({groupedAttendances[status].length})
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              )}
-            </>
-          )}
-        </Card>
+              </div>
+              <div className="col-lg-8">
+                <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
+                  <div className="input-icon w-120 position-relative me-2">
+                    <DatePicker
+                      selected={selectedDate}
+                      onChange={handleDateChange}
+                      className="form-control datetimepicker"
+                      placeholderText="Select Date"
+                      dateFormat="dd/MM/yyyy"
+                    />
+                    <span className="input-icon-addon">
+                      <i className="ti ti-calendar text-gray-9"></i>
+                    </span>
+                  </div>
+                  <div className="input-icon-start position-relative me-2">
+                    <span className="input-icon-addon">
+                      <SearchOutlined />
+                    </span>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Search by employee name"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      aria-label="Search attendance"
+                    />
+                  </div>
+                  <div style={{ width: "120px" }}>
+                    <Select
+                      style={{ width: "100%" }}
+                      placeholder="All Status"
+                      value={selectedStatus || undefined}
+                      onChange={(value) => setSelectedStatus(value)}
+                      allowClear
+                    >
+                      <Option value="">All Status</Option>
+                      <Option value="present">Present</Option>
+                      <Option value="absent">Absent</Option>
+                      <Option value="late">Late</Option>
+                    </Select>
+                  </div>
+                  <div className="d-flex align-items-center border p-2 rounded ms-2">
+                    <span className="d-inline-flex me-2">Sort By: </span>
+                    <div className="dropdown">
+                      <a
+                        href="#"
+                        className="dropdown-toggle btn btn-white d-inline-flex align-items-center border-0 bg-transparent p-0 text-dark"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
+                      >
+                        {sortBy}
+                      </a>
+                      <ul className="dropdown-menu dropdown-menu-end p-3">
+                        {[
+                          "Recently Added",
+                          "Ascending",
+                          "Descending",
+                          "Last 7 Days",
+                          "Last Month",
+                          "Created Date",
+                        ].map((option) => (
+                          <li key={option}>
+                            <a
+                              href="#"
+                              className="dropdown-item rounded-1"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setSortBy(option);
+                              }}
+                            >
+                              {option}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                  <Button
+                    className="btn btn-outline-secondary ms-2"
+                    onClick={clearFilters}
+                  >
+                    Clear Filters
+                  </Button>
+                  <Tooltip title="Export to PDF">
+                    <Button
+                      className="btn btn-outline-primary ms-2"
+                      icon={<DownloadOutlined />}
+                      onClick={exportToPDF}
+                      aria-label="Export to PDF"
+                    />
+                  </Tooltip>
+                  <Tooltip title="Export to Excel">
+                    <Button
+                      className="btn btn-outline-primary ms-2"
+                      icon={<DownloadOutlined />}
+                      onClick={exportToExcel}
+                      aria-label="Export to Excel"
+                    />
+                  </Tooltip>
+                  <Tooltip title="Refresh">
+                    <Button
+                      className="btn btn-outline-primary ms-2"
+                      icon={<ReloadOutlined />}
+                      onClick={handleRefresh}
+                      aria-label="Refresh data"
+                    />
+                  </Tooltip>
+                  <Tooltip title={isTableCollapsed ? "Expand" : "Collapse"}>
+                    <Button
+                      className="btn btn-outline-primary ms-2"
+                      icon={
+                        isTableCollapsed ? <DownOutlined /> : <UpOutlined />
+                      }
+                      onClick={handleCollapse}
+                      aria-label={
+                        isTableCollapsed ? "Expand table" : "Collapse table"
+                      }
+                    />
+                  </Tooltip>
+                </div>
+              </div>
+            </div>
+            <div className="tab-content" id="pills-tabContent">
+              {Object.entries(groupedAttendances).map(([status, list]) => (
+                <div
+                  className={`tab-pane fade ${
+                    activeTab === status ? "show active" : ""
+                  }`}
+                  id={`pills-${status}`}
+                  role="tabpanel"
+                  aria-labelledby={`tab-${status}`}
+                  key={status}
+                >
+                  {filteredAttendances.length === 0 ? (
+                    <p className="text-muted">
+                      No {status.toLowerCase()} attendance records match the
+                      applied filters
+                    </p>
+                  ) : !isTableCollapsed ? (
+                    <div className="table-responsive">
+                      <Table
+                        columns={columns}
+                        dataSource={paginatedAttendances}
+                        loading={isAllAttendanceLoading}
+                        pagination={false}
+                        rowKey="_id"
+                        className="attendance-table table table-hover"
+                      />
+                      <div className="pagination-section mt-4">
+                        <DataTablePagination
+                          totalItems={filteredAttendances.length}
+                          itemNo={itemsPerPage}
+                          onPageChange={setCurrentPage}
+                          currentPage={currentPage}
+                        />
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

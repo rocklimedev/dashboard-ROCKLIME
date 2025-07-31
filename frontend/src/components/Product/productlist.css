@@ -1,5 +1,3 @@
-/* productlist.css */
-
 /* Filter bar */
 .filter-bar {
   z-index: 1000;
@@ -34,293 +32,198 @@
   font-weight: 500;
 }
 
-/* Product card */
+/* ---------- GRID: always 4 per row ---------- */
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)); /* exactly 4 */
+  gap: 16px;
+}
+
+/* Remove bootstrap column spacing influence if present */
+.products-grid > [class*="col-"] {
+  all: unset;
+}
+
+/* ---------- CARD: square + grid interior ---------- */
 .product-info.card {
+  aspect-ratio: 1 / 1; /* perfect square */
+  width: 100%;
+  display: grid;
+  grid-template-rows: 1fr auto auto auto; /* image | name | price/qty | actions */
   border: 1px solid #e8ecef;
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   background: #fff;
-  
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
 .product-info.card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
 }
 
-/* Product image container */
+/* ---------- IMAGE AREA stays inside the top 1fr row ---------- */
 .pro-img {
   position: relative;
   display: block;
-  text-align: center;
-  background: #f9f9f9;
+  background: #fafafa;
 }
 
-/* Image wrapper for centering */
 .image-wrapper {
-  width: 100%;
-  height: 200px;
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 12px;
 }
 
-/* Product image */
 .product-image-card {
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
-  height: auto;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
-  object-position: center;
-  transition: transform 0.3s ease;
+  transition: transform 0.25s ease;
 }
 
 .product-info.card:hover .product-image-card {
-  transform: scale(1.05);
+  transform: scale(1.03);
 }
 
-/* Heart button wrapper */
+/* Heart & stock badge */
 .heart-button-wrapper {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 10;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
 }
-
-/* Heart button */
 .heart-button {
   width: 32px;
   height: 32px;
-  line-height: 32px;
-  text-align: center;
-  background: rgba(255, 255, 255, 0.9);
   border-radius: 50%;
-  padding: 0;
+  background: rgba(255, 255, 255, 0.95);
 }
-
-.heart-button:hover {
-  background: rgba(255, 255, 255, 1);
-}
-
-/* Out of stock badge */
 .out-of-stock-badge .ant-badge-count {
   position: absolute;
   top: 10px;
   left: 10px;
   background-color: #ff4d4f;
-  color: white;
+  color: #fff;
   font-size: 12px;
   padding: 2px 8px;
   border-radius: 12px;
 }
 
-/* Category name */
-.cat-name {
-  font-size: 14px;
-  color: #6c757d;
-  margin: 10px 15px 5px;
-}
-
-.cat-name a {
-  color: inherit;
-  text-decoration: none;
-}
-
-.cat-name a:hover {
-  color: #007bff;
-}
-
-/* Product name */
+/* ---------- TEXT AREAS ---------- */
 .product-name {
-  font-size: 16px;
+  margin: 8px 12px 0;
+  font-size: 14px;
   font-weight: 600;
-  margin: 0 15px 10px;
+  line-height: 1.35;
 }
-
 .product-name a {
-  color: #333;
+  color: #222;
   text-decoration: none;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 2; /* clamp to two lines */
   -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
-
 .product-name a:hover {
   color: #e31e24;
 }
 
-/* Price and quantity section */
+/* ---------- PRICE + QTY ---------- */
 .price {
-  padding: 0 15px 15px;
+  padding: 6px 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
-
 .text-gray-9 {
-  color: #6c757d;
-  font-size: 16px;
-  font-weight: 500;
+  color: #28a745; /* Green color for price */
+  font-weight: 600;
 }
 
-.mb-0 {
-  margin-bottom: 0 !important;
-}
-
-/* Quantity input */
 .qty-item {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
 }
-
 .qty-item .form-control {
-  width: 60px;
-  height: 32px;
-  font-size: 14px;
+  width: 52px;
+  height: 30px;
+  font-size: 12px;
   border: 1px solid #e8ecef;
   border-radius: 4px;
   text-align: center;
 }
-
 .dec,
 .inc {
-  width: 32px;
-  height: 32px;
-  background: #f8f9fa;
+  width: 30px;
+  height: 30px;
   border: 1px solid #e8ecef;
   border-radius: 4px;
-  text-align: center;
-  line-height: 30px;
-  text-decoration: none;
-  color: #333;
+  background: #f7f8fa;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
 }
-
 .dec:hover,
 .inc:hover {
-  background: #e8ecef;
+  background: #eef1f4;
 }
 
-/* Product actions */
+/* ---------- ACTIONS (same row) ---------- */
+/* ---------- ACTIONS (same row) ---------- */
 .product-actions {
+  padding: 10px 12px;
+  border-top: 1px solid #eef1f4;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 15px;
-  border-top: 1px solid #e8ecef;
+  position: relative; /* Add this to allow absolute positioning of child elements */
 }
 
-.product-actions .ant-btn {
-  flex: 1;
-}
-
+/* Move the More button to the extreme left */
 .more-options-btn {
-  padding: 0 10px;
   width: 40px;
   height: 40px;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: 8px;
+  position: absolute; /* Position it absolutely within product-actions */
+left: -8px; /* Align to the extreme left with padding */
 }
 
-/* Pagination */
-.pagination-container {
-  margin-top: 24px;
+/* Ensure Add to Cart button takes remaining space */
+.add-to-cart-btn {
+  flex: 1;
+/* Add margin to prevent overlap with the More button */
 }
-
-.pagination-container .ant-pagination-item,
-.pagination-container .ant-pagination-prev,
-.pagination-container .ant-pagination-next {
-  border-radius: 6px;
-}
-
-.pagination-container .ant-pagination-item-active {
-  border-color: #e31e24;
-  background: #e31e24;
-}
-
-.pagination-container .ant-pagination-item-active a {
-  color: #fff;
-}
-
-/* Loading, error, and empty states */
-.loading-container,
-.error-container,
-.empty-container {
-  min-height: 400px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-
-.loading-container p,
-.error-container p,
-.empty-container p {
-  font-size: 16px;
-  color: #666;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .page-wrapper {
-    padding: 10px;
-  }
-
-  .filter-form .filter-item {
-    min-width: 100%;
-    margin-bottom: 12px;
-  }
-
-  .filter-bar {
-    padding: 12px;
-  }
-
-  .image-wrapper {
-    height: 150px;
-  }
-
+/* ---------- RESPONSIVE ----------
+   You asked for 4 per row on every device, so we DON'T change the columns.
+   We just shrink internal paddings/fonts slightly on very small widths. */
+@media (max-width: 480px) {
   .product-name {
-    font-size: 14px;
+    font-size: 13px;
   }
-
   .text-gray-9 {
     font-size: 14px;
   }
-
-  .product-actions .ant-btn,
+  .qty-item .form-control {
+    width: 46px;
+    height: 28px;
+  }
+  .dec,
+  .inc {
+    width: 28px;
+    height: 28px;
+  }
   .more-options-btn {
+    width: 36px;
     height: 36px;
   }
-}
-
-@media (max-width: 576px) {
-  .product-actions {
-    flex-direction: column;
-  }
-
-  .product-actions .ant-btn,
-  .more-options-btn {
-    width: 100%;
-  }
-}
-
-/* Remove conflicting or unused styles */
-.ecommerce-product-card,
-.product-image-container,
-.product-image-wrapper {
-  /* Remove or comment out unused styles */
-}
-
-/* Tabler Icons */
-.ti {
-  font-size: 16px;
 }

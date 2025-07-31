@@ -458,26 +458,34 @@ const ProductsList = () => {
           </div>
         ) : viewMode === "card" ? (
           <div className="products-section">
-            <div className="row">
+            {/* BEFORE
+<div className="row">
+  {currentItems.map((product) => (
+    <div key={product.productId} className="col-6 col-md-4 col-lg-3 col-xl-3 col-xxl-2">
+      <ProductCard ... />
+    </div>
+  ))}
+</div>
+*/}
+
+            {/* AFTER */}
+            <div className="products-grid">
               {currentItems.map((product) => (
-                <div
+                <ProductCard
                   key={product.productId}
-                  className="col-6 col-md-4 col-lg-3 col-xl-3 col-xxl-2"
-                >
-                  <ProductCard
-                    product={product}
-                    getBrandsName={getBrandsName}
-                    getCategoryName={getCategoryName}
-                    formatPrice={formatPrice}
-                    handleAddToCart={handleAddToCart}
-                    handleToggleFeatured={handleToggleFeatured}
-                    cartLoadingStates={cartLoadingStates}
-                    featuredLoadingStates={featuredLoadingStates}
-                    menu={menu}
-                  />
-                </div>
+                  product={product}
+                  getBrandsName={getBrandsName}
+                  getCategoryName={getCategoryName}
+                  formatPrice={formatPrice}
+                  handleAddToCart={handleAddToCart}
+                  handleToggleFeatured={handleToggleFeatured}
+                  cartLoadingStates={cartLoadingStates}
+                  featuredLoadingStates={featuredLoadingStates}
+                  menu={menu}
+                />
               ))}
             </div>
+
             <div
               className="pagination-container text-center mt-4"
               style={{
