@@ -11,7 +11,7 @@ import { BiEdit, BiTrash, BiShowAlt } from "react-icons/bi";
 import { FaSearch } from "react-icons/fa";
 import { toast } from "sonner";
 import DataTablePagination from "../Common/DataTablePagination";
-
+import PageHeader from "../Common/PageHeader";
 const CompaniesWrapper = () => {
   const {
     data: vendorsData,
@@ -189,6 +189,11 @@ const CompaniesWrapper = () => {
     <div className="page-wrapper">
       <div className="content">
         <div className="card">
+          <PageHeader
+            title="Vendors"
+            subtitle="Manage your Vendors   "
+            onAdd={handleAddVendor}
+          />
           <div className="card-body">
             <div className="row">
               <div className="col-lg-4">
@@ -271,12 +276,6 @@ const CompaniesWrapper = () => {
                     onClick={clearFilters}
                   >
                     Clear Filters
-                  </button>
-                  <button
-                    className="btn btn-outline-primary ms-2"
-                    onClick={handleAddVendor}
-                  >
-                    Add Vendor
                   </button>
                 </div>
               </div>

@@ -8,6 +8,7 @@ import PermissionsTable from "./PermissionsTable";
 import DataTablePagination from "../Common/DataTablePagination";
 import { toast } from "sonner";
 import { useDeleteRoleMutation } from "../../api/rolesApi";
+import PageHeader from "../Common/PageHeader";
 // Placeholder for delete mutation (replace with actual import)
 
 const RolePermission = () => {
@@ -227,11 +228,13 @@ const RolePermission = () => {
     <div className="page-wrapper">
       <div className="content">
         <div className="card">
-          <div className="card-header d-flex align-items-center justify-content-between flex-wrap row-gap-3">
-            <h4>
-              {activeTab === "roles" ? "Roles & Permissions" : "Permissions"}
-            </h4>
-          </div>
+          <PageHeader
+            title={
+              activeTab === "roles" ? "Roles & Permissions" : "Permissions"
+            }
+            subtitle="Manage your brands"
+            onAdd={handleOpenRoleModal}
+          />
 
           <div className="card-body">
             <div className="d-flex align-items-center mb-3">
@@ -385,12 +388,6 @@ const RolePermission = () => {
                       >
                         Clear Filters
                       </button>
-                      <button
-                        className="btn btn-outline-primary ms-2"
-                        onClick={handleOpenRoleModal}
-                      >
-                        Add Role
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -405,8 +402,6 @@ const RolePermission = () => {
                       <thead>
                         <tr>
                           <th>Role</th>
-                          <th>Created Date</th>
-                          <th>Status</th>
                           <th>Actions</th>
                         </tr>
                       </thead>
@@ -415,23 +410,7 @@ const RolePermission = () => {
                           <tr key={role.roleId}>
                             <td>{role.roleName || "N/A"}</td>
                             <td>
-                              {role.createdAt
-                                ? new Date(role.createdAt).toLocaleDateString()
-                                : "N/A"}
-                            </td>
-                            <td>
-                              <span
-                                className={`badge ${
-                                  role.status?.toLowerCase() === "active"
-                                    ? "badge-success"
-                                    : "badge-danger"
-                                }`}
-                              >
-                                {role.status || "Unknown"}
-                              </span>
-                            </td>
-                            <td>
-                              <div className="actions d-flex gap-2">
+                              <div className="actions">
                                 <a
                                   href={`/roles-permission/permissions/${role.roleId}`}
                                   className="action-icon"
@@ -475,61 +454,46 @@ const RolePermission = () => {
                 role="tabpanel"
                 aria-labelledby="tab-permissions"
               >
-                <div className="row">
-                  <div className="col-lg-4">
-                    <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
-                      <div className="d-flex align-items-center ms-3">
-                        <p className="mb-0 fs-14">
-                          Total Permissions:{" "}
-                          <span className="text-dark">
-                            {permissionStats.totalPermissions}
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="col-lg-8">
-                    <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
-                      <div className="d-flex align-items-center border p-2 rounded">
-                        <span className="d-inline-flex me-2">Sort By: </span>
-                        <div className="dropdown">
-                          <a
-                            href="#"
-                            className="dropdown-toggle btn btn-white d-inline-flex align-items-center border-0 bg-transparent p-0 text-dark"
-                            data-bs-toggle="dropdown"
-                            aria-expanded="false"
-                          >
-                            {sortBy}
-                          </a>
-                          <ul className="dropdown-menu dropdown-menu-end p-3">
-                            {["Recently Added", "Ascending", "Descending"].map(
-                              (option) => (
-                                <li key={option}>
-                                  <a
-                                    href="#"
-                                    className="dropdown-item rounded-1"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      setSortBy(option);
-                                    }}
-                                  >
-                                    {option}
-                                  </a>
-                                </li>
-                              )
-                            )}
-                          </ul>
-                        </div>
-                      </div>
-                      <button
-                        className="btn btn-outline-secondary ms-2"
-                        onClick={clearFilters}
+                <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
+                  <div className="d-flex align-items-center border p-2 rounded">
+                    <span className="d-inline-flex me-2">Sort By: </span>
+                    <div className="dropdown">
+                      <a
+                        href="#"
+                        className="dropdown-toggle btn btn-white d-inline-flex align-items-center border-0 bg-transparent p-0 text-dark"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
                       >
-                        Clear Filters
-                      </button>
+                        {sortBy}
+                      </a>
+                      <ul className="dropdown-menu dropdown-menu-end p-3">
+                        {["Recently Added", "Ascending", "Descending"].map(
+                          (option) => (
+                            <li key={option}>
+                              <a
+                                href="#"
+                                className="dropdown-item rounded-1"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setSortBy(option);
+                                }}
+                              >
+                                {option}
+                              </a>
+                            </li>
+                          )
+                        )}
+                      </ul>
                     </div>
                   </div>
+                  <button
+                    className="btn btn-outline-secondary ms-2"
+                    onClick={clearFilters}
+                  >
+                    Clear Filters
+                  </button>
                 </div>
+
                 {paginatedPermissions.length === 0 ? (
                   <p className="text-muted">
                     No permissions match the applied filters

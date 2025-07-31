@@ -9,7 +9,7 @@ import { FaEye, FaSearch } from "react-icons/fa";
 import { toast } from "sonner";
 import DeleteModal from "../Common/DeleteModal";
 import DataTablePagination from "../Common/DataTablePagination";
-
+import PageHeader from "../Common/PageHeader";
 const CustomerList = () => {
   const { data, error, isLoading } = useGetCustomersQuery();
   const customers = data?.data || [];
@@ -168,6 +168,11 @@ const CustomerList = () => {
     <div className="page-wrapper">
       <div className="content">
         <div className="card">
+          <PageHeader
+            title="Customers"
+            subtitle="Manage your Customers"
+            onAdd={handleAddCustomer}
+          />
           <div className="card-body">
             <div className="row">
               <div className="col-lg-4">
@@ -250,12 +255,6 @@ const CustomerList = () => {
                     onClick={clearFilters}
                   >
                     Clear Filters
-                  </button>
-                  <button
-                    className="btn btn-outline-primary ms-2"
-                    onClick={handleAddCustomer}
-                  >
-                    Add Customer
                   </button>
                 </div>
               </div>

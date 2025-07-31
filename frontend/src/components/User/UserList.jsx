@@ -18,7 +18,7 @@ import DataTablePagination from "../Common/DataTablePagination";
 import DeleteModal from "../Common/DeleteModal";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-
+import PageHeader from "../Common/PageHeader";
 const UserList = () => {
   const { data, error, isLoading, isFetching, refetch } = useGetAllUsersQuery();
   const users = data?.users || [];
@@ -229,6 +229,11 @@ const UserList = () => {
     <div className="page-wrapper">
       <div className="content">
         <div className="card">
+          <PageHeader
+            title="Users"
+            subtitle="Manage your Users"
+            onAdd={handleAddUser}
+          />
           <div className="card-body">
             <div className="row">
               <div className="col-lg-4">
@@ -311,12 +316,6 @@ const UserList = () => {
                     onClick={clearFilters}
                   >
                     Clear Filters
-                  </button>
-                  <button
-                    className="btn btn-outline-primary ms-2"
-                    onClick={handleAddUser}
-                  >
-                    Add User
                   </button>
                 </div>
               </div>

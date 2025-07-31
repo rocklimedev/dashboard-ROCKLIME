@@ -27,7 +27,7 @@ import DataTablePagination from "../Common/DataTablePagination";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { format, subDays } from "date-fns";
-
+import PageHeader from "../Common/PageHeader";
 // Destructure Option from Select
 const { Option } = Select;
 
@@ -523,6 +523,7 @@ const ShowInvoices = () => {
   return (
     <div className="content">
       <div className="card">
+        <PageHeader title="Invoices" subtitle="Manage your Invoices" />
         <div className="card-body">
           <div className="row">
             <div className="col-lg-4">

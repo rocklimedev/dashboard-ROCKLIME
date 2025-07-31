@@ -118,8 +118,6 @@ const PermissionsTable = ({
               <th>Route</th>
               <th>Name</th>
               <th>API</th>
-              <th>Created Date</th>
-              <th>Status</th>
             </tr>
           </thead>
           <tbody>
@@ -137,22 +135,6 @@ const PermissionsTable = ({
                       <td>{permission.route}</td>
                       <td>{permission.name}</td>
                       <td>{permission.api}</td>
-                      <td>
-                        {permission.createdAt
-                          ? new Date(permission.createdAt).toLocaleDateString()
-                          : "N/A"}
-                      </td>
-                      <td>
-                        <span
-                          className={`badge ${
-                            permission.status?.toLowerCase() === "active"
-                              ? "badge-success"
-                              : "badge-danger"
-                          }`}
-                        >
-                          {permission.status || "Unknown"}
-                        </span>
-                      </td>
                     </tr>
                   ))}
                 </React.Fragment>
