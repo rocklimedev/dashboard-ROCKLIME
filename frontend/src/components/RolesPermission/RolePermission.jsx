@@ -409,17 +409,17 @@ const RolePermission = () => {
                         {paginatedRoles.map((role) => (
                           <tr key={role.roleId}>
                             <td>{role.roleName || "N/A"}</td>
-                            <td>
-                              <div className="actions">
+                            <td className="action-column">
+                              <div className="action-buttons d-flex gap-2">
                                 <a
                                   href={`/roles-permission/permissions/${role.roleId}`}
-                                  className="action-icon"
+                                  className="btn btn-icon btn-sm btn-outline-primary"
                                   aria-label={`View permissions for ${role.roleName}`}
                                 >
                                   <FaShieldAlt />
                                 </a>
                                 <FaTrash
-                                  className="action-icon text-danger"
+                                  className="btn btn-icon btn-sm btn-outline-warning"
                                   onClick={() => handleOpenDeleteModal(role)}
                                   disabled={isDeleting}
                                   aria-label={`Delete ${role.roleName}`}
