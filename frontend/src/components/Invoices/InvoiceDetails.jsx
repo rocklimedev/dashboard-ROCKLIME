@@ -5,8 +5,7 @@ import { useGetQuotationByIdQuery } from "../../api/quotationApi";
 import { useGetAddressByIdQuery } from "../../api/addressApi";
 import { useGetUserByIdQuery } from "../../api/userApi";
 import { useGetProductByIdQuery } from "../../api/productApi";
-import { globalStyles, componentStyles } from "./styles";
-
+import logo from "../../assets/img/logo.png";
 // Subcomponent for each product row
 const ProductRow = ({ product, index }) => {
   const { data, isLoading, isError, error } = useGetProductByIdQuery(
@@ -14,25 +13,27 @@ const ProductRow = ({ product, index }) => {
     { skip: !product.productId }
   );
 
-  // Log errors for debugging
   if (isError) {
     console.log(`Product Query Error for ID ${product.productId}:`, error);
   }
 
   const prod = data || {};
   const productName = prod.name || "Unknown Product";
-  const productCode = prod.product_code || "—";
   const price = parseFloat(product.price || prod.sellingPrice || 0);
   const quantity = parseInt(product.quantity || 0);
+  const discount = 0; // Assuming no discount data is provided; adjust as needed
 
   return (
-    <tr key={product.productId || index} style={componentStyles.tableRow}>
-      <td>{index + 1}</td>
-      <td>{isLoading ? "Loading..." : productName}</td>
-      <td>{productCode}</td>
-      <td>{quantity}</td>
-      <td>₹{price.toFixed(2)}</td>
-      <td>₹{(price * quantity).toFixed(2)}</td>
+    <tr>
+      <td>
+        <h6>{isLoading ? "Loading..." : productName}</h6>
+      </td>
+      <td className="text-gray-9 fw-medium text-end">{quantity}</td>
+      <td className="text-gray-9 fw-medium text-end">₹{price.toFixed(2)}</td>
+      <td className="text-gray-9 fw-medium text-end">₹{discount.toFixed(2)}</td>
+      <td className="text-gray-9 fw-medium text-end">
+        ₹{(price * quantity).toFixed(2)}
+      </td>
     </tr>
   );
 };
@@ -42,7 +43,7 @@ const InvoiceDetails = () => {
   const { data, isLoading, isError } = useGetInvoiceByIdQuery(invoiceId);
   const invoice = data?.data || {};
 
-  // Parse products if it's a string
+  // Parse products
   let products = invoice.products || [];
   if (typeof products === "string") {
     try {
@@ -52,13 +53,11 @@ const InvoiceDetails = () => {
       products = [];
     }
   }
-
-  // Ensure products is an array
   if (!Array.isArray(products)) {
     products = [];
   }
 
-  // Parse paymentMethod if it's a string
+  // Parse paymentMethod
   let paymentMethodParsed = invoice.paymentMethod || "N/A";
   if (typeof invoice.paymentMethod === "string") {
     try {
@@ -83,54 +82,21 @@ const InvoiceDetails = () => {
   } = invoice;
 
   // Fetch additional data
-  const {
-    data: createdByUser,
-    isLoading: isUserLoading,
-    isError: isUserError,
-  } = useGetUserByIdQuery(createdBy, { skip: !createdBy });
+  const { data: createdByUser, isLoading: isUserLoading } = useGetUserByIdQuery(
+    createdBy,
+    { skip: !createdBy }
+  );
   const { data: quotation, isLoading: isQuotationLoading } =
     useGetQuotationByIdQuery(quotationId, { skip: !quotationId });
-  const {
-    data: shipToAddress,
-    isLoading: isAddressLoading,
-    isError: isAddressError,
-  } = useGetAddressByIdQuery(shipTo, { skip: !shipTo });
-
-  // State for drag functionality
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const dragRef = useRef(null);
-
-  // Handle drag start
-  const handleMouseDown = (e) => {
-    setIsDragging(true);
-    dragRef.current = { startX: e.clientX, startY: e.clientY };
-  };
-
-  // Handle drag movement
-  const handleMouseMove = (e) => {
-    if (isDragging) {
-      const deltaX = e.clientX - dragRef.current.startX;
-      const deltaY = e.clientY - dragRef.current.startY;
-      setPosition((prev) => ({
-        x: prev.x + deltaX,
-        y: prev.y + deltaY,
-      }));
-      dragRef.current = { startX: e.clientX, startY: e.clientY };
-    }
-  };
-
-  // Handle drag end
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
+  const { data: shipToAddress, isLoading: isAddressLoading } =
+    useGetAddressByIdQuery(shipTo, { skip: !shipTo });
 
   // Calculations
   const subTotal = products.reduce(
     (sum, p) => sum + parseFloat(p.price || 0) * parseInt(p.quantity || 0),
     0
   );
-  const vat = subTotal * 0.18;
+  const vat = subTotal * 0.05; // Using 5% VAT as per the provided HTML
   const total = parseFloat(amount) || subTotal + vat;
 
   const amountInWords = total
@@ -148,260 +114,299 @@ const InvoiceDetails = () => {
     "Please verify all details and contact us in case of any discrepancies.",
   ];
 
-  // Debug styles and address
-  console.log("globalStyles:", globalStyles);
-  console.log("componentStyles:", componentStyles);
-  console.log("ShipTo Address:", shipToAddress);
-
   // Loading and Error States
   if (isLoading || isAddressLoading || isUserLoading || isQuotationLoading) {
-    return (
-      <div style={{ textAlign: "center", padding: "20px" }}>
-        Loading invoice...
-      </div>
-    );
+    return <div className="text-center p-4">Loading invoice...</div>;
   }
 
-  if (isError || isAddressError || isUserError) {
+  if (isError) {
     return (
-      <div style={{ textAlign: "center", padding: "20px", color: "red" }}>
+      <div className="text-center p-4 text-danger">
         Error fetching invoice details.
       </div>
     );
   }
 
-  if (products.length === 0) {
-    return (
-      <div style={{ textAlign: "center", padding: "20px" }}>
-        No products found in this invoice.
-      </div>
-    );
-  }
-
   return (
-    <div
-      className="page-wrapper"
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-    >
+    <div className="page-wrapper">
       <div className="content">
-        <div style={{ position: "absolute", top: "20px", left: "20px" }}>
-          <Link to="/invoices/list" className="btn btn-primary">
-            <i className="me-2" data-feather="arrow-left"></i>Back to Invoices
-          </Link>
+        {/* Breadcrumb */}
+        <div className="d-md-flex d-block align-items-center justify-content-between page-breadcrumb mb-3">
+          <div className="my-auto mb-2">
+            <h2 className="mb-1">Invoices</h2>
+            <nav>
+              <ol className="breadcrumb mb-0">
+                <li className="breadcrumb-item active" aria-current="page">
+                  Manage your Invoice
+                </li>
+              </ol>
+            </nav>
+          </div>
+          <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
+            <div className="mb-2">
+              <button className="btn btn-dark d-flex align-items-center">
+                <i className="ti ti-download me-2"></i>Download
+              </button>
+            </div>
+          </div>
+        </div>
+        {/* /Breadcrumb */}
+
+        {/* Invoices */}
+        <div>
+          <div className="row">
+            <div className="col-sm-10 mx-auto">
+              <Link
+                to="/orders/list"
+                className="back-icon d-flex align-items-center fs-12 fw-medium mb-3 d-inline-flex"
+              >
+                <span className="d-flex justify-content-center align-items-center rounded-circle me-2">
+                  <i className="ti ti-arrow-left"></i>
+                </span>
+                Back to List
+              </Link>
+              <div className="card">
+                <div className="card-body">
+                  {/* Header Section */}
+                  <div className="row justify-content-between align-items-center border-bottom mb-3">
+                    <div className="col-md-6">
+                      <div className="mb-2">
+                        <img src={logo} className="img-fluid" alt="logo" />
+                      </div>
+                      <p>3099 Kennedy Court Framingham, MA 01702</p>
+                    </div>
+                    <div className="col-md-6">
+                      <div className="text-end mb-3">
+                        <h5 className="text-gray mb-1">
+                          Invoice No{" "}
+                          <span className="text-primary">#{invoiceNo}</span>
+                        </h5>
+                        <p className="mb-1 fw-medium">
+                          Created Date :{" "}
+                          <span className="text-dark">
+                            {invoiceDate
+                              ? new Date(invoiceDate).toLocaleDateString()
+                              : "Not available"}
+                          </span>
+                        </p>
+                        <p className="fw-medium">
+                          Due Date :{" "}
+                          <span className="text-dark">
+                            {dueDate
+                              ? new Date(dueDate).toLocaleDateString()
+                              : "Not available"}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* From/To Section */}
+                  <div className="row border-bottom mb-3">
+                    <div className="col-md-5">
+                      <p className="text-dark mb-2 fw-semibold">From</p>
+                      <div>
+                        <h4 className="mb-1">
+                          {createdByUser?.data?.name || "Unknown"}
+                        </h4>
+                        <p className="mb-1">
+                          2077 Chicago Avenue Orosi, CA 93647
+                        </p>
+                        <p className="mb-1">
+                          Email :{" "}
+                          <span className="text-dark">
+                            {createdByUser?.data?.email || "Not available"}
+                          </span>
+                        </p>
+                        <p>
+                          Phone :{" "}
+                          <span className="text-dark">+1 987 654 3210</span>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="col-md-5">
+                      <p className="text-dark mb-2 fw-semibold">To</p>
+                      <div>
+                        <h4 className="mb-1">{billTo}</h4>
+                        <p className="mb-1">
+                          {shipToAddress?.data
+                            ? `${shipToAddress.data.street || "N/A"}, ${
+                                shipToAddress.data.city || "N/A"
+                              }, ${shipToAddress.data.state || "N/A"}, ${
+                                shipToAddress.data.country || "N/A"
+                              } - ${shipToAddress.data.postalCode || "N/A"}`
+                            : "Not available"}
+                        </p>
+                        <p className="mb-1">
+                          Email :{" "}
+                          <span className="text-dark">sarainc@example.com</span>
+                        </p>
+                        <p>
+                          Phone :{" "}
+                          <span className="text-dark">+1 987 471 6589</span>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="col-md-2">
+                      <div className="mb-3">
+                        <p className="text-title mb-2 fw-medium">
+                          Payment Status
+                        </p>
+                        <span
+                          className={`badge ${
+                            status === "Paid" ? "badge-success" : "badge-danger"
+                          } align-items-center mb-3`}
+                        >
+                          <i className="ti ti-point-filled"></i>
+                          {status === "Paid" ? "Paid" : "Due in 10 Days"}
+                        </span>
+                        <div>
+                          <img
+                            src="https://smarthr.co.in/demo/html/template/assets/img/qr.svg"
+                            className="img-fluid"
+                            alt="QR"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Invoice Items */}
+                  <div>
+                    <p className="fw-medium">
+                      Invoice For :{" "}
+                      <span className="text-dark fw-medium">
+                        {quotation?.data?.title || "Design & development"}
+                      </span>
+                    </p>
+                    <div className="table-responsive mb-3">
+                      <table className="table">
+                        <thead className="thead-light">
+                          <tr>
+                            <th>Job Description</th>
+                            <th className="text-end">Qty</th>
+                            <th className="text-end">Cost</th>
+                            <th className="text-end">Discount</th>
+                            <th className="text-end">Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {products.map((product, idx) => (
+                            <ProductRow
+                              key={product.productId || idx}
+                              product={product}
+                              index={idx}
+                            />
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Summary Section */}
+                  <div className="row border-bottom mb-3">
+                    <div className="col-md-7">
+                      <div className="py-4">
+                        <div className="mb-3">
+                          <h6 className="mb-1">Terms and Conditions</h6>
+                          {termsList.map((term, idx) => (
+                            <p key={idx}>{term}</p>
+                          ))}
+                        </div>
+                        <div className="mb-3">
+                          <h6 className="mb-1">Notes</h6>
+                          <p>
+                            Please quote invoice number when remitting funds.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="col-md-5">
+                      <div className="d-flex justify-content-between align-items-center border-bottom mb-2 pe-3">
+                        <p className="mb-0">Sub Total</p>
+                        <p className="text-dark fw-medium mb-2">
+                          ₹{subTotal.toFixed(2)}
+                        </p>
+                      </div>
+                      <div className="d-flex justify-content-between align-items-center border-bottom mb-2 pe-3">
+                        <p className="mb-0">Discount(0%)</p>
+                        <p className="text-dark fw-medium mb-2">₹0.00</p>
+                      </div>
+                      <div className="d-flex justify-content-between align-items-center mb-2 pe-3">
+                        <p className="mb-0">VAT(5%)</p>
+                        <p className="text-dark fw-medium mb-2">
+                          ₹{vat.toFixed(2)}
+                        </p>
+                      </div>
+                      <div className="d-flex justify-content-between align-items-center mb-2 pe-3">
+                        <h5>Total Amount</h5>
+                        <h5>₹{total.toFixed(2)}</h5>
+                      </div>
+                      <p className="fs-12">{amountInWords}</p>
+                    </div>
+                  </div>
+
+                  {/* Signature Section */}
+                  {signatureName && (
+                    <div className="row justify-content-end align-items-end text-end border-bottom mb-3">
+                      <div className="col-md-3">
+                        <div className="text-end">
+                          <img
+                            src="https://smarthr.co.in/demo/html/template/assets/img/sign.svg"
+                            className="img-fluid"
+                            alt="sign"
+                          />
+                        </div>
+                        <div className="text-end mb-3">
+                          <h6 className="fs-14 fw-medium pe-3">
+                            {signatureName}
+                          </h6>
+                          <p>Assistant Manager</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Footer Section */}
+                  <div className="text-center">
+                    <div className="mb-3">
+                      <img src={logo} className="img-fluid" alt="logo" />
+                    </div>
+                    <p className="text-dark mb-1">
+                      Payment Made Via {paymentMethodParsed} in the name of{" "}
+                      {createdByUser?.data?.name || "Unknown"}
+                    </p>
+                    <div className="d-flex justify-content-center align-items-center">
+                      <p className="fs-12 mb-0 me-3">
+                        Bank Name : <span className="text-dark">HDFC Bank</span>
+                      </p>
+                      <p className="fs-12 mb-0 me-3">
+                        Account Number :{" "}
+                        <span className="text-dark">45366287987</span>
+                      </p>
+                      <p className="fs-12">
+                        IFSC : <span className="text-dark">HDFC0018159</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* /Invoices */}
+
+        {/* Action Buttons */}
+        <div className="d-flex justify-content-center align-items-center mb-4">
           <button
-            className="btn btn-secondary"
-            style={{ marginLeft: "10px" }}
+            className="btn btn-primary d-flex justify-content-center align-items-center me-2"
             onClick={() => window.print()}
           >
-            Print Invoice
+            <i className="ti ti-printer me-2"></i>Print Invoice
           </button>
-        </div>
-        <div
-          className="draggable-content"
-          style={{
-            maxWidth: "800px",
-            margin: "0 auto",
-            background: "#fff",
-            padding: "30px",
-            borderRadius: "8px",
-            boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-          }}
-        >
-          <div className="page-header" onMouseDown={handleMouseDown}>
-            <h3 style={{ ...componentStyles.headerTitle, textAlign: "center" }}>
-              Invoice #{invoiceNo}
-            </h3>
-          </div>
-
-          {/* Invoice Details Section */}
-          <div style={{ marginBottom: "30px" }}>
-            <h4 style={{ ...componentStyles.sectionTitle, fontSize: "18px" }}>
-              Invoice Details
-            </h4>
-            <div
-              style={{ ...componentStyles.dateSection, marginBottom: "20px" }}
-            >
-              <p style={componentStyles.dateItem}>
-                <strong>Invoice Date:</strong>{" "}
-                {invoiceDate
-                  ? new Date(invoiceDate).toLocaleDateString()
-                  : "Not available"}
-              </p>
-              <p style={componentStyles.dateItem}>
-                <strong>Due Date:</strong>{" "}
-                {dueDate
-                  ? new Date(dueDate).toLocaleDateString()
-                  : "Not available"}
-              </p>
-              <p style={componentStyles.dateItem}>
-                <strong>Status:</strong>{" "}
-                <span
-                  style={{
-                    color: status === "Paid" ? "green" : "red",
-                    fontWeight: "bold",
-                  }}
-                >
-                  {status}
-                </span>
-              </p>
-            </div>
-
-            <table
-              className="table"
-              style={{ ...componentStyles.table, marginBottom: "20px" }}
-            >
-              <thead style={{ backgroundColor: "#f1f1f1" }}>
-                <tr>
-                  <th>#</th>
-                  <th>Item Name</th>
-                  <th>Product Code</th>
-                  <th>Qty</th>
-                  <th>Rate (₹)</th>
-                  <th>Amount (₹)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {products.map((product, idx) => (
-                  <ProductRow
-                    key={product.productId || idx}
-                    product={product}
-                    index={idx}
-                  />
-                ))}
-              </tbody>
-              <tfoot>
-                <tr>
-                  <td
-                    colSpan="5"
-                    style={{ textAlign: "right", fontWeight: "bold" }}
-                  >
-                    Subtotal:
-                  </td>
-                  <td>₹{subTotal.toFixed(2)}</td>
-                </tr>
-                <tr>
-                  <td
-                    colSpan="5"
-                    style={{ textAlign: "right", fontWeight: "bold" }}
-                  >
-                    VAT (18%):
-                  </td>
-                  <td>₹{vat.toFixed(2)}</td>
-                </tr>
-                {parseFloat(amount) !== subTotal + vat && (
-                  <tr>
-                    <td
-                      colSpan="5"
-                      style={{ textAlign: "right", fontWeight: "bold" }}
-                    >
-                      Additional Fees:
-                    </td>
-                    <td>
-                      ₹{(parseFloat(amount) - (subTotal + vat)).toFixed(2)}
-                    </td>
-                  </tr>
-                )}
-                <tr>
-                  <td
-                    colSpan="5"
-                    style={{ textAlign: "right", fontWeight: "bold" }}
-                  >
-                    Total:
-                  </td>
-                  <td style={{ fontWeight: "bold" }}>₹{total.toFixed(2)}</td>
-                </tr>
-              </tfoot>
-            </table>
-
-            <p style={{ ...componentStyles.amountInWords, textAlign: "right" }}>
-              <em>{amountInWords}</em>
-            </p>
-          </div>
-
-          {/* Miscellaneous Section */}
-          <div>
-            <h4 style={{ ...componentStyles.sectionTitle, fontSize: "18px" }}>
-              Miscellaneous
-            </h4>
-            <div
-              className="row"
-              style={{ ...componentStyles.addressRow, marginBottom: "20px" }}
-            >
-              <div className="col-md-6" style={componentStyles.addressCol}>
-                <h6 style={componentStyles.addressTitle}>Bill To</h6>
-                <p style={componentStyles.addressText}>{billTo}</p>
-                <p style={componentStyles.addressText}>
-                  {createdByUser?.data?.email || "Not available"}
-                </p>
-              </div>
-              <div className="col-md-6" style={componentStyles.addressCol}>
-                <h6 style={componentStyles.addressTitle}>Ship To</h6>
-                {isAddressLoading ? (
-                  <p style={componentStyles.addressText}>Loading address...</p>
-                ) : isAddressError ? (
-                  <p style={{ ...componentStyles.addressText, color: "red" }}>
-                    Error fetching address
-                  </p>
-                ) : shipToAddress?.data ? (
-                  <>
-                    <p style={componentStyles.addressText}>
-                      {shipToAddress.data.street || "N/A"},{" "}
-                      {shipToAddress.data.city || "N/A"}
-                    </p>
-                    <p style={componentStyles.addressText}>
-                      {shipToAddress.data.state || "N/A"},{" "}
-                      {shipToAddress.data.country || "N/A"} -{" "}
-                      {shipToAddress.data.postalCode || "N/A"}
-                    </p>
-                  </>
-                ) : (
-                  <p style={componentStyles.addressText}>Not available</p>
-                )}
-              </div>
-            </div>
-
-            <div style={{ marginBottom: "20px" }}>
-              <p style={componentStyles.summaryItem}>
-                <strong>Created By:</strong>{" "}
-                {createdByUser?.data?.name || "Unknown"}
-              </p>
-              <p style={componentStyles.summaryItem}>
-                <strong>Payment Method:</strong> {paymentMethodParsed}
-              </p>
-              {quotationId && (
-                <p style={componentStyles.summaryItem}>
-                  <strong>Quotation ID:</strong>{" "}
-                  {quotation?.data?.quotationNo || quotationId}
-                </p>
-              )}
-            </div>
-
-            <div style={componentStyles.termsSection}>
-              <h6 style={componentStyles.termsTitle}>Terms & Conditions</h6>
-              <ul style={componentStyles.termsList}>
-                {termsList.map((term, idx) => (
-                  <li key={idx} style={componentStyles.termsItem}>
-                    {term}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {signatureName && (
-              <div
-                style={{
-                  ...componentStyles.signatureSection,
-                  textAlign: "right",
-                }}
-              >
-                <p style={componentStyles.signatureLabel}>
-                  Authorized Signatory
-                </p>
-                <h6 style={componentStyles.signatureName}>{signatureName}</h6>
-              </div>
-            )}
-          </div>
+          <button className="btn btn-white d-flex justify-content-center align-items-center border">
+            <i className="ti ti-copy me-2"></i>Clone Invoice
+          </button>
         </div>
       </div>
     </div>
