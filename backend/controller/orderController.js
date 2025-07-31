@@ -5,6 +5,7 @@ const Team = require("../models/team");
 const Invoice = require("../models/invoice");
 const { Op } = require("sequelize");
 
+const Customer = require("../models/customers"); // Import Customer model
 const Quotation = require("../models/quotation");
 
 exports.createOrder = async (req, res) => {
@@ -215,7 +216,6 @@ exports.draftOrder = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-// controllers/order.controller.js
 
 exports.getFilteredOrders = async (req, res) => {
   try {
@@ -228,6 +228,7 @@ exports.getFilteredOrders = async (req, res) => {
       createdFor,
       important,
       trash,
+      search,
       page = 1,
       limit = 10,
     } = req.query;
@@ -275,22 +276,17 @@ exports.getFilteredOrders = async (req, res) => {
     }
 
     if (dueDate) {
-      // Assume dueDate is a date string like "2025-07-22"
-      // Use range filtering for dueDate (e.g., on or before)
       const parsedDate = new Date(dueDate);
       if (isNaN(parsedDate)) {
         return res.status(400).json({ error: "Invalid dueDate format" });
       }
-      filters.dueDate = {
-        [Op.lte]: parsedDate, // Orders due on or before the specified date
-      };
+      filters.dueDate = { [Op.lte]: parsedDate };
     }
 
     if (createdBy) filters.createdBy = createdBy;
     if (assignedTo) filters.assignedTo = assignedTo;
     if (createdFor) filters.createdFor = createdFor;
 
-    // Add support for important and trash if fields exist in Order model
     if (important !== undefined) {
       filters.important = important === "true" || important === true;
     }
@@ -298,11 +294,41 @@ exports.getFilteredOrders = async (req, res) => {
       filters.trash = trash === "true" || trash === true;
     }
 
+    // Handle search parameter
+    const searchFilter = search
+      ? {
+          [Op.or]: [
+            { title: { [Op.like]: `%${search}%` } },
+            { source: { [Op.like]: `%${search}%` } },
+          ],
+        }
+      : {};
+
     const offset = (pageNum - 1) * limitNum;
 
     // Fetch orders with pagination
+    const include = search
+      ? [
+          {
+            model: Customer,
+            as: "customer",
+            where: { name: { [Op.like]: `%${search}%` } },
+            attributes: ["name"],
+            required: false,
+          },
+        ]
+      : [
+          {
+            model: Customer,
+            as: "customer",
+            attributes: ["name"],
+            required: false,
+          },
+        ];
+
     const orders = await Order.findAll({
-      where: filters,
+      where: { ...filters, ...searchFilter },
+      include,
       order: [["createdAt", "DESC"]],
       limit: limitNum,
       offset: offset,
@@ -310,7 +336,8 @@ exports.getFilteredOrders = async (req, res) => {
 
     // Get total count of matching orders
     const totalCount = await Order.count({
-      where: filters,
+      where: { ...filters, ...searchFilter },
+      include,
     });
 
     return res.status(200).json({
@@ -318,6 +345,7 @@ exports.getFilteredOrders = async (req, res) => {
       totalCount,
     });
   } catch (err) {
+    console.error("Error in getFilteredOrders:", err.message, err.stack);
     return res.status(500).json({
       error: "Failed to fetch filtered orders",
       details: err.message,
