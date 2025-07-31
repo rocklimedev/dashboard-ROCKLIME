@@ -1,4 +1,4 @@
-/* Container */
+Container
 .container {
   max-width: 1200px;
   margin: 0 auto;
@@ -577,7 +577,7 @@ background: #fff;
 .product-image-card {
   max-width: 100%;
   max-height: 100%;
-  object-fit: contain;
+object-fit: scale-down;
   transition: transform 0.3s ease;
 }
 
@@ -587,10 +587,9 @@ background: #fff;
 
 .heart-button-wrapper {
   position: absolute;
-  top: 10px;
-  right: 10px;
+    top: 2px;
+    right: 30px;
 }
-
 .heart-button {
   width: 32px;
   height: 32px;
