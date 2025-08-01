@@ -10,7 +10,7 @@ import {
 } from "@ant-design/icons";
 import { Button, Switch, Tooltip } from "antd";
 import { ShoppingCartOutlined } from "@ant-design/icons";
-
+import styles from "./pageheader.module.css";
 // Add custom CSS to style the Switch component
 const switchStyles = `
   .custom-switch .ant-switch {
@@ -127,7 +127,7 @@ const PageHeader = ({
     viewMode,
     onViewToggle,
     showViewToggle = false,
-    cartItems = [],
+
     onCartClick,
   } = extra;
 
@@ -170,24 +170,15 @@ const PageHeader = ({
               }
             >
               <Switch
-                className="custom-switch"
+                style={{
+                  backgroundColor: viewMode === "card" ? "#808080" : "#808080",
+                }}
                 checkedChildren={<AppstoreOutlined />}
                 unCheckedChildren={<UnorderedListOutlined />}
-                checked={viewMode === "card"} // True when card view
+                checked={viewMode === "card"}
                 onChange={onViewToggle}
               />
             </Tooltip>
-          </li>
-        )}
-        {onCartClick && (
-          <li>
-            <Button
-              style={{ color: "#c72c41" }}
-              icon={<ShoppingCartOutlined />}
-              onClick={onCartClick}
-            >
-              Cart ({cartItems.length})
-            </Button>
           </li>
         )}
       </ul>

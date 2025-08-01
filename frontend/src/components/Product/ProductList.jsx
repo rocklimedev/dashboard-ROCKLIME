@@ -343,6 +343,7 @@ const ProductsList = () => {
         <div style={{ display: "flex", gap: 8 }}>
           <Tooltip title={record.quantity <= 0 ? "Out of stock" : ""}>
             <Button
+              className="cart-button" // Add custom class
               icon={
                 cartLoadingStates[record.productId] ? (
                   <Spin size="small" />

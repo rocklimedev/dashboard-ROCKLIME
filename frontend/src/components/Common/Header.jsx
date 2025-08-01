@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import { useGetProfileQuery } from "../../api/userApi";
+import { useGetCartQuery } from "../../api/cartApi"; // Import the cart query hook
 import { Dropdown, Button, Menu } from "antd";
 import { FaSearch, FaUserCircle } from "react-icons/fa";
 import { BiFullscreen, BiLogOut } from "react-icons/bi";
@@ -12,7 +13,8 @@ import logo_small from "../../assets/img/fav_icon.png";
 import { CgShoppingCart } from "react-icons/cg";
 import { useLogoutMutation } from "../../api/authApi";
 import { MdListAlt } from "react-icons/md";
-// Add custom CSS to ensure avatar is circular
+
+// Add custom CSS for avatar and cart badge
 const styles = `
   .circular-avatar {
     width: 100% !important;
@@ -32,6 +34,17 @@ const styles = `
     height: 50px;
     display: inline-block;
   }
+  .cart-badge {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background-color: #e31e24;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 12px;
+    font-weight: bold;
+  }
 `;
 
 // Inject styles into the document
@@ -43,9 +56,26 @@ document.head.appendChild(styleSheet);
 const Header = ({ toggleSidebar, isSidebarOpen }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { data: user, isLoading, error } = useGetProfileQuery();
+  const {
+    data: user,
+    isLoading: isProfileLoading,
+    error: profileError,
+  } = useGetProfileQuery();
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Fetch cart data for the current user
+  const {
+    data: cart,
+    isLoading: isCartLoading,
+    error: cartError,
+  } = useGetCartQuery(
+    user?.user?.userId,
+    { skip: !user?.user?.userId } // Skip query if userId is not available
+  );
+
+  // Calculate cart item count (adjust based on your cart data structure)
+  const cartItemCount = cart?.cart?.items?.length || 0; // Assuming cart.items is an array
 
   const handleLogout = async () => {
     try {
@@ -81,7 +111,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
             size="50"
             round={true}
             className="circular-avatar"
-            color="#e31e24" // Add red background
+            color="#e31e24"
           />
         </span>
         <div>
@@ -176,14 +206,21 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
             </Button>
           </li>
           <li className="nav-item nav-item-box">
-            <Link to="/cart">
+            <Link
+              to="/cart"
+              style={{ position: "relative" }}
+              aria-label={`Cart with ${cartItemCount} items`}
+            >
               <CgShoppingCart />
+              {cartItemCount > 0 && (
+                <span className="cart-badge">{cartItemCount}</span>
+              )}
             </Link>
           </li>
           <li className="nav-item dropdown main-drop profile-nav">
-            {isLoading ? (
+            {isProfileLoading ? (
               <span className="text-muted">Loading...</span>
-            ) : error ? (
+            ) : profileError ? (
               <span className="text-danger">Error loading profile</span>
             ) : user ? (
               <Dropdown overlay={userMenu} trigger={["click"]}>
@@ -203,7 +240,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                         size="40"
                         round={true}
                         className="circular-avatar"
-                        color="#e31e24" // Add red background
+                        color="#e31e24"
                       />
                     </span>
                   </span>

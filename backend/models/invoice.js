@@ -79,7 +79,8 @@ const Invoice = sequelize.define(
         "unpaid",
         "partially paid",
         "void",
-        "refund"
+        "refund",
+        "return"
       ),
       allowNull: false,
     },

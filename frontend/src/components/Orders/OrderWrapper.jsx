@@ -9,15 +9,15 @@ import {
   useDeleteOrderMutation,
 } from "../../api/orderApi";
 import { toast } from "sonner";
-import { FaSearch } from "react-icons/fa"; // Keep FaSearch for the search input
+import { FaSearch } from "react-icons/fa";
 import {
   EditOutlined,
   PauseOutlined,
   FileTextOutlined,
   DeleteOutlined,
   MoreOutlined,
-} from "@ant-design/icons"; // Ant Design icons
-import { Dropdown, Menu, Button } from "antd"; // Ant Design components
+} from "@ant-design/icons";
+import { Dropdown, Menu, Button } from "antd";
 import { Tooltip } from "react-tooltip";
 import ShowInvoices from "./ShowInvoices";
 import QuotationList from "../Quotation/QuotationList";
@@ -27,6 +27,20 @@ import DeleteModal from "../Common/DeleteModal";
 import OrderPagination from "./OrderPagination";
 import PageHeader from "../Common/PageHeader";
 import ComingSoon from "../Common/ComingSoon";
+
+// Define status colors for each possible order status
+const statusColors = {
+  CREATED: "bg-primary",
+  PREPARING: "bg-info",
+  CHECKING: "bg-warning",
+  INVOICE: "bg-secondary",
+  DISPATCHED: "bg-success",
+  DELIVERED: "bg-success-dark", // Custom class or adjust as needed
+  PARTIALLY_DELIVERED: "bg-info-dark", // Custom class or adjust as needed
+  CANCELED: "bg-danger",
+  DRAFT: "bg-light",
+  ONHOLD: "bg-warning-dark", // Custom class or adjust as needed
+};
 
 const OrderWrapper = () => {
   const navigate = useNavigate();
@@ -142,9 +156,8 @@ const OrderWrapper = () => {
 
   const [deleteOrder] = useDeleteOrderMutation();
 
-  // Define status and priority options from schema
-  const statusOptions = [
-    "All",
+  // Statuses from backend ENUM
+  const statuses = [
     "CREATED",
     "PREPARING",
     "CHECKING",
@@ -156,6 +169,8 @@ const OrderWrapper = () => {
     "DRAFT",
     "ONHOLD",
   ];
+
+  // Priority options from schema
   const priorityOptions = ["All", "high", "medium", "low"];
 
   // Filtered and sorted orders
@@ -290,6 +305,11 @@ const OrderWrapper = () => {
     return diffDays <= 3;
   };
 
+  // Helper to get status display and color
+  const getStatusDisplay = (status) => {
+    return statuses.includes(status) ? status : "CREATED"; // Default to CREATED if invalid
+  };
+
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -357,12 +377,10 @@ const OrderWrapper = () => {
                           }))
                         }
                       >
-                        {statusOptions.map((status) => (
-                          <option
-                            key={status}
-                            value={status === "All" ? "" : status}
-                          >
-                            {status === "All" ? "All Statuses" : status}
+                        <option value="">All Statuses</option>
+                        {statuses.map((status) => (
+                          <option key={status} value={status}>
+                            {status}
                           </option>
                         ))}
                       </select>
@@ -456,9 +474,7 @@ const OrderWrapper = () => {
                           const createdByName = order.createdBy
                             ? userMap[order.createdBy] || "Loading..."
                             : "N/A";
-                          const statusClass = order.status
-                            ? order.status.toLowerCase().replace("_", "-")
-                            : "";
+                          const status = getStatusDisplay(order.status);
                           const dueDateClass = isDueDateClose(order.dueDate)
                             ? "due-date-close"
                             : "";
@@ -467,9 +483,11 @@ const OrderWrapper = () => {
                             <tr key={order.id}>
                               <td>
                                 <span
-                                  className={`priority-badge ${statusClass}`}
+                                  className={`priority-badge ${
+                                    statusColors[status] || "bg-secondary"
+                                  }`}
                                 >
-                                  {order.status}
+                                  {status}
                                 </span>
                               </td>
                               <td>
@@ -630,6 +648,19 @@ const OrderWrapper = () => {
           />
         )}
       </div>
+
+      {/* Custom styles for additional status colors */}
+      <style jsx>{`
+        .bg-success-dark {
+          background-color: #1e7e34 !important; /* Darker green for DELIVERED */
+        }
+        .bg-info-dark {
+          background-color: #117a8b !important; /* Darker cyan for PARTIALLY_DELIVERED */
+        }
+        .bg-warning-dark {
+          background-color: #d39e00 !important; /* Darker yellow for ONHOLD */
+        }
+      `}</style>
     </div>
   );
 };
