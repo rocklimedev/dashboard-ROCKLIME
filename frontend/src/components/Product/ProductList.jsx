@@ -407,7 +407,7 @@ const ProductsList = () => {
   }
 
   const pageTitle = brandId
-    ? `Products by ${getBrandsName(brandId)}`
+    ? `Product`
     : bpcId
     ? `Products in ${bpcData?.name || "Category"}`
     : "All Products";

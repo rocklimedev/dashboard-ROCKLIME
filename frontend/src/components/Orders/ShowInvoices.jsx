@@ -28,6 +28,8 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { format, subDays } from "date-fns";
 import PageHeader from "../Common/PageHeader";
+import { Dropdown } from "react-bootstrap";
+import { BsThreeDotsVertical } from "react-icons/bs";
 // Destructure Option from Select
 const { Option } = Select;
 
@@ -523,7 +525,11 @@ const ShowInvoices = () => {
   return (
     <>
       <div className="card">
-        <PageHeader title="Invoices" subtitle="Manage your Invoices" />
+        <PageHeader
+          title="Invoices"
+          subtitle="Manage your Invoices"
+          tableData={paginatedInvoices}
+        />
         <div className="card-body">
           <div className="row">
             <div className="col-lg-4">
@@ -832,40 +838,38 @@ const ShowInvoices = () => {
                                 </span>
                               )}
                             </td>
-                            <td className="action-column">
-                              <div className="action-buttons d-flex gap-2">
-                                <Button
-                                  variant="outline-primary"
+                            <td className="text-end">
+                              <Dropdown>
+                                <Dropdown.Toggle
+                                  variant="outline-secondary"
                                   size="sm"
-                                  as={Link}
-                                  to={`/invoice/${inv.invoiceId}`}
-                                  title="View Invoice"
-                                  aria-label={`View invoice ${inv.invoiceNo}`}
-                                  className="btn btn-icon btn-sm btn-outline-primary"
+                                  id={`dropdown-${inv.invoiceId}`}
+                                  aria-label={`More actions for invoice ${inv.invoiceNo}`}
                                 >
-                                  <FaEye />
-                                </Button>
-                                <Button
-                                  variant="outline-primary"
-                                  size="sm"
-                                  onClick={() => handleEditClick(inv)}
-                                  title="Edit Invoice"
-                                  aria-label={`Edit invoice ${inv.invoiceNo}`}
-                                  className="btn btn-icon btn-sm btn-outline-warning"
-                                >
-                                  <FaEdit />
-                                </Button>
-                                <Button
-                                  variant="outline-danger"
-                                  size="sm"
-                                  onClick={() => handleDeleteClick(inv)}
-                                  disabled={isDeleting}
-                                  className="btn btn-icon btn-sm btn-outline-danger"
-                                  aria-label={`Delete invoice ${inv.invoiceNo}`}
-                                >
-                                  <FaTrash />
-                                </Button>
-                              </div>
+                                  <BsThreeDotsVertical />
+                                </Dropdown.Toggle>
+
+                                <Dropdown.Menu align="end">
+                                  <Dropdown.Item
+                                    as={Link}
+                                    to={`/invoice/${inv.invoiceId}`}
+                                  >
+                                    <FaEye className="me-2" /> View Invoice
+                                  </Dropdown.Item>
+                                  <Dropdown.Item
+                                    onClick={() => handleEditClick(inv)}
+                                  >
+                                    <FaEdit className="me-2" /> Edit Invoice
+                                  </Dropdown.Item>
+                                  <Dropdown.Item
+                                    onClick={() => handleDeleteClick(inv)}
+                                    disabled={isDeleting}
+                                    className="text-danger"
+                                  >
+                                    <FaTrash className="me-2" /> Delete Invoice
+                                  </Dropdown.Item>
+                                </Dropdown.Menu>
+                              </Dropdown>
                             </td>
                           </tr>
                         ))}

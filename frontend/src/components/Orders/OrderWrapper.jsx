@@ -24,6 +24,8 @@ import OnHoldModal from "./OnHoldOrder";
 import DeleteModal from "../Common/DeleteModal";
 import OrderPagination from "./OrderPagination";
 import PageHeader from "../Common/PageHeader";
+import { Dropdown } from "react-bootstrap";
+import { BsThreeDotsVertical } from "react-icons/bs";
 
 const OrderWrapper = () => {
   const navigate = useNavigate();
@@ -326,6 +328,7 @@ const OrderWrapper = () => {
               title="Orders"
               subtitle="Manage your Orders"
               onAdd={handleOpenAddOrder}
+              tableData={paginatedOrders}
             />
 
             <div className="card-body">
@@ -507,44 +510,45 @@ const OrderWrapper = () => {
                                 )}
                               </td>
                               <td className="action-column">
-                                <div className="action-buttons d-flex gap-2">
-                                  <button
-                                    className="btn btn-icon btn-sm btn-outline-primary"
-                                    onClick={() => handleEditClick(order)}
-                                    data-tooltip-id={`edit-${order.id}`}
-                                    data-tooltip-content="Edit Order"
+                                <Dropdown align="end">
+                                  <Dropdown.Toggle
+                                    variant="outline-secondary"
+                                    size="sm"
+                                    id={`dropdown-order-${order.id}`}
                                   >
-                                    <FaEdit />
-                                  </button>
-                                  <button
-                                    className="btn btn-icon btn-sm btn-outline-warning"
-                                    onClick={() => handleHoldClick(order)}
-                                    data-tooltip-id={`hold-${order.id}`}
-                                    data-tooltip-content="Put Order on Hold"
-                                  >
-                                    <FaPause />
-                                  </button>
-                                  <button
-                                    className="btn btn-icon btn-sm btn-outline-secondary"
-                                    onClick={() => handleViewInvoice(order)}
-                                    data-tooltip-id={`invoice-${order.id}`}
-                                    data-tooltip-content="View Invoice"
-                                  >
-                                    <FaFileInvoice />
-                                  </button>
-                                  <button
-                                    className="btn btn-icon btn-sm btn-outline-danger"
-                                    onClick={() => handleDeleteClick(order.id)}
-                                    data-tooltip-id={`delete-${order.id}`}
-                                    data-tooltip-content="Delete Order"
-                                  >
-                                    <FaTrash />
-                                  </button>
-                                  <Tooltip id={`edit-${order.id}`} />
-                                  <Tooltip id={`hold-${order.id}`} />
-                                  <Tooltip id={`invoice-${order.id}`} />
-                                  <Tooltip id={`delete-${order.id}`} />
-                                </div>
+                                    <BsThreeDotsVertical />
+                                  </Dropdown.Toggle>
+
+                                  <Dropdown.Menu>
+                                    <Dropdown.Item
+                                      onClick={() => handleEditClick(order)}
+                                    >
+                                      <FaEdit className="me-2" />
+                                      Edit Order
+                                    </Dropdown.Item>
+                                    <Dropdown.Item
+                                      onClick={() => handleHoldClick(order)}
+                                    >
+                                      <FaPause className="me-2" />
+                                      Put on Hold
+                                    </Dropdown.Item>
+                                    <Dropdown.Item
+                                      onClick={() => handleViewInvoice(order)}
+                                    >
+                                      <FaFileInvoice className="me-2" />
+                                      View Invoice
+                                    </Dropdown.Item>
+                                    <Dropdown.Item
+                                      onClick={() =>
+                                        handleDeleteClick(order.id)
+                                      }
+                                      className="text-danger"
+                                    >
+                                      <FaTrash className="me-2" />
+                                      Delete Order
+                                    </Dropdown.Item>
+                                  </Dropdown.Menu>
+                                </Dropdown>
                               </td>
                             </tr>
                           );

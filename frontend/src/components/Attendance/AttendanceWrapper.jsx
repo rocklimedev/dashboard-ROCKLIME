@@ -371,7 +371,11 @@ const AttendanceWrapper = ({ userId }) => {
     <div className="page-wrapper">
       <div className="content">
         <div className="card">
-          <PageHeader title="Attendence" subtitle="Manage your Attendance" />
+          <PageHeader
+            title="Attendence"
+            subtitle="Manage your Attendance"
+            tableData={paginatedAttendance}
+          />
           <div className="card-body">
             <div className="row">
               <div className="col-lg-4">

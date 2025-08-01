@@ -193,39 +193,11 @@ const CompaniesWrapper = () => {
             title="Vendors"
             subtitle="Manage your Vendors   "
             onAdd={handleAddVendor}
+            tableData={paginatedVendors}
           />
           <div className="card-body">
             <div className="row">
-              <div className="col-lg-4">
-                <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
-                  <h6 className="me-2">Status</h6>
-                  <ul
-                    className="nav nav-pills border d-inline-flex p-1 rounded bg-light todo-tabs"
-                    id="pills-tab"
-                    role="tablist"
-                  >
-                    {Object.keys(groupedVendors).map((status) => (
-                      <li className="nav-item" role="presentation" key={status}>
-                        <button
-                          className={`nav-link btn btn-sm btn-icon py-3 d-flex align-items-center justify-content-center w-auto ${
-                            activeTab === status ? "active" : ""
-                          }`}
-                          id={`tab-${status}`}
-                          data-bs-toggle="pill"
-                          data-bs-target={`#pills-${status}`}
-                          type="button"
-                          role="tab"
-                          aria-selected={activeTab === status}
-                          onClick={() => setActiveTab(status)}
-                        >
-                          {status} ({groupedVendors[status].length})
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-              <div className="col-lg-8">
+              <div className="col-lg-12">
                 <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
                   <div className="d-flex align-items-center border p-2 rounded">
                     <span className="d-inline-flex me-2">Sort By: </span>
@@ -332,17 +304,17 @@ const CompaniesWrapper = () => {
                                   <BiShowAlt
                                     aria-label={`View ${vendor.vendorName}`}
                                     onClick={() => setViewCompanyId(vendor.id)}
-                                    className="action-icon"
+                                    className="align-middle fs-18"
                                   />
                                   <BiEdit
                                     aria-label={`Edit ${vendor.vendorName}`}
                                     onClick={() => handleEditVendor(vendor)}
-                                    className="action-icon"
+                                    className="align-middle fs-18"
                                   />
                                   <BiTrash
                                     aria-label={`Delete ${vendor.vendorName}`}
                                     onClick={() => handleDeleteVendor(vendor)}
-                                    className="action-icon"
+                                    className="align-middle fs-18"
                                   />
                                 </div>
                               </td>

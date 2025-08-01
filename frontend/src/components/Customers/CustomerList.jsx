@@ -172,6 +172,7 @@ const CustomerList = () => {
             title="Customers"
             subtitle="Manage your Customers"
             onAdd={handleAddCustomer}
+            tableData={paginatedCustomers}
           />
           <div className="card-body">
             <div className="row">

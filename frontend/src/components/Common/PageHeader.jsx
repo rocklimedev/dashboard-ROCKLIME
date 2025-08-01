@@ -17,10 +17,15 @@ const PageHeader = ({
   onAdd,
   tableData = [],
   extra = {},
-  exportOptions = { pdf: true, excel: true }, // New prop to control export options
+  exportOptions = { pdf: true, excel: true },
 }) => {
   // Function to handle downloading PDF
   const handleDownloadPDF = () => {
+    if (tableData.length === 0) {
+      alert("No data available to export");
+      return;
+    }
+
     const doc = new jsPDF();
     let yOffset = 10;
 
@@ -29,35 +34,41 @@ const PageHeader = ({
     doc.text(title, 10, yOffset);
     yOffset += 10;
 
-    if (tableData.length === 0) {
-      doc.setFontSize(12);
-      doc.text("No data available", 10, yOffset);
-      doc.save(`${title}.pdf`);
-      return;
-    }
-
-    // Extract column headers
-    const headers = Object.keys(tableData[0]);
-    const colWidths = headers.map(() => 40); // Fixed width for simplicity
+    // Get headers from the first data object (assume all objects have the same structure)
+    const headers = Object.keys(tableData[0] || {});
+    const colWidths = headers.map(() => 30); // Adjustable column width
     const rowHeight = 10;
 
     // Add headers
     doc.setFontSize(12);
     headers.forEach((header, index) => {
-      doc.text(header, 10 + index * 40, yOffset);
+      doc.text(header, 10 + index * 30, yOffset);
     });
     yOffset += rowHeight;
 
     // Add table rows
     tableData.forEach((row) => {
       headers.forEach((header, index) => {
-        const value = row[header] || "";
-        doc.text(String(value), 10 + index * 40, yOffset);
+        // Convert value to string and handle dates
+        let value = row[header] ?? "—";
+        if (value instanceof Date) {
+          value = value.toLocaleDateString();
+        } else if (typeof value === "object") {
+          value = JSON.stringify(value); // Handle nested objects if necessary
+        } else {
+          value = String(value);
+        }
+        doc.text(value, 10 + index * 30, yOffset);
       });
       yOffset += rowHeight;
     });
 
-    doc.save(`${title}.pdf`);
+    try {
+      doc.save(`${title}.pdf`);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      alert("Failed to generate PDF. Please try again.");
+    }
   };
 
   // Function to handle downloading Excel
@@ -67,13 +78,34 @@ const PageHeader = ({
       return;
     }
 
-    // Convert tableData to worksheet
-    const worksheet = XLSX.utils.json_to_sheet(tableData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, title);
+    try {
+      // Prepare data for Excel (convert dates to strings)
+      const formattedData = tableData.map((row) => {
+        const formattedRow = {};
+        Object.keys(row).forEach((key) => {
+          let value = row[key] ?? "—";
+          if (value instanceof Date) {
+            value = value.toLocaleDateString();
+          } else if (typeof value === "object") {
+            value = JSON.stringify(value); // Handle nested objects
+          } else {
+            value = String(value);
+          }
+          formattedRow[key] = value;
+        });
+        return formattedRow;
+      });
 
-    // Generate Excel file and trigger download
-    XLSX.writeFile(workbook, `${title}.xlsx`);
+      const worksheet = XLSX.utils.json_to_sheet(formattedData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, title);
+
+      // Generate Excel file and trigger download
+      XLSX.writeFile(workbook, `${title}.xlsx`);
+    } catch (error) {
+      console.error("Error generating Excel:", error);
+      alert("Failed to generate Excel file. Please try again.");
+    }
   };
 
   // Destructure extra prop for view toggle attributes

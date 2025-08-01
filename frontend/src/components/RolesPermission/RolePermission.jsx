@@ -234,6 +234,7 @@ const RolePermission = () => {
             }
             subtitle="Manage your brands"
             onAdd={handleOpenRoleModal}
+            tableData={paginatedRoles}
           />
 
           <div className="card-body">
@@ -299,40 +300,7 @@ const RolePermission = () => {
                 aria-labelledby="tab-roles"
               >
                 <div className="row">
-                  <div className="col-lg-4">
-                    <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
-                      <h6 className="me-2">Status</h6>
-                      <ul
-                        className="nav nav-pills border d-inline-flex p-1 rounded bg-light todo-tabs"
-                        id="status-tab"
-                        role="tablist"
-                      >
-                        {Object.keys(groupedRoles).map((status) => (
-                          <li
-                            className="nav-item"
-                            role="presentation"
-                            key={status}
-                          >
-                            <button
-                              className={`nav-link btn btn-sm btn-icon py-3 d-flex align-items-center justify-content-center w-auto ${
-                                roleStatus === status ? "active" : ""
-                              }`}
-                              id={`status-tab-${status}`}
-                              data-bs-toggle="pill"
-                              data-bs-target={`#status-${status}`}
-                              type="button"
-                              role="tab"
-                              aria-selected={roleStatus === status}
-                              onClick={() => setRoleStatus(status)}
-                            >
-                              {status} ({groupedRoles[status].length})
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                  <div className="col-lg-8">
+                  <div className="col-lg-12">
                     <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
                       <div className="d-flex align-items-center border p-2 rounded">
                         <span className="d-inline-flex me-2">Sort By: </span>

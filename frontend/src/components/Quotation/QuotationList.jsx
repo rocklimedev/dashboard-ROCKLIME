@@ -13,8 +13,11 @@ import { toast } from "sonner";
 import ReactPaginate from "react-paginate";
 import Actions from "../Common/Actions";
 import PageHeader from "../Common/PageHeader";
-import { Button } from "react-bootstrap";
 import { FaEye, FaTrash, FaEdit } from "react-icons/fa";
+import DataTablePagination from "../Common/DataTablePagination";
+import { Dropdown, Button } from "react-bootstrap";
+import { BsThreeDotsVertical } from "react-icons/bs";
+
 const QuotationList = () => {
   const navigate = useNavigate();
   const {
@@ -127,6 +130,28 @@ const QuotationList = () => {
     return filteredQuotations.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredQuotations, currentPage]);
 
+  // Format data for tableData prop
+  const formattedTableData = useMemo(() => {
+    return currentQuotations.map((quotation) => ({
+      quotationId: quotation.quotationId,
+      document_title: quotation.document_title || "N/A",
+      quotation_date: quotation.quotation_date
+        ? new Date(quotation.quotation_date).toLocaleDateString()
+        : "N/A",
+      due_date: quotation.due_date
+        ? new Date(quotation.due_date).toLocaleDateString()
+        : "N/A",
+      reference_number: quotation.reference_number || "N/A",
+      include_gst: quotation.include_gst ? "Yes" : "No",
+      products: getProductCount(quotation.products),
+      discountType: quotation.discountType || "N/A",
+      roundOff: quotation.roundOff || "N/A",
+      createdBy: getUserName(quotation.createdBy),
+      customer: getCustomerName(quotation.customerId),
+      finalAmount: `₹${quotation.finalAmount || 0}`,
+    }));
+  }, [currentQuotations, customers, users]);
+
   // Handlers
   const handleAddQuotation = () => navigate("/quotations/add");
 
@@ -219,6 +244,7 @@ const QuotationList = () => {
           title="Quotations"
           subtitle="Manage your Quotations"
           onAdd={handleAddQuotation}
+          tableData={formattedTableData} // Pass formatted data for export
         />
         <div className="card-body">
           <div className="row">
@@ -253,37 +279,6 @@ const QuotationList = () => {
             </div>
             <div className="col-lg-8">
               <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
-                {/* <div className="d-flex align-items-center border p-2 rounded">
-                  <span className="d-inline-flex me-2">Sort By: </span>
-                  <div className="dropdown">
-                    <a
-                      href="#"
-                      className="dropdown-toggle btn btn-white d-inline-flex align-items-center border-0 bg-transparent p-0 text-dark"
-                      data-bs-toggle="dropdown"
-                      aria-expanded="false"
-                    >
-                      {sortBy}
-                    </a>
-                    <ul className="dropdown-menu dropdown-menu-end p-3">
-                      {["Recently Added", "Ascending", "Descending"].map(
-                        (option) => (
-                          <li key={option}>
-                            <a
-                              href="#"
-                              className="dropdown-item rounded-1"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                setSortBy(option);
-                              }}
-                            >
-                              {option}
-                            </a>
-                          </li>
-                        )
-                      )}
-                    </ul>
-                  </div>
-                </div> */}
                 <div className="input-icon-start position-relative">
                   <span className="input-icon-addon">
                     <FaSearch />
@@ -376,36 +371,43 @@ const QuotationList = () => {
                             <td>{getCustomerName(quotation.customerId)}</td>
                             <td>₹{quotation.finalAmount || 0}</td>
                             <td className="action-column">
-                              <div className="action-buttons d-flex gap-2">
-                                <Button
-                                  variant="outline-primary"
+                              <Dropdown align="end">
+                                <Dropdown.Toggle
+                                  variant="outline-secondary"
                                   size="sm"
-                                  as={Link}
-                                  to={`/quotations/${quotation.quotationId}`}
-                                  title="View Quotation"
-                                  className="btn btn-icon btn-sm btn-outline-primary"
+                                  id={`dropdown-quotation-${quotation.quotationId}`}
                                 >
-                                  <FaEye />
-                                </Button>
-                                <Button
-                                  variant="outline-primary"
-                                  size="sm"
-                                  to={`/quotations/${quotation.quotationId}/edit`}
-                                  title="Edit Quotation"
-                                  className="btn btn-icon btn-sm btn-outline-warning"
-                                >
-                                  <FaEdit />
-                                </Button>
-                                <Button
-                                  variant="outline-danger"
-                                  size="sm"
-                                  onClick={() => handleDeleteClick(quotation)}
-                                  disabled={isDeleting}
-                                  className="btn btn-icon btn-sm btn-outline-danger"
-                                >
-                                  <FaTrash />
-                                </Button>
-                              </div>
+                                  <BsThreeDotsVertical />
+                                </Dropdown.Toggle>
+
+                                <Dropdown.Menu>
+                                  <Dropdown.Item
+                                    as={Link}
+                                    to={`/quotations/${quotation.quotationId}`}
+                                    title="View Quotation"
+                                  >
+                                    <FaEye className="me-2" />
+                                    View
+                                  </Dropdown.Item>
+                                  <Dropdown.Item
+                                    as={Link}
+                                    to={`/quotations/${quotation.quotationId}/edit`}
+                                    title="Edit Quotation"
+                                  >
+                                    <FaEdit className="me-2" />
+                                    Edit
+                                  </Dropdown.Item>
+                                  <Dropdown.Item
+                                    onClick={() => handleDeleteClick(quotation)}
+                                    disabled={isDeleting}
+                                    className="text-danger"
+                                    title="Delete Quotation"
+                                  >
+                                    <FaTrash className="me-2" />
+                                    Delete
+                                  </Dropdown.Item>
+                                </Dropdown.Menu>
+                              </Dropdown>
                             </td>
                           </tr>
                         ))}
@@ -413,28 +415,11 @@ const QuotationList = () => {
                     </table>
                     {filteredQuotations.length > itemsPerPage && (
                       <div className="pagination-section mt-4">
-                        <ReactPaginate
-                          previousLabel={"Previous"}
-                          nextLabel={"Next"}
-                          breakLabel={"..."}
-                          pageCount={Math.ceil(
-                            filteredQuotations.length / itemsPerPage
-                          )}
-                          marginPagesDisplayed={2}
-                          pageRangeDisplayed={3}
+                        <DataTablePagination
+                          totalItems={filteredQuotations.length}
+                          itemNo={itemsPerPage}
                           onPageChange={handlePageChange}
-                          containerClassName={
-                            "pagination justify-content-end mb-0"
-                          }
-                          pageClassName={"page-item"}
-                          pageLinkClassName={"page-link"}
-                          previousClassName={"page-item"}
-                          previousLinkClassName={"page-link"}
-                          nextClassName={"page-item"}
-                          nextLinkClassName={"page-link"}
-                          breakClassName={"page-item"}
-                          breakLinkClassName={"page-link"}
-                          activeClassName={"active"}
+                          currentPage={currentPage}
                         />
                       </div>
                     )}

@@ -76,18 +76,6 @@ const ViewCompany = ({ company, onClose }) => {
                   <strong>Parent Company ID:</strong>{" "}
                   {company.parentCompanyId || "N/A"}
                 </p>
-                <p>
-                  <strong>Status:</strong>{" "}
-                  <span
-                    className={`badge ${
-                      company.status === "Active"
-                        ? "badge-success"
-                        : "badge-danger"
-                    }`}
-                  >
-                    {company.status || "Unknown"}
-                  </span>
-                </p>
               </div>
             </div>
           </div>
@@ -283,36 +271,7 @@ const CmList = () => {
           />
           <div className="card-body">
             <div className="row">
-              <div className="col-lg-4">
-                <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
-                  <h6 className="me-2">Status</h6>
-                  <ul
-                    className="nav nav-pills border d-inline-flex p-1 rounded bg-light todo-tabs"
-                    id="pills-tab"
-                    role="tablist"
-                  >
-                    {Object.keys(groupedCompanies).map((status) => (
-                      <li className="nav-item" role="presentation" key={status}>
-                        <button
-                          className={`nav-link btn btn-sm btn-icon py-3 d-flex align-items-center justify-content-center w-auto ${
-                            activeTab === status ? "active" : ""
-                          }`}
-                          id={`tab-${status}`}
-                          data-bs-toggle="pill"
-                          data-bs-target={`#pills-${status}`}
-                          type="button"
-                          role="tab"
-                          aria-selected={activeTab === status}
-                          onClick={() => setActiveTab(status)}
-                        >
-                          {status} ({groupedCompanies[status].length})
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-              <div className="col-lg-8">
+              <div className="col-lg-12">
                 <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
                   <div className="d-flex align-items-center border p-2 rounded">
                     <span className="d-inline-flex me-2">Sort By: </span>
@@ -415,17 +374,17 @@ const CmList = () => {
                               <td>
                                 <div className="actions d-flex gap-2">
                                   <FaEye
-                                    className="action-icon"
+                                    className="align-middle fs-18"
                                     onClick={() => handleViewCompany(company)}
                                     aria-label={`View ${company.name}`}
                                   />
                                   <BiEdit
-                                    className="action-icon"
+                                    className="align-middle fs-18"
                                     onClick={() => handleEditCompany(company)}
                                     aria-label={`Edit ${company.name}`}
                                   />
                                   <BiTrash
-                                    className="action-icon"
+                                    className="align-middle fs-18"
                                     onClick={() => handleDeleteCompany(company)}
                                     aria-label={`Delete ${company.name}`}
                                   />
