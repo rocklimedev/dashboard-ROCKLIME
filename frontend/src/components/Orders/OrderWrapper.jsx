@@ -468,7 +468,10 @@ const OrderWrapper = () => {
                           return (
                             <tr key={order.id}>
                               <td>
-                                <span className="priority-badge bg-secondary">
+                                <span
+                                  className="priority-badge"
+                                  style={{ backgroundColor: "#f2f2f2" }}
+                                >
                                   {status}
                                 </span>
                               </td>
