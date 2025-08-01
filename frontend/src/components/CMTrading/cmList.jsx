@@ -10,6 +10,7 @@ import DeleteModal from "../Common/DeleteModal";
 import DataTablePagination from "../Common/DataTablePagination";
 import { toast } from "sonner";
 import PageHeader from "../Common/PageHeader";
+import { BsThreeDotsVertical } from "react-icons/bs";
 const ViewCompany = ({ company, onClose }) => {
   const modalRef = useRef(null);
 
@@ -372,22 +373,54 @@ const CmList = () => {
                               </td>
                               <td>{company.parentCompanyId || "None"}</td>
                               <td>
-                                <div className="actions d-flex gap-2">
-                                  <FaEye
-                                    className="align-middle fs-18"
-                                    onClick={() => handleViewCompany(company)}
-                                    aria-label={`View ${company.name}`}
-                                  />
-                                  <BiEdit
-                                    className="align-middle fs-18"
-                                    onClick={() => handleEditCompany(company)}
-                                    aria-label={`Edit ${company.name}`}
-                                  />
-                                  <BiTrash
-                                    className="align-middle fs-18"
-                                    onClick={() => handleDeleteCompany(company)}
-                                    aria-label={`Delete ${company.name}`}
-                                  />
+                                <div className="dropdown">
+                                  <button
+                                    className="btn btn-outline-secondary btn-sm dropdown-toggle"
+                                    type="button"
+                                    id={`dropdownMenuButton-${company.companyId}`}
+                                    data-bs-toggle="dropdown"
+                                    aria-expanded="false"
+                                  >
+                                    <BsThreeDotsVertical />
+                                  </button>
+                                  <ul
+                                    className="dropdown-menu"
+                                    aria-labelledby={`dropdownMenuButton-${company.companyId}`}
+                                  >
+                                    <li>
+                                      <button
+                                        className="dropdown-item"
+                                        onClick={() =>
+                                          handleViewCompany(company)
+                                        }
+                                      >
+                                        <FaEye className="me-2" />
+                                        View
+                                      </button>
+                                    </li>
+                                    <li>
+                                      <button
+                                        className="dropdown-item"
+                                        onClick={() =>
+                                          handleEditCompany(company)
+                                        }
+                                      >
+                                        <BiEdit className="me-2" />
+                                        Edit
+                                      </button>
+                                    </li>
+                                    <li>
+                                      <button
+                                        className="dropdown-item text-danger"
+                                        onClick={() =>
+                                          handleDeleteCompany(company)
+                                        }
+                                      >
+                                        <BiTrash className="me-2" />
+                                        Delete
+                                      </button>
+                                    </li>
+                                  </ul>
                                 </div>
                               </td>
                             </tr>

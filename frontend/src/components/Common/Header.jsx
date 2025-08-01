@@ -11,7 +11,7 @@ import logo from "../../assets/img/logo.png";
 import logo_small from "../../assets/img/fav_icon.png";
 import { CgShoppingCart } from "react-icons/cg";
 import { useLogoutMutation } from "../../api/authApi";
-
+import { MdListAlt } from "react-icons/md";
 // Add custom CSS to ensure avatar is circular
 const styles = `
   .circular-avatar {
@@ -95,6 +95,11 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
       <Menu.Item key="profile">
         <div onClick={() => navigate(`/u/${user?.user?.userId || "profile"}`)}>
           <FaUserCircle className="me-2" /> My Profile
+        </div>
+      </Menu.Item>
+      <Menu.Item key="attendance">
+        <div onClick={() => navigate(`/u/${user?.user?.userId}/attendance`)}>
+          <MdListAlt className="me-2" /> Your Attendance
         </div>
       </Menu.Item>
       <Menu.Item key="settings">

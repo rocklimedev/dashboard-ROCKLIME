@@ -418,7 +418,7 @@ const Cart = ({ onConvertToOrder }) => {
       setActiveTab("cart");
     } catch (error) {
       toast.error(
-        `Failed to place order: ${
+        `Failed to create invoice: ${
           error.data?.message || error.message || "Unknown error"
         }`
       );
@@ -757,9 +757,9 @@ const Cart = ({ onConvertToOrder }) => {
                       }
                       block
                       size="large"
-                      aria-label="Place order"
+                      aria-label="Create Invoice"
                     >
-                      Place Order
+                      Create Invoice
                     </CheckoutButton>
                     <Button
                       type="default"

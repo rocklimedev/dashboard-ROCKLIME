@@ -114,7 +114,7 @@ const UserList = () => {
   }, [filteredUsers, currentPage]);
 
   const handleAddUser = () => {
-    setShowModal(true);
+    navigate("/user/add");
   };
 
   const handleEditUser = (user) => {
