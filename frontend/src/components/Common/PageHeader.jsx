@@ -12,7 +12,6 @@ import { Button, Switch, Tooltip } from "antd";
 import { ShoppingCartOutlined } from "@ant-design/icons";
 
 // Add custom CSS to style the Switch component
-// Add custom CSS to style the Switch component
 const switchStyles = `
   .custom-switch .ant-switch {
     background-color: #808080 !important; /* Grey when unchecked */
@@ -53,7 +52,7 @@ const PageHeader = ({
     doc.text(title, 10, yOffset);
     yOffset += 10;
 
-    // Get headers from the first data object (assume all objects have the same structure)
+    // Get headers from the first data object
     const headers = Object.keys(tableData[0] || {});
     const colWidths = headers.map(() => 30); // Adjustable column width
     const rowHeight = 10;
@@ -68,12 +67,11 @@ const PageHeader = ({
     // Add table rows
     tableData.forEach((row) => {
       headers.forEach((header, index) => {
-        // Convert value to string and handle dates
         let value = row[header] ?? "—";
         if (value instanceof Date) {
           value = value.toLocaleDateString();
         } else if (typeof value === "object") {
-          value = JSON.stringify(value); // Handle nested objects if necessary
+          value = JSON.stringify(value);
         } else {
           value = String(value);
         }
@@ -98,7 +96,6 @@ const PageHeader = ({
     }
 
     try {
-      // Prepare data for Excel (convert dates to strings)
       const formattedData = tableData.map((row) => {
         const formattedRow = {};
         Object.keys(row).forEach((key) => {
@@ -106,7 +103,7 @@ const PageHeader = ({
           if (value instanceof Date) {
             value = value.toLocaleDateString();
           } else if (typeof value === "object") {
-            value = JSON.stringify(value); // Handle nested objects
+            value = JSON.stringify(value);
           } else {
             value = String(value);
           }
@@ -119,7 +116,6 @@ const PageHeader = ({
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, title);
 
-      // Generate Excel file and trigger download
       XLSX.writeFile(workbook, `${title}.xlsx`);
     } catch (error) {
       console.error("Error generating Excel:", error);
@@ -127,7 +123,6 @@ const PageHeader = ({
     }
   };
 
-  // Destructure extra prop for view toggle attributes
   const {
     viewMode,
     onViewToggle,
@@ -175,10 +170,10 @@ const PageHeader = ({
               }
             >
               <Switch
-                className="custom-switch" // Apply custom class for styling
+                className="custom-switch"
                 checkedChildren={<AppstoreOutlined />}
                 unCheckedChildren={<UnorderedListOutlined />}
-                checked={viewMode === "card"}
+                checked={viewMode === "card"} // True when card view
                 onChange={onViewToggle}
               />
             </Tooltip>

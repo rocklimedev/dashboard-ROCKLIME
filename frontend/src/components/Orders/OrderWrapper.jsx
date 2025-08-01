@@ -466,8 +466,10 @@ const OrderWrapper = () => {
                           return (
                             <tr key={order.id}>
                               <td>
-                                <span className={`status-badge ${statusClass}`}>
-                                  {order.status || "CREATED"}
+                                <span
+                                  className={`priority-badge ${statusClass}`}
+                                >
+                                  {order.status}
                                 </span>
                               </td>
                               <td>
