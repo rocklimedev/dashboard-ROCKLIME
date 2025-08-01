@@ -127,21 +127,21 @@ const masterRoutes = [
         element: <CheckProductCodeStatus />,
         isSidebarActive: false,
       },
-      {
-        path: "/inventory/categories-keywords",
-        element: <CategoryManagement />,
-        name: "Categories",
-        icon: <BiCategory />,
-        isSidebarActive: true,
-      },
+      // {
+      //   path: "/inventory/categories-keywords",
+      //   element: <CategoryManagement />,
+      //   name: "Categories",
+      //   icon: <BiCategory />,
+      //   isSidebarActive: true,
+      // },
 
-      {
-        path: "/brands/list",
-        name: "Brands",
-        icon: <MdOutlineBrandingWatermark />,
-        isSidebarActive: true,
-        element: <Brands />,
-      },
+      // {
+      //   path: "/brands/list",
+      //   name: "Brands",
+      //   icon: <MdOutlineBrandingWatermark />,
+      //   isSidebarActive: true,
+      //   element: <Brands />,
+      // },
       {
         path: "/inventory/product/add",
         name: "Create Product",
