@@ -244,39 +244,11 @@ const TeamsList = ({ adminName }) => {
             onAdd={handleAddTeam}
             title="Teams"
             subtitle="Manage your teams & team-members"
+            tableData={paginatedTeams}
           />
           <div className="card-body">
             <div className="row">
-              <div className="col-lg-4">
-                <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
-                  <h6 className="me-2">Status</h6>
-                  <ul
-                    className="nav nav-pills border d-inline-flex p-1 rounded bg-light todo-tabs"
-                    id="pills-tab"
-                    role="tablist"
-                  >
-                    {Object.keys(groupedTeams).map((status) => (
-                      <li className="nav-item" role="presentation" key={status}>
-                        <button
-                          className={`nav-link btn btn-sm btn-icon py-3 d-flex align-items-center justify-content-center w-auto ${
-                            activeTab === status ? "active" : ""
-                          }`}
-                          id={`tab-${status}`}
-                          data-bs-toggle="pill"
-                          data-bs-target={`#pills-${status}`}
-                          type="button"
-                          role="tab"
-                          aria-selected={activeTab === status}
-                          onClick={() => setActiveTab(status)}
-                        >
-                          {status} ({groupedTeams[status].length})
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-              <div className="col-lg-8">
+              <div className="col-lg-12">
                 <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
                   <div className="input-icon w-120 position-relative me-2">
                     <DatePicker
@@ -303,20 +275,7 @@ const TeamsList = ({ adminName }) => {
                       aria-label="Search teams"
                     />
                   </div>
-                  <div style={{ width: "120px" }}>
-                    <Select
-                      style={{ width: "100%" }}
-                      placeholder="All Status"
-                      value={selectedStatus || undefined}
-                      onChange={(value) => setSelectedStatus(value)}
-                      allowClear
-                    >
-                      <Option value="">All Status</Option>
-                      <Option value="active">Active</Option>
-                      <Option value="inactive">Inactive</Option>
-                      <Option value="new">New Joiners</Option>
-                    </Select>
-                  </div>
+
                   <div className="d-flex align-items-center border p-2 rounded ms-2">
                     <span className="d-inline-flex me-2">Sort By: </span>
                     <div className="dropdown">
@@ -385,8 +344,6 @@ const TeamsList = ({ adminName }) => {
                             <th>Team Name</th>
                             <th>Admin</th>
                             <th>Total Members</th>
-                            <th>Created Date</th>
-                            <th>Status</th>
                             <th>Actions</th>
                           </tr>
                         </thead>
@@ -441,30 +398,7 @@ const TeamsList = ({ adminName }) => {
                                   <Text>{team.teammembers?.length || 0}</Text>
                                 </Space>
                               </td>
-                              <td>
-                                {team.createdDate &&
-                                team.createdDate !== "0000-00-00"
-                                  ? new Date(
-                                      team.createdDate
-                                    ).toLocaleDateString("en-IN")
-                                  : "N/A"}
-                              </td>
-                              <td>
-                                <span
-                                  className={`badge ${
-                                    team.status?.toLowerCase() === "active"
-                                      ? "bg-success"
-                                      : team.status?.toLowerCase() ===
-                                        "inactive"
-                                      ? "bg-warning"
-                                      : team.status?.toLowerCase() === "new"
-                                      ? "bg-info"
-                                      : "bg-secondary"
-                                  }`}
-                                >
-                                  {team.status || "N/A"}
-                                </span>
-                              </td>
+
                               <td>
                                 <div className="action-buttons">
                                   <Button

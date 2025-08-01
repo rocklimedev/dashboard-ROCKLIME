@@ -6,7 +6,7 @@ const sequelize = new Sequelize(
   process.env.DB_USER,
   process.env.DB_PASSWORD,
   {
-    host: process.env.DB_HOST, // MySQL host
+    host: process.env.DB_HOST,
     dialect: "mysql",
     port: process.env.DB_PORT || 3306,
     logging: console.log,
@@ -23,10 +23,10 @@ const sequelize = new Sequelize(
 sequelize
   .authenticate()
   .then(() => {
-    console.log("Connection has been established successfully.");
+    console.log("✅ Connection has been established successfully.");
   })
   .catch((err) => {
-    console.error("Unable to connect to the database:", err);
+    console.error("❌ Unable to connect to the database:", err);
   });
 
 module.exports = sequelize;

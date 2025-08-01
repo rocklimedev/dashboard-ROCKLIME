@@ -387,7 +387,7 @@ const AttendanceList = () => {
           <PageHeader
             title="Attendance"
             subtitle="Manage your Attendance"
-            onAdd={null} // No add button for attendance
+            tableData={paginatedAttendances}
           />
           <div className="card-body">
             <div className="row">

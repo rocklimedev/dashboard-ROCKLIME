@@ -233,6 +233,7 @@ const UserList = () => {
             title="Users"
             subtitle="Manage your Users"
             onAdd={handleAddUser}
+            tableData={paginatedUsers}
           />
           <div className="card-body">
             <div className="row">
@@ -381,17 +382,17 @@ const UserList = () => {
                               <td>
                                 <div className="actions d-flex gap-2">
                                   <FaEye
-                                    className="action-icon"
+                                    className="align-middle fs-18"
                                     onClick={() => handleViewUser(user)}
                                     aria-label={`View ${user.name}`}
                                   />
                                   <FaPen
-                                    className="action-icon"
+                                    className="align-middle fs-18"
                                     onClick={() => handleEditUser(user)}
                                     aria-label={`Edit ${user.name}`}
                                   />
                                   <FaBan
-                                    className="action-icon"
+                                    className="align-middle fs-18"
                                     onClick={() =>
                                       handleInactiveUser(user.userId)
                                     }
@@ -399,7 +400,7 @@ const UserList = () => {
                                     aria-label={`Inactive ${user.name}`}
                                   />
                                   <FaExclamationTriangle
-                                    className="action-icon text-warning"
+                                    className="align-middle fs-18"
                                     onClick={() =>
                                       handleReportUser(user.userId)
                                     }
@@ -407,7 +408,7 @@ const UserList = () => {
                                     aria-label={`Report ${user.name}`}
                                   />
                                   <FaTrash
-                                    className="action-icon text-danger"
+                                    className="align-middle fs-18"
                                     onClick={() =>
                                       handleDeleteUser(user.userId)
                                     }
