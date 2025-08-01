@@ -268,37 +268,6 @@ const UserList = () => {
               </div>
               <div className="col-lg-8">
                 <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
-                  <div className="d-flex align-items-center border p-2 rounded">
-                    <span className="d-inline-flex me-2">Sort By: </span>
-                    <div className="dropdown">
-                      <a
-                        href="#"
-                        className="dropdown-toggle btn btn-white d-inline-flex align-items-center border-0 bg-transparent p-0 text-dark"
-                        data-bs-toggle="dropdown"
-                        aria-expanded="false"
-                      >
-                        {sortBy}
-                      </a>
-                      <ul className="dropdown-menu dropdown-menu-end p-3">
-                        {["Recently Added", "Ascending", "Descending"].map(
-                          (option) => (
-                            <li key={option}>
-                              <a
-                                href="#"
-                                className="dropdown-item rounded-1"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  setSortBy(option);
-                                }}
-                              >
-                                {option}
-                              </a>
-                            </li>
-                          )
-                        )}
-                      </ul>
-                    </div>
-                  </div>
                   <div className="input-icon-start position-relative">
                     <span className="input-icon-addon">
                       <FaSearch />
@@ -347,8 +316,8 @@ const UserList = () => {
                             <th>Mobile Number</th>
                             <th>Roles</th>
                             <th>Status</th>
-                            <th>Created At</th>
-                            <th>Actions</th>
+
+                            <th></th>
                           </tr>
                         </thead>
                         <tbody>
@@ -371,13 +340,6 @@ const UserList = () => {
                                     ? "Active"
                                     : "Inactive"}
                                 </span>
-                              </td>
-                              <td>
-                                {user.createdAt
-                                  ? new Date(
-                                      user.createdAt
-                                    ).toLocaleDateString()
-                                  : "N/A"}
                               </td>
                               <td>
                                 <div className="actions d-flex gap-2">

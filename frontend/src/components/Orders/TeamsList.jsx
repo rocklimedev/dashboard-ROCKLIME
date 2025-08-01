@@ -308,7 +308,7 @@ const TeamsList = ({ adminName }) => {
                             <th>Team Name</th>
                             <th>Admin</th>
                             <th>Total Members</th>
-                            <th>Actions</th>
+                            <th></th>
                           </tr>
                         </thead>
                         <tbody>
