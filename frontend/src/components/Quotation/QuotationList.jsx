@@ -248,36 +248,7 @@ const QuotationList = () => {
         />
         <div className="card-body">
           <div className="row">
-            <div className="col-lg-4">
-              <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
-                <h6 className="me-2">Status</h6>
-                <ul
-                  className="nav nav-pills border d-inline-flex p-1 rounded bg-light todo-tabs"
-                  id="pills-tab"
-                  role="tablist"
-                >
-                  {Object.keys(groupedQuotations).map((status) => (
-                    <li className="nav-item" role="presentation" key={status}>
-                      <button
-                        className={`nav-link btn btn-sm btn-icon py-3 d-flex align-items-center justify-content-center w-auto ${
-                          activeTab === status ? "active" : ""
-                        }`}
-                        id={`tab-${status}`}
-                        data-bs-toggle="pill"
-                        data-bs-target={`#pills-${status}`}
-                        type="button"
-                        role="tab"
-                        aria-selected={activeTab === status}
-                        onClick={() => setActiveTab(status)}
-                      >
-                        {status} ({groupedQuotations[status].length})
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-            <div className="col-lg-8">
+            <div className="col-lg-12">
               <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
                 <div className="input-icon-start position-relative">
                   <span className="input-icon-addon">
@@ -292,12 +263,6 @@ const QuotationList = () => {
                     aria-label="Search quotations"
                   />
                 </div>
-                <button
-                  className="btn btn-outline-secondary ms-2"
-                  onClick={clearFilters}
-                >
-                  Clear Filters
-                </button>
               </div>
             </div>
           </div>
@@ -326,14 +291,13 @@ const QuotationList = () => {
                           <th>Quotation Date</th>
                           <th>Due Date</th>
                           <th>Reference Number</th>
-                          <th>Include GST</th>
+
                           <th>Products</th>
-                          <th>Discount Type</th>
-                          <th>Round Off</th>
+
                           <th>Created By</th>
                           <th>Customer</th>
                           <th>Final Amount</th>
-                          <th>Actions</th>
+                          <th></th>
                         </tr>
                       </thead>
                       <tbody>
@@ -351,7 +315,7 @@ const QuotationList = () => {
                               ).toLocaleDateString()}
                             </td>
                             <td>{quotation.reference_number || "N/A"}</td>
-                            <td>{quotation.include_gst ? "Yes" : "No"}</td>
+
                             <td>
                               <button
                                 className="btn btn-link"
@@ -365,12 +329,11 @@ const QuotationList = () => {
                                 {getProductCount(quotation.products)})
                               </button>
                             </td>
-                            <td>{quotation.discountType || "N/A"}</td>
-                            <td>{quotation.roundOff || "N/A"}</td>
+
                             <td>{getUserName(quotation.createdBy)}</td>
                             <td>{getCustomerName(quotation.customerId)}</td>
                             <td>₹{quotation.finalAmount || 0}</td>
-                            <td className="action-column">
+                            <td>
                               <Dropdown align="end">
                                 <Dropdown.Toggle
                                   variant="outline-secondary"

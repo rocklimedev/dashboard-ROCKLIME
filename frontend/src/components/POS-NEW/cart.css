@@ -7,8 +7,8 @@
 }
 
 .floating-cart .ant-btn-primary {
-  background: #1890ff;
-  border-color: #1890ff;
+  background: #e31e24;
+  border-color: #e31e24;
   font-size: 16px;
   height: 40px;
   display: flex;
@@ -17,8 +17,8 @@
 
 .floating-cart .ant-btn-primary:hover,
 .floating-cart .ant-btn-primary:focus {
-  background: #40a9ff;
-  border-color: #40a9ff;
+  background: #e31e24;
+  border-color: #e31e24;
 }
 
 .floating-cart .ant-badge-count {
@@ -106,16 +106,16 @@
 }
 
 .checkout-button {
-  background: #1890ff;
-  border-color: #1890ff;
+  background: #e31e24;
+  border-color: #e31e24;
   font-size: 16px;
   height: 48px;
 }
 
 .checkout-button:hover,
 .checkout-button:focus {
-  background: #40a9ff;
-  border-color: #40a9ff;
+  background: #e31e24;
+  border-color: #e31e24;
 }
 
 .remove-item {

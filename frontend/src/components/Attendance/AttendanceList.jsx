@@ -447,98 +447,13 @@ const AttendanceList = () => {
                       aria-label="Search attendance"
                     />
                   </div>
-                  <div style={{ width: "120px" }}>
-                    <Select
-                      style={{ width: "100%" }}
-                      placeholder="All Status"
-                      value={selectedStatus || undefined}
-                      onChange={(value) => setSelectedStatus(value)}
-                      allowClear
-                    >
-                      <Option value="">All Status</Option>
-                      <Option value="present">Present</Option>
-                      <Option value="absent">Absent</Option>
-                      <Option value="late">Late</Option>
-                    </Select>
-                  </div>
-                  <div className="d-flex align-items-center border p-2 rounded ms-2">
-                    <span className="d-inline-flex me-2">Sort By: </span>
-                    <div className="dropdown">
-                      <a
-                        href="#"
-                        className="dropdown-toggle btn btn-white d-inline-flex align-items-center border-0 bg-transparent p-0 text-dark"
-                        data-bs-toggle="dropdown"
-                        aria-expanded="false"
-                      >
-                        {sortBy}
-                      </a>
-                      <ul className="dropdown-menu dropdown-menu-end p-3">
-                        {[
-                          "Recently Added",
-                          "Ascending",
-                          "Descending",
-                          "Last 7 Days",
-                          "Last Month",
-                          "Created Date",
-                        ].map((option) => (
-                          <li key={option}>
-                            <a
-                              href="#"
-                              className="dropdown-item rounded-1"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                setSortBy(option);
-                              }}
-                            >
-                              {option}
-                            </a>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
+
                   <Button
                     className="btn btn-outline-secondary ms-2"
                     onClick={clearFilters}
                   >
                     Clear Filters
                   </Button>
-                  <Tooltip title="Export to PDF">
-                    <Button
-                      className="btn btn-outline-primary ms-2"
-                      icon={<DownloadOutlined />}
-                      onClick={exportToPDF}
-                      aria-label="Export to PDF"
-                    />
-                  </Tooltip>
-                  <Tooltip title="Export to Excel">
-                    <Button
-                      className="btn btn-outline-primary ms-2"
-                      icon={<DownloadOutlined />}
-                      onClick={exportToExcel}
-                      aria-label="Export to Excel"
-                    />
-                  </Tooltip>
-                  <Tooltip title="Refresh">
-                    <Button
-                      className="btn btn-outline-primary ms-2"
-                      icon={<ReloadOutlined />}
-                      onClick={handleRefresh}
-                      aria-label="Refresh data"
-                    />
-                  </Tooltip>
-                  <Tooltip title={isTableCollapsed ? "Expand" : "Collapse"}>
-                    <Button
-                      className="btn btn-outline-primary ms-2"
-                      icon={
-                        isTableCollapsed ? <DownOutlined /> : <UpOutlined />
-                      }
-                      onClick={handleCollapse}
-                      aria-label={
-                        isTableCollapsed ? "Expand table" : "Collapse table"
-                      }
-                    />
-                  </Tooltip>
                 </div>
               </div>
             </div>

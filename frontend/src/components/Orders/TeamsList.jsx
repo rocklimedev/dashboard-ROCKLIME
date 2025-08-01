@@ -276,42 +276,6 @@ const TeamsList = ({ adminName }) => {
                     />
                   </div>
 
-                  <div className="d-flex align-items-center border p-2 rounded ms-2">
-                    <span className="d-inline-flex me-2">Sort By: </span>
-                    <div className="dropdown">
-                      <a
-                        href="#"
-                        className="dropdown-toggle btn btn-white d-inline-flex align-items-center border-0 bg-transparent p-0 text-dark"
-                        data-bs-toggle="dropdown"
-                        aria-expanded="false"
-                      >
-                        {sortBy}
-                      </a>
-                      <ul className="dropdown-menu dropdown-menu-end p-3">
-                        {[
-                          "Recently Added",
-                          "Ascending",
-                          "Descending",
-                          "Last 7 Days",
-                          "Last Month",
-                          "Created Date",
-                        ].map((option) => (
-                          <li key={option}>
-                            <a
-                              href="#"
-                              className="dropdown-item rounded-1"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                setSortBy(option);
-                              }}
-                            >
-                              {option}
-                            </a>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
                   <button
                     className="btn btn-outline-secondary ms-2"
                     onClick={clearFilters}

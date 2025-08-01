@@ -433,7 +433,7 @@ const OrderWrapper = () => {
                           <th>CREATED BY</th>
                           <th>CREATED AT</th>
                           <th>DUE DATE</th>
-                          <th>ACTIONS</th>
+                          <th></th>
                         </tr>
                       </thead>
                       <tbody>
@@ -509,11 +509,10 @@ const OrderWrapper = () => {
                                   "—"
                                 )}
                               </td>
-                              <td className="action-column">
+                              <td>
                                 <Dropdown align="end">
                                   <Dropdown.Toggle
                                     variant="outline-secondary"
-                                    size="sm"
                                     id={`dropdown-order-${order.id}`}
                                   >
                                     <BsThreeDotsVertical />

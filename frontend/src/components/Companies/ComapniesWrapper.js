@@ -199,37 +199,6 @@ const CompaniesWrapper = () => {
             <div className="row">
               <div className="col-lg-12">
                 <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
-                  <div className="d-flex align-items-center border p-2 rounded">
-                    <span className="d-inline-flex me-2">Sort By: </span>
-                    <div className="dropdown">
-                      <a
-                        href="#"
-                        className="dropdown-toggle btn btn-white d-inline-flex align-items-center border-0 bg-transparent p-0 text-dark"
-                        data-bs-toggle="dropdown"
-                        aria-expanded="false"
-                      >
-                        {sortBy}
-                      </a>
-                      <ul className="dropdown-menu dropdown-menu-end p-3">
-                        {["Recently Added", "Ascending", "Descending"].map(
-                          (option) => (
-                            <li key={option}>
-                              <a
-                                href="#"
-                                className="dropdown-item rounded-1"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  setSortBy(option);
-                                }}
-                              >
-                                {option}
-                              </a>
-                            </li>
-                          )
-                        )}
-                      </ul>
-                    </div>
-                  </div>
                   <div className="input-icon-start position-relative">
                     <span className="input-icon-addon">
                       <FaSearch />
@@ -243,12 +212,6 @@ const CompaniesWrapper = () => {
                       aria-label="Search vendors"
                     />
                   </div>
-                  <button
-                    className="btn btn-outline-secondary ms-2"
-                    onClick={clearFilters}
-                  >
-                    Clear Filters
-                  </button>
                 </div>
               </div>
             </div>
@@ -277,7 +240,7 @@ const CompaniesWrapper = () => {
                             <th>Vendor ID</th>
                             <th>Brand</th>
                             <th>Date</th>
-                            <th>Actions</th>
+                            <th></th>
                           </tr>
                         </thead>
                         <tbody>
@@ -300,7 +263,7 @@ const CompaniesWrapper = () => {
                                   : "N/A"}
                               </td>
                               <td data-label="Actions">
-                                <div className="actions d-flex gap-2">
+                                <div className="gap-2">
                                   <BiShowAlt
                                     aria-label={`View ${vendor.vendorName}`}
                                     onClick={() => setViewCompanyId(vendor.id)}
