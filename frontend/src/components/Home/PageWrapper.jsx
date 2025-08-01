@@ -389,7 +389,7 @@ const PageWrapper = () => {
             <div>
               <h1>{username}</h1>
             </div>
-            <div className="dashboard-actions">
+            {/* <div className="dashboard-actions">
               {loadingAttendance ? (
                 <span>Loading...</span>
               ) : !userId ? (
@@ -415,7 +415,7 @@ const PageWrapper = () => {
               ) : (
                 <span>Clocked out for today</span>
               )}
-            </div>
+            </div> */}
           </div>
 
           <section className="summary-cards">
