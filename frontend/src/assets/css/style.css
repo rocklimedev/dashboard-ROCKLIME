@@ -9303,7 +9303,7 @@ table .edit-delete-action.data {
   color: inherit;
 }
 .card .card-body {
-  padding: 1.25rem;
+ padding: 0.25rem;
 }
 .card .card-title {
   font-size: 18px;
