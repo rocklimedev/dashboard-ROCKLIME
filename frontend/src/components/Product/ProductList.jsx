@@ -68,7 +68,7 @@ const ProductsList = () => {
   const [removeFromCart] = useRemoveFromCartMutation();
 
   const userId = user?.user?.userId;
-  const [viewMode, setViewMode] = useState("card");
+  const [viewMode, setViewMode] = useState("list"); // Changed default to "list"
   const [currentPage, setCurrentPage] = useState(1);
   const [isDeleteModalVisible, setDeleteModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -270,6 +270,10 @@ const ProductsList = () => {
     setCurrentPage(1);
   };
 
+  const handleCartClick = () => {
+    document.getElementById("cart-modal").click();
+  };
+
   const menu = (product) => (
     <Menu>
       <Menu.Item key="view">
@@ -331,26 +335,7 @@ const ProductsList = () => {
       render: (quantity) =>
         quantity > 0 ? `${quantity} in stock` : "Out of Stock",
     },
-    {
-      title: "Featured",
-      key: "featured",
-      render: (_, record) => (
-        <Button
-          type="text"
-          icon={
-            featuredLoadingStates[record.productId] ? (
-              <Spin size="small" />
-            ) : record.isFeatured ? (
-              <HeartFilled style={{ color: "#ff4d4f" }} />
-            ) : (
-              <HeartOutlined style={{ color: "#ff4d4f" }} />
-            )
-          }
-          onClick={() => handleToggleFeatured(record)}
-          disabled={featuredLoadingStates[record.productId]}
-        />
-      ),
-    },
+
     {
       title: "Actions",
       key: "actions",
@@ -421,9 +406,10 @@ const ProductsList = () => {
           tableData={formattedTableData}
           extra={{
             viewMode,
-            onViewToggle: (checked) => setViewMode(checked ? "card" : "list"),
+            onViewToggle: (checked) => setViewMode(checked ? "card" : "list"), // Adjusted for list as default
             showViewToggle: true,
             cartItems,
+            onCartClick: handleCartClick, // Added cart click handler
           }}
           exportOptions={{ pdf: false, excel: false }}
         />
@@ -456,17 +442,6 @@ const ProductsList = () => {
           </div>
         ) : viewMode === "card" ? (
           <div className="products-section">
-            {/* BEFORE
-<div className="row">
-  {currentItems.map((product) => (
-    <div key={product.productId} className="col-6 col-md-4 col-lg-3 col-xl-3 col-xxl-2">
-      <ProductCard ... />
-    </div>
-  ))}
-</div>
-*/}
-
-            {/* AFTER */}
             <div className="products-grid">
               {currentItems.map((product) => (
                 <ProductCard
@@ -476,16 +451,14 @@ const ProductsList = () => {
                   getCategoryName={getCategoryName}
                   formatPrice={formatPrice}
                   handleAddToCart={handleAddToCart}
-                  handleToggleFeatured={handleToggleFeatured}
                   cartLoadingStates={cartLoadingStates}
                   featuredLoadingStates={featuredLoadingStates}
                   menu={menu}
                 />
               ))}
             </div>
-
             <div
-              className="pagination-container text-center mt-4"
+              className="pagination-container"
               style={{
                 display: "flex",
                 justifyContent: "flex-end",
@@ -539,7 +512,6 @@ const ProductsList = () => {
         data-bs-target="#cartModal"
         style={{ display: "none" }}
       ></button>
-
       <DeleteModal
         isVisible={isDeleteModalVisible}
         onConfirm={handleConfirmDelete}

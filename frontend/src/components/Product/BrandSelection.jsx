@@ -81,7 +81,7 @@ const BrandSelection = () => {
                 <img
                   src={brand.image}
                   alt={brand.alt}
-                  className="categories-img"
+                  className="brands-selection-img"
                 />
                 <h2 className="categories-text">{brand.name}</h2>
               </Link>
