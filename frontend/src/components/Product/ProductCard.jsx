@@ -43,7 +43,7 @@ const ProductCard = ({
   };
 
   return (
-    <div className="product-info card mb-0">
+    <div className="card mb-0">
       <div className="image-wrapper">
         <img
           src={product?.images?.[0] || pos}
