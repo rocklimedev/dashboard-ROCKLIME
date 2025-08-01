@@ -96,13 +96,13 @@
 }
 
 .btn-primary {
-  background-color: #007bff;
+  background-color: #e31e24;
   border: none;
   color: #fff;
 }
 
 .btn-primary:hover {
-  background-color: #0056b3;
+  background-color: #e31e24;
 }
 
 .btn-warning {
@@ -145,7 +145,7 @@
 
 .status-badge.created {
   background-color: #e7f3ff;
-  color: #007bff;
+  color: #e31e24;
 }
 
 .status-badge.pending {
@@ -188,12 +188,12 @@
 
 .due-date-link {
   cursor: pointer;
-  color: #007bff;
+  color: #e31e24;
   text-decoration: underline;
 }
 
 .due-date-link:hover {
-  color: #0056b3;
+  color: #e31e24;
 }
 
 .no-data {
@@ -302,7 +302,7 @@
 
 .edit {
   cursor: pointer;
-  color: #007bff;
+  color: #e31e24;
 }
 
 .pagination {
@@ -387,7 +387,7 @@
 }
 
 .module-tag.badge-primary {
-  background-color: #007bff;
+  background-color: #e31e24;
   color: white;
 }
 
@@ -877,7 +877,7 @@
 }
 
 .action-button:hover {
-  color: var(--primary-color, #007bff);
+  color: var(--primary-color, #e31e24);
 }
 
 .action-button:disabled {
@@ -1174,7 +1174,7 @@
 }
 
 .status-badge.created {
-  background: #007bff;
+  background: #e31e24;
   color: #fff;
 }
 
@@ -1206,12 +1206,12 @@
 
 .due-date-link {
   cursor: pointer;
-  color: #007bff;
+  color: #e31e24;
   text-decoration: underline;
 }
 
 .due-date-link:hover {
-  color: #0056b3;
+  color: #e31e24;
 }
 
 /* Action buttons */
@@ -1232,11 +1232,11 @@
 }
 
 .btn-edit {
-  background: #007bff;
+  background: #e31e24;
 }
 
 .btn-edit:hover {
-  background: linear-gradient(90deg, #007bff 0%, #27ae60 100%);
+  background: linear-gradient(90deg, #e31e24 0%, #27ae60 100%);
 }
 
 .btn-hold {

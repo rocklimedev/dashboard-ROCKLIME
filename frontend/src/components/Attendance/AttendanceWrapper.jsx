@@ -466,46 +466,6 @@ const AttendanceWrapper = ({ userId }) => {
                   >
                     Clear Filters
                   </button>
-                  <button
-                    className="btn btn-outline-primary ms-2"
-                    onClick={handleClockIn}
-                    disabled={isClockInLoading}
-                  >
-                    {isClockInLoading ? (
-                      <span
-                        className="spinner-border spinner-border-sm"
-                        role="status"
-                      />
-                    ) : (
-                      "Clock In"
-                    )}
-                  </button>
-                  <button
-                    className="btn btn-outline-primary ms-2"
-                    onClick={handleClockOut}
-                    disabled={isClockOutLoading}
-                  >
-                    {isClockOutLoading ? (
-                      <span
-                        className="spinner-border spinner-border-sm"
-                        role="status"
-                      />
-                    ) : (
-                      "Clock Out"
-                    )}
-                  </button>
-                  <button
-                    className="btn btn-outline-primary ms-2"
-                    onClick={exportToPDF}
-                  >
-                    Export to PDF
-                  </button>
-                  <button
-                    className="btn btn-outline-primary ms-2"
-                    onClick={exportToExcel}
-                  >
-                    Export to Excel
-                  </button>
                 </div>
               </div>
             </div>

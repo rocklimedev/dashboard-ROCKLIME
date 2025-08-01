@@ -109,11 +109,11 @@ const CustomerSelect = styled(Select)`
 `;
 
 const CheckoutButton = styled(Button)`
-  background: #1890ff;
-  border-color: #1890ff;
+  background: #e31e24;
+  border-color: #e31e24;
   &:hover {
-    background: #40a9ff;
-    border-color: #40a9ff;
+    background: #e31e24;
+    border-color: #e31e24;
   }
 `;
 

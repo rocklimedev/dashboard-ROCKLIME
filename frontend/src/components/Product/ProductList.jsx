@@ -42,7 +42,6 @@ import HistoryModal from "../Common/HistoryModal";
 import StockModal from "../Common/StockModal";
 import ProductCard from "./ProductCard";
 import PageHeader from "../Common/PageHeader";
-import "./productlist.css";
 import pos from "../../assets/img/default.png";
 
 const ProductsList = () => {

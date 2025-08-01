@@ -176,68 +176,8 @@ const CustomerList = () => {
           />
           <div className="card-body">
             <div className="row">
-              <div className="col-lg-4">
-                <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
-                  <h6 className="me-2">Status</h6>
-                  <ul
-                    className="nav nav-pills border d-inline-flex p-1 rounded bg-light todo-tabs"
-                    id="pills-tab"
-                    role="tablist"
-                  >
-                    {Object.keys(groupedCustomers).map((status) => (
-                      <li className="nav-item" role="presentation" key={status}>
-                        <button
-                          className={`nav-link btn btn-sm btn-icon py-3 d-flex align-items-center justify-content-center w-auto ${
-                            activeTab === status ? "active" : ""
-                          }`}
-                          id={`tab-${status}`}
-                          data-bs-toggle="pill"
-                          data-bs-target={`#pills-${status}`}
-                          type="button"
-                          role="tab"
-                          aria-selected={activeTab === status}
-                          onClick={() => setActiveTab(status)}
-                        >
-                          {status} ({groupedCustomers[status].length})
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-              <div className="col-lg-8">
+              <div className="col-lg-12">
                 <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
-                  <div className="d-flex align-items-center border p-2 rounded">
-                    <span className="d-inline-flex me-2">Sort By: </span>
-                    <div className="dropdown">
-                      <a
-                        href="#"
-                        className="dropdown-toggle btn btn-white d-inline-flex align-items-center border-0 bg-transparent p-0 text-dark"
-                        data-bs-toggle="dropdown"
-                        aria-expanded="false"
-                      >
-                        {sortBy}
-                      </a>
-                      <ul className="dropdown-menu dropdown-menu-end p-3">
-                        {["Recently Added", "Ascending", "Descending"].map(
-                          (option) => (
-                            <li key={option}>
-                              <a
-                                href="#"
-                                className="dropdown-item rounded-1"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  setSortBy(option);
-                                }}
-                              >
-                                {option}
-                              </a>
-                            </li>
-                          )
-                        )}
-                      </ul>
-                    </div>
-                  </div>
                   <div className="input-icon-start position-relative">
                     <span className="input-icon-addon">
                       <FaSearch />
@@ -251,12 +191,6 @@ const CustomerList = () => {
                       aria-label="Search customers"
                     />
                   </div>
-                  <button
-                    className="btn btn-outline-secondary ms-2"
-                    onClick={clearFilters}
-                  >
-                    Clear Filters
-                  </button>
                 </div>
               </div>
             </div>

@@ -696,7 +696,7 @@ const ShowInvoices = () => {
                           <th>Invoice Date</th>
                           <th>Due Date</th>
                           <th>Status</th>
-                          <th>Actions</th>
+                          <th></th>
                         </tr>
                       </thead>
                       <tbody>
@@ -838,7 +838,7 @@ const ShowInvoices = () => {
                                 </span>
                               )}
                             </td>
-                            <td className="text-end">
+                            <td>
                               <Dropdown>
                                 <Dropdown.Toggle
                                   variant="outline-secondary"
