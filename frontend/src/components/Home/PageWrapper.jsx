@@ -477,7 +477,7 @@ const PageWrapper = () => {
                   <div className="d-flex align-items-center justify-content-between border-bottom mb-3 pb-3">
                     <div className="d-flex align-items-center">
                       <Link
-                        to={`/customers/${topCustomer.customerId}`}
+                        to={`/customer/${topCustomer.customerId}`}
                         className="avatar avatar-lg flex-shrink-0 me-2"
                       >
                         <img
@@ -493,7 +493,7 @@ const PageWrapper = () => {
                       <div>
                         <h6 className="fs-14 fw-bold mb-1">
                           <Link
-                            to={`/customers/${topCustomer.customerId}`}
+                            to={`/customer/${topCustomer.customerId}`}
                             className="text-dark"
                           >
                             {topCustomer.name}
