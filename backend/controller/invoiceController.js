@@ -2,8 +2,9 @@ const Invoice = require("../models/invoice");
 const Address = require("../models/address");
 const { v4: uuidv4 } = require("uuid");
 const Customer = require("../models/customers");
+const updateCustomerCalculations = require("../middleware/updateCustomerCalculations");
 // Create a new invoice
-exports.createInvoice = async (req, res) => {
+exports.createInvoice = async (req, res, next) => {
   try {
     const {
       customerId,
@@ -18,11 +19,35 @@ exports.createInvoice = async (req, res) => {
       signatureName,
     } = req.body;
 
-    // Get the first address associated with the user (you can customize filter logic)
+    // Validate required fields
+    if (
+      !customerId ||
+      !createdBy ||
+      !billTo ||
+      !amount ||
+      !invoiceDate ||
+      !dueDate ||
+      !status ||
+      !products
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields",
+      });
+    }
+
+    // Validate customer
+    const customer = await Customer.findByPk(customerId);
+    if (!customer) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid customer ID",
+      });
+    }
+
+    // Get the first address associated with the user
     const address = await Address.findOne({
-      where: {
-        userId: createdBy, // dynamically find shipTo from createdBy
-      },
+      where: { userId: createdBy },
     });
 
     if (!address) {
@@ -32,7 +57,7 @@ exports.createInvoice = async (req, res) => {
       });
     }
 
-    // Use address.addressId as shipTo
+    // Create invoice
     const invoice = await Invoice.create({
       invoiceId: uuidv4(),
       createdBy,
@@ -48,15 +73,22 @@ exports.createInvoice = async (req, res) => {
       signatureName,
     });
 
-    return res.status(201).json({
-      success: true,
-      message: "Invoice created successfully",
-      data: invoice,
+    // Store invoice in req for middleware
+    req.invoice = invoice;
+
+    // Call middleware to update customer calculations
+    return updateCustomerCalculations(req, res, () => {
+      res.status(201).json({
+        success: true,
+        message: "Invoice created successfully",
+        data: invoice,
+      });
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
+      error: error.message,
     });
   }
 };
@@ -93,16 +125,54 @@ exports.getInvoiceById = async (req, res) => {
   }
 };
 
-exports.updateInvoice = async (req, res) => {
+// Get all invoices
+exports.getAllInvoices = async (req, res) => {
+  try {
+    const invoices = await Invoice.findAll();
+    return res.status(200).json({ success: true, data: invoices });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+// Get invoice by ID
+exports.getInvoiceById = async (req, res) => {
   try {
     const { id } = req.params;
-
     const invoice = await Invoice.findByPk(id);
 
     if (!invoice) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Invoice not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Invoice not found",
+      });
+    }
+
+    return res.status(200).json({ success: true, data: invoice });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+// Update invoice
+exports.updateInvoice = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const invoice = await Invoice.findByPk(id);
+
+    if (!invoice) {
+      return res.status(404).json({
+        success: false,
+        message: "Invoice not found",
+      });
     }
 
     const {
@@ -119,47 +189,42 @@ exports.updateInvoice = async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (!customerId) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Customer ID is required" });
+    if (!customerId || !invoiceDate || !status || !products || !amount) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Customer ID, invoice date, status, products, and amount are required",
+      });
     }
 
-    // Validate customerId existence
+    // Validate customer
     const customer = await Customer.findByPk(customerId);
     if (!customer) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid customer ID" });
-    }
-
-    if (!invoiceDate) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invoice date is required" });
-    }
-    if (!status) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Status is required" });
-    }
-    if (!products || !Array.isArray(products) || products.length === 0) {
-      return res
-        .status(400)
-        .json({ success: false, message: "At least one product is required" });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid customer ID",
+      });
     }
 
     // Validate shipTo if provided
     if (shipTo) {
       const address = await Address.findByPk(shipTo);
       if (!address) {
-        return res
-          .status(400)
-          .json({ success: false, message: "Invalid shipping address ID" });
+        return res.status(400).json({
+          success: false,
+          message: "Invalid shipping address ID",
+        });
       }
     }
 
     // Validate products
+    if (!Array.isArray(products) || products.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "At least one product is required",
+      });
+    }
+
     for (const product of products) {
       if (!product.productId || !product.price || !product.quantity) {
         return res.status(400).json({
@@ -203,73 +268,90 @@ exports.updateInvoice = async (req, res) => {
       signatureName: signatureName || null,
     });
 
-    return res.status(200).json({
-      success: true,
-      message: "Invoice updated successfully",
-      data: invoice,
+    // Store invoice in req for middleware
+    req.invoice = invoice;
+
+    // Call middleware to update customer calculations
+    return updateCustomerCalculations(req, res, () => {
+      res.status(200).json({
+        success: true,
+        message: "Invoice updated successfully",
+        data: invoice,
+      });
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message || "Internal Server Error",
+      message: "Internal Server Error",
+      error: error.message,
     });
   }
 };
 
 // Delete invoice
-exports.deleteInvoice = async (req, res) => {
+exports.deleteInvoice = async (req, res, next) => {
   try {
     const { id } = req.params;
     const invoice = await Invoice.findByPk(id);
 
     if (!invoice) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Invoice not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Invoice not found",
+      });
     }
 
+    // Store invoice in req for middleware
+    req.invoice = invoice;
+
+    // Delete invoice
     await invoice.destroy();
 
-    return res.status(200).json({
-      success: true,
-      message: "Invoice deleted successfully",
+    // Call middleware to update customer calculations
+    return updateCustomerCalculations(req, res, () => {
+      res.status(200).json({
+        success: true,
+        message: "Invoice deleted successfully",
+      });
     });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal Server Error" });
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
   }
 };
+
 // Change invoice status
-exports.changeInvoiceStatus = async (req, res) => {
+exports.changeInvoiceStatus = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
 
-    // Find the invoice
     const invoice = await Invoice.findByPk(id);
 
     if (!invoice) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Invoice not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Invoice not found",
+      });
     }
 
-    // Validate status
     if (!status) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Status is required" });
+      return res.status(400).json({
+        success: false,
+        message: "Status is required",
+      });
     }
 
-    // Optional: Validate status against allowed values
     const validStatuses = [
       "paid",
       "unpaid",
       "partially paid",
       "void",
       "refund",
-    ]; // Adjust based on your requirements
+    ];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({
         success: false,
@@ -282,15 +364,22 @@ exports.changeInvoiceStatus = async (req, res) => {
     // Update status
     await invoice.update({ status });
 
-    return res.status(200).json({
-      success: true,
-      message: "Invoice status updated successfully",
-      data: invoice,
+    // Store invoice in req for middleware
+    req.invoice = invoice;
+
+    // Call middleware to update customer calculations
+    return updateCustomerCalculations(req, res, () => {
+      res.status(200).json({
+        success: true,
+        message: "Invoice status updated successfully",
+        data: invoice,
+      });
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
+      error: error.message,
     });
   }
 };

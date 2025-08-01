@@ -1,0 +1,11 @@
+
+/* PageHeader.css */
+.custom-switch.ant-switch {
+  background-color: #808080 !important; /* Grey when unchecked */
+}
+.custom-switch.ant-switch-checked {
+  background-color: #808080 !important; /* Grey when checked */
+}
+.custom-switch .ant-switch-handle::before {
+  background-color: #fff !important; /* White handle for contrast */
+}

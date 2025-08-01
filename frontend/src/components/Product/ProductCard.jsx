@@ -120,7 +120,7 @@ const ProductCard = ({
 
       <Tooltip title={product.quantity <= 0 ? "Out of stock" : ""}>
         <Button
-          style={{ color: "#c72c41" }}
+          className="cart-button" // Add custom class
           icon={
             cartLoadingStates[product.productId] ? (
               <Spin size="small" />
@@ -133,7 +133,6 @@ const ProductCard = ({
             cartLoadingStates[product.productId] || (product.quantity ?? 0) <= 0
           }
           size="large"
-          className="add-to-cart-btn"
         >
           {product.quantity <= 0 ? "Out of Stock" : "Add to Cart"}
         </Button>

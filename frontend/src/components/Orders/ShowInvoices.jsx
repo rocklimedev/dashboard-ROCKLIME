@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Form, Spinner, Alert } from "react-bootstrap"; // Removed Button, Dropdown
+import { Form, Spinner, Alert } from "react-bootstrap";
 import {
   useGetAllInvoicesQuery,
   useDeleteInvoiceMutation,
@@ -11,14 +11,14 @@ import { useGetAllQuotationsQuery } from "../../api/quotationApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetAllAddressesQuery } from "../../api/addressApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
-import { FaSearch, FaPen } from "react-icons/fa"; // Keep FaSearch, FaPen
+import { FaSearch, FaPen } from "react-icons/fa";
 import {
   EyeOutlined,
   EditOutlined,
   DeleteOutlined,
   MoreOutlined,
-} from "@ant-design/icons"; // Ant Design icons
-import { Select, Dropdown, Menu, Button } from "antd"; // Ant Design components
+} from "@ant-design/icons";
+import { Select, Dropdown, Menu, Button } from "antd";
 import EditInvoice from "../Invoices/EditInvoice";
 import CreateInvoiceFromQuotation from "../Invoices/CreateInvoiceFromQuotation";
 import DeleteModal from "../Common/DeleteModal";
@@ -28,8 +28,17 @@ import "react-datepicker/dist/react-datepicker.css";
 import { format, subDays } from "date-fns";
 import PageHeader from "../Common/PageHeader";
 
-// Destructure Option from Select
 const { Option } = Select;
+
+// Define status colors for each possible invoice status
+const statusColors = {
+  paid: "bg-success",
+  unpaid: "bg-warning",
+  "partially paid": "bg-info",
+  void: "bg-danger",
+  refund: "bg-primary",
+  return: "bg-secondary",
+};
 
 const ShowInvoices = () => {
   // Queries
@@ -93,6 +102,16 @@ const ShowInvoices = () => {
   const [editingStatusInvoiceId, setEditingStatusInvoiceId] = useState(null);
   const itemsPerPage = 12;
 
+  // Statuses from backend ENUM
+  const statuses = [
+    "paid",
+    "unpaid",
+    "partially paid",
+    "void",
+    "refund",
+    "return",
+  ];
+
   // Memoized maps
   const customerMap = useMemo(() => {
     const map = {};
@@ -130,25 +149,12 @@ const ShowInvoices = () => {
     return map;
   }, [users]);
 
-  // Define valid statuses
-  const statuses = ["paid", "unpaid", "partially paid", "void", "refund"];
-
+  // Get invoice status directly from invoice data
   const getInvoiceStatus = (invoice) => {
-    const validStatuses = statuses;
-    const invoiceStatus = invoice.status ? invoice.status.toLowerCase() : null;
-    if (validStatuses.includes(invoiceStatus)) {
-      return invoiceStatus;
-    }
-    if (!invoice.customerId || typeof invoice.customerId !== "string") {
-      return "unpaid";
-    }
-    const customer = customers.find(
-      (cust) => cust.customerId === invoice.customerId.trim()
-    );
-    const customerStatus = customer?.invoiceStatus
-      ? customer?.invoiceStatus.toLowerCase()
-      : null;
-    return validStatuses.includes(customerStatus) ? customerStatus : "unpaid";
+    const invoiceStatus = invoice.status
+      ? invoice.status.toLowerCase()
+      : "unpaid";
+    return statuses.includes(invoiceStatus) ? invoiceStatus : "unpaid";
   };
 
   const normalizeName = (name) =>
@@ -174,17 +180,14 @@ const ShowInvoices = () => {
   };
 
   // Memoized grouped invoices for tab-based filtering
-  const groupedInvoices = useMemo(
-    () => ({
-      All: invoices,
-      Paid: invoices.filter((inv) => getInvoiceStatus(inv) === "paid"),
-      Unpaid: invoices.filter((inv) => getInvoiceStatus(inv) === "unpaid"),
-      Overdue: invoices.filter((inv) =>
-        ["partially paid", "void", "refund"].includes(getInvoiceStatus(inv))
-      ),
-    }),
-    [invoices]
-  );
+  const groupedInvoices = useMemo(() => {
+    const groups = { All: invoices };
+    statuses.forEach((status) => {
+      groups[status.charAt(0).toUpperCase() + status.slice(1)] =
+        invoices.filter((inv) => getInvoiceStatus(inv) === status);
+    });
+    return groups;
+  }, [invoices, statuses]);
 
   // Filtered and sorted invoices
   const filteredInvoices = useMemo(() => {
@@ -669,17 +672,8 @@ const ShowInvoices = () => {
                                 >
                                   <span
                                     className={`badge ${
-                                      getInvoiceStatus(inv) === "paid"
-                                        ? "bg-success"
-                                        : getInvoiceStatus(inv) === "unpaid"
-                                        ? "bg-warning"
-                                        : [
-                                            "partially paid",
-                                            "void",
-                                            "refund",
-                                          ].includes(getInvoiceStatus(inv))
-                                        ? "bg-danger"
-                                        : "bg-secondary"
+                                      statusColors[getInvoiceStatus(inv)] ||
+                                      "bg-secondary"
                                     }`}
                                   >
                                     {getInvoiceStatus(inv)}
@@ -734,17 +728,8 @@ const ShowInvoices = () => {
                               ) : (
                                 <span
                                   className={`badge ${
-                                    getInvoiceStatus(inv) === "paid"
-                                      ? "bg-success"
-                                      : getInvoiceStatus(inv) === "unpaid"
-                                      ? "bg-warning"
-                                      : [
-                                          "partially paid",
-                                          "void",
-                                          "refund",
-                                        ].includes(getInvoiceStatus(inv))
-                                      ? "bg-danger"
-                                      : "bg-secondary"
+                                    statusColors[getInvoiceStatus(inv)] ||
+                                    "bg-secondary"
                                   }`}
                                 >
                                   {getInvoiceStatus(inv)}

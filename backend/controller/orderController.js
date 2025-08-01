@@ -226,8 +226,6 @@ exports.getFilteredOrders = async (req, res) => {
       createdBy,
       assignedTo,
       createdFor,
-      important,
-      trash,
       search,
       page = 1,
       limit = 10,
@@ -245,7 +243,7 @@ exports.getFilteredOrders = async (req, res) => {
 
     const filters = {};
 
-    // Normalize and validate filters
+    // Apply status filter
     if (status) {
       const normalizedStatus = status.toUpperCase();
       const validStatuses = [
@@ -261,38 +259,38 @@ exports.getFilteredOrders = async (req, res) => {
         "ONHOLD",
       ];
       if (!validStatuses.includes(normalizedStatus)) {
-        return res.status(400).json({ error: "Invalid status value" });
+        return res
+          .status(400)
+          .json({ error: `Invalid status value: ${status}` });
       }
       filters.status = normalizedStatus;
     }
 
+    // Apply priority filter
     if (priority) {
       const normalizedPriority = priority.toLowerCase();
       const validPriorities = ["high", "medium", "low"];
       if (!validPriorities.includes(normalizedPriority)) {
-        return res.status(400).json({ error: "Invalid priority value" });
+        return res
+          .status(400)
+          .json({ error: `Invalid priority value: ${priority}` });
       }
       filters.priority = normalizedPriority;
     }
 
+    // Apply dueDate filter
     if (dueDate) {
       const parsedDate = new Date(dueDate);
       if (isNaN(parsedDate)) {
         return res.status(400).json({ error: "Invalid dueDate format" });
       }
-      filters.dueDate = { [Op.lte]: parsedDate };
+      filters.dueDate = parsedDate; // Use exact match or adjust as needed
     }
 
+    // Apply createdBy, assignedTo, createdFor filters
     if (createdBy) filters.createdBy = createdBy;
     if (assignedTo) filters.assignedTo = assignedTo;
     if (createdFor) filters.createdFor = createdFor;
-
-    if (important !== undefined) {
-      filters.important = important === "true" || important === true;
-    }
-    if (trash !== undefined) {
-      filters.trash = trash === "true" || trash === true;
-    }
 
     // Handle search parameter
     const searchFilter = search
@@ -304,40 +302,45 @@ exports.getFilteredOrders = async (req, res) => {
         }
       : {};
 
+    const include = [
+      {
+        model: Customer,
+        as: "customer",
+        attributes: ["name"],
+        required: false,
+      },
+    ];
+
+    // Add Customer name search to include clause if search is provided
+    if (search) {
+      include[0].where = { name: { [Op.like]: `%${search}%` } };
+      include[0].required = false; // Keep join optional
+    }
+
     const offset = (pageNum - 1) * limitNum;
 
-    // Fetch orders with pagination
-    const include = search
-      ? [
-          {
-            model: Customer,
-            as: "customer",
-            where: { name: { [Op.like]: `%${search}%` } },
-            attributes: ["name"],
-            required: false,
-          },
-        ]
-      : [
-          {
-            model: Customer,
-            as: "customer",
-            attributes: ["name"],
-            required: false,
-          },
-        ];
+    // Log the query for debugging
+    console.log("Executing getFilteredOrders with:", {
+      filters,
+      searchFilter,
+      include,
+      offset,
+      limit: limitNum,
+    });
 
+    // Fetch orders with pagination and associations
     const orders = await Order.findAll({
       where: { ...filters, ...searchFilter },
       include,
       order: [["createdAt", "DESC"]],
       limit: limitNum,
-      offset: offset,
+      offset,
     });
 
     // Get total count of matching orders
     const totalCount = await Order.count({
       where: { ...filters, ...searchFilter },
-      include,
+      include: search ? include : [], // Only include Customer for count if searching
     });
 
     return res.status(200).json({
@@ -345,7 +348,11 @@ exports.getFilteredOrders = async (req, res) => {
       totalCount,
     });
   } catch (err) {
-    console.error("Error in getFilteredOrders:", err.message, err.stack);
+    console.error("Error in getFilteredOrders:", {
+      message: err.message,
+      stack: err.stack,
+      query: req.query,
+    });
     return res.status(500).json({
       error: "Failed to fetch filtered orders",
       details: err.message,

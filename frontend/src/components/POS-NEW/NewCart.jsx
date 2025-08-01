@@ -42,7 +42,6 @@ import { LazyLoadImage } from "react-lazy-load-image-component";
 import AddCustomer from "../Customers/AddCustomer";
 import OrderTotal from "./OrderTotal";
 import PaymentMethod from "./PaymentMethod";
-import InvoiceDetails from "../POS/InvoiceDetails";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import { FcEmptyTrash } from "react-icons/fc";
@@ -52,7 +51,6 @@ import styled from "styled-components";
 import PropTypes from "prop-types";
 import "react-lazy-load-image-component/src/effects/blur.css";
 
-// ... (Styled Components remain unchanged)
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { TabPane } = Tabs;
@@ -132,13 +130,6 @@ const EmptyCartWrapper = styled.div`
   padding: 40px 0;
 `;
 
-// Add Address Modal styled component
-const AddAddressModalWrapper = styled.div`
-  .modal {
-    display: block;
-    background: rgba(0, 0, 0, 0.5);
-  }
-`;
 const generateInvoiceNumber = () => {
   const timestamp = Date.now().toString().slice(-6);
   const random = Math.floor(1000 + Math.random() * 9000);
@@ -151,7 +142,7 @@ const generateQuotationNumber = () => {
   return `QUO-${timestamp}-${random}`;
 };
 
-// Add Address Modal Component (unchanged)
+// Add Address Modal Component
 const AddAddressModal = ({ show, onClose, onSave }) => {
   const [addressData, setAddressData] = useState({
     name: "",
@@ -192,110 +183,86 @@ const AddAddressModal = ({ show, onClose, onSave }) => {
     }
   };
 
-  if (!show) return null;
-
   return (
-    <AddAddressModalWrapper>
-      <div className="modal">
-        <div className="modal-dialog">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title">Add New Address</h5>
-              <button
-                type="button"
-                className="btn-close"
-                onClick={onClose}
-                aria-label="Close"
-              ></button>
-            </div>
-            <form onSubmit={handleSubmit}>
-              <div className="modal-body">
-                <div className="mb-3">
-                  <label className="form-label">Name</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="name"
-                    value={addressData.name}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="mb-3">
-                  <label className="form-label">Street *</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="street"
-                    value={addressData.street}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="mb-3">
-                  <label className="form-label">City *</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="city"
-                    value={addressData.city}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="mb-3">
-                  <label className="form-label">State</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="state"
-                    value={addressData.state}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="mb-3">
-                  <label className="form-label">Country *</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="country"
-                    value={addressData.country}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="mb-3">
-                  <label className="form-label">Postal Code</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="postalCode"
-                    value={addressData.postalCode}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={onClose}
-                  disabled={isCreatingAddress}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  disabled={isCreatingAddress}
-                >
-                  {isCreatingAddress ? "Saving..." : "Save Address"}
-                </button>
-              </div>
-            </form>
-          </div>
+    <Modal title="Add New Address" open={show} onCancel={onClose} footer={null}>
+      <form onSubmit={handleSubmit}>
+        <div className="mb-3">
+          <label className="form-label">Name</label>
+          <input
+            type="text"
+            className="form-control"
+            name="name"
+            value={addressData.name}
+            onChange={handleChange}
+          />
         </div>
-      </div>
-    </AddAddressModalWrapper>
+        <div className="mb-3">
+          <label className="form-label">Street *</label>
+          <input
+            type="text"
+            className="form-control"
+            name="street"
+            value={addressData.street}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div className="mb-3">
+          <label className="form-label">City *</label>
+          <input
+            type="text"
+            className="form-control"
+            name="city"
+            value={addressData.city}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div className="mb-3">
+          <label className="form-label">State</label>
+          <input
+            type="text"
+            className="form-control"
+            name="state"
+            value={addressData.state}
+            onChange={handleChange}
+          />
+        </div>
+        <div className="mb-3">
+          <label className="form-label">Country *</label>
+          <input
+            type="text"
+            className="form-control"
+            name="country"
+            value={addressData.country}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div className="mb-3">
+          <label className="form-label">Postal Code</label>
+          <input
+            type="text"
+            className="form-control"
+            name="postalCode"
+            value={addressData.postalCode}
+            onChange={handleChange}
+          />
+        </div>
+        <div className="modal-footer">
+          <Button
+            type="secondary"
+            onClick={onClose}
+            disabled={isCreatingAddress}
+          >
+            Cancel
+          </Button>
+          <Button type="primary" htmlType="submit" disabled={isCreatingAddress}>
+            {isCreatingAddress ? "Saving..." : "Save Address"}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 };
 
@@ -330,8 +297,10 @@ const NewCart = ({ onConvertToOrder }) => {
   const [updateCart] = useUpdateCartMutation();
   const [clearCart] = useClearCartMutation();
   const [removeFromCart] = useRemoveFromCartMutation();
-  const [createInvoice] = useCreateInvoiceMutation();
-  const [createQuotation] = useCreateQuotationMutation();
+  const [createInvoice, { isLoading: isCreatingInvoice }] =
+    useCreateInvoiceMutation();
+  const [createQuotation, { isLoading: isCreatingQuotation }] =
+    useCreateQuotationMutation();
 
   const [activeTab, setActiveTab] = useState("cart");
   const [documentType, setDocumentType] = useState("invoice");
@@ -348,11 +317,10 @@ const NewCart = ({ onConvertToOrder }) => {
   const [error, setError] = useState("");
   const [updatingItems, setUpdatingItems] = useState({});
 
-  // Initialize formData state
   const [formData, setFormData] = useState({
     document_title: "",
     quotation_date: new Date().toISOString().split("T")[0],
-    due_date: "", // Consistent naming
+    due_date: "",
     reference_number: "",
     include_gst: false,
     gst_value: "",
@@ -361,12 +329,11 @@ const NewCart = ({ onConvertToOrder }) => {
     finalAmount: "",
     signature_name: "CM TRADING CO",
     signature_image: "",
-    invoice_date: new Date().toISOString().split("T")[0], // Consistent naming
+    invoice_date: new Date().toISOString().split("T")[0],
     bill_to: "",
     ship_to: null,
   });
 
-  // Derived data
   const cartItems = useMemo(
     () => (Array.isArray(cartData?.cart?.items) ? cartData.cart.items : []),
     [cartData]
@@ -383,38 +350,31 @@ const NewCart = ({ onConvertToOrder }) => {
         : [],
     [addressesData]
   );
+
   const calculateTotals = useMemo(() => {
     const subTotal = cartItems.reduce(
       (sum, item) => sum + (item.price || 0) * (item.quantity || 1),
       0
     );
-    const tax = formData.include_gst ? 0 : subTotal * 0.1; // Example tax rate
-    const discount = 0; // Add discount logic if needed
-    const shipping = 0; // Add shipping logic if needed
-    const totalAmount =
-      subTotal +
-      (formData.include_gst
-        ? (subTotal * (parseFloat(formData.gst_value) || 0)) / 100
-        : tax) +
-      shipping -
-      discount +
-      (parseFloat(formData.roundOff) || 0);
+    const gstValue = formData.include_gst
+      ? parseFloat(formData.gst_value) || 0
+      : 10;
+    const tax = (subTotal * gstValue) / 100;
+    const roundOff = parseFloat(formData.roundOff) || 0;
+    const totalAmount = subTotal + tax + roundOff;
 
     return {
       subTotal: subTotal || 0,
       tax: tax || 0,
-      discount: discount || 0,
-      shipping: shipping || 0,
+      roundOff: roundOff || 0,
       totalAmount: totalAmount || 0,
     };
   }, [cartItems, formData.include_gst, formData.gst_value, formData.roundOff]);
 
-  // Handle form changes
   const handleFormChange = (key, value) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
-  // Handle quantity update
   const handleUpdateQuantity = async (productId, newQuantity) => {
     if (newQuantity < 1) return;
     setUpdatingItems((prev) => ({ ...prev, [productId]: true }));
@@ -435,7 +395,6 @@ const NewCart = ({ onConvertToOrder }) => {
     }
   };
 
-  // Handle remove item
   const handleRemoveItem = async (productId) => {
     setUpdatingItems((prev) => ({ ...prev, [productId]: true }));
     try {
@@ -451,7 +410,6 @@ const NewCart = ({ onConvertToOrder }) => {
     }
   };
 
-  // Handle clear cart
   const handleClearCart = async () => {
     try {
       await clearCart({ userId }).unwrap();
@@ -465,37 +423,36 @@ const NewCart = ({ onConvertToOrder }) => {
     }
   };
 
-  // Handle add address
   const handleAddAddress = (type) => {
     setAddressType(type);
     setShowAddressModal(true);
   };
 
-  // Handle address save
   const handleAddressSave = (addressId) => {
     setFormData((prev) => ({ ...prev, [addressType]: addressId }));
     setShowAddressModal(false);
     refetchAddresses();
+    toast.success("Address added successfully!");
   };
 
-  // Date validation
   useEffect(() => {
     const { invoice_date, due_date, quotation_date } = formData;
     const checkDate =
       documentType === "invoice" ? invoice_date : quotation_date;
-    const due = due_date;
-    if (checkDate && due) {
-      const documentDate = new Date(checkDate);
-      const dueDateObj = new Date(due);
-      if (isNaN(dueDateObj) || isNaN(documentDate)) {
-        setError("Invalid date format");
-      } else if (dueDateObj <= documentDate) {
-        setError("Due date must be after document date");
-      } else {
-        setError("");
-      }
-    } else if (!due) {
-      setError("Due date is required");
+    if (!checkDate || !due_date) {
+      setError("Document date and due date are required.");
+      return;
+    }
+
+    const documentDate = new Date(checkDate);
+    const dueDateObj = new Date(due_date);
+    if (isNaN(documentDate) || isNaN(dueDateObj)) {
+      setError("Invalid date format for document or due date.");
+      return;
+    }
+
+    if (dueDateObj <= documentDate) {
+      setError("Due date must be after document date.");
     } else {
       setError("");
     }
@@ -506,7 +463,30 @@ const NewCart = ({ onConvertToOrder }) => {
     documentType,
   ]);
 
-  // Handle place order
+  const resetForm = () => {
+    setFormData({
+      document_title: "",
+      quotation_date: new Date().toISOString().split("T")[0],
+      due_date: "",
+      reference_number: "",
+      include_gst: false,
+      gst_value: "",
+      discountType: "percent",
+      roundOff: "",
+      finalAmount: "",
+      signature_name: "CM TRADING CO",
+      signature_image: "",
+      invoice_date: new Date().toISOString().split("T")[0],
+      bill_to: "",
+      ship_to: null,
+    });
+    setSelectedCustomer("");
+    setSelectedPaymentMethod("Cash");
+    setInvoiceNumber(generateInvoiceNumber());
+    setQuotationNumber(generateQuotationNumber());
+    setActiveTab("cart");
+  };
+
   const handlePlaceOrder = async () => {
     if (!selectedCustomer) return toast.error("Please select a customer.");
     if (!userId) return toast.error("User not logged in!");
@@ -521,7 +501,6 @@ const NewCart = ({ onConvertToOrder }) => {
       return toast.error("Please select a payment method.");
     }
 
-    // Validate date format
     const documentDate = new Date(
       documentType === "invoice"
         ? formData.invoice_date
@@ -602,41 +581,17 @@ const NewCart = ({ onConvertToOrder }) => {
 
       try {
         const response = await createInvoice(invoiceDataToSubmit).unwrap();
-        const invoiceId =
-          response?.invoice?.invoiceId ||
-          response?.invoiceId ||
-          response?.data?.invoiceId ||
-          response?.data?.invoice?.invoiceId;
-
+        const invoiceId = response?.invoiceId || response?.data?.invoiceId;
         if (!invoiceId) {
-          throw new Error("Invalid response structure: invoiceId not found.");
+          throw new Error("Invoice ID not found in response.");
         }
-
         orderData.invoiceId = invoiceId;
         onConvertToOrder(orderData);
         await handleClearCart();
         toast.success("Invoice created successfully!");
-        setFormData({
-          document_title: "",
-          quotation_date: new Date().toISOString().split("T")[0],
-          due_date: "",
-          reference_number: "",
-          include_gst: false,
-          gst_value: "",
-          discountType: "percent",
-          roundOff: "",
-          finalAmount: "",
-          signature_name: "CM TRADING CO",
-          signature_image: "",
-          invoice_date: new Date().toISOString().split("T")[0],
-          bill_to: "",
-          ship_to: null,
-        });
-        setSelectedCustomer("");
-        setSelectedPaymentMethod("Cash");
-        setInvoiceNumber(generateInvoiceNumber());
-        setActiveTab("cart");
+        resetForm();
       } catch (error) {
+        console.error("Invoice creation error:", error);
         toast.error(
           `Failed to create invoice: ${
             error.data?.message || error.message || "Unknown error"
@@ -644,7 +599,6 @@ const NewCart = ({ onConvertToOrder }) => {
         );
       }
     } else {
-      // Quotation logic
       const formattedProducts = cartItems.map((item) => ({
         productId: item.productId,
         quantity: Number(item.quantity) || 1,
@@ -679,26 +633,9 @@ const NewCart = ({ onConvertToOrder }) => {
         await createQuotation(formattedFormData).unwrap();
         toast.success("Quotation created successfully!");
         await handleClearCart();
-        setFormData({
-          document_title: "",
-          quotation_date: new Date().toISOString().split("T")[0],
-          due_date: "",
-          reference_number: "",
-          include_gst: false,
-          gst_value: "",
-          discountType: "percent",
-          roundOff: "",
-          finalAmount: "",
-          signature_name: "CM TRADING CO",
-          signature_image: "",
-          invoice_date: new Date().toISOString().split("T")[0],
-          bill_to: "",
-          ship_to: null,
-        });
-        setSelectedCustomer("");
-        setQuotationNumber(generateQuotationNumber());
-        setActiveTab("cart");
+        resetForm();
       } catch (error) {
+        console.error("Quotation creation error:", error);
         toast.error(
           `Failed to create quotation: ${
             error.data?.message || error.message || "Unknown error"
@@ -898,10 +835,7 @@ const NewCart = ({ onConvertToOrder }) => {
                       <Title level={4}>Order Summary</Title>
                       <Divider />
                       <OrderTotal
-                        shipping={calculateTotals.shipping}
                         tax={formData.include_gst ? 0 : calculateTotals.tax}
-                        coupon={0}
-                        discount={calculateTotals.discount}
                         roundOff={formData.roundOff}
                         subTotal={calculateTotals.subTotal}
                         gstAmount={
@@ -969,6 +903,15 @@ const NewCart = ({ onConvertToOrder }) => {
                         </EmptyCartWrapper>
                       ) : (
                         <>
+                          {error && (
+                            <Alert
+                              message="Error"
+                              description={error}
+                              type="error"
+                              showIcon
+                              style={{ marginBottom: 16 }}
+                            />
+                          )}
                           <Text strong>Document Type</Text>
                           <Radio.Group
                             value={documentType}
@@ -986,7 +929,7 @@ const NewCart = ({ onConvertToOrder }) => {
                             placeholder="Select a customer"
                             loading={customersLoading}
                             disabled={customersLoading || customersError}
-                            aria-label="Select customer"
+                            aria-label="Select a customer for the order"
                           >
                             {customersLoading ? (
                               <Option disabled>Loading...</Option>
@@ -1017,19 +960,129 @@ const NewCart = ({ onConvertToOrder }) => {
                           <Divider />
                           {documentType === "invoice" ? (
                             <>
-                              <InvoiceDetails
-                                invoiceData={{
-                                  invoice_date: formData.invoice_date,
-                                  due_date: formData.due_date,
-                                  bill_to: formData.bill_to,
-                                  ship_to: formData.ship_to,
-                                  signature_name: formData.signature_name,
-                                }}
-                                onChange={(key, value) =>
-                                  handleFormChange(key, value)
-                                }
-                                error={error}
-                              />
+                              <div>
+                                <Text strong>Shipping Address (Optional)</Text>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    marginTop: 8,
+                                  }}
+                                >
+                                  <Select
+                                    value={formData.ship_to}
+                                    onChange={(value) =>
+                                      handleFormChange("ship_to", value)
+                                    }
+                                    placeholder="Select shipping address"
+                                    style={{ width: "100%" }}
+                                    loading={addressesLoading}
+                                  >
+                                    <Option value={null}>
+                                      Select an Address
+                                    </Option>
+                                    {addressesLoading ? (
+                                      <Option disabled>Loading...</Option>
+                                    ) : addresses.length === 0 ? (
+                                      <Option disabled>
+                                        No addresses available
+                                      </Option>
+                                    ) : (
+                                      addresses.map((address) => (
+                                        <Option
+                                          key={address.addressId}
+                                          value={address.addressId}
+                                        >
+                                          {address.name ||
+                                            `${address.street}, ${address.city}, ${address.state}, ${address.country}`}
+                                        </Option>
+                                      ))
+                                    )}
+                                  </Select>
+                                  <Button
+                                    type="link"
+                                    icon={<PiPlus />}
+                                    onClick={() => handleAddAddress("ship_to")}
+                                    style={{ marginLeft: 8 }}
+                                    aria-label="Add new shipping address"
+                                  />
+                                </div>
+                              </div>
+                              <Divider />
+                              <Row gutter={[16, 16]}>
+                                <Col xs={24} md={12}>
+                                  <Text strong>Bill To *</Text>
+                                  <Input
+                                    value={formData.bill_to}
+                                    onChange={(e) =>
+                                      handleFormChange(
+                                        "bill_to",
+                                        e.target.value
+                                      )
+                                    }
+                                    placeholder="Enter billing name or address"
+                                    style={{ marginTop: 8 }}
+                                    status={
+                                      error && !formData.bill_to ? "error" : ""
+                                    }
+                                    required
+                                  />
+                                </Col>
+                                <Col xs={24} md={12}>
+                                  <Text strong>Invoice Date *</Text>
+                                  <Input
+                                    type="date"
+                                    value={formData.invoice_date}
+                                    onChange={(e) =>
+                                      handleFormChange(
+                                        "invoice_date",
+                                        e.target.value
+                                      )
+                                    }
+                                    style={{ marginTop: 8 }}
+                                    status={
+                                      error && !formData.invoice_date
+                                        ? "error"
+                                        : ""
+                                    }
+                                    required
+                                  />
+                                </Col>
+                                <Col xs={24} md={12}>
+                                  <Text strong>Due Date *</Text>
+                                  <Input
+                                    type="date"
+                                    value={formData.due_date}
+                                    onChange={(e) =>
+                                      handleFormChange(
+                                        "due_date",
+                                        e.target.value
+                                      )
+                                    }
+                                    style={{ marginTop: 8 }}
+                                    status={
+                                      error && error.includes("Due date")
+                                        ? "error"
+                                        : ""
+                                    }
+                                    required
+                                  />
+                                </Col>
+                                <Col xs={24} md={12}>
+                                  <Text strong>Signature Name</Text>
+                                  <Input
+                                    value={formData.signature_name}
+                                    onChange={(e) =>
+                                      handleFormChange(
+                                        "signature_name",
+                                        e.target.value
+                                      )
+                                    }
+                                    placeholder="Enter signature name"
+                                    style={{ marginTop: 8 }}
+                                  />
+                                </Col>
+                              </Row>
                               <Divider />
                             </>
                           ) : (
@@ -1046,6 +1099,11 @@ const NewCart = ({ onConvertToOrder }) => {
                                   }
                                   placeholder="Enter quotation title"
                                   style={{ marginTop: 8 }}
+                                  status={
+                                    error && !formData.document_title
+                                      ? "error"
+                                      : ""
+                                  }
                                   required
                                 />
                               </div>
@@ -1062,6 +1120,11 @@ const NewCart = ({ onConvertToOrder }) => {
                                     )
                                   }
                                   style={{ marginTop: 8 }}
+                                  status={
+                                    error && !formData.quotation_date
+                                      ? "error"
+                                      : ""
+                                  }
                                   required
                                 />
                               </div>
@@ -1074,6 +1137,11 @@ const NewCart = ({ onConvertToOrder }) => {
                                     handleFormChange("due_date", e.target.value)
                                   }
                                   style={{ marginTop: 8 }}
+                                  status={
+                                    error && error.includes("Due date")
+                                      ? "error"
+                                      : ""
+                                  }
                                   required
                                 />
                               </div>
@@ -1112,6 +1180,9 @@ const NewCart = ({ onConvertToOrder }) => {
                                     style={{ width: "100%" }}
                                     loading={addressesLoading}
                                   >
+                                    <Option value={null}>
+                                      Select an Address
+                                    </Option>
                                     {addressesLoading ? (
                                       <Option disabled>Loading...</Option>
                                     ) : addresses.length === 0 ? (
@@ -1125,7 +1196,7 @@ const NewCart = ({ onConvertToOrder }) => {
                                           value={address.addressId}
                                         >
                                           {address.name ||
-                                            `${address.street}, ${address.city}`}
+                                            `${address.street}, ${address.city}, ${address.state}, ${address.country}`}
                                         </Option>
                                       ))
                                     )}
@@ -1250,10 +1321,7 @@ const NewCart = ({ onConvertToOrder }) => {
                       )}
                       <Divider />
                       <OrderTotal
-                        shipping={calculateTotals.shipping}
                         tax={formData.include_gst ? 0 : calculateTotals.tax}
-                        coupon={0}
-                        discount={calculateTotals.discount}
                         roundOff={formData.roundOff}
                         subTotal={calculateTotals.subTotal}
                         gstAmount={
@@ -1278,7 +1346,9 @@ const NewCart = ({ onConvertToOrder }) => {
                           (documentType === "invoice" &&
                             !selectedPaymentMethod) ||
                           (documentType === "quotation" &&
-                            !formData.document_title)
+                            !formData.document_title) ||
+                          isCreatingInvoice ||
+                          isCreatingQuotation
                         }
                         block
                         size="large"
@@ -1288,7 +1358,9 @@ const NewCart = ({ onConvertToOrder }) => {
                             : "Create Quotation"
                         }
                       >
-                        {documentType === "invoice"
+                        {isCreatingInvoice || isCreatingQuotation
+                          ? "Processing..."
+                          : documentType === "invoice"
                           ? "Create Invoice"
                           : "Create Quotation"}
                       </CheckoutButton>

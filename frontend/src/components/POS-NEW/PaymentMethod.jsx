@@ -31,14 +31,9 @@ const PaymentButton = styled(Button)`
 const PaymentMethod = ({ subTotal, selectedMethod, onSelectMethod }) => {
   const methods = [
     { icon: <FaMoneyBillAlt />, label: "Cash" },
-    { icon: <FaCreditCard />, label: "Card" },
-    { icon: <FaStar />, label: "Points" },
     { icon: <FaUniversity />, label: "Deposit" },
     { icon: <FaRegFileAlt />, label: "Cheque" },
-    { icon: <FaGift />, label: "Gift Card" },
     { icon: <FaQrcode />, label: "Scan" },
-    { icon: <FaClock />, label: "Pay Later" },
-    { icon: <FaExternalLinkAlt />, label: "External" },
     { icon: <FaEquals />, label: "Split Bill" },
   ];
 
