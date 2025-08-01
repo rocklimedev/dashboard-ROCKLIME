@@ -10,6 +10,9 @@ import { toast } from "sonner";
 import DeleteModal from "../Common/DeleteModal";
 import DataTablePagination from "../Common/DataTablePagination";
 import PageHeader from "../Common/PageHeader";
+import { BsThreeDotsVertical } from "react-icons/bs";
+import { Dropdown, Button, Menu } from "antd";
+
 const CustomerList = () => {
   const { data, error, isLoading } = useGetCustomersQuery();
   const customers = data?.data || [];
@@ -236,34 +239,48 @@ const CustomerList = () => {
                               <td>{customer.balance || "0"}</td>
                               <td>{customer.paidAmount || "0"}</td>
                               <td>
-                                <div className="edit-delete-action d-flex gap-2">
-                                  <a
-                                    href={`/customer/${customer.customerId}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    aria-label={`View customer ${customer.name}`}
-                                  >
-                                    <FaEye />
-                                  </a>
-                                  <a
-                                    className="me-2 p-2"
-                                    href="javascript:void(0);"
-                                    onClick={() => handleEditCustomer(customer)}
-                                    aria-label={`Edit customer ${customer.name}`}
-                                  >
-                                    <BiEdit />
-                                  </a>
-                                  <a
-                                    className="p-2"
-                                    href="javascript:void(0);"
-                                    onClick={() =>
-                                      handleDelete(customer.customerId)
-                                    }
-                                    aria-label={`Delete customer ${customer.name}`}
-                                  >
-                                    <BiTrash />
-                                  </a>
-                                </div>
+                                <Dropdown
+                                  trigger={["click"]}
+                                  overlay={
+                                    <Menu>
+                                      <Menu.Item key="view">
+                                        <a
+                                          href={`/customer/${customer.customerId}`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                        >
+                                          <FaEye className="me-2" />
+                                          View
+                                        </a>
+                                      </Menu.Item>
+                                      <Menu.Item
+                                        key="edit"
+                                        onClick={() =>
+                                          handleEditCustomer(customer)
+                                        }
+                                      >
+                                        <BiEdit className="me-2" />
+                                        Edit
+                                      </Menu.Item>
+                                      <Menu.Item
+                                        key="delete"
+                                        onClick={() =>
+                                          handleDelete(customer.customerId)
+                                        }
+                                        danger
+                                      >
+                                        <BiTrash className="me-2" />
+                                        Delete
+                                      </Menu.Item>
+                                    </Menu>
+                                  }
+                                  placement="bottomRight"
+                                >
+                                  <Button
+                                    type="text"
+                                    icon={<BsThreeDotsVertical />}
+                                  />
+                                </Dropdown>
                               </td>
                             </tr>
                           ))}

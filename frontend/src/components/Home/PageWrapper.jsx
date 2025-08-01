@@ -388,10 +388,6 @@ const PageWrapper = () => {
           <div className="dashboard-header">
             <div>
               <h1>{username}</h1>
-              <p>
-                Order{todaysOrders.length !== 1 && "s"} Today:{" "}
-                {todaysOrders.length}
-              </p>
             </div>
             <div className="dashboard-actions">
               {loadingAttendance ? (

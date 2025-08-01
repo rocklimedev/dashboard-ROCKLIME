@@ -12,6 +12,7 @@ import { FaSearch } from "react-icons/fa";
 import { toast } from "sonner";
 import DataTablePagination from "../Common/DataTablePagination";
 import PageHeader from "../Common/PageHeader";
+import { BsThreeDotsVertical } from "react-icons/bs";
 const CompaniesWrapper = () => {
   const {
     data: vendorsData,
@@ -263,22 +264,52 @@ const CompaniesWrapper = () => {
                                   : "N/A"}
                               </td>
                               <td data-label="Actions">
-                                <div className="gap-2">
-                                  <BiShowAlt
-                                    aria-label={`View ${vendor.vendorName}`}
-                                    onClick={() => setViewCompanyId(vendor.id)}
-                                    className="align-middle fs-18"
-                                  />
-                                  <BiEdit
-                                    aria-label={`Edit ${vendor.vendorName}`}
-                                    onClick={() => handleEditVendor(vendor)}
-                                    className="align-middle fs-18"
-                                  />
-                                  <BiTrash
-                                    aria-label={`Delete ${vendor.vendorName}`}
-                                    onClick={() => handleDeleteVendor(vendor)}
-                                    className="align-middle fs-18"
-                                  />
+                                <div className="dropdown">
+                                  <button
+                                    className="btn btn-sm btn-outline-secondary dropdown-toggle"
+                                    type="button"
+                                    id={`dropdownMenu-${vendor.id}`}
+                                    data-bs-toggle="dropdown"
+                                    aria-expanded="false"
+                                  >
+                                    <BsThreeDotsVertical />
+                                  </button>
+                                  <ul
+                                    className="dropdown-menu"
+                                    aria-labelledby={`dropdownMenu-${vendor.id}`}
+                                  >
+                                    <li>
+                                      <button
+                                        className="dropdown-item"
+                                        onClick={() =>
+                                          setViewCompanyId(vendor.id)
+                                        }
+                                      >
+                                        <BiShowAlt className="me-2" />
+                                        View
+                                      </button>
+                                    </li>
+                                    <li>
+                                      <button
+                                        className="dropdown-item"
+                                        onClick={() => handleEditVendor(vendor)}
+                                      >
+                                        <BiEdit className="me-2" />
+                                        Edit
+                                      </button>
+                                    </li>
+                                    <li>
+                                      <button
+                                        className="dropdown-item text-danger"
+                                        onClick={() =>
+                                          handleDeleteVendor(vendor)
+                                        }
+                                      >
+                                        <BiTrash className="me-2" />
+                                        Delete
+                                      </button>
+                                    </li>
+                                  </ul>
                                 </div>
                               </td>
                             </tr>

@@ -28,6 +28,8 @@ import {
 import { toast } from "sonner";
 import user from "../../assets/img/profiles/avatar-01.jpg";
 import avatar from "../../assets/img/profiles/avatar-15.jpg";
+import { Dropdown, Menu } from "antd";
+import { MoreOutlined } from "@ant-design/icons";
 
 const { Option } = Select;
 const { Text, Title } = Typography;
@@ -362,30 +364,36 @@ const TeamsList = ({ adminName }) => {
                                   <Text>{team.teammembers?.length || 0}</Text>
                                 </Space>
                               </td>
-
                               <td>
-                                <div className="action-buttons">
+                                <Dropdown
+                                  overlay={
+                                    <Menu>
+                                      <Menu.Item
+                                        key="edit"
+                                        onClick={() => handleEditTeam(team)}
+                                        icon={<EditOutlined />}
+                                      >
+                                        Edit
+                                      </Menu.Item>
+                                      <Menu.Item
+                                        key="delete"
+                                        onClick={() => handleDeleteTeam(team)}
+                                        icon={<DeleteOutlined />}
+                                        disabled={isDeleting}
+                                        danger
+                                      >
+                                        Delete
+                                      </Menu.Item>
+                                    </Menu>
+                                  }
+                                  trigger={["click"]}
+                                >
                                   <Button
-                                    variant="outline-primary"
-                                    size="sm"
-                                    onClick={() => handleEditTeam(team)}
-                                    title="Edit Team"
-                                    aria-label={`Edit team ${team.teamName}`}
-                                    className="me-1"
-                                  >
-                                    <EditOutlined />
-                                  </Button>
-                                  <Button
-                                    variant="outline-danger"
-                                    size="sm"
-                                    onClick={() => handleDeleteTeam(team)}
-                                    disabled={isDeleting}
-                                    title="Delete Team"
-                                    aria-label={`Delete team ${team.teamName}`}
-                                  >
-                                    <DeleteOutlined />
-                                  </Button>
-                                </div>
+                                    icon={<MoreOutlined />}
+                                    size="small"
+                                    aria-label={`Actions for team ${team.teamName}`}
+                                  />
+                                </Dropdown>
                               </td>
                             </tr>
                           ))}

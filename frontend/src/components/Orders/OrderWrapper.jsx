@@ -296,12 +296,15 @@ const OrderWrapper = () => {
         <ul className="nav nav-tabs mb-4">
           <li className="nav-item">
             <button
-              className={`nav-link ${activeTab === "orders" ? "active" : ""}`}
-              onClick={() => setActiveTab("orders")}
+              className={`nav-link ${
+                activeTab === "quotations" ? "active" : ""
+              }`}
+              onClick={() => setActiveTab("quotations")}
             >
-              Orders
+              Quotations
             </button>
           </li>
+
           <li className="nav-item">
             <button
               className={`nav-link ${activeTab === "invoices" ? "active" : ""}`}
@@ -312,12 +315,10 @@ const OrderWrapper = () => {
           </li>
           <li className="nav-item">
             <button
-              className={`nav-link ${
-                activeTab === "quotations" ? "active" : ""
-              }`}
-              onClick={() => setActiveTab("quotations")}
+              className={`nav-link ${activeTab === "orders" ? "active" : ""}`}
+              onClick={() => setActiveTab("orders")}
             >
-              Quotations
+              Orders
             </button>
           </li>
         </ul>
