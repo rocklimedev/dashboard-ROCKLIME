@@ -160,7 +160,7 @@ const SidebarNew = ({
                   )}
                 </li>
               ))}
-            <li className="submenu">
+            {/* <li className="submenu">
               <a
                 href="#"
                 className={openMenu === "extras" ? "subdrop active" : ""}
@@ -188,7 +188,7 @@ const SidebarNew = ({
                   </a>
                 </li>
               </ul>
-            </li>
+            </li> */}
           </ul>
         </div>
       </div>
