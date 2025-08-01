@@ -3,6 +3,11 @@ import { useParams, Link, Navigate } from "react-router-dom";
 import { Spin, Empty } from "antd";
 import { useGetBrandParentCategoryByIdQuery } from "../../api/brandParentCategoryApi";
 import mainWrapper from "../../assets/img/products/product_page_title.png";
+import americanStandard from "../../assets/img/products/american_standard.png";
+import grohe from "../../assets/img/products/grohe.png";
+import colston from "../../assets/img/products/colston-logo_black.png";
+import groheBau from "../../assets/img/products/grohe.png"; // Assuming Grohe Bau uses the same logo as Grohe Premium
+const jayna = "https://via.placeholder.com/300"; // Placeholder for Jayna (no logo provided)
 
 const BrandSelection = () => {
   const { bpcId } = useParams();
@@ -14,12 +19,21 @@ const BrandSelection = () => {
   } = useGetBrandParentCategoryByIdQuery(bpcId);
 
   const brands = useMemo(() => {
+    // Map brand slugs to their respective logos
+    const logoMap = {
+      AS_001: americanStandard,
+      GP_002: grohe,
+      colston: colston,
+      GB_004: groheBau,
+      JA_003: jayna, // Placeholder for Jayna
+    };
+
     return Array.isArray(bpc?.brands)
       ? bpc.brands.map((brand) => ({
           id: brand.id,
           name: brand.brandName,
           url: `/products/brand/${brand.id}`,
-          image: "https://via.placeholder.com/300", // Replace with actual brand image
+          image: logoMap[brand.brandSlug] || "https://via.placeholder.com/300", // Fallback to placeholder if no logo
           alt: `${brand.brandName} logo`,
         }))
       : [];
