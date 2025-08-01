@@ -9,13 +9,15 @@ import {
   useDeleteOrderMutation,
 } from "../../api/orderApi";
 import { toast } from "sonner";
+import { FaSearch } from "react-icons/fa"; // Keep FaSearch for the search input
 import {
-  FaEdit,
-  FaPause,
-  FaFileInvoice,
-  FaTrash,
-  FaSearch,
-} from "react-icons/fa";
+  EditOutlined,
+  PauseOutlined,
+  FileTextOutlined,
+  DeleteOutlined,
+  MoreOutlined,
+} from "@ant-design/icons"; // Ant Design icons
+import { Dropdown, Menu, Button } from "antd"; // Ant Design components
 import { Tooltip } from "react-tooltip";
 import ShowInvoices from "./ShowInvoices";
 import QuotationList from "../Quotation/QuotationList";
@@ -24,8 +26,6 @@ import OnHoldModal from "./OnHoldOrder";
 import DeleteModal from "../Common/DeleteModal";
 import OrderPagination from "./OrderPagination";
 import PageHeader from "../Common/PageHeader";
-import { Dropdown } from "react-bootstrap";
-import { BsThreeDotsVertical } from "react-icons/bs";
 
 const OrderWrapper = () => {
   const navigate = useNavigate();
@@ -304,7 +304,6 @@ const OrderWrapper = () => {
               Quotations
             </button>
           </li>
-
           <li className="nav-item">
             <button
               className={`nav-link ${activeTab === "invoices" ? "active" : ""}`}
@@ -511,43 +510,58 @@ const OrderWrapper = () => {
                                 )}
                               </td>
                               <td>
-                                <Dropdown align="end">
-                                  <Dropdown.Toggle
-                                    variant="outline-secondary"
-                                    id={`dropdown-order-${order.id}`}
-                                  >
-                                    <BsThreeDotsVertical />
-                                  </Dropdown.Toggle>
-
-                                  <Dropdown.Menu>
-                                    <Dropdown.Item
-                                      onClick={() => handleEditClick(order)}
-                                    >
-                                      <FaEdit className="me-2" />
-                                      Edit Order
-                                    </Dropdown.Item>
-                                    <Dropdown.Item
-                                      onClick={() => handleHoldClick(order)}
-                                    >
-                                      <FaPause className="me-2" />
-                                      Put on Hold
-                                    </Dropdown.Item>
-                                    <Dropdown.Item
-                                      onClick={() => handleViewInvoice(order)}
-                                    >
-                                      <FaFileInvoice className="me-2" />
-                                      View Invoice
-                                    </Dropdown.Item>
-                                    <Dropdown.Item
-                                      onClick={() =>
-                                        handleDeleteClick(order.id)
-                                      }
-                                      className="text-danger"
-                                    >
-                                      <FaTrash className="me-2" />
-                                      Delete Order
-                                    </Dropdown.Item>
-                                  </Dropdown.Menu>
+                                <Dropdown
+                                  overlay={
+                                    <Menu>
+                                      <Menu.Item
+                                        key="edit"
+                                        onClick={() => handleEditClick(order)}
+                                      >
+                                        <EditOutlined
+                                          style={{ marginRight: 8 }}
+                                        />
+                                        Edit Order
+                                      </Menu.Item>
+                                      <Menu.Item
+                                        key="hold"
+                                        onClick={() => handleHoldClick(order)}
+                                      >
+                                        <PauseOutlined
+                                          style={{ marginRight: 8 }}
+                                        />
+                                        Put on Hold
+                                      </Menu.Item>
+                                      <Menu.Item
+                                        key="view-invoice"
+                                        onClick={() => handleViewInvoice(order)}
+                                      >
+                                        <FileTextOutlined
+                                          style={{ marginRight: 8 }}
+                                        />
+                                        View Invoice
+                                      </Menu.Item>
+                                      <Menu.Item
+                                        key="delete"
+                                        onClick={() =>
+                                          handleDeleteClick(order.id)
+                                        }
+                                        style={{ color: "#ff4d4f" }}
+                                      >
+                                        <DeleteOutlined
+                                          style={{ marginRight: 8 }}
+                                        />
+                                        Delete Order
+                                      </Menu.Item>
+                                    </Menu>
+                                  }
+                                  trigger={["click"]}
+                                  placement="bottomRight"
+                                >
+                                  <Button
+                                    type="text"
+                                    icon={<MoreOutlined />}
+                                    aria-label="More actions"
+                                  />
                                 </Dropdown>
                               </td>
                             </tr>

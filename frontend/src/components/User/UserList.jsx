@@ -1,24 +1,27 @@
 import React, { useState, useMemo } from "react";
-import {
-  FaEye,
-  FaPen,
-  FaTrash,
-  FaExclamationTriangle,
-  FaBan,
-  FaSearch,
-} from "react-icons/fa";
+import { FaSearch } from "react-icons/fa"; // Keep FaSearch for search input
 import {
   useGetAllUsersQuery,
   useReportUserMutation,
   useInactiveUserMutation,
   useDeleteUserMutation,
 } from "../../api/userApi";
+import {
+  EyeOutlined,
+  EditOutlined,
+  StopOutlined,
+  ExclamationCircleOutlined,
+  DeleteOutlined,
+  MoreOutlined,
+} from "@ant-design/icons"; // Ant Design icons
+import { Dropdown, Menu, Button } from "antd"; // Ant Design components
 import AddUser from "./AddUser";
 import DataTablePagination from "../Common/DataTablePagination";
 import DeleteModal from "../Common/DeleteModal";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "../Common/PageHeader";
+
 const UserList = () => {
   const { data, error, isLoading, isFetching, refetch } = useGetAllUsersQuery();
   const users = data?.users || [];
@@ -316,7 +319,6 @@ const UserList = () => {
                             <th>Mobile Number</th>
                             <th>Roles</th>
                             <th>Status</th>
-
                             <th></th>
                           </tr>
                         </thead>
@@ -342,42 +344,84 @@ const UserList = () => {
                                 </span>
                               </td>
                               <td>
-                                <div className="actions d-flex gap-2">
-                                  <FaEye
-                                    className="align-middle fs-18"
-                                    onClick={() => handleViewUser(user)}
-                                    aria-label={`View ${user.name}`}
+                                <Dropdown
+                                  overlay={
+                                    <Menu>
+                                      <Menu.Item
+                                        key="view"
+                                        onClick={() => handleViewUser(user)}
+                                        title={`View ${user.name || "user"}`}
+                                      >
+                                        <EyeOutlined
+                                          style={{ marginRight: 8 }}
+                                        />
+                                        View User
+                                      </Menu.Item>
+                                      <Menu.Item
+                                        key="edit"
+                                        onClick={() => handleEditUser(user)}
+                                        title={`Edit ${user.name || "user"}`}
+                                      >
+                                        <EditOutlined
+                                          style={{ marginRight: 8 }}
+                                        />
+                                        Edit User
+                                      </Menu.Item>
+                                      <Menu.Item
+                                        key="inactive"
+                                        onClick={() =>
+                                          handleInactiveUser(user.userId)
+                                        }
+                                        disabled={isInactivating}
+                                        title={`Mark ${
+                                          user.name || "user"
+                                        } as inactive`}
+                                      >
+                                        <StopOutlined
+                                          style={{ marginRight: 8 }}
+                                        />
+                                        Inactive User
+                                      </Menu.Item>
+                                      <Menu.Item
+                                        key="report"
+                                        onClick={() =>
+                                          handleReportUser(user.userId)
+                                        }
+                                        disabled={isReporting}
+                                        title={`Report ${user.name || "user"}`}
+                                      >
+                                        <ExclamationCircleOutlined
+                                          style={{ marginRight: 8 }}
+                                        />
+                                        Report User
+                                      </Menu.Item>
+                                      <Menu.Item
+                                        key="delete"
+                                        onClick={() =>
+                                          handleDeleteUser(user.userId)
+                                        }
+                                        disabled={isDeleting}
+                                        style={{ color: "#ff4d4f" }}
+                                        title={`Delete ${user.name || "user"}`}
+                                      >
+                                        <DeleteOutlined
+                                          style={{ marginRight: 8 }}
+                                        />
+                                        Delete User
+                                      </Menu.Item>
+                                    </Menu>
+                                  }
+                                  trigger={["click"]}
+                                  placement="bottomRight"
+                                >
+                                  <Button
+                                    type="text"
+                                    icon={<MoreOutlined />}
+                                    aria-label={`More actions for ${
+                                      user.name || "user"
+                                    }`}
                                   />
-                                  <FaPen
-                                    className="align-middle fs-18"
-                                    onClick={() => handleEditUser(user)}
-                                    aria-label={`Edit ${user.name}`}
-                                  />
-                                  <FaBan
-                                    className="align-middle fs-18"
-                                    onClick={() =>
-                                      handleInactiveUser(user.userId)
-                                    }
-                                    disabled={isInactivating}
-                                    aria-label={`Inactive ${user.name}`}
-                                  />
-                                  <FaExclamationTriangle
-                                    className="align-middle fs-18"
-                                    onClick={() =>
-                                      handleReportUser(user.userId)
-                                    }
-                                    disabled={isReporting}
-                                    aria-label={`Report ${user.name}`}
-                                  />
-                                  <FaTrash
-                                    className="align-middle fs-18"
-                                    onClick={() =>
-                                      handleDeleteUser(user.userId)
-                                    }
-                                    disabled={isDeleting}
-                                    aria-label={`Delete ${user.name}`}
-                                  />
-                                </div>
+                                </Dropdown>
                               </td>
                             </tr>
                           ))}

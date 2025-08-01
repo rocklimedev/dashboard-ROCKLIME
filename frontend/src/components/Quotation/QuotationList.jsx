@@ -6,17 +6,14 @@ import {
 } from "../../api/quotationApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
-import { FaSearch } from "react-icons/fa";
+import { FaSearch, FaEye, FaTrash, FaEdit } from "react-icons/fa";
 import QuotationProductModal from "./QuotationProductModal";
 import DeleteModal from "../Common/DeleteModal";
 import { toast } from "sonner";
-import ReactPaginate from "react-paginate";
-import Actions from "../Common/Actions";
+import { Dropdown, Menu, Button } from "antd"; // Import Ant Design components
+import { MoreOutlined } from "@ant-design/icons"; // Ant Design icon for the dropdown trigger
 import PageHeader from "../Common/PageHeader";
-import { FaEye, FaTrash, FaEdit } from "react-icons/fa";
 import DataTablePagination from "../Common/DataTablePagination";
-import { Dropdown, Button } from "react-bootstrap";
-import { BsThreeDotsVertical } from "react-icons/bs";
 
 const QuotationList = () => {
   const navigate = useNavigate();
@@ -291,9 +288,7 @@ const QuotationList = () => {
                           <th>Quotation Date</th>
                           <th>Due Date</th>
                           <th>Reference Number</th>
-
                           <th>Products</th>
-
                           <th>Created By</th>
                           <th>Customer</th>
                           <th>Final Amount</th>
@@ -315,7 +310,6 @@ const QuotationList = () => {
                               ).toLocaleDateString()}
                             </td>
                             <td>{quotation.reference_number || "N/A"}</td>
-
                             <td>
                               <button
                                 className="btn btn-link"
@@ -329,47 +323,61 @@ const QuotationList = () => {
                                 {getProductCount(quotation.products)})
                               </button>
                             </td>
-
                             <td>{getUserName(quotation.createdBy)}</td>
                             <td>{getCustomerName(quotation.customerId)}</td>
                             <td>₹{quotation.finalAmount || 0}</td>
                             <td>
-                              <Dropdown align="end">
-                                <Dropdown.Toggle
-                                  variant="outline-secondary"
-                                  size="sm"
-                                  id={`dropdown-quotation-${quotation.quotationId}`}
-                                >
-                                  <BsThreeDotsVertical />
-                                </Dropdown.Toggle>
-
-                                <Dropdown.Menu>
-                                  <Dropdown.Item
-                                    as={Link}
-                                    to={`/quotations/${quotation.quotationId}`}
-                                    title="View Quotation"
-                                  >
-                                    <FaEye className="me-2" />
-                                    View
-                                  </Dropdown.Item>
-                                  <Dropdown.Item
-                                    as={Link}
-                                    to={`/quotations/${quotation.quotationId}/edit`}
-                                    title="Edit Quotation"
-                                  >
-                                    <FaEdit className="me-2" />
-                                    Edit
-                                  </Dropdown.Item>
-                                  <Dropdown.Item
-                                    onClick={() => handleDeleteClick(quotation)}
-                                    disabled={isDeleting}
-                                    className="text-danger"
-                                    title="Delete Quotation"
-                                  >
-                                    <FaTrash className="me-2" />
-                                    Delete
-                                  </Dropdown.Item>
-                                </Dropdown.Menu>
+                              <Dropdown
+                                overlay={
+                                  <Menu>
+                                    <Menu.Item key="view">
+                                      <Link
+                                        to={`/quotations/${quotation.quotationId}`}
+                                        style={{
+                                          textDecoration: "none",
+                                          color: "inherit",
+                                        }}
+                                        title="View Quotation"
+                                      >
+                                        <FaEye style={{ marginRight: 8 }} />
+                                        View
+                                      </Link>
+                                    </Menu.Item>
+                                    <Menu.Item key="edit">
+                                      <Link
+                                        to={`/quotations/${quotation.quotationId}/edit`}
+                                        style={{
+                                          textDecoration: "none",
+                                          color: "inherit",
+                                        }}
+                                        title="Edit Quotation"
+                                      >
+                                        <FaEdit style={{ marginRight: 8 }} />
+                                        Edit
+                                      </Link>
+                                    </Menu.Item>
+                                    <Menu.Item
+                                      key="delete"
+                                      onClick={() =>
+                                        handleDeleteClick(quotation)
+                                      }
+                                      disabled={isDeleting}
+                                      style={{ color: "#ff4d4f" }}
+                                      title="Delete Quotation"
+                                    >
+                                      <FaTrash style={{ marginRight: 8 }} />
+                                      Delete
+                                    </Menu.Item>
+                                  </Menu>
+                                }
+                                trigger={["click"]}
+                                placement="bottomRight"
+                              >
+                                <Button
+                                  type="text"
+                                  icon={<MoreOutlined />}
+                                  aria-label="More actions"
+                                />
                               </Dropdown>
                             </td>
                           </tr>
