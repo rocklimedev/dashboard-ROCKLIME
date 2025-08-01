@@ -424,7 +424,6 @@ const ProductsList = () => {
             onViewToggle: (checked) => setViewMode(checked ? "card" : "list"),
             showViewToggle: true,
             cartItems,
-            onCartClick: () => document.getElementById("cart-modal").click(),
           }}
           exportOptions={{ pdf: false, excel: false }}
         />

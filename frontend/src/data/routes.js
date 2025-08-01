@@ -181,7 +181,7 @@ const masterRoutes = [
     submenu: [
       {
         path: "/hrm/attendance/list",
-        name: "Employee",
+        name: "HRM",
         icon: <MdOutlinePeopleAlt />,
         isSidebarActive: true,
         element: <AttendanceList />,
