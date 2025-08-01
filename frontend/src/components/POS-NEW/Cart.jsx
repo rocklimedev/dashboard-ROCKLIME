@@ -109,11 +109,11 @@ const CustomerSelect = styled(Select)`
 `;
 
 const CheckoutButton = styled(Button)`
-  background: #e31e24;
-  border-color: #e31e24;
+  background: #1890ff;
+  border-color: #1890ff;
   &:hover {
-    background: #e31e24;
-    border-color: #e31e24;
+    background: #40a9ff;
+    border-color: #40a9ff;
   }
 `;
 
@@ -418,7 +418,7 @@ const Cart = ({ onConvertToOrder }) => {
       setActiveTab("cart");
     } catch (error) {
       toast.error(
-        `Failed to create invoice: ${
+        `Failed to place order: ${
           error.data?.message || error.message || "Unknown error"
         }`
       );
@@ -757,9 +757,9 @@ const Cart = ({ onConvertToOrder }) => {
                       }
                       block
                       size="large"
-                      aria-label="Create Invoice"
+                      aria-label="Place order"
                     >
-                      Create Invoice
+                      Place Order
                     </CheckoutButton>
                     <Button
                       type="default"

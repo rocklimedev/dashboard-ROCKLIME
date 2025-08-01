@@ -20,6 +20,8 @@ import {
 } from "../../api/customerApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
 import { useGetAllAddressesQuery } from "../../api/addressApi";
+import { useGetAllQuotationsQuery } from "../../api/quotationApi";
+import { useGetAllOrdersQuery } from "../../api/orderApi"; // Import order hook
 import {
   FaEye,
   FaTrash,
@@ -57,18 +59,36 @@ const CustomerDetails = () => {
     error: usersError,
     isLoading: isUsersLoading,
   } = useGetAllUsersQuery();
+
   const {
     data: addressesData,
     error: addressesError,
     isLoading: isAddressesLoading,
   } = useGetAllAddressesQuery();
 
+  const {
+    data: quotationsData,
+    error: quotationsError,
+    isLoading: isQuotationsLoading,
+  } = useGetAllQuotationsQuery(
+    { customerId: customer?.customerId },
+    { skip: !customer?.customerId }
+  );
+
+  const {
+    data: ordersData,
+    error: ordersError,
+    isLoading: isOrdersLoading,
+  } = useGetAllOrdersQuery();
+
   // Loading state
   if (
     isCustomerLoading ||
     isInvoiceLoading ||
     isUsersLoading ||
-    isAddressesLoading
+    isAddressesLoading ||
+    isQuotationsLoading ||
+    isOrdersLoading
   ) {
     return (
       <Container className="text-center my-5">
@@ -84,7 +104,14 @@ const CustomerDetails = () => {
   }
 
   // Error state
-  if (customerError || invoiceError || usersError || addressesError) {
+  if (
+    customerError ||
+    invoiceError ||
+    usersError ||
+    addressesError ||
+    quotationsError ||
+    ordersError
+  ) {
     return (
       <Container className="my-5">
         <Alert variant="danger" role="alert">
@@ -93,6 +120,8 @@ const CustomerDetails = () => {
             invoiceError?.data?.message ||
             usersError?.data?.message ||
             addressesError?.data?.message ||
+            quotationsError?.data?.message ||
+            ordersError?.data?.message ||
             "Unknown error"}
         </Alert>
       </Container>
@@ -113,6 +142,12 @@ const CustomerDetails = () => {
   const invoices = invoicesData?.data || [];
   const users = usersData?.data || [];
   const addresses = addressesData?.data || [];
+  const quotations = Array.isArray(quotationsData)
+    ? quotationsData
+    : quotationsData?.data || [];
+  const orders = (ordersData?.orders || []).filter(
+    (order) => order.createdFor === customer.customerId
+  );
 
   // Helper functions
   const formatAddress = (shipTo) => {
@@ -136,7 +171,7 @@ const CustomerDetails = () => {
         <Container fluid className="customer-details-container">
           <h1 className="page-title mb-4">{customer.name}</h1>
 
-          {/* Accordion for Customer Info and Invoices */}
+          {/* Accordion for Customer Info, Invoices, Quotations, and Orders */}
           <Accordion
             activeKey={activeAccordion}
             onSelect={(key) => setActiveAccordion(key)}
@@ -299,6 +334,212 @@ const CustomerDetails = () => {
                                     data-bs-target="#delete"
                                     className="action-btn"
                                     aria-label={`Delete invoice ${invoice.invoiceNo}`}
+                                  >
+                                    <FaTrash />
+                                  </Button>
+                                </OverlayTrigger>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </Table>
+                    </div>
+                  </Card.Body>
+                </Card>
+              </Accordion.Body>
+            </Accordion.Item>
+
+            {/* Quotations */}
+            <Accordion.Item eventKey="2">
+              <Accordion.Header>
+                <FaEye className="me-2" /> Quotations
+              </Accordion.Header>
+              <Accordion.Body>
+                <Card className="shadow-sm">
+                  <Card.Body>
+                    <div className="table-responsive">
+                      <Table hover className="customer-table">
+                        <thead>
+                          <tr>
+                            <th>
+                              <input
+                                type="checkbox"
+                                aria-label="Select all quotations"
+                              />
+                            </th>
+                            <th>Quotation No</th>
+                            <th>Title</th>
+                            <th>Ship To</th>
+                            <th>Quotation Date</th>
+                            <th>Due Date</th>
+                            <th>Final Amount</th>
+                            <th>Created By</th>
+                            <th className="text-end">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {quotations.map((quotation) => (
+                            <tr key={quotation.quotationId}>
+                              <td>
+                                <input
+                                  type="checkbox"
+                                  aria-label={`Select quotation ${quotation.reference_number}`}
+                                />
+                              </td>
+                              <td>
+                                <a
+                                  href={`/quotation/${quotation.quotationId}`}
+                                  className="invoice-link"
+                                >
+                                  {quotation.reference_number || "N/A"}
+                                </a>
+                              </td>
+                              <td>{quotation.document_title}</td>
+                              <td>{formatAddress(quotation.shipTo)}</td>
+                              <td>
+                                {new Date(
+                                  quotation.quotation_date
+                                ).toLocaleDateString()}
+                              </td>
+                              <td>
+                                {new Date(
+                                  quotation.due_date
+                                ).toLocaleDateString()}
+                              </td>
+                              <td>${quotation.finalAmount}</td>
+                              <td>{getUsername(quotation.createdBy)}</td>
+                              <td className="text-end">
+                                <OverlayTrigger
+                                  overlay={<Tooltip>View Quotation</Tooltip>}
+                                >
+                                  <Button
+                                    variant="outline-primary"
+                                    size="sm"
+                                    href={`/quotation/${quotation.quotationId}`}
+                                    target="_blank"
+                                    className="me-2 action-btn"
+                                    aria-label={`View quotation ${quotation.reference_number}`}
+                                  >
+                                    <FaEye />
+                                  </Button>
+                                </OverlayTrigger>
+                                <OverlayTrigger
+                                  overlay={<Tooltip>Delete Quotation</Tooltip>}
+                                >
+                                  <Button
+                                    variant="outline-danger"
+                                    size="sm"
+                                    href="#"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#delete"
+                                    className="action-btn"
+                                    aria-label={`Delete quotation ${quotation.reference_number}`}
+                                  >
+                                    <FaTrash />
+                                  </Button>
+                                </OverlayTrigger>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </Table>
+                    </div>
+                  </Card.Body>
+                </Card>
+              </Accordion.Body>
+            </Accordion.Item>
+
+            {/* Orders */}
+            <Accordion.Item eventKey="3">
+              <Accordion.Header>
+                <FaEye className="me-2" /> Orders
+              </Accordion.Header>
+              <Accordion.Body>
+                <Card className="shadow-sm">
+                  <Card.Body>
+                    <div className="table-responsive">
+                      <Table hover className="customer-table">
+                        <thead>
+                          <tr>
+                            <th>
+                              <input
+                                type="checkbox"
+                                aria-label="Select all orders"
+                              />
+                            </th>
+                            <th>Order ID</th>
+                            <th>Title</th>
+                            <th>Status</th>
+                            <th>Due Date</th>
+                            <th>Priority</th>
+                            <th>Created By</th>
+                            <th className="text-end">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {orders.map((order) => (
+                            <tr key={order.id}>
+                              <td>
+                                <input
+                                  type="checkbox"
+                                  aria-label={`Select order ${order.id}`}
+                                />
+                              </td>
+                              <td>
+                                <a
+                                  href={`/order/${order.id}`}
+                                  className="invoice-link"
+                                >
+                                  {order.id}
+                                </a>
+                              </td>
+                              <td>{order.title}</td>
+                              <td>
+                                <Badge
+                                  bg={
+                                    order.status === "DELIVERED"
+                                      ? "success"
+                                      : order.status === "CANCELED"
+                                      ? "danger"
+                                      : "warning"
+                                  }
+                                >
+                                  {order.status}
+                                </Badge>
+                              </td>
+                              <td>
+                                {order.dueDate
+                                  ? new Date(order.dueDate).toLocaleDateString()
+                                  : "N/A"}
+                              </td>
+                              <td>{order.priority}</td>
+                              <td>{getUsername(order.createdBy)}</td>
+                              <td className="text-end">
+                                <OverlayTrigger
+                                  overlay={<Tooltip>View Order</Tooltip>}
+                                >
+                                  <Button
+                                    variant="outline-primary"
+                                    size="sm"
+                                    href={`/order/${order.id}`}
+                                    target="_blank"
+                                    className="me-2 action-btn"
+                                    aria-label={`View order ${order.id}`}
+                                  >
+                                    <FaEye />
+                                  </Button>
+                                </OverlayTrigger>
+                                <OverlayTrigger
+                                  overlay={<Tooltip>Delete Order</Tooltip>}
+                                >
+                                  <Button
+                                    variant="outline-danger"
+                                    size="sm"
+                                    href="#"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#delete"
+                                    className="action-btn"
+                                    aria-label={`Delete order ${order.id}`}
                                   >
                                     <FaTrash />
                                   </Button>
