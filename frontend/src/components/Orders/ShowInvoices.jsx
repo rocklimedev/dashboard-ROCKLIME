@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Button, Form, Spinner, Alert } from "react-bootstrap";
+import { Form, Spinner, Alert } from "react-bootstrap"; // Removed Button, Dropdown
 import {
   useGetAllInvoicesQuery,
   useDeleteInvoiceMutation,
@@ -11,15 +11,14 @@ import { useGetAllQuotationsQuery } from "../../api/quotationApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetAllAddressesQuery } from "../../api/addressApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
+import { FaSearch, FaPen } from "react-icons/fa"; // Keep FaSearch, FaPen
 import {
-  FaEye,
-  FaEdit,
-  FaTrash,
-  FaSearch,
-  FaFileInvoice,
-  FaPen,
-} from "react-icons/fa";
-import { Select } from "antd";
+  EyeOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  MoreOutlined,
+} from "@ant-design/icons"; // Ant Design icons
+import { Select, Dropdown, Menu, Button } from "antd"; // Ant Design components
 import EditInvoice from "../Invoices/EditInvoice";
 import CreateInvoiceFromQuotation from "../Invoices/CreateInvoiceFromQuotation";
 import DeleteModal from "../Common/DeleteModal";
@@ -28,8 +27,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { format, subDays } from "date-fns";
 import PageHeader from "../Common/PageHeader";
-import { Dropdown } from "react-bootstrap";
-import { BsThreeDotsVertical } from "react-icons/bs";
+
 // Destructure Option from Select
 const { Option } = Select;
 
@@ -563,30 +561,6 @@ const ShowInvoices = () => {
             </div>
             <div className="col-lg-8">
               <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
-                {/* <div className="input-icon w-120 position-relative me-2">
-                  <DatePicker
-                    selected={createdDate}
-                    onChange={(date) => setCreatedDate(date)}
-                    className="form-control datetimepicker"
-                    placeholderText="Created Date"
-                    dateFormat="dd/MM/yyyy"
-                  />
-                  <span className="input-icon-addon">
-                    <i className="ti ti-calendar text-gray-9"></i>
-                  </span>
-                </div>
-                <div className="input-icon w-120 position-relative me-2">
-                  <DatePicker
-                    selected={dueDate}
-                    onChange={(date) => setDueDate(date)}
-                    className="form-control datetimepicker"
-                    placeholderText="Due Date"
-                    dateFormat="dd/MM/yyyy"
-                  />
-                  <span className="input-icon-addon">
-                    <i className="ti ti-calendar text-gray-9"></i>
-                  </span>
-                </div> */}
                 <div className="input-icon-start position-relative">
                   <span className="input-icon-addon">
                     <FaSearch />
@@ -600,67 +574,6 @@ const ShowInvoices = () => {
                     aria-label="Search invoices"
                   />
                 </div>
-                {/* <div className="me-2" style={{ width: "120px" }}>
-                  <Select
-                    style={{ width: "100%" }}
-                    placeholder="All Customers"
-                    value={selectedCustomer || undefined}
-                    onChange={(value) => setSelectedCustomer(value)}
-                    allowClear
-                    showSearch
-                    optionFilterProp="children"
-                    filterOption={(input, option) =>
-                      option.children
-                        .toLowerCase()
-                        .includes(input.toLowerCase())
-                    }
-                  >
-                    <Option value="">All Customers</Option>
-                    {customers.map((cust) => (
-                      <Option key={cust.customerId} value={cust.customerId}>
-                        {cust.name || "Unnamed Customer"}
-                      </Option>
-                    ))}
-                  </Select>
-                </div>
-
-                <div className="d-flex align-items-center border p-2 rounded">
-                  <span className="d-inline-flex me-2">Sort By: </span>
-                  <div className="dropdown">
-                    <a
-                      href="#"
-                      className="dropdown-toggle btn btn-white d-inline-flex align-items-center border-0 bg-transparent p-0 text-dark"
-                      data-bs-toggle="dropdown"
-                      aria-expanded="false"
-                    >
-                      {sortBy}
-                    </a>
-                    <ul className="dropdown-menu dropdown-menu-end p-3">
-                      {[
-                        "Recently Added",
-                        "Ascending",
-                        "Descending",
-                        "Last 7 Days",
-                        "Last Month",
-                        "Created Date",
-                        "Due Date",
-                      ].map((option) => (
-                        <li key={option}>
-                          <a
-                            href="#"
-                            className="dropdown-item rounded-1"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              setSortBy(option);
-                            }}
-                          >
-                            {option}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div> */}
                 <button
                   className="btn btn-outline-secondary ms-2"
                   onClick={clearFilters}
@@ -839,36 +752,56 @@ const ShowInvoices = () => {
                               )}
                             </td>
                             <td>
-                              <Dropdown>
-                                <Dropdown.Toggle
-                                  variant="outline-secondary"
-                                  size="sm"
-                                  id={`dropdown-${inv.invoiceId}`}
+                              <Dropdown
+                                overlay={
+                                  <Menu>
+                                    <Menu.Item key="view">
+                                      <Link
+                                        to={`/invoice/${inv.invoiceId}`}
+                                        style={{
+                                          textDecoration: "none",
+                                          color: "inherit",
+                                        }}
+                                        title="View Invoice"
+                                      >
+                                        <EyeOutlined
+                                          style={{ marginRight: 8 }}
+                                        />
+                                        View Invoice
+                                      </Link>
+                                    </Menu.Item>
+                                    <Menu.Item
+                                      key="edit"
+                                      onClick={() => handleEditClick(inv)}
+                                      title="Edit Invoice"
+                                    >
+                                      <EditOutlined
+                                        style={{ marginRight: 8 }}
+                                      />
+                                      Edit Invoice
+                                    </Menu.Item>
+                                    <Menu.Item
+                                      key="delete"
+                                      onClick={() => handleDeleteClick(inv)}
+                                      disabled={isDeleting}
+                                      style={{ color: "#ff4d4f" }}
+                                      title="Delete Invoice"
+                                    >
+                                      <DeleteOutlined
+                                        style={{ marginRight: 8 }}
+                                      />
+                                      Delete Invoice
+                                    </Menu.Item>
+                                  </Menu>
+                                }
+                                trigger={["click"]}
+                                placement="bottomRight"
+                              >
+                                <Button
+                                  type="text"
+                                  icon={<MoreOutlined />}
                                   aria-label={`More actions for invoice ${inv.invoiceNo}`}
-                                >
-                                  <BsThreeDotsVertical />
-                                </Dropdown.Toggle>
-
-                                <Dropdown.Menu align="end">
-                                  <Dropdown.Item
-                                    as={Link}
-                                    to={`/invoice/${inv.invoiceId}`}
-                                  >
-                                    <FaEye className="me-2" /> View Invoice
-                                  </Dropdown.Item>
-                                  <Dropdown.Item
-                                    onClick={() => handleEditClick(inv)}
-                                  >
-                                    <FaEdit className="me-2" /> Edit Invoice
-                                  </Dropdown.Item>
-                                  <Dropdown.Item
-                                    onClick={() => handleDeleteClick(inv)}
-                                    disabled={isDeleting}
-                                    className="text-danger"
-                                  >
-                                    <FaTrash className="me-2" /> Delete Invoice
-                                  </Dropdown.Item>
-                                </Dropdown.Menu>
+                                />
                               </Dropdown>
                             </td>
                           </tr>
