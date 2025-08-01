@@ -12,6 +12,7 @@ import * as XLSX from "xlsx";
 import moment from "moment";
 import DataTablePagination from "../Common/DataTablePagination";
 import PageHeader from "../Common/PageHeader";
+
 const AttendanceWrapper = ({ userId }) => {
   const [filters, setFilters] = useState({
     status: "",
@@ -46,7 +47,17 @@ const AttendanceWrapper = ({ userId }) => {
     { skip: !userId }
   );
 
-  // Memoized grouped attendance for tab-based filtering
+  // Check if user has clocked in/out today
+  const todayAttendance = useMemo(() => {
+    return (
+      userAttendance?.find(
+        (att) =>
+          moment(att.date).isSame(moment(), "day") && att.status === "present"
+      ) || null
+    );
+  }, [userAttendance]);
+
+  // Memoized grouped attendance
   const groupedAttendance = useMemo(
     () => ({
       All: allAttendance?.attendances || [],
@@ -70,7 +81,7 @@ const AttendanceWrapper = ({ userId }) => {
     if (filters.search.trim()) {
       result = result.filter((att) =>
         [att.user?.name, att.user?.email]
-          .filter(Boolean)
+          .filter(Boolean) // Ensure field exists
           .some((field) =>
             field.toLowerCase().includes(filters.search.toLowerCase())
           )
@@ -80,25 +91,18 @@ const AttendanceWrapper = ({ userId }) => {
     // Apply sorting
     switch (filters.sortBy) {
       case "Ascending":
-        result = [...result].sort((a, b) =>
+        return [...result].sort((a, b) =>
           (a.user?.name || "").localeCompare(b.user?.name || "")
         );
-        break;
       case "Descending":
-        result = [...result].sort((a, b) =>
+        return [...result].sort((a, b) =>
           (b.user?.name || "").localeCompare(a.user?.name || "")
         );
-        break;
       case "Recently Added":
-        result = [...result].sort(
-          (a, b) => new Date(b.date) - new Date(a.date)
-        );
-        break;
+        return [...result].sort((a, b) => new Date(b.date) - new Date(a.date));
       default:
-        break;
+        return result;
     }
-
-    return result;
   }, [groupedAttendance, filters.status, filters.search, filters.sortBy]);
 
   // Paginated attendance
@@ -110,11 +114,7 @@ const AttendanceWrapper = ({ userId }) => {
   // Calculate overview metrics
   const calculateOverview = () => {
     if (!userAttendance) {
-      return {
-        totalDays: 0,
-        presentDays: 0,
-        absentDays: 0,
-      };
+      return { totalDays: 0, presentDays: 0, absentDays: 0 };
     }
 
     const totalDays =
@@ -126,11 +126,7 @@ const AttendanceWrapper = ({ userId }) => {
       (att) => att.status === "absent"
     ).length;
 
-    return {
-      totalDays,
-      presentDays,
-      absentDays,
-    };
+    return { totalDays, presentDays, absentDays };
   };
 
   const overview = calculateOverview();
@@ -173,17 +169,18 @@ const AttendanceWrapper = ({ userId }) => {
     }
 
     const doc = new jsPDF();
+    doc.setFontSize(12);
     doc.text("Attendance Report", 20, 10);
     let y = 20;
     filteredAttendance.forEach((att, index) => {
       doc.text(
-        `${index + 1}. ${new Date(att.date).toLocaleDateString()} - ${
-          att.status
-        } - Clock In: ${
-          att.clockIn ? new Date(att.clockIn).toLocaleTimeString() : "N/A"
-        } - Clock Out: ${
-          att.clockOut ? new Date(att.clockOut).toLocaleTimeString() : "N/A"
-        }`,
+        `${index + 1}. Date: ${moment(att.date).format(
+          "MM/DD/YYYY"
+        )} | Status: ${att.status} | Clock In: ${
+          att.clockIn ? moment(att.clockIn).format("hh:mm A") : "N/A"
+        } | Clock Out: ${
+          att.clockOut ? moment(att.clockOut).format("hh:mm A") : "N/A"
+        } | User: ${att.user?.name || "N/A"} (${att.user?.email || "N/A"})`,
         20,
         y
       );
@@ -200,13 +197,11 @@ const AttendanceWrapper = ({ userId }) => {
     }
 
     const data = filteredAttendance.map((att) => ({
-      Date: new Date(att.date).toLocaleDateString(),
+      Date: moment(att.date).format("MM/DD/YYYY"),
       Status: att.status,
-      "Clock In": att.clockIn
-        ? new Date(att.clockIn).toLocaleTimeString()
-        : "N/A",
+      "Clock In": att.clockIn ? moment(att.clockIn).format("hh:mm A") : "N/A",
       "Clock Out": att.clockOut
-        ? new Date(att.clockOut).toLocaleTimeString()
+        ? moment(att.clockOut).format("hh:mm A")
         : "N/A",
       "User Name": att.user?.name || "N/A",
       "User Email": att.user?.email || "N/A",
@@ -235,34 +230,21 @@ const AttendanceWrapper = ({ userId }) => {
   useEffect(() => {
     if (allAttendanceError) {
       toast.error(
-        allAttendanceError.message || "Failed to fetch all attendance"
+        allAttendanceError.data?.message || "Failed to fetch all attendance"
       );
     }
     if (userAttendanceError) {
       toast.error(
-        userAttendanceError.message || "Failed to fetch user attendance"
+        userAttendanceError.data?.message || "Failed to fetch user attendance"
       );
     }
   }, [allAttendanceError, userAttendanceError]);
 
   // Render overview
-  const renderOverview = () => (
-    <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
-      <p className="mb-0 me-3 pe-3 border-end fs-14">
-        Total Days: <span className="text-dark">{overview.totalDays}</span>
-      </p>
-      <p className="mb-0 me-3 pe-3 border-end fs-14">
-        Present: <span className="text-dark">{overview.presentDays}</span>
-      </p>
-      <p className="mb-0 fs-14">
-        Absent: <span className="text-dark">{overview.absentDays}</span>
-      </p>
-    </div>
-  );
 
   // Render table
   const renderTable = () => {
-    if (isAllAttendanceLoading) {
+    if (isAllAttendanceLoading || isUserAttendanceLoading) {
       return (
         <div className="text-center py-4">
           <div className="spinner-border text-primary" role="status">
@@ -290,10 +272,8 @@ const AttendanceWrapper = ({ userId }) => {
               <th>Status</th>
               <th>Clock In</th>
               <th>Clock Out</th>
-              <th>Production</th>
-              <th>Break</th>
-              <th>Overtime</th>
-              <th>Progress</th>
+              <th>User Name</th>
+              <th>User Email</th>
               <th>Total Hours</th>
             </tr>
           </thead>
@@ -305,15 +285,10 @@ const AttendanceWrapper = ({ userId }) => {
                 clockIn && clockOut
                   ? ((clockOut - clockIn) / (1000 * 60 * 60)).toFixed(2) + "h"
                   : "N/A";
-              // Placeholder calculations (adjust based on your logic)
-              const production = totalHours !== "N/A" ? "9h 00m" : "0h 00m";
-              const breakTime = "1h 13m"; // Add logic if available
-              const overtime = "0h 00m"; // Add logic if available
-              const progress = { success: 60, warning: 20, danger: 10 }; // Add logic
 
               return (
                 <tr key={att._id}>
-                  <td>{new Date(att.date).toLocaleDateString()}</td>
+                  <td>{moment(att.date).format("MM/DD/YYYY")}</td>
                   <td>
                     <span
                       className={`badge badge-${
@@ -324,30 +299,12 @@ const AttendanceWrapper = ({ userId }) => {
                       {att.status.charAt(0).toUpperCase() + att.status.slice(1)}
                     </span>
                   </td>
-                  <td>{clockIn ? clockIn.toLocaleTimeString() : "N/A"}</td>
-                  <td>{clockOut ? clockOut.toLocaleTimeString() : "N/A"}</td>
-                  <td>{production}</td>
-                  <td>{breakTime}</td>
-                  <td>{overtime}</td>
+                  <td>{clockIn ? moment(clockIn).format("hh:mm A") : "N/A"}</td>
                   <td>
-                    <div className="progress attendance bg-secondary-transparent">
-                      <div
-                        className="progress-bar progress-bar-success"
-                        role="progressbar"
-                        style={{ width: `${progress.success}%` }}
-                      ></div>
-                      <div
-                        className="progress-bar progress-bar-warning"
-                        role="progressbar"
-                        style={{ width: `${progress.warning}%` }}
-                      ></div>
-                      <div
-                        className="progress-bar progress-bar-danger"
-                        role="progressbar"
-                        style={{ width: `${progress.danger}%` }}
-                      ></div>
-                    </div>
+                    {clockOut ? moment(clockOut).format("hh:mm A") : "N/A"}
                   </td>
+                  <td>{att.user?.name || "N/A"}</td>
+                  <td>{att.user?.email || "N/A"}</td>
                   <td>{totalHours}</td>
                 </tr>
               );
@@ -372,11 +329,37 @@ const AttendanceWrapper = ({ userId }) => {
       <div className="content">
         <div className="card">
           <PageHeader
-            title="Attendence"
+            title="Attendance"
             subtitle="Manage your Attendance"
             tableData={paginatedAttendance}
           />
           <div className="card-body">
+            {userId && (
+              <div className="mb-3">
+                <button
+                  className="btn btn-primary me-2"
+                  onClick={handleClockIn}
+                  disabled={
+                    isClockInLoading ||
+                    (todayAttendance && !todayAttendance.clockOut)
+                  }
+                >
+                  {isClockInLoading ? "Clocking In..." : "Clock In"}
+                </button>
+                <button
+                  className="btn btn-secondary"
+                  onClick={handleClockOut}
+                  disabled={
+                    isClockOutLoading ||
+                    !todayAttendance ||
+                    todayAttendance.clockOut
+                  }
+                >
+                  {isClockOutLoading ? "Clocking Out..." : "Clock Out"}
+                </button>
+              </div>
+            )}
+
             <div className="row">
               <div className="col-lg-4">
                 <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
