@@ -28,20 +28,6 @@ import OrderPagination from "./OrderPagination";
 import PageHeader from "../Common/PageHeader";
 import ComingSoon from "../Common/ComingSoon";
 
-// Define status colors for each possible order status
-const statusColors = {
-  CREATED: "bg-primary",
-  PREPARING: "bg-info",
-  CHECKING: "bg-warning",
-  INVOICE: "bg-secondary",
-  DISPATCHED: "bg-success",
-  DELIVERED: "bg-success-dark", // Custom class or adjust as needed
-  PARTIALLY_DELIVERED: "bg-info-dark", // Custom class or adjust as needed
-  CANCELED: "bg-danger",
-  DRAFT: "bg-light",
-  ONHOLD: "bg-warning-dark", // Custom class or adjust as needed
-};
-
 const OrderWrapper = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("orders");
@@ -305,7 +291,7 @@ const OrderWrapper = () => {
     return diffDays <= 3;
   };
 
-  // Helper to get status display and color
+  // Helper to get status display
   const getStatusDisplay = (status) => {
     return statuses.includes(status) ? status : "CREATED"; // Default to CREATED if invalid
   };
@@ -482,11 +468,7 @@ const OrderWrapper = () => {
                           return (
                             <tr key={order.id}>
                               <td>
-                                <span
-                                  className={`priority-badge ${
-                                    statusColors[status] || "bg-secondary"
-                                  }`}
-                                >
+                                <span className="priority-badge bg-secondary">
                                   {status}
                                 </span>
                               </td>
@@ -648,19 +630,6 @@ const OrderWrapper = () => {
           />
         )}
       </div>
-
-      {/* Custom styles for additional status colors */}
-      <style jsx>{`
-        .bg-success-dark {
-          background-color: #1e7e34 !important; /* Darker green for DELIVERED */
-        }
-        .bg-info-dark {
-          background-color: #117a8b !important; /* Darker cyan for PARTIALLY_DELIVERED */
-        }
-        .bg-warning-dark {
-          background-color: #d39e00 !important; /* Darker yellow for ONHOLD */
-        }
-      `}</style>
     </div>
   );
 };

@@ -1,43 +1,30 @@
-import React, { useState, useMemo } from "react";
-import {
-  Input,
-  Select,
-  Button,
-  Table,
-  Card,
-  Space,
-  Typography,
-  Alert,
-} from "antd";
-import { Spinner } from "react-bootstrap";
-import {
-  SearchOutlined,
-  DownloadOutlined,
-  ReloadOutlined,
-  UpOutlined,
-  DownOutlined,
-} from "@ant-design/icons";
+import React, { useState, useMemo, useEffect } from "react";
 import { toast } from "react-toastify";
+import {
+  useClockInMutation,
+  useClockOutMutation,
+  useGetAllAttendanceQuery,
+  useGetAttendanceQuery,
+} from "../../api/attendanceApi";
+import { Spinner, Button, Form } from "react-bootstrap";
+import {
+  FaSearch,
+  FaSyncAlt,
+  FaDownload,
+  FaChevronUp,
+  FaChevronDown,
+} from "react-icons/fa";
 import moment from "moment";
 import jsPDF from "jspdf";
 import * as XLSX from "xlsx";
-import {
-  useGetAllAttendanceQuery,
-  useGetAttendanceQuery,
-  useClockInMutation,
-  useClockOutMutation,
-} from "../../api/attendanceApi";
-import PageHeader from "../Common/PageHeader";
-import DataTablePagination from "../Common/DataTablePagination";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { subDays } from "date-fns";
+import PageHeader from "../Common/PageHeader";
+import DataTablePagination from "../Common/DataTablePagination";
 import "./attendancelist.css";
 
-const { Option } = Select;
-const { Text } = Typography;
-
-const AttendanceList = ({ userId }) => {
+const AttendanceWrapper = ({ userId }) => {
   // State management
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
@@ -47,7 +34,7 @@ const AttendanceList = ({ userId }) => {
   const [activeTab, setActiveTab] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const [isTableCollapsed, setIsTableCollapsed] = useState(false);
-  const itemsPerPage = 12;
+  const itemsPerPage = 10;
 
   // RTK Query hooks
   const {
@@ -64,15 +51,18 @@ const AttendanceList = ({ userId }) => {
     endDate: endDate ? moment(endDate).format("YYYY-MM-DD") : "",
   });
 
-  const { data: userAttendance, isLoading: isUserAttendanceLoading } =
-    useGetAttendanceQuery(
-      {
-        userId,
-        startDate: startDate ? moment(startDate).format("YYYY-MM-DD") : "",
-        endDate: endDate ? moment(endDate).format("YYYY-MM-DD") : "",
-      },
-      { skip: !userId }
-    );
+  const {
+    data: userAttendance,
+    isLoading: isUserAttendanceLoading,
+    error: userAttendanceError,
+  } = useGetAttendanceQuery(
+    {
+      userId,
+      startDate: startDate ? moment(startDate).format("YYYY-MM-DD") : "",
+      endDate: endDate ? moment(endDate).format("YYYY-MM-DD") : "",
+    },
+    { skip: !userId }
+  );
 
   const [clockIn, { isLoading: isClockInLoading }] = useClockInMutation();
   const [clockOut, { isLoading: isClockOutLoading }] = useClockOutMutation();
@@ -110,7 +100,11 @@ const AttendanceList = ({ userId }) => {
     // Apply search filter
     if (searchTerm.trim()) {
       result = result.filter((att) =>
-        att.user?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+        [att.user?.name, att.user?.email]
+          .filter(Boolean)
+          .some((field) =>
+            field.toLowerCase().includes(searchTerm.toLowerCase())
+          )
       );
     }
 
@@ -257,82 +251,104 @@ const AttendanceList = ({ userId }) => {
     XLSX.writeFile(wb, "attendance-report.xlsx");
   };
 
-  // Table columns
-  const columns = [
-    {
-      title: "Employee",
-      dataIndex: "user",
-      key: "employee",
-      render: (user) => (
-        <Space>
-          <div>
-            <Text strong>{user?.name || "Unknown"}</Text>
-            <br />
-            <Text type="secondary">{user?.email || "N/A"}</Text>
+  // Render table
+  const renderTable = () => {
+    if (isAllAttendanceLoading || isUserAttendanceLoading) {
+      return (
+        <div className="text-center py-4">
+          <Spinner animation="border" variant="primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+
+            <p>Loading attendance...</p>
+          </Spinner>
+        </div>
+      );
+    }
+
+    if (!paginatedAttendances.length) {
+      return (
+        <div className="text-center py-4 text-muted">
+          No attendance records found.
+        </div>
+      );
+    }
+
+    return (
+      <div className="table-responsive">
+        <table className="table table-hover">
+          <thead>
+            <tr>
+              <th>Employee</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th>Clock In</th>
+              <th>Clock Out</th>
+              <th>Total Hours</th>
+            </tr>
+          </thead>
+          <tbody>
+            {paginatedAttendances.map((att) => {
+              const clockIn = att.clockIn ? new Date(att.clockIn) : null;
+              const clockOut = att.clockOut ? new Date(att.clockOut) : null;
+              const totalHours =
+                clockIn && clockOut
+                  ? ((clockOut - clockIn) / (1000 * 60 * 60)).toFixed(2) + "h"
+                  : "N/A";
+
+              return (
+                <tr key={att._id}>
+                  <td>
+                    <div>
+                      <strong>{att.user?.name || "Unknown"}</strong>
+                      <br />
+                      <small>{att.user?.email || "N/A"}</small>
+                    </div>
+                  </td>
+                  <td>{moment(att.date).format("MM/DD/YYYY")}</td>
+                  <td>
+                    <span className="badge bg-secondary d-inline-flex align-items-center badge-xs">
+                      {att.status.charAt(0).toUpperCase() + att.status.slice(1)}
+                    </span>
+                  </td>
+                  <td>{clockIn ? moment(clockIn).format("hh:mm A") : "N/A"}</td>
+                  <td>
+                    {clockOut ? moment(clockOut).format("hh:mm A") : "N/A"}
+                  </td>
+                  <td>{totalHours}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        {filteredAttendances.length > itemsPerPage && (
+          <div className="pagination-section mt-4">
+            <DataTablePagination
+              totalItems={filteredAttendances.length}
+              itemNo={itemsPerPage}
+              onPageChange={setCurrentPage}
+              currentPage={currentPage}
+            />
           </div>
-        </Space>
-      ),
-    },
-    {
-      title: "Date",
-      dataIndex: "date",
-      key: "date",
-      render: (date) => moment(date).format("MM/DD/YYYY"),
-    },
-    {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-      render: (status) => (
-        <span
-          className={`badge ${
-            status === "present" ? "bg-success" : "bg-danger"
-          }`}
-        >
-          {status.charAt(0).toUpperCase() + status.slice(1)}
-        </span>
-      ),
-    },
-    {
-      title: "Clock In",
-      dataIndex: "clockIn",
-      key: "clockIn",
-      render: (clockIn) =>
-        clockIn ? moment(clockIn).format("hh:mm A") : "N/A",
-    },
-    {
-      title: "Clock Out",
-      dataIndex: "clockOut",
-      key: "clockOut",
-      render: (clockOut) =>
-        clockOut ? moment(clockOut).format("hh:mm A") : "N/A",
-    },
-    {
-      title: "Total Hours",
-      key: "totalHours",
-      render: (_, record) =>
-        record.clockIn && record.clockOut
-          ? (
-              (new Date(record.clockOut) - new Date(record.clockIn)) /
-              (1000 * 60 * 60)
-            ).toFixed(2) + "h"
-          : "N/A",
-    },
-  ];
+        )}
+      </div>
+    );
+  };
 
   // Loading state
   if (isAllAttendanceLoading || isUserAttendanceLoading) {
     return (
-      <div className="content">
-        <div className="card">
-          <div className="card-body text-center">
-            <Spinner
-              animation="border"
-              variant="primary"
-              role="status"
-              aria-label="Loading data"
-            />
-            <p>Loading attendance data...</p>
+      <div className="page-wrapper">
+        <div className="content">
+          <div className="card">
+            <div className="card-body text-center">
+              <Spinner
+                animation="border"
+                variant="primary"
+                role="status"
+                aria-label="Loading data"
+              />
+              <p>Loading attendance data...</p>
+            </div>
           </div>
         </div>
       </div>
@@ -340,20 +356,19 @@ const AttendanceList = ({ userId }) => {
   }
 
   // Error state
-  if (allAttendanceError) {
+  if (allAttendanceError || userAttendanceError) {
     return (
-      <div className="content">
-        <div className="card">
-          <div className="card-body">
-            <Alert
-              message="Error"
-              description={
-                allAttendanceError.data?.message ||
-                "Failed to load attendance data. Please try again."
-              }
-              type="error"
-              showIcon
-            />
+      <div className="page-wrapper">
+        <div className="content">
+          <div className="card">
+            <div className="card-body">
+              <div className="alert alert-danger" role="alert">
+                <strong>Error:</strong>{" "}
+                {allAttendanceError?.data?.message ||
+                  userAttendanceError?.data?.message ||
+                  "Failed to load attendance data. Please try again."}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -373,7 +388,7 @@ const AttendanceList = ({ userId }) => {
             {userId && (
               <div className="mb-3">
                 <Button
-                  type="primary"
+                  variant="primary"
                   onClick={handleClockIn}
                   disabled={
                     isClockInLoading ||
@@ -384,7 +399,7 @@ const AttendanceList = ({ userId }) => {
                   {isClockInLoading ? "Clocking In..." : "Clock In"}
                 </Button>
                 <Button
-                  type="default"
+                  variant="secondary"
                   onClick={handleClockOut}
                   disabled={
                     isClockOutLoading ||
@@ -450,41 +465,36 @@ const AttendanceList = ({ userId }) => {
                     placeholderText="End Date"
                     dateFormat="dd/MM/yyyy"
                   />
-                  <Select
+                  <Form.Select
                     value={sortBy}
-                    onChange={setSortBy}
-                    style={{ width: 150 }}
+                    onChange={(e) => setSortBy(e.target.value)}
                     className="me-2"
+                    style={{ width: "150px" }}
                   >
-                    <Option value="Recently Added">Recently Added</Option>
-                    <Option value="Ascending">Name (A-Z)</Option>
-                    <Option value="Descending">Name (Z-A)</Option>
-                  </Select>
-                  <Input
-                    prefix={<SearchOutlined />}
-                    placeholder="Search by employee name"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    style={{ width: 200 }}
-                    className="me-2"
-                  />
-                  <Button
-                    icon={<ReloadOutlined />}
-                    onClick={handleRefresh}
-                    className="me-2"
+                    <option value="Recently Added">Recently Added</option>
+                    <option value="Ascending">Name (A-Z)</option>
+                    <option value="Descending">Name (Z-A)</option>
+                  </Form.Select>
+                  <div
+                    className="input-group input-icon-start position-relative me-2"
+                    style={{ width: "200px" }}
                   >
-                    Refresh
-                  </Button>
+                    <span className="input-group-text">
+                      <FaSearch />
+                    </span>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Search by employee name or email"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      aria-label="Search attendance"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
-            <Button
-              icon={isTableCollapsed ? <DownOutlined /> : <UpOutlined />}
-              onClick={handleCollapse}
-              className="mb-3"
-            >
-              {isTableCollapsed ? "Show Table" : "Hide Table"}
-            </Button>
+
             <div className="tab-content" id="pills-tabContent">
               {Object.entries(groupedAttendances).map(([status, list]) => (
                 <div
@@ -502,23 +512,7 @@ const AttendanceList = ({ userId }) => {
                       applied filters
                     </p>
                   ) : !isTableCollapsed ? (
-                    <div className="table-responsive">
-                      <Table
-                        columns={columns}
-                        dataSource={paginatedAttendances}
-                        pagination={false}
-                        rowKey="_id"
-                        className="attendance-table table table-hover"
-                      />
-                      <div className="pagination-section mt-4">
-                        <DataTablePagination
-                          totalItems={filteredAttendances.length}
-                          itemNo={itemsPerPage}
-                          onPageChange={setCurrentPage}
-                          currentPage={currentPage}
-                        />
-                      </div>
-                    </div>
+                    renderTable()
                   ) : null}
                 </div>
               ))}
@@ -530,4 +524,4 @@ const AttendanceList = ({ userId }) => {
   );
 };
 
-export default AttendanceList;
+export default AttendanceWrapper;
