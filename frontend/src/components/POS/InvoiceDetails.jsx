@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useGetAllAddressesQuery } from "../../api/addressApi";
 import { useGetProfileQuery } from "../../api/userApi";
-import { Form } from "react-bootstrap";
+import { Form, Button } from "react-bootstrap"; // Added Button for consistency
 import { toast } from "sonner";
 import AddAddress from "../Address/AddAddressModal";
 
@@ -34,7 +34,8 @@ const InvoiceDetails = ({ invoiceData, onChange, error }) => {
   useEffect(() => {
     console.log("Addresses:", addresses);
     console.log("Current shipTo:", shipTo);
-  }, [addresses, shipTo]);
+    console.log("Current dueDate:", dueDate); // Debug dueDate
+  }, [addresses, shipTo, dueDate]);
 
   const handleAddressCreated = (newAddress) => {
     if (newAddress?.addressId) {
@@ -57,88 +58,115 @@ const InvoiceDetails = ({ invoiceData, onChange, error }) => {
             {error}
           </div>
         )}
-        <div className="row g-3">
-          <div className="col-md-12 position-relative">
-            <label className="form-label">Shipping Address (Optional)</label>
-            <Form.Select
-              className="form-control"
-              value={shipTo || ""}
-              onChange={(e) => {
-                const value = e.target.value || null;
-                onChange("shipTo", value);
-              }}
-            >
-              <option value="">Select an Address</option>
-              {addresses.length === 0 ? (
-                <option disabled>No addresses available</option>
-              ) : (
-                addresses.map((addr) => (
-                  <option key={addr.addressId} value={addr.addressId}>
-                    {`${
-                      addr?.addressDetails?.street || addr?.street || "Unknown"
-                    }, 
-                      ${addr?.addressDetails?.city || addr?.city || "Unknown"}, 
-                      ${
-                        addr?.addressDetails?.state || addr?.state || "Unknown"
-                      }, 
-                      ${
-                        addr?.addressDetails?.country ||
-                        addr?.country ||
+        <Form>
+          <div className="row g-3">
+            <div className="col-md-12 position-relative">
+              <Form.Label>Shipping Address (Optional)</Form.Label>
+              <Form.Select
+                className="form-control"
+                value={shipTo || ""}
+                onChange={(e) => {
+                  const value = e.target.value || null;
+                  console.log("Selected shipTo:", value); // Debug
+                  onChange("shipTo", value);
+                }}
+              >
+                <option value="">Select an Address</option>
+                {addresses.length === 0 ? (
+                  <option disabled>No addresses available</option>
+                ) : (
+                  addresses.map((addr) => (
+                    <option key={addr.addressId} value={addr.addressId}>
+                      {`${
+                        addr?.addressDetails?.street ||
+                        addr?.street ||
                         "Unknown"
-                      }`}
-                  </option>
-                ))
-              )}
-            </Form.Select>
-            <button
-              className="btn btn-sm btn-primary mt-2"
-              onClick={() => setShowModal(true)}
-            >
-              + Add New Address
-            </button>
+                      }, 
+                        ${
+                          addr?.addressDetails?.city || addr?.city || "Unknown"
+                        }, 
+                        ${
+                          addr?.addressDetails?.state ||
+                          addr?.state ||
+                          "Unknown"
+                        }, 
+                        ${
+                          addr?.addressDetails?.country ||
+                          addr?.country ||
+                          "Unknown"
+                        }`}
+                    </option>
+                  ))
+                )}
+              </Form.Select>
+              <Button
+                variant="primary"
+                size="sm"
+                className="mt-2"
+                onClick={() => setShowModal(true)}
+              >
+                + Add New Address
+              </Button>
+            </div>
           </div>
-        </div>
-        <div className="row g-3 mt-3">
-          <div className="col-md-6">
-            <label className="form-label">Bill To</label>
-            <input
-              type="text"
-              className="form-control"
-              value={billTo || ""}
-              onChange={(e) => onChange("billTo", e.target.value)}
-              placeholder="Enter billing name or address"
-            />
+          <div className="row g-3 mt-3">
+            <div className="col-md-6">
+              <Form.Label>Bill To *</Form.Label>
+              <Form.Control
+                type="text"
+                value={billTo || ""}
+                onChange={(e) => {
+                  console.log("Bill To:", e.target.value); // Debug
+                  onChange("billTo", e.target.value);
+                }}
+                placeholder="Enter billing name or address"
+                required
+              />
+            </div>
+            <div className="col-md-6">
+              <Form.Label>Invoice Date *</Form.Label>
+              <Form.Control
+                type="date"
+                value={invoiceDate || ""}
+                onChange={(e) => {
+                  console.log("Invoice Date:", e.target.value); // Debug
+                  onChange("invoiceDate", e.target.value);
+                }}
+                required
+              />
+            </div>
+            <div className="col-md-6">
+              <Form.Label>Due Date *</Form.Label>
+              <Form.Control
+                type="date"
+                value={dueDate || ""}
+                onChange={(e) => {
+                  console.log("Due Date:", e.target.value); // Debug
+                  onChange("dueDate", e.target.value);
+                }}
+                required
+                isInvalid={!!error && error.includes("Due date")} // Highlight if error
+              />
+              <Form.Control.Feedback type="invalid">
+                {error && error.includes("Due date") ? error : ""}
+              </Form.Control.Feedback>
+            </div>
           </div>
-          <div className="col-md-6">
-            <label className="form-label">Invoice Date</label>
-            <input
-              type="date"
-              className="form-control"
-              value={invoiceDate || ""}
-              onChange={(e) => onChange("invoiceDate", e.target.value)}
-            />
+          <div className="row g-3 mt-3">
+            <div className="col-md-12">
+              <Form.Label>Signature Name</Form.Label>
+              <Form.Control
+                type="text"
+                value={signatureName || ""}
+                onChange={(e) => {
+                  console.log("Signature Name:", e.target.value); // Debug
+                  onChange("signatureName", e.target.value);
+                }}
+                placeholder="Enter signature name"
+              />
+            </div>
           </div>
-          <div className="col-md-6">
-            <label className="form-label">Due Date</label>
-            <input
-              type="date"
-              className="form-control"
-              value={dueDate || ""}
-              onChange={(e) => onChange("dueDate", e.target.value)}
-            />
-          </div>
-        </div>
-        <div className="row g-3 mt-3">
-          <div className="col-md-12">
-            <label className="form-label">Signature Name</label>
-            <input
-              type="text"
-              className="form-control"
-              value={signatureName || ""}
-              onChange={(e) => onChange("signatureName", e.target.value)}
-            />
-          </div>
-        </div>
+        </Form>
       </div>
 
       {showModal && (

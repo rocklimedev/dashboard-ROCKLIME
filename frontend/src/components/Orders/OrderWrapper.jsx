@@ -26,6 +26,7 @@ import OnHoldModal from "./OnHoldOrder";
 import DeleteModal from "../Common/DeleteModal";
 import OrderPagination from "./OrderPagination";
 import PageHeader from "../Common/PageHeader";
+import ComingSoon from "../Common/ComingSoon";
 
 const OrderWrapper = () => {
   const navigate = useNavigate();
@@ -320,6 +321,14 @@ const OrderWrapper = () => {
               Orders
             </button>
           </li>
+          <li className="nav-item">
+            <button
+              className={`nav-link ${activeTab === "po" ? "active" : ""}`}
+              onClick={() => setActiveTab("po")}
+            >
+              PO
+            </button>
+          </li>
         </ul>
 
         {activeTab === "orders" ? (
@@ -586,8 +595,10 @@ const OrderWrapper = () => {
           </div>
         ) : activeTab === "invoices" ? (
           <ShowInvoices />
-        ) : (
+        ) : activeTab === "quotations" ? (
           <QuotationList />
+        ) : (
+          <ComingSoon />
         )}
 
         {/* Modals */}

@@ -82,6 +82,7 @@ import AddNewOrder from "../components/Orders/AddNewOrder";
 import NewUserList from "../components/User/NewUserList";
 import CategoryManagement from "../components/Categories/CategoryManagement";
 import BrandSelection from "../components/Product/BrandSelection";
+import NewCart from "../components/POS-NEW/NewCart";
 
 const masterRoutes = [
   {
@@ -214,14 +215,21 @@ const masterRoutes = [
         isSidebarActive: false,
         element: <NewAddUser />,
       },
+      {
+        path: "/roles-permission/list",
+        name: "Roles",
+        icon: <TiBusinessCard />,
+        element: <RolePermission />,
+        isSidebarActive: true,
+      },
     ],
   },
   {
-    path: "/roles-permission/list",
-    name: "RBAC",
-    icon: <TiBusinessCard />,
-    element: <RolePermission />,
-    isSidebarActive: true,
+    path: "/new-cart",
+    name: "Cart",
+    icon: <BiCart />,
+    isSidebarActive: false,
+    element: <NewCart />,
   },
   {
     path: "/cart",

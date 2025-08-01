@@ -11,6 +11,25 @@ import {
 import { Button, Switch, Tooltip } from "antd";
 import { ShoppingCartOutlined } from "@ant-design/icons";
 
+// Add custom CSS to style the Switch component
+// Add custom CSS to style the Switch component
+const switchStyles = `
+  .custom-switch .ant-switch {
+    background-color: #808080 !important; /* Grey when unchecked */
+  }
+  .custom-switch .ant-switch-checked {
+    background-color: #808080 !important; /* Grey when checked */
+  }
+  .custom-switch .ant-switch-handle::before {
+    background-color: #fff !important; /* White handle for contrast */
+  }
+`;
+
+// Inject the styles into the document
+const styleSheet = document.createElement("style");
+styleSheet.innerText = switchStyles;
+document.head.appendChild(styleSheet);
+
 const PageHeader = ({
   title,
   subtitle,
@@ -156,11 +175,11 @@ const PageHeader = ({
               }
             >
               <Switch
+                className="custom-switch" // Apply custom class for styling
                 checkedChildren={<AppstoreOutlined />}
                 unCheckedChildren={<UnorderedListOutlined />}
                 checked={viewMode === "card"}
                 onChange={onViewToggle}
-                className="view-toggle-switch"
               />
             </Tooltip>
           </li>

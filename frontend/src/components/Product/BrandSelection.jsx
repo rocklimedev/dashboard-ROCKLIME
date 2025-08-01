@@ -76,7 +76,7 @@ const BrandSelection = () => {
 
         <div className="categories-wrapper">
           {brands.map((brand) => (
-            <div key={brand.id} className="categories-card">
+            <div key={brand.id} className="brands-selection-card ">
               <Link to={brand.url}>
                 <img
                   src={brand.image}
