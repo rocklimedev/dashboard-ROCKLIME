@@ -12,6 +12,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import Alert from "./Alert";
+import Avatar from "react-avatar";
 import "./pagewrapper.css";
 import {
   useClockInMutation,
@@ -480,14 +481,15 @@ const PageWrapper = () => {
                         to={`/customer/${topCustomer.customerId}`}
                         className="avatar avatar-lg flex-shrink-0 me-2"
                       >
-                        <img
-                          src={
-                            topCustomer.avatar ||
-                            "/assets/img/customer/customer11.jpg"
-                          }
-                          alt={`Avatar of ${topCustomer.name}`}
+                        <Avatar
+                          name={topCustomer.name} // Use customer name for initials
+                          src={topCustomer.avatar} // Use avatar URL if available
+                          size="60" // Match the size of the previous image
+                          round={true} // Rounded avatar
                           className="rounded"
-                          style={{ width: "60px", height: "60px" }}
+                          color="#4A90E2" // Optional: Customize background color
+                          textSizeRatio={2.5} // Optional: Adjust text size for initials
+                          alt={`Avatar of ${topCustomer.name}`}
                         />
                       </Link>
                       <div>

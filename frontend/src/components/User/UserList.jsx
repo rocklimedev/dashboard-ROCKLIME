@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { FaSearch } from "react-icons/fa"; // Keep FaSearch for search input
+import { FaSearch } from "react-icons/fa";
 import {
   useGetAllUsersQuery,
   useReportUserMutation,
@@ -13,24 +13,15 @@ import {
   ExclamationCircleOutlined,
   DeleteOutlined,
   MoreOutlined,
-} from "@ant-design/icons"; // Ant Design icons
-import { Dropdown, Menu, Button } from "antd"; // Ant Design components
+} from "@ant-design/icons";
+import { Dropdown, Menu, Button, Pagination } from "antd";
 import AddUser from "./AddUser";
-import DataTablePagination from "../Common/DataTablePagination";
 import DeleteModal from "../Common/DeleteModal";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "../Common/PageHeader";
 
 const UserList = () => {
-  const { data, error, isLoading, isFetching, refetch } = useGetAllUsersQuery();
-  const users = data?.users || [];
-  const navigate = useNavigate();
-  const [reportUser, { isLoading: isReporting }] = useReportUserMutation();
-  const [inactiveUser, { isLoading: isInactivating }] =
-    useInactiveUserMutation();
-  const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
-
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("Recently Added");
@@ -40,6 +31,23 @@ const UserList = () => {
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
+
+  // Fetch users with pagination
+  const { data, error, isLoading, isFetching, refetch } = useGetAllUsersQuery({
+    page: currentPage,
+    limit: itemsPerPage,
+  });
+
+  const users = data?.users || [];
+  console.log(users);
+  const totalUsers = data?.total || 0;
+  const totalPages = data?.totalPages || 1;
+
+  const navigate = useNavigate();
+  const [reportUser, { isLoading: isReporting }] = useReportUserMutation();
+  const [inactiveUser, { isLoading: isInactivating }] =
+    useInactiveUserMutation();
+  const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
 
   // Calculate stats using useMemo
   const stats = useMemo(() => {
@@ -56,14 +64,14 @@ const UserList = () => {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     return {
-      totalEmployees: users.length,
+      totalEmployees: totalUsers,
       active: users.filter((user) => user.status === "active").length,
       inactive: users.filter((user) => user.status !== "active").length,
       newJoiners: users.filter(
         (user) => new Date(user.createdAt) >= thirtyDaysAgo
       ).length,
     };
-  }, [users]);
+  }, [users, totalUsers]);
 
   // Memoized grouped users for tab-based filtering
   const groupedUsers = useMemo(
@@ -110,12 +118,6 @@ const UserList = () => {
     return result;
   }, [groupedUsers, activeTab, searchTerm, sortBy]);
 
-  // Paginated users
-  const paginatedUsers = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredUsers.slice(startIndex, startIndex + itemsPerPage);
-  }, [filteredUsers, currentPage]);
-
   const handleAddUser = () => {
     navigate("/user/add");
   };
@@ -142,7 +144,7 @@ const UserList = () => {
     try {
       await deleteUser(userToDelete).unwrap();
       toast.success("User deleted successfully!");
-      if (paginatedUsers.length === 1 && currentPage > 1) {
+      if (filteredUsers.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
     } catch (error) {
@@ -236,7 +238,7 @@ const UserList = () => {
             title="Users"
             subtitle="Manage your Users"
             onAdd={handleAddUser}
-            tableData={paginatedUsers}
+            tableData={filteredUsers}
           />
           <div className="card-body">
             <div className="row">
@@ -304,7 +306,7 @@ const UserList = () => {
                   aria-labelledby={`tab-${status}`}
                   key={status}
                 >
-                  {paginatedUsers.length === 0 ? (
+                  {filteredUsers.length === 0 ? (
                     <p className="text-muted">
                       No {status.toLowerCase()} users match the applied filters
                     </p>
@@ -323,7 +325,7 @@ const UserList = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {paginatedUsers.map((user) => (
+                          {filteredUsers.map((user) => (
                             <tr key={user.userId}>
                               <td>{user.name || "N/A"}</td>
                               <td>{user.email || "N/A"}</td>
@@ -427,13 +429,15 @@ const UserList = () => {
                           ))}
                         </tbody>
                       </table>
-                      {filteredUsers.length > itemsPerPage && (
-                        <div className="pagination-section mt-4">
-                          <DataTablePagination
-                            totalItems={filteredUsers.length}
-                            itemNo={itemsPerPage}
-                            onPageChange={handlePageChange}
-                            currentPage={currentPage}
+                      {totalUsers > itemsPerPage && (
+                        <div className="pagination-section mt-4 d-flex justify-content-end">
+                          <Pagination
+                            current={currentPage}
+                            pageSize={itemsPerPage}
+                            total={totalUsers}
+                            onChange={handlePageChange}
+                            showSizeChanger={false}
+                            showQuickJumper
                           />
                         </div>
                       )}

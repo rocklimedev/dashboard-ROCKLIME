@@ -1,18 +1,22 @@
-import React, { useState } from "react";
+import React from "react";
 import ReactPaginate from "react-paginate";
 import "./pagination.css";
-const DataTablePagination = ({ totalItems, itemNo = 20, onPageChange }) => {
+
+const DataTablePagination = ({
+  totalItems,
+  itemNo = 20,
+  onPageChange,
+  currentPage,
+}) => {
   const pageCount = Math.ceil(totalItems / itemNo);
-  const [currentPage, setCurrentPage] = useState(0); // Zero-based index for react-paginate
 
   // Calculate start and end indices for "Showing X to Y of Z"
-  const startIndex = currentPage * itemNo;
+  const startIndex = (currentPage - 1) * itemNo; // Adjust for 1-based currentPage
   const endIndex = Math.min(startIndex + itemNo, totalItems);
 
   // Handle page change
   const handlePageClick = (event) => {
     const newPage = event.selected + 1; // Convert to 1-based for onPageChange
-    setCurrentPage(event.selected); // Update current page (zero-based)
     onPageChange(newPage); // Pass 1-based page to parent
   };
 
@@ -29,7 +33,7 @@ const DataTablePagination = ({ totalItems, itemNo = 20, onPageChange }) => {
         marginPagesDisplayed={2}
         pageRangeDisplayed={3}
         onPageChange={handlePageClick}
-        forcePage={currentPage} // Sync with current page state
+        forcePage={currentPage - 1} // Convert 1-based to 0-based for ReactPaginate
         containerClassName={"pagination-buttons"}
         pageClassName={"page-item"}
         pageLinkClassName={"page-link"}
