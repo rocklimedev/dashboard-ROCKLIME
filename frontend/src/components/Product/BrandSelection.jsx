@@ -19,7 +19,6 @@ const BrandSelection = () => {
   } = useGetBrandParentCategoryByIdQuery(bpcId);
 
   const brands = useMemo(() => {
-    // Map brand slugs to their respective logos
     const logoMap = {
       AS_001: americanStandard,
       GP_002: grohe,
@@ -76,13 +75,15 @@ const BrandSelection = () => {
 
         <div className="categories-wrapper">
           {brands.map((brand) => (
-            <div key={brand.id} className="brands-selection-card ">
+            <div key={brand.id} className="brands-selection-card">
               <Link to={brand.url}>
-                <img
-                  src={brand.image}
-                  alt={brand.alt}
-                  className="brands-selection-img"
-                />
+                <div className="brand-logo-container">
+                  <img
+                    src={brand.image}
+                    alt={brand.alt}
+                    className="brands-selection-img"
+                  />
+                </div>
                 <h2 className="categories-text">{brand.name}</h2>
               </Link>
             </div>
