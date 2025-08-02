@@ -222,14 +222,14 @@ const AddQuotation = () => {
         position: "top-right",
         autoClose: 3000,
       });
-      setTimeout(() => navigate("/quotations/list"), 2000);
+      setTimeout(() => navigate("/orders/list"), 2000);
     }
     if (isEditMode && isFetchSuccess && !existingQuotation) {
       toast.error("Quotation not found. Redirecting to quotations list...", {
         position: "top-right",
         autoClose: 3000,
       });
-      setTimeout(() => navigate("/quotations/list"), 2000);
+      setTimeout(() => navigate("/orders/list"), 2000);
     }
   }, [
     fetchError,
@@ -429,7 +429,7 @@ const AddQuotation = () => {
           updatedQuotation: formattedFormData,
         }).unwrap();
         toast.success("Quotation updated successfully!");
-        navigate("/quotations/list");
+        navigate("/orders/list");
       } else {
         await createQuotation(formattedFormData).unwrap();
         toast.success("Quotation created successfully!");
@@ -448,7 +448,7 @@ const AddQuotation = () => {
       }
       toast.error(errorMessage);
       if (err.status === 404) {
-        setTimeout(() => navigate("/quotations/list"), 2000);
+        setTimeout(() => navigate("/orders/list"), 2000);
       }
     }
   };
@@ -484,7 +484,7 @@ const AddQuotation = () => {
             <h6>Fill out the quotation details</h6>
           </div>
           <div className="page-btn">
-            <a href="/quotations/list" className="btn btn-secondary">
+            <a href="/orders/list" className="btn btn-secondary">
               <FaArrowLeft className="me-2" /> Back to Quotations
             </a>
           </div>
@@ -830,7 +830,7 @@ const AddQuotation = () => {
             <button
               type="button"
               className="btn btn-secondary me-2"
-              onClick={() => navigate("/quotations/list")}
+              onClick={() => navigate("/orders/list")}
             >
               Cancel
             </button>

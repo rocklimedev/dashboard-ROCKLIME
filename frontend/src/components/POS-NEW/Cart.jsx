@@ -14,6 +14,7 @@ import {
   Col,
   Tabs,
   Select,
+  Radio,
 } from "antd";
 import {
   ShoppingCartOutlined,
@@ -31,7 +32,14 @@ import {
 } from "../../api/cartApi";
 import { useGetProfileQuery } from "../../api/userApi";
 import { useCreateInvoiceMutation } from "../../api/invoiceApi";
-import { useGetAllAddressesQuery } from "../../api/addressApi";
+import {
+  useGetAllAddressesQuery,
+  useCreateAddressMutation,
+} from "../../api/addressApi";
+import {
+  useCreateQuotationMutation,
+  useUpdateQuotationMutation,
+} from "../../api/quotationApi";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import AddCustomer from "../Customers/AddCustomer";
 import OrderTotal from "./OrderTotal";
@@ -124,10 +132,140 @@ const EmptyCartWrapper = styled.div`
   padding: 40px 0;
 `;
 
+const AddAddressModal = ({ show, onClose, onSave }) => {
+  const [addressData, setAddressData] = useState({
+    name: "",
+    street: "",
+    city: "",
+    state: "",
+    country: "",
+    postalCode: "",
+  });
+  const [createAddress, { isLoading: isCreatingAddress }] =
+    useCreateAddressMutation();
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setAddressData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const newAddress = await createAddress(addressData).unwrap();
+      toast.success("Address created successfully!");
+      onSave(newAddress.data.addressId);
+      setAddressData({
+        name: "",
+        street: "",
+        city: "",
+        state: "",
+        country: "",
+        postalCode: "",
+      });
+      onClose();
+    } catch (err) {
+      toast.error(
+        `Failed to create address: ${err.data?.message || "Unknown error"}`
+      );
+    }
+  };
+
+  return (
+    <Modal title="Add New Address" open={show} onCancel={onClose} footer={null}>
+      <form onSubmit={handleSubmit}>
+        <div className="mb-3">
+          <label className="form-label">Name</label>
+          <input
+            type="text"
+            className="form-control"
+            name="name"
+            value={addressData.name}
+            onChange={handleChange}
+          />
+        </div>
+        <div className="mb-3">
+          <label className="form-label">Street *</label>
+          <input
+            type="text"
+            className="form-control"
+            name="street"
+            value={addressData.street}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div className="mb-3">
+          <label className="form-label">City *</label>
+          <input
+            type="text"
+            className="form-control"
+            name="city"
+            value={addressData.city}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div className="mb-3">
+          <label className="form-label">State</label>
+          <input
+            type="text"
+            className="form-control"
+            name="state"
+            value={addressData.state}
+            onChange={handleChange}
+          />
+        </div>
+        <div className="mb-3">
+          <label className="form-label">Country *</label>
+          <input
+            type="text"
+            className="form-control"
+            name="country"
+            value={addressData.country}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div className="mb-3">
+          <label className="form-label">Postal Code</label>
+          <input
+            type="text"
+            className="form-control"
+            name="postalCode"
+            value={addressData.postalCode}
+            onChange={handleChange}
+          />
+        </div>
+        <div className="modal-footer">
+          <Button type="button" onClick={onClose} disabled={isCreatingAddress}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isCreatingAddress}>
+            {isCreatingAddress ? "Saving..." : "Save Address"}
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  );
+};
+
+AddAddressModal.propTypes = {
+  show: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSave: PropTypes.func.isRequired,
+};
+
 const generateInvoiceNumber = () => {
   const timestamp = Date.now().toString().slice(-6);
   const random = Math.floor(1000 + Math.random() * 9000);
   return `INV-${timestamp}-${random}`;
+};
+
+const generateQuotationNumber = () => {
+  const timestamp = Date.now().toString().slice(-6);
+  const random = Math.floor(1000 + Math.random() * 9000);
+  return `QUO-${timestamp}-${random}`;
 };
 
 const Cart = ({ onConvertToOrder }) => {
@@ -162,19 +300,29 @@ const Cart = ({ onConvertToOrder }) => {
   const [clearCart] = useClearCartMutation();
   const [removeFromCart] = useRemoveFromCartMutation();
   const [createInvoice] = useCreateInvoiceMutation();
+  const [createQuotation] = useCreateQuotationMutation();
 
   const [activeTab, setActiveTab] = useState("cart");
   const [selectedCustomer, setSelectedCustomer] = useState("");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("Cash");
   const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
   const [showClearCartModal, setShowClearCartModal] = useState(false);
+  const [showAddAddressModal, setShowAddAddressModal] = useState(false);
+  const [documentType, setDocumentType] = useState("invoice"); // invoice or quotation
   const [invoiceNumber, setInvoiceNumber] = useState(generateInvoiceNumber());
+  const [quotationNumber, setQuotationNumber] = useState(
+    generateQuotationNumber()
+  );
   const [invoiceData, setInvoiceData] = useState({
     invoiceDate: new Date().toISOString().split("T")[0],
     dueDate: "",
     billTo: "",
     shipTo: null,
     signatureName: "CM TRADING CO",
+    includeGst: false,
+    gstValue: "",
+    discountType: "percent",
+    roundOff: "",
   });
   const [error, setError] = useState("");
   const [updatingItems, setUpdatingItems] = useState({});
@@ -211,9 +359,13 @@ const Cart = ({ onConvertToOrder }) => {
     [cartItems]
   );
   const shipping = 40;
-  const tax = 25;
-  const discount = 15;
-  const totalAmount = subTotal + shipping + tax - discount;
+  const tax = invoiceData.includeGst
+    ? (subTotal * (parseFloat(invoiceData.gstValue) || 0)) / 100
+    : 25;
+  const discount =
+    invoiceData.discountType === "percent" ? (subTotal * 15) / 100 : 15;
+  const roundOff = parseFloat(invoiceData.roundOff) || 0;
+  const totalAmount = subTotal + shipping + tax - discount + roundOff;
 
   useEffect(() => {
     if (selectedCustomer && addresses.length > 0) {
@@ -270,6 +422,7 @@ const Cart = ({ onConvertToOrder }) => {
       await clearCart({ userId }).unwrap();
       toast.success("Cart cleared!");
       setInvoiceNumber(generateInvoiceNumber());
+      setQuotationNumber(generateQuotationNumber());
       refetch();
       setShowClearCartModal(false);
       setActiveTab("cart");
@@ -316,31 +469,28 @@ const Cart = ({ onConvertToOrder }) => {
   };
 
   const handlePlaceOrder = async () => {
-    // Existing validation
+    // Common validations
     if (!selectedCustomer) return toast.error("Please select a customer.");
     if (!userId) return toast.error("User not logged in!");
     if (!invoiceData.invoiceDate || !invoiceData.dueDate)
-      return toast.error("Please provide invoice and due dates.");
+      return toast.error("Please provide invoice/quotation and due dates.");
     if (!invoiceData.billTo)
       return toast.error("Please provide a billing name.");
     if (error) return toast.error("Please fix the errors before submitting.");
-    if (!selectedPaymentMethod)
-      return toast.error("Please select a payment method.");
     if (cartItems.length === 0)
       return toast.error("Cart is empty. Add items to proceed.");
 
-    // Validate date formats
     const invoiceDateRegex = /^\d{4}-\d{2}-\d{2}$/;
     if (!invoiceDateRegex.test(invoiceData.invoiceDate))
-      return toast.error("Invalid invoice date format. Use YYYY-MM-DD.");
+      return toast.error(
+        "Invalid invoice/quotation date format. Use YYYY-MM-DD."
+      );
     if (!invoiceDateRegex.test(invoiceData.dueDate))
       return toast.error("Invalid due date format. Use YYYY-MM-DD.");
 
-    // Validate amount
     if (isNaN(totalAmount) || totalAmount <= 0)
       return toast.error("Invalid total amount.");
 
-    // Validate products
     if (
       !cartItems.every(
         (item) =>
@@ -375,88 +525,161 @@ const Cart = ({ onConvertToOrder }) => {
     if (!selectedCustomerData)
       return toast.error("Selected customer not found.");
 
-    const orderId = uuidv4();
-    const orderData = {
-      id: orderId,
-      title: `Order for ${selectedCustomerData.name}`,
-      createdFor: selectedCustomerData.customerId,
-      createdBy: userId,
-      status: "INVOICE",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      products: cartItems.map((item) => ({
-        id: item?.productId || "",
-        name: item?.name || "Unnamed Product",
-        price: item?.price || 0,
-        quantity: item?.quantity || 1,
-        total: (item?.price || 0) * (item?.quantity || 1),
-      })),
-      totalAmount: totalAmount || 0,
-      invoiceId: null,
-    };
+    if (documentType === "invoice") {
+      if (!selectedPaymentMethod)
+        return toast.error("Please select a payment method.");
 
-    const invoiceDataToSubmit = {
-      invoiceId: uuidv4(),
-      createdBy: userId,
-      customerId: selectedCustomerData.customerId,
-      billTo: invoiceData.billTo,
-      shipTo: invoiceData.shipTo || null, // Ensure null if not provided
-      amount: parseFloat(totalAmount.toFixed(2)), // Ensure DECIMAL(10,2) format
-      invoiceDate: invoiceData.invoiceDate,
-      dueDate: invoiceData.dueDate,
-      paymentMethod: JSON.stringify({ method: selectedPaymentMethod }),
-      status: selectedPaymentMethod === "Pay Later" ? "unpaid" : "paid",
-      products: JSON.stringify(
-        cartItems.map((item) => ({
-          productId: item.productId,
-          quantity: item.quantity,
-          price: parseFloat(item.price.toFixed(2)), // Ensure DECIMAL format
-        }))
-      ),
-      signatureName: invoiceData.signatureName || "CM TRADING CO",
-      invoiceNo: invoiceNumber,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+      const orderId = uuidv4();
+      const orderData = {
+        id: orderId,
+        title: `Order for ${selectedCustomerData.name}`,
+        createdFor: selectedCustomerData.customerId,
+        createdBy: userId,
+        status: "INVOICE",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        products: cartItems.map((item) => ({
+          id: item?.productId || "",
+          name: item?.name || "Unnamed Product",
+          price: item?.price || 0,
+          quantity: item?.quantity || 1,
+          total: (item?.price || 0) * (item?.quantity || 1),
+        })),
+        totalAmount: totalAmount || 0,
+        invoiceId: null,
+      };
 
-    // Log the data for debugging
-    console.log("Submitting invoice data:", invoiceDataToSubmit);
+      const invoiceDataToSubmit = {
+        invoiceId: uuidv4(),
+        createdBy: userId,
+        customerId: selectedCustomerData.customerId,
+        billTo: invoiceData.billTo,
+        shipTo: invoiceData.shipTo || null,
+        amount: parseFloat(totalAmount.toFixed(2)),
+        invoiceDate: invoiceData.invoiceDate,
+        dueDate: invoiceData.dueDate,
+        paymentMethod: JSON.stringify({ method: selectedPaymentMethod }),
+        status: selectedPaymentMethod === "Pay Later" ? "unpaid" : "paid",
+        products: JSON.stringify(
+          cartItems.map((item) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+            price: parseFloat(item.price.toFixed(2)),
+          }))
+        ),
+        signatureName: invoiceData.signatureName || "CM TRADING CO",
+        invoiceNo: invoiceNumber,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
 
-    try {
-      const response = await createInvoice(invoiceDataToSubmit).unwrap();
-      const invoiceId =
-        response?.invoice?.invoiceId ||
-        response?.invoiceId ||
-        response?.data?.invoiceId ||
-        response?.data?.invoice?.invoiceId;
+      try {
+        const response = await createInvoice(invoiceDataToSubmit).unwrap();
+        const invoiceId =
+          response?.invoice?.invoiceId ||
+          response?.invoiceId ||
+          response?.data?.invoiceId ||
+          response?.data?.invoice?.invoiceId;
 
-      if (!invoiceId) {
-        throw new Error("Invalid response structure: invoiceId not found.");
+        if (!invoiceId) {
+          throw new Error("Invalid response structure: invoiceId not found.");
+        }
+
+        orderData.invoiceId = invoiceId;
+        onConvertToOrder(orderData);
+        await handleClearCart();
+        toast.success("Order placed successfully!");
+        resetForm();
+      } catch (error) {
+        console.error("Invoice creation error:", error);
+        toast.error(
+          `Failed to place order: ${
+            error.data?.message || error.message || "Unknown error"
+          }`
+        );
       }
+    } else {
+      const quotationData = {
+        quotationId: uuidv4(),
+        document_title: `Quotation for ${selectedCustomerData.name}`,
+        quotation_date: invoiceData.invoiceDate,
+        due_date: invoiceData.dueDate,
+        reference_number: quotationNumber,
+        include_gst: invoiceData.includeGst,
+        gst_value: parseFloat(invoiceData.gstValue) || 0,
+        discountType: invoiceData.discountType,
+        roundOff: parseFloat(invoiceData.roundOff) || 0,
+        finalAmount: parseFloat(totalAmount.toFixed(2)),
+        signature_name: invoiceData.signatureName || "CM TRADING CO",
+        signature_image: "",
+        customerId: selectedCustomerData.customerId,
+        shipTo: invoiceData.shipTo || null,
+        createdBy: userId,
+        products: cartItems.map((item) => ({
+          productId: item.productId,
+          name: item.name || "Unnamed Product",
+          quantity: item.quantity || 1,
+          sellingPrice: parseFloat(item.price || 0),
+          discount: 0,
+          tax: invoiceData.includeGst
+            ? parseFloat(invoiceData.gstValue) || 0
+            : 0,
+          total: parseFloat((item.price * item.quantity).toFixed(2)),
+        })),
+        items: cartItems.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity || 1,
+          discount: 0,
+          tax: invoiceData.includeGst
+            ? parseFloat(invoiceData.gstValue) || 0
+            : 0,
+          total: parseFloat((item.price * item.quantity).toFixed(2)),
+        })),
+      };
 
-      orderData.invoiceId = invoiceId;
-      onConvertToOrder(orderData);
-      await handleClearCart();
-      toast.success("Order placed successfully!");
-      setInvoiceData({
-        invoiceDate: new Date().toISOString().split("T")[0],
-        dueDate: "",
-        billTo: "",
-        shipTo: null,
-        signatureName: "CM TRADING CO",
-      });
-      setSelectedCustomer("");
-      setSelectedPaymentMethod("Cash");
-      setInvoiceNumber(generateInvoiceNumber());
-      setActiveTab("cart");
-    } catch (error) {
-      console.error("Invoice creation error:", error);
-      toast.error(
-        `Failed to place order: ${
-          error.data?.message || error.message || "Unknown error"
-        }`
-      );
+      try {
+        await createQuotation(quotationData).unwrap();
+        await handleClearCart();
+        toast.success("Quotation created successfully!");
+        resetForm();
+      } catch (error) {
+        console.error("Quotation creation error:", error);
+        toast.error(
+          `Failed to create quotation: ${
+            error.data?.message || error.message || "Unknown error"
+          }`
+        );
+      }
     }
+  };
+
+  const resetForm = () => {
+    setInvoiceData({
+      invoiceDate: new Date().toISOString().split("T")[0],
+      dueDate: "",
+      billTo: "",
+      shipTo: null,
+      signatureName: "CM TRADING CO",
+      includeGst: false,
+      gstValue: "",
+      discountType: "percent",
+      roundOff: "",
+    });
+    setSelectedCustomer("");
+    setSelectedPaymentMethod("Cash");
+    setDocumentType("invoice");
+    setInvoiceNumber(generateInvoiceNumber());
+    setQuotationNumber(generateQuotationNumber());
+    setActiveTab("cart");
+  };
+
+  const handleAddAddress = () => {
+    setShowAddAddressModal(true);
+  };
+
+  const handleAddressSave = (newAddressId) => {
+    setInvoiceData((prev) => ({ ...prev, shipTo: newAddressId }));
+    setShowAddAddressModal(false);
   };
 
   if (profileLoading || cartLoading) {
@@ -652,7 +875,7 @@ const Cart = ({ onConvertToOrder }) => {
                       tax={tax}
                       coupon={0}
                       discount={discount}
-                      roundOff={0}
+                      roundOff={roundOff}
                       subTotal={subTotal}
                     />
                     <Divider />
@@ -712,6 +935,15 @@ const Cart = ({ onConvertToOrder }) => {
                       </EmptyCartWrapper>
                     ) : (
                       <>
+                        <Text strong>Document Type</Text>
+                        <Radio.Group
+                          onChange={(e) => setDocumentType(e.target.value)}
+                          value={documentType}
+                          style={{ marginBottom: 16 }}
+                        >
+                          <Radio value="invoice">Invoice</Radio>
+                          <Radio value="quotation">Quotation</Radio>
+                        </Radio.Group>
                         <Text strong>Select Customer</Text>
                         <CustomerSelect
                           value={selectedCustomer}
@@ -748,32 +980,138 @@ const Cart = ({ onConvertToOrder }) => {
                           Add New Customer
                         </Button>
                         <Divider />
+                        <Text strong>Shipping Address</Text>
+                        <Select
+                          value={invoiceData.shipTo}
+                          onChange={(value) =>
+                            handleInvoiceChange("shipTo", value)
+                          }
+                          placeholder="Select shipping address"
+                          loading={addressesLoading}
+                          disabled={addressesLoading || addressesError}
+                          style={{ width: "100%", marginTop: 8 }}
+                        >
+                          {addressesLoading ? (
+                            <Option disabled>Loading...</Option>
+                          ) : addressesError ? (
+                            <Option disabled>Error fetching addresses</Option>
+                          ) : addresses.length === 0 ? (
+                            <Option disabled>No addresses available</Option>
+                          ) : (
+                            addresses.map((address) => (
+                              <Option
+                                key={address.addressId}
+                                value={address.addressId}
+                              >
+                                {address.name ||
+                                  `${address.street}, ${address.city}`}
+                              </Option>
+                            ))
+                          )}
+                        </Select>
+                        <Button
+                          type="link"
+                          icon={<UserAddOutlined />}
+                          onClick={handleAddAddress}
+                          style={{ padding: 0, marginTop: 8 }}
+                          aria-label="Add new address"
+                        >
+                          Add New Address
+                        </Button>
+                        <Divider />
                         <InvoiceDetails
                           invoiceData={invoiceData}
                           onChange={handleInvoiceChange}
                           error={error}
                         />
                         <Divider />
+                        {documentType === "quotation" && (
+                          <>
+                            <Text strong>Include GST</Text>
+                            <div>
+                              <input
+                                type="checkbox"
+                                checked={invoiceData.includeGst}
+                                onChange={(e) =>
+                                  handleInvoiceChange(
+                                    "includeGst",
+                                    e.target.checked
+                                  )
+                                }
+                                className="form-check-input"
+                              />
+                            </div>
+                            {invoiceData.includeGst && (
+                              <>
+                                <Text strong>GST Value (%)</Text>
+                                <input
+                                  type="number"
+                                  className="form-control"
+                                  value={invoiceData.gstValue}
+                                  onChange={(e) =>
+                                    handleInvoiceChange(
+                                      "gstValue",
+                                      e.target.value
+                                    )
+                                  }
+                                  min="0"
+                                  style={{ marginTop: 8 }}
+                                />
+                              </>
+                            )}
+                            <Divider />
+                            <Text strong>Discount Type</Text>
+                            <Select
+                              value={invoiceData.discountType}
+                              onChange={(value) =>
+                                handleInvoiceChange("discountType", value)
+                              }
+                              style={{ width: "100%", marginTop: 8 }}
+                            >
+                              <Option value="percent">Percent</Option>
+                              <Option value="fixed">Fixed</Option>
+                            </Select>
+                            <Divider />
+                            <Text strong>Round Off</Text>
+                            <input
+                              type="number"
+                              className="form-control"
+                              value={invoiceData.roundOff}
+                              onChange={(e) =>
+                                handleInvoiceChange("roundOff", e.target.value)
+                              }
+                              style={{ marginTop: 8 }}
+                            />
+                            <Divider />
+                          </>
+                        )}
                       </>
                     )}
                   </CartSummaryCard>
                 </Col>
                 <Col xs={24} lg={8}>
                   <CartSummaryCard>
-                    <PaymentMethod
-                      subTotal={totalAmount}
-                      selectedMethod={selectedPaymentMethod}
-                      onSelectMethod={setSelectedPaymentMethod}
-                    />
-                    <Divider />
-                    <Text strong>Invoice #: {invoiceNumber}</Text>
+                    {documentType === "invoice" && (
+                      <>
+                        <PaymentMethod
+                          subTotal={totalAmount}
+                          selectedMethod={selectedPaymentMethod}
+                          onSelectMethod={setSelectedPaymentMethod}
+                        />
+                        <Divider />
+                        <Text strong>Invoice #: {invoiceNumber}</Text>
+                      </>
+                    )}
+                    {documentType === "quotation" && (
+                      <Text strong>Quotation #: {quotationNumber}</Text>
+                    )}
                     <Divider />
                     <OrderTotal
                       shipping={shipping}
                       tax={tax}
                       coupon={0}
                       discount={discount}
-                      roundOff={0}
+                      roundOff={roundOff}
                       subTotal={subTotal}
                     />
                     <Divider />
@@ -787,13 +1125,19 @@ const Cart = ({ onConvertToOrder }) => {
                         error ||
                         !invoiceData.invoiceDate ||
                         !invoiceData.dueDate ||
-                        !selectedPaymentMethod
+                        (documentType === "invoice" && !selectedPaymentMethod)
                       }
                       block
                       size="large"
-                      aria-label="Place order"
+                      aria-label={
+                        documentType === "invoice"
+                          ? "Place order"
+                          : "Create quotation"
+                      }
                     >
-                      Place Order
+                      {documentType === "invoice"
+                        ? "Place Order"
+                        : "Create Quotation"}
                     </CheckoutButton>
                     <Button
                       type="default"
@@ -835,6 +1179,12 @@ const Cart = ({ onConvertToOrder }) => {
               Are you sure you want to clear all items from your cart?
             </Text>
           </Modal>
+
+          <AddAddressModal
+            show={showAddAddressModal}
+            onClose={() => setShowAddAddressModal(false)}
+            onSave={handleAddressSave}
+          />
         </CartContainer>
       </PageWrapper>
     </div>
