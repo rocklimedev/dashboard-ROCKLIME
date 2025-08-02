@@ -18165,7 +18165,7 @@ div#global-loader .whirly-loader:not(:required) {
 }
 .sidebar .sidebar-menu > ul > li > a.active .menu-arrow,
 .settings-sidebar .sidebar-menu > ul > li > a.active .menu-arrow {
-  background: #ffeddc;
+  /* background: #ffeddc; */
 }
 .sidebar .sidebar-menu > ul > li > a.active .menu-arrow::before,
 .settings-sidebar .sidebar-menu > ul > li > a.active .menu-arrow::before {
