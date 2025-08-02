@@ -414,7 +414,7 @@ const ProductsList = () => {
           }}
           exportOptions={{ pdf: false, excel: false }}
         />
-        <div className="filter-bar sticky-top bg-white p-3 shadow-sm">
+        <div className="filter-bar bg-white p-3 shadow-sm">
           <Form layout="inline" form={form} className="filter-form">
             <Form.Item className="filter-item">
               <Input
