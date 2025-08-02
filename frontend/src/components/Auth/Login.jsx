@@ -19,15 +19,11 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Perform login mutation
       const response = await loginMutation({ email, password }).unwrap();
       const token = response.accessToken;
 
-      if (!token) {
-        throw new Error("No access token received");
-      }
+      if (!token) throw new Error("No access token received");
 
-      // Store token in localStorage or sessionStorage first
       if (rememberMe) {
         localStorage.setItem("token", token);
         sessionStorage.removeItem("token");
@@ -36,27 +32,24 @@ const Login = () => {
         localStorage.removeItem("token");
       }
 
-      // Update AuthContext
+      // Update context
       authLogin(token, response.user || null);
 
-      // Mark login as successful
-      setLoginSuccess(true);
-
-      // Show success toast
-      toast.success("Login successful!", { duration: 1000 }); // Sonner toast
+      // Show success toast and navigate immediately
+      toast.success("Login successful!", { duration: 1000 });
+      navigate("/", { replace: true });
     } catch (err) {
-      toast.error(`Login failed: ${err?.message || "Unknown error occurred"}`); // Sonner toast
-      const status = err?.status;
-      const message = err?.data?.message || "Invalid email or password";
+      const message =
+        err?.data?.message || err?.message || "Invalid email or password";
+      toast.error(`Login failed: ${message}`);
 
+      const status = err?.status;
       if (
         status === 403 ||
         message.toLowerCase().includes("forbidden") ||
         message.toLowerCase().includes("not allowed")
       ) {
         navigate("/no-access");
-      } else {
-        toast.error(message, { duration: 3000 }); // Sonner toast
       }
     }
   };
