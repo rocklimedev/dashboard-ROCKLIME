@@ -46,7 +46,7 @@ import Profile from "../components/Profile/Profile";
 import CreateProduct from "../components/Product/CreateProduct";
 import ResetPassword from "../components/Auth/ResetPassword";
 import QuotationList from "../components/Quotation/QuotationList";
-import RecentInvoices from "../components/Invoices/RecentInvoices";
+
 import RolePermission from "../components/RolesPermission/RolePermission";
 import Permissions from "../components/RolesPermission/Permissions";
 import Error500 from "../components/Error/Error500";
@@ -61,18 +61,18 @@ import InvoiceDetails from "../components/Invoices/InvoiceDetails";
 import OrderWithInvoice from "../components/Orders/OrderWithInvoice";
 import CheckProductCodeStatus from "../components/Product/CheckProductCodeStatus";
 import NoAccess from "../components/Common/NoAccess";
-import POSWrapperNew from "../components/POS-NEW/POSWrapper";
+
 import AddressList from "../components/Address/Address";
 import SearchList from "../components/Search/SearchList";
 import AttendanceWrapper from "../components/Attendance/AttendanceWrapper";
 import AttendanceList from "../components/Attendance/AttendanceList";
 import NewAddUser from "../components/User/NewAddUser";
 import UserPage from "../components/User/UserPage";
-import NewProductWrapper from "../components/Product/NewProductWrapper";
+
 import Cart from "../components/POS-NEW/Cart";
 import Product from "../components/Product/Product";
 import ProductWrapper from "../components/Product/ProductWrapper";
-import NewProductDetails from "../components/Product/NewProductDetails";
+
 import ProductListByCategory from "../components/Product/ProductListByCategory";
 import AddQuotation from "../components/Quotation/AddQuntation";
 import CompaniesWrapper from "../components/Companies/ComapniesWrapper";
@@ -82,7 +82,6 @@ import AddNewOrder from "../components/Orders/AddNewOrder";
 import NewUserList from "../components/User/NewUserList";
 import CategoryManagement from "../components/Categories/CategoryManagement";
 import BrandSelection from "../components/Product/BrandSelection";
-import NewCart from "../components/POS-NEW/NewCart";
 
 const masterRoutes = [
   {
@@ -223,13 +222,6 @@ const masterRoutes = [
         isSidebarActive: true,
       },
     ],
-  },
-  {
-    path: "/new-cart",
-    name: "Cart",
-    icon: <BiCart />,
-    isSidebarActive: false,
-    element: <NewCart />,
   },
   {
     path: "/cart",
@@ -392,20 +384,7 @@ const masterRoutes = [
         element: <InvoiceDetails />,
         isSidebarActive: false,
       },
-      {
-        path: "/pos",
-        name: "POS",
-        icon: <TbShoppingCart />,
-        isSidebarActive: false,
-        element: <POSWrapperNew />,
-      },
-      {
-        path: "/pos-new",
-        name: "POS NEW",
-        icon: <TbShoppingCart />,
-        isSidebarActive: false,
-        element: <POSWrapperNew />,
-      },
+
       // {
       //   path: "/quotations/list",
       //   name: "Quotations",
