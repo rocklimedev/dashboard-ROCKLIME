@@ -8,6 +8,7 @@ import { useGetCustomerByIdQuery } from "../../api/customerApi";
 import { useGetUserByIdQuery } from "../../api/userApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
+import { useGetCompanyByIdQuery } from "../../api/companyApi"; // Import the company API hook
 import { toast } from "sonner";
 import logo from "../../assets/img/logo.png";
 import sampleQuotationTemplate from "../../assets/Sample-Quotation.xlsx";
@@ -18,7 +19,11 @@ import "./quotation.css";
 
 const QuotationsDetails = () => {
   const { id } = useParams();
-  const { data: quotation, error, isLoading } = useGetQuotationByIdQuery(id);
+  const {
+    data: quotation,
+    error,
+    isLoading: isQuotationLoading,
+  } = useGetQuotationByIdQuery(id);
   const { data: usersData } = useGetAllUsersQuery();
   const { data: customersData } = useGetCustomersQuery();
   const users = usersData?.users || [];
@@ -30,15 +35,24 @@ const QuotationsDetails = () => {
   const { data: user } = useGetUserByIdQuery(quotation?.createdBy, {
     skip: !quotation?.createdBy,
   });
+  // Fetch company details for "CHABBRA MARBEL"
+  const companyId = "401df7ef-f350-4bc4-ba6f-bf36923af252";
+  const {
+    data: companyData,
+    isLoading: isCompanyLoading,
+    isError: isCompanyError,
+  } = useGetCompanyByIdQuery(companyId, { skip: !companyId });
+  const company = companyData?.data || {};
   const quotationRef = useRef(null);
   const [exportFormat, setExportFormat] = useState("pdf");
 
   const getUserName = (createdBy) => {
-    if (!users || users.length === 0 || !createdBy) return "Unknown";
+    if (!users || users.length === 0 || !createdBy)
+      return company.name || "CHABBRA MARBEL";
     const user = users.find(
       (u) => u.userId && u.userId.trim() === createdBy.trim()
     );
-    return user ? user.name : "Unknown";
+    return user ? user.name : company.name || "CHABBRA MARBEL";
   };
 
   const getCustomerName = (customerId) => {
@@ -126,6 +140,14 @@ const QuotationsDetails = () => {
               : 0;
           const finalTotal = subtotal + gstAmount;
 
+          // Update Excel with company details
+          worksheet["A2"] = { v: company.name || "CHABBRA MARBEL" };
+          worksheet["A3"] = {
+            v: company.address || "123, Main Street, Mumbai, India",
+          };
+          worksheet["A4"] = {
+            v: company.website || "https://cmtradingco.com/",
+          };
           worksheet["A5"] = { v: getCustomerName(quotation.customerId) };
           worksheet["A6"] = { v: customer?.address || "Address not available" };
           worksheet["F5"] = {
@@ -225,7 +247,7 @@ const QuotationsDetails = () => {
     }
   };
 
-  if (isLoading) {
+  if (isQuotationLoading || isCompanyLoading) {
     return (
       <div className="page-wrapper">
         <div className="content text-center">
@@ -235,11 +257,13 @@ const QuotationsDetails = () => {
     );
   }
 
-  if (error) {
+  if (error || isCompanyError) {
     return (
       <div className="page-wrapper">
         <div className="content text-center">
-          <p className="text-danger">Error loading quotation details.</p>
+          <p className="text-danger">
+            Error loading quotation or company details.
+          </p>
         </div>
       </div>
     );
@@ -319,7 +343,16 @@ const QuotationsDetails = () => {
                           alt="Company Logo"
                         />
                       </div>
-                      <p>3099 Kennedy Court Framingham, MA 01702</p>
+                      <h4>{company.name || "CHABBRA MARBEL"}</h4>
+                      <p>
+                        {company.address || "123, Main Street, Mumbai, India"}
+                      </p>
+                      <p>
+                        Website:{" "}
+                        <a href={company.website || "https://cmtradingco.com/"}>
+                          {company.website || "https://cmtradingco.com/"}
+                        </a>
+                      </p>
                     </div>
                     <div className="col-md-6">
                       <div className="text-end mb-3">
@@ -362,7 +395,7 @@ const QuotationsDetails = () => {
                           {getUserName(quotation.createdBy)}
                         </h4>
                         <p className="mb-1">
-                          2077 Chicago Avenue Orosi, CA 93647
+                          {company.address || "123, Main Street, Mumbai, India"}
                         </p>
                         <p className="mb-1">
                           Email :{" "}
@@ -569,7 +602,7 @@ const QuotationsDetails = () => {
                     </div>
                     <p className="text-dark mb-1">
                       Payment to be made via bank transfer / cheque in the name
-                      of {getUserName(quotation.createdBy)}
+                      of {company.name || getUserName(quotation.createdBy)}
                     </p>
                     <div className="d-flex justify-content-center align-items-center">
                       <p className="fs-12 mb-0 me-3">

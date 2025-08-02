@@ -5,8 +5,10 @@ import { useGetQuotationByIdQuery } from "../../api/quotationApi";
 import { useGetAddressByIdQuery } from "../../api/addressApi";
 import { useGetUserByIdQuery } from "../../api/userApi";
 import { useGetProductByIdQuery } from "../../api/productApi";
+import { useGetCompanyByIdQuery } from "../../api/companyApi"; // Import the company API hook
 import logo from "../../assets/img/logo.png";
-// Subcomponent for each product row
+
+// Subcomponent for each product row (unchanged)
 const ProductRow = ({ product, index }) => {
   const { data, isLoading, isError, error } = useGetProductByIdQuery(
     product.productId,
@@ -40,8 +42,21 @@ const ProductRow = ({ product, index }) => {
 
 const InvoiceDetails = () => {
   const { invoiceId } = useParams();
-  const { data, isLoading, isError } = useGetInvoiceByIdQuery(invoiceId);
-  const invoice = data?.data || {};
+  const {
+    data: invoiceData,
+    isLoading: isInvoiceLoading,
+    isError: isInvoiceError,
+  } = useGetInvoiceByIdQuery(invoiceId);
+  const invoice = invoiceData?.data || {};
+
+  // Fetch company details for "CHABBRA MARBEL"
+  const companyId = "401df7ef-f350-4bc4-ba6f-bf36923af252";
+  const {
+    data: companyData,
+    isLoading: isCompanyLoading,
+    isError: isCompanyError,
+  } = useGetCompanyByIdQuery(companyId, { skip: !companyId });
+  const company = companyData?.data || {};
 
   // Parse products
   let products = invoice.products || [];
@@ -115,14 +130,20 @@ const InvoiceDetails = () => {
   ];
 
   // Loading and Error States
-  if (isLoading || isAddressLoading || isUserLoading || isQuotationLoading) {
+  if (
+    isInvoiceLoading ||
+    isAddressLoading ||
+    isUserLoading ||
+    isQuotationLoading ||
+    isCompanyLoading
+  ) {
     return <div className="text-center p-4">Loading invoice...</div>;
   }
 
-  if (isError) {
+  if (isInvoiceError || isCompanyError) {
     return (
       <div className="text-center p-4 text-danger">
-        Error fetching invoice details.
+        Error fetching invoice or company details.
       </div>
     );
   }
@@ -173,7 +194,16 @@ const InvoiceDetails = () => {
                       <div className="mb-2">
                         <img src={logo} className="img-fluid" alt="logo" />
                       </div>
-                      <p>3099 Kennedy Court Framingham, MA 01702</p>
+                      <h4>{company.name || "CHABBRA MARBEL"}</h4>
+                      <p>
+                        {company.address || "123, Main Street, Mumbai, India"}
+                      </p>
+                      <p>
+                        Website:{" "}
+                        <a href={company.website || "https://cmtradingco.com/"}>
+                          {company.website || "https://cmtradingco.com/"}
+                        </a>
+                      </p>
                     </div>
                     <div className="col-md-6">
                       <div className="text-end mb-3">
@@ -207,10 +237,12 @@ const InvoiceDetails = () => {
                       <p className="text-dark mb-2 fw-semibold">From</p>
                       <div>
                         <h4 className="mb-1">
-                          {createdByUser?.data?.name || "Unknown"}
+                          {createdByUser?.data?.name ||
+                            company.name ||
+                            "CHABBRA MARBEL"}
                         </h4>
                         <p className="mb-1">
-                          2077 Chicago Avenue Orosi, CA 93647
+                          {company.address || "123, Main Street, Mumbai, India"}
                         </p>
                         <p className="mb-1">
                           Email :{" "}
@@ -260,30 +292,17 @@ const InvoiceDetails = () => {
                           <i className="ti ti-point-filled"></i>
                           {status === "Paid" ? "Paid" : "Due in 10 Days"}
                         </span>
-                        <div>
-                          <img
-                            src="https://smarthr.co.in/demo/html/template/assets/img/qr.svg"
-                            className="img-fluid"
-                            alt="QR"
-                          />
-                        </div>
                       </div>
                     </div>
                   </div>
 
                   {/* Invoice Items */}
                   <div>
-                    <p className="fw-medium">
-                      Invoice For :{" "}
-                      <span className="text-dark fw-medium">
-                        {quotation?.data?.title || "Design & development"}
-                      </span>
-                    </p>
                     <div className="table-responsive mb-3">
                       <table className="table">
                         <thead className="thead-light">
                           <tr>
-                            <th>Job Description</th>
+                            <th>Products</th>
                             <th className="text-end">Qty</th>
                             <th className="text-end">Cost</th>
                             <th className="text-end">Discount</th>
@@ -374,7 +393,9 @@ const InvoiceDetails = () => {
                     </div>
                     <p className="text-dark mb-1">
                       Payment Made Via {paymentMethodParsed} in the name of{" "}
-                      {createdByUser?.data?.name || "Unknown"}
+                      {company.name ||
+                        createdByUser?.data?.name ||
+                        "CHABBRA MARBEL"}
                     </p>
                     <div className="d-flex justify-content-center align-items-center">
                       <p className="fs-12 mb-0 me-3">
