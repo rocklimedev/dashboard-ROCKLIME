@@ -226,246 +226,254 @@ const NewUserList = () => {
   }
 
   return (
-    <div className="content">
-      <div className="card">
-        <div className="card-header d-flex align-items-center justify-content-between flex-wrap row-gap-3">
-          <h4>Users</h4>
-          <div className="input-icon-start position-relative">
-            <span className="input-icon-addon">
-              <FaSearch />
-            </span>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Search Users"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              aria-label="Search users"
-            />
+    <div className="page-wrapper">
+      <div className="content">
+        <div className="card">
+          <div className="card-header d-flex align-items-center justify-content-between flex-wrap row-gap-3">
+            <h4>Users</h4>
+            <div className="input-icon-start position-relative">
+              <span className="input-icon-addon">
+                <FaSearch />
+              </span>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Search Users"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                aria-label="Search users"
+              />
+            </div>
           </div>
-        </div>
 
-        <div className="card-body">
-          <div className="row">
-            <div className="col-lg-4">
-              <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
-                <h6 className="me-2">Status</h6>
-                <ul
-                  className="nav nav-pills border d-inline-flex p-1 rounded bg-light todo-tabs"
-                  id="pills-tab"
-                  role="tablist"
-                >
-                  {Object.keys(groupedUsers).map((status) => (
-                    <li className="nav-item" role="presentation" key={status}>
-                      <button
-                        className={`nav-link btn btn-sm btn-icon py-3 d-flex align-items-center justify-content-center w-auto ${
-                          activeTab === status ? "active" : ""
-                        }`}
-                        id={`tab-${status}`}
-                        data-bs-toggle="pill"
-                        data-bs-target={`#pills-${status}`}
-                        type="button"
-                        role="tab"
-                        aria-selected={activeTab === status}
-                        onClick={() => setActiveTab(status)}
+          <div className="card-body">
+            <div className="row">
+              <div className="col-lg-4">
+                <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
+                  <h6 className="me-2">Status</h6>
+                  <ul
+                    className="nav nav-pills border d-inline-flex p-1 rounded bg-light todo-tabs"
+                    id="pills-tab"
+                    role="tablist"
+                  >
+                    {Object.keys(groupedUsers).map((status) => (
+                      <li className="nav-item" role="presentation" key={status}>
+                        <button
+                          className={`nav-link btn btn-sm btn-icon py-3 d-flex align-items-center justify-content-center w-auto ${
+                            activeTab === status ? "active" : ""
+                          }`}
+                          id={`tab-${status}`}
+                          data-bs-toggle="pill"
+                          data-bs-target={`#pills-${status}`}
+                          type="button"
+                          role="tab"
+                          aria-selected={activeTab === status}
+                          onClick={() => setActiveTab(status)}
+                        >
+                          {status} ({groupedUsers[status].length})
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="d-flex align-items-center ms-3">
+                    <p className="mb-0 me-3 pe-3 border-end fs-14">
+                      Total Employees:{" "}
+                      <span className="text-dark">{stats.totalEmployees}</span>
+                    </p>
+                    <p className="mb-0 me-3 pe-3 border-end fs-14">
+                      Active: <span className="text-dark">{stats.active}</span>
+                    </p>
+                    <p className="mb-0 me-3 pe-3 border-end fs-14">
+                      Inactive:{" "}
+                      <span className="text-dark">{stats.inactive}</span>
+                    </p>
+                    <p className="mb-0 fs-14">
+                      New Joiners:{" "}
+                      <span className="text-dark">{stats.newJoiners}</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="col-lg-8">
+                <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
+                  <div className="d-flex align-items-center border p-2 rounded">
+                    <span className="d-inline-flex me-2">Sort By: </span>
+                    <div className="dropdown">
+                      <a
+                        href="#"
+                        className="dropdown-toggle btn btn-white d-inline-flex align-items-center border-0 bg-transparent p-0 text-dark"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
                       >
-                        {status} ({groupedUsers[status].length})
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-                <div className="d-flex align-items-center ms-3">
-                  <p className="mb-0 me-3 pe-3 border-end fs-14">
-                    Total Employees:{" "}
-                    <span className="text-dark">{stats.totalEmployees}</span>
-                  </p>
-                  <p className="mb-0 me-3 pe-3 border-end fs-14">
-                    Active: <span className="text-dark">{stats.active}</span>
-                  </p>
-                  <p className="mb-0 me-3 pe-3 border-end fs-14">
-                    Inactive:{" "}
-                    <span className="text-dark">{stats.inactive}</span>
-                  </p>
-                  <p className="mb-0 fs-14">
-                    New Joiners:{" "}
-                    <span className="text-dark">{stats.newJoiners}</span>
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="col-lg-8">
-              <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
-                <div className="d-flex align-items-center border p-2 rounded">
-                  <span className="d-inline-flex me-2">Sort By: </span>
-                  <div className="dropdown">
-                    <a
-                      href="#"
-                      className="dropdown-toggle btn btn-white d-inline-flex align-items-center border-0 bg-transparent p-0 text-dark"
-                      data-bs-toggle="dropdown"
-                      aria-expanded="false"
-                    >
-                      {sortBy}
-                    </a>
-                    <ul className="dropdown-menu dropdown-menu-end p-3">
-                      {["Recently Added", "Ascending", "Descending"].map(
-                        (option) => (
-                          <li key={option}>
-                            <a
-                              href="#"
-                              className="dropdown-item rounded-1"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                setSortBy(option);
-                              }}
-                            >
-                              {option}
-                            </a>
-                          </li>
-                        )
-                      )}
-                    </ul>
-                  </div>
-                </div>
-                <button
-                  className="btn btn-outline-secondary ms-2"
-                  onClick={clearFilters}
-                >
-                  Clear Filters
-                </button>
-                <button
-                  className="btn btn-outline-primary ms-2"
-                  onClick={handleAddUser}
-                >
-                  Add User
-                </button>
-              </div>
-            </div>
-          </div>
-          <div className="tab-content" id="pills-tabContent">
-            {Object.entries(groupedUsers).map(([status, list]) => (
-              <div
-                className={`tab-pane fade ${
-                  activeTab === status ? "show active" : ""
-                }`}
-                id={`pills-${status}`}
-                role="tabpanel"
-                aria-labelledby={`tab-${status}`}
-                key={status}
-              >
-                {paginatedUsers.length === 0 ? (
-                  <p className="text-muted">
-                    No {status.toLowerCase()} users match the applied filters
-                  </p>
-                ) : (
-                  <div className="table-responsive">
-                    <table className="table table-hover">
-                      <thead>
-                        <tr>
-                          <th>Name</th>
-                          <th>Email</th>
-                          <th>Username</th>
-                          <th>Mobile Number</th>
-                          <th>Roles</th>
-                          <th>Status</th>
-                          <th>Created At</th>
-                          <th>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {paginatedUsers.map((user) => (
-                          <tr key={user.userId}>
-                            <td>{user.name || "N/A"}</td>
-                            <td>{user.email || "N/A"}</td>
-                            <td>{user.username || "N/A"}</td>
-                            <td>{user.mobileNumber || "N/A"}</td>
-                            <td>{user.roles?.join(", ") || "N/A"}</td>
-                            <td>
-                              <span
-                                className={`badge ${
-                                  user.status === "active"
-                                    ? "badge-success"
-                                    : "badge-danger"
-                                }`}
+                        {sortBy}
+                      </a>
+                      <ul className="dropdown-menu dropdown-menu-end p-3">
+                        {["Recently Added", "Ascending", "Descending"].map(
+                          (option) => (
+                            <li key={option}>
+                              <a
+                                href="#"
+                                className="dropdown-item rounded-1"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setSortBy(option);
+                                }}
                               >
-                                {user.status === "active"
-                                  ? "Active"
-                                  : "Inactive"}
-                              </span>
-                            </td>
-                            <td>
-                              {user.createdAt
-                                ? new Date(user.createdAt).toLocaleDateString()
-                                : "N/A"}
-                            </td>
-                            <td>
-                              <div className="actions d-flex gap-2">
-                                <FaEye
-                                  className="action-icon"
-                                  onClick={() => handleViewUser(user)}
-                                  aria-label={`View ${user.name}`}
-                                />
-                                <FaPen
-                                  className="action-icon"
-                                  onClick={() => handleEditUser(user)}
-                                  aria-label={`Edit ${user.name}`}
-                                />
-                                <FaBan
-                                  className="action-icon"
-                                  onClick={() =>
-                                    handleInactiveUser(user.userId)
-                                  }
-                                  disabled={isInactivating}
-                                  aria-label={`Inactive ${user.name}`}
-                                />
-                                <FaExclamationTriangle
-                                  className="action-icon text-warning"
-                                  onClick={() => handleReportUser(user.userId)}
-                                  disabled={isReporting}
-                                  aria-label={`Report ${user.name}`}
-                                />
-                                <FaTrash
-                                  className="action-icon text-danger"
-                                  onClick={() => handleDeleteUser(user.userId)}
-                                  disabled={isDeleting}
-                                  aria-label={`Delete ${user.name}`}
-                                />
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    {filteredUsers.length > itemsPerPage && (
-                      <div className="pagination-section mt-4">
-                        <DataTablePagination
-                          totalItems={filteredUsers.length}
-                          itemNo={itemsPerPage}
-                          onPageChange={handlePageChange}
-                          currentPage={currentPage}
-                        />
-                      </div>
-                    )}
+                                {option}
+                              </a>
+                            </li>
+                          )
+                        )}
+                      </ul>
+                    </div>
                   </div>
-                )}
+                  <button
+                    className="btn btn-outline-secondary ms-2"
+                    onClick={clearFilters}
+                  >
+                    Clear Filters
+                  </button>
+                  <button
+                    className="btn btn-outline-primary ms-2"
+                    onClick={handleAddUser}
+                  >
+                    Add User
+                  </button>
+                </div>
               </div>
-            ))}
+            </div>
+            <div className="tab-content" id="pills-tabContent">
+              {Object.entries(groupedUsers).map(([status, list]) => (
+                <div
+                  className={`tab-pane fade ${
+                    activeTab === status ? "show active" : ""
+                  }`}
+                  id={`pills-${status}`}
+                  role="tabpanel"
+                  aria-labelledby={`tab-${status}`}
+                  key={status}
+                >
+                  {paginatedUsers.length === 0 ? (
+                    <p className="text-muted">
+                      No {status.toLowerCase()} users match the applied filters
+                    </p>
+                  ) : (
+                    <div className="table-responsive">
+                      <table className="table table-hover">
+                        <thead>
+                          <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Username</th>
+                            <th>Mobile Number</th>
+                            <th>Roles</th>
+                            <th>Status</th>
+                            <th>Created At</th>
+                            <th>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {paginatedUsers.map((user) => (
+                            <tr key={user.userId}>
+                              <td>{user.name || "N/A"}</td>
+                              <td>{user.email || "N/A"}</td>
+                              <td>{user.username || "N/A"}</td>
+                              <td>{user.mobileNumber || "N/A"}</td>
+                              <td>{user.roles?.join(", ") || "N/A"}</td>
+                              <td>
+                                <span
+                                  className={`badge ${
+                                    user.status === "active"
+                                      ? "badge-success"
+                                      : "badge-danger"
+                                  }`}
+                                >
+                                  {user.status === "active"
+                                    ? "Active"
+                                    : "Inactive"}
+                                </span>
+                              </td>
+                              <td>
+                                {user.createdAt
+                                  ? new Date(
+                                      user.createdAt
+                                    ).toLocaleDateString()
+                                  : "N/A"}
+                              </td>
+                              <td>
+                                <div className="actions d-flex gap-2">
+                                  <FaEye
+                                    className="action-icon"
+                                    onClick={() => handleViewUser(user)}
+                                    aria-label={`View ${user.name}`}
+                                  />
+                                  <FaPen
+                                    className="action-icon"
+                                    onClick={() => handleEditUser(user)}
+                                    aria-label={`Edit ${user.name}`}
+                                  />
+                                  <FaBan
+                                    className="action-icon"
+                                    onClick={() =>
+                                      handleInactiveUser(user.userId)
+                                    }
+                                    disabled={isInactivating}
+                                    aria-label={`Inactive ${user.name}`}
+                                  />
+                                  <FaExclamationTriangle
+                                    className="action-icon text-warning"
+                                    onClick={() =>
+                                      handleReportUser(user.userId)
+                                    }
+                                    disabled={isReporting}
+                                    aria-label={`Report ${user.name}`}
+                                  />
+                                  <FaTrash
+                                    className="action-icon text-danger"
+                                    onClick={() =>
+                                      handleDeleteUser(user.userId)
+                                    }
+                                    disabled={isDeleting}
+                                    aria-label={`Delete ${user.name}`}
+                                  />
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {filteredUsers.length > itemsPerPage && (
+                        <div className="pagination-section mt-4">
+                          <DataTablePagination
+                            totalItems={filteredUsers.length}
+                            itemNo={itemsPerPage}
+                            onPageChange={handlePageChange}
+                            currentPage={currentPage}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
+        {showModal && <AddUser onClose={handleCloseModal} userToEdit={null} />}
+        {showDeleteModal && (
+          <DeleteModal
+            item={userToDelete}
+            itemType="User"
+            isVisible={showDeleteModal}
+            onConfirm={handleConfirmDelete}
+            onCancel={() => {
+              setShowDeleteModal(false);
+              setUserToDelete(null);
+            }}
+            isLoading={isDeleting}
+          />
+        )}
       </div>
-      {showModal && <AddUser onClose={handleCloseModal} userToEdit={null} />}
-      {showDeleteModal && (
-        <DeleteModal
-          item={userToDelete}
-          itemType="User"
-          isVisible={showDeleteModal}
-          onConfirm={handleConfirmDelete}
-          onCancel={() => {
-            setShowDeleteModal(false);
-            setUserToDelete(null);
-          }}
-          isLoading={isDeleting}
-        />
-      )}
     </div>
   );
 };

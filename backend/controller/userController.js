@@ -77,7 +77,7 @@ exports.createUser = async (req, res) => {
       shiftTo,
       addressId,
       roleId,
-      roles: roleData.roleName, // Store roleName for backward compatibility
+      roles: roleData.roleName,
       status: roleData.roleName === "Users" ? "inactive" : "active",
     });
 
@@ -106,7 +106,7 @@ exports.getProfile = async (req, res) => {
 // Search User
 exports.searchUser = async (req, res) => {
   try {
-    const { query, page = 1, limit = 10 } = req.query;
+    const { query, page = 1, limit = 20 } = req.query;
     const offset = (page - 1) * limit;
 
     const users = await User.findAndCountAll({
@@ -115,11 +115,12 @@ exports.searchUser = async (req, res) => {
           { username: { [Op.like]: `%${query}%` } },
           { name: { [Op.like]: `%${query}%` } },
           { email: { [Op.like]: `%${query}%` } },
+          { mobileNumber: { [Op.like]: `%${query}%` } },
         ],
       },
       ...excludeSensitiveFields,
-      limit,
-      offset,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
     });
 
     res.status(200).json({
@@ -192,15 +193,13 @@ exports.updateProfile = async (req, res) => {
 // Report User
 exports.reportUser = async (req, res) => {
   try {
-    const { userId, reason } = req.body;
+    const { userId } = req.params;
     const user = await User.findByPk(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // TODO: Implement actual reporting logic (e.g., save to a reports table or send notification)
-    // Example: await Reports.create({ userId, reportedBy: req.user.userId, reason });
-
+    // TODO: Implement reporting logic (e.g., save to a reports table)
     res.status(200).json({ message: "User reported successfully" });
   } catch (err) {
     res.status(500).json({ message: "Server Error", error: err.message });
@@ -226,20 +225,73 @@ exports.deleteUser = async (req, res) => {
 // Get All Users
 exports.getAllUsers = async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
+    const {
+      page = 1,
+      limit = 20,
+      searchTerm = "",
+      sortBy = "Recently Added",
+      status = "All",
+    } = req.query;
     const offset = (page - 1) * limit;
 
+    // Build where clause for filtering
+    const where = {};
+    if (searchTerm) {
+      where[Op.or] = [
+        { username: { [Op.like]: `%${searchTerm}%` } },
+        { name: { [Op.like]: `%${searchTerm}%` } },
+        { email: { [Op.like]: `%${searchTerm}%` } },
+        { mobileNumber: { [Op.like]: `%${searchTerm}%` } },
+      ];
+    }
+    if (status !== "All") {
+      where.status = status === "Active" ? "active" : "inactive";
+    }
+
+    // Build order clause for sorting
+    let order = [];
+    switch (sortBy) {
+      case "Ascending":
+        order = [["name", "ASC"]];
+        break;
+      case "Descending":
+        order = [["name", "DESC"]];
+        break;
+      case "Recently Added":
+        order = [["createdAt", "DESC"]];
+        break;
+      default:
+        order = [["createdAt", "DESC"]];
+    }
+
     const users = await User.findAndCountAll({
+      where,
       ...excludeSensitiveFields,
-      limit,
-      offset,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      order,
     });
+
+    // Calculate stats for counts
+    const stats = {
+      total: users.count,
+      active: await User.count({ where: { status: "active" } }),
+      inactive: await User.count({ where: { status: "inactive" } }),
+      newJoiners: await User.count({
+        where: {
+          createdAt: {
+            [Op.gte]: new Date(new Date().setDate(new Date().getDate() - 30)),
+          },
+        },
+      }),
+    };
 
     res.status(200).json({
       users: users.rows,
       total: users.count,
       page: parseInt(page),
       totalPages: Math.ceil(users.count / limit),
+      stats,
     });
   } catch (err) {
     res.status(500).json({ message: "Server Error", error: err.message });
@@ -275,6 +327,7 @@ exports.updateUser = async (req, res) => {
       shiftFrom,
       shiftTo,
       addressId,
+      status,
     } = req.body;
 
     const user = await User.findByPk(userId);
@@ -306,6 +359,8 @@ exports.updateUser = async (req, res) => {
     user.shiftFrom = shiftFrom || user.shiftFrom;
     user.shiftTo = shiftTo || user.shiftTo;
     user.addressId = addressId || user.addressId;
+    user.status =
+      status !== undefined ? (status ? "active" : "inactive") : user.status;
 
     // Handle role update
     if (roleId) {
@@ -329,14 +384,8 @@ exports.updateUser = async (req, res) => {
         }
       }
 
-      // Update roles and status
-      let userRoles = user.getDataValue("roles")?.split(",") || [];
-      if (!userRoles.includes(roleData.roleName)) {
-        userRoles.push(roleData.roleName);
-      }
-      user.roles = userRoles.join(",");
+      user.roles = roleData.roleName;
       user.roleId = roleData.roleId;
-      user.status = roleData.roleName === "Users" ? "inactive" : "active";
     }
 
     await user.save();
@@ -353,12 +402,13 @@ exports.updateUser = async (req, res) => {
 exports.changeStatusToInactive = async (req, res) => {
   try {
     const { userId } = req.params;
+    const { status } = req.body; // Expect status: false for inactive
     const user = await User.findByPk(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    user.status = "inactive";
+    user.status = status === false ? "inactive" : user.status;
     await user.save();
     res.status(200).json({
       message: "User status updated to inactive",
@@ -369,53 +419,45 @@ exports.changeStatusToInactive = async (req, res) => {
   }
 };
 
-exports.assignRole = async (userId, role) => {
+// Assign Role
+exports.assignRole = async (req, res) => {
   try {
-    const user = await User.findOne({ where: { id: userId } });
+    const { userId } = req.params;
+    const { roleId } = req.body;
 
+    const user = await User.findByPk(userId);
     if (!user) {
-      return { success: false, message: "User not found" };
+      return res.status(404).json({ message: "User not found" });
     }
 
-    // Fetch roleId from Roles table
-    const roleData = await Roles.findOne({ where: { roleName: role } });
-
+    const roleData = await Roles.findOne({ where: { roleId } });
     if (!roleData) {
-      return { success: false, message: "Invalid role specified" };
+      return res.status(400).json({ message: "Invalid role specified" });
     }
 
-    const roleId = roleData.roleId; // Assign roleId dynamically
-
-    // Check if a SuperAdmin already exists
-    if (role === "SuperAdmin") {
+    // Check for existing SuperAdmin
+    if (roleData.roleName === "SUPER_ADMIN") {
       const existingSuperAdmin = await User.findOne({
-        where: { roles: { [Op.substring]: "SuperAdmin" } }, // Improved check
+        where: {
+          roles: { [Op.like]: `%SUPER_ADMIN%` },
+          userId: { [Op.ne]: userId },
+        },
       });
-
       if (existingSuperAdmin) {
-        return { success: false, message: "A SuperAdmin already exists" };
+        return res.status(400).json({ message: "A SuperAdmin already exists" });
       }
     }
 
-    // Assigning roles
-    let userRoles = user.roles ? user.roles.split(",") : [];
-
-    if (role === "Users") {
-      user.roles = "Users";
-      user.roleId = null;
-      user.status = "inactive";
-    } else {
-      if (!userRoles.includes(role)) {
-        userRoles.push(role);
-      }
-      user.roles = userRoles.join(",");
-      user.roleId = roleId; // Now dynamically assigned from Roles table
-      user.status = "active";
-    }
+    user.roles = roleData.roleName;
+    user.roleId = roleData.roleId;
+    user.status = roleData.roleName === "Users" ? "inactive" : "active";
 
     await user.save();
-    return { success: true, message: `Role ${role} assigned successfully` };
-  } catch (error) {
-    return { success: false, message: "Internal server error" };
+    res.status(200).json({
+      message: `Role ${roleData.roleName} assigned successfully`,
+      user: await User.findByPk(user.userId, excludeSensitiveFields),
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Server Error", error: err.message });
   }
 };
