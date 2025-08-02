@@ -88,8 +88,14 @@ const CreateInvoiceFromQuotation = ({
     setError(null);
 
     const validProducts = formData.products.filter(
-      (p) => p.name && p.qty && p.sellingPrice && p.total
+      (p) =>
+        typeof p.name === "string" &&
+        p.name.trim() !== "" &&
+        p.qty !== undefined &&
+        p.sellingPrice !== undefined &&
+        p.total !== undefined
     );
+
     if (!formData.customerId) {
       setError("Please select a customer.");
       setIsSubmitting(false);

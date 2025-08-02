@@ -401,13 +401,6 @@ const Profile = () => {
                   >
                     Edit Profile
                   </button>
-                  <button
-                    className="btn btn-outline-light ms-2"
-                    onClick={handleForgotPassword}
-                    disabled={isResetting}
-                  >
-                    Reset Password
-                  </button>
                 </div>
               </div>
               <div className="card-body">

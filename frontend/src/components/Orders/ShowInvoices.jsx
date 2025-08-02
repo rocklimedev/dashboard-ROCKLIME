@@ -33,7 +33,7 @@ const { Option } = Select;
 // Define status colors for each possible invoice status
 const statusColors = {
   paid: "bg-success",
-  unpaid: "bg-warning",
+  unpaid: "bg-primary",
   "partially paid": "bg-info",
   void: "bg-danger",
   refund: "bg-primary",
