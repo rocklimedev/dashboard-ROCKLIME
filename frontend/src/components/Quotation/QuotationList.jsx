@@ -6,15 +6,22 @@ import {
 } from "../../api/quotationApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
-import { FaSearch, FaEye, FaTrash, FaEdit } from "react-icons/fa";
+import {
+  FaSearch,
+  FaEye,
+  FaTrash,
+  FaEdit,
+  FaFileInvoice,
+} from "react-icons/fa"; // Added FaFileInvoice
 import QuotationProductModal from "./QuotationProductModal";
 import DeleteModal from "../Common/DeleteModal";
 import { toast } from "sonner";
-import { Dropdown, Menu, Button } from "antd"; // Import Ant Design components
-import { MoreOutlined } from "@ant-design/icons"; // Ant Design icon for the dropdown trigger
+import { Dropdown, Menu, Button } from "antd";
+import { MoreOutlined } from "@ant-design/icons";
 import PageHeader from "../Common/PageHeader";
 import DataTablePagination from "../Common/DataTablePagination";
-
+import { useCreateInvoiceMutation } from "../../api/invoiceApi"; // Import the invoice API hook
+import CreateInvoiceFromQuotation from "../Invoices/CreateInvoiceFromQuotation";
 const QuotationList = () => {
   const navigate = useNavigate();
   const {
@@ -27,6 +34,7 @@ const QuotationList = () => {
   const { data: usersData } = useGetAllUsersQuery();
   const [deleteQuotation, { isLoading: isDeleting }] =
     useDeleteQuotationMutation();
+  const [createInvoice] = useCreateInvoiceMutation(); // Hook for creating invoice
 
   const quotations = quotationsData || [];
   const customers = customersData?.data || [];
@@ -34,15 +42,17 @@ const QuotationList = () => {
 
   const [showProductModal, setShowProductModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false); // State for invoice modal
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [quotationToDelete, setQuotationToDelete] = useState(null);
+  const [selectedQuotation, setSelectedQuotation] = useState(null); // State for selected quotation
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("Recently Added");
   const [activeTab, setActiveTab] = useState("All");
   const itemsPerPage = 10;
 
-  // Define helper functions
+  // Helper functions
   const getProductCount = (products) => {
     const parsedProducts =
       typeof products === "string"
@@ -64,6 +74,14 @@ const QuotationList = () => {
     return user ? user.name : "Unknown";
   };
 
+  // Memoized customer map for CreateInvoiceFromQuotation
+  const customerMap = useMemo(() => {
+    return customers.reduce((map, customer) => {
+      map[customer.customerId] = customer.name;
+      return map;
+    }, {});
+  }, [customers]);
+
   // Memoized grouped quotations for tab-based filtering
   const groupedQuotations = useMemo(
     () => ({
@@ -83,7 +101,6 @@ const QuotationList = () => {
   const filteredQuotations = useMemo(() => {
     let result = groupedQuotations[activeTab] || [];
 
-    // Apply search filter
     if (searchTerm.trim()) {
       result = result.filter((q) => {
         const customerName = getCustomerName(q.customerId);
@@ -97,7 +114,6 @@ const QuotationList = () => {
       });
     }
 
-    // Apply sorting
     switch (sortBy) {
       case "Ascending":
         result = [...result].sort((a, b) =>
@@ -193,6 +209,16 @@ const QuotationList = () => {
     setSelectedProducts([]);
   };
 
+  const handleOpenInvoiceModal = (quotation) => {
+    setSelectedQuotation(quotation);
+    setShowInvoiceModal(true);
+  };
+
+  const handleCloseInvoiceModal = () => {
+    setShowInvoiceModal(false);
+    setSelectedQuotation(null);
+  };
+
   const handlePageChange = ({ selected }) => {
     setCurrentPage(selected + 1);
   };
@@ -241,7 +267,7 @@ const QuotationList = () => {
           title="Quotations"
           subtitle="Manage your Quotations"
           onAdd={handleAddQuotation}
-          tableData={formattedTableData} // Pass formatted data for export
+          tableData={formattedTableData}
         />
         <div className="card-body">
           <div className="row">
@@ -357,6 +383,18 @@ const QuotationList = () => {
                                       </Link>
                                     </Menu.Item>
                                     <Menu.Item
+                                      key="convert"
+                                      onClick={() =>
+                                        handleOpenInvoiceModal(quotation)
+                                      }
+                                      title="Convert to Invoice"
+                                    >
+                                      <FaFileInvoice
+                                        style={{ marginRight: 8 }}
+                                      />
+                                      Convert to Invoice
+                                    </Menu.Item>
+                                    <Menu.Item
                                       key="delete"
                                       onClick={() =>
                                         handleDeleteClick(quotation)
@@ -418,6 +456,15 @@ const QuotationList = () => {
             setQuotationToDelete(null);
           }}
           isLoading={isDeleting}
+        />
+      )}
+      {showInvoiceModal && selectedQuotation && (
+        <CreateInvoiceFromQuotation
+          quotation={selectedQuotation}
+          onClose={handleCloseInvoiceModal}
+          createInvoice={createInvoice}
+          customerMap={customerMap}
+          addressMap={{}} // Pass addressMap if needed, or fetch within CreateInvoiceFromQuotation
         />
       )}
     </>

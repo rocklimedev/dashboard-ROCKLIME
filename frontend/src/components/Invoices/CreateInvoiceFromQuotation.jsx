@@ -115,7 +115,7 @@ const CreateInvoiceFromQuotation = ({
         invoiceDate: formData.invoiceDate,
         dueDate: formData.dueDate,
         status: formData.status,
-        items: validProducts.map((product) => ({
+        products: validProducts.map((product) => ({
           name: product.name,
           qty: parseInt(product.qty) || 1,
           sellingPrice: parseFloat(product.sellingPrice) || 0,

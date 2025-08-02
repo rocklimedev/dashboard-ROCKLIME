@@ -316,6 +316,7 @@ const Cart = ({ onConvertToOrder }) => {
   };
 
   const handlePlaceOrder = async () => {
+    // Existing validation
     if (!selectedCustomer) return toast.error("Please select a customer.");
     if (!userId) return toast.error("User not logged in!");
     if (!invoiceData.invoiceDate || !invoiceData.dueDate)
@@ -325,6 +326,35 @@ const Cart = ({ onConvertToOrder }) => {
     if (error) return toast.error("Please fix the errors before submitting.");
     if (!selectedPaymentMethod)
       return toast.error("Please select a payment method.");
+    if (cartItems.length === 0)
+      return toast.error("Cart is empty. Add items to proceed.");
+
+    // Validate date formats
+    const invoiceDateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!invoiceDateRegex.test(invoiceData.invoiceDate))
+      return toast.error("Invalid invoice date format. Use YYYY-MM-DD.");
+    if (!invoiceDateRegex.test(invoiceData.dueDate))
+      return toast.error("Invalid due date format. Use YYYY-MM-DD.");
+
+    // Validate amount
+    if (isNaN(totalAmount) || totalAmount <= 0)
+      return toast.error("Invalid total amount.");
+
+    // Validate products
+    if (
+      !cartItems.every(
+        (item) =>
+          item.productId &&
+          typeof item.quantity === "number" &&
+          item.quantity > 0 &&
+          typeof item.price === "number" &&
+          item.price >= 0
+      )
+    ) {
+      return toast.error(
+        "Invalid cart items. Ensure all items have valid productId, quantity, and price."
+      );
+    }
 
     try {
       await refetchAddresses().unwrap();
@@ -370,8 +400,8 @@ const Cart = ({ onConvertToOrder }) => {
       createdBy: userId,
       customerId: selectedCustomerData.customerId,
       billTo: invoiceData.billTo,
-      shipTo: invoiceData.shipTo,
-      amount: totalAmount,
+      shipTo: invoiceData.shipTo || null, // Ensure null if not provided
+      amount: parseFloat(totalAmount.toFixed(2)), // Ensure DECIMAL(10,2) format
       invoiceDate: invoiceData.invoiceDate,
       dueDate: invoiceData.dueDate,
       paymentMethod: JSON.stringify({ method: selectedPaymentMethod }),
@@ -380,7 +410,7 @@ const Cart = ({ onConvertToOrder }) => {
         cartItems.map((item) => ({
           productId: item.productId,
           quantity: item.quantity,
-          price: item.price,
+          price: parseFloat(item.price.toFixed(2)), // Ensure DECIMAL format
         }))
       ),
       signatureName: invoiceData.signatureName || "CM TRADING CO",
@@ -388,6 +418,9 @@ const Cart = ({ onConvertToOrder }) => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
+
+    // Log the data for debugging
+    console.log("Submitting invoice data:", invoiceDataToSubmit);
 
     try {
       const response = await createInvoice(invoiceDataToSubmit).unwrap();
@@ -417,6 +450,7 @@ const Cart = ({ onConvertToOrder }) => {
       setInvoiceNumber(generateInvoiceNumber());
       setActiveTab("cart");
     } catch (error) {
+      console.error("Invoice creation error:", error);
       toast.error(
         `Failed to place order: ${
           error.data?.message || error.message || "Unknown error"
