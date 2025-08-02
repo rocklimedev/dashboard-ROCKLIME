@@ -102,3 +102,5 @@ const updateCustomerCalculations = async (req, res, next) => {
     });
   }
 };
+
+module.exports = { updateCustomerCalculations };

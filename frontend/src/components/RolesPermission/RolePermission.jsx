@@ -381,13 +381,13 @@ const RolePermission = () => {
                               <div className="action-buttons d-flex gap-2">
                                 <a
                                   href={`/roles-permission/permissions/${role.roleId}`}
-                                  className="btn btn-icon btn-sm btn-outline-primary"
+                                  className="btn btn-icon btn-sm"
                                   aria-label={`View permissions for ${role.roleName}`}
                                 >
                                   <FaShieldAlt />
                                 </a>
                                 <FaTrash
-                                  className="btn btn-icon btn-sm btn-outline-warning"
+                                  className="btn btn-icon btn-sm"
                                   onClick={() => handleOpenDeleteModal(role)}
                                   disabled={isDeleting}
                                   aria-label={`Delete ${role.roleName}`}
