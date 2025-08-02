@@ -28,6 +28,7 @@ import {
   FaBuilding,
   FaMapMarkerAlt,
 } from "react-icons/fa";
+import Avatar from "react-avatar"; // Import react-avatar
 import "./customerdetails.css";
 
 const CustomerDetails = () => {
@@ -234,9 +235,15 @@ const CustomerDetails = () => {
             <div className="card rounded-0 border-0">
               <div className="card-header rounded-0 bg-primary d-flex align-items-center">
                 <span className="avatar avatar-xl avatar-rounded flex-shrink-0 border border-white border-3 me-3">
-                  <img
-                    src={customer.avatar || "/assets/img/users/user-32.jpg"}
-                    alt="Customer"
+                  <Avatar
+                    name={customer.name || "Customer"} // Use customer name for initials
+                    src={customer.avatar || "/assets/img/users/user-32.jpg"} // Use avatar URL or fallback
+                    size="60" // Match the size of the previous image
+                    round={true} // Rounded avatar
+                    className="rounded"
+                    color="#4A90E2" // Optional: Customize background color
+                    textSizeRatio={2.5} // Optional: Adjust text size for initials
+                    alt={`Avatar of ${customer.name || "Customer"}`}
                   />
                 </span>
                 <div className="me-3">
@@ -368,7 +375,6 @@ const CustomerDetails = () => {
                 </div>
               </div>
             </div>
-            {/* Invoices */}
             {/* Invoices */}
             <div className="card rounded-0 border-0">
               <div className="card-header border-0 rounded-0 bg-light">
