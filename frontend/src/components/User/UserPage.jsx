@@ -1,6 +1,7 @@
 import React from "react";
 import { useParams, Link } from "react-router-dom";
 import { useGetUserByIdQuery } from "../../api/userApi";
+import Avatar from "react-avatar"; // Import react-avatar
 
 const UserPage = () => {
   const { userId } = useParams(); // Get userId from URL
@@ -144,9 +145,15 @@ const UserPage = () => {
             <div className="card rounded-0 border-0">
               <div className="card-header rounded-0 bg-primary d-flex align-items-center">
                 <span className="avatar avatar-xl avatar-rounded flex-shrink-0 border border-white border-3 me-3">
-                  <img
-                    src={user.avatar || "/assets/img/users/user-32.jpg"}
-                    alt="User"
+                  <Avatar
+                    name={user.name || "User"} // Use user name for initials
+                    src={user.avatar || "/assets/img/users/user-32.jpg"} // Use avatar URL or fallback
+                    size="60" // Match the size of the previous image
+                    round={true} // Rounded avatar
+                    className="rounded"
+                    color="#4A90E2" // Optional: Customize background color
+                    textSizeRatio={2.5} // Optional: Adjust text size for initials
+                    alt={`Avatar of ${user.name || "User"}`}
                   />
                 </span>
                 <div className="me-3">

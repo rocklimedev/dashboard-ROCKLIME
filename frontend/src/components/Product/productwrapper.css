@@ -26,7 +26,8 @@
   border-radius: 12px;
   padding: 1rem;
   transition: transform 0.3s ease, box-shadow 0.3s ease; /* Smooth hover effect */
-  min-height: 250px; /* Ensure minimum height to prevent squeezing */
+  min-height: calc(100px + 5vw); /* Scale height relative to viewport width */
+  width: 100%; /* Ensure cards take full available width */
 }
 
 .categories-card:hover,
@@ -38,7 +39,7 @@
 /* Brand logo container to control image aspect ratio */
 .brand-logo-container {
   width: 100%;
-  height: 150px; /* Fixed height for logo container */
+  height: calc(120px + 3vw); /* Scale height relative to viewport width */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -77,16 +78,16 @@
   .categories-card,
   .brands-selection-card {
     padding: 0.75rem;
-min-height: 160px;
+    min-height: calc(160px + 4vw); /* Reduced height, still relative to viewport width */
   }
 
   .brand-logo-container {
-    height: 120px; /* Reduced height for tablets */
+    height: calc(100px + 3vw); /* Reduced height for tablets */
   }
 
   .categories-img,
   .brands-selection-img {
-    max-height: 120px; /* Reduced max height for images on mobile */
+    max-height: calc(100px + 3vw); /* Reduced max height */
   }
 
   .categories-text {
@@ -107,16 +108,16 @@ min-height: 160px;
   .categories-card,
   .brands-selection-card {
     padding: 0.5rem;
-    min-height: 180px; /* Further reduced minimum height */
+    min-height: calc(140px + 4vw); /* Further reduced height, still relative to viewport width */
   }
 
   .brand-logo-container {
-    height: 100px; /* Further reduced height for mobile */
+    height: calc(80px + 3vw); /* Further reduced height for mobile */
   }
 
   .categories-img,
   .brands-selection-img {
-    max-height: 100px; /* Further reduced max height */
+    max-height: calc(80px + 3vw); /* Further reduced max height */
   }
 
   .categories-text {
