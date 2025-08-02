@@ -76,7 +76,7 @@ const ForgotPassword = () => {
                       <div className="signinform text-center">
                         <h4>
                           Return to{" "}
-                          <a href="/signin" className="hover-a">
+                          <a href="/login" className="hover-a">
                             login
                           </a>
                         </h4>

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import {
   useDeleteUserMutation,
   useInactiveUserMutation,
+  useGetProfileQuery,
 } from "../../api/userApi";
 import { useResetPasswordMutation } from "../../api/authApi";
 import { logout } from "../../api/userSlice";
@@ -16,12 +17,17 @@ const GeneralSettings = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  // RTK Query mutations
+  // RTK Query mutations and queries
   const [resetPassword, { isLoading: isResettingPassword }] =
     useResetPasswordMutation();
   const [deactivateAccount, { isLoading: isDeactivating }] =
     useInactiveUserMutation();
   const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
+  const {
+    data: profile,
+    isLoading: isProfileLoading,
+    error: profileError,
+  } = useGetProfileQuery();
 
   // State for active section
   const [activeSection, setActiveSection] = useState("Profile");
@@ -30,19 +36,6 @@ const GeneralSettings = () => {
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
-  });
-
-  // State for profile data (example)
-  const [profileData, setProfileData] = useState({
-    name: "John Doe",
-    email: "john.doe@example.com",
-    profilePicture: "",
-  });
-
-  // State for company data (example)
-  const [companyData] = useState({
-    name: "Example Corp",
-    address: "123 Business St, City, Country",
   });
 
   // State for confirmation modal
@@ -60,17 +53,6 @@ const GeneralSettings = () => {
       document.getElementById("change-password").classList.remove("show");
     } catch (error) {
       toast.error(error?.data?.message || "Failed to change password");
-    }
-  };
-
-  // Handle profile update
-  const handleProfileUpdate = async (e) => {
-    e.preventDefault();
-    try {
-      // Placeholder for profile update API call
-      toast.success("Profile updated successfully!");
-    } catch (error) {
-      toast.error(error?.data?.message || "Failed to update profile");
     }
   };
 
@@ -138,144 +120,6 @@ const GeneralSettings = () => {
   };
 
   // Render content based on active section
-  const renderContent = () => {
-    switch (activeSection) {
-      case "Security":
-        return (
-          <div className="card flex-fill mb-0">
-            <div className="card-body">
-              {/* Password Section */}
-              <div className="d-flex align-items-center justify-content-between flex-wrap row-gap-3 border-bottom mb-3 pb-3">
-                <div className="d-flex align-items-center">
-                  <span className="avatar avatar-lg border bg-light fs-24 me-2">
-                    <i className="ti ti-eye-off text-gray-900 fs-18"></i>
-                  </span>
-                  <div>
-                    <h5 className="fs-16 fw-medium mb-1">Password</h5>
-                    <p className="fs-16">Last Changed 22 Dec 2024, 10:30 AM</p>
-                  </div>
-                </div>
-                <Link to="/forgot-password">
-                  <button
-                    className="btn btn-primary"
-                    disabled={isResettingPassword}
-                  >
-                    {isResettingPassword ? "Resetting..." : "Forgot Password"}
-                  </button>
-                </Link>
-              </div>
-
-              {/* Phone Number Verification */}
-              <div className="d-flex align-items-center justify-content-between flex-wrap row-gap-3 border-bottom mb-3 pb-3">
-                <div className="d-flex align-items-center">
-                  <span className="avatar avatar-lg border bg-light fs-24 me-2">
-                    <i className="ti ti-phone text-gray-900 fs-18"></i>
-                  </span>
-                  <div>
-                    <h5 className="fs-16 fw-medium mb-1">
-                      Phone Number Verification
-                    </h5>
-                    <p className="fs-16">
-                      Verified Mobile Number: +81699799974
-                    </p>
-                  </div>
-                </div>
-                <div className="d-flex align-items-center">
-                  <span className="fs-20 text-success me-3">
-                    <i className="ti ti-circle-check-filled"></i>
-                  </span>
-                  <a
-                    href="javascript:void(0);"
-                    className="btn btn-primary mt-0"
-                  >
-                    Change
-                  </a>
-                  <a
-                    href="javascript:void(0);"
-                    className="btn btn-secondary ms-3"
-                    onClick={() =>
-                      toast.info("Phone number removal not implemented yet")
-                    }
-                  >
-                    Remove
-                  </a>
-                </div>
-              </div>
-
-              {/* Deactivate Account */}
-              <div className="d-flex align-items-center justify-content-between flex-wrap row-gap-3 border-bottom mb-3 pb-3">
-                <div className="d-flex align-items-center">
-                  <span className="avatar avatar-lg border bg-light fs-24 me-2">
-                    <i className="ti ti-ban text-gray-900 fs-18"></i>
-                  </span>
-                  <div>
-                    <h5 className="fs-16 fw-medium mb-1">Deactivate Account</h5>
-                    <p className="fs-16">
-                      This will shut down your account. Your account will be
-                      reactivated when you sign in again.
-                    </p>
-                  </div>
-                </div>
-                <button
-                  className="btn btn-primary mt-0"
-                  onClick={handleInitiateDeactivateAccount}
-                  disabled={isDeactivating}
-                >
-                  {isDeactivating ? "Deactivating..." : "Deactivate"}
-                </button>
-              </div>
-
-              {/* Delete Account */}
-              <div className="d-flex align-items-center justify-content-between flex-wrap row-gap-3">
-                <div className="d-flex align-items-center">
-                  <span className="avatar avatar-lg border bg-light fs-24 me-2">
-                    <i className="ti ti-trash text-gray-900 fs-18"></i>
-                  </span>
-                  <div>
-                    <h5 className="fs-16 fw-medium mb-1">Delete Account</h5>
-                    <p className="fs-16">
-                      Your account will be permanently deleted.
-                    </p>
-                  </div>
-                </div>
-                <button
-                  className="btn btn-danger"
-                  onClick={handleInitiateDeleteAccount}
-                  disabled={isDeleting}
-                >
-                  {isDeleting ? "Deleting..." : "Delete"}
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      case "Company":
-        return (
-          <div className="card flex-fill mb-0">
-            <div className="card-body">
-              <h5 className="fs-16 fw-medium mb-3">Company Details</h5>
-              <Form>
-                <Form.Group className="mb-3" controlId="companyName">
-                  <Form.Label>Company Name</Form.Label>
-                  <Form.Control type="text" value={companyData.name} disabled />
-                </Form.Group>
-                <Form.Group className="mb-3" controlId="companyAddress">
-                  <Form.Label>Address</Form.Label>
-                  <Form.Control
-                    type="text"
-                    value={companyData.address}
-                    disabled
-                  />
-                </Form.Group>
-              </Form>
-            </div>
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
-
   return (
     <div className="page-wrapper">
       <div className="content settings-content">
@@ -284,32 +128,120 @@ const GeneralSettings = () => {
           <h6>Manage your settings on the portal</h6>
         </div>
         <div className="settings-wrapper d-flex">
-          {/* Sidebar */}
-          <div className="settings-sidebar">
-            <ul className="nav flex-column">
-              <li
-                className={`nav-item ${
-                  activeSection === "Security" ? "active" : ""
-                }`}
-                onClick={() => setActiveSection("Security")}
-              >
-                <i className="ti ti-lock me-2"></i> Security
-              </li>
-              <li
-                className={`nav-item ${
-                  activeSection === "Company" ? "active" : ""
-                }`}
-                onClick={() => setActiveSection("Company")}
-              >
-                <i className="ti ti-building me-2"></i> Company
-              </li>
-              <li className="nav-item" onClick={handleLogout}>
-                <i className="ti ti-logout me-2"></i> Logout
-              </li>
-            </ul>
-          </div>
           {/* Content */}
-          <div className="settings-content-area">{renderContent()}</div>
+          <div className="settings-content-area">
+            <div className="card flex-fill mb-0">
+              <div className="card-body">
+                {/* Password Section */}
+                <div className="d-flex align-items-center justify-content-between flex-wrap row-gap-3 border-bottom mb-3 pb-3">
+                  <div className="d-flex align-items-center">
+                    <span className="avatar avatar-lg border bg-light fs-24 me-2">
+                      <i className="ti ti-eye-off text-gray-900 fs-18"></i>
+                    </span>
+                    <div>
+                      <h5 className="fs-16 fw-medium mb-1">Password</h5>
+                      <p className="fs-16">
+                        Forgot Your Password? Click here to change it.
+                      </p>
+                    </div>
+                  </div>
+                  <Link to="/forgot-password">
+                    <button
+                      className="btn btn-primary"
+                      disabled={isResettingPassword}
+                    >
+                      {isResettingPassword ? "Resetting..." : "Forgot Password"}
+                    </button>
+                  </Link>
+                </div>
+
+                {/* Phone Number Verification */}
+                <div className="d-flex align-items-center justify-content-between flex-wrap row-gap-3 border-bottom mb-3 pb-3">
+                  <div className="d-flex align-items-center">
+                    <span className="avatar avatar-lg border bg-light fs-24 me-2">
+                      <i className="ti ti-phone text-gray-900 fs-18"></i>
+                    </span>
+                    <div>
+                      <h5 className="fs-16 fw-medium mb-1">
+                        Phone Number Verification
+                      </h5>
+                      <p className="fs-16">
+                        Verified Mobile Number:{" "}
+                        {profile?.user?.mobileNumber || "+81699799974"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="d-flex align-items-center">
+                    <span className="fs-20 text-success me-3">
+                      <i className="ti ti-circle-check-filled"></i>
+                    </span>
+                    <a
+                      href="javascript:void(0);"
+                      className="btn btn-primary mt-0"
+                    >
+                      Change
+                    </a>
+                    <a
+                      href="javascript:void(0);"
+                      className="btn btn-secondary ms-3"
+                      onClick={() =>
+                        toast.info("Phone number removal not implemented yet")
+                      }
+                    >
+                      Remove
+                    </a>
+                  </div>
+                </div>
+
+                {/* Deactivate Account */}
+                <div className="d-flex align-items-center justify-content-between flex-wrap row-gap-3 border-bottom mb-3 pb-3">
+                  <div className="d-flex align-items-center">
+                    <span className="avatar avatar-lg border bg-light fs-24 me-2">
+                      <i className="ti ti-ban text-gray-900 fs-18"></i>
+                    </span>
+                    <div>
+                      <h5 className="fs-16 fw-medium mb-1">
+                        Deactivate Account
+                      </h5>
+                      <p className="fs-16">
+                        This will shut down your account. Your account will be
+                        reactivated when you sign in again.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    className="btn btn-primary mt-0"
+                    onClick={handleInitiateDeactivateAccount}
+                    disabled={isDeactivating}
+                  >
+                    {isDeactivating ? "Deactivating..." : "Deactivate"}
+                  </button>
+                </div>
+
+                {/* Delete Account */}
+                <div className="d-flex align-items-center justify-content-between flex-wrap row-gap-3">
+                  <div className="d-flex align-items-center">
+                    <span className="avatar avatar-lg border bg-light fs-24 me-2">
+                      <i className="ti ti-trash text-gray-900 fs-18"></i>
+                    </span>
+                    <div>
+                      <h5 className="fs-16 fw-medium mb-1">Delete Account</h5>
+                      <p className="fs-16">
+                        Your account will be permanently deleted.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    className="btn btn-danger"
+                    onClick={handleInitiateDeleteAccount}
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? "Deleting..." : "Delete"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

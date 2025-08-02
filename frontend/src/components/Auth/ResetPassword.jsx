@@ -20,7 +20,7 @@ const ResetPassword = () => {
     try {
       const response = await resetPassword({ newPassword }).unwrap();
       toast.success(response.message || "Password changed successfully!"); // Sonner toast
-      navigate("/signin");
+      navigate("/login");
     } catch (error) {
       toast.error(error?.data?.message || "Failed to reset password"); // Sonner toast
     }
