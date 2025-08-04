@@ -1,5 +1,18 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { FaArrowLeft } from "react-icons/fa";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import {
+  Form,
+  Spinner,
+  Alert,
+  Modal,
+  Button as BootstrapButton,
+} from "react-bootstrap";
+import { FaArrowLeft, FaSearch } from "react-icons/fa";
+import { DeleteOutlined } from "@ant-design/icons";
+import { Select, Button } from "antd";
+import { toast } from "sonner";
+import { debounce } from "lodash";
+import PageHeader from "../Common/PageHeader";
 import {
   useCreateQuotationMutation,
   useGetQuotationByIdQuery,
@@ -12,14 +25,11 @@ import {
   useCreateAddressMutation,
 } from "../../api/addressApi";
 import { useGetProfileQuery } from "../../api/userApi";
-import { PiPlus } from "react-icons/pi";
-import { BiTrash } from "react-icons/bi";
-import { useParams, useNavigate } from "react-router-dom";
-import { toast } from "sonner";
-import { debounce } from "lodash";
 
-// Modal component for creating new addresses
-const AddAddressModal = ({ show, onClose, onSave }) => {
+const { Option } = Select;
+
+// AddAddressModal component
+const AddAddressModal = ({ show, onClose, onSave, isCreatingAddress }) => {
   const [addressData, setAddressData] = useState({
     name: "",
     street: "",
@@ -29,9 +39,6 @@ const AddAddressModal = ({ show, onClose, onSave }) => {
     postalCode: "",
   });
 
-  const [createAddress, { isLoading: isCreatingAddress }] =
-    useCreateAddressMutation();
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setAddressData((prev) => ({ ...prev, [name]: value }));
@@ -40,9 +47,8 @@ const AddAddressModal = ({ show, onClose, onSave }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const newAddress = await createAddress(addressData).unwrap();
+      const newAddress = await onSave(addressData).unwrap();
       toast.success("Address created successfully!");
-      onSave(newAddress.data.addressId);
       setAddressData({
         name: "",
         street: "",
@@ -59,110 +65,89 @@ const AddAddressModal = ({ show, onClose, onSave }) => {
     }
   };
 
-  if (!show) return null;
-
   return (
-    <div
-      className="modal"
-      style={{ display: "block", background: "rgba(0,0,0,0.5)" }}
-    >
-      <div className="modal-dialog">
-        <div className="modal-content">
-          <div className="modal-header">
-            <h5 className="modal-title">Add New Address</h5>
-            <button
-              type="button"
-              className="btn-close"
-              onClick={onClose}
-            ></button>
-          </div>
-          <form onSubmit={handleSubmit}>
-            <div className="modal-body">
-              <div className="mb-3">
-                <label className="form-label">Name</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  name="name"
-                  value={addressData.name}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="mb-3">
-                <label className="form-label">Street *</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  name="street"
-                  value={addressData.street}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <div className="mb-3">
-                <label className="form-label">City *</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  name="city"
-                  value={addressData.city}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <div className="mb-3">
-                <label className="form-label">State</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  name="state"
-                  value={addressData.state}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="mb-3">
-                <label className="form-label">Country *</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  name="country"
-                  value={addressData.country}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <div className="mb-3">
-                <label className="form-label">Postal Code</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  name="postalCode"
-                  value={addressData.postalCode}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={onClose}
-                disabled={isCreatingAddress}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={isCreatingAddress}
-              >
-                {isCreatingAddress ? "Saving..." : "Save Address"}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+    <Modal show={show} onHide={onClose} centered>
+      <Modal.Header closeButton>
+        <Modal.Title>Add New Address</Modal.Title>
+      </Modal.Header>
+      <Form onSubmit={handleSubmit}>
+        <Modal.Body>
+          <Form.Group className="mb-3">
+            <Form.Label>Name</Form.Label>
+            <Form.Control
+              type="text"
+              name="name"
+              value={addressData.name}
+              onChange={handleChange}
+            />
+          </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>Street *</Form.Label>
+            <Form.Control
+              type="text"
+              name="street"
+              value={addressData.street}
+              onChange={handleChange}
+              required
+            />
+          </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>City *</Form.Label>
+            <Form.Control
+              type="text"
+              name="city"
+              value={addressData.city}
+              onChange={handleChange}
+              required
+            />
+          </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>State</Form.Label>
+            <Form.Control
+              type="text"
+              name="state"
+              value={addressData.state}
+              onChange={handleChange}
+            />
+          </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>Country *</Form.Label>
+            <Form.Control
+              type="text"
+              name="country"
+              value={addressData.country}
+              onChange={handleChange}
+              required
+            />
+          </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>Postal Code</Form.Label>
+            <Form.Control
+              type="text"
+              name="postalCode"
+              value={addressData.postalCode}
+              onChange={handleChange}
+            />
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+          <BootstrapButton
+            variant="secondary"
+            onClick={onClose}
+            disabled={isCreatingAddress}
+          >
+            Cancel
+          </BootstrapButton>
+          <BootstrapButton
+            variant="primary"
+            type="submit"
+            disabled={isCreatingAddress}
+          >
+            {isCreatingAddress ? "Saving..." : "Save Address"}
+          </BootstrapButton>
+        </Modal.Footer>
+      </Form>
+    </Modal>
   );
 };
 
@@ -170,27 +155,35 @@ const AddQuotation = () => {
   const { id } = useParams();
   const isEditMode = Boolean(id);
   const navigate = useNavigate();
+
+  // Queries
   const {
     data: existingQuotation,
     isLoading: isFetching,
     error: fetchError,
     isSuccess: isFetchSuccess,
   } = useGetQuotationByIdQuery(id, { skip: !isEditMode });
-  const { data: userData } = useGetProfileQuery();
-  const userId = userData?.user?.userId || "nill";
-  const { data: customersData } = useGetCustomersQuery();
-  const customers = customersData?.data || [];
+  const { data: userData, isLoading: isUserLoading } = useGetProfileQuery();
+  const { data: customersData, isLoading: isCustomersLoading } =
+    useGetCustomersQuery();
   const { data: addressesData, isLoading: isAddressesLoading } =
     useGetAllAddressesQuery();
-
-  const addresses = Array.isArray(addressesData) ? addressesData : [];
-  const { data: products, isLoading: isProductsLoading } =
+  const { data: productsData, isLoading: isProductsLoading } =
     useGetAllProductsQuery();
   const [createQuotation, { isLoading: isCreating }] =
     useCreateQuotationMutation();
   const [updateQuotation, { isLoading: isUpdating }] =
     useUpdateQuotationMutation();
+  const [createAddress, { isLoading: isCreatingAddress }] =
+    useCreateAddressMutation();
 
+  // Data assignments
+  const userId = userData?.user?.userId || "nill";
+  const customers = customersData?.data || [];
+  const addresses = Array.isArray(addressesData) ? addressesData : [];
+  const products = productsData || [];
+
+  // Initial form data
   const initialFormData = {
     document_title: "",
     quotation_date: "",
@@ -205,40 +198,28 @@ const AddQuotation = () => {
     signature_name: "",
     signature_image: "",
     customerId: "",
-
     shipTo: "",
     createdBy: userId,
   };
 
+  // State
   const [formData, setFormData] = useState(initialFormData);
   const [productSearch, setProductSearch] = useState("");
   const [showAddressModal, setShowAddressModal] = useState(false);
-  const [addressType, setAddressType] = useState(""); // "billTo" or "shipTo"
+  const [addressType, setAddressType] = useState("");
+  const [filteredProducts, setFilteredProducts] = useState([]);
 
   // Handle fetch errors
   useEffect(() => {
     if (isEditMode && fetchError) {
-      toast.error("Quotation not found or inaccessible. Redirecting...", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error("Quotation not found or inaccessible. Redirecting...");
       setTimeout(() => navigate("/orders/list"), 2000);
     }
     if (isEditMode && isFetchSuccess && !existingQuotation) {
-      toast.error("Quotation not found. Redirecting to quotations list...", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error("Quotation not found. Redirecting to quotations list...");
       setTimeout(() => navigate("/orders/list"), 2000);
     }
-  }, [
-    fetchError,
-    isEditMode,
-    navigate,
-    isFetching,
-    isFetchSuccess,
-    existingQuotation,
-  ]);
+  }, [fetchError, isEditMode, navigate, isFetchSuccess, existingQuotation]);
 
   // Pre-fill form in edit mode
   useEffect(() => {
@@ -264,7 +245,6 @@ const AddQuotation = () => {
         signature_name: existingQuotation.signature_name || "",
         signature_image: existingQuotation.signature_image || "",
         customerId: existingQuotation.customerId || "",
-
         shipTo: existingQuotation.shipTo || "",
         createdBy: userId,
         products:
@@ -286,12 +266,26 @@ const AddQuotation = () => {
   const debouncedSearch = useCallback(
     debounce((value) => {
       setProductSearch(value);
+      if (value) {
+        const filtered = products
+          .filter(
+            (product) =>
+              product.name.toLowerCase().includes(value.toLowerCase()) ||
+              product.product_code?.toLowerCase().includes(value.toLowerCase())
+          )
+          .slice(0, 5);
+        setFilteredProducts(filtered);
+      } else {
+        setFilteredProducts([]);
+      }
     }, 300),
-    []
+    [products]
   );
 
-  // Add product to quotation
-  const addProduct = (product) => {
+  // Add product
+  const addProduct = (productId) => {
+    const product = products.find((p) => p.id === productId);
+    if (!product) return;
     setFormData((prev) => ({
       ...prev,
       products: [
@@ -309,10 +303,11 @@ const AddQuotation = () => {
       ],
     }));
     setProductSearch("");
+    setFilteredProducts([]);
     toast.success("Product added successfully!");
   };
 
-  // Remove product from quotation
+  // Remove product
   const removeProduct = (index) => {
     setFormData((prev) => ({
       ...prev,
@@ -322,7 +317,7 @@ const AddQuotation = () => {
   };
 
   // Calculate final amount
-  const calculateFinalAmount = () => {
+  const calculateFinalAmount = useCallback(() => {
     let subtotal = formData.products.reduce(
       (sum, product) => sum + Number(product.total || 0),
       0
@@ -333,16 +328,16 @@ const AddQuotation = () => {
     let finalAmount =
       subtotal + gstAmount + (parseFloat(formData.roundOff) || 0);
     setFormData((prev) => ({ ...prev, finalAmount: finalAmount.toFixed(2) }));
-  };
-
-  useEffect(() => {
-    calculateFinalAmount();
   }, [
     formData.products,
     formData.include_gst,
     formData.gst_value,
     formData.roundOff,
   ]);
+
+  useEffect(() => {
+    calculateFinalAmount();
+  }, [calculateFinalAmount]);
 
   // Update product fields
   const updateProductField = (index, field, value) => {
@@ -361,6 +356,7 @@ const AddQuotation = () => {
     setFormData({ ...formData, products: updatedProducts });
   };
 
+  // Handle form changes
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData({
@@ -369,33 +365,35 @@ const AddQuotation = () => {
     });
   };
 
-  const handleAddressChange = (e, type) => {
+  // Handle address selection
+  const handleAddressChange = (value, type) => {
     setFormData((prev) => ({
       ...prev,
-      [type]: e.target.value,
+      [type]: value,
     }));
   };
 
+  // Handle add address
   const handleAddAddress = (type) => {
     setAddressType(type);
     setShowAddressModal(true);
   };
 
-  const handleAddressSave = (newAddressId) => {
-    setFormData((prev) => ({
-      ...prev,
-      [addressType]: newAddressId,
-    }));
+  // Clear form
+  const clearForm = () => {
+    setFormData({ ...initialFormData, createdBy: userId });
+    setProductSearch("");
+    setFilteredProducts([]);
+    toast.info("Form cleared.");
   };
 
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!formData.customerId) {
       toast.error("Please select a customer.");
       return;
     }
-
     if (isEditMode && (!existingQuotation || isFetching)) {
       toast.error("Quotation data is still loading or not found.");
       return;
@@ -418,7 +416,6 @@ const AddQuotation = () => {
         : Number(formData.finalAmount),
       items: formattedProducts,
       products: formData.products.length > 0 ? formData.products : [],
-
       shipTo: formData.shipTo || null,
     };
 
@@ -453,21 +450,36 @@ const AddQuotation = () => {
     }
   };
 
-  const filteredProducts = products
-    ?.filter(
-      (product) =>
-        product.name.toLowerCase().includes(productSearch.toLowerCase()) ||
-        product.product_code
-          ?.toLowerCase()
-          .includes(productSearch.toLowerCase())
-    )
-    .slice(0, 5); // Increased to show more results
-
-  if (isFetching) {
+  // Loading state
+  if (isFetching || isUserLoading || isCustomersLoading || isAddressesLoading) {
     return (
-      <div className="text-center">
-        <div className="spinner-border" role="status">
-          <span className="visually-hidden">Loading quotation details...</span>
+      <div className="content">
+        <div className="card">
+          <div className="card-body text-center">
+            <Spinner
+              animation="border"
+              variant="primary"
+              role="status"
+              aria-label="Loading data"
+            />
+            <p>Loading data...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (fetchError) {
+    return (
+      <div className="content">
+        <div className="card">
+          <div className="card-body">
+            <Alert variant="danger" role="alert">
+              Error loading quotation data: {JSON.stringify(fetchError)}. Please
+              try again.
+            </Alert>
+          </div>
         </div>
       </div>
     );
@@ -476,380 +488,381 @@ const AddQuotation = () => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        <div className="page-header d-flex justify-content-between">
-          <div className="page-title">
-            <h4 className="fw-bold">
-              {isEditMode ? "Edit Quotation" : "Create Quotation"}
-            </h4>
-            <h6>Fill out the quotation details</h6>
-          </div>
-          <div className="page-btn">
-            <a href="/orders/list" className="btn btn-secondary">
-              <FaArrowLeft className="me-2" /> Back to Quotations
-            </a>
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit}>
-          <div className="row">
-            <div className="col-md-6">
-              <div className="mb-3">
-                <label className="form-label">Customer *</label>
-                <div className="row">
-                  <div className="col-lg-10 col-sm-10 col-10">
-                    <select
-                      className="form-control"
-                      name="customerId"
-                      value={formData.customerId}
-                      onChange={(e) => handleChange(e)}
-                      required
+        <div className="card">
+          <PageHeader
+            title={isEditMode ? "Edit Quotation" : "Create Quotation"}
+            subtitle="Fill out the quotation details"
+          />
+          <div className="card-body">
+            <div className="d-flex justify-content-end mb-3">
+              <Link to="/orders/list" className="btn btn-secondary me-2">
+                <FaArrowLeft className="me-2" /> Back to Quotations
+              </Link>
+              <BootstrapButton variant="outline-secondary" onClick={clearForm}>
+                Clear Form
+              </BootstrapButton>
+            </div>
+            <Form onSubmit={handleSubmit}>
+              <div className="row">
+                <div className="col-lg-6">
+                  <Form.Group className="mb-3">
+                    <Form.Label>Customer *</Form.Label>
+                    <Select
+                      style={{ width: "100%" }}
+                      value={formData.customerId || undefined}
+                      onChange={(value) =>
+                        handleChange({ target: { name: "customerId", value } })
+                      }
+                      placeholder="Select a customer"
+                      disabled={isCustomersLoading}
                     >
-                      <option value="">Select</option>
                       {customers.length === 0 ? (
-                        <option>No customers available</option>
+                        <Option value="">No customers available</Option>
                       ) : (
                         customers.map((customer) => (
-                          <option
+                          <Option
                             key={customer.customerId}
                             value={customer.customerId}
                           >
                             {customer.name}
-                          </option>
+                          </Option>
                         ))
                       )}
-                    </select>
-                  </div>
-                  <div className="col-lg-2 col-sm-2 col-2 p-0">
-                    <div className="add-icon tab">
-                      <a className="bg-dark text-white p-2 rounded">
-                        <PiPlus />
-                      </a>
-                    </div>
-                  </div>
+                    </Select>
+                  </Form.Group>
                 </div>
-              </div>
-            </div>
-          </div>
-          <div className="row">
-            <div className="col-md-6">
-              <div className="mb-3">
-                <label className="form-label">Shipping Address</label>
-                <div className="row">
-                  <div className="col-lg-10 col-sm-10 col-10">
-                    <select
-                      className="form-control"
-                      name="shipTo"
-                      value={formData.shipTo}
-                      onChange={(e) => handleAddressChange(e, "shipTo")}
-                    >
-                      <option value="">Select</option>
-                      {isAddressesLoading ? (
-                        <option>Loading...</option>
-                      ) : addresses.length === 0 ? (
-                        <option>No addresses available</option>
-                      ) : (
-                        addresses.map((address) => (
-                          <option
-                            key={address.addressId}
-                            value={address.addressId}
-                          >
-                            {address.name ||
-                              `${address.street}, ${address.city}`}
-                          </option>
-                        ))
-                      )}
-                    </select>
-                  </div>
-                  <div className="col-lg-2 col-sm-2 col-2 p-0">
-                    <div className="add-icon tab">
-                      <a
-                        className="bg-dark text-white p-2 rounded"
+                <div className="col-lg-6">
+                  <Form.Group className="mb-3">
+                    <Form.Label>Shipping Address</Form.Label>
+                    <div className="d-flex align-items-center">
+                      <Select
+                        style={{ width: "100%" }}
+                        value={formData.shipTo || undefined}
+                        onChange={(value) =>
+                          handleAddressChange(value, "shipTo")
+                        }
+                        placeholder="Select an address"
+                        disabled={isAddressesLoading}
+                      >
+                        {addresses.length === 0 ? (
+                          <Option value="">No addresses available</Option>
+                        ) : (
+                          addresses.map((address) => (
+                            <Option
+                              key={address.addressId}
+                              value={address.addressId}
+                            >
+                              {address.name ||
+                                `${address.street}, ${address.city}`}
+                            </Option>
+                          ))
+                        )}
+                      </Select>
+                      <Button
+                        type="primary"
+                        className="ms-2"
                         onClick={() => handleAddAddress("shipTo")}
+                        aria-label="Add new shipping address"
                       >
-                        <PiPlus />
-                      </a>
+                        +
+                      </Button>
                     </div>
+                  </Form.Group>
+                </div>
+              </div>
+              <div className="row">
+                <div className="col-lg-6">
+                  <Form.Group className="mb-3">
+                    <Form.Label>Quotation Title *</Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="document_title"
+                      value={formData.document_title}
+                      onChange={handleChange}
+                      required
+                    />
+                  </Form.Group>
+                </div>
+                <div className="col-lg-6">
+                  <Form.Group className="mb-3">
+                    <Form.Label>Reference Number</Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="reference_number"
+                      value={formData.reference_number}
+                      onChange={handleChange}
+                    />
+                  </Form.Group>
+                </div>
+              </div>
+              <div className="row">
+                <div className="col-lg-6">
+                  <Form.Group className="mb-3">
+                    <Form.Label>Quotation Date *</Form.Label>
+                    <Form.Control
+                      type="date"
+                      name="quotation_date"
+                      value={formData.quotation_date}
+                      onChange={handleChange}
+                      required
+                    />
+                  </Form.Group>
+                </div>
+                <div className="col-lg-6">
+                  <Form.Group className="mb-3">
+                    <Form.Label>Due Date *</Form.Label>
+                    <Form.Control
+                      type="date"
+                      name="due_date"
+                      value={formData.due_date}
+                      onChange={handleChange}
+                      required
+                    />
+                  </Form.Group>
+                </div>
+              </div>
+              <div className="row">
+                <div className="col-lg-12">
+                  <Form.Group className="mb-3">
+                    <Form.Label>Search Product</Form.Label>
+                    <div className="input-icon-start position-relative">
+                      <span className="input-icon-addon">
+                        <FaSearch />
+                      </span>
+                      <Select
+                        showSearch
+                        style={{ width: "100%" }}
+                        placeholder="Search by product name or code"
+                        onSearch={debouncedSearch}
+                        onChange={addProduct}
+                        filterOption={false}
+                        loading={isProductsLoading}
+                      >
+                        {filteredProducts.map((product) => (
+                          <Option key={product.id} value={product.id}>
+                            {product.name} ({product.product_code}) - ₹
+                            {product.sellingPrice}
+                          </Option>
+                        ))}
+                      </Select>
+                    </div>
+                  </Form.Group>
+                </div>
+              </div>
+              <div className="row">
+                <div className="col-lg-12">
+                  <div className="table-responsive">
+                    <table className="table table-hover">
+                      <thead>
+                        <tr>
+                          <th>Product</th>
+                          <th>Qty</th>
+                          <th>Selling Price (₹)</th>
+                          <th>Discount (₹)</th>
+                          <th>Tax (%)</th>
+                          <th>Total (₹)</th>
+                          <th>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {formData.products.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="text-muted">
+                              No products added
+                            </td>
+                          </tr>
+                        ) : (
+                          formData.products.map((product, index) => (
+                            <tr key={product.id || index}>
+                              <td>{product.name}</td>
+                              <td>
+                                <Form.Control
+                                  type="number"
+                                  value={product.qty}
+                                  onChange={(e) =>
+                                    updateProductField(
+                                      index,
+                                      "qty",
+                                      Math.max(1, e.target.value)
+                                    )
+                                  }
+                                  min="1"
+                                />
+                              </td>
+                              <td>
+                                <Form.Control
+                                  type="number"
+                                  value={product.sellingPrice}
+                                  disabled
+                                  readOnly
+                                />
+                              </td>
+                              <td>
+                                <Form.Control
+                                  type="number"
+                                  value={product.discount}
+                                  onChange={(e) =>
+                                    updateProductField(
+                                      index,
+                                      "discount",
+                                      Math.max(0, e.target.value)
+                                    )
+                                  }
+                                  min="0"
+                                />
+                              </td>
+                              <td>
+                                <Form.Control
+                                  type="number"
+                                  value={product.tax}
+                                  onChange={(e) =>
+                                    updateProductField(
+                                      index,
+                                      "tax",
+                                      Math.max(0, e.target.value)
+                                    )
+                                  }
+                                  min="0"
+                                />
+                              </td>
+                              <td>{Number(product.total || 0).toFixed(2)}</td>
+                              <td>
+                                <Button
+                                  type="text"
+                                  danger
+                                  icon={<DeleteOutlined />}
+                                  onClick={() => removeProduct(index)}
+                                  aria-label="Remove product"
+                                />
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>
-            </div>
-            <div className="col-md-6">
-              <label className="form-label">Quotation Title *</label>
-              <input
-                type="text"
-                className="form-control"
-                name="document_title"
-                value={formData.document_title}
-                onChange={handleChange}
-                required
-              />
-            </div>
-          </div>
-          <div className="row mt-3">
-            <div className="col-md-6">
-              <label className="form-label">Quotation Date *</label>
-              <input
-                type="date"
-                className="form-control"
-                name="quotation_date"
-                value={formData.quotation_date}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div className="col-md-6">
-              <label className="form-label">Due Date *</label>
-              <input
-                type="date"
-                className="form-control"
-                name="due_date"
-                value={formData.due_date}
-                onChange={handleChange}
-                required
-              />
-            </div>
-          </div>
-          <div className="row mt-3">
-            <div className="col-md-6">
-              <label className="form-label">Reference Number</label>
-              <input
-                type="text"
-                className="form-control"
-                name="reference_number"
-                value={formData.reference_number}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="col-md-6">
-              <label className="form-label">Search Product</label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Search by product name or code"
-                onChange={(e) => debouncedSearch(e.target.value)}
-              />
-              {productSearch && (
-                <ul
-                  className="list-group mt-2"
-                  style={{ maxHeight: "200px", overflowY: "auto" }}
-                >
-                  {isProductsLoading ? (
-                    <li className="list-group-item">Loading products...</li>
-                  ) : filteredProducts?.length > 0 ? (
-                    filteredProducts.map((product) => (
-                      <li
-                        key={product.id}
-                        className="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-                        onClick={() => addProduct(product)}
-                        style={{ cursor: "pointer" }}
-                      >
-                        <span>
-                          {product.name} ({product.product_code})
-                        </span>
-                        <span>₹{product.sellingPrice}</span>
-                      </li>
-                    ))
-                  ) : (
-                    <li className="list-group-item">No products found</li>
-                  )}
-                </ul>
-              )}
-            </div>
-          </div>
-          <div className="row mt-3">
-            <div className="col-lg-12">
-              <div className="table-responsive">
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>Product</th>
-                      <th>Qty</th>
-                      <th>Selling Price (₹)</th>
-                      <th>Discount (₹)</th>
-                      <th>Tax (%)</th>
-                      <th>Total (₹)</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {formData.products.map((product, index) => (
-                      <tr key={product.id || index}>
-                        <td>{product.name}</td>
-                        <td>
-                          <input
-                            type="number"
-                            value={product.qty}
-                            onChange={(e) =>
-                              updateProductField(
-                                index,
-                                "qty",
-                                Math.max(1, e.target.value)
-                              )
-                            }
-                            className="form-control"
-                            min="1"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={product.sellingPrice}
-                            className="form-control"
-                            disabled
-                            readOnly
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={product.discount}
-                            onChange={(e) =>
-                              updateProductField(
-                                index,
-                                "discount",
-                                Math.max(0, e.target.value)
-                              )
-                            }
-                            className="form-control"
-                            min="0"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={product.tax}
-                            onChange={(e) =>
-                              updateProductField(
-                                index,
-                                "tax",
-                                Math.max(0, e.target.value)
-                              )
-                            }
-                            className="form-control"
-                            min="0"
-                          />
-                        </td>
-                        <td>{Number(product.total || 0).toFixed(2)}</td>
-                        <td>
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-danger"
-                            onClick={() => removeProduct(index)}
-                            aria-label="Remove product"
-                          >
-                            <BiTrash />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="row mt-3">
+                <div className="col-lg-4">
+                  <Form.Group className="mb-3">
+                    <Form.Label>Include GST</Form.Label>
+                    <Form.Check
+                      type="checkbox"
+                      name="include_gst"
+                      checked={formData.include_gst}
+                      onChange={handleChange}
+                    />
+                  </Form.Group>
+                </div>
+                <div className="col-lg-4">
+                  <Form.Group className="mb-3">
+                    <Form.Label>GST Value (%)</Form.Label>
+                    <Form.Control
+                      type="number"
+                      name="gst_value"
+                      value={formData.gst_value}
+                      onChange={handleChange}
+                      min="0"
+                    />
+                  </Form.Group>
+                </div>
+                <div className="col-lg-4">
+                  <Form.Group className="mb-3">
+                    <Form.Label>Discount Type</Form.Label>
+                    <Select
+                      style={{ width: "100%" }}
+                      value={formData.discountType}
+                      onChange={(value) =>
+                        handleChange({
+                          target: { name: "discountType", value },
+                        })
+                      }
+                    >
+                      <Option value="percent">Percent</Option>
+                      <Option value="fixed">Fixed</Option>
+                    </Select>
+                  </Form.Group>
+                </div>
               </div>
-            </div>
+              <div className="row">
+                <div className="col-lg-6">
+                  <Form.Group className="mb-3">
+                    <Form.Label>Round Off</Form.Label>
+                    <Form.Control
+                      type="number"
+                      name="roundOff"
+                      value={formData.roundOff}
+                      onChange={handleChange}
+                    />
+                  </Form.Group>
+                </div>
+                <div className="col-lg-6">
+                  <Form.Group className="mb-3">
+                    <Form.Label>Final Amount *</Form.Label>
+                    <Form.Control
+                      type="number"
+                      name="finalAmount"
+                      value={formData.finalAmount}
+                      readOnly
+                    />
+                  </Form.Group>
+                </div>
+              </div>
+              <div className="row">
+                <div className="col-lg-6">
+                  <Form.Group className="mb-3">
+                    <Form.Label>Signature Name</Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="signature_name"
+                      value={formData.signature_name}
+                      onChange={handleChange}
+                    />
+                  </Form.Group>
+                </div>
+                <div className="col-lg-6">
+                  <Form.Group className="mb-3">
+                    <Form.Label>Signature Image (URL)</Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="signature_image"
+                      value={formData.signature_image}
+                      onChange={handleChange}
+                    />
+                  </Form.Group>
+                </div>
+              </div>
+              <div className="d-flex justify-content-end mt-4">
+                <BootstrapButton
+                  variant="secondary"
+                  className="me-2"
+                  onClick={() => navigate("/orders/list")}
+                  disabled={isCreating || isUpdating}
+                >
+                  Cancel
+                </BootstrapButton>
+                <BootstrapButton
+                  variant="primary"
+                  type="submit"
+                  disabled={
+                    isCreating ||
+                    isUpdating ||
+                    (isEditMode && !existingQuotation)
+                  }
+                >
+                  {isCreating || isUpdating ? "Saving..." : "Submit"}
+                </BootstrapButton>
+              </div>
+            </Form>
+            <AddAddressModal
+              show={showAddressModal}
+              onClose={() => setShowAddressModal(false)}
+              onSave={createAddress}
+              isCreatingAddress={isCreatingAddress}
+            />
           </div>
-          <div className="row mt-3">
-            <div className="col-md-4">
-              <label className="form-label">Include GST</label>
-              <input
-                type="checkbox"
-                className="form-check-input ms-2"
-                name="include_gst"
-                checked={formData.include_gst}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="col-md-4">
-              <label className="form-label">GST Value (%)</label>
-              <input
-                type="number"
-                className="form-control"
-                name="gst_value"
-                value={formData.gst_value}
-                onChange={handleChange}
-                min="0"
-              />
-            </div>
-            <div className="col-md-4">
-              <label className="form-label">Discount Type</label>
-              <select
-                className="form-control"
-                name="discountType"
-                value={formData.discountType}
-                onChange={handleChange}
-              >
-                <option value="percent">Percent</option>
-                <option value="fixed">Fixed</option>
-              </select>
-            </div>
-          </div>
-          <div className="row mt-3">
-            <div className="col-md-6">
-              <label className="form-label">Round Off</label>
-              <input
-                type="number"
-                className="form-control"
-                name="roundOff"
-                value={formData.roundOff}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="col-md-6">
-              <label className="form-label">Final Amount *</label>
-              <input
-                type="number"
-                className="form-control"
-                name="finalAmount"
-                value={formData.finalAmount}
-                readOnly
-              />
-            </div>
-          </div>
-          <div className="row mt-3">
-            <div className="col-md-6">
-              <label className="form-label">Signature Name</label>
-              <input
-                type="text"
-                className="form-control"
-                name="signature_name"
-                value={formData.signature_name}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="col-md-6">
-              <label className="form-label">Signature Image (URL)</label>
-              <input
-                type="text"
-                className="form-control"
-                name="signature_image"
-                value={formData.signature_image}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-          <div className="modal-footer mt-4">
-            <button
-              type="button"
-              className="btn btn-secondary me-2"
-              onClick={() => navigate("/orders/list")}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={
-                isCreating || isUpdating || (isEditMode && !existingQuotation)
-              }
-            >
-              {isCreating || isUpdating ? "Saving..." : "Submit"}
-            </button>
-          </div>
-        </form>
-        <AddAddressModal
-          show={showAddressModal}
-          onClose={() => setShowAddressModal(false)}
-          onSave={handleAddressSave}
-        />
+        </div>
       </div>
     </div>
   );
