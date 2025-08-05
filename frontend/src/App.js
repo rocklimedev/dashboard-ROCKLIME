@@ -14,6 +14,10 @@ function App() {
   const navigate = useNavigate();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [layoutMode, setLayoutMode] = useState("vertical");
+  const MAINTENANCE_MODE = true; // ⛔️ Toggle this ON/OFF manually or from .env
+  const isMaintenancePage = location.pathname === "/under-maintenance";
+
+  // Force redirect to /under-maintenance if under maintenance
 
   const isAuthPage = [
     "/login",
@@ -21,7 +25,7 @@ function App() {
     "/404",
     "/reset-password",
     "/forgot-password",
-    "/under-maintainance",
+    "/under-maintenance",
     "/coming-soon",
     "/no-access",
   ].includes(location.pathname);
@@ -88,7 +92,14 @@ function App() {
     location.pathname,
     navigate,
   ]);
+  useEffect(() => {
+    if (MAINTENANCE_MODE && !isMaintenancePage) {
+      navigate("/under-maintenance", { replace: true });
+    }
+  }, [MAINTENANCE_MODE, isMaintenancePage, navigate]);
 
+  // Prevent rendering of main app when in maintenance
+  if (MAINTENANCE_MODE && !isMaintenancePage) return null;
   const toggleSidebar = (value) => {
     setSidebarOpen(value);
   };
