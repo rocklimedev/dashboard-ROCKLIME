@@ -14,7 +14,7 @@ function App() {
   const navigate = useNavigate();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [layoutMode, setLayoutMode] = useState("vertical");
-  const MAINTENANCE_MODE = false; // ⛔️ Toggle this ON/OFF manually or from .env
+  const MAINTENANCE_MODE = true; // ⛔️ Toggle this ON/OFF manually or from .env
   const isMaintenancePage = location.pathname === "/under-maintenance";
 
   // Force redirect to /under-maintenance if under maintenance
