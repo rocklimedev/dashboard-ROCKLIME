@@ -1,9 +1,32 @@
 const Product = require("../models/product");
+const ProductMeta = require("../models/productMeta");
 const { Op } = require("sequelize");
 const { InventoryHistory } = require("../models/history");
+
+// Create a product with meta data
 exports.createProduct = async (req, res) => {
   try {
-    const product = await Product.create(req.body);
+    const { meta, ...productData } = req.body;
+
+    // Validate meta data if provided
+    if (meta) {
+      for (const metaId of Object.keys(meta)) {
+        const metaField = await ProductMeta.findByPk(metaId);
+        if (!metaField) {
+          return res
+            .status(400)
+            .json({ message: `Invalid ProductMeta ID: ${metaId}` });
+        }
+        // Optional: Validate meta value based on fieldType (e.g., number, string)
+        if (metaField.fieldType === "number" && isNaN(meta[metaId])) {
+          return res
+            .status(400)
+            .json({ message: `Value for ${metaField.title} must be a number` });
+        }
+      }
+    }
+
+    const product = await Product.create({ ...productData, meta });
     return res
       .status(201)
       .json({ message: "Product created successfully", product });
@@ -14,11 +37,40 @@ exports.createProduct = async (req, res) => {
   }
 };
 
-// Get all products
+// Get all products with their meta data
 exports.getAllProducts = async (req, res) => {
   try {
     const products = await Product.findAll();
-    return res.status(200).json(products);
+    const productMetaIds = [
+      ...new Set(
+        products.filter((p) => p.meta).flatMap((p) => Object.keys(p.meta))
+      ),
+    ];
+    const productMetas = await ProductMeta.findAll({
+      where: { id: { [Op.in]: productMetaIds } },
+      attributes: ["id", "title", "fieldType", "unit"],
+    });
+
+    const enrichedProducts = products.map((product) => {
+      const productData = product.toJSON();
+      if (productData.meta) {
+        productData.metaDetails = Object.keys(productData.meta).map(
+          (metaId) => {
+            const metaField = productMetas.find((mf) => mf.id === metaId);
+            return {
+              id: metaId,
+              title: metaField ? metaField.title : "Unknown",
+              value: productData.meta[metaId],
+              fieldType: metaField ? metaField.fieldType : null,
+              unit: metaField ? metaField.unit : null,
+            };
+          }
+        );
+      }
+      return productData;
+    });
+
+    return res.status(200).json(enrichedProducts);
   } catch (error) {
     return res
       .status(500)
@@ -26,14 +78,38 @@ exports.getAllProducts = async (req, res) => {
   }
 };
 
-// Get a single product by ID
+// Get a single product by ID with meta data
 exports.getProductById = async (req, res) => {
   try {
-    const product = await Product.findByPk(req.params.productId);
+    const product = await Product.findByPk(req.params.productId, {
+      include: [
+        {
+          model: ProductMeta,
+          as: "product_metas",
+          attributes: ["id", "title", "fieldType", "unit"],
+        },
+      ],
+    });
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
-    return res.status(200).json(product);
+
+    const productData = product.toJSON();
+    if (productData.meta) {
+      productData.metaDetails = Object.keys(productData.meta).map((metaId) => {
+        const metaField = product.metaFields.find((mf) => mf.id === metaId);
+        return {
+          id: metaId,
+          title: metaField ? metaField.title : "Unknown",
+          value: productData.meta[metaId],
+          fieldType: metaField ? metaField.fieldType : null,
+          unit: metaField ? metaField.unit : null,
+        };
+      });
+    }
+    delete productData.metaFields;
+
+    return res.status(200).json(productData);
   } catch (error) {
     return res
       .status(500)
@@ -41,6 +117,7 @@ exports.getProductById = async (req, res) => {
   }
 };
 
+// Get products by category
 exports.getProductsByCategory = async (req, res) => {
   const { categoryId } = req.params;
 
@@ -48,6 +125,13 @@ exports.getProductsByCategory = async (req, res) => {
     const products = await Product.findAll({
       where: { categoryId },
       order: [["createdAt", "DESC"]],
+      include: [
+        {
+          model: ProductMeta,
+          as: "product_metas",
+          attributes: ["id", "title", "fieldType", "unit"],
+        },
+      ],
     });
 
     if (products.length === 0) {
@@ -56,21 +140,60 @@ exports.getProductsByCategory = async (req, res) => {
         .json({ message: "No products found for this category." });
     }
 
-    res.status(200).json(products);
+    const enrichedProducts = products.map((product) => {
+      const productData = product.toJSON();
+      if (productData.meta) {
+        productData.metaDetails = Object.keys(productData.meta).map(
+          (metaId) => {
+            const metaField = product.metaFields.find((mf) => mf.id === metaId);
+            return {
+              id: metaId,
+              title: metaField ? metaField.title : "Unknown",
+              value: productData.meta[metaId],
+              fieldType: metaField ? metaField.fieldType : null,
+              unit: metaField ? metaField.unit : null,
+            };
+          }
+        );
+      }
+      delete productData.metaFields;
+      return productData;
+    });
+
+    res.status(200).json(enrichedProducts);
   } catch (error) {
     console.error("Error fetching products by category:", error);
     res.status(500).json({ message: "Internal server error." });
   }
 };
 
-// Update a product
+// Update a product with meta data
 exports.updateProduct = async (req, res) => {
   try {
+    const { meta, ...productData } = req.body;
     const product = await Product.findByPk(req.params.productId);
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
-    await product.update(req.body);
+
+    // Validate meta data if provided
+    if (meta) {
+      for (const metaId of Object.keys(meta)) {
+        const metaField = await ProductMeta.findByPk(metaId);
+        if (!metaField) {
+          return res
+            .status(400)
+            .json({ message: `Invalid ProductMeta ID: ${metaId}` });
+        }
+        if (metaField.fieldType === "number" && isNaN(meta[metaId])) {
+          return res
+            .status(400)
+            .json({ message: `Value for ${metaField.title} must be a number` });
+        }
+      }
+    }
+
+    await product.update({ ...productData, meta });
     return res
       .status(200)
       .json({ message: "Product updated successfully", product });
@@ -97,8 +220,7 @@ exports.deleteProduct = async (req, res) => {
   }
 };
 
-// Inventory Management Features
-
+// Add stock to a product
 exports.addStock = async (req, res) => {
   try {
     const { productId } = req.params;
@@ -116,9 +238,8 @@ exports.addStock = async (req, res) => {
     product.quantity += Number(quantity);
     await product.save();
 
-    // ✅ Update or create inventory history in MongoDB
     const historyEntry = await InventoryHistory.findOneAndUpdate(
-      { productId: productId.toString() }, // ✅ Ensure productId is a string
+      { productId: productId.toString() },
       {
         $push: {
           history: {
@@ -165,9 +286,8 @@ exports.removeStock = async (req, res) => {
     product.quantity -= Number(quantity);
     await product.save();
 
-    // ✅ Update or create inventory history in MongoDB
     const historyEntry = await InventoryHistory.findOneAndUpdate(
-      { productId: productId.toString() }, // ✅ Ensure productId is a string
+      { productId: productId.toString() },
       {
         $push: {
           history: {
@@ -195,41 +315,50 @@ exports.removeStock = async (req, res) => {
 // Get low-stock products
 exports.getLowStockProducts = async (req, res) => {
   try {
-    const threshold = req.query.threshold || 10; // Default low stock threshold
+    const threshold = req.query.threshold || 10;
     const products = await Product.findAll({
       where: {
         quantity: { [Op.lte]: threshold },
       },
       attributes: ["productId", "name", "quantity"],
+      include: [
+        {
+          model: ProductMeta,
+          as: "product_metas",
+          attributes: ["id", "title", "fieldType", "unit"],
+        },
+      ],
     });
+
+    const enrichedProducts = products.map((product) => {
+      const productData = product.toJSON();
+      if (productData.meta) {
+        productData.metaDetails = Object.keys(productData.meta).map(
+          (metaId) => {
+            const metaField = product.metaFields.find((mf) => mf.id === metaId);
+            return {
+              id: metaId,
+              title: metaField ? metaField.title : "Unknown",
+              value: productData.meta[metaId],
+              fieldType: metaField ? metaField.fieldType : null,
+              unit: metaField ? metaField.unit : null,
+            };
+          }
+        );
+      }
+      delete productData.metaFields;
+      return productData;
+    });
+
     return res.status(200).json({
       message: `${products.length} product(s) with low stock`,
-      products: products,
+      products: enrichedProducts,
     });
   } catch (error) {
     return res.status(500).json({
       message: "Error fetching low stock products",
       error: error.message,
     });
-  }
-};
-
-// Function to log stock changes
-exports.updateInventoryHistory = async (productId, quantity, action) => {
-  try {
-    let historyEntry = await InventoryHistory.findOne({ productId });
-
-    if (!historyEntry) {
-      // If no history exists, create a new one
-      historyEntry = new InventoryHistory({ productId, history: [] });
-    }
-
-    // Push new history record
-    historyEntry.history.push({ quantity, action });
-
-    await historyEntry.save();
-  } catch (error) {
-    console.error("Error updating inventory history:", error);
   }
 };
 
@@ -242,11 +371,10 @@ exports.getHistoryByProductId = async (req, res) => {
       productId: productId.toString(),
     });
 
-    // Fix: Return an empty array instead of a 404 error
     if (!historyEntry || historyEntry.history.length === 0) {
       return res.status(200).json({
         message: "No history found for this product",
-        history: [], // Return an empty array instead of a 404
+        history: [],
       });
     }
 
@@ -262,12 +390,11 @@ exports.getHistoryByProductId = async (req, res) => {
   }
 };
 
-// Search products with
-
+// Search products with meta data
 exports.searchProducts = async (req, res) => {
   try {
     const {
-      query, // General search term (searches across all fields)
+      query,
       name,
       sellingPrice,
       minSellingPrice,
@@ -283,48 +410,45 @@ exports.searchProducts = async (req, res) => {
 
     const filters = {};
 
-    // 🔍 General Search (Search in all relevant fields)
     if (query) {
       filters[Op.or] = [
         { name: { [Op.iLike]: `%${query}%` } },
-        { companyCode: { [Op.iLike]: `%${query}%` } },
-        { productCode: { [Op.iLike]: `%${query}%` } },
+        { product_code: { [Op.iLike]: `%${query}%` } }, // Updated to product_code
         { brandId: { [Op.eq]: query } },
         { categoryId: { [Op.eq]: query } },
       ];
     }
 
-    // 🔍 Specific Field Search (Only applied if explicitly given)
     if (name) {
       filters.name = { [Op.iLike]: `%${name}%` };
     }
     if (sellingPrice) {
-      filters.sellingPrice = { [Op.eq]: Number(sellingPrice) };
+      filters["$meta.sellingPrice$"] = { [Op.eq]: Number(sellingPrice) }; // Search in meta JSON
     }
     if (minSellingPrice) {
-      filters.sellingPrice = {
-        ...filters.sellingPrice,
+      filters["$meta.sellingPrice$"] = {
+        ...filters["$meta.sellingPrice$"],
         [Op.gte]: Number(minSellingPrice),
       };
     }
     if (maxSellingPrice) {
-      filters.sellingPrice = {
-        ...filters.sellingPrice,
+      filters["$meta.sellingPrice$"] = {
+        ...filters["$meta.sellingPrice$"],
         [Op.lte]: Number(maxSellingPrice),
       };
     }
     if (purchasingPrice) {
-      filters.purchasingPrice = { [Op.eq]: Number(purchasingPrice) };
+      filters["$meta.purchasingPrice$"] = { [Op.eq]: Number(purchasingPrice) };
     }
     if (minPurchasingPrice) {
-      filters.purchasingPrice = {
-        ...filters.purchasingPrice,
+      filters["$meta.purchasingPrice$"] = {
+        ...filters["$meta.purchasingPrice$"],
         [Op.gte]: Number(minPurchasingPrice),
       };
     }
     if (maxPurchasingPrice) {
-      filters.purchasingPrice = {
-        ...filters.purchasingPrice,
+      filters["$meta.purchasingPrice$"] = {
+        ...filters["$meta.purchasingPrice$"],
         [Op.lte]: Number(maxPurchasingPrice),
       };
     }
@@ -332,7 +456,7 @@ exports.searchProducts = async (req, res) => {
       filters.companyCode = companyCode;
     }
     if (productCode) {
-      filters.productCode = productCode;
+      filters.product_code = productCode; // Updated to product_code
     }
     if (brandId) {
       filters.brandId = brandId;
@@ -341,47 +465,83 @@ exports.searchProducts = async (req, res) => {
       filters.categoryId = categoryId;
     }
 
-    const products = await Product.findAll({ where: filters });
+    const products = await Product.findAll({
+      where: filters,
+      include: [
+        {
+          model: ProductMeta,
+          as: "product_metas",
+          attributes: ["id", "title", "fieldType", "unit"],
+        },
+      ],
+    });
 
-    return res.status(200).json(products);
+    const enrichedProducts = products.map((product) => {
+      const productData = product.toJSON();
+      if (productData.meta) {
+        productData.metaDetails = Object.keys(productData.meta).map(
+          (metaId) => {
+            const metaField = product.metaFields.find((mf) => mf.id === metaId);
+            return {
+              id: metaId,
+              title: metaField ? metaField.title : "Unknown",
+              value: productData.meta[metaId],
+              fieldType: metaField ? metaField.fieldType : null,
+              unit: metaField ? metaField.unit : null,
+            };
+          }
+        );
+      }
+      delete productData.metaFields;
+      return productData;
+    });
+
+    return res.status(200).json(enrichedProducts);
   } catch (error) {
     return res
       .status(500)
       .json({ message: "Error searching products", error: error.message });
   }
 };
-// ✅ Get all products that are low in stock (quantity <= threshold)
-exports.getAllLowStockProducts = async (req, res) => {
-  try {
-    const threshold = parseInt(req.query.threshold) || 5; // Default threshold is 5
-    const lowStockProducts = await Product.findAll({
-      where: {
-        quantity: { [Op.lte]: threshold },
-      },
-      attributes: ["productId", "name", "quantity"], // Return only necessary fields
-    });
 
-    return res.status(200).json({
-      message: `${lowStockProducts.length} product(s) with low stock`,
-      products: lowStockProducts,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      message: "Error fetching low stock products",
-      error: error.message,
-    });
-  }
-};
+// Get all product codes
 exports.getAllProductCodes = async (req, res) => {
   try {
     const products = await Product.findAll({
       attributes: ["productId", "product_code", "name", "categoryId"],
+      include: [
+        {
+          model: ProductMeta,
+          as: "product_metas",
+          attributes: ["id", "title", "fieldType", "unit"],
+        },
+      ],
+    });
+
+    const enrichedProducts = products.map((product) => {
+      const productData = product.toJSON();
+      if (productData.meta) {
+        productData.metaDetails = Object.keys(productData.meta).map(
+          (metaId) => {
+            const metaField = product.metaFields.find((mf) => mf.id === metaId);
+            return {
+              id: metaId,
+              title: metaField ? metaField.title : "Unknown",
+              value: productData.meta[metaId],
+              fieldType: metaField ? metaField.fieldType : null,
+              unit: metaField ? metaField.unit : null,
+            };
+          }
+        );
+      }
+      delete productData.metaFields;
+      return productData;
     });
 
     res.status(200).json({
       success: true,
       count: products.length,
-      data: products,
+      data: enrichedProducts,
     });
   } catch (error) {
     console.error("Error fetching product codes:", error);
@@ -398,18 +558,15 @@ exports.updateProductFeatured = async (req, res) => {
   const { isFeatured } = req.body;
 
   try {
-    // Validate input
     if (typeof isFeatured !== "boolean") {
       return res.status(400).json({ message: "isFeatured must be a boolean" });
     }
 
-    // Find the product
     const product = await Product.findOne({ where: { productId } });
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    // Update isFeatured
     product.isFeatured = isFeatured;
     await product.save();
 

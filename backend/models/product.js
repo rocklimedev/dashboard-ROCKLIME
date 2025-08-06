@@ -4,7 +4,8 @@ const Category = require("./category");
 const { v4: uuidv4 } = require("uuid");
 const Brand = require("./brand");
 const Keyword = require("./keyword"); // Import Keyword Model
-
+const BrandParentCategory = require("./brandParentCategory");
+const Vendor = require("./vendor");
 const Product = sequelize.define(
   "Product",
   {
@@ -13,35 +14,14 @@ const Product = sequelize.define(
       primaryKey: true,
       defaultValue: uuidv4,
     },
-    product_segment: {
-      type: DataTypes.STRING(100),
-      allowNull: true,
-    },
-    productGroup: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
-    },
     name: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.STRING,
       allowNull: false,
     },
     product_code: {
-      type: DataTypes.STRING(100),
+      type: DataTypes.STRING,
       allowNull: false,
       unique: true,
-    },
-    company_code: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
-      unique: true,
-    },
-    sellingPrice: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
-    },
-    purchasingPrice: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
     },
     quantity: {
       type: DataTypes.INTEGER,
@@ -49,25 +29,41 @@ const Product = sequelize.define(
     },
     discountType: {
       type: DataTypes.ENUM("percent", "fixed"),
-    },
-    barcode: {
-      type: DataTypes.STRING(100),
-      unique: true,
+      allowNull: true,
     },
     alert_quantity: {
       type: DataTypes.INTEGER,
+      allowNull: true,
     },
     tax: {
       type: DataTypes.DECIMAL(5, 2),
+      allowNull: true,
     },
     description: {
       type: DataTypes.TEXT,
+      allowNull: true,
     },
     images: {
       type: DataTypes.JSON,
+      allowNull: true,
     },
+    isFeatured: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    userId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+    },
+    productType: {
+      type: DataTypes.ENUM("tiles", "sanitary"),
+      allowNull: false,
+    },
+
+    // Optional Foreign Keys
     brandId: {
       type: DataTypes.UUID,
+      allowNull: true,
       references: {
         model: Brand,
         key: "id",
@@ -75,15 +71,33 @@ const Product = sequelize.define(
     },
     categoryId: {
       type: DataTypes.UUID,
+      allowNull: true,
       references: {
         model: Category,
         key: "categoryId",
       },
     },
-    isFeatured: {
-      // Correctly placed isFeatured field
-      type: DataTypes.BOOLEAN,
-      defaultValue: false,
+    vendorId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: Vendor,
+        key: "id",
+      },
+    },
+    brand_parentcategoriesId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: BrandParentCategory,
+        key: "id",
+      },
+    },
+    meta: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      comment:
+        "Stores key-value pairs where key is ProductMeta UUID and value is the actual value",
     },
   },
   {
