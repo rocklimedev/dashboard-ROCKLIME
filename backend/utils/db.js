@@ -19,6 +19,7 @@ const Team = require("../models/team");
 const Keyword = require("../models/keyword");
 const TeamMember = require("../models/teamMember");
 const ParentCategory = require("../models/parentCategory");
+const ProductMeta = require("../models/productMeta");
 const BrandParentCategory = require("../models/brandParentCategory");
 const BrandParentCategoryBrand = require("../models/brandParentCategoryBrand");
 const setupDB = async () => {
@@ -72,8 +73,8 @@ const setupDB = async () => {
     // 🔥 USER RELATIONSHIPS
     // ==============================
 
-    User.hasMany(Product, { foreignKey: "user_id" });
-    Product.belongsTo(User, { foreignKey: "user_id" });
+    User.hasMany(Product, { foreignKey: "userId" });
+    Product.belongsTo(User, { foreignKey: "userId" });
 
     // User ↔ Invoice
     Invoice.belongsTo(User, { foreignKey: "createdBy" });
@@ -89,8 +90,18 @@ const setupDB = async () => {
     // 🔥 PRODUCT RELATIONSHIPS
     // ==============================
 
-    Product.belongsTo(Category, { foreignKey: "categoryId" });
-
+    Product.belongsTo(Brand, { foreignKey: "brandId", as: "brand" });
+    Product.belongsTo(Category, { foreignKey: "categoryId", as: "categories" });
+    Product.belongsTo(Vendor, { foreignKey: "vendorId", as: "vendors" });
+    Product.belongsTo(BrandParentCategory, {
+      foreignKey: "brand_parentcategoriesId",
+      as: "brand_parentcategories",
+    });
+    Product.belongsTo(ProductMeta, {
+      foreignKey: "meta",
+      as: "product_metas",
+      constraints: false,
+    });
     // ==============================
     // 🔥 CUSTOMER RELATIONSHIPS
     // ==============================
