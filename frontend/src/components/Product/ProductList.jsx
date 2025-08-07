@@ -299,13 +299,16 @@ const ProductsList = () => {
       title: "Image",
       dataIndex: "images",
       key: "images",
-      render: (images) => (
-        <img
-          src={images?.[0] || pos}
-          alt="Product"
-          style={{ width: 50, height: 50, objectFit: "cover" }}
-        />
-      ),
+      render: (images) => {
+        const parsedImages = images ? JSON.parse(images) : [pos];
+        return (
+          <img
+            src={parsedImages[0] || pos}
+            alt="Product"
+            style={{ width: 50, height: 50, objectFit: "cover" }}
+          />
+        );
+      },
       width: 80,
     },
     {
@@ -326,7 +329,12 @@ const ProductsList = () => {
       title: "Price",
       dataIndex: "sellingPrice",
       key: "sellingPrice",
-      render: (price) => formatPrice(price),
+      render: (_, record) => {
+        const sellingPrice = record.metaDetails?.find(
+          (meta) => meta.title === "sellingPrice"
+        )?.value;
+        return formatPrice(sellingPrice);
+      },
     },
     {
       title: "Stock",
@@ -335,15 +343,16 @@ const ProductsList = () => {
       render: (quantity) =>
         quantity > 0 ? `${quantity} in stock` : "Out of Stock",
     },
-
     {
       title: "Actions",
       key: "actions",
       render: (_, record) => (
         <div style={{ display: "flex", gap: 8 }}>
-          <Tooltip title={record.quantity <= 0 ? "Out of stock" : ""}>
+          <Tooltip
+            title={record.quantity <= 0 ? "Out of stock" : "Add to cart"}
+          >
             <Button
-              className="cart-button" // Add custom class
+              className="cart-button"
               icon={
                 cartLoadingStates[record.productId] ? (
                   <Spin size="small" />
@@ -353,8 +362,7 @@ const ProductsList = () => {
               }
               onClick={() => handleAddToCart(record)}
               disabled={
-                cartLoadingStates[record.productId] ||
-                (record.quantity ?? 0) <= 0
+                cartLoadingStates[record.productId] || record.quantity <= 0
               }
             >
               Add to Cart
