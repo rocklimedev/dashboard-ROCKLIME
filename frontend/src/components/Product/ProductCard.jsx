@@ -1,11 +1,6 @@
 import React, { useState } from "react";
 import { Button, Tooltip, Badge, Dropdown, Spin, Input } from "antd";
-import {
-  ShoppingCartOutlined,
-  HeartOutlined,
-  HeartFilled,
-  MoreOutlined,
-} from "@ant-design/icons";
+import { ShoppingCartOutlined, MoreOutlined } from "@ant-design/icons";
 import { Link } from "react-router-dom";
 import pos from "../../assets/img/default.png";
 import "./productlist.css";
@@ -16,12 +11,18 @@ const ProductCard = ({
   getCategoryName,
   formatPrice,
   handleAddToCart,
-  handleToggleFeatured,
   cartLoadingStates,
-  featuredLoadingStates,
   menu,
 }) => {
   const [quantity, setQuantity] = useState(product.quantity > 0 ? 1 : 0);
+
+  // Safely parse images from JSON string
+  const productImages = product.images ? JSON.parse(product.images) : [pos];
+
+  // Get sellingPrice from metaDetails
+  const sellingPrice =
+    product.metaDetails?.find((meta) => meta.title === "sellingPrice")?.value ||
+    null;
 
   const handleIncrement = () => {
     if (quantity < product.quantity) setQuantity(quantity + 1);
@@ -35,6 +36,8 @@ const ProductCard = ({
     const value = parseInt(e.target.value, 10);
     if (!isNaN(value) && value >= 1 && value <= product.quantity) {
       setQuantity(value);
+    } else if (e.target.value === "") {
+      setQuantity(1); // Reset to 1 if input is cleared
     }
   };
 
@@ -46,7 +49,7 @@ const ProductCard = ({
     <div className="card mb-0">
       <div className="image-wrapper">
         <img
-          src={product?.images?.[0] || pos}
+          src={productImages[0] || pos}
           alt={product.name || "Product"}
           className="product-image-card"
         />
@@ -59,27 +62,10 @@ const ProductCard = ({
             icon={<MoreOutlined />}
             size="large"
             className="more-options-btn"
+            aria-label="More options"
           />
         </Dropdown>
       </span>
-      {/* <Button
-          type="text"
-          icon={
-            featuredLoadingStates[product.productId] ? (
-              <Spin size="small" />
-            ) : product.isFeatured ? (
-              <HeartFilled style={{ color: "#ff4d4f" }} />
-            ) : (
-              <HeartOutlined style={{ color: "#ff4d4f" }} />
-            )
-          }
-          onClick={(e) => {
-            e.preventDefault();
-            handleToggleFeatured(product);
-          }}
-          className="heart-button"
-          disabled={featuredLoadingStates[product.productId]}
-        /> */}
 
       {product.quantity <= 0 && (
         <Badge count="Out of Stock" className="out-of-stock-badge" />
@@ -91,11 +77,16 @@ const ProductCard = ({
         </Link>
       </h6>
       <div className="price">
-        <p className="text-gray-9 mb-0">{formatPrice(product.sellingPrice)}</p>
-        {/* Qty */}
+        <p className="text-gray-9 mb-0">{formatPrice(sellingPrice)}</p>
         <div className="qty-item">
           <Tooltip title="Minus">
-            <button type="button" className="dec" onClick={handleDecrement}>
+            <button
+              type="button"
+              className="dec"
+              onClick={handleDecrement}
+              disabled={product.quantity <= 0 || quantity <= 1}
+              aria-label="Decrease quantity"
+            >
               <i className="ti ti-minus"></i>
             </button>
           </Tooltip>
@@ -106,21 +97,26 @@ const ProductCard = ({
             value={quantity}
             onChange={handleQuantityChange}
             disabled={product.quantity <= 0}
+            aria-label="Quantity"
           />
 
           <Tooltip title="Plus">
-            <button type="button" className="inc" onClick={handleIncrement}>
+            <button
+              type="button"
+              className="inc"
+              onClick={handleIncrement}
+              disabled={product.quantity <= 0 || quantity >= product.quantity}
+              aria-label="Increase quantity"
+            >
               <i className="ti ti-plus"></i>
             </button>
           </Tooltip>
         </div>
-
-        {/* Actions in one row */}
       </div>
 
       <Tooltip title={product.quantity <= 0 ? "Out of stock" : ""}>
         <Button
-          className="cart-button" // Add custom class
+          className="cart-button"
           icon={
             cartLoadingStates[product.productId] ? (
               <Spin size="small" />
@@ -130,9 +126,10 @@ const ProductCard = ({
           }
           onClick={handleAddToCartWithQuantity}
           disabled={
-            cartLoadingStates[product.productId] || (product.quantity ?? 0) <= 0
+            cartLoadingStates[product.productId] || product.quantity <= 0
           }
           size="large"
+          aria-label="Add to cart"
         >
           {product.quantity <= 0 ? "Out of Stock" : "Add to Cart"}
         </Button>

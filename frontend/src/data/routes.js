@@ -343,13 +343,7 @@ const masterRoutes = [
         element: <Product />,
         isSidebarActive: true,
       },
-      {
-        path: "/inventory/product/product-code-status",
-        name: "Code Status",
-        icon: <RiFileListLine />,
-        element: <CheckProductCodeStatus />,
-        isSidebarActive: false,
-      },
+
       {
         path: "/order/:id",
         name: "Order Details",
@@ -511,6 +505,13 @@ const masterRoutes = [
         element: <ComingSoon />,
       },
     ],
+  },
+  {
+    path: "/inventory/product/product-code-status",
+    name: "Code Status",
+    icon: <RiFileListLine />,
+    element: <CheckProductCodeStatus />,
+    isSidebarActive: false,
   },
 ];
 
