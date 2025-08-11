@@ -1,18 +1,29 @@
 import React, { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useGetInvoiceByIdQuery } from "../../api/invoiceApi";
-import { useGetOrderDetailsQuery } from "../../api/orderApi";
-import { useGetCustomersQuery } from "../../api/customerApi";
-import { useGetAllTeamsQuery } from "../../api/teamApi";
+import { useGetTeamByIdQuery } from "../../api/teamApi"; // Hypothetical query for multiple team IDs
+import { useGetCustomerByIdQuery } from "../../api/customerApi";
 import { useGetProductByIdQuery } from "../../api/productApi";
-import { Dropdown, OverlayTrigger, Tooltip } from "react-bootstrap";
-import { BsThreeDotsVertical } from "react-icons/bs";
+import { useGetInvoiceByIdQuery } from "../../api/invoiceApi";
 import {
+  useGetOrderDetailsQuery,
+  useAddCommentMutation,
+  useGetCommentsQuery,
+  useDeleteCommentMutation,
   useDeleteOrderMutation,
   useUpdateOrderStatusMutation,
 } from "../../api/orderApi";
-import AddNewOrder from "./AddNewOrder";
+import { useGetProfileQuery } from "../../api/userApi"; // Import useGetProfileQuery
+import {
+  Dropdown,
+  OverlayTrigger,
+  Tooltip,
+  Form,
+  Button,
+  Spinner,
+} from "react-bootstrap";
+import { BsThreeDotsVertical } from "react-icons/bs";
 import { toast } from "sonner";
+import AddNewOrder from "./AddNewOrder";
 
 // Subcomponent to handle each product row
 const ProductRow = ({ product, index }) => {
@@ -21,12 +32,10 @@ const ProductRow = ({ product, index }) => {
     { skip: !product.productId }
   );
 
-  // Log error for debugging
   if (isError) {
-    console.log(`Product Query Error for ID ${product.productId}:`, error);
+    console.error(`Product Query Error for ID ${product.productId}:`, error);
   }
 
-  // Assume data structure: { name, product_code, sellingPrice }
   const prod = data || {};
   const productName = prod.name || "Unknown Product";
   const productCode = prod.product_code || "—";
@@ -41,7 +50,47 @@ const ProductRow = ({ product, index }) => {
       <td>{quantity}</td>
       <td>{price.toFixed(2)}</td>
       <td>{(price * quantity).toFixed(2)}</td>
+      {isError && (
+        <td colSpan="6" className="text-danger">
+          Error loading product: {error?.data?.message || "Unknown error"}
+        </td>
+      )}
     </tr>
+  );
+};
+
+// Subcomponent to handle each comment
+const CommentRow = ({ comment, onDelete, currentUserId }) => {
+  const canDelete = comment.userId === currentUserId; // Only comment creator can delete
+  return (
+    <div className="card mb-2 shadow-sm border rounded-3">
+      <div className="card-body">
+        <div className="d-flex justify-content-between align-items-center">
+          <div>
+            <p className="mb-1">
+              <strong>{comment.user?.name || "Unknown User"}</strong> (
+              {comment.user?.username || "N/A"})
+            </p>
+            <p className="mb-1">{comment.comment}</p>
+            <small className="text-muted">
+              {new Date(comment.createdAt).toLocaleString()}
+            </small>
+          </div>
+          {canDelete && (
+            <Button
+              variant="link"
+              className="text-danger p-0"
+              onClick={() => onDelete(comment._id)}
+              aria-label={`Delete comment by ${
+                comment.user?.username || "user"
+              }`}
+            >
+              Delete
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -52,15 +101,27 @@ const OrderWithInvoice = () => {
   const [showInvoiceTooltip, setShowInvoiceTooltip] = useState(false);
   const [deleteOrder] = useDeleteOrderMutation();
   const [updateOrderStatus] = useUpdateOrderStatusMutation();
+  const [addComment] = useAddCommentMutation();
+  const [deleteComment] = useDeleteCommentMutation();
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [newComment, setNewComment] = useState("");
+  const [commentPage, setCommentPage] = useState(1);
+  const commentLimit = 10;
+
+  // Fetch current user profile
+  const {
+    data: profileData,
+    isLoading: profileLoading,
+    error: profileError,
+  } = useGetProfileQuery();
+  const user = profileData || {};
 
   const {
     data: orderData,
     isLoading: orderLoading,
     error: orderError,
   } = useGetOrderDetailsQuery(id);
-  const { data: customerData } = useGetCustomersQuery();
   const order = orderData?.order || {};
   const invoiceId = order?.invoiceId;
 
@@ -70,12 +131,41 @@ const OrderWithInvoice = () => {
     error: invoiceError,
   } = useGetInvoiceByIdQuery(invoiceId, { skip: !invoiceId });
 
-  // Parse products JSON string into an array
+  const {
+    data: commentData,
+    isLoading: commentLoading,
+    error: commentError,
+  } = useGetCommentsQuery({
+    resourceId: id,
+    resourceType: "Order",
+    page: commentPage,
+    limit: commentLimit,
+  });
+
+  const teamIds = useMemo(
+    () =>
+      order.assignedTo
+        ? order.assignedTo.split(",").map((id) => id.trim())
+        : [],
+    [order.assignedTo]
+  );
+  const {
+    data: teamData,
+    isLoading: teamLoading,
+    error: teamError,
+  } = useGetTeamByIdQuery(teamIds, { skip: !teamIds.length }); // Use hypothetical query
+
+  const { data: customerData } = useGetCustomerByIdQuery(order.createdFor, {
+    skip: !order.createdFor,
+  });
+
+  // Parse products
   const invoice = invoiceData?.data || {};
   const products = useMemo(() => {
     if (typeof invoice?.products === "string") {
       try {
-        return JSON.parse(invoice.products) || [];
+        const parsed = JSON.parse(invoice.products);
+        return Array.isArray(parsed) ? parsed : [];
       } catch (e) {
         console.error("Error parsing invoice.products:", e);
         return [];
@@ -84,23 +174,14 @@ const OrderWithInvoice = () => {
     return Array.isArray(invoice?.products) ? invoice.products : [];
   }, [invoice?.products]);
 
-  const customers = customerData?.data || [];
-  const {
-    data: teamData,
-    isLoading: teamLoading,
-    error: teamError,
-  } = useGetAllTeamsQuery();
+  // Parse comments
+  const comments = useMemo(() => commentData?.comments || [], [commentData]);
+  const totalComments = commentData?.totalCount || 0;
 
-  // Customer map
   const customerMap = useMemo(() => {
-    const map = {};
-    customers.forEach((cust) => {
-      map[cust.customerId] = cust.name;
-    });
-    return map;
-  }, [customers]);
+    return customerData ? { [customerData.customerId]: customerData.name } : {};
+  }, [customerData]);
 
-  // User map
   const userMap = useMemo(() => {
     const map = {};
     if (teamData?.teams) {
@@ -113,7 +194,6 @@ const OrderWithInvoice = () => {
     return map;
   }, [teamData]);
 
-  // Team map
   const teamMap = useMemo(() => {
     const map = {};
     if (teamData?.teams) {
@@ -124,14 +204,10 @@ const OrderWithInvoice = () => {
     return map;
   }, [teamData]);
 
-  // Team members
   const normalizedTeamMembers = useMemo(() => {
-    const teamIds = order.assignedTo
-      ? order.assignedTo.split(",").map((id) => id.trim())
-      : [];
     if (!teamIds.length || !teamData?.teams) return [];
 
-    const teams = teamIds
+    return teamIds
       .map((teamId) => {
         const team = teamData.teams.find((t) => t.id === teamId);
         if (!team) return null;
@@ -146,9 +222,7 @@ const OrderWithInvoice = () => {
         };
       })
       .filter((team) => team !== null);
-
-    return teams;
-  }, [order.assignedTo, teamData]);
+  }, [teamIds, teamData]);
 
   const handleEditOrder = () => {
     setSelectedOrder(order);
@@ -159,20 +233,26 @@ const OrderWithInvoice = () => {
     if (window.confirm("Are you sure you want to delete this order?")) {
       try {
         await deleteOrder(id).unwrap();
-        toast.success("Order deleted successfully!");
+        toast.success("Order deleted successfully");
         navigate("/orders/list");
       } catch (err) {
-        toast.error("Failed to delete order. Please try again.");
+        toast.error(
+          `Failed to delete order: ${err?.data?.message || "Unknown error"}`
+        );
       }
     }
   };
 
   const handleHoldOrder = async () => {
     try {
-      await updateOrderStatus({ id, status: "On Hold" }).unwrap();
-      toast.success("Order status updated to 'On Hold'");
+      await updateOrderStatus({ id, status: "ONHOLD" }).unwrap();
+      toast.success("Order put on hold");
     } catch (err) {
-      toast.error("Failed to update order status. Please try again.");
+      toast.error(
+        `Failed to update order status: ${
+          err?.data?.message || "Unknown error"
+        }`
+      );
     }
   };
 
@@ -183,25 +263,79 @@ const OrderWithInvoice = () => {
     setShowEditModal(false);
   };
 
-  // Debug logs to verify data
-  console.log("Invoice Data:", invoiceData);
-  console.log("Parsed Products:", products);
+  const handleAddComment = async (e) => {
+    e.preventDefault();
+    if (!newComment.trim()) {
+      toast.error("Comment cannot be empty");
+      return;
+    }
+    if (!user?.userId) {
+      toast.error("User profile not loaded. Please log in again.");
+      return;
+    }
 
-  if (orderLoading || invoiceLoading || teamLoading) {
+    try {
+      await addComment({
+        resourceId: id,
+        resourceType: "Order",
+        userId: user.userId,
+        comment: newComment,
+      }).unwrap();
+      toast.success("Comment added successfully");
+      setNewComment("");
+    } catch (err) {
+      toast.error(
+        `Failed to add comment: ${err?.data?.message || "Unknown error"}`
+      );
+      console.error("Add comment error:", err);
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    if (!user?.userId) {
+      toast.error("User profile not loaded. Please log in again.");
+      return;
+    }
+    if (window.confirm("Are you sure you want to delete this comment?")) {
+      try {
+        await deleteComment({ commentId, userId: user.userId }).unwrap();
+        toast.success("Comment deleted successfully");
+      } catch (err) {
+        toast.error(
+          `Failed to delete comment: ${err?.data?.message || "Unknown error"}`
+        );
+        console.error("Delete comment error:", err);
+      }
+    }
+  };
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= Math.ceil(totalComments / commentLimit)) {
+      setCommentPage(newPage);
+    }
+  };
+
+  if (profileLoading || orderLoading || invoiceLoading || teamLoading) {
     return (
       <div className="page-wrapper notes-page-wrapper">
         <div className="content text-center">
-          <p>Loading...</p>
+          <Spinner animation="border" /> Loading...
         </div>
       </div>
     );
   }
 
-  if (orderError || invoiceError || teamError) {
+  if (profileError || orderError || invoiceError || teamError) {
     return (
       <div className="page-wrapper notes-page-wrapper">
         <div className="content text-center">
-          <p className="text-danger">Error loading data. Please try again.</p>
+          <p className="text-danger">
+            {profileError?.data?.message ||
+              orderError?.data?.message ||
+              invoiceError?.data?.message ||
+              teamError?.data?.message ||
+              "Error loading data. Please try again."}
+          </p>
         </div>
       </div>
     );
@@ -226,7 +360,11 @@ const OrderWithInvoice = () => {
               <div className="card-header bg-primary text-white rounded-top-4 d-flex justify-content-between align-items-center">
                 <h5 className="mb-0">🧾 Order Details</h5>
                 <Dropdown align="end">
-                  <Dropdown.Toggle variant="link" className="text-white p-0">
+                  <Dropdown.Toggle
+                    variant="link"
+                    className="text-white p-0"
+                    aria-label="Order actions"
+                  >
                     <BsThreeDotsVertical />
                   </Dropdown.Toggle>
                   <Dropdown.Menu>
@@ -245,7 +383,7 @@ const OrderWithInvoice = () => {
                   </Dropdown.Menu>
                 </Dropdown>
               </div>
-              <div className="card30ody">
+              <div className="card-body">
                 <div className="row">
                   <div className="col-6 mb-3">
                     <small className="text-muted">Title</small>
@@ -322,8 +460,9 @@ const OrderWithInvoice = () => {
                   show={showInvoiceTooltip}
                   overlay={
                     <Tooltip>
-                      ⚠️ To edit the invoice, go to{" "}
-                      <code>/invoice/{invoiceId}</code>
+                      {invoiceId
+                        ? `Edit invoice at /invoice/${invoiceId}`
+                        : "No invoice available to edit"}
                     </Tooltip>
                   }
                 >
@@ -333,6 +472,8 @@ const OrderWithInvoice = () => {
                     onMouseLeave={() => setShowInvoiceTooltip(false)}
                     onClick={handleInvoiceEdit}
                     disabled={!invoiceId}
+                    aria-disabled={!invoiceId}
+                    aria-label="Edit invoice"
                   >
                     Edit Invoice
                   </button>
@@ -340,9 +481,14 @@ const OrderWithInvoice = () => {
               </div>
               <div className="card-body">
                 {invoiceLoading ? (
-                  <p>Loading Invoice...</p>
+                  <p>
+                    <Spinner animation="border" size="sm" /> Loading Invoice...
+                  </p>
                 ) : invoiceError ? (
-                  <p className="text-danger">Error fetching invoice</p>
+                  <p className="text-danger">
+                    Error fetching invoice:{" "}
+                    {invoiceError?.data?.message || "Unknown error"}
+                  </p>
                 ) : !invoiceId ? (
                   <p className="text-muted">
                     No invoice associated with this order.
@@ -408,6 +554,7 @@ const OrderWithInvoice = () => {
               activeTab === "products" ? "active" : ""
             }`}
             onClick={() => setActiveTab("products")}
+            aria-pressed={activeTab === "products"}
           >
             📦 Products
           </button>
@@ -416,8 +563,18 @@ const OrderWithInvoice = () => {
               activeTab === "team" ? "active" : ""
             }`}
             onClick={() => setActiveTab("team")}
+            aria-pressed={activeTab === "team"}
           >
             👥 Team
+          </button>
+          <button
+            className={`btn btn-outline-dark ${
+              activeTab === "comments" ? "active" : ""
+            }`}
+            onClick={() => setActiveTab("comments")}
+            aria-pressed={activeTab === "comments"}
+          >
+            💬 Comments
           </button>
         </div>
 
@@ -430,12 +587,12 @@ const OrderWithInvoice = () => {
                 <table className="table table-striped table-bordered rounded">
                   <thead className="table-dark">
                     <tr>
-                      <th>#</th>
-                      <th>Product Name</th>
-                      <th>Product Code</th>
-                      <th>Quantity</th>
-                      <th>Unit Price (₹)</th>
-                      <th>Total Price (₹)</th>
+                      <th scope="col">#</th>
+                      <th scope="col">Product Name</th>
+                      <th scope="col">Product Code</th>
+                      <th scope="col">Quantity</th>
+                      <th scope="col">Unit Price (₹)</th>
+                      <th scope="col">Total Price (₹)</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -478,9 +635,18 @@ const OrderWithInvoice = () => {
         {activeTab === "team" && (
           <div className="mt-4">
             <h5>Team Members</h5>
-            <div className="row">
-              {normalizedTeamMembers.length > 0 ? (
-                normalizedTeamMembers.map((team, teamIdx) => (
+            {teamLoading ? (
+              <p>
+                <Spinner animation="border" size="sm" /> Loading team members...
+              </p>
+            ) : teamError ? (
+              <p className="text-danger">
+                Error fetching team:{" "}
+                {teamError?.data?.message || "Unknown error"}
+              </p>
+            ) : normalizedTeamMembers.length > 0 ? (
+              <div className="row">
+                {normalizedTeamMembers.map((team, teamIdx) => (
                   <div key={team.teamId} className="col-12 mb-4">
                     <h6 className="fw-bold text-primary">{team.teamName}</h6>
                     {team.members.length > 0 ? (
@@ -507,25 +673,106 @@ const OrderWithInvoice = () => {
                       </p>
                     )}
                   </div>
-                ))
-              ) : (
-                <p className="text-muted">
-                  {order.assignedTo
-                    ? "No teams or members found for the assigned team(s)."
-                    : "No team assigned to this order."}
-                </p>
-              )}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted">
+                {order.assignedTo
+                  ? "No teams or members found for the assigned team(s)."
+                  : "No team assigned to this order."}
+              </p>
+            )}
           </div>
         )}
+
+        {/* Comments Section */}
+        {activeTab === "comments" && (
+          <div className="mt-4">
+            <h5>Comments</h5>
+            <Form onSubmit={handleAddComment} className="mb-4">
+              <Form.Group controlId="newComment">
+                <Form.Label>Add a Comment</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={3}
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="Type your comment here..."
+                  maxLength={1000}
+                  aria-describedby="commentHelp"
+                  disabled={!user?.userId} // Disable if user profile not loaded
+                />
+                <Form.Text id="commentHelp" muted>
+                  Maximum 1000 characters.
+                </Form.Text>
+              </Form.Group>
+              <Button
+                type="submit"
+                variant="primary"
+                className="mt-2"
+                disabled={!user?.userId} // Disable if user profile not loaded
+              >
+                Submit Comment
+              </Button>
+            </Form>
+            {commentLoading ? (
+              <p>
+                <Spinner animation="border" size="sm" /> Loading comments...
+              </p>
+            ) : commentError ? (
+              <p className="text-danger">
+                Unable to load comments:{" "}
+                {commentError?.data?.message || "Please try again later."}
+              </p>
+            ) : comments.length > 0 ? (
+              <div>
+                {comments.map((comment) => (
+                  <CommentRow
+                    key={comment._id}
+                    comment={comment}
+                    onDelete={handleDeleteComment}
+                    currentUserId={user?.userId}
+                  />
+                ))}
+                <div className="d-flex justify-content-between mt-3">
+                  <Button
+                    variant="outline-secondary"
+                    disabled={commentPage === 1}
+                    onClick={() => handlePageChange(commentPage - 1)}
+                    aria-label="Previous comments page"
+                  >
+                    Previous
+                  </Button>
+                  <span>
+                    Page {commentPage} of{" "}
+                    {Math.ceil(totalComments / commentLimit)}
+                  </span>
+                  <Button
+                    variant="outline-secondary"
+                    disabled={
+                      commentPage >= Math.ceil(totalComments / commentLimit)
+                    }
+                    onClick={() => handlePageChange(commentPage + 1)}
+                    aria-label="Next comments page"
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-muted">No comments found for this order.</p>
+            )}
+          </div>
+        )}
+
+        {showEditModal && (
+          <AddNewOrder
+            adminName={user?.name || "Admin"}
+            orderId={selectedOrder?.id}
+            onClose={handleModalClose}
+          />
+        )}
       </div>
-      {showEditModal && (
-        <AddNewOrder
-          adminName="Admin" // Replace with dynamic admin name if available
-          orderId={selectedOrder?._id}
-          onClose={handleModalClose}
-        />
-      )}
     </div>
   );
 };

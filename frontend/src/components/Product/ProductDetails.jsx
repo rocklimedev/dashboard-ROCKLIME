@@ -35,6 +35,7 @@ const ProductDetails = () => {
     isLoading: isProductLoading,
     refetch: refetchProduct,
   } = useGetProductByIdQuery(id);
+  console.log(product);
   const { data: categoryData, isLoading: isCategoryLoading } =
     useGetCategoryByIdQuery(product?.categoryId, {
       skip: !product?.categoryId,
@@ -125,7 +126,6 @@ const ProductDetails = () => {
     setIsAddingToCart(true);
     try {
       await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API call
-      toast.success(`${product.name} (Quantity: ${quantity}) added to cart!`);
     } catch {
       toast.error("Failed to add to cart.");
     } finally {

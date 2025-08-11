@@ -153,7 +153,7 @@ const AddAddressModal = ({ show, onClose, onSave }) => {
     e.preventDefault();
     try {
       const newAddress = await createAddress(addressData).unwrap();
-      toast.success("Address created successfully!");
+
       onSave(newAddress.data.addressId);
       setAddressData({
         name: "",
@@ -420,7 +420,7 @@ const Cart = ({ onConvertToOrder }) => {
     if (!userId) return toast.error("User not logged in!");
     try {
       await clearCart({ userId }).unwrap();
-      toast.success("Cart cleared!");
+
       setInvoiceNumber(generateInvoiceNumber());
       setQuotationNumber(generateQuotationNumber());
       refetch();
@@ -437,14 +437,12 @@ const Cart = ({ onConvertToOrder }) => {
     try {
       if (newQuantity <= 0) {
         await removeFromCart({ userId, productId }).unwrap();
-        toast.success("Item removed from cart!");
       } else {
         await updateCart({
           userId,
           productId,
           quantity: Number(newQuantity),
         }).unwrap();
-        toast.success("Quantity updated!");
       }
       refetch();
     } catch (error) {
@@ -459,7 +457,7 @@ const Cart = ({ onConvertToOrder }) => {
     setUpdatingItems((prev) => ({ ...prev, [productId]: true }));
     try {
       await removeFromCart({ userId, productId }).unwrap();
-      toast.success("Item removed from cart!");
+
       refetch();
     } catch (error) {
       toast.error(`Error: ${error.data?.message || "Unknown error"}`);
@@ -588,7 +586,7 @@ const Cart = ({ onConvertToOrder }) => {
         orderData.invoiceId = invoiceId;
         onConvertToOrder(orderData);
         await handleClearCart();
-        toast.success("Order placed successfully!");
+
         resetForm();
       } catch (error) {
         console.error("Invoice creation error:", error);
@@ -640,7 +638,7 @@ const Cart = ({ onConvertToOrder }) => {
       try {
         await createQuotation(quotationData).unwrap();
         await handleClearCart();
-        toast.success("Quotation created successfully!");
+
         resetForm();
       } catch (error) {
         console.error("Quotation creation error:", error);

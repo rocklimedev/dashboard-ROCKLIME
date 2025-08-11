@@ -27,6 +27,7 @@ import {
 } from "react-icons/md";
 import { TiBusinessCard } from "react-icons/ti";
 import { TbShoppingCart } from "react-icons/tb";
+import { PiMicrosoftTeamsLogoLight } from "react-icons/pi";
 import { IoPricetagOutline } from "react-icons/io5";
 import { FaFileInvoice } from "react-icons/fa6";
 import { RiFileListLine } from "react-icons/ri";
@@ -176,7 +177,7 @@ const masterRoutes = [
   {
     path: "#",
     name: "Team",
-    icon: <MdOutlinePeopleAlt />,
+    icon: <PiMicrosoftTeamsLogoLight />,
     isSidebarActive: true,
     submenu: [
       {
@@ -285,13 +286,7 @@ const masterRoutes = [
         isSidebarActive: true,
         element: <CmList />,
       },
-      // {
-      //   path: "/inventory/categories-keywords",
-      //   element: <CategoryManagement />,
-      //   name: "Categories",
-      //   icon: <BiCategory />,
-      //   isSidebarActive: true,
-      // },
+      //
 
       // {
       //   path: "/brands/list",
@@ -512,6 +507,13 @@ const masterRoutes = [
     icon: <RiFileListLine />,
     element: <CheckProductCodeStatus />,
     isSidebarActive: false,
+  },
+  {
+    path: "/inventory/categories-keywords",
+    element: <CategoryManagement />,
+    name: "Categories",
+    icon: <BiCategory />,
+    isSidebarActive: true,
   },
 ];
 

@@ -235,11 +235,9 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
             { type: "Customer", id: existingCustomer.customerId },
           ])
         );
-        toast.success("Customer updated successfully!");
       } else {
         await createCustomer(payload).unwrap();
         dispatch(api.util.invalidateTags(["Customer"]));
-        toast.success("Customer added successfully!");
       }
 
       onClose();

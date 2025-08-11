@@ -26,7 +26,7 @@ const OnHoldModal = ({ order, invoice, onClose, onConfirm }) => {
         status: "ONHOLD",
         source: reference,
       }).unwrap();
-      toast.success("Order placed on hold successfully!");
+
       onConfirm(reference); // Notify parent (e.g., clear cart)
       onClose(); // Close modal
     } catch (error) {

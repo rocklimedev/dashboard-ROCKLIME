@@ -94,7 +94,6 @@ const QuotationsDetails = () => {
         }
 
         pdf.save(`quotation_${id}.pdf`);
-        toast.success("Quotation exported as PDF successfully!");
       } else if (exportFormat === "excel") {
         try {
           const blob = await exportQuotation(id).unwrap();
@@ -107,7 +106,7 @@ const QuotationsDetails = () => {
             a.click();
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
-            toast.success("Quotation exported as Excel successfully!");
+
             return;
           }
         } catch (apiError) {
@@ -231,7 +230,6 @@ const QuotationsDetails = () => {
           });
 
           XLSX.writeFile(workbook, `quotation_${id}.xlsx`);
-          toast.success("Quotation exported as Excel successfully!");
         } catch (error) {
           console.error("Excel export error:", error);
           toast.error(
@@ -646,9 +644,6 @@ const QuotationsDetails = () => {
           </div>
           <button
             className="btn btn-white d-flex justify-content-center align-items-center border"
-            onClick={() =>
-              toast.info("Clone functionality not implemented yet.")
-            }
             aria-label="Clone quotation"
           >
             <i className="ti ti-copy me-2"></i>Clone Quotation

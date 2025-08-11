@@ -92,10 +92,8 @@ const AddNewTeam = ({ onClose, onTeamAdded, team, visible }) => {
           teamId: team.id,
           ...teamDataPayload,
         }).unwrap();
-        toast.success("Team updated successfully");
       } else {
         await createTeam(teamDataPayload).unwrap();
-        toast.success("Team created successfully");
       }
       form.resetFields();
       setMembers([]);

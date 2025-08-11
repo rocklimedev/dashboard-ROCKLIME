@@ -176,7 +176,7 @@ const TeamsList = ({ adminName }) => {
 
     try {
       await deleteTeam(teamToDelete.id).unwrap();
-      toast.success("Team deleted successfully!");
+
       refetch();
       if (paginatedTeams.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);

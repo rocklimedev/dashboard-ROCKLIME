@@ -156,7 +156,7 @@ const CreateInvoiceFromQuotation = ({
       };
 
       await createInvoice(invoiceData).unwrap();
-      toast.success("Invoice created successfully!");
+
       onClose();
     } catch (error) {
       const errorMessage =

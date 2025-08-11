@@ -141,7 +141,6 @@ const AttendanceWrapper = ({ userId }) => {
   const handleClockIn = async () => {
     try {
       await clockIn({ userId }).unwrap();
-      toast.success("Clocked in successfully!");
     } catch (error) {
       toast.error(
         `Failed to clock in: ${error.data?.message || "Unknown error"}`
@@ -153,7 +152,6 @@ const AttendanceWrapper = ({ userId }) => {
   const handleClockOut = async () => {
     try {
       await clockOut({ userId }).unwrap();
-      toast.success("Clocked out successfully!");
     } catch (error) {
       toast.error(
         `Failed to clock out: ${error.data?.message || "Unknown error"}`
@@ -223,7 +221,6 @@ const AttendanceWrapper = ({ userId }) => {
       endDate: moment().endOf("month").format("YYYY-MM-DD"),
     });
     setPage(1);
-    toast.info("Filters cleared!");
   };
 
   // Error handling

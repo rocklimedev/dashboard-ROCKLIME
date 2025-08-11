@@ -1,52 +1,48 @@
 const { v4: uuidv4 } = require("uuid");
-const sequelize = require("../config/database");
 const Category = require("../models/category");
-const ParentCategory = require("../models/parentCategory");
+const sequelize = require("../config/database");
+const categories = require("../categories.json");
 
-const categoriesData = [
-  {
-    slug: "C_1",
-    name: "Sanitary",
-    parentCategory: true,
-  },
-  {
-    slug: "C_2",
-    name: "Ceramics",
-    parentCategory: true,
-  },
-  {
-    slug: "C_3",
-    name: "Kitchen",
-    parentCategory: true,
-  },
-];
+module.exports = {
+  async up(queryInterface, Sequelize) {
+    try {
+      await sequelize.sync();
 
-const seedCategories = async () => {
-  try {
-    await sequelize.sync(); // Ensure database sync
+      for (const category of categories) {
+        await Category.findOrCreate({
+          where: {
+            name: category.name,
+            brandId: category.brandId,
+          },
+          defaults: {
+            ...category,
+            categoryId: uuidv4(), // ✅ Generate UUID here
+          },
+        });
+      }
 
-    for (const category of categoriesData) {
-      const parentCategory = await ParentCategory.findOne({
-        where: { name: category.name },
-      });
-
-      const parentCategoryId = parentCategory ? parentCategory.id : null;
-
-      await Category.create({
-        categoryId: uuidv4(),
-        name: category.name,
-        total_products: 0,
-        vendorId: null, // Set this dynamically if needed
-        slug: category.slug,
-        parentCategory: category.parentCategory,
-        parentCategoryId: parentCategoryId,
-      });
+      console.log("✅ Categories seeded allowing duplicate names per brandId");
+    } catch (err) {
+      console.error("❌ Failed to seed categories:", err);
     }
+  },
 
-    console.log("✅ Categories seeded successfully.");
-  } catch (error) {
-    console.error("❌ Error seeding categories:", error);
-  }
+  async down(queryInterface, Sequelize) {
+    try {
+      // ⚠️ You no longer have categoryId in your JSON,
+      // so we must delete using name + brandId combo
+      for (const category of categories) {
+        await Category.destroy({
+          where: {
+            name: category.name,
+            brandId: category.brandId,
+          },
+        });
+      }
+
+      console.log("✅ Categories removed");
+    } catch (err) {
+      console.error("❌ Failed to remove categories:", err);
+    }
+  },
 };
-
-seedCategories();

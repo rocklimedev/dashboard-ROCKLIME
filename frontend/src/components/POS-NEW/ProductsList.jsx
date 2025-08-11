@@ -73,7 +73,6 @@ const ProductsList = ({ products = [] }) => {
 
     try {
       const response = await addProductToCart({ userId, productId }).unwrap();
-      toast.success(`${product.name} added to cart!`);
     } catch (error) {
       toast.error(`Error: ${error.data?.message || "Unknown error"}`);
     } finally {

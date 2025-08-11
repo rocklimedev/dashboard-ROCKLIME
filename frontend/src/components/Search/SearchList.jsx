@@ -38,7 +38,6 @@ const SearchList = () => {
       return;
     }
     setPage({}); // Reset pagination for all models
-    toast.success(`Searching for "${searchTerm}"`);
   };
 
   const handlePageChange = (modelName, newPage) => {
@@ -213,7 +212,6 @@ const SearchList = () => {
                     e.preventDefault();
                     setSearchTerm("");
                     setPage({});
-                    toast.info("Search reset");
                   }}
                   data-bs-toggle="tooltip"
                   data-bs-placement="top"

@@ -192,7 +192,7 @@ const CmList = () => {
     }
     try {
       await deleteCompany(companyToDelete.companyId).unwrap();
-      toast.success("Company deleted successfully!");
+
       if (currentCompanies.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
@@ -229,7 +229,6 @@ const CmList = () => {
     setSortBy("Recently Added");
     setActiveTab("All");
     setCurrentPage(1);
-    toast.success("Filters cleared!");
   };
 
   if (isLoading) {

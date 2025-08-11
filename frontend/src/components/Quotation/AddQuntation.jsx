@@ -48,7 +48,7 @@ const AddAddressModal = ({ show, onClose, onSave, isCreatingAddress }) => {
     e.preventDefault();
     try {
       const newAddress = await onSave(addressData).unwrap();
-      toast.success("Address created successfully!");
+
       setAddressData({
         name: "",
         street: "",
@@ -304,7 +304,6 @@ const AddQuotation = () => {
     }));
     setProductSearch("");
     setFilteredProducts([]);
-    toast.success("Product added successfully!");
   };
 
   // Remove product
@@ -313,7 +312,6 @@ const AddQuotation = () => {
       ...prev,
       products: prev.products.filter((_, i) => i !== index),
     }));
-    toast.info("Product removed from quotation.");
   };
 
   // Calculate final amount
@@ -384,7 +382,6 @@ const AddQuotation = () => {
     setFormData({ ...initialFormData, createdBy: userId });
     setProductSearch("");
     setFilteredProducts([]);
-    toast.info("Form cleared.");
   };
 
   // Handle form submission
@@ -425,11 +422,11 @@ const AddQuotation = () => {
           id,
           updatedQuotation: formattedFormData,
         }).unwrap();
-        toast.success("Quotation updated successfully!");
+
         navigate("/orders/list");
       } else {
         await createQuotation(formattedFormData).unwrap();
-        toast.success("Quotation created successfully!");
+
         setFormData({ ...initialFormData, createdBy: userId });
       }
     } catch (err) {

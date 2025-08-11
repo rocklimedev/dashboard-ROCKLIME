@@ -63,7 +63,6 @@ const RecentOrders = () => {
     if (!orderToDelete) return;
     try {
       await deleteOrder(orderToDelete).unwrap();
-      toast.success("Order deleted successfully!");
     } catch (err) {
       toast.error("Error deleting order!");
     } finally {

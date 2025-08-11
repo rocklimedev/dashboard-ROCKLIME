@@ -62,7 +62,7 @@ const Brands = () => {
     }
     try {
       await deleteBrand(brandToDelete.id).unwrap();
-      toast.success("Brand deleted successfully!");
+
       if (paginatedBrands.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }

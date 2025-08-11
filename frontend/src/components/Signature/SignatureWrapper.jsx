@@ -40,10 +40,6 @@ const SignatureWrapper = () => {
     if (window.confirm("Are you sure you want to delete this signature?")) {
       try {
         await deleteSignature(signatureId).unwrap();
-        toast.success("Signature deleted successfully!", {
-          position: "top-right",
-          autoClose: 5000,
-        });
       } catch (error) {
         toast.error(error?.data?.error || "Failed to delete signature.", {
           position: "top-right",

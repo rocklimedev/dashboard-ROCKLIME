@@ -204,7 +204,7 @@ const PageWrapper = () => {
     }));
   }, [filteredProducts, filteredCategories]);
 
-  // Top categories and chart data
+  // Top categories
   const topCategories = useMemo(
     () =>
       [...categoryProductCounts]
@@ -239,6 +239,64 @@ const PageWrapper = () => {
     }));
   }, [orders, today]);
 
+  // Top selling products
+  const topSellingProducts = useMemo(() => {
+    const productQuantities = {};
+
+    // Aggregate quantities from invoices
+    if (invoiceData?.data) {
+      invoiceData.data.forEach((invoice) => {
+        if (invoice.products && Array.isArray(invoice.products)) {
+          invoice.products.forEach((product) => {
+            if (product.productId && product.quantity) {
+              productQuantities[product.productId] =
+                (productQuantities[product.productId] || 0) + product.quantity;
+            }
+          });
+        }
+      });
+    }
+
+    // Aggregate quantities from quotations
+    if (quotationData) {
+      quotationData.forEach((quotation) => {
+        if (quotation.products && Array.isArray(quotation.products)) {
+          quotation.products.forEach((product) => {
+            if (product.productId && product.quantity) {
+              productQuantities[product.productId] =
+                (productQuantities[product.productId] || 0) + product.quantity;
+            }
+          });
+        }
+      });
+    }
+
+    // Map product IDs to names and sort by quantity
+    const topProducts = Object.entries(productQuantities)
+      .map(([productId, quantity]) => {
+        const product = products.find((p) => p._id === productId);
+        return {
+          productId,
+          name: product ? product.name : `Product ${productId}`,
+          quantity,
+        };
+      })
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 5); // Top 5 products
+
+    return topProducts;
+  }, [invoiceData, quotationData, products]);
+
+  // Bar chart data for top selling products
+  const topProductsChartData = useMemo(
+    () =>
+      topSellingProducts.map((product) => ({
+        name: product.name,
+        quantity: product.quantity,
+      })),
+    [topSellingProducts]
+  );
+
   // Top customer
   const topCustomer = useMemo(
     () =>
@@ -270,7 +328,6 @@ const PageWrapper = () => {
     if (!userId) return toast.error("User ID is not available.");
     try {
       await clockIn({ userId }).unwrap();
-      toast.success("Clocked in successfully!");
     } catch (error) {
       toast.error("Failed to clock in.");
     }
@@ -280,7 +337,6 @@ const PageWrapper = () => {
     if (!userId) return toast.error("User ID is not available.");
     try {
       await clockOut({ userId }).unwrap();
-      toast.success("Clocked out successfully!");
     } catch (error) {
       toast.error("Failed to clock out.");
     }
@@ -299,20 +355,6 @@ const PageWrapper = () => {
       toast.error(message, { id: "profileError" });
     }
   }, [profileError]);
-
-  useEffect(() => {
-    if (
-      !loadingAttendance &&
-      !hasClockedIn &&
-      !attendanceError &&
-      userId &&
-      !profileError
-    ) {
-      toast.warning("You haven't clocked in today!", {
-        id: "clockInReminder",
-      });
-    }
-  }, [loadingAttendance, hasClockedIn, attendanceError, userId, profileError]);
 
   // Early returns
   if (
@@ -390,7 +432,7 @@ const PageWrapper = () => {
             <div>
               <h1>{username}</h1>
             </div>
-            {/* <div className="dashboard-actions">
+            <div className="dashboard-actions">
               {loadingAttendance ? (
                 <span>Loading...</span>
               ) : !userId ? (
@@ -416,27 +458,11 @@ const PageWrapper = () => {
               ) : (
                 <span>Clocked out for today</span>
               )}
-            </div> */}
+            </div>
           </div>
 
           <section className="summary-cards">
             {[
-              {
-                link: "/orders/list",
-                count: orderCount,
-                label: "Total Orders",
-                loading: loadingOrders,
-                icon: <FaChartBar />,
-                max: maxCounts.orders,
-              },
-              {
-                link: "/invoices/list",
-                count: invoiceCount,
-                label: "Invoices",
-                loading: loadingInvoices,
-                icon: <FaFileInvoice />,
-                max: maxCounts.invoices,
-              },
               {
                 link: "/quotations/list",
                 count: quotationCount,
@@ -444,6 +470,14 @@ const PageWrapper = () => {
                 loading: loadingQuotations,
                 icon: <FaBox />,
                 max: maxCounts.quotations,
+              },
+              {
+                link: "/orders/list",
+                count: orderCount,
+                label: "Total Orders",
+                loading: loadingOrders,
+                icon: <FaChartBar />,
+                max: maxCounts.orders,
               },
               {
                 link: "/inventory/products",
@@ -471,61 +505,34 @@ const PageWrapper = () => {
           </section>
 
           <section className="dashboard-main">
-            <div className="card pie-chart">
-              <h4>Top Customer</h4>
+            <div className="card">
+              <h4>Top Selling Products</h4>
               <div className="card-body">
-                {topCustomer.name ? (
-                  <div className="d-flex align-items-center justify-content-between border-bottom mb-3 pb-3">
-                    <div className="d-flex align-items-center">
-                      <Link
-                        to={`/customer/${topCustomer.customerId}`}
-                        className="avatar avatar-lg flex-shrink-0 me-2"
-                      >
-                        <Avatar
-                          name={topCustomer.name} // Use customer name for initials
-                          src={topCustomer.avatar} // Use avatar URL if available
-                          size="60" // Match the size of the previous image
-                          round={true} // Rounded avatar
-                          className="rounded"
-                          color="#4A90E2" // Optional: Customize background color
-                          textSizeRatio={2.5} // Optional: Adjust text size for initials
-                          alt={`Avatar of ${topCustomer.name}`}
-                        />
-                      </Link>
-                      <div>
-                        <h6 className="fs-14 fw-bold mb-1">
-                          <Link
-                            to={`/customer/${topCustomer.customerId}`}
-                            className="text-dark"
-                          >
-                            {topCustomer.name}
-                          </Link>
-                        </h6>
-                        <p className="fs-13 mb-1">
-                          <i className="ti ti-building me-1"></i>
-                          {topCustomer.company || "Unknown"}
-                        </p>
-                        <p className="fs-13 mb-0">
-                          <i className="ti ti-mail me-1"></i>
-                          {topCustomer.email}
-                        </p>
-                        <p className="fs-12 text-muted mb-0">
-                          Payable: Rs {topCustomer.payable.toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-end">
-                      <h5 className="text-primary">
-                        Rs {topCustomer.totalSpent.toLocaleString()}
-                      </h5>
-                    </div>
-                  </div>
+                {topProductsChartData.some((d) => d.quantity > 0) ? (
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={topProductsChartData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar
+                        dataKey="quantity"
+                        fill="#888888"
+                        radius={[4, 4, 0, 0]}
+                        shape={(props) => {
+                          const { fill, ...rest } = props;
+                          const barFill =
+                            props.quantity > 0 ? "#4A90E2" : "#888888";
+                          return <rect {...rest} fill={barFill} />;
+                        }}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
                 ) : (
-                  <p>No customers found.</p>
+                  <p>No products sold recently.</p>
                 )}
               </div>
             </div>
-
             <div className="card bar-graph">
               <h4>Order Trends (Last 7 Days)</h4>
               <div className="card-body">
@@ -553,6 +560,8 @@ const PageWrapper = () => {
                   <p>No orders in the last 7 days.</p>
                 )}
               </div>
+
+              {/* Top Selling Products Bar Chart */}
             </div>
 
             <div className="card low-stock">

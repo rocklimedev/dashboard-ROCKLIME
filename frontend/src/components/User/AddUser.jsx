@@ -71,17 +71,14 @@ const AddUser = ({ onClose, userToEdit, isViewMode }) => {
           userId: userToEdit.userId,
           ...userPayload,
         }).unwrap();
-        toast.success("User updated successfully!");
       } else {
         user = await createUser(userPayload).unwrap();
-        toast.success("User added successfully!");
       }
 
       await assignRole({
         userId: user.userId || userToEdit.userId,
         roleId: selectedRoleObj.roleId,
       }).unwrap();
-      toast.success("Role assigned successfully!");
 
       onClose();
     } catch (err) {

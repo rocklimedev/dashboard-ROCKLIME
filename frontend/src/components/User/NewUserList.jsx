@@ -138,7 +138,7 @@ const NewUserList = () => {
     }
     try {
       await deleteUser(userToDelete).unwrap();
-      toast.success("User deleted successfully!");
+
       if (paginatedUsers.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
@@ -155,7 +155,6 @@ const NewUserList = () => {
   const handleReportUser = async (userId) => {
     try {
       await reportUser(userId).unwrap();
-      toast.success("User reported successfully!");
     } catch (error) {
       toast.error(
         `Failed to report user: ${error.data?.message || "Unknown error"}`
@@ -166,7 +165,6 @@ const NewUserList = () => {
   const handleInactiveUser = async (userId) => {
     try {
       await inactiveUser(userId).unwrap();
-      toast.success("User marked as inactive!");
     } catch (error) {
       toast.error(
         `Failed to mark user as inactive: ${
@@ -189,7 +187,6 @@ const NewUserList = () => {
     setSortBy("Recently Added");
     setActiveTab("All");
     setCurrentPage(1);
-    toast.info("Filters cleared!");
   };
 
   if (isLoading || isFetching) {

@@ -175,13 +175,12 @@ const OrderCart = ({ onConvertToOrder }) => {
 
   const handleClearCart = async () => {
     if (!userId) {
-      toast.error("User not logged in!");
       return;
     }
 
     try {
       await clearCart({ userId }).unwrap();
-      toast.success("Cart cleared!");
+
       setInvoiceNumber(generateInvoiceNumber());
       refetch();
     } catch (error) {
@@ -195,14 +194,12 @@ const OrderCart = ({ onConvertToOrder }) => {
     try {
       if (newQuantity <= 0) {
         await removeFromCart({ userId, productId }).unwrap();
-        toast.success("Item removed from cart!");
       } else {
         await updateCart({
           userId,
           productId,
           quantity: Number(newQuantity),
         }).unwrap();
-        toast.success("Quantity updated!");
       }
       refetch();
     } catch (error) {
@@ -215,7 +212,7 @@ const OrderCart = ({ onConvertToOrder }) => {
 
     try {
       await removeFromCart({ userId, productId }).unwrap();
-      toast.success("Item removed from cart!");
+
       refetch();
     } catch (error) {
       toast.error(`Error: ${error.data?.message || "Unknown error"}`);
@@ -343,7 +340,7 @@ const OrderCart = ({ onConvertToOrder }) => {
       orderData.invoiceId = invoiceId;
       onConvertToOrder(orderData);
       await handleClearCart();
-      toast.success("Order placed and invoice created successfully!");
+
       setInvoiceData(initialInvoiceData);
       setSelectedCustomer("");
       setInvoiceNumber(generateInvoiceNumber());

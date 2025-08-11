@@ -135,7 +135,6 @@ const Profile = () => {
     if (file.status === "done") {
       setAvatarUrl(file.response.url);
       localStorage.setItem(`avatar_${profile.user.userId}`, file.response.url);
-      toast.success("Avatar uploaded successfully!");
     } else if (file.status === "error") {
       toast.error("Failed to upload avatar.");
     }
@@ -186,7 +185,7 @@ const Profile = () => {
 
     try {
       await updateProfile(updatedData).unwrap();
-      toast.success("Profile updated successfully!");
+
       setIsEditing(false);
     } catch (error) {
       toast.error(

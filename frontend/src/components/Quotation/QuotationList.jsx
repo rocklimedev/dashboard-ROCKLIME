@@ -181,7 +181,7 @@ const QuotationList = () => {
     }
     try {
       await deleteQuotation(quotationToDelete.quotationId).unwrap();
-      toast.success("Quotation deleted successfully!");
+
       setShowDeleteModal(false);
       setQuotationToDelete(null);
       refetch();
@@ -228,7 +228,6 @@ const QuotationList = () => {
     setSortBy("Recently Added");
     setActiveTab("All");
     setCurrentPage(1);
-    toast.success("Filters cleared!");
   };
 
   if (isLoading) {

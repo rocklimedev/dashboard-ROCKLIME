@@ -85,7 +85,7 @@ const Keyword = ({ onClose, showModal }) => {
 
     try {
       await deleteKeyword(keyword.id).unwrap();
-      toast.success("Keyword deleted successfully!");
+
       setShowDeleteModal(false);
       setKeywordToDelete(null);
       if (paginated.length === 1 && keywordPage > 1) {

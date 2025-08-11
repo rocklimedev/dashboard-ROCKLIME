@@ -108,7 +108,7 @@ const CustomerList = () => {
 
     try {
       await deleteCustomer(customerToDelete).unwrap();
-      toast.success("Customer deleted successfully!");
+
       if (paginatedCustomers.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
@@ -134,7 +134,6 @@ const CustomerList = () => {
     setSortBy("Recently Added");
     setActiveTab("All");
     setCurrentPage(1);
-    toast.success("Filters cleared!");
   };
 
   if (isLoading) {
@@ -231,7 +230,16 @@ const CustomerList = () => {
                         <tbody>
                           {paginatedCustomers.map((customer) => (
                             <tr key={customer.customerId}>
-                              <td>{customer.name || "N/A"}</td>
+                              <td>
+                                {" "}
+                                <a
+                                  href={`/customer/${customer.customerId}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  {customer.name || "N/A"}
+                                </a>
+                              </td>
                               <td>{customer.email || "N/A"}</td>
                               <td>{customer.mobileNumber || "N/A"}</td>
                               <td>{customer.companyName || "N/A"}</td>

@@ -81,7 +81,6 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     try {
       await logout().unwrap();
       localStorage.removeItem("token");
-      toast.success("Logged out successfully!");
       navigate("/login");
     } catch (error) {
       toast.error("Logout failed. Please try again.");

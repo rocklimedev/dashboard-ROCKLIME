@@ -2,6 +2,22 @@ const express = require("express");
 const router = express.Router();
 const orderController = require("../controller/orderController");
 const checkPermission = require("../middleware/permission");
+// Route to add a comment to a resource
+router.post("/comments", orderController.addComment);
+
+// Route to get comments for a resource
+router.get("/comments", orderController.getComments);
+router.delete(
+  "/comments/:commentId",
+  // checkPermission("delete", "delete_comment", "orders", "/orders/comments/:commentId"),
+  orderController.deleteComment
+);
+// Route to delete all comments for a resource
+router.post(
+  "/delete-comment",
+
+  orderController.deleteCommentsByResource
+);
 // Create a new order
 router.post(
   "/create",

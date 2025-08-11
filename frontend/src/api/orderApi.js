@@ -15,6 +15,42 @@ export const orderApi = createApi({
   }),
   tagTypes: ["Orders"], // Define tag type for orders
   endpoints: (builder) => ({
+    getComments: builder.query({
+      query: ({ resourceId, resourceType, page = 1, limit = 10 }) => {
+        const params = new URLSearchParams({
+          resourceId,
+          resourceType,
+          page,
+          limit,
+        });
+        return `/comments?${params.toString()}`;
+      },
+      providesTags: ["Comment"],
+    }),
+    addComment: builder.mutation({
+      query: (comment) => ({
+        url: "/comments",
+        method: "POST",
+        body: comment,
+      }),
+      invalidatesTags: ["Comment"],
+    }),
+    deleteComment: builder.mutation({
+      query: ({ commentId, userId }) => ({
+        url: `/comments/${commentId}`,
+        method: "DELETE",
+        body: { userId },
+      }),
+      invalidatesTags: ["Comment"],
+    }),
+    deleteCommentsByResource: builder.mutation({
+      query: ({ resourceId, resourceType }) => ({
+        url: "/delete-comment", // Match backend route
+        method: "POST",
+        body: { resourceId, resourceType },
+      }),
+      invalidatesTags: ["Comment"],
+    }),
     createOrder: builder.mutation({
       query: (orderData) => ({
         url: "/create",
@@ -89,6 +125,7 @@ export const orderApi = createApi({
 });
 
 export const {
+  useDeleteCommentMutation,
   useCreateOrderMutation,
   useGetOrderDetailsQuery,
   useUpdateOrderStatusMutation,
@@ -96,6 +133,9 @@ export const {
   useRecentOrdersQuery,
   useGetAllOrdersQuery,
   useOrderByIdQuery,
+  useGetCommentsQuery,
+  useAddCommentMutation,
+  useDeleteCommentsByResourceMutation,
   useUpdateOrderByIdMutation,
   useDraftOrderMutation,
   useUpdateOrderTeamMutation,

@@ -52,6 +52,11 @@ const OrderWrapper = () => {
     page: 1,
     limit: 10,
   });
+  // New state for date range filter
+  const [dateRange, setDateRange] = useState({
+    startDate: "",
+    endDate: "",
+  });
 
   // Fetch data from APIs
   const { data: teamsData } = useGetAllTeamsQuery();
@@ -64,9 +69,11 @@ const OrderWrapper = () => {
       filters.status !== "" ||
       filters.priority !== "" ||
       filters.source !== "" ||
-      searchTerm.trim() !== ""
+      searchTerm.trim() !== "" ||
+      dateRange.startDate !== "" ||
+      dateRange.endDate !== ""
     );
-  }, [filters, searchTerm]);
+  }, [filters, searchTerm, dateRange]);
 
   // Clean filters for API query
   const cleanFilters = useMemo(() => {
@@ -76,10 +83,12 @@ const OrderWrapper = () => {
       ...(priority && { priority }),
       ...(source && { source }),
       ...(searchTerm.trim() && { search: searchTerm.trim() }),
+      ...(dateRange.startDate && { startDate: dateRange.startDate }),
+      ...(dateRange.endDate && { endDate: dateRange.endDate }),
       page,
       limit,
     };
-  }, [filters, searchTerm]);
+  }, [filters, searchTerm, dateRange]);
 
   // Fetch orders based on filters
   const {
@@ -159,6 +168,15 @@ const OrderWrapper = () => {
   // Priority options from schema
   const priorityOptions = ["All", "high", "medium", "low"];
 
+  // Sort options including date sorting
+  const sortOptions = [
+    "Recently Added",
+    "Ascending",
+    "Descending",
+    "Due Date Ascending",
+    "Due Date Descending",
+  ];
+
   // Filtered and sorted orders
   const filteredOrders = useMemo(() => {
     let result = orders;
@@ -188,6 +206,20 @@ const OrderWrapper = () => {
       case "Recently Added":
         result = [...result].sort(
           (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
+        break;
+      case "Due Date Ascending":
+        result = [...result].sort(
+          (a, b) =>
+            new Date(a.dueDate || "9999-12-31") -
+            new Date(b.dueDate || "9999-12-31")
+        );
+        break;
+      case "Due Date Descending":
+        result = [...result].sort(
+          (a, b) =>
+            new Date(b.dueDate || "9999-12-31") -
+            new Date(a.dueDate || "9999-12-31")
         );
         break;
       default:
@@ -241,7 +273,7 @@ const OrderWrapper = () => {
   const handleDeleteOrder = async (orderId) => {
     try {
       await deleteOrder(orderId).unwrap();
-      toast.success("Order deleted successfully!");
+
       handleModalClose();
     } catch (err) {
       toast.error(
@@ -252,7 +284,6 @@ const OrderWrapper = () => {
 
   const handleConfirmHold = () => {
     handleModalClose();
-    toast.success("Order placed on hold!");
   };
 
   const handlePageChange = (page) => {
@@ -269,7 +300,7 @@ const OrderWrapper = () => {
     });
     setSearchTerm("");
     setSortBy("Recently Added");
-    toast.success("Filters cleared!");
+    setDateRange({ startDate: "", endDate: "" });
   };
 
   const handleOpenDatesModal = (dueDate, followupDates) => {
@@ -280,6 +311,14 @@ const OrderWrapper = () => {
   const handleCloseDatesModal = () => {
     setShowDatesModal(false);
     setSelectedDates({ dueDate: null, followupDates: [] });
+  };
+
+  const handleDateRangeChange = (field) => (e) => {
+    setDateRange((prev) => ({
+      ...prev,
+      [field]: e.target.value,
+    }));
+    setFilters((prev) => ({ ...prev, page: 1 }));
   };
 
   const isDueDateClose = (dueDate) => {
@@ -394,6 +433,21 @@ const OrderWrapper = () => {
                         ))}
                       </select>
                     </div>
+                    {/* New Sort By Dropdown */}
+                    <div className="d-flex align-items-center ms-3">
+                      <span className="me-2">Sort By:</span>
+                      <select
+                        className="form-select"
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value)}
+                      >
+                        {sortOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>
                 <div className="col-lg-6">
@@ -412,6 +466,25 @@ const OrderWrapper = () => {
                           setFilters((prev) => ({ ...prev, page: 1 }));
                         }}
                         aria-label="Search orders"
+                      />
+                    </div>
+                    {/* New Date Range Inputs */}
+                    <div className="d-flex align-items-center me-2">
+                      <input
+                        type="date"
+                        className="form-control me-2"
+                        value={dateRange.startDate}
+                        onChange={handleDateRangeChange("startDate")}
+                        placeholder="Start Date"
+                        aria-label="Start Date"
+                      />
+                      <input
+                        type="date"
+                        className="form-control"
+                        value={dateRange.endDate}
+                        onChange={handleDateRangeChange("endDate")}
+                        placeholder="End Date"
+                        aria-label="End Date"
                       />
                     </div>
                     <button
@@ -437,20 +510,19 @@ const OrderWrapper = () => {
                     <table className="table table-hover">
                       <thead>
                         <tr>
+                          <th>S.No.</th> {/* New S.No. Column */}
                           <th>STATUS</th>
                           <th>TITLE</th>
                           <th>CUSTOMER</th>
                           <th>PRIORITY</th>
-                          <th>TEAM</th>
-                          <th>SOURCE</th>
+                          <th>ASSIGNED TO</th>
                           <th>CREATED BY</th>
-                          <th>CREATED AT</th>
                           <th>DUE DATE</th>
                           <th></th>
                         </tr>
                       </thead>
                       <tbody>
-                        {paginatedOrders.map((order) => {
+                        {paginatedOrders.map((order, index) => {
                           const teamName = order.assignedTo
                             ? teamMap[order.assignedTo] || "—"
                             : "—";
@@ -464,9 +536,13 @@ const OrderWrapper = () => {
                           const dueDateClass = isDueDateClose(order.dueDate)
                             ? "due-date-close"
                             : "";
+                          // Calculate S.No.
+                          const serialNumber =
+                            (filters.page - 1) * filters.limit + index + 1;
 
                           return (
                             <tr key={order.id}>
+                              <td>{serialNumber}</td> {/* New S.No. Column */}
                               <td>
                                 <span
                                   className="priority-badge"
@@ -491,15 +567,7 @@ const OrderWrapper = () => {
                                 </span>
                               </td>
                               <td>{teamName}</td>
-                              <td>{order.source || "—"}</td>
                               <td>{createdByName}</td>
-                              <td>
-                                {order.createdAt
-                                  ? new Date(
-                                      order.createdAt
-                                    ).toLocaleDateString()
-                                  : "—"}
-                              </td>
                               <td className={dueDateClass}>
                                 {order.dueDate ? (
                                   <span

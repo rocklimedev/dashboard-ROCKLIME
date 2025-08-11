@@ -132,7 +132,6 @@ const CategoriesList = () => {
       setShowDeleteModal(false);
       setItemToDelete(null);
       setDeleteItemType(null);
-      toast.success(`${itemType} deleted successfully!`);
     } catch (err) {
       toast.error(
         err?.data?.message || `Delete ${itemType.toLowerCase()} failed`

@@ -44,10 +44,8 @@ const AddKeywordModal = ({ onClose, editData }) => {
     try {
       if (isEditMode) {
         await updateKeyword({ id: editData.id, ...formData }).unwrap();
-        toast.success("Keyword updated successfully! ✨"); // Sonner toast
       } else {
         await createKeyword(formData).unwrap();
-        toast.success("Keyword added successfully! 🎉"); // Sonner toast
       }
       onClose();
     } catch (err) {
