@@ -150,7 +150,7 @@ const AttendanceWrapper = ({ userId }) => {
   const handleClockIn = async () => {
     try {
       await clockIn({ userId }).unwrap();
-      toast.success("Clocked in successfully!");
+
       refetch();
     } catch (error) {
       toast.error(
@@ -162,7 +162,7 @@ const AttendanceWrapper = ({ userId }) => {
   const handleClockOut = async () => {
     try {
       await clockOut({ userId }).unwrap();
-      toast.success("Clocked out successfully!");
+
       refetch();
     } catch (error) {
       toast.error(
@@ -179,13 +179,11 @@ const AttendanceWrapper = ({ userId }) => {
     setSortBy("Recently Added");
     setActiveTab("All");
     setCurrentPage(1);
-    toast.info("Filters cleared");
   };
 
   const handleRefresh = () => {
     handleClearFilters();
     refetch();
-    toast.info("Attendance data refreshed");
   };
 
   const handleCollapse = () => {

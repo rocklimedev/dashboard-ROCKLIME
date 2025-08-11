@@ -44,10 +44,8 @@ const AddCategoryModal = ({ onClose, editMode = false, categoryData = {} }) => {
           id: categoryData.categoryId,
           ...formData,
         }).unwrap();
-        toast.success("Category updated successfully!"); // Sonner toast
       } else {
         await createCategory(formData).unwrap();
-        toast.success("Category added successfully!"); // Sonner toast
       }
       onClose();
     } catch (err) {

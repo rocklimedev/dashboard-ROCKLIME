@@ -212,7 +212,7 @@ const ProductListByCategory = ({ isAdmin = false }) => {
 
     try {
       await deleteProduct(selectedProduct.productId).unwrap();
-      toast.success("Product deleted successfully!");
+
       if (currentItems.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
@@ -242,7 +242,6 @@ const ProductListByCategory = ({ isAdmin = false }) => {
 
     try {
       await addToCart({ userId, productId, quantity: 1 }).unwrap();
-      toast.success(`${product.name} added to cart!`);
     } catch (error) {
       toast.error(
         `Failed to add to cart: ${error.data?.message || "Unknown error"}`
@@ -255,7 +254,6 @@ const ProductListByCategory = ({ isAdmin = false }) => {
   const handleRemoveFromCart = async (productId) => {
     try {
       await removeFromCart({ userId, productId }).unwrap();
-      toast.success("Item removed from cart!");
     } catch (error) {
       toast.error(
         `Failed to remove from cart: ${error?.data?.message || "Unknown error"}`

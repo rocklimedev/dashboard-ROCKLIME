@@ -185,7 +185,6 @@ const AddNewOrder = ({ adminName }) => {
     });
     setInvoiceSearch("");
     setFilteredInvoices(invoices);
-    toast.info("Form cleared.");
   };
 
   const handleSubmit = async (e) => {
@@ -202,10 +201,8 @@ const AddNewOrder = ({ adminName }) => {
     try {
       if (isEditMode) {
         await updateOrder({ id, updatedData: formData }).unwrap();
-        toast.success("Order updated successfully!");
       } else {
         await createOrder(formData).unwrap();
-        toast.success("Order created successfully!");
       }
       navigate("/orders/list");
     } catch (err) {

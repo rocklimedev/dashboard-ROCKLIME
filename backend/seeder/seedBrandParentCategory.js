@@ -1,151 +1,52 @@
-// seeders/seedBrandParentCategories.js
-require("dotenv").config();
-const sequelize = require("../config/database");
-
 const ParentCategory = require("../models/parentCategory");
-const BrandParentCategory = require("../models/brandParentCategory");
-const BrandParentCategoryBrand = require("../models/brandParentCategoryBrand");
-const Brand = require("../models/brand");
-
-const { v4: uuidv4 } = require("uuid");
-
-const seedData = [
+const sequelize = require("../config/database");
+const { Sequelize, Op } = require("sequelize");
+const parentCategories = [
   {
-    parentCategoryName: "CP Fitting",
-    parentCategorySlug: "cp_fitting",
-    brands: [
-      { name: "American Standard", id: "4e3acf32-1e47-4d38-a6bb-417addd52ac0" },
-      { name: "Grohe Kitchen", id: "1a76fdf5-a380-4a62-867c-ca32f6bd7f29" },
-      { name: "Grohe Bau", id: "34e5ad50-2d39-4dfe-8726-cb4db364d84d" },
-      { name: "Grohe Premium", id: "13847c2c-3c91-4bb2-a130-f94928658237" },
-      { name: "Grohe Colour", id: "d642a7f4-9bb9-4d91-bcf3-fd63b438b85e" },
-    ],
+    id: "d2d9627d-674f-4e4d-ade6-1533fa9460f0",
+    name: "COLSTON PROJECT",
+    slug: "colston-project",
   },
   {
-    parentCategoryName: "Wellness",
-    parentCategorySlug: "wellness",
-    brands: [{ name: "Colston", id: "acbe7061-9b76-47d1-a509-e4b1f982a36f" }],
+    id: "53d41af3-b078-45aa-b226-bef6a35ce1c8",
+    name: "COLSTON WELLNESS",
+    slug: "colston-wellness",
   },
   {
-    parentCategoryName: "Adhesive",
-    parentCategorySlug: "adhesive",
-    brands: [],
+    id: "d18dd89c-90d2-44dd-8ba4-16783d58bd5e",
+    name: "COLSTON BATHROOM",
+    slug: "colston-bathroom",
   },
   {
-    parentCategoryName: "Surface",
-    parentCategorySlug: "surface",
-    brands: [],
+    id: "7b7a5690-1dae-46dd-9de0-601646b66331",
+    name: "COLSTON WATER INNOVATION",
+    slug: "colston-water-innovation",
   },
 ];
 
-const seedBrandParentCategories = async () => {
-  let trx;
-  try {
-    await sequelize.authenticate();
-    console.log("✓ DB connected...");
-
-    for (const item of seedData) {
-      trx = await sequelize.transaction();
-
-      // 1) Ensure ParentCategory
-      const [parentCategory, createdPC] = await ParentCategory.findOrCreate({
-        where: { name: item.parentCategoryName },
-        defaults: {
-          id: uuidv4(),
-          name: item.parentCategoryName,
-          slug: item.parentCategorySlug,
-        },
-        transaction: trx,
+module.exports = {
+  async up(queryInterface, Sequelize) {
+    try {
+      await sequelize.sync();
+      await ParentCategory.bulkCreate(parentCategories, {
+        ignoreDuplicates: true,
       });
+      console.log("✅ Parent categories seeded");
+    } catch (err) {
+      console.error("❌ Failed to seed parent categories:", err);
+    }
+  },
 
-      console.log(
-        `${createdPC ? "➕ Created" : "✔ Exists"} ParentCategory: ${
-          item.parentCategoryName
-        }`
-      );
-
-      // 2) Ensure BrandParentCategory (entity with its own id/name/slug)
-      const [bpc, createdBPC] = await BrandParentCategory.findOrCreate({
-        where: { slug: item.parentCategorySlug },
-        defaults: {
-          id: uuidv4(),
-          name: item.parentCategoryName,
-          slug: item.parentCategorySlug,
+  async down(queryInterface, Sequelize) {
+    try {
+      await ParentCategory.destroy({
+        where: {
+          id: parentCategories.map((item) => item.id),
         },
-        transaction: trx,
       });
-
-      console.log(
-        `${createdBPC ? "➕ Created" : "✔ Exists"} BrandParentCategory: ${
-          bpc.name
-        }`
-      );
-
-      // 3) If ParentCategory has the FK column, set it
-      if ("brandParentCategoryId" in ParentCategory.rawAttributes) {
-        if (parentCategory.brandParentCategoryId !== bpc.id) {
-          await parentCategory.update(
-            { brandParentCategoryId: bpc.id },
-            { transaction: trx }
-          );
-          console.log(
-            `🔗 Set ParentCategory.brandParentCategoryId → ${bpc.id} (${bpc.slug})`
-          );
-        } else {
-          console.log("✔ ParentCategory already linked to BrandParentCategory");
-        }
-      } else {
-        console.log(
-          "ℹ ParentCategory model has no brandParentCategoryId column; skipping FK set."
-        );
-      }
-
-      // 4) Link each Brand to this BrandParentCategory via pivot
-      for (const brand of item.brands) {
-        const brandExists = await Brand.findByPk(brand.id, {
-          transaction: trx,
-        });
-        if (!brandExists) {
-          console.warn(`⚠️ Brand not found: ${brand.name} (${brand.id})`);
-          continue;
-        }
-
-        // Use findOrCreate on the pivot
-        const [pivotRow, createdPivot] =
-          await BrandParentCategoryBrand.findOrCreate({
-            where: {
-              brandParentCategoryId: bpc.id,
-              brandId: brand.id,
-            },
-            defaults: {
-              brandParentCategoryId: bpc.id,
-              brandId: brand.id,
-            },
-            transaction: trx,
-          });
-
-        console.log(
-          `${createdPivot ? "🔗 Linked" : "✔ Link exists"} Brand: ${
-            brand.name
-          } → BrandParentCategory: ${bpc.name}`
-        );
-      }
-
-      await trx.commit();
-      trx = null;
+      console.log("✅ Parent categories removed");
+    } catch (err) {
+      console.error("❌ Failed to remove parent categories:", err);
     }
-
-    console.log("✅ Seeding complete!");
-    process.exit(0);
-  } catch (err) {
-    if (trx) {
-      try {
-        await trx.rollback();
-      } catch (_) {}
-    }
-    console.error("❌ Error seeding BrandParentCategories:", err);
-    process.exit(1);
-  }
+  },
 };
-
-seedBrandParentCategories();

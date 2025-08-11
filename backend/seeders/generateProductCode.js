@@ -2,10 +2,10 @@ const fs = require("fs").promises;
 const path = require("path");
 
 // JSON data to process
-const jsonData = require("./colston.json");
+const jsonData = require("./products_updated.json");
 
 // Mock category and brand objects (since no DB access)
-const mockBrand = { brandName: "Colston" }; // Assumed brand name
+const mockBrand = { brandName: "Tiles" }; // Assumed brand name
 
 async function generateCode(row, parentcategories, existingCodes) {
   // Extract company_code from row[2]
@@ -46,6 +46,11 @@ async function updateProductJson() {
     for (const item of jsonData) {
       const { parentcategories, row } = item;
 
+      if (!Array.isArray(row)) {
+        console.warn(`⏩ Skipping item without 'row': ${JSON.stringify(item)}`);
+        continue;
+      }
+
       // Skip single-field rows (categories)
       if (row.length === 1) {
         console.log(`ℹ️ Skipping category: "${row[0]}"`);
@@ -59,11 +64,8 @@ async function updateProductJson() {
           parentcategories,
           existingCodes
         );
-
-        // Add productCode as the fifth field
         row.push(newCode);
-        existingCodes.push(newCode); // Update existing codes for uniqueness
-
+        existingCodes.push(newCode);
         console.log(`✅ Added productCode "${newCode}" to "${row[1]}"`);
       } else if (row.length > 4) {
         console.warn(`⚠️ Row already has ${row.length} fields: "${row[1]}"`);

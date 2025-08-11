@@ -40,10 +40,8 @@ const AddParentCategoryModal = ({ editMode, parentCategoryData, onClose }) => {
           slug,
           brandId,
         }).unwrap();
-        toast.success("Parent category updated successfully!");
       } else {
         await addParentCategory({ name, slug, brandId }).unwrap();
-        toast.success("Parent category added successfully!");
       }
       onClose();
     } catch (error) {

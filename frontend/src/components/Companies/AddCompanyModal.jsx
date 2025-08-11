@@ -78,7 +78,6 @@ const AddCompanyModal = ({ show, onClose, existingVendor }) => {
         };
 
         await updateVendor(updatePayload).unwrap();
-        toast.success("Vendor updated successfully!");
       } else {
         // Payload for create
         const createPayload = {
@@ -89,7 +88,6 @@ const AddCompanyModal = ({ show, onClose, existingVendor }) => {
         };
 
         await addVendor(createPayload).unwrap();
-        toast.success("Vendor added successfully!");
       }
       closeModal();
     } catch (error) {

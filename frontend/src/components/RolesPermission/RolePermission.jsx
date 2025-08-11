@@ -169,7 +169,7 @@ const RolePermission = () => {
     }
     try {
       await deleteRole(selectedRole.roleId).unwrap();
-      toast.success("Role deleted successfully!");
+
       if (paginatedRoles.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
@@ -192,7 +192,6 @@ const RolePermission = () => {
     setSortBy("Recently Added");
     setRoleStatus("All");
     setCurrentPage(1);
-    toast.info("Filters cleared!");
   };
 
   if (isLoading || isPermissionsLoading) {

@@ -55,10 +55,8 @@ const AddCompany = ({ onClose, companyToEdit = null }) => {
           id: companyToEdit.companyId,
           updatedData: formData,
         }).unwrap();
-        toast.success("Company updated successfully!");
       } else {
         await addCompany(formData).unwrap();
-        toast.success("Company created successfully!");
       }
 
       setFormData({

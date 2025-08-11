@@ -50,7 +50,11 @@ const setupDB = async () => {
       otherKey: "roleId",
       as: "roles",
     });
-
+    // User ↔ Order (for createdBy)
+    User.hasMany(Order, { foreignKey: "createdBy", as: "users" });
+    Order.belongsTo(User, { foreignKey: "createdBy", as: "users" });
+    Customer.hasMany(Order, { foreignKey: "createdFor", as: "customers" });
+    Order.belongsTo(Customer, { foreignKey: "createdFor", as: "customers" });
     RolePermission.belongsTo(Role, { foreignKey: "roleId", as: "roles" });
     RolePermission.belongsTo(Permission, {
       foreignKey: "permissionId",
@@ -202,8 +206,8 @@ const setupDB = async () => {
     });
 
     // Team ↔ Order
-    Team.hasMany(Order, { foreignKey: "assignedTo" });
-    Order.belongsTo(Team, { foreignKey: "assignedTo" });
+    Team.hasMany(Order, { foreignKey: "assignedTo", as: "team" });
+    Order.belongsTo(Team, { foreignKey: "assignedTo", as: "team" });
 
     // Keyword ↔ Category
     Keyword.belongsTo(Category, { foreignKey: "categoryId", as: "categories" });

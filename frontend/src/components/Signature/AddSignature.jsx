@@ -68,16 +68,8 @@ const AddSignature = ({ signatureId, existingSignature, onClose }) => {
     try {
       if (signatureId) {
         await updateSignature({ id: signatureId, body: formData }).unwrap();
-        toast.success("Signature updated successfully!", {
-          position: "top-right",
-          autoClose: 5000,
-        });
       } else {
         await createSignature(formData).unwrap();
-        toast.success("Signature added successfully!", {
-          position: "top-right",
-          autoClose: 5000,
-        });
       }
       handleClose();
     } catch (error) {

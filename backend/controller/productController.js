@@ -81,33 +81,27 @@ exports.getAllProducts = async (req, res) => {
 // Get a single product by ID with meta data
 exports.getProductById = async (req, res) => {
   try {
-    const product = await Product.findByPk(req.params.productId, {
-      include: [
-        {
-          model: ProductMeta,
-          as: "product_metas",
-          attributes: ["id", "title", "fieldType", "unit"],
-        },
-      ],
+    // getProductById
+    const product = await Product.findByPk(req.params.productId);
+
+    if (!product) return res.status(404).json({ message: "Product not found" });
+
+    const metaIds = Object.keys(product.meta || {});
+    const metas = await ProductMeta.findAll({
+      where: { id: { [Op.in]: metaIds } },
     });
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
-    }
 
     const productData = product.toJSON();
-    if (productData.meta) {
-      productData.metaDetails = Object.keys(productData.meta).map((metaId) => {
-        const metaField = product.metaFields.find((mf) => mf.id === metaId);
-        return {
-          id: metaId,
-          title: metaField ? metaField.title : "Unknown",
-          value: productData.meta[metaId],
-          fieldType: metaField ? metaField.fieldType : null,
-          unit: metaField ? metaField.unit : null,
-        };
-      });
-    }
-    delete productData.metaFields;
+    productData.meta = metaIds.map((id) => {
+      const field = metas.find((m) => m.id === id);
+      return {
+        id,
+        title: field?.title || "Unknown",
+        value: productData.meta[id],
+        fieldType: field?.fieldType || null,
+        unit: field?.unit || null,
+      };
+    });
 
     return res.status(200).json(productData);
   } catch (error) {

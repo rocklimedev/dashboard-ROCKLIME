@@ -21,9 +21,16 @@ const Product = () => {
     adhesive: adhesive,
     wellness: wellness,
     cp_fitting: fittings,
+    plumbing: fittings,
   };
 
-  const desiredOrder = ["cp_fitting", "wellness", "adhesive", "surface"];
+  const desiredOrder = [
+    "cp_fitting",
+    "wellness",
+    "adhesive",
+    "surface",
+    "plumbing",
+  ];
 
   const cards = useMemo(() => {
     const list = Array.isArray(bpcList) ? bpcList : [];

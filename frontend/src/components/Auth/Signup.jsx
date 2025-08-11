@@ -40,7 +40,6 @@ const Signup = () => {
 
     try {
       await register(formData).unwrap();
-      toast.success("Registration successful!", { duration: 2000 });
       setTimeout(() => navigate("/login"), 2000);
     } catch (err) {
       toast.error(err?.data?.message || "Something went wrong. Try again.");

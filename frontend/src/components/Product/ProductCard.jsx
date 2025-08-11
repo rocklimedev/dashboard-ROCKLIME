@@ -4,7 +4,7 @@ import { ShoppingCartOutlined, MoreOutlined } from "@ant-design/icons";
 import { Link } from "react-router-dom";
 import pos from "../../assets/img/default.png";
 import "./productlist.css";
-
+import { toast } from "sonner";
 const ProductCard = ({
   product,
   getBrandsName,
@@ -42,7 +42,11 @@ const ProductCard = ({
   };
 
   const handleAddToCartWithQuantity = () => {
-    if (quantity > 0) handleAddToCart({ ...product, quantity });
+    if (quantity > 0 && sellingPrice) {
+      handleAddToCart({ ...product, quantity });
+    } else {
+      toast.error(sellingPrice ? "Invalid quantity" : "Invalid product price");
+    }
   };
 
   return (
@@ -114,7 +118,15 @@ const ProductCard = ({
         </div>
       </div>
 
-      <Tooltip title={product.quantity <= 0 ? "Out of stock" : ""}>
+      <Tooltip
+        title={
+          product.quantity <= 0
+            ? "Out of stock"
+            : !sellingPrice
+            ? "Invalid price"
+            : "Add to cart"
+        }
+      >
         <Button
           className="cart-button"
           icon={
@@ -126,7 +138,9 @@ const ProductCard = ({
           }
           onClick={handleAddToCartWithQuantity}
           disabled={
-            cartLoadingStates[product.productId] || product.quantity <= 0
+            cartLoadingStates[product.productId] ||
+            product.quantity <= 0 ||
+            !sellingPrice
           }
           size="large"
           aria-label="Add to cart"

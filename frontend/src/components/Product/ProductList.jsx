@@ -58,8 +58,9 @@ const ProductsList = () => {
     error: categoriesError,
   } = useGetBrandParentCategoriesQuery();
   const { data: customersData } = useGetCustomersQuery();
-  const { data: cartData } = useGetCartQuery();
   const { data: user, isLoading: userLoading } = useGetProfileQuery();
+  const userId = user?.user?.userId;
+  const { data: cartData } = useGetCartQuery(userId, { skip: !userId });
   const [updateProductFeatured, { isLoading: isUpdatingFeatured }] =
     useUpdateProductFeaturedMutation();
   const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
@@ -67,8 +68,7 @@ const ProductsList = () => {
     useAddProductToCartMutation();
   const [removeFromCart] = useRemoveFromCartMutation();
 
-  const userId = user?.user?.userId;
-  const [viewMode, setViewMode] = useState("list"); // Changed default to "list"
+  const [viewMode, setViewMode] = useState("list");
   const [currentPage, setCurrentPage] = useState(1);
   const [isDeleteModalVisible, setDeleteModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -95,7 +95,12 @@ const ProductsList = () => {
       : "Uncategorized";
   };
 
-  const formatPrice = (price) => {
+  const formatPrice = (meta, metaDetails) => {
+    // Find the sellingPrice from metaDetails
+    const sellingPriceEntry = metaDetails?.find(
+      (detail) => detail.title === "sellingPrice"
+    );
+    const price = sellingPriceEntry ? sellingPriceEntry.value : null;
     return price !== null && !isNaN(Number(price))
       ? `₹${Number(price).toFixed(2)}`
       : "N/A";
@@ -114,7 +119,7 @@ const ProductsList = () => {
     [customersData]
   );
   const cartItems = useMemo(
-    () => (Array.isArray(cartData?.items) ? cartData.items : []),
+    () => (Array.isArray(cartData?.cart?.items) ? cartData.cart.items : []),
     [cartData]
   );
 
@@ -123,7 +128,7 @@ const ProductsList = () => {
       const matchesFilter = brandId
         ? String(product.brandId) === String(brandId)
         : bpcId
-        ? String(product.categoryId) === String(bpcId)
+        ? String(product.brand_parentcategoriesId) === String(bpcId) // Fixed to use brand_parentcategoriesId
         : true;
       const searchTerm = search.toLowerCase();
       return (
@@ -131,30 +136,30 @@ const ProductsList = () => {
         (!searchTerm ||
           product.name?.toLowerCase().includes(searchTerm) ||
           product.product_code?.toLowerCase().includes(searchTerm) ||
-          product.company_code?.toLowerCase().includes(searchTerm))
+          product.meta?.company_code?.toLowerCase().includes(searchTerm))
       );
     });
   }, [products, brandId, bpcId, search]);
-
   const formattedTableData = useMemo(
     () =>
       filteredProducts.map((product) => ({
         Name: product.name || "N/A",
         Brand: getBrandsName(product.brandId),
-        Price: formatPrice(product.sellingPrice),
+        Price: formatPrice(product.meta, product.metaDetails), // Pass metaDetails
         Stock:
           product.quantity > 0
             ? `${product.quantity} in stock`
             : "Out of Stock",
         Featured: product.isFeatured ? "Yes" : "No",
       })),
-    [filteredProducts, getBrandsName, formatPrice]
+    [filteredProducts, getBrandsName]
   );
 
   const offset = (currentPage - 1) * itemsPerPage;
   const currentItems = filteredProducts.slice(offset, offset + itemsPerPage);
 
   const handleAddProduct = () => navigate("/inventory/product/add");
+
   const handleDeleteClick = (product) => {
     setSelectedProduct(product);
     setDeleteModalVisible(true);
@@ -168,9 +173,10 @@ const ProductsList = () => {
     }
     try {
       await deleteProduct(selectedProduct.productId).unwrap();
-      toast.success("Product deleted successfully!");
-      if (currentItems.length === 1 && currentPage > 1)
+      toast.success("Product deleted successfully");
+      if (currentItems.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
+      }
     } catch (error) {
       toast.error(
         `Failed to delete product: ${error.data?.message || "Unknown error"}`
@@ -194,9 +200,9 @@ const ProductsList = () => {
         isFeatured: !product.isFeatured,
       }).unwrap();
       toast.success(
-        !product.isFeatured
-          ? `${product.name} marked as featured!`
-          : `${product.name} unmarked as featured!`
+        product.isFeatured
+          ? `${product.name} unmarked as featured!`
+          : `${product.name} marked as featured!`
       );
     } catch (error) {
       toast.error(
@@ -214,13 +220,22 @@ const ProductsList = () => {
       toast.error("User not logged in!");
       return;
     }
+    // Find sellingPrice from metaDetails
+    const sellingPriceEntry = product.metaDetails?.find(
+      (detail) => detail.title === "sellingPrice"
+    );
+    const sellingPrice = sellingPriceEntry ? sellingPriceEntry.value : null;
+    if (!sellingPrice || isNaN(Number(sellingPrice))) {
+      toast.error("Invalid product price");
+      return;
+    }
     const productId = product.productId;
     setCartLoadingStates((prev) => ({ ...prev, [productId]: true }));
     try {
       await addProductToCart({
         userId,
         productId,
-        quantity: product.quantity || 1,
+        quantity: 1,
       }).unwrap();
       toast.success(`${product.name} added to cart!`);
     } catch (error) {
@@ -231,9 +246,13 @@ const ProductsList = () => {
   };
 
   const handleRemoveFromCart = async (productId) => {
+    if (!userId) {
+      toast.error("User not logged in!");
+      return;
+    }
     try {
       await removeFromCart({ userId, productId }).unwrap();
-      toast.success("Item removed from cart!");
+      toast.success("Product removed from cart!");
     } catch (error) {
       toast.error(
         `Failed to remove from cart: ${error.data?.message || "Unknown error"}`
@@ -327,14 +346,9 @@ const ProductsList = () => {
     },
     {
       title: "Price",
-      dataIndex: "sellingPrice",
-      key: "sellingPrice",
-      render: (_, record) => {
-        const sellingPrice = record.metaDetails?.find(
-          (meta) => meta.title === "sellingPrice"
-        )?.value;
-        return formatPrice(sellingPrice);
-      },
+      dataIndex: "meta",
+      key: "price",
+      render: (meta, record) => formatPrice(meta, record.metaDetails), // Pass metaDetails
     },
     {
       title: "Stock",
@@ -346,33 +360,64 @@ const ProductsList = () => {
     {
       title: "Actions",
       key: "actions",
-      render: (_, record) => (
-        <div style={{ display: "flex", gap: 8 }}>
-          <Tooltip
-            title={record.quantity <= 0 ? "Out of stock" : "Add to cart"}
-          >
-            <Button
-              className="cart-button"
-              icon={
-                cartLoadingStates[record.productId] ? (
-                  <Spin size="small" />
-                ) : (
-                  <ShoppingCartOutlined />
-                )
-              }
-              onClick={() => handleAddToCart(record)}
-              disabled={
-                cartLoadingStates[record.productId] || record.quantity <= 0
+      render: (_, record) => {
+        const sellingPriceEntry = record.metaDetails?.find(
+          (detail) => detail.title === "sellingPrice"
+        );
+        const sellingPrice = sellingPriceEntry ? sellingPriceEntry.value : null;
+        return (
+          <div style={{ display: "flex", gap: 8 }}>
+            <Tooltip
+              title={
+                record.quantity <= 0
+                  ? "Out of stock"
+                  : !sellingPrice
+                  ? "Invalid price"
+                  : "Add to cart"
               }
             >
-              Add to Cart
-            </Button>
-          </Tooltip>
-          <Dropdown overlay={menu(record)} trigger={["click"]}>
-            <Button type="text" icon={<MoreOutlined />} />
-          </Dropdown>
-        </div>
-      ),
+              <Button
+                className="cart-button"
+                icon={
+                  cartLoadingStates[record.productId] ? (
+                    <Spin size="small" />
+                  ) : (
+                    <ShoppingCartOutlined />
+                  )
+                }
+                onClick={() => handleAddToCart(record)}
+                disabled={
+                  cartLoadingStates[record.productId] ||
+                  record.quantity <= 0 ||
+                  !sellingPrice
+                }
+              >
+                Add to Cart
+              </Button>
+            </Tooltip>
+            <Tooltip
+              title={record.isFeatured ? "Unmark Featured" : "Mark Featured"}
+            >
+              <Button
+                icon={
+                  featuredLoadingStates[record.productId] ? (
+                    <Spin size="small" />
+                  ) : record.isFeatured ? (
+                    <HeartFilled style={{ color: "red" }} />
+                  ) : (
+                    <HeartOutlined />
+                  )
+                }
+                onClick={() => handleToggleFeatured(record)}
+                disabled={featuredLoadingStates[record.productId]}
+              />
+            </Tooltip>
+            <Dropdown overlay={menu(record)} trigger={["click"]}>
+              <Button type="text" icon={<MoreOutlined />} />
+            </Dropdown>
+          </div>
+        );
+      },
     },
   ];
 
@@ -400,7 +445,7 @@ const ProductsList = () => {
   }
 
   const pageTitle = brandId
-    ? `Product`
+    ? `Products for ${getBrandsName(brandId)}`
     : bpcId
     ? `Products in ${bpcData?.name || "Category"}`
     : "All Products";
@@ -415,10 +460,10 @@ const ProductsList = () => {
           tableData={formattedTableData}
           extra={{
             viewMode,
-            onViewToggle: (checked) => setViewMode(checked ? "card" : "list"), // Adjusted for list as default
+            onViewToggle: (checked) => setViewMode(checked ? "card" : "list"),
             showViewToggle: true,
             cartItems,
-            onCartClick: handleCartClick, // Added cart click handler
+            onCartClick: handleCartClick,
           }}
           exportOptions={{ pdf: false, excel: false }}
         />
@@ -460,6 +505,7 @@ const ProductsList = () => {
                   getCategoryName={getCategoryName}
                   formatPrice={formatPrice}
                   handleAddToCart={handleAddToCart}
+                  handleToggleFeatured={handleToggleFeatured}
                   cartLoadingStates={cartLoadingStates}
                   featuredLoadingStates={featuredLoadingStates}
                   menu={menu}

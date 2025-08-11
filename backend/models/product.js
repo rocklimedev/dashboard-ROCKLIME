@@ -12,7 +12,7 @@ const Product = sequelize.define(
     productId: {
       type: DataTypes.UUID,
       primaryKey: true,
-      defaultValue: uuidv4,
+      defaultValue: () => uuidv4(),
     },
     name: {
       type: DataTypes.STRING,

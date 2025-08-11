@@ -42,7 +42,6 @@ const InvoiceDetails = ({ invoiceData, onChange, error }) => {
       onChange("shipTo", newAddress.addressId);
       refetch();
       setShowModal(false);
-      toast.success("Address added successfully!");
     } else {
       console.error("Invalid new address:", newAddress);
       toast.error("Failed to add address. Please try again.");

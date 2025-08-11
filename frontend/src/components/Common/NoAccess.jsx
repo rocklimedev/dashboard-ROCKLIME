@@ -84,7 +84,6 @@ const NoAccess = () => {
     try {
       await logout().unwrap();
       localStorage.removeItem("token");
-      toast.success("Logged out successfully!");
       navigate("/login", { replace: true });
     } catch (error) {
       toast.error("Logout failed. Please try again.");

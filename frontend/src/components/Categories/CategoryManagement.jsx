@@ -162,7 +162,6 @@ const CategoryManagement = () => {
       setShowDeleteModal(false);
       setItemToDelete(null);
       setDeleteItemType(null);
-      toast.success(`${itemType} deleted successfully!`);
     } catch (err) {
       toast.error(
         err?.data?.message || `Failed to delete ${itemType.toLowerCase()}`

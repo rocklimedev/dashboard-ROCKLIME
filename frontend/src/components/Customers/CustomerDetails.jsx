@@ -28,7 +28,7 @@ import {
   FaBuilding,
   FaMapMarkerAlt,
 } from "react-icons/fa";
-import Avatar from "react-avatar"; // Import react-avatar
+import Avatar from "react-avatar";
 import "./customerdetails.css";
 
 const CustomerDetails = () => {
@@ -207,43 +207,21 @@ const CustomerDetails = () => {
               <i className="ti ti-chevron-left me-2"></i>Back to List
             </Link>
           </div>
-          <ul className="table-top-head">
-            <li className="me-2">
-              <a
-                data-bs-toggle="tooltip"
-                data-bs-placement="top"
-                title="Refresh"
-                onClick={refetchCustomer}
-              >
-                <i className="ti ti-refresh"></i>
-              </a>
-            </li>
-            <li className="me-2">
-              <a
-                data-bs-toggle="tooltip"
-                data-bs-placement="top"
-                title="Collapse"
-                id="collapse-header"
-              >
-                <i className="ti ti-chevron-up"></i>
-              </a>
-            </li>
-          </ul>
         </div>
         <div className="row">
           <div className="col-xl-4 theiaStickySidebar">
             <div className="card rounded-0 border-0">
               <div className="card-header rounded-0 bg-primary d-flex align-items-center">
-                <span className="avatar avatar-xl avatar-rounded flex-shrink-0 border border-white border-3 me-3">
+                <span className="avatar avatar-xl flex-shrink-0 border border-white border-3 me-3">
                   <Avatar
-                    name={customer.name || "Customer"} // Use customer name for initials
-                    src={customer.avatar || "/assets/img/users/user-32.jpg"} // Use avatar URL or fallback
-                    size="60" // Match the size of the previous image
-                    round={true} // Rounded avatar
-                    className="rounded"
-                    color="#4A90E2" // Optional: Customize background color
-                    textSizeRatio={2.5} // Optional: Adjust text size for initials
+                    name={customer.name || "Customer"}
+                    src={customer.avatar || "/assets/img/users/user-32.jpg"}
+                    size="60"
+                    round={true}
+                    color="#4A90E2"
+                    textSizeRatio={2.5}
                     alt={`Avatar of ${customer.name || "Customer"}`}
+                    style={{ borderRadius: "50%" }} // Inline style to ensure circular shape
                   />
                 </span>
                 <div className="me-3">
@@ -253,7 +231,10 @@ const CustomerDetails = () => {
                   </span>
                 </div>
                 <div>
-                  <Link to={`/customers/list`} className="btn btn-white">
+                  <Link
+                    to={`/customers/edit/${customer.customerId}`}
+                    className="btn btn-white"
+                  >
                     Edit Customer
                   </Link>
                 </div>
@@ -261,29 +242,15 @@ const CustomerDetails = () => {
               <div className="card-body">
                 <div className="d-flex align-items-center justify-content-between mb-2">
                   <span className="d-inline-flex align-items-center">
-                    <i className="ti ti-id me-2"></i>
-                    Customer ID
-                  </span>
-                  <p className="text-dark">{customer.customerId}</p>
-                </div>
-                <div className="d-flex align-items-center justify-content-between mb-2">
-                  <span className="d-inline-flex align-items-center">
                     <i className="ti ti-building me-2"></i>
                     Company
                   </span>
                   <p className="text-dark">{customer.companyName || "N/A"}</p>
                 </div>
-                <div className="d-flex align-items-center justify-content-between mb-2">
-                  <span className="d-inline-flex align-items-center">
-                    <i className="ti ti-user me-2"></i>
-                    Vendor ID
-                  </span>
-                  <p className="text-dark">{customer.vendorId || "N/A"}</p>
-                </div>
                 <div className="d-flex align-items-center justify-content-between">
                   <span className="d-inline-flex align-items-center">
                     <i className="ti ti-calendar-check me-2"></i>
-                    Created At
+                    Date
                   </span>
                   <p className="text-dark">{formatDate(customer.createdAt)}</p>
                 </div>
@@ -353,14 +320,6 @@ const CustomerDetails = () => {
                       <p className="fs-13 mb-2">Payment Mode</p>
                       <span className="text-gray-900 fs-13">
                         {customer.paymentMode || "N/A"}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="col-md-4">
-                    <div className="mb-3">
-                      <p className="fs-13 mb-2">Invoice Status</p>
-                      <span className="text-gray-900 fs-13">
-                        {getInvoiceStatusBadge(customer.invoiceStatus)}
                       </span>
                     </div>
                   </div>

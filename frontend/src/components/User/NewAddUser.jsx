@@ -269,10 +269,8 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
           userId: userToEdit.userId,
           ...userPayload,
         }).unwrap();
-        toast.success("User updated successfully!");
       } else {
         userResponse = await createUser(userPayload).unwrap();
-        toast.success("User added successfully!");
       }
 
       // Role assignment is handled by updateUser/createUser in the backend, so no need for separate assignRole call
@@ -308,7 +306,6 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
       addressId: null,
     });
     setIsEditMode(false);
-    toast.info("Form reset");
   };
 
   const handleCollapse = () => {

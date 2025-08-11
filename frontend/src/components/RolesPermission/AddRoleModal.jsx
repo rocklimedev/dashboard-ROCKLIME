@@ -14,7 +14,7 @@ const AddRoleModal = ({ show, onClose }) => {
     }
     try {
       await createRole({ roleName }).unwrap();
-      toast.success("Role added successfully!");
+
       setRoleName("");
       onClose();
     } catch (error) {

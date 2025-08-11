@@ -36,7 +36,7 @@ const Login = () => {
       authLogin(token, response.user || null);
 
       // Show success toast and navigate immediately
-      toast.success("Login successful!", { duration: 1000 });
+
       navigate("/", { replace: true });
     } catch (err) {
       const message =

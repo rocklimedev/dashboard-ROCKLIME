@@ -48,7 +48,7 @@ const GeneralSettings = () => {
     e.preventDefault();
     try {
       await resetPassword(passwordData).unwrap();
-      toast.success("Password changed successfully!");
+
       setPasswordData({ currentPassword: "", newPassword: "" });
       document.getElementById("change-password").classList.remove("show");
     } catch (error) {
@@ -62,7 +62,7 @@ const GeneralSettings = () => {
     setConfirmAction(() => () => {
       dispatch(logout());
       navigate("/login");
-      toast.success("Logged out successfully");
+
       setShowConfirmModal(false);
     });
     setShowConfirmModal(true);
@@ -88,7 +88,7 @@ const GeneralSettings = () => {
   const handleDeactivateAccount = async () => {
     try {
       await deactivateAccount().unwrap();
-      toast.success("Account deactivated successfully");
+
       dispatch(logout());
       navigate("/login");
     } catch (error) {
@@ -102,7 +102,7 @@ const GeneralSettings = () => {
   const handleDeleteAccount = async () => {
     try {
       await deleteUser().unwrap();
-      toast.success("Account deleted successfully");
+
       dispatch(logout());
       navigate("/login");
     } catch (error) {
@@ -184,9 +184,6 @@ const GeneralSettings = () => {
                     <a
                       href="javascript:void(0);"
                       className="btn btn-secondary ms-3"
-                      onClick={() =>
-                        toast.info("Phone number removal not implemented yet")
-                      }
                     >
                       Remove
                     </a>

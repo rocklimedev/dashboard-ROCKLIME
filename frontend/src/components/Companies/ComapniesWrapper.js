@@ -130,7 +130,7 @@ const CompaniesWrapper = () => {
     }
     try {
       await deleteVendor(vendorToDelete.id).unwrap();
-      toast.success("Vendor deleted successfully!");
+
       if (paginatedVendors.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
@@ -152,7 +152,6 @@ const CompaniesWrapper = () => {
     setSortBy("Recently Added");
     setActiveTab("All");
     setCurrentPage(1);
-    toast.success("Filters cleared!");
   }, []);
 
   // Loading and error states

@@ -61,10 +61,8 @@ const AddBrand = ({ onClose, existingBrand }) => {
     try {
       if (id) {
         await updateBrand(formData).unwrap();
-        toast.success("Brand updated successfully!", { duration: 2000 }); // Sonner toast
       } else {
         await createBrand(formData).unwrap();
-        toast.success("Brand added successfully!", { duration: 2000 }); // Sonner toast
       }
 
       setTimeout(() => {
