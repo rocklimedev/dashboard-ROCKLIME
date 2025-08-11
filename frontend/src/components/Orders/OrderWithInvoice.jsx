@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useGetTeamByIdQuery } from "../../api/teamApi"; // Hypothetical query for multiple team IDs
+import { useGetTeamByIdQuery } from "../../api/teamApi";
 import { useGetCustomerByIdQuery } from "../../api/customerApi";
 import { useGetProductByIdQuery } from "../../api/productApi";
 import { useGetInvoiceByIdQuery } from "../../api/invoiceApi";
@@ -12,7 +12,7 @@ import {
   useDeleteOrderMutation,
   useUpdateOrderStatusMutation,
 } from "../../api/orderApi";
-import { useGetProfileQuery } from "../../api/userApi"; // Import useGetProfileQuery
+import { useGetProfileQuery } from "../../api/userApi";
 import {
   Dropdown,
   OverlayTrigger,
@@ -25,6 +25,7 @@ import { BsThreeDotsVertical } from "react-icons/bs";
 import { toast } from "sonner";
 import AddNewOrder from "./AddNewOrder";
 
+// ... (ProductRow and CommentRow components remain unchanged)
 // Subcomponent to handle each product row
 const ProductRow = ({ product, index }) => {
   const { data, isLoading, isError, error } = useGetProductByIdQuery(
@@ -60,6 +61,7 @@ const ProductRow = ({ product, index }) => {
 };
 
 // Subcomponent to handle each comment
+// CommentRow.jsx (from your provided code)
 const CommentRow = ({ comment, onDelete, currentUserId }) => {
   const canDelete = comment.userId === currentUserId; // Only comment creator can delete
   return (
@@ -93,7 +95,6 @@ const CommentRow = ({ comment, onDelete, currentUserId }) => {
     </div>
   );
 };
-
 const OrderWithInvoice = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -115,7 +116,8 @@ const OrderWithInvoice = () => {
     isLoading: profileLoading,
     error: profileError,
   } = useGetProfileQuery();
-  const user = profileData || {};
+  const user = profileData?.user || {};
+  console.log("User data:", user); // Log for debugging
 
   const {
     data: orderData,
@@ -135,12 +137,15 @@ const OrderWithInvoice = () => {
     data: commentData,
     isLoading: commentLoading,
     error: commentError,
-  } = useGetCommentsQuery({
-    resourceId: id,
-    resourceType: "Order",
-    page: commentPage,
-    limit: commentLimit,
-  });
+  } = useGetCommentsQuery(
+    {
+      resourceId: id,
+      resourceType: "Order",
+      page: commentPage,
+      limit: commentLimit,
+    },
+    { skip: !id } // Skip if id is not available
+  );
 
   const teamIds = useMemo(
     () =>
@@ -153,7 +158,7 @@ const OrderWithInvoice = () => {
     data: teamData,
     isLoading: teamLoading,
     error: teamError,
-  } = useGetTeamByIdQuery(teamIds, { skip: !teamIds.length }); // Use hypothetical query
+  } = useGetTeamByIdQuery(teamIds, { skip: !teamIds.length });
 
   const { data: customerData } = useGetCustomerByIdQuery(order.createdFor, {
     skip: !order.createdFor,
@@ -269,8 +274,9 @@ const OrderWithInvoice = () => {
       toast.error("Comment cannot be empty");
       return;
     }
-    if (!user?.userId) {
+    if (!user.userId) {
       toast.error("User profile not loaded. Please log in again.");
+      navigate("/login");
       return;
     }
 
@@ -284,16 +290,23 @@ const OrderWithInvoice = () => {
       toast.success("Comment added successfully");
       setNewComment("");
     } catch (err) {
-      toast.error(
-        `Failed to add comment: ${err?.data?.message || "Unknown error"}`
-      );
+      const errorMessage =
+        err?.data?.message || "Failed to add comment. Please try again.";
+      if (errorMessage.includes("maximum of 3 comments")) {
+        toast.error(
+          "You have reached the maximum of 3 comments for this order."
+        );
+      } else {
+        toast.error(errorMessage);
+      }
       console.error("Add comment error:", err);
     }
   };
 
   const handleDeleteComment = async (commentId) => {
-    if (!user?.userId) {
+    if (!user.userId) {
       toast.error("User profile not loaded. Please log in again.");
+      navigate("/login");
       return;
     }
     if (window.confirm("Are you sure you want to delete this comment?")) {
@@ -314,6 +327,13 @@ const OrderWithInvoice = () => {
       setCommentPage(newPage);
     }
   };
+
+  // Redirect to login if not authenticated
+  if (profileError && profileError.status === 401) {
+    toast.error("Please log in to access this page.");
+    navigate("/login");
+    return null;
+  }
 
   if (profileLoading || orderLoading || invoiceLoading || teamLoading) {
     return (
@@ -689,32 +709,40 @@ const OrderWithInvoice = () => {
         {activeTab === "comments" && (
           <div className="mt-4">
             <h5>Comments</h5>
-            <Form onSubmit={handleAddComment} className="mb-4">
-              <Form.Group controlId="newComment">
-                <Form.Label>Add a Comment</Form.Label>
-                <Form.Control
-                  as="textarea"
-                  rows={3}
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Type your comment here..."
-                  maxLength={1000}
-                  aria-describedby="commentHelp"
-                  disabled={!user?.userId} // Disable if user profile not loaded
-                />
-                <Form.Text id="commentHelp" muted>
-                  Maximum 1000 characters.
-                </Form.Text>
-              </Form.Group>
-              <Button
-                type="submit"
-                variant="primary"
-                className="mt-2"
-                disabled={!user?.userId} // Disable if user profile not loaded
-              >
-                Submit Comment
-              </Button>
-            </Form>
+            {!user.userId ? (
+              <p className="text-warning">
+                You must be logged in to add comments.{" "}
+                <Button
+                  variant="link"
+                  onClick={() => navigate("/login")}
+                  className="p-0"
+                >
+                  Log in
+                </Button>
+              </p>
+            ) : (
+              <Form onSubmit={handleAddComment} className="mb-4">
+                <Form.Group controlId="newComment">
+                  <Form.Label>Add a Comment</Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    rows={3}
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder="Type your comment here..."
+                    maxLength={1000}
+                    aria-describedby="commentHelp"
+                  />
+                  <Form.Text id="commentHelp" muted>
+                    Maximum 1000 characters. You can add up to 3 comments per
+                    order.
+                  </Form.Text>
+                </Form.Group>
+                <Button type="submit" variant="primary" className="mt-2">
+                  Submit Comment
+                </Button>
+              </Form>
+            )}
             {commentLoading ? (
               <p>
                 <Spinner animation="border" size="sm" /> Loading comments...
@@ -731,7 +759,7 @@ const OrderWithInvoice = () => {
                     key={comment._id}
                     comment={comment}
                     onDelete={handleDeleteComment}
-                    currentUserId={user?.userId}
+                    currentUserId={user.userId}
                   />
                 ))}
                 <div className="d-flex justify-content-between mt-3">
@@ -767,7 +795,7 @@ const OrderWithInvoice = () => {
 
         {showEditModal && (
           <AddNewOrder
-            adminName={user?.name || "Admin"}
+            adminName={user.name || "Admin"}
             orderId={selectedOrder?.id}
             onClose={handleModalClose}
           />

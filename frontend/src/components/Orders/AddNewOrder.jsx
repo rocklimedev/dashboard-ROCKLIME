@@ -261,6 +261,7 @@ const AddNewOrder = ({ adminName }) => {
           <PageHeader
             title={isEditMode ? "Edit Order" : "Add New Order"}
             subtitle="Fill out the order details"
+            exportOptions={{ pdf: false, excel: false }}
           />
           <div className="card-body">
             <div className="d-flex justify-content-end mb-3">
