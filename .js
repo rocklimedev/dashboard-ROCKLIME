@@ -1,139 +1,41 @@
-const Product = sequelize.define("Product", {
-  id: {
-    type: DataTypes.UUID,
-    primaryKey: true,
-    defaultValue: uuidv4,
-  },
-  name: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  product_code: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    unique: true,
-  },
-  quantity: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-  },
-  discountType: {
-    type: DataTypes.ENUM("percent", "fixed"),
-    allowNull: true,
-  },
-  alert_quantity: {
-    type: DataTypes.INTEGER,
-    allowNull: true,
-  },
-  tax: {
-    type: DataTypes.DECIMAL(5, 2),
-    allowNull: true,
-  },
-  description: {
-    type: DataTypes.TEXT,
-    allowNull: true,
-  },
-  images: {
-    type: DataTypes.JSON,
-    allowNull: true,
-  },
-  isFeatured: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false,
-  },
-  userId: {
-    type: DataTypes.UUID,
-    allowNull: false,
-  },
-  productType: {
-    type: DataTypes.ENUM("tiles", "sanitary"),
-    allowNull: false,
-  },
+"id"	"brandSlug"	"brandName"	"createdAt"	"updatedAt"
+"13847c2c-3c91-4bb2-a130-f94928658237"	"GP_002"	"Grohe Premium"	"2025-03-01 10:10:42"	"2025-03-01 10:10:42"
+"25df6ffd-16a5-4cd2-8c4b-c7a18a3f18ab"	"JA_003"	"Jayna"	"2025-03-01 10:10:42"	"2025-03-01 10:10:42"
+"4e3acf32-1e47-4d38-a6bb-417addd52ac0"	"AS_001"	"American Standard"	"2025-03-01 10:10:42"	"2025-03-01 10:10:42"
+"500b10a7-7686-11f0-9e84-52540021303b"	"shiv-ceramic"	"SHIV CERAMIC"	"2025-08-11 13:09:28"	"2025-08-11 13:09:28"
+"50105657-7686-11f0-9e84-52540021303b"	"sgt"	"SGT"	"2025-08-11 13:09:28"	"2025-08-11 13:09:28"
+"50106480-7686-11f0-9e84-52540021303b"	"jtc"	"JTC"	"2025-08-11 13:09:28"	"2025-08-11 13:09:28"
+"501073c4-7686-11f0-9e84-52540021303b"	"baleno-grey"	"BALENO GREY"	"2025-08-11 13:09:28"	"2025-08-11 13:09:28"
+"50107b22-7686-11f0-9e84-52540021303b"	"uw"	"UW"	"2025-08-11 13:09:28"	"2025-08-11 13:09:28"
+"501083c0-7686-11f0-9e84-52540021303b"	"ibis"	"IBIS"	"2025-08-11 13:09:28"	"2025-08-11 13:09:28"
+"acbe7061-9b76-47d1-a509-e4b1f982a36f"	"colston"	"Colston"	"2025-07-30 07:59:10"	"2025-07-30 07:59:10"
+"c69121e3-7686-11f0-9e84-52540021303b"	"sunheart"	"SUNHEART"	"2025-08-11 13:12:47"	"2025-08-11 13:12:47"
+"d642a7f4-9bb9-4d91-bcf3-fd63b438b85e"	"GB_004"	"Grohe Bau"	"2025-03-01 10:10:42"	"2025-03-01 10:10:42"
 
-  // Optional Foreign Keys
-  brandId: {
-    type: DataTypes.UUID,
-    allowNull: true,
-    references: {
-      model: "Brands",
-      key: "id",
-    },
-  },
-  categoryId: {
-    type: DataTypes.UUID,
-    allowNull: true,
-    references: {
-      model: "Categories",
-      key: "id",
-    },
-  },
-  vendorId: {
-    type: DataTypes.UUID,
-    allowNull: true,
-    references: {
-      model: "Vendors",
-      key: "id",
-    },
-  },
-  brand_parentcategoriesId: {
-    type: DataTypes.UUID,
-    allowNull: true,
-    references: {
-      model: "brand_parentcategories",
-      key: "id",
-    },
-  },
-  meta: {
-    type: DataTypes.JSON,
-    allowNull: true,
-    comment:
-      "Stores key-value pairs where key is ProductMeta UUID and value is the actual value",
-  },
-});
 
-Product.belongsTo(Brand, { foreignKey: "brandId", as: "brand" });
-Product.belongsTo(Category, { foreignKey: "categoryId", as: "category" });
-Product.belongsTo(Vendor, { foreignKey: "vendorId", as: "vendor" });
-Product.belongsTo(BrandParentCategory, {
-  foreignKey: "brand_parentcategoriesId",
-  as: "brand_parentcategories",
-});
-// models/ProductMeta.js
-const { DataTypes } = require("sequelize");
-const sequelize = require("../config/db"); // adjust path as needed
+"id"	"name"	"slug"	"createdAt"	"updatedAt"	"brandParentCategoryId"
+"0d8d9492-e319-44a6-8e88-6da2d71b46a2"	"CP Fitting"	"cp_fitting"	"2025-07-30 09:11:33"	"2025-07-30 09:11:33"	\N
+"1a76fdf5-a380-4a62-867c-ca32f6bd7f29"	"Grohe Kitchen"	"CT_GK_002"	"2025-04-05 07:47:55"	"2025-04-05 07:47:55"	\N
+"282b5212-88b7-4ae8-9a6c-049a285c5f70"	"American Standard"	"CT_AS_001"	"2025-04-05 07:47:55"	"2025-04-05 07:47:55"	\N
+"34e5ad50-2d39-4dfe-8726-cb4db364d84d"	"Grohe Bau"	"CT_GB_003"	"2025-04-05 07:47:55"	"2025-04-05 07:47:55"	\N
+"53d41af3-b078-45aa-b226-bef6a35ce1c8"	"COLSTON WELLNESS"	"colston-wellness"	"2025-08-08 07:00:44"	"2025-08-08 07:00:44"	\N
+"612a2d52-ae3b-4e14-9364-3dbc8fa344a0"	"Colston"	"colston"	"2025-07-30 07:59:28"	"2025-07-30 07:59:28"	\N
+"63dfb32c-767f-11f0-9e84-52540021303b"	"12x8"	"12x8"	"2025-08-11 12:19:55"	"2025-08-11 12:19:55"	\N
+"63ef1587-767f-11f0-9e84-52540021303b"	"12x12"	"12x12"	"2025-08-11 12:19:55"	"2025-08-11 12:19:55"	\N
+"63ef29c4-767f-11f0-9e84-52540021303b"	"12x18"	"12x18"	"2025-08-11 12:19:55"	"2025-08-11 12:19:55"	\N
+"63ef3670-767f-11f0-9e84-52540021303b"	"16x16"	"16x16"	"2025-08-11 12:19:55"	"2025-08-11 12:19:55"	\N
+"63ef4288-767f-11f0-9e84-52540021303b"	"24x24"	"24x24"	"2025-08-11 12:19:55"	"2025-08-11 12:19:55"	\N
+"63ef4c7d-767f-11f0-9e84-52540021303b"	"24x48"	"24x48"	"2025-08-11 12:19:55"	"2025-08-11 12:19:55"	\N
+"63ef586f-767f-11f0-9e84-52540021303b"	"64x32"	"64x32"	"2025-08-11 12:19:55"	"2025-08-11 12:19:55"	\N
+"63ef6476-767f-11f0-9e84-52540021303b"	"72x24"	"72x24"	"2025-08-11 12:19:55"	"2025-08-11 12:19:55"	\N
+"63ef6fa8-767f-11f0-9e84-52540021303b"	"96x32"	"96x32"	"2025-08-11 12:19:55"	"2025-08-11 12:19:55"	\N
+"7a5e2bd8-8dfe-4511-a098-6ffd13e0a178"	"Grohe Colour"	"CT_GC_005"	"2025-04-05 07:47:55"	"2025-04-05 07:47:55"	\N
+"7b7a5690-1dae-46dd-9de0-601646b66331"	"COLSTON WATER INNOVATION"	"colston-water-innovation"	"2025-08-08 07:00:44"	"2025-08-08 07:00:44"	\N
+"80afdfa6-2124-4c58-8d1e-116f9f7d8c56"	"Grohe Premium"	"CT_GP_004"	"2025-04-05 07:47:55"	"2025-04-05 07:47:55"	\N
+"a267c4a0-7682-11f0-9e84-52540021303b"	"12x24"	"12x24"	"2025-08-11 12:43:09"	"2025-08-11 12:43:09"	\N
+"c01d955b-38eb-45b2-bb5e-96ae3c4a72df"	"Adhesive"	"adhesive"	"2025-07-30 09:11:34"	"2025-07-30 09:11:34"	\N
+"cf02dafa-6640-47dd-a38e-45e79c4a52ae"	"Wellness"	"wellness"	"2025-07-30 09:11:34"	"2025-07-30 09:11:34"	\N
+"d18dd89c-90d2-44dd-8ba4-16783d58bd5e"	"COLSTON BATHROOM"	"colston-bathroom"	"2025-08-08 07:00:44"	"2025-08-08 07:00:44"	\N
+"f7c065c3-e2bf-48c9-9c32-8d979402388c"	"Surface"	"surface"	"2025-07-30 09:11:35"	"2025-07-30 09:11:35"	\N
+"fcec49c3-3931-4120-841c-50d517b2ab1b"	"COLSTON PROJECT"	"colston-project"	"2025-08-08 06:46:36"	"2025-08-08 06:46:36"	\N
 
-const ProductMeta = sequelize.define(
-  "ProductMeta",
-  {
-    id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true,
-    },
-    title: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      comment: "Label for the metadata field (e.g., Selling Price, MRP)",
-    },
-    fieldType: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      comment: "Type of data (e.g., string, number, mm, inch, pcs, box, feet)",
-    },
-    unit: {
-      type: DataTypes.STRING,
-      allowNull: true,
-      comment: "Optional unit of measurement (e.g., inch, mm, pcs)",
-    },
-    createdAt: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-    },
-  },
-  {
-    tableName: "product_metas",
-    timestamps: false,
-  }
-);
-
-module.exports = ProductMeta;
