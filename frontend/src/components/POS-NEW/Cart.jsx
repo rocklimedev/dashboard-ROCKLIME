@@ -796,7 +796,12 @@ const Cart = ({ onConvertToOrder }) => {
                               </Col>
                               <Col xs={18} sm={10}>
                                 <Text strong>{item.name}</Text>
-                                <Text type="secondary" block>
+                                <br />
+                                <Text
+                                  type="secondary"
+                                  block
+                                  style={{ color: "green" }}
+                                >
                                   Price: ₹{item.price?.toFixed(2) || "0.00"}
                                 </Text>
                               </Col>
@@ -841,7 +846,7 @@ const Cart = ({ onConvertToOrder }) => {
                                 sm={4}
                                 style={{ textAlign: "right" }}
                               >
-                                <Text strong>
+                                <Text strong style={{ color: "green" }}>
                                   ₹{(item.price * item.quantity).toFixed(2)}
                                 </Text>
                                 <RemoveButton
@@ -934,6 +939,7 @@ const Cart = ({ onConvertToOrder }) => {
                     ) : (
                       <>
                         <Text strong>Document Type</Text>
+                        <br />
                         <Radio.Group
                           onChange={(e) => setDocumentType(e.target.value)}
                           value={documentType}
@@ -942,6 +948,7 @@ const Cart = ({ onConvertToOrder }) => {
                           <Radio value="invoice">Invoice</Radio>
                           <Radio value="quotation">Quotation</Radio>
                         </Radio.Group>
+                        <br />
                         <Text strong>Select Customer</Text>
                         <CustomerSelect
                           value={selectedCustomer}

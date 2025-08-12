@@ -14,52 +14,59 @@ import { useGetAllBrandsQuery } from "../../api/brandsApi";
 import { useGetProfileQuery } from "../../api/userApi"; // Added to fetch user_id
 import { toast } from "sonner";
 import { useDropzone } from "react-dropzone";
-
+import { useGetVendorsQuery } from "../../api/vendorApi";
+import { useGetAllProductMetaQuery } from "../../api/productMetaApi";
+import { useGetBrandParentCategoriesQuery } from "../../api/brandParentCategoryApi";
 const CreateProduct = () => {
   const { productId } = useParams();
   const navigate = useNavigate();
   const isEditMode = Boolean(productId);
-  const [filteredCategories, setFilteredCategories] = useState([]);
   const [newImages, setNewImages] = useState([]); // { file, preview }
   const [existingImages, setExistingImages] = useState([]); // Image URLs
   const [imagesToDelete, setImagesToDelete] = useState([]); // Images to delete
+  const [metaData, setMetaData] = useState({}); // Meta key-value pairs
 
-  // Fetch product, categories, parent categories, brands, and user
+  // Fetch data
   const { data: existingProduct, isLoading: isFetching } =
     useGetProductByIdQuery(productId, { skip: !isEditMode });
   const {
     data: categoryData = { categories: [] },
     isLoading: isCategoryLoading,
   } = useGetAllCategoriesQuery();
-  const { data: parentCategories, isLoading: isParentCategoryLoading } =
-    useGetAllParentCategoriesQuery();
   const { data: brands, isLoading: isBrandLoading } = useGetAllBrandsQuery();
-  const { data: user, isLoading: isUserLoading } = useGetProfileQuery(); // Fetch user for user_id
+  const { data: vendors, isLoading: isVendorLoading } = useGetVendorsQuery();
+  const {
+    data: brandParentCategories,
+    isLoading: isBrandParentCategoryLoading,
+  } = useGetBrandParentCategoriesQuery();
+  const { data: productMetas, isLoading: isProductMetaLoading } =
+    useGetAllProductMetaQuery();
+  const { data: user, isLoading: isUserLoading } = useGetProfileQuery();
 
-  const parentCategoryData = Array.isArray(parentCategories?.data)
-    ? parentCategories.data
+  const categories = Array.isArray(categoryData?.categories)
+    ? categoryData.categories
     : [];
   const brandData = Array.isArray(brands) ? brands : [];
-  const userId = user?.user?.userId; // Get user_id from profile
+  const vendorData = Array.isArray(vendors) ? vendors : [];
+  const brandParentCategoryData = Array.isArray(brandParentCategories)
+    ? brandParentCategories
+    : [];
+  const productMetaData = Array.isArray(productMetas) ? productMetas : [];
+  const userId = user?.user?.userId;
 
   const initialFormData = {
     name: "",
-    productSegment: "",
-    productGroup: "",
     product_code: "",
-    company_code: "",
-    sellingPrice: "",
-    purchasingPrice: "",
-    category: "",
-    parentCategory: "",
-    brand: "",
-    isFeatured: "",
-    description: "",
     quantity: "",
-    alertQuantity: "",
+    productType: "",
+    isFeatured: "false",
+    description: "",
     tax: "",
-    discountType: "", // Added for schema
-    barcode: "", // Added for schema
+    alert_quantity: "",
+    categoryId: "",
+    brandId: "",
+    vendorId: "",
+    brand_parentcategoriesId: "",
   };
 
   const [formData, setFormData] = useState(initialFormData);
@@ -70,93 +77,48 @@ const CreateProduct = () => {
 
   // Pre-fill form and images in edit mode
   useEffect(() => {
-    if (existingProduct && categoryData?.categories) {
-      const selectedCategory = categoryData.categories.find(
-        (cat) => cat.categoryId === existingProduct.categoryId
-      );
-      const parentCategoryId = selectedCategory?.parentCategoryId || "";
-
-      if (!parentCategoryId && selectedCategory) {
-        console.warn(
-          `Category '${selectedCategory.name}' (ID: ${selectedCategory.categoryId}) has no valid parentCategoryId.`
-        );
-      }
-
-      const matchingCategories = categoryData.categories.filter(
-        (cat) => cat.parentCategoryId === parentCategoryId
-      );
-      setFilteredCategories(matchingCategories);
-
+    if (existingProduct) {
       setFormData({
         name: existingProduct.name || "",
-        productSegment: existingProduct.product_segment || "",
-        productGroup: existingProduct.productGroup || "",
         product_code: existingProduct.product_code || "",
-        company_code: existingProduct.company_code || "",
-        sellingPrice: existingProduct.sellingPrice || "",
-        purchasingPrice: existingProduct.purchasingPrice || "",
-        category: existingProduct.categoryId || "",
-        parentCategory: parentCategoryId,
-        brand: existingProduct.brandId || "",
+        quantity: existingProduct.quantity || "",
+        productType: existingProduct.productType || "",
         isFeatured: existingProduct.isFeatured?.toString() || "false",
         description: existingProduct.description || "",
-        quantity: existingProduct.quantity || "",
-        alertQuantity: existingProduct.alert_quantity || "",
         tax: existingProduct.tax || "",
-        discountType: existingProduct.discountType || "", // Added
-        barcode: existingProduct.barcode || "", // Added
+        alert_quantity: existingProduct.alert_quantity || "",
+        categoryId: existingProduct.categoryId || "",
+        brandId: existingProduct.brandId || "",
+        vendorId: existingProduct.vendorId || "",
+        brand_parentcategoriesId:
+          existingProduct.brand_parentcategoriesId || "",
       });
-
       setExistingImages(existingProduct.images || []);
+      setMetaData(existingProduct.meta || {});
     }
-  }, [existingProduct, categoryData, parentCategoryData]);
+  }, [existingProduct]);
+
+  // Clean up preview URLs
+  useEffect(() => {
+    return () => {
+      newImages.forEach((img) => URL.revokeObjectURL(img.preview));
+    };
+  }, [newImages]);
 
   // Handle form input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
-
-    if (name === "category") {
-      const selectedCategory = categoryData?.categories?.find(
-        (cat) => cat.categoryId === value
-      );
-      const parentCategoryId = selectedCategory?.parentCategoryId || "";
-
-      if (!parentCategoryId && selectedCategory) {
-        console.warn(
-          `Category '${selectedCategory.name}' (ID: ${selectedCategory.categoryId}) has no valid parentCategoryId.`
-        );
-      }
-
-      const matchingCategories = categoryData?.categories?.filter(
-        (cat) => cat.parentCategoryId === parentCategoryId
-      );
-      setFilteredCategories(matchingCategories || []);
-
-      setFormData((prev) => ({
-        ...prev,
-        category: value,
-        parentCategory: parentCategoryId,
-      }));
-      return;
-    }
-
-    if (name === "parentCategory") {
-      const matchingCategories = categoryData?.categories?.filter(
-        (cat) => cat.parentCategoryId === value
-      );
-      setFilteredCategories(matchingCategories || []);
-
-      setFormData((prev) => ({
-        ...prev,
-        parentCategory: value,
-        category: "",
-      }));
-      return;
-    }
-
     setFormData((prev) => ({
       ...prev,
       [name]: value,
+    }));
+  };
+
+  // Handle meta data changes
+  const handleMetaChange = (metaId, value) => {
+    setMetaData((prev) => ({
+      ...prev,
+      [metaId]: value,
     }));
   };
 
@@ -211,28 +173,16 @@ const CreateProduct = () => {
     });
   };
 
-  // Clean up preview URLs
-  useEffect(() => {
-    return () => {
-      newImages.forEach((img) => URL.revokeObjectURL(img.preview));
-    };
-  }, [newImages]);
-
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     const requiredFields = {
       name: formData.name,
-      productGroup: formData.productGroup,
       product_code: formData.product_code,
-      company_code: formData.company_code,
-      sellingPrice: formData.sellingPrice,
-      purchasingPrice: formData.purchasingPrice,
-      category: formData.category,
-      brand: formData.brand,
-      isFeatured: formData.isFeatured,
       quantity: formData.quantity,
+      productType: formData.productType,
+      userId: userId,
     };
 
     const emptyFields = Object.entries(requiredFields).filter(
@@ -248,48 +198,47 @@ const CreateProduct = () => {
       return;
     }
 
-    if (formData.category) {
-      const selectedCategory = categoryData?.categories?.find(
-        (cat) => cat.categoryId === formData.category
-      );
-      if (!selectedCategory) {
-        toast.error("Selected category is invalid.");
+    // Validate meta data
+    for (const metaId of Object.keys(metaData)) {
+      const metaField = productMetaData.find((meta) => meta.id === metaId);
+      if (!metaField) {
+        toast.error(`Invalid ProductMeta ID: ${metaId}`);
         return;
       }
-      if (!selectedCategory?.parentCategoryId) {
-        console.warn(
-          `Submitting with category '${selectedCategory.name}' (ID: ${selectedCategory.categoryId}) that has no valid parentCategoryId.`
-        );
+      if (
+        metaField.fieldType === "number" &&
+        metaData[metaId] !== "" &&
+        isNaN(metaData[metaId])
+      ) {
+        toast.error(`Value for ${metaField.title} must be a number`);
+        return;
       }
     }
 
     const formDataToSend = new FormData();
     formDataToSend.append("name", formData.name);
-    formDataToSend.append("product_segment", formData.productSegment);
-    formDataToSend.append("productGroup", formData.productGroup);
     formDataToSend.append("product_code", formData.product_code);
-    formDataToSend.append("company_code", formData.company_code);
-    formDataToSend.append(
-      "sellingPrice",
-      formData.sellingPrice.replace(/,/g, "")
-    );
-    formDataToSend.append(
-      "purchasingPrice",
-      formData.purchasingPrice.replace(/,/g, "")
-    );
-    formDataToSend.append("categoryId", formData.category);
-    formDataToSend.append("brandId", formData.brand);
+    formDataToSend.append("quantity", Number(formData.quantity) || 0);
+    formDataToSend.append("productType", formData.productType);
     formDataToSend.append("isFeatured", formData.isFeatured === "true");
     formDataToSend.append("description", formData.description);
-    formDataToSend.append("quantity", Number(formData.quantity) || 0);
+    formDataToSend.append("tax", formData.tax ? Number(formData.tax) : "");
     formDataToSend.append(
       "alert_quantity",
-      Number(formData.alertQuantity) || 0
+      Number(formData.alert_quantity) || 0
     );
-    formDataToSend.append("tax", formData.tax ? Number(formData.tax) : "");
-    formDataToSend.append("discountType", formData.discountType || "");
-    formDataToSend.append("barcode", formData.barcode || "");
-    formDataToSend.append("user_id", userId || "");
+    formDataToSend.append("userId", userId || "");
+    if (formData.categoryId)
+      formDataToSend.append("categoryId", formData.categoryId);
+    if (formData.brandId) formDataToSend.append("brandId", formData.brandId);
+    if (formData.vendorId) formDataToSend.append("vendorId", formData.vendorId);
+    if (formData.brand_parentcategoriesId)
+      formDataToSend.append(
+        "brand_parentcategoriesId",
+        formData.brand_parentcategoriesId
+      );
+    if (Object.keys(metaData).length > 0)
+      formDataToSend.append("meta", JSON.stringify(metaData));
 
     newImages.forEach((image) => {
       formDataToSend.append("images", image.file);
@@ -302,36 +251,30 @@ const CreateProduct = () => {
     try {
       if (isEditMode) {
         await updateProduct({ productId, formData: formDataToSend }).unwrap();
-
+        toast.success("Product updated successfully");
         navigate("/inventory/products");
       } else {
         await createProduct(formDataToSend).unwrap();
-
+        toast.success("Product created successfully");
         setFormData(initialFormData);
-        setFilteredCategories([]);
         setNewImages([]);
+        setMetaData({});
         navigate("/inventory/products");
       }
     } catch (error) {
       const message =
         error.data?.message || "Something went wrong while saving the product.";
-      if (
-        message.includes("product_code") ||
-        message.includes("company_code") ||
-        message.includes("barcode")
-      ) {
-        toast.error(`Error: ${message} (must be unique)`);
-      } else {
-        toast.error(`Error: ${message}`);
-      }
+      toast.error(`Error: ${message}`);
     }
   };
 
   if (
     isFetching ||
     isCategoryLoading ||
-    isParentCategoryLoading ||
     isBrandLoading ||
+    isVendorLoading ||
+    isBrandParentCategoryLoading ||
+    isProductMetaLoading ||
     isUserLoading
   ) {
     return <p className="text-center">Loading product details...</p>;
@@ -389,33 +332,6 @@ const CreateProduct = () => {
                   </div>
                   <div className="col-md-6 col-12">
                     <div className="form-group">
-                      <label className="form-label">Product Segment</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        name="productSegment"
-                        value={formData.productSegment}
-                        onChange={handleChange}
-                      />
-                    </div>
-                  </div>
-                  <div className="col-md-6 col-12">
-                    <div className="form-group">
-                      <label className="form-label">
-                        Product Group <span className="text-danger">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        name="productGroup"
-                        value={formData.productGroup}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="col-md-6 col-12">
-                    <div className="form-group">
                       <label className="form-label">
                         Product Code <span className="text-danger">*</span>
                       </label>
@@ -432,62 +348,32 @@ const CreateProduct = () => {
                   <div className="col-md-6 col-12">
                     <div className="form-group">
                       <label className="form-label">
-                        Company Code <span className="text-danger">*</span>
+                        Product Type <span className="text-danger">*</span>
                       </label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        name="company_code"
-                        value={formData.company_code}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="col-md-6 col-12">
-                    <div className="form-group">
-                      <label className="form-label">Barcode</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        name="barcode"
-                        value={formData.barcode}
-                        onChange={handleChange}
-                      />
-                    </div>
-                  </div>
-                  <div className="col-md-6 col-12">
-                    <div className="form-group">
-                      <label className="form-label">Discount Type</label>
                       <select
                         className="form-control"
-                        name="discountType"
-                        value={formData.discountType}
+                        name="productType"
+                        value={formData.productType}
                         onChange={handleChange}
+                        required
                       >
-                        <option value="">Select Discount Type</option>
-                        <option value="percent">Percent</option>
-                        <option value="fixed">Fixed</option>
+                        <option value="">Select Product Type</option>
+                        <option value="tiles">Tiles</option>
+                        <option value="sanitary">Sanitary</option>
                       </select>
                     </div>
                   </div>
                   <div className="col-md-6 col-12">
                     <div className="form-group">
-                      <label className="form-label">
-                        Category <span className="text-danger">*</span>
-                      </label>
+                      <label className="form-label">Category</label>
                       <select
                         className="form-control"
-                        name="category"
-                        value={formData.category}
+                        name="categoryId"
+                        value={formData.categoryId}
                         onChange={handleChange}
-                        required
                       >
                         <option value="">Select Category</option>
-                        {(formData.parentCategory
-                          ? filteredCategories
-                          : categoryData?.categories
-                        )?.map((cat) => (
+                        {categories.map((cat) => (
                           <option key={cat.categoryId} value={cat.categoryId}>
                             {cat.name}
                           </option>
@@ -497,21 +383,35 @@ const CreateProduct = () => {
                   </div>
                   <div className="col-md-6 col-12">
                     <div className="form-group">
-                      <label className="form-label">
-                        Parent Category <span className="text-danger">*</span>
-                      </label>
+                      <label className="form-label">Brand</label>
                       <select
                         className="form-control"
-                        name="parentCategory"
-                        value={formData.parentCategory}
+                        name="brandId"
+                        value={formData.brandId}
                         onChange={handleChange}
-                        disabled={!!formData.category}
-                        required
                       >
-                        <option value="">Select Parent Category</option>
-                        {parentCategoryData.map((parent) => (
-                          <option key={parent.id} value={parent.id}>
-                            {parent.name}
+                        <option value="">Select Brand</option>
+                        {brandData.map((brand) => (
+                          <option key={brand.id} value={brand.id}>
+                            {brand.brandName}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="col-md-6 col-12">
+                    <div className="form-group">
+                      <label className="form-label">Vendor</label>
+                      <select
+                        className="form-control"
+                        name="vendorId"
+                        value={formData.vendorId}
+                        onChange={handleChange}
+                      >
+                        <option value="">Select Vendor</option>
+                        {vendorData.map((vendor) => (
+                          <option key={vendor.id} value={vendor.id}>
+                            {vendor.vendorName}
                           </option>
                         ))}
                       </select>
@@ -520,19 +420,18 @@ const CreateProduct = () => {
                   <div className="col-md-6 col-12">
                     <div className="form-group">
                       <label className="form-label">
-                        Brand <span className="text-danger">*</span>
+                        Brand Parent Category
                       </label>
                       <select
                         className="form-control"
-                        name="brand"
-                        value={formData.brand}
+                        name="brand_parentcategoriesId"
+                        value={formData.brand_parentcategoriesId}
                         onChange={handleChange}
-                        required
                       >
-                        <option value="">Select Brand</option>
-                        {brandData.map((brand) => (
-                          <option key={brand.id} value={brand.id}>
-                            {brand.brandName}
+                        <option value="">Select Brand Parent Category</option>
+                        {brandParentCategoryData.map((bpc) => (
+                          <option key={bpc.id} value={bpc.id}>
+                            {bpc.name}
                           </option>
                         ))}
                       </select>
@@ -588,38 +487,6 @@ const CreateProduct = () => {
                   <div className="col-md-4 col-12">
                     <div className="form-group">
                       <label className="form-label">
-                        Selling Price <span className="text-danger">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        className="form-control"
-                        name="sellingPrice"
-                        value={formData.sellingPrice}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="col-md-4 col-12">
-                    <div className="form-group">
-                      <label className="form-label">
-                        Purchasing Price <span className="text-danger">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        className="form-control"
-                        name="purchasingPrice"
-                        value={formData.purchasingPrice}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="col-md-4 col-12">
-                    <div className="form-group">
-                      <label className="form-label">
                         Quantity <span className="text-danger">*</span>
                       </label>
                       <input
@@ -639,8 +506,8 @@ const CreateProduct = () => {
                       <input
                         type="number"
                         className="form-control"
-                        name="alertQuantity"
-                        value={formData.alertQuantity}
+                        name="alert_quantity"
+                        value={formData.alert_quantity}
                         onChange={handleChange}
                         min="0"
                       />
@@ -661,6 +528,41 @@ const CreateProduct = () => {
                       />
                     </div>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Meta Data Section */}
+          <div className="col-12">
+            <div className="card">
+              <div className="card-header">
+                <h5 className="card-title d-flex align-items-center">
+                  <FiLifeBuoy className="text-primary me-2" />
+                  Meta Data
+                </h5>
+              </div>
+              <div className="card-body">
+                <div className="row g-3">
+                  {productMetaData.map((meta) => (
+                    <div key={meta.id} className="col-md-6 col-12">
+                      <div className="form-group">
+                        <label className="form-label">
+                          {meta.title}{" "}
+                          {meta.unit && <small>({meta.unit})</small>}
+                        </label>
+                        <input
+                          type={meta.fieldType === "number" ? "number" : "text"}
+                          className="form-control"
+                          value={metaData[meta.id] || ""}
+                          onChange={(e) =>
+                            handleMetaChange(meta.id, e.target.value)
+                          }
+                          placeholder={`Enter ${meta.title}`}
+                        />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>

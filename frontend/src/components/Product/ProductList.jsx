@@ -395,23 +395,6 @@ const ProductsList = () => {
                 Add to Cart
               </Button>
             </Tooltip>
-            <Tooltip
-              title={record.isFeatured ? "Unmark Featured" : "Mark Featured"}
-            >
-              <Button
-                icon={
-                  featuredLoadingStates[record.productId] ? (
-                    <Spin size="small" />
-                  ) : record.isFeatured ? (
-                    <HeartFilled style={{ color: "red" }} />
-                  ) : (
-                    <HeartOutlined />
-                  )
-                }
-                onClick={() => handleToggleFeatured(record)}
-                disabled={featuredLoadingStates[record.productId]}
-              />
-            </Tooltip>
             <Dropdown overlay={menu(record)} trigger={["click"]}>
               <Button type="text" icon={<MoreOutlined />} />
             </Dropdown>
@@ -445,7 +428,7 @@ const ProductsList = () => {
   }
 
   const pageTitle = brandId
-    ? `Products for ${getBrandsName(brandId)}`
+    ? `Products`
     : bpcId
     ? `Products in ${bpcData?.name || "Category"}`
     : "All Products";

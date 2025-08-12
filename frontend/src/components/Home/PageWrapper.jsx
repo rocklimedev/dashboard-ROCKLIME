@@ -432,33 +432,6 @@ const PageWrapper = () => {
             <div>
               <h1>{username}</h1>
             </div>
-            <div className="dashboard-actions">
-              {loadingAttendance ? (
-                <span>Loading...</span>
-              ) : !userId ? (
-                <span>User profile not loaded</span>
-              ) : !hasClockedIn ? (
-                <button
-                  className="btn btn-clock-in"
-                  onClick={handleClockIn}
-                  disabled={isClockInLoading || isClockOutLoading}
-                  aria-label="Clock In"
-                >
-                  {isClockInLoading ? "Clocking In..." : "In"}
-                </button>
-              ) : !hasClockedOut ? (
-                <button
-                  className="btn btn-clock-out"
-                  onClick={handleClockOut}
-                  disabled={isClockInLoading || isClockOutLoading}
-                  aria-label="Clock Out"
-                >
-                  {isClockOutLoading ? "Clocking Out..." : "Out"}
-                </button>
-              ) : (
-                <span>Clocked out for today</span>
-              )}
-            </div>
           </div>
 
           <section className="summary-cards">
