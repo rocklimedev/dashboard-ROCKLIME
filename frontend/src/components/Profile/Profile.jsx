@@ -14,6 +14,7 @@ import moment from "moment";
 import { toast } from "react-toastify";
 import ProfileForm from "./ProfileForm";
 import DataTable from "./DataTable";
+import Avatar from "react-avatar"; // Import react-avatar
 import "./profile.css";
 import Form from "antd/es/form/Form";
 const Profile = () => {
@@ -381,9 +382,13 @@ const Profile = () => {
             <div className="card rounded-0 border-0">
               <div className="card-header rounded-0 bg-primary d-flex align-items-center">
                 <span className="avatar avatar-xl avatar-rounded flex-shrink-0 border border-white border-3 me-3">
-                  <img
-                    src={avatarUrl || "/assets/img/users/user-32.jpg"}
-                    alt="User"
+                  <Avatar
+                    src={avatarUrl || undefined} // Use avatarUrl if available
+                    name={user.name || "User"} // Fallback to user's name for initials
+                    size="60" // Adjust size as needed
+                    round={true} // Keep the avatar rounded
+                    textSizeRatio={2.5} // Adjust text size for initials
+                    alt="User Avatar"
                   />
                 </span>
                 <div className="me-3">
@@ -403,13 +408,6 @@ const Profile = () => {
                 </div>
               </div>
               <div className="card-body">
-                <div className="d-flex align-items-center justify-content-between mb-2">
-                  <span className="d-inline-flex align-items-center">
-                    <i className="ti ti-id me-2"></i>
-                    Employee ID
-                  </span>
-                  <p className="text-dark">{user.userId}</p>
-                </div>
                 <div className="d-flex align-items-center justify-content-between mb-2">
                   <span className="d-inline-flex align-items-center">
                     <i className="ti ti-star me-2"></i>

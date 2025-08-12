@@ -23,8 +23,10 @@ import { rolePermissionsApi } from "../api/rolePermissionApi";
 import { searchApi } from "../api/searchApi";
 import { attendanceApi } from "../api/attendanceApi";
 import { brandParentCategoryApi } from "../api/brandParentCategoryApi";
+import { productMetaApi } from "../api/productMetaApi";
 export const store = configureStore({
   reducer: {
+    [productMetaApi.reducerPath]: productMetaApi.reducer,
     [brandParentCategoryApi.reducerPath]: brandParentCategoryApi.reducer,
     [vendorApi.reducerPath]: vendorApi.reducer,
     [authApi.reducerPath]: authApi.reducer,
@@ -51,6 +53,7 @@ export const store = configureStore({
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
+      productMetaApi.middleware,
       vendorApi.middleware,
       brandParentCategoryApi.middleware,
       authApi.middleware,

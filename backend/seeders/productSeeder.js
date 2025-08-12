@@ -8,7 +8,7 @@ const Brand = require("../models/brand");
 const User = require("../models/users");
 const BrandParentCategory = require("../models/brandParentCategory");
 const sequelize = require("../config/database");
-const rawData = require("./products_updated.json");
+const rawData = require("./new.json");
 
 const fieldTypeMap = {
   sellingPrice: { fieldType: "number", unit: "INR" },
@@ -60,9 +60,9 @@ module.exports = {
 
       for (const item of rawData) {
         const {
-          parentcategories,
-          id,
+          parentcategoriesId,
           brandParentCategoryId,
+          brandId,
           product_code,
           images,
           "pcs per box": pcs_per_box,
@@ -72,12 +72,13 @@ module.exports = {
           "MRP per Box": price,
           "Size (inches/feet)": size_inches_feet,
           "Width ": width,
+          company_code,
         } = item;
 
         // Validate required fields
-        if (!parentcategories || !id || !brandParentCategoryId) {
+        if (!parentcategoriesId || !brandId || !brandParentCategoryId) {
           console.warn(
-            `⚠️ Skipping item due to missing required fields: parentcategories=${parentcategories}, id=${id}, brandParentCategoryId=${brandParentCategoryId}, item: ${JSON.stringify(
+            `⚠️ Skipping item due to missing required fields: parentcategoriesId=${parentcategoriesId}, brandId=${brandId}, brandParentCategoryId=${brandParentCategoryId}, item: ${JSON.stringify(
               item
             )}`
           );
@@ -85,9 +86,10 @@ module.exports = {
         }
 
         // Handle product_code
-        let cleanProductCode = product_code ? product_code.trim() : null;
+        let cleanProductCode = product_code
+          ? product_code.toString().trim()
+          : null;
         if (!cleanProductCode) {
-          // Generate a default product_code if null or empty
           cleanProductCode = `TILE-${Size_mm || "UNKNOWN"}-${uuidv4().slice(
             0,
             8
@@ -127,19 +129,19 @@ module.exports = {
         const name = cleanProductCode; // Use product_code as name
         const category = "Tiles"; // Default category
         console.log(
-          `Processing item: ${cleanProductCode}, Name: ${name}, Category: ${category}, id: ${id}`
+          `Processing item: ${cleanProductCode}, Name: ${name}, Category: ${category}, brandId: ${brandId}`
         );
 
-        // Find or create Brand using provided id
+        // Find or create Brand using provided brandId
         let brand = await Brand.findOne({
-          where: { id },
+          where: { id: brandId },
           transaction,
         });
         if (!brand) {
           brand = await Brand.create(
             {
-              id,
-              name: `Brand-${id.slice(0, 8)}`,
+              id: brandId,
+              name: `Brand-${brandId.slice(0, 8)}`,
             },
             { transaction }
           );
@@ -150,14 +152,14 @@ module.exports = {
 
         // Find or create ParentCategory
         let parentCategory = await ParentCategory.findOne({
-          where: { parentCategoryId: parentcategories },
+          where: { id: parentcategoriesId },
           transaction,
         });
         if (!parentCategory) {
           parentCategory = await ParentCategory.create(
             {
-              parentCategoryId: parentcategories,
-              name: `Parent-${parentcategories.slice(0, 8)}`,
+              id: parentcategoriesId,
+              name: `Parent-${parentcategoriesId.slice(0, 8)}`,
             },
             { transaction }
           );
@@ -166,48 +168,10 @@ module.exports = {
           );
         }
 
-        // Find or create Category
-        let categoryRecord = await Category.findOne({
-          where: { name: category, id: brand.id },
-          transaction,
-        });
-        if (!categoryRecord) {
-          categoryRecord = await Category.create(
-            { categoryId: uuidv4(), name: category, id: brand.id },
-            { transaction }
-          );
-          console.log(
-            `Created Category: ${category} (ID: ${categoryRecord.categoryId})`
-          );
-        }
-
-        // Find or create BrandParentCategory
-        let brandParentCategory = await BrandParentCategory.findOne({
-          where: {
-            brandParentCategoryId,
-            id: brand.id,
-            parentCategoryId: parentCategory.parentCategoryId,
-          },
-          transaction,
-        });
-        if (!brandParentCategory) {
-          brandParentCategory = await BrandParentCategory.create(
-            {
-              brandParentCategoryId,
-              id: brand.id,
-              parentCategoryId: parentCategory.parentCategoryId,
-            },
-            { transaction }
-          );
-          console.log(
-            `Created BrandParentCategory (ID: ${brandParentCategory.brandParentCategoryId})`
-          );
-        }
-
         // Build meta
         const meta = {};
         const metaFields = {
-          company_code: item.company_code || `BRAND-${cleanProductCode}`,
+          company_code: company_code || `BRAND-${cleanProductCode}`,
           sellingPrice: price,
           purchasingPrice: price,
           pcsPerBox: pcs_per_box,
@@ -229,12 +193,13 @@ module.exports = {
           }
         }
 
+        // Generate productId as UUID
         const productId = uuidv4();
         const productData = {
           productId,
           name,
           company_code: cleanProductCode,
-          product_code,
+          product_code: cleanProductCode,
           description: name,
           quantity: 0,
           discountType: null,
@@ -243,9 +208,8 @@ module.exports = {
           images: JSON.stringify(
             images && typeof images === "string" ? [images] : []
           ),
-          id: brand.id,
-          categoryId: categoryRecord.categoryId,
-          brand_parentcategoriesId: brandParentCategory.brandParentCategoryId,
+          brandId: brandId,
+          brand_parentcategoriesId: "65f90ae0-601f-42e4-9993-e2d199f7c5cc",
           isFeatured: false,
           userId: user.userId,
           productType: "tiles",
@@ -256,10 +220,14 @@ module.exports = {
         };
 
         console.log(
-          `Attempting to upsert product: ${name} (Code: ${cleanProductCode})`
+          `Attempting to upsert product: ${name} (Code: ${cleanProductCode}, ProductId: ${productId})`
         );
-        await Product.upsert(productData, { transaction });
-        console.log(`✅ Product upserted: ${name} (ID: ${productId})`);
+        const result = await Product.upsert(productData, { transaction });
+        console.log(
+          `✅ Product upserted: ${name} (ID: ${productId}, Result: ${JSON.stringify(
+            result
+          )})`
+        );
       }
 
       await transaction.commit();
@@ -277,7 +245,7 @@ module.exports = {
       const productCodes = rawData
         .map((item) =>
           item.product_code
-            ? item.product_code.trim()
+            ? item.product_code.toString().trim()
             : `TILE-${item["Size (mm)"] || "UNKNOWN"}-${uuidv4().slice(0, 8)}`
         )
         .filter(Boolean);
