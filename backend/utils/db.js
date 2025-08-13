@@ -129,9 +129,6 @@ const setupDB = async () => {
 
     Invoice.belongsTo(Address, { foreignKey: "shipTo" });
 
-    Invoice.hasOne(Order, { foreignKey: "invoiceId", onDelete: "CASCADE" });
-    Order.belongsTo(Invoice, { foreignKey: "invoiceId" });
-
     Invoice.belongsTo(Quotation, {
       foreignKey: "quotationId",
       allowNull: true,

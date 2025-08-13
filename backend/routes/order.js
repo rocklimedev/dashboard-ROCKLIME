@@ -2,92 +2,66 @@ const express = require("express");
 const router = express.Router();
 const orderController = require("../controller/orderController");
 const checkPermission = require("../middleware/permission");
-// Route to add a comment to a resource
+const multer = require("multer");
+const path = require("path");
+const { v4: uuidv4 } = require("uuid");
+const ftp = require("basic-ftp");
+require("dotenv").config();
+
+// Configure Multer for memory storage (temporary before FTP upload)
+// Multer memory storage (for direct FTP upload later)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      "application/pdf",
+      "image/png",
+      "image/jpeg",
+      "image/jpg",
+    ];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only PDF, PNG, and JPG files are allowed"), false);
+    }
+  },
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+}).single("invoice");
+
+// Routes
+
+// Route definitions
 router.post("/comments", orderController.addComment);
-
-// Route to get comments for a resource
 router.get("/comments", orderController.getComments);
-router.delete(
-  "/comments/:commentId",
-  // checkPermission("delete", "delete_comment", "orders", "/orders/comments/:commentId"),
-  orderController.deleteComment
-);
-// Route to delete all comments for a resource
-router.post(
-  "/delete-comment",
-
-  orderController.deleteCommentsByResource
-);
-// Create a new order
-router.post(
-  "/create",
-  //checkPermission("write", "create_order", "orders", "/orders/create"),
-  orderController.createOrder
-);
-router.get(
-  "/all",
-  // checkPermission("view", "get_all_orders", "orders", "/orders/all"),
-  orderController.getAllOrders
-);
-// Get order details by ID
-router.get(
-  "/:id",
-  // checkPermission("view", "get_order_details", "orders", "/orders/:id"),
-  orderController.getOrderDetails
-);
-
-// Update order status
+router.delete("/comments/:commentId", orderController.deleteComment);
+router.post("/delete-comment", orderController.deleteCommentsByResource);
+router.post("/create", orderController.createOrder);
+router.get("/all", orderController.getAllOrders);
+router.get("/:id", orderController.getOrderDetails);
+router.put("/update-status", orderController.updateOrderStatus);
+router.delete("/delete/:id", orderController.deleteOrder);
+router.get("/recent", orderController.recentOrders);
+router.put("/:id", orderController.updateOrderById);
+router.post("/draft", orderController.draftOrder);
+router.get("/filter", orderController.getFilteredOrders);
+router.put("/update-team", orderController.updateOrderTeam);
 router.put(
-  "/update-status",
-  // checkPermission(
-  //   "edit",
-  //   "updateOrderStatus",
-  //   "orders",
-  //   "/orders/update-status"
-  // ),
-  orderController.updateOrderStatus
+  "/invoice-upload/:orderId",
+  (req, res, next) => {
+    upload(req, res, (err) => {
+      if (err instanceof multer.MulterError) {
+        return res
+          .status(400)
+          .json({ message: `Multer error: ${err.message}` });
+      } else if (err) {
+        return res.status(400).json({ message: err.message });
+      }
+      next();
+    });
+  },
+  orderController.uploadInvoiceAndLinkOrder
 );
+//
+router.get("/count", orderController.countOrders);
 
-// Delete an order
-router.delete(
-  "/delete/:id",
-  // checkPermission(
-  //   "delete",
-  //   "delete_order",
-  //   "orders",
-  //   "/orders/delete/:id"
-  // ),
-  orderController.deleteOrder
-);
-
-// Get recent orders
-router.get(
-  "/recent",
-  // checkPermission("view", "recent_orders", "orders", "/orders/recent"),
-  orderController.recentOrders
-);
-
-// Update an order by ID
-router.put(
-  "/:id",
-  // checkPermission("edit", "update_order_by_id", "orders", "/orders/:id"),
-  orderController.updateOrderById
-);
-
-// Create a draft order
-router.post(
-  "/draft",
-  // checkPermission("write", "draft_order", "orders", "/orders/draft"),
-  orderController.draftOrder
-);
-router.get(
-  "/filter",
-  // checkPermission("view", "get_filtered_orders", "orders", "/orders/filter"),
-  orderController.getFilteredOrders
-);
-router.put(
-  "/update-team",
-  // checkPermission("edit", "update_order_team", "orders", "/orders/update-team"),
-  orderController.updateOrderTeam
-);
 module.exports = router;

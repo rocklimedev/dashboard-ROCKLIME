@@ -41,7 +41,7 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
     mobileNumber: "",
     address: { street: "", city: "", state: "", zip: "" },
     isVendor: "false",
-    vendorId: "",
+
     totalAmount: "0.00",
     paidAmount: "0.00",
     balance: "0.00",
@@ -342,45 +342,7 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
                         required
                       />
                     </div>
-                    <div className="col-lg-6 mb-3">
-                      <label className="form-label">
-                        Is Vendor?<span className="text-danger ms-1">*</span>
-                      </label>
-                      <select
-                        name="isVendor"
-                        className="form-control"
-                        value={formData.isVendor}
-                        onChange={handleChange}
-                        required
-                      >
-                        <option value="true">Yes</option>
-                        <option value="false">No</option>
-                      </select>
-                    </div>
-                    {formData.isVendor === "true" && (
-                      <div className="col-lg-6 mb-3">
-                        <label className="form-label">Vendor</label>
-                        <select
-                          name="vendorId"
-                          className="form-control"
-                          value={formData.vendorId}
-                          onChange={handleChange}
-                          disabled={isVendorsLoading}
-                        >
-                          <option value="">Select a vendor</option>
-                          {vendors?.data?.map((vendor) => (
-                            <option
-                              key={vendor.vendorId}
-                              value={vendor.vendorId}
-                            >
-                              {vendor.name ||
-                                vendor.vendorName ||
-                                vendor.vendorId}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
+
                     <div className="col-lg-12 mb-3">
                       <label className="form-label">Address</label>
                       <div className="row">

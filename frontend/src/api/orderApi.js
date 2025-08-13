@@ -51,6 +51,14 @@ export const orderApi = createApi({
       }),
       invalidatesTags: ["Comment"],
     }),
+    uploadInvoice: builder.mutation({
+      query: ({ orderId, formData }) => ({
+        url: `/invoice-upload/${orderId}`,
+        method: "POST",
+        body: formData,
+      }),
+      invalidatesTags: [{ type: "Order", id: "LIST" }],
+    }),
     createOrder: builder.mutation({
       query: (orderData) => ({
         url: "/create",
@@ -91,8 +99,8 @@ export const orderApi = createApi({
       providesTags: ["Orders"], // Tag for specific order data
     }),
     updateOrderById: builder.mutation({
-      query: ({ orderId, ...orderData }) => ({
-        url: `/${orderId}`,
+      query: ({ id, ...orderData }) => ({
+        url: `/${id}`,
         method: "PUT",
         body: orderData,
       }),
@@ -121,10 +129,16 @@ export const orderApi = createApi({
       },
       providesTags: ["Orders"], // Tag for filtered orders
     }),
+    getOrderCountByDate: builder.query({
+      query: (date) => `/order/count?date=${date}`,
+      providesTags: ["Orders"],
+    }),
   }),
 });
 
 export const {
+  useGetOrderCountByDateQuery,
+  useUploadInvoiceMutation,
   useDeleteCommentMutation,
   useCreateOrderMutation,
   useGetOrderDetailsQuery,

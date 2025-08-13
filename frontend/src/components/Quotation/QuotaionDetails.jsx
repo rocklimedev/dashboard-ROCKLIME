@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   useGetQuotationByIdQuery,
@@ -8,15 +8,16 @@ import { useGetCustomerByIdQuery } from "../../api/customerApi";
 import { useGetUserByIdQuery } from "../../api/userApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
-import { useGetCompanyByIdQuery } from "../../api/companyApi"; // Import the company API hook
+import { useGetCompanyByIdQuery } from "../../api/companyApi";
 import { toast } from "sonner";
 import logo from "../../assets/img/logo.png";
 import sampleQuotationTemplate from "../../assets/Sample-Quotation.xlsx";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import ExcelJS from "exceljs"; // Add exceljs import
 import * as XLSX from "xlsx";
 import "./quotation.css";
-
+import useProductsData from "../../data/useProductdata";
 const QuotationsDetails = () => {
   const { id } = useParams();
   const {
@@ -35,7 +36,6 @@ const QuotationsDetails = () => {
   const { data: user } = useGetUserByIdQuery(quotation?.createdBy, {
     skip: !quotation?.createdBy,
   });
-  // Fetch company details for "CHABBRA MARBEL"
   const companyId = "401df7ef-f350-4bc4-ba6f-bf36923af252";
   const {
     data: companyData,
@@ -46,13 +46,25 @@ const QuotationsDetails = () => {
   const quotationRef = useRef(null);
   const [exportFormat, setExportFormat] = useState("pdf");
 
+  const products = Array.isArray(quotation?.products) ? quotation.products : [];
+  const { productsData, errors, loading } = useProductsData(products);
+
+  // Display errors for failed product fetches
+  useEffect(() => {
+    if (errors.length > 0) {
+      errors.forEach(({ productId, error }) => {
+        toast.error(`Failed to fetch product ${productId}: ${error}`);
+      });
+    }
+  }, [errors]);
+
   const getUserName = (createdBy) => {
     if (!users || users.length === 0 || !createdBy)
-      return company.name || "CHABBRA MARBEL";
+      return company.name || "CHHABRA MARBLE";
     const user = users.find(
       (u) => u.userId && u.userId.trim() === createdBy.trim()
     );
-    return user ? user.name : company.name || "CHABBRA MARBEL";
+    return user ? user.name : company.name || "CHHABRA MARBLE";
   };
 
   const getCustomerName = (customerId) => {
@@ -61,6 +73,85 @@ const QuotationsDetails = () => {
     return customer ? customer.name : "Unknown";
   };
 
+  // Function to validate image URLs (including base64)
+  const isValidImageUrl = (url) => {
+    if (!url || typeof url !== "string") return false;
+
+    // Check for base64 data URLs
+    if (url.startsWith("data:image/")) {
+      return (
+        url.includes("base64,") && /image\/(png|jpg|jpeg|gif|bmp)/i.test(url)
+      );
+    }
+
+    // Check for remote URLs with valid image extensions
+    try {
+      new URL(url);
+      const imageExtensions = /\.(png|jpg|jpeg|gif|bmp)$/i;
+      return imageExtensions.test(url);
+    } catch {
+      return false;
+    }
+  };
+
+  // Function to fetch image as buffer (supports base64 and remote URLs)
+  const fetchImageAsBuffer = async (url) => {
+    try {
+      if (!url || !isValidImageUrl(url)) {
+        throw new Error("Invalid or missing image URL");
+      }
+
+      let buffer, extension;
+
+      // Handle base64 image URLs
+      if (url.startsWith("data:image/")) {
+        const matches = url.match(
+          /^data:image\/(png|jpg|jpeg|gif|bmp);base64,(.+)$/
+        );
+        if (!matches) {
+          throw new Error("Invalid base64 image format");
+        }
+        extension = matches[1];
+        buffer = Buffer.from(matches[2], "base64");
+      } else {
+        // Handle remote image URLs
+        const response = await fetch(url, {
+          mode: "cors",
+          credentials: "omit",
+          headers: {
+            Accept: "image/*",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(
+            `Failed to fetch image from ${url}: ${response.status} - ${response.statusText}`
+          );
+        }
+
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.startsWith("image/")) {
+          throw new Error(
+            `Unsupported content type: ${
+              contentType || "Unknown"
+            } for URL: ${url}`
+          );
+        }
+
+        extension = contentType.split("/")[1].toLowerCase();
+        if (extension === "jpeg") extension = "jpg"; // Normalize extension
+        buffer = Buffer.from(await response.arrayBuffer());
+      }
+
+      return { buffer, extension };
+    } catch (error) {
+      console.error(`Error fetching image from ${url}:`, error.message);
+      toast.error(`Failed to load image: ${error.message}`);
+      return null;
+    }
+  };
+
+  // Inside handleExport function, update the image processing logic
   const handleExport = async () => {
     try {
       if (!id) {
@@ -68,184 +159,253 @@ const QuotationsDetails = () => {
         return;
       }
 
-      if (exportFormat === "pdf") {
-        if (!quotationRef.current) {
-          toast.error("Quotation content not available.");
+      if (exportFormat === "excel") {
+        if (!products || products.length === 0) {
+          toast.error("No products available to export.");
           return;
         }
 
-        const canvas = await html2canvas(quotationRef.current, { scale: 2 });
-        const imgData = canvas.toDataURL("image/png");
-        const pdf = new jsPDF("p", "mm", "a4");
-        const imgWidth = 210;
-        const pageHeight = 295;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        let heightLeft = imgHeight;
-        let position = 0;
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet("Quotation");
 
-        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-
-        while (heightLeft >= 0) {
-          position = heightLeft - imgHeight;
-          pdf.addPage();
-          pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-          heightLeft -= pageHeight;
+        // Add header with logo, title, and brand
+        const logoBuffer = await fetchImageAsBuffer(logo);
+        if (logoBuffer) {
+          const logoId = workbook.addImage({
+            buffer: logoBuffer.buffer,
+            extension: logoBuffer.extension,
+          });
+          worksheet.addImage(logoId, {
+            tl: { col: 0, row: 0 },
+            ext: { width: 100, height: 50 },
+            editAs: "undefined",
+          });
         }
+        worksheet.mergeCells("B1:D1");
+        worksheet.getCell("B1").value = "Estimate / Quotation";
+        worksheet.getCell("B1").font = { bold: true, size: 16 };
+        worksheet.getCell("E1").value = "GROHE / AMERICAN STANDARD";
+        worksheet.getCell("E1").font = { bold: true, size: 12 };
+        worksheet.getRow(1).height = 50;
 
-        pdf.save(`quotation_${id}.pdf`);
-      } else if (exportFormat === "excel") {
-        try {
-          const blob = await exportQuotation(id).unwrap();
-          if (blob) {
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `quotation_${id}.xlsx`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
+        // Add M/s, Address, Date section
+        worksheet.getCell("A2").value = "M/s";
+        worksheet.getCell("B2").value =
+          getUserName(quotation.createdBy) || "CHHABRA MARBLE";
+        worksheet.getCell("D2").value = "Date";
+        worksheet.getCell("E2").value = quotation.quotation_date
+          ? new Date(quotation.quotation_date).toLocaleDateString()
+          : new Date().toLocaleDateString();
+        worksheet.mergeCells("B3:D3");
+        worksheet.getCell("A3").value = "Address";
+        worksheet.getCell("B3").value =
+          customer?.address ||
+          quotation.shipTo ||
+          "456, Park Avenue, New York, USA";
+        worksheet.getRow(2).height = 20;
+        worksheet.getRow(3).height = 40;
 
-            return;
+        // Add product table headers
+        const headers = [
+          "S.No",
+          "Product Image",
+          "Product Name",
+          "Product Code",
+          "MRP",
+          "Discount",
+          "Rate",
+          "Unit",
+          "Total",
+        ];
+        const headerRow = worksheet.addRow(headers);
+        headerRow.font = { bold: true };
+        worksheet.mergeCells("G1:I1");
+        worksheet.getCell("G1").value = "Amount";
+        worksheet.getCell("G1").font = { bold: true };
+
+        // Set column widths
+        worksheet.columns = [
+          { width: 5 }, // S.No
+          { width: 15 }, // Product Image
+          { width: 25 }, // Product Name
+          { width: 15 }, // Product Code
+          { width: 10 }, // MRP
+          { width: 10 }, // Discount
+          { width: 10 }, // Rate
+          { width: 10 }, // Unit
+          { width: 10 }, // Total
+        ];
+
+        // Add product rows with images
+        for (let index = 0; index < products.length; index++) {
+          const product = products[index];
+          const productDetail =
+            productsData?.find((p) => p.productId === product.productId) || {};
+          const productCode =
+            product.productCode ||
+            productDetail.product_code ||
+            productDetail.meta?.d11da9f9_3f2e_4536_8236_9671200cca4a ||
+            "N/A";
+          const sellingPrice =
+            product.sellingPrice ||
+            productDetail.metaDetails?.find((m) => m.title === "sellingPrice")
+              ?.value ||
+            0;
+          let imageUrl = productDetail?.images;
+          try {
+            imageUrl =
+              imageUrl && Array.isArray(JSON.parse(imageUrl))
+                ? JSON.parse(imageUrl)[0]
+                : imageUrl;
+          } catch {
+            imageUrl = null; // Handle invalid JSON gracefully
           }
-        } catch (apiError) {
-          console.warn(
-            "Backend Excel export failed, falling back to client-side generation:",
-            apiError
-          );
-        }
 
-        try {
-          const response = await fetch(sampleQuotationTemplate);
-          if (!response.ok) {
-            throw new Error("Failed to fetch the Excel template.");
-          }
-          const arrayBuffer = await response.arrayBuffer();
-          const workbook = XLSX.read(arrayBuffer, { type: "array" });
-          const sheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[sheetName];
-
-          const products = Array.isArray(quotation.products)
-            ? quotation.products
-            : [];
-          const subtotal = products.reduce(
-            (sum, product) => sum + Number(product.total || 0),
-            0
-          );
-          const gstAmount =
-            quotation.include_gst && quotation.gst_value
-              ? (subtotal * Number(quotation.gst_value)) / 100
-              : 0;
-          const finalTotal = subtotal + gstAmount;
-
-          // Update Excel with company details
-          worksheet["A2"] = { v: company.name || "CHABBRA MARBEL" };
-          worksheet["A3"] = {
-            v: company.address || "123, Main Street, Mumbai, India",
-          };
-          worksheet["A4"] = {
-            v: company.website || "https://cmtradingco.com/",
-          };
-          worksheet["A5"] = { v: getCustomerName(quotation.customerId) };
-          worksheet["A6"] = { v: customer?.address || "Address not available" };
-          worksheet["F5"] = {
-            v: quotation.quotation_date
-              ? new Date(quotation.quotation_date).toLocaleDateString()
+          const rowData = [
+            index + 1,
+            "", // Placeholder for image
+            product.name || productDetail.name || "N/A",
+            productCode,
+            Number(sellingPrice) || 0,
+            product.discount
+              ? product.discountType === "percent"
+                ? `${Number(product.discount)}%`
+                : `₹${Number(product.discount).toFixed(2)}`
               : "N/A",
-          };
+            Number(product.rate) || Number(sellingPrice) || 0,
+            product.qty || product.quantity || 0,
+            Number(product.total) || 0,
+          ];
 
-          const startRow = 9;
-          products.forEach((product, index) => {
-            const row = startRow + index;
-            XLSX.utils.sheet_add_aoa(
-              worksheet,
-              [
-                [
-                  index + 1,
-                  "",
-                  product.name || "N/A",
-                  product.productCode || "N/A",
-                  product.sellingPrice ? Number(product.sellingPrice) : 0,
-                  product.discount || 0,
-                  product.rate || product.sellingPrice || 0,
-                  product.qty || product.quantity || 0,
-                  product.total ? Number(product.total) : 0,
-                ],
-              ],
-              { origin: `A${row}` }
-            );
+          const row = worksheet.addRow(rowData);
 
-            ["E", "G", "I"].forEach((col) => {
-              const cell = `${col}${row}`;
-              worksheet[cell].z = "₹#,##0.00";
-            });
-
-            const discountCell = `F${row}`;
-            if (product.discount) {
-              worksheet[discountCell].z =
-                product.discountType === "percent" ? "0.00%" : "₹#,##0.00";
+          if (imageUrl && isValidImageUrl(imageUrl)) {
+            console.log(`Fetching image from: ${imageUrl}`);
+            const imageData = await fetchImageAsBuffer(imageUrl);
+            if (imageData) {
+              console.log(`Successfully fetched image: ${imageUrl}`);
+              const imageId = workbook.addImage({
+                buffer: imageData.buffer,
+                extension: imageData.extension,
+              });
+              worksheet.addImage(imageId, {
+                tl: { col: 1, row: row.number - 1 }, // Adjust row number (ExcelJS is 1-based)
+                ext: { width: 50, height: 50 },
+                editAs: "undefined",
+              });
+              worksheet.getRow(row.number).height = 60;
+            } else {
+              console.warn(`Failed to fetch image: ${imageUrl}`);
+              worksheet.getRow(row.number).height = 20;
+              worksheet.getCell(row.number, 2).value = "Image Unavailable";
             }
-          });
-
-          const maxRows = startRow + (products.length || 1);
-          for (let row = maxRows; row < startRow + 50; row++) {
-            XLSX.utils.sheet_add_aoa(
-              worksheet,
-              [[null, null, null, null, null, null, null, null, null]],
-              { origin: `A${row}` }
+          } else {
+            console.warn(
+              `Invalid or missing image URL for product: ${product.name}`
             );
+            worksheet.getRow(row.number).height = 20;
+            worksheet.getCell(row.number, 2).value = "No Image";
           }
 
-          const totalsStartRow = startRow + (products.length || 1) + 1;
-          XLSX.utils.sheet_add_aoa(
-            worksheet,
-            [
-              ["", "", "", "", "", "", "", "Subtotal", subtotal],
-              [
-                "",
-                "",
-                "",
-                "",
-                "",
-                "",
-                "",
-                quotation.include_gst && quotation.gst_value
-                  ? `GST (${quotation.gst_value}%)`
-                  : "",
-                quotation.include_gst && quotation.gst_value ? gstAmount : "",
-              ],
-              ["", "", "", "", "", "", "", "Total", finalTotal],
-            ],
-            { origin: `A${totalsStartRow}` }
-          );
-
-          ["I"].forEach((col) => {
-            for (let row = totalsStartRow; row <= totalsStartRow + 2; row++) {
-              const cell = `${col}${row}`;
-              if (worksheet[cell]?.v) {
-                worksheet[cell].z = "₹#,##0.00";
-              }
-            }
-          });
-
-          XLSX.writeFile(workbook, `quotation_${id}.xlsx`);
-        } catch (error) {
-          console.error("Excel export error:", error);
-          toast.error(
-            "Failed to export quotation to Excel. Please ensure the template is available."
-          );
+          // Apply number formatting
+          row.getCell(5).numFmt = "₹#,##0.00"; // MRP
+          if (product.discountType === "percent") {
+            row.getCell(6).numFmt = "0.00%"; // Discount as percentage
+          } else {
+            row.getCell(6).numFmt = "₹#,##0.00"; // Discount as currency
+          }
+          row.getCell(7).numFmt = "₹#,##0.00"; // Rate
+          row.getCell(9).numFmt = "₹#,##0.00"; // Total
         }
+
+        // Calculate and add totals
+        const subtotal = products.reduce(
+          (sum, product) => sum + Number(product.total || 0),
+          0
+        );
+        const gstAmount =
+          quotation.include_gst && quotation.gst_value
+            ? (subtotal * Number(quotation.gst_value)) / 100
+            : 0;
+        const finalTotal = subtotal + gstAmount;
+
+        worksheet.addRow([]);
+        const subtotalRow = worksheet.addRow([
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "Subtotal",
+          "",
+          subtotal,
+        ]);
+        subtotalRow.getCell(9).numFmt = "₹#,##0.00";
+        if (quotation.include_gst && quotation.gst_value) {
+          const gstRow = worksheet.addRow([
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            `GST (${quotation.gst_value}%)`,
+            "",
+            gstAmount,
+          ]);
+          gstRow.getCell(9).numFmt = "₹#,##0.00";
+        }
+        const totalRow = worksheet.addRow([
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "Total",
+          "",
+          finalTotal,
+        ]);
+        totalRow.getCell(9).numFmt = "₹#,##0.00";
+        totalRow.font = { bold: true };
+
+        // Apply borders to the table
+        const lastRow = worksheet.lastRow.number;
+        for (let row = 4; row <= lastRow; row++) {
+          for (let col = 1; col <= 9; col++) {
+            const cell = worksheet.getCell(row, col);
+            cell.border = {
+              top: { style: "thin" },
+              left: { style: "thin" },
+              bottom: { style: "thin" },
+              right: { style: "thin" },
+            };
+          }
+        }
+
+        // Save the workbook
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `quotation_${id}.xlsx`;
+        a.click();
+        window.URL.revokeObjectURL(url);
       }
     } catch (error) {
       toast.error(
-        `Failed to export quotation as ${exportFormat.toUpperCase()}.`
+        `Failed to export quotation as ${exportFormat.toUpperCase()}: ${
+          error.message
+        }`
       );
       console.error("Export error:", error);
     }
   };
-
-  if (isQuotationLoading || isCompanyLoading) {
+  if (isQuotationLoading || isCompanyLoading || loading) {
     return (
       <div className="page-wrapper">
         <div className="content text-center">
@@ -277,7 +437,6 @@ const QuotationsDetails = () => {
     );
   }
 
-  const products = Array.isArray(quotation.products) ? quotation.products : [];
   const subtotal = products.reduce(
     (sum, product) => sum + Number(product.total || 0),
     0
@@ -291,363 +450,207 @@ const QuotationsDetails = () => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        {/* Breadcrumb */}
-        <div className="d-md-flex d-block align-items-center justify-content-between page-breadcrumb mb-3">
-          <div className="my-auto mb-2">
-            <h2 className="mb-1">Quotations</h2>
-            <nav>
-              <ol className="breadcrumb mb-0">
-                <li className="breadcrumb-item active" aria-current="page">
-                  Manage your Quotation
-                </li>
-              </ol>
-            </nav>
-          </div>
-          <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
-            <div className="mb-2">
-              <button
-                className="btn btn-dark d-flex align-items-center"
-                onClick={handleExport}
-              >
-                <i className="ti ti-download me-2"></i>Download
-              </button>
-            </div>
-          </div>
-        </div>
-        {/* /Breadcrumb */}
-
-        {/* Quotation */}
-        <div>
-          <div className="row">
-            <div className="col-sm-10 mx-auto">
-              <Link
-                to="/orders/list"
-                className="back-icon d-flex align-items-center fs-12 fw-medium mb-3 d-inline-flex"
-              >
-                <span className="d-flex justify-content-center align-items-center rounded-circle me-2">
-                  <i className="ti ti-arrow-left"></i>
-                </span>
-                Back to List
-              </Link>
-              <div className="card">
-                <div className="card-body" ref={quotationRef}>
-                  {/* Header Section */}
-                  <div className="row justify-content-between align-items-center border-bottom mb-3">
-                    <div className="col-md-6">
-                      <div className="mb-2">
+        <div className="row">
+          <div className="col-sm-10 mx-auto">
+            <Link
+              to="/orders/list"
+              className="back-icon d-flex align-items-center fs-12 fw-medium mb-3 d-inline-flex"
+            >
+              <span className="d-flex justify-content-center align-items-center rounded-circle me-2">
+                <i className="ti ti-arrow-left"></i>
+              </span>
+              Back to List
+            </Link>
+            <div className="card">
+              <div className="quotation-container" ref={quotationRef}>
+                {/* Header Row */}
+                <table className="quotation-table full-width no-border">
+                  <tbody>
+                    <tr>
+                      <td className="logo-cell">
                         <img
                           src={logo}
-                          className="img-fluid"
                           alt="Company Logo"
+                          className="logo-img"
                         />
-                      </div>
-                      <h4>{company.name || "CHABBRA MARBEL"}</h4>
-                      <p>
-                        {company.address || "123, Main Street, Mumbai, India"}
-                      </p>
-                      <p>
-                        Website:{" "}
-                        <a href={company.website || "https://cmtradingco.com/"}>
-                          {company.website || "https://cmtradingco.com/"}
-                        </a>
-                      </p>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="text-end mb-3">
-                        <h5 className="text-gray mb-1">
-                          Quotation No{" "}
-                          <span className="text-primary">
-                            #{quotation.quotationId}
-                          </span>
-                        </h5>
-                        <p className="mb-1 fw-medium">
-                          Created Date :{" "}
-                          <span className="text-dark">
-                            {quotation.quotation_date
-                              ? new Date(
-                                  quotation.quotation_date
-                                ).toLocaleDateString()
-                              : "Not available"}
-                          </span>
-                        </p>
-                        <p className="fw-medium">
-                          Due Date :{" "}
-                          <span className="text-dark">
-                            {quotation.due_date
-                              ? new Date(
-                                  quotation.due_date
-                                ).toLocaleDateString()
-                              : "Not available"}
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="title-cell">
+                        <h2>Estimate / Quotation</h2>
+                      </td>
+                      <td className="brand-cell">GROHE / AMERICAN STANDARD</td>
+                    </tr>
+                  </tbody>
+                </table>
 
-                  {/* From/To Section */}
-                  <div className="row border-bottom mb-3">
-                    <div className="col-md-5">
-                      <p className="text-dark mb-2 fw-semibold">From</p>
-                      <div>
-                        <h4 className="mb-1">
-                          {getUserName(quotation.createdBy)}
-                        </h4>
-                        <p className="mb-1">
-                          {company.address || "123, Main Street, Mumbai, India"}
-                        </p>
-                        <p className="mb-1">
-                          Email :{" "}
-                          <span className="text-dark">
-                            {user?.email || "Not available"}
-                          </span>
-                        </p>
-                        <p>
-                          Phone :{" "}
-                          <span className="text-dark">+1 987 654 3210</span>
-                        </p>
-                      </div>
-                    </div>
-                    <div className="col-md-5">
-                      <p className="text-dark mb-2 fw-semibold">To</p>
-                      <div>
-                        <h4 className="mb-1">
-                          {getCustomerName(quotation.customerId)}
-                        </h4>
-                        <p className="mb-1">
-                          {customer?.address ||
-                            quotation.shipTo ||
-                            "Not available"}
-                        </p>
-                        <p className="mb-1">
-                          Email :{" "}
-                          <span className="text-dark">sarainc@example.com</span>
-                        </p>
-                        <p>
-                          Phone :{" "}
-                          <span className="text-dark">+1 987 471 6589</span>
-                        </p>
-                      </div>
-                    </div>
-                    <div className="col-md-2">
-                      <div className="mb-3">
-                        <p className="text-title mb-2 fw-medium">Status</p>
-                        <span className="badge badge-primary align-items-center mb-3">
-                          <i className="ti ti-point-filled"></i>Pending
-                        </span>
-                        <div>
-                          <img
-                            src="https://smarthr.co.in/demo/html/template/assets/img/qr.svg"
-                            className="img-fluid"
-                            alt="QR"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                {/* M/s, Address, Date */}
+                <table className="quotation-table full-width bordered">
+                  <tbody>
+                    <tr>
+                      <td className="label-cell">M/s</td>
+                      <td>{getUserName(quotation.createdBy)}</td>
+                      <td className="label-cell">Date</td>
+                      <td>
+                        {quotation.quotation_date
+                          ? new Date(
+                              quotation.quotation_date
+                            ).toLocaleDateString()
+                          : new Date().toLocaleDateString()}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="label-cell">Address</td>
+                      <td colSpan="3">
+                        {customer?.address ||
+                          quotation.shipTo ||
+                          "456, Park Avenue, New York, USA"}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
 
-                  {/* Quotation Items */}
-                  <div>
-                    <p className="fw-medium">
-                      Quotation For :{" "}
-                      <span className="text-dark fw-medium">
-                        {quotation.title || "Design & development"}
-                      </span>
-                    </p>
-                    <div className="table-responsive mb-3">
-                      <table className="table">
-                        <thead className="thead-light">
-                          <tr>
-                            <th>S.No</th>
-                            <th>Product Image</th>
-                            <th>Product Name</th>
-                            <th>Product Code</th>
-                            <th>MRP</th>
-                            <th>Discount</th>
-                            <th>Rate</th>
-                            <th>Unit</th>
-                            <th>Total</th>
+                {/* Product Table */}
+                <table className="quotation-table full-width bordered">
+                  <thead>
+                    <tr>
+                      <th>S.No</th>
+                      <th>Product Image</th>
+                      <th>Product Name</th>
+                      <th>Product Code</th>
+                      <th>MRP</th>
+                      <th>Discount</th>
+                      <th>Rate</th>
+                      <th>Unit</th>
+                      <th>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {products.length > 0 ? (
+                      products.map((product, index) => {
+                        const productDetail = productsData?.find(
+                          (p) => p.productId === product.productId
+                        );
+                        const imageUrl =
+                          productDetail?.images &&
+                          Array.isArray(JSON.parse(productDetail.images)) &&
+                          JSON.parse(productDetail.images)[0];
+                        const productCode =
+                          productDetail?.product_code ||
+                          productDetail?.meta
+                            ?.d11da9f9_3f2e_4536_8236_9671200cca4a ||
+                          "N/A";
+                        const sellingPrice =
+                          productDetail?.metaDetails?.find(
+                            (m) => m.title === "sellingPrice"
+                          )?.value ||
+                          product.sellingPrice ||
+                          0;
+
+                        return (
+                          <tr key={index}>
+                            <td>{index + 1}</td>
+                            <td>
+                              {imageUrl ? (
+                                <img
+                                  src={imageUrl}
+                                  alt={product.name || "Product"}
+                                  className="product-img"
+                                />
+                              ) : (
+                                "N/A"
+                              )}
+                            </td>
+                            <td>
+                              {product.name || productDetail?.name || "N/A"}
+                            </td>
+                            <td>{productCode}</td>
+                            <td>
+                              {sellingPrice
+                                ? `₹${Number(sellingPrice).toFixed(2)}`
+                                : "N/A"}
+                            </td>
+                            <td>
+                              {product.discount
+                                ? product.discountType === "percent"
+                                  ? `${product.discount}%`
+                                  : `₹${Number(product.discount).toFixed(2)}`
+                                : "N/A"}
+                            </td>
+                            <td>
+                              {product.rate
+                                ? `₹${Number(product.rate).toFixed(2)}`
+                                : sellingPrice
+                                ? `₹${Number(sellingPrice).toFixed(2)}`
+                                : "N/A"}
+                            </td>
+                            <td>{product.qty || product.quantity || "N/A"}</td>
+                            <td>
+                              {product.total
+                                ? `₹${Number(product.total).toFixed(2)}`
+                                : "N/A"}
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {products.length > 0 ? (
-                            products.map((product, index) => (
-                              <tr key={index}>
-                                <td>{index + 1}</td>
-                                <td>
-                                  {product.image ? (
-                                    <img
-                                      src={product.image}
-                                      alt={product.name || "Product"}
-                                      className="img-fluid"
-                                      style={{ maxWidth: "50px" }}
-                                    />
-                                  ) : (
-                                    "N/A"
-                                  )}
-                                </td>
-                                <td>
-                                  <h6>{product.name || "N/A"}</h6>
-                                </td>
-                                <td className="text-gray-9 fw-medium text-end">
-                                  {product.productCode || "N/A"}
-                                </td>
-                                <td className="text-gray-9 fw-medium text-end">
-                                  {product.sellingPrice
-                                    ? `₹${Number(product.sellingPrice).toFixed(
-                                        2
-                                      )}`
-                                    : "N/A"}
-                                </td>
-                                <td className="text-gray-9 fw-medium text-end">
-                                  {product.discount
-                                    ? `${
-                                        product.discountType === "percent"
-                                          ? `${product.discount}%`
-                                          : `₹${Number(
-                                              product.discount
-                                            ).toFixed(2)}`
-                                      }`
-                                    : "N/A"}
-                                </td>
-                                <td className="text-gray-9 fw-medium text-end">
-                                  {product.rate
-                                    ? `₹${Number(product.rate).toFixed(2)}`
-                                    : product.sellingPrice
-                                    ? `₹${Number(product.sellingPrice).toFixed(
-                                        2
-                                      )}`
-                                    : "N/A"}
-                                </td>
-                                <td className="text-gray-9 fw-medium text-end">
-                                  {product.qty || product.quantity || "N/A"}
-                                </td>
-                                <td className="text-gray-9 fw-medium text-end">
-                                  {product.total
-                                    ? `₹${Number(product.total).toFixed(2)}`
-                                    : "N/A"}
-                                </td>
-                              </tr>
-                            ))
-                          ) : (
-                            <tr>
-                              <td colSpan="9" className="text-center">
-                                No products available for this quotation.
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan="9" className="text-center">
+                          No products available for this quotation.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
 
-                  {/* Summary Section */}
-                  <div className="row border-bottom mb-3">
-                    <div className="col-md-7">
-                      <div className="py-4">
-                        <div className="mb-3">
-                          <h6 className="mb-1">Terms and Conditions</h6>
-                          {quotation.terms ? (
-                            quotation.terms
-                              .split("\n")
-                              .map((term, index) => <p key={index}>{term}</p>)
-                          ) : (
-                            <p>No terms and conditions provided.</p>
-                          )}
-                        </div>
-                        <div className="mb-3">
-                          <h6 className="mb-1">Notes</h6>
-                          <p>Please quote quotation number when responding.</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="col-md-5">
-                      <div className="d-flex justify-content-between align-items-center border-bottom mb-2 pe-3">
-                        <p className="mb-0">Sub Total</p>
-                        <p className="text-dark fw-medium mb-2">
-                          ₹{subtotal.toFixed(2)}
-                        </p>
-                      </div>
-                      {quotation.include_gst && quotation.gst_value && (
-                        <div className="d-flex justify-content-between align-items-center border-bottom mb-2 pe-3">
-                          <p className="mb-0">GST ({quotation.gst_value}%)</p>
-                          <p className="text-dark fw-medium mb-2">
-                            ₹{gstAmount.toFixed(2)}
-                          </p>
-                        </div>
-                      )}
-                      <div className="d-flex justify-content-between align-items-center mb-2 pe-3">
-                        <h5>Total Amount</h5>
-                        <h5>₹{finalTotal.toFixed(2)}</h5>
-                      </div>
-                      <p className="fs-12">
-                        Amount in Words: Rupees{" "}
-                        {Math.floor(finalTotal).toLocaleString("en-IN", {
-                          maximumFractionDigits: 0,
-                        })}{" "}
-                        only
-                      </p>
-                    </div>
-                  </div>
+                {/* Totals */}
+                <table className="quotation-table full-width bordered">
+                  <tbody>
+                    <tr>
+                      <td colSpan="8" className="text-right">
+                        Sub Total
+                      </td>
+                      <td>₹{subtotal.toFixed(2)}</td>
+                    </tr>
+                    {quotation.include_gst && quotation.gst_value && (
+                      <tr>
+                        <td colSpan="8" className="text-right">
+                          GST ({quotation.gst_value}%)
+                        </td>
+                        <td>₹{gstAmount.toFixed(2)}</td>
+                      </tr>
+                    )}
+                    <tr>
+                      <td colSpan="8" className="text-right fw-bold">
+                        Total
+                      </td>
+                      <td className="fw-bold">₹{finalTotal.toFixed(2)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
 
-                  {/* Footer Section */}
-                  <div className="text-center">
-                    <div className="mb-3">
-                      <img
-                        src={logo}
-                        className="img-fluid"
-                        alt="Company Logo"
-                      />
-                    </div>
-                    <p className="text-dark mb-1">
-                      Payment to be made via bank transfer / cheque in the name
-                      of {company.name || getUserName(quotation.createdBy)}
-                    </p>
-                    <div className="d-flex justify-content-center align-items-center">
-                      <p className="fs-12 mb-0 me-3">
-                        Bank Name : <span className="text-dark">HDFC Bank</span>
-                      </p>
-                      <p className="fs-12 mb-0 me-3">
-                        Account Number :{" "}
-                        <span className="text-dark">45366287987</span>
-                      </p>
-                      <p className="fs-12">
-                        IFSC : <span className="text-dark">HDFC0018159</span>
-                      </p>
-                    </div>
-                  </div>
-                </div>
+            {/* Action Buttons */}
+            <div className="d-flex justify-content-center align-items-center mb-4">
+              <div className="d-flex align-items-center me-2">
+                <select
+                  className="form-select me-2"
+                  value={exportFormat}
+                  onChange={(e) => setExportFormat(e.target.value)}
+                >
+                  <option value="pdf">Export as PDF</option>
+                  <option value="excel">Export as Excel</option>
+                </select>
+                <button
+                  className="btn btn-primary d-flex justify-content-center align-items-center"
+                  onClick={handleExport}
+                >
+                  <i className="ti ti-printer me-2"></i>Export Quotation
+                </button>
               </div>
             </div>
           </div>
-        </div>
-        {/* /Quotation */}
-
-        {/* Action Buttons */}
-        <div className="d-flex justify-content-center align-items-center mb-4">
-          <div className="d-flex align-items-center me-2">
-            <select
-              className="form-select me-2"
-              value={exportFormat}
-              onChange={(e) => setExportFormat(e.target.value)}
-              aria-label="Select export format"
-            >
-              <option value="pdf">Export as PDF</option>
-              <option value="excel">Export as Excel</option>
-            </select>
-            <button
-              className="btn btn-primary d-flex justify-content-center align-items-center"
-              onClick={handleExport}
-              aria-label={`Export quotation as ${exportFormat}`}
-            >
-              <i className="ti ti-printer me-2"></i>Export Quotation
-            </button>
-          </div>
-          <button
-            className="btn btn-white d-flex justify-content-center align-items-center border"
-            aria-label="Clone quotation"
-          >
-            <i className="ti ti-copy me-2"></i>Clone Quotation
-          </button>
         </div>
       </div>
     </div>

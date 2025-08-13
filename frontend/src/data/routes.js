@@ -83,6 +83,7 @@ import AddNewOrder from "../components/Orders/AddNewOrder";
 import NewUserList from "../components/User/NewUserList";
 import CategoryManagement from "../components/Categories/CategoryManagement";
 import BrandSelection from "../components/Product/BrandSelection";
+import OrderPage from "../components/Orders/Orderpage";
 
 const masterRoutes = [
   {
@@ -344,7 +345,7 @@ const masterRoutes = [
         name: "Order Details",
         icon: <RiFileListLine />,
         isSidebarActive: false,
-        element: <OrderWithInvoice />,
+        element: <OrderPage />,
       },
       {
         path: "/order/add",

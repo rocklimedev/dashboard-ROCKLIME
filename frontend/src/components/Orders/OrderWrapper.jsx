@@ -4,7 +4,6 @@ import { useGetAllUsersQuery } from "../../api/userApi";
 import { useGetAllTeamsQuery } from "../../api/teamApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import {
-  useGetFilteredOrdersQuery,
   useGetAllOrdersQuery,
   useDeleteOrderMutation,
 } from "../../api/orderApi";
@@ -52,7 +51,6 @@ const OrderWrapper = () => {
     page: 1,
     limit: 10,
   });
-  // New state for date range filter
   const [dateRange, setDateRange] = useState({
     startDate: "",
     endDate: "",
@@ -62,61 +60,18 @@ const OrderWrapper = () => {
   const { data: teamsData } = useGetAllTeamsQuery();
   const { data: customersData } = useGetCustomersQuery();
   const { data: usersData } = useGetAllUsersQuery();
-
-  // Compute filtered state
-  const isFiltered = useMemo(() => {
-    return (
-      filters.status !== "" ||
-      filters.priority !== "" ||
-      filters.source !== "" ||
-      searchTerm.trim() !== "" ||
-      dateRange.startDate !== "" ||
-      dateRange.endDate !== ""
-    );
-  }, [filters, searchTerm, dateRange]);
-
-  // Clean filters for API query
-  const cleanFilters = useMemo(() => {
-    const { status, priority, source, page, limit } = filters;
-    return {
-      ...(status && { status }),
-      ...(priority && { priority }),
-      ...(source && { source }),
-      ...(searchTerm.trim() && { search: searchTerm.trim() }),
-      ...(dateRange.startDate && { startDate: dateRange.startDate }),
-      ...(dateRange.endDate && { endDate: dateRange.endDate }),
-      page,
-      limit,
-    };
-  }, [filters, searchTerm, dateRange]);
-
-  // Fetch orders based on filters
-  const {
-    data: filteredData,
-    error: filteredError,
-    isLoading: filteredLoading,
-    isFetching: filteredFetching,
-  } = useGetFilteredOrdersQuery(cleanFilters, { skip: !isFiltered });
-
   const {
     data: allData,
     error: allError,
     isLoading: allLoading,
     isFetching: allFetching,
-  } = useGetAllOrdersQuery(
-    { page: filters.page, limit: filters.limit },
-    { skip: isFiltered }
-  );
+  } = useGetAllOrdersQuery({ page: filters.page, limit: filters.limit });
 
-  const orders = isFiltered
-    ? filteredData?.orders || []
-    : allData?.orders || [];
-  const totalCount = isFiltered
-    ? filteredData?.totalCount || 0
-    : allData?.totalCount || 0;
-  const isLoading = isFiltered ? filteredLoading : allLoading;
-  const isFetching = isFiltered ? filteredFetching : allFetching;
-  const error = isFiltered ? filteredError : allError;
+  const orders = allData?.orders || [];
+  const totalCount = allData?.totalCount || 0;
+  const isLoading = allLoading;
+  const isFetching = allFetching;
+  const error = allError;
 
   // Map teams, customers, and users for quick lookup
   useEffect(() => {
@@ -181,7 +136,26 @@ const OrderWrapper = () => {
   const filteredOrders = useMemo(() => {
     let result = orders;
 
-    // Apply search filter (client-side fallback, optional)
+    // Apply status filter
+    if (filters.status) {
+      result = result.filter((ord) => ord.status === filters.status);
+    }
+
+    // Apply priority filter
+    if (filters.priority) {
+      result = result.filter(
+        (ord) => ord.priority?.toLowerCase() === filters.priority
+      );
+    }
+
+    // Apply source filter
+    if (filters.source) {
+      result = result.filter(
+        (ord) => ord.source?.toLowerCase() === filters.source.toLowerCase()
+      );
+    }
+
+    // Apply search filter
     if (searchTerm.trim()) {
       result = result.filter((ord) => {
         const customerName = ord.createdFor
@@ -192,6 +166,18 @@ const OrderWrapper = () => {
           customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
           ord.source?.toLowerCase().includes(searchTerm.toLowerCase())
         );
+      });
+    }
+
+    // Apply date range filter
+    if (dateRange.startDate || dateRange.endDate) {
+      result = result.filter((ord) => {
+        const orderDate = new Date(ord.createdAt);
+        const start = dateRange.startDate
+          ? new Date(dateRange.startDate)
+          : null;
+        const end = dateRange.endDate ? new Date(dateRange.endDate) : null;
+        return (!start || orderDate >= start) && (!end || orderDate <= end);
       });
     }
 
@@ -227,13 +213,25 @@ const OrderWrapper = () => {
     }
 
     return result;
-  }, [orders, searchTerm, sortBy, customerMap]);
+  }, [orders, searchTerm, sortBy, filters, dateRange, customerMap]);
 
   // Paginated orders
   const paginatedOrders = useMemo(() => {
     const startIndex = (filters.page - 1) * filters.limit;
     return filteredOrders.slice(startIndex, startIndex + filters.limit);
   }, [filteredOrders, filters.page, filters.limit]);
+
+  // Compute filtered state
+  const isFiltered = useMemo(() => {
+    return (
+      filters.status !== "" ||
+      filters.priority !== "" ||
+      filters.source !== "" ||
+      searchTerm.trim() !== "" ||
+      dateRange.startDate !== "" ||
+      dateRange.endDate !== ""
+    );
+  }, [filters, searchTerm, dateRange]);
 
   // Handlers
   const handleOpenAddOrder = () => {
@@ -273,7 +271,6 @@ const OrderWrapper = () => {
   const handleDeleteOrder = async (orderId) => {
     try {
       await deleteOrder(orderId).unwrap();
-
       handleModalClose();
     } catch (err) {
       toast.error(
@@ -332,7 +329,7 @@ const OrderWrapper = () => {
 
   // Helper to get status display
   const getStatusDisplay = (status) => {
-    return statuses.includes(status) ? status : "CREATED"; // Default to CREATED if invalid
+    return statuses.includes(status) ? status : "CREATED";
   };
 
   return (
@@ -348,14 +345,6 @@ const OrderWrapper = () => {
               onClick={() => setActiveTab("quotations")}
             >
               Quotations
-            </button>
-          </li>
-          <li className="nav-item">
-            <button
-              className={`nav-link ${activeTab === "invoices" ? "active" : ""}`}
-              onClick={() => setActiveTab("invoices")}
-            >
-              Invoices
             </button>
           </li>
           <li className="nav-item">
@@ -390,7 +379,6 @@ const OrderWrapper = () => {
                 <div className="col-lg-6">
                   <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
                     <div className="d-flex align-items-center me-3">
-                      <span className="me-2">Status:</span>
                       <select
                         className="form-select"
                         value={filters.status}
@@ -411,7 +399,6 @@ const OrderWrapper = () => {
                       </select>
                     </div>
                     <div className="d-flex align-items-center">
-                      <span className="me-2">Priority:</span>
                       <select
                         className="form-select"
                         value={filters.priority}
@@ -433,9 +420,7 @@ const OrderWrapper = () => {
                         ))}
                       </select>
                     </div>
-                    {/* New Sort By Dropdown */}
                     <div className="d-flex align-items-center ms-3">
-                      <span className="me-2">Sort By:</span>
                       <select
                         className="form-select"
                         value={sortBy}
@@ -468,25 +453,6 @@ const OrderWrapper = () => {
                         aria-label="Search orders"
                       />
                     </div>
-                    {/* New Date Range Inputs */}
-                    <div className="d-flex align-items-center me-2">
-                      <input
-                        type="date"
-                        className="form-control me-2"
-                        value={dateRange.startDate}
-                        onChange={handleDateRangeChange("startDate")}
-                        placeholder="Start Date"
-                        aria-label="Start Date"
-                      />
-                      <input
-                        type="date"
-                        className="form-control"
-                        value={dateRange.endDate}
-                        onChange={handleDateRangeChange("endDate")}
-                        placeholder="End Date"
-                        aria-label="End Date"
-                      />
-                    </div>
                     <button
                       className="btn btn-outline-secondary"
                       onClick={handleClearFilters}
@@ -510,7 +476,7 @@ const OrderWrapper = () => {
                     <table className="table table-hover">
                       <thead>
                         <tr>
-                          <th>S.No.</th> {/* New S.No. Column */}
+                          <th>S.No.</th>
                           <th>STATUS</th>
                           <th>TITLE</th>
                           <th>CUSTOMER</th>
@@ -536,13 +502,12 @@ const OrderWrapper = () => {
                           const dueDateClass = isDueDateClose(order.dueDate)
                             ? "due-date-close"
                             : "";
-                          // Calculate S.No.
                           const serialNumber =
                             (filters.page - 1) * filters.limit + index + 1;
 
                           return (
                             <tr key={order.id}>
-                              <td>{serialNumber}</td> {/* New S.No. Column */}
+                              <td>{serialNumber}</td>
                               <td>
                                 <span
                                   className="priority-badge"
@@ -666,8 +631,6 @@ const OrderWrapper = () => {
               </div>
             </div>
           </div>
-        ) : activeTab === "invoices" ? (
-          <ShowInvoices />
         ) : activeTab === "quotations" ? (
           <QuotationList />
         ) : (

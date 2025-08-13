@@ -265,7 +265,6 @@ const QuotationList = () => {
         <PageHeader
           title="Quotations"
           subtitle="Manage your Quotations"
-          onAdd={handleAddQuotation}
           tableData={formattedTableData}
         />
         <div className="card-body">

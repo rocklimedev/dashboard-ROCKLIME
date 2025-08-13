@@ -6,9 +6,9 @@ import {
   Alert,
   Button as BootstrapButton,
 } from "react-bootstrap";
-import { FaArrowLeft, FaSearch } from "react-icons/fa";
+import { FaArrowLeft } from "react-icons/fa";
 import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
-import { Select, DatePicker, Button } from "antd";
+import { Select, DatePicker, Button, InputNumber, Input } from "antd";
 import { toast } from "sonner";
 import { debounce } from "lodash";
 import PageHeader from "../Common/PageHeader";
@@ -16,38 +16,77 @@ import {
   useCreateOrderMutation,
   useUpdateOrderByIdMutation,
   useOrderByIdQuery,
+  useGetOrderCountByDateQuery,
 } from "../../api/orderApi";
-import {
-  useGetAllInvoicesQuery,
-  useGetInvoiceByIdQuery,
-} from "../../api/invoiceApi";
 import { useGetAllTeamsQuery } from "../../api/teamApi";
+import { useGetCustomersQuery } from "../../api/customerApi";
+import { useGetProfileQuery } from "../../api/userApi";
 import AddNewTeam from "./AddNewTeam";
 import moment from "moment";
+
 const { Option } = Select;
+
+// Define status values from the database schema
+const STATUS_VALUES = [
+  "CREATED",
+  "PREPARING",
+  "CHECKING",
+  "INVOICE",
+  "DISPATCHED",
+  "DELIVERED",
+  "PARTIALLY_DELIVERED",
+  "CANCELED",
+  "DRAFT",
+  "ONHOLD",
+];
 
 const AddNewOrder = ({ adminName }) => {
   const { id } = useParams();
   const isEditMode = Boolean(id);
   const navigate = useNavigate();
+  const [createOrder] = useCreateOrderMutation();
+  const [updateOrder] = useUpdateOrderByIdMutation();
 
   // Queries
   const {
     data: orderData,
     isLoading: isOrderLoading,
     error: orderError,
-  } = useOrderByIdQuery(id, { skip: !isEditMode });
+  } = useOrderByIdQuery(id, { skip: !isEditMode || !id });
   const {
-    data: invoicesData,
-    isLoading: isInvoicesLoading,
-    error: invoicesError,
-  } = useGetAllInvoicesQuery();
-  const [createOrder] = useCreateOrderMutation();
-  const [updateOrder] = useUpdateOrderByIdMutation();
+    data: teamsData,
+    isLoading: isTeamsLoading,
+    refetch: refetchTeams,
+  } = useGetAllTeamsQuery();
+  const {
+    data: customersData,
+    isLoading: isCustomersLoading,
+    error: customersError,
+  } = useGetCustomersQuery();
+  const {
+    data: profileData,
+    isLoading: isProfileLoading,
+    error: profileError,
+  } = useGetProfileQuery();
+  const { data: orderCountData, isLoading: isOrderCountLoading } =
+    useGetOrderCountByDateQuery(moment().format("YYYY-MM-DD"), {
+      skip: isEditMode, // Only fetch count in create mode
+    });
+
+  // Data assignments
+  const order = orderData?.order;
+  const teams = Array.isArray(teamsData?.teams) ? teamsData.teams : [];
+  const customers = Array.isArray(customersData?.data)
+    ? customersData.data
+    : [];
+  const user = profileData?.user || {};
+  const orderCount = orderCountData?.count || 0;
+
+  // State
   const [formData, setFormData] = useState({
     title: "",
     createdFor: "",
-    createdBy: "",
+    createdBy: user.userId || "",
     assignedTo: "",
     pipeline: "",
     status: "CREATED",
@@ -55,77 +94,77 @@ const AddNewOrder = ({ adminName }) => {
     followupDates: [],
     source: "",
     teamId: "",
-    priority: "",
+    priority: "medium",
     description: "",
-    invoiceId: "",
+    invoiceLink: "",
+    orderNo: "",
   });
-  const {
-    data: teamsData,
-    isLoading: isTeamsLoading,
-    refetch: refetchTeams,
-  } = useGetAllTeamsQuery();
-  const { data: selectedInvoiceData, isLoading: isSelectedInvoiceLoading } =
-    useGetInvoiceByIdQuery(formData.invoiceId, { skip: !formData.invoiceId });
 
-  // Data assignments
-  const order = orderData?.order;
-  const invoices = Array.isArray(invoicesData?.data) ? invoicesData.data : [];
-  const teams = Array.isArray(teamsData?.teams) ? teamsData.teams : [];
-  const selectedInvoice = selectedInvoiceData?.data;
-
-  // State
-
-  const [invoiceSearch, setInvoiceSearch] = useState("");
   const [showNewTeamModal, setShowNewTeamModal] = useState(false);
-  const [filteredInvoices, setFilteredInvoices] = useState([]);
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [filteredCustomers, setFilteredCustomers] = useState([]);
+  const [descriptionLength, setDescriptionLength] = useState(0);
 
-  // Populate formData in edit mode
+  // Generate orderNo in create mode
   useEffect(() => {
-    if (isEditMode && order) {
-      setFormData({
-        ...formData,
-        ...order,
-        followupDates: order.followupDates || [],
-        invoiceId: order.invoiceId || "",
-      });
-    }
-  }, [isEditMode, order]);
-
-  // Update formData with invoice details
-  useEffect(() => {
-    if (selectedInvoice) {
+    if (!isEditMode && !isOrderCountLoading && orderCountData !== undefined) {
+      const today = moment().format("DDMMYYYY");
+      const serialNumber = String(orderCount + 1).padStart(5, "0"); // 5-digit serial number
+      const generatedOrderNo = `${today}${serialNumber}`;
       setFormData((prev) => ({
         ...prev,
-        invoiceId: prev.invoiceId,
-        dueDate: selectedInvoice.dueDate || prev.dueDate,
-        createdBy: selectedInvoice.createdBy || prev.createdBy,
-        createdFor: selectedInvoice.customerId || prev.createdFor,
+        orderNo: generatedOrderNo,
       }));
     }
-  }, [selectedInvoice]);
+  }, [isEditMode, orderCount, orderCountData, isOrderCountLoading]);
 
-  // Debounced invoice search
-  const debouncedInvoiceSearch = useCallback(
+  useEffect(() => {
+    if (isEditMode && order && formData.orderNo !== order.orderNo) {
+      setFormData({
+        title: order.title || "",
+        createdFor: order.createdFor || "",
+        createdBy: order.createdBy || user.userId || "",
+        assignedTo: order.assignedTo || "",
+        pipeline: order.pipeline || "",
+        status: order.status || "CREATED",
+        dueDate: order.dueDate || "",
+        followupDates: order.followupDates || [],
+        source: order.source || "",
+        teamId: order.assignedTo || "",
+        priority: order.priority || "medium",
+        description: order.description || "",
+        invoiceLink: order.invoiceLink || "",
+        orderNo: order.orderNo || "",
+      });
+      setDescriptionLength((order.description || "").length);
+    }
+  }, [isEditMode, order, user.userId, formData.orderNo]);
+
+  useEffect(() => {
+    if (!isEditMode && user.userId && formData.createdBy !== user.userId) {
+      setFormData((prev) => ({ ...prev, createdBy: user.userId }));
+    }
+  }, [user.userId, isEditMode, formData.createdBy]);
+
+  // Debounced customer search
+  const debouncedCustomerSearch = useCallback(
     debounce((value) => {
-      setInvoiceSearch(value);
+      setCustomerSearch(value);
       if (value) {
-        const filtered = invoices.filter(
-          (invoice) =>
-            invoice.billTo?.toLowerCase().includes(value.toLowerCase()) ||
-            invoice.invoiceNo?.toLowerCase().includes(value.toLowerCase()) ||
-            invoice.invoiceDate?.includes(value)
+        const filtered = customers.filter((customer) =>
+          customer.name?.toLowerCase().includes(value.toLowerCase())
         );
-        setFilteredInvoices(filtered);
+        setFilteredCustomers(filtered);
       } else {
-        setFilteredInvoices(invoices);
+        setFilteredCustomers(customers);
       }
     }, 300),
-    [invoices]
+    [customers]
   );
 
   useEffect(() => {
-    setFilteredInvoices(invoices);
-  }, [invoices]);
+    setFilteredCustomers(customers);
+  }, [customers]);
 
   // Handlers
   const handleChange = (name, value) => {
@@ -135,6 +174,17 @@ const AddNewOrder = ({ adminName }) => {
         teamId: value,
         assignedTo: value,
       }));
+    } else if (name === "description") {
+      setDescriptionLength(value.length);
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    } else if (name === "orderNo") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value === "" ? "" : value,
+      }));
     } else {
       setFormData((prev) => ({
         ...prev,
@@ -143,13 +193,58 @@ const AddNewOrder = ({ adminName }) => {
     }
   };
 
-  const handleInvoiceSelect = (value) => {
-    setFormData((prev) => ({ ...prev, invoiceId: value }));
+  const clearForm = () => {
+    setFormData({
+      title: "",
+      createdFor: "",
+      createdBy: user.userId || "",
+      assignedTo: "",
+      pipeline: "",
+      status: "CREATED",
+      dueDate: "",
+      followupDates: [],
+      source: "",
+      teamId: "",
+      priority: "medium",
+      description: "",
+      invoiceLink: "",
+      orderNo: isEditMode ? formData.orderNo : "",
+    });
+    setCustomerSearch("");
+    setFilteredCustomers(customers);
+    setDescriptionLength(0);
   };
 
+  // Validate follow-up dates against due date
+  const validateFollowupDates = () => {
+    if (!formData.dueDate || formData.followupDates.length === 0) return true;
+
+    const dueDate = moment(formData.dueDate);
+    return formData.followupDates.every((followupDate) => {
+      if (!followupDate || new Date(followupDate).toString() === "Invalid Date")
+        return true;
+      return moment(followupDate).isSameOrBefore(dueDate, "day");
+    });
+  };
+
+  // Handler for follow-up date change with real-time validation
   const handleFollowupDateChange = (index, date) => {
     const updatedDates = [...formData.followupDates];
     updatedDates[index] = date ? date.format("YYYY-MM-DD") : "";
+
+    if (
+      formData.dueDate &&
+      date &&
+      moment(date).isAfter(moment(formData.dueDate), "day")
+    ) {
+      toast.warning(
+        `Follow-up date ${index + 1} cannot be after the due date.`
+      );
+    }
+    if (date && moment(date).isBefore(moment().startOf("day"))) {
+      toast.warning(`Follow-up date ${index + 1} cannot be before today.`);
+    }
+
     setFormData({ ...formData, followupDates: updatedDates });
   };
 
@@ -167,48 +262,64 @@ const AddNewOrder = ({ adminName }) => {
     });
   };
 
-  const clearForm = () => {
-    setFormData({
-      title: "",
-      createdFor: "",
-      createdBy: "",
-      assignedTo: "",
-      pipeline: "",
-      status: "CREATED",
-      dueDate: "",
-      followupDates: [],
-      source: "",
-      teamId: "",
-      priority: "",
-      description: "",
-      invoiceId: "",
-    });
-    setInvoiceSearch("");
-    setFilteredInvoices(invoices);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (
-      !formData.title ||
-      !formData.pipeline ||
-      !formData.dueDate ||
-      !formData.invoiceId
-    ) {
-      toast.error("Please fill all required fields.");
+
+    // Validate required fields per the model/controller
+    if (!formData.title || !formData.createdFor) {
+      toast.error("Please fill all required fields (Title, Customer).");
       return;
     }
+
+    // Validate orderNo format (DDMMYYYYXXXXX)
+    const orderNoRegex = /^\d{8}\d{5}$/;
+    if (formData.orderNo && !orderNoRegex.test(formData.orderNo)) {
+      toast.error(
+        "Order Number must be in the format DDMMYYYYXXXXX (e.g., 1308202500001)."
+      );
+      return;
+    }
+
+    // Validate invoiceLink length
+    if (formData.invoiceLink && formData.invoiceLink.length > 500) {
+      toast.error("Invoice Link cannot exceed 500 characters.");
+      return;
+    }
+
+    // Validate follow-up dates do not exceed due date
+    if (!validateFollowupDates()) {
+      toast.error("Follow-up dates cannot be after the due date.");
+      return;
+    }
+
     try {
+      const payload = {
+        ...formData,
+        orderNo: formData.orderNo || null,
+        assignedTo: formData.assignedTo || null,
+        priority: formData.priority || null,
+        followupDates: formData.followupDates.filter(
+          (date) => date && new Date(date).toString() !== "Invalid Date"
+        ),
+      };
       if (isEditMode) {
-        await updateOrder({ id, updatedData: formData }).unwrap();
+        if (!id) {
+          toast.error("Cannot update order: Invalid order ID.");
+          return;
+        }
+        await updateOrder({ id, updatedData: payload }).unwrap();
+        toast.success("Order updated successfully");
       } else {
-        await createOrder(formData).unwrap();
+        await createOrder(payload).unwrap();
+        toast.success("Order created successfully");
       }
       navigate("/orders/list");
     } catch (err) {
       const errorMessage =
         err?.status === 400
           ? `Bad Request: ${err.data?.message || "Invalid data provided."}`
+          : err?.status === 404
+          ? `Not Found: ${err.data?.message || "Resource not found."}`
           : err?.status === 500
           ? "Server error. Please try again later."
           : "Something went wrong. Please try again.";
@@ -217,7 +328,13 @@ const AddNewOrder = ({ adminName }) => {
   };
 
   // Loading state
-  if (isOrderLoading || isInvoicesLoading || isTeamsLoading) {
+  if (
+    isOrderLoading ||
+    isTeamsLoading ||
+    isCustomersLoading ||
+    isProfileLoading ||
+    (!isEditMode && isOrderCountLoading)
+  ) {
     return (
       <div className="content">
         <div className="card">
@@ -236,7 +353,7 @@ const AddNewOrder = ({ adminName }) => {
   }
 
   // Error state
-  if (orderError || invoicesError) {
+  if (orderError || customersError || profileError) {
     return (
       <div className="content">
         <div className="card">
@@ -244,7 +361,8 @@ const AddNewOrder = ({ adminName }) => {
             <Alert variant="danger" role="alert">
               Error loading data:{" "}
               {orderError?.data?.message ||
-                invoicesError?.data?.message ||
+                customersError?.data?.message ||
+                profileError?.data?.message ||
                 "Unknown error"}
               . Please try again.
             </Alert>
@@ -277,70 +395,48 @@ const AddNewOrder = ({ adminName }) => {
                 <div className="col-lg-6">
                   <Form.Group className="mb-3">
                     <Form.Label>
-                      Invoice <span className="text-danger">*</span>
+                      Customer <span className="text-danger">*</span>
                     </Form.Label>
-                    <div className="input-icon-start position-relative">
-                      <span className="input-icon-addon">
-                        <FaSearch />
-                      </span>
-                      <Select
-                        showSearch
-                        style={{ width: "100%" }}
-                        placeholder="Search invoices"
-                        value={formData.invoiceId || undefined}
-                        onChange={handleInvoiceSelect}
-                        onSearch={debouncedInvoiceSearch}
-                        filterOption={false}
-                        disabled={
-                          isEditMode ||
-                          isInvoicesLoading ||
-                          isSelectedInvoiceLoading
-                        }
-                      >
-                        {filteredInvoices.length > 0 ? (
-                          filteredInvoices.map((invoice) => (
-                            <Option
-                              key={invoice.invoiceId}
-                              value={invoice.invoiceId}
-                            >
-                              {invoice.billTo} - {invoice.amount} (
-                              {invoice.invoiceDate})
-                            </Option>
-                          ))
-                        ) : (
-                          <Option value="" disabled>
-                            No invoices available
+                    <Select
+                      showSearch
+                      style={{ width: "100%" }}
+                      placeholder="Search customers"
+                      value={formData.createdFor || undefined}
+                      onChange={(value) => handleChange("createdFor", value)}
+                      onSearch={debouncedCustomerSearch}
+                      filterOption={false}
+                      disabled={isCustomersLoading}
+                    >
+                      {filteredCustomers.length > 0 ? (
+                        filteredCustomers.map((customer) => (
+                          <Option
+                            key={customer.customerId}
+                            value={customer.customerId}
+                          >
+                            {customer.name}
                           </Option>
-                        )}
-                      </Select>
-                    </div>
+                        ))
+                      ) : (
+                        <Option value="" disabled>
+                          No customers available
+                        </Option>
+                      )}
+                    </Select>
+                  </Form.Group>
+                </div>
+                <div className="col-lg-6">
+                  <Form.Group className="mb-3">
+                    <Form.Label>Created By</Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="createdBy"
+                      value={user.name || "N/A"}
+                      readOnly
+                      placeholder="Auto-filled from profile"
+                    />
                   </Form.Group>
                 </div>
               </div>
-
-              {selectedInvoice && (
-                <div className="border p-3 mb-4 rounded bg-light">
-                  <h5 className="fw-bold">Invoice Details</h5>
-                  <div className="row">
-                    <div className="col-md-6">
-                      <p>
-                        <strong>Bill To:</strong> {selectedInvoice.billTo}
-                      </p>
-                      <p>
-                        <strong>Amount:</strong> {selectedInvoice.amount}
-                      </p>
-                    </div>
-                    <div className="col-md-6">
-                      <p>
-                        <strong>Date:</strong> {selectedInvoice.invoiceDate}
-                      </p>
-                      <p>
-                        <strong>Invoice No:</strong> {selectedInvoice.invoiceNo}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               <div className="row">
                 <div className="col-lg-6">
@@ -355,6 +451,7 @@ const AddNewOrder = ({ adminName }) => {
                       onChange={(e) =>
                         handleChange(e.target.name, e.target.value)
                       }
+                      maxLength={255}
                       required
                       placeholder="Enter order title"
                     />
@@ -362,9 +459,25 @@ const AddNewOrder = ({ adminName }) => {
                 </div>
                 <div className="col-lg-6">
                   <Form.Group className="mb-3">
-                    <Form.Label>
-                      Pipeline <span className="text-danger">*</span>
-                    </Form.Label>
+                    <Form.Label>Order Number</Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="orderNo"
+                      value={formData.orderNo}
+                      onChange={(e) =>
+                        handleChange(e.target.name, e.target.value)
+                      }
+                      placeholder="Enter order number (e.g., 1308202500001)"
+                      disabled={!isEditMode} // Disable in create mode
+                    />
+                  </Form.Group>
+                </div>
+              </div>
+
+              <div className="row">
+                <div className="col-lg-6">
+                  <Form.Group className="mb-3">
+                    <Form.Label>Pipeline</Form.Label>
                     <Form.Control
                       type="text"
                       name="pipeline"
@@ -372,35 +485,22 @@ const AddNewOrder = ({ adminName }) => {
                       onChange={(e) =>
                         handleChange(e.target.name, e.target.value)
                       }
-                      required
                       placeholder="Enter pipeline"
                     />
                   </Form.Group>
                 </div>
-              </div>
-
-              <div className="row">
                 <div className="col-lg-6">
                   <Form.Group className="mb-3">
-                    <Form.Label>Customer</Form.Label>
+                    <Form.Label>Invoice Link</Form.Label>
                     <Form.Control
                       type="text"
-                      name="createdFor"
-                      value={formData.createdFor}
-                      readOnly
-                      placeholder="Auto-filled from invoice"
-                    />
-                  </Form.Group>
-                </div>
-                <div className="col-lg-6">
-                  <Form.Group className="mb-3">
-                    <Form.Label>Created By</Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="createdBy"
-                      value={formData.createdBy}
-                      readOnly
-                      placeholder="Auto-filled from invoice"
+                      name="invoiceLink"
+                      value={formData.invoiceLink}
+                      onChange={(e) =>
+                        handleChange(e.target.name, e.target.value)
+                      }
+                      maxLength={500}
+                      placeholder="Enter invoice link"
                     />
                   </Form.Group>
                 </div>
@@ -409,27 +509,13 @@ const AddNewOrder = ({ adminName }) => {
               <div className="row">
                 <div className="col-lg-6">
                   <Form.Group className="mb-3">
-                    <Form.Label>
-                      Status <span className="text-danger">*</span>
-                    </Form.Label>
+                    <Form.Label>Status</Form.Label>
                     <Select
                       style={{ width: "100%" }}
                       value={formData.status}
                       onChange={(value) => handleChange("status", value)}
-                      required
                     >
-                      {[
-                        "CREATED",
-                        "PREPARING",
-                        "CHECKING",
-                        "INVOICE",
-                        "DISPATCHED",
-                        "DELIVERED",
-                        "PARTIALLY_DELIVERED",
-                        "CANCELED",
-                        "DRAFT",
-                        "ONHOLD",
-                      ].map((status) => (
+                      {STATUS_VALUES.map((status) => (
                         <Option key={status} value={status}>
                           {status.charAt(0) +
                             status.slice(1).toLowerCase().replace("_", " ")}
@@ -440,15 +526,12 @@ const AddNewOrder = ({ adminName }) => {
                 </div>
                 <div className="col-lg-6">
                   <Form.Group className="mb-3">
-                    <Form.Label>
-                      Priority <span className="text-danger">*</span>
-                    </Form.Label>
+                    <Form.Label>Priority</Form.Label>
                     <Select
                       style={{ width: "100%" }}
                       value={formData.priority || undefined}
                       onChange={(value) => handleChange("priority", value)}
                       placeholder="Select priority"
-                      required
                     >
                       <Option value="high">High</Option>
                       <Option value="medium">Medium</Option>
@@ -461,9 +544,7 @@ const AddNewOrder = ({ adminName }) => {
               <div className="row">
                 <div className="col-lg-6">
                   <Form.Group className="mb-3">
-                    <Form.Label>
-                      Assigned To <span className="text-danger">*</span>
-                    </Form.Label>
+                    <Form.Label>Assigned To</Form.Label>
                     <div className="d-flex align-items-center">
                       <Select
                         style={{ width: "100%" }}
@@ -471,7 +552,6 @@ const AddNewOrder = ({ adminName }) => {
                         onChange={(value) => handleChange("teamId", value)}
                         placeholder="Select team"
                         disabled={isTeamsLoading}
-                        required
                       >
                         {teams.length > 0 ? (
                           teams.map((team) => (
@@ -498,9 +578,7 @@ const AddNewOrder = ({ adminName }) => {
                 </div>
                 <div className="col-lg-6">
                   <Form.Group className="mb-3">
-                    <Form.Label>
-                      Due Date <span className="text-danger">*</span>
-                    </Form.Label>
+                    <Form.Label>Due Date</Form.Label>
                     <DatePicker
                       style={{ width: "100%" }}
                       value={formData.dueDate ? moment(formData.dueDate) : null}
@@ -511,7 +589,9 @@ const AddNewOrder = ({ adminName }) => {
                         )
                       }
                       format="YYYY-MM-DD"
-                      required
+                      disabledDate={(current) =>
+                        current && current < moment().startOf("day")
+                      }
                     />
                   </Form.Group>
                 </div>
@@ -533,6 +613,13 @@ const AddNewOrder = ({ adminName }) => {
                             handleFollowupDateChange(index, date)
                           }
                           format="YYYY-MM-DD"
+                          disabledDate={(current) =>
+                            current &&
+                            (current < moment().startOf("day") ||
+                              (formData.dueDate &&
+                                current >
+                                  moment(formData.dueDate).endOf("day")))
+                          }
                         />
                         <Button
                           type="text"
@@ -558,9 +645,7 @@ const AddNewOrder = ({ adminName }) => {
               <div className="row">
                 <div className="col-lg-12">
                   <Form.Group className="mb-3">
-                    <Form.Label>
-                      Source <span className="text-danger">*</span>
-                    </Form.Label>
+                    <Form.Label>Source</Form.Label>
                     <Form.Control
                       type="text"
                       name="source"
@@ -568,7 +653,7 @@ const AddNewOrder = ({ adminName }) => {
                       onChange={(e) =>
                         handleChange(e.target.name, e.target.value)
                       }
-                      required
+                      maxLength={255}
                       placeholder="Enter source"
                     />
                   </Form.Group>
@@ -578,9 +663,7 @@ const AddNewOrder = ({ adminName }) => {
               <div className="row">
                 <div className="col-lg-12">
                   <Form.Group className="mb-3">
-                    <Form.Label>
-                      Description <span className="text-danger">*</span>
-                    </Form.Label>
+                    <Form.Label>Description</Form.Label>
                     <Form.Control
                       as="textarea"
                       name="description"
@@ -588,13 +671,15 @@ const AddNewOrder = ({ adminName }) => {
                       onChange={(e) =>
                         handleChange(e.target.name, e.target.value)
                       }
-                      maxLength="60"
-                      rows="4"
-                      required
-                      placeholder="Enter description (max 60 characters)"
+                      rows={4}
+                      placeholder="Enter description"
                     />
-                    <Form.Text className="text-muted">
-                      Maximum 60 Characters
+                    <Form.Text
+                      className={
+                        descriptionLength > 60 ? "text-danger" : "text-muted"
+                      }
+                    >
+                      {descriptionLength}/60 Characters (Recommended)
                     </Form.Text>
                   </Form.Group>
                 </div>
@@ -605,7 +690,10 @@ const AddNewOrder = ({ adminName }) => {
                   variant="secondary"
                   onClick={() => navigate("/orders/list")}
                   disabled={
-                    isOrderLoading || isInvoicesLoading || isTeamsLoading
+                    isOrderLoading ||
+                    isTeamsLoading ||
+                    isCustomersLoading ||
+                    isOrderCountLoading
                   }
                 >
                   Cancel
@@ -614,10 +702,16 @@ const AddNewOrder = ({ adminName }) => {
                   variant="primary"
                   type="submit"
                   disabled={
-                    isOrderLoading || isInvoicesLoading || isTeamsLoading
+                    isOrderLoading ||
+                    isTeamsLoading ||
+                    isCustomersLoading ||
+                    isOrderCountLoading
                   }
                 >
-                  {isOrderLoading || isInvoicesLoading || isTeamsLoading
+                  {isOrderLoading ||
+                  isTeamsLoading ||
+                  isCustomersLoading ||
+                  isOrderCountLoading
                     ? isEditMode
                       ? "Updating..."
                       : "Creating..."
