@@ -6,8 +6,60 @@ const Customer = require("../models/customers"); // Sequelize Customer model
 const Quotation = require("../models/quotation"); // Sequelize Quotation model
 const Comment = require("../models/comment"); // MongoDB Comment model
 const User = require("../models/users"); // Sequelize User model
+const path = require("path");
+const { v4: uuidv4 } = require("uuid"); // For unique file names
+const ftp = require("basic-ftp"); // FTP client
+require("dotenv").config(); // Load environment variables
 const { Op } = require("sequelize");
 const sanitizeHtml = require("sanitize-html"); // For XSS prevention
+const { Readable } = require("stream");
+
+function bufferToStream(buffer) {
+  const stream = new Readable();
+  stream.push(buffer);
+  stream.push(null);
+  return stream;
+}
+
+const uploadToCDN = async (file) => {
+  const client = new ftp.Client();
+  client.ftp.verbose = process.env.NODE_ENV === "development";
+
+  try {
+    await client.access({
+      host: process.env.FTP_HOST,
+      port: process.env.FTP_PORT || 21,
+      user: process.env.FTP_USER,
+      password: process.env.FTP_PASSWORD,
+      secure: process.env.FTP_SECURE === "true",
+    });
+
+    // Check where FTP logs us in
+    const cwd = await client.pwd();
+    console.log("Current FTP directory:", cwd);
+
+    // Absolute path for storage — adjust if your public folder is different
+    const uploadDir = "/invoice_pdf"; // this must match the web-visible folder
+
+    // Ensure directory exists and move into it
+    await client.ensureDir(uploadDir);
+    await client.cd(uploadDir);
+
+    const ext = path.extname(file.originalname);
+    const uniqueName = `${uuidv4()}-${Date.now()}${ext}`;
+
+    // Upload to current directory
+    await client.uploadFrom(bufferToStream(file.buffer), uniqueName);
+
+    // Construct public URL
+    const fileUrl = `${process.env.FTP_BASE_URL}/invoice_pdf/${uniqueName}`;
+    return fileUrl;
+  } catch (err) {
+    throw new Error(`FTP upload failed: ${err.message}`);
+  } finally {
+    client.close();
+  }
+};
 
 // Utility function for consistent error responses
 const sendErrorResponse = (res, status, message, details = null) => {
@@ -304,6 +356,8 @@ exports.deleteComment = async (req, res) => {
   }
 };
 // Create a new order
+// createOrder.js
+// Create a new order
 exports.createOrder = async (req, res) => {
   try {
     const {
@@ -318,23 +372,16 @@ exports.createOrder = async (req, res) => {
       source,
       priority,
       description,
-      invoiceId,
       orderNo,
     } = req.body;
 
     // Validate required fields
-    if (!title || !invoiceId || !createdFor || !createdBy) {
+    if (!title || !createdFor || !createdBy) {
       return sendErrorResponse(
         res,
         400,
-        "Title, invoiceId, createdFor, and createdBy are required"
+        "Title, createdFor, and createdBy are required"
       );
-    }
-
-    // Validate invoice
-    const invoice = await Invoice.findByPk(invoiceId);
-    if (!invoice) {
-      return sendErrorResponse(res, 400, "Invalid or missing invoiceId");
     }
 
     // Validate user
@@ -383,6 +430,14 @@ exports.createOrder = async (req, res) => {
       }
     }
 
+    // Validate priority
+    if (priority) {
+      const validPriorities = ["high", "medium", "low"];
+      if (!validPriorities.includes(priority.toLowerCase())) {
+        return sendErrorResponse(res, 400, `Invalid priority: ${priority}`);
+      }
+    }
+
     // Validate status
     const validStatuses = [
       "CREATED",
@@ -412,9 +467,8 @@ exports.createOrder = async (req, res) => {
       assignedTo: assignedTeamId,
       followupDates: parsedFollowupDates,
       source,
-      priority,
+      priority: priority?.toLowerCase() || null,
       description,
-      invoiceId,
       orderNo: orderNo ? parseInt(orderNo) : null,
     });
 
@@ -668,18 +722,18 @@ exports.orderById = async (req, res) => {
   }
 };
 
-// Update order by ID
 exports.updateOrderById = async (req, res) => {
   try {
     const { id } = req.params;
-    const updates = req.body;
+    const updates = { ...req.body };
 
+    // Find the order
     const order = await Order.findByPk(id);
     if (!order) {
-      return sendErrorResponse(res, 404, "Order not found");
+      return res.status(404).json({ message: "Order not found" });
     }
 
-    // Validate updates
+    // Validate status
     if (updates.status) {
       const validStatuses = [
         "CREATED",
@@ -695,76 +749,142 @@ exports.updateOrderById = async (req, res) => {
       ];
       const normalizedStatus = updates.status.toUpperCase();
       if (!validStatuses.includes(normalizedStatus)) {
-        return sendErrorResponse(res, 400, `Invalid status: ${updates.status}`);
+        return res
+          .status(400)
+          .json({ message: `Invalid status: ${updates.status}` });
       }
       updates.status = normalizedStatus;
     }
 
+    // Validate priority
     if (updates.priority) {
       const validPriorities = ["high", "medium", "low"];
-      if (!validPriorities.includes(updates.priority.toLowerCase())) {
-        return sendErrorResponse(
-          res,
-          400,
-          `Invalid priority: ${updates.priority}`
-        );
+      const normalizedPriority = updates.priority.toLowerCase();
+      if (!validPriorities.includes(normalizedPriority)) {
+        return res
+          .status(400)
+          .json({ message: `Invalid priority: ${updates.priority}` });
       }
-      updates.priority = updates.priority.toLowerCase();
+      updates.priority = normalizedPriority;
     }
 
-    if (
-      updates.dueDate &&
-      new Date(updates.dueDate).toString() === "Invalid Date"
-    ) {
-      return sendErrorResponse(res, 400, "Invalid dueDate format");
+    // Validate dueDate
+    if (updates.dueDate) {
+      if (new Date(updates.dueDate).toString() === "Invalid Date") {
+        return res.status(400).json({ message: "Invalid dueDate format" });
+      }
+      updates.dueDate = new Date(updates.dueDate).toISOString().split("T")[0]; // Ensure correct date format
     }
 
+    // Validate followupDates
+    if (updates.followupDates) {
+      if (!Array.isArray(updates.followupDates)) {
+        return res
+          .status(400)
+          .json({ message: "followupDates must be an array" });
+      }
+      const invalidDates = updates.followupDates.filter(
+        (date) => date && new Date(date).toString() === "Invalid Date"
+      );
+      if (invalidDates.length > 0) {
+        return res
+          .status(400)
+          .json({ message: "Invalid followupDates format" });
+      }
+      // Ensure followupDates are not after dueDate
+      if (updates.dueDate && updates.followupDates.length > 0) {
+        const dueDate = new Date(updates.dueDate);
+        const invalidFollowupDates = updates.followupDates.filter(
+          (date) => date && new Date(date) > dueDate
+        );
+        if (invalidFollowupDates.length > 0) {
+          return res.status(400).json({
+            message: "Follow-up dates cannot be after the due date",
+          });
+        }
+      }
+      updates.followupDates = updates.followupDates.filter((date) => date); // Remove empty dates
+    }
+
+    // Validate assignedTo (teamId from frontend)
     if (updates.assignedTo) {
       const team = await Team.findByPk(updates.assignedTo);
       if (!team) {
-        return sendErrorResponse(res, 400, "Assigned team not found");
+        return res.status(400).json({ message: "Assigned team not found" });
       }
     }
 
+    // Validate createdBy
     if (updates.createdBy) {
       const user = await User.findByPk(updates.createdBy);
       if (!user) {
-        return sendErrorResponse(res, 404, "Creator user not found");
+        return res.status(404).json({ message: "Creator user not found" });
       }
     }
 
+    // Validate createdFor
     if (updates.createdFor) {
       const customer = await Customer.findByPk(updates.createdFor);
       if (!customer) {
-        return sendErrorResponse(res, 404, "Customer not found");
+        return res.status(404).json({ message: "Customer not found" });
       }
     }
 
-    if (updates.orderNo && isNaN(parseInt(updates.orderNo))) {
-      return sendErrorResponse(res, 400, "orderNo must be a valid number");
-    }
-
-    if (updates.orderNo) {
-      const existingOrder = await Order.findOne({
-        where: { orderNo: parseInt(updates.orderNo), id: { [Op.ne]: id } },
-      });
-      if (existingOrder) {
-        return sendErrorResponse(res, 400, "Order number already exists");
+    // Validate orderNo
+    if (updates.orderNo !== undefined) {
+      if (updates.orderNo === "" || updates.orderNo === null) {
+        updates.orderNo = null; // Allow clearing orderNo
+      } else if (isNaN(parseInt(updates.orderNo))) {
+        return res
+          .status(400)
+          .json({ message: "orderNo must be a valid number" });
+      } else {
+        const existingOrder = await Order.findOne({
+          where: { orderNo: parseInt(updates.orderNo), id: { [Op.ne]: id } },
+        });
+        if (existingOrder) {
+          return res
+            .status(400)
+            .json({ message: "Order number already exists" });
+        }
+        updates.orderNo = parseInt(updates.orderNo);
       }
-      updates.orderNo = parseInt(updates.orderNo);
     }
 
+    // Validate invoiceLink
+    if (updates.invoiceLink && updates.invoiceLink.length > 500) {
+      return res
+        .status(400)
+        .json({ message: "Invoice Link cannot exceed 500 characters" });
+    }
+
+    // Validate title
+    if (updates.title && updates.title.length > 255) {
+      return res
+        .status(400)
+        .json({ message: "Title cannot exceed 255 characters" });
+    }
+
+    // Validate source
+    if (updates.source && updates.source.length > 255) {
+      return res
+        .status(400)
+        .json({ message: "Source cannot exceed 255 characters" });
+    }
     await order.update(updates);
-
-    return res
-      .status(200)
-      .json({ message: "Order updated successfully", order });
+    await order.reload(); // ensures we send updated data
+    return res.status(200).json({
+      message: "Order updated successfully",
+      order,
+    });
   } catch (err) {
     console.error("Update order by ID error:", {
       message: err.message,
       stack: err.stack,
     });
-    return sendErrorResponse(res, 500, "Failed to update order", err.message);
+    return res
+      .status(500)
+      .json({ message: "Failed to update order", error: err.message });
   }
 };
 
@@ -1016,5 +1136,82 @@ exports.updateOrderTeam = async (req, res) => {
       "Failed to update order team",
       err.message
     );
+  }
+};
+
+exports.uploadInvoiceAndLinkOrder = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    // Generate unique filename
+    const ext = path.extname(req.file.originalname);
+    const uniqueName = `${uuidv4()}${ext}`;
+
+    // FTP upload
+    const client = new ftp.Client();
+    client.ftp.verbose = false;
+
+    try {
+      await client.access({
+        host: process.env.FTP_HOST,
+        user: process.env.FTP_USER,
+        password: process.env.FTP_PASSWORD,
+        secure: false,
+      });
+
+      // Ensure folder exists for invoices
+      await client.ensureDir("/invoices");
+      await client.uploadFrom(req.file.buffer, `/invoices/${uniqueName}`);
+    } catch (ftpErr) {
+      console.error("FTP upload error:", ftpErr);
+      return res.status(500).json({ message: "FTP upload failed" });
+    } finally {
+      client.close();
+    }
+
+    // Update order record in DB
+    await Order.update(
+      { invoicePath: `/invoices/${uniqueName}` },
+      { where: { orderId: req.params.orderId } }
+    );
+
+    return res.status(200).json({
+      message: "Invoice uploaded successfully",
+      filename: uniqueName,
+      size: req.file.size,
+    });
+  } catch (err) {
+    console.error("Upload handler error:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+// GET /api/order/count?date=YYYY-MM-DD
+exports.countOrders = async (req, res) => {
+  try {
+    const { date } = req.query;
+    if (!date || !moment(date, "YYYY-MM-DD").isValid()) {
+      return res
+        .status(400)
+        .json({ message: "Invalid date format. Use YYYY-MM-DD" });
+    }
+
+    const startOfDay = moment(date).startOf("day").toDate();
+    const endOfDay = moment(date).endOf("day").toDate();
+
+    const count = await Order.count({
+      where: {
+        createdAt: {
+          [Op.gte]: startOfDay,
+          [Op.lte]: endOfDay,
+        },
+      },
+    });
+
+    res.json({ count });
+  } catch (error) {
+    console.error("Error counting orders:", error.message);
+    res.status(500).json({ message: "Server error" });
   }
 };

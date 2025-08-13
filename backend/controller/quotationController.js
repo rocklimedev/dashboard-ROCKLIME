@@ -178,50 +178,116 @@ exports.deleteQuotation = async (req, res) => {
 
 exports.exportQuotation = async (req, res) => {
   try {
+    // Fetch quotation
     const quotation = await Quotation.findByPk(req.params.id);
-    if (!quotation)
+    if (!quotation) {
       return res.status(404).json({ message: "Quotation not found" });
+    }
 
-    const items = await QuotationItem.findOne({ quotationId: req.params.id });
+    // Fetch all quotation items
+    const quotationItems = await QuotationItem.findAll({
+      where: { quotationId: req.params.id },
+    });
 
-    // Define the format
+    // Prepare sheet data
     const sheetData = [
-      ["Estimate / Quotation", "", "GROHE / AMERICAN STANDARD"],
+      ["Estimate / Quotation", "", "", "", "GROHE / AMERICAN STANDARD"],
       [""],
-      ["M/s", "", "", "Date", quotation.date],
-      ["Address", ""],
+      [
+        "M/s",
+        quotation.companyName || "CHHABRA MARBLE",
+        "",
+        "Date",
+        quotation.date
+          ? new Date(quotation.date).toLocaleDateString()
+          : new Date().toLocaleDateString(),
+      ],
+      ["Address", quotation.shipTo || "456, Park Avenue, New York, USA"],
       [""],
-      ["S.No", "Product Image", "Product Name", "Product Code", "Amount"],
-      ["", "", "MRP", "Discount", "Rate", "Unit", "Total"],
+      [
+        "S.No",
+        "Product Image",
+        "Product Name",
+        "Product Code",
+        "MRP",
+        "Discount",
+        "Rate",
+        "Unit",
+        "Total",
+      ],
     ];
 
     // Append product items
-    items?.items.forEach((item, index) => {
-      sheetData.push([
-        index + 1, // S.No
-        item.imageUrl || "N/A", // Product Image (URL or placeholder)
-        item.productName, // Product Name
-        item.productCode, // Product Code
-        "", // Empty column (for Amount)
-        item.mrp, // MRP
-        item.discount || 0, // Discount
-        item.rate, // Rate
-        item.unit, // Unit
-        item.total, // Total
-      ]);
+    let index = 0;
+    quotationItems.forEach((item) => {
+      // Assuming `items` is a JSON field containing an array of products
+      const products =
+        item.items && Array.isArray(item.items) ? item.items : [];
+      products.forEach((product) => {
+        sheetData.push([
+          ++index, // S.No
+          product.imageUrl || "N/A", // Product Image
+          product.productName || product.name || "N/A", // Product Name
+          product.productCode || "N/A", // Product Code
+          Number(product.mrp) || 0, // MRP
+          product.discount
+            ? product.discountType === "percent"
+              ? Number(product.discount) / 100
+              : Number(product.discount)
+            : 0, // Discount
+          Number(product.rate) || Number(product.mrp) || 0, // Rate
+          product.unit || product.qty || 0, // Unit
+          Number(product.total) || 0, // Total
+        ]);
+      });
     });
 
-    // Create a new workbook & sheet
+    // Calculate totals
+    const subtotal = quotationItems.reduce((sum, item) => {
+      const products =
+        item.items && Array.isArray(item.items) ? item.items : [];
+      return (
+        sum +
+        products.reduce(
+          (itemSum, product) => itemSum + Number(product.total || 0),
+          0
+        )
+      );
+    }, 0);
+    const gstAmount =
+      quotation.include_gst && quotation.gst_value
+        ? (subtotal * Number(quotation.gst_value)) / 100
+        : 0;
+    const finalTotal = subtotal + gstAmount;
+
+    // Add totals to sheet
+    sheetData.push([]);
+    sheetData.push(["", "", "", "", "", "", "Subtotal", "", subtotal]);
+    if (quotation.include_gst && quotation.gst_value) {
+      sheetData.push([
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        `GST (${quotation.gst_value}%)`,
+        "",
+        gstAmount,
+      ]);
+    }
+    sheetData.push(["", "", "", "", "", "", "Total", "", finalTotal]);
+
+    // Create workbook and worksheet
     const workbook = XLSX.utils.book_new();
     const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
 
-    // Adjust column widths
+    // Set column widths
     const columnWidths = [
       { wch: 5 }, // S.No
       { wch: 20 }, // Product Image
       { wch: 30 }, // Product Name
-      { wch: 20 }, // Product Code
-      { wch: 10 }, // Amount
+      { wch: 15 }, // Product Code
       { wch: 10 }, // MRP
       { wch: 10 }, // Discount
       { wch: 10 }, // Rate
@@ -230,22 +296,56 @@ exports.exportQuotation = async (req, res) => {
     ];
     worksheet["!cols"] = columnWidths;
 
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Sample-Quotation");
-
-    // Save file
-    const fileName = `${quotation.quotationTitle || "quotation"}.xlsx`;
-    const filePath = path.join(__dirname, "../data", fileName);
-    XLSX.writeFile(workbook, filePath);
-
-    // Send file for download
-    res.download(filePath, fileName, (err) => {
-      if (err) {
-        res.status(500).json({ message: "Failed to download file" });
+    // Apply number formatting
+    const range = XLSX.utils.decode_range(
+      worksheet["!ref"] || "A1:I" + sheetData.length
+    );
+    for (let row = range.s.r; row <= range.e.r; row++) {
+      for (let col = range.s.c; col <= range.e.c; col++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+        const cell = worksheet[cellAddress];
+        if (cell && typeof cell.v === "number") {
+          if (col === 4 || col === 6 || col === 8) {
+            // MRP, Rate, Total
+            cell.z = "₹#,##0.00";
+          } else if (col === 5) {
+            // Discount
+            const productRow = row - 6; // Adjust for header rows
+            const product = quotationItems.flatMap((item) => item.items || [])[
+              productRow
+            ];
+            if (product?.discountType === "percent") {
+              cell.z = "0.00%";
+            } else {
+              cell.z = "₹#,##0.00";
+            }
+          }
+        }
       }
-      fs.unlinkSync(filePath); // Delete file after download
-    });
+    }
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Quotation");
+
+    // Generate buffer instead of saving to file
+    const buffer = XLSX.write(workbook, { bookType: "xlsx", type: "buffer" });
+
+    // Set response headers
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=quotation_${req.params.id}.xlsx`
+    );
+
+    // Send buffer directly
+    res.send(buffer);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Export error:", error);
+    res
+      .status(500)
+      .json({ message: "Failed to export quotation", error: error.message });
   }
 };
 exports.cloneQuotation = async (req, res) => {

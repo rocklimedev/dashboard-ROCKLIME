@@ -12,26 +12,13 @@ const Order = sequelize.define(
       primaryKey: true,
       defaultValue: DataTypes.UUIDV4,
     },
-    createdFor: {
-      type: DataTypes.UUID,
+    title: {
+      type: DataTypes.STRING(255),
       allowNull: false,
-      references: {
-        model: Customer,
-        key: "customerId", // Fix: Use correct primary key
-      },
     },
-    createdBy: {
-      type: DataTypes.UUID,
-      allowNull: false,
-      references: {
-        model: User,
-        key: "userId", // Fix: Use correct primary key
-      },
-    },
-    title: { type: DataTypes.STRING, allowNull: false },
     pipeline: {
       type: DataTypes.JSON,
-      allowNull: true, // Store array as JSON
+      allowNull: true,
     },
     status: {
       type: DataTypes.ENUM(
@@ -50,28 +37,57 @@ const Order = sequelize.define(
     },
     dueDate: {
       type: DataTypes.DATEONLY,
-    },
-    assignedTo: {
-      type: DataTypes.UUID,
-      references: {
-        model: Team,
-        key: "id",
-      },
-      allowNull: true, // Fix: Make nullable
+      allowNull: true,
     },
     followupDates: {
-      type: DataTypes.JSON, // Store array as JSON
+      type: DataTypes.JSON,
       allowNull: true,
     },
     source: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(255),
+      allowNull: true,
     },
     priority: {
       type: DataTypes.ENUM("high", "medium", "low"),
       defaultValue: "medium",
+      allowNull: true,
     },
     description: {
       type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    createdFor: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: {
+        model: Customer,
+        key: "customerId",
+      },
+    },
+    createdBy: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: {
+        model: User,
+        key: "userId",
+      },
+    },
+    assignedTo: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: Team,
+        key: "id",
+      },
+    },
+    invoiceLink: {
+      type: DataTypes.STRING(500),
+      allowNull: true,
+    },
+    orderNo: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      unique: true,
     },
   },
   {

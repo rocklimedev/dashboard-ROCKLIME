@@ -769,7 +769,7 @@ const Cart = ({ onConvertToOrder }) => {
                         <Button
                           type="primary"
                           icon={<ArrowLeftOutlined />}
-                          href="/shop"
+                          href="/inventory/products"
                           style={{ marginTop: 16 }}
                           aria-label="Continue shopping"
                         >
@@ -979,8 +979,6 @@ const Cart = ({ onConvertToOrder }) => {
                           type="link"
                           icon={<UserAddOutlined />}
                           onClick={() => setShowAddCustomerModal(true)}
-                          style={{ padding: 0, marginTop: 8 }}
-                          aria-label="Add new customer"
                         >
                           Add New Customer
                         </Button>

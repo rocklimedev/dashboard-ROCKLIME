@@ -87,13 +87,17 @@ const PageWrapper = () => {
 
   // Derived state
   const userId = profile?.user?.userId;
-  const username = useMemo(
-    () =>
-      profile?.user?.name
-        ? profile.user.name.charAt(0).toUpperCase() + profile.user.name.slice(1)
-        : "Admin",
-    [profile]
-  );
+  const username = useMemo(() => {
+    if (profile?.user?.name) {
+      return profile.user.name
+        .split(" ") // split full name into words
+        .map(
+          (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase() // Capitalize first, rest lowercase
+        )
+        .join(" "); // rejoin into a single string
+    }
+    return "Admin";
+  }, [profile]);
 
   const orders = ordersData?.orders || [];
   const products = Array.isArray(productsData)
@@ -244,48 +248,32 @@ const PageWrapper = () => {
     const productQuantities = {};
 
     // Aggregate quantities from invoices
-    if (invoiceData?.data) {
-      invoiceData.data.forEach((invoice) => {
-        if (invoice.products && Array.isArray(invoice.products)) {
-          invoice.products.forEach((product) => {
-            if (product.productId && product.quantity) {
-              productQuantities[product.productId] =
-                (productQuantities[product.productId] || 0) + product.quantity;
-            }
-          });
-        }
-      });
-    }
 
     // Aggregate quantities from quotations
-    if (quotationData) {
-      quotationData.forEach((quotation) => {
-        if (quotation.products && Array.isArray(quotation.products)) {
-          quotation.products.forEach((product) => {
-            if (product.productId && product.quantity) {
-              productQuantities[product.productId] =
-                (productQuantities[product.productId] || 0) + product.quantity;
-            }
-          });
+    quotationData?.forEach((quotation) => {
+      quotation.products?.forEach((p) => {
+        const pid = p.productId?._id || p.productId;
+        if (pid && p.quantity) {
+          productQuantities[pid] = (productQuantities[pid] || 0) + p.quantity;
         }
       });
-    }
+    });
 
-    // Map product IDs to names and sort by quantity
-    const topProducts = Object.entries(productQuantities)
+    // Map IDs to product names
+    return Object.entries(productQuantities)
       .map(([productId, quantity]) => {
-        const product = products.find((p) => p._id === productId);
+        const product = products.find(
+          (prod) => prod._id === productId || prod.productId === productId
+        );
         return {
           productId,
-          name: product ? product.name : `Product ${productId}`,
+          name: product?.name || "Unknown Product",
           quantity,
         };
       })
       .sort((a, b) => b.quantity - a.quantity)
-      .slice(0, 5); // Top 5 products
-
-    return topProducts;
-  }, [invoiceData, quotationData, products]);
+      .slice(0, 5);
+  }, [quotationData, products]);
 
   // Bar chart data for top selling products
   const topProductsChartData = useMemo(
