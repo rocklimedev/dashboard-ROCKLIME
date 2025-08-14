@@ -13,6 +13,7 @@ require("dotenv").config(); // Load environment variables
 const { Op } = require("sequelize");
 const sanitizeHtml = require("sanitize-html"); // For XSS prevention
 const { Readable } = require("stream");
+const moment = require("moment");
 
 function bufferToStream(buffer) {
   const stream = new Readable();
@@ -38,10 +39,8 @@ const uploadToCDN = async (file) => {
     const cwd = await client.pwd();
     console.log("Current FTP directory:", cwd);
 
-    // Absolute path for storage — adjust if your public folder is different
-    const uploadDir = "/invoice_pdf"; // this must match the web-visible folder
-
-    // Ensure directory exists and move into it
+    // Absolute path for storage
+    const uploadDir = "/invoice_pdfs";
     await client.ensureDir(uploadDir);
     await client.cd(uploadDir);
 
@@ -52,7 +51,7 @@ const uploadToCDN = async (file) => {
     await client.uploadFrom(bufferToStream(file.buffer), uniqueName);
 
     // Construct public URL
-    const fileUrl = `${process.env.FTP_BASE_URL}/invoice_pdf/${uniqueName}`;
+    const fileUrl = `${process.env.FTP_BASE_URL}/invoice_pdfs/${uniqueName}`;
     return fileUrl;
   } catch (err) {
     throw new Error(`FTP upload failed: ${err.message}`);
@@ -726,6 +725,7 @@ exports.updateOrderById = async (req, res) => {
   try {
     const { id } = req.params;
     const updates = { ...req.body };
+    console.log("Received update payload:", updates); // Debug payload
 
     // Find the order
     const order = await Order.findByPk(id);
@@ -770,10 +770,11 @@ exports.updateOrderById = async (req, res) => {
 
     // Validate dueDate
     if (updates.dueDate) {
-      if (new Date(updates.dueDate).toString() === "Invalid Date") {
+      if (moment(updates.dueDate, "YYYY-MM-DD", true).isValid()) {
+        updates.dueDate = moment(updates.dueDate).format("YYYY-MM-DD");
+      } else {
         return res.status(400).json({ message: "Invalid dueDate format" });
       }
-      updates.dueDate = new Date(updates.dueDate).toISOString().split("T")[0]; // Ensure correct date format
     }
 
     // Validate followupDates
@@ -784,18 +785,17 @@ exports.updateOrderById = async (req, res) => {
           .json({ message: "followupDates must be an array" });
       }
       const invalidDates = updates.followupDates.filter(
-        (date) => date && new Date(date).toString() === "Invalid Date"
+        (date) => date && !moment(date, "YYYY-MM-DD", true).isValid()
       );
       if (invalidDates.length > 0) {
         return res
           .status(400)
           .json({ message: "Invalid followupDates format" });
       }
-      // Ensure followupDates are not after dueDate
       if (updates.dueDate && updates.followupDates.length > 0) {
-        const dueDate = new Date(updates.dueDate);
+        const dueDate = moment(updates.dueDate);
         const invalidFollowupDates = updates.followupDates.filter(
-          (date) => date && new Date(date) > dueDate
+          (date) => date && moment(date).isAfter(dueDate, "day")
         );
         if (invalidFollowupDates.length > 0) {
           return res.status(400).json({
@@ -803,10 +803,10 @@ exports.updateOrderById = async (req, res) => {
           });
         }
       }
-      updates.followupDates = updates.followupDates.filter((date) => date); // Remove empty dates
+      updates.followupDates = updates.followupDates.filter((date) => date);
     }
 
-    // Validate assignedTo (teamId from frontend)
+    // Validate assignedTo
     if (updates.assignedTo) {
       const team = await Team.findByPk(updates.assignedTo);
       if (!team) {
@@ -833,7 +833,7 @@ exports.updateOrderById = async (req, res) => {
     // Validate orderNo
     if (updates.orderNo !== undefined) {
       if (updates.orderNo === "" || updates.orderNo === null) {
-        updates.orderNo = null; // Allow clearing orderNo
+        updates.orderNo = null;
       } else if (isNaN(parseInt(updates.orderNo))) {
         return res
           .status(400)
@@ -871,8 +871,10 @@ exports.updateOrderById = async (req, res) => {
         .status(400)
         .json({ message: "Source cannot exceed 255 characters" });
     }
+
+    // Perform update
     await order.update(updates);
-    await order.reload(); // ensures we send updated data
+    await order.reload();
     return res.status(200).json({
       message: "Order updated successfully",
       order,
@@ -1151,40 +1153,62 @@ exports.uploadInvoiceAndLinkOrder = async (req, res) => {
 
     // FTP upload
     const client = new ftp.Client();
-    client.ftp.verbose = false;
+    client.ftp.verbose = process.env.NODE_ENV === "development"; // Enable verbose logging in development
 
     try {
       await client.access({
         host: process.env.FTP_HOST,
+        port: process.env.FTP_PORT || 21,
         user: process.env.FTP_USER,
         password: process.env.FTP_PASSWORD,
-        secure: false,
+        secure: process.env.FTP_SECURE === "true" || false,
       });
 
+      // Log current FTP directory for debugging
+      const cwd = await client.pwd();
+      console.log("Current FTP directory:", cwd);
+
       // Ensure folder exists for invoices
-      await client.ensureDir("/invoices");
-      await client.uploadFrom(req.file.buffer, `/invoices/${uniqueName}`);
+      const uploadDir = "/invoice_pdfs";
+      await client.ensureDir(uploadDir);
+      await client.cd(uploadDir); // Change to /invoice_pdfs
+
+      // Convert buffer to stream and upload
+      const stream = bufferToStream(req.file.buffer);
+      await client.uploadFrom(stream, uniqueName); // Upload to current directory
+
+      // Construct public URL
+      const fileUrl = `${process.env.FTP_BASE_URL}/invoice_pdfs/${uniqueName}`;
     } catch (ftpErr) {
       console.error("FTP upload error:", ftpErr);
-      return res.status(500).json({ message: "FTP upload failed" });
+      return res
+        .status(500)
+        .json({ message: "FTP upload failed", error: ftpErr.message });
     } finally {
       client.close();
     }
 
     // Update order record in DB
-    await Order.update(
-      { invoicePath: `/invoices/${uniqueName}` },
-      { where: { orderId: req.params.orderId } }
+    const [updated] = await Order.update(
+      { invoiceLink: `/invoice_pdfs/${uniqueName}` }, // Use invoiceLink to match model
+      { where: { id: req.params.orderId } } // Use id to match model
     );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Order not found" });
+    }
 
     return res.status(200).json({
       message: "Invoice uploaded successfully",
       filename: uniqueName,
       size: req.file.size,
+      fileUrl: `/invoice_pdfs/${uniqueName}`, // Return relative path
     });
   } catch (err) {
     console.error("Upload handler error:", err);
-    return res.status(500).json({ message: "Server error" });
+    return res
+      .status(500)
+      .json({ message: "Server error", error: err.message });
   }
 };
 // GET /api/order/count?date=YYYY-MM-DD

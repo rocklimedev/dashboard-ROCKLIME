@@ -6,7 +6,6 @@ import "flatpickr/dist/flatpickr.min.css";
 import {
   useCreateUserMutation,
   useUpdateUserMutation,
-  useAssignRoleMutation,
   useGetUserByIdQuery,
 } from "../../api/userApi";
 import { useGetRolesQuery } from "../../api/rolesApi";
@@ -24,15 +23,12 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
     error: fetchUserError,
   } = useGetUserByIdQuery(userId, { skip: !userId || !!propUserToEdit });
 
-  // Adjust based on actual API response structure
-
   const userToEdit = propUserToEdit || fetchedUser?.data || fetchedUser?.user;
 
   const [createUser, { isLoading: isCreating, error: createError }] =
     useCreateUserMutation();
   const [updateUser, { isLoading: isUpdating, error: updateError }] =
     useUpdateUserMutation();
-  const [assignRole] = useAssignRoleMutation();
   const [
     createAddress,
     { isLoading: isAddressCreating, error: addressCreateError },
@@ -58,18 +54,22 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
     shiftFrom: "",
     shiftTo: "",
     bloodGroup: "",
-    street: "",
-    country: "",
-    state: "",
-    city: "",
-    postalCode: "",
     emergencyNumber: "",
-    roleId: "", // Changed from role to roleId to match backend
+    roleId: "",
     status: "inactive",
     password: "",
     avatar: null,
     about: "",
-    addressId: null,
+    ...(userToEdit
+      ? {
+          street: userToEdit.address?.street || "",
+          country: userToEdit.address?.country || "",
+          state: userToEdit.address?.state || "",
+          city: userToEdit.address?.city || "",
+          postalCode: userToEdit.address?.postalCode || "",
+          addressId: userToEdit.addressId || null,
+        }
+      : {}),
   });
 
   useEffect(() => {
@@ -85,17 +85,13 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
         shiftFrom: userToEdit.shiftFrom
           ? new Date(`1970-01-01T${userToEdit.shiftFrom}`).toLocaleTimeString(
               "en-US",
-              {
-                hour12: false,
-              }
+              { hour12: false }
             )
           : "",
         shiftTo: userToEdit.shiftTo
           ? new Date(`1970-01-01T${userToEdit.shiftTo}`).toLocaleTimeString(
               "en-US",
-              {
-                hour12: false,
-              }
+              { hour12: false }
             )
           : "",
         bloodGroup: userToEdit.bloodGroup || "",
@@ -105,7 +101,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
         city: userToEdit.address?.city || "",
         postalCode: userToEdit.address?.postalCode || "",
         emergencyNumber: userToEdit.emergencyNumber || "",
-        roleId: userToEdit.roleId || "", // Use roleId from backend
+        roleId: userToEdit.roleId || "",
         status: ["active", "inactive", "restricted"].includes(userToEdit.status)
           ? userToEdit.status
           : "inactive",
@@ -127,11 +123,11 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
       toast.error(updateError?.data?.message || "Failed to update user");
     if (rolesError)
       toast.error(rolesError?.data?.message || "Failed to load roles");
-    if (addressCreateError)
+    if (isEditMode && addressCreateError)
       toast.error(
         addressCreateError?.data?.message || "Failed to create address"
       );
-    if (addressUpdateError)
+    if (isEditMode && addressUpdateError)
       toast.error(
         addressUpdateError?.data?.message || "Failed to update address"
       );
@@ -141,6 +137,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
     createError,
     updateError,
     rolesError,
+    isEditMode,
     addressCreateError,
     addressUpdateError,
     fetchUserError,
@@ -198,35 +195,43 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
         return;
       }
 
-      let addressId = formData.addressId;
-      if (
-        formData.street ||
-        formData.country ||
-        formData.state ||
-        formData.city ||
-        formData.postalCode
-      ) {
-        const addressPayload = {
-          street: formData.street,
-          country: formData.country,
-          state: formData.state,
-          city: formData.city,
-          postalCode: formData.postalCode,
-          userId: userToEdit?.userId || null,
-        };
+      let addressId = isEditMode ? formData.addressId : null;
+      if (isEditMode) {
+        const hasAddressFields =
+          formData.street ||
+          formData.country ||
+          formData.state ||
+          formData.city ||
+          formData.postalCode;
 
-        let addressResponse;
-        if (isEditMode && addressId) {
-          // Update existing address
-          addressResponse = await updateAddress({
-            addressId,
-            ...addressPayload,
-          }).unwrap();
-        } else {
-          // Create new address
-          addressResponse = await createAddress(addressPayload).unwrap();
+        if (hasAddressFields) {
+          const addressPayload = {
+            street: formData.street || null,
+            country: formData.country || null,
+            state: formData.state || null,
+            city: formData.city || null,
+            postalCode: formData.postalCode || null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            userId: userToEdit.userId,
+          };
+
+          let addressResponse;
+          if (addressId) {
+            addressResponse = await updateAddress({
+              addressId,
+              ...addressPayload,
+            }).unwrap();
+          } else {
+            addressResponse = await createAddress(addressPayload).unwrap();
+          }
+          addressId =
+            addressResponse.addressId || addressResponse.data?.addressId;
+          if (!addressId) {
+            toast.error("Failed to obtain address ID");
+            return;
+          }
         }
-        addressId = addressResponse.addressId; // Backend returns addressId
       }
 
       let avatarUrl = formData.avatar;
@@ -256,7 +261,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
         bloodGroup: formData.bloodGroup || null,
         addressId: addressId || null,
         emergencyNumber: formData.emergencyNumber || null,
-        roleId: selectedRoleObj.roleId, // Use roleId instead of roles array
+        roleId: selectedRoleObj.roleId,
         status: formData.status,
         password: formData.password || undefined,
         avatar: avatarUrl || null,
@@ -273,8 +278,10 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
         userResponse = await createUser(userPayload).unwrap();
       }
 
-      // Role assignment is handled by updateUser/createUser in the backend, so no need for separate assignRole call
       onClose();
+      toast.success(
+        isEditMode ? "User updated successfully" : "User created successfully"
+      );
     } catch (err) {
       toast.error(
         `Failed to process the request: ${err.data?.message || "Unknown error"}`
@@ -292,18 +299,22 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
       shiftFrom: "",
       shiftTo: "",
       bloodGroup: "",
-      street: "",
-      country: "",
-      state: "",
-      city: "",
-      postalCode: "",
       emergencyNumber: "",
       roleId: "",
       status: "inactive",
       password: "",
       avatar: null,
       about: "",
-      addressId: null,
+      ...(isEditMode
+        ? {
+            street: "",
+            country: "",
+            state: "",
+            city: "",
+            postalCode: "",
+            addressId: null,
+          }
+        : {}),
     });
     setIsEditMode(false);
   };
@@ -631,100 +642,98 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
               </div>
             </div>
 
-            {/* Address Information */}
-            <div className="accordion-item border mb-4">
-              <h2 className="accordion-header" id="headingThree">
+            {/* Address Information (Only in Edit Mode) */}
+            {isEditMode && (
+              <div className="accordion-item border mb-4">
+                <h2 className="accordion-header" id="headingThree">
+                  <div
+                    className="accordion-button bg-white"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#collapseThree"
+                    aria-controls="collapseThree"
+                  >
+                    <h5 className="d-inline-flex align-items-center">
+                      <i
+                        data-feather="map-pin"
+                        className="text-primary me-2"
+                      ></i>
+                      <span>Address Information</span>
+                    </h5>
+                  </div>
+                </h2>
                 <div
-                  className="accordion-button bg-white"
-                  data-bs-toggle="collapse"
-                  data-bs-target="#collapseThree"
-                  aria-controls="collapseThree"
+                  id="collapseThree"
+                  className="accordion-collapse collapse show"
+                  aria-labelledby="headingThree"
+                  data-bs-parent="#accordionExample"
                 >
-                  <h5 className="d-inline-flex align-items-center">
-                    <i data-feather="map-pin" className="text-primary me-2"></i>
-                    <span>Address Information</span>
-                  </h5>
-                </div>
-              </h2>
-              <div
-                id="collapseThree"
-                className="accordion-collapse collapse show"
-                aria-labelledby="headingThree"
-                data-bs-parent="#accordionExample"
-              >
-                <div className="accordion-body border-top">
-                  <div className="row">
-                    <div className="col-lg-4 col-md-6">
-                      <div className="mb-3">
-                        <label className="form-label">Street</label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          name="street"
-                          value={formData.street}
-                          onChange={handleChange}
-                        />
+                  <div className="accordion-body border-top">
+                    <div className="row">
+                      <div className="col-lg-4 col-md-6">
+                        <div className="mb-3">
+                          <label className="form-label">Street</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            name="street"
+                            value={formData.street}
+                            onChange={handleChange}
+                          />
+                        </div>
                       </div>
-                    </div>
-                    <div className="col-lg-4 col-md-6">
-                      <div className="mb-3">
-                        <label className="form-label">Country</label>
-                        <Form.Select
-                          name="country"
-                          value={formData.country}
-                          onChange={handleChange}
-                        >
-                          <option value="">Select</option>
-                          <option value="United Kingdom">United Kingdom</option>
-                          <option value="USA">USA</option>
-                          <option value="India">India</option>
-                        </Form.Select>
+                      <div className="col-lg-4 col-md-6">
+                        <div className="mb-3">
+                          <label className="form-label">Country</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            name="country"
+                            value={formData.country}
+                            onChange={handleChange}
+                          />
+                        </div>
                       </div>
-                    </div>
-                    <div className="col-lg-4 col-md-6">
-                      <div className="mb-3">
-                        <label className="form-label">State</label>
-                        <Form.Select
-                          name="state"
-                          value={formData.state}
-                          onChange={handleChange}
-                        >
-                          <option value="">Select</option>
-                          <option value="California">California</option>
-                          <option value="Texas">Texas</option>
-                        </Form.Select>
+                      <div className="col-lg-4 col-md-6">
+                        <div className="mb-3">
+                          <label className="form-label">State</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            name="state"
+                            value={formData.state}
+                            onChange={handleChange}
+                          />
+                        </div>
                       </div>
-                    </div>
-                    <div className="col-lg-4 col-md-6">
-                      <div className="mb-3">
-                        <label className="form-label">City</label>
-                        <Form.Select
-                          name="city"
-                          value={formData.city}
-                          onChange={handleChange}
-                        >
-                          <option value="">Select</option>
-                          <option value="Los Angeles">Los Angeles</option>
-                          <option value="New York">New York</option>
-                        </Form.Select>
+                      <div className="col-lg-4 col-md-6">
+                        <div className="mb-3">
+                          <label className="form-label">City</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            name="city"
+                            value={formData.city}
+                            onChange={handleChange}
+                          />
+                        </div>
                       </div>
-                    </div>
-                    <div className="col-lg-4 col-md-6">
-                      <div className="mb-3">
-                        <label className="form-label">Postal Code</label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          name="postalCode"
-                          value={formData.postalCode}
-                          onChange={handleChange}
-                        />
+                      <div className="col-lg-4 col-md-6">
+                        <div className="mb-3">
+                          <label className="form-label">Postal Code</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            name="postalCode"
+                            value={formData.postalCode}
+                            onChange={handleChange}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
           <div className="text-end mb-3">
@@ -735,8 +744,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
               disabled={
                 isCreating ||
                 isUpdating ||
-                isAddressCreating ||
-                isAddressUpdating
+                (isEditMode && (isAddressCreating || isAddressUpdating))
               }
             >
               Cancel
@@ -747,15 +755,13 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
               disabled={
                 isCreating ||
                 isUpdating ||
-                isAddressCreating ||
-                isAddressUpdating ||
-                isRolesLoading
+                isRolesLoading ||
+                (isEditMode && (isAddressCreating || isAddressUpdating))
               }
             >
               {isCreating ||
               isUpdating ||
-              isAddressCreating ||
-              isAddressUpdating
+              (isEditMode && (isAddressCreating || isAddressUpdating))
                 ? "Saving..."
                 : isEditMode
                 ? "Update Employee"

@@ -1,0 +1,1095 @@
+import React, { useState, useEffect, useMemo } from "react";
+import {
+  Card,
+  Button,
+  Modal,
+  Spin,
+  Alert,
+  Space,
+  Typography,
+  Divider,
+  Empty,
+  Badge,
+  Row,
+  Col,
+  Tabs,
+  Select,
+} from "antd";
+import {
+  ShoppingCartOutlined,
+  UserAddOutlined,
+  DeleteOutlined,
+  CheckCircleOutlined,
+  ArrowLeftOutlined,
+} from "@ant-design/icons";
+import { useGetCustomersQuery } from "../../api/customerApi";
+import {
+  useGetCartQuery,
+  useUpdateCartMutation,
+  useClearCartMutation,
+  useRemoveFromCartMutation,
+} from "../../api/cartApi";
+import { useGetProfileQuery } from "../../api/userApi";
+import { useCreateQuotationMutation } from "../../api/quotationApi";
+import {
+  useGetAllAddressesQuery,
+  useCreateAddressMutation,
+} from "../../api/addressApi";
+import { LazyLoadImage } from "react-lazy-load-image-component";
+import AddCustomer from "../Customers/AddCustomer";
+import OrderTotal from "./OrderTotal";
+import { toast } from "sonner";
+import { v4 as uuidv4 } from "uuid";
+import { FcEmptyTrash } from "react-icons/fc";
+import { BiTrash } from "react-icons/bi";
+import styled from "styled-components";
+import PropTypes from "prop-types";
+import "react-lazy-load-image-component/src/effects/blur.css";
+
+const { Title, Text } = Typography;
+const { Option } = Select;
+const { TabPane } = Tabs;
+
+// Styled Components
+const PageWrapper = styled.div`
+  padding: 20px;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+`;
+
+const CartContainer = styled.div`
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+`;
+
+const CartItemsCard = styled(Card)`
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+`;
+
+const CartHeader = styled.div`
+  width: 100%;
+`;
+
+const CartItem = styled.div`
+  padding: 16px 0;
+  &:hover {
+    background: #fafafa;
+  }
+`;
+
+const CartItemImage = styled(LazyLoadImage)`
+  border-radius: 4px;
+  object-fit: cover;
+`;
+
+const QuantityButton = styled(Button)`
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const RemoveButton = styled(Button)`
+  margin-left: 8px;
+`;
+
+const CartSummaryCard = styled(Card)`
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 20px;
+`;
+
+const CustomerSelect = styled(Select)`
+  width: 100%;
+  margin-top: 8px;
+`;
+
+const CheckoutButton = styled(Button)`
+  background: #e31e24;
+  border-color: #e31e24;
+  &:hover {
+    background: #e31e24;
+    border-color: #e31e24;
+  }
+`;
+
+const EmptyCartWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 0;
+`;
+
+const AddAddressModal = ({ show, onClose, onSave }) => {
+  const [addressData, setAddressData] = useState({
+    name: "",
+    street: "",
+    city: "",
+    state: "",
+    country: "",
+    postalCode: "",
+  });
+  const [createAddress, { isLoading: isCreatingAddress }] =
+    useCreateAddressMutation();
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setAddressData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const newAddress = await createAddress(addressData).unwrap();
+      onSave(newAddress.data.addressId);
+      setAddressData({
+        name: "",
+        street: "",
+        city: "",
+        state: "",
+        country: "",
+        postalCode: "",
+      });
+      onClose();
+    } catch (err) {
+      toast.error(
+        `Failed to create address: ${err.data?.message || "Unknown error"}`
+      );
+    }
+  };
+
+  return (
+    <Modal title="Add New Address" open={show} onCancel={onClose} footer={null}>
+      <form onSubmit={handleSubmit}>
+        <div className="mb-3">
+          <label className="form-label">Name</label>
+          <input
+            type="text"
+            className="form-control"
+            name="name"
+            value={addressData.name}
+            onChange={handleChange}
+          />
+        </div>
+        <div className="mb-3">
+          <label className="form-label">Street *</label>
+          <input
+            type="text"
+            className="form-control"
+            name="street"
+            value={addressData.street}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div className="mb-3">
+          <label className="form-label">City *</label>
+          <input
+            type="text"
+            className="form-control"
+            name="city"
+            value={addressData.city}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div className="mb-3">
+          <label className="form-label">State</label>
+          <input
+            type="text"
+            className="form-control"
+            name="state"
+            value={addressData.state}
+            onChange={handleChange}
+          />
+        </div>
+        <div className="mb-3">
+          <label className="form-label">Country *</label>
+          <input
+            type="text"
+            className="form-control"
+            name="country"
+            value={addressData.country}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div className="mb-3">
+          <label className="form-label">Postal Code</label>
+          <input
+            type="text"
+            className="form-control"
+            name="postalCode"
+            value={addressData.postalCode}
+            onChange={handleChange}
+          />
+        </div>
+        <div className="modal-footer">
+          <Button type="button" onClick={onClose} disabled={isCreatingAddress}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isCreatingAddress}>
+            {isCreatingAddress ? "Saving..." : "Save Address"}
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  );
+};
+
+AddAddressModal.propTypes = {
+  show: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSave: PropTypes.func.isRequired,
+};
+
+const generateQuotationNumber = () => {
+  const timestamp = Date.now().toString().slice(-6);
+  const random = Math.floor(1000 + Math.random() * 9000);
+  return `QUO-${timestamp}-${random}`;
+};
+
+const NewCart = ({ onConvertToOrder }) => {
+  const {
+    data: profileData,
+    isLoading: profileLoading,
+    error: profileError,
+  } = useGetProfileQuery();
+  const userId = profileData?.user?.userId;
+
+  const {
+    data: cartData,
+    isLoading: cartLoading,
+    isError: cartError,
+    refetch,
+  } = useGetCartQuery(userId, { skip: !userId });
+
+  const {
+    data: customerData,
+    isLoading: customersLoading,
+    isError: customersError,
+  } = useGetCustomersQuery();
+
+  const {
+    data: addressesData,
+    isLoading: addressesLoading,
+    isError: addressesError,
+    refetch: refetchAddresses,
+  } = useGetAllAddressesQuery(userId, { skip: !userId });
+
+  const [updateCart] = useUpdateCartMutation();
+  const [clearCart] = useClearCartMutation();
+  const [removeFromCart] = useRemoveFromCartMutation();
+  const [createQuotation] = useCreateQuotationMutation();
+
+  const [activeTab, setActiveTab] = useState("cart");
+  const [selectedCustomer, setSelectedCustomer] = useState("");
+  const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
+  const [showClearCartModal, setShowClearCartModal] = useState(false);
+  const [showAddAddressModal, setShowAddAddressModal] = useState(false);
+  const [quotationNumber, setQuotationNumber] = useState(
+    generateQuotationNumber()
+  );
+  const [quotationData, setQuotationData] = useState({
+    quotationDate: new Date().toISOString().split("T")[0],
+    dueDate: "",
+    billTo: "",
+    shipTo: null,
+    signatureName: "CM TRADING CO",
+    includeGst: false,
+    gstValue: "",
+    discountType: "percent",
+    roundOff: "",
+  });
+  const [error, setError] = useState("");
+  const [updatingItems, setUpdatingItems] = useState({});
+
+  const customers = customerData?.data || [];
+  const customerList = useMemo(
+    () => (Array.isArray(customers) ? customers : []),
+    [customers]
+  );
+  const addresses = useMemo(
+    () =>
+      Array.isArray(addressesData?.data)
+        ? addressesData.data
+        : Array.isArray(addressesData)
+        ? addressesData
+        : [],
+    [addressesData]
+  );
+  const cartItems = useMemo(
+    () => (Array.isArray(cartData?.cart?.items) ? cartData.cart.items : []),
+    [cartData]
+  );
+
+  const totalItems = useMemo(
+    () => cartItems.reduce((acc, item) => acc + (item.quantity || 0), 0),
+    [cartItems]
+  );
+  const subTotal = useMemo(
+    () =>
+      cartItems.reduce(
+        (acc, item) => acc + (item.price || 0) * (item.quantity || 0),
+        0
+      ),
+    [cartItems]
+  );
+  const shipping = 40;
+  const tax = quotationData.includeGst
+    ? (subTotal * (parseFloat(quotationData.gstValue) || 0)) / 100
+    : 25;
+  const discount =
+    quotationData.discountType === "percent" ? (subTotal * 15) / 100 : 15;
+  const roundOff = parseFloat(quotationData.roundOff) || 0;
+  const totalAmount = subTotal + shipping + tax - discount + roundOff;
+
+  useEffect(() => {
+    if (selectedCustomer && addresses.length > 0) {
+      const selectedCustomerData = customerList.find(
+        (customer) => customer.customerId === selectedCustomer
+      );
+      if (selectedCustomerData) {
+        setQuotationData((prev) => {
+          const newBillTo = selectedCustomerData.name || prev.billTo;
+          let newShipTo = null;
+          if (selectedCustomerData.address) {
+            const customerAddress = selectedCustomerData.address;
+            const matchingAddress = addresses.find((addr) => {
+              const addrDetails = addr.addressDetails || addr;
+              return (
+                addrDetails.street === customerAddress.street &&
+                addrDetails.city === customerAddress.city &&
+                addrDetails.state === customerAddress.state &&
+                (addrDetails.postalCode === customerAddress.zipCode ||
+                  addrDetails.postalCode === customerAddress.postalCode) &&
+                addrDetails.country === customerAddress.country
+              );
+            });
+            if (matchingAddress && matchingAddress.addressId) {
+              newShipTo = matchingAddress.addressId;
+            }
+          }
+          return { ...prev, billTo: newBillTo, shipTo: newShipTo };
+        });
+      }
+    }
+  }, [selectedCustomer, customerList, addresses]);
+
+  useEffect(() => {
+    const { quotationDate, dueDate } = quotationData;
+    if (quotationDate && dueDate) {
+      const quotation = new Date(quotationDate);
+      const due = new Date(dueDate);
+      if (due <= quotation) {
+        setError("Due date must be after quotation date");
+      } else {
+        setError("");
+      }
+    }
+  }, [quotationData.quotationDate, quotationData.dueDate]);
+
+  const handleQuotationChange = (key, value) => {
+    setQuotationData((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleClearCart = async () => {
+    if (!userId) return toast.error("User not logged in!");
+    try {
+      await clearCart({ userId }).unwrap();
+      setQuotationNumber(generateQuotationNumber());
+      refetch();
+      setShowClearCartModal(false);
+      setActiveTab("cart");
+    } catch (error) {
+      toast.error(`Error: ${error.data?.message || "Failed to clear cart"}`);
+    }
+  };
+
+  const handleUpdateQuantity = async (productId, newQuantity) => {
+    if (!userId) return toast.error("User not logged in!");
+    setUpdatingItems((prev) => ({ ...prev, [productId]: true }));
+    try {
+      if (newQuantity <= 0) {
+        await removeFromCart({ userId, productId }).unwrap();
+      } else {
+        await updateCart({
+          userId,
+          productId,
+          quantity: Number(newQuantity),
+        }).unwrap();
+      }
+      refetch();
+    } catch (error) {
+      toast.error(`Error: ${error.data?.message || "Unknown error"}`);
+    } finally {
+      setUpdatingItems((prev) => ({ ...prev, [productId]: false }));
+    }
+  };
+
+  const handleRemoveItem = async (productId) => {
+    if (!userId) return toast.error("User not logged in!");
+    setUpdatingItems((prev) => ({ ...prev, [productId]: true }));
+    try {
+      await removeFromCart({ userId, productId }).unwrap();
+      refetch();
+    } catch (error) {
+      toast.error(`Error: ${error.data?.message || "Unknown error"}`);
+    } finally {
+      setUpdatingItems((prev) => ({ ...prev, [productId]: false }));
+    }
+  };
+
+  const handleCreateQuotation = async () => {
+    if (!selectedCustomer) return toast.error("Please select a customer.");
+    if (!userId) return toast.error("User not logged in!");
+    if (!quotationData.quotationDate || !quotationData.dueDate)
+      return toast.error("Please provide quotation and due dates.");
+    if (!quotationData.billTo)
+      return toast.error("Please provide a billing name.");
+    if (error) return toast.error("Please fix the errors before submitting.");
+    if (cartItems.length === 0)
+      return toast.error("Cart is empty. Add items to proceed.");
+
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(quotationData.quotationDate))
+      return toast.error("Invalid quotation date format. Use YYYY-MM-DD.");
+    if (!dateRegex.test(quotationData.dueDate))
+      return toast.error("Invalid due date format. Use YYYY-MM-DD.");
+
+    if (isNaN(totalAmount) || totalAmount <= 0)
+      return toast.error("Invalid total amount.");
+
+    if (
+      !cartItems.every(
+        (item) =>
+          item.productId &&
+          typeof item.quantity === "number" &&
+          item.quantity > 0 &&
+          typeof item.price === "number" &&
+          item.price >= 0
+      )
+    ) {
+      return toast.error(
+        "Invalid cart items. Ensure all items have valid productId, quantity, and price."
+      );
+    }
+
+    try {
+      await refetchAddresses().unwrap();
+    } catch (err) {
+      return toast.error("Failed to load addresses. Please try again.");
+    }
+
+    if (
+      quotationData.shipTo &&
+      !addresses.find((addr) => addr.addressId === quotationData.shipTo)
+    ) {
+      return toast.error("Invalid shipping address selected.");
+    }
+
+    const selectedCustomerData = customerList.find(
+      (customer) => customer.customerId === selectedCustomer
+    );
+    if (!selectedCustomerData)
+      return toast.error("Selected customer not found.");
+
+    const quotationPayload = {
+      quotationId: uuidv4(),
+      document_title: `Quotation for ${selectedCustomerData.name}`,
+      quotation_date: quotationData.quotationDate,
+      due_date: quotationData.dueDate,
+      reference_number: quotationNumber,
+      include_gst: quotationData.includeGst,
+      gst_value: parseFloat(quotationData.gstValue) || 0,
+      discountType: quotationData.discountType,
+      roundOff: parseFloat(quotationData.roundOff) || 0,
+      finalAmount: parseFloat(totalAmount.toFixed(2)),
+      signature_name: quotationData.signatureName || "CM TRADING CO",
+      signature_image: "",
+      customerId: selectedCustomerData.customerId,
+      shipTo: quotationData.shipTo || null,
+      createdBy: userId,
+      products: cartItems.map((item) => ({
+        productId: item.productId,
+        name: item.name || "Unnamed Product",
+        quantity: item.quantity || 1,
+        sellingPrice: parseFloat(item.price || 0),
+        discount: 0,
+        tax: quotationData.includeGst
+          ? parseFloat(quotationData.gstValue) || 0
+          : 0,
+        total: parseFloat((item.price * item.quantity).toFixed(2)),
+      })),
+      items: cartItems.map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity || 1,
+        discount: 0,
+        tax: quotationData.includeGst
+          ? parseFloat(quotationData.gstValue) || 0
+          : 0,
+        total: parseFloat((item.price * item.quantity).toFixed(2)),
+      })),
+    };
+
+    try {
+      await createQuotation(quotationPayload).unwrap();
+      await handleClearCart();
+      resetForm();
+    } catch (error) {
+      console.error("Quotation creation error:", error);
+      toast.error(
+        `Failed to create quotation: ${
+          error.data?.message || error.message || "Unknown error"
+        }`
+      );
+    }
+  };
+
+  const resetForm = () => {
+    setQuotationData({
+      quotationDate: new Date().toISOString().split("T")[0],
+      dueDate: "",
+      billTo: "",
+      shipTo: null,
+      signatureName: "CM TRADING CO",
+      includeGst: false,
+      gstValue: "",
+      discountType: "percent",
+      roundOff: "",
+    });
+    setSelectedCustomer("");
+    setQuotationNumber(generateQuotationNumber());
+    setActiveTab("cart");
+  };
+
+  const handleAddAddress = () => {
+    setShowAddAddressModal(true);
+  };
+
+  const handleAddressSave = (newAddressId) => {
+    setQuotationData((prev) => ({ ...prev, shipTo: newAddressId }));
+    setShowAddAddressModal(false);
+  };
+
+  if (profileLoading || cartLoading) {
+    return (
+      <PageWrapper>
+        <Spin size="large" style={{ display: "block", margin: "50px auto" }} />
+      </PageWrapper>
+    );
+  }
+
+  if (profileError || cartError) {
+    return (
+      <PageWrapper>
+        <Alert
+          message="Error loading data"
+          description={
+            profileError?.message ||
+            cartError?.message ||
+            "An unexpected error occurred"
+          }
+          type="error"
+          action={
+            <Button type="primary" onClick={refetch}>
+              Retry
+            </Button>
+          }
+          showIcon
+        />
+      </PageWrapper>
+    );
+  }
+
+  return (
+    <div className="page-wrapper">
+      <PageWrapper>
+        <CartContainer>
+          <Tabs
+            activeKey={activeTab}
+            onChange={setActiveTab}
+            type="card"
+            style={{ marginBottom: 24 }}
+            role="tablist"
+          >
+            <TabPane
+              tab={
+                <span
+                  role="tab"
+                  aria-label={`Cart tab with ${totalItems} items`}
+                >
+                  <ShoppingCartOutlined /> Cart ({totalItems})
+                </span>
+              }
+              key="cart"
+            >
+              <Row gutter={[24, 24]}>
+                <Col xs={24} lg={16}>
+                  <CartItemsCard>
+                    <CartHeader>
+                      <Space
+                        align="center"
+                        style={{
+                          justifyContent: "space-between",
+                          width: "100%",
+                        }}
+                      >
+                        <Title level={3}>
+                          Your Cart <ShoppingCartOutlined /> ({totalItems}{" "}
+                          items)
+                        </Title>
+                        <Button
+                          type="link"
+                          danger
+                          onClick={() => setShowClearCartModal(true)}
+                          disabled={cartItems.length === 0}
+                          aria-label="Clear cart"
+                        >
+                          Clear Cart
+                        </Button>
+                      </Space>
+                      <Divider />
+                    </CartHeader>
+
+                    {cartItems.length === 0 ? (
+                      <EmptyCartWrapper>
+                        <Empty
+                          description="Your cart is empty"
+                          image={<FcEmptyTrash style={{ fontSize: 64 }} />}
+                        />
+                        <Button
+                          type="primary"
+                          icon={<ArrowLeftOutlined />}
+                          href="/inventory/products"
+                          style={{ marginTop: 16 }}
+                          aria-label="Continue shopping"
+                        >
+                          Continue Shopping
+                        </Button>
+                      </EmptyCartWrapper>
+                    ) : (
+                      <div>
+                        {cartItems.map((item) => (
+                          <CartItem key={item.productId}>
+                            <Row gutter={[16, 16]} align="middle">
+                              <Col xs={6} sm={4}>
+                                <CartItemImage
+                                  src={
+                                    item.image ||
+                                    "https://via.placeholder.com/100"
+                                  }
+                                  alt={item.name}
+                                  width={80}
+                                  height={80}
+                                  effect="blur"
+                                  placeholderSrc="https://via.placeholder.com/100"
+                                />
+                              </Col>
+                              <Col xs={18} sm={10}>
+                                <Text strong>{item.name}</Text>
+                                <br />
+                                <Text
+                                  type="secondary"
+                                  block
+                                  style={{ color: "green" }}
+                                >
+                                  Price: ₹{item.price?.toFixed(2) || "0.00"}
+                                </Text>
+                              </Col>
+                              <Col xs={12} sm={6}>
+                                <Space>
+                                  <QuantityButton
+                                    size="small"
+                                    onClick={() =>
+                                      handleUpdateQuantity(
+                                        item.productId,
+                                        item.quantity - 1
+                                      )
+                                    }
+                                    disabled={
+                                      item.quantity <= 1 ||
+                                      updatingItems[item.productId]
+                                    }
+                                    loading={updatingItems[item.productId]}
+                                    aria-label={`Decrease quantity of ${item.name}`}
+                                  >
+                                    -
+                                  </QuantityButton>
+                                  <Text>{item.quantity}</Text>
+                                  <QuantityButton
+                                    size="small"
+                                    onClick={() =>
+                                      handleUpdateQuantity(
+                                        item.productId,
+                                        item.quantity + 1
+                                      )
+                                    }
+                                    disabled={updatingItems[item.productId]}
+                                    loading={updatingItems[item.productId]}
+                                    aria-label={`Increase quantity of ${item.name}`}
+                                  >
+                                    +
+                                  </QuantityButton>
+                                </Space>
+                              </Col>
+                              <Col
+                                xs={12}
+                                sm={4}
+                                style={{ textAlign: "right" }}
+                              >
+                                <Text strong style={{ color: "green" }}>
+                                  ₹{(item.price * item.quantity).toFixed(2)}
+                                </Text>
+                                <RemoveButton
+                                  type="text"
+                                  danger
+                                  icon={<BiTrash />}
+                                  onClick={() =>
+                                    handleRemoveItem(item.productId)
+                                  }
+                                  disabled={updatingItems[item.productId]}
+                                  loading={updatingItems[item.productId]}
+                                  aria-label={`Remove ${item.name} from cart`}
+                                />
+                              </Col>
+                            </Row>
+                            <Divider />
+                          </CartItem>
+                        ))}
+                      </div>
+                    )}
+                  </CartItemsCard>
+                </Col>
+                <Col xs={24} lg={8}>
+                  <CartSummaryCard>
+                    <Title level={4}>Order Summary</Title>
+                    <Divider />
+                    <OrderTotal
+                      shipping={shipping}
+                      tax={tax}
+                      coupon={0}
+                      discount={discount}
+                      roundOff={roundOff}
+                      subTotal={subTotal}
+                    />
+                    <Divider />
+                    <CheckoutButton
+                      type="primary"
+                      icon={<CheckCircleOutlined />}
+                      onClick={() => setActiveTab("checkout")}
+                      disabled={cartItems.length === 0}
+                      block
+                      size="large"
+                      aria-label="Proceed to checkout"
+                    >
+                      Proceed to Checkout
+                    </CheckoutButton>
+                    <Button
+                      type="default"
+                      href="/inventory/products"
+                      block
+                      style={{ marginTop: 8 }}
+                      aria-label="Continue shopping"
+                    >
+                      Continue Shopping
+                    </Button>
+                  </CartSummaryCard>
+                </Col>
+              </Row>
+            </TabPane>
+
+            <TabPane
+              tab={
+                <span role="tab" aria-label="Checkout tab">
+                  <CheckCircleOutlined /> Checkout
+                </span>
+              }
+              key="checkout"
+            >
+              <Row gutter={[24, 24]} justify="center">
+                <Col xs={24} lg={16}>
+                  <CartSummaryCard>
+                    <Title level={3}>Checkout</Title>
+                    <Divider />
+                    {cartItems.length === 0 ? (
+                      <EmptyCartWrapper>
+                        <Empty
+                          description="Your cart is empty"
+                          image={<FcEmptyTrash style={{ fontSize: 64 }} />}
+                        />
+                        <Button
+                          type="primary"
+                          icon={<ArrowLeftOutlined />}
+                          onClick={() => setActiveTab("cart")}
+                          style={{ marginTop: 16 }}
+                          aria-label="Back to cart"
+                        >
+                          Back to Cart
+                        </Button>
+                      </EmptyCartWrapper>
+                    ) : (
+                      <>
+                        <Text strong>Select Customer</Text>
+                        <CustomerSelect
+                          value={selectedCustomer}
+                          onChange={setSelectedCustomer}
+                          placeholder="Select a customer"
+                          loading={customersLoading}
+                          disabled={customersLoading || customersError}
+                          aria-label="Select customer"
+                        >
+                          {customersLoading ? (
+                            <Option disabled>Loading...</Option>
+                          ) : customersError ? (
+                            <Option disabled>Error fetching customers</Option>
+                          ) : customerList.length === 0 ? (
+                            <Option disabled>No customers available</Option>
+                          ) : (
+                            customerList.map((customer) => (
+                              <Option
+                                key={customer.customerId}
+                                value={customer.customerId}
+                              >
+                                {customer.name} ({customer.email})
+                              </Option>
+                            ))
+                          )}
+                        </CustomerSelect>
+                        <Button
+                          type="link"
+                          icon={<UserAddOutlined />}
+                          onClick={() => setShowAddCustomerModal(true)}
+                        >
+                          Add New Customer
+                        </Button>
+                        <Divider />
+                        <Text strong>Shipping Address</Text>
+                        <Select
+                          value={quotationData.shipTo}
+                          onChange={(value) =>
+                            handleQuotationChange("shipTo", value)
+                          }
+                          placeholder="Select shipping address"
+                          loading={addressesLoading}
+                          disabled={addressesLoading || addressesError}
+                          style={{ width: "100%", marginTop: 8 }}
+                        >
+                          {addressesLoading ? (
+                            <Option disabled>Loading...</Option>
+                          ) : addressesError ? (
+                            <Option disabled>Error fetching addresses</Option>
+                          ) : addresses.length === 0 ? (
+                            <Option disabled>No addresses available</Option>
+                          ) : (
+                            addresses.map((address) => (
+                              <Option
+                                key={address.addressId}
+                                value={address.addressId}
+                              >
+                                {address.name ||
+                                  `${address.street}, ${address.city}`}
+                              </Option>
+                            ))
+                          )}
+                        </Select>
+                        <Button
+                          type="link"
+                          icon={<UserAddOutlined />}
+                          onClick={handleAddAddress}
+                          style={{ padding: 0, marginTop: 8 }}
+                          aria-label="Add new address"
+                        >
+                          Add New Address
+                        </Button>
+                        <Divider />
+                        <Text strong>Quotation Date</Text>
+                        <input
+                          type="date"
+                          className="form-control"
+                          value={quotationData.quotationDate}
+                          onChange={(e) =>
+                            handleQuotationChange(
+                              "quotationDate",
+                              e.target.value
+                            )
+                          }
+                          style={{ marginTop: 8 }}
+                        />
+                        <Text strong>Due Date</Text>
+                        <input
+                          type="date"
+                          className="form-control"
+                          value={quotationData.dueDate}
+                          onChange={(e) =>
+                            handleQuotationChange("dueDate", e.target.value)
+                          }
+                          style={{ marginTop: 8 }}
+                        />
+                        {error && (
+                          <Alert
+                            message={error}
+                            type="error"
+                            showIcon
+                            style={{ marginTop: 8 }}
+                          />
+                        )}
+                        <Divider />
+                        <Text strong>Include GST</Text>
+                        <div>
+                          <input
+                            type="checkbox"
+                            checked={quotationData.includeGst}
+                            onChange={(e) =>
+                              handleQuotationChange(
+                                "includeGst",
+                                e.target.checked
+                              )
+                            }
+                            className="form-check-input"
+                          />
+                        </div>
+                        {quotationData.includeGst && (
+                          <>
+                            <Text strong>GST Value (%)</Text>
+                            <input
+                              type="number"
+                              className="form-control"
+                              value={quotationData.gstValue}
+                              onChange={(e) =>
+                                handleQuotationChange(
+                                  "gstValue",
+                                  e.target.value
+                                )
+                              }
+                              min="0"
+                              style={{ marginTop: 8 }}
+                            />
+                          </>
+                        )}
+                        <Divider />
+                        <Text strong>Discount Type</Text>
+                        <Select
+                          value={quotationData.discountType}
+                          onChange={(value) =>
+                            handleQuotationChange("discountType", value)
+                          }
+                          style={{ width: "100%", marginTop: 8 }}
+                        >
+                          <Option value="percent">Percent</Option>
+                          <Option value="fixed">Fixed</Option>
+                        </Select>
+                        <Divider />
+                        <Text strong>Round Off</Text>
+                        <input
+                          type="number"
+                          className="form-control"
+                          value={quotationData.roundOff}
+                          onChange={(e) =>
+                            handleQuotationChange("roundOff", e.target.value)
+                          }
+                          style={{ marginTop: 8 }}
+                        />
+                        <Divider />
+                      </>
+                    )}
+                  </CartSummaryCard>
+                </Col>
+                <Col xs={24} lg={8}>
+                  <CartSummaryCard>
+                    <Text strong>Quotation #: {quotationNumber}</Text>
+                    <Divider />
+                    <OrderTotal
+                      shipping={shipping}
+                      tax={tax}
+                      coupon={0}
+                      discount={discount}
+                      roundOff={roundOff}
+                      subTotal={subTotal}
+                    />
+                    <Divider />
+                    <CheckoutButton
+                      type="primary"
+                      icon={<CheckCircleOutlined />}
+                      onClick={handleCreateQuotation}
+                      disabled={
+                        cartItems.length === 0 ||
+                        !selectedCustomer ||
+                        error ||
+                        !quotationData.quotationDate ||
+                        !quotationData.dueDate
+                      }
+                      block
+                      size="large"
+                      aria-label="Create quotation"
+                    >
+                      Create Quotation
+                    </CheckoutButton>
+                    <Button
+                      type="default"
+                      onClick={() => setActiveTab("cart")}
+                      block
+                      style={{ marginTop: 8 }}
+                      aria-label="Back to cart"
+                    >
+                      Back to Cart
+                    </Button>
+                  </CartSummaryCard>
+                </Col>
+              </Row>
+            </TabPane>
+          </Tabs>
+
+          <Modal
+            title="Add Customer"
+            open={showAddCustomerModal}
+            onCancel={() => setShowAddCustomerModal(false)}
+            footer={null}
+          >
+            <AddCustomer
+              onClose={() => setShowAddCustomerModal(false)}
+              existingCustomer={null}
+            />
+          </Modal>
+
+          <Modal
+            title="Confirm Clear Cart"
+            open={showClearCartModal}
+            onOk={handleClearCart}
+            onCancel={() => setShowClearCartModal(false)}
+            okText="Clear"
+            okButtonProps={{ danger: true }}
+            cancelText="Cancel"
+          >
+            <Text>
+              Are you sure you want to clear all items from your cart?
+            </Text>
+          </Modal>
+
+          <AddAddressModal
+            show={showAddAddressModal}
+            onClose={() => setShowAddAddressModal(false)}
+            onSave={handleAddressSave}
+          />
+        </CartContainer>
+      </PageWrapper>
+    </div>
+  );
+};
+
+NewCart.propTypes = {
+  onConvertToOrder: PropTypes.func,
+};
+
+NewCart.defaultProps = {
+  onConvertToOrder: (orderData) => {
+    console.warn("onConvertToOrder not provided. Order data:", orderData);
+  },
+};
+
+export default NewCart;
