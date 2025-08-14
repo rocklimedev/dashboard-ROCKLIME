@@ -147,7 +147,15 @@ const ProductDetails = () => {
       setQuantity(value);
     }
   };
+  // Helper to get selling price from meta array
+  const getSellingPrice = (meta) => {
+    if (!Array.isArray(meta)) return null;
+    const spObj = meta.find((m) => m.title === "sellingPrice");
+    return spObj ? Number(spObj.value) : null;
+  };
 
+  // Only calculate sellingPrice if product exists
+  const sellingPrice = product ? getSellingPrice(product.meta) : null;
   // Dummy functions for ProductCard (replace with actual implementations)
   const getBrandsName = (brandId) => brandData?.brandName || "Not Branded";
   const getCategoryName = (categoryId) =>
@@ -223,6 +231,19 @@ const ProductDetails = () => {
     );
   }
 
+  if (!product) {
+    return (
+      <div className="main__product product">
+        <div className="container">
+          <div className="product__inner">
+            <div className="product__wrapper">
+              <p className="error-text">Product not found.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   if (!product) {
     return (
       <div className="main__product product">
@@ -364,13 +385,15 @@ const ProductDetails = () => {
                 {product.name || "N/A"}
               </h1>
               <div className="product-content__price">
-                {product.mrp && product.mrp !== product.sellingPrice && (
+                {product?.mrp && product.mrp !== sellingPrice && (
                   <span className="product-content__price-del">
                     ₹{Number(product.mrp).toFixed(2)}
                   </span>
                 )}
                 <span className="product-content__price-current">
-                  ₹{Number(product.sellingPrice).toFixed(2) || "N/A"}
+                  {sellingPrice !== null
+                    ? `₹${sellingPrice.toFixed(2)}`
+                    : "N/A"}
                 </span>
               </div>
               <p className="product-content__text">
@@ -451,20 +474,6 @@ const ProductDetails = () => {
                   Print Barcode
                 </button>
               </div>
-              <ul className="product-content__list">
-                <li className="product-content__list-item">
-                  <span>SKU:</span> {product.product_code || "N/A"}
-                </li>
-                <li className="product-content__list-item">
-                  <span>Category:</span>{" "}
-                  {parentCategoryData?.data?.name ||
-                    categoryData?.category?.name ||
-                    "N/A"}
-                </li>
-                <li className="product-content__list-item">
-                  <span>Brand:</span> {brandData?.brandName || "N/A"}
-                </li>
-              </ul>
             </div>
           </div>
         </div>
@@ -487,17 +496,6 @@ const ProductDetails = () => {
                       <p className="blog-section-box-content__text">
                         {product.description || "No description available"}
                       </p>
-                      <ul className="blog-section-box-content__list">
-                        <li className="blog-section-box-content__list-item">
-                          Product Code: {product.product_code || "N/A"}
-                        </li>
-                        <li className="blog-section-box-content__list-item">
-                          Product Group: {product.productGroup || "N/A"}
-                        </li>
-                        <li className="blog-section-box-content__list-item">
-                          Product Segment: {product.product_segment || "N/A"}
-                        </li>
-                      </ul>
                     </div>
                   ),
                 },
@@ -512,8 +510,30 @@ const ProductDetails = () => {
                         Additional Information
                       </h4>
                       <p className="blog-section-box-content__text">
-                        {product.additionalInfo ||
-                          "No additional information available."}
+                        <ul className="blog-section-box-content__list">
+                          <li className="blog-section-box-content__list-item">
+                            Product Code: {product.product_code || "N/A"}
+                          </li>
+                          <li className="blog-section-box-content__list-item">
+                            Product Group: {product.productGroup || "N/A"}
+                          </li>
+                          <li className="blog-section-box-content__list-item">
+                            Product Segment: {product.product_segment || "N/A"}
+                          </li>
+
+                          <li className="product-content__list-item">
+                            <span>SKU:</span> {product.product_code || "N/A"}
+                          </li>
+                          <li className="product-content__list-item">
+                            <span>Category:</span>{" "}
+                            {parentCategoryData?.data?.name ||
+                              categoryData?.category?.name ||
+                              "N/A"}
+                          </li>
+                          <li className="product-content__list-item">
+                            <span>Brand:</span> {brandData?.brandName || "N/A"}
+                          </li>
+                        </ul>
                       </p>
                     </div>
                   ),
