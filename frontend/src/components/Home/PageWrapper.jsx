@@ -28,10 +28,16 @@ import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
 import { FaRupeeSign } from "react-icons/fa";
+import StockModal from "../Common/StockModal";
+import DataTablePagination from "../Common/DataTablePagination";
 
 const PageWrapper = () => {
-  // State for low stock checkboxes
-  const [checkedProducts, setCheckedProducts] = useState({});
+  // State for modal
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [lowStockListModal, setLowStockListModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1); // 1-based page index for DataTablePagination
+  const itemsPerPage = 10;
 
   // Date utilities
   const today = useMemo(() => {
@@ -90,11 +96,11 @@ const PageWrapper = () => {
   const username = useMemo(() => {
     if (profile?.user?.name) {
       return profile.user.name
-        .split(" ") // split full name into words
+        .split(" ")
         .map(
-          (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase() // Capitalize first, rest lowercase
+          (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
         )
-        .join(" "); // rejoin into a single string
+        .join(" ");
     }
     return "Admin";
   }, [profile]);
@@ -188,9 +194,21 @@ const PageWrapper = () => {
     [products]
   );
 
-  // Toggle checkbox for low stock products
-  const toggleProductCheck = (productId) => {
-    setCheckedProducts((prev) => ({ ...prev, [productId]: !prev[productId] }));
+  const paginatedLowStock = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return lowStockProducts.slice(startIndex, startIndex + itemsPerPage);
+  }, [lowStockProducts, currentPage]);
+
+  // Open modal for selected product
+  const handleProductClick = (product) => {
+    setSelectedProduct(product);
+    setIsModalVisible(true);
+  };
+
+  // Close modal
+  const handleModalClose = () => {
+    setIsModalVisible(false);
+    setSelectedProduct(null);
   };
 
   // Category product counts
@@ -246,10 +264,6 @@ const PageWrapper = () => {
   // Top selling products
   const topSellingProducts = useMemo(() => {
     const productQuantities = {};
-
-    // Aggregate quantities from invoices
-
-    // Aggregate quantities from quotations
     quotationData?.forEach((quotation) => {
       quotation.products?.forEach((p) => {
         const pid = p.productId?._id || p.productId;
@@ -258,8 +272,6 @@ const PageWrapper = () => {
         }
       });
     });
-
-    // Map IDs to product names
     return Object.entries(productQuantities)
       .map(([productId, quantity]) => {
         const product = products.find(
@@ -328,6 +340,11 @@ const PageWrapper = () => {
     } catch (error) {
       toast.error("Failed to clock out.");
     }
+  };
+
+  // Handle page change for DataTablePagination
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage); // Update to the new page (1-based)
   };
 
   // Toasts
@@ -425,7 +442,7 @@ const PageWrapper = () => {
           <section className="summary-cards">
             {[
               {
-                link: "/quotations/list",
+                link: "/orders/list",
                 count: quotationCount,
                 label: "Total Quotations",
                 loading: loadingQuotations,
@@ -521,22 +538,39 @@ const PageWrapper = () => {
                   <p>No orders in the last 7 days.</p>
                 )}
               </div>
-
-              {/* Top Selling Products Bar Chart */}
             </div>
 
             <div className="card low-stock">
-              <h4>Low in Stock</h4>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <h4>Low in Stock</h4>
+                {lowStockProducts.length > 0 && (
+                  <button
+                    onClick={() => setLowStockListModal(true)}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    View All
+                  </button>
+                )}
+              </div>
               <ul>
                 {lowStockProducts.length > 0 ? (
                   lowStockProducts.slice(0, 4).map((product) => (
-                    <li key={product._id}>
-                      <input
-                        type="checkbox"
-                        checked={!!checkedProducts[product._id]}
-                        onChange={() => toggleProductCheck(product._id)}
-                        aria-label={`Select ${product.name}`}
-                      />
+                    <li
+                      key={product._id || product.productId}
+                      onClick={() => handleProductClick(product)}
+                      style={{ cursor: "pointer" }}
+                    >
                       {product.name} (Qty: {product.quantity})
                     </li>
                   ))
@@ -547,6 +581,85 @@ const PageWrapper = () => {
             </div>
           </section>
 
+          {/* Custom Modal for Low Stock Products */}
+          {lowStockListModal && (
+            <div
+              className="modal fade show"
+              style={{
+                display: "block",
+                backgroundColor: "rgba(0,0,0,0.5)",
+              }}
+              tabIndex="-1"
+              role="dialog"
+            >
+              <div
+                className="modal-dialog modal-lg modal-dialog-centered"
+                role="document"
+              >
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title">All Low Stock Products</h5>
+                    <button
+                      type="button"
+                      className="close"
+                      onClick={() => setLowStockListModal(false)}
+                      style={{
+                        fontSize: "1.5rem",
+                        lineHeight: "1",
+                        border: "none",
+                        background: "transparent",
+                      }}
+                    >
+                      <span>&times;</span>
+                    </button>
+                  </div>
+                  <div className="modal-body">
+                    {paginatedLowStock.length > 0 ? (
+                      <ul>
+                        {paginatedLowStock.map((product) => (
+                          <li
+                            key={product._id || product.productId}
+                            onClick={() => handleProductClick(product)}
+                            style={{
+                              cursor: "pointer",
+                              marginBottom: "8px",
+                            }}
+                          >
+                            {product.name} (Qty: {product.quantity})
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p>No low stock products.</p>
+                    )}
+                  </div>
+                  <div className="modal-footer">
+                    <DataTablePagination
+                      totalItems={lowStockProducts.length}
+                      itemNo={itemsPerPage}
+                      onPageChange={handlePageChange}
+                      currentPage={currentPage}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => setLowStockListModal(false)}
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          {isModalVisible && selectedProduct && (
+            <StockModal
+              show={isModalVisible}
+              onHide={() => handleModalClose(true)}
+              product={selectedProduct}
+              refetch={refetchProducts}
+            />
+          )}
           {!hasClockedIn && !loadingAttendance && userId && (
             <Alert
               type="warning"

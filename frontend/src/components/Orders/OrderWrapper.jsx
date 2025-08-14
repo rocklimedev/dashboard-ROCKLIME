@@ -260,12 +260,7 @@ const OrderWrapper = () => {
   };
 
   const handleViewInvoice = (order) => {
-    const invoiceId = order.invoiceId;
-    if (invoiceId) {
-      window.open(`/invoice/${invoiceId}`, "_blank");
-    } else {
-      toast.error("No invoice associated with this order.");
-    }
+    window.open(`${order.invoiceLink}`, "_blank");
   };
 
   const handleDeleteOrder = async (orderId) => {
@@ -477,6 +472,7 @@ const OrderWrapper = () => {
                       <thead>
                         <tr>
                           <th>S.No.</th>
+                          <th>Order No.</th>
                           <th>STATUS</th>
                           <th>TITLE</th>
                           <th>CUSTOMER</th>
@@ -508,6 +504,7 @@ const OrderWrapper = () => {
                           return (
                             <tr key={order.id}>
                               <td>{serialNumber}</td>
+                              <td>{order.orderNo}</td>
                               <td>
                                 <span
                                   className="priority-badge"

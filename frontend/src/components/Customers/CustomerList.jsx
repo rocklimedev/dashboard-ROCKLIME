@@ -221,9 +221,6 @@ const CustomerList = () => {
                             <th>Email</th>
                             <th>Phone</th>
                             <th>Company</th>
-                            <th>Total Amount</th>
-                            <th>Balance</th>
-                            <th>Paid Amount</th>
                             <th>Actions</th>
                           </tr>
                         </thead>
@@ -243,9 +240,7 @@ const CustomerList = () => {
                               <td>{customer.email || "N/A"}</td>
                               <td>{customer.mobileNumber || "N/A"}</td>
                               <td>{customer.companyName || "N/A"}</td>
-                              <td>{customer.totalAmount || "0"}</td>
-                              <td>{customer.balance || "0"}</td>
-                              <td>{customer.paidAmount || "0"}</td>
+
                               <td>
                                 <Dropdown
                                   trigger={["click"]}

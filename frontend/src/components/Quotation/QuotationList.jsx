@@ -308,21 +308,29 @@ const QuotationList = () => {
                     <table className="table table-hover">
                       <thead>
                         <tr>
+                          <th>S.No.</th> {/* New column */}
                           <th>Quotation Title</th>
                           <th>Quotation Date</th>
                           <th>Due Date</th>
                           <th>Reference Number</th>
                           <th>Products</th>
-                          <th>Created By</th>
                           <th>Customer</th>
                           <th>Final Amount</th>
                           <th></th>
                         </tr>
                       </thead>
                       <tbody>
-                        {currentQuotations.map((quotation) => (
+                        {currentQuotations.map((quotation, index) => (
                           <tr key={quotation.quotationId}>
-                            <td>{quotation.document_title || "N/A"}</td>
+                            <td>
+                              {(currentPage - 1) * itemsPerPage + index + 1}
+                            </td>{" "}
+                            {/* S.No. */}
+                            <td>
+                              <Link to={`/quotations/${quotation.quotationId}`}>
+                                {quotation.document_title || "N/A"}
+                              </Link>
+                            </td>
                             <td>
                               {new Date(
                                 quotation.quotation_date
@@ -347,8 +355,11 @@ const QuotationList = () => {
                                 {getProductCount(quotation.products)})
                               </button>
                             </td>
-                            <td>{getUserName(quotation.createdBy)}</td>
-                            <td>{getCustomerName(quotation.customerId)}</td>
+                            <td>
+                              <Link to={`/customer/${quotation.customerId}`}>
+                                {getCustomerName(quotation.customerId)}
+                              </Link>
+                            </td>
                             <td>₹{quotation.finalAmount || 0}</td>
                             <td>
                               <Dropdown

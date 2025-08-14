@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import pos from "../../assets/img/default.png";
 import "./productlist.css";
 import { toast } from "sonner";
+
 const ProductCard = ({
   product,
   getBrandsName,
@@ -19,7 +20,7 @@ const ProductCard = ({
   // Safely parse images from JSON string
   const productImages = product.images ? JSON.parse(product.images) : [pos];
 
-  // Get sellingPrice from metaDetails
+  // Get sellingPrice from metaDetails (still needed for add-to-cart validation)
   const sellingPrice =
     product.metaDetails?.find((meta) => meta.title === "sellingPrice")?.value ||
     null;
@@ -81,7 +82,9 @@ const ProductCard = ({
         </Link>
       </h6>
       <div className="price">
-        <p className="text-gray-9 mb-0">{formatPrice(sellingPrice)}</p>
+        <p className="text-gray-9 mb-0">
+          {formatPrice(product.meta, product.metaDetails)}
+        </p>
         <div className="qty-item">
           <Tooltip title="Minus">
             <button
