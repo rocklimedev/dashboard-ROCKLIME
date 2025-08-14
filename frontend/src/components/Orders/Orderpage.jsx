@@ -13,6 +13,7 @@ import {
   useUploadInvoiceMutation,
   orderApi,
 } from "../../api/orderApi";
+import { useGetAllTeamsQuery } from "../../api/teamApi";
 import { useGetProfileQuery } from "../../api/userApi";
 import { Dropdown, Form, Button, Spinner, Alert } from "react-bootstrap";
 import { BsThreeDotsVertical } from "react-icons/bs";
@@ -67,6 +68,7 @@ const OrderPage = () => {
   const [deleteComment] = useDeleteCommentMutation();
   const [uploadInvoice, { isLoading: isUploading }] =
     useUploadInvoiceMutation();
+  const [teamMap, setTeamMap] = useState({});
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [newComment, setNewComment] = useState("");
@@ -119,7 +121,11 @@ const OrderPage = () => {
   const { data: customerData } = useGetCustomerByIdQuery(order.createdFor, {
     skip: !order.createdFor,
   });
-
+  const {
+    data: teamData,
+    isLoading: teamLoading,
+    error: teamError,
+  } = useGetAllTeamsQuery();
   // Fetch team
   const teamIds = useMemo(
     () =>
@@ -128,13 +134,6 @@ const OrderPage = () => {
         : [],
     [order.assignedTo]
   );
-  const {
-    data: teamData,
-    isLoading: teamLoading,
-    error: teamError,
-  } = useGetTeamByIdQuery(teamIds, {
-    skip: !teamIds.length,
-  });
 
   // Parse comments
   const comments = useMemo(() => commentData?.comments || [], [commentData]);
@@ -150,6 +149,15 @@ const OrderPage = () => {
       setCustomerMap(map);
     }
   }, [customersData]);
+  useEffect(() => {
+    if (teamData?.teams) {
+      const map = teamData.teams.reduce((acc, team) => {
+        acc[team.id] = team.teamName || "—";
+        return acc;
+      }, {});
+      setTeamMap(map);
+    }
+  }, [teamData]);
 
   const userMap = useMemo(() => {
     const map = {};
@@ -158,16 +166,6 @@ const OrderPage = () => {
         team.teammembers.forEach((member) => {
           map[member.userId] = member.userName;
         });
-      });
-    }
-    return map;
-  }, [teamData]);
-
-  const teamMap = useMemo(() => {
-    const map = {};
-    if (teamData?.teams) {
-      teamData.teams.forEach((team) => {
-        map[team.id] = team.teamName;
       });
     }
     return map;
@@ -488,8 +486,8 @@ const OrderPage = () => {
                     <small className="text-muted">Assigned To</small>
                     <p>
                       {order.assignedTo
-                        ? teamMap[order.assignedTo] || "Unknown Team"
-                        : "N/A"}
+                        ? teamMap[order.assignedTo] || "—"
+                        : "—"}
                     </p>
                   </div>
                   <div className="col-6 mb-3">
