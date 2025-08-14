@@ -253,3 +253,34 @@
     font-size: 24px;
   }
 }
+/* pagewrapper.css */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
+
+.modal-dialog {
+  max-width: 500px; /* Adjust for StockModal */
+}
+
+.modal-dialog.modal-lg {
+  max-width: 800px; /* Adjust for low stock modal */
+}
+
+.modal-content {
+  border-radius: 0.3rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header,
+.modal-footer {
+  padding: 1rem;
+}
+
+.modal-body {
+  padding: 1rem;
+}

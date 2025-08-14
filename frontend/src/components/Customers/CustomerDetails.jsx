@@ -474,26 +474,16 @@ const CustomerDetails = () => {
                   <Table hover className="table table-borderless">
                     <thead>
                       <tr>
-                        <th>Order ID</th>
                         <th>Title</th>
                         <th>Status</th>
                         <th>Due Date</th>
                         <th>Priority</th>
-                        <th>Created By</th>
                         <th className="text-end">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {orders.map((order) => (
                         <tr key={order.id}>
-                          <td>
-                            <Link
-                              to={`/order/${order.id}`}
-                              className="text-primary"
-                            >
-                              {order.id}
-                            </Link>
-                          </td>
                           <td>{order.title}</td>
                           <td>
                             <Badge
@@ -509,8 +499,16 @@ const CustomerDetails = () => {
                             </Badge>
                           </td>
                           <td>{formatDate(order.dueDate)}</td>
-                          <td>{order.priority}</td>
-                          <td>{getUsername(order.createdBy)}</td>
+                          <td>
+                            {" "}
+                            <span
+                              className={`priority-badge ${
+                                order.priority?.toLowerCase() || "medium"
+                              }`}
+                            >
+                              {order.priority || "Medium"}
+                            </span>
+                          </td>
                           <td className="text-end">
                             <Link
                               to={`/order/${order.id}`}

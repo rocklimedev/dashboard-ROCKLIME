@@ -17,18 +17,21 @@ const Product = () => {
   } = useGetBrandParentCategoriesQuery();
 
   const imageBySlug = {
-    surface: surfaces,
-    adhesive: adhesive,
-    wellness: wellness,
-    cp_fitting: fittings,
     plumbing: fittings,
+    chemicals_and_adhesive: adhesive,
+    accessories_and_add_ons: surfaces,
+    stone_and_granites: surfaces,
+
+    tiles: surfaces,
+    cp_fittings_and_sanitary: fittings,
   };
 
   const desiredOrder = [
-    "cp_fitting",
-    "wellness",
-    "adhesive",
-    "surface",
+    "cp_fittings_and_sanitary",
+    "tiles",
+    "stone_and_granites",
+    "chemicals_and_adhesive",
+    "accessories_and_add_ons",
     "plumbing",
   ];
 

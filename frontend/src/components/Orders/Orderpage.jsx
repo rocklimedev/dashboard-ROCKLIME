@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useGetTeamByIdQuery } from "../../api/teamApi";
+import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetCustomerByIdQuery } from "../../api/customerApi";
 import {
   useGetOrderDetailsQuery,
@@ -59,7 +60,7 @@ const CommentRow = ({ comment, onDelete, currentUserId }) => {
 const OrderPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-
+  const [customerMap, setCustomerMap] = useState({});
   const [deleteOrder] = useDeleteOrderMutation();
   const [updateOrderStatus] = useUpdateOrderStatusMutation();
   const [addComment] = useAddCommentMutation();
@@ -82,7 +83,7 @@ const OrderPage = () => {
     error: profileError,
   } = useGetProfileQuery();
   const user = profileData?.user || {};
-
+  const { data: customersData } = useGetCustomersQuery();
   // Fetch order details
   const {
     data: orderData,
@@ -140,11 +141,15 @@ const OrderPage = () => {
   const totalComments = commentData?.totalCount || 0;
 
   // Maps for customer, user, and team
-  const customerMap = useMemo(
-    () =>
-      customerData ? { [customerData.customerId]: customerData.name } : {},
-    [customerData]
-  );
+  useEffect(() => {
+    if (customersData?.data) {
+      const map = customersData.data.reduce((acc, customer) => {
+        acc[customer.customerId] = customer.name || "—";
+        return acc;
+      }, {});
+      setCustomerMap(map);
+    }
+  }, [customersData]);
 
   const userMap = useMemo(() => {
     const map = {};
@@ -457,15 +462,7 @@ const OrderPage = () => {
                     <small className="text-muted">Customer</small>
                     <p>
                       {order.createdFor
-                        ? customerMap[order.createdFor] || "Unknown Customer"
-                        : "N/A"}
-                    </p>
-                  </div>
-                  <div className="col-6 mb-3">
-                    <small className="text-muted">Created By</small>
-                    <p>
-                      {order.createdBy
-                        ? userMap[order.createdBy] || "Unknown User"
+                        ? customerMap[order.createdFor] || "Loading..."
                         : "N/A"}
                     </p>
                   </div>
@@ -566,7 +563,10 @@ const OrderPage = () => {
                     </div>
                     <div style={{ flexGrow: 1 }}>
                       <strong>
-                        {order.invoiceLink.split("/").pop() || "Invoice.pdf"}
+                        <a href={order.invoiceLink} target="_blank">
+                          {" "}
+                          {order.invoiceLink.split("/").pop() || "Invoice.pdf"}
+                        </a>
                       </strong>
                       <div style={{ fontSize: "0.85rem", color: "#6c757d" }}>
                         PDF Document

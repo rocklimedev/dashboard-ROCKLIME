@@ -126,11 +126,6 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
           <FaUserCircle className="me-2" /> My Profile
         </div>
       </Menu.Item>
-      <Menu.Item key="attendance">
-        <div onClick={() => navigate(`/u/${user?.user?.userId}/attendance`)}>
-          <MdListAlt className="me-2" /> Your Attendance
-        </div>
-      </Menu.Item>
       <Menu.Item key="settings">
         <div onClick={() => navigate("/settings")}>
           <i className="ti ti-settings-2 me-2" /> Settings

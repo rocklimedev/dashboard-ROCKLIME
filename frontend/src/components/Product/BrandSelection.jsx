@@ -26,16 +26,16 @@ const BrandSelection = () => {
       GP_002: grohe,
       colston: colston,
       GB_004: groheBau,
-      JA_003: jayna,
-      surface: jayna,
-      sgt: jayna,
-      "shiv-ceramic": jayna,
-      jtc: "https://via.placeholder.com/300", // Placeholder for JTC
-      "baleno-grey": "https://via.placeholder.com/300", // Placeholder for BALENO GREY
-      uw: "https://via.placeholder.com/300", // Placeholder for UW
-      ibis: "https://via.placeholder.com/300", // Placeholder for IBIS
-      subway: "https://via.placeholder.com/300", // Placeholder for SUBWAY
-      sunheart: "https://via.placeholder.com/300", // Placeholder for SUNHEART
+      JA_003: groheBau,
+      surface: groheBau,
+      sgt: groheBau,
+      "shiv-ceramic": groheBau,
+      jtc: groheBau,
+      "baleno-grey": groheBau,
+      uw: groheBau,
+      ibis: groheBau,
+      subway: groheBau,
+      sunheart: groheBau,
     };
 
     const mappedBrands = Array.isArray(bpc?.brands)
