@@ -84,6 +84,7 @@ import NewUserList from "../components/User/NewUserList";
 import CategoryManagement from "../components/Categories/CategoryManagement";
 import BrandSelection from "../components/Product/BrandSelection";
 import OrderPage from "../components/Orders/Orderpage";
+import NewCart from "../components/POS-NEW/NewCart";
 
 const masterRoutes = [
   {
@@ -185,7 +186,7 @@ const masterRoutes = [
         path: "/hrm/attendance/list",
         name: "HRM",
         icon: <MdOutlinePeopleAlt />,
-        isSidebarActive: true,
+        isSidebarActive: false,
         element: <AttendanceList />,
       },
       {
@@ -230,7 +231,7 @@ const masterRoutes = [
     name: "Cart",
     icon: <BiCart />,
     isSidebarActive: false,
-    element: <Cart />,
+    element: <NewCart />,
   },
   {
     path: "#",

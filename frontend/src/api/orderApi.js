@@ -54,10 +54,13 @@ export const orderApi = createApi({
     uploadInvoice: builder.mutation({
       query: ({ orderId, formData }) => ({
         url: `/invoice-upload/${orderId}`,
-        method: "POST",
+        method: "PUT", // Changed from POST to PUT
         body: formData,
       }),
-      invalidatesTags: [{ type: "Order", id: "LIST" }],
+      invalidatesTags: (result, error, { orderId }) => [
+        { type: "Orders", id: orderId },
+        { type: "Orders", id: "LIST" },
+      ],
     }),
     createOrder: builder.mutation({
       query: (orderData) => ({
@@ -69,7 +72,9 @@ export const orderApi = createApi({
     }),
     getOrderDetails: builder.query({
       query: (orderId) => `/${orderId}`,
-      providesTags: ["Orders"], // Tag for specific order data
+      providesTags: (result, error, orderId) => [
+        { type: "Orders", id: orderId },
+      ], // Specific tag for the order ID
     }),
     updateOrderStatus: builder.mutation({
       query: (statusData) => ({

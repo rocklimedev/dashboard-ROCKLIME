@@ -1,8 +1,7 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useGetTeamByIdQuery } from "../../api/teamApi";
 import { useGetCustomerByIdQuery } from "../../api/customerApi";
-import { useGetProductByIdQuery } from "../../api/productApi";
 import {
   useGetOrderDetailsQuery,
   useAddCommentMutation,
@@ -10,7 +9,8 @@ import {
   useDeleteCommentMutation,
   useDeleteOrderMutation,
   useUpdateOrderStatusMutation,
-  useUploadInvoiceMutation, // New mutation for uploading invoices
+  useUploadInvoiceMutation,
+  orderApi,
 } from "../../api/orderApi";
 import { useGetProfileQuery } from "../../api/userApi";
 import { Dropdown, Form, Button, Spinner, Alert } from "react-bootstrap";
@@ -18,11 +18,10 @@ import { BsThreeDotsVertical } from "react-icons/bs";
 import { toast } from "sonner";
 import AddNewOrder from "./AddNewOrder";
 import { Document, Page, pdfjs } from "react-pdf";
-import axios from "axios";
-// Set the worker for react-pdf
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
-// CommentRow component (unchanged)
+// Dynamically use the pdfjs version installed with react-pdf
+pdfjs.GlobalWorkerOptions.workerSrc = `${process.env.PUBLIC_URL}/pdf.worker.min.js`;
+
 const CommentRow = ({ comment, onDelete, currentUserId }) => {
   const canDelete = comment.userId === currentUserId;
   return (
@@ -65,7 +64,8 @@ const OrderPage = () => {
   const [updateOrderStatus] = useUpdateOrderStatusMutation();
   const [addComment] = useAddCommentMutation();
   const [deleteComment] = useDeleteCommentMutation();
-  const [uploadInvoice] = useUploadInvoiceMutation(); // New mutation
+  const [uploadInvoice, { isLoading: isUploading }] =
+    useUploadInvoiceMutation();
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [newComment, setNewComment] = useState("");
@@ -88,8 +88,16 @@ const OrderPage = () => {
     data: orderData,
     isLoading: orderLoading,
     error: orderError,
+    refetch: refetchOrder,
   } = useGetOrderDetailsQuery(id);
   const order = orderData?.order || {};
+
+  // Debug order data
+  useEffect(() => {
+    console.log("Order data updated:", orderData);
+    console.log("Order status:", order?.status);
+    console.log("Order invoiceLink:", order?.invoiceLink);
+  }, [orderData]);
 
   // Fetch comments
   const {
@@ -123,16 +131,20 @@ const OrderPage = () => {
     data: teamData,
     isLoading: teamLoading,
     error: teamError,
-  } = useGetTeamByIdQuery(teamIds, { skip: !teamIds.length });
+  } = useGetTeamByIdQuery(teamIds, {
+    skip: !teamIds.length,
+  });
 
   // Parse comments
   const comments = useMemo(() => commentData?.comments || [], [commentData]);
   const totalComments = commentData?.totalCount || 0;
 
   // Maps for customer, user, and team
-  const customerMap = useMemo(() => {
-    return customerData ? { [customerData.customerId]: customerData.name } : {};
-  }, [customerData]);
+  const customerMap = useMemo(
+    () =>
+      customerData ? { [customerData.customerId]: customerData.name } : {},
+    [customerData]
+  );
 
   const userMap = useMemo(() => {
     const map = {};
@@ -158,7 +170,6 @@ const OrderPage = () => {
 
   const normalizedTeamMembers = useMemo(() => {
     if (!teamIds.length || !teamData?.teams) return [];
-
     return teamIds
       .map((teamId) => {
         const team = teamData.teams.find((t) => t.id === teamId);
@@ -190,36 +201,58 @@ const OrderPage = () => {
       toast.error("Please upload a valid PDF file.");
     }
   };
-  // Handle invoice upload
-  const handleUploadInvoice = async (e) => {
+
+  // Handle invoice upload form submission
+  const handleInvoiceFormSubmit = async (e) => {
     e.preventDefault();
     if (!invoiceFile) {
-      toast.error("No file selected for upload.");
+      toast.error("Please select a PDF file to upload.");
       return;
     }
+    if (!id) {
+      toast.error("Order ID is missing.");
+      return;
+    }
+    console.log("Submitting invoice for orderId:", id);
+    try {
+      const response = await handleUploadInvoice(id, invoiceFile);
+      console.log("Upload response:", response);
+      setInvoiceFile(null);
+      document.getElementById("invoiceUpload").value = null;
+    } catch (err) {
+      // Error is handled in handleUploadInvoice
+    }
+  };
 
+  const handleUploadInvoice = async (orderId, file) => {
     try {
       const formData = new FormData();
-      formData.append("invoice", invoiceFile);
+      formData.append("invoice", file);
 
-      const response = await axios.put(
-        `http://localhost:4000/api/order/invoice-upload/${id}`,
-        formData // Don't set Content-Type manually
-      );
+      console.log("Uploading file:", {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+      });
+
+      const response = await uploadInvoice({ orderId, formData }).unwrap();
+      console.log("Upload response:", response);
+
+      // Optimistically update the cache
+      orderApi.util.updateQueryData("getOrderDetails", orderId, (draft) => {
+        if (response.order?.invoiceLink) {
+          draft.order.invoiceLink = response.order.invoiceLink;
+        }
+      });
 
       toast.success("Invoice uploaded successfully");
-      setInvoiceFile(null);
-      return response.data;
+      refetchOrder();
+      return response;
     } catch (err) {
-      const errorMessage =
-        err.response?.data?.message || "Failed to upload invoice";
-      console.error("Upload error:", {
-        status: err.response?.status,
-        message: errorMessage,
-        data: err.response?.data,
-        fileSize: invoiceFile?.size,
-      });
-      toast.error(errorMessage);
+      console.error("Upload error:", err);
+      toast.error(
+        `Upload error: ${err.data?.message || "Failed to upload invoice"}`
+      );
       throw err;
     }
   };
@@ -252,6 +285,7 @@ const OrderPage = () => {
     try {
       await updateOrderStatus({ id, status: "ONHOLD" }).unwrap();
       toast.success("Order put on hold");
+      refetchOrder();
     } catch (err) {
       toast.error(
         `Failed to update order status: ${
@@ -355,6 +389,15 @@ const OrderPage = () => {
       </div>
     );
   }
+
+  // Construct PDF URL
+  const pdfUrl =
+    order.status === "INVOICE" && order.invoiceLink && order.invoiceLink !== ""
+      ? order.invoiceLink.startsWith("http")
+        ? order.invoiceLink
+        : `${process.env.REACT_APP_FTP_BASE_URL}${order.invoiceLink}`
+      : null;
+  console.log("PDF URL:", pdfUrl);
 
   return (
     <div className="page-wrapper notes-page-wrapper">
@@ -473,18 +516,18 @@ const OrderPage = () => {
               </div>
               <div className="card-body">
                 {/* Invoice Upload Form */}
-                <Form onSubmit={handleUploadInvoice} className="mb-4">
+                <Form onSubmit={handleInvoiceFormSubmit} className="mb-4">
                   <Form.Group controlId="invoiceUpload">
                     <Form.Label>Upload Invoice (PDF only)</Form.Label>
                     <Form.Control
                       type="file"
                       accept="application/pdf"
                       onChange={handleFileChange}
-                      disabled={order.status !== "INVOICE"}
+                      disabled={order.status !== "INVOICE" || isUploading}
                       aria-describedby="invoiceUploadHelp"
                     />
                     <Form.Text id="invoiceUploadHelp" muted>
-                      Upload a PDF invoice. Available only when order is not yet
+                      Upload a PDF invoice. Available only when order status is
                       INVOICE.
                     </Form.Text>
                   </Form.Group>
@@ -492,57 +535,57 @@ const OrderPage = () => {
                     type="submit"
                     variant="primary"
                     className="mt-2"
-                    disabled={!invoiceFile || order.status !== "INVOICE"}
+                    disabled={
+                      !invoiceFile || order.status !== "INVOICE" || isUploading
+                    }
                   >
-                    Upload Invoice
+                    {isUploading ? (
+                      <Spinner animation="border" size="sm" />
+                    ) : (
+                      "Upload Invoice"
+                    )}
                   </Button>
                 </Form>
 
                 {/* PDF Viewer */}
-                {order.status === "INVOICE" && order.invoiceUrl ? (
-                  <div>
-                    <h6>View Invoice</h6>
+                {/* Invoice Card Style (WhatsApp-like) */}
+                {order.status === "INVOICE" &&
+                order.invoiceLink &&
+                order.invoiceLink !== "" ? (
+                  <div
+                    className="d-flex align-items-center p-3 border rounded-3 bg-light"
+                    style={{ gap: "10px" }}
+                  >
                     <div
                       style={{
-                        border: "1px solid #ddd",
-                        padding: "10px",
-                        maxHeight: "500px",
-                        overflowY: "auto",
+                        fontSize: "2rem",
+                        color: "#d9534f",
                       }}
                     >
-                      <Document
-                        file={order.invoiceUrl}
-                        onLoadSuccess={onDocumentLoadSuccess}
-                        onLoadError={(error) =>
-                          toast.error("Failed to load PDF: " + error.message)
-                        }
-                      >
-                        <Page pageNumber={pdfPageNum} />
-                      </Document>
+                      📄
                     </div>
-                    {numPages && (
-                      <div className="d-flex justify-content-between mt-3">
-                        <Button
-                          variant="outline-secondary"
-                          disabled={pdfPageNum === 1}
-                          onClick={() => setPdfPageNum(pdfPageNum - 1)}
-                          aria-label="Previous PDF page"
-                        >
-                          Previous
-                        </Button>
-                        <span>
-                          Page {pdfPageNum} of {numPages}
-                        </span>
-                        <Button
-                          variant="outline-secondary"
-                          disabled={pdfPageNum === numPages}
-                          onClick={() => setPdfPageNum(pdfPageNum + 1)}
-                          aria-label="Next PDF page"
-                        >
-                          Next
-                        </Button>
+                    <div style={{ flexGrow: 1 }}>
+                      <strong>
+                        {order.invoiceLink.split("/").pop() || "Invoice.pdf"}
+                      </strong>
+                      <div style={{ fontSize: "0.85rem", color: "#6c757d" }}>
+                        PDF Document
                       </div>
-                    )}
+                    </div>
+                    <Button
+                      variant="outline-primary"
+                      onClick={() => {
+                        const link = document.createElement("a");
+                        link.href = pdfUrl;
+                        link.download =
+                          order.invoiceLink.split("/").pop() || "invoice.pdf";
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                    >
+                      Download
+                    </Button>
                   </div>
                 ) : order.status === "INVOICE" ? (
                   <Alert variant="warning">

@@ -265,13 +265,13 @@ const AddNewOrder = ({ adminName }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate required fields per the model/controller
+    // Validate required fields
     if (!formData.title || !formData.createdFor) {
       toast.error("Please fill all required fields (Title, Customer).");
       return;
     }
 
-    // Validate orderNo format (DDMMYYYYXXXXX)
+    // Validate orderNo format
     const orderNoRegex = /^\d{8}\d{5}$/;
     if (formData.orderNo && !orderNoRegex.test(formData.orderNo)) {
       toast.error(
@@ -286,7 +286,7 @@ const AddNewOrder = ({ adminName }) => {
       return;
     }
 
-    // Validate follow-up dates do not exceed due date
+    // Validate follow-up dates
     if (!validateFollowupDates()) {
       toast.error("Follow-up dates cannot be after the due date.");
       return;
@@ -299,15 +299,16 @@ const AddNewOrder = ({ adminName }) => {
         assignedTo: formData.assignedTo || null,
         priority: formData.priority || null,
         followupDates: formData.followupDates.filter(
-          (date) => date && new Date(date).toString() !== "Invalid Date"
+          (date) => date && moment(date).isValid()
         ),
       };
+      console.log("Update payload:", payload); // Debug payload
       if (isEditMode) {
         if (!id) {
           toast.error("Cannot update order: Invalid order ID.");
           return;
         }
-        await updateOrder({ id, updatedData: payload }).unwrap();
+        await updateOrder({ id, ...payload }).unwrap();
         toast.success("Order updated successfully");
       } else {
         await createOrder(payload).unwrap();
@@ -315,6 +316,7 @@ const AddNewOrder = ({ adminName }) => {
       }
       navigate("/orders/list");
     } catch (err) {
+      console.log("Update error:", err); // Debug error
       const errorMessage =
         err?.status === 400
           ? `Bad Request: ${err.data?.message || "Invalid data provided."}`
