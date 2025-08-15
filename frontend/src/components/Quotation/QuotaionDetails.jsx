@@ -28,7 +28,7 @@ const QuotationsDetails = () => {
     error,
     isLoading: isQuotationLoading,
   } = useGetQuotationByIdQuery(id);
-
+  const [isExporting, setIsExporting] = useState(false); // Add loading state
   const { data: usersData } = useGetAllUsersQuery();
   const { data: customersData } = useGetCustomersQuery();
   const users = usersData?.users || [];
@@ -244,6 +244,8 @@ const QuotationsDetails = () => {
         return;
       }
 
+      setIsExporting(true); // Set loading state
+
       if (exportFormat === "excel") {
         if (!products || products.length === 0) {
           toast.error("No products available to export.");
@@ -303,16 +305,41 @@ const QuotationsDetails = () => {
           };
         });
 
-        // STEP 2: Workbook setup
+        // STEP 2: Fetch all images in parallel
+        const imagePromises = [
+          fetchImageAsBuffer(logo), // Logo
+          ...exportRows.map((row) =>
+            row.imageUrl
+              ? fetchImageAsBuffer(row.imageUrl)
+              : Promise.resolve(placeholderImage)
+          ),
+        ];
+        const images = await Promise.all(imagePromises);
+        const logoImage = images[0]; // First image is the logo
+        const productImages = images.slice(1); // Remaining are product images
+
+        // STEP 3: Workbook setup
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet("Quotation");
 
+        // Set column widths to match UI table
+        worksheet.columns = [
+          { width: 8 }, // S.No
+          { width: 15 }, // Product Image
+          { width: 25 }, // Product Name
+          { width: 15 }, // Product Code
+          { width: 12 }, // MRP
+          { width: 12 }, // Discount
+          { width: 12 }, // Rate
+          { width: 8 }, // Unit
+          { width: 12 }, // Total
+        ];
+
         // Logo
-        const logoBuffer = await fetchImageAsBuffer(logo);
         try {
           const logoId = workbook.addImage({
-            buffer: logoBuffer.buffer,
-            extension: logoBuffer.extension,
+            buffer: logoImage.buffer,
+            extension: logoImage.extension,
           });
           worksheet.addImage(logoId, {
             tl: { col: 0, row: 0 },
@@ -335,18 +362,277 @@ const QuotationsDetails = () => {
           worksheet.getRow(1).height = 60;
         }
 
-        // Title + brand
+        // Title and Brand
         worksheet.mergeCells("B1:D1");
         worksheet.getCell("B1").value = "Estimate / Quotation";
         worksheet.getCell("B1").font = { bold: true, size: 16 };
-        worksheet.getCell("E1").value = brandNames; // Use dynamic brand names
+        worksheet.getCell("B1").alignment = {
+          horizontal: "center",
+          vertical: "middle",
+        };
+        worksheet.mergeCells("E1:I1");
+        worksheet.getCell("E1").value = brandNames;
         worksheet.getCell("E1").font = { bold: true, size: 12 };
-        worksheet.getRow(1).height = Math.max(
-          worksheet.getRow(1).height || 0,
-          60
-        );
+        worksheet.getCell("E1").alignment = {
+          horizontal: "center",
+          vertical: "middle",
+        };
 
-        // ... (rest of the handleExport function remains unchanged)
+        // Customer and Address Information
+        worksheet.mergeCells("A3:A4");
+        worksheet.getCell("A3").value = "M/s";
+        worksheet.getCell("A3").font = { bold: true };
+        worksheet.getCell("A3").alignment = { vertical: "middle" };
+        worksheet.mergeCells("B3:E4");
+        worksheet.getCell("B3").value = getCustomerName(quotation.customerId);
+        worksheet.getCell("B3").alignment = { vertical: "middle" };
+        worksheet.mergeCells("F3:F4");
+        worksheet.getCell("F3").value = "Date";
+        worksheet.getCell("F3").font = { bold: true };
+        worksheet.getCell("F3").alignment = { vertical: "middle" };
+        worksheet.mergeCells("G3:I4");
+        worksheet.getCell("G3").value = quotation.quotation_date
+          ? new Date(quotation.quotation_date).toLocaleDateString()
+          : new Date().toLocaleDateString();
+        worksheet.getCell("G3").alignment = { vertical: "middle" };
+
+        worksheet.mergeCells("A5:A6");
+        worksheet.getCell("A5").value = "Address";
+        worksheet.getCell("A5").font = { bold: true };
+        worksheet.getCell("A5").alignment = { vertical: "middle" };
+        worksheet.mergeCells("B5:I6");
+        worksheet.getCell("B5").value = addressData
+          ? `${addressData.street || ""}, ${addressData.city || ""}, ${
+              addressData.state || ""
+            }, ${addressData.postalCode || ""}, ${addressData.country || ""}`
+          : quotation.shipTo || "456, Park Avenue, New York, USA";
+        worksheet.getCell("B5").alignment = { vertical: "middle" };
+
+        // Product Table Headers
+        const headerRow1 = worksheet.addRow([
+          "S.No",
+          "Product Image",
+          "Product Name",
+          "Product Code",
+          "Amount",
+          "",
+          "",
+          "",
+          "",
+        ]);
+        headerRow1.font = { bold: true };
+        headerRow1.alignment = { vertical: "middle", horizontal: "center" };
+        worksheet.mergeCells(`E${headerRow1.number}:I${headerRow1.number}`);
+        headerRow1.eachCell((cell) => {
+          cell.border = {
+            top: { style: "thin" },
+            left: { style: "thin" },
+            bottom: { style: "thin" },
+            right: { style: "thin" },
+          };
+        });
+
+        const headerRow2 = worksheet.addRow([
+          "",
+          "",
+          "",
+          "",
+          "MRP",
+          "Discount",
+          "Rate",
+          "Unit",
+          "Total",
+        ]);
+        headerRow2.font = { bold: true };
+        headerRow2.alignment = { vertical: "middle", horizontal: "center" };
+        headerRow2.eachCell((cell) => {
+          cell.border = {
+            top: { style: "thin" },
+            left: { style: "thin" },
+            bottom: { style: "thin" },
+            right: { style: "thin" },
+          };
+        });
+
+        // Add product rows with images
+        let currentRow = headerRow2.number + 1;
+        exportRows.forEach((row, index) => {
+          const excelRow = worksheet.addRow([
+            row.index,
+            "", // Placeholder for image
+            row.name,
+            row.code,
+            row.mrp,
+            row.discount,
+            row.rate,
+            row.qty,
+            row.total,
+          ]);
+          excelRow.eachCell((cell) => {
+            cell.alignment = { vertical: "middle", horizontal: "center" };
+            cell.border = {
+              top: { style: "thin" },
+              left: { style: "thin" },
+              bottom: { style: "thin" },
+              right: { style: "thin" },
+            };
+          });
+
+          // Add product image
+          if (productImages[index].buffer) {
+            try {
+              const imageId = workbook.addImage({
+                buffer: productImages[index].buffer,
+                extension: productImages[index].extension,
+              });
+              worksheet.addImage(imageId, {
+                tl: { col: 1, row: currentRow - 1 },
+                ext: { width: 50, height: 50 },
+                editAs: "oneCell",
+              });
+              worksheet.getRow(currentRow).height = 50;
+            } catch (error) {
+              console.error(
+                `Error adding image for product ${row.name}: ${error.message}`
+              );
+            }
+          }
+
+          currentRow++;
+        });
+
+        // Add totals
+        const subtotalRow = worksheet.addRow([
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "Sub Total",
+          `₹${subtotal.toFixed(2)}`,
+        ]);
+        subtotalRow.eachCell((cell, colNumber) => {
+          if (colNumber > 7) {
+            cell.alignment = { vertical: "middle", horizontal: "center" };
+            cell.border = {
+              top: { style: "thin" },
+              left: { style: "thin" },
+              bottom: { style: "thin" },
+              right: { style: "thin" },
+            };
+          }
+        });
+
+        if (quotation.include_gst && quotation.gst_value) {
+          const gstRow = worksheet.addRow([
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            `GST (${quotation.gst_value}%)`,
+            `₹${gstAmount.toFixed(2)}`,
+          ]);
+          gstRow.eachCell((cell, colNumber) => {
+            if (colNumber > 7) {
+              cell.alignment = { vertical: "middle", horizontal: "center" };
+              cell.border = {
+                top: { style: "thin" },
+                left: { style: "thin" },
+                bottom: { style: "thin" },
+                right: { style: "thin" },
+              };
+            }
+          });
+        }
+
+        const totalRow = worksheet.addRow([
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "Total",
+          `₹${finalTotal.toFixed(2)}`,
+        ]);
+        totalRow.font = { bold: true };
+        totalRow.eachCell((cell, colNumber) => {
+          if (colNumber > 7) {
+            cell.alignment = { vertical: "middle", horizontal: "center" };
+            cell.border = {
+              top: { style: "thin" },
+              left: { style: "thin" },
+              bottom: { style: "thin" },
+              right: { style: "thin" },
+            };
+          }
+        });
+
+        // STEP 4: Generate and download the Excel file
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `Quotation_${id}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+        toast.success("Quotation exported successfully as Excel!");
+      } else if (exportFormat === "pdf") {
+        if (!quotationRef.current) {
+          toast.error("Quotation content not found.");
+          return;
+        }
+
+        // STEP 1: Capture the quotation container as an image
+        const canvas = await html2canvas(quotationRef.current, {
+          scale: 2, // Increase resolution for better quality
+          useCORS: true, // Enable CORS for images
+          logging: false, // Disable logging for performance
+        });
+
+        // STEP 2: Initialize jsPDF
+        const pdf = new jsPDF({
+          orientation: "portrait",
+          unit: "mm",
+          format: "a4",
+        });
+
+        // STEP 3: Calculate dimensions
+        const imgWidth = 190; // A4 width (210mm) minus margins (10mm each side)
+        const pageHeight = 297; // A4 height in mm
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        let heightLeft = imgHeight;
+        let position = 10; // Top margin
+
+        // STEP 4: Add the image to the PDF
+        const imgData = canvas.toDataURL("image/png");
+        pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+
+        // STEP 5: Handle multi-page content if needed
+        heightLeft -= pageHeight - 20; // Account for margins
+        while (heightLeft > 0) {
+          pdf.addPage();
+          position = heightLeft - imgHeight + 10;
+          pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+          heightLeft -= pageHeight - 20;
+        }
+
+        // STEP 6: Save the PDF
+        pdf.save(`Quotation_${id}.pdf`);
+
+        toast.success("Quotation exported successfully as PDF!");
       }
     } catch (error) {
       toast.error(
@@ -355,9 +641,10 @@ const QuotationsDetails = () => {
         }`
       );
       console.error("Export error:", error);
+    } finally {
+      setIsExporting(false); // Reset loading state
     }
   };
-
   if (isQuotationLoading || isCompanyLoading || loading) {
     return (
       <div className="page-wrapper">
