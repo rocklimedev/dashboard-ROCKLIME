@@ -85,6 +85,7 @@ import CategoryManagement from "../components/Categories/CategoryManagement";
 import BrandSelection from "../components/Product/BrandSelection";
 import OrderPage from "../components/Orders/Orderpage";
 import NewCart from "../components/POS-NEW/NewCart";
+import AccountVerify from "../components/Auth/AccountVerify";
 
 const masterRoutes = [
   {
@@ -430,6 +431,13 @@ const masterRoutes = [
         name: "Logout",
         icon: <IoLogOut />,
         isSidebarActive: true,
+      },
+      {
+        path: "/verify-account/:token",
+        name: "Veriy Account",
+        icon: <IoLogIn />,
+        isSidebarActive: false,
+        element: <AccountVerify />,
       },
       {
         path: "/login",

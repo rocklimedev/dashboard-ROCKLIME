@@ -1,117 +1,79 @@
 "use strict";
 const Product = require("../models/product");
-const ProductMeta = require("../models/productMeta");
-const { Op } = require("sequelize");
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    // Fetch the ProductMeta ID for company_code
-    const companyCodeMeta = await ProductMeta.findOne({
-      where: { title: "company_code" },
-      attributes: ["id"],
-    });
-
-    if (!companyCodeMeta) {
-      console.log(
-        'No ProductMeta found for title "company_code". Aborting seeder.'
-      );
-      return;
-    }
-
-    const companyCodeMetaId = companyCodeMeta.id;
-    console.log(`Found company_code ProductMeta ID: ${companyCodeMetaId}`);
-
-    // Fetch products with empty images (handle multiple cases)
+    // Fetch all products in Chemicals & Adhesive parentcategory
     const products = await Product.findAll({
       where: {
-        [Op.or]: [
-          { images: "[]" },
-          { images: "" },
-          { images: null },
-          { images: { [Op.eq]: [] } }, // For JSON/JSONB columns
-        ],
+        brand_parentcategoriesId: "94b8daf8-d026-4983-a567-85381c8faded",
       },
-      attributes: ["productId", "images", "meta"],
+      attributes: ["productId", "name", "images"],
     });
 
-    console.log(`Fetched ${products.length} products with empty images`);
+    console.log(`Fetched ${products.length} products to update`);
 
     let updatedCount = 0;
     let skippedCount = 0;
 
-    // Iterate through each product
     for (const product of products) {
       try {
-        // Log the raw images value for debugging
-        console.log(
-          `Processing product ${product.productId}, images: ${product.images}`
-        );
+        const name = product.name;
 
-        // Parse the images field
-        let images;
-        try {
-          images = product.images ? JSON.parse(product.images) : [];
-        } catch (error) {
-          console.log(
-            `Invalid images JSON for product ${product.productId}: ${product.images}`
-          );
+        if (!name) {
+          console.log(`❌ No name for product ${product.productId}`);
           skippedCount++;
           continue;
         }
 
-        // Skip if images is not empty
-        if (Array.isArray(images) && images.length > 0) {
-          console.log(
-            `Skipping product ${product.productId}: images not empty (${product.images})`
-          );
+        // Clean name: allow alphanumeric + spaces, drop everything else
+        const cleanName = name
+          .replace(/[^\w\s]/g, "") // remove special chars
+          .replace(/\s+/g, " ") // collapse multiple spaces
+          .trim();
+
+        if (!cleanName) {
+          console.log(`❌ Cleaned name empty for product ${product.productId}`);
           skippedCount++;
           continue;
         }
 
-        // Parse the meta field
-        const meta = product.meta || {};
-        const companyCode = meta[companyCodeMetaId];
+        // Encode to make it safe for URL (spaces → %20, etc.)
+        const encodedName = encodeURIComponent(cleanName);
 
-        if (!companyCode) {
-          console.log(
-            `No company_code found in meta for product ${product.productId}`
-          );
+        // Build new image URL
+        const newImageUrl = `https://static.cmtradingco.com/product_images/${encodedName}.png`;
+
+        // Skip update if image already matches
+        const currentImages = product.images ? JSON.parse(product.images) : [];
+        if (currentImages.length && currentImages[0] === newImageUrl) {
+          console.log(`⏩ Skipping ${product.productId} (already up to date)`);
           skippedCount++;
           continue;
         }
 
-        // Construct the image URL using company_code
-        const imageUrl = `https://static.cmtradingco.com/product_images/${companyCode}.png`;
-
-        // Update the images field
+        // Update DB
         await Product.update(
-          { images: JSON.stringify([imageUrl]) },
+          { images: JSON.stringify([newImageUrl]) },
           { where: { productId: product.productId } }
         );
 
-        console.log(
-          `Updated product ${product.productId} with image ${imageUrl}`
-        );
+        console.log(`✅ Updated ${product.productId} -> ${newImageUrl}`);
         updatedCount++;
       } catch (error) {
         console.error(
-          `Failed to update product ${product.productId}: ${error.message}`
+          `⚠️ Failed to update ${product.productId}: ${error.message}`
         );
         skippedCount++;
       }
     }
 
     console.log(
-      `Seeder completed: ${updatedCount} products updated, ${skippedCount} products skipped.`
+      `Seeder finished: ✅ ${updatedCount} updated, ⏩ ${skippedCount} skipped.`
     );
   },
 
   down: async (queryInterface, Sequelize) => {
-    // Revert changes by setting images back to "[]"
-    await Product.update(
-      { images: "[]" },
-      { where: { images: { [Op.like]: "%static.cmtradingco.com%" } } }
-    );
-    console.log("Reverted image updates for all affected products");
+    console.log("Revert not implemented. Restore from backup if needed.");
   },
 };

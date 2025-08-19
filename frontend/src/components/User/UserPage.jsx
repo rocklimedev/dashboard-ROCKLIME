@@ -171,13 +171,6 @@ const UserPage = () => {
               <div className="card-body">
                 <div className="d-flex align-items-center justify-content-between mb-2">
                   <span className="d-inline-flex align-items-center">
-                    <i className="ti ti-id me-2"></i>
-                    Employee ID
-                  </span>
-                  <p className="text-dark">{user.userId}</p>
-                </div>
-                <div className="d-flex align-items-center justify-content-between mb-2">
-                  <span className="d-inline-flex align-items-center">
                     <i className="ti ti-star me-2"></i>
                     Team
                   </span>

@@ -2,25 +2,26 @@ const fs = require("fs").promises;
 const path = require("path");
 
 // JSON data to process
-const jsonData = require("./products_updated.json");
+const jsonData = require("./product.json");
 
-// Mock category and brand objects (since no DB access)
-const mockBrand = { brandName: "Tiles" }; // Assumed brand name
+// Mock brand (replace if you fetch from DB)
+const mockBrand = { brandName: "Tiles" };
 
-async function generateCode(row, parentcategories, existingCodes) {
-  // Extract company_code from row[2]
-  const companyCode = row[2] ? `CMP-${row[2]}` : "CMP-0000";
+async function generateCode(product, existingCodes) {
+  const companyCode = product.company_code
+    ? `CMP-${product.company_code}`
+    : "CMP-0000";
 
-  // Extract last 4 digits from company_code (e.g., "CMP-767" -> "0767")
+  // Extract last 4 digits from company_code
   const match = companyCode.match(/\d{4}(?!.*\d)/);
   const last4 = match ? match[0] : "0000";
 
-  // Generate prefix: E + first 2 letters of category + first 2 letters of brand + last 4 digits
-  const prefix = `E${parentcategories
+  // Use productType (adhesive, etc.) as prefix + brand + last4 digits
+  const prefix = `E${product.productType
     .slice(0, 2)
     .toUpperCase()}${mockBrand.brandName.slice(0, 2).toUpperCase()}${last4}`;
 
-  // Extract suffixes from existing codes with the same prefix
+  // Collect existing suffixes for this prefix
   const suffixes = existingCodes
     .filter((code) => code.startsWith(prefix))
     .map((code) => code.replace(prefix, ""))
@@ -37,42 +38,36 @@ async function updateProductJson() {
   try {
     console.log("✅ Processing product.json...");
 
-    // Collect existing product codes to ensure uniqueness
+    // Collect existing codes (if products already have productCode field)
     const existingCodes = jsonData
-      .filter((item) => item.row.length >= 4 && item.row[4]) // Check for existing productCode
-      .map((item) => item.row[4]);
+      .filter((item) => item.productCode)
+      .map((item) => item.productCode);
 
-    // Process each item in the JSON data
-    for (const item of jsonData) {
-      const { parentcategories, row } = item;
-
-      if (!Array.isArray(row)) {
-        console.warn(`⏩ Skipping item without 'row': ${JSON.stringify(item)}`);
-        continue;
-      }
-
-      // Skip single-field rows (categories)
-      if (row.length === 1) {
-        console.log(`ℹ️ Skipping category: "${row[0]}"`);
-        continue;
-      }
-
-      // For four-field rows, generate and add productCode
-      if (row.length === 4) {
-        const newCode = await generateCode(
-          row,
-          parentcategories,
-          existingCodes
+    for (const product of jsonData) {
+      if (!product.company_code) {
+        console.warn(
+          `⏩ Skipping product without company_code: ${product.name}`
         );
-        row.push(newCode);
-        existingCodes.push(newCode);
-        console.log(`✅ Added productCode "${newCode}" to "${row[1]}"`);
-      } else if (row.length > 4) {
-        console.warn(`⚠️ Row already has ${row.length} fields: "${row[1]}"`);
+        continue;
       }
+
+      // If already has productCode, skip
+      if (product.productCode) {
+        console.log(
+          `ℹ️ Already has code: ${product.name} (${product.productCode})`
+        );
+        continue;
+      }
+
+      // Generate new code
+      const newCode = await generateCode(product, existingCodes);
+      product.productCode = newCode;
+      existingCodes.push(newCode);
+
+      console.log(`✅ Added productCode "${newCode}" to "${product.name}"`);
     }
 
-    // Write updated JSON back to product.json
+    // Save back
     const outputPath = path.resolve(__dirname, "product.json");
     await fs.writeFile(outputPath, JSON.stringify(jsonData, null, 2));
     console.log("🎉 product.json updated successfully.");

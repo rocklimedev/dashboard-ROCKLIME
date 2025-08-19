@@ -6,14 +6,18 @@ const {
   forgotPassword,
   resetPassword,
   refreshToken,
+  verifyAccount,
 } = require("../controller/authController");
 const checkPermission = require("../middleware/permission");
 const router = express.Router();
-
+const { emailer } = require("../middleware/sendMail");
+const emails = require("../config/template");
+router.post("/verify-account", verifyAccount); // New endpoint
 router.post(
   "/register",
   //checkPermission("write", "register", "auth", "/auth/register"),
-  register
+  register,
+  emailer(emails.accountVerificationEmail)
 );
 router.post(
   "/login",
@@ -33,12 +37,14 @@ router.post(
   //   "forgot-password",
   //   "/auth/forgot-password"
   // ),
-  forgotPassword
+  forgotPassword,
+  emailer(emails.resetEmail)
 );
 router.post(
   "/reset-password",
   // checkPermission("write", "reset-password", "auth", "/auth/reset-password"),
-  resetPassword
+  resetPassword,
+  emailer(emails.confirmResetPasswordEmail)
 );
 router.post(
   "/refresh-token",

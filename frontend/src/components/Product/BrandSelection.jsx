@@ -36,6 +36,7 @@ const BrandSelection = () => {
       ibis: groheBau,
       subway: groheBau,
       sunheart: groheBau,
+      extras: groheBau,
     };
 
     const mappedBrands = Array.isArray(bpc?.brands)

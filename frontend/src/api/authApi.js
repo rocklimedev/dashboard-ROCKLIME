@@ -48,10 +48,17 @@ export const authApi = createApi({
       invalidatesTags: ["Auth", "Users"],
     }),
     forgotPassword: builder.mutation({
-      query: (email) => ({
+      query: (payload) => ({
         url: "/forgot-password",
         method: "POST",
-        body: { email },
+        body: payload, // Should receive { email: string }
+      }),
+    }),
+    verifyAccount: builder.mutation({
+      query: ({ token }) => ({
+        url: "/verify-account", // Replace with your actual endpoint
+        method: "POST",
+        body: { token },
       }),
     }),
     resetPassword: builder.mutation({
@@ -95,4 +102,5 @@ export const {
   useRefreshTokenMutation,
   useVerifyEmailMutation,
   useChangePasswordMutation,
+  useVerifyAccountMutation,
 } = authApi;
