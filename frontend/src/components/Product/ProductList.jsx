@@ -96,14 +96,28 @@ const ProductsList = () => {
   };
 
   const formatPrice = (meta, metaDetails) => {
-    // Find the sellingPrice from metaDetails
-    const sellingPriceEntry = metaDetails?.find(
-      (detail) => detail.title === "sellingPrice"
-    );
+    const sellingPriceEntry = Array.isArray(metaDetails)
+      ? metaDetails.find((detail) => detail.title === "sellingPrice")
+      : null;
     const price = sellingPriceEntry ? sellingPriceEntry.value : null;
     return price !== null && !isNaN(Number(price))
       ? `₹${Number(price).toFixed(2)}`
       : "N/A";
+  };
+
+  const parseImages = (images) => {
+    try {
+      // Check if images is a string and attempt to parse it
+      if (typeof images === "string") {
+        const parsed = JSON.parse(images);
+        return Array.isArray(parsed) ? parsed : [pos];
+      }
+      // If images is already an array, return it
+      return Array.isArray(images) ? images : [pos];
+    } catch (error) {
+      console.error(`Error parsing images for product: ${error.message}`);
+      return [pos]; // Fallback to default image
+    }
   };
 
   const products = useMemo(
@@ -128,7 +142,7 @@ const ProductsList = () => {
       const matchesFilter = brandId
         ? String(product.brandId) === String(brandId)
         : bpcId
-        ? String(product.brand_parentcategoriesId) === String(bpcId) // Fixed to use brand_parentcategoriesId
+        ? String(product.brand_parentcategoriesId) === String(bpcId)
         : true;
       const searchTerm = search.toLowerCase();
       return (
@@ -140,12 +154,14 @@ const ProductsList = () => {
       );
     });
   }, [products, brandId, bpcId, search]);
+
   const formattedTableData = useMemo(
     () =>
       filteredProducts.map((product) => ({
+        ...product,
         Name: product.name || "N/A",
         Brand: getBrandsName(product.brandId),
-        Price: formatPrice(product.meta, product.metaDetails), // Pass metaDetails
+        Price: formatPrice(product.meta, product.metaDetails),
         Stock:
           product.quantity > 0
             ? `${product.quantity} in stock`
@@ -220,10 +236,9 @@ const ProductsList = () => {
       toast.error("User not logged in!");
       return;
     }
-    // Find sellingPrice from metaDetails
-    const sellingPriceEntry = product.metaDetails?.find(
-      (detail) => detail.title === "sellingPrice"
-    );
+    const sellingPriceEntry = Array.isArray(product.metaDetails)
+      ? product.metaDetails.find((detail) => detail.title === "sellingPrice")
+      : null;
     const sellingPrice = sellingPriceEntry ? sellingPriceEntry.value : null;
     if (!sellingPrice || isNaN(Number(sellingPrice))) {
       toast.error("Invalid product price");
@@ -319,7 +334,7 @@ const ProductsList = () => {
       dataIndex: "images",
       key: "images",
       render: (images) => {
-        const parsedImages = images ? JSON.parse(images) : [pos];
+        const parsedImages = parseImages(images);
         return (
           <img
             src={parsedImages[0] || pos}
@@ -348,7 +363,7 @@ const ProductsList = () => {
       title: "Price",
       dataIndex: "meta",
       key: "price",
-      render: (meta, record) => formatPrice(meta, record.metaDetails), // Pass metaDetails
+      render: (meta, record) => formatPrice(meta, record.metaDetails),
     },
     {
       title: "Stock",
@@ -361,9 +376,9 @@ const ProductsList = () => {
       title: "Actions",
       key: "actions",
       render: (_, record) => {
-        const sellingPriceEntry = record.metaDetails?.find(
-          (detail) => detail.title === "sellingPrice"
-        );
+        const sellingPriceEntry = Array.isArray(record.metaDetails)
+          ? record.metaDetails.find((detail) => detail.title === "sellingPrice")
+          : null;
         const sellingPrice = sellingPriceEntry ? sellingPriceEntry.value : null;
         return (
           <div style={{ display: "flex", gap: 8 }}>
@@ -532,6 +547,7 @@ const ProductsList = () => {
               }}
             >
               <Pagination
+                U
                 current={currentPage}
                 total={filteredProducts.length}
                 pageSize={itemsPerPage}

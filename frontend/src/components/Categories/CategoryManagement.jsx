@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useCallback } from "react";
+import { debounce } from "lodash";
 import {
   useGetAllCategoriesQuery,
   useDeleteCategoryMutation,
@@ -22,7 +23,7 @@ import { BiTrash } from "react-icons/bi";
 import { toast } from "sonner";
 
 const CategoryManagement = () => {
-  // State for modals and navigation
+  // State
   const [showParentCategoryModal, setShowParentCategoryModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showKeywordModal, setShowKeywordModal] = useState(false);
@@ -74,30 +75,42 @@ const CategoryManagement = () => {
     ? keywordData.keywords
     : [];
 
-  // Filtering
-  const filteredParentCategories = parentCategories.filter((pc) =>
-    pc.name.toLowerCase().includes(parentCategorySearchTerm.toLowerCase())
+  // Memoized filtering
+  const filteredParentCategories = useMemo(
+    () =>
+      parentCategories.filter((pc) =>
+        pc.name.toLowerCase().includes(parentCategorySearchTerm.toLowerCase())
+      ),
+    [parentCategories, parentCategorySearchTerm]
   );
 
-  const filteredCategories = categories.filter((c) => {
-    const categoryNameMatch = c.name
-      .toLowerCase()
-      .includes(categorySearchTerm.toLowerCase());
-    const parentMatch = selectedParentId
-      ? c.parentCategoryId === selectedParentId
-      : true;
-    return categoryNameMatch && parentMatch;
-  });
+  const filteredCategories = useMemo(
+    () =>
+      categories.filter((c) => {
+        const categoryNameMatch = c.name
+          .toLowerCase()
+          .includes(categorySearchTerm.toLowerCase());
+        const parentMatch = selectedParentId
+          ? c.parentCategoryId === selectedParentId
+          : true;
+        return categoryNameMatch && parentMatch;
+      }),
+    [categories, categorySearchTerm, selectedParentId]
+  );
 
-  const filteredKeywords = keywords.filter((k) => {
-    const keywordMatch = k.keyword
-      .toLowerCase()
-      .includes(keywordSearchTerm.toLowerCase());
-    const categoryMatch = selectedCategoryId
-      ? k.categoryId === selectedCategoryId
-      : true;
-    return keywordMatch && categoryMatch;
-  });
+  const filteredKeywords = useMemo(
+    () =>
+      keywords.filter((k) => {
+        const keywordMatch = k.keyword
+          .toLowerCase()
+          .includes(keywordSearchTerm.toLowerCase());
+        const categoryMatch = selectedCategoryId
+          ? k.categoryId === selectedCategoryId
+          : true;
+        return keywordMatch && categoryMatch;
+      }),
+    [keywords, keywordSearchTerm, selectedCategoryId]
+  );
 
   // Pagination
   const paginatedParentCategories = filteredParentCategories.slice(
@@ -111,6 +124,20 @@ const CategoryManagement = () => {
   const paginatedKeywords = filteredKeywords.slice(
     (keywordPage - 1) * itemsPerPage,
     keywordPage * itemsPerPage
+  );
+
+  // Debounced search handlers
+  const debouncedSetParentCategorySearch = useCallback(
+    debounce((value) => setParentCategorySearchTerm(value), 300),
+    []
+  );
+  const debouncedSetCategorySearch = useCallback(
+    debounce((value) => setCategorySearchTerm(value), 300),
+    []
+  );
+  const debouncedSetKeywordSearch = useCallback(
+    debounce((value) => setKeywordSearchTerm(value), 300),
+    []
   );
 
   // Handlers
@@ -139,7 +166,7 @@ const CategoryManagement = () => {
       if (itemType === "ParentCategory") {
         await deleteParentCategory(item.id).unwrap();
         if (paginatedParentCategories.length === 1 && parentCategoryPage > 1) {
-          setParentCategoryPage(parentCategoryPage - 1);
+          setParentCategoryPage((prev) => Math.max(1, prev - 1));
         }
         if (selectedParentId === item.id) {
           setSelectedParentId(null);
@@ -148,7 +175,7 @@ const CategoryManagement = () => {
       } else if (itemType === "Category") {
         await deleteCategory(item.categoryId).unwrap();
         if (paginatedCategories.length === 1 && categoryPage > 1) {
-          setCategoryPage(categoryPage - 1);
+          setCategoryPage((prev) => Math.max(1, prev - 1));
         }
         if (selectedCategoryId === item.categoryId) {
           setSelectedCategoryId(null);
@@ -156,7 +183,7 @@ const CategoryManagement = () => {
       } else if (itemType === "Keyword") {
         await deleteKeyword(item.id).unwrap();
         if (paginatedKeywords.length === 1 && keywordPage > 1) {
-          setKeywordPage(keywordPage - 1);
+          setKeywordPage((prev) => Math.max(1, prev - 1));
         }
       }
       setShowDeleteModal(false);
@@ -181,7 +208,6 @@ const CategoryManagement = () => {
     }
   };
 
-  // Modal close handlers
   const handleCloseParentCategoryModal = () => {
     setShowParentCategoryModal(false);
     setEditingParentCategory(null);
@@ -211,7 +237,7 @@ const CategoryManagement = () => {
           <ol className="breadcrumb">
             <li
               className={`breadcrumb-item ${!selectedParentId ? "active" : ""}`}
-              onClick={() => handleBack()}
+              onClick={handleBack}
               style={{ cursor: selectedParentId ? "pointer" : "default" }}
             >
               Parent Categories /
@@ -263,8 +289,9 @@ const CategoryManagement = () => {
                   type="text"
                   className="form-control"
                   placeholder="Search Parent Category..."
-                  value={parentCategorySearchTerm}
-                  onChange={(e) => setParentCategorySearchTerm(e.target.value)}
+                  onChange={(e) =>
+                    debouncedSetParentCategorySearch(e.target.value)
+                  }
                 />
               </div>
             </div>
@@ -292,6 +319,10 @@ const CategoryManagement = () => {
                     className="card h-100"
                     style={{ cursor: "pointer" }}
                     onClick={() => {
+                      console.log(
+                        "Selecting parent category:",
+                        parentCategory.id
+                      );
                       setSelectedParentId(parentCategory.id);
                       setCategoryPage(1);
                       setCategorySearchTerm("");
@@ -372,8 +403,7 @@ const CategoryManagement = () => {
                   type="text"
                   className="form-control"
                   placeholder="Search Category..."
-                  value={categorySearchTerm}
-                  onChange={(e) => setCategorySearchTerm(e.target.value)}
+                  onChange={(e) => debouncedSetCategorySearch(e.target.value)}
                 />
               </div>
             </div>
@@ -401,6 +431,7 @@ const CategoryManagement = () => {
                     className="card h-100"
                     style={{ cursor: "pointer" }}
                     onClick={() => {
+                      console.log("Selecting category:", category.categoryId);
                       setSelectedCategoryId(category.categoryId);
                       setKeywordPage(1);
                       setKeywordSearchTerm("");
@@ -480,8 +511,7 @@ const CategoryManagement = () => {
                   type="text"
                   className="form-control"
                   placeholder="Search Keyword..."
-                  value={keywordSearchTerm}
-                  onChange={(e) => setKeywordSearchTerm(e.target.value)}
+                  onChange={(e) => debouncedSetKeywordSearch(e.target.value)}
                 />
               </div>
             </div>

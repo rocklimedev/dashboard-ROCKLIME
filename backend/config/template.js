@@ -1,226 +1,103 @@
+// emails.js
+
+// Base HTML template for all emails
+function baseTemplate(title, body) {
+  return `
+  <div style="font-family: Arial, sans-serif; max-width:600px; margin:auto; border:1px solid #eee; border-radius:8px; overflow:hidden;">
+    <div style="background:#222; color:#fff; padding:16px; text-align:center; font-size:20px; font-weight:bold;">
+      CM Trading Co
+    </div>
+    <div style="padding:24px; font-size:15px; line-height:1.6; color:#333;">
+      <h2 style="color:#222; margin-top:0;">${title}</h2>
+      ${body}
+    </div>
+    <div style="background:#f8f8f8; padding:12px; text-align:center; font-size:13px; color:#777;">
+      © ${new Date().getFullYear()} CM Trading Co. All rights reserved.
+    </div>
+  </div>`;
+}
+
+// 1. Password Reset
 exports.resetEmail = (host, resetToken) => {
-  const message = {
-    subject: "Reset Password",
-    text:
-      `${
-        "You are receiving this because you have requested to reset your password for your account.\n\n" +
-        "Please click on the following link, or paste this into your browser to complete the process.\n\n" +
-        "http://"
-      }${host}/reset-password/${resetToken}\n\n` +
-      `If you did not request this, please ignore this email and your password will remain unchanged.\n`,
-  };
-  return message;
+  const url = `http://${host}/reset-password/${resetToken}`;
+  const subject = "Reset Your Password";
+
+  const text = `
+You requested a password reset.
+
+Please click the link below (or copy/paste in your browser) to reset your password:
+${url}
+
+If you did not request this, you can safely ignore this email.`;
+
+  const html = baseTemplate(
+    "Reset Your Password",
+    `<p>You requested a password reset.</p>
+     <p>Please click the button below to reset your password:</p>
+     <p style="text-align:center; margin:20px 0;">
+       <a href="${url}" style="background:#007bff; color:#fff; padding:12px 20px; border-radius:5px; text-decoration:none; font-weight:bold;">Reset Password</a>
+     </p>
+     <p>If you did not request this, you can safely ignore this email.</p>`
+  );
+
+  return { subject, text, html };
 };
 
+// 2. Confirm Password Reset
 exports.confirmResetPasswordEmail = () => {
-  const message = {
-    subjext: "Password Changed",
-    text:
-      `You are receiving this email because you changed your password. \n\n` +
-      `If you did not request this change, please contact us immediately.`,
-  };
-  return message;
+  const subject = "Your Password Has Been Changed";
+
+  const text = `
+Your password was successfully changed.
+
+If you did not make this change, please contact our support team immediately.`;
+
+  const html = baseTemplate(
+    "Password Changed",
+    `<p>Your password was successfully changed.</p>
+     <p>If you did not make this change, please contact our support team immediately.</p>`
+  );
+
+  return { subject, text, html };
 };
 
-exports.merchantSignUp = (host, { resetToken, email }) => {
-  const message = {
-    subject: "Merchant Registration",
-    text: `${
-      "Congratulations! You application has been acceptedd. Please complete your Merchant account signup by clicking on the link below. \n\n" +
-      "Please click on the following link, or paste this into your browser to complete the process:\n\n" +
-      "http://"
-    }${host}/merchant-signup/${resetToken}?email=${email}\n\n`,
-  };
-  return message;
-};
-
-exports.merchantWelcome = (name) => {
-  const message = {
-    subject: "Merchant Registration",
-    text:
-      `Hi ${name}! Congratulations! Your application for merchant account has been accepted. \n\n` +
-      `It looks like you already have a member account with us. Please sign in with your member credentials and you will be able to see your merchant account.`,
-  };
-  return message;
-};
-
-exports.signupEmail = (name) => {
-  const message = {
-    subject: "Account Registration",
-    text: `Hi ${name.firstName} ${name.lastName}! Thank you for creating an account with us.`,
-  };
-  return message;
-};
-
-exports.newsletterSubscriptionEmail = () => {
-  const message = {
-    subject: "Newsletter Subscription",
-    text:
-      `You are receiving this meial because you subscribes to our newsletter. \n\n` +
-      `If you did not request this change, please contact us immediately.`,
-  };
-  return message;
-};
-
-exports.contactEmail = () => {
-  const message = {
-    subject: "Contact Us",
-    text: `We received your message! Our team will contact you soon. \n\n`,
-  };
-
-  return message;
-};
-
-exports.merchantApplicationEmail = () => {
-  const message = {
-    subject: "Sell on Time Office",
-    text: `We received your request! Our team will contact you soon. \n\n`,
-  };
-
-  return message;
-};
-
-exports.merchantDeactivateAccount = () => {
-  const message = {
-    subject: "Merchant account on Time Office",
-    text:
-      `Your merchant account has been disabled. \n\n` +
-      `Please contact admin to request access again.`,
-  };
-
-  return message;
-};
-
-exports.orderConfirmationEmail = (order) => {
-  const message = {
-    subject: `Order Confirmation ${order._id}`,
-    text:
-      `Hi ${order.user.profile.firstName}! Thank you for your order!. \n\n` +
-      `We've received your order and will contact you as soon as your package is shipped. \n\n`,
-  };
-
-  return message;
-};
-exports.orderShippedEmail = (order) => {
-  const message = {
-    subject: `Your Order ${order._id} Has Been Shipped`,
-    text:
-      `Hi ${order.user.profile.firstName},\n\n` +
-      `Good news! Your order has been shipped and is on its way to you.\n\n` +
-      `You can track your shipment here: ${order.shippingTrackingUrl}\n\n` +
-      `Thank you for shopping with us! If you have any questions, feel free to reach out.\n\n`,
-  };
-  return message;
-};
-exports.orderDeliveredEmail = (order) => {
-  const message = {
-    subject: `Your Order ${order._id} Has Been Delivered`,
-    text:
-      `Hi ${order.user.profile.firstName},\n\n` +
-      `We're excited to let you know that your order has been delivered!\n\n` +
-      `If you're satisfied with your purchase, please consider leaving a review.\n\n` +
-      `Thank you for shopping with us. We hope to serve you again soon!\n\n`,
-  };
-  return message;
-};
-exports.orderCanceledEmail = (order) => {
-  const message = {
-    subject: `Your Order ${order._id} Has Been Canceled`,
-    text:
-      `Hi ${order.user.profile.firstName},\n\n` +
-      `We're sorry to inform you that your order has been canceled due to an issue with payment or availability.\n\n` +
-      `If you have any questions or would like to reorder, please contact our support team.\n\n` +
-      `We apologize for any inconvenience caused.\n\n`,
-  };
-  return message;
-};
-exports.productBackInStockEmail = (product, user) => {
-  const message = {
-    subject: `${product.name} is Back in Stock!`,
-    text:
-      `Hi ${user.profile.firstName},\n\n` +
-      `We're excited to let you know that the product you wanted, ${product.name}, is now back in stock!\n\n` +
-      `Hurry, limited quantities are available. You can purchase it here: ${product.url}\n\n` +
-      `Thanks for your patience!\n\n`,
-  };
-  return message;
-};
-exports.passwordResetRequestEmail = (host, resetToken) => {
-  const message = {
-    subject: "Password Reset Request",
-    text:
-      `Hi, \n\n` +
-      `You requested a password reset. Please click on the following link to reset your password:\n\n` +
-      `http://${host}/reset-password/${resetToken}\n\n` +
-      `If you did not request this, please ignore this email.\n\n`,
-  };
-  return message;
-};
-exports.paymentFailedEmail = (order) => {
-  const message = {
-    subject: `Payment Failed for Order ${order._id}`,
-    text:
-      `Hi ${order.user.profile.firstName},\n\n` +
-      `We were unable to process your payment for the order ${order._id}. Please check your payment details and try again.\n\n` +
-      `If the issue persists, please contact our support team for assistance.\n\n` +
-      `Thank you!\n\n`,
-  };
-  return message;
-};
+// 3. Account Verification
 exports.accountVerificationEmail = (host, verificationToken) => {
-  const message = {
-    subject: "Account Verification",
-    text:
-      `Hi,\n\n` +
-      `Thank you for registering with us. To verify your account, please click the following link:\n\n` +
-      `http://${host}/verify-account/${verificationToken}\n\n` +
-      `If you did not register, please ignore this email.\n\n`,
-  };
-  return message;
+  const url = `http://${host}/verify-account/${verificationToken}`;
+  const subject = "Verify Your Account";
+
+  const text = `
+Thank you for registering.
+
+Please verify your account by clicking the link below:
+${url}
+
+If you did not register, please ignore this email.`;
+
+  const html = baseTemplate(
+    "Verify Your Account",
+    `<p>Thank you for registering with CM Trading Co.</p>
+     <p>Click the button below to verify your account:</p>
+     <p style="text-align:center; margin:20px 0;">
+       <a href="${url}" style="background:#28a745; color:#fff; padding:12px 20px; border-radius:5px; text-decoration:none; font-weight:bold;">Verify Account</a>
+     </p>
+     <p>If you did not register, please ignore this email.</p>`
+  );
+
+  return { subject, text, html };
 };
-exports.reviewRequestEmail = (order) => {
-  const message = {
-    subject: `We'd Love Your Feedback on Order ${order._id}`,
-    text:
-      `Hi ${order.user.profile.firstName},\n\n` +
-      `We hope you're enjoying your recent purchase from us. We'd love to hear your thoughts!\n\n` +
-      `Please leave a review for the product(s) you purchased:\n\n` +
-      `${order.productNames}\n\n` +
-      `Your feedback helps us improve and helps other customers make informed decisions. Thank you!`,
-  };
-  return message;
-};
-exports.subscriptionRenewalReminderEmail = (user) => {
-  const message = {
-    subject: "Subscription Renewal Reminder",
-    text:
-      `Hi ${user.profile.firstName},\n\n` +
-      `This is a reminder that your subscription plan will be renewed soon. Please ensure your payment details are up to date.\n\n` +
-      `If you have any questions or want to modify your plan, feel free to contact us.\n\n`,
-  };
-  return message;
-};
-exports.accountDeactivationWarningEmail = (user) => {
-  const message = {
-    subject: "Account Deactivation Warning",
-    text:
-      `Hi ${user.profile.firstName},\n\n` +
-      `We noticed that your account has been inactive for a while. If you wish to keep it, please log in within the next 7 days to avoid deactivation.\n\n` +
-      `If you need assistance, feel free to contact us.\n\n`,
-  };
-  return message;
-};
-exports.cartAbandonmentReminderEmail = (user, cart) => {
-  const message = {
-    subject: "You Left Something in Your Cart!",
-    text:
-      `Hi ${user.profile.firstName},\n\n` +
-      `It looks like you left some items in your cart. Don't miss out on them! Here's what you left behind:\n\n` +
-      `${cart.items
-        .map((item) => `${item.name} - ${item.quantity} x $${item.price}`)
-        .join("\n")}\n\n` +
-      `Complete your purchase now: ${cart.url}\n\n` +
-      `If you have any questions, our team is here to help.\n\n`,
-  };
-  return message;
+
+// 4. User Signup Welcome
+exports.signupEmail = (name) => {
+  const subject = "Welcome to CM Trading Co";
+
+  const text = `Hi ${name}!\n\nThank you for creating an account with us.`;
+
+  const html = baseTemplate(
+    "Welcome to CM Trading Co",
+    `<p>Hi ${name}!</p>
+     <p>Thank you for creating an account with us. We’re excited to have you onboard.</p>`
+  );
+
+  return { subject, text, html };
 };

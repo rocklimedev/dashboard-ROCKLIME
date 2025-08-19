@@ -213,16 +213,18 @@ const CustomerDetails = () => {
             <div className="card rounded-0 border-0">
               <div className="card-header rounded-0 bg-primary d-flex align-items-center">
                 <span className="avatar avatar-xl flex-shrink-0 border border-white border-3 me-3">
-                  <Avatar
-                    name={customer.name || "Customer"}
-                    src={customer.avatar || "/assets/img/users/user-32.jpg"}
-                    size="60"
-                    round={true}
-                    color="#4A90E2"
-                    textSizeRatio={2.5}
-                    alt={`Avatar of ${customer.name || "Customer"}`}
-                    style={{ borderRadius: "50%" }} // Inline style to ensure circular shape
-                  />
+                  <span className="avatar avatar-xl flex-shrink-0 border border-white border-3 me-3">
+                    <Avatar
+                      name={customer.name || "Customer"}
+                      src={customer.avatar || "/assets/img/users/user-32.jpg"}
+                      size="60"
+                      round={true}
+                      color="#4A90E2"
+                      textSizeRatio={2.5}
+                      alt={`Avatar of ${customer.name || "Customer"}`}
+                      style={{ borderRadius: "50% !important" }}
+                    />
+                  </span>
                 </span>
                 <div className="me-3">
                   <h6 className="text-white mb-1">{customer.name || "N/A"}</h6>
@@ -334,71 +336,7 @@ const CustomerDetails = () => {
                 </div>
               </div>
             </div>
-            {/* Invoices */}
-            <div className="card rounded-0 border-0">
-              <div className="card-header border-0 rounded-0 bg-light">
-                <h6>Invoices</h6>
-              </div>
-              <div className="card-body">
-                <div className="table-responsive">
-                  <Table hover className="table table-borderless">
-                    <thead>
-                      <tr>
-                        <th>Invoice No</th>
-                        <th>Bill To</th>
-                        <th>Ship To</th>
-                        <th>Invoice Date</th>
-                        <th>Due Date</th>
-                        <th>Amount</th>
-                        <th>Created By</th>
-                        <th>Status</th>
-                        <th className="text-end">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {invoices.map((invoice) => (
-                        <tr key={invoice.invoiceId}>
-                          <td>
-                            <Link
-                              to={`/invoice/${invoice.invoiceId}`}
-                              className="text-primary"
-                            >
-                              {invoice.invoiceNo}
-                            </Link>
-                          </td>
-                          <td>{invoice.billTo}</td>
-                          <td>{formatAddress(invoice.shipTo)}</td>
-                          <td>{formatDate(invoice.invoiceDate)}</td>
-                          <td>{formatDate(invoice.dueDate)}</td>
-                          <td>Rs. {Number(invoice.amount || 0).toFixed(2)}</td>
-                          <td>{getUsername(invoice.createdBy)}</td>
-                          <td>{getInvoiceStatusBadge(invoice.status)}</td>
-                          <td className="text-end">
-                            <Link
-                              to={`/invoice/${invoice.invoiceId}`}
-                              className="btn btn-sm btn-outline-primary me-2"
-                              title="View Invoice"
-                            >
-                              <FaEye />
-                            </Link>
-                            <Button
-                              variant="outline-danger"
-                              size="sm"
-                              href="#"
-                              data-bs-toggle="modal"
-                              data-bs-target="#delete"
-                              title="Delete Invoice"
-                            >
-                              <FaTrash />
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </Table>
-                </div>
-              </div>
-            </div>
+
             {/* Quotations */}
             <div className="card rounded-0 border-0">
               <div className="card-header border-0 rounded-0 bg-light">
