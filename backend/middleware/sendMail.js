@@ -43,16 +43,6 @@ async function sendMail(to, subject, text, html) {
   }
 }
 
-// Example usage
-(async () => {
-  await sendMail(
-    "vermadhruv09112002@gmail.com", // Test recipient
-    "Test Email from CM Trading Co",
-    "This is a plain text test email.",
-    "<h1>Hello!</h1><p>This is a test email from CM Trading Co via Nodemailer + BigRock cPanel.</p>"
-  );
-})();
-
 function emailer(templateFn) {
   return async (req, res, next) => {
     if (res.headersSent) {
