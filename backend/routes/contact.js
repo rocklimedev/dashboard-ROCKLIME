@@ -1,7 +1,7 @@
 // routes/contact.js
 const express = require("express");
 const router = express.Router();
-const ContactController = require("../controllers/ContactController");
+const ContactController = require("../controller/contactController");
 
 // POST route for contact form submission
 router.post("/", ContactController.submitContactForm);
