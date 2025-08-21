@@ -392,18 +392,6 @@ const QuotationList = () => {
                                       </Link>
                                     </Menu.Item>
                                     <Menu.Item
-                                      key="convert"
-                                      onClick={() =>
-                                        handleOpenInvoiceModal(quotation)
-                                      }
-                                      title="Convert to Invoice"
-                                    >
-                                      <FaFileInvoice
-                                        style={{ marginRight: 8 }}
-                                      />
-                                      Convert to Invoice
-                                    </Menu.Item>
-                                    <Menu.Item
                                       key="delete"
                                       onClick={() =>
                                         handleDeleteClick(quotation)

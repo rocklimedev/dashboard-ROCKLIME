@@ -1190,7 +1190,7 @@ exports.uploadInvoiceAndLinkOrder = async (req, res) => {
 
     // Update order record in DB
     const [updated] = await Order.update(
-      { invoiceLink: `/invoice_pdfs/${uniqueName}` }, // Use invoiceLink to match model
+      { invoiceLink: `${process.env.FTP_BASE_URL}/invoice_pdfs/${uniqueName}` }, // Use invoiceLink to match model
       { where: { id: req.params.orderId } } // Use id to match model
     );
 
@@ -1202,7 +1202,7 @@ exports.uploadInvoiceAndLinkOrder = async (req, res) => {
       message: "Invoice uploaded successfully",
       filename: uniqueName,
       size: req.file.size,
-      fileUrl: `/invoice_pdfs/${uniqueName}`, // Return relative path
+      fileUrl: `${process.env.FTP_BASE_URL}/invoice_pdfs/${uniqueName}`, // Return relative path
     });
   } catch (err) {
     console.error("Upload handler error:", err);
