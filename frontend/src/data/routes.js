@@ -12,6 +12,7 @@ import {
   BiSearch,
   BiCategory,
   BiUser,
+  BiCoinStack,
 } from "react-icons/bi";
 import { FaFileCircleCheck } from "react-icons/fa6";
 import { FaPhone, FaTeamspeak } from "react-icons/fa";
@@ -86,6 +87,7 @@ import BrandSelection from "../components/Product/BrandSelection";
 import OrderPage from "../components/Orders/Orderpage";
 import NewCart from "../components/POS-NEW/NewCart";
 import AccountVerify from "../components/Auth/AccountVerify";
+import ContactWrapper from "../components/Contact/ContactWrapper";
 
 const masterRoutes = [
   {
@@ -525,6 +527,13 @@ const masterRoutes = [
     name: "Categories",
     icon: <BiCategory />,
     isSidebarActive: true,
+  },
+  {
+    path: "/contact",
+    element: <ContactWrapper />,
+    name: "Contact",
+    icon: <BiCoinStack />,
+    isSidebarActive: false,
   },
 ];
 

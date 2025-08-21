@@ -24,8 +24,10 @@ import { searchApi } from "../api/searchApi";
 import { attendanceApi } from "../api/attendanceApi";
 import { brandParentCategoryApi } from "../api/brandParentCategoryApi";
 import { productMetaApi } from "../api/productMetaApi";
+import { contactApi } from "../api/contactApi";
 export const store = configureStore({
   reducer: {
+    [contactApi.reducerPath]: contactApi.reducer,
     [productMetaApi.reducerPath]: productMetaApi.reducer,
     [brandParentCategoryApi.reducerPath]: brandParentCategoryApi.reducer,
     [vendorApi.reducerPath]: vendorApi.reducer,
@@ -53,6 +55,7 @@ export const store = configureStore({
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
+      contactApi.middleware,
       productMetaApi.middleware,
       vendorApi.middleware,
       brandParentCategoryApi.middleware,
