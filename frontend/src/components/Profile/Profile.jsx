@@ -536,30 +536,24 @@ const Profile = () => {
                       id="pills-tab"
                       role="tablist"
                     >
-                      {["Quotations", "Invoices", "Teams", "Orders"].map(
-                        (tab) => (
-                          <li
-                            className="nav-item"
-                            role="presentation"
-                            key={tab}
+                      {["Quotations", "Teams", "Orders"].map((tab) => (
+                        <li className="nav-item" role="presentation" key={tab}>
+                          <button
+                            className={`nav-link btn btn-sm btn-icon py-3 d-flex align-items-center justify-content-center w-auto ${
+                              activeTab === tab.toLowerCase() ? "active" : ""
+                            }`}
+                            id={`tab-${tab}`}
+                            data-bs-toggle="pill"
+                            data-bs-target={`#pills-${tab}`}
+                            type="button"
+                            role="tab"
+                            aria-selected={activeTab === tab.toLowerCase()}
+                            onClick={() => setActiveTab(tab.toLowerCase())}
                           >
-                            <button
-                              className={`nav-link btn btn-sm btn-icon py-3 d-flex align-items-center justify-content-center w-auto ${
-                                activeTab === tab.toLowerCase() ? "active" : ""
-                              }`}
-                              id={`tab-${tab}`}
-                              data-bs-toggle="pill"
-                              data-bs-target={`#pills-${tab}`}
-                              type="button"
-                              role="tab"
-                              aria-selected={activeTab === tab.toLowerCase()}
-                              onClick={() => setActiveTab(tab.toLowerCase())}
-                            >
-                              {tab}
-                            </button>
-                          </li>
-                        )
-                      )}
+                            {tab}
+                          </button>
+                        </li>
+                      ))}
                     </ul>
                   </div>
                   <div className="card-body">
@@ -579,24 +573,6 @@ const Profile = () => {
                           isLoading={isQuotationsLoading}
                           error={quotationsError}
                           rowKey="quotationId"
-                          className="table table-hover"
-                        />
-                      </div>
-                      <div
-                        className={`tab-pane fade ${
-                          activeTab === "invoices" ? "show active" : ""
-                        }`}
-                        id="pills-Invoices"
-                        role="tabpanel"
-                        aria-labelledby="tab-Invoices"
-                      >
-                        <DataTable
-                          title="My Invoices"
-                          columns={invoiceColumns}
-                          dataSource={invoicesData?.data || []}
-                          isLoading={isInvoicesLoading}
-                          error={invoicesError}
-                          rowKey="invoiceId"
                           className="table table-hover"
                         />
                       </div>
