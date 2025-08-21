@@ -503,6 +503,7 @@ const AddNewOrder = ({ adminName }) => {
                       }
                       maxLength={500}
                       placeholder="Enter invoice link"
+                      disabled
                     />
                   </Form.Group>
                 </div>

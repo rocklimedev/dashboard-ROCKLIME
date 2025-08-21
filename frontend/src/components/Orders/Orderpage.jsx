@@ -25,33 +25,69 @@ import { Document, Page, pdfjs } from "react-pdf";
 pdfjs.GlobalWorkerOptions.workerSrc = `${process.env.PUBLIC_URL}/pdf.worker.min.js`;
 
 const CommentRow = ({ comment, onDelete, currentUserId }) => {
-  const canDelete = comment.userId === currentUserId;
+  const isCurrentUser = comment.userId === currentUserId;
+  const userInitial = comment.user?.name
+    ? comment.user.name[0].toUpperCase()
+    : "U";
+
   return (
-    <div className="card mb-2 shadow-sm border rounded-3">
-      <div className="card-body">
-        <div className="d-flex justify-content-between align-items-center">
-          <div>
-            <p className="mb-1">
-              <strong>{comment.user?.name || "Unknown User"}</strong> (
-              {comment.user?.username || "N/A"})
-            </p>
-            <p className="mb-1">{comment.comment}</p>
-            <small className="text-muted">
-              {new Date(comment.createdAt).toLocaleString()}
-            </small>
+    <div
+      className={`d-flex mb-3 ${
+        isCurrentUser ? "justify-content-end" : "justify-content-start"
+      }`}
+    >
+      <div
+        className={`d-flex align-items-start ${
+          isCurrentUser ? "flex-row-reverse" : ""
+        }`}
+        style={{ maxWidth: "70%" }}
+      >
+        {/* Avatar */}
+        <div
+          className="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-2"
+          style={{ width: "40px", height: "40px", fontSize: "1.2rem" }}
+        >
+          {userInitial}
+        </div>
+        {/* Chat Bubble */}
+        <div
+          className={`p-3 rounded-3 shadow-sm ${
+            isCurrentUser ? "bg-primary text-white" : "bg-light border"
+          }`}
+          style={{
+            borderRadius: isCurrentUser
+              ? "15px 15px 0 15px"
+              : "15px 15px 15px 0",
+          }}
+        >
+          <div className="d-flex justify-content-between align-items-center mb-1">
+            <strong>{comment.user?.name || "Unknown User"}</strong>
+            {isCurrentUser && (
+              <Button
+                variant="link"
+                className={`p-0 ${
+                  isCurrentUser ? "text-white" : "text-danger"
+                }`}
+                onClick={() => onDelete(comment._id)}
+                aria-label={`Delete comment by ${
+                  comment.user?.username || "user"
+                }`}
+              >
+                Delete
+              </Button>
+            )}
           </div>
-          {canDelete && (
-            <Button
-              variant="link"
-              className="text-danger p-0"
-              onClick={() => onDelete(comment._id)}
-              aria-label={`Delete comment by ${
-                comment.user?.username || "user"
-              }`}
-            >
-              Delete
-            </Button>
-          )}
+          <p className="mb-1">{comment.comment}</p>
+          <small
+            className={`text-muted ${isCurrentUser ? "text-white-50" : ""}`}
+          >
+            {new Date(comment.createdAt).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+            {" • "}
+            {new Date(comment.createdAt).toLocaleDateString()}
+          </small>
         </div>
       </div>
     </div>
@@ -432,9 +468,6 @@ const OrderPage = () => {
                     <Dropdown.Item onClick={handleEditOrder}>
                       Edit
                     </Dropdown.Item>
-                    <Dropdown.Item onClick={handleHoldOrder}>
-                      Put On Hold
-                    </Dropdown.Item>
                     <Dropdown.Item
                       onClick={handleDeleteOrder}
                       className="text-danger"
@@ -598,11 +631,40 @@ const OrderPage = () => {
             </div>
           </div>
         </div>
-
         <div className="mt-4">
           <h5>Comments</h5>
+          <div
+            className="border rounded-4 p-3 bg-white shadow-sm"
+            style={{ maxHeight: "400px", overflowY: "auto" }}
+          >
+            {commentLoading ? (
+              <p className="text-center">
+                <Spinner animation="border" size="sm" /> Loading comments...
+              </p>
+            ) : commentError ? (
+              <p className="text-danger text-center">
+                Unable to load comments:{" "}
+                {commentError?.data?.message || "Please try again later."}
+              </p>
+            ) : comments.length > 0 ? (
+              comments.map((comment) => (
+                <CommentRow
+                  key={comment._id}
+                  comment={comment}
+                  onDelete={handleDeleteComment}
+                  currentUserId={user.userId}
+                />
+              ))
+            ) : (
+              <p className="text-muted text-center">
+                No comments found for this order.
+              </p>
+            )}
+          </div>
+
+          {/* Comment Input Form */}
           {!user.userId ? (
-            <p className="text-warning">
+            <p className="text-warning mt-3">
               You must be logged in to add comments.{" "}
               <Button
                 variant="link"
@@ -613,74 +675,58 @@ const OrderPage = () => {
               </Button>
             </p>
           ) : (
-            <Form onSubmit={handleAddComment} className="mb-4">
-              <Form.Group controlId="newComment">
-                <Form.Label>Add a Comment</Form.Label>
+            <Form onSubmit={handleAddComment} className="mt-3">
+              <div className="d-flex align-items-center">
                 <Form.Control
                   as="textarea"
-                  rows={3}
+                  rows={1}
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   placeholder="Type your comment here..."
                   maxLength={1000}
+                  className="border rounded-3 me-2"
+                  style={{ resize: "none" }}
                   aria-describedby="commentHelp"
                 />
-                <Form.Text id="commentHelp" muted>
-                  Maximum 1000 characters. You can add up to 3 comments per
-                  order.
-                </Form.Text>
-              </Form.Group>
-              <Button type="submit" variant="primary" className="mt-2">
-                Submit Comment
-              </Button>
-            </Form>
-          )}
-          {commentLoading ? (
-            <p>
-              <Spinner animation="border" size="sm" /> Loading comments...
-            </p>
-          ) : commentError ? (
-            <p className="text-danger">
-              Unable to load comments:{" "}
-              {commentError?.data?.message || "Please try again later."}
-            </p>
-          ) : comments.length > 0 ? (
-            <div>
-              {comments.map((comment) => (
-                <CommentRow
-                  key={comment._id}
-                  comment={comment}
-                  onDelete={handleDeleteComment}
-                  currentUserId={user.userId}
-                />
-              ))}
-              <div className="d-flex justify-content-between mt-3">
                 <Button
-                  variant="outline-secondary"
-                  disabled={commentPage === 1}
-                  onClick={() => handlePageChange(commentPage - 1)}
-                  aria-label="Previous comments page"
+                  type="submit"
+                  variant="primary"
+                  disabled={!newComment.trim()}
                 >
-                  Previous
-                </Button>
-                <span>
-                  Page {commentPage} of{" "}
-                  {Math.ceil(totalComments / commentLimit)}
-                </span>
-                <Button
-                  variant="outline-secondary"
-                  disabled={
-                    commentPage >= Math.ceil(totalComments / commentLimit)
-                  }
-                  onClick={() => handlePageChange(commentPage + 1)}
-                  aria-label="Next comments page"
-                >
-                  Next
+                  Send
                 </Button>
               </div>
+              <Form.Text id="commentHelp" muted>
+                Maximum 1000 characters. You can add up to 3 comments per order.
+              </Form.Text>
+            </Form>
+          )}
+
+          {/* Pagination */}
+          {comments.length > 0 && (
+            <div className="d-flex justify-content-between mt-3">
+              <Button
+                variant="outline-secondary"
+                disabled={commentPage === 1}
+                onClick={() => handlePageChange(commentPage - 1)}
+                aria-label="Previous comments page"
+              >
+                Previous
+              </Button>
+              <span>
+                Page {commentPage} of {Math.ceil(totalComments / commentLimit)}
+              </span>
+              <Button
+                variant="outline-secondary"
+                disabled={
+                  commentPage >= Math.ceil(totalComments / commentLimit)
+                }
+                onClick={() => handlePageChange(commentPage + 1)}
+                aria-label="Next comments page"
+              >
+                Next
+              </Button>
             </div>
-          ) : (
-            <p className="text-muted">No comments found for this order.</p>
           )}
         </div>
 

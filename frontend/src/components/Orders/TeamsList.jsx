@@ -12,7 +12,6 @@ import {
   Select,
   Button,
   Card,
-  Avatar,
   Tooltip,
   Space,
   Typography,
@@ -24,25 +23,21 @@ import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
+  MoreOutlined,
 } from "@ant-design/icons";
 import { toast } from "sonner";
-import user from "../../assets/img/profiles/avatar-01.jpg";
-import avatar from "../../assets/img/profiles/avatar-15.jpg";
+import Avatar from "react-avatar"; // Imported react-avatar
 import { Dropdown, Menu } from "antd";
-import { MoreOutlined } from "@ant-design/icons";
 
 const { Option } = Select;
 const { Text, Title } = Typography;
 
 const TeamsList = ({ adminName }) => {
-  // Queries
   const { data, isLoading, isError, refetch } = useGetAllTeamsQuery();
   const [deleteTeam, { isLoading: isDeleting }] = useDeleteTeamMutation();
 
-  // Data assignments
   const teams = Array.isArray(data?.teams) ? data.teams : [];
 
-  // State management
   const [searchTerm, setSearchTerm] = useState("");
   const [createdDate, setCreatedDate] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState("");
@@ -55,7 +50,6 @@ const TeamsList = ({ adminName }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
 
-  // Memoized grouped teams for tab-based filtering
   const groupedTeams = useMemo(
     () => ({
       All: teams,
@@ -70,11 +64,9 @@ const TeamsList = ({ adminName }) => {
     [teams]
   );
 
-  // Filtered and sorted teams
   const filteredTeams = useMemo(() => {
     let result = groupedTeams[activeTab] || [];
 
-    // Apply search filter
     if (searchTerm.trim()) {
       result = result.filter((team) =>
         [team.teamName, team.adminName]
@@ -84,7 +76,6 @@ const TeamsList = ({ adminName }) => {
       );
     }
 
-    // Apply created date filter
     if (createdDate) {
       result = result.filter((team) => {
         const teamDate = new Date(team.createdDate);
@@ -92,14 +83,12 @@ const TeamsList = ({ adminName }) => {
       });
     }
 
-    // Apply status filter from dropdown
     if (selectedStatus) {
       result = result.filter(
         (team) => team.status?.toLowerCase() === selectedStatus.toLowerCase()
       );
     }
 
-    // Apply sorting
     switch (sortBy) {
       case "Ascending":
         result = [...result].sort((a, b) =>
@@ -149,13 +138,11 @@ const TeamsList = ({ adminName }) => {
     sortBy,
   ]);
 
-  // Paginated teams
   const paginatedTeams = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return filteredTeams.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredTeams, currentPage]);
 
-  // Handlers
   const handleAddTeam = () => {
     setSelectedTeam(null);
     setShowNewTeamModal(true);
@@ -176,7 +163,6 @@ const TeamsList = ({ adminName }) => {
 
     try {
       await deleteTeam(teamToDelete.id).unwrap();
-
       refetch();
       if (paginatedTeams.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
@@ -277,7 +263,6 @@ const TeamsList = ({ adminName }) => {
                       aria-label="Search teams"
                     />
                   </div>
-
                   <button
                     className="btn btn-outline-secondary ms-2"
                     onClick={clearFilters}
@@ -320,8 +305,14 @@ const TeamsList = ({ adminName }) => {
                               <td>
                                 <Space>
                                   <Avatar
-                                    src={team.adminImage || user}
+                                    src={
+                                      team.adminId
+                                        ? `/u/${team.adminId}`
+                                        : "/u/default"
+                                    } // Use /u/:userId format
+                                    name={team.adminName || "Unknown"} // Fallback to name if no image
                                     size={30}
+                                    round
                                   />
                                   {team.adminName || "Unknown"}
                                 </Space>
@@ -336,8 +327,14 @@ const TeamsList = ({ adminName }) => {
                                         title={member.userName}
                                       >
                                         <Avatar
-                                          src={member.userImage || avatar}
+                                          src={
+                                            member.userId
+                                              ? `/u/${member.userId}`
+                                              : "/u/default"
+                                          } // Use /u/:userId format
+                                          name={member.userName || "Unknown"} // Fallback to name
                                           size={30}
+                                          round
                                         />
                                       </Tooltip>
                                     ))}
@@ -348,17 +345,14 @@ const TeamsList = ({ adminName }) => {
                                       } more members`}
                                     >
                                       <Avatar
+                                        value={`+${
+                                          team.teammembers.length - 3
+                                        }`} // Display number of extra members
                                         size={30}
-                                        style={{
-                                          backgroundColor: "#6c757d",
-                                          color: "#fff",
-                                          display: "flex",
-                                          alignItems: "center",
-                                          justifyContent: "center",
-                                        }}
-                                      >
-                                        +{team.teammembers.length - 3}
-                                      </Avatar>
+                                        round
+                                        color="#6c757d"
+                                        fgColor="#fff"
+                                      />
                                     </Tooltip>
                                   )}
                                   <Text>{team.teammembers?.length || 0}</Text>

@@ -14,7 +14,7 @@ import {
   BiUser,
 } from "react-icons/bi";
 import { FaFileCircleCheck } from "react-icons/fa6";
-import { FaPhone } from "react-icons/fa";
+import { FaPhone, FaTeamspeak } from "react-icons/fa";
 import { CgProfile } from "react-icons/cg";
 import { IoLogOut, IoLogIn } from "react-icons/io5";
 import { GiSuitcase } from "react-icons/gi";
@@ -198,6 +198,13 @@ const masterRoutes = [
         element: <UserList />,
       },
       {
+        path: "/orders/teams",
+        name: "Teams",
+        icon: <FaTeamspeak />,
+        element: <TeamsList />,
+        isSidebarActive: true,
+      },
+      {
         path: "/user/add",
         name: "Create User",
         icon: <BiUser />,
@@ -275,13 +282,7 @@ const masterRoutes = [
         isSidebarActive: true,
         element: <SignatureWrapper />,
       },
-      {
-        path: "/orders/teams",
-        name: "Teams",
-        icon: <FaPhone />,
-        element: <TeamsList />,
-        isSidebarActive: true,
-      },
+
       {
         path: "/companies/list",
         name: "Companies",

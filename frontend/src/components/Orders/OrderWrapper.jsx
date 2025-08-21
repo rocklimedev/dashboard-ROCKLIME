@@ -120,6 +120,14 @@ const OrderWrapper = () => {
     "ONHOLD",
   ];
 
+  // Define statuses that are "INVOICE or above"
+  const invoiceOrAboveStatuses = [
+    "INVOICE",
+    "DISPATCHED",
+    "DELIVERED",
+    "PARTIALLY_DELIVERED",
+  ];
+
   // Priority options from schema
   const priorityOptions = ["All", "high", "medium", "low"];
 
@@ -501,6 +509,12 @@ const OrderWrapper = () => {
                           const serialNumber =
                             (filters.page - 1) * filters.limit + index + 1;
 
+                          // Check if "Show Invoice" should be displayed
+                          const showInvoiceOption =
+                            invoiceOrAboveStatuses.includes(order.status) &&
+                            order.invoiceLink &&
+                            order.invoiceLink.trim() !== "";
+
                           return (
                             <tr key={order.id}>
                               <td>{serialNumber}</td>
@@ -566,24 +580,19 @@ const OrderWrapper = () => {
                                         />
                                         Edit Order
                                       </Menu.Item>
-                                      <Menu.Item
-                                        key="hold"
-                                        onClick={() => handleHoldClick(order)}
-                                      >
-                                        <PauseOutlined
-                                          style={{ marginRight: 8 }}
-                                        />
-                                        Put on Hold
-                                      </Menu.Item>
-                                      <Menu.Item
-                                        key="view-invoice"
-                                        onClick={() => handleViewInvoice(order)}
-                                      >
-                                        <FileTextOutlined
-                                          style={{ marginRight: 8 }}
-                                        />
-                                        View Invoice
-                                      </Menu.Item>
+                                      {showInvoiceOption && (
+                                        <Menu.Item
+                                          key="viewInvoice"
+                                          onClick={() =>
+                                            handleViewInvoice(order)
+                                          }
+                                        >
+                                          <FileTextOutlined
+                                            style={{ marginRight: 8 }}
+                                          />
+                                          Show Invoice
+                                        </Menu.Item>
+                                      )}
                                       <Menu.Item
                                         key="delete"
                                         onClick={() =>
