@@ -6,7 +6,7 @@ import {
 } from "../../api/quotationApi";
 import { useGetCustomerByIdQuery } from "../../api/customerApi";
 import { useGetUserByIdQuery } from "../../api/userApi";
-import { useGetProductByIdQuery } from "../../api/productApi"; // Add this import
+import { useGetProductByIdQuery } from "../../api/productApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetCompanyByIdQuery } from "../../api/companyApi";
@@ -15,12 +15,13 @@ import logo from "../../assets/img/logo.png";
 import sampleQuotationTemplate from "../../assets/Sample-Quotation.xlsx";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
-import ExcelJS from "exceljs"; // Add exceljs import
+import ExcelJS from "exceljs";
 import * as XLSX from "xlsx";
 import "./quotation.css";
 import useProductsData from "../../data/useProductdata";
 import { useGetAddressByIdQuery } from "../../api/addressApi";
 import { Buffer } from "buffer";
+
 const QuotationsDetails = () => {
   const { id } = useParams();
   const {
@@ -28,7 +29,7 @@ const QuotationsDetails = () => {
     error,
     isLoading: isQuotationLoading,
   } = useGetQuotationByIdQuery(id);
-  const [isExporting, setIsExporting] = useState(false); // Add loading state
+  const [isExporting, setIsExporting] = useState(false);
   const { data: usersData } = useGetAllUsersQuery();
   const { data: customersData } = useGetCustomersQuery();
   const users = usersData?.users || [];
@@ -58,37 +59,32 @@ const QuotationsDetails = () => {
 
   const products = Array.isArray(quotation?.products) ? quotation.products : [];
   const { productsData, errors, loading } = useProductsData(products);
-  // Fetch brand names for each product
+
+  // Fix for brand displaying as UUID
   const brandNames = useMemo(() => {
     const uniqueBrands = new Set();
     products.forEach((product) => {
-      const productDetail = productsData?.find(
-        (p) => p.productId === product.productId
-      );
+      const productDetail =
+        productsData?.find((p) => p.productId === product.productId) || {};
       let brandName = "N/A";
-      if (productDetail) {
-        // Adjust this based on your API's structure
-        // Option 1: Direct brandName field
-        if (productDetail.brandName) {
-          brandName = productDetail.brandName;
-        }
-        // Option 2: brandId field (requires mapping or additional API call)
-        else if (productDetail.brandId) {
-          brandName = productDetail.brandId; // Replace with actual brand name if you have a mapping
-        }
-        // Option 3: brand in metaDetails
-        else if (productDetail.metaDetails) {
-          const brandMeta = productDetail.metaDetails.find(
-            (m) => m.title === "brandName" || m.title === "brand"
-          );
-          brandName = brandMeta?.value || "N/A";
-        }
+      if (productDetail.brandName) {
+        brandName = productDetail.brandName;
+      } else if (productDetail.metaDetails) {
+        const brandMeta = productDetail.metaDetails.find(
+          (m) => m.title === "brandName" || m.title === "brand"
+        );
+        brandName = brandMeta?.value || "N/A";
       }
-      if (brandName !== "N/A") {
+      if (
+        brandName !== "N/A" &&
+        !/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
+          brandName
+        )
+      ) {
         uniqueBrands.add(brandName);
       }
     });
-    return Array.from(uniqueBrands).join(" / ") || "Unknown";
+    return Array.from(uniqueBrands).join(" / ") || "GROHE / AMERICAN STANDARD";
   }, [products, productsData]);
 
   // Display errors for failed product fetches
@@ -122,7 +118,6 @@ const QuotationsDetails = () => {
       return false;
     }
 
-    // Handle base64 data URLs
     if (url.startsWith("data:image/")) {
       const isValid = /data:image\/(png|jpg|jpeg|gif|bmp|webp);base64,/.test(
         url
@@ -132,7 +127,6 @@ const QuotationsDetails = () => {
       return isValid;
     }
 
-    // Handle remote URLs (e.g., https://static.cmtradingco.com/product_images/COL-4005.png)
     try {
       new URL(url);
       const imageExtensions = /\.(png|jpg|jpeg|gif|bmp|webp)$/i;
@@ -145,8 +139,7 @@ const QuotationsDetails = () => {
     }
   };
 
-  // Function to fetch image as buffer (supports base64 and remote URLs)
-  // Placeholder image (tiny grey square, base64-encoded PNG)
+  // Placeholder image
   const placeholderImage = {
     buffer: Buffer.from(
       "iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAMAAAC7IEhfAAAAA1BMVEX///+nxBvIAAAAIElEQVR4nGNgGAWjYBSMglEwCkbBKBgFo2AUjIJRMAoGAK8rB3N0S2o0AAAAAElFTkSuQmCC",
@@ -165,7 +158,6 @@ const QuotationsDetails = () => {
 
       let buffer, extension;
 
-      // Handle base64 image URLs
       if (url.startsWith("data:image/")) {
         const matches = url.match(
           /^data:image\/(png|jpg|jpeg|gif|bmp|webp);base64,(.+)$/
@@ -181,7 +173,6 @@ const QuotationsDetails = () => {
           return placeholderImage;
         }
       } else {
-        // Handle remote image URLs (e.g., https://static.cmtradingco.com/product_images/COL-4005.png)
         for (let attempt = 1; attempt <= retries; attempt++) {
           try {
             const response = await fetch(url, {
@@ -211,7 +202,7 @@ const QuotationsDetails = () => {
             if (!buffer || buffer.length === 0) {
               throw new Error("Empty image buffer");
             }
-            break; // Success, exit retry loop
+            break;
           } catch (err) {
             if (attempt === retries) {
               console.error(
@@ -219,7 +210,7 @@ const QuotationsDetails = () => {
               );
               return placeholderImage;
             }
-            await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 1s before retry
+            await new Promise((resolve) => setTimeout(resolve, 1000));
           }
         }
       }
@@ -232,11 +223,10 @@ const QuotationsDetails = () => {
       return { buffer, extension };
     } catch (error) {
       console.error(`Error fetching image: ${url}, Error: ${error.message}`);
-      return placeholderImage; // Fallback to placeholder
+      return placeholderImage;
     }
   };
 
-  // Inside handleExport function, update the image processing logic
   const handleExport = async () => {
     try {
       if (!id) {
@@ -244,7 +234,7 @@ const QuotationsDetails = () => {
         return;
       }
 
-      setIsExporting(true); // Set loading state
+      setIsExporting(true);
 
       if (exportFormat === "excel") {
         if (!products || products.length === 0) {
@@ -252,7 +242,6 @@ const QuotationsDetails = () => {
           return;
         }
 
-        // STEP 1: Build unified export rows
         const exportRows = products.map((product, index) => {
           const productDetail =
             productsData?.find((p) => p.productId === product.productId) || {};
@@ -305,9 +294,63 @@ const QuotationsDetails = () => {
           };
         });
 
-        // STEP 2: Fetch all images in parallel
+        // Handle logo image
+        let logoImage = placeholderImage;
+        try {
+          if (logo.startsWith("data:image/")) {
+            // If logo is a base64 string
+            const matches = logo.match(
+              /^data:image\/(png|jpg|jpeg|gif|bmp|webp);base64,(.+)$/
+            );
+            if (matches) {
+              const extension = matches[1];
+              const base64Data = matches[2];
+              const buffer = Buffer.from(base64Data, "base64");
+              if (buffer && buffer.length > 0) {
+                logoImage = { buffer, extension };
+                console.log(
+                  `Logo loaded from base64, Size: ${buffer.length} bytes`
+                );
+              } else {
+                console.error("Empty buffer from base64 logo");
+              }
+            } else {
+              console.error("Invalid base64 logo format");
+            }
+          } else {
+            // If logo is a URL
+            const response = await fetch(logo, {
+              mode: "cors",
+              credentials: "omit",
+              headers: { Accept: "image/*" },
+            });
+            if (!response.ok) {
+              throw new Error(
+                `HTTP ${response.status} - ${response.statusText}`
+              );
+            }
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.startsWith("image/")) {
+              throw new Error(`Unsupported content type: ${contentType}`);
+            }
+            const extension = contentType.split("/")[1].toLowerCase();
+            const buffer = Buffer.from(await response.arrayBuffer());
+            if (buffer && buffer.length > 0) {
+              logoImage = { buffer, extension };
+              console.log(
+                `Logo fetched from URL, Size: ${buffer.length} bytes`
+              );
+            } else {
+              console.error("Empty buffer from logo URL");
+            }
+          }
+        } catch (error) {
+          console.error(`Error processing logo: ${error.message}`);
+          toast.warning("Using placeholder logo due to error in loading logo.");
+        }
+
         const imagePromises = [
-          fetchImageAsBuffer(logo), // Logo
+          Promise.resolve(logoImage),
           ...exportRows.map((row) =>
             row.imageUrl
               ? fetchImageAsBuffer(row.imageUrl)
@@ -315,38 +358,37 @@ const QuotationsDetails = () => {
           ),
         ];
         const images = await Promise.all(imagePromises);
-        const logoImage = images[0]; // First image is the logo
-        const productImages = images.slice(1); // Remaining are product images
+        const logoImageFinal = images[0];
+        const productImages = images.slice(1);
 
-        // STEP 3: Workbook setup
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet("Quotation");
 
-        // Set column widths to match UI table
         worksheet.columns = [
-          { width: 8 }, // S.No
-          { width: 15 }, // Product Image
-          { width: 25 }, // Product Name
-          { width: 15 }, // Product Code
-          { width: 12 }, // MRP
-          { width: 12 }, // Discount
-          { width: 12 }, // Rate
-          { width: 8 }, // Unit
-          { width: 12 }, // Total
+          { width: 8 },
+          { width: 15 },
+          { width: 25 },
+          { width: 15 },
+          { width: 12 },
+          { width: 12 },
+          { width: 12 },
+          { width: 8 },
+          { width: 12 },
         ];
 
-        // Logo
+        // Add logo with exact dimensions as in the component
         try {
           const logoId = workbook.addImage({
-            buffer: logoImage.buffer,
-            extension: logoImage.extension,
+            buffer: logoImageFinal.buffer,
+            extension: logoImageFinal.extension,
           });
           worksheet.addImage(logoId, {
             tl: { col: 0, row: 0 },
-            ext: { width: 100, height: 50 },
+            ext: { width: 100, height: 50 }, // Match component logo size
             editAs: "oneCell",
           });
-          worksheet.getRow(1).height = 60;
+          worksheet.getRow(1).height = 60; // Ensure enough row height
+          console.log("Logo added successfully to Excel");
         } catch (error) {
           console.error(`Error adding logo to Excel: ${error.message}`);
           toast.warning("Failed to add logo to Excel file, using placeholder.");
@@ -362,7 +404,7 @@ const QuotationsDetails = () => {
           worksheet.getRow(1).height = 60;
         }
 
-        // Title and Brand
+        // Rest of the worksheet setup (unchanged)
         worksheet.mergeCells("B1:D1");
         worksheet.getCell("B1").value = "Estimate / Quotation";
         worksheet.getCell("B1").font = { bold: true, size: 16 };
@@ -378,7 +420,6 @@ const QuotationsDetails = () => {
           vertical: "middle",
         };
 
-        // Customer and Address Information
         worksheet.mergeCells("A3:A4");
         worksheet.getCell("A3").value = "M/s";
         worksheet.getCell("A3").font = { bold: true };
@@ -408,7 +449,6 @@ const QuotationsDetails = () => {
           : quotation.shipTo || "456, Park Avenue, New York, USA";
         worksheet.getCell("B5").alignment = { vertical: "middle" };
 
-        // Product Table Headers
         const headerRow1 = worksheet.addRow([
           "S.No",
           "Product Image",
@@ -454,12 +494,11 @@ const QuotationsDetails = () => {
           };
         });
 
-        // Add product rows with images
         let currentRow = headerRow2.number + 1;
         exportRows.forEach((row, index) => {
           const excelRow = worksheet.addRow([
             row.index,
-            "", // Placeholder for image
+            "",
             row.name,
             row.code,
             row.mrp,
@@ -478,7 +517,6 @@ const QuotationsDetails = () => {
             };
           });
 
-          // Add product image
           if (productImages[index].buffer) {
             try {
               const imageId = workbook.addImage({
@@ -501,7 +539,16 @@ const QuotationsDetails = () => {
           currentRow++;
         });
 
-        // Add totals
+        const subtotal = products.reduce(
+          (sum, product) => sum + Number(product.total || 0),
+          0
+        );
+        const gstAmount =
+          quotation.include_gst && quotation.gst_value
+            ? (subtotal * Number(quotation.gst_value)) / 100
+            : 0;
+        const finalTotal = subtotal + gstAmount;
+
         const subtotalRow = worksheet.addRow([
           "",
           "",
@@ -574,7 +621,6 @@ const QuotationsDetails = () => {
           }
         });
 
-        // STEP 4: Generate and download the Excel file
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], {
           type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -590,38 +636,34 @@ const QuotationsDetails = () => {
 
         toast.success("Quotation exported successfully as Excel!");
       } else if (exportFormat === "pdf") {
+        // PDF export logic remains unchanged
         if (!quotationRef.current) {
           toast.error("Quotation content not found.");
           return;
         }
 
-        // STEP 1: Capture the quotation container as an image
         const canvas = await html2canvas(quotationRef.current, {
-          scale: 2, // Increase resolution for better quality
-          useCORS: true, // Enable CORS for images
-          logging: false, // Disable logging for performance
+          scale: 2,
+          useCORS: true,
+          logging: false,
         });
 
-        // STEP 2: Initialize jsPDF
         const pdf = new jsPDF({
           orientation: "portrait",
           unit: "mm",
           format: "a4",
         });
 
-        // STEP 3: Calculate dimensions
-        const imgWidth = 190; // A4 width (210mm) minus margins (10mm each side)
-        const pageHeight = 297; // A4 height in mm
+        const imgWidth = 190;
+        const pageHeight = 297;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
         let heightLeft = imgHeight;
-        let position = 10; // Top margin
+        let position = 10;
 
-        // STEP 4: Add the image to the PDF
         const imgData = canvas.toDataURL("image/png");
         pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
 
-        // STEP 5: Handle multi-page content if needed
-        heightLeft -= pageHeight - 20; // Account for margins
+        heightLeft -= pageHeight - 20;
         while (heightLeft > 0) {
           pdf.addPage();
           position = heightLeft - imgHeight + 10;
@@ -629,7 +671,6 @@ const QuotationsDetails = () => {
           heightLeft -= pageHeight - 20;
         }
 
-        // STEP 6: Save the PDF
         pdf.save(`Quotation_${id}.pdf`);
 
         toast.success("Quotation exported successfully as PDF!");
@@ -642,9 +683,10 @@ const QuotationsDetails = () => {
       );
       console.error("Export error:", error);
     } finally {
-      setIsExporting(false); // Reset loading state
+      setIsExporting(false);
     }
   };
+
   if (isQuotationLoading || isCompanyLoading || loading) {
     return (
       <div className="page-wrapper">
@@ -703,13 +745,8 @@ const QuotationsDetails = () => {
             </Link>
             <div className="card">
               <div className="quotation-container" ref={quotationRef}>
-                {/* Header Row */}
-                {/* Header Row */}
                 <table className="quotation-table full-width">
-                  {/* Header Section */}
-
                   <tbody>
-                    {/* Logo row */}
                     <tr>
                       <td colSpan="3" style={{ textAlign: "center" }}>
                         <img
@@ -719,16 +756,14 @@ const QuotationsDetails = () => {
                         />
                       </td>
                     </tr>
-                    {/* Title + Brand row */}
                     <tr>
                       <td></td>
                       <td className="title-cell">Estimate / Quotation</td>
-                      <td className="brand-cell">GROHE / AMERICAN STANDARD</td>
+                      <td className="brand-cell">{brandNames}</td>
                     </tr>
                   </tbody>
                 </table>
 
-                {/* M/s, Address, Date */}
                 <table className="quotation-table full-width">
                   <tbody>
                     <tr>
@@ -767,7 +802,6 @@ const QuotationsDetails = () => {
                   </tbody>
                 </table>
 
-                {/* Product Table */}
                 <table className="quotation-table full-width">
                   <thead>
                     <tr>
@@ -868,7 +902,6 @@ const QuotationsDetails = () => {
                   </tbody>
                 </table>
 
-                {/* Totals */}
                 <table className="quotation-table full-width bordered">
                   <tbody>
                     <tr>
@@ -896,7 +929,6 @@ const QuotationsDetails = () => {
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="d-flex justify-content-center align-items-center mb-4">
               <div className="d-flex align-items-center me-2">
                 <select
