@@ -15,7 +15,7 @@ import {
   BiCoinStack,
 } from "react-icons/bi";
 import { FaFileCircleCheck } from "react-icons/fa6";
-import { FaPhone, FaTeamspeak } from "react-icons/fa";
+import { FaTeamspeak } from "react-icons/fa";
 import { CgProfile } from "react-icons/cg";
 import { IoLogOut, IoLogIn } from "react-icons/io5";
 import { GiSuitcase } from "react-icons/gi";
@@ -27,16 +27,13 @@ import {
   MdOutlinePeopleAlt,
 } from "react-icons/md";
 import { TiBusinessCard } from "react-icons/ti";
-import { TbShoppingCart } from "react-icons/tb";
 import { PiMicrosoftTeamsLogoLight } from "react-icons/pi";
 import { IoPricetagOutline } from "react-icons/io5";
 import { FaFileInvoice } from "react-icons/fa6";
 import { RiFileListLine } from "react-icons/ri";
-import { FaExternalLinkAlt } from "react-icons/fa";
 import ForgotPassword from "../components/Auth/ForgotPassword";
 import Login from "../components/Auth/Login";
 import Signup from "../components/Auth/Signup";
-import CategoriesList from "../components/Categories/CategoriesList";
 import Error404 from "../components/Error/Error404";
 import PageWrapper from "../components/Home/PageWrapper";
 import ProductList from "../components/Product/ProductList";
@@ -48,7 +45,6 @@ import Profile from "../components/Profile/Profile";
 import CreateProduct from "../components/Product/CreateProduct";
 import ResetPassword from "../components/Auth/ResetPassword";
 import QuotationList from "../components/Quotation/QuotationList";
-
 import RolePermission from "../components/RolesPermission/RolePermission";
 import Permissions from "../components/RolesPermission/Permissions";
 import Error500 from "../components/Error/Error500";
@@ -60,28 +56,22 @@ import ComingSoon from "../components/Error/ComingSoon";
 import CmList from "../components/CMTrading/cmList";
 import TeamsList from "../components/Orders/TeamsList";
 import InvoiceDetails from "../components/Invoices/InvoiceDetails";
-import OrderWithInvoice from "../components/Orders/OrderWithInvoice";
 import CheckProductCodeStatus from "../components/Product/CheckProductCodeStatus";
 import NoAccess from "../components/Common/NoAccess";
-
 import AddressList from "../components/Address/Address";
 import SearchList from "../components/Search/SearchList";
 import AttendanceWrapper from "../components/Attendance/AttendanceWrapper";
 import AttendanceList from "../components/Attendance/AttendanceList";
 import NewAddUser from "../components/User/NewAddUser";
 import UserPage from "../components/User/UserPage";
-
-import Cart from "../components/POS-NEW/Cart";
 import Product from "../components/Product/Product";
 import ProductWrapper from "../components/Product/ProductWrapper";
-
 import ProductListByCategory from "../components/Product/ProductListByCategory";
 import AddQuotation from "../components/Quotation/AddQuntation";
 import CompaniesWrapper from "../components/Companies/ComapniesWrapper";
 import QuotationsDetails from "../components/Quotation/QuotaionDetails";
 import UnderMaintanance from "../components/Error/UnderMaintanance";
 import AddNewOrder from "../components/Orders/AddNewOrder";
-import NewUserList from "../components/User/NewUserList";
 import CategoryManagement from "../components/Categories/CategoryManagement";
 import BrandSelection from "../components/Product/BrandSelection";
 import OrderPage from "../components/Orders/Orderpage";
@@ -128,50 +118,43 @@ const masterRoutes = [
     isSidebarActive: true,
     element: <CustomerList />,
   },
-  // {
-  //   path: "#",
-  //   name: "Products",
-  //   icon: <AiOutlineProduct />,
-  //   element: <NewProductWrapper />,
-  //   isSidebarActive: true,
-  //   submenu: [
-  //     {
-  //       path: "/inventory/list",
-  //       name: "Products",
-  //       icon: <AiOutlineProduct />,
-  //       element: <NewProductWrapper />,
-  //       isSidebarActive: true,
-  //     },
-  //     {
-  //       path: "/products/:categoryId",
-  //       name: "Category filtered Products",
-  //       icon: <BiCategory />,
-  //       element: <ProductListByCategory />,
-  //       isSidebarActive: true,
-  //     },
-  //     {
-  //       path: "/inventory/list/:id",
-  //       name: "Category filtered Products",
-  //       icon: <BiCategory />,
-  //       element: <ProductWrapper />,
-  //       isSidebarActive: true,
-  //     },
-  //     {
-  //       path: "/inventory/all-products/",
-  //       name: "Products",
-  //       icon: <AiOutlineProduct />,
-  //       element: <Product />,
-  //       isSidebarActive: true,
-  //     },
-  //     {
-  //       path: "/inventory/new-product/:id",
-  //       name: "Products",
-  //       icon: <AiOutlineProduct />,
-  //       element: <NewProductDetails />,
-  //       isSidebarActive: true,
-  //     },
-  //   ],
-  // },
+  {
+    path: "#",
+    name: "Products",
+    icon: <AiOutlineProduct />,
+
+    isSidebarActive: false,
+    submenu: [
+      {
+        path: "/inventory/list",
+        name: "Products",
+        icon: <AiOutlineProduct />,
+
+        isSidebarActive: false,
+      },
+      {
+        path: "/products/:categoryId",
+        name: "Category filtered Products",
+        icon: <BiCategory />,
+        element: <ProductListByCategory />,
+        isSidebarActive: false,
+      },
+      {
+        path: "/inventory/list/:id",
+        name: "Category filtered Products",
+        icon: <BiCategory />,
+        element: <ProductWrapper />,
+        isSidebarActive: false,
+      },
+      {
+        path: "/inventory/all-products/",
+        name: "Products",
+        icon: <AiOutlineProduct />,
+        element: <Product />,
+        isSidebarActive: false,
+      },
+    ],
+  },
   {
     path: "/settings",
     name: "Settings",
@@ -284,7 +267,6 @@ const masterRoutes = [
         isSidebarActive: true,
         element: <SignatureWrapper />,
       },
-
       {
         path: "/companies/list",
         name: "Companies",
@@ -292,15 +274,13 @@ const masterRoutes = [
         isSidebarActive: true,
         element: <CmList />,
       },
-      //
-
-      // {
-      //   path: "/brands/list",
-      //   name: "Brands",
-      //   icon: <MdOutlineBrandingWatermark />,
-      //   isSidebarActive: true,
-      //   element: <Brands />,
-      // },
+      {
+        path: "/brands/list",
+        name: "Brands",
+        icon: <MdOutlineBrandingWatermark />,
+        isSidebarActive: false,
+        element: <Brands />,
+      },
       {
         path: "/inventory/product/add",
         name: "Create Product",
@@ -336,7 +316,6 @@ const masterRoutes = [
         element: <BrandSelection />,
         isSidebarActive: false,
       },
-
       {
         path: "/inventory/products",
         name: "Products",
@@ -344,7 +323,6 @@ const masterRoutes = [
         element: <Product />,
         isSidebarActive: true,
       },
-
       {
         path: "/order/:id",
         name: "Order Details",
@@ -365,13 +343,12 @@ const masterRoutes = [
         isSidebarActive: false,
         element: <AddNewOrder />,
       },
-      // {
-      //   path: "/invoices/list",
-      //   name: "Invoices",
-      //   icon: <FaFileInvoice />,
-      //   element: <RecentInvoices />,
-      //   isSidebarActive: true,
-      // },
+      {
+        path: "/invoices/list",
+        name: "Invoices",
+        icon: <FaFileInvoice />,
+        isSidebarActive: false,
+      },
       {
         path: "/invoice/:invoiceId",
         name: "Invoices",
@@ -380,13 +357,13 @@ const masterRoutes = [
         isSidebarActive: false,
       },
 
-      // {
-      //   path: "/quotations/list",
-      //   name: "Quotations",
-      //   icon: <IoPricetagOutline />,
-      //   isSidebarActive: true,
-      //   element: <QuotationList />,
-      // },
+      {
+        path: "/quotations/list",
+        name: "Quotations",
+        icon: <IoPricetagOutline />,
+        isSidebarActive: false,
+        element: <QuotationList />,
+      },
       {
         path: "/quotations/:id",
         name: "Quotations Details",
@@ -526,7 +503,7 @@ const masterRoutes = [
     element: <CategoryManagement />,
     name: "Categories",
     icon: <BiCategory />,
-    isSidebarActive: true,
+    isSidebarActive: false,
   },
   {
     path: "/contact",
