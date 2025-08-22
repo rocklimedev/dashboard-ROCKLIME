@@ -46,37 +46,7 @@ CREATE TABLE IF NOT EXISTS `brands` (
   `updatedAt` datetime NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `brandSlug` (`brandSlug`),
-  UNIQUE KEY `brandName` (`brandName`),
-  UNIQUE KEY `brandSlug_2` (`brandSlug`),
-  UNIQUE KEY `brandName_2` (`brandName`),
-  UNIQUE KEY `brandSlug_3` (`brandSlug`),
-  UNIQUE KEY `brandName_3` (`brandName`),
-  UNIQUE KEY `brandSlug_4` (`brandSlug`),
-  UNIQUE KEY `brandName_4` (`brandName`),
-  UNIQUE KEY `brandSlug_5` (`brandSlug`),
-  UNIQUE KEY `brandName_5` (`brandName`),
-  UNIQUE KEY `brandSlug_6` (`brandSlug`),
-  UNIQUE KEY `brandName_6` (`brandName`),
-  UNIQUE KEY `brandSlug_7` (`brandSlug`),
-  UNIQUE KEY `brandName_7` (`brandName`),
-  UNIQUE KEY `brandSlug_8` (`brandSlug`),
-  UNIQUE KEY `brandName_8` (`brandName`),
-  UNIQUE KEY `brandSlug_9` (`brandSlug`),
-  UNIQUE KEY `brandName_9` (`brandName`),
-  UNIQUE KEY `brandSlug_10` (`brandSlug`),
-  UNIQUE KEY `brandName_10` (`brandName`),
-  UNIQUE KEY `brandSlug_11` (`brandSlug`),
-  UNIQUE KEY `brandName_11` (`brandName`),
-  UNIQUE KEY `brandSlug_12` (`brandSlug`),
-  UNIQUE KEY `brandName_12` (`brandName`),
-  UNIQUE KEY `brandSlug_13` (`brandSlug`),
-  UNIQUE KEY `brandName_13` (`brandName`),
-  UNIQUE KEY `brandSlug_14` (`brandSlug`),
-  UNIQUE KEY `brandName_14` (`brandName`),
-  UNIQUE KEY `brandSlug_15` (`brandSlug`),
-  UNIQUE KEY `brandName_15` (`brandName`),
-  UNIQUE KEY `brandSlug_16` (`brandSlug`),
-  UNIQUE KEY `brandName_16` (`brandName`)
+  UNIQUE KEY `brandName` (`brandName`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Data exporting was unselected.
@@ -93,36 +63,10 @@ CREATE TABLE IF NOT EXISTS `brand_parentcategories` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`),
   UNIQUE KEY `slug` (`slug`),
-  UNIQUE KEY `name_2` (`name`),
-  UNIQUE KEY `slug_2` (`slug`),
-  UNIQUE KEY `name_3` (`name`),
-  UNIQUE KEY `slug_3` (`slug`),
-  UNIQUE KEY `name_4` (`name`),
-  UNIQUE KEY `slug_4` (`slug`),
-  UNIQUE KEY `name_5` (`name`),
-  UNIQUE KEY `slug_5` (`slug`),
-  UNIQUE KEY `name_6` (`name`),
-  UNIQUE KEY `slug_6` (`slug`),
-  UNIQUE KEY `name_7` (`name`),
-  UNIQUE KEY `slug_7` (`slug`),
-  UNIQUE KEY `name_8` (`name`),
-  UNIQUE KEY `slug_8` (`slug`),
-  UNIQUE KEY `name_9` (`name`),
-  UNIQUE KEY `slug_9` (`slug`),
-  UNIQUE KEY `name_10` (`name`),
-  UNIQUE KEY `slug_10` (`slug`),
-  UNIQUE KEY `name_11` (`name`),
-  UNIQUE KEY `slug_11` (`slug`),
-  UNIQUE KEY `name_12` (`name`),
-  UNIQUE KEY `slug_12` (`slug`),
-  UNIQUE KEY `name_13` (`name`),
-  UNIQUE KEY `slug_13` (`slug`),
-  UNIQUE KEY `name_14` (`name`),
-  UNIQUE KEY `slug_14` (`slug`),
   UNIQUE KEY `brand_parentcategories_parentCategoryId_brandId_unique` (`brandId`),
   KEY `parentCategoryId` (`parentCategoryId`),
-  CONSTRAINT `brand_parentcategories_ibfk_15` FOREIGN KEY (`brandId`) REFERENCES `brands` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `brand_parentcategories_ibfk_16` FOREIGN KEY (`parentCategoryId`) REFERENCES `parentcategories` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `brand_parentcategories_ibfk_307` FOREIGN KEY (`brandId`) REFERENCES `brands` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `brand_parentcategories_ibfk_308` FOREIGN KEY (`parentCategoryId`) REFERENCES `parentcategories` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Data exporting was unselected.
@@ -161,12 +105,24 @@ CREATE TABLE IF NOT EXISTS `categories` (
   `slug` varchar(255) NOT NULL,
   `brandId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   PRIMARY KEY (`categoryId`),
-  UNIQUE KEY `name` (`name`),
+  UNIQUE KEY `unique_category_name_per_brand` (`name`,`brandId`),
   KEY `parentCategoryId` (`parentCategoryId`),
   KEY `brandId` (`brandId`),
-  CONSTRAINT `categories_ibfk_181` FOREIGN KEY (`parentCategoryId`) REFERENCES `parentcategories` (`id`) ON DELETE NO ACTION ON UPDATE CASCADE,
-  CONSTRAINT `categories_ibfk_182` FOREIGN KEY (`brandId`) REFERENCES `brands` (`id`) ON DELETE NO ACTION ON UPDATE CASCADE
+  CONSTRAINT `categories_ibfk_531` FOREIGN KEY (`parentCategoryId`) REFERENCES `parentcategories` (`id`) ON DELETE NO ACTION ON UPDATE CASCADE,
+  CONSTRAINT `categories_ibfk_532` FOREIGN KEY (`brandId`) REFERENCES `brands` (`id`) ON DELETE NO ACTION ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.comments
+CREATE TABLE IF NOT EXISTS `comments` (
+  `id` char(36) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `orderId` char(36) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `userId` char(36) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `comment` text COLLATE utf8_unicode_ci NOT NULL,
+  `createdAt` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
 
@@ -184,26 +140,6 @@ CREATE TABLE IF NOT EXISTS `companies` (
   PRIMARY KEY (`companyId`),
   UNIQUE KEY `name` (`name`),
   UNIQUE KEY `slug` (`slug`),
-  UNIQUE KEY `name_2` (`name`),
-  UNIQUE KEY `slug_2` (`slug`),
-  UNIQUE KEY `name_3` (`name`),
-  UNIQUE KEY `slug_3` (`slug`),
-  UNIQUE KEY `name_4` (`name`),
-  UNIQUE KEY `slug_4` (`slug`),
-  UNIQUE KEY `name_5` (`name`),
-  UNIQUE KEY `slug_5` (`slug`),
-  UNIQUE KEY `name_6` (`name`),
-  UNIQUE KEY `slug_6` (`slug`),
-  UNIQUE KEY `name_7` (`name`),
-  UNIQUE KEY `slug_7` (`slug`),
-  UNIQUE KEY `name_8` (`name`),
-  UNIQUE KEY `slug_8` (`slug`),
-  UNIQUE KEY `name_9` (`name`),
-  UNIQUE KEY `slug_9` (`slug`),
-  UNIQUE KEY `name_10` (`name`),
-  UNIQUE KEY `slug_10` (`slug`),
-  UNIQUE KEY `name_11` (`name`),
-  UNIQUE KEY `slug_11` (`slug`),
   KEY `parentCompanyId` (`parentCompanyId`),
   CONSTRAINT `companies_ibfk_1` FOREIGN KEY (`parentCompanyId`) REFERENCES `companies` (`companyId`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -232,20 +168,6 @@ CREATE TABLE IF NOT EXISTS `customers` (
   `updatedAt` datetime NOT NULL,
   PRIMARY KEY (`customerId`),
   UNIQUE KEY `email` (`email`),
-  UNIQUE KEY `email_2` (`email`),
-  UNIQUE KEY `email_3` (`email`),
-  UNIQUE KEY `email_4` (`email`),
-  UNIQUE KEY `email_5` (`email`),
-  UNIQUE KEY `email_6` (`email`),
-  UNIQUE KEY `email_7` (`email`),
-  UNIQUE KEY `email_8` (`email`),
-  UNIQUE KEY `email_9` (`email`),
-  UNIQUE KEY `email_10` (`email`),
-  UNIQUE KEY `email_11` (`email`),
-  UNIQUE KEY `email_12` (`email`),
-  UNIQUE KEY `email_13` (`email`),
-  UNIQUE KEY `email_14` (`email`),
-  UNIQUE KEY `email_15` (`email`),
   KEY `vendorId` (`vendorId`),
   CONSTRAINT `customers_ibfk_1` FOREIGN KEY (`vendorId`) REFERENCES `vendors` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -261,7 +183,7 @@ CREATE TABLE IF NOT EXISTS `invoices` (
   `invoiceDate` date NOT NULL,
   `dueDate` date NOT NULL,
   `paymentMethod` json DEFAULT NULL,
-  `status` enum('paid','unpaid','partially paid','void','refund') NOT NULL,
+  `status` enum('paid','unpaid','partially paid','void','refund','return') NOT NULL,
   `products` json NOT NULL,
   `signatureName` varchar(255) NOT NULL DEFAULT 'CM TRADING CO',
   `createdBy` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
@@ -272,26 +194,14 @@ CREATE TABLE IF NOT EXISTS `invoices` (
   `customerId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   PRIMARY KEY (`invoiceId`),
   UNIQUE KEY `invoiceNo` (`invoiceNo`),
-  UNIQUE KEY `invoiceNo_2` (`invoiceNo`),
-  UNIQUE KEY `invoiceNo_3` (`invoiceNo`),
-  UNIQUE KEY `invoiceNo_4` (`invoiceNo`),
-  UNIQUE KEY `invoiceNo_5` (`invoiceNo`),
-  UNIQUE KEY `invoiceNo_6` (`invoiceNo`),
-  UNIQUE KEY `invoiceNo_7` (`invoiceNo`),
-  UNIQUE KEY `invoiceNo_8` (`invoiceNo`),
-  UNIQUE KEY `invoiceNo_9` (`invoiceNo`),
-  UNIQUE KEY `invoiceNo_10` (`invoiceNo`),
-  UNIQUE KEY `invoiceNo_11` (`invoiceNo`),
-  UNIQUE KEY `invoiceNo_12` (`invoiceNo`),
-  UNIQUE KEY `invoiceNo_13` (`invoiceNo`),
   KEY `shipTo` (`shipTo`),
   KEY `createdBy` (`createdBy`),
   KEY `quotationId` (`quotationId`),
   KEY `customerId` (`customerId`),
-  CONSTRAINT `invoices_ibfk_2173` FOREIGN KEY (`shipTo`) REFERENCES `addresses` (`addressId`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `invoices_ibfk_2174` FOREIGN KEY (`createdBy`) REFERENCES `users` (`userId`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `invoices_ibfk_2175` FOREIGN KEY (`quotationId`) REFERENCES `quotations` (`quotationId`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `invoices_ibfk_2176` FOREIGN KEY (`customerId`) REFERENCES `customers` (`customerId`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `invoices_ibfk_2883` FOREIGN KEY (`shipTo`) REFERENCES `addresses` (`addressId`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `invoices_ibfk_2884` FOREIGN KEY (`createdBy`) REFERENCES `users` (`userId`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `invoices_ibfk_2885` FOREIGN KEY (`quotationId`) REFERENCES `quotations` (`quotationId`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `invoices_ibfk_2886` FOREIGN KEY (`customerId`) REFERENCES `customers` (`customerId`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Data exporting was unselected.
@@ -305,18 +215,6 @@ CREATE TABLE IF NOT EXISTS `keywords` (
   `categoryId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `keyword` (`keyword`),
-  UNIQUE KEY `keyword_2` (`keyword`),
-  UNIQUE KEY `keyword_3` (`keyword`),
-  UNIQUE KEY `keyword_4` (`keyword`),
-  UNIQUE KEY `keyword_5` (`keyword`),
-  UNIQUE KEY `keyword_6` (`keyword`),
-  UNIQUE KEY `keyword_7` (`keyword`),
-  UNIQUE KEY `keyword_8` (`keyword`),
-  UNIQUE KEY `keyword_9` (`keyword`),
-  UNIQUE KEY `keyword_10` (`keyword`),
-  UNIQUE KEY `keyword_11` (`keyword`),
-  UNIQUE KEY `keyword_12` (`keyword`),
-  UNIQUE KEY `keyword_13` (`keyword`),
   KEY `categoryId` (`categoryId`),
   CONSTRAINT `keywords_ibfk_1` FOREIGN KEY (`categoryId`) REFERENCES `categories` (`categoryId`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -339,16 +237,16 @@ CREATE TABLE IF NOT EXISTS `orders` (
   `createdFor` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `createdBy` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `assignedTo` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
-  `invoiceId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `invoiceLink` varchar(500) DEFAULT NULL,
+  `orderNo` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`id`),
+  UNIQUE KEY `orderNo` (`orderNo`),
   KEY `createdFor` (`createdFor`),
   KEY `createdBy` (`createdBy`),
   KEY `assignedTo` (`assignedTo`),
-  KEY `invoiceId` (`invoiceId`),
-  CONSTRAINT `orders_ibfk_2636` FOREIGN KEY (`createdFor`) REFERENCES `customers` (`customerId`),
-  CONSTRAINT `orders_ibfk_2637` FOREIGN KEY (`createdBy`) REFERENCES `users` (`userId`),
-  CONSTRAINT `orders_ibfk_2638` FOREIGN KEY (`assignedTo`) REFERENCES `teams` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `orders_ibfk_2639` FOREIGN KEY (`invoiceId`) REFERENCES `invoices` (`invoiceId`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `orders_ibfk_3486` FOREIGN KEY (`createdFor`) REFERENCES `customers` (`customerId`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `orders_ibfk_3487` FOREIGN KEY (`createdBy`) REFERENCES `users` (`userId`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `orders_ibfk_3488` FOREIGN KEY (`assignedTo`) REFERENCES `teams` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Data exporting was unselected.
@@ -364,30 +262,6 @@ CREATE TABLE IF NOT EXISTS `parentcategories` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`),
   UNIQUE KEY `slug` (`slug`),
-  UNIQUE KEY `name_2` (`name`),
-  UNIQUE KEY `slug_2` (`slug`),
-  UNIQUE KEY `name_3` (`name`),
-  UNIQUE KEY `slug_3` (`slug`),
-  UNIQUE KEY `name_4` (`name`),
-  UNIQUE KEY `slug_4` (`slug`),
-  UNIQUE KEY `name_5` (`name`),
-  UNIQUE KEY `slug_5` (`slug`),
-  UNIQUE KEY `name_6` (`name`),
-  UNIQUE KEY `slug_6` (`slug`),
-  UNIQUE KEY `name_7` (`name`),
-  UNIQUE KEY `slug_7` (`slug`),
-  UNIQUE KEY `name_8` (`name`),
-  UNIQUE KEY `slug_8` (`slug`),
-  UNIQUE KEY `name_9` (`name`),
-  UNIQUE KEY `slug_9` (`slug`),
-  UNIQUE KEY `name_10` (`name`),
-  UNIQUE KEY `slug_10` (`slug`),
-  UNIQUE KEY `name_11` (`name`),
-  UNIQUE KEY `slug_11` (`slug`),
-  UNIQUE KEY `name_12` (`name`),
-  UNIQUE KEY `slug_12` (`slug`),
-  UNIQUE KEY `name_13` (`name`),
-  UNIQUE KEY `slug_13` (`slug`),
   KEY `brandParentCategoryId` (`brandParentCategoryId`),
   CONSTRAINT `parentcategories_ibfk_1` FOREIGN KEY (`brandParentCategoryId`) REFERENCES `brand_parentcategories` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -413,17 +287,11 @@ CREATE TABLE IF NOT EXISTS `permissions` (
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.products
 CREATE TABLE IF NOT EXISTS `products` (
   `productId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `product_segment` varchar(100) DEFAULT NULL,
-  `productGroup` varchar(100) NOT NULL,
   `name` varchar(255) NOT NULL,
-  `product_code` varchar(100) NOT NULL,
-  `company_code` varchar(100) NOT NULL,
-  `sellingPrice` decimal(10,2) NOT NULL,
-  `purchasingPrice` decimal(10,2) NOT NULL,
+  `product_code` varchar(255) NOT NULL,
   `quantity` int(11) NOT NULL,
   `discountType` enum('percent','fixed') DEFAULT NULL,
-  `barcode` varchar(100) DEFAULT NULL,
-  `alert_quantity` int(11) DEFAULT NULL,
+  `alert_quantity` int(11) DEFAULT '20',
   `tax` decimal(5,2) DEFAULT NULL,
   `description` text,
   `images` json DEFAULT NULL,
@@ -432,48 +300,36 @@ CREATE TABLE IF NOT EXISTS `products` (
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL,
   `isFeatured` tinyint(1) DEFAULT '0',
-  `user_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `userId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `productType` enum('tiles','sanitary') NOT NULL,
+  `vendorId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `brand_parentcategoriesId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `meta` json DEFAULT NULL COMMENT 'Stores key-value pairs where key is ProductMeta UUID and value is the actual value',
   PRIMARY KEY (`productId`),
   UNIQUE KEY `product_code` (`product_code`),
-  UNIQUE KEY `company_code` (`company_code`),
-  UNIQUE KEY `product_code_2` (`product_code`),
-  UNIQUE KEY `company_code_2` (`company_code`),
-  UNIQUE KEY `product_code_3` (`product_code`),
-  UNIQUE KEY `company_code_3` (`company_code`),
-  UNIQUE KEY `product_code_4` (`product_code`),
-  UNIQUE KEY `company_code_4` (`company_code`),
-  UNIQUE KEY `product_code_5` (`product_code`),
-  UNIQUE KEY `company_code_5` (`company_code`),
-  UNIQUE KEY `product_code_6` (`product_code`),
-  UNIQUE KEY `company_code_6` (`company_code`),
-  UNIQUE KEY `product_code_7` (`product_code`),
-  UNIQUE KEY `company_code_7` (`company_code`),
-  UNIQUE KEY `product_code_8` (`product_code`),
-  UNIQUE KEY `company_code_8` (`company_code`),
-  UNIQUE KEY `product_code_9` (`product_code`),
-  UNIQUE KEY `company_code_9` (`company_code`),
-  UNIQUE KEY `product_code_10` (`product_code`),
-  UNIQUE KEY `company_code_10` (`company_code`),
-  UNIQUE KEY `product_code_11` (`product_code`),
-  UNIQUE KEY `company_code_11` (`company_code`),
-  UNIQUE KEY `barcode` (`barcode`),
-  UNIQUE KEY `barcode_2` (`barcode`),
-  UNIQUE KEY `barcode_3` (`barcode`),
-  UNIQUE KEY `barcode_4` (`barcode`),
-  UNIQUE KEY `barcode_5` (`barcode`),
-  UNIQUE KEY `barcode_6` (`barcode`),
-  UNIQUE KEY `barcode_7` (`barcode`),
-  UNIQUE KEY `barcode_8` (`barcode`),
-  UNIQUE KEY `barcode_9` (`barcode`),
-  UNIQUE KEY `barcode_10` (`barcode`),
-  UNIQUE KEY `barcode_11` (`barcode`),
   KEY `brandId` (`brandId`),
   KEY `categoryId` (`categoryId`),
-  KEY `user_id` (`user_id`),
-  CONSTRAINT `products_ibfk_1326` FOREIGN KEY (`brandId`) REFERENCES `brands` (`id`),
-  CONSTRAINT `products_ibfk_1327` FOREIGN KEY (`categoryId`) REFERENCES `categories` (`categoryId`) ON DELETE NO ACTION ON UPDATE CASCADE,
-  CONSTRAINT `products_ibfk_1328` FOREIGN KEY (`user_id`) REFERENCES `users` (`userId`) ON DELETE SET NULL ON UPDATE CASCADE
+  KEY `userId` (`userId`),
+  KEY `vendorId` (`vendorId`),
+  KEY `brand_parentcategoriesId` (`brand_parentcategoriesId`),
+  CONSTRAINT `products_ibfk_1792` FOREIGN KEY (`brandId`) REFERENCES `brands` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `products_ibfk_1793` FOREIGN KEY (`categoryId`) REFERENCES `categories` (`categoryId`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `products_ibfk_1794` FOREIGN KEY (`userId`) REFERENCES `users` (`userId`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `products_ibfk_1795` FOREIGN KEY (`vendorId`) REFERENCES `vendors` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `products_ibfk_1796` FOREIGN KEY (`brand_parentcategoriesId`) REFERENCES `brand_parentcategories` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.product_metas
+CREATE TABLE IF NOT EXISTS `product_metas` (
+  `id` char(36) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `title` varchar(255) COLLATE utf8_unicode_ci NOT NULL COMMENT 'Label for the metadata field (e.g., Selling Price, MRP)',
+  `fieldType` varchar(255) COLLATE utf8_unicode_ci NOT NULL COMMENT 'Type of data (e.g., string, number, mm, inch, pcs, box, feet)',
+  `unit` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL COMMENT 'Optional unit of measurement (e.g., inch, mm, pcs)',
+  `createdAt` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
 
@@ -501,9 +357,9 @@ CREATE TABLE IF NOT EXISTS `quotations` (
   KEY `customerId` (`customerId`),
   KEY `createdBy` (`createdBy`),
   KEY `shipTo` (`shipTo`),
-  CONSTRAINT `quotations_ibfk_1416` FOREIGN KEY (`customerId`) REFERENCES `customers` (`customerId`) ON UPDATE CASCADE,
-  CONSTRAINT `quotations_ibfk_1417` FOREIGN KEY (`createdBy`) REFERENCES `users` (`userId`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `quotations_ibfk_1418` FOREIGN KEY (`shipTo`) REFERENCES `addresses` (`addressId`) ON DELETE SET NULL ON UPDATE CASCADE
+  CONSTRAINT `quotations_ibfk_1950` FOREIGN KEY (`customerId`) REFERENCES `customers` (`customerId`) ON UPDATE CASCADE,
+  CONSTRAINT `quotations_ibfk_1951` FOREIGN KEY (`createdBy`) REFERENCES `users` (`userId`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `quotations_ibfk_1952` FOREIGN KEY (`shipTo`) REFERENCES `addresses` (`addressId`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Data exporting was unselected.
@@ -520,8 +376,8 @@ CREATE TABLE IF NOT EXISTS `rolepermissions` (
   UNIQUE KEY `rolepermissions_role_id_permission_id` (`roleId`,`permissionId`),
   KEY `permissionId` (`permissionId`),
   KEY `rolepermissions_permission_id` (`permissionId`),
-  CONSTRAINT `rolepermissions_ibfk_1237` FOREIGN KEY (`roleId`) REFERENCES `roles` (`roleId`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `rolepermissions_ibfk_1238` FOREIGN KEY (`permissionId`) REFERENCES `permissions` (`permissionId`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `rolepermissions_ibfk_1589` FOREIGN KEY (`roleId`) REFERENCES `roles` (`roleId`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `rolepermissions_ibfk_1590` FOREIGN KEY (`permissionId`) REFERENCES `permissions` (`permissionId`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Data exporting was unselected.
@@ -533,21 +389,7 @@ CREATE TABLE IF NOT EXISTS `roles` (
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL,
   PRIMARY KEY (`roleId`),
-  UNIQUE KEY `roleName` (`roleName`),
-  UNIQUE KEY `roleName_2` (`roleName`),
-  UNIQUE KEY `roleName_3` (`roleName`),
-  UNIQUE KEY `roleName_4` (`roleName`),
-  UNIQUE KEY `roleName_5` (`roleName`),
-  UNIQUE KEY `roleName_6` (`roleName`),
-  UNIQUE KEY `roleName_7` (`roleName`),
-  UNIQUE KEY `roleName_8` (`roleName`),
-  UNIQUE KEY `roleName_9` (`roleName`),
-  UNIQUE KEY `roleName_10` (`roleName`),
-  UNIQUE KEY `roleName_11` (`roleName`),
-  UNIQUE KEY `roleName_12` (`roleName`),
-  UNIQUE KEY `roleName_13` (`roleName`),
-  UNIQUE KEY `roleName_14` (`roleName`),
-  UNIQUE KEY `roleName_15` (`roleName`)
+  UNIQUE KEY `roleName` (`roleName`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Data exporting was unselected.
@@ -630,52 +472,10 @@ CREATE TABLE IF NOT EXISTS `users` (
   PRIMARY KEY (`userId`),
   UNIQUE KEY `username` (`username`),
   UNIQUE KEY `email` (`email`),
-  UNIQUE KEY `username_2` (`username`),
-  UNIQUE KEY `email_2` (`email`),
-  UNIQUE KEY `username_3` (`username`),
-  UNIQUE KEY `email_3` (`email`),
-  UNIQUE KEY `username_4` (`username`),
-  UNIQUE KEY `email_4` (`email`),
-  UNIQUE KEY `username_5` (`username`),
-  UNIQUE KEY `email_5` (`email`),
-  UNIQUE KEY `username_6` (`username`),
-  UNIQUE KEY `email_6` (`email`),
-  UNIQUE KEY `username_7` (`username`),
-  UNIQUE KEY `email_7` (`email`),
-  UNIQUE KEY `username_8` (`username`),
-  UNIQUE KEY `email_8` (`email`),
-  UNIQUE KEY `username_9` (`username`),
-  UNIQUE KEY `email_9` (`email`),
-  UNIQUE KEY `username_10` (`username`),
-  UNIQUE KEY `email_10` (`email`),
-  UNIQUE KEY `username_11` (`username`),
-  UNIQUE KEY `email_11` (`email`),
-  UNIQUE KEY `username_12` (`username`),
-  UNIQUE KEY `email_12` (`email`),
-  UNIQUE KEY `username_13` (`username`),
-  UNIQUE KEY `email_13` (`email`),
-  UNIQUE KEY `username_14` (`username`),
-  UNIQUE KEY `email_14` (`email`),
-  UNIQUE KEY `username_15` (`username`),
-  UNIQUE KEY `email_15` (`email`),
-  UNIQUE KEY `username_16` (`username`),
-  UNIQUE KEY `email_16` (`email`),
-  UNIQUE KEY `username_17` (`username`),
-  UNIQUE KEY `email_17` (`email`),
-  UNIQUE KEY `username_18` (`username`),
-  UNIQUE KEY `email_18` (`email`),
-  UNIQUE KEY `username_19` (`username`),
-  UNIQUE KEY `email_19` (`email`),
-  UNIQUE KEY `username_20` (`username`),
-  UNIQUE KEY `email_20` (`email`),
-  UNIQUE KEY `username_21` (`username`),
-  UNIQUE KEY `email_21` (`email`),
-  UNIQUE KEY `username_22` (`username`),
-  UNIQUE KEY `email_22` (`email`),
   KEY `addressId` (`addressId`),
   KEY `roleId` (`roleId`),
-  CONSTRAINT `users_ibfk_352` FOREIGN KEY (`addressId`) REFERENCES `addresses` (`addressId`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `users_ibfk_353` FOREIGN KEY (`roleId`) REFERENCES `roles` (`roleId`) ON UPDATE CASCADE
+  CONSTRAINT `users_ibfk_273` FOREIGN KEY (`addressId`) REFERENCES `addresses` (`addressId`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `users_ibfk_274` FOREIGN KEY (`roleId`) REFERENCES `roles` (`roleId`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Data exporting was unselected.
@@ -691,27 +491,37 @@ CREATE TABLE IF NOT EXISTS `vendors` (
   `updatedAt` datetime NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `vendorId` (`vendorId`),
-  UNIQUE KEY `vendorId_2` (`vendorId`),
-  UNIQUE KEY `vendorId_3` (`vendorId`),
-  UNIQUE KEY `vendorId_4` (`vendorId`),
-  UNIQUE KEY `vendorId_5` (`vendorId`),
-  UNIQUE KEY `vendorId_6` (`vendorId`),
-  UNIQUE KEY `vendorId_7` (`vendorId`),
-  UNIQUE KEY `vendorId_8` (`vendorId`),
-  UNIQUE KEY `vendorId_9` (`vendorId`),
-  UNIQUE KEY `vendorId_10` (`vendorId`),
-  UNIQUE KEY `vendorId_11` (`vendorId`),
-  UNIQUE KEY `vendorId_12` (`vendorId`),
-  UNIQUE KEY `vendorId_13` (`vendorId`),
-  UNIQUE KEY `vendorId_14` (`vendorId`),
-  UNIQUE KEY `vendorId_15` (`vendorId`),
   KEY `vendors_fk_brandId` (`brandId`),
   KEY `vendors_fk_brandSlug` (`brandSlug`),
-  CONSTRAINT `vendors_ibfk_1361` FOREIGN KEY (`brandId`) REFERENCES `brands` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `vendors_ibfk_1362` FOREIGN KEY (`brandSlug`) REFERENCES `brands` (`brandSlug`)
+  CONSTRAINT `vendors_ibfk_167` FOREIGN KEY (`brandId`) REFERENCES `brands` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `vendors_ibfk_168` FOREIGN KEY (`brandSlug`) REFERENCES `brands` (`brandSlug`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Data exporting was unselected.
+
+-- Dumping structure for trigger spsyn8lm_rocklime_dashboard.before_insert_orders
+SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION';
+DELIMITER //
+CREATE TRIGGER before_insert_orders
+BEFORE INSERT ON orders
+FOR EACH ROW
+BEGIN
+    DECLARE nextSerial INT;
+
+    -- Get the count of today's orders and increment by 1
+    SELECT COUNT(*) + 1
+    INTO nextSerial
+    FROM orders
+    WHERE DATE(createdAt) = CURDATE();
+
+    -- Set the orderNo in DDMMYYYY00001 format
+    SET NEW.orderNo = CONCAT(
+        DATE_FORMAT(NOW(), '%d%m%Y'),
+        LPAD(nextSerial, 5, '0')
+    );
+END//
+DELIMITER ;
+SET SQL_MODE=@OLDTMP_SQL_MODE;
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

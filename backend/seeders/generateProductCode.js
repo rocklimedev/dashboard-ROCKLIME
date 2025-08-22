@@ -2,21 +2,27 @@ const fs = require("fs").promises;
 const path = require("path");
 
 // JSON data to process
-const jsonData = require("./product.json");
+const jsonData = require("./new.json");
 
-// Mock brand (replace if you fetch from DB)
-const mockBrand = { brandName: "Tiles" };
+// Mock brand
+const mockBrand = { brandName: "Colston" };
 
 async function generateCode(product, existingCodes) {
-  const companyCode = product.company_code
-    ? `CMP-${product.company_code}`
-    : "CMP-0000";
+  let last4;
 
-  // Extract last 4 digits from company_code
-  const match = companyCode.match(/\d{4}(?!.*\d)/);
-  const last4 = match ? match[0] : "0000";
+  // Check if company_code exists
+  if (product.company_code) {
+    const companyCode = `CMP-${product.company_code}`;
+    const match = companyCode.match(/\d{4}(?!.*\d)/);
+    last4 = match ? match[0] : "0000";
+  } else {
+    // Use size from meta, remove asterisks and spaces, take last 4 digits
+    const size = product.meta["06857cb5-3fbe-404b-bdef-657c8ae7c345"] || "0000";
+    const cleanedSize = size.replace(/[\*\s]/g, "");
+    last4 = cleanedSize.slice(-4) || "0000";
+  }
 
-  // Use productType (adhesive, etc.) as prefix + brand + last4 digits
+  // Generate prefix: E + first 2 chars of productType + first 2 chars of brandName + last4
   const prefix = `E${product.productType
     .slice(0, 2)
     .toUpperCase()}${mockBrand.brandName.slice(0, 2).toUpperCase()}${last4}`;
@@ -38,19 +44,12 @@ async function updateProductJson() {
   try {
     console.log("✅ Processing product.json...");
 
-    // Collect existing codes (if products already have productCode field)
+    // Collect existing codes
     const existingCodes = jsonData
       .filter((item) => item.productCode)
       .map((item) => item.productCode);
 
     for (const product of jsonData) {
-      if (!product.company_code) {
-        console.warn(
-          `⏩ Skipping product without company_code: ${product.name}`
-        );
-        continue;
-      }
-
       // If already has productCode, skip
       if (product.productCode) {
         console.log(

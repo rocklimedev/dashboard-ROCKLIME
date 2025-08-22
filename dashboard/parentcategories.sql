@@ -1,8 +1,8 @@
 -- --------------------------------------------------------
--- Host:                         127.0.0.1
--- Server version:               9.2.0 - MySQL Community Server - GPL
--- Server OS:                    Win64
--- HeidiSQL Version:             12.10.0.7000
+-- Host:                         119.18.54.11
+-- Server version:               5.7.23-23 - Percona Server (GPL), Release 23, Revision 500fcf5
+-- Server OS:                    Linux
+-- HeidiSQL Version:             12.11.0.7065
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -14,25 +14,22 @@
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
--- Dumping structure for table dashboard.parentcategories
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.parentcategories
 CREATE TABLE IF NOT EXISTS `parentcategories` (
   `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `name` varchar(100) NOT NULL,
   `slug` varchar(255) NOT NULL,
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL,
+  `brandParentCategoryId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`),
   UNIQUE KEY `slug` (`slug`),
-  UNIQUE KEY `name_2` (`name`),
-  UNIQUE KEY `slug_2` (`slug`),
-  UNIQUE KEY `name_3` (`name`),
-  UNIQUE KEY `slug_3` (`slug`),
-  UNIQUE KEY `name_4` (`name`),
-  UNIQUE KEY `slug_4` (`slug`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  KEY `brandParentCategoryId` (`brandParentCategoryId`),
+  CONSTRAINT `parentcategories_ibfk_1` FOREIGN KEY (`brandParentCategoryId`) REFERENCES `brand_parentcategories` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Dumping data for table dashboard.parentcategories: ~0 rows (approximately)
+-- Data exporting was unselected.
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
