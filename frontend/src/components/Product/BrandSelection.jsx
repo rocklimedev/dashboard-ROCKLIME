@@ -18,8 +18,6 @@ const BrandSelection = () => {
     error,
   } = useGetBrandParentCategoryByIdQuery(bpcId);
 
-  console.log("bpcId:", bpcId, "bpc:", bpc, "bpc.brands:", bpc?.brands); // Debug API response
-
   const brands = useMemo(() => {
     const logoMap = {
       AS_001: americanStandard,

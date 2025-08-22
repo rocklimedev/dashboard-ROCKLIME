@@ -9,7 +9,7 @@ module.exports = {
   async up(queryInterface, Sequelize) {
     const transaction = await sequelize.transaction();
     try {
-      console.log("✅ Starting Adhesive Product Seeding...");
+      console.log("✅ Starting Product Seeding...");
 
       // Ensure user exists
       const userId = "2ef0f07a-a275-4fe1-832d-fe9a5d145f60";
@@ -22,7 +22,6 @@ module.exports = {
       for (const item of rawData) {
         let {
           name,
-          company_code,
           description,
           images,
           brandId,
@@ -34,9 +33,15 @@ module.exports = {
           brand_parentcategoriesId,
           meta,
           productCode,
+          quantity,
+          discountType,
+          alert_quantity,
+          tax,
+          createdAt,
+          updatedAt,
         } = item;
 
-        // 🔥 Fix ENUM mismatch
+        // 🔹 Fix ENUM mismatch
         if (!["tiles", "sanitary"].includes(productType)) {
           console.warn(
             `⚠️ productType "${productType}" is invalid. Defaulting to "tiles".`
@@ -44,31 +49,30 @@ module.exports = {
           productType = "tiles";
         }
 
-        // 🔥 Fix images for JSON column
+        // 🔹 Ensure images is a JSON array
         const imagesArray =
-          images && typeof images === "string" ? [images] : [];
+          images && Array.isArray(images) ? images : images ? [images] : [];
 
         const productData = {
           productId: uuidv4(),
           name,
-          company_code,
           product_code: productCode,
           description,
-          quantity: item.quantity ?? 0,
-          discountType: item.discountType ?? null,
-          alert_quantity: item.alert_quantity ?? 20,
-          tax: item.tax ?? null,
-          images: imagesArray, // ✅ keep JSON array, not string
+          quantity: quantity ?? 0,
+          discountType: discountType ?? null,
+          alert_quantity: alert_quantity ?? 20,
+          tax: tax ?? null,
+          images: imagesArray,
           brandId,
           categoryId,
           brand_parentcategoriesId,
-          isFeatured: isFeatured ?? 0, // ✅ keep as int (0/1)
+          isFeatured: isFeatured ?? 0,
           userId: itemUserId || user.userId,
           productType,
           vendorId,
-          meta,
-          createdAt: new Date(item.createdAt),
-          updatedAt: new Date(item.updatedAt),
+          meta: meta ?? {},
+          createdAt: createdAt ? new Date(createdAt) : new Date(),
+          updatedAt: updatedAt ? new Date(updatedAt) : new Date(),
         };
 
         console.log(`Upserting product: ${productData.product_code}`);
@@ -76,10 +80,10 @@ module.exports = {
       }
 
       await transaction.commit();
-      console.log("✅ Adhesive Product Seeding Completed.");
+      console.log("✅ Product Seeding Completed.");
     } catch (error) {
       await transaction.rollback();
-      console.error("❌ Error during adhesive seeding:", error);
+      console.error("❌ Error during product seeding:", error);
       throw error;
     }
   },
@@ -97,7 +101,7 @@ module.exports = {
       });
 
       await transaction.commit();
-      console.log("✅ Adhesive Product Rollback Completed.");
+      console.log("✅ Product Rollback Completed.");
     } catch (error) {
       await transaction.rollback();
       console.error("❌ Error during rollback:", error);
