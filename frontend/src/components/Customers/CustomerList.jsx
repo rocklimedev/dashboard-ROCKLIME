@@ -3,7 +3,6 @@ import {
   useGetCustomersQuery,
   useDeleteCustomerMutation,
 } from "../../api/customerApi";
-import AddCustomer from "./AddCustomer";
 import { BiEdit, BiTrash } from "react-icons/bi";
 import { FaEye, FaSearch } from "react-icons/fa";
 import { toast } from "sonner";
@@ -12,16 +11,16 @@ import DataTablePagination from "../Common/DataTablePagination";
 import PageHeader from "../Common/PageHeader";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { Dropdown, Button, Menu } from "antd";
+import { useNavigate } from "react-router-dom";
 
 const CustomerList = () => {
+  const navigate = useNavigate();
   const { data, error, isLoading } = useGetCustomersQuery();
-  const customers = data?.data || [];
+  const customers = Array.isArray(data?.data) ? data.data : []; // Ensure customers is always an array
   const [deleteCustomer] = useDeleteCustomerMutation();
 
-  // State for modals, selected customer, pagination, and filters
-  const [showModal, setShowModal] = useState(false);
+  // State for delete modal, pagination, and filters
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [customerToDelete, setCustomerToDelete] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
@@ -30,14 +29,17 @@ const CustomerList = () => {
   const itemsPerPage = 20;
 
   // Memoized grouped customers for tab-based filtering
-  const groupedCustomers = useMemo(
-    () => ({
+  const groupedCustomers = useMemo(() => {
+    if (!Array.isArray(customers)) {
+      return { All: [], Active: [], Inactive: [] }; // Return empty arrays if customers is not ready
+    }
+
+    return {
       All: customers,
-      Active: customers.filter((c) => c.isActive !== false), // Assuming isActive boolean
+      Active: customers.filter((c) => c.isActive !== false),
       Inactive: customers.filter((c) => c.isActive === false),
-    }),
-    [customers]
-  );
+    };
+  }, [customers]);
 
   // Filtered and sorted customers
   const filteredCustomers = useMemo(() => {
@@ -60,12 +62,12 @@ const CustomerList = () => {
         result = [...result].sort((a, b) => a.name.localeCompare(b.name));
         break;
       case "Descending":
-        result = [...result].sort((a, b) => b.name.localeCompare(a.name));
+        result = [...result].sort((a, b) => b.name.localeCompare(b.name));
         break;
       case "Recently Added":
         result = [...result].sort(
           (a, b) => (b.createdAt || 0) - (a.createdAt || 0)
-        ); // Assuming createdAt exists
+        );
         break;
       default:
         break;
@@ -86,13 +88,11 @@ const CustomerList = () => {
   };
 
   const handleAddCustomer = () => {
-    setSelectedCustomer(null);
-    setShowModal(true);
+    navigate("/customers/add");
   };
 
   const handleEditCustomer = (customer) => {
-    setSelectedCustomer({ ...customer });
-    setShowModal(true);
+    navigate(`/customers/edit/${customer.customerId}`, { state: { customer } });
   };
 
   const handleDelete = (customerId) => {
@@ -228,7 +228,6 @@ const CustomerList = () => {
                           {paginatedCustomers.map((customer) => (
                             <tr key={customer.customerId}>
                               <td>
-                                {" "}
                                 <a
                                   href={`/customer/${customer.customerId}`}
                                   target="_blank"
@@ -240,7 +239,6 @@ const CustomerList = () => {
                               <td>{customer.email || "N/A"}</td>
                               <td>{customer.mobileNumber || "N/A"}</td>
                               <td>{customer.companyName || "N/A"}</td>
-
                               <td>
                                 <Dropdown
                                   trigger={["click"]}
@@ -305,14 +303,6 @@ const CustomerList = () => {
             </div>
           </div>
         </div>
-
-        {showModal && (
-          <AddCustomer
-            key={selectedCustomer?.customerId || "new"}
-            onClose={() => setShowModal(false)}
-            existingCustomer={selectedCustomer}
-          />
-        )}
 
         {showDeleteModal && (
           <DeleteModal

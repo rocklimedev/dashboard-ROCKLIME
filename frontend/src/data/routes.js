@@ -78,7 +78,7 @@ import OrderPage from "../components/Orders/Orderpage";
 import NewCart from "../components/POS-NEW/NewCart";
 import AccountVerify from "../components/Auth/AccountVerify";
 import ContactWrapper from "../components/Contact/ContactWrapper";
-
+import AddCustomer from "../components/Customers/AddCustomer";
 const masterRoutes = [
   {
     path: "/",
@@ -510,6 +510,20 @@ const masterRoutes = [
     element: <ContactWrapper />,
     name: "Contact",
     icon: <BiCoinStack />,
+    isSidebarActive: false,
+  },
+  {
+    path: "/customers/add",
+    element: <AddCustomer />,
+    name: "Add Customer",
+    icon: <BiCart />,
+    isSidebarActive: false,
+  },
+  {
+    path: "/customers/edit/:customerId",
+    element: <AddCustomer />,
+    name: "Edit Customer",
+    icon: <BiCart />,
     isSidebarActive: false,
   },
 ];

@@ -116,12 +116,11 @@
 
 .card.stat p a {
   text-decoration: none;
-  color: #4a90e2;
 }
 
 .bar {
   height: 0.375rem;
-  background: linear-gradient(90deg, #e74c3c, #f5a623);
+  background: #e31e24;
   border-radius: 0.25rem;
   transition: width 0.5s ease;
 }
