@@ -10,16 +10,21 @@ import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetVendorsQuery } from "../../api/vendorApi";
 import { toast } from "sonner";
 import { Tab, Tabs } from "react-bootstrap";
+import { useNavigate, useLocation } from "react-router-dom";
+import PageHeader from "../Common/PageHeader";
 
-const AddCustomer = ({ onClose, existingCustomer }) => {
+const AddCustomer = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const existingCustomer = location.state?.customer || null;
+
   const [createCustomer, { isLoading: isCreating, error: createError }] =
     useCreateCustomerMutation();
   const [updateCustomer, { isLoading: isEditing, error: editError }] =
     useUpdateCustomerMutation();
   const { data: allCustomersData, isLoading: isCustomersLoading } =
     useGetCustomersQuery();
-
   const {
     data: invoices,
     isLoading: isInvoicesLoading,
@@ -28,12 +33,12 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
   } = useGetInvoicesByCustomerIdQuery(existingCustomer?.customerId, {
     skip: !existingCustomer?.customerId,
   });
-
   const {
     data: vendors,
     isLoading: isVendorsLoading,
     error: vendorsError,
   } = useGetVendorsQuery();
+
   const [formData, setFormData] = useState({
     name: "",
     companyName: "",
@@ -41,7 +46,6 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
     mobileNumber: "",
     address: { street: "", city: "", state: "", zip: "" },
     isVendor: "false",
-
     totalAmount: "0.00",
     paidAmount: "0.00",
     balance: "0.00",
@@ -50,6 +54,7 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
     invoiceStatus: "Draft",
     invoices: [],
     quotations: [],
+    vendorId: "",
   });
 
   const getInvoiceData = useCallback(() => {
@@ -222,7 +227,7 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
         vendorId:
           formData.isVendor === "true" && formData.vendorId?.trim()
             ? formData.vendorId
-            : null, // This is important
+            : null,
       };
 
       if (existingCustomer) {
@@ -240,26 +245,28 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
         dispatch(api.util.invalidateTags(["Customer"]));
       }
 
-      onClose();
+      navigate("/customers");
     } catch (err) {
       toast.error(err?.data?.message || "Failed to process request.");
     }
   };
 
   return (
-    <div className="modal fade show" style={{ display: "block" }}>
-      <div className="modal-dialog modal-dialog-centered modal-lg">
-        <div className="modal-content">
-          <div className="modal-header">
-            <h4 className="modal-title">
-              {existingCustomer ? "Edit Customer" : "Add Customer"}
-            </h4>
-            <button type="button" className="close" onClick={onClose}>
-              <span>×</span>
-            </button>
-          </div>
-          <form onSubmit={handleSubmit}>
-            <div className="modal-body">
+    <div className="page-wrapper">
+      <div className="content">
+        <div className="card">
+          <PageHeader
+            title={existingCustomer ? "Edit Customer" : "Add Customer"}
+            subtitle={
+              existingCustomer
+                ? "Update customer details"
+                : "Create a new customer"
+            }
+            onAdd={() => navigate("/customers")}
+            buttonText="Back to Customers"
+          />
+          <div className="card-body">
+            <form onSubmit={handleSubmit}>
               {isInvoicesLoading && existingCustomer && (
                 <p>Loading invoice data...</p>
               )}
@@ -342,7 +349,6 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
                         required
                       />
                     </div>
-
                     <div className="col-lg-12 mb-3">
                       <label className="form-label">Address</label>
                       <div className="row">
@@ -390,7 +396,6 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
                     </div>
                   </div>
                 </Tab>
-
                 {existingCustomer && (
                   <Tab eventKey="financial" title="Financial">
                     <div className="row">
@@ -477,7 +482,6 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
                     </div>
                   </Tab>
                 )}
-
                 {existingCustomer && (
                   <Tab eventKey="invoices" title="Invoices">
                     {invoices?.data?.length > 0 ? (
@@ -550,7 +554,6 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
                     )}
                   </Tab>
                 )}
-
                 {existingCustomer && (
                   <Tab eventKey="quotations" title="Quotations">
                     {formData.quotations.length > 0 ? (
@@ -624,50 +627,50 @@ const AddCustomer = ({ onClose, existingCustomer }) => {
                   </Tab>
                 )}
               </Tabs>
-            </div>
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={onClose}
-              >
-                Cancel
-              </button>
-              {existingCustomer && (
+              <div className="d-flex justify-content-end mt-4">
                 <button
                   type="button"
-                  className="btn btn-info"
-                  onClick={() => refetch()}
-                  disabled={isInvoicesLoading}
+                  className="btn btn-secondary me-2"
+                  onClick={() => navigate("/customers")}
                 >
-                  Refresh Invoices
+                  Cancel
                 </button>
+                {existingCustomer && (
+                  <button
+                    type="button"
+                    className="btn btn-info me-2"
+                    onClick={() => refetch()}
+                    disabled={isInvoicesLoading}
+                  >
+                    Refresh Invoices
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={
+                    isCreating ||
+                    isEditing ||
+                    isInvoicesLoading ||
+                    isVendorsLoading
+                  }
+                >
+                  {isCreating || isEditing
+                    ? "Processing..."
+                    : existingCustomer
+                    ? "Update Customer"
+                    : "Add Customer"}
+                </button>
+              </div>
+              {(createError || editError) && (
+                <p className="text-danger mt-3">
+                  {createError?.data?.message ||
+                    editError?.data?.message ||
+                    "Error processing request"}
+                </p>
               )}
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={
-                  isCreating ||
-                  isEditing ||
-                  isInvoicesLoading ||
-                  isVendorsLoading
-                }
-              >
-                {isCreating || isEditing
-                  ? "Processing..."
-                  : existingCustomer
-                  ? "Update Customer"
-                  : "Add Customer"}
-              </button>
-            </div>
-            {(createError || editError) && (
-              <p className="text-danger mt-2">
-                {createError?.data?.message ||
-                  editError?.data?.message ||
-                  "Error processing request"}
-              </p>
-            )}
-          </form>
+            </form>
+          </div>
         </div>
       </div>
     </div>

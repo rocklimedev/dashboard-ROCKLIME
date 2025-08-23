@@ -213,19 +213,17 @@ const CustomerDetails = () => {
             <div className="card rounded-0 border-0">
               <div className="card-header rounded-0 bg-primary d-flex align-items-center">
                 <span className="avatar avatar-xl flex-shrink-0 border border-white border-3 me-3">
-                  <span className="avatar avatar-xl flex-shrink-0 border border-white border-3 me-3">
-                    <Avatar
-                      name={customer.name || "Customer"}
-                      src={customer.avatar || "/assets/img/users/user-32.jpg"}
-                      size="60"
-                      round={true}
-                      color="#4A90E2"
-                      textSizeRatio={2.5}
-                      alt={`Avatar of ${customer.name || "Customer"}`}
-                      style={{ borderRadius: "50% !important" }}
-                    />
-                  </span>
+                  <Avatar
+                    name={customer.name || "Customer"}
+                    src={customer.avatar || "/assets/img/users/user-32.jpg"}
+                    size="60"
+                    round={true}
+                    color="#4A90E2"
+                    textSizeRatio={2.5}
+                    alt={`Avatar of ${customer.name || "Customer"}`}
+                  />
                 </span>
+
                 <div className="me-3">
                   <h6 className="text-white mb-1">{customer.name || "N/A"}</h6>
                   <span className="badge bg-purple-transparent text-purple">
