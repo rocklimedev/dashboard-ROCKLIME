@@ -1,58 +1,63 @@
+/* pagewrapper.css */
+
+/* Ensure the entire page is responsive and prevents horizontal overflow */
 /* Dashboard header */
 .dashboard-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
+  margin-bottom: 1.5rem;
   background: #fff;
-  padding: 20px;
-  border-radius: 10px;
+  padding: 1rem;
+  border-radius: 0.625rem;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .dashboard-header h1 {
-  font-size: 28px;
+  font-size: clamp(1.5rem, 5vw, 1.75rem); /* Scales between 24px and 28px */
   font-weight: 700;
   margin: 0;
   color: #222;
 }
 
 .dashboard-header p {
-  font-size: 16px;
+  font-size: clamp(0.875rem, 3vw, 1rem); /* Scales between 14px and 16px */
   color: #666;
-  margin: 5px 0 0;
+  margin: 0.25rem 0 0;
 }
 
-/* Base button styles (if not already defined) */
+/* Base button styles */
 .btn {
-  padding: 8px 16px;
+  padding: 0.5rem 1rem;
   border: none;
-  border-radius: 4px;
+  border-radius: 0.25rem;
   cursor: pointer;
-  font-size: 14px;
+  font-size: clamp(0.75rem, 2.5vw, 0.875rem); /* Scales between 12px and 14px */
   transition: background-color 0.3s ease, color 0.3s ease;
+  min-height: 2.5rem; /* Ensures touch-friendly size */
+  touch-action: manipulation; /* Improves touch responsiveness */
 }
 
 /* Clock In button (Green) */
 .btn-clock-in {
-  background-color: #27ae60; /* Green color */
+  background-color: #27ae60;
   color: white;
 }
 
 .btn-clock-in:hover:not(:disabled) {
-  background-color: #2e8b57; /* Darker green with a greyish tone */
-  color: #d3d3d3; /* Light grey text on hover */
+  background-color: #2e8b57;
+  color: #d3d3d3;
 }
 
 /* Clock Out button (Red) */
 .btn-clock-out {
-  background-color: #e74c3c; /* Red color */
+  background-color: #e74c3c;
   color: white;
 }
 
 .btn-clock-out:hover:not(:disabled) {
-  background-color: #c0392b; /* Darker red with a greyish tone */
-  color: #d3d3d3; /* Light grey text on hover */
+  background-color: #c0392b;
+  color: #d3d3d3;
 }
 
 /* Disabled state for both buttons */
@@ -62,20 +67,22 @@
   cursor: not-allowed;
   color: #666;
 }
+
 /* Summary cards */
 .summary-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 15px;
-  margin-bottom: 30px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
 }
 
 .card.stat {
-  padding: 20px;
+  padding: clamp(0.75rem, 3vw, 1rem); /* Scales padding */
   background: #fff;
-  border-radius: 10px;
+  border-radius: 0.625rem;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  overflow: hidden; /* Prevents content overflow */
 }
 
 .card.stat:hover {
@@ -86,31 +93,36 @@
 .stat-header {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 0.5rem;
 }
 
 .stat-header svg {
-  font-size: 24px;
+  font-size: clamp(1.25rem, 4vw, 1.5rem); /* Scales icon size */
   color: #666;
 }
 
 .card.stat h3 {
-  font-size: 24px;
+  font-size: clamp(1.25rem, 4vw, 1.5rem); /* Scales between 20px and 24px */
   font-weight: 700;
   color: #222;
   margin: 0;
 }
 
 .card.stat p {
-  font-size: 14px;
+  font-size: clamp(0.75rem, 2.5vw, 0.875rem); /* Scales between 12px and 14px */
   color: #666;
-  margin: 5px 0 10px;
+  margin: 0.25rem 0 0.5rem;
+}
+
+.card.stat p a {
+  text-decoration: none;
+  color: #4a90e2;
 }
 
 .bar {
-  height: 6px;
-  background: linear-gradient(90deg, #e74c3c);
-  border-radius: 4px;
+  height: 0.375rem;
+  background: linear-gradient(90deg, #e74c3c, #f5a623);
+  border-radius: 0.25rem;
   transition: width 0.5s ease;
 }
 
@@ -118,16 +130,17 @@
 .dashboard-main {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  gap: 1rem;
 }
 
 .card {
-  padding: 20px;
+  padding: clamp(0.75rem, 3vw, 1rem);
   background: #fff;
-  border-radius: 10px;
+  border-radius: 0.625rem;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   min-height: 150px;
   transition: transform 0.3s ease;
+  overflow: hidden;
 }
 
 .card:hover {
@@ -135,47 +148,38 @@
 }
 
 .card h4 {
-  font-size: 18px;
+  font-size: clamp(1rem, 3.5vw, 1.125rem); /* Scales between 16px and 18px */
   font-weight: 600;
-  margin-bottom: 15px;
+  margin-bottom: 0.75rem;
   color: #222;
 }
 
-.pie-chart {
-  grid-column: 1;
-}
-
-.bar-graph {
-  grid-column: 2;
-}
-
-.revenue {
-  grid-column: 3;
-}
-
-.messages {
-  grid-column: 1 / 3;
-  grid-row: 2;
-}
-
+.pie-chart,
+.bar-graph,
+.revenue,
+.messages,
 .low-stock {
-  grid-column: 3;
+  grid-column: auto;
 }
 
 .messages ul,
 .low-stock ul {
   list-style: none;
   padding: 0;
-  margin: 15px 0 0;
+  margin: 0.75rem 0 0;
+  max-height: 200px; /* Prevents excessive scrolling */
+  overflow-y: auto;
 }
 
 .messages li,
 .low-stock li {
-  padding: 10px 0;
+  padding: 0.5rem 0;
   border-bottom: 1px solid #eee;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 0.5rem;
+  font-size: clamp(0.75rem, 2.5vw, 0.875rem); /* Scales text */
+  cursor: pointer;
 }
 
 .low-stock li input[type="checkbox"] {
@@ -202,11 +206,70 @@
 .category-primary {
   color: #4a90e2;
 }
+
 .category-orange {
   color: #f5a623;
 }
+
 .category-indigo {
   color: #7b68ee;
+}
+
+/* Modal styles */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  z-index: 1050;
+}
+
+.modal-dialog {
+  width: 90%;
+  max-width: 500px; /* Default for StockModal */
+  margin: 1rem auto;
+}
+
+.modal-dialog.modal-lg {
+  max-width: min(800px, 90vw); /* Scales to viewport width */
+}
+
+.modal-content {
+  border-radius: 0.3rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  background: #fff;
+  max-height: 90vh; /* Prevents modal from exceeding viewport height */
+  overflow-y: auto;
+}
+
+.modal-header,
+.modal-footer {
+  padding: clamp(0.75rem, 2.5vw, 1rem);
+}
+
+.modal-body {
+  padding: clamp(0.75rem, 2.5vw, 1rem);
+  font-size: clamp(0.875rem, 2.5vw, 1rem);
+}
+
+.modal-header .close {
+  font-size: clamp(1.25rem, 4vw, 1.5rem);
+  line-height: 1;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* Chart responsiveness */
+.recharts-responsive-container {
+  width: 100% !important;
+  height: clamp(150px, 40vw, 180px) !important; /* Scales chart height */
 }
 
 /* Responsive design */
@@ -214,9 +277,7 @@
   .dashboard-main {
     grid-template-columns: repeat(2, 1fr);
   }
-  .messages {
-    grid-column: 1 / 3;
-  }
+  .messages,
   .low-stock {
     grid-column: 1 / 3;
   }
@@ -233,12 +294,14 @@
   .dashboard-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 15px;
+    gap: 0.75rem;
+    padding: 0.75rem;
   }
   .dashboard-actions {
     width: 100%;
     display: flex;
     justify-content: flex-end;
+    gap: 0.5rem;
   }
 }
 
@@ -247,40 +310,35 @@
     grid-template-columns: 1fr;
   }
   .card.stat {
-    padding: 15px;
+    padding: 0.75rem;
   }
   .dashboard-header h1 {
-    font-size: 24px;
+    font-size: clamp(1.25rem, 4.5vw, 1.5rem); /* Smaller on very small screens */
+  }
+  .modal-dialog {
+    width: 95%;
+    max-width: 95vw;
+  }
+  .modal-content {
+    max-height: 85vh;
+  }
+  .low-stock ul,
+  .messages ul {
+    max-height: 150px; /* Adjust for smaller screens */
   }
 }
-/* pagewrapper.css */
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  overflow: auto;
+
+/* Ensure pagination is responsive (assuming DataTablePagination has similar classes) */
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
-.modal-dialog {
-  max-width: 500px; /* Adjust for StockModal */
-}
-
-.modal-dialog.modal-lg {
-  max-width: 800px; /* Adjust for low stock modal */
-}
-
-.modal-content {
-  border-radius: 0.3rem;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.modal-header,
-.modal-footer {
-  padding: 1rem;
-}
-
-.modal-body {
-  padding: 1rem;
+.pagination button {
+  padding: 0.5rem;
+  font-size: clamp(0.75rem, 2.5vw, 0.875rem);
+  min-width: 2rem;
+  min-height: 2rem;
 }

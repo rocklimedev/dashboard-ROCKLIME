@@ -244,40 +244,40 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
           </li>
         </ul>
 
-        <div className="dropdown mobile-user-menu">
+        <div
+          className="dropdown mobile-user-menu"
+          style={{ position: "relative", zIndex: 1000 }}
+        >
           <Dropdown
-            overlay={
-              <Menu className="dropdown-menu dropdown-menu-right">
-                <Menu.Item key="profile">
-                  <div
-                    onClick={() =>
-                      navigate(`/u/${user?.user?.userId || "profile"}`)
-                    }
-                  >
-                    My Profile
-                  </div>
-                </Menu.Item>
-                <Menu.Item key="settings">
-                  <div onClick={() => navigate("/settings")}>Settings</div>
-                </Menu.Item>
-                <Menu.Item
-                  key="logout"
-                  onClick={handleLogout}
-                  disabled={isLoggingOut}
-                >
-                  {isLoggingOut ? "Logging out..." : "Logout"}
-                </Menu.Item>
-              </Menu>
-            }
+            menu={{
+              items: [
+                {
+                  key: "profile",
+                  label: "My Profile",
+                  onClick: () =>
+                    navigate(`/u/${user?.user?.userId || "profile"}`),
+                },
+                {
+                  key: "settings",
+                  label: "Settings",
+                  onClick: () => navigate("/settings"),
+                },
+                {
+                  key: "logout",
+                  label: isLoggingOut ? "Logging out..." : "Logout",
+                  onClick: handleLogout,
+                  disabled: isLoggingOut,
+                },
+              ],
+            }}
             trigger={["click"]}
+            placement="bottomRight"
           >
-            <a
-              href="#"
-              className="nav-link dropdown-toggle"
-              onClick={(e) => e.preventDefault()}
-            >
-              <i className="fa fa-ellipsis-v" />
-            </a>
+            <Button
+              type="text"
+              icon={<i className="fa fa-ellipsis-v" />}
+              aria-label="More options"
+            />
           </Dropdown>
         </div>
       </div>
