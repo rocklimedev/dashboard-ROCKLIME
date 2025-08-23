@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Header from "./components/Common/Header";
 import Router from "./router/Router";
 import Footer from "./components/Common/Footer";
-import { toast, Toaster } from "sonner"; // ✅ New toast import
+import { toast, Toaster } from "sonner";
 import { useGetProfileQuery } from "./api/userApi";
 import Loader from "./components/Common/Loader";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
@@ -12,12 +12,10 @@ import SidebarNew from "./components/Common/SidebarNew2";
 function App() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [isSidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 768);
   const [layoutMode, setLayoutMode] = useState("vertical");
-  const MAINTENANCE_MODE = false; // ⛔️ Toggle this ON/OFF manually or from .env
+  const MAINTENANCE_MODE = false;
   const isMaintenancePage = location.pathname === "/under-maintenance";
-
-  // Force redirect to /under-maintenance if under maintenance
 
   const isAuthPage = [
     "/login",
@@ -36,14 +34,26 @@ function App() {
   const { data: profileData, isLoading: isProfileLoading } =
     useGetProfileQuery();
   const userId = profileData?.user?.userId || null;
+
+  // Initialize and update sidebar state based on viewport
+  useEffect(() => {
+    const handleResize = () => {
+      setSidebarOpen(window.innerWidth >= 768);
+    };
+    window.addEventListener("resize", handleResize);
+    handleResize(); // Initial check
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   useEffect(() => {
     if (!token && !isAuthPage) {
       toast.warning("You are not authenticated. Please log in.");
       navigate("/login");
     }
   }, [token, isAuthPage, navigate]);
+
   useEffect(() => {
-    if (isSidebarOpen) {
+    if (isSidebarOpen && window.innerWidth < 768) {
       document.body.classList.add("sidebar-open");
     } else {
       document.body.classList.remove("sidebar-open");
@@ -92,16 +102,19 @@ function App() {
     location.pathname,
     navigate,
   ]);
+
   useEffect(() => {
     if (MAINTENANCE_MODE && !isMaintenancePage) {
       navigate("/under-maintenance", { replace: true });
     }
   }, [MAINTENANCE_MODE, isMaintenancePage, navigate]);
 
-  // Prevent rendering of main app when in maintenance
   if (MAINTENANCE_MODE && !isMaintenancePage) return null;
+
   const toggleSidebar = (value) => {
-    setSidebarOpen(value);
+    if (window.innerWidth < 768) {
+      setSidebarOpen(value);
+    }
   };
 
   return (
@@ -118,15 +131,18 @@ function App() {
             layoutMode={layoutMode}
           />
         )}
-        {!isAuthPage && !isPOSPage && isSidebarOpen && (
-          <div
-            className="sidebar-overlay"
-            onClick={() => setSidebarOpen(false)}
-          ></div>
-        )}
+        {!isAuthPage &&
+          !isPOSPage &&
+          isSidebarOpen &&
+          window.innerWidth < 768 && (
+            <div
+              className="sidebar-overlay"
+              onClick={() => setSidebarOpen(false)}
+            ></div>
+          )}
         <Router />
         <Footer />
-        <Toaster richColors position="top-right" /> {/* ✅ New Toaster */}
+        <Toaster richColors position="top-right" />
       </div>
     </>
   );

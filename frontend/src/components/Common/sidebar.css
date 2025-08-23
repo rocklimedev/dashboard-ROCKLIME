@@ -2,7 +2,7 @@
 .sidebar {
   position: fixed;
   top: 0;
-  left: -250px; /* hidden by default */
+  left: -250px; /* Hidden by default */
   width: 250px;
   height: 100vh;
   background: #fff;
@@ -18,14 +18,30 @@
 /* On larger screens, always visible */
 @media (min-width: 768px) {
   .sidebar {
-    left: 0;
+    left: 0 !important; /* Force visibility */
+  }
+}
+
+/* Explicitly ensure visibility between 768px and 991px */
+@media (min-width: 768px) and (max-width: 991.98px) {
+  .sidebar {
+    left: 0 !important; /* Reinforce visibility */
+  }
+  .sidebar-overlay {
+    display: none !important; /* Ensure overlay is hidden */
   }
 }
 
 /* PUSH MAIN CONTENT on mobile when sidebar is open */
 @media (max-width: 767.98px) {
   body.sidebar-open {
-    overflow: hidden; /* prevent background scroll */
+    overflow: hidden; /* Prevent background scroll */
+  }
+  .sidebar {
+    left: -250px; /* Ensure hidden by default on mobile */
+  }
+  .sidebar.active {
+    left: 0; /* Show when active */
   }
 }
 
@@ -48,7 +64,7 @@
     transition: opacity 0.3s ease;
     pointer-events: none;
   }
-  .sidebar.active + .sidebar-overlay {
+  .sidebar-overlay.active {
     opacity: 1;
     pointer-events: all;
   }

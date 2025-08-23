@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronsLeft, X } from "react-feather";
+import { ChevronsLeft } from "react-feather";
 import masterRoutes from "../../data/routes";
 import logo from "../../assets/img/logo.png";
 import logo_small from "../../assets/img/fav_icon.png";
-import customerImg from "../../assets/img/customer/customer15.jpg";
 import "./sidebar.css";
+
 const SidebarNew = ({
   isSidebarOpen,
   toggleSidebar,
@@ -41,26 +41,17 @@ const SidebarNew = ({
         <Link to="/" className="logo logo-normal">
           <img src={logo} alt="Logo" />
         </Link>
-
         <Link to="/" className="logo-small">
           <img src={logo_small} alt="Logo" />
         </Link>
-        {/* <button
-          className="sidebar-close-btn"
-          onClick={() => {
-            toggleSidebar(false);
-          }}
-          aria-label="Close sidebar"
-        >
-          <X size={16} color="#000" />
-        </button> */}
         <a
           id="toggle_btn"
           href="#"
           onClick={(e) => {
             e.preventDefault();
-
-            toggleSidebar(!isSidebarOpen);
+            if (window.innerWidth < 768) {
+              toggleSidebar(!isSidebarOpen);
+            }
           }}
         >
           <ChevronsLeft size={16} color="#fff" />
@@ -160,35 +151,6 @@ const SidebarNew = ({
                   )}
                 </li>
               ))}
-            {/* <li className="submenu">
-              <a
-                href="#"
-                className={openMenu === "extras" ? "subdrop active" : ""}
-                onClick={(e) => {
-                  e.preventDefault();
-                  toggleDropdown("extras");
-                }}
-              >
-                <i className="ti ti-layout-grid fs-16 me-2"></i>
-                <span>Extras</span>
-                <span className="menu-arrow"></span>
-              </a>
-              <ul
-                className={
-                  openMenu === "extras" ? "submenu-open" : "submenu-closed"
-                }
-              >
-                <li>
-                  <a
-                    href="https://static.cmtradingco.com/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Product Images
-                  </a>
-                </li>
-              </ul>
-            </li> */}
           </ul>
         </div>
       </div>

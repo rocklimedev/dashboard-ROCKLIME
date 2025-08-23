@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import { useGetProfileQuery } from "../../api/userApi";
-import { useGetCartQuery } from "../../api/cartApi"; // Import the cart query hook
+import { useGetCartQuery } from "../../api/cartApi";
 import { Dropdown, Button, Menu } from "antd";
 import { FaSearch, FaUserCircle } from "react-icons/fa";
 import { BiFullscreen, BiLogOut } from "react-icons/bi";
@@ -12,7 +12,6 @@ import logo from "../../assets/img/logo.png";
 import logo_small from "../../assets/img/fav_icon.png";
 import { CgShoppingCart } from "react-icons/cg";
 import { useLogoutMutation } from "../../api/authApi";
-import { MdListAlt } from "react-icons/md";
 
 // Add custom CSS for avatar and cart badge
 const styles = `
@@ -64,18 +63,13 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Fetch cart data for the current user
   const {
     data: cart,
     isLoading: isCartLoading,
     error: cartError,
-  } = useGetCartQuery(
-    user?.user?.userId,
-    { skip: !user?.user?.userId } // Skip query if userId is not available
-  );
+  } = useGetCartQuery(user?.user?.userId, { skip: !user?.user?.userId });
 
-  // Calculate cart item count (adjust based on your cart data structure)
-  const cartItemCount = cart?.cart?.items?.length || 0; // Assuming cart.items is an array
+  const cartItemCount = cart?.cart?.items?.length || 0;
 
   const handleLogout = async () => {
     try {
@@ -162,7 +156,11 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
         <Button
           type="link"
           className="mobile_btn d-md-none"
-          onClick={() => toggleSidebar(!isSidebarOpen)}
+          onClick={() => {
+            if (window.innerWidth < 768) {
+              toggleSidebar(!isSidebarOpen);
+            }
+          }}
           aria-label="Toggle sidebar"
           id="mobile_btn"
         >
@@ -261,6 +259,11 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                   key: "settings",
                   label: "Settings",
                   onClick: () => navigate("/settings"),
+                },
+                {
+                  key: "cart",
+                  label: "Cart",
+                  onClick: () => navigate("/cart"),
                 },
                 {
                   key: "logout",
