@@ -262,7 +262,7 @@ const AddCustomer = () => {
                 ? "Update customer details"
                 : "Create a new customer"
             }
-            onAdd={() => navigate("/customers")}
+            exportOptions={{ pdf: false, excel: false }}
             buttonText="Back to Customers"
           />
           <div className="card-body">
@@ -276,13 +276,6 @@ const AddCustomer = () => {
                   {invoicesError?.data?.message || "Error"}
                 </p>
               )}
-              {!isInvoicesLoading &&
-                existingCustomer &&
-                !invoices?.data?.length && (
-                  <p className="text-warning">
-                    No invoices found for this customer.
-                  </p>
-                )}
               {isVendorsLoading && formData.isVendor === "true" && (
                 <p>Loading vendors...</p>
               )}
@@ -396,236 +389,6 @@ const AddCustomer = () => {
                     </div>
                   </div>
                 </Tab>
-                {existingCustomer && (
-                  <Tab eventKey="financial" title="Financial">
-                    <div className="row">
-                      <div className="col-lg-6 mb-3">
-                        <label className="form-label">Total Amount</label>
-                        <input
-                          type="number"
-                          name="totalAmount"
-                          className="form-control"
-                          value={formData.totalAmount}
-                          onChange={handleChange}
-                          min="0"
-                          step="0.01"
-                          disabled
-                        />
-                        <small className="form-text text-muted">
-                          Sourced from invoice data
-                        </small>
-                      </div>
-                      <div className="col-lg-6 mb-3">
-                        <label className="form-label">Paid Amount</label>
-                        <input
-                          type="number"
-                          name="paidAmount"
-                          className="form-control"
-                          value={formData.paidAmount}
-                          onChange={handleChange}
-                          min="0"
-                          step="0.01"
-                        />
-                      </div>
-                      <div className="col-lg-6 mb-3">
-                        <label className="form-label">Balance</label>
-                        <input
-                          type="number"
-                          name="balance"
-                          className="form-control"
-                          value={formData.balance}
-                          min="0"
-                          step="0.01"
-                          disabled
-                        />
-                      </div>
-                      <div className="col-lg-6 mb-3">
-                        <label className="form-label">Due Date</label>
-                        <input
-                          type="date"
-                          name="dueDate"
-                          className="form-control"
-                          value={formData.dueDate}
-                          onChange={handleChange}
-                          disabled={formData.dueDate}
-                        />
-                        {formData.dueDate && (
-                          <small className="form-text text-muted">
-                            Sourced from invoice data
-                          </small>
-                        )}
-                      </div>
-                      <div className="col-lg-6 mb-3">
-                        <label className="form-label">Payment Mode</label>
-                        <input
-                          type="text"
-                          name="paymentMode"
-                          className="form-control"
-                          value={formData.paymentMode}
-                          onChange={handleChange}
-                        />
-                      </div>
-                      <div className="col-lg-6 mb-3">
-                        <label className="form-label">Invoice Status</label>
-                        <select
-                          name="invoiceStatus"
-                          className="form-control"
-                          value={formData.invoiceStatus}
-                          onChange={handleChange}
-                        >
-                          <option value="Draft">Draft</option>
-                          <option value="Pending">Pending</option>
-                          <option value="Paid">Paid</option>
-                          <option value="Overdue">Overdue</option>
-                        </select>
-                      </div>
-                    </div>
-                  </Tab>
-                )}
-                {existingCustomer && (
-                  <Tab eventKey="invoices" title="Invoices">
-                    {invoices?.data?.length > 0 ? (
-                      <div className="table-responsive">
-                        <table className="table table-bordered">
-                          <thead>
-                            <tr>
-                              <th>Invoice No</th>
-                              <th>Amount</th>
-                              <th>Due Date</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {invoices.data.map((invoice, index) => (
-                              <tr key={index}>
-                                <td>
-                                  <input
-                                    type="text"
-                                    className="form-control"
-                                    value={invoice.invoiceNo || ""}
-                                    onChange={(e) =>
-                                      handleJsonChange(
-                                        "invoices",
-                                        index,
-                                        "invoiceNo",
-                                        e.target.value
-                                      )
-                                    }
-                                  />
-                                </td>
-                                <td>
-                                  <input
-                                    type="number"
-                                    className="form-control"
-                                    value={invoice.amount || "0.00"}
-                                    onChange={(e) =>
-                                      handleJsonChange(
-                                        "invoices",
-                                        index,
-                                        "amount",
-                                        e.target.value
-                                      )
-                                    }
-                                    min="0"
-                                    step="0.01"
-                                  />
-                                </td>
-                                <td>
-                                  <input
-                                    type="date"
-                                    className="form-control"
-                                    value={invoice.dueDate || ""}
-                                    onChange={(e) =>
-                                      handleJsonChange(
-                                        "invoices",
-                                        index,
-                                        "dueDate",
-                                        e.target.value
-                                      )
-                                    }
-                                  />
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <p>No invoices available.</p>
-                    )}
-                  </Tab>
-                )}
-                {existingCustomer && (
-                  <Tab eventKey="quotations" title="Quotations">
-                    {formData.quotations.length > 0 ? (
-                      <div className="table-responsive">
-                        <table className="table table-bordered">
-                          <thead>
-                            <tr>
-                              <th>Quotation No</th>
-                              <th>Amount</th>
-                              <th>Date</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {formData.quotations.map((quotation, index) => (
-                              <tr key={index}>
-                                <td>
-                                  <input
-                                    type="text"
-                                    className="form-control"
-                                    value={quotation.quotationNo || ""}
-                                    onChange={(e) =>
-                                      handleJsonChange(
-                                        "quotations",
-                                        index,
-                                        "quotationNo",
-                                        e.target.value
-                                      )
-                                    }
-                                  />
-                                </td>
-                                <td>
-                                  <input
-                                    type="number"
-                                    className="form-control"
-                                    value={quotation.amount || "0.00"}
-                                    onChange={(e) =>
-                                      handleJsonChange(
-                                        "quotations",
-                                        index,
-                                        "amount",
-                                        e.target.value
-                                      )
-                                    }
-                                    min="0"
-                                    step="0.01"
-                                  />
-                                </td>
-                                <td>
-                                  <input
-                                    type="date"
-                                    className="form-control"
-                                    value={quotation.date || ""}
-                                    onChange={(e) =>
-                                      handleJsonChange(
-                                        "quotations",
-                                        index,
-                                        "date",
-                                        e.target.value
-                                      )
-                                    }
-                                  />
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <p>No quotations available.</p>
-                    )}
-                  </Tab>
-                )}
               </Tabs>
               <div className="d-flex justify-content-end mt-4">
                 <button
@@ -635,16 +398,6 @@ const AddCustomer = () => {
                 >
                   Cancel
                 </button>
-                {existingCustomer && (
-                  <button
-                    type="button"
-                    className="btn btn-info me-2"
-                    onClick={() => refetch()}
-                    disabled={isInvoicesLoading}
-                  >
-                    Refresh Invoices
-                  </button>
-                )}
                 <button
                   type="submit"
                   className="btn btn-primary"
