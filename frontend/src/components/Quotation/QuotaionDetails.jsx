@@ -242,10 +242,10 @@ const QuotationsDetails = () => {
           return;
         }
 
+        // Prepare export rows
         const exportRows = products.map((product, index) => {
           const productDetail =
             productsData?.find((p) => p.productId === product.productId) || {};
-
           let imageUrl = null;
           try {
             if (productDetail?.images) {
@@ -257,14 +257,12 @@ const QuotationsDetails = () => {
             console.error(
               `Failed to parse images for product ${product.productId}: ${error.message}`
             );
-            imageUrl = null;
           }
 
           const productCode =
             productDetail?.product_code ||
             productDetail?.meta?.d11da9f9_3f2e_4536_8236_9671200cca4a ||
             "N/A";
-
           const sellingPrice =
             productDetail?.metaDetails?.find((m) => m.title === "sellingPrice")
               ?.value ||
@@ -294,161 +292,136 @@ const QuotationsDetails = () => {
           };
         });
 
-        // Handle logo image
+        // Fetch logo image
         let logoImage = placeholderImage;
         try {
           if (logo.startsWith("data:image/")) {
-            // If logo is a base64 string
             const matches = logo.match(
               /^data:image\/(png|jpg|jpeg|gif|bmp|webp);base64,(.+)$/
             );
             if (matches) {
-              const extension = matches[1];
-              const base64Data = matches[2];
-              const buffer = Buffer.from(base64Data, "base64");
-              if (buffer && buffer.length > 0) {
-                logoImage = { buffer, extension };
-                console.log(
-                  `Logo loaded from base64, Size: ${buffer.length} bytes`
-                );
-              } else {
-                console.error("Empty buffer from base64 logo");
-              }
-            } else {
-              console.error("Invalid base64 logo format");
+              logoImage = {
+                buffer: Buffer.from(matches[2], "base64"),
+                extension: matches[1],
+              };
             }
-          } else {
-            // If logo is a URL
+          } else if (isValidImageUrl(logo)) {
             const response = await fetch(logo, {
               mode: "cors",
               credentials: "omit",
               headers: { Accept: "image/*" },
             });
-            if (!response.ok) {
-              throw new Error(
-                `HTTP ${response.status} - ${response.statusText}`
-              );
-            }
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const contentType = response.headers.get("content-type");
-            if (!contentType || !contentType.startsWith("image/")) {
-              throw new Error(`Unsupported content type: ${contentType}`);
-            }
             const extension = contentType.split("/")[1].toLowerCase();
             const buffer = Buffer.from(await response.arrayBuffer());
-            if (buffer && buffer.length > 0) {
-              logoImage = { buffer, extension };
-              console.log(
-                `Logo fetched from URL, Size: ${buffer.length} bytes`
-              );
-            } else {
-              console.error("Empty buffer from logo URL");
-            }
+            logoImage = {
+              buffer,
+              extension: extension === "jpeg" ? "jpg" : extension,
+            };
           }
         } catch (error) {
-          console.error(`Error processing logo: ${error.message}`);
-          toast.warning("Using placeholder logo due to error in loading logo.");
+          console.error(`Error fetching logo: ${error.message}`);
+          toast.warning("Using placeholder logo.");
         }
 
-        const imagePromises = [
-          Promise.resolve(logoImage),
-          ...exportRows.map((row) =>
-            row.imageUrl
-              ? fetchImageAsBuffer(row.imageUrl)
-              : Promise.resolve(placeholderImage)
-          ),
-        ];
-        const images = await Promise.all(imagePromises);
-        const logoImageFinal = images[0];
-        const productImages = images.slice(1);
+        // Fetch product images
+        const imagePromises = exportRows.map((row) =>
+          row.imageUrl && isValidImageUrl(row.imageUrl)
+            ? fetchImageAsBuffer(row.imageUrl)
+            : Promise.resolve(placeholderImage)
+        );
+        const productImages = await Promise.all(imagePromises);
 
+        // Create Excel workbook
         const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet("Quotation");
+        const worksheet = workbook.addWorksheet("Quotation", {
+          properties: { defaultColWidth: 15, defaultRowHeight: 20 },
+        });
 
+        // Set column widths to match HTML proportions
         worksheet.columns = [
-          { width: 8 },
-          { width: 15 },
-          { width: 25 },
-          { width: 15 },
-          { width: 12 },
-          { width: 12 },
-          { width: 12 },
-          { width: 8 },
-          { width: 12 },
+          { width: 8 }, // S.No
+          { width: 15 }, // Product Image
+          { width: 25 }, // Product Name
+          { width: 15 }, // Product Code
+          { width: 12 }, // MRP
+          { width: 12 }, // Discount
+          { width: 12 }, // Rate
+          { width: 8 }, // Unit
+          { width: 12 }, // Total
         ];
 
-        // Add logo with exact dimensions as in the component
-        try {
-          const logoId = workbook.addImage({
-            buffer: logoImageFinal.buffer,
-            extension: logoImageFinal.extension,
-          });
-          worksheet.addImage(logoId, {
-            tl: { col: 0, row: 0 },
-            ext: { width: 100, height: 50 }, // Match component logo size
-            editAs: "oneCell",
-          });
-          worksheet.getRow(1).height = 60; // Ensure enough row height
-          console.log("Logo added successfully to Excel");
-        } catch (error) {
-          console.error(`Error adding logo to Excel: ${error.message}`);
-          toast.warning("Failed to add logo to Excel file, using placeholder.");
-          const logoId = workbook.addImage({
-            buffer: placeholderImage.buffer,
-            extension: placeholderImage.extension,
-          });
-          worksheet.addImage(logoId, {
-            tl: { col: 0, row: 0 },
-            ext: { width: 100, height: 50 },
-            editAs: "oneCell",
-          });
-          worksheet.getRow(1).height = 60;
-        }
+        // Add logo (100x50 pixels, centered)
+        const logoId = workbook.addImage({
+          buffer: logoImage.buffer,
+          extension: logoImage.extension,
+        });
+        worksheet.addImage(logoId, {
+          tl: { col: 3, row: 0 }, // Center logo (spanning columns 4-6)
+          ext: { width: 100, height: 50 },
+          editAs: "absolute",
+        });
+        worksheet.getRow(1).height = 60;
 
-        // Rest of the worksheet setup (unchanged)
-        worksheet.mergeCells("B1:D1");
-        worksheet.getCell("B1").value = "Estimate / Quotation";
-        worksheet.getCell("B1").font = { bold: true, size: 16 };
-        worksheet.getCell("B1").alignment = {
-          horizontal: "center",
-          vertical: "middle",
-        };
-        worksheet.mergeCells("E1:I1");
-        worksheet.getCell("E1").value = brandNames;
-        worksheet.getCell("E1").font = { bold: true, size: 12 };
-        worksheet.getCell("E1").alignment = {
+        // Add title and brand
+        worksheet.mergeCells("B2:E2");
+        worksheet.getCell("B2").value = "Estimate / Quotation";
+        worksheet.getCell("B2").font = { bold: true, size: 16 };
+        worksheet.getCell("B2").alignment = {
           horizontal: "center",
           vertical: "middle",
         };
 
-        worksheet.mergeCells("A3:A4");
-        worksheet.getCell("A3").value = "M/s";
-        worksheet.getCell("A3").font = { bold: true };
-        worksheet.getCell("A3").alignment = { vertical: "middle" };
-        worksheet.mergeCells("B3:E4");
-        worksheet.getCell("B3").value = getCustomerName(quotation.customerId);
-        worksheet.getCell("B3").alignment = { vertical: "middle" };
-        worksheet.mergeCells("F3:F4");
-        worksheet.getCell("F3").value = "Date";
-        worksheet.getCell("F3").font = { bold: true };
-        worksheet.getCell("F3").alignment = { vertical: "middle" };
-        worksheet.mergeCells("G3:I4");
-        worksheet.getCell("G3").value = quotation.quotation_date
+        worksheet.mergeCells("F2:I2");
+        worksheet.getCell("F2").value = brandNames;
+        worksheet.getCell("F2").font = { bold: true, size: 12 };
+        worksheet.getCell("F2").alignment = {
+          horizontal: "center",
+          vertical: "middle",
+        };
+
+        // Customer and address details
+        worksheet.mergeCells("A4:A5");
+        worksheet.getCell("A4").value = "M/s";
+        worksheet.getCell("A4").font = { bold: true };
+        worksheet.getCell("A4").alignment = { vertical: "middle" };
+
+        worksheet.mergeCells("B4:E5");
+        worksheet.getCell("B4").value = getCustomerName(quotation.customerId);
+        worksheet.getCell("B4").alignment = {
+          vertical: "middle",
+          wrapText: true,
+        };
+
+        worksheet.mergeCells("F4:F5");
+        worksheet.getCell("F4").value = "Date";
+        worksheet.getCell("F4").font = { bold: true };
+        worksheet.getCell("F4").alignment = { vertical: "middle" };
+
+        worksheet.mergeCells("G4:I5");
+        worksheet.getCell("G4").value = quotation.quotation_date
           ? new Date(quotation.quotation_date).toLocaleDateString()
           : new Date().toLocaleDateString();
-        worksheet.getCell("G3").alignment = { vertical: "middle" };
+        worksheet.getCell("G4").alignment = { vertical: "middle" };
 
-        worksheet.mergeCells("A5:A6");
-        worksheet.getCell("A5").value = "Address";
-        worksheet.getCell("A5").font = { bold: true };
-        worksheet.getCell("A5").alignment = { vertical: "middle" };
-        worksheet.mergeCells("B5:I6");
-        worksheet.getCell("B5").value = addressData
+        worksheet.mergeCells("A6:A7");
+        worksheet.getCell("A6").value = "Address";
+        worksheet.getCell("A6").font = { bold: true };
+        worksheet.getCell("A6").alignment = { vertical: "middle" };
+
+        worksheet.mergeCells("B6:I7");
+        worksheet.getCell("B6").value = addressData
           ? `${addressData.street || ""}, ${addressData.city || ""}, ${
               addressData.state || ""
             }, ${addressData.postalCode || ""}, ${addressData.country || ""}`
           : quotation.shipTo || "456, Park Avenue, New York, USA";
-        worksheet.getCell("B5").alignment = { vertical: "middle" };
+        worksheet.getCell("B6").alignment = {
+          vertical: "middle",
+          wrapText: true,
+        };
 
+        // Product table headers
         const headerRow1 = worksheet.addRow([
           "S.No",
           "Product Image",
@@ -460,9 +433,9 @@ const QuotationsDetails = () => {
           "",
           "",
         ]);
-        headerRow1.font = { bold: true };
-        headerRow1.alignment = { vertical: "middle", horizontal: "center" };
         worksheet.mergeCells(`E${headerRow1.number}:I${headerRow1.number}`);
+        headerRow1.font = { bold: true, size: 11 };
+        headerRow1.alignment = { vertical: "middle", horizontal: "center" };
         headerRow1.eachCell((cell) => {
           cell.border = {
             top: { style: "thin" },
@@ -483,7 +456,7 @@ const QuotationsDetails = () => {
           "Unit",
           "Total",
         ]);
-        headerRow2.font = { bold: true };
+        headerRow2.font = { bold: true, size: 11 };
         headerRow2.alignment = { vertical: "middle", horizontal: "center" };
         headerRow2.eachCell((cell) => {
           cell.border = {
@@ -494,11 +467,12 @@ const QuotationsDetails = () => {
           };
         });
 
+        // Product rows
         let currentRow = headerRow2.number + 1;
         exportRows.forEach((row, index) => {
           const excelRow = worksheet.addRow([
             row.index,
-            "",
+            "", // Placeholder for image
             row.name,
             row.code,
             row.mrp,
@@ -508,7 +482,11 @@ const QuotationsDetails = () => {
             row.total,
           ]);
           excelRow.eachCell((cell) => {
-            cell.alignment = { vertical: "middle", horizontal: "center" };
+            cell.alignment = {
+              vertical: "middle",
+              horizontal: "center",
+              wrapText: true,
+            };
             cell.border = {
               top: { style: "thin" },
               left: { style: "thin" },
@@ -516,7 +494,9 @@ const QuotationsDetails = () => {
               right: { style: "thin" },
             };
           });
+          worksheet.getRow(currentRow).height = 50;
 
+          // Add product image
           if (productImages[index].buffer) {
             try {
               const imageId = workbook.addImage({
@@ -528,17 +508,16 @@ const QuotationsDetails = () => {
                 ext: { width: 50, height: 50 },
                 editAs: "oneCell",
               });
-              worksheet.getRow(currentRow).height = 50;
             } catch (error) {
               console.error(
                 `Error adding image for product ${row.name}: ${error.message}`
               );
             }
           }
-
           currentRow++;
         });
 
+        // Totals section
         const subtotal = products.reduce(
           (sum, product) => sum + Number(product.total || 0),
           0
@@ -608,7 +587,7 @@ const QuotationsDetails = () => {
           "Total",
           `₹${finalTotal.toFixed(2)}`,
         ]);
-        totalRow.font = { bold: true };
+        totalRow.font = { bold: true, size: 11 };
         totalRow.eachCell((cell, colNumber) => {
           if (colNumber > 7) {
             cell.alignment = { vertical: "middle", horizontal: "center" };
@@ -621,6 +600,7 @@ const QuotationsDetails = () => {
           }
         });
 
+        // Generate and download Excel file
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], {
           type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -636,33 +616,28 @@ const QuotationsDetails = () => {
 
         toast.success("Quotation exported successfully as Excel!");
       } else if (exportFormat === "pdf") {
-        // PDF export logic remains unchanged
+        // PDF export (unchanged)
         if (!quotationRef.current) {
           toast.error("Quotation content not found.");
           return;
         }
-
         const canvas = await html2canvas(quotationRef.current, {
           scale: 2,
           useCORS: true,
           logging: false,
         });
-
         const pdf = new jsPDF({
           orientation: "portrait",
           unit: "mm",
           format: "a4",
         });
-
         const imgWidth = 190;
         const pageHeight = 297;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
         let heightLeft = imgHeight;
         let position = 10;
-
         const imgData = canvas.toDataURL("image/png");
         pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
-
         heightLeft -= pageHeight - 20;
         while (heightLeft > 0) {
           pdf.addPage();
@@ -670,9 +645,7 @@ const QuotationsDetails = () => {
           pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
           heightLeft -= pageHeight - 20;
         }
-
         pdf.save(`Quotation_${id}.pdf`);
-
         toast.success("Quotation exported successfully as PDF!");
       }
     } catch (error) {
