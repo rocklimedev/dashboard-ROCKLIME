@@ -1,5 +1,9 @@
-// controllers/ContactController.js
 const Contact = require("../models/contact");
+const {
+  sendMail,
+  contactFormEmail,
+  adminContactNotification,
+} = require("../middleware/sendMail");
 
 // Submit a new contact form
 exports.submitContactForm = async (req, res) => {
@@ -26,6 +30,25 @@ exports.submitContactForm = async (req, res) => {
     // Save to database
     await contact.save();
 
+    // Send confirmation email to user
+    const userEmail = contactFormEmail(firstName, message);
+    await sendMail(email, userEmail.subject, userEmail.text, userEmail.html);
+
+    // Send notification email to admin
+    const adminEmail = adminContactNotification(
+      firstName,
+      lastName,
+      email,
+      phone,
+      message
+    );
+    await sendMail(
+      "no-reply@static.cmtradingco.com", // Fallback admin email
+      adminEmail.subject,
+      adminEmail.text,
+      adminEmail.html
+    );
+
     // Send success response
     res.status(201).json({
       success: true,
@@ -33,6 +56,15 @@ exports.submitContactForm = async (req, res) => {
     });
   } catch (error) {
     console.error("Error submitting contact form:", error);
+    // Log email-specific errors but don't fail the response
+    if (error.message.includes("Error sending email")) {
+      console.warn("Form saved, but email sending failed:", error);
+      return res.status(201).json({
+        success: true,
+        message:
+          "Contact form submitted successfully, but email notification failed",
+      });
+    }
     res.status(500).json({
       success: false,
       message: "Server error, please try again later",
