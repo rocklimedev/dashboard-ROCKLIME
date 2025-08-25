@@ -1,17 +1,24 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
 import {
-  useGetAllCompaniesQuery,
-  useDeleteCompanyMutation,
-} from "../../api/companyApi";
-import { BiEdit, BiTrash } from "react-icons/bi";
+  useGetAllQueriesQuery,
+  useDeleteQueryMutation,
+} from "../../api/contactApi";
 import { FaEye, FaSearch } from "react-icons/fa";
-import AddCompany from "./AddCompany";
+import { BiTrash } from "react-icons/bi";
+import { BsThreeDotsVertical } from "react-icons/bs";
 import DeleteModal from "../Common/DeleteModal";
 import DataTablePagination from "../Common/DataTablePagination";
-import { toast } from "sonner";
 import PageHeader from "../Common/PageHeader";
-import { BsThreeDotsVertical } from "react-icons/bs";
-const ViewCompany = ({ company, onClose }) => {
+import { toast } from "sonner";
+
+// View Query Modal Component
+const ViewQuery = ({ query, onClose }) => {
   const modalRef = useRef(null);
 
   useEffect(() => {
@@ -30,7 +37,7 @@ const ViewCompany = ({ company, onClose }) => {
     }
   };
 
-  if (!company) return null;
+  if (!query) return null;
 
   return (
     <div
@@ -42,7 +49,7 @@ const ViewCompany = ({ company, onClose }) => {
       <div className="modal-dialog modal-lg" role="document" ref={modalRef}>
         <div className="modal-content">
           <div className="modal-header">
-            <h5 className="modal-title">Company Details</h5>
+            <h5 className="modal-title">Query Details</h5>
             <button
               type="button"
               className="btn-close"
@@ -54,28 +61,23 @@ const ViewCompany = ({ company, onClose }) => {
             <div className="row">
               <div className="col-md-6">
                 <p>
-                  <strong>Company Name:</strong> {company.name || "N/A"}
+                  <strong>Name:</strong> {query.firstName}{" "}
+                  {query.lastName || "N/A"}
                 </p>
                 <p>
-                  <strong>Address:</strong> {company.address || "N/A"}
+                  <strong>Email:</strong> {query.email}
                 </p>
                 <p>
-                  <strong>Website:</strong> {company.website || "N/A"}
+                  <strong>Phone:</strong> {query.phone || "N/A"}
                 </p>
               </div>
               <div className="col-md-6">
                 <p>
-                  <strong>Slug:</strong> {company.slug || "N/A"}
+                  <strong>Message:</strong> {query.message}
                 </p>
                 <p>
                   <strong>Created Date:</strong>{" "}
-                  {company.createdDate
-                    ? new Date(company.createdDate).toLocaleDateString()
-                    : "N/A"}
-                </p>
-                <p>
-                  <strong>Parent Company ID:</strong>{" "}
-                  {company.parentCompanyId || "N/A"}
+                  {new Date(query.createdAt).toLocaleDateString()}
                 </p>
               </div>
             </div>
@@ -95,41 +97,39 @@ const ViewCompany = ({ company, onClose }) => {
   );
 };
 
-const CmList = () => {
-  const { data, error, isLoading } = useGetAllCompaniesQuery();
-  const [deleteCompany] = useDeleteCompanyMutation();
-  const [showCompanyModal, setShowCompanyModal] = useState(false);
+const ContactWrapper = () => {
+  const { data, error, isLoading, refetch } = useGetAllQueriesQuery();
+  const [deleteQuery, { isLoading: isDeleting }] = useDeleteQueryMutation();
+
+  // State
   const [showViewModal, setShowViewModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedCompany, setSelectedCompany] = useState(null);
-  const [companyToDelete, setCompanyToDelete] = useState(null);
-  const [editingCompany, setEditingCompany] = useState(null);
+  const [selectedQuery, setSelectedQuery] = useState(null);
+  const [queryToDelete, setQueryToDelete] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("Recently Added");
-  const [activeTab, setActiveTab] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const companies = Array.isArray(data?.companies) ? data.companies : [];
+  // Debugging: Log when component renders
+  useEffect(() => {
+    console.log("ContactWrapper rendered", { searchTerm, sortBy, currentPage });
+  });
 
-  // Memoized grouped companies for tab-based filtering
-  const groupedCompanies = useMemo(
-    () => ({
-      All: companies,
-      Active: companies.filter((c) => c.status?.toLowerCase() === "active"),
-      Inactive: companies.filter((c) => c.status?.toLowerCase() === "inactive"),
-    }),
-    [companies]
+  // Ensure queries is an array
+  const queries = useMemo(
+    () => (Array.isArray(data?.data) ? data.data : []),
+    [data]
   );
 
-  // Filtered and sorted companies
-  const filteredCompanies = useMemo(() => {
-    let result = groupedCompanies[activeTab] || [];
+  // Memoized filtered and sorted queries
+  const filteredQueries = useMemo(() => {
+    let result = [...queries];
 
     // Apply search filter
     if (searchTerm.trim()) {
-      result = result.filter((c) =>
-        [c.name, c.address, c.website, c.slug]
+      result = result.filter((q) =>
+        [q.firstName, q.lastName, q.email, q.message]
           .filter(Boolean)
           .some((field) =>
             field.toLowerCase().includes(searchTerm.toLowerCase())
@@ -139,15 +139,23 @@ const CmList = () => {
 
     // Apply sorting
     switch (sortBy) {
-      case "Ascending":
-        result = [...result].sort((a, b) => a.name.localeCompare(b.name));
+      case "Name (A-Z)":
+        result = [...result].sort((a, b) =>
+          `${a.firstName} ${a.lastName || ""}`.localeCompare(
+            `${b.firstName} ${b.lastName || ""}`
+          )
+        );
         break;
-      case "Descending":
-        result = [...result].sort((a, b) => b.name.localeCompare(a.name));
+      case "Name (Z-A)":
+        result = [...result].sort((a, b) =>
+          `${b.firstName} ${b.lastName || ""}`.localeCompare(
+            `${a.firstName} ${a.lastName || ""}`
+          )
+        );
         break;
       case "Recently Added":
         result = [...result].sort(
-          (a, b) => new Date(b.createdDate) - new Date(a.createdDate)
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
         );
         break;
       default:
@@ -155,104 +163,119 @@ const CmList = () => {
     }
 
     return result;
-  }, [groupedCompanies, activeTab, searchTerm, sortBy]);
+  }, [queries, searchTerm, sortBy]);
 
-  // Paginated companies
-  const currentCompanies = useMemo(() => {
+  // Paginated queries
+  const currentQueries = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredCompanies.slice(startIndex, startIndex + itemsPerPage);
-  }, [filteredCompanies, currentPage]);
+    return filteredQueries.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredQueries, currentPage]);
 
   // Handlers
-  const handleAddCompany = () => {
-    setEditingCompany(null);
-    setShowCompanyModal(true);
-  };
-
-  const handleEditCompany = (company) => {
-    setEditingCompany(company);
-    setShowCompanyModal(true);
-  };
-
-  const handleViewCompany = (company) => {
-    setSelectedCompany(company);
+  const handleViewQuery = useCallback((query) => {
+    console.log("handleViewQuery called", query._id);
+    setSelectedQuery(query);
     setShowViewModal(true);
-  };
+  }, []);
 
-  const handleDeleteCompany = (company) => {
-    setCompanyToDelete(company);
+  const handleDeleteQuery = useCallback((query) => {
+    console.log("handleDeleteQuery called", query._id);
+    setQueryToDelete(query);
     setShowDeleteModal(true);
-  };
+  }, []);
 
-  const handleConfirmDelete = async () => {
-    if (!companyToDelete?.companyId) {
-      toast.error("No company selected for deletion");
+  const handleConfirmDelete = useCallback(async () => {
+    if (!queryToDelete?._id) {
+      toast.error("No query selected for deletion");
       setShowDeleteModal(false);
       return;
     }
     try {
-      await deleteCompany(companyToDelete.companyId).unwrap();
+      console.log("Deleting query", queryToDelete._id);
+      await deleteQuery(queryToDelete._id).unwrap();
+      toast.success("Query deleted successfully");
 
-      if (currentCompanies.length === 1 && currentPage > 1) {
-        setCurrentPage(currentPage - 1);
+      // Update currentPage only if necessary
+      if (currentQueries.length === 1 && currentPage > 1) {
+        console.log("Adjusting currentPage due to last item deletion");
+        setCurrentPage((prev) => prev - 1);
       }
+
       setShowDeleteModal(false);
-      setCompanyToDelete(null);
+      setQueryToDelete(null);
+      // Delay refetch to avoid immediate re-render
+      setTimeout(() => {
+        console.log("Refetching queries");
+        refetch();
+      }, 0);
     } catch (error) {
+      console.error("Delete error:", error);
       toast.error(
-        `Failed to delete company: ${error.data?.message || "Unknown error"}`
+        `Failed to delete query: ${
+          error?.data?.message || error?.message || "Unknown error"
+        }`
       );
+      setShowDeleteModal(false);
+      setQueryToDelete(null);
     }
-  };
+  }, [queryToDelete, deleteQuery, currentQueries.length, currentPage, refetch]);
 
-  const handleCancelDelete = () => {
-    setShowDeleteModal(false);
-    setCompanyToDelete(null);
-  };
-
-  const handleCloseCompanyModal = () => {
-    setShowCompanyModal(false);
-    setEditingCompany(null);
-  };
-
-  const handleCloseViewModal = () => {
+  const handleCloseViewModal = useCallback(() => {
+    console.log("handleCloseViewModal called");
     setShowViewModal(false);
-    setSelectedCompany(null);
-  };
+    setSelectedQuery(null);
+  }, []);
 
-  const handlePageChange = (page) => {
+  const handleCancelDelete = useCallback(() => {
+    console.log("handleCancelDelete called");
+    setShowDeleteModal(false);
+    setQueryToDelete(null);
+  }, []);
+
+  const handlePageChange = useCallback((page) => {
+    console.log("handlePageChange called", page);
     setCurrentPage(page);
-  };
+  }, []);
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
+    console.log("clearFilters called");
     setSearchTerm("");
     setSortBy("Recently Added");
-    setActiveTab("All");
     setCurrentPage(1);
-  };
+  }, []);
 
+  // Loading state
   if (isLoading) {
     return (
-      <div className="content">
-        <div className="card">
-          <div className="card-body text-center">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Loading...</span>
+      <div className="page-wrapper">
+        <div className="content">
+          <div className="card">
+            <div className="card-body text-center">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+              <p>Loading queries...</p>
             </div>
-            <p>Loading companies...</p>
           </div>
         </div>
       </div>
     );
   }
 
+  // Error state
   if (error) {
     return (
-      <div className="content">
-        <div className="card">
-          <div className="card-body">
-            <div className="alert alert-danger" role="alert">
-              Error loading companies: {error.data?.message || "Unknown error"}
+      <div className="page-wrapper">
+        <div className="content">
+          <div className="card">
+            <div className="card-body">
+              <div className="alert alert-danger" role="alert">
+                Error loading queries:{" "}
+                {error?.data?.message || error?.error || "Unknown error"}
+              </div>
+              <button className="btn btn-primary" onClick={refetch}>
+                Retry
+              </button>
             </div>
           </div>
         </div>
@@ -265,9 +288,9 @@ const CmList = () => {
       <div className="content">
         <div className="card">
           <PageHeader
-            title="Companies"
-            subtitle="Manage your Companies"
-            onAdd={handleAddCompany}
+            title="Contact Queries"
+            subtitle="Manage customer queries"
+            tableData={filteredQueries}
           />
           <div className="card-body">
             <div className="row">
@@ -285,7 +308,7 @@ const CmList = () => {
                         {sortBy}
                       </a>
                       <ul className="dropdown-menu dropdown-menu-end p-3">
-                        {["Recently Added", "Ascending", "Descending"].map(
+                        {["Recently Added", "Name (A-Z)", "Name (Z-A)"].map(
                           (option) => (
                             <li key={option}>
                               <a
@@ -293,6 +316,7 @@ const CmList = () => {
                                 className="dropdown-item rounded-1"
                                 onClick={(e) => {
                                   e.preventDefault();
+                                  console.log("Sort option selected:", option);
                                   setSortBy(option);
                                 }}
                               >
@@ -311,10 +335,10 @@ const CmList = () => {
                     <input
                       type="text"
                       className="form-control"
-                      placeholder="Search Companies"
+                      placeholder="Search Queries"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      aria-label="Search companies"
+                      aria-label="Search queries"
                     />
                   </div>
                   <button
@@ -326,143 +350,103 @@ const CmList = () => {
                 </div>
               </div>
             </div>
-            <div className="tab-content" id="pills-tabContent">
-              {Object.entries(groupedCompanies).map(([status, list]) => (
-                <div
-                  className={`tab-pane fade ${
-                    activeTab === status ? "show active" : ""
-                  }`}
-                  id={`pills-${status}`}
-                  role="tabpanel"
-                  aria-labelledby={`tab-${status}`}
-                  key={status}
-                >
-                  {currentCompanies.length === 0 ? (
-                    <p className="text-muted">
-                      No {status.toLowerCase()} companies match the applied
-                      filters
-                    </p>
+            <div className="table-responsive">
+              <table className="table table-hover">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Message</th>
+                    <th>Created Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentQueries.length === 0 ? (
+                    <tr>
+                      <td colSpan="6" className="text-muted text-center">
+                        No queries match the applied filters
+                      </td>
+                    </tr>
                   ) : (
-                    <div className="table-responsive">
-                      <table className="table table-hover">
-                        <thead>
-                          <tr>
-                            <th>Company Name</th>
-                            <th>Address</th>
-                            <th>Website</th>
-                            <th>Slug</th>
-                            <th>Created Date</th>
-                            <th>Parent Company</th>
-                            <th>Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {currentCompanies.map((company) => (
-                            <tr key={company.companyId}>
-                              <td>{company.name || "N/A"}</td>
-                              <td>{company.address || "N/A"}</td>
-                              <td>{company.website || "N/A"}</td>
-                              <td>{company.slug || "N/A"}</td>
-                              <td>
-                                {company.createdDate
-                                  ? new Date(
-                                      company.createdDate
-                                    ).toLocaleDateString()
-                                  : "N/A"}
-                              </td>
-                              <td>{company.parentCompanyId || "None"}</td>
-                              <td>
-                                <div className="dropdown">
-                                  <button
-                                    className="btn btn-outline-secondary btn-sm dropdown-toggle"
-                                    type="button"
-                                    id={`dropdownMenuButton-${company.companyId}`}
-                                    data-bs-toggle="dropdown"
-                                    aria-expanded="false"
-                                  >
-                                    <BsThreeDotsVertical />
-                                  </button>
-                                  <ul
-                                    className="dropdown-menu"
-                                    aria-labelledby={`dropdownMenuButton-${company.companyId}`}
-                                  >
-                                    <li>
-                                      <button
-                                        className="dropdown-item"
-                                        onClick={() =>
-                                          handleViewCompany(company)
-                                        }
-                                      >
-                                        <FaEye className="me-2" />
-                                        View
-                                      </button>
-                                    </li>
-                                    <li>
-                                      <button
-                                        className="dropdown-item"
-                                        onClick={() =>
-                                          handleEditCompany(company)
-                                        }
-                                      >
-                                        <BiEdit className="me-2" />
-                                        Edit
-                                      </button>
-                                    </li>
-                                    <li>
-                                      <button
-                                        className="dropdown-item text-danger"
-                                        onClick={() =>
-                                          handleDeleteCompany(company)
-                                        }
-                                      >
-                                        <BiTrash className="me-2" />
-                                        Delete
-                                      </button>
-                                    </li>
-                                  </ul>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      {filteredCompanies.length > itemsPerPage && (
-                        <div className="pagination-section mt-4">
-                          <DataTablePagination
-                            totalItems={filteredCompanies.length}
-                            itemNo={itemsPerPage}
-                            onPageChange={handlePageChange}
-                          />
-                        </div>
-                      )}
-                    </div>
+                    currentQueries.map((query) => (
+                      <tr key={query._id}>
+                        <td>
+                          {query.firstName} {query.lastName || "N/A"}
+                        </td>
+                        <td>{query.email}</td>
+                        <td>{query.phone || "N/A"}</td>
+                        <td>{query.message.substring(0, 50)}...</td>
+                        <td>
+                          {new Date(query.createdAt).toLocaleDateString()}
+                        </td>
+                        <td>
+                          <div className="dropdown">
+                            <button
+                              className="btn btn-outline-secondary btn-sm dropdown-toggle"
+                              type="button"
+                              id={`dropdownMenuButton-${query._id}`}
+                              data-bs-toggle="dropdown"
+                              aria-expanded="false"
+                            >
+                              <BsThreeDotsVertical />
+                            </button>
+                            <ul
+                              className="dropdown-menu"
+                              aria-labelledby={`dropdownMenuButton-${query._id}`}
+                            >
+                              <li>
+                                <button
+                                  className="dropdown-item"
+                                  onClick={() => handleViewQuery(query)}
+                                >
+                                  <FaEye className="me-2" />
+                                  View
+                                </button>
+                              </li>
+                              <li>
+                                <button
+                                  className="dropdown-item text-danger"
+                                  onClick={() => handleDeleteQuery(query)}
+                                >
+                                  <BiTrash className="me-2" />
+                                  Delete
+                                </button>
+                              </li>
+                            </ul>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
                   )}
+                </tbody>
+              </table>
+              {filteredQueries.length > itemsPerPage && (
+                <div className="pagination-section mt-4">
+                  <DataTablePagination
+                    totalItems={filteredQueries.length}
+                    itemNo={itemsPerPage}
+                    onPageChange={handlePageChange}
+                  />
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
 
         {/* Modals */}
-        {showCompanyModal && (
-          <AddCompany
-            onClose={handleCloseCompanyModal}
-            companyToEdit={editingCompany}
-          />
-        )}
         {showViewModal && (
-          <ViewCompany
-            company={selectedCompany}
-            onClose={handleCloseViewModal}
-          />
+          <ViewQuery query={selectedQuery} onClose={handleCloseViewModal} />
         )}
         {showDeleteModal && (
           <DeleteModal
-            item={companyToDelete}
-            itemType="Company"
+            item={queryToDelete}
+            itemType="Query"
             onConfirm={handleConfirmDelete}
             onCancel={handleCancelDelete}
             isVisible={showDeleteModal}
+            isLoading={isDeleting}
           />
         )}
       </div>
@@ -470,4 +454,4 @@ const CmList = () => {
   );
 };
 
-export default CmList;
+export default ContactWrapper;

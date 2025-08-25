@@ -85,8 +85,8 @@ const Order = sequelize.define(
       allowNull: true,
     },
     orderNo: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
+      type: DataTypes.STRING(20), // not INTEGER
+      allowNull: false,
       unique: true,
     },
   },

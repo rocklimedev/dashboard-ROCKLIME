@@ -1,29 +1,27 @@
 const nodemailer = require("nodemailer");
 require("dotenv").config();
-// Create transporter with cPanel BigRock SMTP settings
+
 const transporter = nodemailer.createTransport({
-  host: "static.cmtradingco.com", // Your mail server
-  port: 465, // SSL/TLS Port
-  secure: true, // true = use SSL
+  host: "static.cmtradingco.com",
+  port: 465,
+  secure: true,
   auth: {
-    user: "no-reply@static.cmtradingco.com", // Full email address
-    pass: process.env.SMTP_PASS || "YOUR_CPANEL_PASSWORD", // CPanel email password
+    user: "no-reply@static.cmtradingco.com",
+    pass: "KB_*d-~[!ST=",
   },
-  tls: {
-    rejectUnauthorized: false, // Allow self-signed certs if needed
-  },
-  logger: true, // Enable logs
-  debug: true, // Show debug output
+  logger: true,
+  debug: true,
 });
 
-// Verify connection config
-transporter.verify((error, success) => {
-  if (error) {
-    console.error("❌ SMTP config error:", error);
-  } else {
-    console.log("✅ SMTP server is ready to send emails");
-  }
-});
+// test
+transporter
+  .verify()
+  .then(() => {
+    console.log("✅ SMTP connected successfully");
+  })
+  .catch((err) => {
+    console.error("❌ SMTP connection failed:", err);
+  });
 
 // Send email function
 async function sendMail(to, subject, text, html) {
@@ -188,6 +186,56 @@ Hi ${name}!\n\nYour account has been successfully verified. You can now log in t
   return { subject, text, html };
 }
 
+// Add to the end of the existing emailer.js
+
+// 6. Contact Form Submission Confirmation
+function contactFormEmail(name, message) {
+  const subject = "Thank You for Contacting CM Trading Co";
+
+  const text = `
+Hi ${name}!\n\nThank you for reaching out to us. We have received your message:\n\n"${message}"\n\nOur team will get back to you soon.\n\nBest regards,\nCM Trading Co`;
+
+  const html = baseTemplate(
+    "Thank You for Your Message",
+    `<p>Hi ${name}!</p>
+     <p>Thank you for reaching out to us. We have received your message:</p>
+     <blockquote style="border-left:3px solid #007bff; padding-left:12px; color:#333;">${message}</blockquote>
+     <p>Our team will get back to you soon.</p>
+     <p>Best regards,<br>CM Trading Co</p>`
+  );
+
+  return { subject, text, html };
+}
+
+// 7. Admin Notification for New Contact Form Submission
+function adminContactNotification(firstName, lastName, email, phone, message) {
+  const subject = "New Contact Form Submission";
+
+  const text = `
+New contact form submission received:\n\n
+First Name: ${firstName}\n
+Last Name: ${lastName || "Not provided"}\n
+Email: ${email}\n
+Phone: ${phone || "Not provided"}\n
+Message: ${message}\n\n
+Please follow up with the user.`;
+
+  const html = baseTemplate(
+    "New Contact Form Submission",
+    `<p>A new contact form submission has been received:</p>
+     <ul style="line-height:1.8;">
+       <li><strong>First Name:</strong> ${firstName}</li>
+       <li><strong>Last Name:</strong> ${lastName || "Not provided"}</li>
+       <li><strong>Email:</strong> ${email}</li>
+       <li><strong>Phone:</strong> ${phone || "Not provided"}</li>
+       <li><strong>Message:</strong> ${message}</li>
+     </ul>
+     <p>Please follow up with the user.</p>`
+  );
+
+  return { subject, text, html };
+}
+
 module.exports = {
   sendMail,
   emailer,
@@ -196,4 +244,6 @@ module.exports = {
   accountVerificationEmail,
   signupEmail,
   accountVerificationConfirmationEmail,
+  contactFormEmail, // New export
+  adminContactNotification, // New export
 };
