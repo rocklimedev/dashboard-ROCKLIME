@@ -11,14 +11,14 @@ import {
   useDeleteQueryMutation,
 } from "../../api/contactApi";
 import { FaSearch, FaEye, FaTrash } from "react-icons/fa";
-import { Dropdown, Menu, Button } from "antd";
+import { Dropdown, Menu, Button, Pagination } from "antd"; // Added Pagination import
 import { MoreOutlined } from "@ant-design/icons";
 import DeleteModal from "../Common/DeleteModal";
 import PageHeader from "../Common/PageHeader";
-import DataTablePagination from "../Common/DataTablePagination";
 import { toast } from "sonner";
 
-// View Query Modal Component
+import { FaTimes } from "react-icons/fa"; // Using react-icons for the close button
+
 const ViewQuery = ({ query, onClose }) => {
   const modalRef = useRef(null);
 
@@ -40,53 +40,88 @@ const ViewQuery = ({ query, onClose }) => {
 
   if (!query) return null;
 
+  // Format the timestamp to resemble email format (e.g., "Mon, Aug 25, 2025, 4:16 PM")
+  const formattedDate = new Date(query.createdAt).toLocaleString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    hour12: true,
+  });
+
+  // Generate a subject line (e.g., truncate message or use a default)
+  const subject =
+    query.message.length > 50
+      ? `${query.message.substring(0, 50)}...`
+      : query.message;
+
   return (
     <div
       className="modal fade show d-block"
       tabIndex="-1"
       role="dialog"
       onClick={handleOutsideClick}
+      style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
     >
-      <div className="modal-dialog modal-lg" role="document" ref={modalRef}>
+      <div
+        className="modal-dialog modal-lg email-modal"
+        role="document"
+        ref={modalRef}
+      >
         <div className="modal-content">
-          <div className="modal-header">
-            <h5 className="modal-title">Query Details</h5>
+          {/* Email Header */}
+          <div className="modal-header email-header">
+            <div className="email-subject">
+              <h5 className="modal-title">{subject}</h5>
+            </div>
             <button
               type="button"
-              className="btn-close"
+              className="email-close-btn"
               onClick={onClose}
               aria-label="Close"
-            ></button>
+            >
+              <FaTimes />
+            </button>
           </div>
-          <div className="modal-body">
-            <div className="row">
-              <div className="col-md-6">
-                <p>
-                  <strong>Name:</strong> {query.firstName}{" "}
-                  {query.lastName || "N/A"}
-                </p>
-                <p>
-                  <strong>Email:</strong> {query.email}
-                </p>
-                <p>
-                  <strong>Phone:</strong> {query.phone || "N/A"}
-                </p>
+          {/* Email Sender Info */}
+          <div className="email-sender-info p-3 border-bottom">
+            <div className="d-flex align-items-center">
+              <div className="email-avatar">
+                <span className="avatar-initial">
+                  {query.firstName ? query.firstName[0].toUpperCase() : "U"}
+                </span>
               </div>
-              <div className="col-md-6">
-                <p>
-                  <strong>Message:</strong> {query.message}
-                </p>
-                <p>
-                  <strong>Created Date:</strong>{" "}
-                  {new Date(query.createdAt).toLocaleDateString()}
-                </p>
+              <div className="ms-3">
+                <div className="email-sender-name">
+                  <strong>{`${query.firstName} ${
+                    query.lastName || ""
+                  }`}</strong>
+                  <span className="email-address ms-2">
+                    &lt;{query.email}&gt;
+                  </span>
+                </div>
+                <div className="email-meta">
+                  <span>to me</span> | <span>{formattedDate}</span>
+                </div>
               </div>
             </div>
           </div>
-          <div className="modal-footer">
+          {/* Email Body */}
+          <div className="modal-body email-body">
+            <p>{query.message}</p>
+            {query.phone && (
+              <p className="mt-3">
+                <strong>Phone:</strong> {query.phone}
+              </p>
+            )}
+          </div>
+          {/* Email Footer */}
+          <div className="modal-footer email-footer">
             <button
               type="button"
-              className="btn btn-secondary"
+              className="btn btn-outline-secondary"
               onClick={onClose}
             >
               Close
@@ -224,8 +259,9 @@ const ContactWrapper = () => {
     setQueryToDelete(null);
   }, []);
 
-  const handlePageChange = useCallback(({ selected }) => {
-    setCurrentPage(selected + 1);
+  // Updated handler for Ant Design Pagination
+  const handlePageChange = useCallback((page) => {
+    setCurrentPage(page); // Ant Design Pagination passes the page number directly
   }, []);
 
   const clearFilters = useCallback(() => {
@@ -377,12 +413,14 @@ const ContactWrapper = () => {
                   </tbody>
                 </table>
                 {filteredQueries.length > itemsPerPage && (
-                  <div className="pagination-section mt-4">
-                    <DataTablePagination
-                      totalItems={filteredQueries.length}
-                      itemNo={itemsPerPage}
-                      onPageChange={handlePageChange}
-                      currentPage={currentPage}
+                  <div className="pagination-section mt-4 d-flex justify-content-end">
+                    <Pagination
+                      current={currentPage}
+                      total={filteredQueries.length}
+                      pageSize={itemsPerPage}
+                      onChange={handlePageChange}
+                      showSizeChanger={false} // Optional: Disable page size changer
+                      showQuickJumper={false} // Optional: Disable quick jumper
                     />
                   </div>
                 )}
