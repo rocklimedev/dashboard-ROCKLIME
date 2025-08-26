@@ -464,7 +464,7 @@ const masterRoutes = [
         element: <ForgotPassword />,
       },
       {
-        path: "/reset-password",
+        path: "/reset-password/:token",
         name: "Reset Password",
         icon: <MdError />,
         isSidebarActive: false,
