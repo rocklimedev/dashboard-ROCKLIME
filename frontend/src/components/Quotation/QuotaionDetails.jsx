@@ -12,7 +12,6 @@ import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetCompanyByIdQuery } from "../../api/companyApi";
 import { toast } from "sonner";
 import logo from "../../assets/img/logo.png";
-import sampleQuotationTemplate from "../../assets/Sample-Quotation.xlsx";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import ExcelJS from "exceljs";

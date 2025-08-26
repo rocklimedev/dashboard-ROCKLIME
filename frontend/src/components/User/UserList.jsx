@@ -15,7 +15,7 @@ import {
   MoreOutlined,
 } from "@ant-design/icons";
 import { Dropdown, Menu, Button, Pagination } from "antd";
-import AddUser from "./AddUser";
+
 import DeleteModal from "../Common/DeleteModal";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -445,7 +445,7 @@ const UserList = () => {
             </div>
           </div>
         </div>
-        {showModal && <AddUser onClose={handleCloseModal} userToEdit={null} />}
+
         {showDeleteModal && (
           <DeleteModal
             item={userToDelete}

@@ -26,7 +26,6 @@ import DeleteModal from "../Common/DeleteModal";
 import OrderPagination from "./OrderPagination";
 import PageHeader from "../Common/PageHeader";
 import ComingSoon from "../Common/ComingSoon";
-
 const OrderWrapper = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("orders");
