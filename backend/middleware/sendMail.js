@@ -115,7 +115,7 @@ function baseTemplate(title, body) {
 // Password Reset
 function resetEmail(host, resetToken) {
   const appHost = process.env.APP_HOST || host || "cmtradingco.com"; // Fallback to a real domain
-  const url = `https://${appHost}/reset-password/${resetToken}`;
+  const url = `https://dashboard-rocklime.vercel.app/reset-password/${resetToken}`;
   const subject = "Reset Your Password";
 
   const text = `
@@ -159,7 +159,7 @@ If you did not make this change, please contact our support team immediately.`;
 
 // Account Verification
 function accountVerificationEmail(host, verificationToken) {
-  const url = `https://${host}/verify-account/${verificationToken}`;
+  const url = `https://dashboard-rocklime.vercel.app/verify-account/${verificationToken}`;
   const subject = "Verify Your Account";
 
   const text = `
@@ -210,7 +210,7 @@ Hi ${name}!\n\nYour account has been successfully verified. You can now log in t
     `<p>Hi ${name}!</p>
      <p>Your account has been successfully verified. You can now log in to your account.</p>
      <p style="text-align:center; margin:20px 0;">
-       <a href="https://cmtradingco.com/login" style="background:#28a745; color:#fff; padding:12px 20px; border-radius:5px; text-decoration:none; font-weight:bold;">Log In Now</a>
+       <a href="https://dashboard-rocklime.vercel.app/login" style="background:#28a745; color:#fff; padding:12px 20px; border-radius:5px; text-decoration:none; font-weight:bold;">Log In Now</a>
      </p>
      <p>If you did not initiate this verification, please contact our support team immediately.</p>`
   );
