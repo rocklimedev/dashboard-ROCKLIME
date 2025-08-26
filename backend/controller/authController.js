@@ -207,28 +207,56 @@ exports.resetPassword = async (req, res, next) => {
         .json({ message: "Token, email, and new password are required" });
     }
 
+    // Find verification token in database
     const verificationToken = await VerificationToken.findOne({
-      token: resetToken,
-      email,
+      where: { token: resetToken, email, isVerified: false },
     });
-    if (!verificationToken || verificationToken.isVerified) {
+
+    if (!verificationToken) {
       return res.status(400).json({ message: "Invalid or used token" });
     }
 
-    const decoded = jwt.verify(resetToken, process.env.JWT_SECRET);
+    // Check token expiration
+    if (verificationToken.expiresAt < new Date()) {
+      await verificationToken.destroy();
+      return res.status(400).json({ message: "Token has expired" });
+    }
+
+    // Verify JWT token
+    let decoded;
+    try {
+      decoded = jwt.verify(resetToken, process.env.JWT_SECRET);
+    } catch (err) {
+      if (err.name === "TokenExpiredError") {
+        await verificationToken.destroy();
+        return res.status(400).json({ message: "Token has expired" });
+      }
+      throw err;
+    }
+
+    // Find user
     const user = await User.findByPk(decoded.userId);
     if (!user || user.email !== email) {
       return res.status(400).json({ message: "Invalid token or email" });
     }
 
+    // Validate password strength (optional, adjust as needed)
+    if (newPassword.length < 8) {
+      return res
+        .status(400)
+        .json({ message: "Password must be at least 8 characters long" });
+    }
+
+    // Hash new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     user.password = hashedPassword;
     await user.save();
 
+    // Mark token as used
     verificationToken.isVerified = true;
     await verificationToken.save();
 
-    req.email = { to: user.email, params: [] };
+    // Send confirmation email
     const emailContent = emails.confirmResetPasswordEmail();
     await emails.sendMail(
       user.email,
@@ -236,16 +264,65 @@ exports.resetPassword = async (req, res, next) => {
       emailContent.text,
       emailContent.html
     );
+
+    res.status(200).json({ message: "Password changed successfully" });
   } catch (err) {
-    if (err.name === "TokenExpiredError") {
-      await VerificationToken.deleteOne({ token: resetToken });
-      return res.status(400).json({ message: "Token has expired" });
-    }
+    console.error("Reset password error:", err);
     next(err);
   }
 };
 
-// Login and Logout remain unchanged
+// Validate Reset Token
+exports.validateResetToken = async (req, res) => {
+  const { token } = req.params;
+  try {
+    if (!token) {
+      return res.status(400).json({ message: "Token is required" });
+    }
+
+    // Find verification token in database
+    const verificationToken = await VerificationToken.findOne({
+      where: { token, isVerified: false },
+    });
+
+    if (!verificationToken) {
+      return res.status(400).json({ message: "Invalid or used token" });
+    }
+
+    // Check token expiration
+    if (verificationToken.expiresAt < new Date()) {
+      await verificationToken.destroy();
+      return res.status(400).json({ message: "Token has expired" });
+    }
+
+    // Verify JWT token
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      if (err.name === "TokenExpiredError") {
+        await verificationToken.destroy();
+        return res.status(400).json({ message: "Token has expired" });
+      }
+      throw err;
+    }
+
+    // Find user
+    const user = await User.findByPk(decoded.userId);
+    if (!user || user.email !== verificationToken.email) {
+      return res.status(400).json({ message: "Invalid token or email" });
+    }
+
+    res.json({ email: user.email });
+  } catch (error) {
+    console.error("Validate reset token error:", error);
+    res
+      .status(400)
+      .json({ message: error.message || "Invalid or expired reset link" });
+  }
+};
+
+// Login, Logout, Refresh Token, and Resend Verification Email remain unchanged
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -327,7 +404,7 @@ exports.logout = async (req, res) => {
     res.status(500).json({ message: "Server Error", error: err.message });
   }
 };
-// Refresh Token
+
 exports.refreshToken = async (req, res) => {
   try {
     const { refreshToken } = req.body;
@@ -350,7 +427,7 @@ exports.refreshToken = async (req, res) => {
     res.status(500).json({ message: "Server Error", error: err.message });
   }
 };
-// Resend Verification Email
+
 exports.resendVerificationEmail = async (req, res, next) => {
   try {
     const { email } = req.body;
@@ -369,7 +446,7 @@ exports.resendVerificationEmail = async (req, res, next) => {
     }
 
     // Delete any existing verification tokens for this user
-    await VerificationToken.deleteMany({ userId: user.userId });
+    await VerificationToken.destroy({ where: { userId: user.userId } });
 
     // Generate a new verification token
     const verificationToken = jwt.sign(

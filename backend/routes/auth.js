@@ -8,11 +8,13 @@ const {
   refreshToken,
   verifyAccount,
   resendVerificationEmail,
+  validateResetToken,
 } = require("../controller/authController");
 const checkPermission = require("../middleware/permission");
 const router = express.Router();
 const { emailer } = require("../middleware/sendMail");
 const emails = require("../config/template");
+router.get("/validate-reset-token/:token", validateResetToken);
 router.get("/verify-account/:token", verifyAccount); // <-- token comes as param
 router.post(
   "/register",
