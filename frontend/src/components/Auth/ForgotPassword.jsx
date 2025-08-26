@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import logo from "../../assets/img/logo.png";
 import { Spinner } from "react-bootstrap";
 import { useGetProfileQuery } from "../../api/userApi";
+
 const ForgotPassword = () => {
   const navigate = useNavigate();
   const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
@@ -17,30 +18,22 @@ const ForgotPassword = () => {
   const [emailError, setEmailError] = useState("");
   const [useManualInput, setUseManualInput] = useState(false);
 
-  // Validate email format
   const validateEmail = (value) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!value || value.trim() === "") {
-      return "Email is required";
-    }
-    if (!emailRegex.test(value.trim())) {
+    if (!value || value.trim() === "") return "Email is required";
+    if (!emailRegex.test(value.trim()))
       return "Please enter a valid email address";
-    }
     return "";
   };
 
-  // Set email from profile when available
   useEffect(() => {
-    console.log("Profile data:", { profile, profileLoading, profileError }); // Debug log
     if (!profileLoading && !profileError && profile?.user?.email) {
-      const fetchedEmail = String(profile.user.email); // Ensure string
-      console.log("Fetched profile email:", fetchedEmail);
+      const fetchedEmail = String(profile.user.email);
       const validationError = validateEmail(fetchedEmail);
       setEmail(fetchedEmail);
       setEmailError(validationError);
       setUseManualInput(validationError !== "");
     } else if (!profileLoading && (profileError || !profile?.user?.email)) {
-      console.log("Profile fetch failed or no email:", profileError, profile);
       setUseManualInput(true);
       setEmail("");
       setEmailError("Unable to fetch profile email. Please enter manually.");
@@ -56,14 +49,11 @@ const ForgotPassword = () => {
       return;
     }
 
-    const payload = { email: email.trim() };
-    console.log("Sending payload to backend:", payload);
     try {
-      const response = await forgotPassword(payload).unwrap();
-      toast.success(
-        response.message || "Password reset link sent successfully!"
-      );
-      setTimeout(() => navigate("/reset-password"), 2000);
+      const response = await forgotPassword({ email: email.trim() }).unwrap();
+      const { token } = response; // Expect token in response
+      toast.success(response.message || "Reset link sent to your email!");
+      navigate(`/verify-account/${token}`, { state: { email: email.trim() } });
     } catch (error) {
       console.error("ForgotPassword API error:", error);
       toast.error(error?.data?.message || "Failed to send reset link.");

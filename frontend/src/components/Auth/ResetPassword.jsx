@@ -1,28 +1,39 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useResetPasswordMutation } from "../../api/authApi";
-import { toast } from "sonner"; // Changed import
+import { toast } from "sonner";
 import logo from "../../assets/img/logo.png";
 
 const ResetPassword = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
+  const { token, email } = location.state || {};
   const [resetPassword, { isLoading }] = useResetPasswordMutation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!token || !email) {
+      toast.error("Invalid or missing verification data.");
+      setTimeout(() => navigate("/login"), 2000);
+      return;
+    }
     if (newPassword !== confirmPassword) {
-      toast.error("Passwords do not match"); // Sonner toast
+      toast.error("Passwords do not match");
       return;
     }
 
     try {
-      const response = await resetPassword({ newPassword }).unwrap();
-      toast.success(response.message || "Password changed successfully!"); // Sonner toast
-      navigate("/login");
+      const response = await resetPassword({
+        resetToken: token,
+        newPassword,
+        email,
+      }).unwrap();
+      toast.success(response.message || "Password changed successfully!");
+      setTimeout(() => navigate("/login"), 2000);
     } catch (error) {
-      toast.error(error?.data?.message || "Failed to reset password"); // Sonner toast
+      toast.error(error?.data?.message || "Failed to reset password");
     }
   };
 
@@ -83,7 +94,6 @@ const ResetPassword = () => {
                     </div>
                   </div>
                 </form>
-                {/* Toast Container */}
               </div>
             </div>
           </div>

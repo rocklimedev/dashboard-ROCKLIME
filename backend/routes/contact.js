@@ -14,5 +14,5 @@ router.get("/:id", ContactController.getQueryById);
 
 // DELETE route to delete a query by ID
 router.delete("/:id", ContactController.deleteQuery);
-
+router.post("/reply/:id", ContactController.replyToEmail);
 module.exports = router;

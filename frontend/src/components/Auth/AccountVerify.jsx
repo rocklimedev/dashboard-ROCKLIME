@@ -3,29 +3,34 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useVerifyAccountMutation } from "../../api/authApi";
 import { toast } from "sonner";
 import logo from "../../assets/img/logo.png";
-import { Spinner } from "react-bootstrap"; // Assuming you're using react-bootstrap for the spinner
+import { Spinner } from "react-bootstrap";
 
 const AccountVerify = () => {
   const navigate = useNavigate();
-  const { token } = useParams(); // Extract token from URL
+  const { token } = useParams();
   const [verifyAccount, { isLoading }] = useVerifyAccountMutation();
 
   useEffect(() => {
     const verifyToken = async () => {
-      // Basic token validation (e.g., check if token exists and is a string)
       if (!token || typeof token !== "string" || token.trim() === "") {
         toast.error("Invalid verification link.");
-        setTimeout(() => navigate("/login"), 2000); // Delay redirect for toast visibility
+        setTimeout(() => navigate("/login"), 2000);
         return;
       }
 
       try {
         const response = await verifyAccount({ token }).unwrap();
         toast.success(response.message || "Account verified successfully!");
-        setTimeout(() => navigate("/login"), 2000); // Delay redirect for toast visibility
+        setTimeout(
+          () =>
+            navigate("/reset-password", {
+              state: { token, email: response.email },
+            }),
+          2000
+        );
       } catch (error) {
         toast.error(error?.data?.message || "Failed to verify account.");
-        setTimeout(() => navigate("/login"), 2000); // Delay redirect for toast visibility
+        setTimeout(() => navigate("/login"), 2000);
       }
     };
 

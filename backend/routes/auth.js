@@ -7,17 +7,17 @@ const {
   resetPassword,
   refreshToken,
   verifyAccount,
+  resendVerificationEmail,
 } = require("../controller/authController");
 const checkPermission = require("../middleware/permission");
 const router = express.Router();
 const { emailer } = require("../middleware/sendMail");
 const emails = require("../config/template");
-router.post("/verify-account", verifyAccount); // New endpoint
+router.get("/verify-account/:token", verifyAccount); // <-- token comes as param
 router.post(
   "/register",
   //checkPermission("write", "register", "auth", "/auth/register"),
-  register,
-  emailer(emails.accountVerificationEmail)
+  register
 );
 router.post(
   "/login",
@@ -37,19 +37,17 @@ router.post(
   //   "forgot-password",
   //   "/auth/forgot-password"
   // ),
-  forgotPassword,
-  emailer(emails.resetEmail)
+  forgotPassword
 );
 router.post(
   "/reset-password",
   // checkPermission("write", "reset-password", "auth", "/auth/reset-password"),
-  resetPassword,
-  emailer(emails.confirmResetPasswordEmail)
+  resetPassword
 );
 router.post(
   "/refresh-token",
   // checkPermission("write", "refresh-token", "auth", "/auth/refresh-token"),
   refreshToken
 );
-
+router.post("/resend-verification", resendVerificationEmail); // New endpoint
 module.exports = router;

@@ -25,8 +25,10 @@ import { attendanceApi } from "../api/attendanceApi";
 import { brandParentCategoryApi } from "../api/brandParentCategoryApi";
 import { productMetaApi } from "../api/productMetaApi";
 import { contactApi } from "../api/contactApi";
+import emailReducer from "../api/emailSlice";
 export const store = configureStore({
   reducer: {
+    email: emailReducer,
     [contactApi.reducerPath]: contactApi.reducer,
     [productMetaApi.reducerPath]: productMetaApi.reducer,
     [brandParentCategoryApi.reducerPath]: brandParentCategoryApi.reducer,

@@ -1,27 +1,22 @@
-// authController.js
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { Op } = require("sequelize");
 const User = require("../models/users");
 const Roles = require("../models/roles");
 const { ROLES } = require("../config/constant");
-const emails = require("../middleware/sendMail"); // Email templates
-require("dotenv").config();
+const emails = require("../middleware/sendMail");
 const VerificationToken = require("../models/verificationToken"); // MongoDB model
-// Store refresh tokens (temporary, recommend using Redis in production)
-const refreshTokens = new Set();
+require("dotenv").config();
 
 // Register
 exports.register = async (req, res, next) => {
   try {
     const { username, name, email, mobileNumber, password } = req.body;
-
     const normalizedEmail = email.toLowerCase();
 
     const existingUser = await User.findOne({
       where: { [Op.or]: [{ username }, { email: normalizedEmail }] },
     });
-
     if (existingUser) {
       return res
         .status(400)
@@ -34,7 +29,6 @@ exports.register = async (req, res, next) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-
     const newUser = await User.create({
       username,
       name,
@@ -46,26 +40,32 @@ exports.register = async (req, res, next) => {
       status: "inactive",
     });
 
-    // Create verification token
     const verificationToken = jwt.sign(
       { userId: newUser.userId },
       process.env.JWT_SECRET,
-      { expiresIn: "1d" }
+      {
+        expiresIn: "1d",
+      }
     );
 
-    // Save verification token in MongoDB
     await VerificationToken.create({
       userId: newUser.userId,
       token: verificationToken,
+      email: normalizedEmail,
       isVerified: false,
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 day expiration
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
     });
 
-    // Send verification email
-    await emails.accountVerificationEmail(
+    // Use sendMail directly with the accountVerificationEmail template
+    const emailContent = emails.accountVerificationEmail(
+      req.headers.host,
+      verificationToken
+    );
+    await emails.sendMail(
       newUser.email,
-      "Account Verification",
-      `Hi ${newUser.name},\n\nPlease verify your account by clicking this link:\n\nhttp://${req.headers.host}/api/auth/verify-account/${verificationToken}\n\nThanks!`
+      emailContent.subject,
+      emailContent.text,
+      emailContent.html
     );
 
     res.status(201).json({
@@ -86,89 +86,185 @@ exports.register = async (req, res, next) => {
     next(err);
   }
 };
+
 // Verify Account
 exports.verifyAccount = async (req, res, next) => {
   try {
-    const { token } = req.body; // Token sent from frontend via POST
+    const { token } = req.params; // Token from URL
 
-    // Find token in MongoDB
     const verificationToken = await VerificationToken.findOne({ token });
     if (!verificationToken) {
       return res.status(400).json({ message: "Invalid or expired token" });
     }
 
-    // Check if already verified
     if (verificationToken.isVerified) {
       return res.status(400).json({ message: "Account already verified" });
     }
 
-    // Verify JWT token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findByPk(decoded.userId);
     if (!user) {
       return res.status(400).json({ message: "User not found" });
     }
 
-    // Update user status to active in MySQL
     user.status = "active";
     await user.save();
 
-    // Update verification token status in MongoDB
     verificationToken.isVerified = true;
     await verificationToken.save();
 
-    // Set email details for verification confirmation email
     req.email = {
       to: user.email,
-      params: [user.name], // Pass name to template
+      params: [user.name],
     };
 
-    // Proceed to emailer middleware for confirmation email
-    await emails.emailer(emails.accountVerificationConfirmationEmail)(
-      req,
-      res,
-      () => {
-        // Send response after email is processed
-        res.status(200).json({
-          message: "Account verified successfully",
-          isVerified: true,
-        });
-      }
+    // after verifying account
+    const emailContent = emails.accountVerificationConfirmationEmail(user.name);
+    await emails.sendMail(
+      user.email,
+      emailContent.subject,
+      emailContent.text,
+      emailContent.html
     );
+
+    res.status(200).json({
+      message: "Account verified successfully",
+      isVerified: true,
+      email: user.email,
+    });
   } catch (err) {
     if (err.name === "TokenExpiredError") {
-      // Remove expired token from MongoDB
       await VerificationToken.deleteOne({ token });
       return res.status(400).json({ message: "Token has expired" });
     }
     next(err);
   }
 };
-// Login
+
+// Forgot Password
+exports.forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email || typeof email !== "string" || email.trim() === "") {
+      return res.status(400).json({ message: "Valid email is required" });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await User.findOne({ where: { email: normalizedEmail } });
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+
+    const resetToken = jwt.sign(
+      { userId: user.userId },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "15m",
+      }
+    );
+
+    await VerificationToken.create({
+      userId: user.userId,
+      token: resetToken,
+      email: normalizedEmail,
+      isVerified: false,
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+    });
+
+    req.email = {
+      to: user.email,
+      params: [req.headers.host, resetToken],
+    };
+
+    const emailContent = emails.resetEmail(req.headers.host, resetToken);
+    await emails.sendMail(
+      user.email,
+      emailContent.subject,
+      emailContent.text,
+      emailContent.html
+    );
+
+    res
+      .status(200)
+      .json({ message: "Password reset link sent", token: resetToken });
+  } catch (err) {
+    console.error("Error in forgotPassword:", err);
+    if (!res.headersSent) {
+      res
+        .status(500)
+        .json({ message: "Failed to send reset link", error: err.message });
+    }
+  }
+};
+
+// Reset Password
+exports.resetPassword = async (req, res, next) => {
+  try {
+    const { resetToken, newPassword, email } = req.body;
+    if (!resetToken || !newPassword || !email) {
+      return res
+        .status(400)
+        .json({ message: "Token, email, and new password are required" });
+    }
+
+    const verificationToken = await VerificationToken.findOne({
+      token: resetToken,
+      email,
+    });
+    if (!verificationToken || verificationToken.isVerified) {
+      return res.status(400).json({ message: "Invalid or used token" });
+    }
+
+    const decoded = jwt.verify(resetToken, process.env.JWT_SECRET);
+    const user = await User.findByPk(decoded.userId);
+    if (!user || user.email !== email) {
+      return res.status(400).json({ message: "Invalid token or email" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    verificationToken.isVerified = true;
+    await verificationToken.save();
+
+    req.email = { to: user.email, params: [] };
+    const emailContent = emails.confirmResetPasswordEmail();
+    await emails.sendMail(
+      user.email,
+      emailContent.subject,
+      emailContent.text,
+      emailContent.html
+    );
+  } catch (err) {
+    if (err.name === "TokenExpiredError") {
+      await VerificationToken.deleteOne({ token: resetToken });
+      return res.status(400).json({ message: "Token has expired" });
+    }
+    next(err);
+  }
+};
+
+// Login and Logout remain unchanged
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-
-    // Find user with case-insensitive email
     const user = await User.findOne({ where: { email: email.toLowerCase() } });
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // Check if user is inactive
     if (user.status === "inactive") {
-      return res.status(403).json({
-        message: "Account is inactive. Please contact an administrator.",
-      });
+      return res
+        .status(403)
+        .json({ message: "Account is inactive. Please verify your account." });
     }
 
-    // Generate access token (7 days expiration)
     const now = Math.floor(Date.now() / 1000);
     const accessToken = jwt.sign(
       {
@@ -177,12 +273,11 @@ exports.login = async (req, res) => {
         roles: user.roles,
         roleId: user.roleId,
         iat: now,
-        exp: now + 7 * 24 * 60 * 60,
       },
-      process.env.JWT_SECRET
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
     );
 
-    // Generate refresh token (7 days expiration)
     const refreshToken = jwt.sign(
       {
         userId: user.userId,
@@ -194,10 +289,6 @@ exports.login = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    // Store refresh token
-    refreshTokens.add(refreshToken);
-
-    // Set refresh token as HTTP-only cookie
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -224,111 +315,18 @@ exports.login = async (req, res) => {
   }
 };
 
-// Logout
 exports.logout = async (req, res) => {
   try {
-    // Clear the access token cookie
-    res.clearCookie("accessToken", {
+    res.clearCookie("refreshToken", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "Strict",
     });
-
     return res.status(200).json({ message: "Logged out successfully" });
   } catch (err) {
     res.status(500).json({ message: "Server Error", error: err.message });
   }
 };
-
-exports.forgotPassword = async (req, res, next) => {
-  try {
-    const { email } = req.body;
-    console.log("ForgotPassword request body:", req.body); // Debug log
-    console.log("Email value:", email, "Type:", typeof email); // Debug log
-
-    // Validate email input
-    if (!email || typeof email !== "string" || email.trim() === "") {
-      console.log("Invalid email detected:", email);
-      return res.status(400).json({ message: "Valid email is required" });
-    }
-
-    // Normalize email
-    const normalizedEmail = email.trim().toLowerCase();
-
-    // Find user with normalized email
-    const user = await User.findOne({ where: { email: normalizedEmail } });
-    if (!user) {
-      console.log("User not found for email:", normalizedEmail);
-      return res.status(400).json({ message: "User not found" });
-    }
-
-    // Generate a reset token
-    const resetToken = jwt.sign(
-      { userId: user.userId },
-      process.env.JWT_SECRET,
-      { expiresIn: "15m" }
-    );
-
-    // Set email details for password reset email
-    req.email = {
-      to: user.email,
-      params: [req.headers.host, resetToken],
-    };
-
-    // Use emailer middleware and wait for it to complete
-    await new Promise((resolve, reject) => {
-      emails.emailer(emails.resetEmail)(req, res, (err) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve();
-        }
-      });
-    });
-
-    // Send response only after email is sent
-    res.status(200).json({ message: "Password reset link sent" });
-  } catch (err) {
-    console.error("Error in forgotPassword:", err);
-    if (!res.headersSent) {
-      res
-        .status(500)
-        .json({ message: "Failed to send reset link", error: err.message });
-    }
-  }
-};
-// Reset Password
-exports.resetPassword = async (req, res, next) => {
-  try {
-    const { resetToken, newPassword } = req.body;
-
-    const decoded = jwt.verify(resetToken, process.env.JWT_SECRET);
-
-    const user = await User.findByPk(decoded.userId);
-    if (!user) {
-      return res.status(400).json({ message: "Invalid token" });
-    }
-
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    user.password = hashedPassword;
-    await user.save();
-
-    // Set email details for password reset confirmation email
-    req.email = {
-      to: user.email,
-      params: [],
-    };
-
-    // Proceed to emailer middleware
-    next();
-
-    // Send response immediately
-    res.status(200).json({ message: "Password reset successfully" });
-  } catch (err) {
-    next(err);
-  }
-};
-
 // Refresh Token
 exports.refreshToken = async (req, res) => {
   try {
@@ -350,5 +348,61 @@ exports.refreshToken = async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ message: "Server Error", error: err.message });
+  }
+};
+// Resend Verification Email
+exports.resendVerificationEmail = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email || typeof email !== "string" || email.trim() === "") {
+      return res.status(400).json({ message: "Valid email is required" });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await User.findOne({ where: { email: normalizedEmail } });
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+
+    if (user.status === "active") {
+      return res.status(400).json({ message: "Account is already verified" });
+    }
+
+    // Delete any existing verification tokens for this user
+    await VerificationToken.deleteMany({ userId: user.userId });
+
+    // Generate a new verification token
+    const verificationToken = jwt.sign(
+      { userId: user.userId },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1d",
+      }
+    );
+
+    // Save the new verification token
+    await VerificationToken.create({
+      userId: user.userId,
+      token: verificationToken,
+      email: normalizedEmail,
+      isVerified: false,
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    });
+
+    // Send the verification email
+    const emailContent = emails.accountVerificationEmail(
+      req.headers.host,
+      verificationToken
+    );
+    await emails.sendMail(
+      user.email,
+      emailContent.subject,
+      emailContent.text,
+      emailContent.html
+    );
+
+    res.status(200).json({ message: "Verification email sent successfully" });
+  } catch (err) {
+    next(err);
   }
 };

@@ -1,38 +1,41 @@
+// emailer.js
 const nodemailer = require("nodemailer");
 require("dotenv").config();
 
+/* -----------------------------------------------------------
+   1. Transporter Setup
+------------------------------------------------------------ */
 const transporter = nodemailer.createTransport({
   host: "static.cmtradingco.com",
   port: 465,
   secure: true,
   auth: {
     user: "no-reply@static.cmtradingco.com",
-    pass: "KB_*d-~[!ST=",
+    pass: process.env.SMTP_PASS || "KB_*d-~[!ST=",
   },
   logger: true,
   debug: true,
 });
 
-// test
+// Verify connection
 transporter
   .verify()
-  .then(() => {
-    console.log("✅ SMTP connected successfully");
-  })
-  .catch((err) => {
-    console.error("❌ SMTP connection failed:", err);
-  });
+  .then(() => console.log("✅ SMTP connected successfully"))
+  .catch((err) => console.error("❌ SMTP connection failed:", err));
 
-// Send email function
+/* -----------------------------------------------------------
+   2. Send Mail Helper
+------------------------------------------------------------ */
 async function sendMail(to, subject, text, html) {
   try {
     const info = await transporter.sendMail({
       from: `"CM Trading Co" <no-reply@static.cmtradingco.com>`, // Must match cPanel email
-      to, // Recipient
-      subject, // Subject
-      text, // Plain text
-      html, // HTML body
+      to,
+      subject,
+      text,
+      html,
     });
+
     console.log("✅ Email sent:", info.messageId);
     return info;
   } catch (err) {
@@ -41,30 +44,54 @@ async function sendMail(to, subject, text, html) {
   }
 }
 
+// (async () => {
+//   try {
+//     const info = await sendMail(
+//       "vermadhruv09112002@gmail.com", // to
+//       "Test Email - Async Await", // subject
+//       "Hello! This is a test email using async/await.", // text
+//       "<b>Hello!</b><br>This is a <i>test email</i> using async/await." // html
+//     );
+
+//     console.log("✅ Email sent:", info);
+//   } catch (error) {
+//     console.error("❌ Email send failed:", error);
+//   }
+// })();
+
+/* -----------------------------------------------------------
+   3. Middleware Wrapper
+------------------------------------------------------------ */
 function emailer(templateFn) {
   return async (req, res, next) => {
     if (res.headersSent) {
-      console.warn("Headers already sent, skipping emailer");
+      console.warn("⚠️ Headers already sent, skipping emailer");
       return next();
     }
+
     try {
       const { to, params } = req.email;
-      console.log(`Sending email to: ${to}`);
+      console.log(`📩 Sending email to: ${to}`);
+
       if (typeof templateFn !== "function") {
         throw new Error(`templateFn is not a function: ${templateFn}`);
       }
+
       const msg = templateFn(...params);
       await sendMail(to, msg.subject, msg.text, msg.html);
-      console.log(`Email sent successfully to: ${to}`);
+
+      console.log(`✅ Email sent successfully to: ${to}`);
       next();
     } catch (err) {
-      console.error(`Email error for ${req.email.to}:`, err);
+      console.error(`❌ Email error for ${req.email?.to}:`, err);
       next(err);
     }
   };
 }
 
-// Base HTML template for all emails
+/* -----------------------------------------------------------
+   4. Base Template
+------------------------------------------------------------ */
 function baseTemplate(title, body) {
   return `
   <div style="font-family: Arial, sans-serif; max-width:600px; margin:auto; border:1px solid #eee; border-radius:8px; overflow:hidden;">
@@ -81,9 +108,14 @@ function baseTemplate(title, body) {
   </div>`;
 }
 
-// 1. Password Reset
+/* -----------------------------------------------------------
+   5. Templates
+------------------------------------------------------------ */
+
+// Password Reset
 function resetEmail(host, resetToken) {
-  const url = `https://${host}/reset-password/${resetToken}`;
+  const appHost = process.env.APP_HOST || host || "cmtradingco.com"; // Fallback to a real domain
+  const url = `https://${appHost}/reset-password/${resetToken}`;
   const subject = "Reset Your Password";
 
   const text = `
@@ -107,7 +139,7 @@ If you did not request this, you can safely ignore this email.`;
   return { subject, text, html };
 }
 
-// 2. Confirm Password Reset
+// Confirm Password Reset
 function confirmResetPasswordEmail() {
   const subject = "Your Password Has Been Changed";
 
@@ -125,7 +157,7 @@ If you did not make this change, please contact our support team immediately.`;
   return { subject, text, html };
 }
 
-// 3. Account Verification
+// Account Verification
 function accountVerificationEmail(host, verificationToken) {
   const url = `https://${host}/verify-account/${verificationToken}`;
   const subject = "Verify Your Account";
@@ -151,7 +183,7 @@ If you did not register, please ignore this email.`;
   return { subject, text, html };
 }
 
-// 4. User Signup Welcome
+// Signup Welcome
 function signupEmail(name) {
   const subject = "Welcome to CM Trading Co";
 
@@ -166,7 +198,7 @@ function signupEmail(name) {
   return { subject, text, html };
 }
 
-// 5. Account Verification Confirmation
+// Account Verification Confirmation
 function accountVerificationConfirmationEmail(name) {
   const subject = "Account Verification Successful";
 
@@ -186,9 +218,7 @@ Hi ${name}!\n\nYour account has been successfully verified. You can now log in t
   return { subject, text, html };
 }
 
-// Add to the end of the existing emailer.js
-
-// 6. Contact Form Submission Confirmation
+// Contact Form Confirmation
 function contactFormEmail(name, message) {
   const subject = "Thank You for Contacting CM Trading Co";
 
@@ -207,7 +237,7 @@ Hi ${name}!\n\nThank you for reaching out to us. We have received your message:\
   return { subject, text, html };
 }
 
-// 7. Admin Notification for New Contact Form Submission
+// Admin Notification for Contact Form
 function adminContactNotification(firstName, lastName, email, phone, message) {
   const subject = "New Contact Form Submission";
 
@@ -236,6 +266,9 @@ Please follow up with the user.`;
   return { subject, text, html };
 }
 
+/* -----------------------------------------------------------
+   6. Exports
+------------------------------------------------------------ */
 module.exports = {
   sendMail,
   emailer,
@@ -244,6 +277,6 @@ module.exports = {
   accountVerificationEmail,
   signupEmail,
   accountVerificationConfirmationEmail,
-  contactFormEmail, // New export
-  adminContactNotification, // New export
+  contactFormEmail,
+  adminContactNotification,
 };
