@@ -1,9 +1,9 @@
-// services/contactApi.js
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { API_URL } from "../data/config";
+
 export const contactApi = createApi({
   reducerPath: "contactApi",
-  baseQuery: fetchBaseQuery({ baseUrl: `${API_URL}/contact` }), // adjust base URL as per backend route
+  baseQuery: fetchBaseQuery({ baseUrl: `${API_URL}/contact` }), // Adjust base URL as per backend route
   tagTypes: ["Contact"],
   endpoints: (builder) => ({
     // POST: submit contact form
@@ -36,6 +36,16 @@ export const contactApi = createApi({
       }),
       invalidatesTags: ["Contact"],
     }),
+
+    // POST: reply to a contact query by ID
+    replyToEmail: builder.mutation({
+      query: ({ id, replyData }) => ({
+        url: `/reply/${id}`,
+        method: "POST",
+        body: replyData,
+      }),
+      invalidatesTags: ["Contact"],
+    }),
   }),
 });
 
@@ -44,4 +54,5 @@ export const {
   useGetAllQueriesQuery,
   useGetQueryByIdQuery,
   useDeleteQueryMutation,
+  useReplyToEmailMutation,
 } = contactApi;

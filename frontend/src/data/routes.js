@@ -79,6 +79,8 @@ import NewCart from "../components/POS-NEW/NewCart";
 import AccountVerify from "../components/Auth/AccountVerify";
 import ContactWrapper from "../components/Contact/ContactWrapper";
 import AddCustomer from "../components/Customers/AddCustomer";
+import EmailInterface from "../components/Contact/EmailInterface";
+import EmailVerification from "../components/Auth/EmailVerifications";
 const masterRoutes = [
   {
     path: "/",
@@ -413,11 +415,11 @@ const masterRoutes = [
         isSidebarActive: true,
       },
       {
-        path: "/verify-account/:token",
+        path: "/verify-account",
         name: "Veriy Account",
         icon: <IoLogIn />,
         isSidebarActive: false,
-        element: <AccountVerify />,
+        element: <EmailVerification />,
       },
       {
         path: "/login",
@@ -490,6 +492,13 @@ const masterRoutes = [
         element: <ComingSoon />,
       },
     ],
+  },
+  {
+    path: "/email",
+    name: "Email",
+    icon: <RiFileListLine />,
+    element: <EmailInterface />,
+    isSidebarActive: false,
   },
   {
     path: "/inventory/product/product-code-status",

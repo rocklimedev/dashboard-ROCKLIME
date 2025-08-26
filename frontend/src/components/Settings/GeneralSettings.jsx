@@ -7,7 +7,10 @@ import {
   useInactiveUserMutation,
   useGetProfileQuery,
 } from "../../api/userApi";
-import { useResetPasswordMutation } from "../../api/authApi";
+import {
+  useResetPasswordMutation,
+  useResendVerificationEmailMutation,
+} from "../../api/authApi";
 import { logout } from "../../api/userSlice";
 import { Modal, Button, Form } from "react-bootstrap";
 import { Link } from "react-router-dom";
@@ -23,6 +26,8 @@ const GeneralSettings = () => {
   const [deactivateAccount, { isLoading: isDeactivating }] =
     useInactiveUserMutation();
   const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
+  const [resendVerificationEmail, { isLoading: isResendingVerification }] =
+    useResendVerificationEmailMutation();
   const {
     data: profile,
     isLoading: isProfileLoading,
@@ -50,6 +55,16 @@ const GeneralSettings = () => {
       toast.success("Password changed successfully");
     } catch (error) {
       toast.error(error?.data?.message || "Failed to change password");
+    }
+  };
+
+  // Handle resend verification email
+  const handleResendVerification = async () => {
+    try {
+      await resendVerificationEmail({ email: profile?.user?.email }).unwrap();
+      toast.success("Verification email sent successfully");
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to send verification email");
     }
   };
 
@@ -128,6 +143,41 @@ const GeneralSettings = () => {
           <div className="settings-content-area">
             <div className="card flex-fill mb-0">
               <div className="card-body">
+                {/* Email Verification Section */}
+                <div className="d-flex align-items-center justify-content-between flex-wrap row-gap-3 border-bottom mb-3 pb-3">
+                  <div className="d-flex align-items-center">
+                    <span className="avatar avatar-lg border bg-light fs-24 me-2">
+                      <i className="ti ti-mail text-gray-900 fs-18"></i>
+                    </span>
+                    <div>
+                      <h5 className="fs-16 fw-medium mb-1">
+                        Email Verification
+                      </h5>
+                      <p className="fs-16">
+                        Email: {profile?.user?.email || "Not available"}
+                        <br />
+                        Status:{" "}
+                        {profile?.user?.status === "active" ? (
+                          <span className="text-success">Verified</span>
+                        ) : (
+                          <span className="text-danger">Not Verified</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  {profile?.user?.status !== "active" && (
+                    <Button
+                      variant="primary"
+                      onClick={handleResendVerification}
+                      disabled={isResendingVerification}
+                    >
+                      {isResendingVerification
+                        ? "Sending..."
+                        : "Resend Verification Email"}
+                    </Button>
+                  )}
+                </div>
+
                 {/* Password Section */}
                 <div className="d-flex align-items-center justify-content-between flex-wrap row-gap-3 border-bottom mb-3 pb-3">
                   <div className="d-flex align-items-center">

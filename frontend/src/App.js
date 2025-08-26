@@ -26,6 +26,7 @@ function App() {
     "/under-maintenance",
     "/coming-soon",
     "/no-access",
+    "/verify-account",
   ].includes(location.pathname);
   const isPOSPage = ["/pos", "/pos-new"].includes(location.pathname);
 

@@ -30,6 +30,17 @@ const contactSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  responded: {
+    type: Boolean,
+    default: false,
+  },
+  replyMessage: {
+    type: String,
+    trim: true,
+  },
+  replyDate: {
+    type: Date,
+  },
 });
 
 module.exports = mongoose.model("Contact", contactSchema);
