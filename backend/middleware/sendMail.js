@@ -44,21 +44,6 @@ async function sendMail(to, subject, text, html) {
   }
 }
 
-// (async () => {
-//   try {
-//     const info = await sendMail(
-//       "vermadhruv09112002@gmail.com", // to
-//       "Test Email - Async Await", // subject
-//       "Hello! This is a test email using async/await.", // text
-//       "<b>Hello!</b><br>This is a <i>test email</i> using async/await." // html
-//     );
-
-//     console.log("✅ Email sent:", info);
-//   } catch (error) {
-//     console.error("❌ Email send failed:", error);
-//   }
-// })();
-
 /* -----------------------------------------------------------
    3. Middleware Wrapper
 ------------------------------------------------------------ */
@@ -94,15 +79,15 @@ function emailer(templateFn) {
 ------------------------------------------------------------ */
 function baseTemplate(title, body) {
   return `
-  <div style="font-family: Arial, sans-serif; max-width:600px; margin:auto; border:1px solid #eee; border-radius:8px; overflow:hidden;">
-    <div style="background:#222; color:#fff; padding:16px; text-align:center; font-size:20px; font-weight:bold;">
+  <div style="font-family: 'Lato', Arial, sans-serif; font-size: 14px; color: #646b72; line-height: 1.5; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 8px; overflow: hidden; background-color: #f7f7f7;">
+    <div style="background-color: #222; color: #fff; padding: 16px; text-align: center; font-size: 20px; font-weight: bold;">
       CM Trading Co
     </div>
-    <div style="padding:24px; font-size:15px; line-height:1.6; color:#333;">
-      <h2 style="color:#222; margin-top:0;">${title}</h2>
+    <div style="padding: 24px; font-size: 15px; line-height: 1.6; color: #333;">
+      <h2 style="color: #212b36; font-family: 'Lato', Arial, sans-serif; font-weight: 700; margin-bottom: 0;">${title}</h2>
       ${body}
     </div>
-    <div style="background:#f8f8f8; padding:12px; text-align:center; font-size:13px; color:#777;">
+    <div style="background-color: #f8f8f8; padding: 12px; text-align: center; font-size: 13px; color: #777;">
       © ${new Date().getFullYear()} CM Trading Co. All rights reserved.
     </div>
   </div>`;
@@ -114,7 +99,7 @@ function baseTemplate(title, body) {
 
 // Password Reset
 function resetEmail(host, resetToken) {
-  const appHost = process.env.APP_HOST || host || "cmtradingco.com"; // Fallback to a real domain
+  const appHost = process.env.APP_HOST || host || "cmtradingco.com";
   const url = `https://dashboard-rocklime.vercel.app/reset-password/${resetToken}`;
   const subject = "Reset Your Password";
 
@@ -128,12 +113,12 @@ If you did not request this, you can safely ignore this email.`;
 
   const html = baseTemplate(
     "Reset Your Password",
-    `<p>You requested a password reset.</p>
-     <p>Please click the button below to reset your password:</p>
-     <p style="text-align:center; margin:20px 0;">
-       <a href="${url}" style="background:#007bff; color:#fff; padding:12px 20px; border-radius:5px; text-decoration:none; font-weight:bold;">Reset Password</a>
+    `<p style="margin-bottom: 20px; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">You requested a password reset.</p>
+     <p style="margin-bottom: 20px; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Please click the button below to reset your password:</p>
+     <p style="text-align: center; margin: 20px 0;">
+       <a href="${url}" style="background-color: #e31e24; color: #fff; padding: 12px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; font-family: 'Lato', Arial, sans-serif;">Reset Password</a>
      </p>
-     <p>If you did not request this, please ignore this email.</p>`
+     <p style="margin-bottom: 0; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">If you did not request this, please ignore this email.</p>`
   );
 
   return { subject, text, html };
@@ -150,8 +135,8 @@ If you did not make this change, please contact our support team immediately.`;
 
   const html = baseTemplate(
     "Password Changed",
-    `<p>Your password was successfully changed.</p>
-     <p>If you did not make this change, please contact our support team immediately.</p>`
+    `<p style="margin-bottom: 20px; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Your password was successfully changed.</p>
+     <p style="margin-bottom: 0; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">If you did not make this change, please contact our support team immediately.</p>`
   );
 
   return { subject, text, html };
@@ -172,12 +157,12 @@ If you did not register, please ignore this email.`;
 
   const html = baseTemplate(
     "Verify Your Account",
-    `<p>Thank you for registering with CM Trading Co.</p>
-     <p>Click the button below to verify your account:</p>
-     <p style="text-align:center; margin:20px 0;">
-       <a href="${url}" style="background:#28a745; color:#fff; padding:12px 20px; border-radius:5px; text-decoration:none; font-weight:bold;">Verify Account</a>
+    `<p style="margin-bottom: 20px; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Thank you for registering with CM Trading Co.</p>
+     <p style="margin-bottom: 20px; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Click the button below to verify your account:</p>
+     <p style="text-align: center; margin: 20px 0;">
+       <a href="${url}" style="background-color: #3eb780; color: #fff; padding: 12px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; font-family: 'Lato', Arial, sans-serif;">Verify Account</a>
      </p>
-     <p>If you did not register, please ignore this email.</p>`
+     <p style="margin-bottom: 0; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">If you did not register, please ignore this email.</p>`
   );
 
   return { subject, text, html };
@@ -191,8 +176,8 @@ function signupEmail(name) {
 
   const html = baseTemplate(
     "Welcome to CM Trading Co",
-    `<p>Hi ${name}!</p>
-     <p>Thank you for creating an account with us. We’re excited to have you onboard.</p>`
+    `<p style="margin-bottom: 20px; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Hi ${name}!</p>
+     <p style="margin-bottom: 0; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Thank you for creating an account with us. We’re excited to have you onboard.</p>`
   );
 
   return { subject, text, html };
@@ -207,12 +192,12 @@ Hi ${name}!\n\nYour account has been successfully verified. You can now log in t
 
   const html = baseTemplate(
     "Account Verification Successful",
-    `<p>Hi ${name}!</p>
-     <p>Your account has been successfully verified. You can now log in to your account.</p>
-     <p style="text-align:center; margin:20px 0;">
-       <a href="https://dashboard-rocklime.vercel.app/login" style="background:#28a745; color:#fff; padding:12px 20px; border-radius:5px; text-decoration:none; font-weight:bold;">Log In Now</a>
+    `<p style="margin-bottom: 20px; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Hi ${name}!</p>
+     <p style="margin-bottom: 20px; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Your account has been successfully verified. You can now log in to your account.</p>
+     <p style="text-align: center; margin: 20px 0;">
+       <a href="https://dashboard-rocklime.vercel.app/login" style="background-color: #3eb780; color: #fff; padding: 12px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; font-family: 'Lato', Arial, sans-serif;">Log In Now</a>
      </p>
-     <p>If you did not initiate this verification, please contact our support team immediately.</p>`
+     <p style="margin-bottom: 0; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">If you did not initiate this verification, please contact our support team immediately.</p>`
   );
 
   return { subject, text, html };
@@ -227,11 +212,11 @@ Hi ${name}!\n\nThank you for reaching out to us. We have received your message:\
 
   const html = baseTemplate(
     "Thank You for Your Message",
-    `<p>Hi ${name}!</p>
-     <p>Thank you for reaching out to us. We have received your message:</p>
-     <blockquote style="border-left:3px solid #007bff; padding-left:12px; color:#333;">${message}</blockquote>
-     <p>Our team will get back to you soon.</p>
-     <p>Best regards,<br>CM Trading Co</p>`
+    `<p style="margin-bottom: 20px; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Hi ${name}!</p>
+     <p style="margin-bottom: 20px; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Thank you for reaching out to us. We have received your message:</p>
+     <blockquote style="border-left: 3px solid #e31e24; padding-left: 12px; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5; margin-bottom: 20px;">${message}</blockquote>
+     <p style="margin-bottom: 20px; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Our team will get back to you soon.</p>
+     <p style="margin-bottom: 0; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Best regards,<br>CM Trading Co</p>`
   );
 
   return { subject, text, html };
@@ -252,15 +237,19 @@ Please follow up with the user.`;
 
   const html = baseTemplate(
     "New Contact Form Submission",
-    `<p>A new contact form submission has been received:</p>
-     <ul style="line-height:1.8;">
-       <li><strong>First Name:</strong> ${firstName}</li>
-       <li><strong>Last Name:</strong> ${lastName || "Not provided"}</li>
-       <li><strong>Email:</strong> ${email}</li>
-       <li><strong>Phone:</strong> ${phone || "Not provided"}</li>
-       <li><strong>Message:</strong> ${message}</li>
+    `<p style="margin-bottom: 20px; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">A new contact form submission has been received:</p>
+     <ul style="list-style: none; margin-bottom: 20px; padding: 0; line-height: 1.8; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px;">
+       <li style="list-style: disc; padding-left: 15px;"><strong style="font-weight: 700;">First Name:</strong> ${firstName}</li>
+       <li style="list-style: disc; padding-left: 15px;"><strong style="font-weight: 700;">Last Name:</strong> ${
+         lastName || "Not provided"
+       }</li>
+       <li style="list-style: disc; padding-left: 15px;"><strong style="font-weight: 700;">Email:</strong> ${email}</li>
+       <li style="list-style: disc; padding-left: 15px;"><strong style="font-weight: 700;">Phone:</strong> ${
+         phone || "Not provided"
+       }</li>
+       <li style="list-style: disc; padding-left: 15px;"><strong style="font-weight: 700;">Message:</strong> ${message}</li>
      </ul>
-     <p>Please follow up with the user.</p>`
+     <p style="margin-bottom: 0; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Please follow up with the user.</p>`
   );
 
   return { subject, text, html };
