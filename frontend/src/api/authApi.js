@@ -90,6 +90,12 @@ export const authApi = createApi({
       }),
       invalidatesTags: ["Auth", "Users"],
     }),
+    validateResetToken: builder.query({
+      query: (token) => ({
+        url: `/validate-reset-token/${token}`,
+        method: "GET",
+      }),
+    }),
     resendVerificationEmail: builder.mutation({
       query: (email) => ({
         url: "/auth/resend-verification",
@@ -101,6 +107,7 @@ export const authApi = createApi({
 });
 
 export const {
+  useValidateResetTokenQuery,
   useResendVerificationEmailMutation,
   useRegisterMutation,
   useLoginMutation,
