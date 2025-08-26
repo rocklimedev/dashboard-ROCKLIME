@@ -9,7 +9,6 @@ import { AiOutlineProduct } from "react-icons/ai";
 import {
   BiAccessibility,
   BiCart,
-  BiSearch,
   BiCategory,
   BiUser,
   BiCoinStack,
@@ -59,14 +58,11 @@ import InvoiceDetails from "../components/Invoices/InvoiceDetails";
 import CheckProductCodeStatus from "../components/Product/CheckProductCodeStatus";
 import NoAccess from "../components/Common/NoAccess";
 import AddressList from "../components/Address/Address";
-import SearchList from "../components/Search/SearchList";
 import AttendanceWrapper from "../components/Attendance/AttendanceWrapper";
 import AttendanceList from "../components/Attendance/AttendanceList";
 import NewAddUser from "../components/User/NewAddUser";
 import UserPage from "../components/User/UserPage";
 import Product from "../components/Product/Product";
-import ProductWrapper from "../components/Product/ProductWrapper";
-import ProductListByCategory from "../components/Product/ProductListByCategory";
 import AddQuotation from "../components/Quotation/AddQuntation";
 import CompaniesWrapper from "../components/Companies/ComapniesWrapper";
 import QuotationsDetails from "../components/Quotation/QuotaionDetails";
@@ -134,20 +130,7 @@ const masterRoutes = [
 
         isSidebarActive: false,
       },
-      {
-        path: "/products/:categoryId",
-        name: "Category filtered Products",
-        icon: <BiCategory />,
-        element: <ProductListByCategory />,
-        isSidebarActive: false,
-      },
-      {
-        path: "/inventory/list/:id",
-        name: "Category filtered Products",
-        icon: <BiCategory />,
-        element: <ProductWrapper />,
-        isSidebarActive: false,
-      },
+
       {
         path: "/inventory/all-products/",
         name: "Products",
@@ -394,13 +377,7 @@ const masterRoutes = [
         isSidebarActive: false,
         element: <Permissions />,
       },
-      {
-        path: "/search",
-        name: "Search",
-        icon: <BiSearch />,
-        isSidebarActive: false,
-        element: <SearchList />,
-      },
+
       {
         path: "/u/:id",
         name: "Profile",

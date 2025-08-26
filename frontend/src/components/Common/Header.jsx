@@ -7,7 +7,6 @@ import { FaSearch, FaUserCircle } from "react-icons/fa";
 import { BiFullscreen, BiLogOut } from "react-icons/bi";
 import { toast } from "sonner";
 import Avatar from "react-avatar";
-import SearchDropdown from "../Search/SearchDropdown";
 import logo from "../../assets/img/logo.png";
 import logo_small from "../../assets/img/fav_icon.png";
 import { CgShoppingCart } from "react-icons/cg";
