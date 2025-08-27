@@ -8,7 +8,7 @@ import {
 } from "react-bootstrap";
 import { FaArrowLeft } from "react-icons/fa";
 import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
-import { Select, DatePicker, Button, InputNumber, Input } from "antd";
+import { Select, DatePicker, Button, Input } from "antd";
 import { toast } from "sonner";
 import { debounce } from "lodash";
 import PageHeader from "../Common/PageHeader";
@@ -16,7 +16,7 @@ import {
   useCreateOrderMutation,
   useUpdateOrderByIdMutation,
   useOrderByIdQuery,
-  useGetOrderCountByDateQuery,
+  useGetAllOrdersQuery,
 } from "../../api/orderApi";
 import { useGetAllTeamsQuery } from "../../api/teamApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
@@ -38,6 +38,14 @@ const STATUS_VALUES = [
   "CANCELED",
   "DRAFT",
   "ONHOLD",
+];
+
+// Statuses where invoiceLink should be enabled
+const INVOICE_EDITABLE_STATUSES = [
+  "INVOICE",
+  "DISPATCHED",
+  "DELIVERED",
+  "PARTIALLY_DELIVERED",
 ];
 
 const AddNewOrder = ({ adminName }) => {
@@ -68,10 +76,11 @@ const AddNewOrder = ({ adminName }) => {
     isLoading: isProfileLoading,
     error: profileError,
   } = useGetProfileQuery();
-  const { data: orderCountData, isLoading: isOrderCountLoading } =
-    useGetOrderCountByDateQuery(moment().format("YYYY-MM-DD"), {
-      skip: isEditMode, // Only fetch count in create mode
-    });
+  const {
+    data: allOrdersData,
+    isLoading: isAllOrdersLoading,
+    error: allOrdersError,
+  } = useGetAllOrdersQuery({ skip: isEditMode });
 
   // Data assignments
   const order = orderData?.order;
@@ -80,7 +89,9 @@ const AddNewOrder = ({ adminName }) => {
     ? customersData.data
     : [];
   const user = profileData?.user || {};
-  const orderCount = orderCountData?.count || 0;
+  const orders = Array.isArray(allOrdersData?.orders)
+    ? allOrdersData.orders
+    : [];
 
   // State
   const [formData, setFormData] = useState({
@@ -96,7 +107,7 @@ const AddNewOrder = ({ adminName }) => {
     teamId: "",
     priority: "medium",
     description: "",
-    invoiceLink: "",
+    invoiceLink: isEditMode ? "" : null, // Set to null in create mode
     orderNo: "",
   });
 
@@ -107,16 +118,24 @@ const AddNewOrder = ({ adminName }) => {
 
   // Generate orderNo in create mode
   useEffect(() => {
-    if (!isEditMode && !isOrderCountLoading && orderCountData !== undefined) {
+    if (!isEditMode && !isAllOrdersLoading && allOrdersData !== undefined) {
       const today = moment().format("DDMMYYYY");
-      const serialNumber = String(orderCount + 1).padStart(5, "0"); // 5-digit serial number
+      const todayOrders = orders.filter((order) =>
+        moment(order.createdAt).isSame(moment(), "day")
+      );
+      const serialNumber = String(todayOrders.length + 1).padStart(5, "0");
       const generatedOrderNo = `${today}${serialNumber}`;
       setFormData((prev) => ({
         ...prev,
         orderNo: generatedOrderNo,
       }));
+    } else if (!isEditMode && isAllOrdersLoading) {
+      setFormData((prev) => ({
+        ...prev,
+        orderNo: moment().format("DDMMYYYY") + "00001",
+      }));
     }
-  }, [isEditMode, orderCount, orderCountData, isOrderCountLoading]);
+  }, [isEditMode, allOrdersData, isAllOrdersLoading, orders]);
 
   useEffect(() => {
     if (isEditMode && order && formData.orderNo !== order.orderNo) {
@@ -133,7 +152,7 @@ const AddNewOrder = ({ adminName }) => {
         teamId: order.assignedTo || "",
         priority: order.priority || "medium",
         description: order.description || "",
-        invoiceLink: order.invoiceLink || "",
+        invoiceLink: order.invoiceLink || "", // Load existing invoiceLink
         orderNo: order.orderNo || "",
       });
       setDescriptionLength((order.description || "").length);
@@ -207,7 +226,7 @@ const AddNewOrder = ({ adminName }) => {
       teamId: "",
       priority: "medium",
       description: "",
-      invoiceLink: "",
+      invoiceLink: isEditMode ? "" : null,
       orderNo: isEditMode ? formData.orderNo : "",
     });
     setCustomerSearch("");
@@ -227,7 +246,6 @@ const AddNewOrder = ({ adminName }) => {
     });
   };
 
-  // Handler for follow-up date change with real-time validation
   const handleFollowupDateChange = (index, date) => {
     const updatedDates = [...formData.followupDates];
     updatedDates[index] = date ? date.format("YYYY-MM-DD") : "";
@@ -262,31 +280,52 @@ const AddNewOrder = ({ adminName }) => {
     });
   };
 
+  const checkOrderNoUniqueness = useCallback(
+    (orderNo) => {
+      if (!orderNo || isEditMode) return true;
+      const isUnique = !orders.some((order) => order.orderNo === orderNo);
+      if (!isUnique) {
+        const today = moment().format("DDMMYYYY");
+        const todayOrders = orders.filter((order) =>
+          moment(order.createdAt).isSame(moment(), "day")
+        );
+        const newSerial = String(todayOrders.length + 2).padStart(5, "0");
+        setFormData((prev) => ({
+          ...prev,
+          orderNo: `${today}${newSerial}`,
+        }));
+      }
+      return isUnique;
+    },
+    [orders, isEditMode]
+  );
+
+  useEffect(() => {
+    if (!isEditMode && formData.orderNo) {
+      checkOrderNoUniqueness(formData.orderNo);
+    }
+  }, [formData.orderNo, isEditMode, checkOrderNoUniqueness]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate required fields
     if (!formData.title || !formData.createdFor) {
       toast.error("Please fill all required fields (Title, Customer).");
       return;
     }
 
-    // Validate orderNo format
     const orderNoRegex = /^\d{8}\d{5}$/;
-    if (formData.orderNo && !orderNoRegex.test(formData.orderNo)) {
+    if (!formData.orderNo || !orderNoRegex.test(formData.orderNo)) {
       toast.error(
-        "Order Number must be in the format DDMMYYYYXXXXX (e.g., 1308202500001)."
+        "Order Number must be in the format DDMMYYYYXXXXX (e.g., 2708202500001)."
       );
       return;
     }
 
-    // Validate invoiceLink length
-    if (formData.invoiceLink && formData.invoiceLink.length > 500) {
-      toast.error("Invoice Link cannot exceed 500 characters.");
+    if (!isEditMode && !checkOrderNoUniqueness(formData.orderNo)) {
       return;
     }
 
-    // Validate follow-up dates
     if (!validateFollowupDates()) {
       toast.error("Follow-up dates cannot be after the due date.");
       return;
@@ -295,28 +334,26 @@ const AddNewOrder = ({ adminName }) => {
     try {
       const payload = {
         ...formData,
-        orderNo: formData.orderNo || null,
         assignedTo: formData.assignedTo || null,
         priority: formData.priority || null,
         followupDates: formData.followupDates.filter(
           (date) => date && moment(date).isValid()
         ),
+        invoiceLink: isEditMode ? formData.invoiceLink || null : null, // Ensure null in create mode
       };
-      console.log("Update payload:", payload); // Debug payload
+      console.log("Payload:", payload);
       if (isEditMode) {
         if (!id) {
           toast.error("Cannot update order: Invalid order ID.");
           return;
         }
         await updateOrder({ id, ...payload }).unwrap();
-        toast.success("Order updated successfully");
       } else {
         await createOrder(payload).unwrap();
-        toast.success("Order created successfully");
       }
       navigate("/orders/list");
     } catch (err) {
-      console.log("Update error:", err); // Debug error
+      console.log("Error:", err);
       const errorMessage =
         err?.status === 400
           ? `Bad Request: ${err.data?.message || "Invalid data provided."}`
@@ -335,7 +372,7 @@ const AddNewOrder = ({ adminName }) => {
     isTeamsLoading ||
     isCustomersLoading ||
     isProfileLoading ||
-    (!isEditMode && isOrderCountLoading)
+    (!isEditMode && isAllOrdersLoading)
   ) {
     return (
       <div className="content">
@@ -355,7 +392,7 @@ const AddNewOrder = ({ adminName }) => {
   }
 
   // Error state
-  if (orderError || customersError || profileError) {
+  if (orderError || customersError || profileError || allOrdersError) {
     return (
       <div className="content">
         <div className="card">
@@ -365,6 +402,7 @@ const AddNewOrder = ({ adminName }) => {
               {orderError?.data?.message ||
                 customersError?.data?.message ||
                 profileError?.data?.message ||
+                allOrdersError?.data?.message ||
                 "Unknown error"}
               . Please try again.
             </Alert>
@@ -469,8 +507,8 @@ const AddNewOrder = ({ adminName }) => {
                       onChange={(e) =>
                         handleChange(e.target.name, e.target.value)
                       }
-                      placeholder="Enter order number (e.g., 1308202500001)"
-                      disabled={!isEditMode} // Disable in create mode
+                      placeholder="Enter order number (e.g., 2708202500001)"
+                      disabled={!isEditMode}
                     />
                   </Form.Group>
                 </div>
@@ -491,22 +529,26 @@ const AddNewOrder = ({ adminName }) => {
                     />
                   </Form.Group>
                 </div>
-                <div className="col-lg-6">
-                  <Form.Group className="mb-3">
-                    <Form.Label>Invoice Link</Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="invoiceLink"
-                      value={formData.invoiceLink}
-                      onChange={(e) =>
-                        handleChange(e.target.name, e.target.value)
-                      }
-                      maxLength={500}
-                      placeholder="Enter invoice link"
-                      disabled
-                    />
-                  </Form.Group>
-                </div>
+                {isEditMode && (
+                  <div className="col-lg-6">
+                    <Form.Group className="mb-3">
+                      <Form.Label>Invoice Link</Form.Label>
+                      <Form.Control
+                        type="text"
+                        name="invoiceLink"
+                        value={formData.invoiceLink || ""}
+                        onChange={(e) =>
+                          handleChange(e.target.name, e.target.value)
+                        }
+                        maxLength={500}
+                        placeholder="Enter invoice link"
+                        disabled={
+                          !INVOICE_EDITABLE_STATUSES.includes(formData.status)
+                        }
+                      />
+                    </Form.Group>
+                  </div>
+                )}
               </div>
 
               <div className="row">
@@ -696,7 +738,7 @@ const AddNewOrder = ({ adminName }) => {
                     isOrderLoading ||
                     isTeamsLoading ||
                     isCustomersLoading ||
-                    isOrderCountLoading
+                    isAllOrdersLoading
                   }
                 >
                   Cancel
@@ -708,13 +750,13 @@ const AddNewOrder = ({ adminName }) => {
                     isOrderLoading ||
                     isTeamsLoading ||
                     isCustomersLoading ||
-                    isOrderCountLoading
+                    isAllOrdersLoading
                   }
                 >
                   {isOrderLoading ||
                   isTeamsLoading ||
                   isCustomersLoading ||
-                  isOrderCountLoading
+                  isAllOrdersLoading
                     ? isEditMode
                       ? "Updating..."
                       : "Creating..."

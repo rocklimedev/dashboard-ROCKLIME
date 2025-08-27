@@ -92,7 +92,7 @@ const Product = () => {
       <div className="content">
         <div className="banner-container">
           <div className="banner-overlay">
-            <h2 className="banner-title">Our Products</h2>
+            <h2 className="banner-title">Our Categories</h2>
             <p className="banner-subtitle">
               Explore our wide range of tiles, sanitary ware, adhesives, and
               more.
