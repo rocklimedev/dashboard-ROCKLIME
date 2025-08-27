@@ -149,15 +149,27 @@ const deleteRole = async (req, res) => {
 
   try {
     const role = await Roles.findByPk(roleId);
-
     if (!role) {
       return res.status(404).json({ message: "Role not found" });
     }
 
+    // Check for associated users
+    const associatedUsers = await User.findAll({ where: { roleId } });
+    if (associatedUsers.length > 0) {
+      return res
+        .status(400)
+        .json({ message: "Cannot delete role with associated users" });
+    }
+
+    // Delete associated permissions
+    await RolePermission.destroy({ where: { roleId } });
+
+    // Delete the role
     await role.destroy();
     res.status(200).json({ message: "Role deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Error deleting role" });
+    console.error("Error deleting role:", error);
+    res.status(500).json({ message: `Error deleting role: ${error.message}` });
   }
 };
 

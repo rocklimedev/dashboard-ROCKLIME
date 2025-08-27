@@ -96,6 +96,11 @@ const User = sequelize.define(
         );
       },
     },
+    isEmailVerified: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
     status: {
       type: DataTypes.ENUM("active", "inactive", "restricted"),
       allowNull: false,

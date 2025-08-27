@@ -38,6 +38,7 @@ exports.register = async (req, res, next) => {
       roles: [roleData.roleName],
       roleId: roleData.roleId,
       status: "inactive",
+      isEmailVerified: false,
     });
 
     const verificationToken = jwt.sign(
@@ -80,6 +81,7 @@ exports.register = async (req, res, next) => {
         roleId: newUser.roleId,
         status: newUser.status,
         createdAt: newUser.createdAt,
+        isEmailVerified: newUser.isEmailVerified,
       },
     });
   } catch (err) {
@@ -107,7 +109,9 @@ exports.verifyAccount = async (req, res, next) => {
       return res.status(400).json({ message: "User not found" });
     }
 
-    user.status = "active";
+    // Mark user verified in MySQL
+    user.isEmailVerified = true;
+    user.status = "active"; // activate account after verification
     await user.save();
 
     verificationToken.isVerified = true;
@@ -336,12 +340,19 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    if (user.status === "inactive") {
+    // Check email verification
+    if (!user.isEmailVerified) {
       return res
         .status(403)
-        .json({ message: "Account is inactive. Please verify your account." });
+        .json({ message: "Please verify your email before logging in." });
     }
 
+    // Check status
+    if (user.status !== "active") {
+      return res
+        .status(403)
+        .json({ message: "Account is inactive or restricted." });
+    }
     const now = Math.floor(Date.now() / 1000);
     const accessToken = jwt.sign(
       {
@@ -385,6 +396,7 @@ exports.login = async (req, res) => {
         roles: user.roles,
         roleId: user.roleId,
         status: user.status,
+        isEmailVerified: user.isEmailVerified,
       },
     });
   } catch (err) {
@@ -480,6 +492,91 @@ exports.resendVerificationEmail = async (req, res, next) => {
 
     res.status(200).json({ message: "Verification email sent successfully" });
   } catch (err) {
+    next(err);
+  }
+};
+
+exports.changePassword = async (req, res, next) => {
+  try {
+    const { password, newPassword } = req.body;
+
+    // Validate input
+    if (!password || !newPassword) {
+      return res
+        .status(400)
+        .json({ message: "Current password and new password are required" });
+    }
+
+    if (password === newPassword) {
+      return res
+        .status(400)
+        .json({
+          message: "New password must be different from current password",
+        });
+    }
+
+    // Validate password strength (optional, adjust as needed)
+    if (newPassword.length < 8) {
+      return res
+        .status(400)
+        .json({ message: "New password must be at least 8 characters long" });
+    }
+
+    // Get token from Authorization header
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "No token provided" });
+    }
+
+    const token = authHeader.split(" ")[1];
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      if (err.name === "TokenExpiredError") {
+        return res.status(401).json({ message: "Token has expired" });
+      }
+      return res.status(401).json({ message: "Invalid token" });
+    }
+
+    // Find user
+    const user = await User.findByPk(decoded.userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Verify current password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(400).json({ message: "Current password is incorrect" });
+    }
+
+    // Check if account is active
+    if (user.status !== "active") {
+      return res
+        .status(403)
+        .json({ message: "Account is inactive or restricted" });
+    }
+
+    // Hash new password
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update user's password
+    user.password = hashedNewPassword;
+    await user.save();
+
+    // Optional: Send confirmation email
+    const emailContent = emails.confirmChangePasswordEmail(user.name);
+    await emails.sendMail(
+      user.email,
+      emailContent.subject,
+      emailContent.text,
+      emailContent.html
+    );
+
+    res.status(200).json({ message: "Password changed successfully" });
+  } catch (err) {
+    console.error("Change password error:", err);
     next(err);
   }
 };

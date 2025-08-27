@@ -1,23 +1,33 @@
 import React, { useState, useMemo } from "react";
-import { useGetRolesQuery } from "../../api/rolesApi";
+import { useGetRolesQuery, useDeleteRoleMutation } from "../../api/rolesApi";
 import { useGetAllPermissionsQuery } from "../../api/permissionApi";
+import { useGetAllUsersQuery } from "../../api/userApi";
 import { FaSearch, FaShieldAlt, FaTrash } from "react-icons/fa";
+import Avatar from "react-avatar"; // Import react-avatar
+import { Link } from "react-router-dom"; // Import Link for navigation
 import AddRoleModal from "./AddRoleModal";
 import DeleteModal from "../Common/DeleteModal";
 import PermissionsTable from "./PermissionsTable";
 import DataTablePagination from "../Common/DataTablePagination";
 import { toast } from "sonner";
-import { useDeleteRoleMutation } from "../../api/rolesApi";
 import PageHeader from "../Common/PageHeader";
-// Placeholder for delete mutation (replace with actual import)
 
 const RolePermission = () => {
-  const { data: roles, isLoading, isError } = useGetRolesQuery();
+  const {
+    data: roles,
+    isLoading: isRolesLoading,
+    isError: isRolesError,
+  } = useGetRolesQuery();
   const {
     data: permissionsData,
     isLoading: isPermissionsLoading,
     isError: isPermissionsError,
   } = useGetAllPermissionsQuery();
+  const {
+    data: users,
+    isLoading: isUsersLoading,
+    isError: isUsersError,
+  } = useGetAllUsersQuery();
   const [deleteRole, { isLoading: isDeleting }] = useDeleteRoleMutation();
 
   const [showModal, setShowModal] = useState(false);
@@ -34,6 +44,18 @@ const RolePermission = () => {
   const permissions = Array.isArray(permissionsData?.permissions)
     ? permissionsData.permissions
     : [];
+  const usersList = Array.isArray(users?.users) ? users?.users : [];
+
+  // Memoized user count per role
+  const roleUserCounts = useMemo(() => {
+    const counts = {};
+    rolesList.forEach((role) => {
+      counts[role.roleId] = usersList.filter(
+        (user) => user.roleId === role.roleId
+      ).length;
+    });
+    return counts;
+  }, [rolesList, usersList]);
 
   // Memoized grouped roles for tab-based filtering
   const groupedRoles = useMemo(
@@ -53,14 +75,12 @@ const RolePermission = () => {
   const filteredRoles = useMemo(() => {
     let result = groupedRoles[roleStatus] || [];
 
-    // Apply search filter
     if (searchTerm.trim()) {
       result = result.filter((role) =>
         role.roleName?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    // Apply sorting
     switch (sortBy) {
       case "Ascending":
         result = [...result].sort((a, b) =>
@@ -94,23 +114,20 @@ const RolePermission = () => {
   const filteredPermissions = useMemo(() => {
     let result = permissions;
 
-    // Apply search filter
     if (searchTerm.trim() && activeTab === "permissions") {
       result = result.filter((perm) =>
         perm.name?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    // Apply sorting
     switch (sortBy) {
       case "Ascending":
         result = [...result].sort((a, b) => a.name.localeCompare(b.name));
         break;
       case "Descending":
-        result = [...result].sort((a, b) => b.name.localeCompare(a.name));
+        result = [...result].sort((a, b) => b.name.localeCompare(b.name));
         break;
       case "Recently Added":
-        // Assume permissions have no createdAt; default to no sorting
         break;
       default:
         break;
@@ -169,7 +186,6 @@ const RolePermission = () => {
     }
     try {
       await deleteRole(selectedRole.roleId).unwrap();
-
       if (paginatedRoles.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
@@ -194,7 +210,7 @@ const RolePermission = () => {
     setCurrentPage(1);
   };
 
-  if (isLoading || isPermissionsLoading) {
+  if (isRolesLoading || isPermissionsLoading || isUsersLoading) {
     return (
       <div className="content">
         <div className="card">
@@ -209,7 +225,7 @@ const RolePermission = () => {
     );
   }
 
-  if (isError || isPermissionsError) {
+  if (isRolesError || isPermissionsError || isUsersError) {
     return (
       <div className="content">
         <div className="card">
@@ -369,32 +385,81 @@ const RolePermission = () => {
                       <thead>
                         <tr>
                           <th>Role</th>
+                          <th>Associated Users</th>
                           <th>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {paginatedRoles.map((role) => (
-                          <tr key={role.roleId}>
-                            <td>{role.roleName || "N/A"}</td>
-                            <td className="action-column">
-                              <div className="action-buttons d-flex gap-2">
-                                <a
-                                  href={`/roles-permission/permissions/${role.roleId}`}
-                                  className="btn btn-icon btn-sm"
-                                  aria-label={`View permissions for ${role.roleName}`}
-                                >
-                                  <FaShieldAlt />
-                                </a>
-                                <FaTrash
-                                  className="btn btn-icon btn-sm"
-                                  onClick={() => handleOpenDeleteModal(role)}
-                                  disabled={isDeleting}
-                                  aria-label={`Delete ${role.roleName}`}
-                                />
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
+                        {paginatedRoles.map((role) => {
+                          // Filter users for the current role
+                          const roleUsers = usersList.filter(
+                            (user) => user.roleId === role.roleId
+                          );
+                          return (
+                            <tr key={role.roleId}>
+                              <td>{role.roleName || "N/A"}</td>
+                              <td>
+                                {roleUsers.length === 0 ? (
+                                  <span>No users assigned</span>
+                                ) : (
+                                  <div className="d-flex flex-wrap gap-2">
+                                    {roleUsers.map((user) => (
+                                      <Link
+                                        key={user.userId}
+                                        to={`/user/${user.userId}`}
+                                        className="d-flex align-items-center text-decoration-none"
+                                        title={
+                                          user.name ||
+                                          user.username ||
+                                          user.email ||
+                                          "Unknown User"
+                                        }
+                                      >
+                                        <Avatar
+                                          name={
+                                            user.name ||
+                                            user.username ||
+                                            user.email ||
+                                            "Unknown"
+                                          }
+                                          size="30"
+                                          round={true}
+                                          className="me-1"
+                                        />
+                                        <span
+                                          className="text-truncate"
+                                          style={{ maxWidth: "100px" }}
+                                        >
+                                          {user.name ||
+                                            user.username ||
+                                            user.email ||
+                                            "Unknown User"}
+                                        </span>
+                                      </Link>
+                                    ))}
+                                  </div>
+                                )}
+                              </td>
+                              <td className="action-column">
+                                <div className="action-buttons d-flex gap-2">
+                                  <a
+                                    href={`/roles-permission/permissions/${role.roleId}`}
+                                    className="btn btn-icon btn-sm"
+                                    aria-label={`View permissions for ${role.roleName}`}
+                                  >
+                                    <FaShieldAlt />
+                                  </a>
+                                  <FaTrash
+                                    className="btn btn-icon btn-sm"
+                                    onClick={() => handleOpenDeleteModal(role)}
+                                    disabled={isDeleting}
+                                    aria-label={`Delete ${role.roleName}`}
+                                  />
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                     {filteredRoles.length > itemsPerPage && (
@@ -411,7 +476,6 @@ const RolePermission = () => {
                 )}
               </div>
 
-              {/* Permissions Tab */}
               {/* Permissions Tab */}
               <div
                 className={`tab-pane fade ${
