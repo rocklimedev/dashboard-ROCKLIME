@@ -245,7 +245,7 @@ const AddCustomer = () => {
         dispatch(api.util.invalidateTags(["Customer"]));
       }
 
-      navigate("/customers");
+      navigate("/customers/list");
     } catch (err) {
       toast.error(err?.data?.message || "Failed to process request.");
     }
