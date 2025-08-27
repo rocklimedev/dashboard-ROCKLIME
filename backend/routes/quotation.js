@@ -51,7 +51,7 @@ router.put(
 router.delete(
   "/:id",
   auth,
-  role.check(ROLES.Admin),
+  // role.check(ROLES.Admin),
   // checkPermission(
   //   "delete",
   //   "delete_quotation",

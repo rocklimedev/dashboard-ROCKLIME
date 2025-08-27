@@ -12,6 +12,7 @@ const auth = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, secret);
+    console.log(decoded);
     if (!decoded.roles || decoded.roles.length === 0) {
       return res.status(403).json({ error: "Unauthorized: Missing roles." });
     }
@@ -29,6 +30,7 @@ const generateToken = (user) => {
     email: user.email,
     iat: Math.floor(Date.now() / 1000),
   };
+  console.log(payload);
   return jwt.sign(payload, secret, { expiresIn: tokenLife });
 };
 

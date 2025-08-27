@@ -181,16 +181,19 @@ const QuotationList = () => {
     }
     try {
       await deleteQuotation(quotationToDelete.quotationId).unwrap();
-
       setShowDeleteModal(false);
       setQuotationToDelete(null);
       refetch();
       if (currentQuotations.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
+      toast.success("Quotation deleted successfully");
     } catch (err) {
+      console.error("Delete error:", err);
       toast.error(
-        `Failed to delete quotation: ${err.data?.message || "Unknown error"}`
+        `Failed to delete quotation: ${
+          err.data?.message || err.data?.error || err.message || "Unknown error"
+        }`
       );
     }
   };
