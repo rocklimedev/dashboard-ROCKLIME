@@ -45,6 +45,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
 
   const [isEditMode, setIsEditMode] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [manageAddress, setManageAddress] = useState(false); // New state for address management
   const [formData, setFormData] = useState({
     username: "",
     name: "",
@@ -111,8 +112,11 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
         addressId: userToEdit.addressId || null,
       });
       setIsEditMode(true);
+      // Set manageAddress to true if address exists, false otherwise
+      setManageAddress(!!userToEdit.addressId);
     } else {
       setIsEditMode(false);
+      setManageAddress(false);
     }
   }, [userToEdit]);
 
@@ -123,11 +127,11 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
       toast.error(updateError?.data?.message || "Failed to update user");
     if (rolesError)
       toast.error(rolesError?.data?.message || "Failed to load roles");
-    if (isEditMode && addressCreateError)
+    if (isEditMode && manageAddress && addressCreateError)
       toast.error(
         addressCreateError?.data?.message || "Failed to create address"
       );
-    if (isEditMode && addressUpdateError)
+    if (isEditMode && manageAddress && addressUpdateError)
       toast.error(
         addressUpdateError?.data?.message || "Failed to update address"
       );
@@ -138,6 +142,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
     updateError,
     rolesError,
     isEditMode,
+    manageAddress,
     addressCreateError,
     addressUpdateError,
     fetchUserError,
@@ -196,7 +201,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
       }
 
       let addressId = isEditMode ? formData.addressId : null;
-      if (isEditMode) {
+      if (isEditMode && manageAddress) {
         const hasAddressFields =
           formData.street ||
           formData.country ||
@@ -231,6 +236,11 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
             toast.error("Failed to obtain address ID");
             return;
           }
+        } else if (addressId) {
+          // If user chooses to manage address but clears all fields, optionally handle address deletion
+          toast.warning(
+            "Address fields are empty; address will remain unchanged."
+          );
         }
       }
 
@@ -259,7 +269,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
         shiftFrom: formData.shiftFrom || null,
         shiftTo: formData.shiftTo || null,
         bloodGroup: formData.bloodGroup || null,
-        addressId: addressId || null,
+        addressId: addressId || null, // Use existing or new addressId
         emergencyNumber: formData.emergencyNumber || null,
         roleId: selectedRoleObj.roleId,
         status: formData.status,
@@ -317,6 +327,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
         : {}),
     });
     setIsEditMode(false);
+    setManageAddress(false);
   };
 
   const handleCollapse = () => {
@@ -668,68 +679,82 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
                   data-bs-parent="#accordionExample"
                 >
                   <div className="accordion-body border-top">
-                    <div className="row">
-                      <div className="col-lg-4 col-md-6">
-                        <div className="mb-3">
-                          <label className="form-label">Street</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            name="street"
-                            value={formData.street}
-                            onChange={handleChange}
-                          />
-                        </div>
-                      </div>
-                      <div className="col-lg-4 col-md-6">
-                        <div className="mb-3">
-                          <label className="form-label">Country</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            name="country"
-                            value={formData.country}
-                            onChange={handleChange}
-                          />
-                        </div>
-                      </div>
-                      <div className="col-lg-4 col-md-6">
-                        <div className="mb-3">
-                          <label className="form-label">State</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            name="state"
-                            value={formData.state}
-                            onChange={handleChange}
-                          />
-                        </div>
-                      </div>
-                      <div className="col-lg-4 col-md-6">
-                        <div className="mb-3">
-                          <label className="form-label">City</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            name="city"
-                            value={formData.city}
-                            onChange={handleChange}
-                          />
-                        </div>
-                      </div>
-                      <div className="col-lg-4 col-md-6">
-                        <div className="mb-3">
-                          <label className="form-label">Postal Code</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            name="postalCode"
-                            value={formData.postalCode}
-                            onChange={handleChange}
-                          />
-                        </div>
-                      </div>
+                    <div className="mb-3">
+                      <Form.Check
+                        type="checkbox"
+                        label={
+                          formData.addressId
+                            ? "Edit existing address"
+                            : "Add new address"
+                        }
+                        checked={manageAddress}
+                        onChange={(e) => setManageAddress(e.target.checked)}
+                      />
                     </div>
+                    {manageAddress && (
+                      <div className="row">
+                        <div className="col-lg-4 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">Street</label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              name="street"
+                              value={formData.street}
+                              onChange={handleChange}
+                            />
+                          </div>
+                        </div>
+                        <div className="col-lg-4 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">Country</label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              name="country"
+                              value={formData.country}
+                              onChange={handleChange}
+                            />
+                          </div>
+                        </div>
+                        <div className="col-lg-4 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">State</label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              name="state"
+                              value={formData.state}
+                              onChange={handleChange}
+                            />
+                          </div>
+                        </div>
+                        <div className="col-lg-4 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">City</label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              name="city"
+                              value={formData.city}
+                              onChange={handleChange}
+                            />
+                          </div>
+                        </div>
+                        <div className="col-lg-4 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">Postal Code</label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              name="postalCode"
+                              value={formData.postalCode}
+                              onChange={handleChange}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -744,7 +769,9 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
               disabled={
                 isCreating ||
                 isUpdating ||
-                (isEditMode && (isAddressCreating || isAddressUpdating))
+                (isEditMode &&
+                  manageAddress &&
+                  (isAddressCreating || isAddressUpdating))
               }
             >
               Cancel
@@ -756,12 +783,16 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
                 isCreating ||
                 isUpdating ||
                 isRolesLoading ||
-                (isEditMode && (isAddressCreating || isAddressUpdating))
+                (isEditMode &&
+                  manageAddress &&
+                  (isAddressCreating || isAddressUpdating))
               }
             >
               {isCreating ||
               isUpdating ||
-              (isEditMode && (isAddressCreating || isAddressUpdating))
+              (isEditMode &&
+                manageAddress &&
+                (isAddressCreating || isAddressUpdating))
                 ? "Saving..."
                 : isEditMode
                 ? "Update Employee"

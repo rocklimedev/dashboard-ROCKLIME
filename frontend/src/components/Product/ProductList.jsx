@@ -430,14 +430,18 @@ const ProductsList = () => {
 
   if (error || categoriesError) {
     return (
-      <div className="error-container text-center py-5">
-        <Empty
-          description={`Error: ${
-            error?.data?.message ||
-            categoriesError?.data?.message ||
-            "Unknown error"
-          }`}
-        />
+      <div className="page-wrapper">
+        <div className="content">
+          <div className="error-container text-center py-5">
+            <Empty
+              description={`Error: ${
+                error?.data?.message ||
+                categoriesError?.data?.message ||
+                "Unknown error"
+              }`}
+            />
+          </div>
+        </div>
       </div>
     );
   }
@@ -479,18 +483,22 @@ const ProductsList = () => {
           </Form>
         </div>
         {filteredProducts.length === 0 ? (
-          <div className="empty-container text-center py-5">
-            <Empty
-              description={
-                brandId
-                  ? `No products found for brand ${getBrandsName(brandId)}.`
-                  : bpcId
-                  ? `No products found for category ${
-                      bpcData?.name || "this category"
-                    }.`
-                  : "No products available."
-              }
-            />
+          <div className="page-wrapper">
+            <div className="content">
+              <div className="empty-container text-center py-5">
+                <Empty
+                  description={
+                    brandId
+                      ? `No products found for brand ${getBrandsName(brandId)}.`
+                      : bpcId
+                      ? `No products found for category ${
+                          bpcData?.name || "this category"
+                        }.`
+                      : "No products available."
+                  }
+                />
+              </div>
+            </div>
           </div>
         ) : viewMode === "card" ? (
           <div className="products-section">

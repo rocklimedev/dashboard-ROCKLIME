@@ -467,17 +467,19 @@ const PageWrapper = () => {
               },
             ].map(({ count, label, loading, icon, max, link }, index) => (
               <div key={index} className="card stat">
-                <div className="stat-header">
-                  {icon}
-                  <h3>{loading ? "..." : count}</h3>
-                </div>
-                <p>
-                  <a href={link}> {label}</a>
-                </p>
-                <div
-                  className="bar"
-                  style={{ width: `${(count / max) * 100}%` }}
-                ></div>
+                <Link to={link}>
+                  <div className="stat-header">
+                    {icon}
+                    <h3>{loading ? "..." : count}</h3>
+                  </div>
+                  <p>
+                    <a href={link}> {label}</a>
+                  </p>
+                  <div
+                    className="bar"
+                    style={{ width: `${(count / max) * 100}%` }}
+                  ></div>
+                </Link>
               </div>
             ))}
           </section>

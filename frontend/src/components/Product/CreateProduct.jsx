@@ -251,11 +251,9 @@ const CreateProduct = () => {
     try {
       if (isEditMode) {
         await updateProduct({ productId, formData: formDataToSend }).unwrap();
-        toast.success("Product updated successfully");
         navigate("/inventory/products");
       } else {
         await createProduct(formDataToSend).unwrap();
-        toast.success("Product created successfully");
         setFormData(initialFormData);
         setNewImages([]);
         setMetaData({});
