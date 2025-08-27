@@ -142,6 +142,18 @@ If you did not make this change, please contact our support team immediately.`;
   return { subject, text, html };
 }
 
+function confirmChangePasswordEmail(name) {
+  return {
+    subject: "Password Changed Successfully",
+    text: `Hello ${name},\n\nYour password has been changed successfully. If you did not initiate this change, please contact support immediately.\n\nBest regards,\nYour App Team`,
+    html: `
+      <p>Hello ${name},</p>
+      <p>Your password has been changed successfully.</p>
+      <p>If you did not initiate this change, please contact support immediately.</p>
+      <p>Best regards,<br>Your App Team</p>
+    `,
+  };
+}
 // Account Verification
 function accountVerificationEmail(host, verificationToken) {
   const url = `https://dashboard-rocklime.vercel.app/verify-account/${verificationToken}`;
@@ -268,4 +280,5 @@ module.exports = {
   accountVerificationConfirmationEmail,
   contactFormEmail,
   adminContactNotification,
+  confirmChangePasswordEmail,
 };

@@ -8,7 +8,7 @@ import {
   useGetProfileQuery,
 } from "../../api/userApi";
 import {
-  useResetPasswordMutation,
+  useChangePasswordMutation, // Changed from useResetPasswordMutation
   useResendVerificationEmailMutation,
 } from "../../api/authApi";
 import { logout } from "../../api/userSlice";
@@ -21,8 +21,8 @@ const GeneralSettings = () => {
   const dispatch = useDispatch();
 
   // RTK Query hooks
-  const [resetPassword, { isLoading: isResettingPassword }] =
-    useResetPasswordMutation();
+  const [changePassword, { isLoading: isChangingPassword }] = // Changed from resetPassword
+    useChangePasswordMutation();
   const [deactivateAccount, { isLoading: isDeactivating }] =
     useInactiveUserMutation();
   const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
@@ -36,8 +36,9 @@ const GeneralSettings = () => {
 
   // State
   const [activeSection, setActiveSection] = useState("Profile");
+
   const [passwordData, setPasswordData] = useState({
-    currentPassword: "",
+    password: "",
     newPassword: "",
   });
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -49,7 +50,7 @@ const GeneralSettings = () => {
   const handlePasswordChange = async (e) => {
     e.preventDefault();
     try {
-      await resetPassword(passwordData).unwrap();
+      await changePassword(passwordData).unwrap(); // Changed from resetPassword
       setPasswordData({ currentPassword: "", newPassword: "" });
       setShowPasswordModal(false);
       toast.success("Password changed successfully");
@@ -57,6 +58,8 @@ const GeneralSettings = () => {
       toast.error(error?.data?.message || "Failed to change password");
     }
   };
+
+  // ... (rest of the component remains unchanged)
 
   // Handle resend verification email
   const handleResendVerification = async () => {
@@ -157,7 +160,7 @@ const GeneralSettings = () => {
                         Email: {profile?.user?.email || "Not available"}
                         <br />
                         Status:{" "}
-                        {profile?.user?.status === "active" ? (
+                        {profile?.user?.isEmailVerified ? (
                           <span className="text-success">Verified</span>
                         ) : (
                           <span className="text-danger">Not Verified</span>
@@ -165,7 +168,7 @@ const GeneralSettings = () => {
                       </p>
                     </div>
                   </div>
-                  {profile?.user?.status !== "active" && (
+                  {!profile?.user?.isEmailVerified && (
                     <Button
                       variant="primary"
                       onClick={handleResendVerification}
@@ -186,18 +189,24 @@ const GeneralSettings = () => {
                     </span>
                     <div>
                       <h5 className="fs-16 fw-medium mb-1">Password</h5>
-                      <p className="fs-16">
-                        Click to change your password or{" "}
-                        <Link to="/forgot-password">reset it</Link>.
+                      <p className="fs-16 mb-1">
+                        Update your password securely.
+                      </p>
+                      <p className="fs-14 text-muted">
+                        Forgot your password?{" "}
+                        <Link to="/forgot-password">
+                          Click here to reset it
+                        </Link>
+                        .
                       </p>
                     </div>
                   </div>
                   <Button
                     variant="primary"
                     onClick={() => setShowPasswordModal(true)}
-                    disabled={isResettingPassword}
+                    disabled={isChangingPassword} // Changed from isResettingPassword
                   >
-                    {isResettingPassword ? "Resetting..." : "Change Password"}
+                    {isChangingPassword ? "Saving..." : "Change Password"}
                   </Button>
                 </div>
 
@@ -292,15 +301,15 @@ const GeneralSettings = () => {
         </Modal.Header>
         <Modal.Body>
           <Form onSubmit={handlePasswordChange}>
-            <Form.Group className="mb-3" controlId="currentPassword">
+            <Form.Group className="mb-3" controlId="password">
               <Form.Label>Current Password</Form.Label>
               <Form.Control
                 type="password"
-                value={passwordData.currentPassword}
+                value={passwordData.password}
                 onChange={(e) =>
                   setPasswordData({
                     ...passwordData,
-                    currentPassword: e.target.value,
+                    password: e.target.value,
                   })
                 }
                 required
@@ -324,9 +333,9 @@ const GeneralSettings = () => {
             <Button
               type="submit"
               variant="primary"
-              disabled={isResettingPassword}
+              disabled={isChangingPassword} // Changed from isResettingPassword
             >
-              {isResettingPassword ? "Saving..." : "Save Changes"}
+              {isChangingPassword ? "Saving..." : "Save Changes"}
             </Button>
           </Form>
         </Modal.Body>

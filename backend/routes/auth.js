@@ -9,6 +9,7 @@ const {
   verifyAccount,
   resendVerificationEmail,
   validateResetToken,
+  changePassword,
 } = require("../controller/authController");
 const checkPermission = require("../middleware/permission");
 const router = express.Router();
@@ -46,6 +47,7 @@ router.post(
   // checkPermission("write", "reset-password", "auth", "/auth/reset-password"),
   resetPassword
 );
+router.post("/change-password", changePassword);
 router.post(
   "/refresh-token",
   // checkPermission("write", "refresh-token", "auth", "/auth/refresh-token"),

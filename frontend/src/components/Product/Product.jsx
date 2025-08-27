@@ -2,11 +2,12 @@ import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Spin, Empty } from "antd";
 import { useGetBrandParentCategoriesQuery } from "../../api/brandParentCategoryApi";
-import mainWrapper from "../../assets/img/products/product_page_title.png";
 import surfaces from "../../assets/img/products/surfaces.jpg";
-import fittings from "../../assets/img/products/cp_fittings.png";
-import wellness from "../../assets/img/products/wellness.jpg";
-import adhesive from "../../assets/img/products/adhesive.jpg";
+import tiles from "../../assets/img/products/tiles.png";
+import plumbing from "../../assets/img/products/plumbing.jpg";
+import fittings from "../../assets/img/products/CP FITTING.png";
+import accessories from "../../assets/img/products/ACCESORIES.png";
+import adhesive from "../../assets/img/products/ADHESIVE.png";
 import "./productwrapper.css";
 
 const Product = () => {
@@ -17,12 +18,11 @@ const Product = () => {
   } = useGetBrandParentCategoriesQuery();
 
   const imageBySlug = {
-    plumbing: fittings,
+    plumbing: plumbing,
     chemicals_and_adhesive: adhesive,
-    accessories_and_add_ons: surfaces,
+    accessories_and_add_ons: accessories,
     stone_and_granites: surfaces,
-
-    tiles: surfaces,
+    tiles: tiles,
     cp_fittings_and_sanitary: fittings,
   };
 
