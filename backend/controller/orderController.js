@@ -627,7 +627,7 @@ exports.deleteOrder = async (req, res) => {
     await Comment.deleteMany({ resourceId: id, resourceType: "Order" });
 
     // Delete associated order items (fixed from deleteOne to destroy)
-    await OrderItem.destroy({ where: { orderId: id } });
+    await OrderItem.deleteOne({ where: { orderId: id } });
 
     // Delete the order
     await order.destroy();

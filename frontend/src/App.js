@@ -35,7 +35,7 @@ function App() {
   const { data: profileData, isLoading: isProfileLoading } =
     useGetProfileQuery();
   const userId = profileData?.user?.userId || null;
-
+  console.log(profileData?.user);
   // Initialize and update sidebar state based on viewport
   useEffect(() => {
     const handleResize = () => {

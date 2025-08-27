@@ -162,14 +162,26 @@ exports.updateQuotation = async (req, res) => {
 // Delete a quotation and its items
 exports.deleteQuotation = async (req, res) => {
   try {
-    const deleted = await Quotation.destroy({
+    const quotation = await Quotation.findByPk(req.params.id);
+    if (!quotation) {
+      return res.status(404).json({ message: "Quotation not found" });
+    }
+    // Check if user is admin or the creator
+    if (
+      !req.user.roles.includes("ADMIN") &&
+      req.user.userId !== quotation.createdBy
+    ) {
+      return res
+        .status(403)
+        .json({
+          message:
+            "Unauthorized: Only admins or the creator can delete this quotation",
+        });
+    }
+    await Quotation.destroy({
       where: { quotationId: req.params.id },
     });
-    if (!deleted)
-      return res.status(404).json({ message: "Quotation not found" });
-
     await QuotationItem.deleteOne({ quotationId: req.params.id });
-
     res.status(200).json({ message: "Quotation deleted successfully" });
   } catch (error) {
     res.status(500).json({ error: error.message });
