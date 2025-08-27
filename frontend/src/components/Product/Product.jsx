@@ -55,7 +55,7 @@ const Product = () => {
         slug: bpc.slug,
         image,
         alt: `${bpc.name} products`,
-        url: `/brand-parent-categories/${bpc.id}`, // Points to BrandSelection
+        url: `/brand-parent-categories/${bpc.id}`,
       };
     });
   }, [bpcList]);
@@ -104,11 +104,13 @@ const Product = () => {
           {cards.map((card) => (
             <div key={card.id} className="categories-card">
               <Link to={card.url}>
-                <img
-                  src={card.image}
-                  alt={card.alt}
-                  className="categories-img"
-                />
+                <div className="brand-logo-container">
+                  <img
+                    src={card.image}
+                    alt={card.alt}
+                    className="categories-img"
+                  />
+                </div>
                 <h2 className="categories-text">{card.name}</h2>
               </Link>
             </div>

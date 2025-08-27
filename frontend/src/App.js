@@ -35,7 +35,7 @@ function App() {
   const { data: profileData, isLoading: isProfileLoading } =
     useGetProfileQuery();
   const userId = profileData?.user?.userId || null;
-  console.log(profileData?.user);
+
   // Initialize and update sidebar state based on viewport
   useEffect(() => {
     const handleResize = () => {
@@ -54,11 +54,19 @@ function App() {
   }, [token, isAuthPage, navigate]);
 
   useEffect(() => {
-    if (isSidebarOpen && window.innerWidth < 768) {
-      document.body.classList.add("sidebar-open");
-    } else {
-      document.body.classList.remove("sidebar-open");
-    }
+    const handleClickOutside = (e) => {
+      if (
+        isSidebarOpen &&
+        window.innerWidth < 992 && // only mobile + tablet
+        !e.target.closest("#sidebar") && // clicked outside sidebar
+        !e.target.closest("#toggle_btn") // not on toggle button
+      ) {
+        setSidebarOpen(false);
+      }
+    };
+
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
   }, [isSidebarOpen]);
 
   useEffect(() => {
@@ -135,12 +143,13 @@ function App() {
         {!isAuthPage &&
           !isPOSPage &&
           isSidebarOpen &&
-          window.innerWidth < 768 && (
+          window.innerWidth < 992 && ( // allow mobile + tablet
             <div
-              className="sidebar-overlay"
+              className={`sidebar-overlay ${isSidebarOpen ? "active" : ""}`}
               onClick={() => setSidebarOpen(false)}
             ></div>
           )}
+
         <Router />
         <Footer />
         <Toaster richColors position="top-right" />
