@@ -64,7 +64,6 @@ import NewAddUser from "../components/User/NewAddUser";
 import UserPage from "../components/User/UserPage";
 import Product from "../components/Product/Product";
 import AddQuotation from "../components/Quotation/AddQuntation";
-import CompaniesWrapper from "../components/Companies/ComapniesWrapper";
 import QuotationsDetails from "../components/Quotation/QuotaionDetails";
 import UnderMaintanance from "../components/Error/UnderMaintanance";
 import AddNewOrder from "../components/Orders/AddNewOrder";
@@ -238,13 +237,7 @@ const masterRoutes = [
         isSidebarActive: true,
         element: <AddressList />,
       },
-      {
-        path: "/vendors/list",
-        name: "Vendors",
-        icon: <MdOutlineBrandingWatermark />,
-        isSidebarActive: true,
-        element: <CompaniesWrapper />,
-      },
+
       {
         path: "/signature/list",
         name: "Signature",
