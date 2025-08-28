@@ -7,6 +7,8 @@ import americanStandard from "../../assets/img/products/american_standard.png";
 import grohe from "../../assets/img/products/grohe.png";
 import colston from "../../assets/img/products/colston-logo_black.png";
 import groheBau from "../../assets/img/products/grohe.png";
+import jk from "../../assets/img/products/jk_cement.png";
+import addons from "../../assets/img/products/addons.png";
 const jayna = "https://via.placeholder.com/300";
 
 const BrandSelection = () => {
@@ -28,13 +30,13 @@ const BrandSelection = () => {
       surface: groheBau,
       sgt: groheBau,
       "shiv-ceramic": groheBau,
-      jtc: groheBau,
+      jtc: jk,
       "baleno-grey": groheBau,
       uw: groheBau,
       ibis: groheBau,
       subway: groheBau,
       sunheart: groheBau,
-      extras: groheBau,
+      extras: addons,
     };
 
     const mappedBrands = Array.isArray(bpc?.brands)
