@@ -60,17 +60,15 @@ const ProductCard = ({
         />
       </div>
 
-      <span className="heart-button-wrapper">
-        <Dropdown overlay={menu(product)} trigger={["click"]}>
-          <Button
-            type="text"
-            icon={<MoreOutlined />}
-            size="large"
-            className="more-options-btn"
-            aria-label="More options"
-          />
-        </Dropdown>
-      </span>
+      <Dropdown overlay={menu(product)} trigger={["click"]}>
+        <Button
+          type="text"
+          icon={<MoreOutlined />}
+          size="large"
+          className="more-options-btn"
+          aria-label="More options"
+        />
+      </Dropdown>
 
       {product.quantity <= 0 && (
         <Badge count="Out of Stock" className="out-of-stock-badge" />

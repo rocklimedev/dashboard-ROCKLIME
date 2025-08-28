@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Card,
   Button,
@@ -255,6 +256,7 @@ const generateQuotationNumber = () => {
 };
 
 const NewCart = ({ onConvertToOrder }) => {
+  const navigate = useNavigate();
   const {
     data: profileData,
     isLoading: profileLoading,
@@ -397,7 +399,9 @@ const NewCart = ({ onConvertToOrder }) => {
   const handleQuotationChange = (key, value) => {
     setQuotationData((prev) => ({ ...prev, [key]: value }));
   };
-
+  const handleAddCustomer = () => {
+    navigate("/customers/add");
+  };
   const handleClearCart = async () => {
     if (!userId) return toast.error("User not logged in!");
     try {
@@ -864,7 +868,7 @@ const NewCart = ({ onConvertToOrder }) => {
                         <Button
                           type="link"
                           icon={<UserAddOutlined />}
-                          onClick={() => setShowAddCustomerModal(true)}
+                          onClick={handleAddCustomer}
                         >
                           Add New Customer
                         </Button>
@@ -1044,18 +1048,6 @@ const NewCart = ({ onConvertToOrder }) => {
               </Row>
             </TabPane>
           </Tabs>
-
-          <Modal
-            title="Add Customer"
-            open={showAddCustomerModal}
-            onCancel={() => setShowAddCustomerModal(false)}
-            footer={null}
-          >
-            <AddCustomer
-              onClose={() => setShowAddCustomerModal(false)}
-              existingCustomer={null}
-            />
-          </Modal>
 
           <Modal
             title="Confirm Clear Cart"
