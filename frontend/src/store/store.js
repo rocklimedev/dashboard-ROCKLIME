@@ -26,6 +26,7 @@ import { brandParentCategoryApi } from "../api/brandParentCategoryApi";
 import { productMetaApi } from "../api/productMetaApi";
 import { contactApi } from "../api/contactApi";
 import emailReducer from "../api/emailSlice";
+import { poApi } from "../api/poApi";
 export const store = configureStore({
   reducer: {
     email: emailReducer,
@@ -53,11 +54,13 @@ export const store = configureStore({
     [teamApi.reducerPath]: teamApi.reducer,
     [rolePermissionsApi.reducerPath]: rolePermissionsApi.reducer,
     [searchApi.reducerPath]: searchApi.reducer,
+    [poApi.reducerPath]: poApi.reducer,
     [attendanceApi.reducerPath]: attendanceApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
       contactApi.middleware,
+      poApi.middleware,
       productMetaApi.middleware,
       vendorApi.middleware,
       brandParentCategoryApi.middleware,

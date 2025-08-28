@@ -129,7 +129,7 @@ function App() {
   return (
     <>
       <Loader loading={isProfileLoading} />
-      <div className="main-wrapper">
+      <div className={`main-wrapper ${isSidebarOpen ? "slide-nav" : ""}`}>
         {!isAuthPage && (
           <Header toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
         )}

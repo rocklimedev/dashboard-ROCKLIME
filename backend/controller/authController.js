@@ -284,7 +284,6 @@ exports.validateResetToken = async (req, res) => {
       return res.status(400).json({ message: "Token is required" });
     }
 
-    // Find verification token in database
     const verificationToken = await VerificationToken.findOne({
       where: { token, isVerified: false },
     });
@@ -293,25 +292,23 @@ exports.validateResetToken = async (req, res) => {
       return res.status(400).json({ message: "Invalid or used token" });
     }
 
-    // Check token expiration
     if (verificationToken.expiresAt < new Date()) {
       await verificationToken.destroy();
       return res.status(400).json({ message: "Token has expired" });
     }
 
-    // Verify JWT token
     let decoded;
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET);
     } catch (err) {
+      console.error("JWT Verification Error:", err.name, err.message);
       if (err.name === "TokenExpiredError") {
         await verificationToken.destroy();
         return res.status(400).json({ message: "Token has expired" });
       }
-      throw err;
+      return res.status(400).json({ message: `Invalid token: ${err.message}` });
     }
 
-    // Find user
     const user = await User.findByPk(decoded.userId);
     if (!user || user.email !== verificationToken.email) {
       return res.status(400).json({ message: "Invalid token or email" });
@@ -320,12 +317,9 @@ exports.validateResetToken = async (req, res) => {
     res.json({ email: user.email });
   } catch (error) {
     console.error("Validate reset token error:", error);
-    res
-      .status(400)
-      .json({ message: error.message || "Invalid or expired reset link" });
+    res.status(500).json({ message: "Server error during token validation" });
   }
 };
-
 // Login, Logout, Refresh Token, and Resend Verification Email remain unchanged
 exports.login = async (req, res) => {
   try {
@@ -508,11 +502,9 @@ exports.changePassword = async (req, res, next) => {
     }
 
     if (password === newPassword) {
-      return res
-        .status(400)
-        .json({
-          message: "New password must be different from current password",
-        });
+      return res.status(400).json({
+        message: "New password must be different from current password",
+      });
     }
 
     // Validate password strength (optional, adjust as needed)

@@ -23,6 +23,7 @@ const ResetPassword = () => {
 
   useEffect(() => {
     if (validationError) {
+      console.log("Validation Error:", validationError);
       toast.error(
         validationError?.data?.message || "Invalid or expired reset link."
       );
@@ -33,6 +34,7 @@ const ResetPassword = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validationData?.email) {
+      console.log("Validation Data Missing:", validationData);
       toast.error("Invalid or missing verification data.");
       setTimeout(() => navigate("/login"), 2000);
       return;
@@ -46,12 +48,12 @@ const ResetPassword = () => {
       const response = await resetPassword({
         resetToken: token,
         newPassword,
-        email: validationData.email, // Use email from validation
+        email: validationData.email,
       }).unwrap();
       toast.success(response.message || "Password changed successfully!");
-      // Trigger email confirmation
       setTimeout(() => navigate("/login"), 2000);
     } catch (error) {
+      console.log("Reset Password Error:", error);
       toast.error(error?.data?.message || "Failed to reset password");
     }
   };

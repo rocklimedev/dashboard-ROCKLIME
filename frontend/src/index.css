@@ -335,15 +335,47 @@
   background-color: #f0f0f0;
 }
 
+/* Base styles for the footer */
+.footer {
+  width: 100%;
+  padding: 8px 16px;
+  box-sizing: border-box;
+}
+
+.footer-text {
+  font-size: 16px; /* Default font size for desktop */
+  line-height: 1.5;
+}
+
+/* Styles for the Rocklime link */
 .rocklime-link {
   color: #ed7c2f !important;
-  font-family: "neuropol", sans-serif !important;
+  font-family: "Neuropol", sans-serif !important;
   text-decoration: none;
 }
 
 .rocklime-link:hover {
   text-decoration: underline;
 }
+
+/* Mobile responsiveness */
+@media (max-width: 576px) {
+  .footer {
+    flex-direction: column; /* Stack items vertically on mobile */
+    padding: 12px 8px; /* Adjust padding for smaller screens */
+    min-height: 60px; /* Allow more height for stacked content */
+  }
+
+  .footer-text {
+    font-size: 14px; /* Smaller font size for mobile */
+    margin: 4px 0; /* Add vertical spacing between stacked text */
+  }
+
+  .container {
+    padding: 0 8px; /* Reduce container padding on mobile */
+  }
+}
+
 
 /* Notification badge */
 .badge-count {
