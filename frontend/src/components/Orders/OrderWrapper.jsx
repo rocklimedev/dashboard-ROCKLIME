@@ -26,6 +26,7 @@ import DeleteModal from "../Common/DeleteModal";
 import OrderPagination from "./OrderPagination";
 import PageHeader from "../Common/PageHeader";
 import ComingSoon from "../Common/ComingSoon";
+import POWrapper from "./POWrapper";
 const OrderWrapper = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("orders");
@@ -639,7 +640,7 @@ const OrderWrapper = () => {
         ) : activeTab === "quotations" ? (
           <QuotationList />
         ) : (
-          <ComingSoon />
+          <POWrapper activeTab={activeTab} setActiveTab={setActiveTab} />
         )}
 
         {/* Modals */}

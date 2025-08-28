@@ -210,33 +210,6 @@ const GeneralSettings = () => {
                   </Button>
                 </div>
 
-                {/* Phone Number Verification */}
-                <div className="d-flex align-items-center justify-content-between flex-wrap row-gap-3 border-bottom mb-3 pb-3">
-                  <div className="d-flex align-items-center">
-                    <span className="avatar avatar-lg border bg-light fs-24 me-2">
-                      <i className="ti ti-phone text-gray-900 fs-18"></i>
-                    </span>
-                    <div>
-                      <h5 className="fs-16 fw-medium mb-1">
-                        Phone Number Verification
-                      </h5>
-                      <p className="fs-16">
-                        Verified Mobile Number:{" "}
-                        {profile?.user?.mobileNumber || "+81699799974"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="d-flex align-items-center">
-                    <span className="fs-20 text-success me-3">
-                      <i className="ti ti-circle-check-filled"></i>
-                    </span>
-                    <Button variant="primary">Change</Button>
-                    <Button variant="secondary" className="ms-3">
-                      Remove
-                    </Button>
-                  </div>
-                </div>
-
                 {/* Deactivate Account */}
                 <div className="d-flex align-items-center justify-content-between flex-wrap row-gap-3 border-bottom mb-3 pb-3">
                   <div className="d-flex align-items-center">

@@ -1,66 +1,22 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronsLeft } from "react-feather";
 import masterRoutes from "../../data/routes";
-import logo from "../../assets/img/logo.png";
-import logo_small from "../../assets/img/fav_icon.png";
-import "./sidebar.css";
 
-const SidebarNew = ({
-  isSidebarOpen,
-  toggleSidebar,
-  layoutMode = "vertical",
-}) => {
+const HorizontalSidebar = ({ isSidebarOpen }) => {
   const [openMenu, setOpenMenu] = useState(null);
-  const [horizontalOpenMenu, setHorizontalOpenMenu] = useState(null);
-  const [twoColOpenMenu, setTwoColOpenMenu] = useState({});
-  const [activeTab, setActiveTab] = useState("dashboard");
 
   const toggleDropdown = (index) => {
     setOpenMenu((prevIndex) => (prevIndex === index ? null : index));
   };
 
-  const toggleHorizontalDropdown = (index) => {
-    setHorizontalOpenMenu((prevIndex) => (prevIndex === index ? null : index));
-  };
-
-  const toggleTwoColDropdown = (tabId, index) => {
-    setTwoColOpenMenu((prev) => ({
-      ...prev,
-      [tabId]: prev[tabId] === index ? null : index,
-    }));
-  };
-
-  const handleTabChange = (tabId) => {
-    setActiveTab(tabId);
-  };
-
-  const VerticalSidebar = () => (
-    <div className={`sidebar ${isSidebarOpen ? "active" : ""}`} id="sidebar">
-      <div className={`sidebar-logo ${isSidebarOpen ? "active" : ""}`}>
-        <Link to="/" className="logo logo-normal">
-          <img src={logo} alt="Logo" />
-        </Link>
-        <Link to="/" className="logo-small">
-          <img src={logo_small} alt="Logo" />
-        </Link>
-        <a
-          id="toggle_btn" // Ensure this matches Header and handleClickOutside
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            if (window.innerWidth < 768) {
-              toggleSidebar(!isSidebarOpen);
-            }
-          }}
-        >
-          <ChevronsLeft size={16} />
-        </a>
-      </div>
-
-      <div className="sidebar-inner slimscroll">
-        <div id="sidebar-menu" className="sidebar-menu">
-          <ul>
+  return (
+    <div
+      className={`sidebar sidebar-horizontal ${isSidebarOpen ? "active" : ""}`}
+      id="horizontal-menu"
+    >
+      <div id="sidebar-menu-3" className="sidebar-menu">
+        <div className="main-menu">
+          <ul className="nav-menu">
             {masterRoutes
               .filter((section) => section.isSidebarActive)
               .map((section, index) => (
@@ -120,7 +76,7 @@ const SidebarNew = ({
                             ) : (
                               <Link to={sub.path}>
                                 {sub.icon || <i className="ti ti-circle"></i>}
-                                {sub.name}
+                                <span>{sub.name}</span>
                               </Link>
                             )}
                             {sub.submenu?.length > 0 && (
@@ -139,7 +95,7 @@ const SidebarNew = ({
                                         {subSub.icon || (
                                           <i className="ti ti-circle"></i>
                                         )}
-                                        {subSub.name}
+                                        <span>{subSub.name}</span>
                                       </Link>
                                     </li>
                                   ))}
@@ -156,8 +112,6 @@ const SidebarNew = ({
       </div>
     </div>
   );
-
-  return <>{layoutMode === "vertical" && <VerticalSidebar />}</>;
 };
 
-export default SidebarNew;
+export default HorizontalSidebar;

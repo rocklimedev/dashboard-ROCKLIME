@@ -4,13 +4,13 @@ const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <div
-      className="footer d-flex align-items-center justify-content-center border-top bg-white p-2"
-      style={{ height: "48px" }}
+    <footer
+      className="footer d-flex align-items-center justify-content-center border-top bg-white py-2"
+      style={{ minHeight: "48px" }}
     >
-      <div className="d-flex align-items-center justify-content-center text-gray-9 text-center">
-        <span className="me-3">© {currentYear} CM Trading Co.</span>
-        <span>
+      <div className="container text-center text-gray-9">
+        <span className="footer-text me-2">© {currentYear} CM Trading Co.</span>
+        <span className="footer-text">
           All Rights Reserved | Powered by{" "}
           <a
             href="https://www.rocklime.com/"
@@ -22,7 +22,7 @@ const Footer = () => {
           </a>
         </span>
       </div>
-    </div>
+    </footer>
   );
 };
 
