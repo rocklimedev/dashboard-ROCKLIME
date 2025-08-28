@@ -518,7 +518,11 @@ const OrderWrapper = () => {
                           return (
                             <tr key={order.id}>
                               <td>{serialNumber}</td>
-                              <td>{order.orderNo}</td>
+                              <td>
+                                <Link to={`/order/${order.id}`}>
+                                  {order.orderNo}
+                                </Link>
+                              </td>
                               <td>
                                 <span
                                   className="priority-badge"
@@ -532,7 +536,11 @@ const OrderWrapper = () => {
                                   {order.title}
                                 </Link>
                               </td>
-                              <td>{customerName}</td>
+                              <td>
+                                <Link to={`/customer/${order.createdFor}`}>
+                                  {customerName}
+                                </Link>
+                              </td>
                               <td>
                                 <span
                                   className={`priority-badge ${
@@ -543,7 +551,11 @@ const OrderWrapper = () => {
                                 </span>
                               </td>
                               <td>{teamName}</td>
-                              <td>{createdByName}</td>
+                              <td>
+                                <Link to={`/user/${order.createdBy}`}>
+                                  {createdByName}
+                                </Link>
+                              </td>
                               <td className={dueDateClass}>
                                 {order.dueDate ? (
                                   <span

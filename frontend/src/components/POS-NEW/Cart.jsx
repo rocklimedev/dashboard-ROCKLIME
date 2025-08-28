@@ -44,7 +44,7 @@ import { LazyLoadImage } from "react-lazy-load-image-component";
 import AddCustomer from "../Customers/AddCustomer";
 import OrderTotal from "./OrderTotal";
 import PaymentMethod from "./PaymentMethod";
-import InvoiceDetails from "../POS/InvoiceDetails";
+import InvoiceDetails from "./InvoiceDetails";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import { FcEmptyTrash } from "react-icons/fc";
