@@ -152,9 +152,8 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
           </Link>
         </div>
 
-        <Button
-          type="link"
-          className="mobile_btn d-md-none"
+        <a
+          className="mobile_btn"
           onClick={() => {
             if (window.innerWidth < 768) {
               toggleSidebar(!isSidebarOpen);
@@ -168,7 +167,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
             <span></span>
             <span></span>
           </span>
-        </Button>
+        </a>
 
         <ul className="nav user-menu">
           <li className="nav-item nav-searchinputs">

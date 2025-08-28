@@ -28,13 +28,17 @@ function App() {
     "/no-access",
     "/verify-account",
   ].includes(location.pathname);
-  const isPOSPage = ["/pos", "/pos-new"].includes(location.pathname);
 
   const token = localStorage.getItem("token");
 
   const { data: profileData, isLoading: isProfileLoading } =
     useGetProfileQuery();
   const userId = profileData?.user?.userId || null;
+
+  // Toggle sidebar function
+  const toggleSidebar = (open) => {
+    setSidebarOpen(open);
+  };
 
   // Initialize and update sidebar state based on viewport
   useEffect(() => {
@@ -57,9 +61,10 @@ function App() {
     const handleClickOutside = (e) => {
       if (
         isSidebarOpen &&
-        window.innerWidth < 992 && // only mobile + tablet
-        !e.target.closest("#sidebar") && // clicked outside sidebar
-        !e.target.closest("#toggle_btn") // not on toggle button
+        window.innerWidth >= 768 && // Tablet and above
+        window.innerWidth < 992 && // Tablet range
+        !e.target.closest("#sidebar") && // Clicked outside sidebar
+        !e.target.closest("#toggle_btn") // Not on toggle button
       ) {
         setSidebarOpen(false);
       }
@@ -99,7 +104,7 @@ function App() {
       setLayoutMode("vertical");
     }
 
-    if (isAuthPage || isPOSPage) {
+    if (isAuthPage) {
       setSidebarOpen(false);
     }
   }, [
@@ -107,7 +112,6 @@ function App() {
     userId,
     profileData,
     isAuthPage,
-    isPOSPage,
     location.pathname,
     navigate,
   ]);
@@ -120,39 +124,32 @@ function App() {
 
   if (MAINTENANCE_MODE && !isMaintenancePage) return null;
 
-  const toggleSidebar = (value) => {
-    if (window.innerWidth < 768) {
-      setSidebarOpen(value);
-    }
-  };
-
   return (
     <>
       <Loader loading={isProfileLoading} />
       <div className={`main-wrapper ${isSidebarOpen ? "slide-nav" : ""}`}>
         {!isAuthPage && (
-          <Header toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
+          <Header
+            isSidebarOpen={isSidebarOpen}
+            toggleSidebar={() => toggleSidebar(!isSidebarOpen)}
+          />
         )}
-        {!isAuthPage && !isPOSPage && (
+        {!isAuthPage && (
           <SidebarNew
             isSidebarOpen={isSidebarOpen}
-            toggleSidebar={toggleSidebar}
+            toggleSidebar={() => toggleSidebar(!isSidebarOpen)}
             layoutMode={layoutMode}
           />
         )}
-        {!isAuthPage &&
-          !isPOSPage &&
-          isSidebarOpen &&
-          window.innerWidth < 992 && ( // allow mobile + tablet
-            <div
-              className={`sidebar-overlay ${isSidebarOpen ? "active" : ""}`}
-              onClick={() => setSidebarOpen(false)}
-            ></div>
-          )}
-
         <Router />
         <Footer />
         <Toaster richColors position="top-right" />
+        {isSidebarOpen && (
+          <div
+            className="sidebar-overlay active"
+            onClick={() => toggleSidebar(false)}
+          ></div>
+        )}
       </div>
     </>
   );

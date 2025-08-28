@@ -4,7 +4,6 @@ import { ChevronsLeft } from "react-feather";
 import masterRoutes from "../../data/routes";
 import logo from "../../assets/img/logo.png";
 import logo_small from "../../assets/img/fav_icon.png";
-import "./sidebar.css";
 
 const SidebarNew = ({
   isSidebarOpen,
