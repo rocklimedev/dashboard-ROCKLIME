@@ -10,7 +10,6 @@ import PageHeader from "../Common/PageHeader";
 import DataTablePagination from "../Common/DataTablePagination";
 import { rolePermissionsApi as api } from "../../api/rolePermissionApi";
 import "./permission.css";
-
 import { useGetRoleQuery } from "../../api/rolesApi";
 import { useGetAllRolePermissionsByRoleIdQuery } from "../../api/rolePermissionApi";
 import { useAssignPermissionToRoleMutation } from "../../api/rolePermissionApi";

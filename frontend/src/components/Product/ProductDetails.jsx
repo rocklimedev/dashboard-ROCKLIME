@@ -14,11 +14,6 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Autoplay } from "swiper/modules";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import { ShoppingCartOutlined } from "@ant-design/icons";
-import {
-  FacebookShareButton,
-  TwitterShareButton,
-  WhatsappShareButton,
-} from "react-share";
 import ProductCard from "./ProductCard";
 import "./productdetails.css";
 import "swiper/css";

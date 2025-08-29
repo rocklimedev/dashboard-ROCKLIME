@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
-import { FaChartBar, FaFileInvoice, FaBox } from "react-icons/fa6";
+import { FaChartBar, FaBox } from "react-icons/fa6";
 import {
   ResponsiveContainer,
   Tooltip,
@@ -12,7 +12,6 @@ import {
   CartesianGrid,
 } from "recharts";
 import Alert from "./Alert";
-import Avatar from "react-avatar";
 import "./pagewrapper.css";
 import {
   useClockInMutation,
@@ -27,7 +26,6 @@ import { useGetAllOrdersQuery } from "../../api/orderApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
-import { FaRupeeSign } from "react-icons/fa";
 import StockModal from "../Common/StockModal";
 import DataTablePagination from "../Common/DataTablePagination";
 

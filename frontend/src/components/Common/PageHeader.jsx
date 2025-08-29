@@ -8,9 +8,7 @@ import {
   AppstoreOutlined,
   UnorderedListOutlined,
 } from "@ant-design/icons";
-import { Button, Switch, Tooltip } from "antd";
-import { ShoppingCartOutlined } from "@ant-design/icons";
-import styles from "./pageheader.module.css";
+import { Switch, Tooltip } from "antd";
 // Add custom CSS to style the Switch component
 const switchStyles = `
   .custom-switch .ant-switch {

@@ -36,12 +36,8 @@ import {
   useGetAllAddressesQuery,
   useCreateAddressMutation,
 } from "../../api/addressApi";
-import {
-  useCreateQuotationMutation,
-  useUpdateQuotationMutation,
-} from "../../api/quotationApi";
+import { useCreateQuotationMutation } from "../../api/quotationApi";
 import { LazyLoadImage } from "react-lazy-load-image-component";
-import AddCustomer from "../Customers/AddCustomer";
 import OrderTotal from "./OrderTotal";
 import PaymentMethod from "./PaymentMethod";
 import InvoiceDetails from "../POS/InvoiceDetails";

@@ -138,13 +138,9 @@ const getAttendance = async (req, res) => {
       };
     }
 
-    console.log("Attendance Query:", { query, startDate, endDate }); // Debug log
-
     const attendances = await Attendance.find(query)
       .sort({ date: -1 })
       .limit(100);
-
-    console.log("Attendance Results:", attendances); // Debug log
 
     return res.status(200).json({
       success: true,

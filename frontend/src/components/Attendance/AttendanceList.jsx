@@ -7,13 +7,7 @@ import {
   useGetAttendanceQuery,
 } from "../../api/attendanceApi";
 import { Spinner, Button, Form } from "react-bootstrap";
-import {
-  FaSearch,
-  FaSyncAlt,
-  FaDownload,
-  FaChevronUp,
-  FaChevronDown,
-} from "react-icons/fa";
+import { FaSearch } from "react-icons/fa";
 import moment from "moment";
 import jsPDF from "jspdf";
 import * as XLSX from "xlsx";

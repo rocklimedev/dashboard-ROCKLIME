@@ -47,9 +47,6 @@ exports.addProductToCart = async (req, res) => {
         .json({ message: `Product not found: ${productId}` });
     }
 
-    // Log product for debugging
-    console.log("Fetched product:", JSON.stringify(product, null, 2));
-
     // Extract and validate sellingPrice
     const sellingPrice = await getSellingPrice(product.meta, productId);
     if (sellingPrice === null) {
@@ -137,9 +134,6 @@ exports.addToCart = async (req, res) => {
           .status(404)
           .json({ message: `Product not found: ${productId}` });
       }
-
-      // Log product for debugging
-      console.log("Fetched product:", JSON.stringify(product, null, 2));
 
       // Extract and validate sellingPrice
       const sellingPrice = await getSellingPrice(product.meta, productId);

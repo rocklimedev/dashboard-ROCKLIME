@@ -16,8 +16,7 @@ import {
 import { FaFileCircleCheck } from "react-icons/fa6";
 import { FaTeamspeak } from "react-icons/fa";
 import { CgProfile } from "react-icons/cg";
-import { IoLogOut, IoLogIn } from "react-icons/io5";
-import { GiSuitcase } from "react-icons/gi";
+import { IoLogIn } from "react-icons/io5";
 import { MdOutlinePerson } from "react-icons/md";
 import { RiDashboardLine } from "react-icons/ri";
 import {
@@ -52,10 +51,8 @@ import ProductDetails from "../components/Product/ProductDetails";
 import UserList from "../components/User/UserList";
 import GeneralSettings from "../components/Settings/GeneralSettings";
 import ComingSoon from "../components/Error/ComingSoon";
-import CmList from "../components/CMTrading/cmList";
 import TeamsList from "../components/Orders/TeamsList";
 import InvoiceDetails from "../components/Invoices/InvoiceDetails";
-import CheckProductCodeStatus from "../components/Product/CheckProductCodeStatus";
 import NoAccess from "../components/Common/NoAccess";
 import AddressList from "../components/Address/Address";
 import AttendanceWrapper from "../components/Attendance/AttendanceWrapper";
@@ -98,15 +95,6 @@ const masterRoutes = [
     icon: <MdOutlineDiscount />,
     element: <OrderWrapper />,
     isSidebarActive: true,
-    // submenu: [
-    //   {
-    //     path: "/orders/list",
-    //     name: "Orders",
-    //     icon: <RiFileListLine />,
-    //     isSidebarActive: true,
-    //     element: <OrderWrapper />,
-    //   },
-    // ],
   },
   {
     path: "/customers/list",
@@ -126,10 +114,8 @@ const masterRoutes = [
         path: "/inventory/list",
         name: "Products",
         icon: <AiOutlineProduct />,
-
         isSidebarActive: false,
       },
-
       {
         path: "/inventory/all-products/",
         name: "Products",
@@ -246,13 +232,6 @@ const masterRoutes = [
         element: <SignatureWrapper />,
       },
       {
-        path: "/companies/list",
-        name: "Companies",
-        icon: <GiSuitcase />,
-        isSidebarActive: true,
-        element: <CmList />,
-      },
-      {
         path: "/brands/list",
         name: "Brands",
         icon: <MdOutlineBrandingWatermark />,
@@ -293,13 +272,6 @@ const masterRoutes = [
         icon: <AiOutlineProduct />,
         element: <BrandSelection />,
         isSidebarActive: false,
-      },
-      {
-        path: "/inventory/products",
-        name: "Products",
-        icon: <AiOutlineProduct />,
-        element: <Product />,
-        isSidebarActive: true,
       },
       {
         path: "/order/:id",
@@ -377,12 +349,6 @@ const masterRoutes = [
         icon: <CgProfile />,
         isSidebarActive: false,
         element: <Profile />,
-      },
-      {
-        path: "#",
-        name: "Logout",
-        icon: <IoLogOut />,
-        isSidebarActive: true,
       },
       {
         path: "/verify-account",
@@ -468,13 +434,6 @@ const masterRoutes = [
     name: "Email",
     icon: <RiFileListLine />,
     element: <EmailInterface />,
-    isSidebarActive: false,
-  },
-  {
-    path: "/inventory/product/product-code-status",
-    name: "Code Status",
-    icon: <RiFileListLine />,
-    element: <CheckProductCodeStatus />,
     isSidebarActive: false,
   },
   {

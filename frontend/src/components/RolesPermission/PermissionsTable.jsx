@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from "react";
-import { FaShieldAlt, FaTrash } from "react-icons/fa";
 import DataTablePagination from "../Common/DataTablePagination";
 
 const PermissionsTable = ({
