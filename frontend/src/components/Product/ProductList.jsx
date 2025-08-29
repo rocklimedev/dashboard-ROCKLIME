@@ -14,8 +14,6 @@ import {
 } from "antd";
 import {
   SearchOutlined,
-  HeartOutlined,
-  HeartFilled,
   ShoppingCartOutlined,
   MoreOutlined,
 } from "@ant-design/icons";

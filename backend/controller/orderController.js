@@ -37,7 +37,6 @@ const uploadToCDN = async (file) => {
 
     // Check where FTP logs us in
     const cwd = await client.pwd();
-    console.log("Current FTP directory:", cwd);
 
     // Absolute path for storage
     const uploadDir = "/invoice_pdfs";
@@ -725,7 +724,6 @@ exports.updateOrderById = async (req, res) => {
   try {
     const { id } = req.params;
     const updates = { ...req.body };
-    console.log("Received update payload:", updates); // Debug payload
 
     // Find the order
     const order = await Order.findByPk(id);
@@ -1166,7 +1164,6 @@ exports.uploadInvoiceAndLinkOrder = async (req, res) => {
 
       // Log current FTP directory for debugging
       const cwd = await client.pwd();
-      console.log("Current FTP directory:", cwd);
 
       // Ensure folder exists for invoices
       const uploadDir = "/invoice_pdfs";

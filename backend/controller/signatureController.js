@@ -65,9 +65,6 @@ exports.deleteSignature = async (req, res) => {
 // 📌 Create a Signature
 exports.createSignature = async (req, res) => {
   try {
-    console.log("Request body:", req.body);
-    console.log("Request file:", req.file);
-
     const { signature_name, mark_as_default, userId } = req.body;
 
     // Validate inputs
@@ -103,11 +100,6 @@ exports.createSignature = async (req, res) => {
 
     let uploadResponse;
     try {
-      console.log("Sending request to external server:", {
-        url: "https://static.cmtradingco.com/signatures",
-        headers: formData.getHeaders(),
-        fileName,
-      });
       uploadResponse = await axios.post(
         "https://static.cmtradingco.com/signatures",
         formData,
@@ -118,10 +110,6 @@ exports.createSignature = async (req, res) => {
           },
         }
       );
-      console.log("Upload response:", {
-        status: uploadResponse.status,
-        data: uploadResponse.data,
-      });
     } catch (uploadError) {
       console.error("Error uploading to external server:", {
         message: uploadError.message,
@@ -181,9 +169,6 @@ exports.createSignature = async (req, res) => {
 // 📌 Update a Signature
 exports.updateSignature = async (req, res) => {
   try {
-    console.log("Request body:", req.body);
-    console.log("Request file:", req.file);
-
     const { id } = req.params;
     const { signature_name, mark_as_default, userId } = req.body;
 
@@ -231,11 +216,6 @@ exports.updateSignature = async (req, res) => {
 
       let uploadResponse;
       try {
-        console.log("Sending request to external server:", {
-          url: "https://static.cmtradingco.com/signatures",
-          headers: formData.getHeaders(),
-          fileName,
-        });
         uploadResponse = await axios.post(
           "https://static.cmtradingco.com/signatures",
           formData,
@@ -246,10 +226,6 @@ exports.updateSignature = async (req, res) => {
             },
           }
         );
-        console.log("Upload response:", {
-          status: uploadResponse.status,
-          data: uploadResponse.data,
-        });
       } catch (uploadError) {
         console.error("Error uploading to external server:", {
           message: uploadError.message,
