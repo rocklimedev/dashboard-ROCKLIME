@@ -95,28 +95,32 @@ const ProductsList = () => {
       : "Uncategorized";
   };
 
-  const formatPrice = (meta, metaDetails) => {
-    const sellingPriceEntry = Array.isArray(metaDetails)
-      ? metaDetails.find((detail) => detail.title === "sellingPrice")
-      : null;
-    const price = sellingPriceEntry ? sellingPriceEntry.value : null;
-    return price !== null && !isNaN(Number(price))
-      ? `₹${Number(price).toFixed(2)}`
-      : "N/A";
+  const formatPrice = (value, unit) => {
+    // Handle both (meta, metaDetails) for table and (value, unit) for ProductCard
+    if (typeof value === "object" && Array.isArray(unit)) {
+      const metaDetails = unit; // unit is metaDetails in this case
+      const sellingPriceEntry = metaDetails?.find(
+        (detail) => detail.slug === "sellingPrice"
+      );
+      const price = sellingPriceEntry
+        ? parseFloat(sellingPriceEntry.value)
+        : null;
+      const priceUnit = sellingPriceEntry ? sellingPriceEntry.unit : null;
+      return price !== null && !isNaN(price) ? `₹ ${price.toFixed(2)}` : "N/A";
+    }
+    // Handle (value, unit) for ProductCard
+    return value !== null && !isNaN(value) ? `₹ ${value.toFixed(2)}` : "N/A";
   };
 
   const parseImages = (images) => {
     try {
-      // Check if images is a string and attempt to parse it
       if (typeof images === "string") {
         const parsed = JSON.parse(images);
         return Array.isArray(parsed) ? parsed : [pos];
       }
-      // If images is already an array, return it
       return Array.isArray(images) ? images : [pos];
     } catch (error) {
-      console.error(`Error parsing images for product: ${error.message}`);
-      return [pos]; // Fallback to default image
+      return [pos];
     }
   };
 
@@ -237,10 +241,12 @@ const ProductsList = () => {
       return;
     }
     const sellingPriceEntry = Array.isArray(product.metaDetails)
-      ? product.metaDetails.find((detail) => detail.title === "sellingPrice")
+      ? product.metaDetails.find((detail) => detail.slug === "sellingPrice")
       : null;
-    const sellingPrice = sellingPriceEntry ? sellingPriceEntry.value : null;
-    if (!sellingPrice || isNaN(Number(sellingPrice))) {
+    const sellingPrice = sellingPriceEntry
+      ? parseFloat(sellingPriceEntry.value)
+      : null;
+    if (!sellingPrice || isNaN(sellingPrice)) {
       toast.error("Invalid product price");
       return;
     }
@@ -250,7 +256,7 @@ const ProductsList = () => {
       await addProductToCart({
         userId,
         productId,
-        quantity: 1,
+        quantity: product.quantity || 1, // Use product.quantity from handleAddToCartWithQuantity
       }).unwrap();
       toast.success(`${product.name} added to cart!`);
     } catch (error) {
@@ -377,16 +383,18 @@ const ProductsList = () => {
       key: "actions",
       render: (_, record) => {
         const sellingPriceEntry = Array.isArray(record.metaDetails)
-          ? record.metaDetails.find((detail) => detail.title === "sellingPrice")
+          ? record.metaDetails.find((detail) => detail.slug === "sellingPrice")
           : null;
-        const sellingPrice = sellingPriceEntry ? sellingPriceEntry.value : null;
+        const sellingPrice = sellingPriceEntry
+          ? parseFloat(sellingPriceEntry.value)
+          : null;
         return (
           <div style={{ display: "flex", gap: 8 }}>
             <Tooltip
               title={
                 record.quantity <= 0
                   ? "Out of stock"
-                  : !sellingPrice
+                  : !sellingPrice || isNaN(sellingPrice)
                   ? "Invalid price"
                   : "Add to cart"
               }
@@ -404,7 +412,8 @@ const ProductsList = () => {
                 disabled={
                   cartLoadingStates[record.productId] ||
                   record.quantity <= 0 ||
-                  !sellingPrice
+                  !sellingPrice ||
+                  isNaN(sellingPrice)
                 }
               >
                 Add to Cart
@@ -555,7 +564,6 @@ const ProductsList = () => {
               }}
             >
               <Pagination
-                U
                 current={currentPage}
                 total={filteredProducts.length}
                 pageSize={itemsPerPage}

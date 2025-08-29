@@ -83,7 +83,6 @@ const PageHeader = ({
     try {
       doc.save(`${title}.pdf`);
     } catch (error) {
-      console.error("Error generating PDF:", error);
       alert("Failed to generate PDF. Please try again.");
     }
   };
@@ -118,7 +117,6 @@ const PageHeader = ({
 
       XLSX.writeFile(workbook, `${title}.xlsx`);
     } catch (error) {
-      console.error("Error generating Excel:", error);
       alert("Failed to generate Excel file. Please try again.");
     }
   };

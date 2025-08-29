@@ -131,13 +131,6 @@ const OrderPage = () => {
   } = useGetOrderDetailsQuery(id);
   const order = orderData?.order || {};
 
-  // Debug order data
-  useEffect(() => {
-    console.log("Order data updated:", orderData);
-    console.log("Order status:", order?.status);
-    console.log("Order invoiceLink:", order?.invoiceLink);
-  }, [orderData]);
-
   // Fetch comments
   const {
     data: commentData,
@@ -230,11 +223,6 @@ const OrderPage = () => {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file && file.type === "application/pdf") {
-      console.log("Selected file:", {
-        name: file.name,
-        size: file.size,
-        type: file.type,
-      });
       setInvoiceFile(file);
     } else {
       toast.error("Please upload a valid PDF file.");
@@ -252,10 +240,10 @@ const OrderPage = () => {
       toast.error("Order ID is missing.");
       return;
     }
-    console.log("Submitting invoice for orderId:", id);
+
     try {
       const response = await handleUploadInvoice(id, invoiceFile);
-      console.log("Upload response:", response);
+
       setInvoiceFile(null);
       document.getElementById("invoiceUpload").value = null;
     } catch (err) {
@@ -268,14 +256,7 @@ const OrderPage = () => {
       const formData = new FormData();
       formData.append("invoice", file);
 
-      console.log("Uploading file:", {
-        name: file.name,
-        size: file.size,
-        type: file.type,
-      });
-
       const response = await uploadInvoice({ orderId, formData }).unwrap();
-      console.log("Upload response:", response);
 
       // Optimistically update the cache
       orderApi.util.updateQueryData("getOrderDetails", orderId, (draft) => {
@@ -288,7 +269,6 @@ const OrderPage = () => {
       refetchOrder();
       return response;
     } catch (err) {
-      console.error("Upload error:", err);
       toast.error(
         `Upload error: ${err.data?.message || "Failed to upload invoice"}`
       );
@@ -436,7 +416,6 @@ const OrderPage = () => {
         ? order.invoiceLink
         : `${process.env.REACT_APP_FTP_BASE_URL}${order.invoiceLink}`
       : null;
-  console.log("PDF URL:", pdfUrl);
 
   return (
     <div className="page-wrapper notes-page-wrapper">

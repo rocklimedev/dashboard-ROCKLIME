@@ -9,14 +9,14 @@ import {
 import { GiFeatherWound } from "react-icons/gi";
 import { FiImage, FiPlusCircle, FiLifeBuoy } from "react-icons/fi";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
-import { useGetAllParentCategoriesQuery } from "../../api/parentCategoryApi";
 import { useGetAllBrandsQuery } from "../../api/brandsApi";
-import { useGetProfileQuery } from "../../api/userApi"; // Added to fetch user_id
+import { useGetProfileQuery } from "../../api/userApi";
 import { toast } from "sonner";
 import { useDropzone } from "react-dropzone";
 import { useGetVendorsQuery } from "../../api/vendorApi";
 import { useGetAllProductMetaQuery } from "../../api/productMetaApi";
 import { useGetBrandParentCategoriesQuery } from "../../api/brandParentCategoryApi";
+
 const CreateProduct = () => {
   const { productId } = useParams();
   const navigate = useNavigate();
@@ -25,6 +25,7 @@ const CreateProduct = () => {
   const [existingImages, setExistingImages] = useState([]); // Image URLs
   const [imagesToDelete, setImagesToDelete] = useState([]); // Images to delete
   const [metaData, setMetaData] = useState({}); // Meta key-value pairs
+  const [selectedImage, setSelectedImage] = useState(null); // For modal
 
   // Fetch data
   const { data: existingProduct, isLoading: isFetching } =
@@ -75,7 +76,6 @@ const CreateProduct = () => {
   const [updateProduct, { isLoading: isUpdating, error }] =
     useUpdateProductMutation();
 
-  // Pre-fill form and images in edit mode
   useEffect(() => {
     if (existingProduct) {
       setFormData({
@@ -93,8 +93,46 @@ const CreateProduct = () => {
         brand_parentcategoriesId:
           existingProduct.brand_parentcategoriesId || "",
       });
-      setExistingImages(existingProduct.images || []);
-      setMetaData(existingProduct.meta || {});
+
+      let imagesArray = [];
+      if (existingProduct.images) {
+        try {
+          imagesArray =
+            typeof existingProduct.images === "string"
+              ? JSON.parse(existingProduct.images)
+              : existingProduct.images;
+        } catch (error) {
+          imagesArray = [];
+        }
+      }
+      setExistingImages(Array.isArray(imagesArray) ? imagesArray : []);
+
+      let metaObject = {};
+      if (existingProduct.meta) {
+        try {
+          if (typeof existingProduct.meta === "string") {
+            // Handle JSON string
+            metaObject = JSON.parse(existingProduct.meta);
+          } else if (Array.isArray(existingProduct.meta)) {
+            // Handle array of meta objects
+            metaObject = existingProduct.meta.reduce((acc, meta) => {
+              acc[meta.id] = meta.value;
+              return acc;
+            }, {});
+          } else {
+            // Handle key-value object
+            metaObject = existingProduct.meta;
+          }
+        } catch (error) {
+          toast.error("Failed to load meta data. Please try again.");
+        }
+      } else {
+        console.warn("No meta field found in existingProduct");
+      }
+
+      setMetaData(metaObject);
+    } else {
+      console.log("No existingProduct data available");
     }
   }, [existingProduct]);
 
@@ -173,6 +211,16 @@ const CreateProduct = () => {
     });
   };
 
+  // Handle image click to open modal
+  const handleImageClick = (imageUrl) => {
+    setSelectedImage(imageUrl);
+  };
+
+  // Close modal
+  const closeModal = () => {
+    setSelectedImage(null);
+  };
+
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -198,7 +246,6 @@ const CreateProduct = () => {
       return;
     }
 
-    // Validate meta data
     for (const metaId of Object.keys(metaData)) {
       const metaField = productMetaData.find((meta) => meta.id === metaId);
       if (!metaField) {
@@ -541,31 +588,43 @@ const CreateProduct = () => {
                 </h5>
               </div>
               <div className="card-body">
-                <div className="row g-3">
-                  {productMetaData.map((meta) => (
-                    <div key={meta.id} className="col-md-6 col-12">
-                      <div className="form-group">
-                        <label className="form-label">
-                          {meta.title}{" "}
-                          {meta.unit && <small>({meta.unit})</small>}
-                        </label>
-                        <input
-                          type={meta.fieldType === "number" ? "number" : "text"}
-                          className="form-control"
-                          value={metaData[meta.id] || ""}
-                          onChange={(e) =>
-                            handleMetaChange(meta.id, e.target.value)
-                          }
-                          placeholder={`Enter ${meta.title}`}
-                        />
+                {isProductMetaLoading ? (
+                  <p className="text-center">Loading meta fields...</p>
+                ) : productMetaData.length === 0 ? (
+                  <p className="text-muted">No meta fields available.</p>
+                ) : (
+                  <div className="row g-3">
+                    {productMetaData.map((meta) => (
+                      <div key={meta.id} className="col-md-6 col-12">
+                        <div className="form-group">
+                          <label className="form-label">
+                            {meta.title}{" "}
+                            {meta.unit && <small>({meta.unit})</small>}
+                          </label>
+                          <input
+                            type={
+                              meta.fieldType === "number" ? "number" : "text"
+                            }
+                            className="form-control"
+                            value={metaData[meta.id] || ""}
+                            onChange={(e) =>
+                              handleMetaChange(meta.id, e.target.value)
+                            }
+                            placeholder={`Enter ${meta.title}`}
+                          />
+                          {!metaData[meta.id] && metaData[meta.id] !== "" && (
+                            <small className="text-muted">
+                              No value set for {meta.title}
+                            </small>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
-
           {/* Images Section */}
           <div className="col-12">
             <div className="card">
@@ -618,8 +677,10 @@ const CreateProduct = () => {
                               style={{
                                 width: "100%",
                                 height: "100px",
-                                objectFit: "cover",
+                                objectFit: "contain", // Changed to contain
+                                cursor: "pointer", // Indicate clickable
                               }}
+                              onClick={() => handleImageClick(image)}
                             />
                             <button
                               type="button"
@@ -643,8 +704,10 @@ const CreateProduct = () => {
                               style={{
                                 width: "100%",
                                 height: "100px",
-                                objectFit: "cover",
+                                objectFit: "contain", // Changed to contain
+                                cursor: "pointer", // Indicate clickable
                               }}
+                              onClick={() => handleImageClick(image.preview)}
                             />
                             <button
                               type="button"
@@ -665,6 +728,54 @@ const CreateProduct = () => {
               </div>
             </div>
           </div>
+
+          {/* Image Modal */}
+          {selectedImage && (
+            <div
+              className="modal fade show"
+              style={{ display: "block", backgroundColor: "rgba(0,0,0,0.5)" }}
+              tabIndex="-1"
+              role="dialog"
+            >
+              <div
+                className="modal-dialog modal-lg"
+                role="document"
+                style={{ maxWidth: "80%" }}
+              >
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title">Image Preview</h5>
+                    <button
+                      type="button"
+                      className="btn-close"
+                      onClick={closeModal}
+                      aria-label="Close"
+                    ></button>
+                  </div>
+                  <div className="modal-body text-center">
+                    <img
+                      src={selectedImage}
+                      alt="Full-size preview"
+                      style={{
+                        maxWidth: "100%",
+                        maxHeight: "70vh",
+                        objectFit: "contain",
+                      }}
+                    />
+                  </div>
+                  <div className="modal-footer">
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={closeModal}
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Submit Button */}
           <div className="col-12">

@@ -39,7 +39,6 @@ const UserList = () => {
   });
 
   const users = data?.users || [];
-  console.log(users);
   const totalUsers = data?.total || 0;
   const totalPages = data?.totalPages || 1;
 

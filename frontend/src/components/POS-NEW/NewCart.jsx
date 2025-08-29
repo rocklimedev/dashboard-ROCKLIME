@@ -546,7 +546,6 @@ const NewCart = ({ onConvertToOrder }) => {
       await handleClearCart();
       resetForm();
     } catch (error) {
-      console.error("Quotation creation error:", error);
       toast.error(
         `Failed to create quotation: ${
           error.data?.message || error.message || "Unknown error"

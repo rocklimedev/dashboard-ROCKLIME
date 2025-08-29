@@ -175,7 +175,6 @@ const ShowInvoices = () => {
       setEditingStatusInvoiceId(null);
     } catch (error) {
       alert("Failed to update invoice status. Please try again.");
-      console.error("Status update error:", error);
     }
   };
 

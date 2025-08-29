@@ -1,6 +1,7 @@
 // models/ProductMeta.js
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
+
 const ProductMeta = sequelize.define(
   "ProductMeta",
   {
@@ -13,6 +14,11 @@ const ProductMeta = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
       comment: "Label for the metadata field (e.g., Selling Price, MRP)",
+    },
+    slug: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
     },
     fieldType: {
       type: DataTypes.STRING,

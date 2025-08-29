@@ -97,7 +97,6 @@ const AddAddress = ({ onClose, existingAddress }) => {
       }
       onClose();
     } catch (err) {
-      console.error("Address save error:", err);
       toast.error(
         `Failed to save address: ${
           err?.data?.message || err.message || "Unknown error"
