@@ -92,37 +92,55 @@ exports.register = async (req, res, next) => {
 // Verify Account
 exports.verifyAccount = async (req, res, next) => {
   try {
-    const { token } = req.params; // Token from URL
+    const { token } = req.params;
+    console.log("Verifying token:", token);
 
     const verificationToken = await VerificationToken.findOne({ token });
     if (!verificationToken) {
+      console.log("Token not found in database:", token);
       return res.status(400).json({ message: "Invalid or expired token" });
     }
 
     if (verificationToken.isVerified) {
+      console.log(
+        "Token already verified for userId:",
+        verificationToken.userId
+      );
       return res.status(400).json({ message: "Account already verified" });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (verificationToken.expiresAt < new Date()) {
+      console.log("Token expired:", verificationToken.expiresAt);
+      await VerificationToken.deleteOne({ token });
+      return res.status(400).json({ message: "Token has expired" });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+      console.log("Decoded token userId:", decoded.userId);
+    } catch (err) {
+      console.error("JWT verification error:", err);
+      if (err.name === "TokenExpiredError") {
+        await VerificationToken.deleteOne({ token });
+        return res.status(400).json({ message: "Token has expired" });
+      }
+      return res.status(400).json({ message: "Invalid token" });
+    }
+
     const user = await User.findByPk(decoded.userId);
     if (!user) {
+      console.log("User not found for userId:", decoded.userId);
       return res.status(400).json({ message: "User not found" });
     }
 
-    // Mark user verified in MySQL
     user.isEmailVerified = true;
-    user.status = "active"; // activate account after verification
+    user.status = "active";
     await user.save();
 
     verificationToken.isVerified = true;
     await verificationToken.save();
 
-    req.email = {
-      to: user.email,
-      params: [user.name],
-    };
-
-    // after verifying account
     const emailContent = emails.accountVerificationConfirmationEmail(user.name);
     await emails.sendMail(
       user.email,
@@ -137,10 +155,7 @@ exports.verifyAccount = async (req, res, next) => {
       email: user.email,
     });
   } catch (err) {
-    if (err.name === "TokenExpiredError") {
-      await VerificationToken.deleteOne({ token });
-      return res.status(400).json({ message: "Token has expired" });
-    }
+    console.error("Verify account error:", err);
     next(err);
   }
 };

@@ -1,9 +1,8 @@
-// models/verificationToken.js
 const mongoose = require("mongoose");
 
 const verificationTokenSchema = new mongoose.Schema({
   userId: {
-    type: String, // Matches UUID from MySQL User model
+    type: String,
     required: true,
     index: true,
   },
@@ -12,6 +11,10 @@ const verificationTokenSchema = new mongoose.Schema({
     required: true,
     index: true,
   },
+  email: {
+    type: String,
+    required: true,
+  },
   isVerified: {
     type: Boolean,
     default: false,
@@ -19,7 +22,7 @@ const verificationTokenSchema = new mongoose.Schema({
   expiresAt: {
     type: Date,
     required: true,
-    index: { expires: "0" }, // TTL index to auto-remove expired tokens
+    index: { expires: "0" }, // TTL index
   },
   createdAt: {
     type: Date,

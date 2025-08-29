@@ -12,6 +12,7 @@ const AccountVerify = () => {
 
   useEffect(() => {
     const verifyToken = async () => {
+      console.log("Token from URL:", token);
       if (!token || typeof token !== "string" || token.trim() === "") {
         toast.error("Invalid verification link.");
         setTimeout(() => navigate("/login"), 2000);
@@ -21,14 +22,9 @@ const AccountVerify = () => {
       try {
         const response = await verifyAccount({ token }).unwrap();
         toast.success(response.message || "Account verified successfully!");
-        setTimeout(
-          () =>
-            navigate("/reset-password", {
-              state: { token, email: response.email },
-            }),
-          2000
-        );
+        setTimeout(() => navigate("/login"), 2000); // Redirect to login
       } catch (error) {
+        console.error("Verification error:", error);
         toast.error(error?.data?.message || "Failed to verify account.");
         setTimeout(() => navigate("/login"), 2000);
       }
@@ -36,7 +32,6 @@ const AccountVerify = () => {
 
     verifyToken();
   }, [token, verifyAccount, navigate]);
-
   return (
     <div className="main-wrapper">
       <div className="account-content">
