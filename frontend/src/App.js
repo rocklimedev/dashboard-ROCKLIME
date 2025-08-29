@@ -21,7 +21,7 @@ function App() {
     "/login",
     "/signup",
     "/404",
-    "/reset-password",
+    "/reset-password/:token",
     "/forgot-password",
     "/under-maintenance",
     "/coming-soon",
