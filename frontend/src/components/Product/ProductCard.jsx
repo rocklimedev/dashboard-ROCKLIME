@@ -20,10 +20,21 @@ const ProductCard = ({
   // Safely parse images from JSON string
   const productImages = product.images ? JSON.parse(product.images) : [pos];
 
-  // Get sellingPrice from metaDetails (still needed for add-to-cart validation)
-  const sellingPrice =
-    product.metaDetails?.find((meta) => meta.title === "sellingPrice")?.value ||
-    null;
+  // Get sellingPrice and unit using slug
+  const sellingPriceMeta = product.metaDetails?.find(
+    (meta) => meta.slug === "sellingPrice"
+  );
+  const sellingPrice = sellingPriceMeta
+    ? parseFloat(sellingPriceMeta.value)
+    : null;
+  const priceUnit = sellingPriceMeta ? sellingPriceMeta.unit : null;
+
+  // Fallback formatting if formatPrice fails
+  const displayPrice =
+    sellingPrice !== null && !isNaN(sellingPrice)
+      ? formatPrice(sellingPrice, priceUnit) ||
+        `₹${sellingPrice.toFixed(2)} ${priceUnit || ""}`
+      : "Price not available";
 
   const handleIncrement = () => {
     if (quantity < product.quantity) setQuantity(quantity + 1);
@@ -43,10 +54,14 @@ const ProductCard = ({
   };
 
   const handleAddToCartWithQuantity = () => {
-    if (quantity > 0 && sellingPrice) {
+    if (quantity > 0 && sellingPrice !== null && !isNaN(sellingPrice)) {
       handleAddToCart({ ...product, quantity });
     } else {
-      toast.error(sellingPrice ? "Invalid quantity" : "Invalid product price");
+      toast.error(
+        sellingPrice !== null && !isNaN(sellingPrice)
+          ? "Invalid quantity"
+          : "Invalid product price"
+      );
     }
   };
 
@@ -79,10 +94,9 @@ const ProductCard = ({
           {product.name || "N/A"}
         </Link>
       </h6>
+
       <div className="price">
-        <p className="text-gray-9 mb-0">
-          {formatPrice(product.meta, product.metaDetails)}
-        </p>
+        <p className="text-gray-9 mb-0">{displayPrice}</p>
         <div className="qty-item">
           <Tooltip title="Minus">
             <button
@@ -123,7 +137,7 @@ const ProductCard = ({
         title={
           product.quantity <= 0
             ? "Out of stock"
-            : !sellingPrice
+            : sellingPrice === null || isNaN(sellingPrice)
             ? "Invalid price"
             : "Add to cart"
         }
@@ -141,7 +155,8 @@ const ProductCard = ({
           disabled={
             cartLoadingStates[product.productId] ||
             product.quantity <= 0 ||
-            !sellingPrice
+            sellingPrice === null ||
+            isNaN(sellingPrice)
           }
           size="large"
           aria-label="Add to cart"

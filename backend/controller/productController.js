@@ -17,7 +17,7 @@ exports.createProduct = async (req, res) => {
             .status(400)
             .json({ message: `Invalid ProductMeta ID: ${metaId}` });
         }
-        // Optional: Validate meta value based on fieldType (e.g., number, string)
+        // Validate meta value based on fieldType (e.g., number, string)
         if (metaField.fieldType === "number" && isNaN(meta[metaId])) {
           return res
             .status(400)
@@ -48,7 +48,7 @@ exports.getAllProducts = async (req, res) => {
     ];
     const productMetas = await ProductMeta.findAll({
       where: { id: { [Op.in]: productMetaIds } },
-      attributes: ["id", "title", "fieldType", "unit"],
+      attributes: ["id", "title", "slug", "fieldType", "unit"],
     });
 
     const enrichedProducts = products.map((product) => {
@@ -60,6 +60,7 @@ exports.getAllProducts = async (req, res) => {
             return {
               id: metaId,
               title: metaField ? metaField.title : "Unknown",
+              slug: metaField ? metaField.slug : null,
               value: productData.meta[metaId],
               fieldType: metaField ? metaField.fieldType : null,
               unit: metaField ? metaField.unit : null,
@@ -81,7 +82,6 @@ exports.getAllProducts = async (req, res) => {
 // Get a single product by ID with meta data
 exports.getProductById = async (req, res) => {
   try {
-    // getProductById
     const product = await Product.findByPk(req.params.productId);
 
     if (!product) return res.status(404).json({ message: "Product not found" });
@@ -89,14 +89,16 @@ exports.getProductById = async (req, res) => {
     const metaIds = Object.keys(product.meta || {});
     const metas = await ProductMeta.findAll({
       where: { id: { [Op.in]: metaIds } },
+      attributes: ["id", "title", "slug", "fieldType", "unit"],
     });
 
     const productData = product.toJSON();
-    productData.meta = metaIds.map((id) => {
+    productData.metaDetails = metaIds.map((id) => {
       const field = metas.find((m) => m.id === id);
       return {
         id,
         title: field?.title || "Unknown",
+        slug: field?.slug || null,
         value: productData.meta[id],
         fieldType: field?.fieldType || null,
         unit: field?.unit || null,
@@ -123,7 +125,7 @@ exports.getProductsByCategory = async (req, res) => {
         {
           model: ProductMeta,
           as: "product_metas",
-          attributes: ["id", "title", "fieldType", "unit"],
+          attributes: ["id", "title", "slug", "fieldType", "unit"],
         },
       ],
     });
@@ -139,10 +141,13 @@ exports.getProductsByCategory = async (req, res) => {
       if (productData.meta) {
         productData.metaDetails = Object.keys(productData.meta).map(
           (metaId) => {
-            const metaField = product.metaFields.find((mf) => mf.id === metaId);
+            const metaField = productData.product_metas.find(
+              (mf) => mf.id === metaId
+            );
             return {
               id: metaId,
               title: metaField ? metaField.title : "Unknown",
+              slug: metaField ? metaField.slug : null,
               value: productData.meta[metaId],
               fieldType: metaField ? metaField.fieldType : null,
               unit: metaField ? metaField.unit : null,
@@ -150,7 +155,7 @@ exports.getProductsByCategory = async (req, res) => {
           }
         );
       }
-      delete productData.metaFields;
+      delete productData.product_metas;
       return productData;
     });
 
@@ -319,7 +324,7 @@ exports.getLowStockProducts = async (req, res) => {
         {
           model: ProductMeta,
           as: "product_metas",
-          attributes: ["id", "title", "fieldType", "unit"],
+          attributes: ["id", "title", "slug", "fieldType", "unit"],
         },
       ],
     });
@@ -329,10 +334,13 @@ exports.getLowStockProducts = async (req, res) => {
       if (productData.meta) {
         productData.metaDetails = Object.keys(productData.meta).map(
           (metaId) => {
-            const metaField = product.metaFields.find((mf) => mf.id === metaId);
+            const metaField = productData.product_metas.find(
+              (mf) => mf.id === metaId
+            );
             return {
               id: metaId,
               title: metaField ? metaField.title : "Unknown",
+              slug: metaField ? metaField.slug : null,
               value: productData.meta[metaId],
               fieldType: metaField ? metaField.fieldType : null,
               unit: metaField ? metaField.unit : null,
@@ -340,7 +348,7 @@ exports.getLowStockProducts = async (req, res) => {
           }
         );
       }
-      delete productData.metaFields;
+      delete productData.product_metas;
       return productData;
     });
 
@@ -407,7 +415,7 @@ exports.searchProducts = async (req, res) => {
     if (query) {
       filters[Op.or] = [
         { name: { [Op.iLike]: `%${query}%` } },
-        { product_code: { [Op.iLike]: `%${query}%` } }, // Updated to product_code
+        { product_code: { [Op.iLike]: `%${query}%` } },
         { brandId: { [Op.eq]: query } },
         { categoryId: { [Op.eq]: query } },
       ];
@@ -417,7 +425,7 @@ exports.searchProducts = async (req, res) => {
       filters.name = { [Op.iLike]: `%${name}%` };
     }
     if (sellingPrice) {
-      filters["$meta.sellingPrice$"] = { [Op.eq]: Number(sellingPrice) }; // Search in meta JSON
+      filters["$meta.sellingPrice$"] = { [Op.eq]: Number(sellingPrice) };
     }
     if (minSellingPrice) {
       filters["$meta.sellingPrice$"] = {
@@ -450,7 +458,7 @@ exports.searchProducts = async (req, res) => {
       filters.companyCode = companyCode;
     }
     if (productCode) {
-      filters.product_code = productCode; // Updated to product_code
+      filters.product_code = productCode;
     }
     if (brandId) {
       filters.brandId = brandId;
@@ -465,7 +473,7 @@ exports.searchProducts = async (req, res) => {
         {
           model: ProductMeta,
           as: "product_metas",
-          attributes: ["id", "title", "fieldType", "unit"],
+          attributes: ["id", "title", "slug", "fieldType", "unit"],
         },
       ],
     });
@@ -475,10 +483,13 @@ exports.searchProducts = async (req, res) => {
       if (productData.meta) {
         productData.metaDetails = Object.keys(productData.meta).map(
           (metaId) => {
-            const metaField = product.metaFields.find((mf) => mf.id === metaId);
+            const metaField = productData.product_metas.find(
+              (mf) => mf.id === metaId
+            );
             return {
               id: metaId,
               title: metaField ? metaField.title : "Unknown",
+              slug: metaField ? metaField.slug : null,
               value: productData.meta[metaId],
               fieldType: metaField ? metaField.fieldType : null,
               unit: metaField ? metaField.unit : null,
@@ -486,7 +497,7 @@ exports.searchProducts = async (req, res) => {
           }
         );
       }
-      delete productData.metaFields;
+      delete productData.product_metas;
       return productData;
     });
 
@@ -507,7 +518,7 @@ exports.getAllProductCodes = async (req, res) => {
         {
           model: ProductMeta,
           as: "product_metas",
-          attributes: ["id", "title", "fieldType", "unit"],
+          attributes: ["id", "title", "slug", "fieldType", "unit"],
         },
       ],
     });
@@ -517,10 +528,13 @@ exports.getAllProductCodes = async (req, res) => {
       if (productData.meta) {
         productData.metaDetails = Object.keys(productData.meta).map(
           (metaId) => {
-            const metaField = product.metaFields.find((mf) => mf.id === metaId);
+            const metaField = productData.product_metas.find(
+              (mf) => mf.id === metaId
+            );
             return {
               id: metaId,
               title: metaField ? metaField.title : "Unknown",
+              slug: metaField ? metaField.slug : null,
               value: productData.meta[metaId],
               fieldType: metaField ? metaField.fieldType : null,
               unit: metaField ? metaField.unit : null,
@@ -528,7 +542,7 @@ exports.getAllProductCodes = async (req, res) => {
           }
         );
       }
-      delete productData.metaFields;
+      delete productData.product_metas;
       return productData;
     });
 

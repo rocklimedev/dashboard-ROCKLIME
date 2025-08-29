@@ -341,7 +341,7 @@ const AddNewOrder = ({ adminName }) => {
         ),
         invoiceLink: isEditMode ? formData.invoiceLink || null : null, // Ensure null in create mode
       };
-      console.log("Payload:", payload);
+
       if (isEditMode) {
         if (!id) {
           toast.error("Cannot update order: Invalid order ID.");
@@ -353,7 +353,6 @@ const AddNewOrder = ({ adminName }) => {
       }
       navigate("/orders/list");
     } catch (err) {
-      console.log("Error:", err);
       const errorMessage =
         err?.status === 400
           ? `Bad Request: ${err.data?.message || "Invalid data provided."}`

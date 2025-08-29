@@ -49,7 +49,6 @@ const BrandSelection = () => {
         }))
       : [];
 
-    console.log("Mapped brands:", mappedBrands); // Debug mapped brands
     return mappedBrands;
   }, [bpc]);
 

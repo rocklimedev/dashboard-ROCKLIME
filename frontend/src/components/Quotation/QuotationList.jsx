@@ -189,7 +189,6 @@ const QuotationList = () => {
       }
       toast.success("Quotation deleted successfully");
     } catch (err) {
-      console.error("Delete error:", err);
       toast.error(
         `Failed to delete quotation: ${
           err.data?.message || err.data?.error || err.message || "Unknown error"

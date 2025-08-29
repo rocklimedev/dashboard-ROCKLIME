@@ -35,7 +35,7 @@ const ProductDetails = () => {
     isLoading: isProductLoading,
     refetch: refetchProduct,
   } = useGetProductByIdQuery(id);
-  console.log(product);
+
   const { data: categoryData, isLoading: isCategoryLoading } =
     useGetCategoryByIdQuery(product?.categoryId, {
       skip: !product?.categoryId,

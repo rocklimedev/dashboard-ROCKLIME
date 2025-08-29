@@ -319,10 +319,6 @@ const CategoryManagement = () => {
                     className="card h-100"
                     style={{ cursor: "pointer" }}
                     onClick={() => {
-                      console.log(
-                        "Selecting parent category:",
-                        parentCategory.id
-                      );
                       setSelectedParentId(parentCategory.id);
                       setCategoryPage(1);
                       setCategorySearchTerm("");
@@ -431,7 +427,6 @@ const CategoryManagement = () => {
                     className="card h-100"
                     style={{ cursor: "pointer" }}
                     onClick={() => {
-                      console.log("Selecting category:", category.categoryId);
                       setSelectedCategoryId(category.categoryId);
                       setKeywordPage(1);
                       setKeywordSearchTerm("");

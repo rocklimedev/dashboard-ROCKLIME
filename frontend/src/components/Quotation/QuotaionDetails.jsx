@@ -113,7 +113,6 @@ const QuotationsDetails = () => {
   // Function to validate image URLs (including base64)
   const isValidImageUrl = (url) => {
     if (!url || typeof url !== "string") {
-      console.warn(`Invalid image URL: ${url}`);
       return false;
     }
 
@@ -121,19 +120,15 @@ const QuotationsDetails = () => {
       const isValid = /data:image\/(png|jpg|jpeg|gif|bmp|webp);base64,/.test(
         url
       );
-      if (!isValid)
-        console.warn(`Invalid base64 image URL: ${url.slice(0, 50)}...`);
-      return isValid;
+      if (!isValid) return isValid;
     }
 
     try {
       new URL(url);
       const imageExtensions = /\.(png|jpg|jpeg|gif|bmp|webp)$/i;
       const isValid = imageExtensions.test(url.split("?")[0]);
-      if (!isValid) console.warn(`Invalid image extension in URL: ${url}`);
       return isValid;
     } catch (error) {
-      console.warn(`Invalid URL format: ${url}, Error: ${error.message}`);
       return false;
     }
   };
@@ -148,10 +143,8 @@ const QuotationsDetails = () => {
   };
 
   const fetchImageAsBuffer = async (url, retries = 2) => {
-    console.log(`Fetching image: ${url.slice(0, 50)}...`);
     try {
       if (!url || !isValidImageUrl(url)) {
-        console.error(`Invalid image URL: ${url}`);
         return placeholderImage;
       }
 
@@ -162,13 +155,11 @@ const QuotationsDetails = () => {
           /^data:image\/(png|jpg|jpeg|gif|bmp|webp);base64,(.+)$/
         );
         if (!matches) {
-          console.error(`Invalid base64 format: ${url.slice(0, 50)}...`);
           return placeholderImage;
         }
         extension = matches[1];
         buffer = Buffer.from(matches[2], "base64");
         if (!buffer || buffer.length === 0) {
-          console.error(`Empty base64 buffer for URL: ${url.slice(0, 50)}...`);
           return placeholderImage;
         }
       } else {
@@ -204,9 +195,6 @@ const QuotationsDetails = () => {
             break;
           } catch (err) {
             if (attempt === retries) {
-              console.error(
-                `Failed to fetch image after ${retries} attempts: ${url}, Error: ${err.message}`
-              );
               return placeholderImage;
             }
             await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -214,14 +202,8 @@ const QuotationsDetails = () => {
         }
       }
 
-      console.log(
-        `Successfully fetched image: ${url.slice(0, 50)}..., Size: ${
-          buffer.length
-        } bytes`
-      );
       return { buffer, extension };
     } catch (error) {
-      console.error(`Error fetching image: ${url}, Error: ${error.message}`);
       return placeholderImage;
     }
   };
@@ -252,11 +234,7 @@ const QuotationsDetails = () => {
               imageUrl =
                 Array.isArray(imgs) && imgs.length > 0 ? imgs[0] : null;
             }
-          } catch (error) {
-            console.error(
-              `Failed to parse images for product ${product.productId}: ${error.message}`
-            );
-          }
+          } catch (error) {}
 
           const productCode =
             productDetail?.product_code ||
@@ -320,7 +298,6 @@ const QuotationsDetails = () => {
             };
           }
         } catch (error) {
-          console.error(`Error fetching logo: ${error.message}`);
           toast.warning("Using placeholder logo.");
         }
 
@@ -507,11 +484,7 @@ const QuotationsDetails = () => {
                 ext: { width: 50, height: 50 },
                 editAs: "oneCell",
               });
-            } catch (error) {
-              console.error(
-                `Error adding image for product ${row.name}: ${error.message}`
-              );
-            }
+            } catch (error) {}
           }
           currentRow++;
         });
@@ -653,7 +626,6 @@ const QuotationsDetails = () => {
           error.message
         }`
       );
-      console.error("Export error:", error);
     } finally {
       setIsExporting(false);
     }

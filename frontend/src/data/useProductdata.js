@@ -34,7 +34,6 @@ export default function useProductsData(products = []) {
             const data = await response.json();
             return { productId: products[index].productId, ...data };
           } catch (error) {
-            console.error(`Error fetching product ${productId}:`, error);
             setErrors((prev) => [...prev, { productId, error: error.message }]);
             return null;
           }
