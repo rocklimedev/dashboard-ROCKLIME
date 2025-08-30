@@ -51,10 +51,6 @@ const Product = sequelize.define(
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },
-    userId: {
-      type: DataTypes.UUID,
-      allowNull: false,
-    },
     productType: {
       type: DataTypes.ENUM("tiles", "sanitary"),
       allowNull: false,

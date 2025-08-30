@@ -77,9 +77,6 @@ const setupDB = async () => {
     // 🔥 USER RELATIONSHIPS
     // ==============================
 
-    User.hasMany(Product, { foreignKey: "userId" });
-    Product.belongsTo(User, { foreignKey: "userId" });
-
     // User ↔ Invoice
     Invoice.belongsTo(User, { foreignKey: "createdBy" });
 
