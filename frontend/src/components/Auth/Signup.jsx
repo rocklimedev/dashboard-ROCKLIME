@@ -47,133 +47,131 @@ const Signup = () => {
   };
 
   return (
-    <div className="main-wrapper">
-      <div className="account-content">
-        <div className="login-wrapper bg-img">
-          <div className="login-content authent-content">
-            <form onSubmit={handleSubmit}>
-              <div className="login-userset">
-                <div className="login-logo logo-normal">
-                  <img
-                    src={logo}
-                    alt="Logo"
-                    style={{ width: "177px", height: "auto" }}
+    <div className="account-content">
+      <div className="login-wrapper">
+        <div className="login-content authent-content">
+          <form onSubmit={handleSubmit}>
+            <div className="login-userset">
+              <div className="login-logo logo-normal">
+                <img
+                  src={logo}
+                  alt="Logo"
+                  style={{ width: "177px", height: "auto" }}
+                />
+              </div>
+              <div className="login-userheading">
+                <h3>Register</h3>
+                <h4>Create New Account</h4>
+              </div>
+              <div className="row">
+                <div className="col-md-6 mb-3">
+                  <label className="form-label">
+                    Name <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
                   />
                 </div>
-                <div className="login-userheading">
-                  <h3>Register</h3>
-                  <h4>Create New Account</h4>
-                </div>
-                <div className="row">
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">
-                      Name <span className="text-danger">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">
-                      Username <span className="text-danger">*</span>
-                    </label>
-                    <input
-                      type="text" // Changed from type="username" to type="text"
-                      className="form-control"
-                      name="username"
-                      value={formData.username}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="row">
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">
-                      Email <span className="text-danger">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      className="form-control"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">
-                      Password <span className="text-danger">*</span>
-                    </label>
-                    <input
-                      type="password"
-                      className="form-control"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="row">
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">
-                      Confirm Password <span className="text-danger">*</span>
-                    </label>
-                    <input
-                      type="password"
-                      className="form-control"
-                      name="confirmPassword"
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="form-login authentication-check">
-                  <label className="checkboxs ps-4 mb-0 pb-0 line-height-1">
-                    <input
-                      type="checkbox"
-                      name="agreeTerms"
-                      checked={formData.agreeTerms}
-                      onChange={handleChange}
-                    />
-                    <span className="checkmarks"></span>I agree to the{" "}
-                    <a href="#" className="text-primary">
-                      Terms & Privacy
-                    </a>
+                <div className="col-md-6 mb-3">
+                  <label className="form-label">
+                    Username <span className="text-danger">*</span>
                   </label>
-                </div>
-                <div className="form-login">
-                  <button
-                    type="submit"
-                    className="btn btn-primary w-100"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? "Registering..." : "Sign Up"}
-                  </button>
-                </div>
-                {error && (
-                  <p className="text-danger">
-                    {error.data?.message || "Registration failed!"}
-                  </p>
-                )}
-                <div className="signinform">
-                  <h4>
-                    Already have an account?{" "}
-                    <a href="/login" className="hover-a">
-                      Log In Instead
-                    </a>
-                  </h4>
+                  <input
+                    type="text" // Changed from type="username" to type="text"
+                    className="form-control"
+                    name="username"
+                    value={formData.username}
+                    onChange={handleChange}
+                    required
+                  />
                 </div>
               </div>
-            </form>
-          </div>
+              <div className="row">
+                <div className="col-md-6 mb-3">
+                  <label className="form-label">
+                    Email <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    className="form-control"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="col-md-6 mb-3">
+                  <label className="form-label">
+                    Password <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    className="form-control"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="row">
+                <div className="col-md-6 mb-3">
+                  <label className="form-label">
+                    Confirm Password <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    className="form-control"
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="form-login authentication-check">
+                <label className="checkboxs ps-4 mb-0 pb-0 line-height-1">
+                  <input
+                    type="checkbox"
+                    name="agreeTerms"
+                    checked={formData.agreeTerms}
+                    onChange={handleChange}
+                  />
+                  <span className="checkmarks"></span>I agree to the{" "}
+                  <a href="#" className="text-primary">
+                    Terms & Privacy
+                  </a>
+                </label>
+              </div>
+              <div className="form-login">
+                <button
+                  type="submit"
+                  className="btn btn-primary w-100"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Registering..." : "Sign Up"}
+                </button>
+              </div>
+              {error && (
+                <p className="text-danger">
+                  {error.data?.message || "Registration failed!"}
+                </p>
+              )}
+              <div className="signinform">
+                <h4>
+                  Already have an account?{" "}
+                  <a href="/login" className="hover-a">
+                    Log In Instead
+                  </a>
+                </h4>
+              </div>
+            </div>
+          </form>
         </div>
       </div>
     </div>
