@@ -48,7 +48,7 @@ const Signup = () => {
 
   return (
     <div className="account-content">
-      <div className="login-wrapper">
+      <div className="login-wrapper bg-img">
         <div className="login-content authent-content">
           <form onSubmit={handleSubmit}>
             <div className="login-userset">

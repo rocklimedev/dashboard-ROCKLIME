@@ -49470,6 +49470,7 @@ a.link-hover:hover {
   display: flex;
 }
 .login-wrapper.bg-img {
+  background-image: url(../img/authentication/e31e24.jpg);
   background-repeat: no-repeat;
   background-size: cover;
   background-position: center;
