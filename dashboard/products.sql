@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS `products` (
   `product_code` varchar(255) NOT NULL,
   `quantity` int(11) NOT NULL,
   `discountType` enum('percent','fixed') DEFAULT NULL,
-  `alert_quantity` int(11) DEFAULT '20',
+  `alert_quantity` int(11) DEFAULT NULL,
   `tax` decimal(5,2) DEFAULT NULL,
   `description` text,
   `images` json DEFAULT NULL,
@@ -30,7 +30,6 @@ CREATE TABLE IF NOT EXISTS `products` (
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL,
   `isFeatured` tinyint(1) DEFAULT '0',
-  `userId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   `productType` enum('tiles','sanitary') NOT NULL,
   `vendorId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   `brand_parentcategoriesId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
@@ -39,14 +38,12 @@ CREATE TABLE IF NOT EXISTS `products` (
   UNIQUE KEY `product_code` (`product_code`),
   KEY `brandId` (`brandId`),
   KEY `categoryId` (`categoryId`),
-  KEY `userId` (`userId`),
   KEY `vendorId` (`vendorId`),
   KEY `brand_parentcategoriesId` (`brand_parentcategoriesId`),
-  CONSTRAINT `products_ibfk_1792` FOREIGN KEY (`brandId`) REFERENCES `brands` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `products_ibfk_1793` FOREIGN KEY (`categoryId`) REFERENCES `categories` (`categoryId`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `products_ibfk_1794` FOREIGN KEY (`userId`) REFERENCES `users` (`userId`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `products_ibfk_1795` FOREIGN KEY (`vendorId`) REFERENCES `vendors` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `products_ibfk_1796` FOREIGN KEY (`brand_parentcategoriesId`) REFERENCES `brand_parentcategories` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+  CONSTRAINT `products_ibfk_2103` FOREIGN KEY (`brandId`) REFERENCES `brands` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `products_ibfk_2104` FOREIGN KEY (`categoryId`) REFERENCES `categories` (`categoryId`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `products_ibfk_2106` FOREIGN KEY (`vendorId`) REFERENCES `vendors` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `products_ibfk_2107` FOREIGN KEY (`brand_parentcategoriesId`) REFERENCES `brand_parentcategories` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Data exporting was unselected.

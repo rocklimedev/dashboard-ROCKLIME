@@ -38,10 +38,10 @@ CREATE TABLE IF NOT EXISTS `invoices` (
   KEY `createdBy` (`createdBy`),
   KEY `quotationId` (`quotationId`),
   KEY `customerId` (`customerId`),
-  CONSTRAINT `invoices_ibfk_2883` FOREIGN KEY (`shipTo`) REFERENCES `addresses` (`addressId`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `invoices_ibfk_2884` FOREIGN KEY (`createdBy`) REFERENCES `users` (`userId`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `invoices_ibfk_2885` FOREIGN KEY (`quotationId`) REFERENCES `quotations` (`quotationId`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `invoices_ibfk_2886` FOREIGN KEY (`customerId`) REFERENCES `customers` (`customerId`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `invoices_ibfk_3243` FOREIGN KEY (`shipTo`) REFERENCES `addresses` (`addressId`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `invoices_ibfk_3244` FOREIGN KEY (`createdBy`) REFERENCES `users` (`userId`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `invoices_ibfk_3245` FOREIGN KEY (`quotationId`) REFERENCES `quotations` (`quotationId`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `invoices_ibfk_3246` FOREIGN KEY (`customerId`) REFERENCES `customers` (`customerId`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Data exporting was unselected.
