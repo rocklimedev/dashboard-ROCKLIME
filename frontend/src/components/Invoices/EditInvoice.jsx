@@ -101,24 +101,6 @@ const EditInvoice = ({ invoice, onClose }) => {
     }
   }, [customers, invoice.customerId, formData.customerId]);
 
-  useEffect(() => {
-    console.log("Invoice Prop:", invoice);
-    console.log("Invoice.products Type:", typeof invoice.products);
-    console.log("Invoice.products Value:", invoice.products);
-    console.log("Products State:", products);
-    console.log("Customers:", customers);
-    console.log("Current customerId:", formData.customerId);
-    console.log("Addresses:", addresses);
-    console.log("Current shipTo:", formData.shipTo);
-  }, [
-    invoice,
-    products,
-    customers,
-    formData.customerId,
-    addresses,
-    formData.shipTo,
-  ]);
-
   const searchResults = useMemo(() => {
     if (!searchTerm) return [];
     return allProducts
@@ -264,10 +246,8 @@ const EditInvoice = ({ invoice, onClose }) => {
       ...invoiceData,
     };
 
-    console.log("Submitting Payload:", payload); // Debug payload
     try {
       const response = await updateInvoice(payload).unwrap();
-      console.log("Update Invoice Response:", response);
       onClose();
     } catch (err) {
       console.error("Update Invoice Error:", err, "Response Data:", err.data);

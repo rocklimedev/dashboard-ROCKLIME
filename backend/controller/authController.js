@@ -54,7 +54,7 @@ exports.register = async (req, res, next) => {
       token: verificationToken,
       email: normalizedEmail,
       isVerified: false,
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h from now
     });
 
     // Use sendMail directly with the accountVerificationEmail template
@@ -187,7 +187,7 @@ exports.forgotPassword = async (req, res, next) => {
       token: resetToken,
       email: normalizedEmail,
       isVerified: false,
-      expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h from now
     });
 
     req.email = {
@@ -484,7 +484,7 @@ exports.resendVerificationEmail = async (req, res, next) => {
       token: verificationToken,
       email: normalizedEmail,
       isVerified: false,
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h from now
     });
 
     // Send the verification email

@@ -15,10 +15,6 @@ const ProductRow = ({ product, index }) => {
     { skip: !product.productId }
   );
 
-  if (isError) {
-    console.log(`Product Query Error for ID ${product.productId}:`, error);
-  }
-
   const prod = data || {};
   const productName = prod.name || "Unknown Product";
   const price = parseFloat(product.price || prod.sellingPrice || 0);

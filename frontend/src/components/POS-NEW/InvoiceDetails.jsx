@@ -31,12 +31,6 @@ const InvoiceDetails = ({ invoiceData, onChange, error }) => {
     }
   }, [userId, refetch]);
 
-  useEffect(() => {
-    console.log("Addresses:", addresses);
-    console.log("Current shipTo:", shipTo);
-    console.log("Current dueDate:", dueDate); // Debug dueDate
-  }, [addresses, shipTo, dueDate]);
-
   const handleAddressCreated = (newAddress) => {
     if (newAddress?.addressId) {
       onChange("shipTo", newAddress.addressId);
@@ -66,7 +60,7 @@ const InvoiceDetails = ({ invoiceData, onChange, error }) => {
                 value={shipTo || ""}
                 onChange={(e) => {
                   const value = e.target.value || null;
-                  console.log("Selected shipTo:", value); // Debug
+
                   onChange("shipTo", value);
                 }}
               >
@@ -115,7 +109,6 @@ const InvoiceDetails = ({ invoiceData, onChange, error }) => {
                 type="text"
                 value={billTo || ""}
                 onChange={(e) => {
-                  console.log("Bill To:", e.target.value); // Debug
                   onChange("billTo", e.target.value);
                 }}
                 placeholder="Enter billing name or address"
@@ -128,7 +121,6 @@ const InvoiceDetails = ({ invoiceData, onChange, error }) => {
                 type="date"
                 value={invoiceDate || ""}
                 onChange={(e) => {
-                  console.log("Invoice Date:", e.target.value); // Debug
                   onChange("invoiceDate", e.target.value);
                 }}
                 required
@@ -140,7 +132,6 @@ const InvoiceDetails = ({ invoiceData, onChange, error }) => {
                 type="date"
                 value={dueDate || ""}
                 onChange={(e) => {
-                  console.log("Due Date:", e.target.value); // Debug
                   onChange("dueDate", e.target.value);
                 }}
                 required
@@ -158,7 +149,6 @@ const InvoiceDetails = ({ invoiceData, onChange, error }) => {
                 type="text"
                 value={signatureName || ""}
                 onChange={(e) => {
-                  console.log("Signature Name:", e.target.value); // Debug
                   onChange("signatureName", e.target.value);
                 }}
                 placeholder="Enter signature name"
