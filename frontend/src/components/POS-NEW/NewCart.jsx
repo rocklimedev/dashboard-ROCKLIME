@@ -15,6 +15,7 @@ import {
   Col,
   Tabs,
   Select,
+  InputNumber,
 } from "antd";
 import {
   ShoppingCartOutlined,
@@ -22,6 +23,7 @@ import {
   DeleteOutlined,
   CheckCircleOutlined,
   ArrowLeftOutlined,
+  PercentageOutlined,
 } from "@ant-design/icons";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import {
@@ -37,8 +39,6 @@ import {
   useCreateAddressMutation,
 } from "../../api/addressApi";
 import { LazyLoadImage } from "react-lazy-load-image-component";
-import AddCustomer from "../Customers/AddCustomer";
-import OrderTotal from "./OrderTotal";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import { FcEmptyTrash } from "react-icons/fc";
@@ -46,7 +46,7 @@ import { BiTrash } from "react-icons/bi";
 import styled from "styled-components";
 import PropTypes from "prop-types";
 import "react-lazy-load-image-component/src/effects/blur.css";
-
+import OrderTotal from "./OrderTotal";
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { TabPane } = Tabs;
@@ -124,6 +124,11 @@ const EmptyCartWrapper = styled.div`
   flex-direction: column;
   align-items: center;
   padding: 40px 0;
+`;
+
+const DiscountInput = styled(InputNumber)`
+  width: 100px;
+  margin-left: 8px;
 `;
 
 const AddAddressModal = ({ show, onClose, onSave }) => {
@@ -291,7 +296,6 @@ const NewCart = ({ onConvertToOrder }) => {
 
   const [activeTab, setActiveTab] = useState("cart");
   const [selectedCustomer, setSelectedCustomer] = useState("");
-  const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
   const [showClearCartModal, setShowClearCartModal] = useState(false);
   const [showAddAddressModal, setShowAddAddressModal] = useState(false);
   const [quotationNumber, setQuotationNumber] = useState(
@@ -308,6 +312,7 @@ const NewCart = ({ onConvertToOrder }) => {
     discountType: "percent",
     roundOff: "",
   });
+  const [itemDiscounts, setItemDiscounts] = useState({}); // Store individual item discounts
   const [error, setError] = useState("");
   const [updatingItems, setUpdatingItems] = useState({});
 
@@ -342,14 +347,24 @@ const NewCart = ({ onConvertToOrder }) => {
       ),
     [cartItems]
   );
+  const totalDiscount = useMemo(
+    () =>
+      cartItems.reduce(
+        (acc, item) =>
+          acc +
+          (itemDiscounts[item.productId]
+            ? parseFloat(itemDiscounts[item.productId]) * (item.quantity || 1)
+            : 0),
+        0
+      ),
+    [cartItems, itemDiscounts]
+  );
   const shipping = 40;
   const tax = quotationData.includeGst
     ? (subTotal * (parseFloat(quotationData.gstValue) || 0)) / 100
     : 25;
-  const discount =
-    quotationData.discountType === "percent" ? (subTotal * 15) / 100 : 15;
   const roundOff = parseFloat(quotationData.roundOff) || 0;
-  const totalAmount = subTotal + shipping + tax - discount + roundOff;
+  const totalAmount = subTotal + shipping + tax - totalDiscount + roundOff;
 
   useEffect(() => {
     if (selectedCustomer && addresses.length > 0) {
@@ -399,14 +414,24 @@ const NewCart = ({ onConvertToOrder }) => {
   const handleQuotationChange = (key, value) => {
     setQuotationData((prev) => ({ ...prev, [key]: value }));
   };
+
+  const handleDiscountChange = (productId, value) => {
+    setItemDiscounts((prev) => ({
+      ...prev,
+      [productId]: value >= 0 ? value : 0, // Ensure non-negative discount
+    }));
+  };
+
   const handleAddCustomer = () => {
     navigate("/customers/add");
   };
+
   const handleClearCart = async () => {
     if (!userId) return toast.error("User not logged in!");
     try {
       await clearCart({ userId }).unwrap();
       setQuotationNumber(generateQuotationNumber());
+      setItemDiscounts({}); // Clear discounts
       refetch();
       setShowClearCartModal(false);
       setActiveTab("cart");
@@ -421,6 +446,10 @@ const NewCart = ({ onConvertToOrder }) => {
     try {
       if (newQuantity <= 0) {
         await removeFromCart({ userId, productId }).unwrap();
+        setItemDiscounts((prev) => {
+          const { [productId]: _, ...rest } = prev;
+          return rest;
+        });
       } else {
         await updateCart({
           userId,
@@ -441,6 +470,10 @@ const NewCart = ({ onConvertToOrder }) => {
     setUpdatingItems((prev) => ({ ...prev, [productId]: true }));
     try {
       await removeFromCart({ userId, productId }).unwrap();
+      setItemDiscounts((prev) => {
+        const { [productId]: _, ...rest } = prev;
+        return rest;
+      });
       refetch();
     } catch (error) {
       toast.error(`Error: ${error.data?.message || "Unknown error"}`);
@@ -519,26 +552,38 @@ const NewCart = ({ onConvertToOrder }) => {
       customerId: selectedCustomerData.customerId,
       shipTo: quotationData.shipTo || null,
       createdBy: userId,
-      products: cartItems.map((item) => ({
-        productId: item.productId,
-        name: item.name || "Unnamed Product",
-        quantity: item.quantity || 1,
-        sellingPrice: parseFloat(item.price || 0),
-        discount: 0,
-        tax: quotationData.includeGst
-          ? parseFloat(quotationData.gstValue) || 0
-          : 0,
-        total: parseFloat((item.price * item.quantity).toFixed(2)),
-      })),
-      items: cartItems.map((item) => ({
-        productId: item.productId,
-        quantity: item.quantity || 1,
-        discount: 0,
-        tax: quotationData.includeGst
-          ? parseFloat(quotationData.gstValue) || 0
-          : 0,
-        total: parseFloat((item.price * item.quantity).toFixed(2)),
-      })),
+      products: cartItems.map((item) => {
+        const itemSubtotal = parseFloat(
+          (item.price * item.quantity).toFixed(2)
+        );
+        const itemDiscount = parseFloat(itemDiscounts[item.productId]) || 0;
+        return {
+          productId: item.productId,
+          name: item.name || "Unnamed Product",
+          quantity: item.quantity || 1,
+          sellingPrice: parseFloat(item.price || 0),
+          discount: itemDiscount,
+          tax: quotationData.includeGst
+            ? parseFloat(quotationData.gstValue) || 0
+            : 0,
+          total: parseFloat((itemSubtotal - itemDiscount).toFixed(2)),
+        };
+      }),
+      items: cartItems.map((item) => {
+        const itemSubtotal = parseFloat(
+          (item.price * item.quantity).toFixed(2)
+        );
+        const itemDiscount = parseFloat(itemDiscounts[item.productId]) || 0;
+        return {
+          productId: item.productId,
+          quantity: item.quantity || 1,
+          discount: itemDiscount,
+          tax: quotationData.includeGst
+            ? parseFloat(quotationData.gstValue) || 0
+            : 0,
+          total: parseFloat((itemSubtotal - itemDiscount).toFixed(2)),
+        };
+      }),
     };
 
     try {
@@ -567,6 +612,7 @@ const NewCart = ({ onConvertToOrder }) => {
       roundOff: "",
     });
     setSelectedCustomer("");
+    setItemDiscounts({});
     setQuotationNumber(generateQuotationNumber());
     setActiveTab("cart");
   };
@@ -684,8 +730,10 @@ const NewCart = ({ onConvertToOrder }) => {
                               <Col xs={6} sm={4}>
                                 <CartItemImage
                                   src={
-                                    item.image ||
-                                    "https://via.placeholder.com/100"
+                                    item.images
+                                      ? JSON.parse(item.images)?.[0] ||
+                                        "https://via.placeholder.com/100"
+                                      : "https://via.placeholder.com/100"
                                   }
                                   alt={item.name}
                                   width={80}
@@ -704,6 +752,21 @@ const NewCart = ({ onConvertToOrder }) => {
                                 >
                                   Price: ₹{item.price?.toFixed(2) || "0.00"}
                                 </Text>
+                                <br />
+                                <Text>Discount:</Text>
+                                <DiscountInput
+                                  min={0}
+                                  value={itemDiscounts[item.productId] || 0}
+                                  onChange={(value) =>
+                                    handleDiscountChange(item.productId, value)
+                                  }
+                                  addonAfter={
+                                    quotationData.discountType === "percent"
+                                      ? "%"
+                                      : "₹"
+                                  }
+                                  aria-label={`Discount for ${item.name}`}
+                                />
                               </Col>
                               <Col xs={12} sm={6}>
                                 <Space>
@@ -747,7 +810,11 @@ const NewCart = ({ onConvertToOrder }) => {
                                 style={{ textAlign: "right" }}
                               >
                                 <Text strong style={{ color: "green" }}>
-                                  ₹{(item.price * item.quantity).toFixed(2)}
+                                  ₹
+                                  {(
+                                    item.price * item.quantity -
+                                    (itemDiscounts[item.productId] || 0)
+                                  ).toFixed(2)}
                                 </Text>
                                 <RemoveButton
                                   type="text"
@@ -777,7 +844,7 @@ const NewCart = ({ onConvertToOrder }) => {
                       shipping={shipping}
                       tax={tax}
                       coupon={0}
-                      discount={discount}
+                      discount={totalDiscount}
                       roundOff={roundOff}
                       subTotal={subTotal}
                     />
@@ -1011,7 +1078,7 @@ const NewCart = ({ onConvertToOrder }) => {
                       shipping={shipping}
                       tax={tax}
                       coupon={0}
-                      discount={discount}
+                      discount={totalDiscount}
                       roundOff={roundOff}
                       subTotal={subTotal}
                     />

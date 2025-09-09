@@ -13,10 +13,11 @@ import {
   useCreateAddressMutation,
   useUpdateAddressMutation,
 } from "../../api/addressApi";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
-const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
+const NewAddUser = ({ userToEdit: propUserToEdit }) => {
   const { userId } = useParams();
+  const navigate = useNavigate();
   const {
     data: fetchedUser,
     isLoading: isFetchingUser,
@@ -45,7 +46,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
 
   const [isEditMode, setIsEditMode] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [manageAddress, setManageAddress] = useState(false); // New state for address management
+  const [manageAddress, setManageAddress] = useState(false);
   const [formData, setFormData] = useState({
     username: "",
     name: "",
@@ -61,16 +62,12 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
     password: "",
     avatar: null,
     about: "",
-    ...(userToEdit
-      ? {
-          street: userToEdit.address?.street || "",
-          country: userToEdit.address?.country || "",
-          state: userToEdit.address?.state || "",
-          city: userToEdit.address?.city || "",
-          postalCode: userToEdit.address?.postalCode || "",
-          addressId: userToEdit.addressId || null,
-        }
-      : {}),
+    street: "",
+    country: "",
+    state: "",
+    city: "",
+    postalCode: "",
+    addressId: null,
   });
 
   useEffect(() => {
@@ -112,7 +109,6 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
         addressId: userToEdit.addressId || null,
       });
       setIsEditMode(true);
-      // Set manageAddress to true if address exists, false otherwise
       setManageAddress(!!userToEdit.addressId);
     } else {
       setIsEditMode(false);
@@ -127,11 +123,11 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
       toast.error(updateError?.data?.message || "Failed to update user");
     if (rolesError)
       toast.error(rolesError?.data?.message || "Failed to load roles");
-    if (isEditMode && manageAddress && addressCreateError)
+    if (addressCreateError)
       toast.error(
         addressCreateError?.data?.message || "Failed to create address"
       );
-    if (isEditMode && manageAddress && addressUpdateError)
+    if (addressUpdateError)
       toast.error(
         addressUpdateError?.data?.message || "Failed to update address"
       );
@@ -141,8 +137,6 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
     createError,
     updateError,
     rolesError,
-    isEditMode,
-    manageAddress,
     addressCreateError,
     addressUpdateError,
     fetchUserError,
@@ -201,7 +195,10 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
       }
 
       let addressId = isEditMode ? formData.addressId : null;
-      if (isEditMode && manageAddress) {
+      let newUserId = null;
+
+      // Handle address creation/update
+      if (manageAddress) {
         const hasAddressFields =
           formData.street ||
           formData.country ||
@@ -218,26 +215,37 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
             postalCode: formData.postalCode || null,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-            userId: userToEdit.userId,
+            userId: isEditMode ? userToEdit.userId : null, // Set userId later for create mode
           };
 
           let addressResponse;
-          if (addressId) {
-            addressResponse = await updateAddress({
-              addressId,
-              ...addressPayload,
-            }).unwrap();
-          } else {
-            addressResponse = await createAddress(addressPayload).unwrap();
-          }
-          addressId =
-            addressResponse.addressId || addressResponse.data?.addressId;
-          if (!addressId) {
-            toast.error("Failed to obtain address ID");
+          try {
+            if (isEditMode && addressId) {
+              addressResponse = await updateAddress({
+                addressId,
+                ...addressPayload,
+              }).unwrap();
+            } else {
+              addressResponse = await createAddress(addressPayload).unwrap();
+            }
+            addressId =
+              addressResponse.addressId || addressResponse.data?.addressId;
+            if (!addressId) {
+              toast.error("Failed to obtain address ID");
+              return;
+            }
+          } catch (addressErr) {
+            console.error("Address operation failed:", addressErr);
+            toast.error(
+              `Address operation failed: ${
+                addressErr.data?.message ||
+                addressErr.message ||
+                "Unknown error"
+              }`
+            );
             return;
           }
-        } else if (addressId) {
-          // If user chooses to manage address but clears all fields, optionally handle address deletion
+        } else if (isEditMode && addressId) {
           toast.warning(
             "Address fields are empty; address will remain unchanged."
           );
@@ -246,18 +254,31 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
 
       let avatarUrl = formData.avatar;
       if (formData.avatar instanceof File) {
-        const formDataUpload = new FormData();
-        formDataUpload.append("file", formData.avatar);
-        const uploadResponse = await fetch("/api/upload", {
-          method: "POST",
-          body: formDataUpload,
-        });
-        const uploadData = await uploadResponse.json();
-        if (!uploadData.success) {
-          toast.error("Failed to upload avatar");
+        try {
+          const formDataUpload = new FormData();
+          formDataUpload.append("file", formData.avatar);
+          const uploadResponse = await fetch("/api/upload", {
+            method: "POST",
+            body: formDataUpload,
+          });
+          const uploadData = await uploadResponse.json();
+          console.log("Avatar upload response:", uploadData);
+          if (!uploadData.success) {
+            toast.error(
+              `Failed to upload avatar: ${
+                uploadData.message || "Unknown error"
+              }`
+            );
+            return;
+          }
+          avatarUrl = uploadData.data.url;
+        } catch (uploadErr) {
+          console.error("Avatar upload failed:", uploadErr);
+          toast.error(
+            `Avatar upload failed: ${uploadErr.message || "Unknown error"}`
+          );
           return;
         }
-        avatarUrl = uploadData.data.url;
       }
 
       const userPayload = {
@@ -269,7 +290,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
         shiftFrom: formData.shiftFrom || null,
         shiftTo: formData.shiftTo || null,
         bloodGroup: formData.bloodGroup || null,
-        addressId: addressId || null, // Use existing or new addressId
+        addressId: addressId || null,
         emergencyNumber: formData.emergencyNumber || null,
         roleId: selectedRoleObj.roleId,
         status: formData.status,
@@ -279,22 +300,60 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
       };
 
       let userResponse;
-      if (isEditMode) {
-        userResponse = await updateUser({
-          userId: userToEdit.userId,
-          ...userPayload,
-        }).unwrap();
-      } else {
-        userResponse = await createUser(userPayload).unwrap();
+      try {
+        if (isEditMode) {
+          userResponse = await updateUser({
+            userId: userToEdit.userId,
+            ...userPayload,
+          }).unwrap();
+        } else {
+          userResponse = await createUser(userPayload).unwrap();
+          newUserId = userResponse.userId || userResponse.data?.userId;
+        }
+      } catch (userErr) {
+        console.error("User operation failed:", userErr);
+        toast.error(
+          `User operation failed: ${
+            userErr.data?.message || userErr.message || "Unknown error"
+          }`
+        );
+        return;
       }
 
-      onClose();
+      // Update address with userId for new user
+      if (!isEditMode && addressId && newUserId) {
+        try {
+          await updateAddress({
+            addressId,
+            userId: newUserId,
+            street: formData.street || null,
+            country: formData.country || null,
+            state: formData.state || null,
+            city: formData.city || null,
+            postalCode: formData.postalCode || null,
+            updatedAt: new Date().toISOString(),
+          }).unwrap();
+        } catch (addressErr) {
+          console.error("Failed to update address with userId:", addressErr);
+          toast.error(
+            `Failed to associate address with user: ${
+              addressErr.data?.message || addressErr.message || "Unknown error"
+            }`
+          );
+          return;
+        }
+      }
+
       toast.success(
         isEditMode ? "User updated successfully" : "User created successfully"
       );
+      navigate("/users/list");
     } catch (err) {
+      console.error("Unexpected error in handleSubmit:", err);
       toast.error(
-        `Failed to process the request: ${err.data?.message || "Unknown error"}`
+        `Failed to process the request: ${
+          err.data?.message || err.message || "Unknown error"
+        }`
       );
     }
   };
@@ -315,16 +374,12 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
       password: "",
       avatar: null,
       about: "",
-      ...(isEditMode
-        ? {
-            street: "",
-            country: "",
-            state: "",
-            city: "",
-            postalCode: "",
-            addressId: null,
-          }
-        : {}),
+      street: "",
+      country: "",
+      state: "",
+      city: "",
+      postalCode: "",
+      addressId: null,
     });
     setIsEditMode(false);
     setManageAddress(false);
@@ -332,6 +387,10 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
 
   const handleCollapse = () => {
     setIsCollapsed((prev) => !prev);
+  };
+
+  const handleClose = () => {
+    navigate("/users/list");
   };
 
   if (isFetchingUser || isRolesLoading) {
@@ -349,7 +408,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
       <div className="page-wrapper">
         <div className="content text-center">
           <p className="text-danger">Error loading user data.</p>
-          <Button variant="secondary" onClick={onClose}>
+          <Button variant="secondary" onClick={handleClose}>
             Go Back
           </Button>
         </div>
@@ -364,7 +423,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
           <div className="add-item d-flex">
             <div className="page-title">
               <h4>{isEditMode ? "Edit User" : "Add User"}</h4>
-              <h6>Create new Employee</h6>
+              <h6>{isEditMode ? "Update Employee" : "Create new Employee"}</h6>
             </div>
           </div>
           <ul className="table-top-head">
@@ -653,125 +712,118 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
               </div>
             </div>
 
-            {/* Address Information (Only in Edit Mode) */}
-            {isEditMode && (
-              <div className="accordion-item border mb-4">
-                <h2 className="accordion-header" id="headingThree">
-                  <div
-                    className="accordion-button bg-white"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#collapseThree"
-                    aria-controls="collapseThree"
-                  >
-                    <h5 className="d-inline-flex align-items-center">
-                      <i
-                        data-feather="map-pin"
-                        className="text-primary me-2"
-                      ></i>
-                      <span>Address Information</span>
-                    </h5>
-                  </div>
-                </h2>
+            {/* Address Information */}
+            <div className="accordion-item border mb-4">
+              <h2 className="accordion-header" id="headingThree">
                 <div
-                  id="collapseThree"
-                  className="accordion-collapse collapse show"
-                  aria-labelledby="headingThree"
-                  data-bs-parent="#accordionExample"
+                  className="accordion-button bg-white"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#collapseThree"
+                  aria-controls="collapseThree"
                 >
-                  <div className="accordion-body border-top">
-                    <div className="mb-3">
-                      <Form.Check
-                        type="checkbox"
-                        label={
-                          formData.addressId
-                            ? "Edit existing address"
-                            : "Add new address"
-                        }
-                        checked={manageAddress}
-                        onChange={(e) => setManageAddress(e.target.checked)}
-                      />
-                    </div>
-                    {manageAddress && (
-                      <div className="row">
-                        <div className="col-lg-4 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">Street</label>
-                            <input
-                              type="text"
-                              className="form-control"
-                              name="street"
-                              value={formData.street}
-                              onChange={handleChange}
-                            />
-                          </div>
-                        </div>
-                        <div className="col-lg-4 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">Country</label>
-                            <input
-                              type="text"
-                              className="form-control"
-                              name="country"
-                              value={formData.country}
-                              onChange={handleChange}
-                            />
-                          </div>
-                        </div>
-                        <div className="col-lg-4 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">State</label>
-                            <input
-                              type="text"
-                              className="form-control"
-                              name="state"
-                              value={formData.state}
-                              onChange={handleChange}
-                            />
-                          </div>
-                        </div>
-                        <div className="col-lg-4 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">City</label>
-                            <input
-                              type="text"
-                              className="form-control"
-                              name="city"
-                              value={formData.city}
-                              onChange={handleChange}
-                            />
-                          </div>
-                        </div>
-                        <div className="col-lg-4 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">Postal Code</label>
-                            <input
-                              type="text"
-                              className="form-control"
-                              name="postalCode"
-                              value={formData.postalCode}
-                              onChange={handleChange}
-                            />
-                          </div>
+                  <h5 className="d-inline-flex align-items-center">
+                    <i data-feather="map-pin" className="text-primary me-2"></i>
+                    <span>Address Information</span>
+                  </h5>
+                </div>
+              </h2>
+              <div
+                id="collapseThree"
+                className="accordion-collapse collapse show"
+                aria-labelledby="headingThree"
+                data-bs-parent="#accordionExample"
+              >
+                <div className="accordion-body border-top">
+                  <div className="mb-3">
+                    <Form.Check
+                      type="checkbox"
+                      label={
+                        isEditMode && formData.addressId
+                          ? "Edit existing address"
+                          : "Add new address"
+                      }
+                      checked={manageAddress}
+                      onChange={(e) => setManageAddress(e.target.checked)}
+                    />
+                  </div>
+                  {manageAddress && (
+                    <div className="row">
+                      <div className="col-lg-4 col-md-6">
+                        <div className="mb-3">
+                          <label className="form-label">Street</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            name="street"
+                            value={formData.street}
+                            onChange={handleChange}
+                          />
                         </div>
                       </div>
-                    )}
-                  </div>
+                      <div className="col-lg-4 col-md-6">
+                        <div className="mb-3">
+                          <label className="form-label">Country</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            name="country"
+                            value={formData.country}
+                            onChange={handleChange}
+                          />
+                        </div>
+                      </div>
+                      <div className="col-lg-4 col-md-6">
+                        <div className="mb-3">
+                          <label className="form-label">State</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            name="state"
+                            value={formData.state}
+                            onChange={handleChange}
+                          />
+                        </div>
+                      </div>
+                      <div className="col-lg-4 col-md-6">
+                        <div className="mb-3">
+                          <label className="form-label">City</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            name="city"
+                            value={formData.city}
+                            onChange={handleChange}
+                          />
+                        </div>
+                      </div>
+                      <div className="col-lg-4 col-md-6">
+                        <div className="mb-3">
+                          <label className="form-label">Postal Code</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            name="postalCode"
+                            value={formData.postalCode}
+                            onChange={handleChange}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
+            </div>
           </div>
 
           <div className="text-end mb-3">
             <Button
               variant="secondary"
               className="me-2"
-              onClick={onClose}
+              onClick={handleClose}
               disabled={
                 isCreating ||
                 isUpdating ||
-                (isEditMode &&
-                  manageAddress &&
-                  (isAddressCreating || isAddressUpdating))
+                (manageAddress && (isAddressCreating || isAddressUpdating))
               }
             >
               Cancel
@@ -783,16 +835,12 @@ const NewAddUser = ({ userToEdit: propUserToEdit, onClose }) => {
                 isCreating ||
                 isUpdating ||
                 isRolesLoading ||
-                (isEditMode &&
-                  manageAddress &&
-                  (isAddressCreating || isAddressUpdating))
+                (manageAddress && (isAddressCreating || isAddressUpdating))
               }
             >
               {isCreating ||
               isUpdating ||
-              (isEditMode &&
-                manageAddress &&
-                (isAddressCreating || isAddressUpdating))
+              (manageAddress && (isAddressCreating || isAddressUpdating))
                 ? "Saving..."
                 : isEditMode
                 ? "Update Employee"

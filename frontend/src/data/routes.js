@@ -16,9 +16,9 @@ import {
 import { FaFileCircleCheck } from "react-icons/fa6";
 import { FaTeamspeak } from "react-icons/fa";
 import { CgProfile } from "react-icons/cg";
-import { IoLogIn } from "react-icons/io5";
+import { IoDocumentAttach, IoLogIn } from "react-icons/io5";
 import { MdOutlinePerson } from "react-icons/md";
-import { RiDashboardLine } from "react-icons/ri";
+import { RiDashboardLine, RiListOrdered } from "react-icons/ri";
 import {
   MdOutlineInventory2,
   MdOutlineDiscount,
@@ -73,6 +73,7 @@ import ContactWrapper from "../components/Contact/ContactWrapper";
 import AddCustomer from "../components/Customers/AddCustomer";
 import EmailInterface from "../components/Contact/EmailInterface";
 import EmailVerification from "../components/Auth/EmailVerifications";
+import POWrapper from "../components/Orders/POWrapper";
 const masterRoutes = [
   {
     path: "/",
@@ -97,6 +98,20 @@ const masterRoutes = [
     isSidebarActive: true,
   },
   {
+    path: "/quotations/list",
+    name: "Quotations",
+    icon: <IoDocumentAttach />,
+    element: <QuotationList />,
+    isSidebarActive: true,
+  },
+  {
+    path: "/po/list",
+    name: "Purchase Orders",
+    icon: <RiListOrdered />,
+    element: <POWrapper />,
+    isSidebarActive: true,
+  },
+  {
     path: "/customers/list",
     name: "Customers",
     icon: <MdOutlinePeopleAlt />,
@@ -107,7 +122,6 @@ const masterRoutes = [
     path: "#",
     name: "Products",
     icon: <AiOutlineProduct />,
-
     isSidebarActive: false,
     submenu: [
       {
@@ -175,7 +189,7 @@ const masterRoutes = [
       },
       {
         path: "/user/:userId/edit",
-        name: "User Edit",
+        name: "Edit User",
         icon: <BiUser />,
         isSidebarActive: false,
         element: <NewAddUser />,
@@ -202,13 +216,6 @@ const masterRoutes = [
     icon: <FaFileCircleCheck />,
     isSidebarActive: false,
     submenu: [
-      {
-        path: "/customers/list",
-        name: "Customers",
-        icon: <PiUserList />,
-        isSidebarActive: true,
-        element: <CustomerList />,
-      },
       {
         path: "/customer/:id",
         name: "Customer Details",
@@ -254,7 +261,7 @@ const masterRoutes = [
       },
       {
         path: "/product/:productId/edit",
-        name: "Product Edit",
+        name: "Edit Product",
         icon: <AiOutlineProduct />,
         isSidebarActive: false,
         element: <CreateProduct />,
@@ -289,6 +296,7 @@ const masterRoutes = [
       },
       {
         path: "/order/:id/edit",
+        name: "Edit Order",
         icon: <RiDashboardLine />,
         isSidebarActive: false,
         element: <AddNewOrder />,
@@ -307,13 +315,6 @@ const masterRoutes = [
         isSidebarActive: false,
       },
 
-      {
-        path: "/quotations/list",
-        name: "Quotations",
-        icon: <IoPricetagOutline />,
-        isSidebarActive: false,
-        element: <QuotationList />,
-      },
       {
         path: "/quotations/:id",
         name: "Quotations Details",
