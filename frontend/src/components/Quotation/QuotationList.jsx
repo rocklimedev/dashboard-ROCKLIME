@@ -262,211 +262,215 @@ const QuotationList = () => {
   }
 
   return (
-    <>
-      <div className="card">
-        <PageHeader
-          title="Quotations"
-          subtitle="Manage your Quotations"
-          tableData={formattedTableData}
-        />
-        <div className="card-body">
-          <div className="row">
-            <div className="col-lg-12">
-              <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
-                <div className="input-icon-start position-relative">
-                  <span className="input-icon-addon">
-                    <FaSearch />
-                  </span>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Search Quotations"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    aria-label="Search quotations"
-                  />
+    <div className="page-wrapper">
+      <div className="content">
+        <div className="card">
+          <PageHeader
+            title="Quotations"
+            subtitle="Manage your Quotations"
+            tableData={formattedTableData}
+          />
+          <div className="card-body">
+            <div className="row">
+              <div className="col-lg-12">
+                <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
+                  <div className="input-icon-start position-relative">
+                    <span className="input-icon-addon">
+                      <FaSearch />
+                    </span>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Search Quotations"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      aria-label="Search quotations"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-          <div className="tab-content" id="pills-tabContent">
-            {Object.entries(groupedQuotations).map(([status, list]) => (
-              <div
-                className={`tab-pane fade ${
-                  activeTab === status ? "show active" : ""
-                }`}
-                id={`pills-${status}`}
-                role="tabpanel"
-                aria-labelledby={`tab-${status}`}
-                key={status}
-              >
-                {currentQuotations.length === 0 ? (
-                  <p className="text-muted">
-                    No {status.toLowerCase()} quotations match the applied
-                    filters
-                  </p>
-                ) : (
-                  <div className="table-responsive">
-                    <table className="table table-hover">
-                      <thead>
-                        <tr>
-                          <th>S.No.</th> {/* New column */}
-                          <th>Quotation Title</th>
-                          <th>Quotation Date</th>
-                          <th>Due Date</th>
-                          <th>Reference Number</th>
-                          <th>Products</th>
-                          <th>Customer</th>
-                          <th>Final Amount</th>
-                          <th></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {currentQuotations.map((quotation, index) => (
-                          <tr key={quotation.quotationId}>
-                            <td>
-                              {(currentPage - 1) * itemsPerPage + index + 1}
-                            </td>{" "}
-                            {/* S.No. */}
-                            <td>
-                              <Link to={`/quotations/${quotation.quotationId}`}>
-                                {quotation.document_title || "N/A"}
-                              </Link>
-                            </td>
-                            <td>
-                              {new Date(
-                                quotation.quotation_date
-                              ).toLocaleDateString()}
-                            </td>
-                            <td>
-                              {new Date(
-                                quotation.due_date
-                              ).toLocaleDateString()}
-                            </td>
-                            <td>{quotation.reference_number || "N/A"}</td>
-                            <td>
-                              <button
-                                className="btn btn-link"
-                                onClick={() =>
-                                  handleOpenProductModal(quotation.products)
-                                }
-                                style={{ color: "#e31e24" }}
-                                aria-label="View products"
-                              >
-                                View Products (
-                                {getProductCount(quotation.products)})
-                              </button>
-                            </td>
-                            <td>
-                              <Link to={`/customer/${quotation.customerId}`}>
-                                {getCustomerName(quotation.customerId)}
-                              </Link>
-                            </td>
-                            <td>₹{quotation.finalAmount || 0}</td>
-                            <td>
-                              <Dropdown
-                                overlay={
-                                  <Menu>
-                                    <Menu.Item key="view">
-                                      <Link
-                                        to={`/quotations/${quotation.quotationId}`}
-                                        style={{
-                                          textDecoration: "none",
-                                          color: "inherit",
-                                        }}
-                                        title="View Quotation"
-                                      >
-                                        <FaEye style={{ marginRight: 8 }} />
-                                        View
-                                      </Link>
-                                    </Menu.Item>
-                                    <Menu.Item key="edit">
-                                      <Link
-                                        to={`/quotations/${quotation.quotationId}/edit`}
-                                        style={{
-                                          textDecoration: "none",
-                                          color: "inherit",
-                                        }}
-                                        title="Edit Quotation"
-                                      >
-                                        <FaEdit style={{ marginRight: 8 }} />
-                                        Edit
-                                      </Link>
-                                    </Menu.Item>
-                                    <Menu.Item
-                                      key="delete"
-                                      onClick={() =>
-                                        handleDeleteClick(quotation)
-                                      }
-                                      disabled={isDeleting}
-                                      style={{ color: "#ff4d4f" }}
-                                      title="Delete Quotation"
-                                    >
-                                      <FaTrash style={{ marginRight: 8 }} />
-                                      Delete
-                                    </Menu.Item>
-                                  </Menu>
-                                }
-                                trigger={["click"]}
-                                placement="bottomRight"
-                              >
-                                <Button
-                                  type="text"
-                                  icon={<MoreOutlined />}
-                                  aria-label="More actions"
-                                />
-                              </Dropdown>
-                            </td>
+            <div className="tab-content" id="pills-tabContent">
+              {Object.entries(groupedQuotations).map(([status, list]) => (
+                <div
+                  className={`tab-pane fade ${
+                    activeTab === status ? "show active" : ""
+                  }`}
+                  id={`pills-${status}`}
+                  role="tabpanel"
+                  aria-labelledby={`tab-${status}`}
+                  key={status}
+                >
+                  {currentQuotations.length === 0 ? (
+                    <p className="text-muted">
+                      No {status.toLowerCase()} quotations match the applied
+                      filters
+                    </p>
+                  ) : (
+                    <div className="table-responsive">
+                      <table className="table table-hover">
+                        <thead>
+                          <tr>
+                            <th>S.No.</th> {/* New column */}
+                            <th>Quotation Title</th>
+                            <th>Quotation Date</th>
+                            <th>Due Date</th>
+                            <th>Reference Number</th>
+                            <th>Products</th>
+                            <th>Customer</th>
+                            <th>Final Amount</th>
+                            <th></th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    {filteredQuotations.length > itemsPerPage && (
-                      <div className="pagination-section mt-4">
-                        <DataTablePagination
-                          totalItems={filteredQuotations.length}
-                          itemNo={itemsPerPage}
-                          onPageChange={handlePageChange}
-                          currentPage={currentPage}
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
+                        </thead>
+                        <tbody>
+                          {currentQuotations.map((quotation, index) => (
+                            <tr key={quotation.quotationId}>
+                              <td>
+                                {(currentPage - 1) * itemsPerPage + index + 1}
+                              </td>{" "}
+                              {/* S.No. */}
+                              <td>
+                                <Link
+                                  to={`/quotations/${quotation.quotationId}`}
+                                >
+                                  {quotation.document_title || "N/A"}
+                                </Link>
+                              </td>
+                              <td>
+                                {new Date(
+                                  quotation.quotation_date
+                                ).toLocaleDateString()}
+                              </td>
+                              <td>
+                                {new Date(
+                                  quotation.due_date
+                                ).toLocaleDateString()}
+                              </td>
+                              <td>{quotation.reference_number || "N/A"}</td>
+                              <td>
+                                <button
+                                  className="btn btn-link"
+                                  onClick={() =>
+                                    handleOpenProductModal(quotation.products)
+                                  }
+                                  style={{ color: "#e31e24" }}
+                                  aria-label="View products"
+                                >
+                                  View Products (
+                                  {getProductCount(quotation.products)})
+                                </button>
+                              </td>
+                              <td>
+                                <Link to={`/customer/${quotation.customerId}`}>
+                                  {getCustomerName(quotation.customerId)}
+                                </Link>
+                              </td>
+                              <td>₹{quotation.finalAmount || 0}</td>
+                              <td>
+                                <Dropdown
+                                  overlay={
+                                    <Menu>
+                                      <Menu.Item key="view">
+                                        <Link
+                                          to={`/quotations/${quotation.quotationId}`}
+                                          style={{
+                                            textDecoration: "none",
+                                            color: "inherit",
+                                          }}
+                                          title="View Quotation"
+                                        >
+                                          <FaEye style={{ marginRight: 8 }} />
+                                          View
+                                        </Link>
+                                      </Menu.Item>
+                                      <Menu.Item key="edit">
+                                        <Link
+                                          to={`/quotations/${quotation.quotationId}/edit`}
+                                          style={{
+                                            textDecoration: "none",
+                                            color: "inherit",
+                                          }}
+                                          title="Edit Quotation"
+                                        >
+                                          <FaEdit style={{ marginRight: 8 }} />
+                                          Edit
+                                        </Link>
+                                      </Menu.Item>
+                                      <Menu.Item
+                                        key="delete"
+                                        onClick={() =>
+                                          handleDeleteClick(quotation)
+                                        }
+                                        disabled={isDeleting}
+                                        style={{ color: "#ff4d4f" }}
+                                        title="Delete Quotation"
+                                      >
+                                        <FaTrash style={{ marginRight: 8 }} />
+                                        Delete
+                                      </Menu.Item>
+                                    </Menu>
+                                  }
+                                  trigger={["click"]}
+                                  placement="bottomRight"
+                                >
+                                  <Button
+                                    type="text"
+                                    icon={<MoreOutlined />}
+                                    aria-label="More actions"
+                                  />
+                                </Dropdown>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {filteredQuotations.length > itemsPerPage && (
+                        <div className="pagination-section mt-4">
+                          <DataTablePagination
+                            totalItems={filteredQuotations.length}
+                            itemNo={itemsPerPage}
+                            onPageChange={handlePageChange}
+                            currentPage={currentPage}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
 
-      <QuotationProductModal
-        show={showProductModal}
-        onHide={handleCloseProductModal}
-        products={selectedProducts}
-      />
-      {showDeleteModal && (
-        <DeleteModal
-          item={quotationToDelete}
-          itemType="Quotation"
-          isVisible={showDeleteModal}
-          onConfirm={handleConfirmDelete}
-          onCancel={() => {
-            setShowDeleteModal(false);
-            setQuotationToDelete(null);
-          }}
-          isLoading={isDeleting}
+        <QuotationProductModal
+          show={showProductModal}
+          onHide={handleCloseProductModal}
+          products={selectedProducts}
         />
-      )}
-      {showInvoiceModal && selectedQuotation && (
-        <CreateInvoiceFromQuotation
-          quotation={selectedQuotation}
-          onClose={handleCloseInvoiceModal}
-          createInvoice={createInvoice}
-          customerMap={customerMap}
-          addressMap={{}} // Pass addressMap if needed, or fetch within CreateInvoiceFromQuotation
-        />
-      )}
-    </>
+        {showDeleteModal && (
+          <DeleteModal
+            item={quotationToDelete}
+            itemType="Quotation"
+            isVisible={showDeleteModal}
+            onConfirm={handleConfirmDelete}
+            onCancel={() => {
+              setShowDeleteModal(false);
+              setQuotationToDelete(null);
+            }}
+            isLoading={isDeleting}
+          />
+        )}
+        {showInvoiceModal && selectedQuotation && (
+          <CreateInvoiceFromQuotation
+            quotation={selectedQuotation}
+            onClose={handleCloseInvoiceModal}
+            createInvoice={createInvoice}
+            customerMap={customerMap}
+            addressMap={{}} // Pass addressMap if needed, or fetch within CreateInvoiceFromQuotation
+          />
+        )}
+      </div>
+    </div>
   );
 };
 

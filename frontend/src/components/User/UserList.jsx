@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { FaSearch } from "react-icons/fa";
 import {
   useGetAllUsersQuery,
+  useGetUserByIdQuery,
   useReportUserMutation,
   useInactiveUserMutation,
   useDeleteUserMutation,
@@ -15,11 +16,12 @@ import {
   MoreOutlined,
 } from "@ant-design/icons";
 import { Dropdown, Menu, Button, Pagination } from "antd";
-
 import DeleteModal from "../Common/DeleteModal";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "../Common/PageHeader";
+import { useResendVerificationEmailMutation } from "../../api/authApi";
+import { MailOutlined } from "@ant-design/icons";
 
 const UserList = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -31,8 +33,8 @@ const UserList = () => {
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
+  const [resendUserId, setResendUserId] = useState(null);
 
-  // Fetch users with pagination
   const { data, error, isLoading, isFetching, refetch } = useGetAllUsersQuery({
     page: currentPage,
     limit: itemsPerPage,
@@ -47,6 +49,21 @@ const UserList = () => {
   const [inactiveUser, { isLoading: isInactivating }] =
     useInactiveUserMutation();
   const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
+  const [resendVerificationEmail, { isLoading: isResending }] =
+    useResendVerificationEmailMutation();
+
+  // Fetch user by ID for resend verification
+  const {
+    data: selectedUserData,
+    isLoading: isUserLoading,
+    error: userError,
+  } = useGetUserByIdQuery(resendUserId, {
+    skip: !resendUserId,
+  });
+
+  // Extract user object, handling potential nesting
+  const selectedUser =
+    selectedUserData?.data?.user || selectedUserData?.user || selectedUserData;
 
   // Calculate stats using useMemo
   const stats = useMemo(() => {
@@ -86,7 +103,6 @@ const UserList = () => {
   const filteredUsers = useMemo(() => {
     let result = groupedUsers[activeTab] || [];
 
-    // Apply search filter
     if (searchTerm.trim()) {
       result = result.filter((user) =>
         [user.name, user.email, user.username, user.mobileNumber]
@@ -97,13 +113,12 @@ const UserList = () => {
       );
     }
 
-    // Apply sorting
     switch (sortBy) {
       case "Ascending":
         result = [...result].sort((a, b) => a.name.localeCompare(b.name));
         break;
       case "Descending":
-        result = [...result].sort((a, b) => b.name.localeCompare(a.name));
+        result = [...result].sort((a, b) => b.name.localeCompare(b.name));
         break;
       case "Recently Added":
         result = [...result].sort(
@@ -134,6 +149,76 @@ const UserList = () => {
     setShowDeleteModal(true);
   };
 
+  const handleResendVerification = async (userId) => {
+    console.log("Initiating resend for userId:", userId); // Debug log
+    setResendUserId(userId);
+  };
+
+  // Effect to handle resend verification after user data is fetched
+  React.useEffect(() => {
+    if (resendUserId && !isUserLoading) {
+      console.log("Selected user data:", selectedUserData); // Debug raw response
+      console.log("Extracted user:", selectedUser); // Debug extracted user
+
+      if (userError) {
+        toast.error(
+          `Failed to fetch user: ${
+            userError.data?.message || userError.message || "Unknown error"
+          }`
+        );
+        setResendUserId(null);
+        return;
+      }
+
+      if (!selectedUser) {
+        toast.error("User data not found");
+        setResendUserId(null);
+        return;
+      }
+
+      const email = selectedUser.email;
+      console.log("Email to send:", email); // Debug email
+
+      if (!email || typeof email !== "string" || email.trim() === "") {
+        toast.error("Invalid or missing user email");
+        setResendUserId(null);
+        return;
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        toast.error("Invalid email format");
+        setResendUserId(null);
+        return;
+      }
+
+      console.log("Sending resend request with payload:", { email }); // Debug payload
+      resendVerificationEmail({ email })
+        .unwrap()
+        .then(() => {
+          toast.success("Verification link sent successfully");
+        })
+        .catch((error) => {
+          console.log("Resend error:", error); // Debug error
+          toast.error(
+            `Failed to resend verification link: ${
+              error.data?.message || error.message || "Unknown error"
+            }`
+          );
+        })
+        .finally(() => {
+          setResendUserId(null);
+        });
+    }
+  }, [
+    resendUserId,
+    selectedUser,
+    isUserLoading,
+    userError,
+    resendVerificationEmail,
+  ]);
+
   const handleConfirmDelete = async () => {
     if (!userToDelete) {
       toast.error("No user selected for deletion");
@@ -142,7 +227,6 @@ const UserList = () => {
     }
     try {
       await deleteUser(userToDelete).unwrap();
-
       if (filteredUsers.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
@@ -323,9 +407,19 @@ const UserList = () => {
                         <tbody>
                           {filteredUsers.map((user) => (
                             <tr key={user.userId}>
-                              <td>{user.name || "N/A"}</td>
+                              <td>
+                                <a onClick={() => handleViewUser(user)}>
+                                  {" "}
+                                  {user.name || "N/A"}
+                                </a>
+                              </td>
                               <td>{user.email || "N/A"}</td>
-                              <td>{user.username || "N/A"}</td>
+                              <td>
+                                {" "}
+                                <a onClick={() => handleViewUser(user)}>
+                                  {user.username || "N/A"}
+                                </a>
+                              </td>
                               <td>{user.mobileNumber || "N/A"}</td>
                               <td>{user.roles?.join(", ") || "N/A"}</td>
                               <td>
@@ -393,6 +487,29 @@ const UserList = () => {
                                         />
                                         Report User
                                       </Menu.Item>
+                                      {!user.isEmailVerified && (
+                                        <Menu.Item
+                                          key="resend-verification"
+                                          onClick={() =>
+                                            handleResendVerification(
+                                              user.userId
+                                            )
+                                          }
+                                          disabled={
+                                            isResending ||
+                                            (resendUserId === user.userId &&
+                                              isUserLoading)
+                                          }
+                                          title={`Resend verification link to ${
+                                            user.name || "user"
+                                          }`}
+                                        >
+                                          <MailOutlined
+                                            style={{ marginRight: 8 }}
+                                          />
+                                          Resend Verification
+                                        </Menu.Item>
+                                      )}
                                       <Menu.Item
                                         key="delete"
                                         onClick={() =>

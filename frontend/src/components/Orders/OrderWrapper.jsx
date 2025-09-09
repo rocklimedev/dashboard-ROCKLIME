@@ -334,322 +334,282 @@ const OrderWrapper = () => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        {/* Tabs */}
-        <ul className="nav nav-tabs mb-4">
-          <li className="nav-item">
-            <button
-              className={`nav-link ${
-                activeTab === "quotations" ? "active" : ""
-              }`}
-              onClick={() => setActiveTab("quotations")}
-            >
-              Quotations
-            </button>
-          </li>
-          <li className="nav-item">
-            <button
-              className={`nav-link ${activeTab === "orders" ? "active" : ""}`}
-              onClick={() => setActiveTab("orders")}
-            >
-              Orders
-            </button>
-          </li>
-          <li className="nav-item">
-            <button
-              className={`nav-link ${activeTab === "po" ? "active" : ""}`}
-              onClick={() => setActiveTab("po")}
-            >
-              PO
-            </button>
-          </li>
-        </ul>
+        <div className="card">
+          <PageHeader
+            title="Orders"
+            subtitle="Manage your Orders"
+            onAdd={handleOpenAddOrder}
+            tableData={paginatedOrders}
+          />
 
-        {activeTab === "orders" ? (
-          <div className="card">
-            <PageHeader
-              title="Orders"
-              subtitle="Manage your Orders"
-              onAdd={handleOpenAddOrder}
-              tableData={paginatedOrders}
-            />
-
-            <div className="card-body">
-              <div className="row">
-                <div className="col-lg-6">
-                  <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
-                    <div className="d-flex align-items-center me-3">
-                      <select
-                        className="form-select"
-                        value={filters.status}
-                        onChange={(e) =>
-                          setFilters((prev) => ({
-                            ...prev,
-                            status: e.target.value,
-                            page: 1,
-                          }))
-                        }
-                      >
-                        <option value="">All Statuses</option>
-                        {statuses.map((status) => (
-                          <option key={status} value={status}>
-                            {status}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="d-flex align-items-center">
-                      <select
-                        className="form-select"
-                        value={filters.priority}
-                        onChange={(e) =>
-                          setFilters((prev) => ({
-                            ...prev,
-                            priority: e.target.value,
-                            page: 1,
-                          }))
-                        }
-                      >
-                        {priorityOptions.map((priority) => (
-                          <option
-                            key={priority}
-                            value={priority === "All" ? "" : priority}
-                          >
-                            {priority === "All" ? "All Priorities" : priority}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="d-flex align-items-center ms-3">
-                      <select
-                        className="form-select"
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value)}
-                      >
-                        {sortOptions.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-                <div className="col-lg-6">
-                  <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
-                    <div className="input-icon-start position-relative me-2">
-                      <span className="input-icon-addon">
-                        <FaSearch />
-                      </span>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Search Orders"
-                        value={searchTerm}
-                        onChange={(e) => {
-                          setSearchTerm(e.target.value);
-                          setFilters((prev) => ({ ...prev, page: 1 }));
-                        }}
-                        aria-label="Search orders"
-                      />
-                    </div>
-                    <button
-                      className="btn btn-outline-secondary"
-                      onClick={handleClearFilters}
+          <div className="card-body">
+            <div className="row">
+              <div className="col-lg-6">
+                <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
+                  <div className="d-flex align-items-center me-3">
+                    <select
+                      className="form-select"
+                      value={filters.status}
+                      onChange={(e) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          status: e.target.value,
+                          page: 1,
+                        }))
+                      }
                     >
-                      Clear Filters
-                    </button>
+                      <option value="">All Statuses</option>
+                      {statuses.map((status) => (
+                        <option key={status} value={status}>
+                          {status}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="d-flex align-items-center">
+                    <select
+                      className="form-select"
+                      value={filters.priority}
+                      onChange={(e) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          priority: e.target.value,
+                          page: 1,
+                        }))
+                      }
+                    >
+                      {priorityOptions.map((priority) => (
+                        <option
+                          key={priority}
+                          value={priority === "All" ? "" : priority}
+                        >
+                          {priority === "All" ? "All Priorities" : priority}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="d-flex align-items-center ms-3">
+                    <select
+                      className="form-select"
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                    >
+                      {sortOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               </div>
-              <div className="tab-content">
-                {isLoading || isFetching ? (
-                  <p>Loading...</p>
-                ) : error ? (
-                  <p className="text-danger">Error: {error.message}</p>
-                ) : paginatedOrders.length === 0 ? (
-                  <p className="text-muted">
-                    No orders match the applied filters
-                  </p>
-                ) : (
-                  <div className="table-responsive">
-                    <table className="table table-hover">
-                      <thead>
-                        <tr>
-                          <th>S.No.</th>
-                          <th>Order No.</th>
-                          <th>STATUS</th>
-                          <th>TITLE</th>
-                          <th>CUSTOMER</th>
-                          <th>PRIORITY</th>
-                          <th>ASSIGNED TO</th>
-                          <th>CREATED BY</th>
-                          <th>DUE DATE</th>
-                          <th></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {paginatedOrders.map((order, index) => {
-                          const teamName = order.assignedTo
-                            ? teamMap[order.assignedTo] || "—"
-                            : "—";
-                          const customerName = order.createdFor
-                            ? customerMap[order.createdFor] || "Loading..."
-                            : "N/A";
-                          const createdByName = order.createdBy
-                            ? userMap[order.createdBy] || "Loading..."
-                            : "N/A";
-                          const status = getStatusDisplay(order.status);
-                          const dueDateClass = isDueDateClose(order.dueDate)
-                            ? "due-date-close"
-                            : "";
-                          const serialNumber =
-                            (filters.page - 1) * filters.limit + index + 1;
-
-                          // Check if "Show Invoice" should be displayed
-                          const showInvoiceOption =
-                            invoiceOrAboveStatuses.includes(order.status) &&
-                            order.invoiceLink &&
-                            order.invoiceLink.trim() !== "";
-
-                          return (
-                            <tr key={order.id}>
-                              <td>{serialNumber}</td>
-                              <td>
-                                <Link to={`/order/${order.id}`}>
-                                  {order.orderNo}
-                                </Link>
-                              </td>
-                              <td>
-                                <span
-                                  className="priority-badge"
-                                  style={{ backgroundColor: "#f2f2f2" }}
-                                >
-                                  {status}
-                                </span>
-                              </td>
-                              <td>
-                                <Link to={`/order/${order.id}`}>
-                                  {order.title}
-                                </Link>
-                              </td>
-                              <td>
-                                <Link to={`/customer/${order.createdFor}`}>
-                                  {customerName}
-                                </Link>
-                              </td>
-                              <td>
-                                <span
-                                  className={`priority-badge ${
-                                    order.priority?.toLowerCase() || "medium"
-                                  }`}
-                                >
-                                  {order.priority || "Medium"}
-                                </span>
-                              </td>
-                              <td>{teamName}</td>
-                              <td>
-                                <Link to={`/user/${order.createdBy}`}>
-                                  {createdByName}
-                                </Link>
-                              </td>
-                              <td className={dueDateClass}>
-                                {order.dueDate ? (
-                                  <span
-                                    className="due-date-link"
-                                    style={{
-                                      color: "#e31e24",
-                                      cursor: "pointer",
-                                    }}
-                                    onClick={() =>
-                                      handleOpenDatesModal(
-                                        order.dueDate,
-                                        order.followupDates || []
-                                      )
-                                    }
-                                  >
-                                    {new Date(
-                                      order.dueDate
-                                    ).toLocaleDateString()}
-                                  </span>
-                                ) : (
-                                  "—"
-                                )}
-                              </td>
-                              <td>
-                                <Dropdown
-                                  overlay={
-                                    <Menu>
-                                      <Menu.Item
-                                        key="edit"
-                                        onClick={() => handleEditClick(order)}
-                                      >
-                                        <EditOutlined
-                                          style={{ marginRight: 8 }}
-                                        />
-                                        Edit Order
-                                      </Menu.Item>
-                                      {showInvoiceOption && (
-                                        <Menu.Item
-                                          key="viewInvoice"
-                                          onClick={() =>
-                                            handleViewInvoice(order)
-                                          }
-                                        >
-                                          <FileTextOutlined
-                                            style={{ marginRight: 8 }}
-                                          />
-                                          Show Invoice
-                                        </Menu.Item>
-                                      )}
-                                      <Menu.Item
-                                        key="delete"
-                                        onClick={() =>
-                                          handleDeleteClick(order.id)
-                                        }
-                                        style={{ color: "#ff4d4f" }}
-                                      >
-                                        <DeleteOutlined
-                                          style={{ marginRight: 8 }}
-                                        />
-                                        Delete Order
-                                      </Menu.Item>
-                                    </Menu>
-                                  }
-                                  trigger={["click"]}
-                                  placement="bottomRight"
-                                >
-                                  <Button
-                                    type="text"
-                                    icon={<MoreOutlined />}
-                                    aria-label="More actions"
-                                  />
-                                </Dropdown>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                    {totalCount > filters.limit && (
-                      <div className="pagination-section mt-4">
-                        <OrderPagination
-                          currentPage={filters.page}
-                          totalCount={totalCount}
-                          pageSize={filters.limit}
-                          onPageChange={handlePageChange}
-                        />
-                      </div>
-                    )}
+              <div className="col-lg-6">
+                <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
+                  <div className="input-icon-start position-relative me-2">
+                    <span className="input-icon-addon">
+                      <FaSearch />
+                    </span>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Search Orders"
+                      value={searchTerm}
+                      onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        setFilters((prev) => ({ ...prev, page: 1 }));
+                      }}
+                      aria-label="Search orders"
+                    />
                   </div>
-                )}
+                  <button
+                    className="btn btn-outline-secondary"
+                    onClick={handleClearFilters}
+                  >
+                    Clear Filters
+                  </button>
+                </div>
               </div>
             </div>
+            <div className="tab-content">
+              {isLoading || isFetching ? (
+                <p>Loading...</p>
+              ) : error ? (
+                <p className="text-danger">Error: {error.message}</p>
+              ) : paginatedOrders.length === 0 ? (
+                <p className="text-muted">
+                  No orders match the applied filters
+                </p>
+              ) : (
+                <div className="table-responsive">
+                  <table className="table table-hover">
+                    <thead>
+                      <tr>
+                        <th>S.No.</th>
+                        <th>Order No.</th>
+                        <th>STATUS</th>
+                        <th>TITLE</th>
+                        <th>CUSTOMER</th>
+                        <th>PRIORITY</th>
+                        <th>ASSIGNED TO</th>
+                        <th>CREATED BY</th>
+                        <th>DUE DATE</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedOrders.map((order, index) => {
+                        const teamName = order.assignedTo
+                          ? teamMap[order.assignedTo] || "—"
+                          : "—";
+                        const customerName = order.createdFor
+                          ? customerMap[order.createdFor] || "Loading..."
+                          : "N/A";
+                        const createdByName = order.createdBy
+                          ? userMap[order.createdBy] || "Loading..."
+                          : "N/A";
+                        const status = getStatusDisplay(order.status);
+                        const dueDateClass = isDueDateClose(order.dueDate)
+                          ? "due-date-close"
+                          : "";
+                        const serialNumber =
+                          (filters.page - 1) * filters.limit + index + 1;
+
+                        // Check if "Show Invoice" should be displayed
+                        const showInvoiceOption =
+                          invoiceOrAboveStatuses.includes(order.status) &&
+                          order.invoiceLink &&
+                          order.invoiceLink.trim() !== "";
+
+                        return (
+                          <tr key={order.id}>
+                            <td>{serialNumber}</td>
+                            <td>
+                              <Link to={`/order/${order.id}`}>
+                                {order.orderNo}
+                              </Link>
+                            </td>
+                            <td>
+                              <span
+                                className="priority-badge"
+                                style={{ backgroundColor: "#f2f2f2" }}
+                              >
+                                {status}
+                              </span>
+                            </td>
+                            <td>
+                              <Link to={`/order/${order.id}`}>
+                                {order.title}
+                              </Link>
+                            </td>
+                            <td>
+                              <Link to={`/customer/${order.createdFor}`}>
+                                {customerName}
+                              </Link>
+                            </td>
+                            <td>
+                              <span
+                                className={`priority-badge ${
+                                  order.priority?.toLowerCase() || "medium"
+                                }`}
+                              >
+                                {order.priority || "Medium"}
+                              </span>
+                            </td>
+                            <td>{teamName}</td>
+                            <td>
+                              <Link to={`/user/${order.createdBy}`}>
+                                {createdByName}
+                              </Link>
+                            </td>
+                            <td className={dueDateClass}>
+                              {order.dueDate ? (
+                                <span
+                                  className="due-date-link"
+                                  style={{
+                                    color: "#e31e24",
+                                    cursor: "pointer",
+                                  }}
+                                  onClick={() =>
+                                    handleOpenDatesModal(
+                                      order.dueDate,
+                                      order.followupDates || []
+                                    )
+                                  }
+                                >
+                                  {new Date(order.dueDate).toLocaleDateString()}
+                                </span>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+                            <td>
+                              <Dropdown
+                                overlay={
+                                  <Menu>
+                                    <Menu.Item
+                                      key="edit"
+                                      onClick={() => handleEditClick(order)}
+                                    >
+                                      <EditOutlined
+                                        style={{ marginRight: 8 }}
+                                      />
+                                      Edit Order
+                                    </Menu.Item>
+                                    {showInvoiceOption && (
+                                      <Menu.Item
+                                        key="viewInvoice"
+                                        onClick={() => handleViewInvoice(order)}
+                                      >
+                                        <FileTextOutlined
+                                          style={{ marginRight: 8 }}
+                                        />
+                                        Show Invoice
+                                      </Menu.Item>
+                                    )}
+                                    <Menu.Item
+                                      key="delete"
+                                      onClick={() =>
+                                        handleDeleteClick(order.id)
+                                      }
+                                      style={{ color: "#ff4d4f" }}
+                                    >
+                                      <DeleteOutlined
+                                        style={{ marginRight: 8 }}
+                                      />
+                                      Delete Order
+                                    </Menu.Item>
+                                  </Menu>
+                                }
+                                trigger={["click"]}
+                                placement="bottomRight"
+                              >
+                                <Button
+                                  type="text"
+                                  icon={<MoreOutlined />}
+                                  aria-label="More actions"
+                                />
+                              </Dropdown>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  {totalCount > filters.limit && (
+                    <div className="pagination-section mt-4">
+                      <OrderPagination
+                        currentPage={filters.page}
+                        totalCount={totalCount}
+                        pageSize={filters.limit}
+                        onPageChange={handlePageChange}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-        ) : activeTab === "quotations" ? (
-          <QuotationList />
-        ) : (
-          <POWrapper activeTab={activeTab} setActiveTab={setActiveTab} />
-        )}
+        </div>
 
         {/* Modals */}
         {showHoldModal && (

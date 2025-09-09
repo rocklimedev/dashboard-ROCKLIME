@@ -94,19 +94,16 @@ const ProductsList = () => {
   };
 
   const formatPrice = (value, unit) => {
-    // Handle both (meta, metaDetails) for table and (value, unit) for ProductCard
     if (typeof value === "object" && Array.isArray(unit)) {
-      const metaDetails = unit; // unit is metaDetails in this case
+      const metaDetails = unit;
       const sellingPriceEntry = metaDetails?.find(
         (detail) => detail.slug === "sellingPrice"
       );
       const price = sellingPriceEntry
         ? parseFloat(sellingPriceEntry.value)
         : null;
-      const priceUnit = sellingPriceEntry ? sellingPriceEntry.unit : null;
       return price !== null && !isNaN(price) ? `₹ ${price.toFixed(2)}` : "N/A";
     }
-    // Handle (value, unit) for ProductCard
     return value !== null && !isNaN(value) ? `₹ ${value.toFixed(2)}` : "N/A";
   };
 
@@ -118,8 +115,20 @@ const ProductsList = () => {
       }
       return Array.isArray(images) ? images : [pos];
     } catch (error) {
+      console.error("Error parsing images:", error);
       return [pos];
     }
+  };
+
+  const getCompanyCode = (metaDetails) => {
+    if (!Array.isArray(metaDetails)) {
+      console.warn("metaDetails is not an array:", metaDetails);
+      return "N/A";
+    }
+    const companyCodeEntry = metaDetails.find(
+      (detail) => detail.slug?.toLowerCase() === "companycode"
+    );
+    return companyCodeEntry ? companyCodeEntry.value : "N/A";
   };
 
   const products = useMemo(
@@ -140,41 +149,49 @@ const ProductsList = () => {
   );
 
   const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
+    const filtered = products.filter((product) => {
       const matchesFilter = brandId
         ? String(product.brandId) === String(brandId)
         : bpcId
         ? String(product.brand_parentcategoriesId) === String(bpcId)
         : true;
       const searchTerm = search.toLowerCase();
+      const companyCode = getCompanyCode(product.metaDetails);
       return (
         matchesFilter &&
         (!searchTerm ||
           product.name?.toLowerCase().includes(searchTerm) ||
           product.product_code?.toLowerCase().includes(searchTerm) ||
-          product.meta?.company_code?.toLowerCase().includes(searchTerm))
+          companyCode?.toLowerCase().includes(searchTerm))
       );
     });
+
+    return filtered;
   }, [products, brandId, bpcId, search]);
 
   const formattedTableData = useMemo(
     () =>
-      filteredProducts.map((product) => ({
-        ...product,
-        Name: product.name || "N/A",
-        Brand: getBrandsName(product.brandId),
-        Price: formatPrice(product.meta, product.metaDetails),
-        Stock:
-          product.quantity > 0
-            ? `${product.quantity} in stock`
-            : "Out of Stock",
-        Featured: product.isFeatured ? "Yes" : "No",
-      })),
+      filteredProducts.map((product) => {
+        const companyCode = getCompanyCode(product.metaDetails);
+
+        return {
+          ...product,
+          Name: product.name || "N/A",
+          Brand: getBrandsName(product.brandId),
+          Price: formatPrice(product.meta, product.metaDetails),
+          Stock:
+            product.quantity > 0
+              ? `${product.quantity} in stock`
+              : "Out of Stock",
+          Featured: product.isFeatured ? "Yes" : "No",
+          company_code: companyCode,
+        };
+      }),
     [filteredProducts, getBrandsName]
   );
 
   const offset = (currentPage - 1) * itemsPerPage;
-  const currentItems = filteredProducts.slice(offset, offset + itemsPerPage);
+  const currentItems = formattedTableData.slice(offset, offset + itemsPerPage);
 
   const handleAddProduct = () => navigate("/inventory/product/add");
 
@@ -254,7 +271,7 @@ const ProductsList = () => {
       await addProductToCart({
         userId,
         productId,
-        quantity: product.quantity || 1, // Use product.quantity from handleAddToCartWithQuantity
+        quantity: product.quantity || 1,
       }).unwrap();
       toast.success(`${product.name} added to cart!`);
     } catch (error) {
@@ -356,6 +373,14 @@ const ProductsList = () => {
       render: (text, record) => (
         <Link to={`/product/${record.productId}`}>{text || "N/A"}</Link>
       ),
+    },
+    {
+      title: "Product Code",
+      dataIndex: "company_code",
+      key: "company_code",
+      render: (text) => {
+        return <p>{text || "N/A"}</p>;
+      },
     },
     {
       title: "Brand",
@@ -509,7 +534,14 @@ const ProductsList = () => {
           </div>
         ) : viewMode === "card" ? (
           <div className="products-section">
-            <div className="products-grid">
+            <div
+              className="products-grid"
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+                gap: "16px",
+              }}
+            >
               {currentItems.map((product) => (
                 <ProductCard
                   key={product.productId}
@@ -517,6 +549,7 @@ const ProductsList = () => {
                   getBrandsName={getBrandsName}
                   getCategoryName={getCategoryName}
                   formatPrice={formatPrice}
+                  getCompanyCode={getCompanyCode}
                   handleAddToCart={handleAddToCart}
                   handleToggleFeatured={handleToggleFeatured}
                   cartLoadingStates={cartLoadingStates}

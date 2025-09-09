@@ -98,7 +98,7 @@ export const authApi = createApi({
     }),
     resendVerificationEmail: builder.mutation({
       query: (email) => ({
-        url: "/auth/resend-verification",
+        url: "/resend-verification",
         method: "POST",
         body: { email },
       }),

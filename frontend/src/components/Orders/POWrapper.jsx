@@ -287,263 +287,271 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
   };
 
   return (
-    <div className="card">
-      <PageHeader
-        title="Purchase Orders"
-        subtitle="Manage your Purchase Orders"
-        onAdd={handleOpenAddPO}
-        tableData={paginatedPOs}
-      />
+    <div className="page-wrapper">
+      <div className="content">
+        <div className="card">
+          <PageHeader
+            title="Purchase Orders"
+            subtitle="Manage your Purchase Orders"
+            onAdd={handleOpenAddPO}
+            tableData={paginatedPOs}
+          />
 
-      <div className="card-body">
-        <div className="row">
-          <div className="col-lg-6">
-            <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
-              <div className="d-flex align-items-center me-3">
-                <select
-                  className="form-select"
-                  value={filters.status}
-                  onChange={(e) =>
-                    setFilters((prev) => ({
-                      ...prev,
-                      status: e.target.value,
-                      page: 1,
-                    }))
-                  }
-                >
-                  <option value="">All Statuses</option>
-                  {statuses.map((status) => (
-                    <option key={status} value={status}>
-                      {status}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="d-flex align-items-center">
-                <select
-                  className="form-select"
-                  value={filters.priority}
-                  onChange={(e) =>
-                    setFilters((prev) => ({
-                      ...prev,
-                      priority: e.target.value,
-                      page: 1,
-                    }))
-                  }
-                >
-                  {priorityOptions.map((priority) => (
-                    <option
-                      key={priority}
-                      value={priority === "All" ? "" : priority}
+          <div className="card-body">
+            <div className="row">
+              <div className="col-lg-6">
+                <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
+                  <div className="d-flex align-items-center me-3">
+                    <select
+                      className="form-select"
+                      value={filters.status}
+                      onChange={(e) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          status: e.target.value,
+                          page: 1,
+                        }))
+                      }
                     >
-                      {priority === "All" ? "All Priorities" : priority}
-                    </option>
-                  ))}
-                </select>
+                      <option value="">All Statuses</option>
+                      {statuses.map((status) => (
+                        <option key={status} value={status}>
+                          {status}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="d-flex align-items-center">
+                    <select
+                      className="form-select"
+                      value={filters.priority}
+                      onChange={(e) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          priority: e.target.value,
+                          page: 1,
+                        }))
+                      }
+                    >
+                      {priorityOptions.map((priority) => (
+                        <option
+                          key={priority}
+                          value={priority === "All" ? "" : priority}
+                        >
+                          {priority === "All" ? "All Priorities" : priority}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="d-flex align-items-center ms-3">
+                    <select
+                      className="form-select"
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                    >
+                      {sortOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </div>
-              <div className="d-flex align-items-center ms-3">
-                <select
-                  className="form-select"
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                >
-                  {sortOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
+              <div className="col-lg-6">
+                <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
+                  <div className="input-icon-start position-relative me-2">
+                    <span className="input-icon-addon">
+                      <FaSearch />
+                    </span>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Search Purchase Orders"
+                      value={searchTerm}
+                      onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        setFilters((prev) => ({ ...prev, page: 1 }));
+                      }}
+                      aria-label="Search purchase orders"
+                    />
+                  </div>
+                  <button
+                    className="btn btn-outline-secondary"
+                    onClick={handleClearFilters}
+                  >
+                    Clear Filters
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="col-lg-6">
-            <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
-              <div className="input-icon-start position-relative me-2">
-                <span className="input-icon-addon">
-                  <FaSearch />
-                </span>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Search Purchase Orders"
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setFilters((prev) => ({ ...prev, page: 1 }));
-                  }}
-                  aria-label="Search purchase orders"
-                />
-              </div>
-              <button
-                className="btn btn-outline-secondary"
-                onClick={handleClearFilters}
-              >
-                Clear Filters
-              </button>
-            </div>
-          </div>
-        </div>
-        <div className="tab-content">
-          {isLoading || isFetching ? (
-            <p>Loading...</p>
-          ) : error ? (
-            <p className="text-danger">Error: {error.message}</p>
-          ) : paginatedPOs.length === 0 ? (
-            <p className="text-muted">
-              No purchase orders match the applied filters
-            </p>
-          ) : (
-            <div className="table-responsive">
-              <table className="table table-hover">
-                <thead>
-                  <tr>
-                    <th>S.No.</th>
-                    <th>PO No.</th>
-                    <th>STATUS</th>
-                    <th>TITLE</th>
-                    <th>CUSTOMER</th>
-                    <th>PRIORITY</th>
-                    <th>ASSIGNED TO</th>
-                    <th>CREATED BY</th>
-                    <th>DUE DATE</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedPOs.map((po, index) => {
-                    const teamName = po.assignedTo
-                      ? teamMap[po.assignedTo] || "—"
-                      : "—";
-                    const customerName = po.createdFor
-                      ? customerMap[po.createdFor] || "Loading..."
-                      : "N/A";
-                    const createdByName = po.createdBy
-                      ? userMap[po.createdBy] || "Loading..."
-                      : "N/A";
-                    const status = getStatusDisplay(po.status);
-                    const dueDateClass = isDueDateClose(po.dueDate)
-                      ? "due-date-close"
-                      : "";
-                    const serialNumber =
-                      (filters.page - 1) * filters.limit + index + 1;
-
-                    return (
-                      <tr key={po.id}>
-                        <td>{serialNumber}</td>
-                        <td>{po.poNo}</td>
-                        <td>
-                          <span
-                            className="priority-badge"
-                            style={{ backgroundColor: "#f2f2f2" }}
-                          >
-                            {status}
-                          </span>
-                        </td>
-                        <td>
-                          <Link to={`/po/${po.id}`}>{po.title}</Link>
-                        </td>
-                        <td>{customerName}</td>
-                        <td>
-                          <span
-                            className={`priority-badge ${
-                              po.priority?.toLowerCase() || "medium"
-                            }`}
-                          >
-                            {po.priority || "Medium"}
-                          </span>
-                        </td>
-                        <td>{teamName}</td>
-                        <td>{createdByName}</td>
-                        <td className={dueDateClass}>
-                          {po.dueDate ? (
-                            <span
-                              className="due-date-link"
-                              style={{
-                                color: "#e31e24",
-                                cursor: "pointer",
-                              }}
-                              onClick={() =>
-                                handleOpenDatesModal(
-                                  po.dueDate,
-                                  po.followupDates || []
-                                )
-                              }
-                            >
-                              {new Date(po.dueDate).toLocaleDateString()}
-                            </span>
-                          ) : (
-                            "—"
-                          )}
-                        </td>
-                        <td>
-                          <Dropdown
-                            overlay={
-                              <Menu>
-                                <Menu.Item
-                                  key="edit"
-                                  onClick={() => handleEditClick(po)}
-                                >
-                                  <EditOutlined style={{ marginRight: 8 }} />
-                                  Edit Purchase Order
-                                </Menu.Item>
-                                <Menu.Item
-                                  key="delete"
-                                  onClick={() => handleDeleteClick(po.id)}
-                                  style={{ color: "#ff4d4f" }}
-                                >
-                                  <DeleteOutlined style={{ marginRight: 8 }} />
-                                  Delete Purchase Order
-                                </Menu.Item>
-                              </Menu>
-                            }
-                            trigger={["click"]}
-                            placement="bottomRight"
-                          >
-                            <Button
-                              type="text"
-                              icon={<MoreOutlined />}
-                              aria-label="More actions"
-                            />
-                          </Dropdown>
-                        </td>
+            <div className="tab-content">
+              {isLoading || isFetching ? (
+                <p>Loading...</p>
+              ) : error ? (
+                <p className="text-danger">Error: {error.message}</p>
+              ) : paginatedPOs.length === 0 ? (
+                <p className="text-muted">
+                  No purchase orders match the applied filters
+                </p>
+              ) : (
+                <div className="table-responsive">
+                  <table className="table table-hover">
+                    <thead>
+                      <tr>
+                        <th>S.No.</th>
+                        <th>PO No.</th>
+                        <th>STATUS</th>
+                        <th>TITLE</th>
+                        <th>CUSTOMER</th>
+                        <th>PRIORITY</th>
+                        <th>ASSIGNED TO</th>
+                        <th>CREATED BY</th>
+                        <th>DUE DATE</th>
+                        <th></th>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              {totalCount > filters.limit && (
-                <div className="pagination-section mt-4">
-                  <OrderPagination
-                    currentPage={filters.page}
-                    totalCount={totalCount}
-                    pageSize={filters.limit}
-                    onPageChange={handlePageChange}
-                  />
+                    </thead>
+                    <tbody>
+                      {paginatedPOs.map((po, index) => {
+                        const teamName = po.assignedTo
+                          ? teamMap[po.assignedTo] || "—"
+                          : "—";
+                        const customerName = po.createdFor
+                          ? customerMap[po.createdFor] || "Loading..."
+                          : "N/A";
+                        const createdByName = po.createdBy
+                          ? userMap[po.createdBy] || "Loading..."
+                          : "N/A";
+                        const status = getStatusDisplay(po.status);
+                        const dueDateClass = isDueDateClose(po.dueDate)
+                          ? "due-date-close"
+                          : "";
+                        const serialNumber =
+                          (filters.page - 1) * filters.limit + index + 1;
+
+                        return (
+                          <tr key={po.id}>
+                            <td>{serialNumber}</td>
+                            <td>{po.poNo}</td>
+                            <td>
+                              <span
+                                className="priority-badge"
+                                style={{ backgroundColor: "#f2f2f2" }}
+                              >
+                                {status}
+                              </span>
+                            </td>
+                            <td>
+                              <Link to={`/po/${po.id}`}>{po.title}</Link>
+                            </td>
+                            <td>{customerName}</td>
+                            <td>
+                              <span
+                                className={`priority-badge ${
+                                  po.priority?.toLowerCase() || "medium"
+                                }`}
+                              >
+                                {po.priority || "Medium"}
+                              </span>
+                            </td>
+                            <td>{teamName}</td>
+                            <td>{createdByName}</td>
+                            <td className={dueDateClass}>
+                              {po.dueDate ? (
+                                <span
+                                  className="due-date-link"
+                                  style={{
+                                    color: "#e31e24",
+                                    cursor: "pointer",
+                                  }}
+                                  onClick={() =>
+                                    handleOpenDatesModal(
+                                      po.dueDate,
+                                      po.followupDates || []
+                                    )
+                                  }
+                                >
+                                  {new Date(po.dueDate).toLocaleDateString()}
+                                </span>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+                            <td>
+                              <Dropdown
+                                overlay={
+                                  <Menu>
+                                    <Menu.Item
+                                      key="edit"
+                                      onClick={() => handleEditClick(po)}
+                                    >
+                                      <EditOutlined
+                                        style={{ marginRight: 8 }}
+                                      />
+                                      Edit Purchase Order
+                                    </Menu.Item>
+                                    <Menu.Item
+                                      key="delete"
+                                      onClick={() => handleDeleteClick(po.id)}
+                                      style={{ color: "#ff4d4f" }}
+                                    >
+                                      <DeleteOutlined
+                                        style={{ marginRight: 8 }}
+                                      />
+                                      Delete Purchase Order
+                                    </Menu.Item>
+                                  </Menu>
+                                }
+                                trigger={["click"]}
+                                placement="bottomRight"
+                              >
+                                <Button
+                                  type="text"
+                                  icon={<MoreOutlined />}
+                                  aria-label="More actions"
+                                />
+                              </Dropdown>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  {totalCount > filters.limit && (
+                    <div className="pagination-section mt-4">
+                      <OrderPagination
+                        currentPage={filters.page}
+                        totalCount={totalCount}
+                        pageSize={filters.limit}
+                        onPageChange={handlePageChange}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Modals */}
+          {showDeleteModal && (
+            <DeleteModal
+              isVisible={showDeleteModal}
+              item={poToDelete}
+              itemType="Purchase Order"
+              onConfirm={handleDeletePO}
+              onCancel={handleModalClose}
+            />
+          )}
+          {showDatesModal && (
+            <DatesModal
+              show={showDatesModal}
+              onHide={handleCloseDatesModal}
+              dueDate={selectedDates.dueDate}
+              followupDates={selectedDates.followupDates}
+            />
           )}
         </div>
       </div>
-
-      {/* Modals */}
-      {showDeleteModal && (
-        <DeleteModal
-          isVisible={showDeleteModal}
-          item={poToDelete}
-          itemType="Purchase Order"
-          onConfirm={handleDeletePO}
-          onCancel={handleModalClose}
-        />
-      )}
-      {showDatesModal && (
-        <DatesModal
-          show={showDatesModal}
-          onHide={handleCloseDatesModal}
-          dueDate={selectedDates.dueDate}
-          followupDates={selectedDates.followupDates}
-        />
-      )}
     </div>
   );
 };

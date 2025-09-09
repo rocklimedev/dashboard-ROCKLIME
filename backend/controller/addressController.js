@@ -7,12 +7,12 @@ exports.createAddress = async (req, res) => {
     const { street, city, state, postalCode, country, userId } = req.body;
 
     if (!userId) {
-      return res.status(400).json({ message: "User ID is required." });
+      return res.status(400).json({ message: "User ID is required" });
     }
 
     const user = await User.findByPk(userId);
     if (!user) {
-      return res.status(404).json({ message: "User not found." });
+      return res.status(404).json({ message: "User not found" });
     }
 
     const address = await Address.create({
@@ -24,12 +24,51 @@ exports.createAddress = async (req, res) => {
       userId,
     });
 
-    res.status(201).json(address);
+    res.status(201).json({
+      message: "Address created successfully",
+      addressId: address.addressId,
+      data: address,
+    });
   } catch (error) {
-    res.status(500).json({ message: "Internal Server Error" });
+    console.error("Error in createAddress:", error);
+    res
+      .status(500)
+      .json({
+        message: `Failed to create address: ${
+          error.message || "Unknown server error"
+        }`,
+      });
   }
 };
 
+exports.updateAddress = async (req, res) => {
+  try {
+    const { addressId } = req.params;
+    const { street, city, state, postalCode, country } = req.body;
+
+    const address = await Address.findByPk(addressId);
+    if (!address) {
+      return res.status(404).json({ message: "Address not found" });
+    }
+
+    await address.update({ street, city, state, postalCode, country });
+
+    res.json({
+      message: "Address updated successfully",
+      addressId: address.addressId,
+      data: address,
+    });
+  } catch (error) {
+    console.error("Error in updateAddress:", error);
+    res
+      .status(500)
+      .json({
+        message: `Failed to update address: ${
+          error.message || "Unknown server error"
+        }`,
+      });
+  }
+};
 // Get all addresses
 exports.getAllAddresses = async (req, res) => {
   try {
@@ -57,23 +96,6 @@ exports.getAddressById = async (req, res) => {
 };
 
 // Update an address
-exports.updateAddress = async (req, res) => {
-  try {
-    const { addressId } = req.params;
-    const { street, city, state, postalCode, country } = req.body;
-
-    const address = await Address.findByPk(addressId);
-    if (!address) {
-      return res.status(404).json({ message: "Address not found." });
-    }
-
-    await address.update({ street, city, state, postalCode, country });
-
-    res.json({ message: "Address updated successfully.", address });
-  } catch (error) {
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-};
 
 // Delete an address
 exports.deleteAddress = async (req, res) => {

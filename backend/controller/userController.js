@@ -2,7 +2,7 @@ const { Op } = require("sequelize");
 const User = require("../models/users");
 const Roles = require("../models/roles");
 const bcrypt = require("bcrypt");
-
+const Address = require("../models/address");
 // Helper function to exclude sensitive fields
 const excludeSensitiveFields = {
   attributes: {
@@ -41,7 +41,10 @@ exports.createUser = async (req, res) => {
 
     // Validate required fields
     if (!username || !email || !password || !roleId) {
-      return res.status(400).json({ message: "Missing required fields" });
+      return res.status(400).json({
+        message: "Missing required fields",
+        fields: { username, email, password, roleId },
+      });
     }
 
     // Check for duplicate username or email
@@ -58,6 +61,14 @@ exports.createUser = async (req, res) => {
     const roleData = await Roles.findOne({ where: { roleId } });
     if (!roleData) {
       return res.status(400).json({ message: "Invalid role specified" });
+    }
+
+    // Validate addressId if provided
+    if (addressId) {
+      const address = await Address.findByPk(addressId);
+      if (!address) {
+        return res.status(400).json({ message: "Invalid address ID" });
+      }
     }
 
     // Hash password
@@ -83,10 +94,15 @@ exports.createUser = async (req, res) => {
 
     res.status(201).json({
       message: "User created successfully",
-      user: await User.findByPk(newUser.userId, excludeSensitiveFields),
+      data: await User.findByPk(newUser.userId, excludeSensitiveFields),
     });
   } catch (err) {
-    res.status(500).json({ message: "Server Error", error: err.message });
+    console.error("Error in createUser:", err);
+    res.status(500).json({
+      message: `Failed to create user: ${
+        err.message || "Unknown server error"
+      }`,
+    });
   }
 };
 
@@ -336,16 +352,26 @@ exports.updateUser = async (req, res) => {
     }
 
     // Check for duplicate username or email
-    const existingUser = await User.findOne({
-      where: {
-        [Op.or]: [{ username }, { email }],
-        userId: { [Op.ne]: userId },
-      },
-    });
-    if (existingUser) {
-      return res
-        .status(400)
-        .json({ message: "Username or Email already exists" });
+    if (username || email) {
+      const existingUser = await User.findOne({
+        where: {
+          [Op.or]: [{ username }, { email }],
+          userId: { [Op.ne]: userId },
+        },
+      });
+      if (existingUser) {
+        return res
+          .status(400)
+          .json({ message: "Username or Email already exists" });
+      }
+    }
+
+    // Validate addressId if provided
+    if (addressId) {
+      const address = await Address.findByPk(addressId);
+      if (!address) {
+        return res.status(400).json({ message: "Invalid address ID" });
+      }
     }
 
     // Update basic fields
@@ -391,10 +417,15 @@ exports.updateUser = async (req, res) => {
     await user.save();
     res.status(200).json({
       message: "User updated successfully",
-      user: await User.findByPk(user.userId, excludeSensitiveFields),
+      data: await User.findByPk(user.userId, excludeSensitiveFields),
     });
   } catch (err) {
-    res.status(500).json({ message: "Server Error", error: err.message });
+    console.error("Error in updateUser:", err);
+    res.status(500).json({
+      message: `Failed to update user: ${
+        err.message || "Unknown server error"
+      }`,
+    });
   }
 };
 
