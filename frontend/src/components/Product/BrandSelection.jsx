@@ -14,6 +14,7 @@ import shivceramics from "../../assets/img/products/shiv_ceremic.png";
 import sunheart from "../../assets/img/products/sunheart.jpg";
 import subway from "../../assets/img/products/subway.webp";
 import ibis from "../../assets/img/products/ibis.avif";
+import sgt from "../../assets/img/products/sgt.jpg";
 const jayna = "https://via.placeholder.com/300";
 
 const BrandSelection = () => {
@@ -33,7 +34,7 @@ const BrandSelection = () => {
       GB_004: groheBau,
       JA_003: groheBau,
       surface: groheBau,
-      sgt: groheBau,
+      sgt: sgt,
       "shiv-ceramic": shivceramics,
       jtc: jk,
       "baleno-grey": groheBau,
