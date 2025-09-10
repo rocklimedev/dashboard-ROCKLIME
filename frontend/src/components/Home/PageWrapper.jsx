@@ -440,7 +440,7 @@ const PageWrapper = () => {
           <section className="summary-cards">
             {[
               {
-                link: "/orders/list",
+                link: "/quotations/list",
                 count: quotationCount,
                 label: "Total Quotations",
                 loading: loadingQuotations,

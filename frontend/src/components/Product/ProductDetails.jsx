@@ -576,7 +576,7 @@ const ProductDetails = () => {
               <div className="loading-container">
                 <Spin size="large" />
               </div>
-            ) : recommendedProducts?.length > 1 ? (
+            ) : recommendedProducts?.length > 0 ? (
               <Swiper
                 modules={[Navigation]}
                 navigation={{

@@ -9,6 +9,11 @@ import colston from "../../assets/img/products/colston-logo_black.png";
 import groheBau from "../../assets/img/products/grohe.png";
 import jk from "../../assets/img/products/jk_cement.png";
 import addons from "../../assets/img/products/addons.png";
+import walplast from "../../assets/img/products/walplast.png";
+import shivceramics from "../../assets/img/products/shiv_ceremic.png";
+import sunheart from "../../assets/img/products/sunheart.jpg";
+import subway from "../../assets/img/products/subway.webp";
+import ibis from "../../assets/img/products/ibis.avif";
 const jayna = "https://via.placeholder.com/300";
 
 const BrandSelection = () => {
@@ -29,14 +34,16 @@ const BrandSelection = () => {
       JA_003: groheBau,
       surface: groheBau,
       sgt: groheBau,
-      "shiv-ceramic": groheBau,
+      "shiv-ceramic": shivceramics,
       jtc: jk,
       "baleno-grey": groheBau,
       uw: groheBau,
-      ibis: groheBau,
-      subway: groheBau,
-      sunheart: groheBau,
+      ibis: ibis,
+      subway: subway,
+      sunheart: sunheart,
       extras: addons,
+      walplast: walplast,
+      jk_adhesive: jk,
     };
 
     const mappedBrands = Array.isArray(bpc?.brands)
