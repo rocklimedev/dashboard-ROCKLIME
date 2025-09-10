@@ -349,15 +349,18 @@ const NewCart = ({ onConvertToOrder }) => {
   );
   const totalDiscount = useMemo(
     () =>
-      cartItems.reduce(
-        (acc, item) =>
-          acc +
-          (itemDiscounts[item.productId]
-            ? parseFloat(itemDiscounts[item.productId]) * (item.quantity || 1)
-            : 0),
-        0
-      ),
-    [cartItems, itemDiscounts]
+      cartItems.reduce((acc, item) => {
+        const discount = parseFloat(itemDiscounts[item.productId]) || 0;
+        const quantity = item.quantity || 1;
+        const price = item.price || 0;
+        if (quotationData.discountType === "percent") {
+          // Calculate discount as a percentage of item price
+          return acc + (price * quantity * discount) / 100;
+        }
+        // Fixed discount per item
+        return acc + discount * quantity;
+      }, 0),
+    [cartItems, itemDiscounts, quotationData.discountType]
   );
   const shipping = 40;
   const tax = quotationData.includeGst
@@ -847,6 +850,13 @@ const NewCart = ({ onConvertToOrder }) => {
                       discount={totalDiscount}
                       roundOff={roundOff}
                       subTotal={subTotal}
+                      items={cartItems.map((item) => ({
+                        productId: item.productId,
+                        name: item.name,
+                        discount:
+                          parseFloat(itemDiscounts[item.productId]) || 0,
+                        quantity: item.quantity || 1,
+                      }))}
                     />
                     <Divider />
                     <CheckoutButton

@@ -107,7 +107,7 @@ const AddNewOrder = ({ adminName }) => {
     teamId: "",
     priority: "medium",
     description: "",
-    invoiceLink: isEditMode ? "" : null, // Set to null in create mode
+    invoiceLink: isEditMode ? "" : null,
     orderNo: "",
   });
 
@@ -152,8 +152,8 @@ const AddNewOrder = ({ adminName }) => {
         teamId: order.assignedTo || "",
         priority: order.priority || "medium",
         description: order.description || "",
-        invoiceLink: order.invoiceLink || "", // Load existing invoiceLink
-        orderNo: order.orderNo || "",
+        invoiceLink: order.invoiceLink || "",
+        orderNo: order.orderNo || "", // Load existing order number
       });
       setDescriptionLength((order.description || "").length);
     }
@@ -199,7 +199,8 @@ const AddNewOrder = ({ adminName }) => {
         ...prev,
         [name]: value,
       }));
-    } else if (name === "orderNo") {
+    } else if (name === "orderNo" && !isEditMode) {
+      // Only allow orderNo changes in create mode
       setFormData((prev) => ({
         ...prev,
         [name]: value === "" ? "" : value,
@@ -234,7 +235,6 @@ const AddNewOrder = ({ adminName }) => {
     setDescriptionLength(0);
   };
 
-  // Validate follow-up dates against due date
   const validateFollowupDates = () => {
     if (!formData.dueDate || formData.followupDates.length === 0) return true;
 
@@ -294,6 +294,9 @@ const AddNewOrder = ({ adminName }) => {
           ...prev,
           orderNo: `${today}${newSerial}`,
         }));
+        toast.warning(
+          `Order number ${orderNo} already exists. Generated new number: ${today}${newSerial}`
+        );
       }
       return isUnique;
     },
@@ -322,6 +325,11 @@ const AddNewOrder = ({ adminName }) => {
       return;
     }
 
+    if (isEditMode && formData.orderNo !== order?.orderNo) {
+      toast.error("Order Number cannot be changed in update mode.");
+      return;
+    }
+
     if (!isEditMode && !checkOrderNoUniqueness(formData.orderNo)) {
       return;
     }
@@ -339,7 +347,7 @@ const AddNewOrder = ({ adminName }) => {
         followupDates: formData.followupDates.filter(
           (date) => date && moment(date).isValid()
         ),
-        invoiceLink: isEditMode ? formData.invoiceLink || null : null, // Ensure null in create mode
+        invoiceLink: isEditMode ? formData.invoiceLink || null : null,
       };
 
       if (isEditMode) {
@@ -348,8 +356,10 @@ const AddNewOrder = ({ adminName }) => {
           return;
         }
         await updateOrder({ id, ...payload }).unwrap();
+        toast.success("Order updated successfully!");
       } else {
         await createOrder(payload).unwrap();
+        toast.success("Order created successfully!");
       }
       navigate("/orders/list");
     } catch (err) {
@@ -364,7 +374,6 @@ const AddNewOrder = ({ adminName }) => {
       toast.error(errorMessage);
     }
   };
-
   // Loading state
   if (
     isOrderLoading ||
@@ -496,21 +505,20 @@ const AddNewOrder = ({ adminName }) => {
                     />
                   </Form.Group>
                 </div>
-                <div className="col-lg-6">
-                  <Form.Group className="mb-3">
-                    <Form.Label>Order Number</Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="orderNo"
-                      value={formData.orderNo}
-                      onChange={(e) =>
-                        handleChange(e.target.name, e.target.value)
-                      }
-                      placeholder="Enter order number (e.g., 2708202500001)"
-                      disabled={!isEditMode}
-                    />
-                  </Form.Group>
-                </div>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Order Number</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="orderNo"
+                    value={formData.orderNo || "Generating..."}
+                    onChange={(e) =>
+                      handleChange(e.target.name, e.target.value)
+                    }
+                    placeholder="Enter order number (e.g., 2708202500001)"
+                    disabled={true}
+                  />
+                </Form.Group>
               </div>
 
               <div className="row">
