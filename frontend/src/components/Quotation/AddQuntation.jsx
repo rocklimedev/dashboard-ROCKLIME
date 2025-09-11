@@ -163,6 +163,7 @@ const AddQuotation = () => {
     error: fetchError,
     isSuccess: isFetchSuccess,
   } = useGetQuotationByIdQuery(id, { skip: !isEditMode });
+  console.log(existingQuotation);
   const { data: userData, isLoading: isUserLoading } = useGetProfileQuery();
   const { data: customersData, isLoading: isCustomersLoading } =
     useGetCustomersQuery();
@@ -224,6 +225,17 @@ const AddQuotation = () => {
   // Pre-fill form in edit mode
   useEffect(() => {
     if (isEditMode && existingQuotation) {
+      // Parse products if it's a string
+      let parsedProducts = existingQuotation.products;
+      if (typeof parsedProducts === "string") {
+        try {
+          parsedProducts = JSON.parse(parsedProducts);
+        } catch (error) {
+          console.error("Failed to parse products:", error);
+          parsedProducts = [];
+        }
+      }
+
       setFormData({
         ...initialFormData,
         quotationId: id,
@@ -247,21 +259,21 @@ const AddQuotation = () => {
         customerId: existingQuotation.customerId || "",
         shipTo: existingQuotation.shipTo || "",
         createdBy: userId,
-        products:
-          existingQuotation.products?.map((p) => ({
-            id: p.productId,
-            productId: p.productId,
-            name: p.name || "Unknown",
-            qty: Number(p.quantity) || 1,
-            sellingPrice: Number(p.sellingPrice) || 0,
-            discount: Number(p.discount) || 0,
-            tax: Number(p.tax) || 0,
-            total: Number(p.total) || 0,
-          })) || [],
+        products: Array.isArray(parsedProducts)
+          ? parsedProducts.map((p) => ({
+              id: p.productId,
+              productId: p.productId,
+              name: p.name || "Unknown",
+              qty: Number(p.quantity) || 1,
+              sellingPrice: Number(p.sellingPrice) || 0,
+              discount: Number(p.discount) || 0,
+              tax: Number(p.tax) || 0,
+              total: Number(p.total) || 0,
+            }))
+          : [],
       });
     }
   }, [existingQuotation, userId, isEditMode]);
-
   // Debounced product search
   const debouncedSearch = useCallback(
     debounce((value) => {
