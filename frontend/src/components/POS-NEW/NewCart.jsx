@@ -47,11 +47,12 @@ import styled from "styled-components";
 import PropTypes from "prop-types";
 import "react-lazy-load-image-component/src/effects/blur.css";
 import OrderTotal from "./OrderTotal";
+import useProductsData from "../../data/useProductdata";
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { TabPane } = Tabs;
 
-// Styled Components
+// Styled Components (unchanged)
 const PageWrapper = styled.div`
   padding: 20px;
   background-color: #f5f5f5;
@@ -131,6 +132,7 @@ const DiscountInput = styled(InputNumber)`
   margin-left: 8px;
 `;
 
+// AddAddressModal component (unchanged)
 const AddAddressModal = ({ show, onClose, onSave }) => {
   const [addressData, setAddressData] = useState({
     name: "",
@@ -312,9 +314,20 @@ const NewCart = ({ onConvertToOrder }) => {
     discountType: "percent",
     roundOff: "",
   });
-  const [itemDiscounts, setItemDiscounts] = useState({}); // Store individual item discounts
+  const [itemDiscounts, setItemDiscounts] = useState({});
   const [error, setError] = useState("");
   const [updatingItems, setUpdatingItems] = useState({});
+
+  // Use the custom hook to fetch product details
+  const cartItems = useMemo(
+    () => (Array.isArray(cartData?.cart?.items) ? cartData.cart.items : []),
+    [cartData]
+  );
+  const {
+    productsData,
+    errors: productErrors,
+    loading: productsLoading,
+  } = useProductsData(cartItems);
 
   const customers = customerData?.data || [];
   const customerList = useMemo(
@@ -329,10 +342,6 @@ const NewCart = ({ onConvertToOrder }) => {
         ? addressesData
         : [],
     [addressesData]
-  );
-  const cartItems = useMemo(
-    () => (Array.isArray(cartData?.cart?.items) ? cartData.cart.items : []),
-    [cartData]
   );
 
   const totalItems = useMemo(
@@ -354,10 +363,8 @@ const NewCart = ({ onConvertToOrder }) => {
         const quantity = item.quantity || 1;
         const price = item.price || 0;
         if (quotationData.discountType === "percent") {
-          // Calculate discount as a percentage of item price
           return acc + (price * quantity * discount) / 100;
         }
-        // Fixed discount per item
         return acc + discount * quantity;
       }, 0),
     [cartItems, itemDiscounts, quotationData.discountType]
@@ -421,7 +428,7 @@ const NewCart = ({ onConvertToOrder }) => {
   const handleDiscountChange = (productId, value) => {
     setItemDiscounts((prev) => ({
       ...prev,
-      [productId]: value >= 0 ? value : 0, // Ensure non-negative discount
+      [productId]: value >= 0 ? value : 0,
     }));
   };
 
@@ -434,7 +441,7 @@ const NewCart = ({ onConvertToOrder }) => {
     try {
       await clearCart({ userId }).unwrap();
       setQuotationNumber(generateQuotationNumber());
-      setItemDiscounts({}); // Clear discounts
+      setItemDiscounts({});
       refetch();
       setShowClearCartModal(false);
       setActiveTab("cart");
@@ -629,7 +636,7 @@ const NewCart = ({ onConvertToOrder }) => {
     setShowAddAddressModal(false);
   };
 
-  if (profileLoading || cartLoading) {
+  if (profileLoading || cartLoading || productsLoading) {
     return (
       <PageWrapper>
         <Spin size="large" style={{ display: "block", margin: "50px auto" }} />
@@ -637,7 +644,7 @@ const NewCart = ({ onConvertToOrder }) => {
     );
   }
 
-  if (profileError || cartError) {
+  if (profileError || cartError || productErrors.length > 0) {
     return (
       <PageWrapper>
         <Alert
@@ -645,6 +652,7 @@ const NewCart = ({ onConvertToOrder }) => {
           description={
             profileError?.message ||
             cartError?.message ||
+            productErrors.map((err) => err.error).join(", ") ||
             "An unexpected error occurred"
           }
           type="error"
@@ -727,114 +735,127 @@ const NewCart = ({ onConvertToOrder }) => {
                       </EmptyCartWrapper>
                     ) : (
                       <div>
-                        {cartItems.map((item) => (
-                          <CartItem key={item.productId}>
-                            <Row gutter={[16, 16]} align="middle">
-                              <Col xs={6} sm={4}>
-                                <CartItemImage
-                                  src={
-                                    item.images
-                                      ? JSON.parse(item.images)?.[0] ||
-                                        "https://via.placeholder.com/100"
-                                      : "https://via.placeholder.com/100"
-                                  }
-                                  alt={item.name}
-                                  width={80}
-                                  height={80}
-                                  effect="blur"
-                                  placeholderSrc="https://via.placeholder.com/100"
-                                />
-                              </Col>
-                              <Col xs={18} sm={10}>
-                                <Text strong>{item.name}</Text>
-                                <br />
-                                <Text
-                                  type="secondary"
-                                  block
-                                  style={{ color: "green" }}
-                                >
-                                  Price: ₹{item.price?.toFixed(2) || "0.00"}
-                                </Text>
-                                <br />
-                                <Text>Discount:</Text>
-                                <DiscountInput
-                                  min={0}
-                                  value={itemDiscounts[item.productId] || 0}
-                                  onChange={(value) =>
-                                    handleDiscountChange(item.productId, value)
-                                  }
-                                  addonAfter={
-                                    quotationData.discountType === "percent"
-                                      ? "%"
-                                      : "₹"
-                                  }
-                                  aria-label={`Discount for ${item.name}`}
-                                />
-                              </Col>
-                              <Col xs={12} sm={6}>
-                                <Space>
-                                  <QuantityButton
-                                    size="small"
-                                    onClick={() =>
-                                      handleUpdateQuantity(
-                                        item.productId,
-                                        item.quantity - 1
-                                      )
-                                    }
-                                    disabled={
-                                      item.quantity <= 1 ||
-                                      updatingItems[item.productId]
-                                    }
-                                    loading={updatingItems[item.productId]}
-                                    aria-label={`Decrease quantity of ${item.name}`}
+                        {cartItems.map((item) => {
+                          // Find the product data from useProductsData
+                          const product = productsData?.find(
+                            (p) => p.productId === item.productId
+                          );
+                          let imageUrl = null;
+                          try {
+                            if (product?.images) {
+                              const imgs = JSON.parse(product.images);
+                              imageUrl = Array.isArray(imgs) ? imgs[0] : null;
+                            }
+                          } catch {
+                            imageUrl = null;
+                          }
+                          return (
+                            <CartItem key={item.productId}>
+                              <Row gutter={[16, 16]} align="middle">
+                                <Col xs={6} sm={4}>
+                                  <CartItemImage
+                                    src={imageUrl}
+                                    alt={item.name}
+                                    width={80}
+                                    height={80}
+                                    effect="blur"
+                                    placeholderSrc="https://via.placeholder.com/100"
+                                  />
+                                </Col>
+                                <Col xs={18} sm={10}>
+                                  <Text strong>{item.name}</Text>
+                                  <br />
+                                  <Text
+                                    type="secondary"
+                                    block
+                                    style={{ color: "green" }}
                                   >
-                                    -
-                                  </QuantityButton>
-                                  <Text>{item.quantity}</Text>
-                                  <QuantityButton
-                                    size="small"
-                                    onClick={() =>
-                                      handleUpdateQuantity(
+                                    Price: ₹{item.price?.toFixed(2) || "0.00"}
+                                  </Text>
+                                  <br />
+                                  <Text>Discount:</Text>
+                                  <DiscountInput
+                                    min={0}
+                                    value={itemDiscounts[item.productId] || 0}
+                                    onChange={(value) =>
+                                      handleDiscountChange(
                                         item.productId,
-                                        item.quantity + 1
+                                        value
                                       )
+                                    }
+                                    addonAfter={
+                                      quotationData.discountType === "percent"
+                                        ? "%"
+                                        : "₹"
+                                    }
+                                    aria-label={`Discount for ${item.name}`}
+                                  />
+                                </Col>
+                                <Col xs={12} sm={6}>
+                                  <Space>
+                                    <QuantityButton
+                                      size="small"
+                                      onClick={() =>
+                                        handleUpdateQuantity(
+                                          item.productId,
+                                          item.quantity - 1
+                                        )
+                                      }
+                                      disabled={
+                                        item.quantity <= 1 ||
+                                        updatingItems[item.productId]
+                                      }
+                                      loading={updatingItems[item.productId]}
+                                      aria-label={`Decrease quantity of ${item.name}`}
+                                    >
+                                      -
+                                    </QuantityButton>
+                                    <Text>{item.quantity}</Text>
+                                    <QuantityButton
+                                      size="small"
+                                      onClick={() =>
+                                        handleUpdateQuantity(
+                                          item.productId,
+                                          item.quantity + 1
+                                        )
+                                      }
+                                      disabled={updatingItems[item.productId]}
+                                      loading={updatingItems[item.productId]}
+                                      aria-label={`Increase quantity of ${item.name}`}
+                                    >
+                                      +
+                                    </QuantityButton>
+                                  </Space>
+                                </Col>
+                                <Col
+                                  xs={12}
+                                  sm={4}
+                                  style={{ textAlign: "right" }}
+                                >
+                                  <Text strong style={{ color: "green" }}>
+                                    ₹
+                                    {(
+                                      item.price * item.quantity -
+                                      (itemDiscounts[item.productId] || 0)
+                                    ).toFixed(2)}
+                                  </Text>
+                                  <RemoveButton
+                                    type="text"
+                                    danger
+                                    icon={<BiTrash />}
+                                    onClick={() =>
+                                      handleRemoveItem(item.productId)
                                     }
                                     disabled={updatingItems[item.productId]}
                                     loading={updatingItems[item.productId]}
-                                    aria-label={`Increase quantity of ${item.name}`}
-                                  >
-                                    +
-                                  </QuantityButton>
-                                </Space>
-                              </Col>
-                              <Col
-                                xs={12}
-                                sm={4}
-                                style={{ textAlign: "right" }}
-                              >
-                                <Text strong style={{ color: "green" }}>
-                                  ₹
-                                  {(
-                                    item.price * item.quantity -
-                                    (itemDiscounts[item.productId] || 0)
-                                  ).toFixed(2)}
-                                </Text>
-                                <RemoveButton
-                                  type="text"
-                                  danger
-                                  icon={<BiTrash />}
-                                  onClick={() =>
-                                    handleRemoveItem(item.productId)
-                                  }
-                                  disabled={updatingItems[item.productId]}
-                                  loading={updatingItems[item.productId]}
-                                  aria-label={`Remove ${item.name} from cart`}
-                                />
-                              </Col>
-                            </Row>
-                            <Divider />
-                          </CartItem>
-                        ))}
+                                    aria-label={`Remove ${item.name} from cart`}
+                                  />
+                                </Col>
+                              </Row>
+                              <Divider />
+                            </CartItem>
+                          );
+                        })}
                       </div>
                     )}
                   </CartItemsCard>
