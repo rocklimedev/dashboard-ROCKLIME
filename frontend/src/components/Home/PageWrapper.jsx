@@ -261,15 +261,31 @@ const PageWrapper = () => {
 
   // Top selling products
   const topSellingProducts = useMemo(() => {
+    // Initialize empty product quantities
     const productQuantities = {};
-    quotationData?.forEach((quotation) => {
-      quotation.products?.forEach((p) => {
-        const pid = p.productId?._id || p.productId;
-        if (pid && p.quantity) {
-          productQuantities[pid] = (productQuantities[pid] || 0) + p.quantity;
-        }
-      });
+
+    // Check if quotationData is an array
+    if (!Array.isArray(quotationData)) {
+      console.warn("quotationData is not an array:", quotationData);
+      return [];
+    }
+
+    // Iterate over quotations
+    quotationData.forEach((quotation) => {
+      // Check if quotation.products is an array
+      if (Array.isArray(quotation.products)) {
+        quotation.products.forEach((p) => {
+          const pid = p.productId?._id || p.productId;
+          if (pid && p.quantity) {
+            productQuantities[pid] = (productQuantities[pid] || 0) + p.quantity;
+          }
+        });
+      } else {
+        console.warn("quotation.products is not an array:", quotation.products);
+      }
     });
+
+    // Convert product quantities to sorted array
     return Object.entries(productQuantities)
       .map(([productId, quantity]) => {
         const product = products.find(
@@ -284,7 +300,6 @@ const PageWrapper = () => {
       .sort((a, b) => b.quantity - a.quantity)
       .slice(0, 5);
   }, [quotationData, products]);
-
   // Bar chart data for top selling products
   const topProductsChartData = useMemo(
     () =>
