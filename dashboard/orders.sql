@@ -37,9 +37,9 @@ CREATE TABLE IF NOT EXISTS `orders` (
   KEY `createdFor` (`createdFor`),
   KEY `createdBy` (`createdBy`),
   KEY `assignedTo` (`assignedTo`),
-  CONSTRAINT `orders_ibfk_3894` FOREIGN KEY (`createdFor`) REFERENCES `customers` (`customerId`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `orders_ibfk_3895` FOREIGN KEY (`createdBy`) REFERENCES `users` (`userId`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `orders_ibfk_3896` FOREIGN KEY (`assignedTo`) REFERENCES `teams` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+  CONSTRAINT `orders_ibfk_4032` FOREIGN KEY (`createdFor`) REFERENCES `customers` (`customerId`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `orders_ibfk_4033` FOREIGN KEY (`createdBy`) REFERENCES `users` (`userId`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `orders_ibfk_4034` FOREIGN KEY (`assignedTo`) REFERENCES `teams` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Data exporting was unselected.

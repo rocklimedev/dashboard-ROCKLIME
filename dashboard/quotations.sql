@@ -38,9 +38,9 @@ CREATE TABLE IF NOT EXISTS `quotations` (
   KEY `customerId` (`customerId`),
   KEY `createdBy` (`createdBy`),
   KEY `shipTo` (`shipTo`),
-  CONSTRAINT `quotations_ibfk_2220` FOREIGN KEY (`customerId`) REFERENCES `customers` (`customerId`) ON UPDATE CASCADE,
-  CONSTRAINT `quotations_ibfk_2221` FOREIGN KEY (`createdBy`) REFERENCES `users` (`userId`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `quotations_ibfk_2222` FOREIGN KEY (`shipTo`) REFERENCES `addresses` (`addressId`) ON DELETE SET NULL ON UPDATE CASCADE
+  CONSTRAINT `quotations_ibfk_2351` FOREIGN KEY (`customerId`) REFERENCES `customers` (`customerId`) ON UPDATE CASCADE,
+  CONSTRAINT `quotations_ibfk_2352` FOREIGN KEY (`createdBy`) REFERENCES `users` (`userId`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `quotations_ibfk_2353` FOREIGN KEY (`shipTo`) REFERENCES `addresses` (`addressId`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Data exporting was unselected.

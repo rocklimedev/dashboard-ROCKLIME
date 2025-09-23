@@ -4,7 +4,7 @@ const PoItem = require("../models/poItem");
 const Vendor = require("../models/vendor");
 const { Op } = require("sequelize");
 const sequelize = require("../config/database"); // Import your Sequelize instance
-
+const mongoose = require("mongoose");
 // Helper function to validate items
 const validateItems = async (items, transaction) => {
   if (!Array.isArray(items) || items.length === 0) {
@@ -221,38 +221,47 @@ exports.getPurchaseOrderById = async (req, res) => {
   }
 };
 
-// Delete a purchase order
 exports.deletePurchaseOrder = async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  let mongoSession;
   try {
+    // Find purchase order in MySQL
     const purchaseOrder = await PurchaseOrder.findByPk(req.params.id);
-
     if (!purchaseOrder) {
       return res.status(404).json({ message: "Purchase order not found" });
     }
 
-    // Delete associated PoItems from MongoDB
-    await PoItem.deleteOne({ _id: purchaseOrder.items }, { session });
+    // Start Mongoose session for PoItem deletion
+    mongoSession = await mongoose.startSession();
+    mongoSession.startTransaction();
+
+    // Delete PoItems from MongoDB with matching id
+    await PoItem.deleteMany(
+      { id: purchaseOrder.id },
+      { session: mongoSession }
+    );
+
+    await mongoSession.commitTransaction();
+    mongoSession.endSession();
 
     // Delete PurchaseOrder from MySQL
-    await purchaseOrder.destroy({ session });
+    await PurchaseOrder.destroy({ where: { id: req.params.id } });
 
-    await session.commitTransaction();
     return res
       .status(200)
       .json({ message: "Purchase order deleted successfully" });
   } catch (error) {
-    await session.abortTransaction();
+    if (mongoSession) {
+      await mongoSession.abortTransaction();
+      mongoSession.endSession();
+    }
+    console.error("Error deleting purchase order:", error);
     return res.status(500).json({
       message: "Error deleting purchase order",
       error: error.message,
+      stack: error.stack,
     });
-  } finally {
-    session.endSession();
   }
 };
-
 // Confirm a purchase order and update product stock
 exports.confirmPurchaseOrder = async (req, res) => {
   const session = await mongoose.startSession();

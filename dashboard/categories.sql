@@ -27,8 +27,8 @@ CREATE TABLE IF NOT EXISTS `categories` (
   UNIQUE KEY `unique_category_name_per_brand` (`name`,`brandId`),
   KEY `parentCategoryId` (`parentCategoryId`),
   KEY `brandId` (`brandId`),
-  CONSTRAINT `categories_ibfk_711` FOREIGN KEY (`parentCategoryId`) REFERENCES `parentcategories` (`id`) ON DELETE NO ACTION ON UPDATE CASCADE,
-  CONSTRAINT `categories_ibfk_712` FOREIGN KEY (`brandId`) REFERENCES `brands` (`id`) ON DELETE NO ACTION ON UPDATE CASCADE
+  CONSTRAINT `categories_ibfk_795` FOREIGN KEY (`parentCategoryId`) REFERENCES `parentcategories` (`id`) ON DELETE NO ACTION ON UPDATE CASCADE,
+  CONSTRAINT `categories_ibfk_796` FOREIGN KEY (`brandId`) REFERENCES `brands` (`id`) ON DELETE NO ACTION ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Data exporting was unselected.
