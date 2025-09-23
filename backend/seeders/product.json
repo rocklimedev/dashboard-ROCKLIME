@@ -13,9 +13,9 @@
     "vendorId": null,
     "brand_parentcategoriesId": "158dd2fa-7421-11f0-9e84-52540021303b",
     "meta": {
-      "sellingPrice": 450,
-      "purchasingPrice": 450,
-      "company_code": "F-11_PAN_CONNECTOR_4_6"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 450,
+      "1ee10c21-1aa4-4cd8-9494-089f0d66cc7c": 450,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "F-11_PAN_CONNECTOR_4_6"
     },
     "product_code": "EPLPL0000001"
   },
@@ -33,9 +33,9 @@
     "vendorId": null,
     "brand_parentcategoriesId": "158dd2fa-7421-11f0-9e84-52540021303b",
     "meta": {
-      "sellingPrice": 455,
-      "purchasingPrice": 455,
-      "company_code": "F-15_FASTNER_12_MM_X_180MM_with_ABS_Cap"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 455,
+      "1ee10c21-1aa4-4cd8-9494-089f0d66cc7c": 455,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "F-15_FASTNER_12_MM_X_180MM_with_ABS_Cap"
     },
     "product_code": "EPLPL0000002"
   },
@@ -53,9 +53,9 @@
     "vendorId": null,
     "brand_parentcategoriesId": "158dd2fa-7421-11f0-9e84-52540021303b",
     "meta": {
-      "sellingPrice": 650,
-      "purchasingPrice": 650,
-      "company_code": "F-14_18_MM_Rack_Bolt"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 650,
+      "1ee10c21-1aa4-4cd8-9494-089f0d66cc7c": 650,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "F-14_18_MM_Rack_Bolt"
     },
     "product_code": "EPLPL0000003"
   },
@@ -73,9 +73,9 @@
     "vendorId": null,
     "brand_parentcategoriesId": "158dd2fa-7421-11f0-9e84-52540021303b",
     "meta": {
-      "sellingPrice": 700,
-      "purchasingPrice": 700,
-      "company_code": "A-8_Wall_Hung_Bracket"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 700,
+      "1ee10c21-1aa4-4cd8-9494-089f0d66cc7c": 700,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "A-8_Wall_Hung_Bracket"
     },
     "product_code": "EPLPL0000004"
   },
@@ -93,9 +93,9 @@
     "vendorId": null,
     "brand_parentcategoriesId": "158dd2fa-7421-11f0-9e84-52540021303b",
     "meta": {
-      "sellingPrice": 950,
-      "purchasingPrice": 950,
-      "company_code": "H-7_Fixing_Kit_For_Concealed_Wall_Hung_WC"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 950,
+      "1ee10c21-1aa4-4cd8-9494-089f0d66cc7c": 950,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "H-7_Fixing_Kit_For_Concealed_Wall_Hung_WC"
     },
     "product_code": "EPLPL0000005"
   }
