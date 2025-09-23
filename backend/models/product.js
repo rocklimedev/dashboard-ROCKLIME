@@ -51,10 +51,6 @@ const Product = sequelize.define(
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },
-    productType: {
-      type: DataTypes.ENUM("tiles", "sanitary"),
-      allowNull: false,
-    },
 
     // Optional Foreign Keys
     brandId: {

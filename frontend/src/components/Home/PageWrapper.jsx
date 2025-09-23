@@ -30,14 +30,12 @@ import StockModal from "../Common/StockModal";
 import DataTablePagination from "../Common/DataTablePagination";
 
 const PageWrapper = () => {
-  // State for modal
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [lowStockListModal, setLowStockListModal] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1); // 1-based page index for DataTablePagination
+  const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Date utilities
   const today = useMemo(() => {
     const date = new Date();
     date.setHours(0, 0, 0, 0);
@@ -51,7 +49,6 @@ const PageWrapper = () => {
   const oneWeekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
   const oneMonthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-  // API Queries
   const {
     data: profile,
     isLoading: loadingProfile,
@@ -82,14 +79,17 @@ const PageWrapper = () => {
     error: productsError,
     refetch: refetchProducts,
   } = useGetAllProductsQuery();
-  const { data: quotationData, isLoading: loadingQuotations } =
-    useGetAllQuotationsQuery();
+  const {
+    data: quotationData = [], // Fallback to empty array
+    isLoading: loadingQuotations,
+    error: quotationsError,
+    refetch: refetchQuotations,
+  } = useGetAllQuotationsQuery();
   const { data: invoiceData, isLoading: loadingInvoices } =
     useGetAllInvoicesQuery();
   const [clockIn, { isLoading: isClockInLoading }] = useClockInMutation();
   const [clockOut, { isLoading: isClockOutLoading }] = useClockOutMutation();
 
-  // Derived state
   const userId = profile?.user?.userId;
   const username = useMemo(() => {
     if (profile?.user?.name) {
@@ -111,11 +111,10 @@ const PageWrapper = () => {
   const categories = categoriesData?.categories || [];
   const users = usersData?.users || [];
   const productCount = products.length;
-  const quotationCount = quotationData?.length || 0;
+  const quotationCount = quotationData.length || 0;
   const invoiceCount = invoiceData?.data?.length || 0;
   const orderCount = orders.length;
 
-  // Attendance query
   const {
     data: attendance,
     isLoading: loadingAttendance,
@@ -128,7 +127,6 @@ const PageWrapper = () => {
   const hasClockedIn = attendance?.length > 0 && !!attendance[0]?.clockIn;
   const hasClockedOut = hasClockedIn && !!attendance[0]?.clockOut;
 
-  // Enhanced stats
   const totalRevenue = useMemo(
     () => orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0),
     [orders]
@@ -138,7 +136,6 @@ const PageWrapper = () => {
     [totalRevenue, orderCount]
   );
 
-  // Dynamic bar widths for summary cards
   const maxCounts = useMemo(
     () => ({
       orders: Math.max(orderCount, 1),
@@ -158,7 +155,6 @@ const PageWrapper = () => {
     ]
   );
 
-  // Filter data by time
   const filterByTime = (items, dateField) => {
     if (!Array.isArray(items)) return [];
     const weekItems = items.filter(
@@ -186,7 +182,6 @@ const PageWrapper = () => {
     [users]
   );
 
-  // Low stock products
   const lowStockProducts = useMemo(
     () => (products || []).filter((p) => p.quantity < p.alert_quantity),
     [products]
@@ -197,19 +192,16 @@ const PageWrapper = () => {
     return lowStockProducts.slice(startIndex, startIndex + itemsPerPage);
   }, [lowStockProducts, currentPage]);
 
-  // Open modal for selected product
   const handleProductClick = (product) => {
     setSelectedProduct(product);
     setIsModalVisible(true);
   };
 
-  // Close modal
   const handleModalClose = () => {
     setIsModalVisible(false);
     setSelectedProduct(null);
   };
 
-  // Category product counts
   const categoryProductCounts = useMemo(() => {
     const productCountByCategory = filteredProducts.reduce((acc, product) => {
       const categoryId =
@@ -224,7 +216,6 @@ const PageWrapper = () => {
     }));
   }, [filteredProducts, filteredCategories]);
 
-  // Top categories
   const topCategories = useMemo(
     () =>
       [...categoryProductCounts]
@@ -244,7 +235,6 @@ const PageWrapper = () => {
 
   const COLORS = ["#4A90E2", "#F5A623", "#7B68EE"];
 
-  // Bar chart data for orders (last 7 days)
   const barChartData = useMemo(() => {
     const days = Array.from({ length: 7 }, (_, i) => {
       const date = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
@@ -259,33 +249,36 @@ const PageWrapper = () => {
     }));
   }, [orders, today]);
 
-  // Top selling products
   const topSellingProducts = useMemo(() => {
-    // Initialize empty product quantities
-    const productQuantities = {};
-
-    // Check if quotationData is an array
+    if (loadingQuotations) return [];
     if (!Array.isArray(quotationData)) {
       console.warn("quotationData is not an array:", quotationData);
       return [];
     }
 
-    // Iterate over quotations
+    const productQuantities = {};
     quotationData.forEach((quotation) => {
-      // Check if quotation.products is an array
-      if (Array.isArray(quotation.products)) {
-        quotation.products.forEach((p) => {
+      let products = quotation.products || [];
+      if (typeof products === "string") {
+        try {
+          products = JSON.parse(products);
+        } catch (e) {
+          console.error("Failed to parse quotation.products:", products, e);
+          products = [];
+        }
+      }
+      if (Array.isArray(products)) {
+        products.forEach((p) => {
           const pid = p.productId?._id || p.productId;
           if (pid && p.quantity) {
             productQuantities[pid] = (productQuantities[pid] || 0) + p.quantity;
           }
         });
       } else {
-        console.warn("quotation.products is not an array:", quotation.products);
+        console.warn("quotation.products is not an array:", products);
       }
     });
 
-    // Convert product quantities to sorted array
     return Object.entries(productQuantities)
       .map(([productId, quantity]) => {
         const product = products.find(
@@ -299,8 +292,8 @@ const PageWrapper = () => {
       })
       .sort((a, b) => b.quantity - a.quantity)
       .slice(0, 5);
-  }, [quotationData, products]);
-  // Bar chart data for top selling products
+  }, [quotationData, products, loadingQuotations]);
+
   const topProductsChartData = useMemo(
     () =>
       topSellingProducts.map((product) => ({
@@ -310,7 +303,6 @@ const PageWrapper = () => {
     [topSellingProducts]
   );
 
-  // Top customer
   const topCustomer = useMemo(
     () =>
       filteredCustomers.reduce(
@@ -325,7 +317,6 @@ const PageWrapper = () => {
     [filteredCustomers]
   );
 
-  // Today's orders
   const todaysOrders = useMemo(
     () =>
       orders.filter((order) => {
@@ -336,7 +327,6 @@ const PageWrapper = () => {
     [orders, startDate]
   );
 
-  // Handlers
   const handleClockIn = async () => {
     if (!userId) return toast.error("User ID is not available.");
     try {
@@ -355,12 +345,10 @@ const PageWrapper = () => {
     }
   };
 
-  // Handle page change for DataTablePagination
   const handlePageChange = (newPage) => {
-    setCurrentPage(newPage); // Update to the new page (1-based)
+    setCurrentPage(newPage);
   };
 
-  // Toasts
   useEffect(() => {
     if (profileError) {
       const message =
@@ -372,15 +360,18 @@ const PageWrapper = () => {
           : "Failed to load profile.";
       toast.error(message, { id: "profileError" });
     }
-  }, [profileError]);
+    if (quotationsError) {
+      toast.error("Failed to load quotations.", { id: "quotationsError" });
+    }
+  }, [profileError, quotationsError]);
 
-  // Early returns
   if (
     loadingProfile ||
     isCustomersLoading ||
     isCategoriesLoading ||
     isUsersLoading ||
-    isProductsLoading
+    isProductsLoading ||
+    loadingQuotations
   ) {
     return (
       <div className="text-center p-5">
@@ -396,7 +387,8 @@ const PageWrapper = () => {
     customersError ||
     categoriesError ||
     usersError ||
-    productsError
+    productsError ||
+    quotationsError
   ) {
     return (
       <div className="alert alert-danger m-3" role="alert">
@@ -416,6 +408,9 @@ const PageWrapper = () => {
         {productsError && (
           <p>Products: {productsError.data?.message || "Unknown error"}</p>
         )}
+        {quotationsError && (
+          <p>Quotations: {quotationsError.data?.message || "Unknown error"}</p>
+        )}
         <button
           className="btn btn-primary mt-2"
           onClick={() => {
@@ -423,6 +418,7 @@ const PageWrapper = () => {
             if (categoriesError) refetchCategories();
             if (usersError) refetchUsers();
             if (productsError) refetchProducts();
+            if (quotationsError) refetchQuotations();
           }}
         >
           Retry
@@ -596,7 +592,6 @@ const PageWrapper = () => {
             </div>
           </section>
 
-          {/* Custom Modal for Low Stock Products */}
           {lowStockListModal && (
             <div
               className="modal fade show"

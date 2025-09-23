@@ -15,6 +15,7 @@ import sunheart from "../../assets/img/products/sunheart.jpg";
 import subway from "../../assets/img/products/subway.webp";
 import ibis from "../../assets/img/products/ibis.avif";
 import sgt from "../../assets/img/products/sgt.jpg";
+import plumbing from "../../assets/img/products/plumbing.jpg";
 const jayna = "https://via.placeholder.com/300";
 
 const BrandSelection = () => {
@@ -45,6 +46,7 @@ const BrandSelection = () => {
       extras: addons,
       walplast: walplast,
       jk_adhesive: jk,
+      plumbing: plumbing,
     };
 
     const mappedBrands = Array.isArray(bpc?.brands)

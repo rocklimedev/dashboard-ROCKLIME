@@ -8,9 +8,10 @@ const Vendor = sequelize.define(
   {
     id: {
       type: DataTypes.UUID,
-      defaultValue: uuidv4,
       primaryKey: true,
+      defaultValue: () => uuidv4(), // <-- must be a function
     },
+
     vendorId: {
       type: DataTypes.STRING,
       unique: true,
@@ -36,8 +37,11 @@ const Vendor = sequelize.define(
     },
   },
   {
-    tableName: "vendors", // Force lowercase table name
+    tableName: "vendors",
     timestamps: true,
+    charset: "utf8mb4",
+    collate: "utf8mb4_unicode_ci",
+    engine: "InnoDB",
   }
 );
 
