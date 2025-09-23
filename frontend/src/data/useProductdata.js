@@ -14,15 +14,24 @@ export default function useProductsData(products = []) {
 
   // Create a stable array of product IDs
   const productIds = useMemo(
-    () => products.map((product) => product.productId).filter(Boolean),
+    () => products.map((product) => product?.productId).filter(Boolean),
     [products]
   );
+
   useEffect(() => {
+    // Avoid fetching if no product IDs
+    if (productIds.length === 0) {
+      setProductsData([]);
+      setErrors([]);
+      setLoading(false);
+      return;
+    }
+
     const fetchProducts = async () => {
       setLoading(true);
-      setErrors([]); // Reset errors
+      const tempErrors = [];
       const results = await Promise.all(
-        productIds.map(async (productId, index) => {
+        productIds.map(async (productId) => {
           if (!productId) return null;
           try {
             const response = await fetch(`${API_URL}/products/${productId}`);
@@ -30,25 +39,21 @@ export default function useProductsData(products = []) {
               throw new Error(`Failed to fetch product ${productId}`);
             }
             const data = await response.json();
-            return { productId, ...data }; // Simplified to avoid referencing products
+            return { productId, ...data };
           } catch (error) {
-            setErrors((prev) => [...prev, { productId, error: error.message }]);
+            tempErrors.push({ productId, error: error.message });
             return null;
           }
         })
       );
 
-      const validProducts = results.filter(Boolean);
-      setProductsData(validProducts);
+      setProductsData(results.filter(Boolean));
+      setErrors(tempErrors);
       setLoading(false);
     };
 
-    if (productIds.length > 0) {
-      fetchProducts();
-    } else {
-      setProductsData([]);
-      setLoading(false);
-    }
-  }, [productIds]); // Only depend on productIds
+    fetchProducts();
+  }, [productIds]);
+
   return { productsData, errors, loading };
 }

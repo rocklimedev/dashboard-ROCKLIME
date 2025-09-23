@@ -26,8 +26,8 @@ CREATE TABLE IF NOT EXISTS `rolepermissions` (
   UNIQUE KEY `rolepermissions_role_id_permission_id` (`roleId`,`permissionId`),
   KEY `permissionId` (`permissionId`),
   KEY `rolepermissions_permission_id` (`permissionId`),
-  CONSTRAINT `rolepermissions_ibfk_1769` FOREIGN KEY (`roleId`) REFERENCES `roles` (`roleId`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `rolepermissions_ibfk_1770` FOREIGN KEY (`permissionId`) REFERENCES `permissions` (`permissionId`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `rolepermissions_ibfk_1853` FOREIGN KEY (`roleId`) REFERENCES `roles` (`roleId`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `rolepermissions_ibfk_1854` FOREIGN KEY (`permissionId`) REFERENCES `permissions` (`permissionId`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Data exporting was unselected.
