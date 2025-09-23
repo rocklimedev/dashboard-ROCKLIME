@@ -1,5 +1,5 @@
-// POWrapper.jsx (modified for mock data)
-import React, { useState, useMemo, useEffect } from "react";
+// src/components/POWrapper.jsx
+import React, { useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { toast } from "sonner";
 import { FaSearch } from "react-icons/fa";
@@ -9,13 +9,14 @@ import DeleteModal from "../Common/DeleteModal";
 import OrderPagination from "./OrderPagination";
 import PageHeader from "../Common/PageHeader";
 import DatesModal from "./DateModal";
-import { mockPOs, mockTeams, mockCustomers, mockUsers } from "./mockData"; // Import mock data
+import {
+  useGetPurchaseOrdersQuery,
+  useDeletePurchaseOrderMutation,
+  useGetVendorsQuery,
+} from "../../api/poApi"; // Import RTK Query hooks
 
 const POWrapper = ({ activeTab, setActiveTab }) => {
   const navigate = useNavigate();
-  const [teamMap, setTeamMap] = useState({});
-  const [customerMap, setCustomerMap] = useState({});
-  const [userMap, setUserMap] = useState({});
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [poToDelete, setPOToDelete] = useState(null);
   const [showDatesModal, setShowDatesModal] = useState(false);
@@ -27,183 +28,103 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
   const [sortBy, setSortBy] = useState("Recently Added");
   const [filters, setFilters] = useState({
     status: "",
-    priority: "",
-    source: "",
     page: 1,
     limit: 10,
   });
-  const [dateRange, setDateRange] = useState({
-    startDate: "",
-    endDate: "",
+
+  // Fetch purchase orders and vendors using RTK Query
+  const {
+    data: poData,
+    isLoading,
+    isFetching,
+    error,
+  } = useGetPurchaseOrdersQuery({
+    page: filters.page,
+    limit: filters.limit,
+    status: filters.status,
+    search: searchTerm,
+    sort: sortBy,
   });
 
-  // Use mock data instead of API hooks
-  const allData = mockPOs;
-  const teamsData = mockTeams;
-  const customersData = mockCustomers;
-  const usersData = mockUsers;
+  const { data: vendorsData } = useGetVendorsQuery();
 
-  const purchaseOrders = allData?.purchaseOrders || [];
-  const totalCount = allData?.totalCount || 0;
-  const isLoading = false; // Simulate no loading
-  const isFetching = false; // Simulate no fetching
-  const error = null; // Simulate no error
+  const [deletePurchaseOrder] = useDeletePurchaseOrderMutation();
 
-  // Mock delete function
-  const deletePO = async (poId) => {
-    try {
-      // Simulate successful deletion
-      console.log(`Mock delete PO with ID: ${poId}`);
-      return { success: true };
-    } catch (err) {
-      throw new Error("Mock deletion failed");
-    }
-  };
+  // Map vendors for quick lookup
+  const vendorMap = useMemo(() => {
+    if (!vendorsData) return {};
+    return vendorsData.reduce((acc, vendor) => {
+      acc[vendor.id] = vendor.vendorName || "—";
+      return acc;
+    }, {});
+  }, [vendorsData]);
 
-  // Map teams, customers, and users for quick lookup
-  useEffect(() => {
-    if (teamsData?.teams) {
-      setTeamMap(
-        teamsData.teams.reduce((acc, team) => {
-          acc[team.id] = team.teamName || "—";
-          return acc;
-        }, {})
-      );
-    }
-  }, [teamsData]);
+  const purchaseOrders = poData?.purchaseOrders || [];
+  const totalCount = poData?.totalCount || 0;
 
-  useEffect(() => {
-    if (customersData?.data) {
-      setCustomerMap(
-        customersData.data.reduce((acc, customer) => {
-          acc[customer.customerId] = customer.name || "—";
-          return acc;
-        }, {})
-      );
-    }
-  }, [customersData]);
-
-  useEffect(() => {
-    if (usersData?.users) {
-      setUserMap(
-        usersData.users.reduce((acc, user) => {
-          acc[user.userId] = user.username || user.name || "—";
-          return acc;
-        }, {})
-      );
-    }
-  }, [usersData]);
-
-  // Statuses for Purchase Orders (adjust based on your backend)
-  const statuses = [
-    "CREATED",
-    "APPROVED",
-    "PENDING",
-    "FULFILLED",
-    "CANCELED",
-    "DRAFT",
-    "ONHOLD",
-  ];
-
-  // Priority options
-  const priorityOptions = ["All", "high", "medium", "low"];
+  // Statuses aligned with backend model
+  const statuses = ["pending", "confirmed", "delivered", "cancelled"];
 
   // Sort options
   const sortOptions = [
     "Recently Added",
     "Ascending",
     "Descending",
-    "Due Date Ascending",
-    "Due Date Descending",
+    "Order Date Ascending",
+    "Order Date Descending",
   ];
 
-  // Filtered and sorted purchase orders
+  // Filtered purchase orders (client-side filtering for search and sort)
   const filteredPOs = useMemo(() => {
     let result = purchaseOrders;
 
-    if (filters.status) {
-      result = result.filter((po) => po.status === filters.status);
-    }
-
-    if (filters.priority) {
-      result = result.filter(
-        (po) => po.priority?.toLowerCase() === filters.priority
-      );
-    }
-
-    if (filters.source) {
-      result = result.filter(
-        (po) => po.source?.toLowerCase() === filters.source.toLowerCase()
-      );
-    }
-
     if (searchTerm.trim()) {
       result = result.filter((po) => {
-        const customerName = po.createdFor
-          ? customerMap[po.createdFor] || "—"
-          : "N/A";
+        const vendorName = po.vendorId ? vendorMap[po.vendorId] || "—" : "N/A";
         return (
-          po.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          po.source?.toLowerCase().includes(searchTerm.toLowerCase())
+          po.orderNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          vendorName.toLowerCase().includes(searchTerm.toLowerCase())
         );
-      });
-    }
-
-    if (dateRange.startDate || dateRange.endDate) {
-      result = result.filter((po) => {
-        const poDate = new Date(po.createdAt);
-        const start = dateRange.startDate
-          ? new Date(dateRange.startDate)
-          : null;
-        const end = dateRange.endDate ? new Date(dateRange.endDate) : null;
-        return (!start || poDate >= start) && (!end || poDate <= end);
       });
     }
 
     switch (sortBy) {
       case "Ascending":
-        return [...result].sort((a, b) => a.title.localeCompare(b.title));
+        return [...result].sort((a, b) =>
+          a.orderNumber.localeCompare(b.orderNumber)
+        );
       case "Descending":
-        return [...result].sort((a, b) => b.title.localeCompare(a.title));
+        return [...result].sort((a, b) =>
+          b.orderNumber.localeCompare(a.orderNumber)
+        );
       case "Recently Added":
         return [...result].sort(
           (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
         );
-      case "Due Date Ascending":
+      case "Order Date Ascending":
         return [...result].sort(
           (a, b) =>
-            new Date(a.dueDate || "9999-12-31") -
-            new Date(b.dueDate || "9999-12-31")
+            new Date(a.orderDate || "9999-12-31") -
+            new Date(b.orderDate || "9999-12-31")
         );
-      case "Due Date Descending":
+      case "Order Date Descending":
         return [...result].sort(
           (a, b) =>
-            new Date(b.dueDate || "9999-12-31") -
-            new Date(a.dueDate || "9999-12-31")
+            new Date(b.orderDate || "9999-12-31") -
+            new Date(a.orderDate || "9999-12-31")
         );
       default:
         return result;
     }
-  }, [purchaseOrders, searchTerm, sortBy, filters, dateRange, customerMap]);
+  }, [purchaseOrders, searchTerm, sortBy, vendorMap]);
 
-  // Paginated purchase orders
-  const paginatedPOs = useMemo(() => {
-    const startIndex = (filters.page - 1) * filters.limit;
-    return filteredPOs.slice(startIndex, startIndex + filters.limit);
-  }, [filteredPOs, filters.page, filters.limit]);
+  // Paginated purchase orders (handled by backend)
+  const paginatedPOs = filteredPOs;
 
   // Compute filtered state
   const isFiltered = useMemo(() => {
-    return (
-      filters.status !== "" ||
-      filters.priority !== "" ||
-      filters.source !== "" ||
-      searchTerm.trim() !== "" ||
-      dateRange.startDate !== "" ||
-      dateRange.endDate !== ""
-    );
-  }, [filters, searchTerm, dateRange]);
+    return filters.status !== "" || searchTerm.trim() !== "";
+  }, [filters, searchTerm]);
 
   // Handlers
   const handleOpenAddPO = () => {
@@ -226,7 +147,7 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
 
   const handleDeletePO = async (poId) => {
     try {
-      await deletePO(poId).unwrap();
+      await deletePurchaseOrder(poId).unwrap();
       toast.success("Purchase order deleted successfully");
       handleModalClose();
     } catch (err) {
@@ -245,32 +166,21 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
   const handleClearFilters = () => {
     setFilters({
       status: "",
-      priority: "",
-      source: "",
       page: 1,
       limit: 10,
     });
     setSearchTerm("");
     setSortBy("Recently Added");
-    setDateRange({ startDate: "", endDate: "" });
   };
 
   const handleOpenDatesModal = (dueDate, followupDates) => {
-    setSelectedDates({ dueDate, followupDates });
+    setSelectedDates({ dueDate, followupDates: followupDates || [] });
     setShowDatesModal(true);
   };
 
   const handleCloseDatesModal = () => {
     setShowDatesModal(false);
     setSelectedDates({ dueDate: null, followupDates: [] });
-  };
-
-  const handleDateRangeChange = (field) => (e) => {
-    setDateRange((prev) => ({
-      ...prev,
-      [field]: e.target.value,
-    }));
-    setFilters((prev) => ({ ...prev, page: 1 }));
   };
 
   const isDueDateClose = (dueDate) => {
@@ -283,7 +193,7 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
   };
 
   const getStatusDisplay = (status) => {
-    return statuses.includes(status) ? status : "CREATED";
+    return statuses.includes(status) ? status : "pending";
   };
 
   return (
@@ -316,34 +226,12 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
                       <option value="">All Statuses</option>
                       {statuses.map((status) => (
                         <option key={status} value={status}>
-                          {status}
+                          {status.charAt(0).toUpperCase() + status.slice(1)}
                         </option>
                       ))}
                     </select>
                   </div>
                   <div className="d-flex align-items-center">
-                    <select
-                      className="form-select"
-                      value={filters.priority}
-                      onChange={(e) =>
-                        setFilters((prev) => ({
-                          ...prev,
-                          priority: e.target.value,
-                          page: 1,
-                        }))
-                      }
-                    >
-                      {priorityOptions.map((priority) => (
-                        <option
-                          key={priority}
-                          value={priority === "All" ? "" : priority}
-                        >
-                          {priority === "All" ? "All Priorities" : priority}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="d-flex align-items-center ms-3">
                     <select
                       className="form-select"
                       value={sortBy}
@@ -389,7 +277,9 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
               {isLoading || isFetching ? (
                 <p>Loading...</p>
               ) : error ? (
-                <p className="text-danger">Error: {error.message}</p>
+                <p className="text-danger">
+                  Error: {error.data?.message || error.message}
+                </p>
               ) : paginatedPOs.length === 0 ? (
                 <p className="text-muted">
                   No purchase orders match the applied filters
@@ -402,28 +292,22 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
                         <th>S.No.</th>
                         <th>PO No.</th>
                         <th>STATUS</th>
-                        <th>TITLE</th>
-                        <th>CUSTOMER</th>
-                        <th>PRIORITY</th>
-                        <th>ASSIGNED TO</th>
-                        <th>CREATED BY</th>
-                        <th>DUE DATE</th>
+                        <th>VENDOR</th>
+                        <th>TOTAL AMOUNT</th>
+                        <th>ORDER DATE</th>
+                        <th>EXPECTED DELIVERY</th>
                         <th></th>
                       </tr>
                     </thead>
                     <tbody>
                       {paginatedPOs.map((po, index) => {
-                        const teamName = po.assignedTo
-                          ? teamMap[po.assignedTo] || "—"
-                          : "—";
-                        const customerName = po.createdFor
-                          ? customerMap[po.createdFor] || "Loading..."
-                          : "N/A";
-                        const createdByName = po.createdBy
-                          ? userMap[po.createdBy] || "Loading..."
+                        const vendorName = po.vendorId
+                          ? vendorMap[po.vendorId] || "Loading..."
                           : "N/A";
                         const status = getStatusDisplay(po.status);
-                        const dueDateClass = isDueDateClose(po.dueDate)
+                        const dueDateClass = isDueDateClose(
+                          po.expectedDeliveryDate
+                        )
                           ? "due-date-close"
                           : "";
                         const serialNumber =
@@ -432,46 +316,41 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
                         return (
                           <tr key={po.id}>
                             <td>{serialNumber}</td>
-                            <td>{po.poNo}</td>
+                            <td>
+                              <Link to={`/po/${po.id}`}>{po.poNumber}</Link>
+                            </td>
                             <td>
                               <span
                                 className="priority-badge"
                                 style={{ backgroundColor: "#f2f2f2" }}
                               >
-                                {status}
+                                {status.charAt(0).toUpperCase() +
+                                  status.slice(1)}
                               </span>
                             </td>
+                            <td>{vendorName}</td>
                             <td>
-                              <Link to={`/po/${po.id}`}>{po.title}</Link>
+                              {po.totalAmount ? `Rs. ${po.totalAmount}` : "—"}
                             </td>
-                            <td>{customerName}</td>
                             <td>
-                              <span
-                                className={`priority-badge ${
-                                  po.priority?.toLowerCase() || "medium"
-                                }`}
-                              >
-                                {po.priority || "Medium"}
-                              </span>
+                              {po.orderDate
+                                ? new Date(po.orderDate).toLocaleDateString()
+                                : "—"}
                             </td>
-                            <td>{teamName}</td>
-                            <td>{createdByName}</td>
-                            <td className={dueDateClass}>
-                              {po.dueDate ? (
+                            <td>
+                              {po.expectDeliveryDate ? (
                                 <span
                                   className="due-date-link"
                                   style={{
                                     color: "#e31e24",
                                     cursor: "pointer",
                                   }}
-                                  onClick={() =>
-                                    handleOpenDatesModal(
-                                      po.dueDate,
-                                      po.followupDates || []
-                                    )
-                                  }
                                 >
-                                  {new Date(po.dueDate).toLocaleDateString()}
+                                  {po.expectDeliveryDate
+                                    ? new Date(
+                                        po.expectDeliveryDate
+                                      ).toLocaleDateString()
+                                    : "—"}
                                 </span>
                               ) : (
                                 "—"

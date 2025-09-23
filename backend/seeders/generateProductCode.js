@@ -2,17 +2,17 @@ const fs = require("fs").promises;
 const path = require("path");
 
 // JSON data to process
-const jsonData = require("./new.json");
+const jsonData = require("../seeder/backup/index.json");
 
 // Mock brand
-const mockBrand = { brandName: "Colston" };
+const mockBrand = { brandName: "Plumbing" };
 
 async function generateCode(product, existingCodes) {
   let last4;
 
   // Check if company_code exists
   if (product.company_code) {
-    const companyCode = `CMP-${product.company_code}`;
+    const companyCode = `${product.company_code}`;
     const match = companyCode.match(/\d{4}(?!.*\d)/);
     last4 = match ? match[0] : "0000";
   } else {
@@ -22,10 +22,13 @@ async function generateCode(product, existingCodes) {
     last4 = cleanedSize.slice(-4) || "0000";
   }
 
+  // Use productType or default to "UN" (unknown) if undefined
+  const productType = "PLU";
+
   // Generate prefix: E + first 2 chars of productType + first 2 chars of brandName + last4
-  const prefix = `E${product.productType
+  const prefix = `E${productType.slice(0, 2).toUpperCase()}${mockBrand.brandName
     .slice(0, 2)
-    .toUpperCase()}${mockBrand.brandName.slice(0, 2).toUpperCase()}${last4}`;
+    .toUpperCase()}${last4}`;
 
   // Collect existing suffixes for this prefix
   const suffixes = existingCodes

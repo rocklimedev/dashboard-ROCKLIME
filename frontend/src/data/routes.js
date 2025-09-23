@@ -74,6 +74,8 @@ import AddCustomer from "../components/Customers/AddCustomer";
 import EmailInterface from "../components/Contact/EmailInterface";
 import EmailVerification from "../components/Auth/EmailVerifications";
 import POWrapper from "../components/Orders/POWrapper";
+import AddPurchaseOrder from "../components/Orders/AddPurchaseOrder";
+import PODetails from "../components/Orders/PODetails";
 const masterRoutes = [
   {
     path: "/",
@@ -230,7 +232,27 @@ const masterRoutes = [
         isSidebarActive: true,
         element: <AddressList />,
       },
-
+      {
+        path: "/po/:id",
+        name: "PO Details",
+        icon: <LiaFileSignatureSolid />,
+        element: <PODetails />,
+        isSidebarActive: false,
+      },
+      {
+        path: "/po/add",
+        name: "Add Purchase Order",
+        icon: <LiaFileSignatureSolid />,
+        isSidebarActive: false,
+        element: <AddPurchaseOrder />,
+      },
+      {
+        path: "/po/:id/edit",
+        name: "Edit Purchase Order",
+        icon: <LiaFileSignatureSolid />,
+        isSidebarActive: false,
+        element: <AddPurchaseOrder />,
+      },
       {
         path: "/signature/list",
         name: "Signature",

@@ -18,7 +18,20 @@ const ProductCard = ({
   const [quantity, setQuantity] = useState(product.quantity > 0 ? 1 : 0);
 
   // Safely parse images from JSON string
-  const productImages = product.images ? JSON.parse(product.images) : [pos];
+  const parseImages = (images) => {
+    try {
+      // Check if images is a non-empty string
+      if (typeof images === "string" && images.trim() !== "") {
+        return JSON.parse(images);
+      }
+      return [pos]; // Fallback to default image if empty or not a string
+    } catch (error) {
+      console.error("Error parsing product images:", error);
+      return [pos]; // Fallback to default image on error
+    }
+  };
+
+  const productImages = product.images ? parseImages(product.images) : [pos];
 
   // Get sellingPrice and unit using slug
   const sellingPriceMeta = product.metaDetails?.find(

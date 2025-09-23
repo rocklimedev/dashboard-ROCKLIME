@@ -24,6 +24,7 @@ const Login = () => {
 
       if (!token) throw new Error("No access token received");
 
+      // Store token
       if (rememberMe) {
         localStorage.setItem("token", token);
         sessionStorage.removeItem("token");
@@ -32,8 +33,11 @@ const Login = () => {
         localStorage.removeItem("token");
       }
 
-      // Update context
+      // Update context (this might not immediately update everywhere!)
       authLogin(token, response.user || null);
+
+      // Instead of immediate navigate, set a flag
+      setLoginSuccess(true);
 
       // Show success toast and navigate immediately
 
@@ -53,15 +57,12 @@ const Login = () => {
       }
     }
   };
-
-  // Navigate when auth is updated after successful login
   useEffect(() => {
     if (loginSuccess && auth?.token) {
       navigate("/", { replace: true });
       setLoginSuccess(false);
     }
   }, [auth, loginSuccess, navigate]);
-
   return (
     <div className="account-content">
       <div className="login-wrapper bg-img">

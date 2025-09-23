@@ -17,9 +17,7 @@ export default function useProductsData(products = []) {
     () => products.map((product) => product.productId).filter(Boolean),
     [products]
   );
-
   useEffect(() => {
-    // Function to fetch product data
     const fetchProducts = async () => {
       setLoading(true);
       setErrors([]); // Reset errors
@@ -32,7 +30,7 @@ export default function useProductsData(products = []) {
               throw new Error(`Failed to fetch product ${productId}`);
             }
             const data = await response.json();
-            return { productId: products[index].productId, ...data };
+            return { productId, ...data }; // Simplified to avoid referencing products
           } catch (error) {
             setErrors((prev) => [...prev, { productId, error: error.message }]);
             return null;
@@ -40,7 +38,6 @@ export default function useProductsData(products = []) {
         })
       );
 
-      // Filter out null results and set productsData
       const validProducts = results.filter(Boolean);
       setProductsData(validProducts);
       setLoading(false);
@@ -52,7 +49,6 @@ export default function useProductsData(products = []) {
       setProductsData([]);
       setLoading(false);
     }
-  }, [productIds, products]);
-
+  }, [productIds]); // Only depend on productIds
   return { productsData, errors, loading };
 }

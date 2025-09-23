@@ -34,7 +34,7 @@ const helmet = require("helmet");
 const keys = require("./config/keys");
 const otpRoutes = require("./routes/otp");
 const productMetaRoutes = require("./routes/productMeta");
-
+const purchaseOrderRoutes = require("./routes/purchaseOrder");
 const app = express();
 
 // CORS configuration
@@ -102,6 +102,7 @@ app.use("/api/role-permissions", rolePermissionRoutes);
 app.use("/api/invoices", invoiceRoutes);
 app.use("/api/teams", teamRoutes);
 app.use("/api/search", searchRoutes);
+app.use("/api/purchase-orders", purchaseOrderRoutes);
 app.use("/api/product-meta", productMetaRoutes);
 // Error handling middleware
 app.use((err, req, res, next) => {
