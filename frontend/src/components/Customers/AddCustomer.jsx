@@ -394,7 +394,7 @@ const AddCustomer = () => {
                 <button
                   type="button"
                   className="btn btn-secondary me-2"
-                  onClick={() => navigate("/customers")}
+                  onClick={() => navigate("/customers/list")}
                 >
                   Cancel
                 </button>

@@ -207,7 +207,7 @@ const ProductsList = () => {
     }
     try {
       await deleteProduct(selectedProduct.productId).unwrap();
-      toast.success("Product deleted successfully");
+
       if (currentItems.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
@@ -233,11 +233,6 @@ const ProductsList = () => {
         productId,
         isFeatured: !product.isFeatured,
       }).unwrap();
-      toast.success(
-        product.isFeatured
-          ? `${product.name} unmarked as featured!`
-          : `${product.name} marked as featured!`
-      );
     } catch (error) {
       toast.error(
         `Failed to update featured status: ${
@@ -272,7 +267,6 @@ const ProductsList = () => {
         productId,
         quantity: product.quantity || 1,
       }).unwrap();
-      toast.success(`${product.name} added to cart!`);
     } catch (error) {
       toast.error(`Error: ${error.data?.message || "Unknown error"}`);
     } finally {
@@ -287,7 +281,6 @@ const ProductsList = () => {
     }
     try {
       await removeFromCart({ userId, productId }).unwrap();
-      toast.success("Product removed from cart!");
     } catch (error) {
       toast.error(
         `Failed to remove from cart: ${error.data?.message || "Unknown error"}`

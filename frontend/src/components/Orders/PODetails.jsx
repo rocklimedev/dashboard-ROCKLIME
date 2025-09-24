@@ -219,22 +219,36 @@ const PODetails = () => {
           } catch (error) {}
 
           const productCode =
-            productDetail?.product_code ||
-            productDetail?.meta?.d11da9f9_3f2e_4536_8236_9671200cca4a ||
+            productDetail.metaDetails?.find(
+              (md) =>
+                md.slug === "companyCode" ||
+                md.title === "company_code" ||
+                md.title === "companyCode"
+            )?.value ||
+            productDetail.meta?.d11da9f9_3f2e_4536_8236_9671200cca4a ||
             "N/A";
-          const mrp = product.mrp || productDetail?.mrp || 0;
-          const total =
-            product.total ||
-            (product.quantity && mrp ? product.quantity * mrp : 0);
+          const sellingPrice =
+            Number(
+              productDetail.metaDetails?.find(
+                (md) =>
+                  md.slug === "sellingPrice" ||
+                  md.title === "Selling Price" ||
+                  md.title === "sellingPrice"
+              )?.value
+            ) ||
+            Number(productDetail.sellingPrice) ||
+            0;
+          const quantity = Number(product.quantity) || 0;
+          const total = quantity * sellingPrice;
 
           return {
             index: index + 1,
             imageUrl,
             name: product.name || productDetail?.name || "N/A",
             code: productCode,
-            mrp: mrp ? `₹${Number(mrp).toFixed(2)}` : "N/A",
-            quantity: product.quantity || "N/A",
-            total: total ? `₹${Number(total).toFixed(2)}` : "N/A",
+            mrp: sellingPrice ? `₹${sellingPrice.toFixed(2)}` : "N/A",
+            quantity,
+            total: total ? `₹${total.toFixed(2)}` : "N/A",
           };
         });
         // Fetch logo image
@@ -353,8 +367,8 @@ const PODetails = () => {
         worksheet.getCell("A6").alignment = { vertical: "middle" };
 
         worksheet.mergeCells("B6:G7");
-        worksheet.getCell("B6").value = purchaseOrder.expectedDeliveryDate
-          ? new Date(purchaseOrder.expectedDeliveryDate).toLocaleDateString()
+        worksheet.getCell("B6").value = purchaseOrder.expectDeliveryDate
+          ? new Date(purchaseOrder.expectDeliveryDate).toLocaleDateString()
           : "N/A";
         worksheet.getCell("B6").alignment = {
           vertical: "middle",
@@ -462,8 +476,6 @@ const PODetails = () => {
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
-
-        toast.success("Purchase Order exported successfully as Excel!");
       } else if (exportFormat === "pdf") {
         if (!poRef.current) {
           toast.error("Purchase Order content not found.");
@@ -494,7 +506,6 @@ const PODetails = () => {
           heightLeft -= pageHeight - 20;
         }
         pdf.save(`PurchaseOrder_${id}.pdf`);
-        toast.success("Purchase Order exported successfully as PDF!");
       }
     } catch (error) {
       toast.error(
@@ -597,9 +608,9 @@ const PODetails = () => {
                     <tr>
                       <td className="label-cell">Expected Delivery</td>
                       <td style={{ width: "55%" }}>
-                        {purchaseOrder.expectedDeliveryDate
+                        {purchaseOrder.expectDeliveryDate
                           ? new Date(
-                              purchaseOrder.expectedDeliveryDate
+                              purchaseOrder.expectDeliveryDate
                             ).toLocaleDateString()
                           : " "}
                       </td>
@@ -627,6 +638,7 @@ const PODetails = () => {
                         const productDetail = productsData?.find(
                           (p) => p.productId === product.productId
                         );
+
                         let imageUrl = null;
                         try {
                           if (productDetail?.images) {
@@ -636,12 +648,32 @@ const PODetails = () => {
                         } catch {
                           imageUrl = null;
                         }
+
                         const productCode =
-                          productDetail?.product_code ||
+                          productDetail?.metaDetails?.find(
+                            (md) =>
+                              md.slug === "companyCode" ||
+                              md.title === "company_code" ||
+                              md.title === "companyCode"
+                          )?.value ||
                           productDetail?.meta
                             ?.d11da9f9_3f2e_4536_8236_9671200cca4a ||
                           "N/A";
-                        const mrp = product.mrp || productDetail?.mrp || 0;
+
+                        const sellingPrice =
+                          Number(
+                            productDetail?.metaDetails?.find(
+                              (md) =>
+                                md.slug === "sellingPrice" ||
+                                md.title === "Selling Price" ||
+                                md.title === "sellingPrice"
+                            )?.value
+                          ) ||
+                          Number(productDetail?.sellingPrice) ||
+                          0;
+
+                        const quantity = Number(product.quantity) || 0;
+                        const total = quantity * sellingPrice;
 
                         return (
                           <tr key={index}>
@@ -658,20 +690,18 @@ const PODetails = () => {
                               )}
                             </td>
                             <td>
-                              {product.name || productDetail?.name || "N/A"}
+                              {product?.name || productDetail?.name || "N/A"}
                             </td>
                             <td>{productCode}</td>
                             <td>
-                              {mrp ? `₹${Number(mrp).toFixed(2)}` : "N/A"}
+                              {sellingPrice
+                                ? `₹${Number(sellingPrice).toFixed(2)}`
+                                : "N/A"}
                             </td>
-                            <td>{product.quantity || "N/A"}</td>
+                            <td>{quantity || "N/A"}</td>
                             <td>
-                              {product.total
-                                ? `₹${Number(product.total).toFixed(2)}`
-                                : product.quantity && product.mrp
-                                ? `₹${Number(
-                                    product.quantity * product.mrp
-                                  ).toFixed(2)}`
+                              {quantity && sellingPrice
+                                ? `₹${Number(total).toFixed(2)}`
                                 : "N/A"}
                             </td>
                           </tr>

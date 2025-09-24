@@ -48,7 +48,6 @@ const ResetPassword = () => {
         newPassword,
         email: validationData.email,
       }).unwrap();
-      toast.success(response.message || "Password changed successfully!");
       setTimeout(() => navigate("/login"), 2000);
     } catch (error) {
       toast.error(error?.data?.message || "Failed to reset password");

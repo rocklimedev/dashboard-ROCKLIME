@@ -148,7 +148,6 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
   const handleDeletePO = async (poId) => {
     try {
       await deletePurchaseOrder(poId).unwrap();
-      toast.success("Purchase order deleted successfully");
       handleModalClose();
     } catch (err) {
       toast.error(

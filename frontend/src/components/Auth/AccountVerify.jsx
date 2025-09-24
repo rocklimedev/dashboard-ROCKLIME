@@ -20,7 +20,7 @@ const AccountVerify = () => {
 
       try {
         const response = await verifyAccount({ token }).unwrap();
-        toast.success(response.message || "Account verified successfully!");
+
         setTimeout(() => navigate("/login"), 2000); // Redirect to login
       } catch (error) {
         toast.error(error?.data?.message || "Failed to verify account.");
