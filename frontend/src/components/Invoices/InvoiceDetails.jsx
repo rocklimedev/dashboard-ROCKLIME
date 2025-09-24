@@ -7,7 +7,12 @@ import { useGetUserByIdQuery } from "../../api/userApi";
 import { useGetProductByIdQuery } from "../../api/productApi";
 import { useGetCompanyByIdQuery } from "../../api/companyApi"; // Import the company API hook
 import logo from "../../assets/img/logo.png";
-
+import {
+  DownloadOutlined,
+  LeftOutlined,
+  PrinterOutlined,
+  CopyOutlined,
+} from "@ant-design/icons";
 // Subcomponent for each product row (unchanged)
 const ProductRow = ({ product, index }) => {
   const { data, isLoading, isError, error } = useGetProductByIdQuery(
@@ -60,7 +65,6 @@ const InvoiceDetails = () => {
     try {
       products = JSON.parse(products);
     } catch (e) {
-      console.error("Failed to parse products JSON:", e);
       products = [];
     }
   }
@@ -74,7 +78,6 @@ const InvoiceDetails = () => {
     try {
       paymentMethodParsed = JSON.parse(invoice.paymentMethod)?.method || "N/A";
     } catch (e) {
-      console.error("Failed to parse paymentMethod JSON:", e);
       paymentMethodParsed = "N/A";
     }
   }
@@ -162,7 +165,8 @@ const InvoiceDetails = () => {
           <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
             <div className="mb-2">
               <button className="btn btn-dark d-flex align-items-center">
-                <i className="ti ti-download me-2"></i>Download
+                <DownloadOutlined />
+                Download
               </button>
             </div>
           </div>
@@ -178,7 +182,7 @@ const InvoiceDetails = () => {
                 className="back-icon d-flex align-items-center fs-12 fw-medium mb-3 d-inline-flex"
               >
                 <span className="d-flex justify-content-center align-items-center rounded-circle me-2">
-                  <i className="ti ti-arrow-left"></i>
+                  <LeftOutlined />
                 </span>
                 Back to List
               </Link>
@@ -419,10 +423,12 @@ const InvoiceDetails = () => {
             className="btn btn-primary d-flex justify-content-center align-items-center me-2"
             onClick={() => window.print()}
           >
-            <i className="ti ti-printer me-2"></i>Print Invoice
+            <PrinterOutlined />
+            Print Invoice
           </button>
           <button className="btn btn-white d-flex justify-content-center align-items-center border">
-            <i className="ti ti-copy me-2"></i>Clone Invoice
+            <CopyOutlined />
+            Clone Invoice
           </button>
         </div>
       </div>

@@ -122,7 +122,6 @@ exports.createInvoice = async (req, res) => {
 
     res.status(201).json({ success: true, invoice });
   } catch (error) {
-    console.error("Create invoice error:", error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",

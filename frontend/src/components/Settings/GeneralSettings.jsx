@@ -15,7 +15,11 @@ import { logout } from "../../api/userSlice";
 import { Modal, Button, Form } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import "./settingsWrapper.css";
-
+import {
+  MailOutlined,
+  EyeOutlined,
+  UserDeleteOutlined,
+} from "@ant-design/icons";
 const GeneralSettings = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -150,7 +154,7 @@ const GeneralSettings = () => {
                 <div className="d-flex align-items-center justify-content-between flex-wrap row-gap-3 border-bottom mb-3 pb-3">
                   <div className="d-flex align-items-center">
                     <span className="avatar avatar-lg border bg-light fs-24 me-2">
-                      <i className="ti ti-mail text-gray-900 fs-18"></i>
+                      <MailOutlined />
                     </span>
                     <div>
                       <h5 className="fs-16 fw-medium mb-1">
@@ -185,7 +189,7 @@ const GeneralSettings = () => {
                 <div className="d-flex align-items-center justify-content-between flex-wrap row-gap-3 border-bottom mb-3 pb-3">
                   <div className="d-flex align-items-center">
                     <span className="avatar avatar-lg border bg-light fs-24 me-2">
-                      <i className="ti ti-eye-off text-gray-900 fs-18"></i>
+                      <EyeOutlined />
                     </span>
                     <div>
                       <h5 className="fs-16 fw-medium mb-1">Password</h5>
@@ -214,7 +218,7 @@ const GeneralSettings = () => {
                 <div className="d-flex align-items-center justify-content-between flex-wrap row-gap-3 border-bottom mb-3 pb-3">
                   <div className="d-flex align-items-center">
                     <span className="avatar avatar-lg border bg-light fs-24 me-2">
-                      <i className="ti ti-ban text-gray-900 fs-18"></i>
+                      <UserDeleteOutlined />
                     </span>
                     <div>
                       <h5 className="fs-16 fw-medium mb-1">
@@ -239,7 +243,7 @@ const GeneralSettings = () => {
                 <div className="d-flex align-items-center justify-content-between flex-wrap row-gap-3">
                   <div className="d-flex align-items-center">
                     <span className="avatar avatar-lg border bg-light fs-24 me-2">
-                      <i className="ti ti-trash text-gray-900 fs-18"></i>
+                      <UserDeleteOutlined />
                     </span>
                     <div>
                       <h5 className="fs-16 fw-medium mb-1">Delete Account</h5>

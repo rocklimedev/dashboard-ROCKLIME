@@ -150,16 +150,12 @@ const UserList = () => {
   };
 
   const handleResendVerification = async (userId) => {
-    console.log("Initiating resend for userId:", userId); // Debug log
     setResendUserId(userId);
   };
 
   // Effect to handle resend verification after user data is fetched
   React.useEffect(() => {
     if (resendUserId && !isUserLoading) {
-      console.log("Selected user data:", selectedUserData); // Debug raw response
-      console.log("Extracted user:", selectedUser); // Debug extracted user
-
       if (userError) {
         toast.error(
           `Failed to fetch user: ${
@@ -177,7 +173,6 @@ const UserList = () => {
       }
 
       const email = selectedUser.email;
-      console.log("Email to send:", email); // Debug email
 
       if (!email || typeof email !== "string" || email.trim() === "") {
         toast.error("Invalid or missing user email");
@@ -193,14 +188,12 @@ const UserList = () => {
         return;
       }
 
-      console.log("Sending resend request with payload:", { email }); // Debug payload
       resendVerificationEmail({ email })
         .unwrap()
         .then(() => {
           toast.success("Verification link sent successfully");
         })
         .catch((error) => {
-          console.log("Resend error:", error); // Debug error
           toast.error(
             `Failed to resend verification link: ${
               error.data?.message || error.message || "Unknown error"

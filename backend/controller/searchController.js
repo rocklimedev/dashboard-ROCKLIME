@@ -174,7 +174,6 @@ const searchAll = async (req, res) => {
             pages: Math.ceil(count / limit),
           };
         } catch (error) {
-          console.error(`Error searching ${model.name}:`, error);
           results[model.name] = {
             items: [],
             total: 0,
@@ -203,7 +202,6 @@ const searchAll = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Search error:", error);
     return res.status(500).json({
       success: false,
       message: error.message || "An error occurred during search",

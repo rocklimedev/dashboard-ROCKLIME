@@ -1,5 +1,5 @@
 import React from "react";
-
+import { TagsOutlined } from "@ant-design/icons";
 const SidebarCategory = ({ category, isActive, onClick }) => {
   return (
     <a
@@ -10,7 +10,7 @@ const SidebarCategory = ({ category, isActive, onClick }) => {
       onClick={onClick}
     >
       <span className="d-flex align-items-center fw-medium">
-        <i className={`ti ${category.icon} text-gray me-2`}></i>
+        <TagsOutlined />
         {category.name}
       </span>
       <span

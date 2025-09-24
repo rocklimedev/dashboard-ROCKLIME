@@ -4,7 +4,7 @@ import { ChevronsLeft } from "react-feather";
 import masterRoutes from "../../data/routes";
 import logo from "../../assets/img/logo.png";
 import logo_small from "../../assets/img/fav_icon.png";
-
+import { DownCircleOutlined } from "@ant-design/icons";
 const SidebarNew = ({
   isSidebarOpen,
   toggleSidebar,
@@ -76,13 +76,13 @@ const SidebarNew = ({
                         toggleDropdown(index);
                       }}
                     >
-                      {section.icon || <i className="ti ti-circle"></i>}
+                      {section.icon || <DownCircleOutlined />}
                       <span>{section.name}</span>
                       <span className="menu-arrow"></span>
                     </a>
                   ) : (
                     <Link to={section.path}>
-                      {section.icon || <i className="ti ti-circle"></i>}
+                      {section.icon || <DownCircleOutlined />}
                       <span>{section.name}</span>
                     </Link>
                   )}
@@ -112,13 +112,13 @@ const SidebarNew = ({
                                   toggleDropdown(`${index}-${subIdx}`);
                                 }}
                               >
-                                {sub.icon || <i className="ti ti-circle"></i>}
+                                {sub.icon || <DownCircleOutlined />}
                                 <span>{sub.name}</span>
                                 <span className="menu-arrow inside-submenu"></span>
                               </a>
                             ) : (
                               <Link to={sub.path}>
-                                {sub.icon || <i className="ti ti-circle"></i>}
+                                {sub.icon || <DownCircleOutlined />}
                                 {sub.name}
                               </Link>
                             )}
@@ -135,9 +135,7 @@ const SidebarNew = ({
                                   .map((subSub, subSubIdx) => (
                                     <li key={subSubIdx}>
                                       <Link to={subSub.path}>
-                                        {subSub.icon || (
-                                          <i className="ti ti-circle"></i>
-                                        )}
+                                        {subSub.icon || <DownCircleOutlined />}
                                         {subSub.name}
                                       </Link>
                                     </li>

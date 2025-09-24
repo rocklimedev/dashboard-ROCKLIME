@@ -4,7 +4,7 @@ import { useVerifyAccountMutation } from "../../api/authApi";
 import logo from "../../assets/img/logo.png";
 import logoWhite from "../../assets/img/logo.png";
 import { toast } from "sonner";
-
+import ClockCircleOutlined from "@ant-design/icons/ClockCircleOutlined";
 const EmailVerification = () => {
   const [otp, setOtp] = useState(["", "", "", ""]);
   const [timer, setTimer] = useState(600); // 10 minutes in seconds
@@ -123,7 +123,7 @@ const EmailVerification = () => {
                   <div>
                     <div className="badge bg-danger-transparent mb-3">
                       <p className="d-flex align-items-center">
-                        <i className="ti ti-clock me-1"></i>
+                        <ClockCircleOutlined />
                         {formatTime(timer)}
                       </p>
                     </div>

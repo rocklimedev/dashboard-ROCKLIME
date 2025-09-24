@@ -25,7 +25,12 @@ import { AiOutlineEdit } from "react-icons/ai";
 import { BiTrash } from "react-icons/bi";
 import { toast } from "sonner";
 import "../Product/checkproductcodestatus.css";
-
+import {
+  SearchOutlined,
+  CheckOutlined,
+  ExclamationCircleFilled,
+  CheckCircleOutlined,
+} from "@ant-design/icons";
 const styles = {
   searchCard: {
     borderRadius: "8px",
@@ -514,7 +519,7 @@ const CategoryManagement = () => {
                 }}
               >
                 <span style={styles.searchIcon}>
-                  <i className="ti ti-search"></i>
+                  <SearchOutlined />
                 </span>
                 <input
                   type="text"
@@ -541,7 +546,8 @@ const CategoryManagement = () => {
             {filteredProduct && (
               <div style={styles.resultSection}>
                 <h5 style={styles.resultTitle}>
-                  <i className="ti ti-check me-2 text-success"></i>Product Found
+                  <CheckOutlined />
+                  Product Found
                 </h5>
                 <p style={styles.resultText}>
                   <strong>Name:</strong> {filteredProduct.name}
@@ -563,11 +569,12 @@ const CategoryManagement = () => {
             {!filteredProduct && productSearchCode && productNotFound && (
               <div style={styles.resultSection}>
                 <h5 style={styles.resultTitle}>
-                  <i className="ti ti-x me-2 text-danger"></i>No Product Found
+                  <ExclamationCircleFilled />
+                  No Product Found
                 </h5>
                 <p className="text-success" style={styles.resultText}>
-                  <i className="ti ti-check me-2"></i>Product Code is available
-                  to use.
+                  <CheckCircleOutlined />
+                  Product Code is available to use.
                 </p>
               </div>
             )}
@@ -955,7 +962,7 @@ const CategoryManagement = () => {
             <Modal.Body>
               <div style={styles.searchInputWrapper}>
                 <span style={styles.searchIcon}>
-                  <i className="ti ti-search"></i>
+                  <SearchOutlined />
                 </span>
                 <input
                   type="text"

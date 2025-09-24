@@ -97,7 +97,6 @@ exports.createUser = async (req, res) => {
       data: await User.findByPk(newUser.userId, excludeSensitiveFields),
     });
   } catch (err) {
-    console.error("Error in createUser:", err);
     res.status(500).json({
       message: `Failed to create user: ${
         err.message || "Unknown server error"
@@ -420,7 +419,6 @@ exports.updateUser = async (req, res) => {
       data: await User.findByPk(user.userId, excludeSensitiveFields),
     });
   } catch (err) {
-    console.error("Error in updateUser:", err);
     res.status(500).json({
       message: `Failed to update user: ${
         err.message || "Unknown server error"

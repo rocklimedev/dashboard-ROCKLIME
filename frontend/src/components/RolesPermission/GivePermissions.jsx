@@ -1,6 +1,12 @@
 import React from "react";
 import PageHeader from "../Common/PageHeader";
 import { useGetRecentRoleToGiveQuery } from "../../api/rolesApi";
+import {
+  SearchOutlined,
+  TagOutlined,
+  EditOutlined,
+  DeleteOutlined,
+} from "@ant-design/icons";
 const GivePermission = () => {
   const { data, error, isLoading } = useGetRecentRoleToGiveQuery();
 
@@ -23,7 +29,7 @@ const GivePermission = () => {
                 placeholder="Search role..."
               />
               <span className="position-absolute top-50 end-0 translate-middle-y pe-3">
-                <i className="ti ti-search fs-14 feather-search"></i>
+                <SearchOutlined />
               </span>
             </div>
 
@@ -76,7 +82,7 @@ const GivePermission = () => {
                                 : "badge-danger"
                             }`}
                           >
-                            <i className="ti ti-point-filled me-1"></i>
+                            <TagOutlined />
                             {role.status}
                           </span>
                         </td>
@@ -93,14 +99,14 @@ const GivePermission = () => {
                               data-bs-toggle="modal"
                               data-bs-target="#edit-role"
                             >
-                              <i className="ti ti-edit"></i>
+                              <EditOutlined />
                             </button>
                             <button
                               className="p-2 border rounded d-flex align-items-center"
                               data-bs-toggle="modal"
                               data-bs-target="#delete_modal"
                             >
-                              <i className="ti ti-trash"></i>
+                              <DeleteOutlined />
                             </button>
                           </div>
                         </td>

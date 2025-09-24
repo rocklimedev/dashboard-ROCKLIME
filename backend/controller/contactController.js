@@ -55,10 +55,8 @@ exports.submitContactForm = async (req, res) => {
       message: "Contact form submitted successfully",
     });
   } catch (error) {
-    console.error("Error submitting contact form:", error);
     // Log email-specific errors but don't fail the response
     if (error.message.includes("Error sending email")) {
-      console.warn("Form saved, but email sending failed:", error);
       return res.status(201).json({
         success: true,
         message:
@@ -83,7 +81,6 @@ exports.getAllQueries = async (req, res) => {
       data: queries,
     });
   } catch (error) {
-    console.error("Error fetching queries:", error);
     res.status(500).json({
       success: false,
       message: "Server error, please try again later",
@@ -119,7 +116,6 @@ exports.getQueryById = async (req, res) => {
       data: query,
     });
   } catch (error) {
-    console.error("Error fetching query by ID:", error);
     res.status(500).json({
       success: false,
       message: "Server error, please try again later",
@@ -154,7 +150,6 @@ exports.deleteQuery = async (req, res) => {
       message: "Query deleted successfully",
     });
   } catch (error) {
-    console.error("Error deleting query:", error);
     res.status(500).json({
       success: false,
       message: "Server error, please try again later",
@@ -220,10 +215,8 @@ exports.replyToEmail = async (req, res) => {
       message: "Reply sent successfully",
     });
   } catch (error) {
-    console.error("Error sending reply email:", error);
     // Log email-specific errors but don't fail the response
     if (error.message.includes("Error sending email")) {
-      console.warn("Reply email sending failed:", error);
       return res.status(200).json({
         success: true,
         message: "Reply processing completed, but email sending failed",

@@ -14,7 +14,12 @@ import {
   useUpdateAddressMutation,
 } from "../../api/addressApi";
 import { useNavigate, useParams } from "react-router-dom";
-
+import {
+  LeftOutlined,
+  ReloadOutlined,
+  InfoCircleOutlined,
+  HomeOutlined,
+} from "@ant-design/icons";
 const NewAddUser = ({ userToEdit: propUserToEdit }) => {
   const { userId } = useParams();
   const navigate = useNavigate();
@@ -235,7 +240,6 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
               return;
             }
           } catch (addressErr) {
-            console.error("Address operation failed:", addressErr);
             toast.error(
               `Address operation failed: ${
                 addressErr.data?.message ||
@@ -262,7 +266,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
             body: formDataUpload,
           });
           const uploadData = await uploadResponse.json();
-          console.log("Avatar upload response:", uploadData);
+
           if (!uploadData.success) {
             toast.error(
               `Failed to upload avatar: ${
@@ -273,7 +277,6 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
           }
           avatarUrl = uploadData.data.url;
         } catch (uploadErr) {
-          console.error("Avatar upload failed:", uploadErr);
           toast.error(
             `Avatar upload failed: ${uploadErr.message || "Unknown error"}`
           );
@@ -311,7 +314,6 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
           newUserId = userResponse.userId || userResponse.data?.userId;
         }
       } catch (userErr) {
-        console.error("User operation failed:", userErr);
         toast.error(
           `User operation failed: ${
             userErr.data?.message || userErr.message || "Unknown error"
@@ -334,7 +336,6 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
             updatedAt: new Date().toISOString(),
           }).unwrap();
         } catch (addressErr) {
-          console.error("Failed to update address with userId:", addressErr);
           toast.error(
             `Failed to associate address with user: ${
               addressErr.data?.message || addressErr.message || "Unknown error"
@@ -349,7 +350,6 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
       );
       navigate("/users/list");
     } catch (err) {
-      console.error("Unexpected error in handleSubmit:", err);
       toast.error(
         `Failed to process the request: ${
           err.data?.message || err.message || "Unknown error"
@@ -434,7 +434,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                 data-bs-toggle="tooltip"
                 title="Refresh"
               >
-                <i className="ti ti-refresh"></i>
+                <ReloadOutlined />
               </a>
             </li>
             <li className="me-2">
@@ -455,7 +455,8 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
           </ul>
           <div className="page-btn">
             <a href="/users/list" className="btn btn-secondary">
-              <i data-feather="arrow-left" className="me-2"></i>Back to List
+              <LeftOutlined />
+              Back to List
             </a>
           </div>
         </div>
@@ -475,7 +476,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                   aria-controls="collapseOne"
                 >
                   <h5 className="d-inline-flex align-items-center">
-                    <i className="ti ti-users text-primary me-2"></i>
+                    <InfoCircleOutlined />
                     <span>Employee Information</span>
                   </h5>
                 </div>
@@ -722,7 +723,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                   aria-controls="collapseThree"
                 >
                   <h5 className="d-inline-flex align-items-center">
-                    <i data-feather="map-pin" className="text-primary me-2"></i>
+                    <HomeOutlined />
                     <span>Address Information</span>
                   </h5>
                 </div>

@@ -17,6 +17,11 @@ import DataTable from "./DataTable";
 import Avatar from "react-avatar"; // Import react-avatar
 import "./profile.css";
 import Form from "antd/es/form/Form";
+import {
+  LeftOutlined,
+  TeamOutlined,
+  CalendarOutlined,
+} from "@ant-design/icons";
 const Profile = () => {
   // Queries
   const {
@@ -373,7 +378,8 @@ const Profile = () => {
         <div className="page-header">
           <div>
             <Link to="/users/list" className="d-inline-flex align-items-center">
-              <i className="ti ti-chevron-left me-2"></i>Back to List
+              <LeftOutlined />
+              Back to List
             </Link>
           </div>
         </div>
@@ -410,14 +416,14 @@ const Profile = () => {
               <div className="card-body">
                 <div className="d-flex align-items-center justify-content-between mb-2">
                   <span className="d-inline-flex align-items-center">
-                    <i className="ti ti-star me-2"></i>
+                    <TeamOutlined />
                     Team
                   </span>
                   <p className="text-dark">{team}</p>
                 </div>
                 <div className="d-flex align-items-center justify-content-between">
                   <span className="d-inline-flex align-items-center">
-                    <i className="ti ti-calendar-check me-2"></i>
+                    <CalendarOutlined />
                     Date Of Join
                   </span>
                   <p className="text-dark">{formatDate(user.createdAt)}</p>

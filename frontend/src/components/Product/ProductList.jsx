@@ -115,7 +115,6 @@ const ProductsList = () => {
       }
       return Array.isArray(images) ? images : [pos];
     } catch (error) {
-      console.error("Error parsing images:", error);
       return [pos];
     }
   };

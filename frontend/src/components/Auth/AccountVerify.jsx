@@ -12,7 +12,6 @@ const AccountVerify = () => {
 
   useEffect(() => {
     const verifyToken = async () => {
-      console.log("Token from URL:", token);
       if (!token || typeof token !== "string" || token.trim() === "") {
         toast.error("Invalid verification link.");
         setTimeout(() => navigate("/login"), 2000);
@@ -24,7 +23,6 @@ const AccountVerify = () => {
         toast.success(response.message || "Account verified successfully!");
         setTimeout(() => navigate("/login"), 2000); // Redirect to login
       } catch (error) {
-        console.error("Verification error:", error);
         toast.error(error?.data?.message || "Failed to verify account.");
         setTimeout(() => navigate("/login"), 2000);
       }

@@ -14,7 +14,6 @@ exports.getAllSignatures = async (req, res) => {
 
     res.status(200).json(signatures);
   } catch (error) {
-    console.error("Error fetching signatures:", error.stack);
     res.status(500).json({ error: "Failed to fetch signatures" });
   }
 };
@@ -36,7 +35,6 @@ exports.getSignatureById = async (req, res) => {
 
     res.status(200).json(signature);
   } catch (error) {
-    console.error("Error fetching signature:", error.stack);
     res.status(500).json({ error: "Failed to fetch signature" });
   }
 };
@@ -57,7 +55,6 @@ exports.deleteSignature = async (req, res) => {
     await signature.destroy();
     res.status(200).json({ message: "Signature deleted successfully" });
   } catch (error) {
-    console.error("Error deleting signature:", error.stack);
     res.status(500).json({ error: "Failed to delete signature" });
   }
 };
@@ -111,11 +108,6 @@ exports.createSignature = async (req, res) => {
         }
       );
     } catch (uploadError) {
-      console.error("Error uploading to external server:", {
-        message: uploadError.message,
-        status: uploadError.response?.status,
-        response: uploadError.response?.data,
-      });
       return res.status(500).json({
         error: `Failed to upload image: ${
           uploadError.response?.status === 403
@@ -126,7 +118,6 @@ exports.createSignature = async (req, res) => {
     }
 
     if (uploadResponse.status !== 200 || !uploadResponse.data) {
-      console.error("Invalid upload response:", uploadResponse.data);
       return res
         .status(500)
         .json({ error: "Invalid response from image server" });
@@ -138,7 +129,6 @@ exports.createSignature = async (req, res) => {
       uploadResponse.data.image_url ||
       uploadResponse.data.SIGNATUER_IAMGE;
     if (typeof imageUrl !== "string") {
-      console.error("Invalid image URL in response:", uploadResponse.data);
       return res.status(500).json({ error: "Image URL is missing or invalid" });
     }
 
@@ -153,13 +143,11 @@ exports.createSignature = async (req, res) => {
         .status(201)
         .json({ message: "Signature created successfully", signature });
     } catch (dbError) {
-      console.error("Database error creating signature:", dbError.stack);
       return res.status(500).json({
         error: `Failed to save signature to database: ${dbError.message}`,
       });
     }
   } catch (error) {
-    console.error("Error creating signature:", error.stack);
     res
       .status(500)
       .json({ error: `Failed to create signature: ${error.message}` });
@@ -227,11 +215,6 @@ exports.updateSignature = async (req, res) => {
           }
         );
       } catch (uploadError) {
-        console.error("Error uploading to external server:", {
-          message: uploadError.message,
-          status: uploadError.response?.status,
-          response: uploadError.response?.data,
-        });
         return res.status(500).json({
           error: `Failed to upload image: ${
             uploadError.response?.status === 403
@@ -242,7 +225,6 @@ exports.updateSignature = async (req, res) => {
       }
 
       if (uploadResponse.status !== 200 || !uploadResponse.data) {
-        console.error("Invalid upload response:", uploadResponse.data);
         return res
           .status(500)
           .json({ error: "Invalid response from image server" });
@@ -253,7 +235,6 @@ exports.updateSignature = async (req, res) => {
         uploadResponse.data.image_url ||
         uploadResponse.data.SIGNATUER_IAMGE;
       if (typeof imageUrl !== "string") {
-        console.error("Invalid image URL in response:", uploadResponse.data);
         return res
           .status(500)
           .json({ error: "Image URL is missing or invalid" });
@@ -269,13 +250,11 @@ exports.updateSignature = async (req, res) => {
         signature,
       });
     } catch (dbError) {
-      console.error("Database error updating signature:", dbError.stack);
       return res.status(500).json({
         error: `Failed to update signature in database: ${dbError.message}`,
       });
     }
   } catch (error) {
-    console.error("Error updating signature:", error.stack);
     res
       .status(500)
       .json({ error: `Failed to update signature: ${error.message}` });

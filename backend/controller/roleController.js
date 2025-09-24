@@ -168,7 +168,6 @@ const deleteRole = async (req, res) => {
     await role.destroy();
     res.status(200).json({ message: "Role deleted successfully" });
   } catch (error) {
-    console.error("Error deleting role:", error);
     res.status(500).json({ message: `Error deleting role: ${error.message}` });
   }
 };

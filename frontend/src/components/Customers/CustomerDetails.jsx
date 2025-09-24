@@ -30,7 +30,7 @@ import {
 } from "react-icons/fa";
 import Avatar from "react-avatar";
 import "./customerdetails.css";
-
+import { LeftOutlined, CalendarOutlined } from "@ant-design/icons";
 const CustomerDetails = () => {
   const { id } = useParams();
 
@@ -204,7 +204,8 @@ const CustomerDetails = () => {
               to="/customers/list"
               className="d-inline-flex align-items-center"
             >
-              <i className="ti ti-chevron-left me-2"></i>Back to List
+              <LeftOutlined />
+              Back to List
             </Link>
           </div>
         </div>
@@ -242,14 +243,14 @@ const CustomerDetails = () => {
               <div className="card-body">
                 <div className="d-flex align-items-center justify-content-between mb-2">
                   <span className="d-inline-flex align-items-center">
-                    <i className="ti ti-building me-2"></i>
+                    <CalendarOutlined />
                     Company
                   </span>
                   <p className="text-dark">{customer.companyName || "N/A"}</p>
                 </div>
                 <div className="d-flex align-items-center justify-content-between">
                   <span className="d-inline-flex align-items-center">
-                    <i className="ti ti-calendar-check me-2"></i>
+                    <CalendarOutlined />
                     Date
                   </span>
                   <p className="text-dark">{formatDate(customer.createdAt)}</p>

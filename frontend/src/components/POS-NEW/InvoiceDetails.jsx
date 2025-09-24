@@ -37,7 +37,6 @@ const InvoiceDetails = ({ invoiceData, onChange, error }) => {
       refetch();
       setShowModal(false);
     } else {
-      console.error("Invalid new address:", newAddress);
       toast.error("Failed to add address. Please try again.");
     }
   };

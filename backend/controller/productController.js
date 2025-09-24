@@ -161,7 +161,6 @@ exports.getProductsByCategory = async (req, res) => {
 
     res.status(200).json(enrichedProducts);
   } catch (error) {
-    console.error("Error fetching products by category:", error);
     res.status(500).json({ message: "Internal server error." });
   }
 };
@@ -552,7 +551,6 @@ exports.getAllProductCodes = async (req, res) => {
       data: enrichedProducts,
     });
   } catch (error) {
-    console.error("Error fetching product codes:", error);
     res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -583,7 +581,6 @@ exports.updateProductFeatured = async (req, res) => {
       product,
     });
   } catch (error) {
-    console.error("Error updating product featured status:", error);
     return res.status(500).json({ message: "Server error" });
   }
 };

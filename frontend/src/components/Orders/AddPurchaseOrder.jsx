@@ -246,12 +246,6 @@ const AddPurchaseOrder = () => {
   const vendors = vendorsData || [];
   const products = productsData || [];
   const statuses = ["pending", "confirmed", "delivered", "cancelled"];
-  // Debug logs
-  useEffect(() => {
-    console.log("Vendors data:", vendors);
-    console.log("Products data:", products);
-    console.log("Existing purchase order:", existingPurchaseOrder);
-  }, [vendors, products, existingPurchaseOrder]);
 
   // Initial form data
   const initialFormData = useMemo(
@@ -360,8 +354,6 @@ const AddPurchaseOrder = () => {
         expectedDeliveryDate: newFormData.expectedDeliveryDate,
         status: newFormData.status,
       });
-
-      console.log("Form data set in edit mode:", newFormData);
     }
   }, [existingPurchaseOrder, isEditMode, products, vendors, form]);
   // Debounced product search
@@ -380,7 +372,6 @@ const AddPurchaseOrder = () => {
           )
           .slice(0, 5);
         setFilteredProducts(filtered);
-        console.log("Filtered products:", filtered);
       } else {
         setFilteredProducts([]);
       }
@@ -391,12 +382,7 @@ const AddPurchaseOrder = () => {
   // Add product
   const addProduct = (productId) => {
     const product = products.find((p) => p.productId === productId);
-    console.log(
-      "Adding product with ID:",
-      productId,
-      "Found product:",
-      product
-    );
+
     if (
       !product ||
       formData.items.some((item) => item.productId === productId)
@@ -431,7 +417,7 @@ const AddPurchaseOrder = () => {
       const totalAmount = newItems
         .reduce((sum, item) => sum + Number(item.total || 0), 0)
         .toFixed(2);
-      console.log("New items:", newItems, "Total amount:", totalAmount);
+
       return {
         ...prev,
         items: newItems,
@@ -498,8 +484,7 @@ const AddPurchaseOrder = () => {
   const handleSubmit = async () => {
     try {
       const formValues = form.getFieldsValue();
-      console.log("Form values:", formValues);
-      console.log("formData:", formData);
+
       await form.validateFields();
       if (formData.items.length === 0) {
         toast.error("Please add at least one product.");
@@ -535,18 +520,16 @@ const AddPurchaseOrder = () => {
         status: isEditMode ? existingPurchaseOrder?.status : "pending",
       };
 
-      console.log("Submitting data:", formattedFormData);
-
       if (isEditMode) {
         const result = await updatePurchaseOrder({
           id,
           ...formattedFormData,
         }).unwrap();
-        console.log("Update response:", result);
+
         toast.success("Purchase order updated successfully");
       } else {
         const result = await createPurchaseOrder(formattedFormData).unwrap();
-        console.log("Create response:", result);
+
         toast.success("Purchase order created successfully");
         setFormData(initialFormData);
         form.resetFields();
@@ -555,7 +538,6 @@ const AddPurchaseOrder = () => {
       }
       navigate("/po/list");
     } catch (err) {
-      console.error("Submission error:", err);
       if (err.errorFields) {
         toast.error("Please fill in all required fields correctly.");
         return;
@@ -569,7 +551,7 @@ const AddPurchaseOrder = () => {
             }`
           : err.data?.message || "Failed to process purchase order";
       toast.error(errorMessage);
-      console.log("Error details:", err);
+
       if (err.status === 404) {
         setTimeout(() => navigate("/po/list"), 2000);
       }
