@@ -2,20 +2,22 @@ import React, { useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Spin, Empty } from "antd";
 import { useGetBrandParentCategoryByIdQuery } from "../../api/brandParentCategoryApi";
-import mainWrapper from "../../assets/img/products/product_page_title.png";
-import americanStandard from "../../assets/img/products/american_standard.png";
-import grohe from "../../assets/img/products/grohe.png";
-import colston from "../../assets/img/products/colston-logo_black.png";
-import groheBau from "../../assets/img/products/grohe.png";
-import jk from "../../assets/img/products/jk_cement.png";
-import addons from "../../assets/img/products/addons.png";
-import walplast from "../../assets/img/products/walplast.png";
-import shivceramics from "../../assets/img/products/shiv_ceremic.png";
-import sunheart from "../../assets/img/products/sunheart.jpg";
-import subway from "../../assets/img/products/subway.webp";
-import ibis from "../../assets/img/products/ibis.avif";
-import sgt from "../../assets/img/products/sgt.jpg";
-import plumbing from "../../assets/img/products/plumbing.jpg";
+const mainWrapper =
+  "https://static.cmtradingco.com/brands//product_page_title.png";
+const americanStandard =
+  "https://static.cmtradingco.com/brands//american_standard.png";
+const grohe = "https://static.cmtradingco.com/brands//grohe.png";
+const colston = "https://static.cmtradingco.com/brands//colston-logo_black.png";
+const groheBau = "https://static.cmtradingco.com/brands//grohe.png";
+const jk = "https://static.cmtradingco.com/brands//jk_cement.png";
+const addons = "https://static.cmtradingco.com/brands//addons.png";
+const walplast = "https://static.cmtradingco.com/brands//walplast.png";
+const shivceramics = "https://static.cmtradingco.com/brands//shiv_ceremic.png";
+const sunheart = "https://static.cmtradingco.com/brands//sunheart.jpg";
+const subway = "https://static.cmtradingco.com/brands//subway.webp";
+const ibis = "https://static.cmtradingco.com/brands//ibis.avif";
+const sgt = "https://static.cmtradingco.com/brands//sgt.jpg";
+const plumbing = "https://static.cmtradingco.com/brands//plumbing.jpg";
 const jayna = "https://via.placeholder.com/300";
 
 const BrandSelection = () => {

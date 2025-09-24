@@ -4,7 +4,8 @@ const baseQuery = fetchBaseQuery({
   baseUrl: `${API_URL}`,
   credentials: "include", // Include cookies (for authentication)
   prepareHeaders: (headers) => {
-    const token = localStorage.getItem("accessToken");
+    const token =
+      localStorage.getItem("token") || sessionStorage.getItem("token");
     if (token) {
       headers.set("Authorization", `Bearer ${token}`);
     }

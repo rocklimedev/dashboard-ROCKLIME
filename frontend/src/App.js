@@ -8,15 +8,20 @@ import { useGetProfileQuery } from "./api/userApi";
 import Loader from "./components/Common/Loader";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import SidebarNew from "./components/Common/SidebarNew2";
+import { useAuth } from "./context/AuthContext";
 
 function App() {
+  const { auth, setAuth } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  console.log(auth);
+  const [authChecked, setAuthChecked] = useState(false);
   const [isSidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 768);
   const [layoutMode, setLayoutMode] = useState("vertical");
+  const [isLoggingOut, setIsLoggingOut] = useState(false); // New flag
   const MAINTENANCE_MODE = false;
-  const isMaintenancePage = location.pathname === "/under-maintenance";
 
+  const isMaintenancePage = location.pathname === "/under-maintenance";
   const isAuthPage = [
     "/login",
     "/signup",
@@ -29,100 +34,169 @@ function App() {
     "/verify-account",
   ].includes(location.pathname);
 
-  const token = localStorage.getItem("token");
-
-  const { data: profileData, isLoading: isProfileLoading } =
-    useGetProfileQuery();
-  const userId = profileData?.user?.userId || null;
-
-  // Toggle sidebar function
-  const toggleSidebar = (open) => {
-    setSidebarOpen(open);
-  };
-
-  // Initialize and update sidebar state based on viewport
+  // Restore token from storage
   useEffect(() => {
-    const handleResize = () => {
-      setSidebarOpen(window.innerWidth >= 768);
-    };
+    const token =
+      localStorage.getItem("token") || sessionStorage.getItem("token");
+    if (token) {
+      setAuth({ token, user: null });
+    }
+    setAuthChecked(true);
+  }, [setAuth]);
+
+  // Toggle sidebar
+  const toggleSidebar = (open) => setSidebarOpen(open);
+
+  // Sidebar resize handler
+  useEffect(() => {
+    const handleResize = () => setSidebarOpen(window.innerWidth >= 768);
     window.addEventListener("resize", handleResize);
-    handleResize(); // Initial check
+    handleResize();
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  useEffect(() => {
-    if (!token && !isAuthPage) {
-      toast.warning("You are not authenticated. Please log in.");
-      navigate("/login");
-    }
-  }, [token, isAuthPage, navigate]);
-
+  // Close sidebar when clicking outside (tablet range)
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (
         isSidebarOpen &&
-        window.innerWidth >= 768 && // Tablet and above
-        window.innerWidth < 992 && // Tablet range
-        !e.target.closest("#sidebar") && // Clicked outside sidebar
-        !e.target.closest("#toggle_btn") // Not on toggle button
+        window.innerWidth >= 768 &&
+        window.innerWidth < 992 &&
+        !e.target.closest("#sidebar") &&
+        !e.target.closest("#toggle_btn")
       ) {
         setSidebarOpen(false);
       }
     };
-
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
   }, [isSidebarOpen]);
 
+  // Authentication check
   useEffect(() => {
-    if (isProfileLoading || isAuthPage) return;
+    if (!authChecked || isLoggingOut) return; // Skip if logging out
+    if (
+      !auth?.token &&
+      (location.pathname === "/no-access" ||
+        location.pathname === "/verify-account")
+    ) {
+      toast.warning("You must be logged in to access this page.");
+      navigate("/login", { replace: true });
+    } else if (!auth?.token && !isAuthPage) {
+      toast.warning("You are not authenticated. Please log in.");
+      navigate("/login", { replace: true });
+    }
+  }, [
+    auth,
+    isAuthPage,
+    navigate,
+    authChecked,
+    location.pathname,
+    isLoggingOut,
+  ]);
 
-    const roleNames = profileData?.user?.roles || [];
+  // Fetch profile
+  const {
+    data: profileData,
+    isLoading: isProfileLoading,
+    error: profileError,
+  } = useGetProfileQuery(undefined, {
+    skip: !auth?.token || isAuthPage,
+    refetchOnMountOrArgChange: true,
+  });
 
-    if (!userId) {
+  // Debug profile fetch
+  useEffect(() => {
+    if (profileError) {
+      console.error("Profile fetch error:", profileError);
+      toast.error("Failed to fetch user profile.");
+      if (!isLoggingOut) {
+        navigate("/login", { replace: true });
+      }
+    }
+    if (profileData) {
+      console.log("Profile data:", profileData);
+    }
+  }, [profileData, profileError, navigate, isLoggingOut]);
+
+  // Access control based on profile
+  useEffect(() => {
+    if (isProfileLoading || isAuthPage || !auth?.token || isLoggingOut) return;
+
+    if (!profileData?.user) {
+      console.warn("No user profile found in profileData");
       toast.error("Access denied. No user profile found.");
-      navigate("/login");
+      navigate("/login", { replace: true });
       return;
     }
 
-    if (roleNames.includes("USERS") && location.pathname !== "/no-access") {
-      toast.warning("Access restricted. No valid role assigned.");
-      navigate("/no-access");
-      return;
+    const user = profileData.user;
+    let roles = user.roles || [];
+    if (typeof roles === "string") {
+      try {
+        roles = JSON.parse(roles);
+      } catch (e) {
+        console.error("Failed to parse roles:", e);
+        roles = [];
+      }
+    }
+    const accessRoles = roles.filter((r) => r !== "USERS");
+
+    if (!user.isEmailVerified || accessRoles.length === 0) {
+      if (location.pathname !== "/no-access") {
+        console.log(
+          "Redirecting to /no-access: isEmailVerified=",
+          user.isEmailVerified,
+          "accessRoles=",
+          accessRoles
+        );
+        toast.warning(
+          "Access restricted. Please verify your email or request access."
+        );
+        navigate("/no-access", { replace: true });
+      }
+    } else if (location.pathname === "/no-access") {
+      console.log("Redirecting to / from /no-access");
+      navigate("/", { replace: true });
     }
 
-    if (!roleNames.includes("USERS") && location.pathname === "/no-access") {
-      navigate("/");
-    }
-
-    if (location.pathname === "/layout-horizontal") {
-      setLayoutMode("horizontal");
-      setSidebarOpen(false);
-    } else if (location.pathname === "/layout-two-column") {
-      setLayoutMode("two-column");
-    } else {
-      setLayoutMode("vertical");
-    }
-
-    if (isAuthPage) {
-      setSidebarOpen(false);
+    if (auth?.user !== user) {
+      setAuth((prev) => ({ ...prev, user }));
     }
   }, [
     isProfileLoading,
-    userId,
     profileData,
-    isAuthPage,
     location.pathname,
     navigate,
+    isAuthPage,
+    auth,
+    setAuth,
+    isLoggingOut,
   ]);
 
+  // Maintenance mode
   useEffect(() => {
     if (MAINTENANCE_MODE && !isMaintenancePage) {
       navigate("/under-maintenance", { replace: true });
     }
   }, [MAINTENANCE_MODE, isMaintenancePage, navigate]);
 
-  if (MAINTENANCE_MODE && !isMaintenancePage) return null;
+  // Expose setIsLoggingOut to AuthContext logout
+  useEffect(() => {
+    const originalLogout = auth?.logout;
+    if (originalLogout) {
+      auth.logout = async () => {
+        setIsLoggingOut(true);
+        try {
+          await originalLogout();
+        } finally {
+          setIsLoggingOut(false);
+        }
+      };
+    }
+  }, [auth]);
+
+  if ((MAINTENANCE_MODE && !isMaintenancePage) || !authChecked) return null;
 
   return (
     <>
@@ -148,7 +222,7 @@ function App() {
           <div
             className="sidebar-overlay active"
             onClick={() => toggleSidebar(false)}
-          ></div>
+          />
         )}
       </div>
     </>

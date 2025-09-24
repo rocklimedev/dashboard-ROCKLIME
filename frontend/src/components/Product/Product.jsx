@@ -2,14 +2,14 @@ import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Spin, Empty } from "antd";
 import { useGetBrandParentCategoriesQuery } from "../../api/brandParentCategoryApi";
-import surfaces from "../../assets/img/products/SIURFACE.png";
-import tiles from "../../assets/img/products/tiles.png";
-import plumbing from "../../assets/img/products/plumbing.jpg";
-import fittings from "../../assets/img/products/CP FITTING.png";
-import accessories from "../../assets/img/products/ACCESORIES.png";
-import adhesive from "../../assets/img/products/ADHESIVE.png";
-import "./productwrapper.css";
 
+import "./productwrapper.css";
+const surfaces = "https://static.cmtradingco.com/brands//SIURFACE.png";
+const tiles = "https://static.cmtradingco.com/brands//tiles.png";
+const plumbing = "https://static.cmtradingco.com/brands//plumbing.jpg";
+const fittings = "https://static.cmtradingco.com/brands//CP FITTING.png";
+const accessories = "https://static.cmtradingco.com/brands//ACCESORIES.png";
+const adhesive = "https://static.cmtradingco.com/brands//ADHESIVE.png";
 const Product = () => {
   const {
     data: bpcList,

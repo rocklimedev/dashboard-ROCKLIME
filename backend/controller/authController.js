@@ -338,19 +338,7 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // Check email verification
-    if (!user.isEmailVerified) {
-      return res
-        .status(403)
-        .json({ message: "Please verify your email before logging in." });
-    }
-
-    // Check status
-    if (user.status !== "active") {
-      return res
-        .status(403)
-        .json({ message: "Account is inactive or restricted." });
-    }
+    // Allow login regardless of isEmailVerified or status
     const now = Math.floor(Date.now() / 1000);
     const accessToken = jwt.sign(
       {
@@ -401,7 +389,6 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: "Server Error", error: err.message });
   }
 };
-
 exports.logout = async (req, res) => {
   try {
     res.clearCookie("refreshToken", {
@@ -459,12 +446,13 @@ exports.resendVerificationEmail = async (req, res, next) => {
       return res.status(400).json({ message: "User not found" });
     }
 
-    if (user.status === "active") {
+    // Check isEmailVerified instead of status
+    if (user.isEmailVerified) {
       return res.status(400).json({ message: "Account is already verified" });
     }
 
-    // Delete any existing verification tokens for this user
-    await VerificationToken.destroy({ where: { userId: user.userId } });
+    // Delete any existing verification tokens for this user using Mongoose
+    await VerificationToken.deleteMany({ userId: user.userId });
 
     // Generate a new verification token
     const verificationToken = jwt.sign(

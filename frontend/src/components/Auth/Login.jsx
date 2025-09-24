@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useLoginMutation } from "../../api/authApi";
-import { toast } from "sonner"; // Changed import
+import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
 import logo from "../../assets/img/logo.png";
 import { FaEnvelope, FaEye, FaEyeSlash } from "react-icons/fa";
@@ -14,17 +14,14 @@ const Login = () => {
   const [loginMutation, { isLoading }] = useLoginMutation();
   const { login: authLogin, auth } = useAuth();
   const navigate = useNavigate();
-  const [loginSuccess, setLoginSuccess] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const response = await loginMutation({ email, password }).unwrap();
       const token = response.accessToken;
-
       if (!token) throw new Error("No access token received");
 
-      // Store token
       if (rememberMe) {
         localStorage.setItem("token", token);
         sessionStorage.removeItem("token");
@@ -33,36 +30,19 @@ const Login = () => {
         localStorage.removeItem("token");
       }
 
-      // Update context (this might not immediately update everywhere!)
-      authLogin(token, response.user || null);
-
-      // Instead of immediate navigate, set a flag
-      setLoginSuccess(true);
-
-      // Show success toast and navigate immediately
-
-      navigate("/", { replace: true });
+      await authLogin(token, response.user || null);
+      // Let App.js handle redirects
     } catch (err) {
-      const message =
-        err?.data?.message || err?.message || "Invalid email or password";
-      toast.error(`Login failed: ${message}`);
-
-      const status = err?.status;
-      if (
-        status === 403 ||
-        message.toLowerCase().includes("forbidden") ||
-        message.toLowerCase().includes("not allowed")
-      ) {
-        navigate("/no-access");
-      }
+      toast.error("Login failed! " + (err?.data?.message || err.message));
     }
   };
+
   useEffect(() => {
-    if (loginSuccess && auth?.token) {
+    if (auth?.token && auth?.user) {
       navigate("/", { replace: true });
-      setLoginSuccess(false);
     }
-  }, [auth, loginSuccess, navigate]);
+  }, [auth, navigate]);
+
   return (
     <div className="account-content">
       <div className="login-wrapper bg-img">
@@ -132,10 +112,10 @@ const Login = () => {
                       />
                       <span className="checkmarks"></span> Remember me
                     </label>
-                    <div className="text-end">
+                    <div className="d-flex flex-column align-items-end">
                       <Link
                         to="/forgot-password"
-                        className="text-orange fs-16 fw-medium"
+                        className="text-orange fs-16 fw-medium mb-1"
                       >
                         Forgot Password?
                       </Link>
