@@ -19961,7 +19961,7 @@ body.layout-mode-rtl .item-list p::before {
 [data-layout="modern"] .page-wrapper::after {
   content: none;
   height: 168px;
-  background: url("../img/bg/modern-bg.html");
+
   background-repeat: no-repeat;
   width: 60%;
   position: absolute;
@@ -20075,7 +20075,6 @@ body.layout-mode-rtl .item-list p::before {
 [data-layout="horizontal-overlay"] .sidebar-horizontal.sidebar::before {
   content: none;
   height: 100%;
-  background: url("../img/bg/overlay-bg.png");
   background-repeat: no-repeat;
   width: 100%;
   position: absolute;
@@ -49479,18 +49478,10 @@ a.link-hover:hover {
   background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(17px);
 }
-.login-wrapper.bg-img.register-wrap {
-  background-image: url(../img/authentication/register-img.jpg);
-}
-.login-wrapper.bg-img.forgot-pass-wrap {
-  background-image: url(../img/authentication/forgot-password-img.jpg);
-}
-.login-wrapper.bg-img.reset-pass-wrap {
-  background-image: url(../img/authentication/reset-password-img.jpg);
-}
-.login-wrapper.bg-img.email-veri-wrap {
-  background-image: url(../img/authentication/email-verification-img.jpg);
-}
+
+
+
+
 @media (max-width: 991.96px) {
   .login-wrapper.bg-img {
     background-image: none;
@@ -49945,10 +49936,9 @@ a.link-hover:hover {
   justify-content: center;
   -webkit-justify-content: center;
   -ms-flex-pack: center;
-  background-image: url(../img/authentication/login-bg.png);
+  background-image: url(../img/authentication/banner.jpeg);
   background-position: bottom center;
   background-repeat: no-repeat;
-  background-size: 100% 500px;
 }
 .login-wrapper.login-new
   .login-content.user-login
@@ -60638,9 +60628,6 @@ svg.feather-14 {
   color: #212b36 !important;
 }
 
-.bg-01 {
-  background: url("../img/bg/upgrade-bg.svg");
-}
 
 .access-wrap {
   position: relative;
