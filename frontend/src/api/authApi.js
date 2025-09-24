@@ -15,7 +15,7 @@ export const authApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ["Auth", "Users"], // Updated to match userApi
+  tagTypes: ["Auth", "Users"],
   endpoints: (builder) => ({
     register: builder.mutation({
       query: (userData) => ({
@@ -32,6 +32,7 @@ export const authApi = createApi({
         body: credentials,
         headers: {
           "Content-Type": "application/json",
+          Authorization: undefined,
         },
       }),
       invalidatesTags: (result, error) => (result ? ["Auth", "Users"] : []),
@@ -40,23 +41,30 @@ export const authApi = createApi({
       query: () => ({
         url: "/logout",
         method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        body: {},
       }),
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          localStorage.removeItem("token");
+          sessionStorage.removeItem("token");
+          dispatch(authApi.util.resetApiState()); // Reset API state
+        } catch (error) {
+          console.error("Logout failed:", error);
+        }
+      },
       invalidatesTags: ["Auth", "Users"],
     }),
     forgotPassword: builder.mutation({
       query: (payload) => ({
         url: "/forgot-password",
         method: "POST",
-        body: payload, // Should receive { email: string }
+        body: payload,
       }),
     }),
     verifyAccount: builder.mutation({
       query: ({ token }) => ({
-        url: "/verify-account", // Replace with your actual endpoint
+        url: "/verify-account",
         method: "POST",
         body: { token },
       }),
@@ -100,7 +108,7 @@ export const authApi = createApi({
       query: (email) => ({
         url: "/resend-verification",
         method: "POST",
-        body: { email },
+        body: email,
       }),
     }),
   }),

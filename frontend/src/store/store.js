@@ -1,5 +1,4 @@
 import { configureStore } from "@reduxjs/toolkit";
-import { apiSlice } from "../api/apiSlice";
 import { vendorApi } from "../api/vendorApi";
 import { authApi } from "../api/authApi";
 import { categoryApi } from "../api/categoryApi";

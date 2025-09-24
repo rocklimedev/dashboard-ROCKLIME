@@ -11,6 +11,7 @@ import logo from "../../assets/img/logo.png";
 import logo_small from "../../assets/img/fav_icon.png";
 import { CgShoppingCart } from "react-icons/cg";
 import { useLogoutMutation } from "../../api/authApi";
+import { useAuth } from "../../context/AuthContext"; // <-- Add this
 
 // Add custom CSS for avatar and cart badge
 const styles = `
@@ -59,8 +60,10 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     isLoading: isProfileLoading,
     error: profileError,
   } = useGetProfileQuery();
-  const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
+  const [logoutMutation, { isLoading: isLoggingOut }] = useLogoutMutation();
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const { logout } = useAuth(); // <-- Use AuthContext logout
 
   const {
     data: cart,
@@ -72,8 +75,8 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
 
   const handleLogout = async () => {
     try {
-      await logout().unwrap();
-      localStorage.removeItem("token");
+      await logoutMutation().unwrap();
+      logout(); // <-- Properly reset context and storage
       navigate("/login");
     } catch (error) {
       toast.error("Logout failed. Please try again.");

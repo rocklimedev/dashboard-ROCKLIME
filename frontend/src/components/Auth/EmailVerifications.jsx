@@ -1,157 +1,116 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useLocation } from "react-router-dom";
-import { useVerifyAccountMutation } from "../../api/authApi";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useResendVerificationEmailMutation } from "../../api/authApi";
 import logo from "../../assets/img/logo.png";
 import logoWhite from "../../assets/img/logo.png";
 import { toast } from "sonner";
-import ClockCircleOutlined from "@ant-design/icons/ClockCircleOutlined";
+import { FaEnvelope } from "react-icons/fa";
+
 const EmailVerification = () => {
-  const [otp, setOtp] = useState(["", "", "", ""]);
-  const [timer, setTimer] = useState(600); // 10 minutes in seconds
-  const [verifyAccount, { isLoading, error }] = useVerifyAccountMutation();
-  const inputRefs = useRef([]);
-  const location = useLocation();
-  const email =
-    location.state?.email ||
-    localStorage.getItem("email") ||
-    "example@domain.com";
+  const [email, setEmail] = useState("");
+  const [emailSent, setEmailSent] = useState(false);
+  const [timer, setTimer] = useState(60); // 60 seconds for auto-close
+  const [resendVerificationEmail, { isLoading, error }] =
+    useResendVerificationEmailMutation();
+  const navigate = useNavigate();
 
-  // Handle OTP input
-  const handleInputChange = (index, value) => {
-    if (/^[0-9]?$/.test(value)) {
-      const newOtp = [...otp];
-      newOtp[index] = value;
-      setOtp(newOtp);
-
-      // Move to next input
-      if (value && index < 3) {
-        inputRefs.current[index + 1].focus();
-      }
-    }
-  };
-
-  // Handle backspace
-  const handleKeyDown = (index, e) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0) {
-      inputRefs.current[index - 1].focus();
-    }
-  };
+  // Email validation regex to match backend
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = otp.join("");
-    try {
-      const response = await verifyAccount({ token, email }).unwrap();
+    const trimmedEmail = email.trim().toLowerCase();
 
-      window.location.href = "/reset-password";
+    // Client-side validation
+    if (!trimmedEmail) {
+      toast.error("Please enter an email address");
+      return;
+    }
+    if (!emailRegex.test(trimmedEmail)) {
+      toast.error("Invalid email format");
+      return;
+    }
+
+    try {
+      await resendVerificationEmail({ email: trimmedEmail }).unwrap();
+      setEmailSent(true);
+      setTimer(60); // Start auto-close timer
+      toast.success("Verification email sent! Please check your inbox.");
     } catch (err) {
-      toast.error(error?.data?.message || "Verification failed");
+      const errorMessage =
+        err?.data?.message || "Failed to send verification email";
+      toast.error(errorMessage);
     }
   };
 
-  // Handle resend OTP
-  const handleResend = async () => {
-    try {
-      await fetch("/api/auth/resend-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      setTimer(600); // Reset timer
-    } catch (err) {
-      toast.error("Failed to resend OTP");
-    }
-  };
-
-  // Timer logic
+  // Auto-close timer
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTimer((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Format timer
-  const formatTime = (seconds) => {
-    const minutes = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${minutes.toString().padStart(2, "0")}:${secs
-      .toString()
-      .padStart(2, "0")}`;
-  };
+    if (emailSent && timer > 0) {
+      const interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+      return () => clearInterval(interval);
+    } else if (emailSent && timer === 0) {
+      window.close(); // Attempt to close the window
+      navigate("/login", { replace: true }); // Fallback to login page
+    }
+  }, [emailSent, timer, navigate]);
 
   return (
     <div className="account-content">
       <div className="login-wrapper email-veri-wrap bg-img">
         <div className="login-content authent-content">
-          <form onSubmit={handleSubmit} className="digit-group">
-            <div className="login-userset">
-              <div className="login-logo logo-normal">
-                <img src={logo} alt="Logo" />
+          <div className="login-userset">
+            <div className="login-logo logo-normal">
+              <img src={logo} alt="Logo" />
+            </div>
+            <a href="/" className="login-logo logo-white">
+              <img src={logoWhite} alt="White Logo" />
+            </a>
+            <div className="login-userheading">
+              <h3>Email Verification</h3>
+              <h4>Enter your email to receive a verification link</h4>
+            </div>
+            {emailSent ? (
+              <div className="text-center">
+                <p className="text-gray-9">
+                  We sent you the email, please check your inbox. This window
+                  will be closed in {timer} seconds, if not, close it yourself.
+                </p>
               </div>
-              <a href="/" className="login-logo logo-white">
-                <img src={logoWhite} alt="White Logo" />
-              </a>
-              <div>
-                <div className="login-userheading">
-                  <h3>Email OTP Verification</h3>
-                  <h4>
-                    OTP sent to your Email Address ending{" "}
-                    <span>******{email.slice(-10)}</span>
-                  </h4>
-                </div>
-                <div className="text-center otp-input">
-                  <div className="d-flex align-items-center mb-3">
-                    {otp.map((digit, index) => (
-                      <input
-                        key={index}
-                        type="text"
-                        className="rounded w-100 py-sm-3 py-2 text-center fs-26 fw-bold me-3"
-                        value={digit}
-                        onChange={(e) =>
-                          handleInputChange(index, e.target.value)
-                        }
-                        onKeyDown={(e) => handleKeyDown(index, e)}
-                        ref={(el) => (inputRefs.current[index] = el)}
-                        maxLength="1"
-                        aria-label={`OTP digit ${index + 1}`}
-                      />
-                    ))}
-                  </div>
-                  <div>
-                    <div className="badge bg-danger-transparent mb-3">
-                      <p className="d-flex align-items-center">
-                        <ClockCircleOutlined />
-                        {formatTime(timer)}
-                      </p>
-                    </div>
-                    <div className="mb-3 d-flex justify-content-center">
-                      <p className="text-gray-9">
-                        Didn't get the OTP?{" "}
-                        <a
-                          href="#"
-                          className="text-primary"
-                          onClick={handleResend}
-                        >
-                          Resend OTP
-                        </a>
-                      </p>
-                    </div>
+            ) : (
+              <form onSubmit={handleSubmit}>
+                <div className="mb-3">
+                  <label className="form-label">
+                    Email <span className="text-danger">*</span>
+                  </label>
+                  <div className="input-group">
+                    <input
+                      type="email"
+                      className="form-control border-end-0"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      placeholder="Enter your email"
+                    />
+                    <span className="input-group-text border-start-0">
+                      <FaEnvelope />
+                    </span>
                   </div>
                 </div>
                 <div className="mb-3">
                   <button
                     type="submit"
                     className="btn btn-primary w-100"
-                    disabled={isLoading || otp.some((digit) => !digit)}
+                    disabled={isLoading}
                   >
-                    {isLoading ? "Verifying..." : "Verify & Proceed"}
+                    {isLoading ? "Sending..." : "Send Verification Email"}
                   </button>
                 </div>
-              </div>
-            </div>
-          </form>
+              </form>
+            )}
+          </div>
         </div>
       </div>
     </div>

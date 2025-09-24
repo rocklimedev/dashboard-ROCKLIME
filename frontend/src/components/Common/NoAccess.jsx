@@ -1,14 +1,17 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { Container, Row, Col, Button } from "react-bootstrap";
 import { toast } from "sonner";
-import { useLogoutMutation } from "../../api/authApi";
+import { useResendVerificationEmailMutation } from "../../api/authApi";
 import { useGetProfileQuery } from "../../api/userApi";
+import { useAuth } from "../../context/AuthContext";
 import { BiLogOut } from "react-icons/bi";
 import "./NoAccess.css";
-import { useGetRolesQuery } from "../../api/rolesApi";
+
 const NoAccess = () => {
-  const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
+  const { auth, logout } = useAuth();
+  const [resendVerificationEmail, { isLoading: isResending }] =
+    useResendVerificationEmailMutation();
   const navigate = useNavigate();
   const {
     data: profileData,
@@ -16,77 +19,80 @@ const NoAccess = () => {
     error: profileError,
     isFetching: isFetchingProfile,
   } = useGetProfileQuery(undefined, {
-    refetchOnMountOrArgChange: false, // No refetch automatically
-    skip: true, // Don't auto-fetch at all
+    refetchOnMountOrArgChange: true,
+    skip: !auth?.token,
   });
-  const {
-    data: rolesData,
-    isLoading: isLoadingRoles,
-    error: rolesError,
-  } = useGetRolesQuery();
+  const [emailSent, setEmailSent] = useState(false);
+  const [timer, setTimer] = useState(60);
+
+  const user = profileData?.user;
+  console.log(user);
+  const isEmailVerified = user?.isEmailVerified === true;
+  let roles = user?.roles || [];
+  if (typeof roles === "string") {
+    try {
+      roles = JSON.parse(roles);
+    } catch (e) {
+      console.error("Failed to parse roles:", e);
+      roles = [];
+    }
+  }
+  const accessRoles = roles.filter((r) => r !== "USERS");
+  const needsVerification = !isEmailVerified && accessRoles.length === 0;
+
+  // Handle profile fetch errors
+  useEffect(() => {
+    if (profileError) {
+      console.error("Profile fetch error:", profileError);
+      toast.error("Failed to fetch user profile.");
+    }
+  }, [profileError]);
+
+  // Auto-redirect after email sent
+  useEffect(() => {
+    if (emailSent && timer > 0) {
+      const interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+      return () => clearInterval(interval);
+    } else if (emailSent && timer === 0) {
+      navigate("/login", { replace: true });
+    }
+  }, [emailSent, timer, navigate]);
 
   const handleRetry = async () => {
     try {
-      // Fetch updated profile
-      const updatedProfile = await refetchProfile().unwrap();
-      const user = updatedProfile?.user;
-
-      // Check if user exists and is active
-      if (!user || !user.isActive) {
-        toast.error(
-          "Your account is not active. Please contact an administrator."
-        );
-        return;
-      }
-
-      // Parse user roles
-      let roleNames = user?.roles || [];
-      if (typeof roleNames === "string") {
-        try {
-          roleNames = JSON.parse(roleNames);
-        } catch (e) {
-          toast.error("Failed to parse user roles.");
-          return;
-        }
-      }
-
-      // Get access-granting roles (exclude USER)
-      const accessGrantingRoles =
-        rolesData
-          ?.filter((role) => role.name !== "USERS")
-          ?.map((role) => role.name) || [];
-
-      // Check if user has an access-granting role
-      const hasAccess = roleNames.some((role) =>
-        accessGrantingRoles.includes(role?.trim())
-      );
-
-      if (!hasAccess) {
-        toast.error(
-          "No valid roles assigned. Please contact an administrator."
-        );
-        return;
-      }
-
-      // Store token if provided
-      if (updatedProfile.token) {
-        localStorage.setItem("token", updatedProfile.token);
-      }
-
-      toast.success("Access granted! Redirecting...");
-      navigate("/", { replace: true });
+      await refetchProfile();
     } catch (error) {
-      toast.error("Failed to verify access. Please try again.");
+      toast.error("Failed to retry. Please try again.");
     }
   };
 
   const handleLogout = async () => {
     try {
-      await logout().unwrap();
-      localStorage.removeItem("token");
+      await logout();
+      toast.success("Logged out successfully.");
       navigate("/login", { replace: true });
     } catch (error) {
       toast.error("Logout failed. Please try again.");
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!user?.email) {
+      console.error("No email in profileData:", profileData);
+      toast.error("No email found for your account.");
+      return;
+    }
+    try {
+      await resendVerificationEmail({ email: user.email }).unwrap();
+      setEmailSent(true);
+      setTimer(60);
+      toast.success("Verification email sent! Please check your inbox.");
+    } catch (error) {
+      const errorMessage =
+        error?.data?.message || "Failed to resend verification email.";
+      toast.error(errorMessage);
     }
   };
 
@@ -98,33 +104,68 @@ const NoAccess = () => {
             <Col md={6}>
               <div className="no-access-icon" />
               <h2 className="mt-4">Access Denied</h2>
-              <p className="text-muted">
-                You are successfully registered but currently don’t have access
-                to the portal.
-              </p>
-              <p className="text-muted">
-                Please contact an administrator to assign you a role.
-              </p>
-              {rolesError && (
-                <p className="text-danger">
-                  Failed to load roles. Please try again.
+              {isFetchingProfile ? (
+                <p className="text-muted">Loading user data...</p>
+              ) : user ? (
+                <>
+                  <p className="text-muted">
+                    You are successfully registered but currently don’t have
+                    access to the portal.
+                  </p>
+                  <p className="text-muted">
+                    Email Verification:{" "}
+                    {isEmailVerified ? "Verified" : "Not Verified"}
+                  </p>
+                  <p className="text-muted">
+                    Roles: {roles.length > 0 ? roles.join(", ") : "None"}
+                  </p>
+                  {!isEmailVerified && (
+                    <p className="text-warning">
+                      Your email address is not verified. Please check your
+                      inbox or click the button below to resend the verification
+                      email.
+                    </p>
+                  )}
+                  {accessRoles.length === 0 && (
+                    <p className="text-muted">
+                      Please contact an administrator to assign you a role.
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="text-muted">Unable to load user data.</p>
+              )}
+              {emailSent && (
+                <p className="text-success">
+                  Verification email sent. Redirecting to login in {timer}{" "}
+                  seconds.
                 </p>
               )}
-              <div className="d-flex justify-content-center gap-3 mt-4">
-                <Button
-                  variant="primary"
-                  onClick={handleRetry}
-                  disabled={isLoggingOut || isFetchingProfile || isLoadingRoles}
-                >
-                  Retry
-                </Button>
-                <Button
-                  variant="outline-danger"
-                  onClick={handleLogout}
-                  disabled={isLoggingOut}
-                >
-                  <BiLogOut /> {isLoggingOut ? "Logging out..." : "Logout"}
-                </Button>
+              <div className="d-flex flex-column align-items-center gap-3 mt-4">
+                <div className="d-flex gap-3">
+                  <Button
+                    variant="primary"
+                    onClick={handleRetry}
+                    disabled={isFetchingProfile}
+                  >
+                    Retry
+                  </Button>
+                  <Button variant="outline-danger" onClick={handleLogout}>
+                    <BiLogOut /> Logout
+                  </Button>
+                </div>
+                {needsVerification && !emailSent && (
+                  <Button
+                    variant="warning"
+                    onClick={handleResendVerification}
+                    disabled={isResending || isFetchingProfile}
+                  >
+                    {isResending ? "Resending..." : "Resend Verification Email"}
+                  </Button>
+                )}
+                <Link to="/login" className="text-orange fs-16 fw-medium">
+                  Return to Login
+                </Link>
               </div>
             </Col>
           </Row>
