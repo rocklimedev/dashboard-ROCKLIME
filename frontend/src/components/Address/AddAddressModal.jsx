@@ -85,7 +85,6 @@ const AddAddress = ({ onClose, existingAddress }) => {
           addressId: existingAddress.addressId,
           updatedData,
         }).unwrap();
-        toast.success("Address updated successfully!");
       } else {
         const addressData = {
           addressId: uuidv4(),
@@ -93,7 +92,6 @@ const AddAddress = ({ onClose, existingAddress }) => {
           createdAt: new Date().toISOString(),
         };
         await createAddress(addressData).unwrap();
-        toast.success("Address created successfully!");
       }
       onClose();
     } catch (err) {

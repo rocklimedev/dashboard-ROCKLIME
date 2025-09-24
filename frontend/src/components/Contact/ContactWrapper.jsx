@@ -233,7 +233,6 @@ const ContactWrapper = () => {
     }
     try {
       await deleteQuery(queryToDelete._id).unwrap();
-      toast.success("Query deleted successfully");
       setShowDeleteModal(false);
       setQueryToDelete(null);
       refetch();

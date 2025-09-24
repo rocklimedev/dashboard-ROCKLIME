@@ -222,7 +222,7 @@ const AddressList = () => {
     }
     try {
       await deleteAddress(addressToDelete.addressId).unwrap();
-      toast.success("Address deleted successfully!");
+
       if (paginatedAddresses.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }

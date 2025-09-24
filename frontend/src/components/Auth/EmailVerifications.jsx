@@ -43,7 +43,7 @@ const EmailVerification = () => {
     const token = otp.join("");
     try {
       const response = await verifyAccount({ token, email }).unwrap();
-      toast.success(response.message || "Account verified successfully!");
+
       window.location.href = "/reset-password";
     } catch (err) {
       toast.error(error?.data?.message || "Verification failed");
@@ -59,7 +59,6 @@ const EmailVerification = () => {
         body: JSON.stringify({ email }),
       });
       setTimer(600); // Reset timer
-      toast.success("OTP resent successfully");
     } catch (err) {
       toast.error("Failed to resend OTP");
     }

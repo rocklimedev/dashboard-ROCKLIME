@@ -585,8 +585,6 @@ const QuotationsDetails = () => {
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
-
-        toast.success("Quotation exported successfully as Excel!");
       } else if (exportFormat === "pdf") {
         // PDF export (unchanged)
         if (!quotationRef.current) {
@@ -618,7 +616,6 @@ const QuotationsDetails = () => {
           heightLeft -= pageHeight - 20;
         }
         pdf.save(`Quotation_${id}.pdf`);
-        toast.success("Quotation exported successfully as PDF!");
       }
     } catch (error) {
       toast.error(

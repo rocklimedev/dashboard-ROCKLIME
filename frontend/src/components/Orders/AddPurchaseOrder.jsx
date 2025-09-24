@@ -77,7 +77,7 @@ const AddVendorModal = ({ show, onClose, onSave, isCreatingVendor }) => {
         brandId: vendorData.brandId || null,
         brandSlug: vendorData.brandSlug || null,
       }).unwrap();
-      toast.success("Vendor created successfully");
+
       setVendorData({
         vendorId: "",
         vendorName: "",
@@ -477,7 +477,6 @@ const AddPurchaseOrder = () => {
     setProductSearch("");
     setFilteredProducts([]);
     setShowClearConfirm(false);
-    toast.success("Form cleared successfully");
   };
 
   // Inside AddPurchaseOrder component
@@ -525,12 +524,9 @@ const AddPurchaseOrder = () => {
           id,
           ...formattedFormData,
         }).unwrap();
-
-        toast.success("Purchase order updated successfully");
       } else {
         const result = await createPurchaseOrder(formattedFormData).unwrap();
 
-        toast.success("Purchase order created successfully");
         setFormData(initialFormData);
         form.resetFields();
         setProductSearch("");

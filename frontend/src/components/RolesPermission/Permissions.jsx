@@ -140,21 +140,11 @@ const Permissions = () => {
           permissionId,
           isGranted: true,
         }).unwrap();
-        toast.success(
-          `${
-            type.charAt(0).toUpperCase() + type.slice(1)
-          } permission assigned successfully.`
-        );
       } else {
         await removePermission({
           roleId,
           permissionId,
         }).unwrap();
-        toast.success(
-          `${
-            type.charAt(0).toUpperCase() + type.slice(1)
-          } permission removed successfully.`
-        );
       }
 
       dispatch(

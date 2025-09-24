@@ -187,7 +187,6 @@ const QuotationList = () => {
       if (currentQuotations.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
-      toast.success("Quotation deleted successfully");
     } catch (err) {
       toast.error(
         `Failed to delete quotation: ${

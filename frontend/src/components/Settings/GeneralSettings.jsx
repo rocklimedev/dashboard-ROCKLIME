@@ -57,7 +57,6 @@ const GeneralSettings = () => {
       await changePassword(passwordData).unwrap(); // Changed from resetPassword
       setPasswordData({ currentPassword: "", newPassword: "" });
       setShowPasswordModal(false);
-      toast.success("Password changed successfully");
     } catch (error) {
       toast.error(error?.data?.message || "Failed to change password");
     }
@@ -69,7 +68,6 @@ const GeneralSettings = () => {
   const handleResendVerification = async () => {
     try {
       await resendVerificationEmail({ email: profile?.user?.email }).unwrap();
-      toast.success("Verification email sent successfully");
     } catch (error) {
       toast.error(error?.data?.message || "Failed to send verification email");
     }
@@ -98,7 +96,6 @@ const GeneralSettings = () => {
       await deactivateAccount().unwrap();
       dispatch(logout());
       navigate("/login");
-      toast.success("Account deactivated");
     } catch (error) {
       toast.error(error?.data?.message || "Failed to deactivate account");
     } finally {
@@ -120,7 +117,6 @@ const GeneralSettings = () => {
       await deleteUser().unwrap();
       dispatch(logout());
       navigate("/login");
-      toast.success("Account deleted");
     } catch (error) {
       toast.error(error?.data?.message || "Failed to delete account");
     } finally {
