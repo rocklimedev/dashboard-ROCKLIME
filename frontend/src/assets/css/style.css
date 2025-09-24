@@ -12490,7 +12490,7 @@ table.dataTable > thead .sku:before {
 
 .custom-select {
   min-width: 80px;
-  background: url(../img/icons/dropdown.svg) no-repeat 95% 50%;
+
 }
 
 .dataTables_paginate .pagination li {
@@ -14952,8 +14952,7 @@ svg.feather {
   li.flag-nav
   .dropdown-menu
   .dropdown-item:hover {
-  background: #212b36 url(../img/icons/check.svg) no-repeat calc(100% - 12px)
-    center;
+
 }
 [data-theme="dark"] .user-menu.nav.nav > li > a.dropdown-toggle.nav-link.show {
   background: #212b36;
@@ -50551,7 +50550,7 @@ span.badge.badges-warning {
 }
 
 .cal-icon {
-  background-image: url(../img/icons/calendars.svg);
+
   background-repeat: no-repeat;
   background-position: 95% 50%;
 }
