@@ -1,6 +1,11 @@
 import React, { useState } from "react";
 import { Button, Tooltip, Badge, Dropdown, Spin, Input } from "antd";
-import { ShoppingCartOutlined, MoreOutlined } from "@ant-design/icons";
+import {
+  ShoppingCartOutlined,
+  MoreOutlined,
+  PlusOutlined,
+  MinusOutlined,
+} from "@ant-design/icons";
 import { Link } from "react-router-dom";
 import pos from "../../assets/img/default.png";
 import "./productlist.css";
@@ -26,7 +31,6 @@ const ProductCard = ({
       }
       return [pos]; // Fallback to default image if empty or not a string
     } catch (error) {
-      console.error("Error parsing product images:", error);
       return [pos]; // Fallback to default image on error
     }
   };
@@ -119,7 +123,7 @@ const ProductCard = ({
               disabled={product.quantity <= 0 || quantity <= 1}
               aria-label="Decrease quantity"
             >
-              <i className="ti ti-minus"></i>
+              <MinusOutlined />
             </button>
           </Tooltip>
 
@@ -140,7 +144,7 @@ const ProductCard = ({
               disabled={product.quantity <= 0 || quantity >= product.quantity}
               aria-label="Increase quantity"
             >
-              <i className="ti ti-plus"></i>
+              <PlusOutlined />
             </button>
           </Tooltip>
         </div>

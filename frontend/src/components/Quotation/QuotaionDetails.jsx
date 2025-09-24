@@ -20,7 +20,7 @@ import "./quotation.css";
 import useProductsData from "../../data/useProductdata";
 import { useGetAddressByIdQuery } from "../../api/addressApi";
 import { Buffer } from "buffer";
-
+import { LeftOutlined, ExportOutlined } from "@ant-design/icons";
 const QuotationsDetails = () => {
   const { id } = useParams();
   const {
@@ -683,7 +683,7 @@ const QuotationsDetails = () => {
               className="back-icon d-flex align-items-center fs-12 fw-medium mb-3 d-inline-flex"
             >
               <span className="d-flex justify-content-center align-items-center rounded-circle me-2">
-                <i className="ti ti-arrow-left"></i>
+                <LeftOutlined />
               </span>
               Back to List
             </Link>
@@ -887,7 +887,8 @@ const QuotationsDetails = () => {
                   className="btn btn-primary d-flex justify-content-center align-items-center"
                   onClick={handleExport}
                 >
-                  <i className="ti ti-printer me-2"></i>Export Quotation
+                  <ExportOutlined />
+                  Export Quotation
                 </button>
               </div>
             </div>

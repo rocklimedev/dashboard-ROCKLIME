@@ -122,7 +122,6 @@ exports.updateQuotation = async (req, res) => {
       });
 
       if (!updated[0]) {
-        console.warn("No rows updated for ID:", id);
         await t.rollback();
         return res.status(404).json({ message: "Quotation not found" });
       }
@@ -171,12 +170,10 @@ exports.deleteQuotation = async (req, res) => {
       !req.user.roles.includes("ADMIN") &&
       req.user.userId !== quotation.createdBy
     ) {
-      return res
-        .status(403)
-        .json({
-          message:
-            "Unauthorized: Only admins or the creator can delete this quotation",
-        });
+      return res.status(403).json({
+        message:
+          "Unauthorized: Only admins or the creator can delete this quotation",
+      });
     }
     await Quotation.destroy({
       where: { quotationId: req.params.id },
@@ -354,7 +351,6 @@ exports.exportQuotation = async (req, res) => {
     // Send buffer directly
     res.send(buffer);
   } catch (error) {
-    console.error("Export error:", error);
     res
       .status(500)
       .json({ message: "Failed to export quotation", error: error.message });

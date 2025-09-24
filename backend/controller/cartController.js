@@ -91,7 +91,6 @@ exports.addProductToCart = async (req, res) => {
     await cart.save();
     res.status(200).json({ message: "Product added to cart", cart });
   } catch (err) {
-    console.error("Add product to cart error:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
@@ -175,7 +174,6 @@ exports.addToCart = async (req, res) => {
     await cart.save();
     res.status(200).json({ message: "Items added to cart", cart });
   } catch (err) {
-    console.error("Add to cart error:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
@@ -196,7 +194,6 @@ exports.getCart = async (req, res) => {
 
     res.status(200).json({ cart });
   } catch (err) {
-    console.error("Get cart error:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
@@ -231,7 +228,6 @@ exports.removeFromCart = async (req, res) => {
 
     res.status(200).json({ message: "Item removed from cart", cart });
   } catch (err) {
-    console.error("Remove from cart error:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
@@ -280,7 +276,6 @@ exports.updateCart = async (req, res) => {
 
     res.status(200).json({ message: "Cart updated successfully", cart });
   } catch (err) {
-    console.error("Update cart error:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
@@ -306,7 +301,6 @@ exports.clearCart = async (req, res) => {
 
     res.status(200).json({ message: "Cart cleared successfully", cart });
   } catch (err) {
-    console.error("Clear cart error:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
@@ -380,7 +374,6 @@ exports.convertQuotationToCart = async (req, res) => {
       .status(200)
       .json({ message: "Quotation converted to cart successfully", cart });
   } catch (err) {
-    console.error("Convert quotation to cart error:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
@@ -436,7 +429,6 @@ exports.getCartById = async (req, res) => {
 
     res.status(200).json({ cart });
   } catch (err) {
-    console.error("Get cart by ID error:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
@@ -447,7 +439,6 @@ exports.getAllCarts = async (req, res) => {
     const carts = await Cart.find();
     res.status(200).json({ success: true, carts });
   } catch (err) {
-    console.error("Get all carts error:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
@@ -495,7 +486,6 @@ exports.reduceQuantity = async (req, res) => {
       cart,
     });
   } catch (err) {
-    console.error("Reduce quantity error:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };

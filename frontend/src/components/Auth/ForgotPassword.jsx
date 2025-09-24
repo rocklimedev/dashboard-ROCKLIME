@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import logo from "../../assets/img/logo.png";
 import { Spinner } from "react-bootstrap";
 import { useGetProfileQuery } from "../../api/userApi";
-
+import { MailOutlined } from "@ant-design/icons";
 const ForgotPassword = () => {
   const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
   const {
@@ -165,7 +165,7 @@ const ForgotPassword = () => {
                               }
                             />
                             <span className="input-group-text border-start-0">
-                              <i className="ti ti-mail"></i>
+                              <MailOutlined />
                             </span>
                             {emailError && (
                               <div className="invalid-feedback">

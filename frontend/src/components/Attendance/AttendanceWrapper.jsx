@@ -6,13 +6,12 @@ import {
   useGetAllAttendanceQuery,
   useGetAttendanceQuery,
 } from "../../api/attendanceApi";
-import { FaSearch } from "react-icons/fa";
 import jsPDF from "jspdf";
 import * as XLSX from "xlsx";
 import moment from "moment";
 import DataTablePagination from "../Common/DataTablePagination";
 import PageHeader from "../Common/PageHeader";
-
+import { SearchOutlined } from "@ant-design/icons";
 const AttendanceWrapper = ({ userId }) => {
   const [filters, setFilters] = useState({
     status: "",
@@ -427,7 +426,7 @@ const AttendanceWrapper = ({ userId }) => {
                   </div>
                   <div className="input-icon-start position-relative">
                     <span className="input-icon-addon">
-                      <FaSearch />
+                      <SearchOutlined />
                     </span>
                     <input
                       type="text"

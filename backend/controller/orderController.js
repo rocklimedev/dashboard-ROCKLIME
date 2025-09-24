@@ -172,10 +172,6 @@ exports.getComments = async (req, res) => {
       limit: limitNum,
     });
   } catch (err) {
-    console.error("Get comments error:", {
-      message: err.message,
-      stack: err.stack,
-    });
     return sendErrorResponse(res, 500, "Failed to fetch comments", err.message);
   }
 };
@@ -284,10 +280,6 @@ exports.addComment = async (req, res) => {
       comment: populatedComment,
     });
   } catch (err) {
-    console.error("Add comment error:", {
-      message: err.message,
-      stack: err.stack,
-    });
     return sendErrorResponse(res, 500, "Failed to add comment", err.message);
   }
 };
@@ -312,10 +304,6 @@ exports.deleteCommentsByResource = async (req, res) => {
       message: `Deleted ${result.deletedCount} comments for ${resourceType}`,
     });
   } catch (err) {
-    console.error("Delete comments error:", {
-      message: err.message,
-      stack: err.stack,
-    });
     return sendErrorResponse(
       res,
       500,
@@ -346,10 +334,6 @@ exports.deleteComment = async (req, res) => {
       message: "Comment deleted successfully",
     });
   } catch (err) {
-    console.error("Delete comment error:", {
-      message: err.message,
-      stack: err.stack,
-    });
     return sendErrorResponse(res, 500, "Failed to delete comment", err.message);
   }
 };
@@ -475,10 +459,6 @@ exports.createOrder = async (req, res) => {
       id: order.id,
     });
   } catch (err) {
-    console.error("Create order error:", {
-      message: err.message,
-      stack: err.stack,
-    });
     return sendErrorResponse(res, 500, "Failed to create order", err.message);
   }
 };
@@ -507,10 +487,6 @@ exports.getAllOrders = async (req, res) => {
       totalCount: orders.length,
     });
   } catch (err) {
-    console.error("Get all orders error:", {
-      message: err.message,
-      stack: err.stack,
-    });
     return sendErrorResponse(res, 500, "Failed to fetch orders", err.message);
   }
 };
@@ -550,10 +526,6 @@ exports.getOrderDetails = async (req, res) => {
 
     return res.status(200).json({ order: orderWithComments });
   } catch (err) {
-    console.error("Get order details error:", {
-      message: err.message,
-      stack: err.stack,
-    });
     return sendErrorResponse(
       res,
       500,
@@ -599,10 +571,6 @@ exports.updateOrderStatus = async (req, res) => {
 
     return res.status(200).json({ message: "Order status updated", order });
   } catch (err) {
-    console.error("Update order status error:", {
-      message: err.message,
-      stack: err.stack,
-    });
     return sendErrorResponse(
       res,
       500,
@@ -635,10 +603,6 @@ exports.deleteOrder = async (req, res) => {
       .status(200)
       .json({ message: "Order and associated data deleted successfully" });
   } catch (err) {
-    console.error("Delete order error:", {
-      message: err.message,
-      stack: err.stack,
-    });
     return sendErrorResponse(res, 500, "Failed to delete order", err.message);
   }
 };
@@ -665,10 +629,6 @@ exports.recentOrders = async (req, res) => {
 
     return res.status(200).json({ orders });
   } catch (err) {
-    console.error("Get recent orders error:", {
-      message: err.message,
-      stack: err.stack,
-    });
     return sendErrorResponse(
       res,
       500,
@@ -712,10 +672,6 @@ exports.orderById = async (req, res) => {
 
     return res.status(200).json({ order: orderWithComments });
   } catch (err) {
-    console.error("Get order by ID error:", {
-      message: err.message,
-      stack: err.stack,
-    });
     return sendErrorResponse(res, 500, "Failed to fetch order", err.message);
   }
 };
@@ -878,10 +834,6 @@ exports.updateOrderById = async (req, res) => {
       order,
     });
   } catch (err) {
-    console.error("Update order by ID error:", {
-      message: err.message,
-      stack: err.stack,
-    });
     return res
       .status(500)
       .json({ message: "Failed to update order", error: err.message });
@@ -918,10 +870,6 @@ exports.draftOrder = async (req, res) => {
 
     return res.status(200).json({ message: "Draft order created", order });
   } catch (err) {
-    console.error("Draft order error:", {
-      message: err.message,
-      stack: err.stack,
-    });
     return sendErrorResponse(
       res,
       500,
@@ -1086,11 +1034,6 @@ exports.getFilteredOrders = async (req, res) => {
       limit: limitNum,
     });
   } catch (err) {
-    console.error("Get filtered orders error:", {
-      message: err.message,
-      stack: err.stack,
-      query: req.query,
-    });
     return sendErrorResponse(
       res,
       500,
@@ -1126,10 +1069,6 @@ exports.updateOrderTeam = async (req, res) => {
 
     return res.status(200).json({ message: "Order team updated", order });
   } catch (err) {
-    console.error("Update order team error:", {
-      message: err.message,
-      stack: err.stack,
-    });
     return sendErrorResponse(
       res,
       500,
@@ -1177,7 +1116,6 @@ exports.uploadInvoiceAndLinkOrder = async (req, res) => {
       // Construct public URL
       const fileUrl = `${process.env.FTP_BASE_URL}/invoice_pdfs/${uniqueName}`;
     } catch (ftpErr) {
-      console.error("FTP upload error:", ftpErr);
       return res
         .status(500)
         .json({ message: "FTP upload failed", error: ftpErr.message });
@@ -1202,7 +1140,6 @@ exports.uploadInvoiceAndLinkOrder = async (req, res) => {
       fileUrl: `${process.env.FTP_BASE_URL}/invoice_pdfs/${uniqueName}`, // Return relative path
     });
   } catch (err) {
-    console.error("Upload handler error:", err);
     return res
       .status(500)
       .json({ message: "Server error", error: err.message });
@@ -1232,7 +1169,6 @@ exports.countOrders = async (req, res) => {
 
     res.json({ count });
   } catch (error) {
-    console.error("Error counting orders:", error.message);
     res.status(500).json({ message: "Server error" });
   }
 };

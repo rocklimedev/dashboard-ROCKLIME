@@ -163,7 +163,7 @@ const AddQuotation = () => {
     error: fetchError,
     isSuccess: isFetchSuccess,
   } = useGetQuotationByIdQuery(id, { skip: !isEditMode });
-  console.log(existingQuotation);
+
   const { data: userData, isLoading: isUserLoading } = useGetProfileQuery();
   const { data: customersData, isLoading: isCustomersLoading } =
     useGetCustomersQuery();

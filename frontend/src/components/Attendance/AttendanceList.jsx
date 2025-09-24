@@ -7,7 +7,6 @@ import {
   useGetAttendanceQuery,
 } from "../../api/attendanceApi";
 import { Spinner, Button, Form } from "react-bootstrap";
-import { FaSearch } from "react-icons/fa";
 import moment from "moment";
 import jsPDF from "jspdf";
 import * as XLSX from "xlsx";
@@ -17,7 +16,7 @@ import { subDays } from "date-fns";
 import PageHeader from "../Common/PageHeader";
 import DataTablePagination from "../Common/DataTablePagination";
 import "./attendancelist.css";
-
+import { SearchOutlined } from "@ant-design/icons";
 const AttendanceWrapper = ({ userId }) => {
   // State management
   const [searchTerm, setSearchTerm] = useState("");
@@ -472,7 +471,7 @@ const AttendanceWrapper = ({ userId }) => {
                     style={{ width: "200px" }}
                   >
                     <span className="input-group-text">
-                      <FaSearch />
+                      <SearchOutlined />
                     </span>
                     <input
                       type="text"

@@ -9,6 +9,15 @@ import SidebarCategory from "./SidebarCategory"; // Assuming this is a component
 import LabelItem from "./LabelItem"; // Assuming this is a component
 import FolderItem from "./FolderItem"; // Assuming this is a component
 import { setActiveCategory } from "../../api/emailSlice";
+import {
+  EditOutlined,
+  SearchOutlined,
+  SettingOutlined,
+  ReloadOutlined,
+  TagOutlined,
+  TagsOutlined,
+  FolderOutlined,
+} from "@ant-design/icons";
 const EmailInterface = () => {
   // Redux state and dispatch
   const dispatch = useDispatch();
@@ -109,7 +118,6 @@ const EmailInterface = () => {
       setSelectedQueryId(null);
       dispatch(setActiveCategory("Inbox")); // Reset to Inbox
     } catch (err) {
-      console.error("Error sending reply:", err);
       alert(`Failed to send reply: ${err?.data?.message || "Unknown error"}`);
     }
   };
@@ -174,7 +182,8 @@ const EmailInterface = () => {
                     className="btn btn-primary w-100"
                     id="compose_mail"
                   >
-                    <i className="ti ti-edit me-2"></i>Compose
+                    <EditOutlined />
+                    Compose
                   </a>
 
                   {/* Email Categories */}
@@ -228,7 +237,7 @@ const EmailInterface = () => {
                     <div className="d-flex align-items-center justify-content-between mb-2">
                       <h5>Labels</h5>
                       <a href="#">
-                        <i className="ti ti-square-rounded-plus-filled text-primary fs-16"></i>
+                        <TagsOutlined />
                       </a>
                     </div>
                     {labels.map((label) => (
@@ -261,7 +270,7 @@ const EmailInterface = () => {
                     <div className="d-flex align-items-center justify-content-between mb-2">
                       <h5>Folders</h5>
                       <a href="#">
-                        <i className="ti ti-square-rounded-plus-filled text-primary fs-16"></i>
+                        <FolderOutlined />
                       </a>
                     </div>
                     {folders.map((folder) => (
@@ -303,7 +312,7 @@ const EmailInterface = () => {
                       <h5 className="mb-1">{activeCategory}</h5>
                       <div className="d-flex align-items-center">
                         <span>{filteredQueries.length} Queries</span>
-                        <i className="ti ti-point-filled text-primary mx-1"></i>
+                        <TagOutlined />
                         <span>
                           {
                             filteredQueries.filter((query) => !query.responded)
@@ -316,7 +325,7 @@ const EmailInterface = () => {
                     <div className="d-flex align-items-center">
                       <div className="position-relative input-icon me-3">
                         <span className="input-icon-addon">
-                          <i className="ti ti-search"></i>
+                          <SearchOutlined />
                         </span>
                         <input
                           type="text"
@@ -329,19 +338,19 @@ const EmailInterface = () => {
                           href="#"
                           className="btn btn-icon btn-sm rounded-circle"
                         >
-                          <i className="ti ti-filter-edit"></i>
+                          <EditOutlined />
                         </a>
                         <a
                           href="#"
                           className="btn btn-icon btn-sm rounded-circle"
                         >
-                          <i className="ti ti-settings"></i>
+                          <SettingOutlined />
                         </a>
                         <a
                           href="#"
                           className="btn btn-icon btn-sm rounded-circle"
                         >
-                          <i className="ti ti-refresh"></i>
+                          <ReloadOutlined />
                         </a>
                       </div>
                     </div>

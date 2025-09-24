@@ -1,6 +1,6 @@
 import React from "react";
 import { Modal, Button } from "react-bootstrap";
-
+import { DeleteOutlined } from "@ant-design/icons";
 const DeleteModal = ({ item, itemType, onConfirm, onCancel, isVisible }) => {
   return (
     <Modal
@@ -12,7 +12,7 @@ const DeleteModal = ({ item, itemType, onConfirm, onCancel, isVisible }) => {
     >
       <Modal.Body className="text-center p-4">
         <span className="rounded-circle d-inline-flex p-2 bg-danger-transparent mb-3">
-          <i className="ti ti-trash fs-24 text-danger"></i>
+          <DeleteOutlined />
         </span>
         <h4 className="fs-20 text-gray-9 fw-bold mb-2 mt-1">
           Delete {itemType}

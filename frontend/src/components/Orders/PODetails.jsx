@@ -17,7 +17,7 @@ import * as XLSX from "xlsx";
 import "./po.css"; // Assume a similar CSS file for styling
 import useProductsData from "../../data/useProductdata";
 import { Buffer } from "buffer";
-
+import { LeftOutlined, PrinterOutlined } from "@ant-design/icons";
 const PODetails = () => {
   const { id } = useParams();
   const {
@@ -549,7 +549,7 @@ const PODetails = () => {
               className="back-icon d-flex align-items-center fs-12 fw-medium mb-3 d-inline-flex"
             >
               <span className="d-flex justify-content-center align-items-center rounded-circle me-2">
-                <i className="ti ti-arrow-left"></i>
+                <LeftOutlined />
               </span>
               Back to Purchase Orders
             </Link>
@@ -717,7 +717,7 @@ const PODetails = () => {
                   onClick={handleExport}
                   disabled={isExporting}
                 >
-                  <i className="ti ti-printer me-2"></i>
+                  <PrinterOutlined />
                   {isExporting ? "Exporting..." : "Export Purchase Order"}
                 </button>
               </div>

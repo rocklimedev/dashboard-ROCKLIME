@@ -585,7 +585,6 @@ const Cart = ({ onConvertToOrder }) => {
 
         resetForm();
       } catch (error) {
-        console.error("Invoice creation error:", error);
         toast.error(
           `Failed to place order: ${
             error.data?.message || error.message || "Unknown error"
@@ -637,7 +636,6 @@ const Cart = ({ onConvertToOrder }) => {
 
         resetForm();
       } catch (error) {
-        console.error("Quotation creation error:", error);
         toast.error(
           `Failed to create quotation: ${
             error.data?.message || error.message || "Unknown error"

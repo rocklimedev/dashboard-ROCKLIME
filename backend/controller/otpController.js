@@ -63,7 +63,6 @@ exports.sendOtp = async (req, res) => {
 
     res.status(200).json({ success: true, message: "OTP sent successfully" });
   } catch (err) {
-    console.error("OTP send error:", err);
     res.status(500).json({ success: false, message: "Failed to send OTP" });
   }
 };
@@ -91,7 +90,6 @@ exports.verifyOtp = async (req, res) => {
       .status(200)
       .json({ success: true, message: "OTP verified successfully" });
   } catch (err) {
-    console.error("OTP verification error:", err);
     res.status(500).json({ success: false, message: "Verification failed" });
   }
 };

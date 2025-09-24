@@ -238,18 +238,6 @@ const TeamsList = ({ adminName }) => {
             <div className="row">
               <div className="col-lg-12">
                 <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
-                  <div className="input-icon w-120 position-relative me-2">
-                    <DatePicker
-                      selected={createdDate}
-                      onChange={(date) => setCreatedDate(date)}
-                      className="form-control datetimepicker"
-                      placeholderText="Created Date"
-                      dateFormat="dd/MM/yyyy"
-                    />
-                    <span className="input-icon-addon">
-                      <i className="ti ti-calendar text-gray-9"></i>
-                    </span>
-                  </div>
                   <div className="input-icon-start position-relative me-2">
                     <span className="input-icon-addon">
                       <SearchOutlined />

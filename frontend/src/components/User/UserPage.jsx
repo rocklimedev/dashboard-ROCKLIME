@@ -2,7 +2,13 @@ import React from "react";
 import { useParams, Link } from "react-router-dom";
 import { useGetUserByIdQuery } from "../../api/userApi";
 import Avatar from "react-avatar"; // Import react-avatar
-
+import {
+  LeftOutlined,
+  ReloadOutlined,
+  NodeCollapseOutlined,
+  TeamOutlined,
+  CalendarOutlined,
+} from "@ant-design/icons";
 const UserPage = () => {
   const { userId } = useParams(); // Get userId from URL
 
@@ -114,7 +120,8 @@ const UserPage = () => {
         <div className="page-header">
           <div>
             <Link to="/users/list" className="d-inline-flex align-items-center">
-              <i className="ti ti-chevron-left me-2"></i>Back to List
+              <LeftOutlined />
+              Back to List
             </Link>
           </div>
           <ul className="table-top-head">
@@ -125,7 +132,7 @@ const UserPage = () => {
                 title="Refresh"
                 onClick={refetch}
               >
-                <i className="ti ti-refresh"></i>
+                <ReloadOutlined />
               </a>
             </li>
             <li className="me-2">
@@ -135,7 +142,7 @@ const UserPage = () => {
                 title="Collapse"
                 id="collapse-header"
               >
-                <i className="ti ti-chevron-up"></i>
+                <NodeCollapseOutlined />
               </a>
             </li>
           </ul>
@@ -171,14 +178,14 @@ const UserPage = () => {
               <div className="card-body">
                 <div className="d-flex align-items-center justify-content-between mb-2">
                   <span className="d-inline-flex align-items-center">
-                    <i className="ti ti-star me-2"></i>
+                    <TeamOutlined />
                     Team
                   </span>
                   <p className="text-dark">{team}</p>
                 </div>
                 <div className="d-flex align-items-center justify-content-between">
                   <span className="d-inline-flex align-items-center">
-                    <i className="ti ti-calendar-check me-2"></i>
+                    <CalendarOutlined />
                     Date Of Join
                   </span>
                   <p className="text-dark">{formatDate(user.createdAt)}</p>

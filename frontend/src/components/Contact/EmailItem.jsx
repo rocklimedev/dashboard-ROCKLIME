@@ -6,7 +6,7 @@ import {
   useDeleteQueryMutation,
 } from "../../api/contactApi";
 import Avatar from "react-avatar";
-
+import { MoreOutlined } from "@ant-design/icons";
 const EmailItem = ({ email, onReplyClick }) => {
   const dispatch = useDispatch();
   const [deleteQuery] = useDeleteQueryMutation();
@@ -86,7 +86,7 @@ const EmailItem = ({ email, onReplyClick }) => {
                     data-bs-toggle="dropdown"
                     aria-expanded="false"
                   >
-                    <i className="ti ti-dots"></i>
+                    <MoreOutlined />
                   </button>
                   <ul className="dropdown-menu dropdown-menu-end p-3">
                     <li>

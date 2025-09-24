@@ -93,24 +93,17 @@ exports.register = async (req, res, next) => {
 exports.verifyAccount = async (req, res, next) => {
   try {
     const { token } = req.params;
-    console.log("Verifying token:", token);
 
     const verificationToken = await VerificationToken.findOne({ token });
     if (!verificationToken) {
-      console.log("Token not found in database:", token);
       return res.status(400).json({ message: "Invalid or expired token" });
     }
 
     if (verificationToken.isVerified) {
-      console.log(
-        "Token already verified for userId:",
-        verificationToken.userId
-      );
       return res.status(400).json({ message: "Account already verified" });
     }
 
     if (verificationToken.expiresAt < new Date()) {
-      console.log("Token expired:", verificationToken.expiresAt);
       await VerificationToken.deleteOne({ token });
       return res.status(400).json({ message: "Token has expired" });
     }
@@ -118,9 +111,7 @@ exports.verifyAccount = async (req, res, next) => {
     let decoded;
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET);
-      console.log("Decoded token userId:", decoded.userId);
     } catch (err) {
-      console.error("JWT verification error:", err);
       if (err.name === "TokenExpiredError") {
         await VerificationToken.deleteOne({ token });
         return res.status(400).json({ message: "Token has expired" });
@@ -130,7 +121,6 @@ exports.verifyAccount = async (req, res, next) => {
 
     const user = await User.findByPk(decoded.userId);
     if (!user) {
-      console.log("User not found for userId:", decoded.userId);
       return res.status(400).json({ message: "User not found" });
     }
 
@@ -155,7 +145,6 @@ exports.verifyAccount = async (req, res, next) => {
       email: user.email,
     });
   } catch (err) {
-    console.error("Verify account error:", err);
     next(err);
   }
 };
@@ -451,40 +440,31 @@ exports.refreshToken = async (req, res) => {
 
 exports.resendVerificationEmail = async (req, res, next) => {
   try {
-    console.log("Request body:", req.body); // Debug: Log the entire request body
     const { email } = req.body;
-    console.log("Extracted email:", email); // Debug: Log the extracted email
 
     if (!email || typeof email !== "string" || email.trim() === "") {
-      console.log("Validation failed for email:", email); // Debug: Log why validation failed
       return res.status(400).json({ message: "Valid email is required" });
     }
 
     // Optional: Add stricter email format validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      console.log("Invalid email format:", email); // Debug
       return res.status(400).json({ message: "Invalid email format" });
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-    console.log("Normalized email:", normalizedEmail); // Debug
 
     const user = await User.findOne({ where: { email: normalizedEmail } });
     if (!user) {
-      console.log("User not found for email:", normalizedEmail); // Debug
       return res.status(400).json({ message: "User not found" });
     }
 
-    console.log("Found user:", user.userId, user.status); // Debug
     if (user.status === "active") {
-      console.log("User already verified:", user.userId); // Debug
       return res.status(400).json({ message: "Account is already verified" });
     }
 
     // Delete any existing verification tokens for this user
     await VerificationToken.destroy({ where: { userId: user.userId } });
-    console.log("Deleted existing tokens for user:", user.userId); // Debug
 
     // Generate a new verification token
     const verificationToken = jwt.sign(
@@ -492,7 +472,6 @@ exports.resendVerificationEmail = async (req, res, next) => {
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
-    console.log("Generated token:", verificationToken); // Debug
 
     // Save the new verification token
     await VerificationToken.create({
@@ -502,25 +481,22 @@ exports.resendVerificationEmail = async (req, res, next) => {
       isVerified: false,
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h from now
     });
-    console.log("Saved new token for user:", user.userId); // Debug
 
     // Send the verification email
     const emailContent = emails.accountVerificationEmail(
       req.headers.host,
       verificationToken
     );
-    console.log("Email content prepared:", emailContent.subject); // Debug
+
     await emails.sendMail(
       user.email,
       emailContent.subject,
       emailContent.text,
       emailContent.html
     );
-    console.log("Email sent to:", user.email); // Debug
 
     res.status(200).json({ message: "Verification email sent successfully" });
   } catch (err) {
-    console.error("Error in resendVerificationEmail:", err); // Debug: Log full error
     next(err);
   }
 };
@@ -602,7 +578,6 @@ exports.changePassword = async (req, res, next) => {
 
     res.status(200).json({ message: "Password changed successfully" });
   } catch (err) {
-    console.error("Change password error:", err);
     next(err);
   }
 };

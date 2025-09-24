@@ -76,33 +76,6 @@ const ComingSoon = () => {
               </a>
             </div>
           </div>
-          <ul className="social-media-icons">
-            <li>
-              <a href="#">
-                <i className="fab fa-facebook-f"></i>
-              </a>
-            </li>
-            <li>
-              <a href="#">
-                <i className="fab fa-instagram"></i>
-              </a>
-            </li>
-            <li>
-              <a href="#">
-                <i className="fab fa-twitter"></i>
-              </a>
-            </li>
-            <li>
-              <a href="#">
-                <i className="fab fa-pinterest-p"></i>
-              </a>
-            </li>
-            <li>
-              <a href="#">
-                <i className="fab fa-linkedin"></i>
-              </a>
-            </li>
-          </ul>
         </div>
       </div>
     </div>
