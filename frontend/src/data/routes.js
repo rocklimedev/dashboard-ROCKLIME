@@ -76,6 +76,7 @@ import EmailVerification from "../components/Auth/EmailVerifications";
 import POWrapper from "../components/Orders/POWrapper";
 import AddPurchaseOrder from "../components/Orders/AddPurchaseOrder";
 import PODetails from "../components/Orders/PODetails";
+import LogTable from "../components/Logs/LogTable";
 const masterRoutes = [
   {
     path: "/",
@@ -451,6 +452,13 @@ const masterRoutes = [
         element: <ComingSoon />,
       },
     ],
+  },
+  {
+    path: "/logging",
+    name: "Logs",
+    icon: <IoDocumentAttach />,
+    element: <LogTable />,
+    isSidebarActive: true,
   },
   {
     path: "/email",

@@ -33,6 +33,12 @@ const validateItems = async (items, transaction) => {
 };
 
 // Create a new purchase order
+// Utility function to generate random PO number
+function generateRandomPONumber() {
+  const randomNumber = Math.floor(100000 + Math.random() * 900000); // 6-digit number
+  return `PO-${randomNumber}`;
+}
+
 exports.createPurchaseOrder = async (req, res) => {
   const t = await sequelize.transaction();
   try {
@@ -55,7 +61,18 @@ exports.createPurchaseOrder = async (req, res) => {
     const totalAmount = await validateItems(items, t);
 
     // Generate unique order number
-    const poNumber = `PO-${uuidv4().slice(0, 8)}`;
+    let poNumber;
+    let isUnique = false;
+
+    // Ensure uniqueness in the DB
+    while (!isUnique) {
+      poNumber = generateRandomPONumber();
+      const existingPO = await PurchaseOrder.findOne({
+        where: { poNumber },
+        transaction: t,
+      });
+      if (!existingPO) isUnique = true;
+    }
 
     // Create Sequelize PurchaseOrder
     const purchaseOrder = await PurchaseOrder.create(
@@ -92,6 +109,7 @@ exports.createPurchaseOrder = async (req, res) => {
     });
   }
 };
+
 // Update a purchase order
 exports.updatePurchaseOrder = async (req, res) => {
   const t = await sequelize.transaction();
