@@ -1,9 +1,9 @@
-// server.js (updated)
 require("dotenv").config();
 const socketio = require("socket.io");
 const express = require("express");
 const cors = require("cors");
 const db = require("./config/database");
+const logger = require("./middleware/logger"); // Import logger middleware
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
 const vendorRoutes = require("./routes/vendor");
@@ -35,6 +35,8 @@ const keys = require("./config/keys");
 const otpRoutes = require("./routes/otp");
 const productMetaRoutes = require("./routes/productMeta");
 const purchaseOrderRoutes = require("./routes/purchaseOrder");
+const logsRoutes = require("./routes/apiLog"); // Add logs route
+
 const app = express();
 
 // CORS configuration
@@ -58,12 +60,6 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Log incoming requests for debugging
-app.use((req, res, next) => {
-  console.log(`${req.method} ${req.url}`);
-  next();
-});
-
 // Security headers
 app.use(
   helmet({
@@ -71,6 +67,15 @@ app.use(
     frameguard: true,
   })
 );
+
+// Apply logger middleware globally
+app.use(require("./middleware/logger"));
+
+// Log incoming requests for debugging (optional)
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  next();
+});
 
 // Database Setup
 connectMongoDB();
@@ -104,6 +109,8 @@ app.use("/api/teams", teamRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/purchase-orders", purchaseOrderRoutes);
 app.use("/api/product-meta", productMetaRoutes);
+app.use("/api/logs", logsRoutes); // Add logs route
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error("Server error:", err);
@@ -126,6 +133,6 @@ const server = app.listen(keys.port, async () => {
 
 // Initialize Socket
 const io = socketio(server, {
-  cors: corsOptions, // Use same CORS options for Socket.io
+  cors: corsOptions,
 });
 require("./socket")(io);

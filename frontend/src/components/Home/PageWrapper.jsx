@@ -46,15 +46,18 @@ const PageWrapper = () => {
   const endDate = new Date(today.getTime() + 24 * 60 * 60 * 1000)
     .toISOString()
     .split("T")[0];
-  const oneWeekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const oneMonthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
 
   const {
     data: profile,
     isLoading: loadingProfile,
     error: profileError,
   } = useGetProfileQuery();
-  const { data: ordersData, isLoading: loadingOrders } = useGetAllOrdersQuery();
+  // Enable polling for real-time order updates (every 30 seconds)
+  const {
+    data: ordersData,
+    isLoading: loadingOrders,
+    refetch: refetchOrders,
+  } = useGetAllOrdersQuery(undefined, { pollingInterval: 30000 }); // Poll every 30 seconds
   const {
     data: customersData,
     isLoading: isCustomersLoading,
@@ -80,7 +83,7 @@ const PageWrapper = () => {
     refetch: refetchProducts,
   } = useGetAllProductsQuery();
   const {
-    data: quotationData = [], // Fallback to empty array
+    data: quotationData = [],
     isLoading: loadingQuotations,
     error: quotationsError,
     refetch: refetchQuotations,
@@ -157,12 +160,7 @@ const PageWrapper = () => {
 
   const filterByTime = (items, dateField) => {
     if (!Array.isArray(items)) return [];
-    const weekItems = items.filter(
-      (item) => new Date(item[dateField]) >= oneWeekAgo
-    );
-    return weekItems.length > 0
-      ? weekItems
-      : items.filter((item) => new Date(item[dateField]) >= oneMonthAgo);
+    return items; // No time-based filtering for all trends
   };
 
   const filteredProducts = useMemo(
@@ -235,19 +233,29 @@ const PageWrapper = () => {
 
   const COLORS = ["#4A90E2", "#F5A623", "#7B68EE"];
 
+  // Modified barChartData to show all order trends, grouped by day
   const barChartData = useMemo(() => {
-    const days = Array.from({ length: 7 }, (_, i) => {
-      const date = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
-      return date.toISOString().split("T")[0];
-    }).reverse();
-    return days.map((date) => ({
-      date: new Date(date).toLocaleDateString("en-US", { weekday: "short" }),
-      orders: orders.filter(
-        (order) =>
-          new Date(order.createdAt).toISOString().split("T")[0] === date
-      ).length,
-    }));
-  }, [orders, today]);
+    // Create a map to group orders by date
+    const orderCountsByDate = orders.reduce((acc, order) => {
+      const orderDate = new Date(order.createdAt);
+      if (isNaN(orderDate)) return acc; // Skip invalid dates
+      const dateKey = orderDate.toISOString().split("T")[0]; // YYYY-MM-DD
+      acc[dateKey] = (acc[dateKey] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Convert to array and sort by date
+    return Object.entries(orderCountsByDate)
+      .map(([date, orders]) => ({
+        date: new Date(date).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        }),
+        orders,
+      }))
+      .sort((a, b) => new Date(a.date) - new Date(b.date)) // Sort by date ascending
+      .slice(-30); // Limit to last 30 days for performance (adjust as needed)
+  }, [orders]);
 
   const topSellingProducts = useMemo(() => {
     if (loadingQuotations) return [];
@@ -523,9 +531,9 @@ const PageWrapper = () => {
               </div>
             </div>
             <div className="card bar-graph">
-              <h4>Order Trends (Last 7 Days)</h4>
+              <h4>All Order Trends</h4>
               <div className="card-body">
-                {barChartData.some((d) => d.orders > 0) ? (
+                {barChartData.length > 0 ? (
                   <ResponsiveContainer width="100%" height={200}>
                     <BarChart data={barChartData}>
                       <CartesianGrid strokeDasharray="3 3" />
@@ -546,7 +554,7 @@ const PageWrapper = () => {
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
-                  <p>No orders in the last 7 days.</p>
+                  <p>No orders available.</p>
                 )}
               </div>
             </div>

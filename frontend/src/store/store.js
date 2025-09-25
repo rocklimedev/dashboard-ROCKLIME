@@ -26,9 +26,11 @@ import { productMetaApi } from "../api/productMetaApi";
 import { contactApi } from "../api/contactApi";
 import emailReducer from "../api/emailSlice";
 import { poApi } from "../api/poApi";
+import { logApi } from "../api/logApi";
 export const store = configureStore({
   reducer: {
     email: emailReducer,
+    [logApi.reducerPath]: logApi.reducer,
     [contactApi.reducerPath]: contactApi.reducer,
     [productMetaApi.reducerPath]: productMetaApi.reducer,
     [brandParentCategoryApi.reducerPath]: brandParentCategoryApi.reducer,
@@ -60,6 +62,7 @@ export const store = configureStore({
     getDefaultMiddleware().concat(
       contactApi.middleware,
       poApi.middleware,
+      logApi.middleware,
       productMetaApi.middleware,
       vendorApi.middleware,
       brandParentCategoryApi.middleware,

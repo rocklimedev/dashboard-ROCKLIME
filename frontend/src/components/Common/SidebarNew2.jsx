@@ -1,50 +1,38 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { ChevronsLeft } from "react-feather";
 import masterRoutes from "../../data/routes";
 import logo from "../../assets/img/logo.png";
 import logo_small from "../../assets/img/fav_icon.png";
 import { DownCircleOutlined } from "@ant-design/icons";
+
 const SidebarNew = ({
   isSidebarOpen,
   toggleSidebar,
   layoutMode = "vertical",
 }) => {
   const [openMenu, setOpenMenu] = useState(null);
-  const [horizontalOpenMenu, setHorizontalOpenMenu] = useState(null);
-  const [twoColOpenMenu, setTwoColOpenMenu] = useState({});
-  const [activeTab, setActiveTab] = useState("dashboard");
 
   const toggleDropdown = (index) => {
     setOpenMenu((prevIndex) => (prevIndex === index ? null : index));
   };
 
-  const toggleHorizontalDropdown = (index) => {
-    setHorizontalOpenMenu((prevIndex) => (prevIndex === index ? null : index));
-  };
-
-  const toggleTwoColDropdown = (tabId, index) => {
-    setTwoColOpenMenu((prev) => ({
-      ...prev,
-      [tabId]: prev[tabId] === index ? null : index,
-    }));
-  };
-
-  const handleTabChange = (tabId) => {
-    setActiveTab(tabId);
+  // Close all submenus when a route is clicked
+  const handleRouteClick = () => {
+    setOpenMenu(null);
   };
 
   const VerticalSidebar = () => (
     <div className={`sidebar ${isSidebarOpen ? "active" : ""}`} id="sidebar">
       <div className={`sidebar-logo ${isSidebarOpen ? "active" : ""}`}>
-        <Link to="/" className="logo logo-normal">
+        <NavLink to="/" className="logo logo-normal">
           <img src={logo} alt="Logo" />
-        </Link>
-        <Link to="/" className="logo-small">
+        </NavLink>
+        <NavLink to="/" className="logo-small">
           <img src={logo_small} alt="Logo" />
-        </Link>
+        </NavLink>
         <a
-          id="toggle_btn" // Ensure this matches Header and handleClickOutside
+          id="toggle_btn"
           href="#"
           onClick={(e) => {
             e.preventDefault();
@@ -81,10 +69,14 @@ const SidebarNew = ({
                       <span className="menu-arrow"></span>
                     </a>
                   ) : (
-                    <Link to={section.path}>
+                    <NavLink
+                      to={section.path}
+                      className={({ isActive }) => (isActive ? "active" : "")}
+                      onClick={handleRouteClick}
+                    >
                       {section.icon || <DownCircleOutlined />}
                       <span>{section.name}</span>
-                    </Link>
+                    </NavLink>
                   )}
                   {section.submenu?.length > 0 && (
                     <ul
@@ -117,10 +109,16 @@ const SidebarNew = ({
                                 <span className="menu-arrow inside-submenu"></span>
                               </a>
                             ) : (
-                              <Link to={sub.path}>
+                              <NavLink
+                                to={sub.path}
+                                className={({ isActive }) =>
+                                  isActive ? "active" : ""
+                                }
+                                onClick={handleRouteClick}
+                              >
                                 {sub.icon || <DownCircleOutlined />}
-                                {sub.name}
-                              </Link>
+                                <span>{sub.name}</span>
+                              </NavLink>
                             )}
                             {sub.submenu?.length > 0 && (
                               <ul
@@ -134,10 +132,16 @@ const SidebarNew = ({
                                   .filter((subSub) => subSub.isSidebarActive)
                                   .map((subSub, subSubIdx) => (
                                     <li key={subSubIdx}>
-                                      <Link to={subSub.path}>
+                                      <NavLink
+                                        to={subSub.path}
+                                        className={({ isActive }) =>
+                                          isActive ? "active" : ""
+                                        }
+                                        onClick={handleRouteClick}
+                                      >
                                         {subSub.icon || <DownCircleOutlined />}
-                                        {subSub.name}
-                                      </Link>
+                                        <span>{subSub.name}</span>
+                                      </NavLink>
                                     </li>
                                   ))}
                               </ul>
