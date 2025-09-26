@@ -291,3 +291,24 @@
   min-width: 2rem;
   min-height: 2rem;
 }
+/* Low Stock list items */
+.low-stock li {
+  display: flex;
+  justify-content: space-between; /* Pushes content to both ends */
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #eee;
+  font-size: clamp(0.75rem, 2.5vw, 0.875rem);
+  cursor: pointer;
+}
+
+/* Ensure the product name and quantity are properly aligned */
+.low-stock li span.product-name {
+  flex-grow: 1; /* Allows the product name to take up available space */
+  text-align: left;
+}
+
+.low-stock li span.product-quantity {
+  flex-shrink: 0; /* Prevents the quantity from shrinking */
+  text-align: right;
+}

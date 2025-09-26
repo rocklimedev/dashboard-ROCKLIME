@@ -82,7 +82,7 @@ const ForgotPassword = () => {
   return (
     <div className="main-wrapper">
       <div className="account-content">
-        <div className="login-wrapper login-new">
+        <div className="login-wrapper login-new-2">
           <div className="row w-100">
             <div className="col-lg-5 mx-auto">
               <div className="login-content user-login">

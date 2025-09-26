@@ -49976,6 +49976,59 @@ a.link-hover:hover {
   }
 }
 
+.login-wrapper.login-new-2{
+  overflow: auto;
+  height: 100vh;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  align-items: center;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  justify-content: center;
+  -webkit-justify-content: center;
+  -ms-flex-pack: center;
+  background-image: url(../img/authentication/banner_2.png);
+  background-position: bottom center;
+  background-repeat: no-repeat;
+}
+.login-wrapper.login-new-2
+  .login-content.user-login
+  .login-userset
+  form
+  .otp-box {
+  margin-bottom: 34px;
+}
+.login-wrapper.login-new-2
+  .login-content.user-login
+  .login-userset
+  form
+  .otp-box
+  input {
+  width: 74px;
+  height: 74px;
+  background: #ffffff;
+  border: 1px solid #e1e1e1;
+  border-radius: 8px;
+  text-align: center;
+  margin-right: 15px;
+  font-weight: 700;
+  font-size: 26px;
+  color: #000000;
+  outline: none;
+}
+@media (max-width: 574.98px) {
+  .login-wrapper.login-new-2
+    .login-content.user-login
+    .login-userset
+    form
+    .otp-box
+    input {
+    width: 40px;
+    height: 40px;
+  }
+}
+
 @media (max-width: 574.98px) {
   .copyright-text p {
     text-align: center;
