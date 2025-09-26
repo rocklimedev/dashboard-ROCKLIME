@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
 import {
   Form,
   Spinner,
@@ -26,7 +26,6 @@ import moment from "moment";
 
 const { Option } = Select;
 
-// Define status values from the database schema
 const STATUS_VALUES = [
   "CREATED",
   "PREPARING",
@@ -40,7 +39,6 @@ const STATUS_VALUES = [
   "ONHOLD",
 ];
 
-// Statuses where invoiceLink should be enabled
 const INVOICE_EDITABLE_STATUSES = [
   "INVOICE",
   "DISPATCHED",
@@ -52,6 +50,7 @@ const AddNewOrder = ({ adminName }) => {
   const { id } = useParams();
   const isEditMode = Boolean(id);
   const navigate = useNavigate();
+  const location = useLocation(); // To access navigation state
   const [createOrder] = useCreateOrderMutation();
   const [updateOrder] = useUpdateOrderByIdMutation();
 
@@ -93,20 +92,23 @@ const AddNewOrder = ({ adminName }) => {
     ? allOrdersData.orders
     : [];
 
+  // Get quotation data from navigation state
+  const quotationData = location.state?.quotationData || {};
+
   // State
   const [formData, setFormData] = useState({
-    title: "",
-    createdFor: "",
+    title: quotationData.title || "",
+    createdFor: quotationData.createdFor || "",
     createdBy: user.userId || "",
     assignedTo: "",
     pipeline: "",
     status: "CREATED",
-    dueDate: "",
+    dueDate: quotationData.dueDate || "",
     followupDates: [],
-    source: "",
+    source: quotationData.source || "",
     teamId: "",
     priority: "medium",
-    description: "",
+    description: quotationData.description || "",
     invoiceLink: isEditMode ? "" : null,
     orderNo: "",
   });
@@ -114,7 +116,9 @@ const AddNewOrder = ({ adminName }) => {
   const [showNewTeamModal, setShowNewTeamModal] = useState(false);
   const [customerSearch, setCustomerSearch] = useState("");
   const [filteredCustomers, setFilteredCustomers] = useState([]);
-  const [descriptionLength, setDescriptionLength] = useState(0);
+  const [descriptionLength, setDescriptionLength] = useState(
+    quotationData.description?.length || 0
+  );
 
   // Generate orderNo in create mode
   useEffect(() => {
@@ -153,7 +157,7 @@ const AddNewOrder = ({ adminName }) => {
         priority: order.priority || "medium",
         description: order.description || "",
         invoiceLink: order.invoiceLink || "",
-        orderNo: order.orderNo || "", // Load existing order number
+        orderNo: order.orderNo || "",
       });
       setDescriptionLength((order.description || "").length);
     }
@@ -200,7 +204,6 @@ const AddNewOrder = ({ adminName }) => {
         [name]: value,
       }));
     } else if (name === "orderNo" && !isEditMode) {
-      // Only allow orderNo changes in create mode
       setFormData((prev) => ({
         ...prev,
         [name]: value === "" ? "" : value,
@@ -372,7 +375,7 @@ const AddNewOrder = ({ adminName }) => {
       toast.error(errorMessage);
     }
   };
-  // Loading state
+
   if (
     isOrderLoading ||
     isTeamsLoading ||
@@ -397,7 +400,6 @@ const AddNewOrder = ({ adminName }) => {
     );
   }
 
-  // Error state
   if (orderError || customersError || profileError || allOrdersError) {
     return (
       <div className="content">
@@ -504,19 +506,21 @@ const AddNewOrder = ({ adminName }) => {
                   </Form.Group>
                 </div>
 
-                <Form.Group className="mb-3">
-                  <Form.Label>Order Number</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="orderNo"
-                    value={formData.orderNo || "Generating..."}
-                    onChange={(e) =>
-                      handleChange(e.target.name, e.target.value)
-                    }
-                    placeholder="Enter order number (e.g., 2708202500001)"
-                    disabled={true}
-                  />
-                </Form.Group>
+                <div className="col-lg-6">
+                  <Form.Group className="mb-3">
+                    <Form.Label>Order Number</Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="orderNo"
+                      value={formData.orderNo || "Generating..."}
+                      onChange={(e) =>
+                        handleChange(e.target.name, e.target.value)
+                      }
+                      placeholder="Enter order number (e.g., 2708202500001)"
+                      disabled={true}
+                    />
+                  </Form.Group>
+                </div>
               </div>
 
               <div className="row">
