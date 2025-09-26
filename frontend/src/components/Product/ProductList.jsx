@@ -127,9 +127,9 @@ const ProductsList = () => {
     const companyCodeEntry = metaDetails.find(
       (detail) => detail.slug?.toLowerCase() === "companycode"
     );
-    return companyCodeEntry ? companyCodeEntry.value : "N/A";
+    // Coerce the value to a string, default to "N/A" if undefined or null
+    return companyCodeEntry ? String(companyCodeEntry.value) : "N/A";
   };
-
   const products = useMemo(
     () => (Array.isArray(productsData) ? productsData : []),
     [productsData]

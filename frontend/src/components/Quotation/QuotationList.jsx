@@ -12,7 +12,7 @@ import {
   FaTrash,
   FaEdit,
   FaFileInvoice,
-} from "react-icons/fa"; // Added FaFileInvoice
+} from "react-icons/fa";
 import QuotationProductModal from "./QuotationProductModal";
 import DeleteModal from "../Common/DeleteModal";
 import { toast } from "sonner";
@@ -20,8 +20,9 @@ import { Dropdown, Menu, Button } from "antd";
 import { MoreOutlined } from "@ant-design/icons";
 import PageHeader from "../Common/PageHeader";
 import DataTablePagination from "../Common/DataTablePagination";
-import { useCreateInvoiceMutation } from "../../api/invoiceApi"; // Import the invoice API hook
+import { useCreateInvoiceMutation } from "../../api/invoiceApi";
 import CreateInvoiceFromQuotation from "../Invoices/CreateInvoiceFromQuotation";
+
 const QuotationList = () => {
   const navigate = useNavigate();
   const {
@@ -34,7 +35,7 @@ const QuotationList = () => {
   const { data: usersData } = useGetAllUsersQuery();
   const [deleteQuotation, { isLoading: isDeleting }] =
     useDeleteQuotationMutation();
-  const [createInvoice] = useCreateInvoiceMutation(); // Hook for creating invoice
+  const [createInvoice] = useCreateInvoiceMutation();
 
   const quotations = quotationsData || [];
   const customers = customersData?.data || [];
@@ -42,10 +43,10 @@ const QuotationList = () => {
 
   const [showProductModal, setShowProductModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showInvoiceModal, setShowInvoiceModal] = useState(false); // State for invoice modal
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [quotationToDelete, setQuotationToDelete] = useState(null);
-  const [selectedQuotation, setSelectedQuotation] = useState(null); // State for selected quotation
+  const [selectedQuotation, setSelectedQuotation] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("Recently Added");
@@ -74,7 +75,6 @@ const QuotationList = () => {
     return user ? user.name : "Unknown";
   };
 
-  // Memoized customer map for CreateInvoiceFromQuotation
   const customerMap = useMemo(() => {
     return customers.reduce((map, customer) => {
       map[customer.customerId] = customer.name;
@@ -82,7 +82,6 @@ const QuotationList = () => {
     }, {});
   }, [customers]);
 
-  // Memoized grouped quotations for tab-based filtering
   const groupedQuotations = useMemo(
     () => ({
       All: quotations,
@@ -97,7 +96,6 @@ const QuotationList = () => {
     [quotations]
   );
 
-  // Filtered and sorted quotations
   const filteredQuotations = useMemo(() => {
     let result = groupedQuotations[activeTab] || [];
 
@@ -137,13 +135,11 @@ const QuotationList = () => {
     return result;
   }, [groupedQuotations, activeTab, searchTerm, sortBy]);
 
-  // Paginated quotations
   const currentQuotations = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return filteredQuotations.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredQuotations, currentPage]);
 
-  // Format data for tableData prop
   const formattedTableData = useMemo(() => {
     return currentQuotations.map((quotation) => ({
       quotationId: quotation.quotationId,
@@ -165,7 +161,6 @@ const QuotationList = () => {
     }));
   }, [currentQuotations, customers, users]);
 
-  // Handlers
   const handleAddQuotation = () => navigate("/quotations/add");
 
   const handleDeleteClick = (quotation) => {
@@ -218,6 +213,25 @@ const QuotationList = () => {
   const handleCloseInvoiceModal = () => {
     setShowInvoiceModal(false);
     setSelectedQuotation(null);
+  };
+
+  // New handler for Convert to Order
+  const handleConvertToOrder = (quotation) => {
+    navigate("/order/add", {
+      state: {
+        quotationData: {
+          title: quotation.document_title || "",
+          createdFor: quotation.customerId || "",
+          dueDate: quotation.due_date || "",
+          source: quotation.reference_number
+            ? `Quotation #${quotation.reference_number}`
+            : "",
+          description: `Converted from Quotation #${
+            quotation.reference_number || "N/A"
+          }`,
+        },
+      },
+    });
   };
 
   const handlePageChange = ({ selected }) => {
@@ -310,7 +324,7 @@ const QuotationList = () => {
                       <table className="table table-hover">
                         <thead>
                           <tr>
-                            <th>S.No.</th> {/* New column */}
+                            <th>S.No.</th>
                             <th>Quotation Title</th>
                             <th>Quotation Date</th>
                             <th>Due Date</th>
@@ -326,8 +340,7 @@ const QuotationList = () => {
                             <tr key={quotation.quotationId}>
                               <td>
                                 {(currentPage - 1) * itemsPerPage + index + 1}
-                              </td>{" "}
-                              {/* S.No. */}
+                              </td>
                               <td>
                                 <Link
                                   to={`/quotations/${quotation.quotationId}`}
@@ -407,6 +420,18 @@ const QuotationList = () => {
                                         <FaTrash style={{ marginRight: 8 }} />
                                         Delete
                                       </Menu.Item>
+                                      <Menu.Item
+                                        key="convert-to-order"
+                                        onClick={() =>
+                                          handleConvertToOrder(quotation)
+                                        }
+                                        title="Convert to Order"
+                                      >
+                                        <FaFileInvoice
+                                          style={{ marginRight: 8 }}
+                                        />
+                                        Convert to Order
+                                      </Menu.Item>
                                     </Menu>
                                   }
                                   trigger={["click"]}
@@ -465,7 +490,7 @@ const QuotationList = () => {
             onClose={handleCloseInvoiceModal}
             createInvoice={createInvoice}
             customerMap={customerMap}
-            addressMap={{}} // Pass addressMap if needed, or fetch within CreateInvoiceFromQuotation
+            addressMap={{}}
           />
         )}
       </div>

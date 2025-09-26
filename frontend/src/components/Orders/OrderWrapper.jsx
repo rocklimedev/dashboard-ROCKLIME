@@ -338,7 +338,6 @@ const OrderWrapper = () => {
           <PageHeader
             title="Orders"
             subtitle="Manage your Orders"
-            onAdd={handleOpenAddOrder}
             tableData={paginatedOrders}
           />
 
