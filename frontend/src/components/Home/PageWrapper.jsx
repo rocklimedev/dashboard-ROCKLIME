@@ -590,7 +590,10 @@ const PageWrapper = () => {
                       onClick={() => handleProductClick(product)}
                       style={{ cursor: "pointer" }}
                     >
-                      {product.name} (Qty: {product.quantity})
+                      <span className="product-name">{product.name}</span>
+                      <span className="product-quantity">
+                        Qty: {product.quantity}
+                      </span>
                     </li>
                   ))
                 ) : (

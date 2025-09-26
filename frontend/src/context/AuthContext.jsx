@@ -21,17 +21,14 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
-  const logout = async () => {
-    try {
-      await authApi.endpoints.logout.initiate().unwrap(); // Call logout API
+  const logout = () => {
+    return new Promise((resolve) => {
       setAuth(null);
       localStorage.removeItem("token");
       sessionStorage.removeItem("token");
-    } catch (error) {
-      console.error("Logout API failed:", error);
-    }
+      resolve();
+    });
   };
-
   return (
     <AuthContext.Provider value={{ auth, setAuth, login, logout }}>
       {children}

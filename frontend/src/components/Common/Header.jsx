@@ -75,14 +75,14 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
 
   const handleLogout = async () => {
     try {
-      await logoutMutation().unwrap();
-      logout(); // <-- Properly reset context and storage
-      navigate("/login");
+      await logoutMutation().unwrap(); // Call the logout API
+      await logout(); // Call the context logout and wait for it to complete
+      navigate("/login", { replace: true }); // Use replace to prevent history stack issues
     } catch (error) {
+      console.error("Logout failed:", error);
       toast.error("Logout failed. Please try again.");
     }
   };
-
   const handleFullscreenToggle = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen();
