@@ -458,7 +458,7 @@ const masterRoutes = [
     name: "Logs",
     icon: <IoDocumentAttach />,
     element: <LogTable />,
-    isSidebarActive: true,
+    isSidebarActive: false,
   },
   {
     path: "/email",
