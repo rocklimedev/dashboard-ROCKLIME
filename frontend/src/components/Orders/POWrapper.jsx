@@ -82,7 +82,9 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
       result = result.filter((po) => {
         const vendorName = po.vendorId ? vendorMap[po.vendorId] || "—" : "N/A";
         return (
-          po.orderNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (po.orderNumber || "")
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
           vendorName.toLowerCase().includes(searchTerm.toLowerCase())
         );
       });
@@ -90,13 +92,17 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
 
     switch (sortBy) {
       case "Ascending":
-        return [...result].sort((a, b) =>
-          a.orderNumber.localeCompare(b.orderNumber)
-        );
+        return [...result].sort((a, b) => {
+          const aOrder = a.orderNumber || "";
+          const bOrder = b.orderNumber || "";
+          return aOrder.localeCompare(bOrder);
+        });
       case "Descending":
-        return [...result].sort((a, b) =>
-          b.orderNumber.localeCompare(a.orderNumber)
-        );
+        return [...result].sort((a, b) => {
+          const aOrder = a.orderNumber || "";
+          const bOrder = b.orderNumber || "";
+          return bOrder.localeCompare(aOrder);
+        });
       case "Recently Added":
         return [...result].sort(
           (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
@@ -117,7 +123,6 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
         return result;
     }
   }, [purchaseOrders, searchTerm, sortBy, vendorMap]);
-
   // Paginated purchase orders (handled by backend)
   const paginatedPOs = filteredPOs;
 
