@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useGetAllUsersQuery } from "../../api/userApi";
 import { useGetAllTeamsQuery } from "../../api/teamApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
-import { useGetAllQuotationsQuery } from "../../api/quotationApi"; // Added import
+import { useGetAllQuotationsQuery } from "../../api/quotationApi";
 import {
   useGetAllOrdersQuery,
   useDeleteOrderMutation,
@@ -17,21 +17,18 @@ import {
   MoreOutlined,
 } from "@ant-design/icons";
 import { Dropdown, Menu, Button } from "antd";
-import QuotationList from "../Quotation/QuotationList";
 import DatesModal from "./DateModal";
 import OnHoldModal from "./OnHoldOrder";
 import DeleteModal from "../Common/DeleteModal";
 import OrderPagination from "./OrderPagination";
 import PageHeader from "../Common/PageHeader";
-import POWrapper from "./POWrapper";
 
 const OrderWrapper = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("orders");
   const [teamMap, setTeamMap] = useState({});
   const [customerMap, setCustomerMap] = useState({});
   const [userMap, setUserMap] = useState({});
-  const [quotationMap, setQuotationMap] = useState({}); // Added state for quotation mapping
+  const [quotationMap, setQuotationMap] = useState({});
   const [showHoldModal, setShowHoldModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -59,7 +56,7 @@ const OrderWrapper = () => {
   const { data: teamsData } = useGetAllTeamsQuery();
   const { data: customersData } = useGetCustomersQuery();
   const { data: usersData } = useGetAllUsersQuery();
-  const { data: quotationsData } = useGetAllQuotationsQuery(); // Added quotation query
+  const { data: quotationsData } = useGetAllQuotationsQuery();
   const {
     data: allData,
     error: allError,
@@ -150,6 +147,16 @@ const OrderWrapper = () => {
     "Due Date Descending",
   ];
 
+  // Helper to get status display
+  const getStatusDisplay = (status) => {
+    return statuses.includes(status) ? status : "CREATED";
+  };
+
+  // Helper to get quotation status
+  const getQuotationStatus = (quotationId) => {
+    return quotationId ? "QUOTATIONED" : "IDLE";
+  };
+
   // Filtered and sorted orders
   const filteredOrders = useMemo(() => {
     let result = orders;
@@ -186,7 +193,7 @@ const OrderWrapper = () => {
           ord.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
           ord.source?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          reference_number.toLowerCase().includes(searchTerm.toLowerCase()) // Added search by reference_number
+          reference_number.toLowerCase().includes(searchTerm.toLowerCase())
         );
       });
     }
@@ -250,6 +257,34 @@ const OrderWrapper = () => {
     const startIndex = (filters.page - 1) * filters.limit;
     return filteredOrders.slice(startIndex, startIndex + filters.limit);
   }, [filteredOrders, filters.page, filters.limit]);
+
+  // Formatted table data for export
+  const tableDataForExport = useMemo(() => {
+    return paginatedOrders.map((order, index) => ({
+      "S.No.": (filters.page - 1) * filters.limit + index + 1,
+      "Order No.": order.orderNo,
+      Status: getStatusDisplay(order.status),
+      Quotation: order.quotationId
+        ? quotationMap[order.quotationId] || "—"
+        : "—",
+      Title: order.title,
+      Customer: order.createdFor ? customerMap[order.createdFor] || "—" : "N/A",
+      Priority: order.priority || "Medium",
+      "Assigned To": order.assignedTo ? teamMap[order.assignedTo] || "—" : "—",
+      "Created By": order.createdBy ? userMap[order.createdBy] || "—" : "N/A",
+      "Due Date": order.dueDate
+        ? new Date(order.dueDate).toLocaleDateString()
+        : "—",
+    }));
+  }, [
+    paginatedOrders,
+    filters.page,
+    filters.limit,
+    customerMap,
+    teamMap,
+    userMap,
+    quotationMap,
+  ]);
 
   // Compute filtered state
   const isFiltered = useMemo(() => {
@@ -352,16 +387,6 @@ const OrderWrapper = () => {
     return diffDays <= 3;
   };
 
-  // Helper to get status display
-  const getStatusDisplay = (status) => {
-    return statuses.includes(status) ? status : "CREATED";
-  };
-
-  // Helper to get quotation status
-  const getQuotationStatus = (quotationId) => {
-    return quotationId ? "QUOTATIONED" : "IDLE";
-  };
-
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -369,7 +394,9 @@ const OrderWrapper = () => {
           <PageHeader
             title="Orders"
             subtitle="Manage your Orders"
-            tableData={paginatedOrders}
+            tableData={tableDataForExport}
+            onAdd={handleOpenAddOrder}
+            exportOptions={{ pdf: true, excel: true }}
           />
 
           <div className="card-body">
@@ -511,7 +538,6 @@ const OrderWrapper = () => {
                         const serialNumber =
                           (filters.page - 1) * filters.limit + index + 1;
 
-                        // Check if "Show Invoice" should be displayed
                         const showInvoiceOption =
                           invoiceOrAboveStatuses.includes(order.status) &&
                           order.invoiceLink &&

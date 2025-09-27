@@ -3,7 +3,7 @@ import { useLocation, Link, useNavigate } from "react-router-dom";
 import { useGetProfileQuery } from "../../api/userApi";
 import { useGetCartQuery } from "../../api/cartApi";
 import { Dropdown, Button, Menu } from "antd";
-import { FaSearch, FaUserCircle } from "react-icons/fa";
+import { FaUserCircle } from "react-icons/fa";
 import { BiFullscreen, BiLogOut } from "react-icons/bi";
 import { toast } from "sonner";
 import Avatar from "react-avatar";
