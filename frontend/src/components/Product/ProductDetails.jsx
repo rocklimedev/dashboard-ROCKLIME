@@ -7,20 +7,17 @@ import {
 import { useGetCategoryByIdQuery } from "../../api/categoryApi";
 import { useGetParentCategoryByIdQuery } from "../../api/parentCategoryApi";
 import { useGetBrandByIdQuery } from "../../api/brandsApi";
+import { useAddProductToCartMutation } from "../../api/cartApi";
+import { useGetProfileQuery } from "../../api/userApi";
 import JsBarcode from "jsbarcode";
-import { toast } from "react-toastify";
-import { Breadcrumb, Button, InputNumber, Rate, Spin, Tabs } from "antd";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Autoplay } from "swiper/modules";
+import { toast } from "sonner";
+import { Breadcrumb, Button, InputNumber, Spin, Tabs, Menu } from "antd";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import { ShoppingCartOutlined } from "@ant-design/icons";
 import ProductCard from "./ProductCard";
 import "./productdetails.css";
-import "swiper/css";
-import "swiper/css/navigation";
 import "react-lazy-load-image-component/src/effects/blur.css";
 import noimage from "../../assets/img/default.png";
-import { Menu } from "antd";
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -30,7 +27,6 @@ const ProductDetails = () => {
     isLoading: isProductLoading,
     refetch: refetchProduct,
   } = useGetProductByIdQuery(id);
-
   const { data: categoryData, isLoading: isCategoryLoading } =
     useGetCategoryByIdQuery(product?.categoryId, {
       skip: !product?.categoryId,
@@ -43,7 +39,9 @@ const ProductDetails = () => {
     data: brandData,
     isLoading: isBrandLoading,
     error: brandError,
-  } = useGetBrandByIdQuery(product?.brandId, { skip: !product?.brandId });
+  } = useGetBrandByIdQuery(product?.brandId, {
+    skip: !product?.brandId,
+  });
   const {
     data: recommendedProducts,
     isLoading: isRecommendedLoading,
@@ -51,13 +49,16 @@ const ProductDetails = () => {
   } = useGetAllProductsByCategoryQuery(product?.categoryId, {
     skip: !product?.categoryId,
   });
-
+  const { data: user, isLoading: userLoading } = useGetProfileQuery();
+  const userId = user?.user?.userId;
+  const [addProductToCart, { isLoading: isCartLoading }] =
+    useAddProductToCartMutation();
+  const [cartLoadingStates, setCartLoadingStates] = useState({});
   const [barcodeData, setBarcodeData] = useState("");
   const [quantity, setQuantity] = useState(1);
-  const [activeSlide, setActiveSlide] = useState(0);
-  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [activeImage, setActiveImage] = useState(0); // Replaced activeSlide with activeImage
+
   const barcodeRef = useRef(null);
-  const swiperRef = useRef(null);
 
   // Parse images
   const getParsedImages = (imageField) => {
@@ -118,22 +119,44 @@ const ProductDetails = () => {
 
   // Add to cart handler
   const handleAddToCart = async (product) => {
-    setIsAddingToCart(true);
+    if (!userId) {
+      toast.error("User not logged in!");
+      return;
+    }
+    const sellingPriceEntry = Array.isArray(product.metaDetails)
+      ? product.metaDetails.find((detail) => detail.slug === "sellingPrice")
+      : null;
+    const sellingPrice = sellingPriceEntry
+      ? parseFloat(sellingPriceEntry.value)
+      : null;
+    if (!sellingPrice || isNaN(sellingPrice)) {
+      toast.error("Invalid product price");
+      return;
+    }
+    if (quantity <= 0 || quantity > product.quantity) {
+      toast.error("Invalid quantity");
+      return;
+    }
+    const productId = product.productId;
+    setCartLoadingStates((prev) => ({ ...prev, [productId]: true }));
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API call
-    } catch {
-      toast.error("Failed to add to cart.");
+      await addProductToCart({
+        userId,
+        productId,
+        quantity,
+      }).unwrap();
+      toast.success(`${product.name} (${quantity}) added to cart!`);
+      setQuantity(1);
+    } catch (error) {
+      toast.error(`Error: ${error.data?.message || "Unknown error"}`);
     } finally {
-      setIsAddingToCart(false);
+      setCartLoadingStates((prev) => ({ ...prev, [productId]: false }));
     }
   };
 
   // Handle thumbnail click
   const handleThumbnailClick = (index) => {
-    setActiveSlide(index);
-    if (swiperRef.current?.swiper) {
-      swiperRef.current.swiper.slideTo(index);
-    }
+    setActiveImage(index);
   };
 
   // Handle quantity change
@@ -142,23 +165,43 @@ const ProductDetails = () => {
       setQuantity(value);
     }
   };
-  // Helper to get selling price from meta array
-  const getSellingPrice = (meta) => {
-    if (!Array.isArray(meta)) return null;
-    const spObj = meta.find((m) => m.title === "sellingPrice");
+
+  // Get selling price from metaDetails
+  const getSellingPrice = (metaDetails) => {
+    const spObj = metaDetails?.find((m) => m.slug === "sellingPrice");
     return spObj ? Number(spObj.value) : null;
   };
 
-  // Only calculate sellingPrice if product exists
-  const sellingPrice = product ? getSellingPrice(product.meta) : null;
-  // Dummy functions for ProductCard (replace with actual implementations)
+  // Get company code from metaDetails
+  const getCompanyCode = (metaDetails) => {
+    if (!Array.isArray(metaDetails)) {
+      return "N/A";
+    }
+    const companyCodeEntry = metaDetails.find(
+      (detail) => detail.slug?.toLowerCase() === "companycode"
+    );
+    return companyCodeEntry ? String(companyCodeEntry.value) : "N/A";
+  };
+
+  // Dummy functions for ProductCard
   const getBrandsName = (brandId) => brandData?.brandName || "Not Branded";
   const getCategoryName = (categoryId) =>
     categoryData?.category?.name || "Uncategorized";
-  const formatPrice = (price) =>
-    price !== null && !isNaN(Number(price))
-      ? `₹${Number(price).toFixed(2)}`
-      : "N/A";
+  const formatPrice = (price, unit) => {
+    if (typeof price === "object" && Array.isArray(unit)) {
+      const metaDetails = unit;
+      const sellingPriceEntry = metaDetails?.find(
+        (detail) => detail.slug === "sellingPrice"
+      );
+      const priceValue = sellingPriceEntry
+        ? parseFloat(sellingPriceEntry.value)
+        : null;
+      return priceValue !== null && !isNaN(priceValue)
+        ? `₹ ${priceValue.toFixed(2)}`
+        : "N/A";
+    }
+    return price !== null && !isNaN(price) ? `₹ ${price.toFixed(2)}` : "N/A";
+  };
   const handleToggleFeatured = (product) => {
     toast.info(`Toggled featured status for ${product.name}`);
   };
@@ -194,7 +237,8 @@ const ProductDetails = () => {
     isProductLoading ||
     isCategoryLoading ||
     isParentCategoryLoading ||
-    isBrandLoading
+    isBrandLoading ||
+    userLoading
   ) {
     return (
       <div className="loading-container">
@@ -239,23 +283,19 @@ const ProductDetails = () => {
       </div>
     );
   }
-  if (!product) {
-    return (
-      <div className="main__product product">
-        <div className="container">
-          <div className="product__inner">
-            <div className="product__wrapper">
-              <p className="error-text">Product not found.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   const images = getParsedImages(product.images);
-  const shareUrl = `${window.location.origin}/product/${product.productId}`;
-  const shareTitle = `Check out ${product.name} on our store!`;
+  const sellingPrice = getSellingPrice(product.metaDetails);
+
+  // Filter related products by brandId and brand_parentcategoriesId
+  const relatedProducts = recommendedProducts
+    ?.filter(
+      (recProduct) =>
+        recProduct.productId !== product.productId &&
+        recProduct.brandId === product.brandId &&
+        recProduct.brand_parentcategoriesId === product.brand_parentcategoriesId
+    )
+    ?.slice(0, 4);
 
   return (
     <div className="page-wrapper">
@@ -298,68 +338,22 @@ const ProductDetails = () => {
           <div className="product__inner">
             {/* Product Gallery */}
             <div className="product__wrapper">
-              <div className="product__swiper product-swiper swiper">
-                <Swiper
-                  modules={[Navigation, Autoplay]}
-                  navigation={{
-                    prevEl: ".product-swiper__prev",
-                    nextEl: ".product-swiper__next",
-                  }}
-                  autoplay={{ delay: 5000, disableOnInteraction: true }}
-                  spaceBetween={10}
-                  slidesPerView={1}
-                  onSwiper={(swiper) => (swiperRef.current = swiper)}
-                  onSlideChange={(swiper) => setActiveSlide(swiper.activeIndex)}
-                >
-                  {images.map((img, idx) => (
-                    <SwiperSlide
-                      key={idx}
-                      className="product-slide swiper-slide"
-                    >
-                      <LazyLoadImage
-                        src={img}
-                        alt={`Product Image ${idx + 1} for ${product.name}`}
-                        effect="blur"
-                        placeholderSrc={noimage}
-                        className="product-slide__img"
-                        onError={(e) => (e.target.src = noimage)}
-                      />
-                    </SwiperSlide>
-                  ))}
-                </Swiper>
-                <div className="product-swiper__prev">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M15 18l-6-6 6-6" />
-                  </svg>
-                </div>
-                <div className="product-swiper__next">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M9 18l6-6-6-6" />
-                  </svg>
-                </div>
+              <div className="product__main-image">
+                <LazyLoadImage
+                  src={images[activeImage] || noimage}
+                  alt={`Product Image for ${product.name}`}
+                  effect="blur"
+                  placeholderSrc={noimage}
+                  className="product-slide__img"
+                  onError={(e) => (e.target.src = noimage)}
+                />
               </div>
               <div className="product__images product-images">
                 {images.map((img, idx) => (
                   <div
                     key={idx}
                     className={`product-images__img ${
-                      activeSlide === idx ? "product-images__img--active" : ""
+                      activeImage === idx ? "product-images__img--active" : ""
                     }`}
                     onClick={() => handleThumbnailClick(idx)}
                   >
@@ -400,58 +394,28 @@ const ProductDetails = () => {
                     Quantity:
                   </span>
                   <div className="product-content-quantity-box__row">
-                    <button
-                      className="product-content-quantity-box__row-btn"
-                      onClick={() => handleQuantityChange(quantity - 1)}
-                      disabled={quantity <= 1}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M5 12h14" />
-                      </svg>
-                    </button>
-                    <input
-                      type="number"
+                    <InputNumber
                       className="product-content-quantity-box__row-input"
                       value={quantity}
-                      onChange={(e) =>
-                        handleQuantityChange(Number(e.target.value))
-                      }
+                      onChange={handleQuantityChange}
                       min={1}
                       max={product.quantity || 1}
+                      controls={true}
                     />
-                    <button
-                      className="product-content-quantity-box__row-btn"
-                      onClick={() => handleQuantityChange(quantity + 1)}
-                      disabled={quantity >= (product.quantity || 1)}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M12 5v14m-7-7h14" />
-                      </svg>
-                    </button>
                   </div>
                 </div>
                 <Button
                   className="product-content-quantity__btn"
                   icon={<ShoppingCartOutlined />}
                   onClick={() => handleAddToCart(product)}
-                  disabled={product.quantity <= 0 || isAddingToCart}
-                  loading={isAddingToCart}
+                  disabled={
+                    product.quantity <= 0 ||
+                    isCartLoading ||
+                    !userId ||
+                    !sellingPrice ||
+                    isNaN(sellingPrice)
+                  }
+                  loading={isCartLoading}
                 >
                   Add to Cart
                 </Button>
@@ -461,13 +425,13 @@ const ProductDetails = () => {
                   ref={barcodeRef}
                   aria-label={`Barcode for ${product.name}`}
                 />
-                <button
+                <Button
                   className="btn btn-print"
                   onClick={handlePrint}
                   disabled={!barcodeData}
                 >
                   Print Barcode
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -504,32 +468,33 @@ const ProductDetails = () => {
                       <h4 className="blog-section-box-content__title">
                         Additional Information
                       </h4>
-                      <p className="blog-section-box-content__text">
-                        <ul className="blog-section-box-content__list">
-                          <li className="blog-section-box-content__list-item">
-                            Product Code: {product.product_code || "N/A"}
+                      <ul className="blog-section-box-content__list">
+                        <li className="blog-section-box-content__list-item">
+                          <span>Product Code:</span>{" "}
+                          {product.product_code || "N/A"}
+                        </li>
+                        <li className="blog-section-box-content__list-item">
+                          <span>SKU:</span> {product.product_code || "N/A"}
+                        </li>
+                        <li className="blog-section-box-content__list-item">
+                          <span>Category:</span>{" "}
+                          {parentCategoryData?.data?.name ||
+                            categoryData?.category?.name ||
+                            "N/A"}
+                        </li>
+                        <li className="blog-section-box-content__list-item">
+                          <span>Brand:</span> {brandData?.brandName || "N/A"}
+                        </li>
+                        {product.metaDetails?.map((meta) => (
+                          <li
+                            key={meta.id}
+                            className="blog-section-box-content__list-item"
+                          >
+                            <span>{meta.title}:</span> {meta.value}{" "}
+                            {meta.unit || ""}
                           </li>
-                          <li className="blog-section-box-content__list-item">
-                            Product Group: {product.productGroup || "N/A"}
-                          </li>
-                          <li className="blog-section-box-content__list-item">
-                            Product Segment: {product.product_segment || "N/A"}
-                          </li>
-
-                          <li className="product-content__list-item">
-                            <span>SKU:</span> {product.product_code || "N/A"}
-                          </li>
-                          <li className="product-content__list-item">
-                            <span>Category:</span>{" "}
-                            {parentCategoryData?.data?.name ||
-                              categoryData?.category?.name ||
-                              "N/A"}
-                          </li>
-                          <li className="product-content__list-item">
-                            <span>Brand:</span> {brandData?.brandName || "N/A"}
-                          </li>
-                        </ul>
-                      </p>
+                        ))}
+                      </ul>
                     </div>
                   ),
                 },
@@ -543,79 +508,33 @@ const ProductDetails = () => {
           <div className="container">
             <div className="shop-section__top shop-section-top">
               <h3 className="shop-section-top__title">Related Products</h3>
-              <div className="shop-section__buttons swiper-buttons">
-                <div className="shop-section__buttons-prev">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M15 18l-6-6 6-6" />
-                  </svg>
-                </div>
-                <div className="shop-section__buttons-next">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M9 18l6-6-6-6" />
-                  </svg>
-                </div>
-              </div>
             </div>
             {isRecommendedLoading ? (
               <div className="loading-container">
                 <Spin size="large" />
               </div>
-            ) : recommendedProducts?.length > 0 ? (
-              <Swiper
-                modules={[Navigation]}
-                navigation={{
-                  prevEl: ".shop-section__buttons-prev",
-                  nextEl: ".shop-section__buttons-next",
-                }}
-                spaceBetween={20}
-                slidesPerView={3}
-                breakpoints={{
-                  0: { slidesPerView: 1 },
-                  640: { slidesPerView: 2 },
-                  1024: { slidesPerView: 3 },
-                }}
-                className="shop-section__swiper shop-section-swiper swiper"
-              >
-                {recommendedProducts
-                  .filter(
-                    (recProduct) => recProduct.productId !== product.productId
-                  )
-                  .slice(0, 4)
-                  .map((recProduct) => (
-                    <SwiperSlide
-                      key={recProduct.productId}
-                      className="shop-section-swiper__slide shop-section-slide swiper-slide"
-                    >
-                      <ProductCard
-                        product={recProduct}
-                        getBrandsName={getBrandsName}
-                        getCategoryName={getCategoryName}
-                        formatPrice={formatPrice}
-                        handleAddToCart={handleAddToCart}
-                        handleToggleFeatured={handleToggleFeatured}
-                        cartLoadingStates={{}}
-                        featuredLoadingStates={{}}
-                        menu={menu}
-                      />
-                    </SwiperSlide>
-                  ))}
-              </Swiper>
+            ) : relatedProducts?.length > 0 ? (
+              <div className="shop-section__products">
+                {relatedProducts.map((recProduct) => (
+                  <div
+                    key={recProduct.productId}
+                    className="shop-section-swiper__slide shop-section-slide"
+                  >
+                    <ProductCard
+                      product={recProduct}
+                      getBrandsName={getBrandsName}
+                      getCategoryName={getCategoryName}
+                      formatPrice={formatPrice}
+                      getCompanyCode={getCompanyCode}
+                      handleAddToCart={handleAddToCart}
+                      handleToggleFeatured={handleToggleFeatured}
+                      cartLoadingStates={cartLoadingStates}
+                      featuredLoadingStates={{}}
+                      menu={menu}
+                    />
+                  </div>
+                ))}
+              </div>
             ) : (
               <p className="blog-section-box-content__text">
                 No related products available.

@@ -1,0 +1,25 @@
+[
+  {
+    "productId": "040d78be-9ed9-4cd3-844e-1242e23f1769",
+    "name": "27367000",
+    "product_code": "EHAGR0000002",
+    "quantity": 20,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "27367000",
+    "images": "[\"https://static.cmtradingco.com/product_images/Cosmopolitan Stick Hand Shower.png\"]",
+    "isFeatured": false,
+    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
+    "categoryId": "87e3337a-0d34-4e82-94b5-76dddf23ed80",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "81cd6d76-d7d2-4226-b48e-6704e6224c2b": "HAND SHOWERS",
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": "8200.00",
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "Cosmopolitan Stick Hand Shower"
+    },
+    "createdAt": "2025-04-18T11:53:30.000Z",
+    "updatedAt": "2025-05-05T11:07:11.000Z"
+  }
+]
