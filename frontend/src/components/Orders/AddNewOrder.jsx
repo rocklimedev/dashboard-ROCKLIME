@@ -50,7 +50,7 @@ const AddNewOrder = ({ adminName }) => {
   const { id } = useParams();
   const isEditMode = Boolean(id);
   const navigate = useNavigate();
-  const location = useLocation(); // To access navigation state
+  const location = useLocation();
   const [createOrder] = useCreateOrderMutation();
   const [updateOrder] = useUpdateOrderByIdMutation();
 
@@ -111,6 +111,7 @@ const AddNewOrder = ({ adminName }) => {
     description: quotationData.description || "",
     invoiceLink: isEditMode ? "" : null,
     orderNo: "",
+    quotationId: quotationData.quotationId || "", // Added quotationId
   });
 
   const [showNewTeamModal, setShowNewTeamModal] = useState(false);
@@ -158,6 +159,7 @@ const AddNewOrder = ({ adminName }) => {
         description: order.description || "",
         invoiceLink: order.invoiceLink || "",
         orderNo: order.orderNo || "",
+        quotationId: order.quotationId || "", // Added quotationId
       });
       setDescriptionLength((order.description || "").length);
     }
@@ -232,6 +234,7 @@ const AddNewOrder = ({ adminName }) => {
       description: "",
       invoiceLink: isEditMode ? "" : null,
       orderNo: isEditMode ? formData.orderNo : "",
+      quotationId: "", // Reset quotationId
     });
     setCustomerSearch("");
     setFilteredCustomers(customers);
@@ -351,6 +354,7 @@ const AddNewOrder = ({ adminName }) => {
           (date) => date && moment(date).isValid()
         ),
         invoiceLink: isEditMode ? formData.invoiceLink || null : null,
+        quotationId: formData.quotationId || null, // Include quotationId
       };
 
       if (isEditMode) {
@@ -526,6 +530,18 @@ const AddNewOrder = ({ adminName }) => {
               <div className="row">
                 <div className="col-lg-6">
                   <Form.Group className="mb-3">
+                    <Form.Label>Quotation Number</Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="quotationId"
+                      value={formData.source || "N/A"}
+                      readOnly
+                      placeholder="Quotation number (auto-filled if converted)"
+                    />
+                  </Form.Group>
+                </div>
+                <div className="col-lg-6">
+                  <Form.Group className="mb-3">
                     <Form.Label>Pipeline</Form.Label>
                     <Form.Control
                       type="text"
@@ -538,7 +554,10 @@ const AddNewOrder = ({ adminName }) => {
                     />
                   </Form.Group>
                 </div>
-                {isEditMode && (
+              </div>
+
+              {isEditMode && (
+                <div className="row">
                   <div className="col-lg-6">
                     <Form.Group className="mb-3">
                       <Form.Label>Invoice Link</Form.Label>
@@ -557,8 +576,8 @@ const AddNewOrder = ({ adminName }) => {
                       />
                     </Form.Group>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
 
               <div className="row">
                 <div className="col-lg-6">

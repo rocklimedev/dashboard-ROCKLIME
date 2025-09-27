@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useGetAllUsersQuery } from "../../api/userApi";
 import { useGetAllTeamsQuery } from "../../api/teamApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
+import { useGetAllQuotationsQuery } from "../../api/quotationApi"; // Added import
 import {
   useGetAllOrdersQuery,
   useDeleteOrderMutation,
@@ -23,12 +24,14 @@ import DeleteModal from "../Common/DeleteModal";
 import OrderPagination from "./OrderPagination";
 import PageHeader from "../Common/PageHeader";
 import POWrapper from "./POWrapper";
+
 const OrderWrapper = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("orders");
   const [teamMap, setTeamMap] = useState({});
   const [customerMap, setCustomerMap] = useState({});
   const [userMap, setUserMap] = useState({});
+  const [quotationMap, setQuotationMap] = useState({}); // Added state for quotation mapping
   const [showHoldModal, setShowHoldModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -56,6 +59,7 @@ const OrderWrapper = () => {
   const { data: teamsData } = useGetAllTeamsQuery();
   const { data: customersData } = useGetCustomersQuery();
   const { data: usersData } = useGetAllUsersQuery();
+  const { data: quotationsData } = useGetAllQuotationsQuery(); // Added quotation query
   const {
     data: allData,
     error: allError,
@@ -69,7 +73,7 @@ const OrderWrapper = () => {
   const isFetching = allFetching;
   const error = allError;
 
-  // Map teams, customers, and users for quick lookup
+  // Map teams, customers, users, and quotations for quick lookup
   useEffect(() => {
     if (teamsData?.teams) {
       const map = teamsData.teams.reduce((acc, team) => {
@@ -99,6 +103,16 @@ const OrderWrapper = () => {
       setUserMap(map);
     }
   }, [usersData]);
+
+  useEffect(() => {
+    if (quotationsData) {
+      const map = quotationsData.reduce((acc, quotation) => {
+        acc[quotation.quotationId] = quotation.reference_number || "—";
+        return acc;
+      }, {});
+      setQuotationMap(map);
+    }
+  }, [quotationsData]);
 
   const [deleteOrder] = useDeleteOrderMutation();
 
@@ -165,10 +179,14 @@ const OrderWrapper = () => {
         const customerName = ord.createdFor
           ? customerMap[ord.createdFor] || "—"
           : "N/A";
+        const reference_number = ord.quotationId
+          ? quotationMap[ord.quotationId] || "—"
+          : "—";
         return (
           ord.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          ord.source?.toLowerCase().includes(searchTerm.toLowerCase())
+          ord.source?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          reference_number.toLowerCase().includes(searchTerm.toLowerCase()) // Added search by reference_number
         );
       });
     }
@@ -217,7 +235,15 @@ const OrderWrapper = () => {
     }
 
     return result;
-  }, [orders, searchTerm, sortBy, filters, dateRange, customerMap]);
+  }, [
+    orders,
+    searchTerm,
+    sortBy,
+    filters,
+    dateRange,
+    customerMap,
+    quotationMap,
+  ]);
 
   // Paginated orders
   const paginatedOrders = useMemo(() => {
@@ -329,6 +355,11 @@ const OrderWrapper = () => {
   // Helper to get status display
   const getStatusDisplay = (status) => {
     return statuses.includes(status) ? status : "CREATED";
+  };
+
+  // Helper to get quotation status
+  const getQuotationStatus = (quotationId) => {
+    return quotationId ? "QUOTATIONED" : "IDLE";
   };
 
   return (
@@ -446,6 +477,7 @@ const OrderWrapper = () => {
                         <th>S.No.</th>
                         <th>Order No.</th>
                         <th>STATUS</th>
+                        <th>QUOTATION</th>
                         <th>TITLE</th>
                         <th>CUSTOMER</th>
                         <th>PRIORITY</th>
@@ -467,6 +499,12 @@ const OrderWrapper = () => {
                           ? userMap[order.createdBy] || "Loading..."
                           : "N/A";
                         const status = getStatusDisplay(order.status);
+                        const quotationStatus = getQuotationStatus(
+                          order.quotationId
+                        );
+                        const reference_number = order.quotationId
+                          ? quotationMap[order.quotationId] || "Loading..."
+                          : "—";
                         const dueDateClass = isDueDateClose(order.dueDate)
                           ? "due-date-close"
                           : "";
@@ -484,7 +522,23 @@ const OrderWrapper = () => {
                             <td>{serialNumber}</td>
                             <td>
                               <Link to={`/order/${order.id}`}>
-                                {order.orderNo}
+                                {order.orderNo}{" "}
+                                <span
+                                  className="priority-badge"
+                                  style={{
+                                    backgroundColor:
+                                      quotationStatus === "QUOTATIONED"
+                                        ? "#d4edda"
+                                        : "#f8d7da",
+                                    color:
+                                      quotationStatus === "QUOTATIONED"
+                                        ? "#155724"
+                                        : "#721c24",
+                                    marginLeft: "8px",
+                                  }}
+                                >
+                                  {quotationStatus}
+                                </span>
                               </Link>
                             </td>
                             <td>
@@ -494,6 +548,15 @@ const OrderWrapper = () => {
                               >
                                 {status}
                               </span>
+                            </td>
+                            <td>
+                              {order.quotationId ? (
+                                <Link to={`/quotations/${order.quotationId}`}>
+                                  {reference_number}
+                                </Link>
+                              ) : (
+                                "—"
+                              )}
                             </td>
                             <td>
                               <Link to={`/order/${order.id}`}>

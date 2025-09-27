@@ -340,6 +340,7 @@ exports.deleteComment = async (req, res) => {
 // Create a new order
 // createOrder.js
 // Create a new order
+// Create a new order
 exports.createOrder = async (req, res) => {
   try {
     const {
@@ -355,6 +356,7 @@ exports.createOrder = async (req, res) => {
       priority,
       description,
       orderNo,
+      quotationId, // Added quotationId
     } = req.body;
 
     // Validate required fields
@@ -376,6 +378,14 @@ exports.createOrder = async (req, res) => {
     const customer = await Customer.findByPk(createdFor);
     if (!customer) {
       return sendErrorResponse(res, 404, "Customer not found");
+    }
+
+    // Validate quotationId if provided
+    if (quotationId) {
+      const quotation = await Quotation.findByPk(quotationId);
+      if (!quotation) {
+        return sendErrorResponse(res, 404, "Quotation not found");
+      }
     }
 
     // Validate dueDate
@@ -452,6 +462,7 @@ exports.createOrder = async (req, res) => {
       priority: priority?.toLowerCase() || null,
       description,
       orderNo: orderNo ? parseInt(orderNo) : null,
+      quotationId, // Include quotationId
     });
 
     return res.status(201).json({
@@ -676,6 +687,7 @@ exports.orderById = async (req, res) => {
   }
 };
 
+// Update order by ID
 exports.updateOrderById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -824,6 +836,18 @@ exports.updateOrderById = async (req, res) => {
       return res
         .status(400)
         .json({ message: "Source cannot exceed 255 characters" });
+    }
+
+    // Validate quotationId
+    if (updates.quotationId !== undefined) {
+      if (updates.quotationId === null || updates.quotationId === "") {
+        updates.quotationId = null; // Allow null as per model
+      } else {
+        const quotation = await Quotation.findByPk(updates.quotationId);
+        if (!quotation) {
+          return res.status(404).json({ message: "Quotation not found" });
+        }
+      }
     }
 
     // Perform update

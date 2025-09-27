@@ -3,6 +3,7 @@ const sequelize = require("../config/database");
 const Team = require("./team");
 const Customer = require("./customers");
 const User = require("./users");
+const Quotation = require("./quotation"); // Import Quotation model
 
 const Order = sequelize.define(
   "Order",
@@ -85,9 +86,19 @@ const Order = sequelize.define(
       allowNull: true,
     },
     orderNo: {
-      type: DataTypes.STRING(20), // not INTEGER
+      type: DataTypes.STRING(20),
       allowNull: false,
       unique: true,
+    },
+    quotationId: {
+      type: DataTypes.UUID,
+      allowNull: true, // Allow null as specified
+      references: {
+        model: Quotation,
+        key: "quotationId",
+      },
+      onDelete: "SET NULL", // If the referenced quotation is deleted, set quotationId to null
+      onUpdate: "CASCADE", // If the quotationId is updated, cascade the update
     },
   },
   {
