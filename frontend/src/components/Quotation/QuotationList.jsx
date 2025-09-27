@@ -215,7 +215,7 @@ const QuotationList = () => {
     setSelectedQuotation(null);
   };
 
-  // New handler for Convert to Order
+  // Updated handler for Convert to Order
   const handleConvertToOrder = (quotation) => {
     navigate("/order/add", {
       state: {
@@ -229,6 +229,7 @@ const QuotationList = () => {
           description: `Converted from Quotation #${
             quotation.reference_number || "N/A"
           }`,
+          quotationId: quotation.quotationId || "", // Added quotationId
         },
       },
     });

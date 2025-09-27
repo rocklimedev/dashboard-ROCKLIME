@@ -26,7 +26,6 @@ const NoAccess = () => {
   const [timer, setTimer] = useState(60);
 
   const user = profileData?.user;
-  console.log(user);
   const isEmailVerified = user?.isEmailVerified === true;
   let roles = user?.roles || [];
   if (typeof roles === "string") {
@@ -37,8 +36,22 @@ const NoAccess = () => {
       roles = [];
     }
   }
-  const accessRoles = roles.filter((r) => r !== "USERS");
+  const accessRoles = Array.isArray(roles)
+    ? roles.filter((r) => r !== "USERS")
+    : [];
   const needsVerification = !isEmailVerified && accessRoles.length === 0;
+
+  // Debugging logs
+  console.log({
+    user,
+    isEmailVerified,
+    roles,
+    accessRoles,
+    needsVerification,
+    emailSent,
+    isFetchingProfile,
+    profileError,
+  });
 
   // Handle profile fetch errors
   useEffect(() => {
@@ -80,7 +93,6 @@ const NoAccess = () => {
 
   const handleResendVerification = async () => {
     if (!user?.email) {
-      console.error("No email in profileData:", profileData);
       toast.error("No email found for your account.");
       return;
     }
@@ -96,6 +108,24 @@ const NoAccess = () => {
     }
   };
 
+  if (isFetchingProfile) {
+    return (
+      <Container className="text-center py-5">
+        <p>Loading user data...</p>
+      </Container>
+    );
+  }
+
+  if (!user) {
+    return (
+      <Container className="text-center py-5">
+        <p>
+          Unable to load user data. <Button onClick={handleRetry}>Retry</Button>
+        </p>
+      </Container>
+    );
+  }
+
   return (
     <div className="main-wrapper">
       <div className="content">
@@ -104,36 +134,27 @@ const NoAccess = () => {
             <Col md={6}>
               <div className="no-access-icon" />
               <h2 className="mt-4">Access Denied</h2>
-              {isFetchingProfile ? (
-                <p className="text-muted">Loading user data...</p>
-              ) : user ? (
-                <>
-                  <p className="text-muted">
-                    You are successfully registered but currently don’t have
-                    access to the portal.
-                  </p>
-                  <p className="text-muted">
-                    Email Verification:{" "}
-                    {isEmailVerified ? "Verified" : "Not Verified"}
-                  </p>
-                  <p className="text-muted">
-                    Roles: {roles.length > 0 ? roles.join(", ") : "None"}
-                  </p>
-                  {!isEmailVerified && (
-                    <p className="text-warning">
-                      Your email address is not verified. Please check your
-                      inbox or click the button below to resend the verification
-                      email.
-                    </p>
-                  )}
-                  {accessRoles.length === 0 && (
-                    <p className="text-muted">
-                      Please contact an administrator to assign you a role.
-                    </p>
-                  )}
-                </>
-              ) : (
-                <p className="text-muted">Unable to load user data.</p>
+              <p className="text-muted">
+                You are successfully registered but currently don’t have access
+                to the portal.
+              </p>
+              <p className="text-muted">
+                Email Verification:{" "}
+                {isEmailVerified ? "Verified" : "Not Verified"}
+              </p>
+              <p className="text-muted">
+                Roles: {roles.length > 0 ? roles.join(", ") : "None"}
+              </p>
+              {!isEmailVerified && (
+                <p className="text-warning">
+                  Your email address is not verified. Please check your inbox or
+                  click the button below to resend the verification email.
+                </p>
+              )}
+              {accessRoles.length === 0 && (
+                <p className="text-muted">
+                  Please contact an administrator to assign you a role.
+                </p>
               )}
               {emailSent && (
                 <p className="text-success">
