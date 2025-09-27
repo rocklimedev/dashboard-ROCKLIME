@@ -10,11 +10,12 @@ import { useGetAllQuotationsQuery } from "../../api/quotationApi";
 import { useGetAllTeamsQuery } from "../../api/teamApi";
 import { useGetAllInvoicesQuery } from "../../api/invoiceApi";
 import { useGetAllOrdersQuery } from "../../api/orderApi";
+import { useGetPurchaseOrdersQuery } from "../../api/poApi"; // Import Purchase Orders query
 import moment from "moment";
 import { toast } from "react-toastify";
 import ProfileForm from "./ProfileForm";
 import DataTable from "./DataTable";
-import Avatar from "react-avatar"; // Import react-avatar
+import Avatar from "react-avatar";
 import "./profile.css";
 import Form from "antd/es/form/Form";
 import {
@@ -22,6 +23,7 @@ import {
   TeamOutlined,
   CalendarOutlined,
 } from "@ant-design/icons";
+
 const Profile = () => {
   // Queries
   const {
@@ -61,6 +63,14 @@ const Profile = () => {
     isLoading: isTeamsLoading,
     error: teamsError,
   } = useGetAllTeamsQuery({ userId }, { skip: !userId });
+  const {
+    data: purchaseOrdersData,
+    isLoading: isPurchaseOrdersLoading,
+    error: purchaseOrdersError,
+  } = useGetPurchaseOrdersQuery(
+    { userId, page: 1, limit: 10 },
+    { skip: !userId }
+  ); // Fetch purchase orders
 
   // State management
   const [isEditing, setIsEditing] = useState(false);
@@ -191,7 +201,6 @@ const Profile = () => {
 
     try {
       await updateProfile(updatedData).unwrap();
-
       setIsEditing(false);
     } catch (error) {
       toast.error(
@@ -284,10 +293,10 @@ const Profile = () => {
   const orderColumns = [
     { title: "Title", dataIndex: "title", key: "title" },
     {
-      title: "Total",
-      dataIndex: "totalAmount",
-      key: "totalAmount",
-      render: (text) => `₹${text || "N/A"}`,
+      title: "Due Date",
+      dataIndex: "dueDate",
+      key: "dueDate",
+      render: (text) => (text ? moment(text).format("DD MMM YYYY") : "N/A"),
     },
     {
       title: "Status",
@@ -307,11 +316,60 @@ const Profile = () => {
         </span>
       ),
     },
+  ];
+
+  const purchaseOrderColumns = [
     {
-      title: "Due Date",
-      dataIndex: "dueDate",
-      key: "dueDate",
+      title: "PO No.",
+      dataIndex: "poNumber",
+      key: "poNumber",
+      render: (text, record) => (
+        <Link to={`/po/${record.id}`}>{text || "N/A"}</Link>
+      ),
+    },
+    {
+      title: "Vendor",
+      dataIndex: "vendorId",
+      key: "vendorId",
+      render: (text) => text || "N/A", // Vendor name would ideally come from a vendor map
+    },
+    {
+      title: "Total Amount",
+      dataIndex: "totalAmount",
+      key: "totalAmount",
+      render: (text) => (text ? `₹${text}` : "N/A"),
+    },
+    {
+      title: "Order Date",
+      dataIndex: "orderDate",
+      key: "orderDate",
       render: (text) => (text ? moment(text).format("DD MMM YYYY") : "N/A"),
+    },
+    {
+      title: "Expected Delivery",
+      dataIndex: "expectDeliveryDate",
+      key: "expectDeliveryDate",
+      render: (text) => (text ? moment(text).format("DD MMM YYYY") : "N/A"),
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      render: (text) => (
+        <span
+          className={`badge ${
+            text?.toLowerCase() === "pending"
+              ? "bg-warning"
+              : text?.toLowerCase() === "confirmed"
+              ? "bg-success"
+              : text?.toLowerCase() === "delivered"
+              ? "bg-primary"
+              : "bg-danger"
+          }`}
+        >
+          {text ? text.charAt(0).toUpperCase() + text.slice(1) : "Pending"}
+        </span>
+      ),
     },
   ];
 
@@ -389,11 +447,11 @@ const Profile = () => {
               <div className="card-header rounded-0 bg-primary d-flex align-items-center">
                 <span className="avatar avatar-xl avatar-rounded flex-shrink-0 border border-white border-3 me-3">
                   <Avatar
-                    src={avatarUrl || undefined} // Use avatarUrl if available
-                    name={user.name || "User"} // Fallback to user's name for initials
-                    size="60" // Adjust size as needed
-                    round={true} // Keep the avatar rounded
-                    textSizeRatio={2.5} // Adjust text size for initials
+                    src={avatarUrl || undefined}
+                    name={user.name || "User"}
+                    size="60"
+                    round={true}
+                    textSizeRatio={2.5}
                     alt="User Avatar"
                   />
                 </span>
@@ -513,7 +571,6 @@ const Profile = () => {
                           </span>
                         </div>
                       </div>
-
                       <div className="col-md-4">
                         <div className="mb-3">
                           <p className="fs-13 mb-2">Emergency Contact</p>
@@ -522,7 +579,6 @@ const Profile = () => {
                           </span>
                         </div>
                       </div>
-
                       <div className="col-md-4">
                         <div className="mb-3">
                           <p className="fs-13 mb-2">Status</p>
@@ -542,24 +598,30 @@ const Profile = () => {
                       id="pills-tab"
                       role="tablist"
                     >
-                      {["Quotations", "Teams", "Orders"].map((tab) => (
-                        <li className="nav-item" role="presentation" key={tab}>
-                          <button
-                            className={`nav-link btn btn-sm btn-icon py-3 d-flex align-items-center justify-content-center w-auto ${
-                              activeTab === tab.toLowerCase() ? "active" : ""
-                            }`}
-                            id={`tab-${tab}`}
-                            data-bs-toggle="pill"
-                            data-bs-target={`#pills-${tab}`}
-                            type="button"
-                            role="tab"
-                            aria-selected={activeTab === tab.toLowerCase()}
-                            onClick={() => setActiveTab(tab.toLowerCase())}
+                      {["Quotations", "Teams", "Orders", "Purchase Orders"].map(
+                        (tab) => (
+                          <li
+                            className="nav-item"
+                            role="presentation"
+                            key={tab}
                           >
-                            {tab}
-                          </button>
-                        </li>
-                      ))}
+                            <button
+                              className={`nav-link btn btn-sm btn-icon py-3 d-flex align-items-center justify-content-center w-auto ${
+                                activeTab === tab.toLowerCase() ? "active" : ""
+                              }`}
+                              id={`tab-${tab}`}
+                              data-bs-toggle="pill"
+                              data-bs-target={`#pills-${tab}`}
+                              type="button"
+                              role="tab"
+                              aria-selected={activeTab === tab.toLowerCase()}
+                              onClick={() => setActiveTab(tab.toLowerCase())}
+                            >
+                              {tab}
+                            </button>
+                          </li>
+                        )
+                      )}
                     </ul>
                   </div>
                   <div className="card-body">
@@ -575,7 +637,7 @@ const Profile = () => {
                         <DataTable
                           title="My Quotations"
                           columns={quotationColumns}
-                          dataSource={quotationsData?.data || []}
+                          dataSource={quotationsData || []}
                           isLoading={isQuotationsLoading}
                           error={quotationsError}
                           rowKey="quotationId"
@@ -614,6 +676,24 @@ const Profile = () => {
                           dataSource={ordersData?.orders || []}
                           isLoading={isOrdersLoading}
                           error={ordersError}
+                          rowKey="id"
+                          className="table table-hover"
+                        />
+                      </div>
+                      <div
+                        className={`tab-pane fade ${
+                          activeTab === "purchase orders" ? "show active" : ""
+                        }`}
+                        id="pills-Purchase Orders"
+                        role="tabpanel"
+                        aria-labelledby="tab-Purchase Orders"
+                      >
+                        <DataTable
+                          title="My Purchase Orders"
+                          columns={purchaseOrderColumns}
+                          dataSource={purchaseOrdersData?.purchaseOrders || []}
+                          isLoading={isPurchaseOrdersLoading}
+                          error={purchaseOrdersError}
                           rowKey="id"
                           className="table table-hover"
                         />

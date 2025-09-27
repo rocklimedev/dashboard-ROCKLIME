@@ -141,25 +141,21 @@ const QuotationList = () => {
   }, [filteredQuotations, currentPage]);
 
   const formattedTableData = useMemo(() => {
-    return currentQuotations.map((quotation) => ({
-      quotationId: quotation.quotationId,
-      document_title: quotation.document_title || "N/A",
-      quotation_date: quotation.quotation_date
+    return currentQuotations.map((quotation, index) => ({
+      "S.No.": (currentPage - 1) * itemsPerPage + index + 1,
+      "Quotation Title": quotation.document_title || "N/A",
+      "Quotation Date": quotation.quotation_date
         ? new Date(quotation.quotation_date).toLocaleDateString()
         : "N/A",
-      due_date: quotation.due_date
+      "Due Date": quotation.due_date
         ? new Date(quotation.due_date).toLocaleDateString()
         : "N/A",
-      reference_number: quotation.reference_number || "N/A",
-      include_gst: quotation.include_gst ? "Yes" : "No",
-      products: getProductCount(quotation.products),
-      discountType: quotation.discountType || "N/A",
-      roundOff: quotation.roundOff || "N/A",
-      createdBy: getUserName(quotation.createdBy),
-      customer: getCustomerName(quotation.customerId),
-      finalAmount: `₹${quotation.finalAmount || 0}`,
+      "Reference Number": quotation.reference_number || "N/A",
+      Products: getProductCount(quotation.products),
+      Customer: getCustomerName(quotation.customerId),
+      "Final Amount": `₹${quotation.finalAmount || 0}`,
     }));
-  }, [currentQuotations, customers, users]);
+  }, [currentQuotations, currentPage, customers]);
 
   const handleAddQuotation = () => navigate("/quotations/add");
 
@@ -215,7 +211,6 @@ const QuotationList = () => {
     setSelectedQuotation(null);
   };
 
-  // Updated handler for Convert to Order
   const handleConvertToOrder = (quotation) => {
     navigate("/order/add", {
       state: {
@@ -229,7 +224,7 @@ const QuotationList = () => {
           description: `Converted from Quotation #${
             quotation.reference_number || "N/A"
           }`,
-          quotationId: quotation.quotationId || "", // Added quotationId
+          quotationId: quotation.quotationId || "",
         },
       },
     });
@@ -283,6 +278,8 @@ const QuotationList = () => {
             title="Quotations"
             subtitle="Manage your Quotations"
             tableData={formattedTableData}
+            onAdd={handleAddQuotation}
+            exportOptions={{ pdf: true, excel: true }}
           />
           <div className="card-body">
             <div className="row">
@@ -350,14 +347,18 @@ const QuotationList = () => {
                                 </Link>
                               </td>
                               <td>
-                                {new Date(
-                                  quotation.quotation_date
-                                ).toLocaleDateString()}
+                                {quotation.quotation_date
+                                  ? new Date(
+                                      quotation.quotation_date
+                                    ).toLocaleDateString()
+                                  : "N/A"}
                               </td>
                               <td>
-                                {new Date(
-                                  quotation.due_date
-                                ).toLocaleDateString()}
+                                {quotation.due_date
+                                  ? new Date(
+                                      quotation.due_date
+                                    ).toLocaleDateString()
+                                  : "N/A"}
                               </td>
                               <td>{quotation.reference_number || "N/A"}</td>
                               <td>

@@ -1,5 +1,6 @@
 import React from "react";
 import { jsPDF } from "jspdf";
+import "jspdf-autotable"; // Import for structured PDF tables
 import * as XLSX from "xlsx";
 import {
   FileAddFilled,
@@ -9,6 +10,7 @@ import {
   UnorderedListOutlined,
 } from "@ant-design/icons";
 import { Switch, Tooltip } from "antd";
+
 // Add custom CSS to style the Switch component
 const switchStyles = `
   .custom-switch .ant-switch {
@@ -42,46 +44,46 @@ const PageHeader = ({
       return;
     }
 
-    const doc = new jsPDF();
-    let yOffset = 10;
-
-    // Add title
-    doc.setFontSize(16);
-    doc.text(title, 10, yOffset);
-    yOffset += 10;
-
-    // Get headers from the first data object
-    const headers = Object.keys(tableData[0] || {});
-    const colWidths = headers.map(() => 30); // Adjustable column width
-    const rowHeight = 10;
-
-    // Add headers
-    doc.setFontSize(12);
-    headers.forEach((header, index) => {
-      doc.text(header, 10 + index * 30, yOffset);
-    });
-    yOffset += rowHeight;
-
-    // Add table rows
-    tableData.forEach((row) => {
-      headers.forEach((header, index) => {
-        let value = row[header] ?? "—";
-        if (value instanceof Date) {
-          value = value.toLocaleDateString();
-        } else if (typeof value === "object") {
-          value = JSON.stringify(value);
-        } else {
-          value = String(value);
-        }
-        doc.text(value, 10 + index * 30, yOffset);
-      });
-      yOffset += rowHeight;
-    });
-
     try {
+      const doc = new jsPDF();
+      doc.setFontSize(16);
+      doc.text(`${title} Report`, 14, 20);
+
+      // Define table columns (based on provided tableData structure)
+      const headers = Object.keys(tableData[0] || {});
+
+      // Prepare table rows
+      const rows = tableData.map((row) =>
+        headers.map((header) => {
+          let value = row[header] ?? "—";
+          if (value instanceof Date) {
+            value = value.toLocaleDateString();
+          } else if (typeof value === "object") {
+            value = JSON.stringify(value);
+          } else {
+            value = String(value);
+          }
+          return value;
+        })
+      );
+
+      // Generate table using jspdf-autotable
+      doc.autoTable({
+        head: [headers],
+        body: rows,
+        startY: 30,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [60, 141, 188] },
+        columnStyles: headers.reduce((acc, _, index) => {
+          acc[index] = { cellWidth: 30 }; // Adjustable column width
+          return acc;
+        }, {}),
+      });
+
       doc.save(`${title}.pdf`);
     } catch (error) {
       alert("Failed to generate PDF. Please try again.");
+      console.error(error);
     }
   };
 
@@ -112,20 +114,14 @@ const PageHeader = ({
       const worksheet = XLSX.utils.json_to_sheet(formattedData);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, title);
-
       XLSX.writeFile(workbook, `${title}.xlsx`);
     } catch (error) {
       alert("Failed to generate Excel file. Please try again.");
+      console.error(error);
     }
   };
 
-  const {
-    viewMode,
-    onViewToggle,
-    showViewToggle = false,
-
-    onCartClick,
-  } = extra;
+  const { viewMode, onViewToggle, showViewToggle = false } = extra;
 
   return (
     <div className="page-header">
@@ -166,9 +162,7 @@ const PageHeader = ({
               }
             >
               <Switch
-                style={{
-                  backgroundColor: viewMode === "card" ? "#808080" : "#808080",
-                }}
+                className="custom-switch"
                 checkedChildren={<AppstoreOutlined />}
                 unCheckedChildren={<UnorderedListOutlined />}
                 checked={viewMode === "card"}
