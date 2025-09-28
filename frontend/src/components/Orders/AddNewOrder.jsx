@@ -120,7 +120,16 @@ const AddNewOrder = ({ adminName }) => {
   const [descriptionLength, setDescriptionLength] = useState(
     quotationData.description?.length || 0
   );
-
+  const handleTeamAdded = (newTeamId) => {
+    refetchTeams(); // Refetch teams to update the list
+    if (newTeamId) {
+      setFormData((prev) => ({
+        ...prev,
+        teamId: newTeamId,
+        assignedTo: newTeamId,
+      }));
+    }
+  };
   // Generate orderNo in create mode
   useEffect(() => {
     if (!isEditMode && !isAllOrdersLoading && allOrdersData !== undefined) {
@@ -798,7 +807,8 @@ const AddNewOrder = ({ adminName }) => {
               <AddNewTeam
                 adminName={adminName}
                 onClose={() => setShowNewTeamModal(false)}
-                onTeamAdded={refetchTeams}
+                onTeamAdded={handleTeamAdded}
+                visible={showNewTeamModal} // Add this prop
               />
             )}
           </div>

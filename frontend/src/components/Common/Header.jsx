@@ -3,7 +3,7 @@ import { useLocation, Link, useNavigate } from "react-router-dom";
 import { useGetProfileQuery } from "../../api/userApi";
 import { useGetCartQuery } from "../../api/cartApi";
 import { Dropdown, Button, Menu } from "antd";
-import { FaUserCircle } from "react-icons/fa";
+import { FaUserCircle, FaSearch } from "react-icons/fa";
 import { BiFullscreen, BiLogOut } from "react-icons/bi";
 import { toast } from "sonner";
 import Avatar from "react-avatar";
@@ -11,9 +11,9 @@ import logo from "../../assets/img/logo.png";
 import logo_small from "../../assets/img/fav_icon.png";
 import { CgShoppingCart } from "react-icons/cg";
 import { useLogoutMutation } from "../../api/authApi";
-import { useAuth } from "../../context/AuthContext"; // <-- Add this
+import { useAuth } from "../../context/AuthContext";
+import { FaEllipsisV } from "react-icons/fa";
 
-// Add custom CSS for avatar and cart badge
 const styles = `
   .circular-avatar {
     width: 100% !important;
@@ -44,9 +44,44 @@ const styles = `
     font-size: 12px;
     font-weight: bold;
   }
+  .mobile-user-menu {
+    z-index: 1100 !important;
+  }
+  .mobile-dropdown .ant-dropdown {
+    z-index: 1100 !important;
+  }
+  @media (max-width: 991.96px) {
+    .mobile-user-menu {
+      display: block !important;
+      position: relative;
+      right: 10px;
+      padding: 0 10px;
+    }
+    .mobile-menu-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px !important;
+      padding: 10px !important;
+      color: #212b36 !important;
+      background: transparent !important;
+    }
+    .mobile-dropdown .ant-dropdown {
+      width: 200px !important;
+      max-width: 90vw !important;
+      top: 100% !important;
+      left: auto !important;
+      right: 0 !important;
+    }
+  }
+  .header {
+    overflow: visible !important;
+  }
+  .main-header {
+    overflow: visible !important;
+  }
 `;
 
-// Inject styles into the document
 const styleSheet = document.createElement("style");
 styleSheet.type = "text/css";
 styleSheet.innerText = styles;
@@ -62,9 +97,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
   } = useGetProfileQuery();
   const [logoutMutation, { isLoading: isLoggingOut }] = useLogoutMutation();
   const [isFullscreen, setIsFullscreen] = useState(false);
-
-  const { logout } = useAuth(); // <-- Use AuthContext logout
-
+  const { logout } = useAuth();
   const {
     data: cart,
     isLoading: isCartLoading,
@@ -75,14 +108,15 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
 
   const handleLogout = async () => {
     try {
-      await logoutMutation().unwrap(); // Call the logout API
-      await logout(); // Call the context logout and wait for it to complete
-      navigate("/login", { replace: true }); // Use replace to prevent history stack issues
+      await logoutMutation().unwrap();
+      await logout();
+      navigate("/login", { replace: true });
     } catch (error) {
       console.error("Logout failed:", error);
       toast.error("Logout failed. Please try again.");
     }
   };
+
   const handleFullscreenToggle = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen();
@@ -94,7 +128,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
   };
 
   const userMenu = (
-    <Menu className="shadow-sm rounded menu-drop-user" style={{ zIndex: 1000 }}>
+    <Menu className="shadow-sm rounded menu-drop-user" style={{ zIndex: 1100 }}>
       <Menu.Item
         key="profile-header"
         className="d-flex align-items-center p-3 profileset"
@@ -140,6 +174,52 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     </Menu>
   );
 
+  const mobileMenuItems = [
+    {
+      key: "profile",
+      label: "My Profile",
+      icon: <FaUserCircle className="me-2" />,
+      onClick: () => navigate(`/u/${user?.user?.userId || "profile"}`),
+    },
+    {
+      key: "settings",
+      label: "Settings",
+      icon: <i className="ti ti-settings-2 me-2" />,
+      onClick: () => navigate("/settings"),
+    },
+    {
+      key: "cart",
+      label: (
+        <span style={{ position: "relative" }}>
+          Cart
+          {cartItemCount > 0 && (
+            <span
+              className="cart-badge"
+              style={{ top: "-5px", right: "-20px" }}
+            >
+              {cartItemCount}
+            </span>
+          )}
+        </span>
+      ),
+      icon: <CgShoppingCart className="me-2" />,
+      onClick: () => navigate("/cart"),
+    },
+    {
+      key: "fullscreen",
+      label: isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen",
+      icon: <BiFullscreen className="me-2" />,
+      onClick: handleFullscreenToggle,
+    },
+    {
+      key: "logout",
+      label: isLoggingOut ? "Logging out..." : "Logout",
+      icon: <BiLogOut className="me-2" />,
+      onClick: handleLogout,
+      disabled: isLoggingOut,
+    },
+  ];
+
   return (
     <div className="header">
       <div className="main-header">
@@ -158,7 +238,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
         <a
           className="mobile_btn"
           onClick={() => {
-            if (window.innerWidth < 768) {
+            if (window.innerWidth < 992) {
               toggleSidebar(!isSidebarOpen);
             }
           }}
@@ -183,10 +263,11 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                 <FaSearch />
               </Button>
               <div className="d-none d-md-block">
-                <SearchDropdown />
+                 <SearchDropdown /> 
               </div>
             </div> */}
           </li>
+
           <li className="nav-item nav-item-box">
             <Button
               type="link"
@@ -244,43 +325,21 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
         </ul>
 
         <div
-          className="dropdown mobile-user-menu"
-          style={{ position: "relative", zIndex: 1000 }}
+          className="mobile-user-menu"
+          style={{ position: "relative", zIndex: 1100 }}
         >
           <Dropdown
-            menu={{
-              items: [
-                {
-                  key: "profile",
-                  label: "My Profile",
-                  onClick: () =>
-                    navigate(`/u/${user?.user?.userId || "profile"}`),
-                },
-                {
-                  key: "settings",
-                  label: "Settings",
-                  onClick: () => navigate("/settings"),
-                },
-                {
-                  key: "cart",
-                  label: "Cart",
-                  onClick: () => navigate("/cart"),
-                },
-                {
-                  key: "logout",
-                  label: isLoggingOut ? "Logging out..." : "Logout",
-                  onClick: handleLogout,
-                  disabled: isLoggingOut,
-                },
-              ],
-            }}
+            menu={{ items: mobileMenuItems }}
             trigger={["click"]}
-            placement="bottomRight"
+            placement={window.innerWidth < 992 ? "bottom" : "bottomRight"}
+            overlayClassName="mobile-dropdown"
+            getPopupContainer={(trigger) => trigger.parentElement}
           >
             <Button
               type="text"
-              icon={<i className="fa fa-ellipsis-v" />}
+              icon={<FaEllipsisV />}
               aria-label="More options"
+              className="mobile-menu-button"
             />
           </Dropdown>
         </div>

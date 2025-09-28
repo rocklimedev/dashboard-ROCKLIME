@@ -10,7 +10,6 @@ import {
   Typography,
   Divider,
   Empty,
-  Badge,
   Row,
   Col,
   Tabs,
@@ -23,15 +22,19 @@ import {
   DeleteOutlined,
   CheckCircleOutlined,
   ArrowLeftOutlined,
-  PercentageOutlined,
 } from "@ant-design/icons";
-import { useGetCustomersQuery } from "../../api/customerApi";
+import {
+  useGetCustomersQuery,
+  useGetCustomerByIdQuery,
+} from "../../api/customerApi";
+import useUserAndCustomerData from "../../data/useUserAndCustomerData";
 import {
   useGetCartQuery,
   useUpdateCartMutation,
   useClearCartMutation,
   useRemoveFromCartMutation,
 } from "../../api/cartApi";
+import { useGetAllUsersQuery, useGetUserByIdQuery } from "../../api/userApi";
 import { useGetProfileQuery } from "../../api/userApi";
 import { useCreateQuotationMutation } from "../../api/quotationApi";
 import {
@@ -48,11 +51,13 @@ import PropTypes from "prop-types";
 import "react-lazy-load-image-component/src/effects/blur.css";
 import OrderTotal from "./OrderTotal";
 import useProductsData from "../../data/useProductdata";
+import AddAddress from "../Address/AddAddressModal";
+
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { TabPane } = Tabs;
 
-// Styled Components (unchanged)
+// Styled Components
 const PageWrapper = styled.div`
   padding: 20px;
   background-color: #f5f5f5;
@@ -132,130 +137,6 @@ const DiscountInput = styled(InputNumber)`
   margin-left: 8px;
 `;
 
-// AddAddressModal component (unchanged)
-const AddAddressModal = ({ show, onClose, onSave }) => {
-  const [addressData, setAddressData] = useState({
-    name: "",
-    street: "",
-    city: "",
-    state: "",
-    country: "",
-    postalCode: "",
-  });
-  const [createAddress, { isLoading: isCreatingAddress }] =
-    useCreateAddressMutation();
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setAddressData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const newAddress = await createAddress(addressData).unwrap();
-      onSave(newAddress.data.addressId);
-      setAddressData({
-        name: "",
-        street: "",
-        city: "",
-        state: "",
-        country: "",
-        postalCode: "",
-      });
-      onClose();
-    } catch (err) {
-      toast.error(
-        `Failed to create address: ${err.data?.message || "Unknown error"}`
-      );
-    }
-  };
-
-  return (
-    <Modal title="Add New Address" open={show} onCancel={onClose} footer={null}>
-      <form onSubmit={handleSubmit}>
-        <div className="mb-3">
-          <label className="form-label">Name</label>
-          <input
-            type="text"
-            className="form-control"
-            name="name"
-            value={addressData.name}
-            onChange={handleChange}
-          />
-        </div>
-        <div className="mb-3">
-          <label className="form-label">Street *</label>
-          <input
-            type="text"
-            className="form-control"
-            name="street"
-            value={addressData.street}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div className="mb-3">
-          <label className="form-label">City *</label>
-          <input
-            type="text"
-            className="form-control"
-            name="city"
-            value={addressData.city}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div className="mb-3">
-          <label className="form-label">State</label>
-          <input
-            type="text"
-            className="form-control"
-            name="state"
-            value={addressData.state}
-            onChange={handleChange}
-          />
-        </div>
-        <div className="mb-3">
-          <label className="form-label">Country *</label>
-          <input
-            type="text"
-            className="form-control"
-            name="country"
-            value={addressData.country}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div className="mb-3">
-          <label className="form-label">Postal Code</label>
-          <input
-            type="text"
-            className="form-control"
-            name="postalCode"
-            value={addressData.postalCode}
-            onChange={handleChange}
-          />
-        </div>
-        <div className="modal-footer">
-          <Button type="button" onClick={onClose} disabled={isCreatingAddress}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isCreatingAddress}>
-            {isCreatingAddress ? "Saving..." : "Save Address"}
-          </Button>
-        </div>
-      </form>
-    </Modal>
-  );
-};
-
-AddAddressModal.propTypes = {
-  show: PropTypes.bool.isRequired,
-  onClose: PropTypes.func.isRequired,
-  onSave: PropTypes.func.isRequired,
-};
-
 const generateQuotationNumber = () => {
   const timestamp = Date.now().toString().slice(-6);
   const random = Math.floor(1000 + Math.random() * 9000);
@@ -284,18 +165,6 @@ const NewCart = ({ onConvertToOrder }) => {
     isError: customersError,
   } = useGetCustomersQuery();
 
-  const {
-    data: addressesData,
-    isLoading: addressesLoading,
-    isError: addressesError,
-    refetch: refetchAddresses,
-  } = useGetAllAddressesQuery(userId, { skip: !userId });
-
-  const [updateCart] = useUpdateCartMutation();
-  const [clearCart] = useClearCartMutation();
-  const [removeFromCart] = useRemoveFromCartMutation();
-  const [createQuotation] = useCreateQuotationMutation();
-
   const [activeTab, setActiveTab] = useState("cart");
   const [selectedCustomer, setSelectedCustomer] = useState("");
   const [showClearCartModal, setShowClearCartModal] = useState(false);
@@ -318,6 +187,43 @@ const NewCart = ({ onConvertToOrder }) => {
   const [error, setError] = useState("");
   const [updatingItems, setUpdatingItems] = useState({});
 
+  // Inside NewCart.jsx
+  const {
+    data: addressesData,
+    isLoading: addressesLoading,
+    isError: addressesError,
+    refetch: refetchAddresses,
+  } = useGetAllAddressesQuery(
+    { customerId: selectedCustomer },
+    { skip: !selectedCustomer }
+  );
+
+  const addresses = useMemo(() => {
+    if (!addressesData) return [];
+    if (Array.isArray(addressesData?.data)) return addressesData.data;
+    if (Array.isArray(addressesData)) return addressesData;
+    return [];
+  }, [addressesData]);
+  // Inside the component
+  const userIds = useMemo(
+    () => [...new Set(addresses.map((addr) => addr.userId).filter(Boolean))],
+    [addresses]
+  );
+  const customerIds = useMemo(
+    () => [
+      ...new Set(addresses.map((addr) => addr.customerId).filter(Boolean)),
+    ],
+    [addresses]
+  );
+
+  // Inside NewCart.jsx
+  const { userMap, customerMap, userQueries, customerQueries } =
+    useUserAndCustomerData(userIds, customerIds);
+  const [updateCart] = useUpdateCartMutation();
+  const [clearCart] = useClearCartMutation();
+  const [removeFromCart] = useRemoveFromCartMutation();
+  const [createQuotation] = useCreateQuotationMutation();
+
   // Use the custom hook to fetch product details
   const cartItems = useMemo(
     () => (Array.isArray(cartData?.cart?.items) ? cartData.cart.items : []),
@@ -333,15 +239,6 @@ const NewCart = ({ onConvertToOrder }) => {
   const customerList = useMemo(
     () => (Array.isArray(customers) ? customers : []),
     [customers]
-  );
-  const addresses = useMemo(
-    () =>
-      Array.isArray(addressesData?.data)
-        ? addressesData.data
-        : Array.isArray(addressesData)
-        ? addressesData
-        : [],
-    [addressesData]
   );
 
   const totalItems = useMemo(
@@ -377,6 +274,9 @@ const NewCart = ({ onConvertToOrder }) => {
   const totalAmount = subTotal + shipping + tax - totalDiscount + roundOff;
 
   useEffect(() => {
+    console.log("addressesData:", addressesData);
+    console.log("addresses:", addresses);
+    console.log("selectedCustomer:", selectedCustomer);
     if (selectedCustomer && addresses.length > 0) {
       const selectedCustomerData = customerList.find(
         (customer) => customer.customerId === selectedCustomer
@@ -384,7 +284,7 @@ const NewCart = ({ onConvertToOrder }) => {
       if (selectedCustomerData) {
         setQuotationData((prev) => {
           const newBillTo = selectedCustomerData.name || prev.billTo;
-          let newShipTo = null;
+          let newShipTo = prev.shipTo;
           if (selectedCustomerData.address) {
             const customerAddress = selectedCustomerData.address;
             const matchingAddress = addresses.find((addr) => {
@@ -546,6 +446,18 @@ const NewCart = ({ onConvertToOrder }) => {
     if (!selectedCustomerData)
       return toast.error("Selected customer not found.");
 
+    // Validate that the selected shipTo address belongs to the selected customer
+    if (quotationData.shipTo) {
+      const selectedAddress = addresses.find(
+        (addr) => addr.addressId === quotationData.shipTo
+      );
+      if (selectedAddress && selectedAddress.customerId !== selectedCustomer) {
+        return toast.error(
+          "Selected address does not belong to the chosen customer."
+        );
+      }
+    }
+
     const quotationPayload = {
       quotationId: uuidv4(),
       document_title: `Quotation for ${selectedCustomerData.name}`,
@@ -600,7 +512,10 @@ const NewCart = ({ onConvertToOrder }) => {
       await createQuotation(quotationPayload).unwrap();
       await handleClearCart();
       resetForm();
+      toast.success("Quotation created successfully!");
+      navigate("/quotations/list");
     } catch (error) {
+      console.error("Quotation creation error:", error);
       toast.error(
         `Failed to create quotation: ${
           error.data?.message || error.message || "Unknown error"
@@ -631,9 +546,10 @@ const NewCart = ({ onConvertToOrder }) => {
     setShowAddAddressModal(true);
   };
 
-  const handleAddressSave = (newAddressId) => {
+  const handleAddressSave = async (newAddressId) => {
     setQuotationData((prev) => ({ ...prev, shipTo: newAddressId }));
     setShowAddAddressModal(false);
+    await refetchAddresses();
   };
 
   if (profileLoading || cartLoading || productsLoading) {
@@ -736,7 +652,6 @@ const NewCart = ({ onConvertToOrder }) => {
                     ) : (
                       <div>
                         {cartItems.map((item) => {
-                          // Find the product data from useProductsData
                           const product = productsData?.find(
                             (p) => p.productId === item.productId
                           );
@@ -939,14 +854,20 @@ const NewCart = ({ onConvertToOrder }) => {
                         <Text strong>Select Customer</Text>
                         <CustomerSelect
                           value={selectedCustomer}
-                          onChange={setSelectedCustomer}
+                          onChange={(value) => {
+                            setSelectedCustomer(value);
+                            setQuotationData((prev) => ({
+                              ...prev,
+                              shipTo: null,
+                            }));
+                          }}
                           placeholder="Select a customer"
                           loading={customersLoading}
                           disabled={customersLoading || customersError}
                           aria-label="Select customer"
                         >
                           {customersLoading ? (
-                            <Option disabled>Loading...</Option>
+                            <Option disabled>Select a customer</Option>
                           ) : customersError ? (
                             <Option disabled>Error fetching customers</Option>
                           ) : customerList.length === 0 ? (
@@ -971,20 +892,35 @@ const NewCart = ({ onConvertToOrder }) => {
                         </Button>
                         <Divider />
                         <Text strong>Shipping Address</Text>
+
                         <Select
                           value={quotationData.shipTo}
                           onChange={(value) =>
                             handleQuotationChange("shipTo", value)
                           }
                           placeholder="Select shipping address"
-                          loading={addressesLoading}
-                          disabled={addressesLoading || addressesError}
+                          loading={
+                            addressesLoading ||
+                            userQueries.some((q) => q.isLoading) ||
+                            customerQueries.some((q) => q.isLoading)
+                          }
+                          disabled={
+                            addressesLoading ||
+                            addressesError ||
+                            !selectedCustomer ||
+                            userQueries.some((q) => q.isLoading) ||
+                            customerQueries.some((q) => q.isLoading)
+                          }
                           style={{ width: "100%", marginTop: 8 }}
+                          aria-label="Select shipping address"
                         >
                           {addressesLoading ? (
                             <Option disabled>Loading...</Option>
                           ) : addressesError ? (
-                            <Option disabled>Error fetching addresses</Option>
+                            <Option disabled>
+                              Error fetching addresses:{" "}
+                              {addressesError?.data?.message || "Unknown error"}
+                            </Option>
                           ) : addresses.length === 0 ? (
                             <Option disabled>No addresses available</Option>
                           ) : (
@@ -993,8 +929,16 @@ const NewCart = ({ onConvertToOrder }) => {
                                 key={address.addressId}
                                 value={address.addressId}
                               >
-                                {address.name ||
-                                  `${address.street}, ${address.city}`}
+                                {`${address.street}, ${address.city}${
+                                  address.state ? `, ${address.state}` : ""
+                                }, ${address.country} (${
+                                  address.customerId
+                                    ? customerMap[address.customerId] ||
+                                      "Unknown Customer"
+                                    : address.userId
+                                    ? userMap[address.userId] || "Unknown User"
+                                    : "No associated name"
+                                })`}
                               </Option>
                             ))
                           )}
@@ -1005,9 +949,11 @@ const NewCart = ({ onConvertToOrder }) => {
                           onClick={handleAddAddress}
                           style={{ padding: 0, marginTop: 8 }}
                           aria-label="Add new address"
+                          disabled={!selectedCustomer}
                         >
                           Add New Address
                         </Button>
+
                         <Divider />
                         <Text strong>Quotation Date</Text>
                         <input
@@ -1160,11 +1106,13 @@ const NewCart = ({ onConvertToOrder }) => {
             </Text>
           </Modal>
 
-          <AddAddressModal
-            show={showAddAddressModal}
-            onClose={() => setShowAddAddressModal(false)}
-            onSave={handleAddressSave}
-          />
+          {showAddAddressModal && (
+            <AddAddress
+              onClose={() => setShowAddAddressModal(false)}
+              onSave={handleAddressSave}
+              selectedCustomer={selectedCustomer}
+            />
+          )}
         </CartContainer>
       </PageWrapper>
     </div>
