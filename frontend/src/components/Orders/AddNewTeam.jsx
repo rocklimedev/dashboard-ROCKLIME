@@ -87,17 +87,20 @@ const AddNewTeam = ({ onClose, onTeamAdded, team, visible }) => {
     };
 
     try {
+      let newTeamId;
       if (team) {
-        await updateTeam({
+        const updatedTeam = await updateTeam({
           teamId: team.id,
           ...teamDataPayload,
         }).unwrap();
+        newTeamId = team.id; // Use existing team ID for updates
       } else {
-        await createTeam(teamDataPayload).unwrap();
+        const createdTeam = await createTeam(teamDataPayload).unwrap();
+        newTeamId = createdTeam.teamId; // Assuming the API returns the new team ID
       }
       form.resetFields();
       setMembers([]);
-      onTeamAdded?.();
+      onTeamAdded?.(newTeamId); // Pass the new team ID to the callback
       onClose();
     } catch (err) {
       toast.error(

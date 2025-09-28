@@ -3,79 +3,90 @@ import {
   useCreateAddressMutation,
   useUpdateAddressMutation,
 } from "../../api/addressApi";
-import { v4 as uuidv4 } from "uuid";
+import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
+import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
+import { Modal, Button, Input, Select, Form, Radio } from "antd";
 
-const AddAddress = ({ onClose, existingAddress }) => {
+const { Option } = Select;
+
+const AddAddress = ({ onClose, onSave, existingAddress, selectedCustomer }) => {
   const isEdit = !!existingAddress;
-
-  const [formData, setFormData] = useState({
-    street: "",
-    city: "",
-    state: "",
-    postalCode: "",
-    country: "",
-    userId: "",
-  });
-
-  const [errors, setErrors] = useState({});
-
+  const [form] = Form.useForm();
+  const [addressType, setAddressType] = useState(
+    existingAddress?.customerId
+      ? "customer"
+      : existingAddress?.userId
+      ? "user"
+      : "customer"
+  );
   const [createAddress, { isLoading: isCreating }] = useCreateAddressMutation();
   const [updateAddress, { isLoading: isUpdating }] = useUpdateAddressMutation();
   const {
-    data: users,
+    data: customersData,
+    isLoading: isCustomersLoading,
+    error: customersError,
+  } = useGetCustomersQuery();
+  const {
+    data: usersData,
     isLoading: isUsersLoading,
     error: usersError,
   } = useGetAllUsersQuery();
 
+  const customers = customersData?.data || [];
+  const users = usersData?.users || [];
+
   useEffect(() => {
     if (existingAddress) {
-      setFormData({
+      form.setFieldsValue({
         street: existingAddress.street || "",
         city: existingAddress.city || "",
         state: existingAddress.state || "",
         postalCode: existingAddress.postalCode || "",
         country: existingAddress.country || "",
-        userId: existingAddress.userId || "",
+        userId: existingAddress.userId || undefined,
+        customerId: existingAddress.customerId || undefined,
       });
+      setAddressType(existingAddress.customerId ? "customer" : "user");
+    } else if (selectedCustomer) {
+      form.setFieldsValue({ customerId: selectedCustomer });
+      setAddressType("customer");
     }
-  }, [existingAddress]);
+  }, [existingAddress, selectedCustomer, form]);
 
-  const validateForm = () => {
-    const newErrors = {};
-    if (!formData.street.trim()) newErrors.street = "Street is required";
-    if (!formData.city.trim()) newErrors.city = "City is required";
-    if (!formData.state.trim()) newErrors.state = "State is required";
-    if (!formData.postalCode.trim())
-      newErrors.postalCode = "Postal Code is required";
-    if (!formData.country.trim()) newErrors.country = "Country is required";
-    if (!formData.userId) newErrors.userId = "User is required";
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const handleAddressTypeChange = (e) => {
+    const type = e.target.value;
+    setAddressType(type);
+    form.setFieldsValue({
+      userId: undefined,
+      customerId: undefined,
+      ...(type === "customer" && selectedCustomer
+        ? { customerId: selectedCustomer }
+        : {}),
+    });
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: "" }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!validateForm()) {
-      toast.error("Please fill in all required fields");
+  const handleSubmit = async (values) => {
+    if (!values.userId && !values.customerId) {
+      toast.error("Either User or Customer is required");
+      return;
+    }
+    if (values.userId && values.customerId) {
+      toast.error(
+        "Address can only be associated with either a User or a Customer"
+      );
       return;
     }
 
     const updatedData = {
-      street: formData.street,
-      city: formData.city,
-      state: formData.state,
-      postalCode: formData.postalCode,
-      country: formData.country,
-      userId: formData.userId,
+      street: values.street,
+      city: values.city,
+      state: values.state,
+      postalCode: values.postalCode,
+      country: values.country,
+      userId: values.userId || null,
+      customerId: values.customerId || null,
       updatedAt: new Date().toISOString(),
     };
 
@@ -91,10 +102,12 @@ const AddAddress = ({ onClose, existingAddress }) => {
           ...updatedData,
           createdAt: new Date().toISOString(),
         };
-        await createAddress(addressData).unwrap();
+        const newAddress = await createAddress(addressData).unwrap();
+        onSave(newAddress.data.addressId);
       }
       onClose();
     } catch (err) {
+      console.error("Address creation error:", err);
       toast.error(
         `Failed to save address: ${
           err?.data?.message || err.message || "Unknown error"
@@ -104,198 +117,136 @@ const AddAddress = ({ onClose, existingAddress }) => {
   };
 
   return (
-    <div
-      className="modal fade show d-block"
-      tabIndex="-1"
-      role="dialog"
-      aria-labelledby="addressModalLabel"
-      style={{ background: "rgba(0,0,0,0.5)" }}
+    <Modal
+      title={isEdit ? "Edit Address" : "Add New Address"}
+      open={true}
+      onCancel={onClose}
+      footer={null}
     >
-      <div className="modal-dialog modal-lg">
-        <form onSubmit={handleSubmit}>
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 id="addressModalLabel" className="modal-title">
-                {isEdit ? "Edit Address" : "Add New Address"}
-              </h5>
-              <button
-                type="button"
-                className="btn-close"
-                onClick={onClose}
-                aria-label="Close"
-              ></button>
-            </div>
-            <div className="modal-body row g-3">
-              <div className="col-md-6">
-                <label htmlFor="street" className="form-label">
-                  Street
-                </label>
-                <input
-                  type="text"
-                  id="street"
-                  name="street"
-                  value={formData.street}
-                  onChange={handleChange}
-                  className={`form-control ${
-                    errors.street ? "is-invalid" : ""
-                  }`}
-                  required
-                  aria-describedby="streetError"
-                />
-                {errors.street && (
-                  <div id="streetError" className="invalid-feedback">
-                    {errors.street}
-                  </div>
-                )}
-              </div>
-              <div className="col-md-6">
-                <label htmlFor="city" className="form-label">
-                  City
-                </label>
-                <input
-                  type="text"
-                  id="city"
-                  name="city"
-                  value={formData.city}
-                  onChange={handleChange}
-                  className={`form-control ${errors.city ? "is-invalid" : ""}`}
-                  required
-                  aria-describedby="cityError"
-                />
-                {errors.city && (
-                  <div id="cityError" className="invalid-feedback">
-                    {errors.city}
-                  </div>
-                )}
-              </div>
-              <div className="col-md-6">
-                <label htmlFor="state" className="form-label">
-                  State
-                </label>
-                <input
-                  type="text"
-                  id="state"
-                  name="state"
-                  value={formData.state}
-                  onChange={handleChange}
-                  className={`form-control ${errors.state ? "is-invalid" : ""}`}
-                  required
-                  aria-describedby="stateError"
-                />
-                {errors.state && (
-                  <div id="stateError" className="invalid-feedback">
-                    {errors.state}
-                  </div>
-                )}
-              </div>
-              <div className="col-md-6">
-                <label htmlFor="postalCode" className="form-label">
-                  Postal Code
-                </label>
-                <input
-                  type="text"
-                  id="postalCode"
-                  name="postalCode"
-                  value={formData.postalCode}
-                  onChange={handleChange}
-                  className={`form-control ${
-                    errors.postalCode ? "is-invalid" : ""
-                  }`}
-                  required
-                  aria-describedby="postalCodeError"
-                />
-                {errors.postalCode && (
-                  <div id="postalCodeError" className="invalid-feedback">
-                    {errors.postalCode}
-                  </div>
-                )}
-              </div>
-              <div className="col-md-6">
-                <label htmlFor="country" className="form-label">
-                  Country
-                </label>
-                <input
-                  type="text"
-                  id="country"
-                  name="country"
-                  value={formData.country}
-                  onChange={handleChange}
-                  className={`form-control ${
-                    errors.country ? "is-invalid" : ""
-                  }`}
-                  required
-                  aria-describedby="countryError"
-                />
-                {errors.country && (
-                  <div id="countryError" className="invalid-feedback">
-                    {errors.country}
-                  </div>
-                )}
-              </div>
-              <div className="col-md-6">
-                <label htmlFor="userId" className="form-label">
-                  User
-                </label>
-                {isUsersLoading ? (
-                  <div>Loading users...</div>
-                ) : usersError ? (
-                  <div className="text-danger">
-                    Error loading users: {usersError.message}
-                  </div>
-                ) : (
-                  <select
-                    id="userId"
-                    name="userId"
-                    value={formData.userId}
-                    onChange={handleChange}
-                    className={`form-select ${
-                      errors.userId ? "is-invalid" : ""
-                    }`}
-                    required
-                    aria-describedby="userIdError"
-                  >
-                    <option value="">Select a user</option>
-                    {users?.users?.map((user) => (
-                      <option key={user.userId} value={user.userId}>
-                        {user.name || user.email || user.userId}
-                      </option>
-                    ))}
-                  </select>
-                )}
-                {errors.userId && (
-                  <div id="userIdError" className="invalid-feedback">
-                    {errors.userId}
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={onClose}
-                disabled={isCreating || isUpdating}
-                aria-label="Cancel"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={isCreating || isUpdating || isUsersLoading}
-                aria-label={isEdit ? "Update address" : "Create address"}
-              >
-                {isCreating || isUpdating
-                  ? "Saving..."
-                  : isEdit
-                  ? "Update"
-                  : "Create"}
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
+      <Form form={form} onFinish={handleSubmit} layout="vertical">
+        <Form.Item
+          label="Address For"
+          name="addressType"
+          rules={[
+            {
+              required: true,
+              message:
+                "Please select whether the address is for a User or Customer",
+            },
+          ]}
+        >
+          <Radio.Group
+            onChange={handleAddressTypeChange}
+            value={addressType}
+            disabled={isEdit} // Prevent changing type when editing
+          >
+            <Radio value="user">User</Radio>
+            <Radio value="customer">Customer</Radio>
+          </Radio.Group>
+        </Form.Item>
+        <Form.Item
+          label="Street"
+          name="street"
+          rules={[{ required: true, message: "Street is required" }]}
+        >
+          <Input />
+        </Form.Item>
+        <Form.Item
+          label="City"
+          name="city"
+          rules={[{ required: true, message: "City is required" }]}
+        >
+          <Input />
+        </Form.Item>
+        <Form.Item label="State" name="state">
+          <Input />
+        </Form.Item>
+        <Form.Item label="Postal Code" name="postalCode">
+          <Input />
+        </Form.Item>
+        <Form.Item
+          label="Country"
+          name="country"
+          rules={[{ required: true, message: "Country is required" }]}
+        >
+          <Input />
+        </Form.Item>
+        {addressType === "user" && (
+          <Form.Item
+            label="User"
+            name="userId"
+            rules={[{ required: true, message: "User is required" }]}
+          >
+            <Select
+              loading={isUsersLoading}
+              disabled={isUsersLoading || !!usersError}
+              placeholder="Select a user"
+              allowClear
+            >
+              {isUsersLoading ? (
+                <Option disabled>Loading...</Option>
+              ) : usersError ? (
+                <Option disabled>Error fetching users</Option>
+              ) : (
+                users.map((user) => (
+                  <Option key={user.userId} value={user.userId}>
+                    {user.name || user.email || user.userId}
+                  </Option>
+                ))
+              )}
+            </Select>
+          </Form.Item>
+        )}
+        {addressType === "customer" && (
+          <Form.Item
+            label="Customer"
+            name="customerId"
+            rules={[{ required: true, message: "Customer is required" }]}
+          >
+            <Select
+              loading={isCustomersLoading}
+              disabled={isCustomersLoading || !!customersError}
+              placeholder="Select a customer"
+              allowClear
+            >
+              {isCustomersLoading ? (
+                <Option disabled>Loading...</Option>
+              ) : customersError ? (
+                <Option disabled>Error fetching customers</Option>
+              ) : (
+                customers.map((customer) => (
+                  <Option key={customer.customerId} value={customer.customerId}>
+                    {customer.name} ({customer.email})
+                  </Option>
+                ))
+              )}
+            </Select>
+          </Form.Item>
+        )}
+        <Form.Item>
+          <Button
+            type="default"
+            onClick={onClose}
+            disabled={isCreating || isUpdating}
+            style={{ marginRight: 8 }}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="primary"
+            htmlType="submit"
+            loading={isCreating || isUpdating}
+            disabled={isUsersLoading || isCustomersLoading}
+          >
+            {isCreating || isUpdating
+              ? "Saving..."
+              : isEdit
+              ? "Update"
+              : "Create"}
+          </Button>
+        </Form.Item>
+      </Form>
+    </Modal>
   );
 };
 
