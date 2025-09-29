@@ -275,13 +275,11 @@ const CustomerDetails = () => {
           addressId: editingAddress.addressId,
           updatedData: { ...values, customerId: customer.customerId },
         }).unwrap();
-        toast.success("Address updated successfully!");
       } else {
         await createAddress({
           ...values,
           customerId: customer.customerId,
         }).unwrap();
-        toast.success("Address added successfully!");
       }
       setIsAddressModalVisible(false);
       addressForm.resetFields();
@@ -298,7 +296,6 @@ const CustomerDetails = () => {
   const handleDeleteAddress = async (addressId) => {
     try {
       await deleteAddress(addressId).unwrap();
-      toast.success("Address deleted successfully!");
       refetchAddresses();
     } catch (error) {
       toast.error(

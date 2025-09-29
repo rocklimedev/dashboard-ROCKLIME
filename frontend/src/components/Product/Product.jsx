@@ -4,12 +4,12 @@ import { Spin, Empty } from "antd";
 import { useGetBrandParentCategoriesQuery } from "../../api/brandParentCategoryApi";
 
 import "./productwrapper.css";
-const surfaces = "https://static.cmtradingco.com/brands//SIURFACE.png";
-const tiles = "https://static.cmtradingco.com/brands//tiles.png";
-const plumbing = "https://static.cmtradingco.com/brands//plumbing.jpg";
-const fittings = "https://static.cmtradingco.com/brands//CP FITTING.png";
-const accessories = "https://static.cmtradingco.com/brands//ACCESORIES.png";
-const adhesive = "https://static.cmtradingco.com/brands//ADHESIVE.png";
+const surfaces = "https://static.cmtradingco.com/brands/SIURFACE.png";
+const tiles = "https://static.cmtradingco.com/brands/tiles.png";
+const plumbing = "https://static.cmtradingco.com/brands/plumbing.jpg";
+const fittings = "https://static.cmtradingco.com/brands/CP FITTING.png";
+const accessories = "https://static.cmtradingco.com/brands/ACCESORIES.png";
+const adhesive = "https://static.cmtradingco.com/brands/ADHESIVE.png";
 const Product = () => {
   const {
     data: bpcList,

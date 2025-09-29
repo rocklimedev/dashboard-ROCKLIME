@@ -249,7 +249,6 @@ const Profile = () => {
     try {
       await updateProfile(updatedData).unwrap();
       setIsEditing(false);
-      toast.success("Profile updated successfully!");
     } catch (error) {
       toast.error(
         `Failed to update profile: ${error.data?.message || "Unknown error"}`
@@ -281,10 +280,8 @@ const Profile = () => {
           addressId: editingAddress.addressId,
           updatedData: { ...values, userId },
         }).unwrap();
-        toast.success("Address updated successfully!");
       } else {
         await createAddress({ ...values, userId }).unwrap();
-        toast.success("Address added successfully!");
       }
       setIsAddressModalVisible(false);
       addressForm.resetFields();
@@ -301,7 +298,7 @@ const Profile = () => {
   const handleDeleteAddress = async (addressId) => {
     try {
       await deleteAddress(addressId).unwrap();
-      toast.success("Address deleted successfully!");
+
       refetchAddresses();
     } catch (error) {
       toast.error(
@@ -332,10 +329,8 @@ const Profile = () => {
           id: editingSignature.signatureId,
           body: { ...values, userId },
         }).unwrap();
-        toast.success("Signature updated successfully!");
       } else {
         await createSignature({ ...values, userId }).unwrap();
-        toast.success("Signature added successfully!");
       }
       setIsSignatureModalVisible(false);
       signatureForm.resetFields();
@@ -352,7 +347,7 @@ const Profile = () => {
   const handleDeleteSignature = async (signatureId) => {
     try {
       await deleteSignature(signatureId).unwrap();
-      toast.success("Signature deleted successfully!");
+
       refetchSignatures();
     } catch (error) {
       toast.error(
