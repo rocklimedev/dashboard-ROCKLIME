@@ -278,7 +278,6 @@ const QuotationList = () => {
             title="Quotations"
             subtitle="Manage your Quotations"
             tableData={formattedTableData}
-            onAdd={handleAddQuotation}
             exportOptions={{ pdf: true, excel: true }}
           />
           <div className="card-body">
