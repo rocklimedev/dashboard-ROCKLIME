@@ -36,7 +36,6 @@ const EmailVerification = () => {
       await resendVerificationEmail({ email: trimmedEmail }).unwrap();
       setEmailSent(true);
       setTimer(60); // Start auto-close timer
-      toast.success("Verification email sent! Please check your inbox.");
     } catch (err) {
       const errorMessage =
         err?.data?.message || "Failed to send verification email";

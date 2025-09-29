@@ -9,23 +9,35 @@ const sequelize = require("../config/database");
 // Create a new quotation
 exports.createQuotation = async (req, res) => {
   try {
-    let { products, ...quotationData } = req.body;
+    let { products, items, ...quotationData } = req.body;
+
+    // Use items if provided, otherwise fallback to products
+    const quotationItems = items || products || [];
 
     // Ensure discount values are numbers
-    products = products.map((item) => ({
+    const formattedItems = quotationItems.map((item) => ({
       ...item,
-      discount: typeof item.discount === "string" ? 0.0 : item.discount, // Default if string
+      productId: item.productId || null,
+      quantity: Number(item.quantity) || 1,
+      discount: Number(item.discount) || 0,
+      tax: Number(item.tax) || 0,
+      total: Number(item.total) || 0,
     }));
+
+    // Stringify products for Quotation model if required
+    quotationData.products = JSON.stringify(formattedItems);
 
     const quotation = await Quotation.create({
       ...quotationData,
-      products,
+      quotationId: uuidv4(), // Ensure unique ID
     });
 
-    await QuotationItem.create({
-      quotationId: quotation.quotationId,
-      items: products,
-    });
+    if (formattedItems.length > 0) {
+      await QuotationItem.create({
+        quotationId: quotation.quotationId,
+        items: formattedItems,
+      });
+    }
 
     res.status(201).json({
       quotation,
@@ -82,20 +94,16 @@ exports.updateQuotation = async (req, res) => {
   const t = await sequelize.transaction();
   try {
     const { id } = req.params;
-    const { items, ...quotationData } = req.body;
+    const { items, products, ...quotationData } = req.body;
 
     // Validate input
     if (!id) {
       await t.rollback();
       return res.status(400).json({ message: "Quotation ID is required" });
     }
-    if (Object.keys(quotationData).length === 0 && !items) {
+    if (Object.keys(quotationData).length === 0 && !items && !products) {
       await t.rollback();
       return res.status(400).json({ message: "No data provided for update" });
-    }
-    if (items && !Array.isArray(items)) {
-      await t.rollback();
-      return res.status(400).json({ message: "Items must be an array" });
     }
 
     // Check if quotation exists
@@ -108,15 +116,28 @@ exports.updateQuotation = async (req, res) => {
       return res.status(404).json({ message: "Quotation not found" });
     }
 
-    // Stringify products if provided
-    if (quotationData.products && typeof quotationData.products !== "string") {
-      quotationData.products = JSON.stringify(quotationData.products);
+    // Use items if provided, otherwise fallback to products
+    const quotationItems = items || products || [];
+
+    // Format items
+    const formattedItems = quotationItems.map((item) => ({
+      productId: item.productId || null,
+      quantity: Number(item.quantity) || 1,
+      discount: Number(item.discount) || 0,
+      tax: Number(item.tax) || 0,
+      total: Number(item.total) || 0,
+    }));
+
+    // Stringify products for Quotation model if required
+    if (quotationItems.length > 0) {
+      quotationData.products = JSON.stringify(formattedItems);
+    } else {
+      quotationData.products = null; // Clear products if no items
     }
 
     // Update MySQL Quotation if quotationData is not empty
-    let updated;
     if (Object.keys(quotationData).length > 0) {
-      updated = await Quotation.update(quotationData, {
+      const updated = await Quotation.update(quotationData, {
         where: { quotationId: id },
         transaction: t,
       });
@@ -128,23 +149,13 @@ exports.updateQuotation = async (req, res) => {
     }
 
     // Update MongoDB Items
-    if (items && items.length > 0) {
+    if (formattedItems.length > 0) {
       await QuotationItem.updateOne(
         { quotationId: id },
-        {
-          $set: {
-            items: items.map((item) => ({
-              productId: item.productId || null,
-              quantity: item.quantity,
-              discount: item.discount,
-              tax: item.tax,
-              total: item.total,
-            })),
-          },
-        },
+        { $set: { items: formattedItems } },
         { upsert: true }
       );
-    } else if (items) {
+    } else {
       await QuotationItem.deleteOne({ quotationId: id });
     }
 
@@ -152,7 +163,6 @@ exports.updateQuotation = async (req, res) => {
     res.status(200).json({ message: "Quotation updated successfully" });
   } catch (error) {
     await t.rollback();
-
     res
       .status(500)
       .json({ error: "Failed to update quotation", details: error.message });
