@@ -15,7 +15,6 @@ export default function useUserAndCustomerData(userIds = [], customerIds = []) {
   const [customerErrors, setCustomerErrors] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Create stable arrays of user and customer IDs
   const safeUserIds = useMemo(
     () => (Array.isArray(userIds) ? userIds.filter(Boolean) : []),
     [userIds]
@@ -26,7 +25,6 @@ export default function useUserAndCustomerData(userIds = [], customerIds = []) {
   );
 
   useEffect(() => {
-    // Avoid fetching if no IDs
     if (safeUserIds.length === 0 && safeCustomerIds.length === 0) {
       setUserData([]);
       setCustomerData([]);
@@ -103,31 +101,29 @@ export default function useUserAndCustomerData(userIds = [], customerIds = []) {
 
   // Map user data to { [userId]: name }
   const userMap = useMemo(() => {
-    const map = {};
-    safeUserIds.forEach((id, index) => {
-      if (userData[index]?.user && id) {
-        map[id] = userData[index].user.name;
+    return userData.reduce((map, result) => {
+      if (result?.user && result.userId) {
+        map[result.userId] = result.user.name || "Unnamed User";
       }
-    });
-    return map;
-  }, [userData, safeUserIds]);
+      return map;
+    }, {});
+  }, [userData]);
 
   // Map customer data to { [customerId]: name }
   const customerMap = useMemo(() => {
-    const map = {};
-    safeCustomerIds.forEach((id, index) => {
-      if (customerData[index]?.customer && id) {
-        map[id] = customerData[index].customer.name;
+    return customerData.reduce((map, result) => {
+      if (result?.customer && result.customerId) {
+        map[result.customerId] = result.customer.name || "Unnamed Customer";
       }
-    });
-    return map;
-  }, [customerData, safeCustomerIds]);
+      return map;
+    }, {});
+  }, [customerData]);
 
   // Create query-like objects for compatibility with NewCart
   const userQueries = useMemo(
     () =>
-      safeUserIds.map((id, index) => ({
-        data: userData[index] || null,
+      safeUserIds.map((id) => ({
+        data: userData.find((result) => result?.userId === id) || null,
         isLoading: loading,
         error: userErrors.find((err) => err.userId === id) || null,
       })),
@@ -136,8 +132,8 @@ export default function useUserAndCustomerData(userIds = [], customerIds = []) {
 
   const customerQueries = useMemo(
     () =>
-      safeCustomerIds.map((id, index) => ({
-        data: customerData[index] || null,
+      safeCustomerIds.map((id) => ({
+        data: customerData.find((result) => result?.customerId === id) || null,
         isLoading: loading,
         error: customerErrors.find((err) => err.customerId === id) || null,
       })),

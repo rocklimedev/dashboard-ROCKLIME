@@ -274,9 +274,6 @@ const NewCart = ({ onConvertToOrder }) => {
   const totalAmount = subTotal + shipping + tax - totalDiscount + roundOff;
 
   useEffect(() => {
-    console.log("addressesData:", addressesData);
-    console.log("addresses:", addresses);
-    console.log("selectedCustomer:", selectedCustomer);
     if (selectedCustomer && addresses.length > 0) {
       const selectedCustomerData = customerList.find(
         (customer) => customer.customerId === selectedCustomer
@@ -515,7 +512,6 @@ const NewCart = ({ onConvertToOrder }) => {
       toast.success("Quotation created successfully!");
       navigate("/quotations/list");
     } catch (error) {
-      console.error("Quotation creation error:", error);
       toast.error(
         `Failed to create quotation: ${
           error.data?.message || error.message || "Unknown error"
@@ -915,7 +911,7 @@ const NewCart = ({ onConvertToOrder }) => {
                           aria-label="Select shipping address"
                         >
                           {addressesLoading ? (
-                            <Option disabled>Loading...</Option>
+                            <Option disabled>Select Shipping Address</Option>
                           ) : addressesError ? (
                             <Option disabled>
                               Error fetching addresses:{" "}

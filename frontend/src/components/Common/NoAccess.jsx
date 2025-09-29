@@ -41,22 +41,9 @@ const NoAccess = () => {
     : [];
   const needsVerification = !isEmailVerified && accessRoles.length === 0;
 
-  // Debugging logs
-  console.log({
-    user,
-    isEmailVerified,
-    roles,
-    accessRoles,
-    needsVerification,
-    emailSent,
-    isFetchingProfile,
-    profileError,
-  });
-
   // Handle profile fetch errors
   useEffect(() => {
     if (profileError) {
-      console.error("Profile fetch error:", profileError);
       toast.error("Failed to fetch user profile.");
     }
   }, [profileError]);

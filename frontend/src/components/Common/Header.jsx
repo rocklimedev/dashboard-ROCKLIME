@@ -112,7 +112,6 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
       await logout();
       navigate("/login", { replace: true });
     } catch (error) {
-      console.error("Logout failed:", error);
       toast.error("Logout failed. Please try again.");
     }
   };

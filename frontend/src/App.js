@@ -14,7 +14,7 @@ function App() {
   const { auth, setAuth } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  console.log(auth);
+
   const [authChecked, setAuthChecked] = useState(false);
   const [isSidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 768);
   const [layoutMode, setLayoutMode] = useState("vertical");
@@ -108,14 +108,10 @@ function App() {
   // Debug profile fetch
   useEffect(() => {
     if (profileError) {
-      console.error("Profile fetch error:", profileError);
       toast.error("Failed to fetch user profile.");
       if (!isLoggingOut) {
         navigate("/login", { replace: true });
       }
-    }
-    if (profileData) {
-      console.log("Profile data:", profileData);
     }
   }, [profileData, profileError, navigate, isLoggingOut]);
 
@@ -124,7 +120,6 @@ function App() {
     if (isProfileLoading || isAuthPage || !auth?.token || isLoggingOut) return;
 
     if (!profileData?.user) {
-      console.warn("No user profile found in profileData");
       toast.error("Access denied. No user profile found.");
       navigate("/login", { replace: true });
       return;
@@ -136,7 +131,6 @@ function App() {
       try {
         roles = JSON.parse(roles);
       } catch (e) {
-        console.error("Failed to parse roles:", e);
         roles = [];
       }
     }
@@ -144,19 +138,12 @@ function App() {
 
     if (!user.isEmailVerified || accessRoles.length === 0) {
       if (location.pathname !== "/no-access") {
-        console.log(
-          "Redirecting to /no-access: isEmailVerified=",
-          user.isEmailVerified,
-          "accessRoles=",
-          accessRoles
-        );
         toast.warning(
           "Access restricted. Please verify your email or request access."
         );
         navigate("/no-access", { replace: true });
       }
     } else if (location.pathname === "/no-access") {
-      console.log("Redirecting to / from /no-access");
       navigate("/", { replace: true });
     }
 
