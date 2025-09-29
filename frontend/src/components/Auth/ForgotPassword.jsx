@@ -74,7 +74,6 @@ const ForgotPassword = () => {
       const response = await forgotPassword({ email: email.trim() }).unwrap();
       setEmailSent(true); // Show success message and start timer
     } catch (error) {
-      console.error("ForgotPassword API error:", error);
       toast.error(error?.data?.message || "Failed to send reset link.");
     }
   };

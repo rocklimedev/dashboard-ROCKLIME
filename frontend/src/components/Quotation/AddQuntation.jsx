@@ -231,7 +231,6 @@ const AddQuotation = () => {
         try {
           parsedProducts = JSON.parse(parsedProducts);
         } catch (error) {
-          console.error("Failed to parse products:", error);
           parsedProducts = [];
         }
       }

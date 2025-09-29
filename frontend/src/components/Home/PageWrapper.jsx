@@ -260,7 +260,6 @@ const PageWrapper = () => {
   const topSellingProducts = useMemo(() => {
     if (loadingQuotations) return [];
     if (!Array.isArray(quotationData)) {
-      console.warn("quotationData is not an array:", quotationData);
       return [];
     }
 
@@ -271,7 +270,6 @@ const PageWrapper = () => {
         try {
           products = JSON.parse(products);
         } catch (e) {
-          console.error("Failed to parse quotation.products:", products, e);
           products = [];
         }
       }

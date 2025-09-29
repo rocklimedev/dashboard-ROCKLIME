@@ -1,6 +1,6 @@
 {
-  "short_name": "CM Trading Co.",
-  "name": "CM Trading Co. - Inventory & Orders",
+  "short_name": "CM Trading",
+  "name": "CM Trading Co. - Inventory & Orders Dashboard",
   "icons": [
     {
       "src": "fav_icon.png",
@@ -21,10 +21,10 @@
     }
   ],
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "theme_color": "#0d6efd",
   "background_color": "#ffffff",
   "orientation": "portrait",
-  "scope": "/",
-  "description": "CM Trading Co. Dashboard - Admin Panel for managing inventory and orders."
+  "description": "CM Trading Co. Dashboard - Manage inventory, sales, and customer orders efficiently."
 }

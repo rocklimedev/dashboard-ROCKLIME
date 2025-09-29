@@ -301,9 +301,6 @@ const AddPurchaseOrder = () => {
               const quantity = Number(item.quantity) || 1;
 
               if (sellingPrice <= 0) {
-                console.warn(
-                  `Invalid unitPrice for product ${item.productId}: ${sellingPrice}`
-                );
                 toast.warning(
                   `Product ${item.productId} has an invalid price (₹${sellingPrice}).`
                 );
