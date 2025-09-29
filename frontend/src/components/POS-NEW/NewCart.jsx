@@ -509,7 +509,6 @@ const NewCart = ({ onConvertToOrder }) => {
       await createQuotation(quotationPayload).unwrap();
       await handleClearCart();
       resetForm();
-      toast.success("Quotation created successfully!");
       navigate("/quotations/list");
     } catch (error) {
       toast.error(

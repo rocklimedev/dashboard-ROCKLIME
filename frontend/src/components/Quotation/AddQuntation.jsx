@@ -4,7 +4,6 @@ import {
   Form,
   Spinner,
   Alert,
-  Modal,
   Button as BootstrapButton,
 } from "react-bootstrap";
 import { FaArrowLeft, FaSearch } from "react-icons/fa";
@@ -25,131 +24,9 @@ import {
   useCreateAddressMutation,
 } from "../../api/addressApi";
 import { useGetProfileQuery } from "../../api/userApi";
-
+import { v4 as uuidv4 } from "uuid";
+import AddAddress from "../Address/AddAddressModal";
 const { Option } = Select;
-
-// AddAddressModal component
-const AddAddressModal = ({ show, onClose, onSave, isCreatingAddress }) => {
-  const [addressData, setAddressData] = useState({
-    name: "",
-    street: "",
-    city: "",
-    state: "",
-    country: "",
-    postalCode: "",
-  });
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setAddressData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const newAddress = await onSave(addressData).unwrap();
-
-      setAddressData({
-        name: "",
-        street: "",
-        city: "",
-        state: "",
-        country: "",
-        postalCode: "",
-      });
-      onClose();
-    } catch (err) {
-      toast.error(
-        `Failed to create address: ${err.data?.message || "Unknown error"}`
-      );
-    }
-  };
-
-  return (
-    <Modal show={show} onHide={onClose} centered>
-      <Modal.Header closeButton>
-        <Modal.Title>Add New Address</Modal.Title>
-      </Modal.Header>
-      <Form onSubmit={handleSubmit}>
-        <Modal.Body>
-          <Form.Group className="mb-3">
-            <Form.Label>Name</Form.Label>
-            <Form.Control
-              type="text"
-              name="name"
-              value={addressData.name}
-              onChange={handleChange}
-            />
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>Street *</Form.Label>
-            <Form.Control
-              type="text"
-              name="street"
-              value={addressData.street}
-              onChange={handleChange}
-              required
-            />
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>City *</Form.Label>
-            <Form.Control
-              type="text"
-              name="city"
-              value={addressData.city}
-              onChange={handleChange}
-              required
-            />
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>State</Form.Label>
-            <Form.Control
-              type="text"
-              name="state"
-              value={addressData.state}
-              onChange={handleChange}
-            />
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>Country *</Form.Label>
-            <Form.Control
-              type="text"
-              name="country"
-              value={addressData.country}
-              onChange={handleChange}
-              required
-            />
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>Postal Code</Form.Label>
-            <Form.Control
-              type="text"
-              name="postalCode"
-              value={addressData.postalCode}
-              onChange={handleChange}
-            />
-          </Form.Group>
-        </Modal.Body>
-        <Modal.Footer>
-          <BootstrapButton
-            variant="secondary"
-            onClick={onClose}
-            disabled={isCreatingAddress}
-          >
-            Cancel
-          </BootstrapButton>
-          <BootstrapButton
-            variant="primary"
-            type="submit"
-            disabled={isCreatingAddress}
-          >
-            {isCreatingAddress ? "Saving..." : "Save Address"}
-          </BootstrapButton>
-        </Modal.Footer>
-      </Form>
-    </Modal>
-  );
-};
 
 const AddQuotation = () => {
   const { id } = useParams();
@@ -163,7 +40,6 @@ const AddQuotation = () => {
     error: fetchError,
     isSuccess: isFetchSuccess,
   } = useGetQuotationByIdQuery(id, { skip: !isEditMode });
-
   const { data: userData, isLoading: isUserLoading } = useGetProfileQuery();
   const { data: customersData, isLoading: isCustomersLoading } =
     useGetCustomersQuery();
@@ -207,7 +83,7 @@ const AddQuotation = () => {
   const [formData, setFormData] = useState(initialFormData);
   const [productSearch, setProductSearch] = useState("");
   const [showAddressModal, setShowAddressModal] = useState(false);
-  const [addressType, setAddressType] = useState("");
+  const [addressType, setAddressType] = useState("customer"); // Default to customer
   const [filteredProducts, setFilteredProducts] = useState([]);
 
   // Handle fetch errors
@@ -225,7 +101,6 @@ const AddQuotation = () => {
   // Pre-fill form in edit mode
   useEffect(() => {
     if (isEditMode && existingQuotation) {
-      // Parse products if it's a string
       let parsedProducts = existingQuotation.products;
       if (typeof parsedProducts === "string") {
         try {
@@ -234,6 +109,27 @@ const AddQuotation = () => {
           parsedProducts = [];
         }
       }
+
+      const updatedProducts = Array.isArray(parsedProducts)
+        ? parsedProducts.map((p) => {
+            const product = products.find(
+              (prod) => (prod.id || prod.productId) === p.productId
+            );
+            const sellingPrice =
+              Number(product?.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"]) ||
+              0;
+            return {
+              id: p.productId,
+              productId: p.productId,
+              name: product?.name || p.name || "Unknown",
+              qty: Number(p.quantity) || 1,
+              sellingPrice: sellingPrice,
+              discount: Number(p.discount) || 0,
+              tax: Number(p.tax) || 0,
+              total: Number(p.total) || sellingPrice, // Use stored total or recalculate
+            };
+          })
+        : [];
 
       setFormData({
         ...initialFormData,
@@ -258,30 +154,18 @@ const AddQuotation = () => {
         customerId: existingQuotation.customerId || "",
         shipTo: existingQuotation.shipTo || "",
         createdBy: userId,
-        products: Array.isArray(parsedProducts)
-          ? parsedProducts.map((p) => ({
-              id: p.productId,
-              productId: p.productId,
-              name: p.name || "Unknown",
-              qty: Number(p.quantity) || 1,
-              sellingPrice: Number(p.sellingPrice) || 0,
-              discount: Number(p.discount) || 0,
-              tax: Number(p.tax) || 0,
-              total: Number(p.total) || 0,
-            }))
-          : [],
+        products: updatedProducts,
       });
     }
-  }, [existingQuotation, userId, isEditMode]);
+  }, [existingQuotation, userId, isEditMode, products]);
   // Debounced product search
   const debouncedSearch = useCallback(
     debounce((value) => {
-      setProductSearch(value);
       if (value) {
         const filtered = products
           .filter(
             (product) =>
-              product.name.toLowerCase().includes(value.toLowerCase()) ||
+              product.name?.toLowerCase().includes(value.toLowerCase()) ||
               product.product_code?.toLowerCase().includes(value.toLowerCase())
           )
           .slice(0, 5);
@@ -289,29 +173,33 @@ const AddQuotation = () => {
       } else {
         setFilteredProducts([]);
       }
+      setProductSearch(value);
     }, 300),
     [products]
   );
 
   // Add product
   const addProduct = (productId) => {
-    const product = products.find((p) => p.id === productId);
-    if (!product) return;
+    const product = products.find((p) => (p.id || p.productId) === productId);
+    if (!product) {
+      toast.error("Selected product not found.");
+      return;
+    }
+    const sellingPrice =
+      Number(product.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"]) || 0;
+    const newProduct = {
+      id: product.id || product.productId,
+      productId: product.id || product.productId,
+      name: product.name || "Unknown",
+      qty: 1,
+      sellingPrice: sellingPrice,
+      discount: 0,
+      tax: 0,
+      total: sellingPrice, // Initial total is sellingPrice * qty (1)
+    };
     setFormData((prev) => ({
       ...prev,
-      products: [
-        ...prev.products,
-        {
-          id: product.id,
-          productId: product.id,
-          name: product.name,
-          qty: 1,
-          sellingPrice: Number(product.sellingPrice) || 0,
-          discount: 0,
-          tax: 0,
-          total: Number(product.sellingPrice) || 0,
-        },
-      ],
+      products: [...prev.products, newProduct],
     }));
     setProductSearch("");
     setFilteredProducts([]);
@@ -327,16 +215,19 @@ const AddQuotation = () => {
 
   // Calculate final amount
   const calculateFinalAmount = useCallback(() => {
-    let subtotal = formData.products.reduce(
+    const subtotal = formData.products.reduce(
       (sum, product) => sum + Number(product.total || 0),
       0
     );
-    let gstAmount = formData.include_gst
+    const gstAmount = formData.include_gst
       ? (subtotal * (parseFloat(formData.gst_value) || 0)) / 100
       : 0;
-    let finalAmount =
+    const finalAmount =
       subtotal + gstAmount + (parseFloat(formData.roundOff) || 0);
-    setFormData((prev) => ({ ...prev, finalAmount: finalAmount.toFixed(2) }));
+    setFormData((prev) => ({
+      ...prev,
+      finalAmount: finalAmount.toFixed(2),
+    }));
   }, [
     formData.products,
     formData.include_gst,
@@ -350,21 +241,26 @@ const AddQuotation = () => {
 
   // Update product fields
   const updateProductField = (index, field, value) => {
-    const updatedProducts = [...formData.products];
-    updatedProducts[index][field] = value;
+    setFormData((prev) => {
+      const updatedProducts = [...prev.products];
+      updatedProducts[index] = {
+        ...updatedProducts[index],
+        [field]: value,
+      };
 
-    if (["qty", "discount", "tax"].includes(field)) {
-      const qty = parseFloat(updatedProducts[index].qty) || 0;
-      const sellingPrice = parseFloat(updatedProducts[index].sellingPrice) || 0;
-      const discount = parseFloat(updatedProducts[index].discount) || 0;
-      const tax = parseFloat(updatedProducts[index].tax) || 0;
-      updatedProducts[index].total =
-        Number((qty * sellingPrice - discount) * (1 + tax / 100)) || 0;
-    }
+      if (["qty", "discount", "tax"].includes(field)) {
+        const qty = parseFloat(updatedProducts[index].qty) || 1;
+        const sellingPrice =
+          parseFloat(updatedProducts[index].sellingPrice) || 0;
+        const discount = parseFloat(updatedProducts[index].discount) || 0;
+        const tax = parseFloat(updatedProducts[index].tax) || 0;
+        updatedProducts[index].total =
+          Number((qty * sellingPrice - discount) * (1 + tax / 100)) || 0;
+      }
 
-    setFormData({ ...formData, products: updatedProducts });
+      return { ...prev, products: updatedProducts };
+    });
   };
-
   // Handle form changes
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -375,17 +271,25 @@ const AddQuotation = () => {
   };
 
   // Handle address selection
-  const handleAddressChange = (value, type) => {
+  const handleAddressChange = (value) => {
     setFormData((prev) => ({
       ...prev,
-      [type]: value,
+      shipTo: value,
     }));
   };
 
   // Handle add address
-  const handleAddAddress = (type) => {
-    setAddressType(type);
+  const handleAddAddress = () => {
     setShowAddressModal(true);
+  };
+
+  // Handle address save
+  const handleAddressSave = (addressId) => {
+    setFormData((prev) => ({
+      ...prev,
+      shipTo: addressId,
+    }));
+    setShowAddressModal(false);
   };
 
   // Clear form
@@ -402,13 +306,17 @@ const AddQuotation = () => {
       toast.error("Please select a customer.");
       return;
     }
+    if (formData.products.length === 0) {
+      toast.error("Please add at least one product.");
+      return;
+    }
     if (isEditMode && (!existingQuotation || isFetching)) {
       toast.error("Quotation data is still loading or not found.");
       return;
     }
 
     const formattedProducts = formData.products.map((product) => ({
-      productId: product.id || product.productId || null,
+      productId: product.productId || product.id,
       quantity: Number(product.qty) || 1,
       discount: Number(product.discount) || 0,
       tax: Number(product.tax) || 0,
@@ -423,7 +331,7 @@ const AddQuotation = () => {
         ? 0
         : Number(formData.finalAmount),
       items: formattedProducts,
-      products: formData.products.length > 0 ? formData.products : [],
+      products: formattedProducts,
       shipTo: formData.shipTo || null,
     };
 
@@ -433,7 +341,6 @@ const AddQuotation = () => {
           id,
           updatedQuotation: formattedFormData,
         }).unwrap();
-
         navigate("/orders/list");
       } else {
         await createQuotation(formattedFormData).unwrap();
@@ -546,9 +453,7 @@ const AddQuotation = () => {
                       <Select
                         style={{ width: "100%" }}
                         value={formData.shipTo || undefined}
-                        onChange={(value) =>
-                          handleAddressChange(value, "shipTo")
-                        }
+                        onChange={handleAddressChange}
                         placeholder="Select an address"
                         disabled={isAddressesLoading}
                       >
@@ -569,7 +474,7 @@ const AddQuotation = () => {
                       <Button
                         type="primary"
                         className="ms-2"
-                        onClick={() => handleAddAddress("shipTo")}
+                        onClick={handleAddAddress}
                         aria-label="Add new shipping address"
                       >
                         +
@@ -641,15 +546,29 @@ const AddQuotation = () => {
                         showSearch
                         style={{ width: "100%" }}
                         placeholder="Search by product name or code"
-                        onSearch={debouncedSearch}
-                        onChange={addProduct}
+                        onSearch={(value) => debouncedSearch(value)}
+                        onChange={(value) => addProduct(value)}
                         filterOption={false}
                         loading={isProductsLoading}
+                        value={productSearch || undefined}
+                        notFoundContent={
+                          filteredProducts.length === 0
+                            ? "No products found"
+                            : null
+                        }
                       >
                         {filteredProducts.map((product) => (
-                          <Option key={product.id} value={product.id}>
-                            {product.name} ({product.product_code}) - ₹
-                            {product.sellingPrice}
+                          <Option
+                            key={product.id || product.productId}
+                            value={product.id || product.productId}
+                          >
+                            {product.name || "Unknown"} (
+                            {product.product_code || "N/A"}) - ₹
+                            {Number(
+                              product.meta?.[
+                                "9ba862ef-f993-4873-95ef-1fef10036aa5"
+                              ] || 0
+                            ).toFixed(2)}
                           </Option>
                         ))}
                       </Select>
@@ -863,12 +782,15 @@ const AddQuotation = () => {
                 </BootstrapButton>
               </div>
             </Form>
-            <AddAddressModal
-              show={showAddressModal}
-              onClose={() => setShowAddressModal(false)}
-              onSave={createAddress}
-              isCreatingAddress={isCreatingAddress}
-            />
+            {showAddressModal && (
+              <AddAddress
+                open={showAddressModal}
+                onClose={() => setShowAddressModal(false)}
+                onSave={handleAddressSave}
+                existingAddress={null} // Pass null since we're creating a new address
+                selectedCustomer={formData.customerId} // Pass the selected customer ID
+              />
+            )}
           </div>
         </div>
       </div>
