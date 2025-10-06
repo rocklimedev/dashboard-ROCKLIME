@@ -18,7 +18,7 @@ router.post(
 // ✅ Get all quotations (Admins, Managers & Sales Team)
 router.get(
   "/",
-  auth,
+
   // role.check([ROLES.Admin, ROLES.Manager, ROLES.Sales]),
   // checkPermission("view", "get_all_quotations", "quotations", "/quotations"),
   quotationController.getAllQuotations
