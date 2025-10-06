@@ -6,7 +6,6 @@ import {
 } from "../../api/quotationApi";
 import { useGetCustomerByIdQuery } from "../../api/customerApi";
 import { useGetUserByIdQuery } from "../../api/userApi";
-import { useGetProductByIdQuery } from "../../api/productApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetCompanyByIdQuery } from "../../api/companyApi";
@@ -15,12 +14,12 @@ import logo from "../../assets/img/logo.png";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import ExcelJS from "exceljs";
-import * as XLSX from "xlsx";
 import "./quotation.css";
 import useProductsData from "../../data/useProductdata";
 import { useGetAddressByIdQuery } from "../../api/addressApi";
 import { Buffer } from "buffer";
 import { LeftOutlined, ExportOutlined } from "@ant-design/icons";
+
 const QuotationsDetails = () => {
   const { id } = useParams();
   const {
@@ -37,11 +36,9 @@ const QuotationsDetails = () => {
     skip: !quotation?.customerId,
   });
   const addressId = quotation?.shipTo;
-
   const { data: addressData } = useGetAddressByIdQuery(addressId, {
     skip: !addressId,
   });
-
   const [exportQuotation] = useExportQuotationMutation();
   const { data: user } = useGetUserByIdQuery(quotation?.createdBy, {
     skip: !quotation?.createdBy,
@@ -56,8 +53,37 @@ const QuotationsDetails = () => {
   const quotationRef = useRef(null);
   const [exportFormat, setExportFormat] = useState("pdf");
 
-  const products = Array.isArray(quotation?.products) ? quotation.products : [];
+  // Parse products JSON string
+  const products = useMemo(() => {
+    try {
+      return typeof quotation?.products === "string"
+        ? JSON.parse(quotation.products)
+        : Array.isArray(quotation?.products)
+        ? quotation.products
+        : [];
+    } catch (error) {
+      console.error("Error parsing products JSON:", error);
+      return [];
+    }
+  }, [quotation?.products]);
+
   const { productsData, errors, loading } = useProductsData(products);
+
+  // Log products and productsData for debugging
+  useEffect(() => {
+    console.log("Parsed products:", products);
+    console.log("Fetched productsData:", productsData);
+    console.log("Errors:", errors);
+  }, [products, productsData, errors]);
+
+  // Display errors for failed product fetches
+  useEffect(() => {
+    if (errors.length > 0) {
+      errors.forEach(({ productId, error }) => {
+        toast.error(`Failed to fetch product ${productId}: ${error}`);
+      });
+    }
+  }, [errors]);
 
   // Fix for brand displaying as UUID
   const brandNames = useMemo(() => {
@@ -86,15 +112,6 @@ const QuotationsDetails = () => {
     return Array.from(uniqueBrands).join(" / ") || "GROHE / AMERICAN STANDARD";
   }, [products, productsData]);
 
-  // Display errors for failed product fetches
-  useEffect(() => {
-    if (errors.length > 0) {
-      errors.forEach(({ productId, error }) => {
-        toast.error(`Failed to fetch product ${productId}: ${error}`);
-      });
-    }
-  }, [errors]);
-
   const getUserName = (createdBy) => {
     if (!users || users.length === 0 || !createdBy)
       return company.name || "CHHABRA MARBLE";
@@ -115,20 +132,13 @@ const QuotationsDetails = () => {
     if (!url || typeof url !== "string") {
       return false;
     }
-
     if (url.startsWith("data:image/")) {
-      const isValid = /data:image\/(png|jpg|jpeg|gif|bmp|webp);base64,/.test(
-        url
-      );
-      if (!isValid) return isValid;
+      return /data:image\/(png|jpg|jpeg|gif|bmp|webp);base64,/.test(url);
     }
-
     try {
       new URL(url);
-      const imageExtensions = /\.(png|jpg|jpeg|gif|bmp|webp)$/i;
-      const isValid = imageExtensions.test(url.split("?")[0]);
-      return isValid;
-    } catch (error) {
+      return /\.(png|jpg|jpeg|gif|bmp|webp)$/i.test(url.split("?")[0]);
+    } catch {
       return false;
     }
   };
@@ -147,45 +157,34 @@ const QuotationsDetails = () => {
       if (!url || !isValidImageUrl(url)) {
         return placeholderImage;
       }
-
       let buffer, extension;
-
       if (url.startsWith("data:image/")) {
         const matches = url.match(
           /^data:image\/(png|jpg|jpeg|gif|bmp|webp);base64,(.+)$/
         );
-        if (!matches) {
-          return placeholderImage;
-        }
+        if (!matches) return placeholderImage;
         extension = matches[1];
         buffer = Buffer.from(matches[2], "base64");
-        if (!buffer || buffer.length === 0) {
-          return placeholderImage;
-        }
+        if (!buffer || buffer.length === 0) return placeholderImage;
       } else {
         for (let attempt = 1; attempt <= retries; attempt++) {
           try {
             const response = await fetch(url, {
               mode: "cors",
               credentials: "omit",
-              headers: {
-                Accept: "image/*",
-              },
+              headers: { Accept: "image/*" },
             });
-
             if (!response.ok) {
               throw new Error(
                 `HTTP ${response.status} - ${response.statusText}`
               );
             }
-
             const contentType = response.headers.get("content-type");
             if (!contentType || !contentType.startsWith("image/")) {
               throw new Error(
                 `Unsupported content type: ${contentType || "Unknown"}`
               );
             }
-
             extension = contentType.split("/")[1].toLowerCase();
             if (extension === "jpeg") extension = "jpg";
             buffer = Buffer.from(await response.arrayBuffer());
@@ -194,16 +193,13 @@ const QuotationsDetails = () => {
             }
             break;
           } catch (err) {
-            if (attempt === retries) {
-              return placeholderImage;
-            }
+            if (attempt === retries) return placeholderImage;
             await new Promise((resolve) => setTimeout(resolve, 1000));
           }
         }
       }
-
       return { buffer, extension };
-    } catch (error) {
+    } catch {
       return placeholderImage;
     }
   };
@@ -214,15 +210,12 @@ const QuotationsDetails = () => {
         toast.error("Quotation ID is missing.");
         return;
       }
-
       setIsExporting(true);
-
       if (exportFormat === "excel") {
         if (!products || products.length === 0) {
           toast.error("No products available to export.");
           return;
         }
-
         // Prepare export rows
         const exportRows = products.map((product, index) => {
           const productDetail =
@@ -234,35 +227,32 @@ const QuotationsDetails = () => {
               imageUrl =
                 Array.isArray(imgs) && imgs.length > 0 ? imgs[0] : null;
             }
-          } catch (error) {}
-
+          } catch {}
           const productCode =
-            productDetail?.product_code ||
-            productDetail?.meta?.d11da9f9_3f2e_4536_8236_9671200cca4a ||
-            "N/A";
+            productDetail?.meta?.d11da9f9_3f2e_4536_8236_9671200cca4a || "N/A";
           const sellingPrice =
             productDetail?.metaDetails?.find((m) => m.title === "sellingPrice")
               ?.value ||
-            product.sellingPrice ||
+            product.total || // Fallback to total
             0;
 
           return {
             index: index + 1,
             imageUrl,
-            name: product.name || productDetail?.name || "N/A",
+            name: product.name || productDetail?.name || "Unknown Product",
             code: productCode,
             mrp: sellingPrice ? `₹${Number(sellingPrice).toFixed(2)}` : "N/A",
             discount: product.discount
               ? product.discountType === "percent"
                 ? `${product.discount}%`
                 : `₹${Number(product.discount).toFixed(2)}`
-              : "N/A",
+              : "0", // Show 0 instead of N/A for clarity
             rate: product.rate
               ? `₹${Number(product.rate).toFixed(2)}`
               : sellingPrice
               ? `₹${Number(sellingPrice).toFixed(2)}`
-              : "N/A",
-            qty: product.qty || product.quantity || "N/A",
+              : `₹${Number(product.total).toFixed(2)}`, // Fallback to total
+            qty: product.quantity || "1", // Use quantity, default to 1
             total: product.total
               ? `₹${Number(product.total).toFixed(2)}`
               : "N/A",
@@ -297,7 +287,7 @@ const QuotationsDetails = () => {
               extension: extension === "jpeg" ? "jpg" : extension,
             };
           }
-        } catch (error) {
+        } catch {
           toast.warning("Using placeholder logo.");
         }
 
@@ -315,7 +305,7 @@ const QuotationsDetails = () => {
           properties: { defaultColWidth: 15, defaultRowHeight: 20 },
         });
 
-        // Set column widths to match HTML proportions
+        // Set column widths
         worksheet.columns = [
           { width: 8 }, // S.No
           { width: 15 }, // Product Image
@@ -328,13 +318,13 @@ const QuotationsDetails = () => {
           { width: 12 }, // Total
         ];
 
-        // Add logo (100x50 pixels, centered)
+        // Add logo
         const logoId = workbook.addImage({
           buffer: logoImage.buffer,
           extension: logoImage.extension,
         });
         worksheet.addImage(logoId, {
-          tl: { col: 3, row: 0 }, // Center logo (spanning columns 4-6)
+          tl: { col: 3, row: 0 },
           ext: { width: 100, height: 50 },
           editAs: "absolute",
         });
@@ -448,7 +438,7 @@ const QuotationsDetails = () => {
         exportRows.forEach((row, index) => {
           const excelRow = worksheet.addRow([
             row.index,
-            "", // Placeholder for image
+            "",
             row.name,
             row.code,
             row.mrp,
@@ -471,8 +461,6 @@ const QuotationsDetails = () => {
             };
           });
           worksheet.getRow(currentRow).height = 50;
-
-          // Add product image
           if (productImages[index].buffer) {
             try {
               const imageId = workbook.addImage({
@@ -484,7 +472,7 @@ const QuotationsDetails = () => {
                 ext: { width: 50, height: 50 },
                 editAs: "oneCell",
               });
-            } catch (error) {}
+            } catch {}
           }
           currentRow++;
         });
@@ -586,7 +574,6 @@ const QuotationsDetails = () => {
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
       } else if (exportFormat === "pdf") {
-        // PDF export (unchanged)
         if (!quotationRef.current) {
           toast.error("Quotation content not found.");
           return;
@@ -763,9 +750,10 @@ const QuotationsDetails = () => {
                   <tbody>
                     {products.length > 0 ? (
                       products.map((product, index) => {
-                        const productDetail = productsData?.find(
-                          (p) => p.productId === product.productId
-                        );
+                        const productDetail =
+                          productsData?.find(
+                            (p) => p.productId === product.productId
+                          ) || {};
                         let imageUrl = null;
                         try {
                           if (productDetail?.images) {
@@ -784,7 +772,7 @@ const QuotationsDetails = () => {
                           productDetail?.metaDetails?.find(
                             (m) => m.title === "sellingPrice"
                           )?.value ||
-                          product.sellingPrice ||
+                          product.total || // Fallback to total
                           0;
 
                         return (
@@ -802,7 +790,9 @@ const QuotationsDetails = () => {
                               )}
                             </td>
                             <td>
-                              {product.name || productDetail?.name || "N/A"}
+                              {product.name ||
+                                productDetail?.name ||
+                                "Unknown Product"}
                             </td>
                             <td>{productCode}</td>
                             <td>
@@ -810,21 +800,15 @@ const QuotationsDetails = () => {
                                 ? `₹${Number(sellingPrice).toFixed(2)}`
                                 : "N/A"}
                             </td>
-                            <td>
-                              {product.discount
-                                ? product.discountType === "percent"
-                                  ? `${product.discount}%`
-                                  : `₹${Number(product.discount).toFixed(2)}`
-                                : "N/A"}
-                            </td>
+                            <td>{product.discount || 0}</td>
                             <td>
                               {product.rate
                                 ? `₹${Number(product.rate).toFixed(2)}`
                                 : sellingPrice
                                 ? `₹${Number(sellingPrice).toFixed(2)}`
-                                : "N/A"}
+                                : `₹${Number(product.total).toFixed(2)}`}
                             </td>
-                            <td>{product.qty || product.quantity || "N/A"}</td>
+                            <td>{product.quantity || "1"}</td>
                             <td>
                               {product.total
                                 ? `₹${Number(product.total).toFixed(2)}`

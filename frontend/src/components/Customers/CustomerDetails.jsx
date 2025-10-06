@@ -123,15 +123,21 @@ const CustomerDetails = () => {
       : "N/A";
 
   // Calculate financial summary from quotations
-  const quotations = Array.isArray(quotationsData)
+  const quotations = Array.isArray(quotationsData?.data)
+    ? quotationsData.data
+    : Array.isArray(quotationsData)
     ? quotationsData
-    : quotationsData?.data || [];
-  const totalAmount = quotations
-    .reduce((sum, quotation) => sum + (quotation.finalAmount || 0), 0)
-    .toFixed(2);
+    : [];
+  const totalAmount = (
+    Number(
+      quotations.reduce(
+        (sum, quotation) => sum + (Number(quotation.finalAmount) || 0),
+        0
+      )
+    ) || 0
+  ).toFixed(2);
   const paidAmount = "0.00"; // Placeholder: No payment data in quotations table
   const balance = totalAmount; // Since paidAmount is 0, balance equals totalAmount
-
   // Loading state
   if (
     isCustomerLoading ||
@@ -574,7 +580,7 @@ const CustomerDetails = () => {
                             <tr key={quotation.quotationId}>
                               <td>
                                 <Link
-                                  to={`/quotation/${quotation.quotationId}`}
+                                  to={`/quotations/${quotation.quotationId}`}
                                   className="text-primary"
                                 >
                                   {quotation.reference_number || "N/A"}
@@ -586,12 +592,14 @@ const CustomerDetails = () => {
                               <td>{formatDate(quotation.due_date)}</td>
                               <td>
                                 Rs.{" "}
-                                {quotation.finalAmount?.toFixed(2) || "0.00"}
+                                {(Number(quotation.finalAmount) || 0).toFixed(
+                                  2
+                                )}
                               </td>
                               <td>{getUsername(quotation.createdBy)}</td>
                               <td className="text-end">
                                 <Link
-                                  to={`/quotation/${quotation.quotationId}`}
+                                  to={`/quotations/${quotation.quotationId}`}
                                   className="btn btn-sm btn-outline-primary me-2"
                                   title="View Quotation"
                                 >
