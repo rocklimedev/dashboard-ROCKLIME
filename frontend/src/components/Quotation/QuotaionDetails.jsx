@@ -56,17 +56,17 @@ const QuotationsDetails = () => {
   // Parse products JSON string
   const products = useMemo(() => {
     try {
-      return typeof quotation?.products === "string"
-        ? JSON.parse(quotation.products)
-        : Array.isArray(quotation?.products)
-        ? quotation.products
-        : [];
+      if (!quotation?.products) return [];
+      if (typeof quotation.products === "string") {
+        const parsed = JSON.parse(quotation.products);
+        return Array.isArray(parsed) ? parsed : [];
+      }
+      return Array.isArray(quotation.products) ? quotation.products : [];
     } catch (error) {
       console.error("Error parsing products JSON:", error);
       return [];
     }
   }, [quotation?.products]);
-
   const { productsData, errors, loading } = useProductsData(products);
 
   // Log products and productsData for debugging
@@ -151,7 +151,12 @@ const QuotationsDetails = () => {
     ),
     extension: "png",
   };
-
+  useEffect(() => {
+    console.log("Raw quotation.products:", quotation?.products);
+    console.log("Parsed products:", products);
+    console.log("Fetched productsData:", productsData);
+    console.log("Errors:", errors);
+  }, [quotation?.products, products, productsData, errors]);
   const fetchImageAsBuffer = async (url, retries = 2) => {
     try {
       if (!url || !isValidImageUrl(url)) {
@@ -759,6 +764,8 @@ const QuotationsDetails = () => {
                           if (productDetail?.images) {
                             const imgs = JSON.parse(productDetail.images);
                             imageUrl = Array.isArray(imgs) ? imgs[0] : null;
+                          } else if (product.image) {
+                            imageUrl = product.image; // Fallback to product.image if available
                           }
                         } catch {
                           imageUrl = null;
@@ -767,12 +774,13 @@ const QuotationsDetails = () => {
                           productDetail?.product_code ||
                           productDetail?.meta
                             ?.d11da9f9_3f2e_4536_8236_9671200cca4a ||
+                          product.productCode || // Fallback to product.productCode
                           "N/A";
                         const sellingPrice =
                           productDetail?.metaDetails?.find(
                             (m) => m.title === "sellingPrice"
                           )?.value ||
-                          product.total || // Fallback to total
+                          product.total ||
                           0;
 
                         return (
