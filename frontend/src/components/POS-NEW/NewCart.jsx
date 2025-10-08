@@ -59,21 +59,30 @@ const { TabPane } = Tabs;
 
 // Styled Components
 const PageWrapper = styled.div`
-  padding: 20px;
+  padding: 16px; /* Reduced padding for smaller screens */
   background-color: #f5f5f5;
   min-height: 100vh;
+  @media (min-width: 768px) {
+    padding: 24px; /* Larger padding for tablets and desktops */
+  }
 `;
 
 const CartContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 12px; /* Reduced padding for mobile */
+  @media (min-width: 768px) {
+    padding: 20px; /* Default padding for larger screens */
+  }
 `;
 
 const CartItemsCard = styled(Card)`
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 24px;
+  margin-bottom: 16px; /* Reduced margin for mobile */
+  @media (min-width: 768px) {
+    margin-bottom: 24px;
+  }
 `;
 
 const CartHeader = styled.div`
@@ -81,23 +90,36 @@ const CartHeader = styled.div`
 `;
 
 const CartItem = styled.div`
-  padding: 16px 0;
+  padding: 12px 0; /* Reduced padding for mobile */
   &:hover {
     background: #fafafa;
+  }
+  @media (min-width: 768px) {
+    padding: 16px 0;
   }
 `;
 
 const CartItemImage = styled(LazyLoadImage)`
   border-radius: 4px;
   object-fit: cover;
+  width: 60px; /* Smaller image for mobile */
+  height: 60px;
+  @media (min-width: 768px) {
+    width: 80px; /* Default size for larger screens */
+    height: 80px;
+  }
 `;
 
 const QuantityButton = styled(Button)`
-  width: 32px;
-  height: 32px;
+  width: 28px; /* Smaller buttons for mobile */
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
+  @media (min-width: 768px) {
+    width: 32px;
+    height: 32px;
+  }
 `;
 
 const RemoveButton = styled(Button)`
@@ -108,7 +130,10 @@ const CartSummaryCard = styled(Card)`
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   position: sticky;
-  top: 20px;
+  top: 16px; /* Adjusted for mobile */
+  @media (min-width: 768px) {
+    top: 20px;
+  }
 `;
 
 const CustomerSelect = styled(Select)`
@@ -129,14 +154,21 @@ const EmptyCartWrapper = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 40px 0;
+  padding: 20px 0; /* Reduced padding for mobile */
+  @media (min-width: 768px) {
+    padding: 40px 0;
+  }
 `;
 
 const DiscountInput = styled(InputNumber)`
-  width: 100px;
+  width: 80px; /* Smaller input for mobile */
   margin-left: 8px;
+  @media (min-width: 768px) {
+    width: 100px;
+  }
 `;
 
+// Rest of the generateQuotationNumber function remains unchanged
 const generateQuotationNumber = () => {
   const timestamp = Date.now().toString().slice(-6);
   const random = Math.floor(1000 + Math.random() * 9000);
@@ -187,7 +219,6 @@ const NewCart = ({ onConvertToOrder }) => {
   const [error, setError] = useState("");
   const [updatingItems, setUpdatingItems] = useState({});
 
-  // Inside NewCart.jsx
   const {
     data: addressesData,
     isLoading: addressesLoading,
@@ -204,7 +235,7 @@ const NewCart = ({ onConvertToOrder }) => {
     if (Array.isArray(addressesData)) return addressesData;
     return [];
   }, [addressesData]);
-  // Inside the component
+
   const userIds = useMemo(
     () => [...new Set(addresses.map((addr) => addr.userId).filter(Boolean))],
     [addresses]
@@ -216,7 +247,6 @@ const NewCart = ({ onConvertToOrder }) => {
     [addresses]
   );
 
-  // Inside NewCart.jsx
   const { userMap, customerMap, userQueries, customerQueries } =
     useUserAndCustomerData(userIds, customerIds);
   const [updateCart] = useUpdateCartMutation();
@@ -224,7 +254,6 @@ const NewCart = ({ onConvertToOrder }) => {
   const [removeFromCart] = useRemoveFromCartMutation();
   const [createQuotation] = useCreateQuotationMutation();
 
-  // Use the custom hook to fetch product details
   const cartItems = useMemo(
     () => (Array.isArray(cartData?.cart?.items) ? cartData.cart.items : []),
     [cartData]
@@ -443,7 +472,6 @@ const NewCart = ({ onConvertToOrder }) => {
     if (!selectedCustomerData)
       return toast.error("Selected customer not found.");
 
-    // Validate that the selected shipTo address belongs to the selected customer
     if (quotationData.shipTo) {
       const selectedAddress = addresses.find(
         (addr) => addr.addressId === quotationData.shipTo
@@ -586,7 +614,7 @@ const NewCart = ({ onConvertToOrder }) => {
             activeKey={activeTab}
             onChange={setActiveTab}
             type="card"
-            style={{ marginBottom: 24 }}
+            style={{ marginBottom: 16 }} /* Reduced margin for mobile */
             role="tablist"
           >
             <TabPane
@@ -600,8 +628,10 @@ const NewCart = ({ onConvertToOrder }) => {
               }
               key="cart"
             >
-              <Row gutter={[24, 24]}>
-                <Col xs={24} lg={16}>
+              <Row gutter={[16, 16]}>
+                {" "}
+                {/* Reduced gutter for mobile */}
+                <Col xs={24} sm={24} md={16} lg={16}>
                   <CartItemsCard>
                     <CartHeader>
                       <Space
@@ -609,9 +639,16 @@ const NewCart = ({ onConvertToOrder }) => {
                         style={{
                           justifyContent: "space-between",
                           width: "100%",
+                          flexWrap: "wrap" /* Allow wrapping for mobile */,
                         }}
                       >
-                        <Title level={3}>
+                        <Title
+                          level={3}
+                          style={{
+                            fontSize: "18px" /* Smaller font for mobile */,
+                            marginBottom: 0,
+                          }}
+                        >
                           Your Cart <ShoppingCartOutlined /> ({totalItems}{" "}
                           items)
                         </Title>
@@ -661,13 +698,11 @@ const NewCart = ({ onConvertToOrder }) => {
                           }
                           return (
                             <CartItem key={item.productId}>
-                              <Row gutter={[16, 16]} align="middle">
+                              <Row gutter={[12, 12]} align="middle">
                                 <Col xs={6} sm={4}>
                                   <CartItemImage
                                     src={imageUrl}
                                     alt={item.name}
-                                    width={80}
-                                    height={80}
                                     effect="blur"
                                     placeholderSrc="https://via.placeholder.com/100"
                                   />
@@ -702,7 +737,7 @@ const NewCart = ({ onConvertToOrder }) => {
                                   />
                                 </Col>
                                 <Col xs={12} sm={6}>
-                                  <Space>
+                                  <Space size="small">
                                     <QuantityButton
                                       size="small"
                                       onClick={() =>
@@ -770,9 +805,14 @@ const NewCart = ({ onConvertToOrder }) => {
                     )}
                   </CartItemsCard>
                 </Col>
-                <Col xs={24} lg={8}>
+                <Col xs={24} sm={24} md={8} lg={8}>
                   <CartSummaryCard>
-                    <Title level={4}>Order Summary</Title>
+                    <Title
+                      level={4}
+                      style={{ fontSize: "16px" /* Smaller font for mobile */ }}
+                    >
+                      Order Summary
+                    </Title>
                     <Divider />
                     <OrderTotal
                       shipping={shipping}
@@ -823,10 +863,15 @@ const NewCart = ({ onConvertToOrder }) => {
               }
               key="checkout"
             >
-              <Row gutter={[24, 24]} justify="center">
-                <Col xs={24} lg={16}>
+              <Row gutter={[16, 16]} justify="center">
+                <Col xs={24} sm={24} md={16} lg={16}>
                   <CartSummaryCard>
-                    <Title level={3}>Checkout</Title>
+                    <Title
+                      level={3}
+                      style={{ fontSize: "18px" /* Smaller font for mobile */ }}
+                    >
+                      Checkout
+                    </Title>
                     <Divider />
                     {cartItems.length === 0 ? (
                       <EmptyCartWrapper>
@@ -961,7 +1006,7 @@ const NewCart = ({ onConvertToOrder }) => {
                               e.target.value
                             )
                           }
-                          style={{ marginTop: 8 }}
+                          style={{ marginTop: 8, width: "100%" }}
                         />
                         <Text strong>Due Date</Text>
                         <input
@@ -971,7 +1016,7 @@ const NewCart = ({ onConvertToOrder }) => {
                           onChange={(e) =>
                             handleQuotationChange("dueDate", e.target.value)
                           }
-                          style={{ marginTop: 8 }}
+                          style={{ marginTop: 8, width: "100%" }}
                         />
                         {error && (
                           <Alert
@@ -1010,7 +1055,7 @@ const NewCart = ({ onConvertToOrder }) => {
                                 )
                               }
                               min="0"
-                              style={{ marginTop: 8 }}
+                              style={{ marginTop: 8, width: "100%" }}
                             />
                           </>
                         )}
@@ -1035,14 +1080,14 @@ const NewCart = ({ onConvertToOrder }) => {
                           onChange={(e) =>
                             handleQuotationChange("roundOff", e.target.value)
                           }
-                          style={{ marginTop: 8 }}
+                          style={{ marginTop: 8, width: "100%" }}
                         />
                         <Divider />
                       </>
                     )}
                   </CartSummaryCard>
                 </Col>
-                <Col xs={24} lg={8}>
+                <Col xs={24} sm={24} md={8} lg={8}>
                   <CartSummaryCard>
                     <Text strong>Quotation #: {quotationNumber}</Text>
                     <Divider />
@@ -1095,6 +1140,9 @@ const NewCart = ({ onConvertToOrder }) => {
             okText="Clear"
             okButtonProps={{ danger: true }}
             cancelText="Cancel"
+            width={
+              window.innerWidth < 576 ? "90%" : 520
+            } /* Responsive modal width */
           >
             <Text>
               Are you sure you want to clear all items from your cart?
