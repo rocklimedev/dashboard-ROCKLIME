@@ -10,18 +10,23 @@ import {
   FaSearch,
   FaEye,
   FaTrash,
-  FaEdit,
   FaFileInvoice,
+  FaWhatsapp,
 } from "react-icons/fa";
+import { EditOutlined } from "@ant-design/icons";
 import QuotationProductModal from "./QuotationProductModal";
 import DeleteModal from "../Common/DeleteModal";
 import { toast } from "sonner";
-import { Dropdown, Menu, Button } from "antd";
+import { Table, Dropdown, Menu, Button, Input, DatePicker, Select } from "antd";
 import { MoreOutlined } from "@ant-design/icons";
 import PageHeader from "../Common/PageHeader";
 import DataTablePagination from "../Common/DataTablePagination";
 import { useCreateInvoiceMutation } from "../../api/invoiceApi";
 import CreateInvoiceFromQuotation from "../Invoices/CreateInvoiceFromQuotation";
+import moment from "moment";
+
+const { RangePicker } = DatePicker;
+const { Option } = Select;
 
 const QuotationList = () => {
   const navigate = useNavigate();
@@ -51,6 +56,12 @@ const QuotationList = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("Recently Added");
   const [activeTab, setActiveTab] = useState("All");
+  const [filters, setFilters] = useState({
+    finalAmount: null,
+    quotationDate: null,
+    customerId: null,
+    dateRange: null,
+  });
   const itemsPerPage = 10;
 
   // Helper functions
@@ -99,6 +110,7 @@ const QuotationList = () => {
   const filteredQuotations = useMemo(() => {
     let result = groupedQuotations[activeTab] || [];
 
+    // Apply search term filter
     if (searchTerm.trim()) {
       result = result.filter((q) => {
         const customerName = getCustomerName(q.customerId);
@@ -112,6 +124,35 @@ const QuotationList = () => {
       });
     }
 
+    // Apply additional filters
+    if (filters.finalAmount) {
+      result = result.filter(
+        (q) =>
+          q.finalAmount &&
+          q.finalAmount.toString().includes(filters.finalAmount)
+      );
+    }
+    if (filters.quotationDate) {
+      result = result.filter(
+        (q) =>
+          q.quotation_date &&
+          moment(q.quotation_date).format("YYYY-MM-DD") ===
+            moment(filters.quotationDate).format("YYYY-MM-DD")
+      );
+    }
+    if (filters.customerId) {
+      result = result.filter((q) => q.customerId === filters.customerId);
+    }
+    if (filters.dateRange && filters.dateRange.length === 2) {
+      const [start, end] = filters.dateRange;
+      result = result.filter(
+        (q) =>
+          q.quotation_date &&
+          moment(q.quotation_date).isBetween(start, end, "day", "[]")
+      );
+    }
+
+    // Apply sorting
     switch (sortBy) {
       case "Ascending":
         result = [...result].sort((a, b) =>
@@ -128,32 +169,388 @@ const QuotationList = () => {
           (a, b) => new Date(b.quotation_date) - new Date(a.quotation_date)
         );
         break;
+      case "Price High":
+        result = [...result].sort(
+          (a, b) => (b.finalAmount || 0) - (a.finalAmount || 0)
+        );
+        break;
+      case "Price Low":
+        result = [...result].sort(
+          (a, b) => (a.finalAmount || 0) - (b.finalAmount || 0)
+        );
+        break;
       default:
         break;
     }
 
     return result;
-  }, [groupedQuotations, activeTab, searchTerm, sortBy]);
+  }, [groupedQuotations, activeTab, searchTerm, sortBy, filters]);
 
   const currentQuotations = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return filteredQuotations.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredQuotations, currentPage]);
 
+  const handleShareOnWhatsApp = (quotation) => {
+    const message = `Quotation Details:\nTitle: ${
+      quotation.document_title || "N/A"
+    }\nReference Number: ${
+      quotation.reference_number || "N/A"
+    }\nFinal Amount: ₹${quotation.finalAmount || 0}\nView Quotation: ${
+      window.location.origin
+    }/quotations/${quotation.quotationId}`;
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
+    window.open(whatsappUrl, "_blank");
+  };
+
+  const columns = [
+    {
+      title: "S.No.",
+      dataIndex: "sNo",
+      key: "sNo",
+    },
+    {
+      title: "Quotation Title",
+      dataIndex: "quotationTitle",
+      key: "quotationTitle",
+      render: (text, record) => (
+        <Link to={`/quotations/${record.quotationId}`}>{text || "N/A"}</Link>
+      ),
+    },
+    {
+      title: "Quotation Date",
+      dataIndex: "quotationDate",
+      key: "quotationDate",
+      filterDropdown: ({
+        setSelectedKeys,
+        selectedKeys,
+        confirm,
+        clearFilters,
+      }) => (
+        <div style={{ padding: 8 }}>
+          <DatePicker
+            style={{ width: "100%", marginBottom: 8 }}
+            value={selectedKeys[0] ? moment(selectedKeys[0]) : null}
+            onChange={(date) => setSelectedKeys(date ? [date] : [])}
+            placeholder="Select Quotation Date"
+          />
+          <div>
+            <Button
+              type="primary"
+              onClick={() => {
+                setFilters((prev) => ({
+                  ...prev,
+                  quotationDate: selectedKeys[0]
+                    ? selectedKeys[0].toDate()
+                    : null,
+                }));
+                confirm();
+              }}
+              size="small"
+              style={{ width: 90, marginRight: 8 }}
+            >
+              OK
+            </Button>
+            <Button
+              onClick={() => {
+                clearFilters();
+                setFilters((prev) => ({ ...prev, quotationDate: null }));
+                confirm();
+              }}
+              size="small"
+              style={{ width: 90 }}
+            >
+              Reset
+            </Button>
+          </div>
+        </div>
+      ),
+      filterIcon: (filtered) => (
+        <FaSearch style={{ color: filtered ? "#1890ff" : undefined }} />
+      ),
+    },
+    {
+      title: "Due Date",
+      dataIndex: "dueDate",
+      key: "dueDate",
+      filterDropdown: ({
+        setSelectedKeys,
+        selectedKeys,
+        confirm,
+        clearFilters,
+      }) => (
+        <div style={{ padding: 8 }}>
+          <RangePicker
+            style={{ width: "100%", marginBottom: 8 }}
+            value={
+              selectedKeys[0]
+                ? [moment(selectedKeys[0][0]), moment(selectedKeys[0][1])]
+                : null
+            }
+            onChange={(dates) =>
+              setSelectedKeys(dates ? [[dates[0], dates[1]]] : [])
+            }
+            placeholder={["Start Date", "End Date"]}
+          />
+          <div>
+            <Button
+              type="primary"
+              onClick={() => {
+                setFilters((prev) => ({
+                  ...prev,
+                  dateRange: selectedKeys[0]
+                    ? [selectedKeys[0][0].toDate(), selectedKeys[0][1].toDate()]
+                    : null,
+                }));
+                confirm();
+              }}
+              size="small"
+              style={{ width: 90, marginRight: 8 }}
+            >
+              OK
+            </Button>
+            <Button
+              onClick={() => {
+                clearFilters();
+                setFilters((prev) => ({ ...prev, dateRange: null }));
+                confirm();
+              }}
+              size="small"
+              style={{ width: 90 }}
+            >
+              Reset
+            </Button>
+          </div>
+        </div>
+      ),
+      filterIcon: (filtered) => (
+        <FaSearch style={{ color: filtered ? "#1890ff" : undefined }} />
+      ),
+    },
+    {
+      title: "Quotation Number",
+      dataIndex: "referenceNumber",
+      key: "referenceNumber",
+    },
+    {
+      title: "Products",
+      dataIndex: "products",
+      key: "products",
+      render: (text, record) => (
+        <button
+          className="btn btn-link"
+          onClick={() => handleOpenProductModal(record.products)}
+          style={{ color: "#e31e24" }}
+          aria-label="Quick View"
+        >
+          Quick View ({getProductCount(record.products)})
+        </button>
+      ),
+    },
+    {
+      title: "Customer",
+      dataIndex: "customer",
+      key: "customer",
+      filterDropdown: ({
+        setSelectedKeys,
+        selectedKeys,
+        confirm,
+        clearFilters,
+      }) => (
+        <div style={{ padding: 8 }}>
+          <Select
+            style={{ width: "100%", marginBottom: 8 }}
+            value={selectedKeys[0]}
+            onChange={(value) => setSelectedKeys(value ? [value] : [])}
+            placeholder="Select Customer"
+            allowClear
+          >
+            {customers.map((customer) => (
+              <Option key={customer.customerId} value={customer.customerId}>
+                {customer.name}
+              </Option>
+            ))}
+          </Select>
+          <div>
+            <Button
+              type="primary"
+              onClick={() => {
+                setFilters((prev) => ({
+                  ...prev,
+                  customerId: selectedKeys[0] || null,
+                }));
+                confirm();
+              }}
+              size="small"
+              style={{ width: 90, marginRight: 8 }}
+            >
+              OK
+            </Button>
+            <Button
+              onClick={() => {
+                clearFilters();
+                setFilters((prev) => ({ ...prev, customerId: null }));
+                confirm();
+              }}
+              size="small"
+              style={{ width: 90 }}
+            >
+              Reset
+            </Button>
+          </div>
+        </div>
+      ),
+      filterIcon: (filtered) => (
+        <FaSearch style={{ color: filtered ? "#1890ff" : undefined }} />
+      ),
+      render: (text, record) => (
+        <Link to={`/customer/${record.customerId}`}>{text}</Link>
+      ),
+    },
+    {
+      title: "Final Amount",
+      dataIndex: "finalAmount",
+      key: "finalAmount",
+      sorter: (a, b) =>
+        parseFloat(a.finalAmount.replace("₹", "")) -
+        parseFloat(b.finalAmount.replace("₹", "")),
+      filterDropdown: ({
+        setSelectedKeys,
+        selectedKeys,
+        confirm,
+        clearFilters,
+      }) => (
+        <div style={{ padding: 8 }}>
+          <Input
+            placeholder="Enter Final Amount"
+            value={selectedKeys[0]}
+            onChange={(e) =>
+              setSelectedKeys(e.target.value ? [e.target.value] : [])
+            }
+            style={{ width: "100%", marginBottom: 8 }}
+          />
+          <div>
+            <Button
+              type="primary"
+              onClick={() => {
+                setFilters((prev) => ({
+                  ...prev,
+                  finalAmount: selectedKeys[0] || null,
+                }));
+                confirm();
+              }}
+              size="small"
+              style={{ width: 90, marginRight: 8 }}
+            >
+              OK
+            </Button>
+            <Button
+              onClick={() => {
+                clearFilters();
+                setFilters((prev) => ({ ...prev, finalAmount: null }));
+                confirm();
+              }}
+              size="small"
+              style={{ width: 90 }}
+            >
+              Reset
+            </Button>
+          </div>
+        </div>
+      ),
+      filterIcon: (filtered) => (
+        <FaSearch style={{ color: filtered ? "#1890ff" : undefined }} />
+      ),
+    },
+    {
+      title: "",
+      key: "actions",
+      render: (_, record) => (
+        <>
+          <span>
+            <Link
+              to={`/quotations/${record.quotationId}/edit`}
+              style={{ textDecoration: "none", color: "inherit" }}
+              title="Edit Quotation"
+            >
+              <EditOutlined style={{ marginRight: 8 }} />
+            </Link>
+          </span>
+          <Dropdown
+            overlay={
+              <Menu>
+                <Menu.Item key="view">
+                  <Link
+                    to={`/quotations/${record.quotationId}`}
+                    style={{ textDecoration: "none", color: "inherit" }}
+                    title="View Quotation"
+                  >
+                    <FaEye style={{ marginRight: 8 }} />
+                    View
+                  </Link>
+                </Menu.Item>
+
+                <Menu.Item
+                  key="delete"
+                  onClick={() => handleDeleteClick(record)}
+                  disabled={isDeleting}
+                  style={{ color: "#ff4d4f" }}
+                  title="Delete Quotation"
+                >
+                  <FaTrash style={{ marginRight: 8 }} />
+                  Delete
+                </Menu.Item>
+                <Menu.Item
+                  key="convert-to-order"
+                  onClick={() => handleConvertToOrder(record)}
+                  title="Convert to Order"
+                >
+                  <FaFileInvoice style={{ marginRight: 8 }} />
+                  Convert to Order
+                </Menu.Item>
+                <Menu.Item
+                  key="share-whatsapp"
+                  onClick={() => handleShareOnWhatsApp(record)}
+                  title="Share on WhatsApp"
+                  style={{ color: "#25D366" }} // WhatsApp green color
+                >
+                  <FaWhatsapp style={{ marginRight: 8 }} />
+                  Share on WhatsApp
+                </Menu.Item>
+              </Menu>
+            }
+            trigger={["click"]}
+            placement="bottomRight"
+          >
+            <Button
+              type="text"
+              icon={<MoreOutlined />}
+              aria-label="More actions"
+            />
+          </Dropdown>
+        </>
+      ),
+    },
+  ];
+
   const formattedTableData = useMemo(() => {
     return currentQuotations.map((quotation, index) => ({
-      "S.No.": (currentPage - 1) * itemsPerPage + index + 1,
-      "Quotation Title": quotation.document_title || "N/A",
-      "Quotation Date": quotation.quotation_date
+      key: quotation.quotationId,
+      sNo: (currentPage - 1) * itemsPerPage + index + 1,
+      quotationTitle: quotation.document_title || "N/A",
+      quotationDate: quotation.quotation_date
         ? new Date(quotation.quotation_date).toLocaleDateString()
         : "N/A",
-      "Due Date": quotation.due_date
+      dueDate: quotation.due_date
         ? new Date(quotation.due_date).toLocaleDateString()
         : "N/A",
-      "Reference Number": quotation.reference_number || "N/A",
-      Products: getProductCount(quotation.products),
-      Customer: getCustomerName(quotation.customerId),
-      "Final Amount": `₹${quotation.finalAmount || 0}`,
+      referenceNumber: quotation.reference_number || "N/A",
+      products: quotation.products,
+      customer: getCustomerName(quotation.customerId),
+      customerId: quotation.customerId,
+      finalAmount: `₹${quotation.finalAmount || 0}`,
+      quotationId: quotation.quotationId,
     }));
   }, [currentQuotations, currentPage, customers]);
 
@@ -215,14 +612,14 @@ const QuotationList = () => {
     navigate("/order/add", {
       state: {
         quotationData: {
-          title: quotation.document_title || "",
+          title: quotation.quotationTitle || "",
           createdFor: quotation.customerId || "",
           dueDate: quotation.due_date || "",
-          source: quotation.reference_number
-            ? `Quotation #${quotation.reference_number}`
+          source: quotation.referenceNumber
+            ? `Quotation #${quotation.referenceNumber}`
             : "",
           description: `Converted from Quotation #${
-            quotation.reference_number || "N/A"
+            quotation.referenceNumber || "N/A"
           }`,
           quotationId: quotation.quotationId || "",
         },
@@ -238,6 +635,12 @@ const QuotationList = () => {
     setSearchTerm("");
     setSortBy("Recently Added");
     setActiveTab("All");
+    setFilters({
+      finalAmount: null,
+      quotationDate: null,
+      customerId: null,
+      dateRange: null,
+    });
     setCurrentPage(1);
   };
 
@@ -297,11 +700,22 @@ const QuotationList = () => {
                       aria-label="Search quotations"
                     />
                   </div>
+                  <Select
+                    style={{ width: 200, marginLeft: 10 }}
+                    value={sortBy}
+                    onChange={(value) => setSortBy(value)}
+                  >
+                    <Option value="Recently Added">Recently Added</Option>
+                    <Option value="Ascending">Reference Ascending</Option>
+                    <Option value="Descending">Reference Descending</Option>
+                    <Option value="Price High">Price High to Low</Option>
+                    <Option value="Price Low">Price Low to High</Option>
+                  </Select>
                 </div>
               </div>
             </div>
             <div className="tab-content" id="pills-tabContent">
-              {Object.entries(groupedQuotations).map(([status, list]) => (
+              {Object.entries(groupedQuotations).map(([status]) => (
                 <div
                   className={`tab-pane fade ${
                     activeTab === status ? "show active" : ""
@@ -318,137 +732,13 @@ const QuotationList = () => {
                     </p>
                   ) : (
                     <div className="table-responsive">
-                      <table className="table table-hover">
-                        <thead>
-                          <tr>
-                            <th>S.No.</th>
-                            <th>Quotation Title</th>
-                            <th>Quotation Date</th>
-                            <th>Due Date</th>
-                            <th>Reference Number</th>
-                            <th>Products</th>
-                            <th>Customer</th>
-                            <th>Final Amount</th>
-                            <th></th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {currentQuotations.map((quotation, index) => (
-                            <tr key={quotation.quotationId}>
-                              <td>
-                                {(currentPage - 1) * itemsPerPage + index + 1}
-                              </td>
-                              <td>
-                                <Link
-                                  to={`/quotations/${quotation.quotationId}`}
-                                >
-                                  {quotation.document_title || "N/A"}
-                                </Link>
-                              </td>
-                              <td>
-                                {quotation.quotation_date
-                                  ? new Date(
-                                      quotation.quotation_date
-                                    ).toLocaleDateString()
-                                  : "N/A"}
-                              </td>
-                              <td>
-                                {quotation.due_date
-                                  ? new Date(
-                                      quotation.due_date
-                                    ).toLocaleDateString()
-                                  : "N/A"}
-                              </td>
-                              <td>{quotation.reference_number || "N/A"}</td>
-                              <td>
-                                <button
-                                  className="btn btn-link"
-                                  onClick={() =>
-                                    handleOpenProductModal(quotation.products)
-                                  }
-                                  style={{ color: "#e31e24" }}
-                                  aria-label="View products"
-                                >
-                                  View Products (
-                                  {getProductCount(quotation.products)})
-                                </button>
-                              </td>
-                              <td>
-                                <Link to={`/customer/${quotation.customerId}`}>
-                                  {getCustomerName(quotation.customerId)}
-                                </Link>
-                              </td>
-                              <td>₹{quotation.finalAmount || 0}</td>
-                              <td>
-                                <Dropdown
-                                  overlay={
-                                    <Menu>
-                                      <Menu.Item key="view">
-                                        <Link
-                                          to={`/quotations/${quotation.quotationId}`}
-                                          style={{
-                                            textDecoration: "none",
-                                            color: "inherit",
-                                          }}
-                                          title="View Quotation"
-                                        >
-                                          <FaEye style={{ marginRight: 8 }} />
-                                          View
-                                        </Link>
-                                      </Menu.Item>
-                                      <Menu.Item key="edit">
-                                        <Link
-                                          to={`/quotations/${quotation.quotationId}/edit`}
-                                          style={{
-                                            textDecoration: "none",
-                                            color: "inherit",
-                                          }}
-                                          title="Edit Quotation"
-                                        >
-                                          <FaEdit style={{ marginRight: 8 }} />
-                                          Edit
-                                        </Link>
-                                      </Menu.Item>
-                                      <Menu.Item
-                                        key="delete"
-                                        onClick={() =>
-                                          handleDeleteClick(quotation)
-                                        }
-                                        disabled={isDeleting}
-                                        style={{ color: "#ff4d4f" }}
-                                        title="Delete Quotation"
-                                      >
-                                        <FaTrash style={{ marginRight: 8 }} />
-                                        Delete
-                                      </Menu.Item>
-                                      <Menu.Item
-                                        key="convert-to-order"
-                                        onClick={() =>
-                                          handleConvertToOrder(quotation)
-                                        }
-                                        title="Convert to Order"
-                                      >
-                                        <FaFileInvoice
-                                          style={{ marginRight: 8 }}
-                                        />
-                                        Convert to Order
-                                      </Menu.Item>
-                                    </Menu>
-                                  }
-                                  trigger={["click"]}
-                                  placement="bottomRight"
-                                >
-                                  <Button
-                                    type="text"
-                                    icon={<MoreOutlined />}
-                                    aria-label="More actions"
-                                  />
-                                </Dropdown>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                      <Table
+                        className="table table-hover"
+                        columns={columns}
+                        dataSource={formattedTableData}
+                        pagination={false}
+                        rowKey="key"
+                      />
                       {filteredQuotations.length > itemsPerPage && (
                         <div className="pagination-section mt-4">
                           <DataTablePagination

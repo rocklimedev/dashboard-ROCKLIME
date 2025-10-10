@@ -344,7 +344,6 @@ exports.deleteComment = async (req, res) => {
 exports.createOrder = async (req, res) => {
   try {
     const {
-      title,
       createdFor,
       createdBy,
       pipeline,
@@ -360,11 +359,11 @@ exports.createOrder = async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (!title || !createdFor || !createdBy) {
+    if (!createdFor || !createdBy) {
       return sendErrorResponse(
         res,
         400,
-        "Title, createdFor, and createdBy are required"
+        "createdFor, and createdBy are required"
       );
     }
 
@@ -450,7 +449,6 @@ exports.createOrder = async (req, res) => {
 
     // Create the order
     const order = await Order.create({
-      title,
       createdFor,
       createdBy,
       pipeline,
@@ -824,13 +822,6 @@ exports.updateOrderById = async (req, res) => {
         .json({ message: "Invoice Link cannot exceed 500 characters" });
     }
 
-    // Validate title
-    if (updates.title && updates.title.length > 255) {
-      return res
-        .status(400)
-        .json({ message: "Title cannot exceed 255 characters" });
-    }
-
     // Validate source
     if (updates.source && updates.source.length > 255) {
       return res
@@ -867,10 +858,10 @@ exports.updateOrderById = async (req, res) => {
 // Create a draft order
 exports.draftOrder = async (req, res) => {
   try {
-    const { title, quotationId, assignedTo } = req.body;
+    const { quotationId, assignedTo } = req.body;
 
-    if (!title || !assignedTo) {
-      return sendErrorResponse(res, 400, "title and assignedTo are required");
+    if (!assignedTo) {
+      return sendErrorResponse(res, 400, "assignedTo are required");
     }
 
     const team = await Team.findByPk(assignedTo);
@@ -886,7 +877,6 @@ exports.draftOrder = async (req, res) => {
     }
 
     const order = await Order.create({
-      title,
       quotationId,
       status: "DRAFT",
       assignedTo,
@@ -997,7 +987,6 @@ exports.getFilteredOrders = async (req, res) => {
     const searchFilter = search
       ? {
           [Op.or]: [
-            { title: { [Op.like]: `%${search}%` } },
             { source: { [Op.like]: `%${search}%` } },
             { "$customer.name$": { [Op.like]: `%${search}%` } },
           ],

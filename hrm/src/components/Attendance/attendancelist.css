@@ -1,0 +1,138 @@
+.attendance-card {
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+}
+
+.stat-rectangle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100px; /* Fixed width for consistency */
+  height: 60px; /* Fixed height for rectangle shape */
+  border-radius: 8px; /* Rounded corners for a modern look */
+  font-weight: bold;
+  font-size: 18px;
+  margin: 0 auto 8px;
+  color: #fff; /* White text for contrast */
+}
+
+/* Background colors for different stats */
+.stat-rectangle.bg-primary-transparent {
+  background-color: rgba(0, 123, 255, 0.2); /* Light blue */
+  color: #007bff;
+}
+
+.stat-rectangle.bg-danger-transparent {
+  background-color: rgba(220, 53, 69, 0.2); /* Light red */
+  color: #dc3545;
+}
+
+.stat-rectangle.bg-purple-transparent {
+  background-color: rgba(111, 66, 193, 0.2); /* Light purple */
+  color: #6f42c1;
+}
+
+.stat-rectangle.bg-warning-transparent {
+  background-color: rgba(255, 193, 7, 0.2); /* Light yellow */
+  color: #ffc107;
+}
+
+.stat-rectangle.bg-cyan-transparent {
+  background-color: rgba(23, 162, 184, 0.2); /* Light cyan */
+  color: #17a2b8;
+}
+
+.stat-rectangle.bg-success-transparent {
+  background-color: rgba(40, 167, 69, 0.2); /* Light green */
+  color: #28a745;
+}
+
+/* Align stats with table */
+.days-overview .row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.days-overview .col-lg-2 {
+  flex: 1;
+  min-width: 120px; /* Ensure responsiveness */
+  text-align: center;
+}
+
+.days-overview p.fs-14 {
+  font-size: 14px;
+  color: #495057;
+  margin-bottom: 0;
+}
+
+/* Table styling for consistency */
+.cm-table-wrapper {
+  margin-top: 16px;
+}
+
+.cm-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.cm-table thead th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #495057;
+  border-bottom: 1px solid #e9ecef;
+  padding: 12px;
+}
+
+.cm-table tbody tr:hover td {
+  background-color: #f1f3f5;
+}
+
+.badge-success {
+  background-color: #d4edda;
+  color: #155724;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.badge-danger {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.text-center {
+  text-align: center;
+  padding: 20px;
+  color: #6c757d;
+  font-size: 16px;
+}
+
+@media (max-width: 768px) {
+  .days-overview .row {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .days-overview .col-lg-2 {
+    min-width: 100%;
+    margin-bottom: 10px;
+  }
+
+  .stat-rectangle {
+    width: 80%; /* Wider on smaller screens */
+    max-width: 150px;
+  }
+}

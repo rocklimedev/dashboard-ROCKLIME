@@ -361,18 +361,12 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
                               )}
                             </td>
                             <td>
+                              <span onClick={() => handleEditClick(po)}>
+                                <EditOutlined style={{ marginRight: 8 }} />
+                              </span>
                               <Dropdown
                                 overlay={
                                   <Menu>
-                                    <Menu.Item
-                                      key="edit"
-                                      onClick={() => handleEditClick(po)}
-                                    >
-                                      <EditOutlined
-                                        style={{ marginRight: 8 }}
-                                      />
-                                      Edit Purchase Order
-                                    </Menu.Item>
                                     <Menu.Item
                                       key="delete"
                                       onClick={() => handleDeleteClick(po.id)}

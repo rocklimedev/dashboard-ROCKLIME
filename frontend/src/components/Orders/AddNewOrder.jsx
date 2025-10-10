@@ -97,7 +97,6 @@ const AddNewOrder = ({ adminName }) => {
 
   // State
   const [formData, setFormData] = useState({
-    title: quotationData.title || "",
     createdFor: quotationData.createdFor || "",
     createdBy: user.userId || "",
     assignedTo: "",
@@ -154,7 +153,6 @@ const AddNewOrder = ({ adminName }) => {
   useEffect(() => {
     if (isEditMode && order && formData.orderNo !== order.orderNo) {
       setFormData({
-        title: order.title || "",
         createdFor: order.createdFor || "",
         createdBy: order.createdBy || user.userId || "",
         assignedTo: order.assignedTo || "",
@@ -229,7 +227,6 @@ const AddNewOrder = ({ adminName }) => {
 
   const clearForm = () => {
     setFormData({
-      title: "",
       createdFor: "",
       createdBy: user.userId || "",
       assignedTo: "",
@@ -327,8 +324,8 @@ const AddNewOrder = ({ adminName }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.title || !formData.createdFor) {
-      toast.error("Please fill all required fields (Title, Customer).");
+    if (!formData.createdFor) {
+      toast.error("Please fill all required fields Customer.");
       return;
     }
 
@@ -500,25 +497,6 @@ const AddNewOrder = ({ adminName }) => {
               </div>
 
               <div className="row">
-                <div className="col-lg-6">
-                  <Form.Group className="mb-3">
-                    <Form.Label>
-                      Order Title <span className="text-danger">*</span>
-                    </Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="title"
-                      value={formData.title}
-                      onChange={(e) =>
-                        handleChange(e.target.name, e.target.value)
-                      }
-                      maxLength={255}
-                      required
-                      placeholder="Enter order title"
-                    />
-                  </Form.Group>
-                </div>
-
                 <div className="col-lg-6">
                   <Form.Group className="mb-3">
                     <Form.Label>Order Number</Form.Label>

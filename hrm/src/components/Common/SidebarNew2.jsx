@@ -1,0 +1,164 @@
+import React, { useState } from "react";
+import { NavLink } from "react-router-dom";
+import { ChevronsLeft } from "react-feather";
+import masterRoutes from "../../data/routes";
+import logo from "../../assets/img/logo.png";
+import logo_small from "../../assets/img/fav_icon.png";
+import { DownCircleOutlined } from "@ant-design/icons";
+
+const SidebarNew = ({
+  isSidebarOpen,
+  toggleSidebar,
+  layoutMode = "vertical",
+}) => {
+  const [openMenu, setOpenMenu] = useState(null);
+
+  const toggleDropdown = (index) => {
+    setOpenMenu((prevIndex) => (prevIndex === index ? null : index));
+  };
+
+  // Close all submenus when a route is clicked
+  const handleRouteClick = () => {
+    setOpenMenu(null);
+  };
+
+  const VerticalSidebar = () => (
+    <div className={`sidebar ${isSidebarOpen ? "active" : ""}`} id="sidebar">
+      <div className={`sidebar-logo ${isSidebarOpen ? "active" : ""}`}>
+        <NavLink to="/" className="logo logo-normal">
+          <img src={logo} alt="Logo" />
+        </NavLink>
+        <NavLink to="/" className="logo-small">
+          <img src={logo_small} alt="Logo" />
+        </NavLink>
+        <a
+          id="toggle_btn"
+          href="#"
+          onClick={(e) => {
+            e.preventDefault();
+            if (window.innerWidth < 768) {
+              toggleSidebar(!isSidebarOpen);
+            }
+          }}
+        >
+          <ChevronsLeft size={16} />
+        </a>
+      </div>
+
+      <div className="sidebar-inner slimscroll">
+        <div id="sidebar-menu" className="sidebar-menu">
+          <ul>
+            {masterRoutes
+              .filter((section) => section.isSidebarActive)
+              .map((section, index) => (
+                <li
+                  key={index}
+                  className={section.submenu?.length ? "submenu" : ""}
+                >
+                  {section.submenu?.length > 0 ? (
+                    <a
+                      href="#"
+                      className={openMenu === index ? "subdrop active" : ""}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        toggleDropdown(index);
+                      }}
+                    >
+                      {section.icon || <DownCircleOutlined />}
+                      <span>{section.name}</span>
+                      <span className="menu-arrow"></span>
+                    </a>
+                  ) : (
+                    <NavLink
+                      to={section.path}
+                      className={({ isActive }) => (isActive ? "active" : "")}
+                      onClick={handleRouteClick}
+                    >
+                      {section.icon || <DownCircleOutlined />}
+                      <span>{section.name}</span>
+                    </NavLink>
+                  )}
+                  {section.submenu?.length > 0 && (
+                    <ul
+                      className={
+                        openMenu === index ? "submenu-open" : "submenu-closed"
+                      }
+                    >
+                      {section.submenu
+                        .filter((sub) => sub.isSidebarActive)
+                        .map((sub, subIdx) => (
+                          <li
+                            key={subIdx}
+                            className={sub.submenu?.length ? "submenu" : ""}
+                          >
+                            {sub.submenu?.length > 0 ? (
+                              <a
+                                href="#"
+                                className={
+                                  openMenu === `${index}-${subIdx}`
+                                    ? "subdrop active"
+                                    : ""
+                                }
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  toggleDropdown(`${index}-${subIdx}`);
+                                }}
+                              >
+                                {sub.icon || <DownCircleOutlined />}
+                                <span>{sub.name}</span>
+                                <span className="menu-arrow inside-submenu"></span>
+                              </a>
+                            ) : (
+                              <NavLink
+                                to={sub.path}
+                                className={({ isActive }) =>
+                                  isActive ? "active" : ""
+                                }
+                                onClick={handleRouteClick}
+                              >
+                                {sub.icon || <DownCircleOutlined />}
+                                <span>{sub.name}</span>
+                              </NavLink>
+                            )}
+                            {sub.submenu?.length > 0 && (
+                              <ul
+                                className={
+                                  openMenu === `${index}-${subIdx}`
+                                    ? "submenu-open"
+                                    : "submenu-closed"
+                                }
+                              >
+                                {sub.submenu
+                                  .filter((subSub) => subSub.isSidebarActive)
+                                  .map((subSub, subSubIdx) => (
+                                    <li key={subSubIdx}>
+                                      <NavLink
+                                        to={subSub.path}
+                                        className={({ isActive }) =>
+                                          isActive ? "active" : ""
+                                        }
+                                        onClick={handleRouteClick}
+                                      >
+                                        {subSub.icon || <DownCircleOutlined />}
+                                        <span>{subSub.name}</span>
+                                      </NavLink>
+                                    </li>
+                                  ))}
+                              </ul>
+                            )}
+                          </li>
+                        ))}
+                    </ul>
+                  )}
+                </li>
+              ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+
+  return <>{layoutMode === "vertical" && <VerticalSidebar />}</>;
+};
+
+export default SidebarNew;

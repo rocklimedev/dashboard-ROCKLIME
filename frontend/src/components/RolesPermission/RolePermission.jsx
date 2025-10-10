@@ -247,7 +247,7 @@ const RolePermission = () => {
             title={
               activeTab === "roles" ? "Roles & Permissions" : "Permissions"
             }
-            subtitle="Manage your brands"
+            subtitle="Manage your roles"
             onAdd={handleOpenRoleModal}
             tableData={paginatedRoles}
           />

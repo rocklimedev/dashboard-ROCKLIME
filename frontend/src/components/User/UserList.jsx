@@ -429,6 +429,12 @@ const UserList = () => {
                                 </span>
                               </td>
                               <td>
+                                <span
+                                  onClick={() => handleEditUser(user)}
+                                  title={`Edit ${user.name || "user"}`}
+                                >
+                                  <EditOutlined style={{ marginRight: 8 }} />
+                                </span>
                                 <Dropdown
                                   overlay={
                                     <Menu>
@@ -442,16 +448,7 @@ const UserList = () => {
                                         />
                                         View User
                                       </Menu.Item>
-                                      <Menu.Item
-                                        key="edit"
-                                        onClick={() => handleEditUser(user)}
-                                        title={`Edit ${user.name || "user"}`}
-                                      >
-                                        <EditOutlined
-                                          style={{ marginRight: 8 }}
-                                        />
-                                        Edit User
-                                      </Menu.Item>
+
                                       <Menu.Item
                                         key="inactive"
                                         onClick={() =>

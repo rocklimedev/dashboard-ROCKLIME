@@ -55,8 +55,6 @@ import TeamsList from "../components/Orders/TeamsList";
 import InvoiceDetails from "../components/Invoices/InvoiceDetails";
 import NoAccess from "../components/Common/NoAccess";
 import AddressList from "../components/Address/Address";
-import AttendanceWrapper from "../components/Attendance/AttendanceWrapper";
-import AttendanceList from "../components/Attendance/AttendanceList";
 import NewAddUser from "../components/User/NewAddUser";
 import UserPage from "../components/User/UserPage";
 import Product from "../components/Product/Product";
@@ -69,9 +67,8 @@ import BrandSelection from "../components/Product/BrandSelection";
 import OrderPage from "../components/Orders/Orderpage";
 import NewCart from "../components/POS-NEW/NewCart";
 import AccountVerify from "../components/Auth/AccountVerify";
-import ContactWrapper from "../components/Contact/ContactWrapper";
 import AddCustomer from "../components/Customers/AddCustomer";
-import EmailInterface from "../components/Contact/EmailInterface";
+
 import EmailVerification from "../components/Auth/EmailVerifications";
 import POWrapper from "../components/Orders/POWrapper";
 import AddPurchaseOrder from "../components/Orders/AddPurchaseOrder";
@@ -155,13 +152,6 @@ const masterRoutes = [
     icon: <PiMicrosoftTeamsLogoLight />,
     isSidebarActive: true,
     submenu: [
-      {
-        path: "/hrm/attendance/list",
-        name: "HRM",
-        icon: <MdOutlinePeopleAlt />,
-        isSidebarActive: false,
-        element: <AttendanceList />,
-      },
       {
         path: "/users/list",
         name: "Users",
@@ -388,13 +378,7 @@ const masterRoutes = [
         isSidebarActive: false,
         element: <Login />,
       },
-      {
-        path: "/u/:id/attendance",
-        name: "HRMS",
-        icon: <MdOutlinePeopleAlt />,
-        isSidebarActive: false,
-        element: <AttendanceWrapper />,
-      },
+
       {
         path: "/no-access",
         name: "No Access",
@@ -460,13 +444,7 @@ const masterRoutes = [
     element: <LogTable />,
     isSidebarActive: false,
   },
-  {
-    path: "/email",
-    name: "Email",
-    icon: <RiFileListLine />,
-    element: <EmailInterface />,
-    isSidebarActive: false,
-  },
+
   {
     path: "/inventory/categories-keywords",
     element: <CategoryManagement />,
@@ -474,13 +452,7 @@ const masterRoutes = [
     icon: <BiCategory />,
     isSidebarActive: false,
   },
-  {
-    path: "/contact",
-    element: <ContactWrapper />,
-    name: "Contact",
-    icon: <BiCoinStack />,
-    isSidebarActive: false,
-  },
+
   {
     path: "/customers/add",
     element: <AddCustomer />,

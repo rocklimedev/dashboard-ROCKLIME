@@ -6,7 +6,6 @@ exports.getInvoicesByCustomerId = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Optionally: Check if customer exists first
     const customer = await Customer.findByPk(id);
     if (!customer) {
       return res.status(404).json({
@@ -34,7 +33,7 @@ exports.getInvoicesByCustomerId = async (req, res) => {
 // Create a new customer
 exports.createCustomer = async (req, res) => {
   try {
-    const requiredFields = ["name", "email"]; // You can add more required fields here if needed
+    const requiredFields = ["name", "email"]; // phone2 is optional
 
     // Check for missing required fields
     for (const field of requiredFields) {
@@ -46,8 +45,11 @@ exports.createCustomer = async (req, res) => {
       }
     }
 
-    // Create customer with all fields provided in the request body
-    const newCustomer = await Customer.create(req.body);
+    // Create customer with all fields provided in the request body, including phone2
+    const newCustomer = await Customer.create({
+      ...req.body,
+      phone2: req.body.phone2 || null, // Ensure phone2 is set or null
+    });
 
     res.status(201).json({
       success: true,
@@ -99,7 +101,10 @@ exports.updateCustomer = async (req, res) => {
         .json({ success: false, message: "Customer not found" });
     }
 
-    await customer.update(req.body);
+    await customer.update({
+      ...req.body,
+      phone2: req.body.phone2 !== undefined ? req.body.phone2 : customer.phone2,
+    });
 
     res.status(200).json({
       success: true,

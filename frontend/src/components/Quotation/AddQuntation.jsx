@@ -498,7 +498,7 @@ const AddQuotation = () => {
                 </div>
                 <div className="col-lg-6">
                   <Form.Group className="mb-3">
-                    <Form.Label>Reference Number</Form.Label>
+                    <Form.Label>Quotation Number</Form.Label>
                     <Form.Control
                       type="text"
                       name="reference_number"
