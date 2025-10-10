@@ -1,8 +1,10 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useGetTeamByIdQuery } from "../../api/teamApi";
-import { useGetCustomersQuery } from "../../api/customerApi";
-import { useGetCustomerByIdQuery } from "../../api/customerApi";
+import {
+  useGetCustomersQuery,
+  useGetCustomerByIdQuery,
+} from "../../api/customerApi";
 import {
   useGetOrderDetailsQuery,
   useAddCommentMutation,
@@ -24,6 +26,7 @@ import { Document, Page, pdfjs } from "react-pdf";
 // Dynamically use the pdfjs version installed with react-pdf
 pdfjs.GlobalWorkerOptions.workerSrc = `${process.env.PUBLIC_URL}/pdf.worker.min.js`;
 
+// CommentRow Component
 const CommentRow = ({ comment, onDelete, currentUserId }) => {
   const isCurrentUser = comment.userId === currentUserId;
   const userInitial = comment.user?.name
@@ -34,7 +37,7 @@ const CommentRow = ({ comment, onDelete, currentUserId }) => {
     <div
       className={`d-flex mb-3 ${
         isCurrentUser ? "justify-content-end" : "justify-content-start"
-      }`}
+      } chat-bubble`}
     >
       <div
         className={`d-flex align-items-start ${
@@ -44,50 +47,47 @@ const CommentRow = ({ comment, onDelete, currentUserId }) => {
       >
         {/* Avatar */}
         <div
-          className="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-2"
-          style={{ width: "40px", height: "40px", fontSize: "1.2rem" }}
+          className="avatar bg-secondary text-white"
+          style={{ fontSize: "1.2rem" }}
         >
           {userInitial}
         </div>
         {/* Chat Bubble */}
         <div
-          className={`p-3 rounded-3 shadow-sm ${
-            isCurrentUser ? "bg-primary text-white" : "bg-light border"
+          className={`card border-0 shadow-sm ${
+            isCurrentUser ? "bg-primary text-white" : "bg-light"
           }`}
-          style={{
-            borderRadius: isCurrentUser
-              ? "15px 15px 0 15px"
-              : "15px 15px 15px 0",
-          }}
         >
-          <div className="d-flex justify-content-between align-items-center mb-1">
-            <strong>{comment.user?.name || "Unknown User"}</strong>
-            {isCurrentUser && (
-              <Button
-                variant="link"
-                className={`p-0 ${
-                  isCurrentUser ? "text-white" : "text-danger"
-                }`}
-                onClick={() => onDelete(comment._id)}
-                aria-label={`Delete comment by ${
-                  comment.user?.username || "user"
-                }`}
-              >
-                Delete
-              </Button>
-            )}
+          <div className="card-body">
+            <div className="d-flex justify-content-between align-items-center mb-1">
+              <strong>{comment.user?.name || "Unknown User"}</strong>
+              {isCurrentUser && (
+                <Button
+                  variant="link"
+                  className={`p-0 ${
+                    isCurrentUser ? "text-white" : "text-danger"
+                  }`}
+                  onClick={() => onDelete(comment._id)}
+                  aria-label={`Delete comment by ${
+                    comment.user?.username || "user"
+                  }`}
+                >
+                  Delete
+                </Button>
+              )}
+            </div>
+            <p className="mb-1">{comment.comment}</p>
+            <small
+              className={`text-muted ${isCurrentUser ? "text-white-50" : ""}`}
+            >
+              {new Date(comment.createdAt).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+              {" • "}
+              {new Date(comment.createdAt).toLocaleDateString()}
+            </small>
           </div>
-          <p className="mb-1">{comment.comment}</p>
-          <small
-            className={`text-muted ${isCurrentUser ? "text-white-50" : ""}`}
-          >
-            {new Date(comment.createdAt).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-            {" • "}
-            {new Date(comment.createdAt).toLocaleDateString()}
-          </small>
         </div>
       </div>
     </div>
@@ -155,14 +155,6 @@ const OrderPage = () => {
     isLoading: teamLoading,
     error: teamError,
   } = useGetAllTeamsQuery();
-  // Fetch team
-  const teamIds = useMemo(
-    () =>
-      order.assignedTo
-        ? order.assignedTo.split(",").map((id) => id.trim())
-        : [],
-    [order.assignedTo]
-  );
 
   // Parse comments
   const comments = useMemo(() => commentData?.comments || [], [commentData]);
@@ -178,6 +170,7 @@ const OrderPage = () => {
       setCustomerMap(map);
     }
   }, [customersData]);
+
   useEffect(() => {
     if (teamData?.teams) {
       const map = teamData.teams.reduce((acc, team) => {
@@ -201,7 +194,8 @@ const OrderPage = () => {
   }, [teamData]);
 
   const normalizedTeamMembers = useMemo(() => {
-    if (!teamIds.length || !teamData?.teams) return [];
+    if (!order.assignedTo || !teamData?.teams) return [];
+    const teamIds = order.assignedTo.split(",").map((id) => id.trim());
     return teamIds
       .map((teamId) => {
         const team = teamData.teams.find((t) => t.id === teamId);
@@ -217,7 +211,7 @@ const OrderPage = () => {
         };
       })
       .filter((team) => team !== null);
-  }, [teamIds, teamData]);
+  }, [order.assignedTo, teamData]);
 
   // Handle file selection
   const handleFileChange = (e) => {
@@ -242,36 +236,17 @@ const OrderPage = () => {
     }
 
     try {
-      const response = await handleUploadInvoice(id, invoiceFile);
-
+      const formData = new FormData();
+      formData.append("invoice", invoiceFile);
+      const response = await uploadInvoice({ orderId: id, formData }).unwrap();
+      toast.success("Invoice uploaded successfully.");
       setInvoiceFile(null);
       document.getElementById("invoiceUpload").value = null;
-    } catch (err) {
-      // Error is handled in handleUploadInvoice
-    }
-  };
-
-  const handleUploadInvoice = async (orderId, file) => {
-    try {
-      const formData = new FormData();
-      formData.append("invoice", file);
-
-      const response = await uploadInvoice({ orderId, formData }).unwrap();
-
-      // Optimistically update the cache
-      orderApi.util.updateQueryData("getOrderDetails", orderId, (draft) => {
-        if (response.order?.invoiceLink) {
-          draft.order.invoiceLink = response.order.invoiceLink;
-        }
-      });
-
       refetchOrder();
-      return response;
     } catch (err) {
       toast.error(
         `Upload error: ${err.data?.message || "Failed to upload invoice"}`
       );
-      throw err;
     }
   };
 
@@ -289,7 +264,7 @@ const OrderPage = () => {
     if (window.confirm("Are you sure you want to delete this order?")) {
       try {
         await deleteOrder(id).unwrap();
-
+        toast.success("Order deleted successfully.");
         navigate("/orders/list");
       } catch (err) {
         toast.error(
@@ -302,7 +277,7 @@ const OrderPage = () => {
   const handleHoldOrder = async () => {
     try {
       await updateOrderStatus({ id, status: "ONHOLD" }).unwrap();
-
+      toast.success("Order status updated to ONHOLD.");
       refetchOrder();
     } catch (err) {
       toast.error(
@@ -337,7 +312,7 @@ const OrderPage = () => {
         userId: user.userId,
         comment: newComment,
       }).unwrap();
-
+      toast.success("Comment added successfully.");
       setNewComment("");
     } catch (err) {
       const errorMessage =
@@ -361,6 +336,7 @@ const OrderPage = () => {
     if (window.confirm("Are you sure you want to delete this comment?")) {
       try {
         await deleteComment({ commentId, userId: user.userId }).unwrap();
+        toast.success("Comment deleted successfully.");
       } catch (err) {
         toast.error(
           `Failed to delete comment: ${err?.data?.message || "Unknown error"}`
@@ -375,6 +351,14 @@ const OrderPage = () => {
     }
   };
 
+  // Construct PDF URL
+  const pdfUrl =
+    order.status === "INVOICE" && order.invoiceLink && order.invoiceLink !== ""
+      ? order.invoiceLink.startsWith("http")
+        ? order.invoiceLink
+        : `${process.env.REACT_APP_FTP_BASE_URL}${order.invoiceLink}`
+      : null;
+
   // Redirect to login if not authenticated
   if (profileError && profileError.status === 401) {
     toast.error("Please log in to access this page.");
@@ -384,54 +368,57 @@ const OrderPage = () => {
 
   if (profileLoading || orderLoading || teamLoading) {
     return (
-      <div className="page-wrapper notes-page-wrapper">
-        <div className="content text-center">
-          <Spinner animation="border" /> Loading...
-        </div>
+      <div
+        className="page-wrapper notes-page-wrapper d-flex justify-content-center align-items-center"
+        style={{ minHeight: "100vh" }}
+      >
+        <Spinner animation="border" /> <span className="ms-2">Loading...</span>
       </div>
     );
   }
 
   if (profileError || orderError || teamError) {
     return (
-      <div className="page-wrapper notes-page-wrapper">
-        <div className="content text-center">
-          <p className="text-danger">
-            {profileError?.data?.message ||
-              orderError?.data?.message ||
-              teamError?.data?.message ||
-              "Error loading data. Please try again."}
-          </p>
-        </div>
+      <div
+        className="page-wrapper notes-page-wrapper d-flex justify-content-center align-items-center"
+        style={{ minHeight: "100vh" }}
+      >
+        <Alert variant="danger">
+          {profileError?.data?.message ||
+            orderError?.data?.message ||
+            teamError?.data?.message ||
+            "Error loading data. Please try again."}
+        </Alert>
       </div>
     );
   }
 
-  // Construct PDF URL
-  const pdfUrl =
-    order.status === "INVOICE" && order.invoiceLink && order.invoiceLink !== ""
-      ? order.invoiceLink.startsWith("http")
-        ? order.invoiceLink
-        : `${process.env.REACT_APP_FTP_BASE_URL}${order.invoiceLink}`
-      : null;
-
   return (
-    <div className="page-wrapper notes-page-wrapper">
+    <div
+      className="page-wrapper"
+      style={{ padding: "20px", backgroundColor: "#f7f7f7" }}
+    >
       <div className="content">
-        <div className="page-header page-add-notes border-0 d-flex flex-sm-row flex-column justify-content-between align-items-start">
-          <div className="add-item d-flex">
-            <div className="page-title">
-              <h4>Orders</h4>
-              <h6 className="mb-0">Manage your orders</h6>
-            </div>
+        {/* Page Header */}
+        <div className="page-header d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-4">
+          <div className="page-title">
+            <h4 className="mb-2">Orders</h4>
+            <h6 className="text-muted mb-0">Manage your orders</h6>
           </div>
+          <Button
+            variant="primary"
+            onClick={() => navigate("/orders/list")}
+            className="mt-2 mt-sm-0"
+          >
+            Back to Orders
+          </Button>
         </div>
 
         <div className="row g-4">
-          {/* Order Card */}
-          <div className="col-md-6">
-            <div className="card border rounded-4 shadow-sm">
-              <div className="card-header bg-primary text-white rounded-top-4 d-flex justify-content-between align-items-center">
+          {/* Order Details Card */}
+          <div className="col-lg-6 col-md-12">
+            <div className="card border-0 rounded-3 shadow-sm">
+              <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                 <h5 className="mb-0">🧾 Order Details</h5>
                 <Dropdown align="end">
                   <Dropdown.Toggle
@@ -451,62 +438,69 @@ const OrderPage = () => {
                     >
                       Delete
                     </Dropdown.Item>
+                    <Dropdown.Item onClick={handleHoldOrder}>
+                      Put on Hold
+                    </Dropdown.Item>
                   </Dropdown.Menu>
                 </Dropdown>
               </div>
               <div className="card-body">
-                <div className="row">
-                  <div className="col-6 mb-3">
-                    <small className="text-muted">Title</small>
-                    <p className="fw-semibold">{order.title || "N/A"}</p>
+                <div className="row g-3">
+                  <div className="col-6">
+                    <small className="text-muted d-block mb-1">Title</small>
+                    <p className="fw-semibold mb-0">{order.title || "N/A"}</p>
                   </div>
-                  <div className="col-6 mb-3">
-                    <small className="text-muted">Status</small>
-                    <span className="badge bg-info">
+                  <div className="col-6">
+                    <small className="text-muted d-block mb-1">Status</small>
+                    <span className="badge bg-info text-white">
                       {order.status || "N/A"}
                     </span>
                   </div>
-                  <div className="col-6 mb-3">
-                    <small className="text-muted">Customer</small>
-                    <p>
+                  <div className="col-6">
+                    <small className="text-muted d-block mb-1">Customer</small>
+                    <p className="mb-0">
                       {order.createdFor
                         ? customerMap[order.createdFor] || "Loading..."
                         : "N/A"}
                     </p>
                   </div>
-                  <div className="col-6 mb-3">
-                    <small className="text-muted">Due Date</small>
-                    <p>
+                  <div className="col-6">
+                    <small className="text-muted d-block mb-1">Due Date</small>
+                    <p className="mb-0">
                       {order.dueDate
                         ? new Date(order.dueDate).toLocaleDateString()
                         : "N/A"}
                     </p>
                   </div>
-                  <div className="col-6 mb-3">
-                    <small className="text-muted">Priority</small>
+                  <div className="col-6">
+                    <small className="text-muted d-block mb-1">Priority</small>
                     <span className="badge bg-warning text-dark">
                       {order.priority || "N/A"}
                     </span>
                   </div>
-                  <div className="col-12 mb-3">
-                    <small className="text-muted">Description</small>
-                    <p>{order.description || "N/A"}</p>
+                  <div className="col-12">
+                    <small className="text-muted d-block mb-1">
+                      Description
+                    </small>
+                    <p className="mb-0">{order.description || "N/A"}</p>
                   </div>
-                  <div className="col-6 mb-3">
-                    <small className="text-muted">Assigned To</small>
-                    <p>
+                  <div className="col-6">
+                    <small className="text-muted d-block mb-1">
+                      Assigned To
+                    </small>
+                    <p className="mb-0">
                       {order.assignedTo
                         ? teamMap[order.assignedTo] || "—"
                         : "—"}
                     </p>
                   </div>
-                  <div className="col-6 mb-3">
-                    <small className="text-muted">Pipeline</small>
-                    <p>{order.pipeline || "N/A"}</p>
+                  <div className="col-6">
+                    <small className="text-muted d-block mb-1">Pipeline</small>
+                    <p className="mb-0">{order.pipeline || "N/A"}</p>
                   </div>
-                  <div className="col-6 mb-3">
-                    <small className="text-muted">Source</small>
-                    <p>{order.source || "N/A"}</p>
+                  <div className="col-6">
+                    <small className="text-muted d-block mb-1">Source</small>
+                    <p className="mb-0">{order.source || "N/A"}</p>
                   </div>
                 </div>
               </div>
@@ -514,21 +508,22 @@ const OrderPage = () => {
           </div>
 
           {/* Invoice Upload and Viewer */}
-          <div className="col-md-6">
-            <div className="card border rounded-4 shadow-sm">
-              <div className="card-header bg-success text-white rounded-top-4">
+          <div className="col-lg-6 col-md-12">
+            <div className="card border-0 rounded-3 shadow-sm">
+              <div className="card-header bg-success text-white">
                 <h5 className="mb-0">📄 Invoice</h5>
               </div>
               <div className="card-body">
                 {/* Invoice Upload Form */}
                 <Form onSubmit={handleInvoiceFormSubmit} className="mb-4">
-                  <Form.Group controlId="invoiceUpload">
+                  <Form.Group controlId="invoiceUpload" className="mb-3">
                     <Form.Label>Upload Invoice (PDF only)</Form.Label>
                     <Form.Control
                       type="file"
                       accept="application/pdf"
                       onChange={handleFileChange}
                       disabled={order.status !== "INVOICE" || isUploading}
+                      className="rounded-3"
                       aria-describedby="invoiceUploadHelp"
                     />
                     <Form.Text id="invoiceUploadHelp" muted>
@@ -539,49 +534,53 @@ const OrderPage = () => {
                   <Button
                     type="submit"
                     variant="primary"
-                    className="mt-2"
+                    className="rounded-3"
                     disabled={
                       !invoiceFile || order.status !== "INVOICE" || isUploading
                     }
                   >
                     {isUploading ? (
-                      <Spinner animation="border" size="sm" />
-                    ) : (
-                      "Upload Invoice"
-                    )}
+                      <Spinner animation="border" size="sm" className="me-2" />
+                    ) : null}
+                    Upload Invoice
                   </Button>
                 </Form>
 
-                {/* PDF Viewer */}
-                {/* Invoice Card Style (WhatsApp-like) */}
+                {/* Invoice Display */}
                 {order.status === "INVOICE" &&
                 order.invoiceLink &&
                 order.invoiceLink !== "" ? (
-                  <div
-                    className="d-flex align-items-center p-3 border rounded-3 bg-light"
-                    style={{ gap: "10px" }}
-                  >
-                    <div
+                  <div className="d-flex align-items-center p-3 border rounded-3 bg-light shadow-sm">
+                    <span
                       style={{
                         fontSize: "2rem",
                         color: "#d9534f",
+                        marginRight: "10px",
                       }}
                     >
                       📄
-                    </div>
+                    </span>
                     <div style={{ flexGrow: 1 }}>
                       <strong>
-                        <a href={order.invoiceLink} target="_blank">
-                          {" "}
+                        <a
+                          href={pdfUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary"
+                        >
                           {order.invoiceLink.split("/").pop() || "Invoice.pdf"}
                         </a>
                       </strong>
-                      <div style={{ fontSize: "0.85rem", color: "#6c757d" }}>
+                      <div
+                        className="text-muted"
+                        style={{ fontSize: "0.85rem" }}
+                      >
                         PDF Document
                       </div>
                     </div>
                     <Button
                       variant="outline-primary"
+                      className="rounded-3"
                       onClick={() => {
                         const link = document.createElement("a");
                         link.href = pdfUrl;
@@ -596,11 +595,11 @@ const OrderPage = () => {
                     </Button>
                   </div>
                 ) : order.status === "INVOICE" ? (
-                  <Alert variant="warning">
+                  <Alert variant="warning" className="rounded-3">
                     No invoice uploaded for this order.
                   </Alert>
                 ) : (
-                  <p className="text-muted">
+                  <p className="text-muted mb-0">
                     Invoice viewer available when order status is INVOICE.
                   </p>
                 )}
@@ -608,21 +607,20 @@ const OrderPage = () => {
             </div>
           </div>
         </div>
-        <div className="mt-4">
-          <h5>Comments</h5>
-          <div
-            className="border rounded-4 p-3 bg-white shadow-sm"
-            style={{ maxHeight: "400px", overflowY: "auto" }}
-          >
+
+        {/* Comments Section */}
+        <div className="mt-5">
+          <h5 className="mb-3">Comments</h5>
+          <div className="chat-container card border-0 rounded-3 shadow-sm">
             {commentLoading ? (
-              <p className="text-center">
+              <div className="text-center p-3">
                 <Spinner animation="border" size="sm" /> Loading comments...
-              </p>
+              </div>
             ) : commentError ? (
-              <p className="text-danger text-center">
+              <Alert variant="danger" className="text-center m-3 rounded-3">
                 Unable to load comments:{" "}
                 {commentError?.data?.message || "Please try again later."}
-              </p>
+              </Alert>
             ) : comments.length > 0 ? (
               comments.map((comment) => (
                 <CommentRow
@@ -633,7 +631,7 @@ const OrderPage = () => {
                 />
               ))
             ) : (
-              <p className="text-muted text-center">
+              <p className="text-muted text-center p-3 mb-0">
                 No comments found for this order.
               </p>
             )}
@@ -641,18 +639,18 @@ const OrderPage = () => {
 
           {/* Comment Input Form */}
           {!user.userId ? (
-            <p className="text-warning mt-3">
+            <Alert variant="warning" className="mt-3 rounded-3">
               You must be logged in to add comments.{" "}
               <Button
                 variant="link"
                 onClick={() => navigate("/login")}
-                className="p-0"
+                className="p-0 text-primary"
               >
                 Log in
               </Button>
-            </p>
+            </Alert>
           ) : (
-            <Form onSubmit={handleAddComment} className="mt-3">
+            <Form onSubmit={handleAddComment} className="mt-3 comment-input">
               <div className="d-flex align-items-center">
                 <Form.Control
                   as="textarea"
@@ -661,13 +659,14 @@ const OrderPage = () => {
                   onChange={(e) => setNewComment(e.target.value)}
                   placeholder="Type your comment here..."
                   maxLength={1000}
-                  className="border rounded-3 me-2"
-                  style={{ resize: "none" }}
+                  className="rounded-3 me-2"
+                  style={{ resize: "none", borderColor: "#ced4da" }}
                   aria-describedby="commentHelp"
                 />
                 <Button
                   type="submit"
                   variant="primary"
+                  className="rounded-3"
                   disabled={!newComment.trim()}
                 >
                   Send
@@ -681,20 +680,22 @@ const OrderPage = () => {
 
           {/* Pagination */}
           {comments.length > 0 && (
-            <div className="d-flex justify-content-between mt-3">
+            <div className="d-flex justify-content-between align-items-center mt-3">
               <Button
                 variant="outline-secondary"
+                className="rounded-3"
                 disabled={commentPage === 1}
                 onClick={() => handlePageChange(commentPage - 1)}
                 aria-label="Previous comments page"
               >
                 Previous
               </Button>
-              <span>
+              <span className="text-muted">
                 Page {commentPage} of {Math.ceil(totalComments / commentLimit)}
               </span>
               <Button
                 variant="outline-secondary"
+                className="rounded-3"
                 disabled={
                   commentPage >= Math.ceil(totalComments / commentLimit)
                 }
@@ -706,14 +707,6 @@ const OrderPage = () => {
             </div>
           )}
         </div>
-
-        {showEditModal && (
-          <AddNewOrder
-            adminName={user.name || "Admin"}
-            orderId={selectedOrder?.id}
-            onClose={handleModalClose}
-          />
-        )}
       </div>
     </div>
   );

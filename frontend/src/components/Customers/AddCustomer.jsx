@@ -44,6 +44,7 @@ const AddCustomer = () => {
     companyName: "",
     email: "",
     mobileNumber: "",
+    phone2: "", // Added phone2
     address: { street: "", city: "", state: "", zip: "" },
     isVendor: "false",
     totalAmount: "0.00",
@@ -102,6 +103,7 @@ const AddCustomer = () => {
 
       setFormData({
         ...existingCustomer,
+        phone2: existingCustomer.phone2 || "", // Added
         isVendor: existingCustomer.isVendor.toString(),
         address: existingCustomer.address || {
           street: "",
@@ -208,6 +210,7 @@ const AddCustomer = () => {
 
       const payload = {
         ...formData,
+        phone2: formData.phone2 || null, // Ensure phone2 is included
         isVendor: formData.isVendor === "true",
         totalAmount: existingCustomer
           ? parseFloat(formData.totalAmount) || 0
@@ -317,9 +320,7 @@ const AddCustomer = () => {
                       />
                     </div>
                     <div className="col-lg-6 mb-3">
-                      <label className="form-label">
-                        Email<span className="text-danger ms-1">*</span>
-                      </label>
+                      <label className="form-label">Email</label>
                       <input
                         type="email"
                         name="email"
@@ -342,6 +343,17 @@ const AddCustomer = () => {
                         required
                       />
                     </div>
+                    <div className="col-lg-6 mb-3">
+                      <label className="form-label">Phone 2</label>
+                      <input
+                        type="tel"
+                        name="phone2"
+                        className="form-control"
+                        value={formData.phone2}
+                        onChange={handleChange}
+                      />
+                    </div>
+
                     <div className="col-lg-12 mb-3">
                       <label className="form-label">Address</label>
                       <div className="row">

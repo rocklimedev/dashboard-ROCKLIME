@@ -14,12 +14,13 @@ const Customer = sequelize.define(
     name: { type: DataTypes.STRING(100), allowNull: false },
     email: { type: DataTypes.STRING(100), unique: true, allowNull: false },
     mobileNumber: { type: DataTypes.STRING(20), allowNull: false },
+    phone2: { type: DataTypes.STRING(20), allowNull: true }, // Added second phone
 
     companyName: { type: DataTypes.STRING(150), allowNull: true },
     address: { type: DataTypes.JSON, allowNull: true },
 
-    quotations: { type: DataTypes.JSON, allowNull: true }, // Changed to JSON
-    invoices: { type: DataTypes.JSON, allowNull: true }, // Changed to JSON
+    quotations: { type: DataTypes.JSON, allowNull: true },
+    invoices: { type: DataTypes.JSON, allowNull: true },
 
     isVendor: { type: DataTypes.BOOLEAN, defaultValue: false },
     vendorId: { type: DataTypes.UUID, allowNull: true },
@@ -36,7 +37,7 @@ const Customer = sequelize.define(
     },
   },
   {
-    tableName: "customers", // Force lowercase table name
+    tableName: "customers",
     timestamps: true,
   }
 );

@@ -90,6 +90,11 @@ const ProductCard = ({
           alt={product.name || "Product"}
           className="product-image-card"
         />
+        {product.quantity > 0 ? (
+          <div className="status-bar in-stock">{`${product.quantity} in stock`}</div>
+        ) : (
+          <div className="status-bar out-of-stock">Out of Stock</div>
+        )}
       </div>
 
       <Dropdown overlay={menu(product)} trigger={["click"]}>

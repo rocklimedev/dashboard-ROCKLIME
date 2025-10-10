@@ -16,6 +16,23 @@ import { useDropzone } from "react-dropzone";
 import { useGetVendorsQuery } from "../../api/vendorApi";
 import { useGetAllProductMetaQuery } from "../../api/productMetaApi";
 import { useGetBrandParentCategoriesQuery } from "../../api/brandParentCategoryApi";
+import {
+  Form,
+  Input,
+  Select,
+  Button,
+  Card,
+  Upload,
+  Modal,
+  Row,
+  Col,
+  Spin,
+  Alert,
+  Space,
+} from "antd";
+
+const { Option } = Select;
+const { TextArea } = Input;
 
 const CreateProduct = () => {
   const { productId } = useParams();
@@ -26,6 +43,7 @@ const CreateProduct = () => {
   const [imagesToDelete, setImagesToDelete] = useState([]); // Images to delete
   const [metaData, setMetaData] = useState({}); // Meta key-value pairs
   const [selectedImage, setSelectedImage] = useState(null); // For modal
+  const [form] = Form.useForm();
 
   // Fetch data
   const { data: existingProduct, isLoading: isFetching } =
@@ -70,15 +88,13 @@ const CreateProduct = () => {
     brand_parentcategoriesId: "",
   };
 
-  const [formData, setFormData] = useState(initialFormData);
-
   const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
   const [updateProduct, { isLoading: isUpdating, error }] =
     useUpdateProductMutation();
 
   useEffect(() => {
     if (existingProduct) {
-      setFormData({
+      const formValues = {
         name: existingProduct.name || "",
         product_code: existingProduct.product_code || "",
         quantity: existingProduct.quantity || "",
@@ -92,7 +108,8 @@ const CreateProduct = () => {
         vendorId: existingProduct.vendorId || "",
         brand_parentcategoriesId:
           existingProduct.brand_parentcategoriesId || "",
-      });
+      };
+      form.setFieldsValue(formValues);
 
       let imagesArray = [];
       if (existingProduct.images) {
@@ -111,16 +128,13 @@ const CreateProduct = () => {
       if (existingProduct.meta) {
         try {
           if (typeof existingProduct.meta === "string") {
-            // Handle JSON string
             metaObject = JSON.parse(existingProduct.meta);
           } else if (Array.isArray(existingProduct.meta)) {
-            // Handle array of meta objects
             metaObject = existingProduct.meta.reduce((acc, meta) => {
               acc[meta.id] = meta.value;
               return acc;
             }, {});
           } else {
-            // Handle key-value object
             metaObject = existingProduct.meta;
           }
         } catch (error) {
@@ -129,12 +143,11 @@ const CreateProduct = () => {
       } else {
         console.warn("No meta field found in existingProduct");
       }
-
       setMetaData(metaObject);
     } else {
       console.log("No existingProduct data available");
     }
-  }, [existingProduct]);
+  }, [existingProduct, form]);
 
   // Clean up preview URLs
   useEffect(() => {
@@ -142,15 +155,6 @@ const CreateProduct = () => {
       newImages.forEach((img) => URL.revokeObjectURL(img.preview));
     };
   }, [newImages]);
-
-  // Handle form input changes
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
 
   // Handle meta data changes
   const handleMetaChange = (metaId, value) => {
@@ -222,14 +226,12 @@ const CreateProduct = () => {
   };
 
   // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
+  const handleSubmit = async (values) => {
     const requiredFields = {
-      name: formData.name,
-      product_code: formData.product_code,
-      quantity: formData.quantity,
-      productType: formData.productType,
+      name: values.name,
+      product_code: values.product_code,
+      quantity: values.quantity,
+      productType: values.productType,
       userId: userId,
     };
 
@@ -263,26 +265,23 @@ const CreateProduct = () => {
     }
 
     const formDataToSend = new FormData();
-    formDataToSend.append("name", formData.name);
-    formDataToSend.append("product_code", formData.product_code);
-    formDataToSend.append("quantity", Number(formData.quantity) || 0);
-    formDataToSend.append("productType", formData.productType);
-    formDataToSend.append("isFeatured", formData.isFeatured === "true");
-    formDataToSend.append("description", formData.description);
-    formDataToSend.append("tax", formData.tax ? Number(formData.tax) : "");
-    formDataToSend.append(
-      "alert_quantity",
-      Number(formData.alert_quantity) || 0
-    );
+    formDataToSend.append("name", values.name);
+    formDataToSend.append("product_code", values.product_code);
+    formDataToSend.append("quantity", Number(values.quantity) || 0);
+    formDataToSend.append("productType", values.productType);
+    formDataToSend.append("isFeatured", values.isFeatured === "true");
+    formDataToSend.append("description", values.description);
+    formDataToSend.append("tax", values.tax ? Number(values.tax) : "");
+    formDataToSend.append("alert_quantity", Number(values.alert_quantity) || 0);
     formDataToSend.append("userId", userId || "");
-    if (formData.categoryId)
-      formDataToSend.append("categoryId", formData.categoryId);
-    if (formData.brandId) formDataToSend.append("brandId", formData.brandId);
-    if (formData.vendorId) formDataToSend.append("vendorId", formData.vendorId);
-    if (formData.brand_parentcategoriesId)
+    if (values.categoryId)
+      formDataToSend.append("categoryId", values.categoryId);
+    if (values.brandId) formDataToSend.append("brandId", values.brandId);
+    if (values.vendorId) formDataToSend.append("vendorId", values.vendorId);
+    if (values.brand_parentcategoriesId)
       formDataToSend.append(
         "brand_parentcategoriesId",
-        formData.brand_parentcategoriesId
+        values.brand_parentcategoriesId
       );
     if (Object.keys(metaData).length > 0)
       formDataToSend.append("meta", JSON.stringify(metaData));
@@ -301,7 +300,7 @@ const CreateProduct = () => {
         navigate("/inventory/products");
       } else {
         await createProduct(formDataToSend).unwrap();
-        setFormData(initialFormData);
+        form.resetFields();
         setNewImages([]);
         setMetaData({});
         navigate("/inventory/products");
@@ -322,476 +321,400 @@ const CreateProduct = () => {
     isProductMetaLoading ||
     isUserLoading
   ) {
-    return <p className="text-center">Loading product details...</p>;
+    return (
+      <div className="page-wrapper">
+        <div className="content">
+          <Spin tip="Loading product details..." />
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="page-wrapper">
       <div className="content">
-        <div className="page-header">
-          <div className="add-item d-flex align-items-center">
-            <div className="page-title">
-              <h4 className="fw-bold">
+        <Space direction="vertical" size="large" style={{ width: "100%" }}>
+          <Row justify="space-between" align="middle">
+            <Col>
+              <h4 style={{ fontWeight: "bold" }}>
                 {isEditMode ? "Edit Product" : "Create Product"}
               </h4>
-              <p className="mb-0">
+              <p style={{ marginBottom: 0 }}>
                 {isEditMode ? "Update product details" : "Create a new product"}
               </p>
-            </div>
-          </div>
-          <div className="page-btn">
-            <a href="/inventory/products" className="btn btn-secondary">
-              <FaArrowLeft className="me-2" /> Back to Products
-            </a>
-          </div>
-        </div>
+            </Col>
+            <Col>
+              <Button
+                href="/inventory/products"
+                icon={<FaArrowLeft style={{ marginRight: 8 }} />}
+              >
+                Back to Products
+              </Button>
+            </Col>
+          </Row>
 
-        <form onSubmit={handleSubmit} className="add-product-form row g-4">
-          {error && <div className="alert alert-danger">{error.message}</div>}
+          <Form
+            form={form}
+            onFinish={handleSubmit}
+            initialValues={initialFormData}
+            layout="vertical"
+          >
+            {error && <Alert message={error.message} type="error" showIcon />}
 
-          {/* Product Information Section */}
-          <div className="col-12">
-            <div className="card">
-              <div className="card-header">
-                <h5 className="card-title d-flex align-items-center">
-                  <GiFeatherWound className="text-primary me-2" />
+            {/* Product Information Section */}
+            <Card
+              title={
+                <h5 style={{ display: "flex", alignItems: "center" }}>
+                  <GiFeatherWound
+                    style={{ color: "#1890ff", marginRight: 8 }}
+                  />
                   Product Information
                 </h5>
-              </div>
-              <div className="card-body">
-                <div className="row g-3">
-                  <div className="col-md-6 col-12">
-                    <div className="form-group">
-                      <label className="form-label">
-                        Product Name <span className="text-danger">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="col-md-6 col-12">
-                    <div className="form-group">
-                      <label className="form-label">
-                        Product Code <span className="text-danger">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        name="product_code"
-                        value={formData.product_code}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="col-md-6 col-12">
-                    <div className="form-group">
-                      <label className="form-label">
-                        Product Type <span className="text-danger">*</span>
-                      </label>
-                      <select
-                        className="form-control"
-                        name="productType"
-                        value={formData.productType}
-                        onChange={handleChange}
-                        required
-                      >
-                        <option value="">Select Product Type</option>
-                        <option value="tiles">Tiles</option>
-                        <option value="sanitary">Sanitary</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="col-md-6 col-12">
-                    <div className="form-group">
-                      <label className="form-label">Category</label>
-                      <select
-                        className="form-control"
-                        name="categoryId"
-                        value={formData.categoryId}
-                        onChange={handleChange}
-                      >
-                        <option value="">Select Category</option>
-                        {categories.map((cat) => (
-                          <option key={cat.categoryId} value={cat.categoryId}>
-                            {cat.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="col-md-6 col-12">
-                    <div className="form-group">
-                      <label className="form-label">Brand</label>
-                      <select
-                        className="form-control"
-                        name="brandId"
-                        value={formData.brandId}
-                        onChange={handleChange}
-                      >
-                        <option value="">Select Brand</option>
-                        {brandData.map((brand) => (
-                          <option key={brand.id} value={brand.id}>
-                            {brand.brandName}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="col-md-6 col-12">
-                    <div className="form-group">
-                      <label className="form-label">Vendor</label>
-                      <select
-                        className="form-control"
-                        name="vendorId"
-                        value={formData.vendorId}
-                        onChange={handleChange}
-                      >
-                        <option value="">Select Vendor</option>
-                        {vendorData.map((vendor) => (
-                          <option key={vendor.id} value={vendor.id}>
-                            {vendor.vendorName}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="col-md-6 col-12">
-                    <div className="form-group">
-                      <label className="form-label">
-                        Brand Parent Category
-                      </label>
-                      <select
-                        className="form-control"
-                        name="brand_parentcategoriesId"
-                        value={formData.brand_parentcategoriesId}
-                        onChange={handleChange}
-                      >
-                        <option value="">Select Brand Parent Category</option>
-                        {brandParentCategoryData.map((bpc) => (
-                          <option key={bpc.id} value={bpc.id}>
-                            {bpc.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="col-md-6 col-12">
-                    <div className="form-group">
-                      <label className="form-label">
-                        Is Featured? <span className="text-danger">*</span>
-                      </label>
-                      <select
-                        className="form-control"
-                        name="isFeatured"
-                        value={formData.isFeatured}
-                        onChange={handleChange}
-                        required
-                      >
-                        <option value="">Select</option>
-                        <option value="true">True</option>
-                        <option value="false">False</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="col-12">
-                    <div className="form-group">
-                      <label className="form-label">Description</label>
-                      <textarea
-                        className="form-control"
-                        name="description"
-                        value={formData.description}
-                        onChange={handleChange}
-                        rows="4"
-                        placeholder="Maximum 60 words"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+              }
+            >
+              <Row gutter={[16, 16]}>
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    label="Product Name"
+                    name="name"
+                    rules={[
+                      { required: true, message: "Please enter product name" },
+                    ]}
+                  >
+                    <Input />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    label="Product Code"
+                    name="product_code"
+                    rules={[
+                      { required: true, message: "Please enter product code" },
+                    ]}
+                  >
+                    <Input />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    label="Product Type"
+                    name="productType"
+                    rules={[
+                      { required: true, message: "Please select product type" },
+                    ]}
+                  >
+                    <Select>
+                      <Option value="">Select Product Type</Option>
+                      <Option value="tiles">Tiles</Option>
+                      <Option value="sanitary">Sanitary</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={12}>
+                  <Form.Item label="Category" name="categoryId">
+                    <Select>
+                      <Option value="">Select Category</Option>
+                      {categories.map((cat) => (
+                        <Option key={cat.categoryId} value={cat.categoryId}>
+                          {cat.name}
+                        </Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={12}>
+                  <Form.Item label="Brand" name="brandId">
+                    <Select>
+                      <Option value="">Select Brand</Option>
+                      {brandData.map((brand) => (
+                        <Option key={brand.id} value={brand.id}>
+                          {brand.brandName}
+                        </Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={12}>
+                  <Form.Item label="Vendor" name="vendorId">
+                    <Select>
+                      <Option value="">Select Vendor</Option>
+                      {vendorData.map((vendor) => (
+                        <Option key={vendor.id} value={vendor.id}>
+                          {vendor.vendorName}
+                        </Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    label="Brand Parent Category"
+                    name="brand_parentcategoriesId"
+                  >
+                    <Select>
+                      <Option value="">Select Brand Parent Category</Option>
+                      {brandParentCategoryData.map((bpc) => (
+                        <Option key={bpc.id} value={bpc.id}>
+                          {bpc.name}
+                        </Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    label="Is Featured?"
+                    name="isFeatured"
+                    rules={[
+                      { required: true, message: "Please select if featured" },
+                    ]}
+                  >
+                    <Select>
+                      <Option value="">Select</Option>
+                      <Option value="true">True</Option>
+                      <Option value="false">False</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col xs={24}>
+                  <Form.Item label="Description" name="description">
+                    <TextArea rows={4} placeholder="Maximum 60 words" />
+                  </Form.Item>
+                </Col>
+              </Row>
+            </Card>
 
-          {/* Pricing & Stocks Section */}
-          <div className="col-12">
-            <div className="card">
-              <div className="card-header">
-                <h5 className="card-title d-flex align-items-center">
-                  <FiLifeBuoy className="text-primary me-2" />
+            {/* Pricing & Stocks Section */}
+            <Card
+              title={
+                <h5 style={{ display: "flex", alignItems: "center" }}>
+                  <FiLifeBuoy style={{ color: "#1890ff", marginRight: 8 }} />
                   Pricing & Stocks
                 </h5>
-              </div>
-              <div className="card-body">
-                <div className="row g-3">
-                  <div className="col-md-4 col-12">
-                    <div className="form-group">
-                      <label className="form-label">
-                        Quantity <span className="text-danger">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        className="form-control"
-                        name="quantity"
-                        value={formData.quantity}
-                        onChange={handleChange}
-                        min="0"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="col-md-4 col-12">
-                    <div className="form-group">
-                      <label className="form-label">Alert Quantity</label>
-                      <input
-                        type="number"
-                        className="form-control"
-                        name="alert_quantity"
-                        value={formData.alert_quantity}
-                        onChange={handleChange}
-                        min="0"
-                      />
-                    </div>
-                  </div>
-                  <div className="col-md-4 col-12">
-                    <div className="form-group">
-                      <label className="form-label">Tax (%)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        className="form-control"
-                        name="tax"
-                        value={formData.tax}
-                        onChange={handleChange}
-                        min="0"
-                        max="100"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+              }
+            >
+              <Row gutter={[16, 16]}>
+                <Col xs={24} md={8}>
+                  <Form.Item
+                    label="Quantity"
+                    name="quantity"
+                    rules={[
+                      { required: true, message: "Please enter quantity" },
+                    ]}
+                  >
+                    <Input type="number" min="0" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={8}>
+                  <Form.Item label="Alert Quantity" name="alert_quantity">
+                    <Input type="number" min="0" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={8}>
+                  <Form.Item label="Tax (%)" name="tax">
+                    <Input type="number" step="0.01" min="0" max="100" />
+                  </Form.Item>
+                </Col>
+              </Row>
+            </Card>
 
-          {/* Meta Data Section */}
-          <div className="col-12">
-            <div className="card">
-              <div className="card-header">
-                <h5 className="card-title d-flex align-items-center">
-                  <FiLifeBuoy className="text-primary me-2" />
+            {/* Meta Data Section */}
+            <Card
+              title={
+                <h5 style={{ display: "flex", alignItems: "center" }}>
+                  <FiLifeBuoy style={{ color: "#1890ff", marginRight: 8 }} />
                   Meta Data
                 </h5>
-              </div>
-              <div className="card-body">
-                {isProductMetaLoading ? (
-                  <p className="text-center">Loading meta fields...</p>
-                ) : productMetaData.length === 0 ? (
-                  <p className="text-muted">No meta fields available.</p>
-                ) : (
-                  <div className="row g-3">
-                    {productMetaData.map((meta) => (
-                      <div key={meta.id} className="col-md-6 col-12">
-                        <div className="form-group">
-                          <label className="form-label">
-                            {meta.title}{" "}
-                            {meta.unit && <small>({meta.unit})</small>}
-                          </label>
-                          <input
-                            type={
-                              meta.fieldType === "number" ? "number" : "text"
-                            }
-                            className="form-control"
-                            value={metaData[meta.id] || ""}
-                            onChange={(e) =>
-                              handleMetaChange(meta.id, e.target.value)
-                            }
-                            placeholder={`Enter ${meta.title}`}
-                          />
-                          {!metaData[meta.id] && metaData[meta.id] !== "" && (
-                            <small className="text-muted">
-                              No value set for {meta.title}
-                            </small>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-          {/* Images Section */}
-          <div className="col-12">
-            <div className="card">
-              <div className="card-header">
-                <h5 className="card-title d-flex align-items-center">
-                  <FiImage className="text-primary me-2" />
-                  Images
-                </h5>
-              </div>
-              <div className="card-body">
-                <div className="row g-3">
-                  <div className="col-12">
-                    <div className="form-group">
-                      <label className="form-label">Upload Images</label>
-                      <div
-                        {...getRootProps()}
-                        className={`image-upload border rounded p-4 text-center ${
-                          isDragActive ? "bg-light" : ""
-                        }`}
-                        style={{ cursor: "pointer" }}
-                      >
-                        <input {...getInputProps()} />
-                        {isDragActive ? (
-                          <p>Drop the images here...</p>
-                        ) : (
-                          <div>
-                            <FiPlusCircle
-                              className="text-muted mb-2"
-                              size={24}
-                            />
-                            <p className="mb-0">
-                              Drag & drop images or click to upload
-                            </p>
-                          </div>
+              }
+            >
+              {isProductMetaLoading ? (
+                <div style={{ textAlign: "center" }}>
+                  <Spin tip="Loading meta fields..." />
+                </div>
+              ) : productMetaData.length === 0 ? (
+                <p style={{ color: "#8c8c8c" }}>No meta fields available.</p>
+              ) : (
+                <Row gutter={[16, 16]}>
+                  {productMetaData.map((meta) => (
+                    <Col key={meta.id} xs={24} md={12}>
+                      <div>
+                        <label style={{ display: "block", marginBottom: 8 }}>
+                          {meta.title}{" "}
+                          {meta.unit && <small>({meta.unit})</small>}
+                        </label>
+                        <Input
+                          type={meta.fieldType === "number" ? "number" : "text"}
+                          value={metaData[meta.id] || ""}
+                          onChange={(e) =>
+                            handleMetaChange(meta.id, e.target.value)
+                          }
+                          placeholder={`Enter ${meta.title}`}
+                        />
+                        {!metaData[meta.id] && metaData[meta.id] !== "" && (
+                          <small style={{ color: "#8c8c8c" }}>
+                            No value set for {meta.title}
+                          </small>
                         )}
                       </div>
-                      <small className="form-text text-muted">
-                        Upload up to 5 images (JPEG, PNG, GIF, max 5MB each).
-                      </small>
-                      <div className="image-preview-container row g-2 mt-2">
-                        {existingImages.map((image, index) => (
-                          <div
-                            key={`existing-${index}`}
-                            className="col-md-3 col-6 position-relative"
-                          >
+                    </Col>
+                  ))}
+                </Row>
+              )}
+            </Card>
+
+            {/* Images Section */}
+            <Card
+              title={
+                <h5 style={{ display: "flex", alignItems: "center" }}>
+                  <FiImage style={{ color: "#1890ff", marginRight: 8 }} />
+                  Images
+                </h5>
+              }
+            >
+              <Row gutter={[16, 16]}>
+                <Col xs={24}>
+                  <div>
+                    <label style={{ display: "block", marginBottom: 8 }}>
+                      Upload Images
+                    </label>
+                    <div
+                      {...getRootProps()}
+                      style={{
+                        border: "1px solid #d9d9d9",
+                        borderRadius: 4,
+                        padding: 16,
+                        textAlign: "center",
+                        cursor: "pointer",
+                        backgroundColor: isDragActive
+                          ? "#fafafa"
+                          : "transparent",
+                      }}
+                    >
+                      <input {...getInputProps()} />
+                      {isDragActive ? (
+                        <p>Drop the images here...</p>
+                      ) : (
+                        <div>
+                          <FiPlusCircle
+                            style={{ color: "#8c8c8c", marginBottom: 8 }}
+                            size={24}
+                          />
+                          <p style={{ marginBottom: 0 }}>
+                            Drag & drop images or click to upload
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    <small
+                      style={{
+                        color: "#8c8c8c",
+                        display: "block",
+                        marginTop: 8,
+                      }}
+                    >
+                      Upload up to 5 images (JPEG, PNG, GIF, max 5MB each).
+                    </small>
+                    <Row gutter={[8, 8]} style={{ marginTop: 8 }}>
+                      {existingImages.map((image, index) => (
+                        <Col key={`existing-${index}`} xs={12} md={6}>
+                          <div style={{ position: "relative" }}>
                             <img
                               src={image}
                               alt="Existing product"
-                              className="img-fluid rounded"
                               style={{
                                 width: "100%",
                                 height: "100px",
-                                objectFit: "contain", // Changed to contain
-                                cursor: "pointer", // Indicate clickable
+                                objectFit: "contain",
+                                borderRadius: 4,
+                                cursor: "pointer",
                               }}
                               onClick={() => handleImageClick(image)}
                             />
-                            <button
-                              type="button"
-                              className="btn btn-danger btn-sm position-absolute"
-                              style={{ top: "5px", right: "5px" }}
+                            <Button
+                              danger
+                              size="small"
+                              style={{ position: "absolute", top: 5, right: 5 }}
                               onClick={() => handleDeleteImage(image)}
                             >
                               ×
-                            </button>
+                            </Button>
                           </div>
-                        ))}
-                        {newImages.map((image, index) => (
-                          <div
-                            key={`new-${index}`}
-                            className="col-md-3 col-6 position-relative"
-                          >
+                        </Col>
+                      ))}
+                      {newImages.map((image, index) => (
+                        <Col key={`new-${index}`} xs={12} md={6}>
+                          <div style={{ position: "relative" }}>
                             <img
                               src={image.preview}
                               alt="New upload"
-                              className="img-fluid rounded"
                               style={{
                                 width: "100%",
                                 height: "100px",
-                                objectFit: "contain", // Changed to contain
-                                cursor: "pointer", // Indicate clickable
+                                objectFit: "contain",
+                                borderRadius: 4,
+                                cursor: "pointer",
                               }}
                               onClick={() => handleImageClick(image.preview)}
                             />
-                            <button
-                              type="button"
-                              className="btn btn-danger btn-sm position-absolute"
-                              style={{ top: "5px", right: "5px" }}
+                            <Button
+                              danger
+                              size="small"
+                              style={{ position: "absolute", top: 5, right: 5 }}
                               onClick={() =>
                                 handleDeleteNewImage(image.preview)
                               }
                             >
                               ×
-                            </button>
+                            </Button>
                           </div>
-                        ))}
-                      </div>
-                    </div>
+                        </Col>
+                      ))}
+                    </Row>
                   </div>
-                </div>
-              </div>
-            </div>
-          </div>
+                </Col>
+              </Row>
+            </Card>
 
-          {/* Image Modal */}
-          {selectedImage && (
-            <div
-              className="modal fade show"
-              style={{ display: "block", backgroundColor: "rgba(0,0,0,0.5)" }}
-              tabIndex="-1"
-              role="dialog"
+            {/* Image Modal */}
+            <Modal
+              visible={!!selectedImage}
+              title="Image Preview"
+              onCancel={closeModal}
+              footer={[
+                <Button key="close" onClick={closeModal}>
+                  Close
+                </Button>,
+              ]}
+              width="80%"
             >
-              <div
-                className="modal-dialog modal-lg"
-                role="document"
-                style={{ maxWidth: "80%" }}
-              >
-                <div className="modal-content">
-                  <div className="modal-header">
-                    <h5 className="modal-title">Image Preview</h5>
-                    <button
-                      type="button"
-                      className="btn-close"
-                      onClick={closeModal}
-                      aria-label="Close"
-                    ></button>
-                  </div>
-                  <div className="modal-body text-center">
-                    <img
-                      src={selectedImage}
-                      alt="Full-size preview"
-                      style={{
-                        maxWidth: "100%",
-                        maxHeight: "70vh",
-                        objectFit: "contain",
-                      }}
-                    />
-                  </div>
-                  <div className="modal-footer">
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      onClick={closeModal}
-                    >
-                      Close
-                    </button>
-                  </div>
-                </div>
+              <div style={{ textAlign: "center" }}>
+                <img
+                  src={selectedImage}
+                  alt="Full-size preview"
+                  style={{
+                    maxWidth: "100%",
+                    maxHeight: "70vh",
+                    objectFit: "contain",
+                  }}
+                />
               </div>
-            </div>
-          )}
+            </Modal>
 
-          {/* Submit Button */}
-          <div className="col-12">
-            <button
-              type="submit"
-              className="btn btn-primary w-100"
-              disabled={isCreating || isUpdating}
+            {/* Submit Button */}
+            <Button
+              type="primary"
+              htmlType="submit"
+              block
+              loading={isCreating || isUpdating}
             >
               {isCreating || isUpdating
                 ? "Saving..."
                 : isEditMode
                 ? "Update Product"
                 : "Create Product"}
-            </button>
-          </div>
-        </form>
+            </Button>
+          </Form>
+        </Space>
       </div>
     </div>
   );

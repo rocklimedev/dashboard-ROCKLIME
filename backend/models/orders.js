@@ -13,10 +13,7 @@ const Order = sequelize.define(
       primaryKey: true,
       defaultValue: DataTypes.UUIDV4,
     },
-    title: {
-      type: DataTypes.STRING(255),
-      allowNull: false,
-    },
+
     pipeline: {
       type: DataTypes.JSON,
       allowNull: true,

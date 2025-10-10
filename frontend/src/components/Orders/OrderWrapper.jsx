@@ -190,7 +190,6 @@ const OrderWrapper = () => {
           ? quotationMap[ord.quotationId] || "—"
           : "—";
         return (
-          ord.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
           ord.source?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           reference_number.toLowerCase().includes(searchTerm.toLowerCase())
@@ -212,12 +211,6 @@ const OrderWrapper = () => {
 
     // Apply sorting
     switch (sortBy) {
-      case "Ascending":
-        result = [...result].sort((a, b) => a.title.localeCompare(b.title));
-        break;
-      case "Descending":
-        result = [...result].sort((a, b) => b.title.localeCompare(a.title));
-        break;
       case "Recently Added":
         result = [...result].sort(
           (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
@@ -267,7 +260,7 @@ const OrderWrapper = () => {
       Quotation: order.quotationId
         ? quotationMap[order.quotationId] || "—"
         : "—",
-      Title: order.title,
+
       Customer: order.createdFor ? customerMap[order.createdFor] || "—" : "N/A",
       Priority: order.priority || "Medium",
       "Assigned To": order.assignedTo ? teamMap[order.assignedTo] || "—" : "—",
@@ -395,7 +388,6 @@ const OrderWrapper = () => {
             title="Orders"
             subtitle="Manage your Orders"
             tableData={tableDataForExport}
-            onAdd={handleOpenAddOrder}
             exportOptions={{ pdf: true, excel: true }}
           />
 
@@ -505,7 +497,6 @@ const OrderWrapper = () => {
                         <th>Order No.</th>
                         <th>STATUS</th>
                         <th>QUOTATION</th>
-                        <th>TITLE</th>
                         <th>CUSTOMER</th>
                         <th>PRIORITY</th>
                         <th>ASSIGNED TO</th>
@@ -584,11 +575,7 @@ const OrderWrapper = () => {
                                 "—"
                               )}
                             </td>
-                            <td>
-                              <Link to={`/order/${order.id}`}>
-                                {order.title}
-                              </Link>
-                            </td>
+
                             <td>
                               <Link to={`/customer/${order.createdFor}`}>
                                 {customerName}
@@ -631,18 +618,15 @@ const OrderWrapper = () => {
                               )}
                             </td>
                             <td>
+                              <span>
+                                <EditOutlined
+                                  style={{ marginRight: 8 }}
+                                  onClick={() => handleEditClick(order)}
+                                />
+                              </span>
                               <Dropdown
                                 overlay={
                                   <Menu>
-                                    <Menu.Item
-                                      key="edit"
-                                      onClick={() => handleEditClick(order)}
-                                    >
-                                      <EditOutlined
-                                        style={{ marginRight: 8 }}
-                                      />
-                                      Edit Order
-                                    </Menu.Item>
                                     {showInvoiceOption && (
                                       <Menu.Item
                                         key="viewInvoice"

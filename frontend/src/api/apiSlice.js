@@ -1,21 +1,48 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { API_URL } from "../data/config";
-const baseQuery = fetchBaseQuery({
-  baseUrl: `${API_URL}`,
-  credentials: "include", // Include cookies (for authentication)
-  prepareHeaders: (headers) => {
-    const token =
-      localStorage.getItem("token") || sessionStorage.getItem("token");
-    if (token) {
-      headers.set("Authorization", `Bearer ${token}`);
-    }
-    return headers;
-  },
-});
 
-export const apiSlice = createApi({
-  baseQuery,
-  reducerPath: "api",
-  tagTypes: ["Users", "Roles", "Dashboard", "Tasks", "Admins"],
-  endpoints: () => ({}), // Empty, extended by other API slices
+// Shared baseApi
+export const baseApi = createApi({
+  reducerPath: "baseApi",
+  baseQuery: fetchBaseQuery({
+    baseUrl: `${API_URL}`,
+    prepareHeaders: (headers) => {
+      const token = localStorage.getItem("token");
+      if (token) {
+        headers.set("Authorization", `Bearer ${token}`);
+      }
+      return headers;
+    },
+  }), // adjust to your backend URL
+  tagTypes: [
+    "Vendor",
+    "Auth",
+    "Category",
+    "Signature",
+    "Customer",
+    "Address",
+    "User",
+    "Keyword",
+    "ParentCategory",
+    "Product",
+    "Brand",
+    "Quotation",
+    "Order",
+    "Cart",
+    "Company",
+    "Role",
+    "Permission",
+    "Invoice",
+    "Team",
+    "RolePermission",
+    "Search",
+    "Attendance",
+    "PO",
+    "Log",
+    "ProductMeta",
+    "Contact",
+    "BrandParentCategory",
+    "Email",
+  ],
+  endpoints: (builder) => ({}), // endpoints will be injected per module
 });

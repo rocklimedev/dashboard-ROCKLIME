@@ -347,16 +347,14 @@ const TeamsList = ({ adminName }) => {
                                 </Space>
                               </td>
                               <td>
+                                <span>
+                                  <EditOutlined
+                                    onClick={() => handleEditTeam(team)}
+                                  />
+                                </span>
                                 <Dropdown
                                   overlay={
                                     <Menu>
-                                      <Menu.Item
-                                        key="edit"
-                                        onClick={() => handleEditTeam(team)}
-                                        icon={<EditOutlined />}
-                                      >
-                                        Edit
-                                      </Menu.Item>
                                       <Menu.Item
                                         key="delete"
                                         onClick={() => handleDeleteTeam(team)}

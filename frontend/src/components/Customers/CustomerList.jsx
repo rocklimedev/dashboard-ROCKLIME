@@ -3,7 +3,7 @@ import {
   useGetCustomersQuery,
   useDeleteCustomerMutation,
 } from "../../api/customerApi";
-import { BiEdit, BiTrash } from "react-icons/bi";
+import { BiTrash } from "react-icons/bi";
 import { FaEye, FaSearch } from "react-icons/fa";
 import { toast } from "sonner";
 import DeleteModal from "../Common/DeleteModal";
@@ -12,6 +12,7 @@ import PageHeader from "../Common/PageHeader";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { Dropdown, Button, Menu } from "antd";
 import { useNavigate } from "react-router-dom";
+import { EditOutlined } from "@ant-design/icons";
 
 const CustomerList = () => {
   const navigate = useNavigate();
@@ -240,6 +241,11 @@ const CustomerList = () => {
                               <td>{customer.mobileNumber || "N/A"}</td>
                               <td>{customer.companyName || "N/A"}</td>
                               <td>
+                                <span
+                                  onClick={() => handleEditCustomer(customer)}
+                                >
+                                  <EditOutlined className="me-2" />
+                                </span>
                                 <Dropdown
                                   trigger={["click"]}
                                   overlay={
@@ -254,15 +260,7 @@ const CustomerList = () => {
                                           View
                                         </a>
                                       </Menu.Item>
-                                      <Menu.Item
-                                        key="edit"
-                                        onClick={() =>
-                                          handleEditCustomer(customer)
-                                        }
-                                      >
-                                        <BiEdit className="me-2" />
-                                        Edit
-                                      </Menu.Item>
+
                                       <Menu.Item
                                         key="delete"
                                         onClick={() =>
