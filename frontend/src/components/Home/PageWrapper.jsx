@@ -28,14 +28,21 @@ import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
 import StockModal from "../Common/StockModal";
 import DataTablePagination from "../Common/DataTablePagination";
-
+import {
+  useAddProductToCartMutation,
+  useGetCartQuery,
+  useRemoveFromCartMutation,
+} from "../../api/cartApi";
+import { useUpdateOrderStatusMutation } from "../../api/orderApi";
 const PageWrapper = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [lowStockListModal, setLowStockListModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-
+  const [cartLoadingStates, setCartLoadingStates] = useState({});
+  const [addProductToCart, { isLoading: mutationLoading }] =
+    useAddProductToCartMutation();
   const today = useMemo(() => {
     const date = new Date();
     date.setHours(0, 0, 0, 0);
@@ -138,6 +145,35 @@ const PageWrapper = () => {
     () => (orderCount > 0 ? totalRevenue / orderCount : 0).toFixed(2),
     [totalRevenue, orderCount]
   );
+  const handleAddToCart = async (product) => {
+    if (!userId) {
+      toast.error("User not logged in!");
+      return;
+    }
+    const sellingPriceEntry = Array.isArray(product.metaDetails)
+      ? product.metaDetails.find((detail) => detail.slug === "sellingPrice")
+      : null;
+    const sellingPrice = sellingPriceEntry
+      ? parseFloat(sellingPriceEntry.value)
+      : null;
+    if (!sellingPrice || isNaN(sellingPrice)) {
+      toast.error("Invalid product price");
+      return;
+    }
+    const productId = product.productId;
+    setCartLoadingStates((prev) => ({ ...prev, [productId]: true }));
+    try {
+      await addProductToCart({
+        userId,
+        productId,
+        quantity: product.quantity || 1,
+      }).unwrap();
+    } catch (error) {
+      toast.error(`Error: ${error.data?.message || "Unknown error"}`);
+    } finally {
+      setCartLoadingStates((prev) => ({ ...prev, [productId]: false }));
+    }
+  };
 
   const maxCounts = useMemo(
     () => ({
@@ -198,6 +234,21 @@ const PageWrapper = () => {
   const handleModalClose = () => {
     setIsModalVisible(false);
     setSelectedProduct(null);
+  };
+  const [updateOrderStatus, { isLoading: isUpdatingStatus }] =
+    useUpdateOrderStatusMutation();
+
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      await updateOrderStatus({ id, status: newStatus }).unwrap();
+      refetchOrders(); // Refresh orders to reflect the updated status
+    } catch (error) {
+      toast.error(
+        `Failed to update order status: ${
+          error.data?.message || "Unknown error"
+        }`
+      );
+    }
   };
 
   const categoryProductCounts = useMemo(() => {
@@ -503,54 +554,116 @@ const PageWrapper = () => {
             <div className="card">
               <h4>Top Selling Products</h4>
               <div className="card-body">
-                {topProductsChartData.some((d) => d.quantity > 0) ? (
-                  <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={topProductsChartData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Bar
-                        dataKey="quantity"
-                        fill="#888888"
-                        radius={[4, 4, 0, 0]}
-                        shape={(props) => {
-                          const { fill, ...rest } = props;
-                          const barFill =
-                            props.quantity > 0 ? "#4A90E2" : "#888888";
-                          return <rect {...rest} fill={barFill} />;
+                {topSellingProducts.length > 0 ? (
+                  <ul className="top-products-list">
+                    {topSellingProducts.map((product, index) => (
+                      <li
+                        key={product.productId}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "10px 0",
+                          borderBottom:
+                            index < topSellingProducts.length - 1
+                              ? "1px solid #e0e0e0"
+                              : "none",
                         }}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
+                      >
+                        <div>
+                          <span className="product-name">{product.name}</span>
+                          <span
+                            className="product-quantity"
+                            style={{ marginLeft: "10px" }}
+                          >
+                            Sold: {product.quantity}{" "}
+                            {product.quantity === 1 ? "time" : "times"}
+                          </span>
+                        </div>
+                        <button
+                          className="btn btn-primary btn-sm"
+                          onClick={() => handleAddToCart(product)}
+                          disabled={product.quantity === 0} // Disable if no stock, adjust based on actual stock data
+                        >
+                          Add to Cart
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
                 ) : (
                   <p>No products sold recently.</p>
                 )}
               </div>
             </div>
-            <div className="card bar-graph">
+            <div className="card">
               <h4>All Order Trends</h4>
               <div className="card-body">
-                {barChartData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={barChartData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip />
-                      <Bar
-                        dataKey="orders"
-                        fill="#888888"
-                        radius={[4, 4, 0, 0]}
-                        shape={(props) => {
-                          const { fill, ...rest } = props;
-                          const barFill =
-                            props.orders > 0 ? "#27ae60" : "#888888";
-                          return <rect {...rest} fill={barFill} />;
+                {orders.length > 0 ? (
+                  <ul className="orders-list">
+                    {orders.map((order, index) => (
+                      <li
+                        key={order.id}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "10px 0",
+                          borderBottom:
+                            index < orders.length - 1
+                              ? "1px solid #e0e0e0"
+                              : "none",
                         }}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
+                      >
+                        <div>
+                          <span className="order-number">
+                            <strong>Order No:</strong> {order.orderNo}
+                          </span>
+                          <span
+                            className="order-date"
+                            style={{ marginLeft: "10px", color: "#666" }}
+                          >
+                            {new Date(order.createdAt).toLocaleDateString()}
+                          </span>
+                          <span
+                            className="order-priority"
+                            style={{
+                              marginLeft: "10px",
+                              fontWeight: "500",
+                              color:
+                                order.priority === "high"
+                                  ? "#e74c3c"
+                                  : order.priority === "medium"
+                                  ? "#f39c12"
+                                  : "#27ae60",
+                            }}
+                          >
+                            {order.priority.toUpperCase()}
+                          </span>
+                        </div>
+
+                        <select
+                          value={order.status}
+                          onChange={(e) =>
+                            handleStatusChange(order.id, e.target.value)
+                          }
+                          className="status-dropdown"
+                        >
+                          <option value="CREATED">Created</option>
+                          <option value="PREPARING">Preparing</option>
+                          <option value="CHECKING">Checking</option>
+                          <option value="INVOICE">Invoice</option>
+                          <option value="DISPATCHED">Dispatched</option>
+                          <option value="DELIVERED">Delivered</option>
+                          <option value="PARTIALLY_DELIVERED">
+                            Partially Delivered
+                          </option>
+                          <option value="CANCELED">Canceled</option>
+                          <option value="DRAFT">Draft</option>
+                          <option value="ONHOLD">On Hold</option>
+                        </select>
+                      </li>
+                    ))}
+                  </ul>
                 ) : (
                   <p>No orders available.</p>
                 )}

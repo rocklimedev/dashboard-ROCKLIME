@@ -634,7 +634,7 @@ const CustomerDetails = () => {
                       <Table hover className="table table-borderless">
                         <thead>
                           <tr>
-                            <th>Title</th>
+                            <th>Order Number</th>
                             <th>Status</th>
                             <th>Due Date</th>
                             <th>Priority</th>
@@ -644,7 +644,7 @@ const CustomerDetails = () => {
                         <tbody>
                           {orders.map((order) => (
                             <tr key={order.id}>
-                              <td>{order.title}</td>
+                              <td>{order.orderNo}</td>
                               <td>
                                 <Badge
                                   bg={

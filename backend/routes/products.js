@@ -46,7 +46,7 @@ router.put(
   // checkPermission("edit", "update_product", "products", "/products/:productId"),
   productController.updateProduct
 );
-
+router.post("/by-ids", productController.getProductsByIds);
 router.delete(
   "/:productId",
   // role.check(ROLES.Admin), // Only Admins can delete products

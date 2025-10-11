@@ -24,7 +24,14 @@ export const productApi = createApi({
       }),
       invalidatesTags: ["Product"],
     }),
-
+    getProductsByIds: builder.query({
+      query: (productIds) => ({
+        url: "/by-ids",
+        method: "POST",
+        body: { productIds },
+      }),
+      transformResponse: (response) => response,
+    }),
     getAllProducts: builder.query({
       query: () => "/",
       providesTags: ["Product"],
@@ -112,6 +119,7 @@ export const productApi = createApi({
 });
 
 export const {
+  useGetProductsByIdsQuery,
   useUpdateProductFeaturedMutation,
   useCreateProductMutation,
   useGetAllProductsQuery,

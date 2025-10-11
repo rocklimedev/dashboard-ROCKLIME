@@ -23,7 +23,6 @@ import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetProfileQuery } from "../../api/userApi";
 import AddNewTeam from "./AddNewTeam";
 import moment from "moment";
-
 const { Option } = Select;
 
 const STATUS_VALUES = [
@@ -267,12 +266,10 @@ const AddNewOrder = ({ adminName }) => {
       date &&
       moment(date).isAfter(moment(formData.dueDate), "day")
     ) {
-      toast.warning(
-        `Follow-up date ${index + 1} cannot be after the due date.`
-      );
+      toast.warning(`Timeline date ${index + 1} cannot be after the due date.`);
     }
     if (date && moment(date).isBefore(moment().startOf("day"))) {
-      toast.warning(`Follow-up date ${index + 1} cannot be before today.`);
+      toast.warning(`Timeline date ${index + 1} cannot be before today.`);
     }
 
     setFormData({ ...formData, followupDates: updatedDates });
@@ -347,7 +344,7 @@ const AddNewOrder = ({ adminName }) => {
     }
 
     if (!validateFollowupDates()) {
-      toast.error("Follow-up dates cannot be after the due date.");
+      toast.error("Timeline dates cannot be after the due date.");
       return;
     }
 
@@ -455,31 +452,41 @@ const AddNewOrder = ({ adminName }) => {
                     <Form.Label>
                       Customer <span className="text-danger">*</span>
                     </Form.Label>
-                    <Select
-                      showSearch
-                      style={{ width: "100%" }}
-                      placeholder="Search customers"
-                      value={formData.createdFor || undefined}
-                      onChange={(value) => handleChange("createdFor", value)}
-                      onSearch={debouncedCustomerSearch}
-                      filterOption={false}
-                      disabled={isCustomersLoading}
-                    >
-                      {filteredCustomers.length > 0 ? (
-                        filteredCustomers.map((customer) => (
-                          <Option
-                            key={customer.customerId}
-                            value={customer.customerId}
-                          >
-                            {customer.name}
+                    <div className="d-flex align-items-center">
+                      <Select
+                        showSearch
+                        style={{ width: "100%" }}
+                        placeholder="Search customers"
+                        value={formData.createdFor || undefined}
+                        onChange={(value) => handleChange("createdFor", value)}
+                        onSearch={debouncedCustomerSearch}
+                        filterOption={false}
+                        disabled={isCustomersLoading}
+                      >
+                        {filteredCustomers.length > 0 ? (
+                          filteredCustomers.map((customer) => (
+                            <Option
+                              key={customer.customerId}
+                              value={customer.customerId}
+                            >
+                              {customer.name}
+                            </Option>
+                          ))
+                        ) : (
+                          <Option value="" disabled>
+                            No customers available
                           </Option>
-                        ))
-                      ) : (
-                        <Option value="" disabled>
-                          No customers available
-                        </Option>
-                      )}
-                    </Select>
+                        )}
+                      </Select>
+                      <Button
+                        type="primary"
+                        className="ms-2"
+                        onClick={() => navigate("/customers/add")}
+                        aria-label="Add new customer"
+                      >
+                        <PlusOutlined />
+                      </Button>
+                    </div>
                   </Form.Group>
                 </div>
                 <div className="col-lg-6">
@@ -660,7 +667,7 @@ const AddNewOrder = ({ adminName }) => {
               <div className="row">
                 <div className="col-lg-12">
                   <Form.Group className="mb-3">
-                    <Form.Label>Follow-up Dates</Form.Label>
+                    <Form.Label>Timeline Dates</Form.Label>
                     {formData.followupDates.map((date, index) => (
                       <div
                         key={index}
@@ -686,7 +693,7 @@ const AddNewOrder = ({ adminName }) => {
                           danger
                           icon={<DeleteOutlined />}
                           onClick={() => removeFollowupDate(index)}
-                          aria-label="Remove follow-up date"
+                          aria-label="Remove Timeline date"
                           className="ms-2"
                         />
                       </div>
@@ -694,9 +701,9 @@ const AddNewOrder = ({ adminName }) => {
                     <Button
                       type="primary"
                       onClick={addFollowupDate}
-                      aria-label="Add follow-up date"
+                      aria-label="Add Timeline date"
                     >
-                      <PlusOutlined /> Add Follow-up Date
+                      <PlusOutlined /> Add Timeline Date
                     </Button>
                   </Form.Group>
                 </div>

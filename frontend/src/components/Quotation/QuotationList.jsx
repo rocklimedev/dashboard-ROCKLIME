@@ -192,13 +192,53 @@ const QuotationList = () => {
   }, [filteredQuotations, currentPage]);
 
   const handleShareOnWhatsApp = (quotation) => {
-    const message = `Quotation Details:\nTitle: ${
-      quotation.document_title || "N/A"
-    }\nReference Number: ${
-      quotation.reference_number || "N/A"
-    }\nFinal Amount: ₹${quotation.finalAmount || 0}\nView Quotation: ${
-      window.location.origin
-    }/quotations/${quotation.quotationId}`;
+    // Ensure we have an array of items
+    let itemsArray = [];
+    if (quotation.items && Array.isArray(quotation.items)) {
+      itemsArray = quotation.items;
+    } else if (quotation.products) {
+      try {
+        itemsArray = JSON.parse(quotation.products);
+      } catch (e) {
+        itemsArray = [];
+      }
+    }
+
+    const items = itemsArray
+      .map(
+        (item, index) =>
+          `  ${index + 1}. Product ID: ${item.productId}\n` +
+          `     Quantity: ${item.quantity}\n` +
+          `     Discount: ${item.discount}\n` +
+          `     Tax: ${item.tax}\n` +
+          `     Total: ₹${item.total}`
+      )
+      .join("\n");
+
+    const message = `
+==== QUOTATION DETAILS ====
+Document Title: ${quotation?.document_title || "N/A"}
+Quotation Date: ${quotation?.quotation_date || "N/A"}
+Due Date: ${quotation?.due_date || "N/A"}
+Reference Number: ${quotation?.reference_number || "N/A"}
+Include GST: ${quotation?.include_gst ? "Yes" : "No"}
+GST Value: ${quotation?.gst_value || 0}
+Discount Type: ${quotation?.discountType || "N/A"}
+Round Off: ₹${quotation?.roundOff || 0}
+
+-- ITEMS --
+${items || "No items found"}
+
+Final Amount: ₹${quotation?.finalAmount || 0}
+
+Created By: ${quotation?.signature_name || "N/A"}
+Customer ID: ${quotation?.customerId || "N/A"}
+Ship To: ${quotation?.shipTo || "N/A"}
+
+View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
+==========================
+  `;
+
     const encodedMessage = encodeURIComponent(message);
     const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
     window.open(whatsappUrl, "_blank");

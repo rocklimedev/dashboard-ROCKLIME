@@ -11,7 +11,7 @@ require("dotenv").config();
 // Register
 exports.register = async (req, res, next) => {
   try {
-    const { username, name, email, mobileNumber, password } = req.body;
+    const { username, name, email, mobileNumber = null, password } = req.body; // Set default to null
     const normalizedEmail = email.toLowerCase();
 
     const existingUser = await User.findOne({
@@ -33,7 +33,7 @@ exports.register = async (req, res, next) => {
       username,
       name,
       email: normalizedEmail,
-      mobileNumber,
+      mobileNumber, // Will be null if not provided
       password: hashedPassword,
       roles: [roleData.roleName],
       roleId: roleData.roleId,
@@ -54,10 +54,10 @@ exports.register = async (req, res, next) => {
       token: verificationToken,
       email: normalizedEmail,
       isVerified: false,
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h from now
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
     });
 
-    // Use sendMail directly with the accountVerificationEmail template
+    // Send verification email
     const emailContent = emails.accountVerificationEmail(
       req.headers.host,
       verificationToken

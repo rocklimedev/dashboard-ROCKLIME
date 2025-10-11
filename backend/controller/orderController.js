@@ -341,6 +341,7 @@ exports.deleteComment = async (req, res) => {
 // createOrder.js
 // Create a new order
 // Create a new order
+// Create a new order
 exports.createOrder = async (req, res) => {
   try {
     const {
@@ -355,7 +356,8 @@ exports.createOrder = async (req, res) => {
       priority,
       description,
       orderNo,
-      quotationId, // Added quotationId
+      quotationId,
+      products, // Add products field
     } = req.body;
 
     // Validate required fields
@@ -363,7 +365,7 @@ exports.createOrder = async (req, res) => {
       return sendErrorResponse(
         res,
         400,
-        "createdFor, and createdBy are required"
+        "createdFor and createdBy are required"
       );
     }
 
@@ -384,6 +386,72 @@ exports.createOrder = async (req, res) => {
       const quotation = await Quotation.findByPk(quotationId);
       if (!quotation) {
         return sendErrorResponse(res, 404, "Quotation not found");
+      }
+    }
+
+    // Validate products array
+    if (products) {
+      if (!Array.isArray(products)) {
+        return sendErrorResponse(res, 400, "Products must be an array");
+      }
+
+      for (const product of products) {
+        const { id, price, discount, total } = product;
+
+        // Validate required fields
+        if (
+          !id ||
+          price === undefined ||
+          discount === undefined ||
+          total === undefined
+        ) {
+          return sendErrorResponse(
+            res,
+            400,
+            "Each product must have id, price, discount, and total"
+          );
+        }
+
+        // Validate product exists
+        const productRecord = await Product.findByPk(id);
+        if (!productRecord) {
+          return sendErrorResponse(res, 404, `Product with ID ${id} not found`);
+        }
+
+        // Validate price, discount, and total
+        if (typeof price !== "number" || price < 0) {
+          return sendErrorResponse(res, 400, `Invalid price for product ${id}`);
+        }
+        if (typeof discount !== "number" || discount < 0) {
+          return sendErrorResponse(
+            res,
+            400,
+            `Invalid discount for product ${id}`
+          );
+        }
+        if (typeof total !== "number" || total < 0) {
+          return sendErrorResponse(res, 400, `Invalid total for product ${id}`);
+        }
+
+        // Validate total based on discountType
+        const discountType = productRecord.discountType || "fixed";
+        let expectedTotal;
+        if (discountType === "percent") {
+          expectedTotal = price * (1 - discount / 100);
+        } else {
+          expectedTotal = price - discount;
+        }
+
+        // Allow for minor floating-point differences
+        if (Math.abs(total - expectedTotal) > 0.01) {
+          return sendErrorResponse(
+            res,
+            400,
+            `Invalid total for product ${id}. Expected ${expectedTotal.toFixed(
+              2
+            )} based on price and discount`
+          );
+        }
       }
     }
 
@@ -460,7 +528,8 @@ exports.createOrder = async (req, res) => {
       priority: priority?.toLowerCase() || null,
       description,
       orderNo: orderNo ? parseInt(orderNo) : null,
-      quotationId, // Include quotationId
+      quotationId,
+      products, // Include products field
     });
 
     return res.status(201).json({
@@ -471,7 +540,6 @@ exports.createOrder = async (req, res) => {
     return sendErrorResponse(res, 500, "Failed to create order", err.message);
   }
 };
-
 // Get all orders
 exports.getAllOrders = async (req, res) => {
   try {
@@ -686,6 +754,7 @@ exports.orderById = async (req, res) => {
 };
 
 // Update order by ID
+// Update order by ID
 exports.updateOrderById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -832,11 +901,82 @@ exports.updateOrderById = async (req, res) => {
     // Validate quotationId
     if (updates.quotationId !== undefined) {
       if (updates.quotationId === null || updates.quotationId === "") {
-        updates.quotationId = null; // Allow null as per model
+        updates.quotationId = null;
       } else {
         const quotation = await Quotation.findByPk(updates.quotationId);
         if (!quotation) {
           return res.status(404).json({ message: "Quotation not found" });
+        }
+      }
+    }
+
+    // Validate products array
+    if (updates.products !== undefined) {
+      if (updates.products === null || updates.products === "") {
+        updates.products = null;
+      } else if (!Array.isArray(updates.products)) {
+        return res.status(400).json({ message: "Products must be an array" });
+      } else {
+        for (const product of updates.products) {
+          const { id, price, discount, total } = product;
+
+          // Validate required fields
+          if (
+            !id ||
+            price === undefined ||
+            discount === undefined ||
+            total === undefined
+          ) {
+            return res
+              .status(400)
+              .json({
+                message:
+                  "Each product must have id, price, discount, and total",
+              });
+          }
+
+          // Validate product exists
+          const productRecord = await Product.findByPk(id);
+          if (!productRecord) {
+            return res
+              .status(404)
+              .json({ message: `Product with ID ${id} not found` });
+          }
+
+          // Validate price, discount, and total
+          if (typeof price !== "number" || price < 0) {
+            return res
+              .status(400)
+              .json({ message: `Invalid price for product ${id}` });
+          }
+          if (typeof discount !== "number" || discount < 0) {
+            return res
+              .status(400)
+              .json({ message: `Invalid discount for product ${id}` });
+          }
+          if (typeof total !== "number" || total < 0) {
+            return res
+              .status(400)
+              .json({ message: `Invalid total for product ${id}` });
+          }
+
+          // Validate total based on discountType
+          const discountType = productRecord.discountType || "fixed";
+          let expectedTotal;
+          if (discountType === "percent") {
+            expectedTotal = price * (1 - discount / 100);
+          } else {
+            expectedTotal = price - discount;
+          }
+
+          // Allow for minor floating-point differences
+          if (Math.abs(total - expectedTotal) > 0.01) {
+            return res.status(400).json({
+              message: `Invalid total for product ${id}. Expected ${expectedTotal.toFixed(
+                2
+              )} based on price and discount`,
+            });
+          }
         }
       }
     }
@@ -856,12 +996,13 @@ exports.updateOrderById = async (req, res) => {
 };
 
 // Create a draft order
+// Create a draft order
 exports.draftOrder = async (req, res) => {
   try {
-    const { quotationId, assignedTo } = req.body;
+    const { quotationId, assignedTo, products } = req.body;
 
     if (!assignedTo) {
-      return sendErrorResponse(res, 400, "assignedTo are required");
+      return sendErrorResponse(res, 400, "assignedTo is required");
     }
 
     const team = await Team.findByPk(assignedTo);
@@ -876,10 +1017,77 @@ exports.draftOrder = async (req, res) => {
       }
     }
 
+    // Validate products array if provided
+    if (products) {
+      if (!Array.isArray(products)) {
+        return sendErrorResponse(res, 400, "Products must be an array");
+      }
+
+      for (const product of products) {
+        const { id, price, discount, total } = product;
+
+        // Validate required fields
+        if (
+          !id ||
+          price === undefined ||
+          discount === undefined ||
+          total === undefined
+        ) {
+          return sendErrorResponse(
+            res,
+            400,
+            "Each product must have id, price, discount, and total"
+          );
+        }
+
+        // Validate product exists
+        const productRecord = await Product.findByPk(id);
+        if (!productRecord) {
+          return sendErrorResponse(res, 404, `Product with ID ${id} not found`);
+        }
+
+        // Validate price, discount, and total
+        if (typeof price !== "number" || price < 0) {
+          return sendErrorResponse(res, 400, `Invalid price for product ${id}`);
+        }
+        if (typeof discount !== "number" || discount < 0) {
+          return sendErrorResponse(
+            res,
+            400,
+            `Invalid discount for product ${id}`
+          );
+        }
+        if (typeof total !== "number" || total < 0) {
+          return sendErrorResponse(res, 400, `Invalid total for product ${id}`);
+        }
+
+        // Validate total based on discountType
+        const discountType = productRecord.discountType || "fixed";
+        let expectedTotal;
+        if (discountType === "percent") {
+          expectedTotal = price * (1 - discount / 100);
+        } else {
+          expectedTotal = price - discount;
+        }
+
+        // Allow for minor floating-point differences
+        if (Math.abs(total - expectedTotal) > 0.01) {
+          return sendErrorResponse(
+            res,
+            400,
+            `Invalid total for product ${id}. Expected ${expectedTotal.toFixed(
+              2
+            )} based on price and discount`
+          );
+        }
+      }
+    }
+
     const order = await Order.create({
       quotationId,
       status: "DRAFT",
       assignedTo,
+      products, // Include products field
     });
 
     return res.status(200).json({ message: "Draft order created", order });

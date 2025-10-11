@@ -17,6 +17,19 @@ const Customer = sequelize.define(
     phone2: { type: DataTypes.STRING(20), allowNull: true }, // Added second phone
 
     companyName: { type: DataTypes.STRING(150), allowNull: true },
+
+    // New field for customer type dropdown
+    customerType: {
+      type: DataTypes.ENUM(
+        "Retail",
+        "Architect",
+        "Interior",
+        "Builder",
+        "Contractor"
+      ),
+      allowNull: true,
+    },
+
     address: { type: DataTypes.JSON, allowNull: true },
 
     quotations: { type: DataTypes.JSON, allowNull: true },
