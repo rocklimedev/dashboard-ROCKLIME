@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -15,6 +15,10 @@ import {
   Tabs,
   Select,
   InputNumber,
+  DatePicker,
+  Input,
+  Table,
+  Form,
 } from "antd";
 import {
   ShoppingCartOutlined,
@@ -22,6 +26,7 @@ import {
   DeleteOutlined,
   CheckCircleOutlined,
   ArrowLeftOutlined,
+  PlusOutlined,
 } from "@ant-design/icons";
 import {
   useGetCustomersQuery,
@@ -34,13 +39,17 @@ import {
   useClearCartMutation,
   useRemoveFromCartMutation,
 } from "../../api/cartApi";
-import { useGetAllUsersQuery, useGetUserByIdQuery } from "../../api/userApi";
 import { useGetProfileQuery } from "../../api/userApi";
 import { useCreateQuotationMutation } from "../../api/quotationApi";
+import {
+  useCreateOrderMutation,
+  useGetAllOrdersQuery,
+} from "../../api/orderApi";
 import {
   useGetAllAddressesQuery,
   useCreateAddressMutation,
 } from "../../api/addressApi";
+import { useGetAllTeamsQuery } from "../../api/teamApi";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
@@ -52,34 +61,43 @@ import "react-lazy-load-image-component/src/effects/blur.css";
 import OrderTotal from "./OrderTotal";
 import useProductsData from "../../data/useProductdata";
 import AddAddress from "../Address/AddAddressModal";
+import moment from "moment";
+import { useCreatePurchaseOrderMutation } from "../../api/poApi";
+import {
+  useGetVendorsQuery,
+  useCreateVendorMutation,
+} from "../../api/vendorApi";
+import { useGetAllBrandsQuery } from "../../api/brandsApi";
+import { debounce } from "lodash";
+import { useGetAllProductsQuery } from "../../api/productApi";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { TabPane } = Tabs;
 
-// Styled Components
+// Styled Components (unchanged from original)
 const PageWrapper = styled.div`
-  padding: 16px; /* Reduced padding for smaller screens */
+  padding: 16px;
   background-color: #f5f5f5;
   min-height: 100vh;
   @media (min-width: 768px) {
-    padding: 24px; /* Larger padding for tablets and desktops */
+    padding: 24px;
   }
 `;
 
 const CartContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
-  padding: 12px; /* Reduced padding for mobile */
+  padding: 12px;
   @media (min-width: 768px) {
-    padding: 20px; /* Default padding for larger screens */
+    padding: 20px;
   }
 `;
 
 const CartItemsCard = styled(Card)`
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 16px; /* Reduced margin for mobile */
+  margin-bottom: 16px;
   @media (min-width: 768px) {
     margin-bottom: 24px;
   }
@@ -90,7 +108,7 @@ const CartHeader = styled.div`
 `;
 
 const CartItem = styled.div`
-  padding: 12px 0; /* Reduced padding for mobile */
+  padding: 12px 0;
   &:hover {
     background: #fafafa;
   }
@@ -102,16 +120,16 @@ const CartItem = styled.div`
 const CartItemImage = styled(LazyLoadImage)`
   border-radius: 4px;
   object-fit: cover;
-  width: 60px; /* Smaller image for mobile */
+  width: 60px;
   height: 60px;
   @media (min-width: 768px) {
-    width: 80px; /* Default size for larger screens */
+    width: 80px;
     height: 80px;
   }
 `;
 
 const QuantityButton = styled(Button)`
-  width: 28px; /* Smaller buttons for mobile */
+  width: 28px;
   height: 28px;
   display: flex;
   align-items: center;
@@ -130,7 +148,7 @@ const CartSummaryCard = styled(Card)`
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   position: sticky;
-  top: 16px; /* Adjusted for mobile */
+  top: 16px;
   @media (min-width: 768px) {
     top: 20px;
   }
@@ -154,26 +172,211 @@ const EmptyCartWrapper = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px 0; /* Reduced padding for mobile */
+  padding: 20px 0;
   @media (min-width: 768px) {
     padding: 40px 0;
   }
 `;
 
 const DiscountInput = styled(InputNumber)`
-  width: 80px; /* Smaller input for mobile */
+  width: 80px;
   margin-left: 8px;
   @media (min-width: 768px) {
     width: 100px;
   }
 `;
 
-// Rest of the generateQuotationNumber function remains unchanged
+// Generate Quotation Number
 const generateQuotationNumber = () => {
   const timestamp = Date.now().toString().slice(-6);
   const random = Math.floor(1000 + Math.random() * 9000);
   return `QUO-${timestamp}-${random}`;
 };
+
+// Generate Order Number
+const generateOrderNumber = (orders) => {
+  const today = moment().format("DDMMYYYY");
+  const todayOrders = orders.filter((order) =>
+    moment(order.createdAt).isSame(moment(), "day")
+  );
+  const serialNumber = String(todayOrders.length + 1).padStart(5, "0");
+  return `${today}${serialNumber}`;
+};
+
+// Generate Purchase Order Number
+const generatePurchaseOrderNumber = (orders) => {
+  const today = moment().format("DDMMYYYY");
+  const todayOrders = orders.filter((order) =>
+    moment(order.createdAt).isSame(moment(), "day")
+  );
+  const serialNumber = String(todayOrders.length + 1).padStart(5, "0");
+  return `PO-${today}-${serialNumber}`;
+};
+
+// AddVendorModal Component (from AddPurchaseOrder)
+const AddVendorModal = ({ show, onClose, onSave, isCreatingVendor }) => {
+  const {
+    data: brandsData,
+    isLoading: isBrandsLoading,
+    error: brandsError,
+  } = useGetAllBrandsQuery(undefined, {
+    refetchOnMountOrArgChange: true,
+  });
+  const brands = brandsData || [];
+  const [form] = Form.useForm();
+  const [vendorData, setVendorData] = useState({
+    vendorId: "",
+    vendorName: "",
+    brandId: "",
+    brandSlug: "",
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setVendorData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleBrandChange = (value) => {
+    const selectedBrand = brands.find((brand) => brand.id === value);
+    setVendorData((prev) => ({
+      ...prev,
+      brandId: value,
+      brandSlug: selectedBrand ? selectedBrand.brandSlug : "",
+    }));
+    form.setFieldsValue({ brandId: value });
+  };
+
+  const handleSubmit = async () => {
+    if (!vendorData.vendorId || !vendorData.vendorName) {
+      toast.error("Vendor ID and Name are required.");
+      return;
+    }
+    try {
+      await onSave({
+        vendorId: vendorData.vendorId,
+        vendorName: vendorData.vendorName,
+        brandId: vendorData.brandId || null,
+        brandSlug: vendorData.brandSlug || null,
+      }).unwrap();
+      setVendorData({
+        vendorId: "",
+        vendorName: "",
+        brandId: "",
+        brandSlug: "",
+      });
+      form.resetFields();
+      onClose();
+    } catch (err) {
+      const errorMessage =
+        err.status === 400 && err.data?.message.includes("vendorId")
+          ? "Vendor ID already exists. Please use a unique ID."
+          : err.data?.message || "Failed to create vendor";
+      toast.error(errorMessage);
+    }
+  };
+
+  return (
+    <Modal
+      title="Add New Vendor"
+      open={show}
+      onCancel={onClose}
+      footer={null}
+      centered
+    >
+      <Form form={form} onFinish={handleSubmit} layout="vertical">
+        {brandsError && (
+          <Alert
+            message="Failed to load brands"
+            description={brandsError?.data?.message || "Unknown error"}
+            type="error"
+            showIcon
+          />
+        )}
+        <Form.Item
+          label="Vendor ID"
+          name="vendorId"
+          rules={[{ required: true, message: "Please enter a Vendor ID" }]}
+        >
+          <Input
+            name="vendorId"
+            value={vendorData.vendorId}
+            onChange={handleChange}
+            placeholder="e.g., VEND123"
+          />
+          <div style={{ color: "#8c8c8c", fontSize: "12px" }}>
+            Must be unique (e.g., VEND123).
+          </div>
+        </Form.Item>
+        <Form.Item
+          label="Vendor Name"
+          name="vendorName"
+          rules={[{ required: true, message: "Please enter a Vendor Name" }]}
+        >
+          <Input
+            name="vendorName"
+            value={vendorData.vendorName}
+            onChange={handleChange}
+            placeholder="e.g., Acme Supplies"
+          />
+        </Form.Item>
+        <Form.Item label="Brand" name="brandId">
+          <Select
+            style={{ width: "100%" }}
+            value={vendorData.brandId || undefined}
+            onChange={handleBrandChange}
+            placeholder={
+              isBrandsLoading ? "Loading brands..." : "Select a brand"
+            }
+            loading={isBrandsLoading}
+            disabled={isBrandsLoading}
+            aria-label="Select a brand"
+            options={brands.map((brand) => ({
+              value: brand.id,
+              label: `${brand.brandName} (${brand.brandSlug})`,
+            }))}
+          />
+        </Form.Item>
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <Button
+            onClick={onClose}
+            disabled={isCreatingVendor}
+            style={{ marginRight: "10px" }}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="primary"
+            htmlType="submit"
+            disabled={isCreatingVendor || isBrandsLoading}
+          >
+            {isCreatingVendor ? <Spin size="small" /> : "Save Vendor"}
+          </Button>
+        </div>
+      </Form>
+    </Modal>
+  );
+};
+
+// Status values
+const STATUS_VALUES = [
+  "CREATED",
+  "PREPARING",
+  "CHECKING",
+  "INVOICE",
+  "DISPATCHED",
+  "DELIVERED",
+  "PARTIALLY_DELIVERED",
+  "CANCELED",
+  "DRAFT",
+  "ONHOLD",
+];
+
+const PURCHASE_ORDER_STATUSES = [
+  "pending",
+  "confirmed",
+  "delivered",
+  "cancelled",
+];
 
 const NewCart = ({ onConvertToOrder }) => {
   const navigate = useNavigate();
@@ -184,26 +387,19 @@ const NewCart = ({ onConvertToOrder }) => {
   } = useGetProfileQuery();
   const userId = profileData?.user?.userId;
 
-  const {
-    data: cartData,
-    isLoading: cartLoading,
-    isError: cartError,
-    refetch,
-  } = useGetCartQuery(userId, { skip: !userId });
-
-  const {
-    data: customerData,
-    isLoading: customersLoading,
-    isError: customersError,
-  } = useGetCustomersQuery();
-
+  // State declarations
   const [activeTab, setActiveTab] = useState("cart");
   const [selectedCustomer, setSelectedCustomer] = useState("");
+  const [selectedVendor, setSelectedVendor] = useState("");
   const [showClearCartModal, setShowClearCartModal] = useState(false);
   const [showAddAddressModal, setShowAddAddressModal] = useState(false);
+  const [showAddVendorModal, setShowAddVendorModal] = useState(false);
+  const [documentType, setDocumentType] = useState("Quotation");
   const [quotationNumber, setQuotationNumber] = useState(
     generateQuotationNumber()
   );
+  const [orderNumber, setOrderNumber] = useState("");
+  const [purchaseOrderNumber, setPurchaseOrderNumber] = useState("");
   const [quotationData, setQuotationData] = useState({
     quotationDate: new Date().toISOString().split("T")[0],
     dueDate: "",
@@ -215,10 +411,58 @@ const NewCart = ({ onConvertToOrder }) => {
     discountType: "percent",
     roundOff: "",
   });
+  const [orderData, setOrderData] = useState({
+    createdFor: "",
+    createdBy: userId || "",
+    assignedTo: "",
+    pipeline: "",
+    status: "CREATED",
+    dueDate: "",
+    followupDates: [],
+    source: "",
+    teamId: "",
+    priority: "medium",
+    description: "",
+    invoiceLink: null,
+    orderNo: "",
+    quotationId: "",
+  });
+  const [purchaseOrderData, setPurchaseOrderData] = useState({
+    vendorId: "",
+    orderDate: moment().format("YYYY-MM-DD"),
+    expectedDeliveryDate: null,
+    items: [],
+    totalAmount: 0,
+    status: "pending",
+  });
   const [itemDiscounts, setItemDiscounts] = useState({});
   const [error, setError] = useState("");
   const [updatingItems, setUpdatingItems] = useState({});
+  const [productSearch, setProductSearch] = useState("");
+  const [filteredProducts, setFilteredProducts] = useState([]);
 
+  // Queries
+  const {
+    data: cartData,
+    isLoading: cartLoading,
+    isError: cartError,
+    refetch,
+  } = useGetCartQuery(userId, { skip: !userId });
+  const {
+    data: customerData,
+    isLoading: customersLoading,
+    isError: customersError,
+  } = useGetCustomersQuery();
+  const {
+    data: allOrdersData,
+    isLoading: isAllOrdersLoading,
+    error: allOrdersError,
+  } = useGetAllOrdersQuery();
+  const {
+    data: teamsData,
+    isLoading: teamsLoading,
+    refetch: refetchTeams,
+  } = useGetAllTeamsQuery();
   const {
     data: addressesData,
     isLoading: addressesLoading,
@@ -228,7 +472,22 @@ const NewCart = ({ onConvertToOrder }) => {
     { customerId: selectedCustomer },
     { skip: !selectedCustomer }
   );
+  const { data: productsData, isLoading: isProductsLoading } =
+    useGetAllProductsQuery();
+  const { data: vendorsData, isLoading: isVendorsLoading } =
+    useGetVendorsQuery();
 
+  // Mutations
+  const [updateCart] = useUpdateCartMutation();
+  const [clearCart] = useClearCartMutation();
+  const [removeFromCart] = useRemoveFromCartMutation();
+  const [createQuotation] = useCreateQuotationMutation();
+  const [createOrder] = useCreateOrderMutation();
+  const [createPurchaseOrder] = useCreatePurchaseOrderMutation();
+  const [createVendor, { isLoading: isCreatingVendor }] =
+    useCreateVendorMutation(); // Extract isLoading
+
+  // Memoized data
   const addresses = useMemo(() => {
     if (!addressesData) return [];
     if (Array.isArray(addressesData?.data)) return addressesData.data;
@@ -247,19 +506,28 @@ const NewCart = ({ onConvertToOrder }) => {
     [addresses]
   );
 
+  const orders = useMemo(
+    () => (Array.isArray(allOrdersData?.orders) ? allOrdersData.orders : []),
+    [allOrdersData]
+  );
+
+  const teams = useMemo(
+    () => (Array.isArray(teamsData?.teams) ? teamsData.teams : []),
+    [teamsData]
+  );
+
+  const vendors = useMemo(() => vendorsData || [], [vendorsData]);
+
+  const products = useMemo(() => productsData || [], [productsData]);
+
   const { userMap, customerMap, userQueries, customerQueries } =
     useUserAndCustomerData(userIds, customerIds);
-  const [updateCart] = useUpdateCartMutation();
-  const [clearCart] = useClearCartMutation();
-  const [removeFromCart] = useRemoveFromCartMutation();
-  const [createQuotation] = useCreateQuotationMutation();
-
   const cartItems = useMemo(
     () => (Array.isArray(cartData?.cart?.items) ? cartData.cart.items : []),
     [cartData]
   );
   const {
-    productsData,
+    productsData: cartProductsData,
     errors: productErrors,
     loading: productsLoading,
   } = useProductsData(cartItems);
@@ -270,6 +538,7 @@ const NewCart = ({ onConvertToOrder }) => {
     [customers]
   );
 
+  // Total calculations
   const totalItems = useMemo(
     () => cartItems.reduce((acc, item) => acc + (item.quantity || 0), 0),
     [cartItems]
@@ -302,6 +571,56 @@ const NewCart = ({ onConvertToOrder }) => {
   const roundOff = parseFloat(quotationData.roundOff) || 0;
   const totalAmount = subTotal + shipping + tax - totalDiscount + roundOff;
 
+  // Purchase Order specific calculations
+  const purchaseOrderTotal = useMemo(() => {
+    return purchaseOrderData.items
+      .reduce((sum, item) => sum + Number(item.total || 0), 0)
+      .toFixed(2);
+  }, [purchaseOrderData.items]);
+
+  // Debounced product search for purchase orders
+  const debouncedSearch = useCallback(
+    debounce((value) => {
+      setProductSearch(value);
+      if (value) {
+        const filtered = products
+          .filter(
+            (product) =>
+              product.productId &&
+              (product.name.toLowerCase().includes(value.toLowerCase()) ||
+                product.product_code
+                  ?.toLowerCase()
+                  .includes(value.toLowerCase()))
+          )
+          .slice(0, 5);
+        setFilteredProducts(filtered);
+      } else {
+        setFilteredProducts([]);
+      }
+    }, 300),
+    [products]
+  );
+
+  // Effects
+  useEffect(() => {
+    if (!orderNumber && !isAllOrdersLoading && allOrdersData !== undefined) {
+      setOrderNumber(generateOrderNumber(orders));
+    }
+    if (
+      !purchaseOrderNumber &&
+      !isAllOrdersLoading &&
+      allOrdersData !== undefined
+    ) {
+      setPurchaseOrderNumber(generatePurchaseOrderNumber(orders));
+    }
+  }, [
+    isAllOrdersLoading,
+    allOrdersData,
+    orders,
+    orderNumber,
+    purchaseOrderNumber,
+  ]);
+
   useEffect(() => {
     if (selectedCustomer && addresses.length > 0) {
       const selectedCustomerData = customerList.find(
@@ -330,6 +649,10 @@ const NewCart = ({ onConvertToOrder }) => {
           }
           return { ...prev, billTo: newBillTo, shipTo: newShipTo };
         });
+        setOrderData((prev) => ({
+          ...prev,
+          createdFor: selectedCustomerData.customerId,
+        }));
       }
     }
   }, [selectedCustomer, customerList, addresses]);
@@ -345,10 +668,26 @@ const NewCart = ({ onConvertToOrder }) => {
         setError("");
       }
     }
+    setOrderData((prev) => ({
+      ...prev,
+      dueDate: quotationData.dueDate,
+    }));
   }, [quotationData.quotationDate, quotationData.dueDate]);
 
+  // Handlers
   const handleQuotationChange = (key, value) => {
     setQuotationData((prev) => ({ ...prev, [key]: value }));
+    if (key === "dueDate") {
+      setOrderData((prev) => ({ ...prev, dueDate: value }));
+    }
+  };
+
+  const handleOrderChange = (key, value) => {
+    setOrderData((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handlePurchaseOrderChange = (key, value) => {
+    setPurchaseOrderData((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleDiscountChange = (productId, value) => {
@@ -367,7 +706,9 @@ const NewCart = ({ onConvertToOrder }) => {
     try {
       await clearCart({ userId }).unwrap();
       setQuotationNumber(generateQuotationNumber());
+      setPurchaseOrderNumber(generatePurchaseOrderNumber(orders));
       setItemDiscounts({});
+      setPurchaseOrderData((prev) => ({ ...prev, items: [] }));
       refetch();
       setShowClearCartModal(false);
       setActiveTab("cart");
@@ -418,7 +759,146 @@ const NewCart = ({ onConvertToOrder }) => {
     }
   };
 
-  const handleCreateQuotation = async () => {
+  const addPurchaseOrderProduct = (productId) => {
+    const product = products.find((p) => p.productId === productId);
+    if (
+      !product ||
+      purchaseOrderData.items.some((item) => item.productId === productId)
+    ) {
+      if (!product) toast.error("Product not found.");
+      else toast.error("Product already added.");
+      return;
+    }
+    const sellingPrice =
+      product.metaDetails?.find((meta) => meta.slug === "sellingPrice")
+        ?.value || 0;
+    if (sellingPrice <= 0) {
+      toast.error(
+        `Product ${product.name} has an invalid MRP (₹${sellingPrice}).`
+      );
+      return;
+    }
+    const quantity = 1;
+    const total = quantity * sellingPrice;
+    setPurchaseOrderData((prev) => {
+      const newItems = [
+        ...prev.items,
+        {
+          id: product.productId,
+          productId: product.productId,
+          name: product.name || "Unknown",
+          quantity,
+          mrp: sellingPrice,
+          total,
+        },
+      ];
+      const totalAmount = newItems
+        .reduce((sum, item) => sum + Number(item.total || 0), 0)
+        .toFixed(2);
+      return {
+        ...prev,
+        items: newItems,
+        totalAmount,
+      };
+    });
+    setProductSearch("");
+    setFilteredProducts([]);
+  };
+
+  const removePurchaseOrderProduct = (index) => {
+    setPurchaseOrderData((prev) => {
+      const newItems = prev.items.filter((_, i) => i !== index);
+      const totalAmount = newItems
+        .reduce((sum, item) => sum + Number(item.total || 0), 0)
+        .toFixed(2);
+      return {
+        ...prev,
+        items: newItems,
+        totalAmount,
+      };
+    });
+  };
+
+  const updatePurchaseOrderProductField = (index, field, value) => {
+    const updatedItems = [...purchaseOrderData.items];
+    updatedItems[index][field] = value;
+    if (["quantity", "mrp"].includes(field)) {
+      const quantity = Number(updatedItems[index].quantity) || 1;
+      const mrp = Number(updatedItems[index].mrp) || 0.01;
+      updatedItems[index].total = quantity * mrp;
+    }
+    const totalAmount = updatedItems
+      .reduce((sum, item) => sum + Number(item.total || 0), 0)
+      .toFixed(2);
+    setPurchaseOrderData({
+      ...purchaseOrderData,
+      items: updatedItems,
+      totalAmount,
+    });
+  };
+
+  const validateFollowupDates = () => {
+    if (!orderData.dueDate || orderData.followupDates.length === 0) return true;
+    const dueDate = moment(orderData.dueDate);
+    return orderData.followupDates.every((followupDate) => {
+      if (!followupDate || new Date(followupDate).toString() === "Invalid Date")
+        return true;
+      return moment(followupDate).isSameOrBefore(dueDate, "day");
+    });
+  };
+
+  const handleCreateDocument = async () => {
+    if (documentType === "Purchase Order") {
+      if (!selectedVendor) return toast.error("Please select a vendor.");
+      if (purchaseOrderData.items.length === 0)
+        return toast.error("Please add at least one product.");
+      if (purchaseOrderData.items.some((item) => item.mrp <= 0))
+        return toast.error(
+          "All products must have a valid MRP greater than 0."
+        );
+      if (
+        purchaseOrderData.items.some(
+          (item) => !products.some((p) => p.productId === item.productId)
+        )
+      )
+        return toast.error(
+          "Some products are no longer available. Please remove them."
+        );
+
+      const formattedItems = purchaseOrderData.items.map((item) => ({
+        productId: item.productId,
+        quantity: Number(item.quantity) || 1,
+        mrp: Number(item.mrp) || 0.01,
+      }));
+
+      const formattedFormData = {
+        vendorId: selectedVendor,
+        items: formattedItems,
+        expectedDeliveryDate: purchaseOrderData.expectedDeliveryDate
+          ? moment(purchaseOrderData.expectedDeliveryDate).format("YYYY-MM-DD")
+          : null,
+        status: purchaseOrderData.status || "pending",
+      };
+
+      try {
+        await createPurchaseOrder(formattedFormData).unwrap();
+        await handleClearCart();
+        resetForm();
+        navigate("/po/list");
+      } catch (err) {
+        const errorMessage =
+          err.status === 404
+            ? "Vendor not found."
+            : err.status === 400
+            ? `Invalid request: ${
+                err.data?.error || err.data?.message || "Check your input data."
+              }`
+            : err.data?.message || "Failed to create purchase order";
+        toast.error(errorMessage);
+      }
+      return;
+    }
+
     if (!selectedCustomer) return toast.error("Please select a customer.");
     if (!userId) return toast.error("User not logged in!");
     if (!quotationData.quotationDate || !quotationData.dueDate)
@@ -483,67 +963,133 @@ const NewCart = ({ onConvertToOrder }) => {
       }
     }
 
-    const quotationPayload = {
-      quotationId: uuidv4(),
-      document_title: `Quotation for ${selectedCustomerData.name}`,
-      quotation_date: quotationData.quotationDate,
-      due_date: quotationData.dueDate,
-      reference_number: quotationNumber,
-      include_gst: quotationData.includeGst,
-      gst_value: parseFloat(quotationData.gstValue) || 0,
-      discountType: quotationData.discountType,
-      roundOff: parseFloat(quotationData.roundOff) || 0,
-      finalAmount: parseFloat(totalAmount.toFixed(2)),
-      signature_name: quotationData.signatureName || "CM TRADING CO",
-      signature_image: "",
-      customerId: selectedCustomerData.customerId,
-      shipTo: quotationData.shipTo || null,
-      createdBy: userId,
-      products: cartItems.map((item) => {
-        const itemSubtotal = parseFloat(
-          (item.price * item.quantity).toFixed(2)
-        );
-        const itemDiscount = parseFloat(itemDiscounts[item.productId]) || 0;
-        return {
-          productId: item.productId,
-          name: item.name || "Unnamed Product",
-          quantity: item.quantity || 1,
-          sellingPrice: parseFloat(item.price || 0),
-          discount: itemDiscount,
-          tax: quotationData.includeGst
-            ? parseFloat(quotationData.gstValue) || 0
-            : 0,
-          total: parseFloat((itemSubtotal - itemDiscount).toFixed(2)),
-        };
-      }),
-      items: cartItems.map((item) => {
-        const itemSubtotal = parseFloat(
-          (item.price * item.quantity).toFixed(2)
-        );
-        const itemDiscount = parseFloat(itemDiscounts[item.productId]) || 0;
-        return {
-          productId: item.productId,
-          quantity: item.quantity || 1,
-          discount: itemDiscount,
-          tax: quotationData.includeGst
-            ? parseFloat(quotationData.gstValue) || 0
-            : 0,
-          total: parseFloat((itemSubtotal - itemDiscount).toFixed(2)),
-        };
-      }),
-    };
+    if (documentType === "Quotation") {
+      const quotationPayload = {
+        quotationId: uuidv4(),
+        document_title: `Quotation for ${selectedCustomerData.name}`,
+        quotation_date: quotationData.quotationDate,
+        due_date: quotationData.dueDate,
+        reference_number: quotationNumber,
+        include_gst: quotationData.includeGst,
+        gst_value: parseFloat(quotationData.gstValue) || 0,
+        discountType: quotationData.discountType,
+        roundOff: parseFloat(quotationData.roundOff) || 0,
+        finalAmount: parseFloat(totalAmount.toFixed(2)),
+        signature_name: quotationData.signatureName || "CM TRADING CO",
+        signature_image: "",
+        customerId: selectedCustomerData.customerId,
+        shipTo: quotationData.shipTo || null,
+        createdBy: userId,
+        products: cartItems.map((item) => {
+          const itemSubtotal = parseFloat(
+            (item.price * item.quantity).toFixed(2)
+          );
+          const itemDiscount = parseFloat(itemDiscounts[item.productId]) || 0;
+          return {
+            productId: item.productId,
+            name: item.name || "Unnamed Product",
+            quantity: item.quantity || 1,
+            sellingPrice: parseFloat(item.price || 0),
+            discount: itemDiscount,
+            tax: quotationData.includeGst
+              ? parseFloat(quotationData.gstValue) || 0
+              : 0,
+            total: parseFloat((itemSubtotal - itemDiscount).toFixed(2)),
+          };
+        }),
+        items: cartItems.map((item) => {
+          const itemSubtotal = parseFloat(
+            (item.price * item.quantity).toFixed(2)
+          );
+          const itemDiscount = parseFloat(itemDiscounts[item.productId]) || 0;
+          return {
+            productId: item.productId,
+            quantity: item.quantity || 1,
+            discount: itemDiscount,
+            tax: quotationData.includeGst
+              ? parseFloat(quotationData.gstValue) || 0
+              : 0,
+            total: parseFloat((itemSubtotal - itemDiscount).toFixed(2)),
+          };
+        }),
+      };
 
-    try {
-      await createQuotation(quotationPayload).unwrap();
-      await handleClearCart();
-      resetForm();
-      navigate("/quotations/list");
-    } catch (error) {
-      toast.error(
-        `Failed to create quotation: ${
-          error.data?.message || error.message || "Unknown error"
-        }`
-      );
+      try {
+        await createQuotation(quotationPayload).unwrap();
+        await handleClearCart();
+        resetForm();
+        navigate("/quotations/list");
+      } catch (error) {
+        toast.error(
+          `Failed to create quotation: ${
+            error.data?.message || error.message || "Unknown error"
+          }`
+        );
+      }
+    } else if (documentType === "Order") {
+      const orderNoRegex = /^\d{8}\d{5}$/;
+      if (!orderData.orderNo || !orderNoRegex.test(orderData.orderNo)) {
+        return toast.error(
+          "Order Number must be in the format DDMMYYYYXXXXX (e.g., 2708202500001)."
+        );
+      }
+
+      if (!validateFollowupDates()) {
+        return toast.error("Follow-up dates cannot be after the due date.");
+      }
+
+      const orderPayload = {
+        orderNo: orderData.orderNo,
+        createdFor: selectedCustomerData.customerId,
+        createdBy: userId,
+        assignedTo: orderData.teamId || null,
+        pipeline: orderData.pipeline || "",
+        status: orderData.status || "CREATED",
+        dueDate: orderData.dueDate || quotationData.dueDate,
+        followupDates: orderData.followupDates.filter(
+          (date) => date && moment(date).isValid()
+        ),
+        source: orderData.source || "",
+        teamId: orderData.teamId || "",
+        priority: orderData.priority || "medium",
+        description: orderData.description || "",
+        invoiceLink: null,
+        quotationId: "",
+        products: cartItems.map((item) => {
+          const itemSubtotal = parseFloat(
+            (item.price * item.quantity).toFixed(2)
+          );
+          const itemDiscount = parseFloat(itemDiscounts[item.productId]) || 0;
+          return {
+            productId: item.productId,
+            name: item.name || "Unnamed Product",
+            quantity: item.quantity || 1,
+            sellingPrice: parseFloat(item.price || 0),
+            discount: itemDiscount,
+            tax: quotationData.includeGst
+              ? parseFloat(quotationData.gstValue) || 0
+              : 0,
+            total: parseFloat((itemSubtotal - itemDiscount).toFixed(2)),
+          };
+        }),
+      };
+
+      try {
+        await createOrder(orderPayload).unwrap();
+        await handleClearCart();
+        resetForm();
+        navigate("/orders/list");
+      } catch (error) {
+        const errorMessage =
+          error?.status === 400
+            ? `Bad Request: ${error.data?.message || "Invalid data provided."}`
+            : error?.status === 404
+            ? `Not Found: ${error.data?.message || "Resource not found."}`
+            : error?.status === 500
+            ? "Server error. Please try again later."
+            : "Something went wrong. Please try again.";
+        toast.error(errorMessage);
+      }
     }
   };
 
@@ -559,10 +1105,40 @@ const NewCart = ({ onConvertToOrder }) => {
       discountType: "percent",
       roundOff: "",
     });
+    setOrderData({
+      createdFor: "",
+      createdBy: userId || "",
+      assignedTo: "",
+      pipeline: "",
+      status: "CREATED",
+      dueDate: "",
+      followupDates: [],
+      source: "",
+      teamId: "",
+      priority: "medium",
+      description: "",
+      invoiceLink: null,
+      orderNo: "",
+      quotationId: "",
+    });
+    setPurchaseOrderData({
+      vendorId: "",
+      orderDate: moment().format("YYYY-MM-DD"),
+      expectedDeliveryDate: null,
+      items: [],
+      totalAmount: 0,
+      status: "pending",
+    });
     setSelectedCustomer("");
+    setSelectedVendor("");
     setItemDiscounts({});
     setQuotationNumber(generateQuotationNumber());
+    setOrderNumber("");
+    setPurchaseOrderNumber("");
+    setDocumentType("Quotation");
     setActiveTab("cart");
+    setProductSearch("");
+    setFilteredProducts([]);
   };
 
   const handleAddAddress = () => {
@@ -575,7 +1151,104 @@ const NewCart = ({ onConvertToOrder }) => {
     await refetchAddresses();
   };
 
-  if (profileLoading || cartLoading || productsLoading) {
+  const handleFollowupDateChange = (index, date) => {
+    const updatedDates = [...orderData.followupDates];
+    updatedDates[index] = date ? date.format("YYYY-MM-DD") : "";
+    if (
+      orderData.dueDate &&
+      date &&
+      moment(date).isAfter(moment(orderData.dueDate), "day")
+    ) {
+      toast.warning(
+        `Follow-up date ${index + 1} cannot be after the due date.`
+      );
+    }
+    if (date && moment(date).isBefore(moment().startOf("day"))) {
+      toast.warning(`Follow-up date ${index + 1} cannot be before today.`);
+    }
+    setOrderData({ ...orderData, followupDates: updatedDates });
+  };
+
+  const addFollowupDate = () => {
+    setOrderData({
+      ...orderData,
+      followupDates: [...orderData.followupDates, ""],
+    });
+  };
+
+  const removeFollowupDate = (index) => {
+    setOrderData({
+      ...orderData,
+      followupDates: orderData.followupDates.filter((_, i) => i !== index),
+    });
+  };
+
+  // Table columns for purchase order items
+  const purchaseOrderColumns = [
+    {
+      title: "Product",
+      dataIndex: "name",
+      key: "name",
+    },
+    {
+      title: "Quantity",
+      key: "quantity",
+      render: (_, record, index) => (
+        <InputNumber
+          min={1}
+          value={record.quantity}
+          onChange={(value) =>
+            updatePurchaseOrderProductField(index, "quantity", value || 1)
+          }
+          aria-label={`Quantity for ${record.name}`}
+        />
+      ),
+    },
+    {
+      title: "MRP (₹)",
+      key: "mrp",
+      render: (_, record, index) => (
+        <InputNumber
+          min={0.01}
+          step={0.01}
+          value={record.mrp}
+          onChange={(value) =>
+            updatePurchaseOrderProductField(index, "mrp", value || 0.01)
+          }
+          aria-label={`MRP for ${record.name}`}
+        />
+      ),
+    },
+    {
+      title: "Total (₹)",
+      dataIndex: "total",
+      key: "total",
+      render: (total) => Number(total || 0).toFixed(2),
+    },
+    {
+      title: "Action",
+      key: "action",
+      render: (_, __, index) => (
+        <Button
+          type="text"
+          danger
+          icon={<DeleteOutlined />}
+          onClick={() => removePurchaseOrderProduct(index)}
+          aria-label={`Remove ${purchaseOrderData.items[index].name}`}
+        />
+      ),
+    },
+  ];
+
+  if (
+    profileLoading ||
+    cartLoading ||
+    productsLoading ||
+    isAllOrdersLoading ||
+    teamsLoading ||
+    isProductsLoading ||
+    isVendorsLoading
+  ) {
     return (
       <PageWrapper>
         <Spin size="large" style={{ display: "block", margin: "50px auto" }} />
@@ -583,7 +1256,7 @@ const NewCart = ({ onConvertToOrder }) => {
     );
   }
 
-  if (profileError || cartError || productErrors.length > 0) {
+  if (profileError || cartError || productErrors.length > 0 || allOrdersError) {
     return (
       <PageWrapper>
         <Alert
@@ -592,6 +1265,7 @@ const NewCart = ({ onConvertToOrder }) => {
             profileError?.message ||
             cartError?.message ||
             productErrors.map((err) => err.error).join(", ") ||
+            allOrdersError?.data?.message ||
             "An unexpected error occurred"
           }
           type="error"
@@ -614,7 +1288,7 @@ const NewCart = ({ onConvertToOrder }) => {
             activeKey={activeTab}
             onChange={setActiveTab}
             type="card"
-            style={{ marginBottom: 16 }} /* Reduced margin for mobile */
+            style={{ marginBottom: 16 }}
             role="tablist"
           >
             <TabPane
@@ -629,8 +1303,6 @@ const NewCart = ({ onConvertToOrder }) => {
               key="cart"
             >
               <Row gutter={[16, 16]}>
-                {" "}
-                {/* Reduced gutter for mobile */}
                 <Col xs={24} sm={24} md={16} lg={16}>
                   <CartItemsCard>
                     <CartHeader>
@@ -639,13 +1311,13 @@ const NewCart = ({ onConvertToOrder }) => {
                         style={{
                           justifyContent: "space-between",
                           width: "100%",
-                          flexWrap: "wrap" /* Allow wrapping for mobile */,
+                          flexWrap: "wrap",
                         }}
                       >
                         <Title
                           level={3}
                           style={{
-                            fontSize: "18px" /* Smaller font for mobile */,
+                            fontSize: "18px",
                             marginBottom: 0,
                           }}
                         >
@@ -684,7 +1356,7 @@ const NewCart = ({ onConvertToOrder }) => {
                     ) : (
                       <div>
                         {cartItems.map((item) => {
-                          const product = productsData?.find(
+                          const product = cartProductsData?.find(
                             (p) => p.productId === item.productId
                           );
                           let imageUrl = null;
@@ -807,10 +1479,7 @@ const NewCart = ({ onConvertToOrder }) => {
                 </Col>
                 <Col xs={24} sm={24} md={8} lg={8}>
                   <CartSummaryCard>
-                    <Title
-                      level={4}
-                      style={{ fontSize: "16px" /* Smaller font for mobile */ }}
-                    >
+                    <Title level={4} style={{ fontSize: "16px" }}>
                       Order Summary
                     </Title>
                     <Divider />
@@ -866,14 +1535,14 @@ const NewCart = ({ onConvertToOrder }) => {
               <Row gutter={[16, 16]} justify="center">
                 <Col xs={24} sm={24} md={16} lg={16}>
                   <CartSummaryCard>
-                    <Title
-                      level={3}
-                      style={{ fontSize: "18px" /* Smaller font for mobile */ }}
-                    >
+                    <Title level={3} style={{ fontSize: "18px" }}>
                       Checkout
                     </Title>
                     <Divider />
-                    {cartItems.length === 0 ? (
+                    {(cartItems.length === 0 &&
+                      documentType !== "Purchase Order") ||
+                    (documentType === "Purchase Order" &&
+                      purchaseOrderData.items.length === 0) ? (
                       <EmptyCartWrapper>
                         <Empty
                           description="Your cart is empty"
@@ -891,231 +1560,612 @@ const NewCart = ({ onConvertToOrder }) => {
                       </EmptyCartWrapper>
                     ) : (
                       <>
-                        <Text strong>Select Customer</Text>
-                        <CustomerSelect
-                          value={selectedCustomer}
-                          onChange={(value) => {
-                            setSelectedCustomer(value);
-                            setQuotationData((prev) => ({
-                              ...prev,
-                              shipTo: null,
-                            }));
-                          }}
-                          placeholder="Select a customer"
-                          loading={customersLoading}
-                          disabled={customersLoading || customersError}
-                          aria-label="Select customer"
-                        >
-                          {customersLoading ? (
-                            <Option disabled>Select a customer</Option>
-                          ) : customersError ? (
-                            <Option disabled>Error fetching customers</Option>
-                          ) : customerList.length === 0 ? (
-                            <Option disabled>No customers available</Option>
-                          ) : (
-                            customerList.map((customer) => (
-                              <Option
-                                key={customer.customerId}
-                                value={customer.customerId}
-                              >
-                                {customer.name} ({customer.email})
-                              </Option>
-                            ))
-                          )}
-                        </CustomerSelect>
-                        <Button
-                          type="link"
-                          icon={<UserAddOutlined />}
-                          onClick={handleAddCustomer}
-                        >
-                          Add New Customer
-                        </Button>
-                        <Divider />
-                        <Text strong>Shipping Address</Text>
-
+                        <Text strong>Document Type</Text>
                         <Select
-                          value={quotationData.shipTo}
-                          onChange={(value) =>
-                            handleQuotationChange("shipTo", value)
-                          }
-                          placeholder="Select shipping address"
-                          loading={
-                            addressesLoading ||
-                            userQueries.some((q) => q.isLoading) ||
-                            customerQueries.some((q) => q.isLoading)
-                          }
-                          disabled={
-                            addressesLoading ||
-                            addressesError ||
-                            !selectedCustomer ||
-                            userQueries.some((q) => q.isLoading) ||
-                            customerQueries.some((q) => q.isLoading)
-                          }
-                          style={{ width: "100%", marginTop: 8 }}
-                          aria-label="Select shipping address"
-                        >
-                          {addressesLoading ? (
-                            <Option disabled>Select Shipping Address</Option>
-                          ) : addressesError ? (
-                            <Option disabled>
-                              Error fetching addresses:{" "}
-                              {addressesError?.data?.message || "Unknown error"}
-                            </Option>
-                          ) : addresses.length === 0 ? (
-                            <Option disabled>No addresses available</Option>
-                          ) : (
-                            addresses.map((address) => (
-                              <Option
-                                key={address.addressId}
-                                value={address.addressId}
-                              >
-                                {`${address.street}, ${address.city}${
-                                  address.state ? `, ${address.state}` : ""
-                                }, ${address.country} (${
-                                  address.customerId
-                                    ? customerMap[address.customerId] ||
-                                      "Unknown Customer"
-                                    : address.userId
-                                    ? userMap[address.userId] || "Unknown User"
-                                    : "No associated name"
-                                })`}
-                              </Option>
-                            ))
-                          )}
-                        </Select>
-                        <Button
-                          type="link"
-                          icon={<UserAddOutlined />}
-                          onClick={handleAddAddress}
-                          style={{ padding: 0, marginTop: 8 }}
-                          aria-label="Add new address"
-                          disabled={!selectedCustomer}
-                        >
-                          Add New Address
-                        </Button>
-
-                        <Divider />
-                        <Text strong>Quotation Date</Text>
-                        <input
-                          type="date"
-                          className="form-control"
-                          value={quotationData.quotationDate}
-                          onChange={(e) =>
-                            handleQuotationChange(
-                              "quotationDate",
-                              e.target.value
-                            )
-                          }
-                          style={{ marginTop: 8, width: "100%" }}
-                        />
-                        <Text strong>Due Date</Text>
-                        <input
-                          type="date"
-                          className="form-control"
-                          value={quotationData.dueDate}
-                          onChange={(e) =>
-                            handleQuotationChange("dueDate", e.target.value)
-                          }
-                          style={{ marginTop: 8, width: "100%" }}
-                        />
-                        {error && (
-                          <Alert
-                            message={error}
-                            type="error"
-                            showIcon
-                            style={{ marginTop: 8 }}
-                          />
-                        )}
-                        <Divider />
-                        <Text strong>Include GST</Text>
-                        <div>
-                          <input
-                            type="checkbox"
-                            checked={quotationData.includeGst}
-                            onChange={(e) =>
-                              handleQuotationChange(
-                                "includeGst",
-                                e.target.checked
-                              )
+                          value={documentType}
+                          onChange={(value) => {
+                            setDocumentType(value);
+                            if (value === "Purchase Order") {
+                              setSelectedCustomer("");
+                              setPurchaseOrderData((prev) => ({
+                                ...prev,
+                                items: cartItems.map((item) => ({
+                                  id: item.productId,
+                                  productId: item.productId,
+                                  name: item.name || "Unknown",
+                                  quantity: item.quantity || 1,
+                                  mrp: item.price || 0.01,
+                                  total:
+                                    (item.quantity || 1) * (item.price || 0.01),
+                                })),
+                                totalAmount: cartItems
+                                  .reduce(
+                                    (sum, item) =>
+                                      sum +
+                                      (item.quantity || 1) * (item.price || 0),
+                                    0
+                                  )
+                                  .toFixed(2),
+                              }));
+                            } else {
+                              setSelectedVendor("");
                             }
-                            className="form-check-input"
-                          />
-                        </div>
-                        {quotationData.includeGst && (
+                          }}
+                          style={{ width: "100%", marginTop: 8 }}
+                          aria-label="Select document type"
+                        >
+                          <Option value="Quotation">Quotation</Option>
+                          <Option value="Order">Order</Option>
+                          <Option value="Purchase Order">Purchase Order</Option>
+                        </Select>
+                        <Divider />
+                        {documentType === "Purchase Order" ? (
                           <>
-                            <Text strong>GST Value (%)</Text>
+                            <Text strong>Vendor</Text>
+                            <div
+                              style={{ display: "flex", alignItems: "center" }}
+                            >
+                              <Select
+                                style={{ width: "100%", marginTop: 8 }}
+                                value={selectedVendor}
+                                onChange={setSelectedVendor}
+                                placeholder="Select a vendor"
+                                disabled={isVendorsLoading}
+                                aria-label="Select a vendor"
+                                showSearch
+                                filterOption={(input, option) =>
+                                  option.children
+                                    .toLowerCase()
+                                    .includes(input.toLowerCase())
+                                }
+                              >
+                                {vendors.length === 0 ? (
+                                  <Option value="" disabled>
+                                    No vendors available
+                                  </Option>
+                                ) : (
+                                  vendors.map((vendor) => (
+                                    <Option key={vendor.id} value={vendor.id}>
+                                      {vendor.vendorName}
+                                    </Option>
+                                  ))
+                                )}
+                              </Select>
+                              <Button
+                                type="primary"
+                                style={{ marginLeft: 8, marginTop: 8 }}
+                                onClick={() => setShowAddVendorModal(true)}
+                                aria-label="Add new vendor"
+                              >
+                                +
+                              </Button>
+                            </div>
+                            <Divider />
+                            <Text strong>Search Products</Text>
+                            <Select
+                              showSearch
+                              style={{ width: "100%", marginTop: 8 }}
+                              placeholder="Search by product name or code"
+                              onSearch={debouncedSearch}
+                              onChange={addPurchaseOrderProduct}
+                              filterOption={false}
+                              loading={isProductsLoading}
+                              aria-label="Search products"
+                              notFoundContent={
+                                isProductsLoading ? (
+                                  <Spin size="small" />
+                                ) : (
+                                  "No products found"
+                                )
+                              }
+                            >
+                              {filteredProducts.map((product, index) => (
+                                <Option
+                                  key={product.productId ?? `fallback-${index}`}
+                                  value={product.productId}
+                                >
+                                  {product.name} (
+                                  {product.product_code ?? "N/A"})
+                                </Option>
+                              ))}
+                            </Select>
+                            <Divider />
+                            <Table
+                              columns={purchaseOrderColumns}
+                              dataSource={purchaseOrderData.items}
+                              rowKey={(record, index) =>
+                                record.id ?? `item-${index}`
+                              }
+                              locale={{ emptyText: "No products added" }}
+                              pagination={false}
+                            />
+                            <Divider />
+                            <Text strong>Order Date</Text>
+                            <DatePicker
+                              style={{ width: "100%", marginTop: 8 }}
+                              value={
+                                purchaseOrderData.orderDate
+                                  ? moment(purchaseOrderData.orderDate)
+                                  : null
+                              }
+                              onChange={(date) =>
+                                handlePurchaseOrderChange(
+                                  "orderDate",
+                                  date ? date.format("YYYY-MM-DD") : null
+                                )
+                              }
+                              format="YYYY-MM-DD"
+                            />
+                            <Divider />
+                            <Text strong>Expected Delivery Date</Text>
+                            <DatePicker
+                              style={{ width: "100%", marginTop: 8 }}
+                              value={
+                                purchaseOrderData.expectedDeliveryDate
+                                  ? moment(
+                                      purchaseOrderData.expectedDeliveryDate
+                                    )
+                                  : null
+                              }
+                              onChange={(date) =>
+                                handlePurchaseOrderChange(
+                                  "expectedDeliveryDate",
+                                  date ? date.format("YYYY-MM-DD") : null
+                                )
+                              }
+                              format="YYYY-MM-DD"
+                            />
+                            <Divider />
+                            <Text strong>Status</Text>
+                            <Select
+                              value={purchaseOrderData.status}
+                              onChange={(value) =>
+                                handlePurchaseOrderChange("status", value)
+                              }
+                              style={{ width: "100%", marginTop: 8 }}
+                              placeholder="Select status"
+                            >
+                              {PURCHASE_ORDER_STATUSES.map((status) => (
+                                <Option key={status} value={status}>
+                                  {status.charAt(0).toUpperCase() +
+                                    status.slice(1)}
+                                </Option>
+                              ))}
+                            </Select>
+                          </>
+                        ) : (
+                          <>
+                            <Text strong>Select Customer</Text>
+                            <CustomerSelect
+                              value={selectedCustomer}
+                              onChange={(value) => {
+                                setSelectedCustomer(value);
+                                setQuotationData((prev) => ({
+                                  ...prev,
+                                  shipTo: null,
+                                }));
+                              }}
+                              placeholder="Select a customer"
+                              loading={customersLoading}
+                              disabled={customersLoading || customersError}
+                              aria-label="Select customer"
+                            >
+                              {customersLoading ? (
+                                <Option disabled>Select a customer</Option>
+                              ) : customersError ? (
+                                <Option disabled>
+                                  Error fetching customers
+                                </Option>
+                              ) : customerList.length === 0 ? (
+                                <Option disabled>No customers available</Option>
+                              ) : (
+                                customerList.map((customer) => (
+                                  <Option
+                                    key={customer.customerId}
+                                    value={customer.customerId}
+                                  >
+                                    {customer.name} ({customer.email})
+                                  </Option>
+                                ))
+                              )}
+                            </CustomerSelect>
+                            <Button
+                              type="link"
+                              icon={<UserAddOutlined />}
+                              onClick={handleAddCustomer}
+                            >
+                              Add New Customer
+                            </Button>
+                            <Divider />
+                            <Text strong>Shipping Address</Text>
+                            <Select
+                              value={quotationData.shipTo}
+                              onChange={(value) =>
+                                handleQuotationChange("shipTo", value)
+                              }
+                              placeholder="Select shipping address"
+                              loading={
+                                addressesLoading ||
+                                userQueries.some((q) => q.isLoading) ||
+                                customerQueries.some((q) => q.isLoading)
+                              }
+                              disabled={
+                                addressesLoading ||
+                                addressesError ||
+                                !selectedCustomer ||
+                                userQueries.some((q) => q.isLoading) ||
+                                customerQueries.some((q) => q.isLoading)
+                              }
+                              style={{ width: "100%", marginTop: 8 }}
+                              aria-label="Select shipping address"
+                            >
+                              {addressesLoading ? (
+                                <Option disabled>
+                                  Select Shipping Address
+                                </Option>
+                              ) : addressesError ? (
+                                <Option disabled>
+                                  Error fetching addresses:{" "}
+                                  {addressesError?.data?.message ||
+                                    "Unknown error"}
+                                </Option>
+                              ) : addresses.length === 0 ? (
+                                <Option disabled>No addresses available</Option>
+                              ) : (
+                                addresses.map((address) => (
+                                  <Option
+                                    key={address.addressId}
+                                    value={address.addressId}
+                                  >
+                                    {`${address.street}, ${address.city}${
+                                      address.state ? `, ${address.state}` : ""
+                                    }, ${address.country} (${
+                                      address.customerId
+                                        ? customerMap[address.customerId] ||
+                                          "Unknown Customer"
+                                        : address.userId
+                                        ? userMap[address.userId] ||
+                                          "Unknown User"
+                                        : "No associated name"
+                                    })`}
+                                  </Option>
+                                ))
+                              )}
+                            </Select>
+                            <Button
+                              type="link"
+                              icon={<UserAddOutlined />}
+                              onClick={handleAddAddress}
+                              style={{ padding: 0, marginTop: 8 }}
+                              aria-label="Add new address"
+                              disabled={!selectedCustomer}
+                            >
+                              Add New Address
+                            </Button>
+                            <Divider />
+                            <Text strong>Quotation/Order Date</Text>
                             <input
-                              type="number"
+                              type="date"
                               className="form-control"
-                              value={quotationData.gstValue}
+                              value={quotationData.quotationDate}
                               onChange={(e) =>
                                 handleQuotationChange(
-                                  "gstValue",
+                                  "quotationDate",
                                   e.target.value
                                 )
                               }
-                              min="0"
                               style={{ marginTop: 8, width: "100%" }}
                             />
+                            <Text strong>Due Date</Text>
+                            <input
+                              type="date"
+                              className="form-control"
+                              value={quotationData.dueDate}
+                              onChange={(e) =>
+                                handleQuotationChange("dueDate", e.target.value)
+                              }
+                              style={{ marginTop: 8, width: "100%" }}
+                            />
+                            {error && (
+                              <Alert
+                                message={error}
+                                type="error"
+                                showIcon
+                                style={{ marginTop: 8 }}
+                              />
+                            )}
+                            <Divider />
+                            <Text strong>Include GST</Text>
+                            <div>
+                              <input
+                                type="checkbox"
+                                checked={quotationData.includeGst}
+                                onChange={(e) =>
+                                  handleQuotationChange(
+                                    "includeGst",
+                                    e.target.checked
+                                  )
+                                }
+                                className="form-check-input"
+                              />
+                            </div>
+                            {quotationData.includeGst && (
+                              <>
+                                <Text strong>GST Value (%)</Text>
+                                <input
+                                  type="number"
+                                  className="form-control"
+                                  value={quotationData.gstValue}
+                                  onChange={(e) =>
+                                    handleQuotationChange(
+                                      "gstValue",
+                                      e.target.value
+                                    )
+                                  }
+                                  min="0"
+                                  style={{ marginTop: 8, width: "100%" }}
+                                />
+                              </>
+                            )}
+                            <Divider />
+                            <Text strong>Discount Type</Text>
+                            <Select
+                              value={quotationData.discountType}
+                              onChange={(value) =>
+                                handleQuotationChange("discountType", value)
+                              }
+                              style={{ width: "100%", marginTop: 8 }}
+                            >
+                              <Option value="percent">Percent</Option>
+                              <Option value="fixed">Fixed</Option>
+                            </Select>
+                            <Divider />
+                            <Text strong>Round Off</Text>
+                            <input
+                              type="number"
+                              className="form-control"
+                              value={quotationData.roundOff}
+                              onChange={(e) =>
+                                handleQuotationChange(
+                                  "roundOff",
+                                  e.target.value
+                                )
+                              }
+                              style={{ marginTop: 8, width: "100%" }}
+                            />
+                            {documentType === "Order" && (
+                              <>
+                                <Divider />
+                                <Text strong>Order Number</Text>
+                                <Input
+                                  value={orderData.orderNo}
+                                  onChange={(e) =>
+                                    handleOrderChange("orderNo", e.target.value)
+                                  }
+                                  placeholder="Enter order number (e.g., 2708202500001)"
+                                  style={{ marginTop: 8 }}
+                                  disabled
+                                />
+                                <Divider />
+                                <Text strong>Status</Text>
+                                <Select
+                                  value={orderData.status}
+                                  onChange={(value) =>
+                                    handleOrderChange("status", value)
+                                  }
+                                  style={{ width: "100%", marginTop: 8 }}
+                                >
+                                  {STATUS_VALUES.map((status) => (
+                                    <Option key={status} value={status}>
+                                      {status.charAt(0).toUpperCase() +
+                                        status
+                                          .slice(1)
+                                          .toLowerCase()
+                                          .replace("_", " ")}
+                                    </Option>
+                                  ))}
+                                </Select>
+                                <Divider />
+                                <Text strong>Priority</Text>
+                                <Select
+                                  value={orderData.priority}
+                                  onChange={(value) =>
+                                    handleOrderChange("priority", value)
+                                  }
+                                  style={{ width: "100%", marginTop: 8 }}
+                                  placeholder="Select priority"
+                                >
+                                  <Option value="high">High</Option>
+                                  <Option value="medium">Medium</Option>
+                                  <Option value="low">Low</Option>
+                                </Select>
+                                <Divider />
+                                <Text strong>Assigned To</Text>
+                                <Select
+                                  value={orderData.teamId}
+                                  onChange={(value) =>
+                                    handleOrderChange("teamId", value)
+                                  }
+                                  style={{ width: "100%", marginTop: 8 }}
+                                  placeholder="Select team"
+                                  disabled={teamsLoading}
+                                >
+                                  {teams.length > 0 ? (
+                                    teams.map((team) => (
+                                      <Option key={team.id} value={team.id}>
+                                        {team.teamName}
+                                      </Option>
+                                    ))
+                                  ) : (
+                                    <Option value="" disabled>
+                                      No teams available
+                                    </Option>
+                                  )}
+                                </Select>
+                                <Divider />
+                                <Text strong>Follow-up Dates</Text>
+                                {orderData.followupDates.map((date, index) => (
+                                  <div
+                                    key={index}
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      marginTop: 8,
+                                    }}
+                                  >
+                                    <DatePicker
+                                      style={{ width: "100%" }}
+                                      value={date ? moment(date) : null}
+                                      onChange={(date) =>
+                                        handleFollowupDateChange(index, date)
+                                      }
+                                      format="YYYY-MM-DD"
+                                      disabledDate={(current) =>
+                                        current &&
+                                        (current < moment().startOf("day") ||
+                                          (orderData.dueDate &&
+                                            current >
+                                              moment(orderData.dueDate).endOf(
+                                                "day"
+                                              )))
+                                      }
+                                    />
+                                    <Button
+                                      type="text"
+                                      danger
+                                      icon={<DeleteOutlined />}
+                                      onClick={() => removeFollowupDate(index)}
+                                      aria-label="Remove follow-up date"
+                                      style={{ marginLeft: 8 }}
+                                    />
+                                  </div>
+                                ))}
+                                <Button
+                                  type="primary"
+                                  onClick={addFollowupDate}
+                                  style={{ marginTop: 8 }}
+                                  aria-label="Add follow-up date"
+                                >
+                                  <PlusOutlined /> Add Follow-up Date
+                                </Button>
+                                <Divider />
+                                <Text strong>Reference</Text>
+                                <Select
+                                  showSearch
+                                  allowClear
+                                  placeholder="Search by customer name or type"
+                                  value={orderData.source}
+                                  onChange={(value) =>
+                                    handleOrderChange("source", value)
+                                  }
+                                  filterOption={(input, option) => {
+                                    const name =
+                                      option?.customerName?.toLowerCase() || "";
+                                    const type =
+                                      option?.customerType?.toLowerCase() || "";
+                                    return (
+                                      name.includes(input.toLowerCase()) ||
+                                      type.includes(input.toLowerCase())
+                                    );
+                                  }}
+                                  style={{ width: "100%", marginTop: 8 }}
+                                  options={
+                                    customerData?.data?.map((cust) => ({
+                                      label: `${cust.name} (${
+                                        cust.customerType || "N/A"
+                                      })`,
+                                      value: cust.name,
+                                      customerName: cust.name,
+                                      customerType: cust.customerType || "",
+                                    })) || []
+                                  }
+                                />
+
+                                <Divider />
+                                <Text strong>Description</Text>
+                                <Input.TextArea
+                                  value={orderData.description}
+                                  onChange={(e) =>
+                                    handleOrderChange(
+                                      "description",
+                                      e.target.value
+                                    )
+                                  }
+                                  rows={4}
+                                  placeholder="Enter description"
+                                  style={{ marginTop: 8 }}
+                                  maxLength={60}
+                                />
+                                <Text
+                                  style={{
+                                    color:
+                                      orderData.description.length > 60
+                                        ? "red"
+                                        : "inherit",
+                                  }}
+                                >
+                                  {orderData.description.length}/60 Characters
+                                  (Recommended)
+                                </Text>
+                              </>
+                            )}
                           </>
                         )}
-                        <Divider />
-                        <Text strong>Discount Type</Text>
-                        <Select
-                          value={quotationData.discountType}
-                          onChange={(value) =>
-                            handleQuotationChange("discountType", value)
-                          }
-                          style={{ width: "100%", marginTop: 8 }}
-                        >
-                          <Option value="percent">Percent</Option>
-                          <Option value="fixed">Fixed</Option>
-                        </Select>
-                        <Divider />
-                        <Text strong>Round Off</Text>
-                        <input
-                          type="number"
-                          className="form-control"
-                          value={quotationData.roundOff}
-                          onChange={(e) =>
-                            handleQuotationChange("roundOff", e.target.value)
-                          }
-                          style={{ marginTop: 8, width: "100%" }}
-                        />
-                        <Divider />
                       </>
                     )}
                   </CartSummaryCard>
                 </Col>
                 <Col xs={24} sm={24} md={8} lg={8}>
                   <CartSummaryCard>
-                    <Text strong>Quotation #: {quotationNumber}</Text>
+                    <Text strong>
+                      {documentType} #:{" "}
+                      {documentType === "Quotation"
+                        ? quotationNumber
+                        : documentType === "Order"
+                        ? orderData.orderNo
+                        : purchaseOrderNumber}
+                    </Text>
                     <Divider />
-                    <OrderTotal
-                      shipping={shipping}
-                      tax={tax}
-                      coupon={0}
-                      discount={totalDiscount}
-                      roundOff={roundOff}
-                      subTotal={subTotal}
-                    />
+                    {documentType === "Purchase Order" ? (
+                      <>
+                        <Text strong>Total Amount (₹)</Text>
+                        <p>{purchaseOrderTotal}</p>
+                      </>
+                    ) : (
+                      <OrderTotal
+                        shipping={shipping}
+                        tax={tax}
+                        coupon={0}
+                        discount={totalDiscount}
+                        roundOff={roundOff}
+                        subTotal={subTotal}
+                      />
+                    )}
                     <Divider />
                     <CheckoutButton
                       type="primary"
                       icon={<CheckCircleOutlined />}
-                      onClick={handleCreateQuotation}
+                      onClick={handleCreateDocument}
                       disabled={
-                        cartItems.length === 0 ||
-                        !selectedCustomer ||
-                        error ||
-                        !quotationData.quotationDate ||
-                        !quotationData.dueDate
+                        (documentType !== "Purchase Order" &&
+                          (cartItems.length === 0 ||
+                            !selectedCustomer ||
+                            error ||
+                            !quotationData.quotationDate ||
+                            !quotationData.dueDate ||
+                            (documentType === "Order" &&
+                              (!orderData.orderNo ||
+                                !orderData.teamId ||
+                                !validateFollowupDates())))) ||
+                        (documentType === "Purchase Order" &&
+                          (purchaseOrderData.items.length === 0 ||
+                            !selectedVendor))
                       }
                       block
                       size="large"
-                      aria-label="Create quotation"
+                      aria-label={`Create ${documentType.toLowerCase()}`}
                     >
-                      Create Quotation
+                      Create {documentType}
                     </CheckoutButton>
                     <Button
                       type="default"
@@ -1140,9 +2190,7 @@ const NewCart = ({ onConvertToOrder }) => {
             okText="Clear"
             okButtonProps={{ danger: true }}
             cancelText="Cancel"
-            width={
-              window.innerWidth < 576 ? "90%" : 520
-            } /* Responsive modal width */
+            width={window.innerWidth < 576 ? "90%" : 520}
           >
             <Text>
               Are you sure you want to clear all items from your cart?
@@ -1156,6 +2204,13 @@ const NewCart = ({ onConvertToOrder }) => {
               selectedCustomer={selectedCustomer}
             />
           )}
+
+          <AddVendorModal
+            show={showAddVendorModal}
+            onClose={() => setShowAddVendorModal(false)}
+            onSave={createVendor}
+            isCreatingVendor={isCreatingVendor}
+          />
         </CartContainer>
       </PageWrapper>
     </div>

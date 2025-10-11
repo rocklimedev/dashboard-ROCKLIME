@@ -40,7 +40,8 @@ const Signup = () => {
 
     try {
       await register(formData).unwrap();
-      setTimeout(() => navigate("/login"), 2000);
+      toast.success("Registration successful! Redirecting to login...");
+      navigate("/login");
     } catch (err) {
       toast.error(err?.data?.message || "Something went wrong. Try again.");
     }
@@ -82,7 +83,7 @@ const Signup = () => {
                     Username <span className="text-danger">*</span>
                   </label>
                   <input
-                    type="text" // Changed from type="username" to type="text"
+                    type="text"
                     className="form-control"
                     name="username"
                     value={formData.username}
@@ -154,7 +155,18 @@ const Signup = () => {
                   className="btn btn-primary w-100"
                   disabled={isLoading}
                 >
-                  {isLoading ? "Registering..." : "Sign Up"}
+                  {isLoading ? (
+                    <>
+                      <span
+                        className="spinner-border spinner-border-sm me-2"
+                        role="status"
+                        aria-hidden="true"
+                      ></span>
+                      Registering...
+                    </>
+                  ) : (
+                    "Sign Up"
+                  )}
                 </button>
               </div>
               {error && (

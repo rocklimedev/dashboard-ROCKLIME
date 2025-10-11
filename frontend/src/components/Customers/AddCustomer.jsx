@@ -42,9 +42,10 @@ const AddCustomer = () => {
   const [formData, setFormData] = useState({
     name: "",
     companyName: "",
+    customerType: "", // Added
     email: "",
     mobileNumber: "",
-    phone2: "", // Added phone2
+    phone2: "",
     address: { street: "", city: "", state: "", zip: "" },
     isVendor: "false",
     totalAmount: "0.00",
@@ -103,6 +104,7 @@ const AddCustomer = () => {
 
       setFormData({
         ...existingCustomer,
+        customerType: existingCustomer.customerType || "", // Added
         phone2: existingCustomer.phone2 || "", // Added
         isVendor: existingCustomer.isVendor.toString(),
         address: existingCustomer.address || {
@@ -210,6 +212,7 @@ const AddCustomer = () => {
 
       const payload = {
         ...formData,
+        customerType: formData.customerType || null, // Added
         phone2: formData.phone2 || null, // Ensure phone2 is included
         isVendor: formData.isVendor === "true",
         totalAmount: existingCustomer
@@ -309,6 +312,23 @@ const AddCustomer = () => {
                         required
                       />
                     </div>
+                    <div className="col-lg-6 mb-3">
+                      <label className="form-label">Customer Type</label>
+                      <select
+                        name="customerType"
+                        className="form-select"
+                        value={formData.customerType}
+                        onChange={handleChange}
+                      >
+                        <option value="">Select Type</option>
+                        <option value="Retail">Retail</option>
+                        <option value="Architect">Architect</option>
+                        <option value="Interior">Interior</option>
+                        <option value="Builder">Builder</option>
+                        <option value="Contractor">Contractor</option>
+                      </select>
+                    </div>
+
                     <div className="col-lg-6 mb-3">
                       <label className="form-label">Company Name</label>
                       <input

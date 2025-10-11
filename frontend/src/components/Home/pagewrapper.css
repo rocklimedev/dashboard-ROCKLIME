@@ -312,3 +312,36 @@
   flex-shrink: 0; /* Prevents the quantity from shrinking */
   text-align: right;
 }
+
+
+.orders-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 0;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.orders-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #eee;
+  font-size: clamp(0.75rem, 2.5vw, 0.875rem);
+}
+
+.status-dropdown {
+  border: 1px solid #ccc;
+  border-radius: 0.375rem;
+  padding: 0.4rem 0.5rem;
+  background-color: #fff;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: border-color 0.3s ease;
+}
+
+.status-dropdown:focus {
+  border-color: #27ae60;
+  outline: none;
+}

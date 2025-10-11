@@ -33,9 +33,8 @@ exports.getInvoicesByCustomerId = async (req, res) => {
 // Create a new customer
 exports.createCustomer = async (req, res) => {
   try {
-    const requiredFields = ["name", "email"]; // phone2 is optional
+    const requiredFields = ["name", "email"]; // phone2 and customerType are optional
 
-    // Check for missing required fields
     for (const field of requiredFields) {
       if (!req.body[field]) {
         return res.status(400).json({
@@ -45,10 +44,30 @@ exports.createCustomer = async (req, res) => {
       }
     }
 
-    // Create customer with all fields provided in the request body, including phone2
+    // Validate customerType if provided
+    const allowedTypes = [
+      "Retail",
+      "Architect",
+      "Interior",
+      "Builder",
+      "Contractor",
+    ];
+    if (
+      req.body.customerType &&
+      !allowedTypes.includes(req.body.customerType)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid customerType. Must be one of: ${allowedTypes.join(
+          ", "
+        )}`,
+      });
+    }
+
     const newCustomer = await Customer.create({
       ...req.body,
-      phone2: req.body.phone2 || null, // Ensure phone2 is set or null
+      phone2: req.body.phone2 || null,
+      customerType: req.body.customerType || null,
     });
 
     res.status(201).json({
@@ -101,9 +120,33 @@ exports.updateCustomer = async (req, res) => {
         .json({ success: false, message: "Customer not found" });
     }
 
+    // Validate customerType if provided
+    const allowedTypes = [
+      "Retail",
+      "Architect",
+      "Interior",
+      "Builder",
+      "Contractor",
+    ];
+    if (
+      req.body.customerType &&
+      !allowedTypes.includes(req.body.customerType)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid customerType. Must be one of: ${allowedTypes.join(
+          ", "
+        )}`,
+      });
+    }
+
     await customer.update({
       ...req.body,
       phone2: req.body.phone2 !== undefined ? req.body.phone2 : customer.phone2,
+      customerType:
+        req.body.customerType !== undefined
+          ? req.body.customerType
+          : customer.customerType,
     });
 
     res.status(200).json({

@@ -358,19 +358,178 @@ const Profile = () => {
 
   // Table columns
   const quotationColumns = [
-    /* ... existing columns ... */
+    {
+      title: "Document Title",
+      dataIndex: "document_title",
+      key: "document_title",
+      render: (text) => text || "N/A",
+    },
+    {
+      title: "Quotation Date",
+      dataIndex: "quotation_date",
+      key: "quotation_date",
+      render: (text) => formatDate(text),
+    },
+    {
+      title: "Due Date",
+      dataIndex: "due_date",
+      key: "due_date",
+      render: (text) => formatDate(text),
+    },
+    {
+      title: "Reference Number",
+      dataIndex: "reference_number",
+      key: "reference_number",
+      render: (text) => text || "N/A",
+    },
+    {
+      title: "Final Amount",
+      dataIndex: "finalAmount",
+      key: "finalAmount",
+      render: (text) => `₹${parseFloat(text).toFixed(2)}` || "N/A",
+    },
+    {
+      title: "Signature Name",
+      dataIndex: "signature_name",
+      key: "signature_name",
+      render: (text) => text || "N/A",
+    },
+    {
+      title: "Created At",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      render: (text) => formatDate(text),
+    },
   ];
-  const invoiceColumns = [
-    /* ... existing columns ... */
-  ];
+
   const teamColumns = [
-    /* ... existing columns ... */
+    {
+      title: "Team Name",
+      dataIndex: "teamName",
+      key: "teamName",
+      render: (text) => text || "N/A",
+    },
+    {
+      title: "Admin Name",
+      dataIndex: "adminName",
+      key: "adminName",
+      render: (text) => text || "N/A",
+    },
+    {
+      title: "Members",
+      dataIndex: "teammembers",
+      key: "teammembers",
+      render: (members) =>
+        members?.map((member) => member.userName).join(", ") || "N/A",
+    },
+    {
+      title: "Created At",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      render: (text) => formatDate(text),
+    },
+    {
+      title: "Updated At",
+      dataIndex: "updatedAt",
+      key: "updatedAt",
+      render: (text) => formatDate(text),
+    },
   ];
+
   const orderColumns = [
-    /* ... existing columns ... */
+    {
+      title: "Order Number",
+      dataIndex: "orderNo",
+      key: "orderNo",
+      render: (text) => text || "N/A",
+    },
+    {
+      title: "Customer",
+      dataIndex: "customers",
+      key: "customers",
+      render: (customers) => customers?.name || "N/A",
+    },
+    {
+      title: "Source",
+      dataIndex: "source",
+      key: "source",
+      render: (text) => text || "N/A",
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      render: (text) => text || "N/A",
+    },
+    {
+      title: "Due Date",
+      dataIndex: "dueDate",
+      key: "dueDate",
+      render: (text) => formatDate(text),
+    },
+    {
+      title: "Priority",
+      dataIndex: "priority",
+      key: "priority",
+      render: (text) => text || "N/A",
+    },
+    {
+      title: "Created By",
+      dataIndex: "users",
+      key: "users",
+      render: (users) => users?.name || "N/A",
+    },
+    {
+      title: "Created At",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      render: (text) => formatDate(text),
+    },
   ];
+
   const purchaseOrderColumns = [
-    /* ... existing columns ... */
+    {
+      title: "PO Number",
+      dataIndex: "poNumber",
+      key: "poNumber",
+      render: (text) => text || "N/A",
+    },
+    {
+      title: "Vendor",
+      dataIndex: "Vendor",
+      key: "Vendor",
+      render: (vendor) => vendor?.vendorName || "N/A",
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      render: (text) => text || "N/A",
+    },
+    {
+      title: "Order Date",
+      dataIndex: "orderDate",
+      key: "orderDate",
+      render: (text) => formatDate(text),
+    },
+    {
+      title: "Expected Delivery",
+      dataIndex: "expectDeliveryDate",
+      key: "expectDeliveryDate",
+      render: (text) => formatDate(text),
+    },
+    {
+      title: "Total Amount",
+      dataIndex: "totalAmount",
+      key: "totalAmount",
+      render: (text) => `₹${parseFloat(text).toFixed(2)}` || "N/A",
+    },
+    {
+      title: "Created At",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      render: (text) => formatDate(text),
+    },
   ];
   const addressColumns = [
     {

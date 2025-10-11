@@ -584,3 +584,70 @@ exports.updateProductFeatured = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+
+// Get products by IDs
+exports.getProductsByIds = async (req, res) => {
+  try {
+    const { productIds } = req.body;
+
+    // Validate input
+    if (!Array.isArray(productIds) || productIds.length === 0) {
+      return sendErrorResponse(
+        res,
+        400,
+        "productIds must be a non-empty array"
+      );
+    }
+
+    // Validate each productId is a non-empty string
+    if (productIds.some((id) => !id || typeof id !== "string")) {
+      return sendErrorResponse(
+        res,
+        400,
+        "All productIds must be non-empty strings"
+      );
+    }
+
+    // Fetch products
+    const products = await Product.findAll({
+      where: {
+        productId: {
+          [Op.in]: productIds,
+        },
+      },
+      attributes: [
+        "productId",
+        "name",
+        "product_code",
+        "quantity",
+        "discountType",
+        "tax",
+        "description",
+        "images",
+        "isFeatured",
+        "brandId",
+        "categoryId",
+        "vendorId",
+        "brand_parentcategoriesId",
+        "meta",
+      ],
+    });
+
+    // Check if all requested productIds were found
+    const foundProductIds = products.map((p) => p.productId);
+    const missingIds = productIds.filter((id) => !foundProductIds.includes(id));
+    if (missingIds.length > 0) {
+      return sendErrorResponse(
+        res,
+        404,
+        `Products not found for IDs: ${missingIds.join(", ")}`
+      );
+    }
+
+    return res.status(200).json({
+      products: products.map((p) => p.toJSON()),
+    });
+  } catch (err) {
+    return sendErrorResponse(res, 500, "Failed to fetch products", err.message);
+  }
+};

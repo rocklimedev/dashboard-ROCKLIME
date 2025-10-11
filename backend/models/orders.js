@@ -18,6 +18,13 @@ const Order = sequelize.define(
       type: DataTypes.JSON,
       allowNull: true,
     },
+
+    // New products field
+    products: {
+      type: DataTypes.JSON,
+      allowNull: true,
+    },
+
     status: {
       type: DataTypes.ENUM(
         "CREATED",
@@ -89,13 +96,13 @@ const Order = sequelize.define(
     },
     quotationId: {
       type: DataTypes.UUID,
-      allowNull: true, // Allow null as specified
+      allowNull: true,
       references: {
         model: Quotation,
         key: "quotationId",
       },
-      onDelete: "SET NULL", // If the referenced quotation is deleted, set quotationId to null
-      onUpdate: "CASCADE", // If the quotationId is updated, cascade the update
+      onDelete: "SET NULL",
+      onUpdate: "CASCADE",
     },
   },
   {
