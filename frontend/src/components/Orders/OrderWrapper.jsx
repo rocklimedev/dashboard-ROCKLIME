@@ -7,6 +7,7 @@ import { useGetAllQuotationsQuery } from "../../api/quotationApi";
 import {
   useGetAllOrdersQuery,
   useDeleteOrderMutation,
+  useUpdateOrderStatusMutation,
 } from "../../api/orderApi";
 import { toast } from "sonner";
 import { FaSearch } from "react-icons/fa";
@@ -16,12 +17,14 @@ import {
   DeleteOutlined,
   MoreOutlined,
 } from "@ant-design/icons";
-import { Dropdown, Menu, Button } from "antd";
+import { Dropdown, Menu, Button, Select } from "antd";
 import DatesModal from "./DateModal";
 import OnHoldModal from "./OnHoldOrder";
 import DeleteModal from "../Common/DeleteModal";
 import OrderPagination from "./OrderPagination";
 import PageHeader from "../Common/PageHeader";
+
+const { Option } = Select;
 
 const OrderWrapper = () => {
   const navigate = useNavigate();
@@ -46,6 +49,8 @@ const OrderWrapper = () => {
     source: "",
     page: 1,
     limit: 10,
+    masterPipelineNo: null,
+    previousOrderNo: null,
   });
   const [dateRange, setDateRange] = useState({
     startDate: "",
@@ -62,15 +67,27 @@ const OrderWrapper = () => {
     error: allError,
     isLoading: allLoading,
     isFetching: allFetching,
-  } = useGetAllOrdersQuery({ page: filters.page, limit: filters.limit });
-
+  } = useGetAllOrdersQuery();
   const orders = allData?.orders || [];
-  const totalCount = allData?.totalCount || 0;
+  const totalCount = allData?.totalCount || orders.length;
   const isLoading = allLoading;
   const isFetching = allFetching;
   const error = allError;
 
-  // Map teams, customers, users, and quotations for quick lookup
+  const [deleteOrder] = useDeleteOrderMutation();
+  const [updateOrderStatus] = useUpdateOrderStatusMutation();
+
+  const handleStatusChange = async (orderId, newStatus) => {
+    try {
+      await updateOrderStatus({ orderId, status: newStatus }).unwrap();
+      toast.success("Order status updated successfully");
+    } catch (err) {
+      toast.error(
+        `Failed to update status: ${err.data?.message || "Unknown error"}`
+      );
+    }
+  };
+  // Map teams, customers, users, and quotations
   useEffect(() => {
     if (teamsData?.teams) {
       const map = teamsData.teams.reduce((acc, team) => {
@@ -111,44 +128,20 @@ const OrderWrapper = () => {
     }
   }, [quotationsData]);
 
-  const [deleteOrder] = useDeleteOrderMutation();
-
-  // Statuses from backend ENUM
-  const statuses = [
-    "CREATED",
-    "PREPARING",
-    "CHECKING",
-    "INVOICE",
-    "DISPATCHED",
-    "DELIVERED",
-    "PARTIALLY_DELIVERED",
-    "CANCELED",
-    "DRAFT",
-    "ONHOLD",
-  ];
-
-  // Define statuses that are "INVOICE or above"
-  const invoiceOrAboveStatuses = [
-    "INVOICE",
-    "DISPATCHED",
-    "DELIVERED",
-    "PARTIALLY_DELIVERED",
-  ];
-
-  // Priority options from schema
-  const priorityOptions = ["All", "high", "medium", "low"];
-
-  // Sort options including date sorting
-  const sortOptions = [
-    "Recently Added",
-    "Ascending",
-    "Descending",
-    "Due Date Ascending",
-    "Due Date Descending",
-  ];
-
   // Helper to get status display
   const getStatusDisplay = (status) => {
+    const statuses = [
+      "CREATED",
+      "PREPARING",
+      "CHECKING",
+      "INVOICE",
+      "DISPATCHED",
+      "DELIVERED",
+      "PARTIALLY_DELIVERED",
+      "CANCELED",
+      "DRAFT",
+      "ONHOLD",
+    ];
     return statuses.includes(status) ? status : "CREATED";
   };
 
@@ -157,30 +150,45 @@ const OrderWrapper = () => {
     return quotationId ? "QUOTATIONED" : "IDLE";
   };
 
+  // Helper to format Assigned To field
+  const getAssignedToDisplay = (order) => {
+    const assignments = [];
+    if (order.assignedTeamId && teamMap[order.assignedTeamId]) {
+      assignments.push(`${teamMap[order.assignedTeamId]} (Team)`);
+    }
+    if (order.assignedUserId && userMap[order.assignedUserId]) {
+      assignments.push(`${userMap[order.assignedUserId]} (User)`);
+    }
+    if (order.secondaryUserId && userMap[order.secondaryUserId]) {
+      assignments.push(`${userMap[order.secondaryUserId]} (User)`);
+    }
+    return assignments.length > 0 ? assignments.join(", ") : "—";
+  };
+
   // Filtered and sorted orders
   const filteredOrders = useMemo(() => {
     let result = orders;
-
-    // Apply status filter
     if (filters.status) {
       result = result.filter((ord) => ord.status === filters.status);
     }
-
-    // Apply priority filter
     if (filters.priority) {
-      result = result.filter(
-        (ord) => ord.priority?.toLowerCase() === filters.priority
-      );
+      result = result.filter((ord) => ord.priority === filters.priority);
     }
-
-    // Apply source filter
     if (filters.source) {
-      result = result.filter(
-        (ord) => ord.source?.toLowerCase() === filters.source.toLowerCase()
+      result = result.filter((ord) =>
+        ord.source?.toLowerCase().includes(filters.source.toLowerCase())
       );
     }
-
-    // Apply search filter
+    if (filters.masterPipelineNo) {
+      result = result.filter(
+        (ord) => ord.masterPipelineNo === filters.masterPipelineNo
+      );
+    }
+    if (filters.previousOrderNo) {
+      result = result.filter(
+        (ord) => ord.previousOrderNo === filters.previousOrderNo
+      );
+    }
     if (searchTerm.trim()) {
       result = result.filter((ord) => {
         const customerName = ord.createdFor
@@ -192,12 +200,17 @@ const OrderWrapper = () => {
         return (
           customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
           ord.source?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          reference_number.toLowerCase().includes(searchTerm.toLowerCase())
+          reference_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          ord.orderNo.toString().includes(searchTerm.toLowerCase()) ||
+          (ord.masterPipelineNo &&
+            ord.masterPipelineNo
+              .toString()
+              .includes(searchTerm.toLowerCase())) ||
+          (ord.previousOrderNo &&
+            ord.previousOrderNo.toString().includes(searchTerm.toLowerCase()))
         );
       });
     }
-
-    // Apply date range filter
     if (dateRange.startDate || dateRange.endDate) {
       result = result.filter((ord) => {
         const orderDate = new Date(ord.createdAt);
@@ -208,8 +221,6 @@ const OrderWrapper = () => {
         return (!start || orderDate >= start) && (!end || orderDate <= end);
       });
     }
-
-    // Apply sorting
     switch (sortBy) {
       case "Recently Added":
         result = [...result].sort(
@@ -233,16 +244,15 @@ const OrderWrapper = () => {
       default:
         break;
     }
-
     return result;
   }, [
     orders,
     searchTerm,
     sortBy,
-    filters,
     dateRange,
     customerMap,
     quotationMap,
+    filters,
   ]);
 
   // Paginated orders
@@ -256,14 +266,15 @@ const OrderWrapper = () => {
     return paginatedOrders.map((order, index) => ({
       "S.No.": (filters.page - 1) * filters.limit + index + 1,
       "Order No.": order.orderNo,
+      "Master Pipeline": order.masterPipelineNo || "—",
+      "Previous Order": order.previousOrderNo || "—",
       Status: getStatusDisplay(order.status),
       Quotation: order.quotationId
         ? quotationMap[order.quotationId] || "—"
         : "—",
-
       Customer: order.createdFor ? customerMap[order.createdFor] || "—" : "N/A",
       Priority: order.priority || "Medium",
-      "Assigned To": order.assignedTo ? teamMap[order.assignedTo] || "—" : "—",
+      "Assigned To": getAssignedToDisplay(order),
       "Created By": order.createdBy ? userMap[order.createdBy] || "—" : "N/A",
       "Due Date": order.dueDate
         ? new Date(order.dueDate).toLocaleDateString()
@@ -279,19 +290,7 @@ const OrderWrapper = () => {
     quotationMap,
   ]);
 
-  // Compute filtered state
-  const isFiltered = useMemo(() => {
-    return (
-      filters.status !== "" ||
-      filters.priority !== "" ||
-      filters.source !== "" ||
-      searchTerm.trim() !== "" ||
-      dateRange.startDate !== "" ||
-      dateRange.endDate !== ""
-    );
-  }, [filters, searchTerm, dateRange]);
-
-  // Handlers
+  // Handlers (unchanged)
   const handleOpenAddOrder = () => {
     navigate("/order/add");
   };
@@ -324,6 +323,7 @@ const OrderWrapper = () => {
   const handleDeleteOrder = async (orderId) => {
     try {
       await deleteOrder(orderId).unwrap();
+      toast.success("Order deleted successfully");
       handleModalClose();
     } catch (err) {
       toast.error(
@@ -347,6 +347,8 @@ const OrderWrapper = () => {
       source: "",
       page: 1,
       limit: 10,
+      masterPipelineNo: null,
+      previousOrderNo: null,
     });
     setSearchTerm("");
     setSortBy("Recently Added");
@@ -390,7 +392,6 @@ const OrderWrapper = () => {
             tableData={tableDataForExport}
             exportOptions={{ pdf: true, excel: true }}
           />
-
           <div className="card-body">
             <div className="row">
               <div className="col-lg-6">
@@ -408,14 +409,25 @@ const OrderWrapper = () => {
                       }
                     >
                       <option value="">All Statuses</option>
-                      {statuses.map((status) => (
+                      {[
+                        "CREATED",
+                        "PREPARING",
+                        "CHECKING",
+                        "INVOICE",
+                        "DISPATCHED",
+                        "DELIVERED",
+                        "PARTIALLY_DELIVERED",
+                        "CANCELED",
+                        "DRAFT",
+                        "ONHOLD",
+                      ].map((status) => (
                         <option key={status} value={status}>
                           {status}
                         </option>
                       ))}
                     </select>
                   </div>
-                  <div className="d-flex align-items-center">
+                  <div className="d-flex align-items-center me-3">
                     <select
                       className="form-select"
                       value={filters.priority}
@@ -427,7 +439,7 @@ const OrderWrapper = () => {
                         }))
                       }
                     >
-                      {priorityOptions.map((priority) => (
+                      {["All", "high", "medium", "low"].map((priority) => (
                         <option
                           key={priority}
                           value={priority === "All" ? "" : priority}
@@ -437,18 +449,51 @@ const OrderWrapper = () => {
                       ))}
                     </select>
                   </div>
-                  <div className="d-flex align-items-center ms-3">
-                    <select
-                      className="form-select"
-                      value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value)}
+                  <div className="d-flex align-items-center me-3">
+                    <Select
+                      style={{ width: 200 }}
+                      value={filters.masterPipelineNo || undefined}
+                      onChange={(value) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          masterPipelineNo: value || null,
+                          page: 1,
+                        }))
+                      }
+                      placeholder="Master Pipeline"
+                      allowClear
                     >
-                      {sortOptions.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
+                      {orders
+                        .filter((order) => order.orderNo)
+                        .map((order) => (
+                          <Option key={order.orderNo} value={order.orderNo}>
+                            {order.orderNo}
+                          </Option>
+                        ))}
+                    </Select>
+                  </div>
+                  <div className="d-flex align-items-center">
+                    <Select
+                      style={{ width: 200 }}
+                      value={filters.previousOrderNo || undefined}
+                      onChange={(value) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          previousOrderNo: value || null,
+                          page: 1,
+                        }))
+                      }
+                      placeholder="Previous Order"
+                      allowClear
+                    >
+                      {orders
+                        .filter((order) => order.orderNo)
+                        .map((order) => (
+                          <Option key={order.orderNo} value={order.orderNo}>
+                            {order.orderNo}
+                          </Option>
+                        ))}
+                    </Select>
                   </div>
                 </div>
               </div>
@@ -476,6 +521,25 @@ const OrderWrapper = () => {
                   >
                     Clear Filters
                   </button>
+                  <div className="d-flex align-items-center ms-3">
+                    <select
+                      className="form-select"
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                    >
+                      {[
+                        "Recently Added",
+                        "Ascending",
+                        "Descending",
+                        "Due Date Ascending",
+                        "Due Date Descending",
+                      ].map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
@@ -495,6 +559,8 @@ const OrderWrapper = () => {
                       <tr>
                         <th>S.No.</th>
                         <th>Order No.</th>
+                        <th>Master Pipeline</th>
+                        <th>Previous Order</th>
                         <th>STATUS</th>
                         <th>QUOTATION</th>
                         <th>CUSTOMER</th>
@@ -507,9 +573,6 @@ const OrderWrapper = () => {
                     </thead>
                     <tbody>
                       {paginatedOrders.map((order, index) => {
-                        const teamName = order.assignedTo
-                          ? teamMap[order.assignedTo] || "—"
-                          : "—";
                         const customerName = order.createdFor
                           ? customerMap[order.createdFor] || "Loading..."
                           : "N/A";
@@ -528,11 +591,38 @@ const OrderWrapper = () => {
                           : "";
                         const serialNumber =
                           (filters.page - 1) * filters.limit + index + 1;
-
                         const showInvoiceOption =
-                          invoiceOrAboveStatuses.includes(order.status) &&
+                          [
+                            "INVOICE",
+                            "DISPATCHED",
+                            "DELIVERED",
+                            "PARTIALLY_DELIVERED",
+                          ].includes(order.status) &&
                           order.invoiceLink &&
                           order.invoiceLink.trim() !== "";
+                        const menuItems = [
+                          showInvoiceOption && {
+                            key: "viewInvoice",
+                            label: (
+                              <span onClick={() => handleViewInvoice(order)}>
+                                <FileTextOutlined style={{ marginRight: 8 }} />
+                                Show Invoice
+                              </span>
+                            ),
+                          },
+                          {
+                            key: "delete",
+                            label: (
+                              <span
+                                onClick={() => handleDeleteClick(order.id)}
+                                style={{ color: "#ff4d4f" }}
+                              >
+                                <DeleteOutlined style={{ marginRight: 8 }} />
+                                Delete Order
+                              </span>
+                            ),
+                          },
+                        ].filter(Boolean);
 
                         return (
                           <tr key={order.id}>
@@ -559,12 +649,68 @@ const OrderWrapper = () => {
                               </Link>
                             </td>
                             <td>
+                              {order.masterOrder ? (
+                                <Link to={`/order/${order.masterOrder.id}`}>
+                                  {order.masterPipelineNo}
+                                </Link>
+                              ) : order.masterPipelineNo ? (
+                                order.masterPipelineNo
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+                            <td>
+                              {order.previousOrder ? (
+                                <Link to={`/order/${order.previousOrder.id}`}>
+                                  {order.previousOrderNo}
+                                </Link>
+                              ) : order.previousOrderNo ? (
+                                order.previousOrderNo
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+                            <td>
                               <span
                                 className="priority-badge"
                                 style={{ backgroundColor: "#f2f2f2" }}
                               >
-                                {status}
+                                {getStatusDisplay(order.status)}
                               </span>
+                              <Dropdown
+                                overlay={
+                                  <Select
+                                    value={getStatusDisplay(order.status)}
+                                    onChange={(value) =>
+                                      handleStatusChange(order.id, value)
+                                    }
+                                    style={{ width: 150 }}
+                                  >
+                                    {[
+                                      "CREATED",
+                                      "PREPARING",
+                                      "CHECKING",
+                                      "INVOICE",
+                                      "DISPATCHED",
+                                      "DELIVERED",
+                                      "PARTIALLY_DELIVERED",
+                                      "CANCELED",
+                                      "DRAFT",
+                                      "ONHOLD",
+                                    ].map((status) => (
+                                      <Option key={status} value={status}>
+                                        {status}
+                                      </Option>
+                                    ))}
+                                  </Select>
+                                }
+                                trigger={["click"]}
+                              >
+                                <EditOutlined
+                                  style={{ marginLeft: 8, cursor: "pointer" }}
+                                  aria-label="Edit status"
+                                />
+                              </Dropdown>
                             </td>
                             <td>
                               {order.quotationId ? (
@@ -575,11 +721,14 @@ const OrderWrapper = () => {
                                 "—"
                               )}
                             </td>
-
                             <td>
-                              <Link to={`/customer/${order.createdFor}`}>
-                                {customerName}
-                              </Link>
+                              {order.createdFor ? (
+                                <Link to={`/customer/${order.createdFor}`}>
+                                  {customerName}
+                                </Link>
+                              ) : (
+                                "N/A"
+                              )}
                             </td>
                             <td>
                               <span
@@ -590,11 +739,15 @@ const OrderWrapper = () => {
                                 {order.priority || "Medium"}
                               </span>
                             </td>
-                            <td>{teamName}</td>
+                            <td>{getAssignedToDisplay(order)}</td>
                             <td>
-                              <Link to={`/user/${order.createdBy}`}>
-                                {createdByName}
-                              </Link>
+                              {order.createdBy ? (
+                                <Link to={`/user/${order.createdBy}`}>
+                                  {createdByName}
+                                </Link>
+                              ) : (
+                                "N/A"
+                              )}
                             </td>
                             <td className={dueDateClass}>
                               {order.dueDate ? (
@@ -625,33 +778,7 @@ const OrderWrapper = () => {
                                 />
                               </span>
                               <Dropdown
-                                overlay={
-                                  <Menu>
-                                    {showInvoiceOption && (
-                                      <Menu.Item
-                                        key="viewInvoice"
-                                        onClick={() => handleViewInvoice(order)}
-                                      >
-                                        <FileTextOutlined
-                                          style={{ marginRight: 8 }}
-                                        />
-                                        Show Invoice
-                                      </Menu.Item>
-                                    )}
-                                    <Menu.Item
-                                      key="delete"
-                                      onClick={() =>
-                                        handleDeleteClick(order.id)
-                                      }
-                                      style={{ color: "#ff4d4f" }}
-                                    >
-                                      <DeleteOutlined
-                                        style={{ marginRight: 8 }}
-                                      />
-                                      Delete Order
-                                    </Menu.Item>
-                                  </Menu>
-                                }
+                                menu={{ items: menuItems }}
                                 trigger={["click"]}
                                 placement="bottomRight"
                               >

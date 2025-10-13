@@ -1,17 +1,18 @@
-const Order = require("../models/orders"); // Sequelize Order model
-const OrderItem = require("../models/orderItem"); // Sequelize OrderItem model
-const Team = require("../models/team"); // Sequelize Team model
-const Invoice = require("../models/invoice"); // Sequelize Invoice model
-const Customer = require("../models/customers"); // Sequelize Customer model
-const Quotation = require("../models/quotation"); // Sequelize Quotation model
-const Comment = require("../models/comment"); // MongoDB Comment model
-const User = require("../models/users"); // Sequelize User model
+const Order = require("../models/orders");
+const OrderItem = require("../models/orderItem");
+const Team = require("../models/team");
+const Invoice = require("../models/invoice");
+const Customer = require("../models/customers");
+const Quotation = require("../models/quotation");
+const Comment = require("../models/comment");
+const User = require("../models/users");
+const Product = require("../models/product"); // Explicit import for Product
 const path = require("path");
-const { v4: uuidv4 } = require("uuid"); // For unique file names
-const ftp = require("basic-ftp"); // FTP client
-require("dotenv").config(); // Load environment variables
+const { v4: uuidv4 } = require("uuid");
+const ftp = require("basic-ftp");
+require("dotenv").config();
 const { Op } = require("sequelize");
-const sanitizeHtml = require("sanitize-html"); // For XSS prevention
+const sanitizeHtml = require("sanitize-html");
 const { Readable } = require("stream");
 const moment = require("moment");
 
@@ -35,21 +36,14 @@ const uploadToCDN = async (file) => {
       secure: process.env.FTP_SECURE === "true",
     });
 
-    // Check where FTP logs us in
     const cwd = await client.pwd();
-
-    // Absolute path for storage
     const uploadDir = "/invoice_pdfs";
     await client.ensureDir(uploadDir);
     await client.cd(uploadDir);
 
     const ext = path.extname(file.originalname);
     const uniqueName = `${uuidv4()}-${Date.now()}${ext}`;
-
-    // Upload to current directory
     await client.uploadFrom(bufferToStream(file.buffer), uniqueName);
-
-    // Construct public URL
     const fileUrl = `${process.env.FTP_BASE_URL}/invoice_pdfs/${uniqueName}`;
     return fileUrl;
   } catch (err) {
@@ -59,18 +53,16 @@ const uploadToCDN = async (file) => {
   }
 };
 
-// Utility function for consistent error responses
 const sendErrorResponse = (res, status, message, details = null) => {
   const response = { message };
   if (details) response.details = details;
   return res.status(status).json(response);
 };
 
-// Utility function to validate resource existence
 const validateResource = async (resourceId, resourceType) => {
   const validResourceTypes = {
     Order: Order,
-    Product: require("../models/product"), // Dynamically load Product model
+    Product: Product,
     Customer: Customer,
   };
 
@@ -87,8 +79,6 @@ const validateResource = async (resourceId, resourceType) => {
   return { valid: true, resource };
 };
 
-// Utility function to validate comment input
-// Utility function to validate comment input for creating comments
 const validateCommentInput = ({
   resourceId,
   resourceType,
@@ -110,7 +100,6 @@ const validateCommentInput = ({
   return { valid: true };
 };
 
-// Utility function to validate comment input for fetching comments
 const validateCommentFetchInput = ({ resourceId, resourceType }) => {
   if (!resourceId || !resourceType) {
     return {
@@ -127,12 +116,10 @@ const validateCommentFetchInput = ({ resourceId, resourceType }) => {
   return { valid: true };
 };
 
-// Get comments for a resource
 exports.getComments = async (req, res) => {
   try {
     const { resourceId, resourceType, page = 1, limit = 10 } = req.query;
 
-    // Validate input for fetching comments
     const inputValidation = validateCommentFetchInput({
       resourceId,
       resourceType,
@@ -141,13 +128,11 @@ exports.getComments = async (req, res) => {
       return sendErrorResponse(res, 400, inputValidation.error);
     }
 
-    // Validate resource
     const resourceValidation = await validateResource(resourceId, resourceType);
     if (!resourceValidation.valid) {
       return sendErrorResponse(res, 404, resourceValidation.error);
     }
 
-    // Validate pagination
     const pageNum = parseInt(page);
     const limitNum = parseInt(limit);
     if (isNaN(pageNum) || pageNum < 1) {
@@ -157,7 +142,6 @@ exports.getComments = async (req, res) => {
       return sendErrorResponse(res, 400, "Invalid limit (must be 1-100)");
     }
 
-    // Fetch comments
     const { comments, totalCount } = await fetchCommentsWithUsers(
       resourceId,
       resourceType,
@@ -176,7 +160,6 @@ exports.getComments = async (req, res) => {
   }
 };
 
-// Utility function to fetch comments with user details
 const fetchCommentsWithUsers = async (
   resourceId,
   resourceType,
@@ -206,12 +189,10 @@ const fetchCommentsWithUsers = async (
   return { comments: commentsWithUsers, totalCount };
 };
 
-// Add a comment to a resource
 exports.addComment = async (req, res) => {
   try {
     const { resourceId, resourceType, userId, comment } = req.body;
 
-    // Validate input
     const inputValidation = validateCommentInput({
       resourceId,
       resourceType,
@@ -222,7 +203,6 @@ exports.addComment = async (req, res) => {
       return sendErrorResponse(res, 400, inputValidation.error);
     }
 
-    // Validate user
     const user = await User.findByPk(userId, {
       attributes: ["userId", "username", "name"],
     });
@@ -230,13 +210,11 @@ exports.addComment = async (req, res) => {
       return sendErrorResponse(res, 404, "User not found");
     }
 
-    // Validate resource
     const resourceValidation = await validateResource(resourceId, resourceType);
     if (!resourceValidation.valid) {
       return sendErrorResponse(res, 404, resourceValidation.error);
     }
 
-    // Check comment limit
     const hasReachedLimit = await Comment.hasReachedCommentLimit(
       resourceId,
       resourceType,
@@ -250,7 +228,6 @@ exports.addComment = async (req, res) => {
       );
     }
 
-    // Sanitize comment to prevent XSS
     const sanitizedComment = sanitizeHtml(comment.trim(), {
       allowedTags: [],
       allowedAttributes: {},
@@ -263,7 +240,6 @@ exports.addComment = async (req, res) => {
       );
     }
 
-    // Create the comment
     const newComment = await Comment.create({
       resourceId,
       resourceType,
@@ -271,7 +247,6 @@ exports.addComment = async (req, res) => {
       comment: sanitizedComment,
     });
 
-    // Fetch comment with user details
     const populatedComment = await Comment.findById(newComment._id).lean();
     populatedComment.user = user.toJSON();
 
@@ -284,20 +259,15 @@ exports.addComment = async (req, res) => {
   }
 };
 
-// Get comments for a resource
-
-// Delete comments for a resource
 exports.deleteCommentsByResource = async (req, res) => {
   try {
     const { resourceId, resourceType } = req.body;
 
-    // Validate input
     const inputValidation = validateCommentInput({ resourceId, resourceType });
     if (!inputValidation.valid) {
       return sendErrorResponse(res, 400, inputValidation.error);
     }
 
-    // Delete comments
     const result = await Comment.deleteMany({ resourceId, resourceType });
 
     return res.status(200).json({
@@ -312,18 +282,17 @@ exports.deleteCommentsByResource = async (req, res) => {
     );
   }
 };
-// Delete a single comment
+
 exports.deleteComment = async (req, res) => {
   try {
     const { commentId } = req.params;
-    const { userId } = req.body; // Assume userId is sent to check permissions
+    const { userId } = req.body;
 
     const comment = await Comment.findById(commentId);
     if (!comment) {
       return sendErrorResponse(res, 404, "Comment not found");
     }
 
-    // Optional: Check if user has permission to delete (e.g., comment creator or admin)
     if (comment.userId !== userId) {
       return sendErrorResponse(res, 403, "Unauthorized to delete this comment");
     }
@@ -337,11 +306,7 @@ exports.deleteComment = async (req, res) => {
     return sendErrorResponse(res, 500, "Failed to delete comment", err.message);
   }
 };
-// Create a new order
-// createOrder.js
-// Create a new order
-// Create a new order
-// Create a new order
+
 exports.createOrder = async (req, res) => {
   try {
     const {
@@ -350,26 +315,30 @@ exports.createOrder = async (req, res) => {
       pipeline,
       status,
       dueDate,
-      assignedTo,
+      assignedTeamId,
+      assignedUserId,
+      secondaryUserId,
       followupDates,
       source,
       priority,
       description,
       orderNo,
       quotationId,
-      products, // Add products field
+      products,
+      masterPipelineNo,
+      previousOrderNo,
     } = req.body;
 
     // Validate required fields
-    if (!createdFor || !createdBy) {
+    if (!createdFor || !createdBy || !orderNo) {
       return sendErrorResponse(
         res,
         400,
-        "createdFor and createdBy are required"
+        "createdFor, createdBy, and orderNo are required"
       );
     }
 
-    // Validate user
+    // Validate user (createdBy)
     const user = await User.findByPk(createdBy);
     if (!user) {
       return sendErrorResponse(res, 404, "Creator user not found");
@@ -389,6 +358,48 @@ exports.createOrder = async (req, res) => {
       }
     }
 
+    // Validate masterPipelineNo if provided
+    if (masterPipelineNo) {
+      const masterOrder = await Order.findOne({
+        where: { orderNo: masterPipelineNo },
+      });
+      if (!masterOrder) {
+        return sendErrorResponse(
+          res,
+          404,
+          `Master order with orderNo ${masterPipelineNo} not found`
+        );
+      }
+      if (masterPipelineNo === orderNo) {
+        return sendErrorResponse(
+          res,
+          400,
+          "Master pipeline number cannot be the same as order number"
+        );
+      }
+    }
+
+    // Validate previousOrderNo if provided
+    if (previousOrderNo) {
+      const previousOrder = await Order.findOne({
+        where: { orderNo: previousOrderNo },
+      });
+      if (!previousOrder) {
+        return sendErrorResponse(
+          res,
+          404,
+          `Previous order with orderNo ${previousOrderNo} not found`
+        );
+      }
+      if (previousOrderNo === orderNo) {
+        return sendErrorResponse(
+          res,
+          400,
+          "Previous order number cannot be the same as order number"
+        );
+      }
+    }
+
     // Validate products array
     if (products) {
       if (!Array.isArray(products)) {
@@ -398,7 +409,6 @@ exports.createOrder = async (req, res) => {
       for (const product of products) {
         const { id, price, discount, total } = product;
 
-        // Validate required fields
         if (
           !id ||
           price === undefined ||
@@ -412,13 +422,11 @@ exports.createOrder = async (req, res) => {
           );
         }
 
-        // Validate product exists
         const productRecord = await Product.findByPk(id);
         if (!productRecord) {
           return sendErrorResponse(res, 404, `Product with ID ${id} not found`);
         }
 
-        // Validate price, discount, and total
         if (typeof price !== "number" || price < 0) {
           return sendErrorResponse(res, 400, `Invalid price for product ${id}`);
         }
@@ -433,7 +441,6 @@ exports.createOrder = async (req, res) => {
           return sendErrorResponse(res, 400, `Invalid total for product ${id}`);
         }
 
-        // Validate total based on discountType
         const discountType = productRecord.discountType || "fixed";
         let expectedTotal;
         if (discountType === "percent") {
@@ -442,7 +449,6 @@ exports.createOrder = async (req, res) => {
           expectedTotal = price - discount;
         }
 
-        // Allow for minor floating-point differences
         if (Math.abs(total - expectedTotal) > 0.01) {
           return sendErrorResponse(
             res,
@@ -467,8 +473,7 @@ exports.createOrder = async (req, res) => {
         )
       : [];
 
-    // Validate assignedTo
-    const assignedTeamId = assignedTo?.trim?.() === "" ? null : assignedTo;
+    // Validate assignedTeamId
     if (assignedTeamId) {
       const team = await Team.findByPk(assignedTeamId);
       if (!team) {
@@ -476,17 +481,31 @@ exports.createOrder = async (req, res) => {
       }
     }
 
+    // Validate assignedUserId
+    if (assignedUserId) {
+      const assignedUser = await User.findByPk(assignedUserId);
+      if (!assignedUser) {
+        return sendErrorResponse(res, 400, "Assigned user not found");
+      }
+    }
+
+    // Validate secondaryUserId
+    if (secondaryUserId) {
+      const secondaryUser = await User.findByPk(secondaryUserId);
+      if (!secondaryUser) {
+        return sendErrorResponse(res, 400, "Secondary user not found");
+      }
+    }
+
     // Validate orderNo
-    if (orderNo) {
-      if (isNaN(parseInt(orderNo))) {
-        return sendErrorResponse(res, 400, "orderNo must be a valid number");
-      }
-      const existingOrder = await Order.findOne({
-        where: { orderNo: parseInt(orderNo) },
-      });
-      if (existingOrder) {
-        return sendErrorResponse(res, 400, "Order number already exists");
-      }
+    if (isNaN(parseInt(orderNo))) {
+      return sendErrorResponse(res, 400, "orderNo must be a valid number");
+    }
+    const existingOrder = await Order.findOne({
+      where: { orderNo: parseInt(orderNo) },
+    });
+    if (existingOrder) {
+      return sendErrorResponse(res, 400, "Order number already exists");
     }
 
     // Validate priority
@@ -522,14 +541,18 @@ exports.createOrder = async (req, res) => {
       pipeline,
       status: normalizedStatus,
       dueDate,
-      assignedTo: assignedTeamId,
+      assignedTeamId,
+      assignedUserId,
+      secondaryUserId,
       followupDates: parsedFollowupDates,
       source,
-      priority: priority?.toLowerCase() || null,
+      priority: priority?.toLowerCase() || "medium",
       description,
-      orderNo: orderNo ? parseInt(orderNo) : null,
+      orderNo: parseInt(orderNo),
       quotationId,
-      products, // Include products field
+      products,
+      masterPipelineNo,
+      previousOrderNo,
     });
 
     return res.status(201).json({
@@ -540,20 +563,45 @@ exports.createOrder = async (req, res) => {
     return sendErrorResponse(res, 500, "Failed to create order", err.message);
   }
 };
-// Get all orders
+
 exports.getAllOrders = async (req, res) => {
   try {
     const orders = await Order.findAll({
       include: [
         {
           model: Customer,
-          as: "customers",
+          as: "customer",
           attributes: ["customerId", "name"],
         },
         {
           model: User,
-          as: "users",
+          as: "creator",
           attributes: ["userId", "username", "name"],
+        },
+        {
+          model: User,
+          as: "assignedUser",
+          attributes: ["userId", "username", "name"],
+        },
+        {
+          model: User,
+          as: "secondaryUser",
+          attributes: ["userId", "username", "name"],
+        },
+        {
+          model: Team,
+          as: "assignedTeam",
+          attributes: ["id", "teamName"],
+        },
+        {
+          model: Order,
+          as: "previousOrder",
+          attributes: ["id", "orderNo"],
+        },
+        {
+          model: Order,
+          as: "masterOrder",
+          attributes: ["id", "orderNo"],
         },
       ],
       order: [["createdAt", "DESC"]],
@@ -568,7 +616,6 @@ exports.getAllOrders = async (req, res) => {
   }
 };
 
-// Get order details
 exports.getOrderDetails = async (req, res) => {
   try {
     const { id } = req.params;
@@ -577,15 +624,49 @@ exports.getOrderDetails = async (req, res) => {
       include: [
         {
           model: Customer,
-          as: "customers",
+          as: "customer",
           attributes: ["customerId", "name"],
         },
         {
           model: User,
-          as: "users",
+          as: "creator",
           attributes: ["userId", "username", "name"],
         },
-        { model: Team, as: "team", attributes: ["id", "teamName"] },
+        {
+          model: User,
+          as: "assignedUser",
+          attributes: ["userId", "username", "name"],
+        },
+        {
+          model: User,
+          as: "secondaryUser",
+          attributes: ["userId", "username", "name"],
+        },
+        {
+          model: Team,
+          as: "assignedTeam",
+          attributes: ["id", "teamName"],
+        },
+        {
+          model: Order,
+          as: "previousOrder",
+          attributes: ["id", "orderNo"],
+        },
+        {
+          model: Order,
+          as: "masterOrder",
+          attributes: ["id", "orderNo"],
+        },
+        {
+          model: Order,
+          as: "nextOrders",
+          attributes: ["id", "orderNo"],
+        },
+        {
+          model: Order,
+          as: "pipelineOrders",
+          attributes: ["id", "orderNo"],
+        },
       ],
     });
 
@@ -593,7 +674,6 @@ exports.getOrderDetails = async (req, res) => {
       return sendErrorResponse(res, 404, `Order with ID ${id} not found`);
     }
 
-    // Fetch comments
     const { comments } = await fetchCommentsWithUsers(id, "Order", 1, 10);
 
     const orderWithComments = {
@@ -612,7 +692,6 @@ exports.getOrderDetails = async (req, res) => {
   }
 };
 
-// Update order status
 exports.updateOrderStatus = async (req, res) => {
   try {
     const { id, status } = req.body;
@@ -657,7 +736,6 @@ exports.updateOrderStatus = async (req, res) => {
   }
 };
 
-// Delete an order
 exports.deleteOrder = async (req, res) => {
   try {
     const { id } = req.params;
@@ -667,13 +745,25 @@ exports.deleteOrder = async (req, res) => {
       return sendErrorResponse(res, 404, "Order not found");
     }
 
-    // Delete associated comments
+    // Check if the order is referenced by other orders
+    const dependentOrders = await Order.findAll({
+      where: {
+        [Op.or]: [
+          { previousOrderNo: order.orderNo },
+          { masterPipelineNo: order.orderNo },
+        ],
+      },
+    });
+    if (dependentOrders.length > 0) {
+      return sendErrorResponse(
+        res,
+        400,
+        "Cannot delete order as it is referenced by other orders in the pipeline"
+      );
+    }
+
     await Comment.deleteMany({ resourceId: id, resourceType: "Order" });
-
-    // Delete associated order items (fixed from deleteOne to destroy)
-    await OrderItem.deleteOne({ where: { orderId: id } });
-
-    // Delete the order
+    await OrderItem.destroy({ where: { orderId: id } });
     await order.destroy();
 
     return res
@@ -684,20 +774,44 @@ exports.deleteOrder = async (req, res) => {
   }
 };
 
-// Get recent orders
 exports.recentOrders = async (req, res) => {
   try {
     const orders = await Order.findAll({
       include: [
         {
           model: Customer,
-          as: "customers",
+          as: "customer",
           attributes: ["customerId", "name"],
         },
         {
           model: User,
-          as: "users",
+          as: "creator",
           attributes: ["userId", "username", "name"],
+        },
+        {
+          model: User,
+          as: "assignedUser",
+          attributes: ["userId", "username", "name"],
+        },
+        {
+          model: User,
+          as: "secondaryUser",
+          attributes: ["userId", "username", "name"],
+        },
+        {
+          model: Team,
+          as: "assignedTeam",
+          attributes: ["id", "teamName"],
+        },
+        {
+          model: Order,
+          as: "previousOrder",
+          attributes: ["id", "orderNo"],
+        },
+        {
+          model: Order,
+          as: "masterOrder",
+          attributes: ["id", "orderNo"],
         },
       ],
       order: [["createdAt", "DESC"]],
@@ -715,7 +829,6 @@ exports.recentOrders = async (req, res) => {
   }
 };
 
-// Get order by ID
 exports.orderById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -724,13 +837,48 @@ exports.orderById = async (req, res) => {
       include: [
         {
           model: Customer,
-          as: "customers",
+          as: "customer",
           attributes: ["customerId", "name"],
         },
         {
           model: User,
-          as: "users",
+          as: "creator",
           attributes: ["userId", "username", "name"],
+        },
+        {
+          model: User,
+          as: "assignedUser",
+          attributes: ["userId", "username", "name"],
+        },
+        {
+          model: User,
+          as: "secondaryUser",
+          attributes: ["userId", "username", "name"],
+        },
+        {
+          model: Team,
+          as: "assignedTeam",
+          attributes: ["id", "teamName"],
+        },
+        {
+          model: Order,
+          as: "previousOrder",
+          attributes: ["id", "orderNo"],
+        },
+        {
+          model: Order,
+          as: "masterOrder",
+          attributes: ["id", "orderNo"],
+        },
+        {
+          model: Order,
+          as: "nextOrders",
+          attributes: ["id", "orderNo"],
+        },
+        {
+          model: Order,
+          as: "pipelineOrders",
+          attributes: ["id", "orderNo"],
         },
       ],
     });
@@ -739,7 +887,6 @@ exports.orderById = async (req, res) => {
       return sendErrorResponse(res, 404, "Order not found");
     }
 
-    // Fetch comments
     const { comments } = await fetchCommentsWithUsers(id, "Order", 1, 10);
 
     const orderWithComments = {
@@ -753,20 +900,16 @@ exports.orderById = async (req, res) => {
   }
 };
 
-// Update order by ID
-// Update order by ID
 exports.updateOrderById = async (req, res) => {
   try {
     const { id } = req.params;
     const updates = { ...req.body };
 
-    // Find the order
     const order = await Order.findByPk(id);
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
 
-    // Validate status
     if (updates.status) {
       const validStatuses = [
         "CREATED",
@@ -789,7 +932,6 @@ exports.updateOrderById = async (req, res) => {
       updates.status = normalizedStatus;
     }
 
-    // Validate priority
     if (updates.priority) {
       const validPriorities = ["high", "medium", "low"];
       const normalizedPriority = updates.priority.toLowerCase();
@@ -801,7 +943,6 @@ exports.updateOrderById = async (req, res) => {
       updates.priority = normalizedPriority;
     }
 
-    // Validate dueDate
     if (updates.dueDate) {
       if (moment(updates.dueDate, "YYYY-MM-DD", true).isValid()) {
         updates.dueDate = moment(updates.dueDate).format("YYYY-MM-DD");
@@ -810,7 +951,6 @@ exports.updateOrderById = async (req, res) => {
       }
     }
 
-    // Validate followupDates
     if (updates.followupDates) {
       if (!Array.isArray(updates.followupDates)) {
         return res
@@ -839,15 +979,27 @@ exports.updateOrderById = async (req, res) => {
       updates.followupDates = updates.followupDates.filter((date) => date);
     }
 
-    // Validate assignedTo
-    if (updates.assignedTo) {
-      const team = await Team.findByPk(updates.assignedTo);
+    if (updates.assignedTeamId) {
+      const team = await Team.findByPk(updates.assignedTeamId);
       if (!team) {
         return res.status(400).json({ message: "Assigned team not found" });
       }
     }
 
-    // Validate createdBy
+    if (updates.assignedUserId) {
+      const assignedUser = await User.findByPk(updates.assignedUserId);
+      if (!assignedUser) {
+        return res.status(400).json({ message: "Assigned user not found" });
+      }
+    }
+
+    if (updates.secondaryUserId) {
+      const secondaryUser = await User.findByPk(updates.secondaryUserId);
+      if (!secondaryUser) {
+        return res.status(400).json({ message: "Secondary user not found" });
+      }
+    }
+
     if (updates.createdBy) {
       const user = await User.findByPk(updates.createdBy);
       if (!user) {
@@ -855,7 +1007,6 @@ exports.updateOrderById = async (req, res) => {
       }
     }
 
-    // Validate createdFor
     if (updates.createdFor) {
       const customer = await Customer.findByPk(updates.createdFor);
       if (!customer) {
@@ -863,10 +1014,9 @@ exports.updateOrderById = async (req, res) => {
       }
     }
 
-    // Validate orderNo
     if (updates.orderNo !== undefined) {
       if (updates.orderNo === "" || updates.orderNo === null) {
-        updates.orderNo = null;
+        return res.status(400).json({ message: "orderNo is required" });
       } else if (isNaN(parseInt(updates.orderNo))) {
         return res
           .status(400)
@@ -884,21 +1034,71 @@ exports.updateOrderById = async (req, res) => {
       }
     }
 
-    // Validate invoiceLink
+    if (updates.masterPipelineNo !== undefined) {
+      if (
+        updates.masterPipelineNo === null ||
+        updates.masterPipelineNo === ""
+      ) {
+        updates.masterPipelineNo = null;
+      } else {
+        const masterOrder = await Order.findOne({
+          where: { orderNo: updates.masterPipelineNo },
+        });
+        if (!masterOrder) {
+          return res
+            .status(404)
+            .json({
+              message: `Master order with orderNo ${updates.masterPipelineNo} not found`,
+            });
+        }
+        if (updates.masterPipelineNo === order.orderNo) {
+          return res
+            .status(400)
+            .json({
+              message:
+                "Master pipeline number cannot be the same as order number",
+            });
+        }
+      }
+    }
+
+    if (updates.previousOrderNo !== undefined) {
+      if (updates.previousOrderNo === null || updates.previousOrderNo === "") {
+        updates.previousOrderNo = null;
+      } else {
+        const previousOrder = await Order.findOne({
+          where: { orderNo: updates.previousOrderNo },
+        });
+        if (!previousOrder) {
+          return res
+            .status(404)
+            .json({
+              message: `Previous order with orderNo ${updates.previousOrderNo} not found`,
+            });
+        }
+        if (updates.previousOrderNo === order.orderNo) {
+          return res
+            .status(400)
+            .json({
+              message:
+                "Previous order number cannot be the same as order number",
+            });
+        }
+      }
+    }
+
     if (updates.invoiceLink && updates.invoiceLink.length > 500) {
       return res
         .status(400)
         .json({ message: "Invoice Link cannot exceed 500 characters" });
     }
 
-    // Validate source
     if (updates.source && updates.source.length > 255) {
       return res
         .status(400)
         .json({ message: "Source cannot exceed 255 characters" });
     }
 
-    // Validate quotationId
     if (updates.quotationId !== undefined) {
       if (updates.quotationId === null || updates.quotationId === "") {
         updates.quotationId = null;
@@ -910,7 +1110,6 @@ exports.updateOrderById = async (req, res) => {
       }
     }
 
-    // Validate products array
     if (updates.products !== undefined) {
       if (updates.products === null || updates.products === "") {
         updates.products = null;
@@ -920,22 +1119,17 @@ exports.updateOrderById = async (req, res) => {
         for (const product of updates.products) {
           const { id, price, discount, total } = product;
 
-          // Validate required fields
           if (
             !id ||
             price === undefined ||
             discount === undefined ||
             total === undefined
           ) {
-            return res
-              .status(400)
-              .json({
-                message:
-                  "Each product must have id, price, discount, and total",
-              });
+            return res.status(400).json({
+              message: "Each product must have id, price, discount, and total",
+            });
           }
 
-          // Validate product exists
           const productRecord = await Product.findByPk(id);
           if (!productRecord) {
             return res
@@ -943,7 +1137,6 @@ exports.updateOrderById = async (req, res) => {
               .json({ message: `Product with ID ${id} not found` });
           }
 
-          // Validate price, discount, and total
           if (typeof price !== "number" || price < 0) {
             return res
               .status(400)
@@ -960,7 +1153,6 @@ exports.updateOrderById = async (req, res) => {
               .json({ message: `Invalid total for product ${id}` });
           }
 
-          // Validate total based on discountType
           const discountType = productRecord.discountType || "fixed";
           let expectedTotal;
           if (discountType === "percent") {
@@ -969,7 +1161,6 @@ exports.updateOrderById = async (req, res) => {
             expectedTotal = price - discount;
           }
 
-          // Allow for minor floating-point differences
           if (Math.abs(total - expectedTotal) > 0.01) {
             return res.status(400).json({
               message: `Invalid total for product ${id}. Expected ${expectedTotal.toFixed(
@@ -981,7 +1172,6 @@ exports.updateOrderById = async (req, res) => {
       }
     }
 
-    // Perform update
     await order.update(updates);
     await order.reload();
     return res.status(200).json({
@@ -995,17 +1185,21 @@ exports.updateOrderById = async (req, res) => {
   }
 };
 
-// Create a draft order
-// Create a draft order
 exports.draftOrder = async (req, res) => {
   try {
-    const { quotationId, assignedTo, products } = req.body;
+    const {
+      quotationId,
+      assignedTeamId,
+      products,
+      masterPipelineNo,
+      previousOrderNo,
+    } = req.body;
 
-    if (!assignedTo) {
-      return sendErrorResponse(res, 400, "assignedTo is required");
+    if (!assignedTeamId) {
+      return sendErrorResponse(res, 400, "assignedTeamId is required");
     }
 
-    const team = await Team.findByPk(assignedTo);
+    const team = await Team.findByPk(assignedTeamId);
     if (!team) {
       return sendErrorResponse(res, 400, "Assigned team not found");
     }
@@ -1017,7 +1211,32 @@ exports.draftOrder = async (req, res) => {
       }
     }
 
-    // Validate products array if provided
+    if (masterPipelineNo) {
+      const masterOrder = await Order.findOne({
+        where: { orderNo: masterPipelineNo },
+      });
+      if (!masterOrder) {
+        return sendErrorResponse(
+          res,
+          404,
+          `Master order with orderNo ${masterPipelineNo} not found`
+        );
+      }
+    }
+
+    if (previousOrderNo) {
+      const previousOrder = await Order.findOne({
+        where: { orderNo: previousOrderNo },
+      });
+      if (!previousOrder) {
+        return sendErrorResponse(
+          res,
+          404,
+          `Previous order with orderNo ${previousOrderNo} not found`
+        );
+      }
+    }
+
     if (products) {
       if (!Array.isArray(products)) {
         return sendErrorResponse(res, 400, "Products must be an array");
@@ -1026,7 +1245,6 @@ exports.draftOrder = async (req, res) => {
       for (const product of products) {
         const { id, price, discount, total } = product;
 
-        // Validate required fields
         if (
           !id ||
           price === undefined ||
@@ -1040,13 +1258,11 @@ exports.draftOrder = async (req, res) => {
           );
         }
 
-        // Validate product exists
         const productRecord = await Product.findByPk(id);
         if (!productRecord) {
           return sendErrorResponse(res, 404, `Product with ID ${id} not found`);
         }
 
-        // Validate price, discount, and total
         if (typeof price !== "number" || price < 0) {
           return sendErrorResponse(res, 400, `Invalid price for product ${id}`);
         }
@@ -1061,7 +1277,6 @@ exports.draftOrder = async (req, res) => {
           return sendErrorResponse(res, 400, `Invalid total for product ${id}`);
         }
 
-        // Validate total based on discountType
         const discountType = productRecord.discountType || "fixed";
         let expectedTotal;
         if (discountType === "percent") {
@@ -1070,7 +1285,6 @@ exports.draftOrder = async (req, res) => {
           expectedTotal = price - discount;
         }
 
-        // Allow for minor floating-point differences
         if (Math.abs(total - expectedTotal) > 0.01) {
           return sendErrorResponse(
             res,
@@ -1083,11 +1297,27 @@ exports.draftOrder = async (req, res) => {
       }
     }
 
+    // Generate unique orderNo for draft order
+    const today = moment().format("DDMMYYYY");
+    const todayOrders = await Order.findAll({
+      where: {
+        createdAt: {
+          [Op.gte]: moment().startOf("day").toDate(),
+          [Op.lte]: moment().endOf("day").toDate(),
+        },
+      },
+    });
+    const serialNumber = String(todayOrders.length + 1).padStart(5, "0");
+    const orderNo = `${today}${serialNumber}`;
+
     const order = await Order.create({
       quotationId,
       status: "DRAFT",
-      assignedTo,
-      products, // Include products field
+      assignedTeamId,
+      products,
+      masterPipelineNo,
+      previousOrderNo,
+      orderNo: parseInt(orderNo),
     });
 
     return res.status(200).json({ message: "Draft order created", order });
@@ -1101,7 +1331,6 @@ exports.draftOrder = async (req, res) => {
   }
 };
 
-// Get filtered orders
 exports.getFilteredOrders = async (req, res) => {
   try {
     const {
@@ -1109,14 +1338,15 @@ exports.getFilteredOrders = async (req, res) => {
       priority,
       dueDate,
       createdBy,
-      assignedTo,
+      assignedTeamId,
       createdFor,
       search,
       page = 1,
       limit = 10,
+      masterPipelineNo,
+      previousOrderNo,
     } = req.query;
 
-    // Validate pagination
     const pageNum = parseInt(page);
     const limitNum = parseInt(limit);
     if (isNaN(pageNum) || pageNum < 1) {
@@ -1128,7 +1358,6 @@ exports.getFilteredOrders = async (req, res) => {
 
     const filters = {};
 
-    // Validate and apply status filter
     if (status) {
       const normalizedStatus = status.toUpperCase();
       const validStatuses = [
@@ -1149,7 +1378,6 @@ exports.getFilteredOrders = async (req, res) => {
       filters.status = normalizedStatus;
     }
 
-    // Validate and apply priority filter
     if (priority) {
       const normalizedPriority = priority.toLowerCase();
       const validPriorities = ["high", "medium", "low"];
@@ -1159,7 +1387,6 @@ exports.getFilteredOrders = async (req, res) => {
       filters.priority = normalizedPriority;
     }
 
-    // Validate and apply dueDate filter
     if (dueDate) {
       const parsedDate = new Date(dueDate);
       if (isNaN(parsedDate)) {
@@ -1168,7 +1395,6 @@ exports.getFilteredOrders = async (req, res) => {
       filters.dueDate = parsedDate;
     }
 
-    // Apply ID-based filters
     if (createdBy) {
       const user = await User.findByPk(createdBy);
       if (!user) {
@@ -1176,13 +1402,15 @@ exports.getFilteredOrders = async (req, res) => {
       }
       filters.createdBy = createdBy;
     }
-    if (assignedTo) {
-      const team = await Team.findByPk(assignedTo);
+
+    if (assignedTeamId) {
+      const team = await Team.findByPk(assignedTeamId);
       if (!team) {
         return sendErrorResponse(res, 404, "Assigned team not found");
       }
-      filters.assignedTo = assignedTo;
+      filters.assignedTeamId = assignedTeamId;
     }
+
     if (createdFor) {
       const customer = await Customer.findByPk(createdFor);
       if (!customer) {
@@ -1191,7 +1419,34 @@ exports.getFilteredOrders = async (req, res) => {
       filters.createdFor = createdFor;
     }
 
-    // Handle search parameter
+    if (masterPipelineNo) {
+      const masterOrder = await Order.findOne({
+        where: { orderNo: masterPipelineNo },
+      });
+      if (!masterOrder) {
+        return sendErrorResponse(
+          res,
+          404,
+          `Master order with orderNo ${masterPipelineNo} not found`
+        );
+      }
+      filters.masterPipelineNo = masterPipelineNo;
+    }
+
+    if (previousOrderNo) {
+      const previousOrder = await Order.findOne({
+        where: { orderNo: previousOrderNo },
+      });
+      if (!previousOrder) {
+        return sendErrorResponse(
+          res,
+          404,
+          `Previous order with orderNo ${previousOrderNo} not found`
+        );
+      }
+      filters.previousOrderNo = previousOrderNo;
+    }
+
     const searchFilter = search
       ? {
           [Op.or]: [
@@ -1204,20 +1459,44 @@ exports.getFilteredOrders = async (req, res) => {
     const include = [
       {
         model: Customer,
-        as: "customers",
+        as: "customer",
         attributes: ["customerId", "name"],
         required: search ? false : undefined,
       },
       {
         model: User,
-        as: "users",
+        as: "creator",
         attributes: ["userId", "username", "name"],
+      },
+      {
+        model: User,
+        as: "assignedUser",
+        attributes: ["userId", "username", "name"],
+      },
+      {
+        model: User,
+        as: "secondaryUser",
+        attributes: ["userId", "username", "name"],
+      },
+      {
+        model: Team,
+        as: "assignedTeam",
+        attributes: ["id", "teamName"],
+      },
+      {
+        model: Order,
+        as: "previousOrder",
+        attributes: ["id", "orderNo"],
+      },
+      {
+        model: Order,
+        as: "masterOrder",
+        attributes: ["id", "orderNo"],
       },
     ];
 
     const offset = (pageNum - 1) * limitNum;
 
-    // Fetch orders with pagination and associations
     const orders = await Order.findAll({
       where: { ...filters, ...searchFilter },
       include,
@@ -1226,13 +1505,6 @@ exports.getFilteredOrders = async (req, res) => {
       offset,
     });
 
-    // Get total count
-    const totalCount = await Order.count({
-      where: { ...filters, ...searchFilter },
-      include: search ? include : [],
-    });
-
-    // Optionally fetch comments for each order
     const ordersWithComments = await Promise.all(
       orders.map(async (order) => {
         const { comments } = await fetchCommentsWithUsers(
@@ -1247,6 +1519,11 @@ exports.getFilteredOrders = async (req, res) => {
         };
       })
     );
+
+    const totalCount = await Order.count({
+      where: { ...filters, ...searchFilter },
+      include: search ? include : [],
+    });
 
     return res.status(200).json({
       orders: ordersWithComments,
@@ -1264,10 +1541,9 @@ exports.getFilteredOrders = async (req, res) => {
   }
 };
 
-// Update order team
 exports.updateOrderTeam = async (req, res) => {
   try {
-    const { id, assignedTo } = req.body;
+    const { id, assignedTeamId } = req.body;
 
     if (!id) {
       return sendErrorResponse(res, 400, "Order ID is required");
@@ -1278,14 +1554,14 @@ exports.updateOrderTeam = async (req, res) => {
       return sendErrorResponse(res, 404, "Order not found");
     }
 
-    if (assignedTo) {
-      const team = await Team.findByPk(assignedTo);
+    if (assignedTeamId) {
+      const team = await Team.findByPk(assignedTeamId);
       if (!team) {
         return sendErrorResponse(res, 400, "Assigned team not found");
       }
     }
 
-    order.assignedTo = assignedTo || null;
+    order.assignedTeamId = assignedTeamId || null;
     await order.save();
 
     return res.status(200).json({ message: "Order team updated", order });
@@ -1305,13 +1581,11 @@ exports.uploadInvoiceAndLinkOrder = async (req, res) => {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    // Generate unique filename
     const ext = path.extname(req.file.originalname);
     const uniqueName = `${uuidv4()}${ext}`;
 
-    // FTP upload
     const client = new ftp.Client();
-    client.ftp.verbose = process.env.NODE_ENV === "development"; // Enable verbose logging in development
+    client.ftp.verbose = process.env.NODE_ENV === "development";
 
     try {
       await client.access({
@@ -1322,19 +1596,14 @@ exports.uploadInvoiceAndLinkOrder = async (req, res) => {
         secure: process.env.FTP_SECURE === "true" || false,
       });
 
-      // Log current FTP directory for debugging
       const cwd = await client.pwd();
-
-      // Ensure folder exists for invoices
       const uploadDir = "/invoice_pdfs";
       await client.ensureDir(uploadDir);
-      await client.cd(uploadDir); // Change to /invoice_pdfs
+      await client.cd(uploadDir);
 
-      // Convert buffer to stream and upload
       const stream = bufferToStream(req.file.buffer);
-      await client.uploadFrom(stream, uniqueName); // Upload to current directory
+      await client.uploadFrom(stream, uniqueName);
 
-      // Construct public URL
       const fileUrl = `${process.env.FTP_BASE_URL}/invoice_pdfs/${uniqueName}`;
     } catch (ftpErr) {
       return res
@@ -1344,10 +1613,9 @@ exports.uploadInvoiceAndLinkOrder = async (req, res) => {
       client.close();
     }
 
-    // Update order record in DB
     const [updated] = await Order.update(
-      { invoiceLink: `${process.env.FTP_BASE_URL}/invoice_pdfs/${uniqueName}` }, // Use invoiceLink to match model
-      { where: { id: req.params.orderId } } // Use id to match model
+      { invoiceLink: `${process.env.FTP_BASE_URL}/invoice_pdfs/${uniqueName}` },
+      { where: { id: req.params.orderId } }
     );
 
     if (!updated) {
@@ -1358,7 +1626,7 @@ exports.uploadInvoiceAndLinkOrder = async (req, res) => {
       message: "Invoice uploaded successfully",
       filename: uniqueName,
       size: req.file.size,
-      fileUrl: `${process.env.FTP_BASE_URL}/invoice_pdfs/${uniqueName}`, // Return relative path
+      fileUrl: `${process.env.FTP_BASE_URL}/invoice_pdfs/${uniqueName}`,
     });
   } catch (err) {
     return res
@@ -1366,7 +1634,7 @@ exports.uploadInvoiceAndLinkOrder = async (req, res) => {
       .json({ message: "Server error", error: err.message });
   }
 };
-// GET /api/order/count?date=YYYY-MM-DD
+
 exports.countOrders = async (req, res) => {
   try {
     const { date } = req.query;

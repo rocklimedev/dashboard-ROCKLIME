@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
 import {
   Form,
@@ -8,7 +8,7 @@ import {
 } from "react-bootstrap";
 import { FaArrowLeft } from "react-icons/fa";
 import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
-import { Select, DatePicker, Button, Input } from "antd";
+import { Select, DatePicker, Button, Input, Radio } from "antd";
 import { toast } from "sonner";
 import { debounce } from "lodash";
 import PageHeader from "../Common/PageHeader";
@@ -20,9 +20,11 @@ import {
 } from "../../api/orderApi";
 import { useGetAllTeamsQuery } from "../../api/teamApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
+import { useGetAllUsersQuery } from "../../api/userApi";
 import { useGetProfileQuery } from "../../api/userApi";
 import AddNewTeam from "./AddNewTeam";
 import moment from "moment";
+
 const { Option } = Select;
 
 const STATUS_VALUES = [
@@ -70,6 +72,11 @@ const AddNewOrder = ({ adminName }) => {
     error: customersError,
   } = useGetCustomersQuery();
   const {
+    data: usersData,
+    isLoading: isUsersLoading,
+    error: usersError,
+  } = useGetAllUsersQuery();
+  const {
     data: profileData,
     isLoading: isProfileLoading,
     error: profileError,
@@ -86,10 +93,12 @@ const AddNewOrder = ({ adminName }) => {
   const customers = Array.isArray(customersData?.data)
     ? customersData.data
     : [];
+  const users = Array.isArray(usersData?.users) ? usersData.users : [];
   const user = profileData?.user || {};
-  const orders = Array.isArray(allOrdersData?.orders)
-    ? allOrdersData.orders
-    : [];
+  const orders = useMemo(
+    () => (Array.isArray(allOrdersData?.orders) ? allOrdersData.orders : []),
+    [allOrdersData]
+  );
 
   // Get quotation data from navigation state
   const quotationData = location.state?.quotationData || {};
@@ -98,36 +107,42 @@ const AddNewOrder = ({ adminName }) => {
   const [formData, setFormData] = useState({
     createdFor: quotationData.createdFor || "",
     createdBy: user.userId || "",
-    assignedTo: "",
+    assignedTeamId: "",
+    assignedUserId: "",
+    secondaryUserId: "",
     pipeline: "",
     status: "CREATED",
     dueDate: quotationData.dueDate || "",
     followupDates: [],
     source: quotationData.source || "",
-    teamId: "",
     priority: "medium",
     description: quotationData.description || "",
     invoiceLink: isEditMode ? "" : null,
     orderNo: "",
-    quotationId: quotationData.quotationId || "", // Added quotationId
+    quotationId: quotationData.quotationId || "",
+    masterPipelineNo: null,
+    previousOrderNo: null,
   });
-
+  const [assignmentType, setAssignmentType] = useState("team");
   const [showNewTeamModal, setShowNewTeamModal] = useState(false);
   const [customerSearch, setCustomerSearch] = useState("");
   const [filteredCustomers, setFilteredCustomers] = useState([]);
   const [descriptionLength, setDescriptionLength] = useState(
     quotationData.description?.length || 0
   );
+
+  // Handle team addition
   const handleTeamAdded = (newTeamId) => {
-    refetchTeams(); // Refetch teams to update the list
+    refetchTeams();
     if (newTeamId) {
       setFormData((prev) => ({
         ...prev,
-        teamId: newTeamId,
-        assignedTo: newTeamId,
+        assignedTeamId: newTeamId,
       }));
+      setAssignmentType("team");
     }
   };
+
   // Generate orderNo in create mode
   useEffect(() => {
     if (!isEditMode && !isAllOrdersLoading && allOrdersData !== undefined) {
@@ -141,36 +156,41 @@ const AddNewOrder = ({ adminName }) => {
         ...prev,
         orderNo: generatedOrderNo,
       }));
-    } else if (!isEditMode && isAllOrdersLoading) {
-      setFormData((prev) => ({
-        ...prev,
-        orderNo: moment().format("DDMMYYYY") + "00001",
-      }));
     }
-  }, [isEditMode, allOrdersData, isAllOrdersLoading, orders]);
+  }, [isEditMode, isAllOrdersLoading, allOrdersData, orders]);
 
+  // Populate form in edit mode
   useEffect(() => {
     if (isEditMode && order && formData.orderNo !== order.orderNo) {
       setFormData({
         createdFor: order.createdFor || "",
         createdBy: order.createdBy || user.userId || "",
-        assignedTo: order.assignedTo || "",
+        assignedTeamId: order.assignedTeamId || "",
+        assignedUserId: order.assignedUserId || "",
+        secondaryUserId: order.secondaryUserId || "",
         pipeline: order.pipeline || "",
         status: order.status || "CREATED",
         dueDate: order.dueDate || "",
         followupDates: order.followupDates || [],
         source: order.source || "",
-        teamId: order.assignedTo || "",
         priority: order.priority || "medium",
         description: order.description || "",
         invoiceLink: order.invoiceLink || "",
         orderNo: order.orderNo || "",
-        quotationId: order.quotationId || "", // Added quotationId
+        quotationId: order.quotationId || "",
+        masterPipelineNo: order.masterPipelineNo || null,
+        previousOrderNo: order.previousOrderNo || null,
       });
       setDescriptionLength((order.description || "").length);
+      if (order.assignedTeamId) {
+        setAssignmentType("team");
+      } else if (order.assignedUserId || order.secondaryUserId) {
+        setAssignmentType("users");
+      }
     }
-  }, [isEditMode, order, user.userId, formData.orderNo]);
+  }, [isEditMode, order, user.userId]);
 
+  // Update createdBy when user profile loads
   useEffect(() => {
     if (!isEditMode && user.userId && formData.createdBy !== user.userId) {
       setFormData((prev) => ({ ...prev, createdBy: user.userId }));
@@ -199,48 +219,36 @@ const AddNewOrder = ({ adminName }) => {
 
   // Handlers
   const handleChange = (name, value) => {
-    if (name === "teamId") {
-      setFormData((prev) => ({
-        ...prev,
-        teamId: value,
-        assignedTo: value,
-      }));
-    } else if (name === "description") {
+    if (name === "description") {
       setDescriptionLength(value.length);
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
-    } else if (name === "orderNo" && !isEditMode) {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value === "" ? "" : value,
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
     }
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   const clearForm = () => {
     setFormData({
       createdFor: "",
       createdBy: user.userId || "",
-      assignedTo: "",
+      assignedTeamId: "",
+      assignedUserId: "",
+      secondaryUserId: "",
       pipeline: "",
       status: "CREATED",
       dueDate: "",
       followupDates: [],
       source: "",
-      teamId: "",
       priority: "medium",
       description: "",
       invoiceLink: isEditMode ? "" : null,
       orderNo: isEditMode ? formData.orderNo : "",
-      quotationId: "", // Reset quotationId
+      quotationId: "",
+      masterPipelineNo: null,
+      previousOrderNo: null,
     });
+    setAssignmentType("team");
     setCustomerSearch("");
     setFilteredCustomers(customers);
     setDescriptionLength(0);
@@ -290,44 +298,77 @@ const AddNewOrder = ({ adminName }) => {
   };
 
   const checkOrderNoUniqueness = useCallback(
-    (orderNo) => {
+    (orderNo, setNewOrderNo = true) => {
       if (!orderNo || isEditMode) return true;
       const isUnique = !orders.some((order) => order.orderNo === orderNo);
-      if (!isUnique) {
+      if (!isUnique && setNewOrderNo) {
         const today = moment().format("DDMMYYYY");
         const todayOrders = orders.filter((order) =>
           moment(order.createdAt).isSame(moment(), "day")
         );
         const newSerial = String(todayOrders.length + 2).padStart(5, "0");
+        const newOrderNo = `${today}${newSerial}`;
         setFormData((prev) => ({
           ...prev,
-          orderNo: `${today}${newSerial}`,
+          orderNo: newOrderNo,
         }));
         toast.warning(
-          `Order number ${orderNo} already exists. Generated new number: ${today}${newSerial}`
+          `Order number ${orderNo} already exists. Generated new number: ${newOrderNo}`
         );
+        return false;
       }
       return isUnique;
     },
     [orders, isEditMode]
   );
 
+  const validateOrderNo = (orderNo) => {
+    if (!orderNo) return false;
+    const orderNoRegex = /^\d{8}\d{5}$/;
+    return orderNoRegex.test(orderNo);
+  };
+
+  // Check orderNo uniqueness only after initial generation
   useEffect(() => {
-    if (!isEditMode && formData.orderNo) {
+    if (!isEditMode && formData.orderNo && !isAllOrdersLoading) {
       checkOrderNoUniqueness(formData.orderNo);
     }
-  }, [formData.orderNo, isEditMode, checkOrderNoUniqueness]);
+  }, [
+    formData.orderNo,
+    isEditMode,
+    isAllOrdersLoading,
+    checkOrderNoUniqueness,
+  ]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!formData.createdFor) {
-      toast.error("Please fill all required fields Customer.");
+      toast.error("Please select a Customer.");
       return;
     }
 
-    const orderNoRegex = /^\d{8}\d{5}$/;
-    if (!formData.orderNo || !orderNoRegex.test(formData.orderNo)) {
+    if (assignmentType === "team" && !formData.assignedTeamId) {
+      toast.error("Please select a Team for assignment.");
+      return;
+    }
+
+    if (assignmentType === "users" && !formData.assignedUserId) {
+      toast.error("Please select at least a Primary User for assignment.");
+      return;
+    }
+
+    if (
+      assignmentType === "users" &&
+      formData.assignedUserId &&
+      formData.secondaryUserId &&
+      formData.assignedUserId === formData.secondaryUserId
+    ) {
+      toast.error("Primary and Secondary Users cannot be the same.");
+      return;
+    }
+
+    if (!validateOrderNo(formData.orderNo)) {
       toast.error(
         "Order Number must be in the format DDMMYYYYXXXXX (e.g., 2708202500001)."
       );
@@ -339,7 +380,8 @@ const AddNewOrder = ({ adminName }) => {
       return;
     }
 
-    if (!isEditMode && !checkOrderNoUniqueness(formData.orderNo)) {
+    if (!isEditMode && !checkOrderNoUniqueness(formData.orderNo, false)) {
+      toast.error("Order Number already exists.");
       return;
     }
 
@@ -348,16 +390,66 @@ const AddNewOrder = ({ adminName }) => {
       return;
     }
 
+    if (
+      formData.masterPipelineNo &&
+      !validateOrderNo(formData.masterPipelineNo)
+    ) {
+      toast.error(
+        "Master Pipeline Number must be in the format DDMMYYYYXXXXX (e.g., 2708202500001)."
+      );
+      return;
+    }
+
+    if (
+      formData.previousOrderNo &&
+      !validateOrderNo(formData.previousOrderNo)
+    ) {
+      toast.error(
+        "Previous Order Number must be in the format DDMMYYYYXXXXX (e.g., 2708202500001)."
+      );
+      return;
+    }
+
+    if (
+      formData.masterPipelineNo &&
+      orders.every((order) => order.orderNo !== formData.masterPipelineNo)
+    ) {
+      toast.error("Master Pipeline Number does not match any existing order.");
+      return;
+    }
+
+    if (
+      formData.previousOrderNo &&
+      orders.every((order) => order.orderNo !== formData.previousOrderNo)
+    ) {
+      toast.error("Previous Order Number does not match any existing order.");
+      return;
+    }
+
     try {
       const payload = {
-        ...formData,
-        assignedTo: formData.assignedTo || null,
-        priority: formData.priority || null,
+        createdFor: formData.createdFor,
+        createdBy: formData.createdBy,
+        assignedTeamId:
+          assignmentType === "team" ? formData.assignedTeamId : null,
+        assignedUserId:
+          assignmentType === "users" ? formData.assignedUserId : null,
+        secondaryUserId:
+          assignmentType === "users" ? formData.secondaryUserId : null,
+        pipeline: formData.pipeline || null,
+        status: formData.status,
+        dueDate: formData.dueDate || null,
         followupDates: formData.followupDates.filter(
           (date) => date && moment(date).isValid()
         ),
+        source: formData.source || null,
+        priority: formData.priority || null,
+        description: formData.description || null,
         invoiceLink: isEditMode ? formData.invoiceLink || null : null,
-        quotationId: formData.quotationId || null, // Include quotationId
+        orderNo: formData.orderNo,
+        quotationId: formData.quotationId || null,
+        masterPipelineNo: formData.masterPipelineNo || null,
+        previousOrderNo: formData.previousOrderNo || null,
       };
 
       if (isEditMode) {
@@ -366,8 +458,10 @@ const AddNewOrder = ({ adminName }) => {
           return;
         }
         await updateOrder({ id, ...payload }).unwrap();
+        toast.success("Order updated successfully");
       } else {
         await createOrder(payload).unwrap();
+        toast.success("Order created successfully");
       }
       navigate("/orders/list");
     } catch (err) {
@@ -387,6 +481,7 @@ const AddNewOrder = ({ adminName }) => {
     isOrderLoading ||
     isTeamsLoading ||
     isCustomersLoading ||
+    isUsersLoading ||
     isProfileLoading ||
     (!isEditMode && isAllOrdersLoading)
   ) {
@@ -407,7 +502,13 @@ const AddNewOrder = ({ adminName }) => {
     );
   }
 
-  if (orderError || customersError || profileError || allOrdersError) {
+  if (
+    orderError ||
+    customersError ||
+    usersError ||
+    profileError ||
+    allOrdersError
+  ) {
     return (
       <div className="content">
         <div className="card">
@@ -416,6 +517,7 @@ const AddNewOrder = ({ adminName }) => {
               Error loading data:{" "}
               {orderError?.data?.message ||
                 customersError?.data?.message ||
+                usersError?.data?.message ||
                 profileError?.data?.message ||
                 allOrdersError?.data?.message ||
                 "Unknown error"}
@@ -519,9 +621,6 @@ const AddNewOrder = ({ adminName }) => {
                     />
                   </Form.Group>
                 </div>
-              </div>
-
-              <div className="row">
                 <div className="col-lg-6">
                   <Form.Group className="mb-3">
                     <Form.Label>Quotation Number</Form.Label>
@@ -534,6 +633,62 @@ const AddNewOrder = ({ adminName }) => {
                     />
                   </Form.Group>
                 </div>
+              </div>
+
+              <div className="row">
+                <div className="col-lg-6">
+                  <Form.Group className="mb-3">
+                    <Form.Label>Master Pipeline Number</Form.Label>
+                    <Select
+                      style={{ width: "100%" }}
+                      value={formData.masterPipelineNo || undefined}
+                      onChange={(value) =>
+                        handleChange("masterPipelineNo", value)
+                      }
+                      placeholder="Select master pipeline order"
+                      allowClear
+                    >
+                      {orders
+                        .filter(
+                          (order) =>
+                            order.orderNo && order.orderNo !== formData.orderNo
+                        )
+                        .map((order) => (
+                          <Option key={order.orderNo} value={order.orderNo}>
+                            {order.orderNo}
+                          </Option>
+                        ))}
+                    </Select>
+                  </Form.Group>
+                </div>
+                <div className="col-lg-6">
+                  <Form.Group className="mb-3">
+                    <Form.Label>Previous Order Number</Form.Label>
+                    <Select
+                      style={{ width: "100%" }}
+                      value={formData.previousOrderNo || undefined}
+                      onChange={(value) =>
+                        handleChange("previousOrderNo", value)
+                      }
+                      placeholder="Select previous order"
+                      allowClear
+                    >
+                      {orders
+                        .filter(
+                          (order) =>
+                            order.orderNo && order.orderNo !== formData.orderNo
+                        )
+                        .map((order) => (
+                          <Option key={order.orderNo} value={order.orderNo}>
+                            {order.orderNo}
+                          </Option>
+                        ))}
+                    </Select>
+                  </Form.Group>
+                </div>
+              </div>
+
+              <div className="row">
                 <div className="col-lg-6">
                   <Form.Group className="mb-3">
                     <Form.Label>Pipeline</Form.Label>
@@ -548,10 +703,7 @@ const AddNewOrder = ({ adminName }) => {
                     />
                   </Form.Group>
                 </div>
-              </div>
-
-              {isEditMode && (
-                <div className="row">
+                {isEditMode && (
                   <div className="col-lg-6">
                     <Form.Group className="mb-3">
                       <Form.Label>Invoice Link</Form.Label>
@@ -570,8 +722,8 @@ const AddNewOrder = ({ adminName }) => {
                       />
                     </Form.Group>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
 
               <div className="row">
                 <div className="col-lg-6">
@@ -609,40 +761,137 @@ const AddNewOrder = ({ adminName }) => {
               </div>
 
               <div className="row">
-                <div className="col-lg-6">
+                <div className="col-lg-12">
                   <Form.Group className="mb-3">
                     <Form.Label>Assigned To</Form.Label>
-                    <div className="d-flex align-items-center">
+                    <Radio.Group
+                      value={assignmentType}
+                      onChange={(e) => {
+                        setAssignmentType(e.target.value);
+                        setFormData((prev) => ({
+                          ...prev,
+                          assignedTeamId:
+                            e.target.value === "team"
+                              ? prev.assignedTeamId
+                              : "",
+                          assignedUserId:
+                            e.target.value === "users"
+                              ? prev.assignedUserId
+                              : "",
+                          secondaryUserId:
+                            e.target.value === "users"
+                              ? prev.secondaryUserId
+                              : "",
+                        }));
+                      }}
+                    >
+                      <Radio value="team">Team</Radio>
+                      <Radio value="users">Users</Radio>
+                    </Radio.Group>
+                  </Form.Group>
+                </div>
+              </div>
+
+              {assignmentType === "team" && (
+                <div className="row">
+                  <div className="col-lg-6">
+                    <Form.Group className="mb-3">
+                      <Form.Label>Team</Form.Label>
+                      <div className="d-flex align-items-center">
+                        <Select
+                          style={{ width: "100%" }}
+                          value={formData.assignedTeamId || undefined}
+                          onChange={(value) =>
+                            handleChange("assignedTeamId", value)
+                          }
+                          placeholder="Select team"
+                          disabled={isTeamsLoading}
+                        >
+                          {teams.length > 0 ? (
+                            teams.map((team) => (
+                              <Option key={team.id} value={team.id}>
+                                {team.teamName}
+                              </Option>
+                            ))
+                          ) : (
+                            <Option value="" disabled>
+                              No teams available
+                            </Option>
+                          )}
+                        </Select>
+                        <Button
+                          type="primary"
+                          className="ms-2"
+                          onClick={() => setShowNewTeamModal(true)}
+                          aria-label="Add new team"
+                        >
+                          <PlusOutlined />
+                        </Button>
+                      </div>
+                    </Form.Group>
+                  </div>
+                </div>
+              )}
+
+              {assignmentType === "users" && (
+                <div className="row">
+                  <div className="col-lg-6">
+                    <Form.Group className="mb-3">
+                      <Form.Label>Primary User</Form.Label>
                       <Select
                         style={{ width: "100%" }}
-                        value={formData.teamId || undefined}
-                        onChange={(value) => handleChange("teamId", value)}
-                        placeholder="Select team"
-                        disabled={isTeamsLoading}
+                        value={formData.assignedUserId || undefined}
+                        onChange={(value) =>
+                          handleChange("assignedUserId", value)
+                        }
+                        placeholder="Select primary user"
+                        disabled={isUsersLoading}
                       >
-                        {teams.length > 0 ? (
-                          teams.map((team) => (
-                            <Option key={team.id} value={team.id}>
-                              {team.teamName}
+                        {users.length > 0 ? (
+                          users.map((user) => (
+                            <Option key={user.userId} value={user.userId}>
+                              {user.username || user.name || "—"}
                             </Option>
                           ))
                         ) : (
                           <Option value="" disabled>
-                            No teams available
+                            No users available
                           </Option>
                         )}
                       </Select>
-                      <Button
-                        type="primary"
-                        className="ms-2"
-                        onClick={() => setShowNewTeamModal(true)}
-                        aria-label="Add new team"
+                    </Form.Group>
+                  </div>
+                  <div className="col-lg-6">
+                    <Form.Group className="mb-3">
+                      <Form.Label>Secondary User (Optional)</Form.Label>
+                      <Select
+                        style={{ width: "100%" }}
+                        value={formData.secondaryUserId || undefined}
+                        onChange={(value) =>
+                          handleChange("secondaryUserId", value)
+                        }
+                        placeholder="Select secondary user"
+                        disabled={isUsersLoading}
+                        allowClear
                       >
-                        <PlusOutlined />
-                      </Button>
-                    </div>
-                  </Form.Group>
+                        {users.length > 0 ? (
+                          users.map((user) => (
+                            <Option key={user.userId} value={user.userId}>
+                              {user.username || user.name || "—"}
+                            </Option>
+                          ))
+                        ) : (
+                          <Option value="" disabled>
+                            No users available
+                          </Option>
+                        )}
+                      </Select>
+                    </Form.Group>
+                  </div>
                 </div>
+              )}
+
+              <div className="row">
                 <div className="col-lg-6">
                   <Form.Group className="mb-3">
                     <Form.Label>Due Date</Form.Label>
@@ -760,6 +1009,7 @@ const AddNewOrder = ({ adminName }) => {
                     isOrderLoading ||
                     isTeamsLoading ||
                     isCustomersLoading ||
+                    isUsersLoading ||
                     isAllOrdersLoading
                   }
                 >
@@ -772,12 +1022,14 @@ const AddNewOrder = ({ adminName }) => {
                     isOrderLoading ||
                     isTeamsLoading ||
                     isCustomersLoading ||
+                    isUsersLoading ||
                     isAllOrdersLoading
                   }
                 >
                   {isOrderLoading ||
                   isTeamsLoading ||
                   isCustomersLoading ||
+                  isUsersLoading ||
                   isAllOrdersLoading
                     ? isEditMode
                       ? "Updating..."
@@ -793,7 +1045,7 @@ const AddNewOrder = ({ adminName }) => {
                 adminName={adminName}
                 onClose={() => setShowNewTeamModal(false)}
                 onTeamAdded={handleTeamAdded}
-                visible={showNewTeamModal} // Add this prop
+                visible={showNewTeamModal}
               />
             )}
           </div>
