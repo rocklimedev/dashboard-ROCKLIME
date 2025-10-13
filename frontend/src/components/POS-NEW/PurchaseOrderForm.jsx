@@ -150,7 +150,7 @@ const PurchaseOrderForm = ({
             Checkout
           </Text>
           <Divider />
-          {purchaseOrderData.items.length === 0 ? (
+          {cartItems.length === 0 && purchaseOrderData.items.length === 0 ? (
             <EmptyCartWrapper>
               <Empty
                 description="No products added"
@@ -336,7 +336,11 @@ const PurchaseOrderForm = ({
             type="primary"
             icon={<CheckCircleOutlined />}
             onClick={handleCreateDocument}
-            disabled={purchaseOrderData.items.length === 0 || !selectedVendor}
+            disabled={
+              (cartItems.length === 0 &&
+                purchaseOrderData.items.length === 0) ||
+              !selectedVendor
+            }
             block
             size="large"
             aria-label="Create purchase order"

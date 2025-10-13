@@ -1,10 +1,9 @@
-// src/components/POWrapper.jsx
 import React, { useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { toast } from "sonner";
 import { FaSearch } from "react-icons/fa";
 import { EditOutlined, DeleteOutlined, MoreOutlined } from "@ant-design/icons";
-import { Dropdown, Menu, Button } from "antd";
+import { Dropdown, Menu, Button, Select, Spin } from "antd";
 import DeleteModal from "../Common/DeleteModal";
 import OrderPagination from "./OrderPagination";
 import PageHeader from "../Common/PageHeader";
@@ -13,7 +12,10 @@ import {
   useGetPurchaseOrdersQuery,
   useDeletePurchaseOrderMutation,
   useGetVendorsQuery,
-} from "../../api/poApi"; // Import RTK Query hooks
+  useUpdatePurchaseOrderStatusMutation, // Import the new mutation
+} from "../../api/poApi";
+
+const { Option } = Select;
 
 const POWrapper = ({ activeTab, setActiveTab }) => {
   const navigate = useNavigate();
@@ -31,6 +33,7 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
     page: 1,
     limit: 10,
   });
+  const [editingStatusId, setEditingStatusId] = useState(null); // Track which PO is being edited
 
   // Fetch purchase orders and vendors using RTK Query
   const {
@@ -47,8 +50,9 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
   });
 
   const { data: vendorsData } = useGetVendorsQuery();
-
   const [deletePurchaseOrder] = useDeletePurchaseOrderMutation();
+  const [updatePurchaseOrderStatus, { isLoading: isUpdatingStatus }] =
+    useUpdatePurchaseOrderStatusMutation();
 
   // Map vendors for quick lookup
   const vendorMap = useMemo(() => {
@@ -82,7 +86,7 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
       result = result.filter((po) => {
         const vendorName = po.vendorId ? vendorMap[po.vendorId] || "—" : "N/A";
         return (
-          (po.orderNumber || "")
+          (po.poNumber || "")
             .toLowerCase()
             .includes(searchTerm.toLowerCase()) ||
           vendorName.toLowerCase().includes(searchTerm.toLowerCase())
@@ -93,14 +97,14 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
     switch (sortBy) {
       case "Ascending":
         return [...result].sort((a, b) => {
-          const aOrder = a.orderNumber || "";
-          const bOrder = b.orderNumber || "";
+          const aOrder = a.poNumber || "";
+          const bOrder = b.poNumber || "";
           return aOrder.localeCompare(bOrder);
         });
       case "Descending":
         return [...result].sort((a, b) => {
-          const aOrder = a.orderNumber || "";
-          const bOrder = b.orderNumber || "";
+          const aOrder = a.poNumber || "";
+          const bOrder = b.poNumber || "";
           return bOrder.localeCompare(aOrder);
         });
       case "Recently Added":
@@ -123,7 +127,8 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
         return result;
     }
   }, [purchaseOrders, searchTerm, sortBy, vendorMap]);
-  // Paginated purchase orders (handled by backend)
+
+  // Paginated purchase orders
   const paginatedPOs = filteredPOs;
 
   // Compute filtered state
@@ -159,6 +164,17 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
         `Failed to delete purchase order: ${
           err.data?.message || "Unknown error"
         }`
+      );
+    }
+  };
+
+  const handleStatusChange = async (poId, newStatus) => {
+    try {
+      await updatePurchaseOrderStatus({ id: poId, status: newStatus }).unwrap();
+      setEditingStatusId(null); // Close the dropdown
+    } catch (err) {
+      toast.error(
+        `Failed to update status: ${err.data?.message || "Unknown error"}`
       );
     }
   };
@@ -310,7 +326,7 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
                           : "N/A";
                         const status = getStatusDisplay(po.status);
                         const dueDateClass = isDueDateClose(
-                          po.expectedDeliveryDate
+                          po.expectDeliveryDate
                         )
                           ? "due-date-close"
                           : "";
@@ -324,13 +340,38 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
                               <Link to={`/po/${po.id}`}>{po.poNumber}</Link>
                             </td>
                             <td>
-                              <span
-                                className="priority-badge"
-                                style={{ backgroundColor: "#f2f2f2" }}
-                              >
-                                {status.charAt(0).toUpperCase() +
-                                  status.slice(1)}
-                              </span>
+                              {editingStatusId === po.id ? (
+                                <Select
+                                  value={status}
+                                  onChange={(value) =>
+                                    handleStatusChange(po.id, value)
+                                  }
+                                  style={{ width: 120 }}
+                                  loading={isUpdatingStatus}
+                                  autoFocus
+                                  onBlur={() => setEditingStatusId(null)}
+                                  aria-label={`Update status for PO ${po.poNumber}`}
+                                >
+                                  {statuses.map((s) => (
+                                    <Option key={s} value={s}>
+                                      {s.charAt(0).toUpperCase() + s.slice(1)}
+                                    </Option>
+                                  ))}
+                                </Select>
+                              ) : (
+                                <span
+                                  className="priority-badge"
+                                  style={{
+                                    backgroundColor: "#f2f2f2",
+                                    cursor: "pointer",
+                                  }}
+                                  onClick={() => setEditingStatusId(po.id)}
+                                >
+                                  {status.charAt(0).toUpperCase() +
+                                    status.slice(1)}
+                                  <EditOutlined style={{ marginLeft: 8 }} />
+                                </span>
+                              )}
                             </td>
                             <td>{vendorName}</td>
                             <td>

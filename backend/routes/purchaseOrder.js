@@ -26,5 +26,6 @@ router.get(
   "/vendor/:vendorId",
   purchaseOrderController.getPurchaseOrdersByVendor
 );
-
+// ✅ New route to update purchase order status
+router.patch("/:id/status", purchaseOrderController.updatePurchaseOrderStatus);
 module.exports = router;

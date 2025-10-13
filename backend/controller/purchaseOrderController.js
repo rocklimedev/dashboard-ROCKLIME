@@ -347,3 +347,69 @@ exports.getPurchaseOrdersByVendor = async (req, res) => {
     });
   }
 };
+
+// Update only the status of a purchase order
+exports.updatePurchaseOrderStatus = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    // Validate status
+    const validStatuses = ["pending", "confirmed", "delivered", "cancelled"];
+    if (!status || !validStatuses.includes(status)) {
+      await t.rollback();
+      return res.status(400).json({
+        message: `Invalid status. Allowed values are: ${validStatuses.join(
+          ", "
+        )}`,
+      });
+    }
+
+    // Find purchase order
+    const purchaseOrder = await PurchaseOrder.findByPk(id, { transaction: t });
+    if (!purchaseOrder) {
+      await t.rollback();
+      return res.status(404).json({ message: "Purchase order not found" });
+    }
+
+    // Prevent redundant updates
+    if (purchaseOrder.status === status) {
+      await t.rollback();
+      return res
+        .status(400)
+        .json({ message: "Status is already set to this value" });
+    }
+
+    // Handle business logic for stock update (only if status moves to delivered)
+    if (status === "delivered" && purchaseOrder.status !== "delivered") {
+      for (const item of purchaseOrder.items || []) {
+        const product = await Product.findByPk(item.productId, {
+          transaction: t,
+        });
+        if (product) {
+          product.quantity += item.quantity;
+          await product.save({ transaction: t });
+        }
+      }
+    }
+
+    // Update status
+    await purchaseOrder.update({ status }, { transaction: t });
+
+    await t.commit();
+    return res.status(200).json({
+      message: `Purchase order status updated to '${status}' successfully`,
+      purchaseOrder: {
+        ...purchaseOrder.toJSON(),
+        items: purchaseOrder.items || [],
+      },
+    });
+  } catch (error) {
+    await t.rollback();
+    return res.status(500).json({
+      message: "Error updating purchase order status",
+      error: error.message,
+    });
+  }
+};

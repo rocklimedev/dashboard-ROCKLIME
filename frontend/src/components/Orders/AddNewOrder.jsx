@@ -458,10 +458,8 @@ const AddNewOrder = ({ adminName }) => {
           return;
         }
         await updateOrder({ id, ...payload }).unwrap();
-        toast.success("Order updated successfully");
       } else {
         await createOrder(payload).unwrap();
-        toast.success("Order created successfully");
       }
       navigate("/orders/list");
     } catch (err) {

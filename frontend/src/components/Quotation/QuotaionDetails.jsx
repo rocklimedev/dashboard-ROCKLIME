@@ -69,13 +69,6 @@ const QuotationsDetails = () => {
   }, [quotation?.products]);
   const { productsData, errors, loading } = useProductsData(products);
 
-  // Log products and productsData for debugging
-  useEffect(() => {
-    console.log("Parsed products:", products);
-    console.log("Fetched productsData:", productsData);
-    console.log("Errors:", errors);
-  }, [products, productsData, errors]);
-
   // Display errors for failed product fetches
   useEffect(() => {
     if (errors.length > 0) {
@@ -151,12 +144,7 @@ const QuotationsDetails = () => {
     ),
     extension: "png",
   };
-  useEffect(() => {
-    console.log("Raw quotation.products:", quotation?.products);
-    console.log("Parsed products:", products);
-    console.log("Fetched productsData:", productsData);
-    console.log("Errors:", errors);
-  }, [quotation?.products, products, productsData, errors]);
+
   const fetchImageAsBuffer = async (url, retries = 2) => {
     try {
       if (!url || !isValidImageUrl(url)) {

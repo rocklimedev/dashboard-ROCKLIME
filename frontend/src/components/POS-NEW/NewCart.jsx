@@ -54,8 +54,10 @@ import {
   generatePurchaseOrderNumber,
 } from "../../data/cartUtils";
 import { useCreateVendorMutation } from "../../api/vendorApi";
+
 const { TabPane } = Tabs;
 const { Text } = Typography;
+
 const PageWrapper = styled.div`
   padding: 16px;
   background-color: #f5f5f5;
@@ -222,6 +224,29 @@ const NewCart = ({ onConvertToOrder }) => {
     () => (Array.isArray(customers) ? customers : []),
     [customers]
   );
+
+  // Sync purchaseOrderData.items with cartItems when cartItems changes
+  useEffect(() => {
+    if (documentType === "Purchase Order") {
+      setPurchaseOrderData((prev) => ({
+        ...prev,
+        items: cartItems.map((item) => ({
+          id: item.productId,
+          productId: item.productId,
+          name: item.name || "Unknown",
+          quantity: item.quantity || 1,
+          mrp: item.price || 0.01,
+          total: (item.quantity || 1) * (item.price || 0.01),
+        })),
+        totalAmount: cartItems
+          .reduce(
+            (sum, item) => sum + (item.quantity || 1) * (item.price || 0),
+            0
+          )
+          .toFixed(2),
+      }));
+    }
+  }, [cartItems, documentType]);
 
   // Total calculations
   const totalItems = useMemo(
@@ -445,7 +470,7 @@ const NewCart = ({ onConvertToOrder }) => {
   const handleCreateDocument = async () => {
     if (documentType === "Purchase Order") {
       if (!selectedVendor) return toast.error("Please select a vendor.");
-      if (purchaseOrderData.items.length === 0)
+      if (cartItems.length === 0 && purchaseOrderData.items.length === 0)
         return toast.error("Please add at least one product.");
       if (purchaseOrderData.items.some((item) => item.mrp <= 0))
         return toast.error(
@@ -870,7 +895,8 @@ const NewCart = ({ onConvertToOrder }) => {
                       !product ||
                       purchaseOrderData.items.some(
                         (item) => item.productId === productId
-                      )
+                      ) ||
+                      cartItems.some((item) => item.productId === productId)
                     ) {
                       if (!product) toast.error("Product not found.");
                       else toast.error("Product already added.");
