@@ -1,34 +1,22 @@
+import React from "react";
 import {
   Card,
   Button,
-  Spin,
   Space,
   Typography,
   Divider,
-  Empty,
   Row,
   Col,
+  Empty,
   InputNumber,
 } from "antd";
-import {
-  ShoppingCartOutlined,
-  CheckCircleOutlined,
-  ArrowLeftOutlined,
-} from "@ant-design/icons";
-import {
-  useUpdateCartMutation,
-  useRemoveFromCartMutation,
-} from "../../api/cartApi";
+import { ArrowLeftOutlined } from "@ant-design/icons";
 import { LazyLoadImage } from "react-lazy-load-image-component";
-import { toast } from "sonner";
 import { FcEmptyTrash } from "react-icons/fc";
 import { BiTrash } from "react-icons/bi";
 import styled from "styled-components";
-import PropTypes from "prop-types";
-import "react-lazy-load-image-component/src/effects/blur.css";
 import OrderTotal from "./OrderTotal";
-import useProductsData from "../../data/useProductdata";
-
+import { ShoppingCartOutlined, CheckCircleOutlined } from "@ant-design/icons";
 const { Title, Text } = Typography;
 
 const CartItemsCard = styled(Card)`
@@ -118,83 +106,24 @@ const DiscountInput = styled(InputNumber)`
   }
 `;
 
-const CartComponent = ({
+const CartTab = ({
   cartItems,
-  userId,
-  itemDiscounts,
-  setItemDiscounts,
-  updatingItems,
-  setUpdatingItems,
-  refetch,
-  quotationData,
+  cartProductsData,
   totalItems,
-  subTotal,
-  totalDiscount,
   shipping,
   tax,
+  discount,
   roundOff,
-  setActiveTab,
+  subTotal,
+  quotationData,
+  itemDiscounts,
+  updatingItems,
+  handleUpdateQuantity,
+  handleRemoveItem,
+  handleDiscountChange,
   setShowClearCartModal,
+  setActiveTab,
 }) => {
-  const [updateCart] = useUpdateCartMutation();
-  const [removeFromCart] = useRemoveFromCartMutation();
-  const { productsData, loading: productsLoading } = useProductsData(cartItems);
-
-  const handleUpdateQuantity = async (productId, newQuantity) => {
-    if (!userId) return toast.error("User not logged in!");
-    setUpdatingItems((prev) => ({ ...prev, [productId]: true }));
-    try {
-      if (newQuantity <= 0) {
-        await removeFromCart({ userId, productId }).unwrap();
-        setItemDiscounts((prev) => {
-          const { [productId]: _, ...rest } = prev;
-          return rest;
-        });
-      } else {
-        await updateCart({
-          userId,
-          productId,
-          quantity: Number(newQuantity),
-        }).unwrap();
-      }
-      refetch();
-    } catch (error) {
-      toast.error(`Error: ${error.data?.message || "Unknown error"}`);
-    } finally {
-      setUpdatingItems((prev) => ({ ...prev, [productId]: false }));
-    }
-  };
-
-  const handleRemoveItem = async (productId) => {
-    if (!userId) return toast.error("User not logged in!");
-    setUpdatingItems((prev) => ({ ...prev, [productId]: true }));
-    try {
-      await removeFromCart({ userId, productId }).unwrap();
-      setItemDiscounts((prev) => {
-        const { [productId]: _, ...rest } = prev;
-        return rest;
-      });
-      refetch();
-    } catch (error) {
-      toast.error(`Error: ${error.data?.message || "Unknown error"}`);
-    } finally {
-      setUpdatingItems((prev) => ({ ...prev, [productId]: false }));
-    }
-  };
-
-  const handleDiscountChange = (productId, value) => {
-    setItemDiscounts((prev) => ({
-      ...prev,
-      [productId]: value >= 0 ? value : 0,
-    }));
-  };
-
-  if (productsLoading) {
-    return (
-      <Spin size="large" style={{ display: "block", margin: "50px auto" }} />
-    );
-  }
-
   return (
     <Row gutter={[16, 16]}>
       <Col xs={24} sm={24} md={16} lg={16}>
@@ -243,7 +172,7 @@ const CartComponent = ({
           ) : (
             <div>
               {cartItems.map((item) => {
-                const product = productsData?.find(
+                const product = cartProductsData?.find(
                   (p) => p.productId === item.productId
                 );
                 let imageUrl = null;
@@ -270,7 +199,15 @@ const CartComponent = ({
                         <Text strong>{item.name}</Text>
                         <br />
                         <Text type="secondary" block style={{ color: "green" }}>
-                          Price: ₹{item.price?.toFixed(2) || "0.00"}
+                          Price: ₹
+                          {(
+                            item.price +
+                            (quotationData.includeGst
+                              ? (item.price *
+                                  (parseFloat(quotationData.gstValue) || 0)) /
+                                100
+                              : 0)
+                          ).toFixed(2)}
                         </Text>
                         <br />
                         <Text>Discount:</Text>
@@ -326,8 +263,20 @@ const CartComponent = ({
                         <Text strong style={{ color: "green" }}>
                           ₹
                           {(
-                            item.price * item.quantity -
-                            (itemDiscounts[item.productId] || 0)
+                            (item.price +
+                              (quotationData.includeGst
+                                ? (item.price *
+                                    (parseFloat(quotationData.gstValue) || 0)) /
+                                  100
+                                : 0)) *
+                              item.quantity -
+                            (quotationData.discountType === "percent"
+                              ? (item.price *
+                                  item.quantity *
+                                  (itemDiscounts[item.productId] || 0)) /
+                                100
+                              : (itemDiscounts[item.productId] || 0) *
+                                item.quantity)
                           ).toFixed(2)}
                         </Text>
                         <RemoveButton
@@ -359,7 +308,7 @@ const CartComponent = ({
             shipping={shipping}
             tax={tax}
             coupon={0}
-            discount={totalDiscount}
+            discount={discount}
             roundOff={roundOff}
             subTotal={subTotal}
             items={cartItems.map((item) => ({
@@ -396,23 +345,4 @@ const CartComponent = ({
   );
 };
 
-CartComponent.propTypes = {
-  cartItems: PropTypes.array.isRequired,
-  userId: PropTypes.string,
-  itemDiscounts: PropTypes.object.isRequired,
-  setItemDiscounts: PropTypes.func.isRequired,
-  updatingItems: PropTypes.object.isRequired,
-  setUpdatingItems: PropTypes.func.isRequired,
-  refetch: PropTypes.func.isRequired,
-  quotationData: PropTypes.object.isRequired,
-  totalItems: PropTypes.number.isRequired,
-  subTotal: PropTypes.number.isRequired,
-  totalDiscount: PropTypes.number.isRequired,
-  shipping: PropTypes.number.isRequired,
-  tax: PropTypes.number.isRequired,
-  roundOff: PropTypes.number.isRequired,
-  setActiveTab: PropTypes.func.isRequired,
-  setShowClearCartModal: PropTypes.func.isRequired,
-};
-
-export default CartComponent;
+export default CartTab;

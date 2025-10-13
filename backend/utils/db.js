@@ -1,43 +1,43 @@
 require("dotenv").config();
 const sequelize = require("../config/database");
+
 const User = require("../models/users");
-const Product = require("../models/product");
-const Permission = require("../models/permisson"); // Fixed typo
 const Role = require("../models/roles");
-const RolePermission = require("../models/rolePermission"); // Junction Table
-const Cart = require("../models/carts");
+const Permission = require("../models/permisson");
+const RolePermission = require("../models/rolePermission");
+
 const Address = require("../models/address");
-const Category = require("../models/category");
-const Invoice = require("../models/invoice");
-const Order = require("../models/orders");
-const Quotation = require("../models/quotation");
-const Signature = require("../models/signature");
-const Vendor = require("../models/vendor");
-const Brand = require("../models/brand");
-const Customer = require("../models/customers");
 const Team = require("../models/team");
-const Keyword = require("../models/keyword");
 const TeamMember = require("../models/teamMember");
-const ParentCategory = require("../models/parentCategory");
+
+const Product = require("../models/product");
 const ProductMeta = require("../models/productMeta");
+const Category = require("../models/category");
+const ParentCategory = require("../models/parentCategory");
+const Brand = require("../models/brand");
+const Vendor = require("../models/vendor");
+const Keyword = require("../models/keyword");
+
 const BrandParentCategory = require("../models/brandParentCategory");
 const BrandParentCategoryBrand = require("../models/brandParentCategoryBrand");
+
+const Customer = require("../models/customers");
+const Quotation = require("../models/quotation");
+const Invoice = require("../models/invoice");
+const Order = require("../models/orders");
+const Signature = require("../models/signature");
+const Cart = require("../models/carts");
+
 const setupDB = async () => {
   try {
     await sequelize.authenticate();
     console.log("\x1b[32m%s\x1b[0m", "✓ MySQL Connected!");
 
-    // ==============================
-    // 🔥 USER RELATIONSHIPS
-    // ==============================
+    // ======================================
+    // 🔥 USER / ROLE / PERMISSION RELATIONSHIPS
+    // ======================================
 
-    Address.belongsTo(User, { foreignKey: "userId", as: "users" });
-    User.hasMany(Address, { foreignKey: "userId", as: "addresses" });
-
-    // ==============================
-    // 🔥 ROLE & PERMISSION SETUP
-    // ==============================
-
+    // Role ↔ Permission (M:N)
     Role.belongsToMany(Permission, {
       through: RolePermission,
       foreignKey: "roleId",
@@ -50,17 +50,13 @@ const setupDB = async () => {
       otherKey: "roleId",
       as: "roles",
     });
-    // User ↔ Order (for createdBy)
-    User.hasMany(Order, { foreignKey: "createdBy", as: "users" });
-    Order.belongsTo(User, { foreignKey: "createdBy", as: "users" });
-    Customer.hasMany(Order, { foreignKey: "createdFor", as: "customers" });
-    Order.belongsTo(Customer, { foreignKey: "createdFor", as: "customers" });
+
+    // RolePermission direct associations
     RolePermission.belongsTo(Role, { foreignKey: "roleId", as: "roles" });
     RolePermission.belongsTo(Permission, {
       foreignKey: "permissionId",
       as: "permissions",
     });
-
     Role.hasMany(RolePermission, {
       foreignKey: "roleId",
       as: "rolepermissions",
@@ -70,27 +66,118 @@ const setupDB = async () => {
       as: "rolepermissions",
     });
 
+    // Role ↔ User (1:M)
     Role.hasMany(User, { foreignKey: "roleId", as: "users" });
     User.belongsTo(Role, { foreignKey: "roleId", as: "role" });
 
-    // ==============================
-    // 🔥 USER RELATIONSHIPS
-    // ==============================
+    // User ↔ Address (1:M)
+    Address.belongsTo(User, { foreignKey: "userId", as: "users" });
+    User.hasMany(Address, { foreignKey: "userId", as: "addresses" });
+    // ======================================
+    // 🔥 ORDER RELATIONSHIPS
+    // ======================================
 
-    // User ↔ Invoice
+    // Created By
+    User.hasMany(Order, { foreignKey: "createdBy", as: "createdOrders" });
+    Order.belongsTo(User, { foreignKey: "createdBy", as: "creator" });
+
+    // Created For
+    Customer.hasMany(Order, { foreignKey: "createdFor", as: "customerOrders" });
+    Order.belongsTo(Customer, { foreignKey: "createdFor", as: "customer" });
+
+    // Assigned user / team
+    User.hasMany(Order, { foreignKey: "assignedUserId", as: "assignedOrders" });
+    Order.belongsTo(User, { foreignKey: "assignedUserId", as: "assignedUser" });
+
+    Team.hasMany(Order, { foreignKey: "assignedTeamId", as: "teamOrders" });
+    Order.belongsTo(Team, { foreignKey: "assignedTeamId", as: "assignedTeam" });
+
+    // Secondary user
+    User.hasMany(Order, {
+      foreignKey: "secondaryUserId",
+      as: "secondaryOrders",
+    });
+    Order.belongsTo(User, {
+      foreignKey: "secondaryUserId",
+      as: "secondaryUser",
+    });
+
+    // ===============================
+    // PIPELINE RELATIONSHIPS
+    // ===============================
+
+    // Previous order mapping
+    Order.hasMany(Order, {
+      foreignKey: "previousOrderNo",
+      sourceKey: "orderNo",
+      as: "nextOrders",
+    });
+    Order.belongsTo(Order, {
+      foreignKey: "previousOrderNo",
+      targetKey: "orderNo",
+      as: "previousOrder",
+    });
+
+    // Master pipeline mapping
+    Order.hasMany(Order, {
+      foreignKey: "masterPipelineNo",
+      sourceKey: "orderNo",
+      as: "pipelineOrders",
+    });
+    Order.belongsTo(Order, {
+      foreignKey: "masterPipelineNo",
+      targetKey: "orderNo",
+      as: "masterOrder",
+    });
+
+    // ======================================
+    // 🔥 INVOICE / QUOTATION / SIGNATURE RELATIONSHIPS
+    // ======================================
+
+    // Invoice ↔ User
     Invoice.belongsTo(User, { foreignKey: "createdBy" });
 
-    // User ↔ Quotation
+    // Quotation ↔ User
     User.hasMany(Quotation, { foreignKey: "createdBy" });
     Quotation.belongsTo(User, { foreignKey: "createdBy", as: "users" });
 
-    // User ↔ Signature
+    // Signature ↔ User
     Signature.belongsTo(User, { foreignKey: "userId" });
 
-    // ==============================
-    // 🔥 PRODUCT RELATIONSHIPS
-    // ==============================
+    // Customer ↔ Quotation (1:M)
+    Customer.hasMany(Quotation, {
+      foreignKey: "customerId",
+      as: "customerQuotations",
+    });
+    Quotation.belongsTo(Customer, {
+      foreignKey: "customerId",
+      as: "customers",
+    });
 
+    // Customer ↔ Invoice (1:M)
+    Customer.hasMany(Invoice, {
+      foreignKey: "customerId",
+      onDelete: "CASCADE",
+    });
+    Invoice.belongsTo(Customer, { foreignKey: "customerId" });
+
+    // Invoice ↔ Address / Quotation
+    Invoice.belongsTo(Address, { foreignKey: "shipTo" });
+    Invoice.belongsTo(Quotation, {
+      foreignKey: "quotationId",
+      allowNull: true,
+    });
+    Quotation.hasOne(Invoice, { foreignKey: "quotationId" });
+    Quotation.belongsTo(Address, {
+      foreignKey: "shipTo",
+      as: "shippingAddress",
+    });
+
+    // ======================================
+    // 🔥 PRODUCT / CATEGORY / BRAND RELATIONSHIPS
+    // ======================================
+
+    // Product ↔ Brand / Category / Vendor / ProductMeta
     Product.belongsTo(Brand, { foreignKey: "brandId", as: "brand" });
     Product.belongsTo(Category, { foreignKey: "categoryId", as: "categories" });
     Product.belongsTo(Vendor, { foreignKey: "vendorId", as: "vendors" });
@@ -103,52 +190,12 @@ const setupDB = async () => {
       as: "product_metas",
       constraints: false,
     });
-    // ==============================
-    // 🔥 CUSTOMER RELATIONSHIPS
-    // ==============================
 
-    Customer.belongsTo(Vendor, { foreignKey: "vendorId", as: "vendors" });
-
-    Customer.hasMany(Quotation, {
-      foreignKey: "customerId",
-      as: "customerQuotations",
-    });
-    Quotation.belongsTo(Customer, {
-      foreignKey: "customerId",
-      as: "customers",
-    });
-
-    Customer.hasMany(Invoice, {
-      foreignKey: "customerId",
-      onDelete: "CASCADE",
-    });
-    Invoice.belongsTo(Customer, { foreignKey: "customerId" });
-
-    Invoice.belongsTo(Address, { foreignKey: "shipTo" });
-
-    Invoice.belongsTo(Quotation, {
-      foreignKey: "quotationId",
-      allowNull: true,
-    });
-    Quotation.hasOne(Invoice, { foreignKey: "quotationId" });
-    Quotation.belongsTo(Address, {
-      foreignKey: "shipTo",
-      as: "shippingAddress",
-    });
-
-    // ==============================
-    // 🔥 BRAND & VENDOR RELATIONSHIPS
-    // ==============================
-
-    // Remove duplicate Vendor-Brand associations
+    // Vendor ↔ Brand
     Brand.hasMany(Vendor, { foreignKey: "brandId" });
     Vendor.belongsTo(Brand, { foreignKey: "brandId" });
 
-    // Remove the brandSlug-based associations as they are redundant
-    // Brand.hasMany(Vendor, { foreignKey: "brandSlug", sourceKey: "brandSlug" });
-    // Vendor.belongsTo(Brand, { foreignKey: "brandSlug", targetKey: "brandSlug" });
-
-    // Brand ↔ ParentCategory (Many-to-Many)
+    // Brand ↔ ParentCategory (M:N)
     Brand.belongsToMany(ParentCategory, {
       through: BrandParentCategory,
       foreignKey: "brandId",
@@ -169,7 +216,6 @@ const setupDB = async () => {
       otherKey: "brandId",
       as: "brands",
     });
-
     Brand.belongsToMany(BrandParentCategory, {
       through: BrandParentCategoryBrand,
       foreignKey: "brandId",
@@ -187,7 +233,7 @@ const setupDB = async () => {
       as: "brandParentCategory",
     });
 
-    // Category relationships
+    // Category ↔ Brand / ParentCategory
     Category.belongsTo(Brand, { foreignKey: "brandId", as: "brand" });
     Category.belongsTo(ParentCategory, {
       foreignKey: "parentCategoryId",
@@ -199,24 +245,23 @@ const setupDB = async () => {
       as: "categories",
     });
 
-    // Team ↔ Order
-    Team.hasMany(Order, { foreignKey: "assignedTo", as: "team" });
-    Order.belongsTo(Team, { foreignKey: "assignedTo", as: "team" });
-
-    // Keyword ↔ Category
+    // Keyword ↔ Category (1:M)
     Keyword.belongsTo(Category, { foreignKey: "categoryId", as: "categories" });
     Category.hasMany(Keyword, { foreignKey: "categoryId" });
 
-    // ==============================
+    // Customer ↔ Vendor
+    Customer.belongsTo(Vendor, { foreignKey: "vendorId", as: "vendors" });
+
+    // ======================================
     // 🔥 SYNC DATABASE
-    // ==============================
+    // ======================================
 
     await sequelize.sync({ alter: true });
     console.log("\x1b[32m%s\x1b[0m", "✓ Database tables synced!");
   } catch (error) {
     console.log(
       "\x1b[31m%s\x1b[0m",
-      "✗ Unable to connect to the the database:",
+      "✗ Unable to connect to the database:",
       error
     );
   }

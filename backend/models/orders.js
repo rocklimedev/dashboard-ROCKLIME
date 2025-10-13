@@ -3,7 +3,7 @@ const sequelize = require("../config/database");
 const Team = require("./team");
 const Customer = require("./customers");
 const User = require("./users");
-const Quotation = require("./quotation"); // Import Quotation model
+const Quotation = require("./quotation");
 
 const Order = sequelize.define(
   "Order",
@@ -13,18 +13,14 @@ const Order = sequelize.define(
       primaryKey: true,
       defaultValue: DataTypes.UUIDV4,
     },
-
     pipeline: {
       type: DataTypes.JSON,
       allowNull: true,
     },
-
-    // New products field
     products: {
       type: DataTypes.JSON,
       allowNull: true,
     },
-
     status: {
       type: DataTypes.ENUM(
         "CREATED",
@@ -55,7 +51,6 @@ const Order = sequelize.define(
     priority: {
       type: DataTypes.ENUM("high", "medium", "low"),
       defaultValue: "medium",
-      allowNull: true,
     },
     description: {
       type: DataTypes.TEXT,
@@ -77,12 +72,28 @@ const Order = sequelize.define(
         key: "userId",
       },
     },
-    assignedTo: {
+    assignedUserId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: User,
+        key: "userId",
+      },
+    },
+    assignedTeamId: {
       type: DataTypes.UUID,
       allowNull: true,
       references: {
         model: Team,
         key: "id",
+      },
+    },
+    secondaryUserId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: User,
+        key: "userId",
       },
     },
     invoiceLink: {
@@ -103,6 +114,17 @@ const Order = sequelize.define(
       },
       onDelete: "SET NULL",
       onUpdate: "CASCADE",
+    },
+    // ===============================
+    // PIPELINE SYSTEM
+    // ===============================
+    masterPipelineNo: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+    },
+    previousOrderNo: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
     },
   },
   {

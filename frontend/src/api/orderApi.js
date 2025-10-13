@@ -4,7 +4,7 @@ import { API_URL } from "../data/config";
 export const orderApi = createApi({
   reducerPath: "orderApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}/order`,
+    baseUrl: `${API_URL}/order`, // Add /api to match backend route
     prepareHeaders: (headers) => {
       const token = localStorage.getItem("token");
       if (token) {
@@ -13,7 +13,7 @@ export const orderApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ["Orders"], // Define tag type for orders
+  tagTypes: ["Orders", "Comment"],
   endpoints: (builder) => ({
     getComments: builder.query({
       query: ({ resourceId, resourceType, page = 1, limit = 10 }) => {
@@ -45,7 +45,7 @@ export const orderApi = createApi({
     }),
     deleteCommentsByResource: builder.mutation({
       query: ({ resourceId, resourceType }) => ({
-        url: "/delete-comment", // Match backend route
+        url: "/delete-comment",
         method: "POST",
         body: { resourceId, resourceType },
       }),
@@ -54,7 +54,7 @@ export const orderApi = createApi({
     uploadInvoice: builder.mutation({
       query: ({ orderId, formData }) => ({
         url: `/invoice-upload/${orderId}`,
-        method: "PUT", // Changed from POST to PUT
+        method: "PUT",
         body: formData,
       }),
       invalidatesTags: (result, error, { orderId }) => [
@@ -66,15 +66,19 @@ export const orderApi = createApi({
       query: (orderData) => ({
         url: "/create",
         method: "POST",
-        body: orderData,
+        body: {
+          ...orderData,
+          masterPipelineNo: orderData.masterPipelineNo || null,
+          previousOrderNo: orderData.previousOrderNo || null,
+        },
       }),
-      invalidatesTags: ["Orders"], // Invalidate to refetch orders
+      invalidatesTags: ["Orders"],
     }),
     getOrderDetails: builder.query({
       query: (orderId) => `/${orderId}`,
       providesTags: (result, error, orderId) => [
         { type: "Orders", id: orderId },
-      ], // Specific tag for the order ID
+      ],
     }),
     updateOrderStatus: builder.mutation({
       query: (statusData) => ({
@@ -82,42 +86,50 @@ export const orderApi = createApi({
         method: "PUT",
         body: statusData,
       }),
-      invalidatesTags: ["Orders"], // Invalidate to refetch orders
+      invalidatesTags: ["Orders"],
     }),
     deleteOrder: builder.mutation({
       query: (orderId) => ({
         url: `/delete/${orderId}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Orders"], // Invalidate to refetch orders
+      invalidatesTags: ["Orders"],
     }),
     recentOrders: builder.query({
       query: () => "/recent",
-      providesTags: ["Orders"], // Tag for recent orders
+      providesTags: ["Orders"],
     }),
     getAllOrders: builder.query({
       query: () => "/all",
-      providesTags: ["Orders"], // Tag for all orders
+      providesTags: ["Orders"],
     }),
     orderById: builder.query({
       query: (orderId) => `/${orderId}`,
-      providesTags: ["Orders"], // Tag for specific order data
+      providesTags: ["Orders"],
     }),
     updateOrderById: builder.mutation({
       query: ({ id, ...orderData }) => ({
         url: `/${id}`,
         method: "PUT",
-        body: orderData,
+        body: {
+          ...orderData,
+          masterPipelineNo: orderData.masterPipelineNo || null,
+          previousOrderNo: orderData.previousOrderNo || null,
+        },
       }),
-      invalidatesTags: ["Orders"], // Invalidate to refetch orders
+      invalidatesTags: ["Orders"],
     }),
     draftOrder: builder.mutation({
       query: (orderData) => ({
         url: "/draft",
         method: "POST",
-        body: orderData,
+        body: {
+          ...orderData,
+          masterPipelineNo: orderData.masterPipelineNo || null,
+          previousOrderNo: orderData.previousOrderNo || null,
+        },
       }),
-      invalidatesTags: ["Orders"], // Invalidate to refetch orders
+      invalidatesTags: ["Orders"],
     }),
     updateOrderTeam: builder.mutation({
       query: (teamData) => ({
@@ -125,14 +137,25 @@ export const orderApi = createApi({
         method: "PUT",
         body: teamData,
       }),
-      invalidatesTags: ["Orders"], // Invalidate to refetch orders
+      invalidatesTags: ["Orders"],
     }),
     getFilteredOrders: builder.query({
       query: (filters) => {
-        const params = new URLSearchParams(filters);
+        const validFilters = {};
+        // Only include defined and non-empty filters
+        Object.keys(filters).forEach((key) => {
+          if (
+            filters[key] !== undefined &&
+            filters[key] !== "" &&
+            filters[key] !== null
+          ) {
+            validFilters[key] = filters[key];
+          }
+        });
+        const params = new URLSearchParams(validFilters);
         return `/filter?${params.toString()}`;
       },
-      providesTags: ["Orders"], // Tag for filtered orders
+      providesTags: ["Orders"],
     }),
     getOrderCountByDate: builder.query({
       query: (date) => `/order/count?date=${date}`,

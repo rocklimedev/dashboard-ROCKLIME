@@ -4,7 +4,7 @@ import { API_URL } from "../data/config";
 export const vendorApi = createApi({
   reducerPath: "vendorApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}/vendors`, // Make sure API_URL is correct
+    baseUrl: `${API_URL}/vendors`,
     credentials: "include",
     prepareHeaders: (headers) => {
       const token = localStorage.getItem("token");
@@ -14,12 +14,21 @@ export const vendorApi = createApi({
       return headers;
     },
   }),
+  tagTypes: ["Vendors"], // define tag type
   endpoints: (builder) => ({
     getVendors: builder.query({
       query: () => "/",
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({ type: "Vendors", id })),
+              { type: "Vendors", id: "LIST" },
+            ]
+          : [{ type: "Vendors", id: "LIST" }],
     }),
     getVendorById: builder.query({
       query: (id) => `/${id}`,
+      providesTags: (result, error, id) => [{ type: "Vendors", id }],
     }),
     createVendor: builder.mutation({
       query: (newVendor) => ({
@@ -30,6 +39,7 @@ export const vendorApi = createApi({
           "Content-Type": "application/json",
         },
       }),
+      invalidatesTags: [{ type: "Vendors", id: "LIST" }],
     }),
     updateVendor: builder.mutation({
       query: ({ id, updatedVendor }) => ({
@@ -40,12 +50,17 @@ export const vendorApi = createApi({
           "Content-Type": "application/json",
         },
       }),
+      invalidatesTags: (result, error, { id }) => [{ type: "Vendors", id }],
     }),
     deleteVendor: builder.mutation({
       query: (id) => ({
         url: `/${id}`,
         method: "DELETE",
       }),
+      invalidatesTags: (result, error, id) => [
+        { type: "Vendors", id },
+        { type: "Vendors", id: "LIST" },
+      ],
     }),
   }),
 });
