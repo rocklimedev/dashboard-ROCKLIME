@@ -76,6 +76,14 @@ export const poApi = createApi({
       query: (id) => `/purchase-orders/${id}`,
       providesTags: (result, error, id) => [{ type: "PurchaseOrders", id }],
     }),
+    updatePurchaseOrderStatus: builder.mutation({
+      query: ({ id, status }) => ({
+        url: `/purchase-orders/${id}/status`,
+        method: "PATCH",
+        body: { status },
+      }),
+      invalidatesTags: ["PurchaseOrders"],
+    }),
 
     // Create a purchase order
     createPurchaseOrder: builder.mutation({
@@ -141,5 +149,6 @@ export const {
   useDeletePurchaseOrderMutation,
   useConfirmPurchaseOrderMutation,
   useGetPurchaseOrdersByVendorQuery,
+  useUpdatePurchaseOrderStatusMutation, // ✅ add this line
   useGetVendorsQuery,
 } = poApi;

@@ -80,7 +80,6 @@ const OrderWrapper = () => {
   const handleStatusChange = async (orderId, newStatus) => {
     try {
       await updateOrderStatus({ orderId, status: newStatus }).unwrap();
-      toast.success("Order status updated successfully");
     } catch (err) {
       toast.error(
         `Failed to update status: ${err.data?.message || "Unknown error"}`
@@ -323,7 +322,6 @@ const OrderWrapper = () => {
   const handleDeleteOrder = async (orderId) => {
     try {
       await deleteOrder(orderId).unwrap();
-      toast.success("Order deleted successfully");
       handleModalClose();
     } catch (err) {
       toast.error(

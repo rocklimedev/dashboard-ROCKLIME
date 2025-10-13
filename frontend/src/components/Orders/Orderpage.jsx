@@ -239,7 +239,7 @@ const OrderPage = () => {
       const formData = new FormData();
       formData.append("invoice", invoiceFile);
       const response = await uploadInvoice({ orderId: id, formData }).unwrap();
-      toast.success("Invoice uploaded successfully.");
+
       setInvoiceFile(null);
       document.getElementById("invoiceUpload").value = null;
       refetchOrder();
@@ -264,7 +264,7 @@ const OrderPage = () => {
     if (window.confirm("Are you sure you want to delete this order?")) {
       try {
         await deleteOrder(id).unwrap();
-        toast.success("Order deleted successfully.");
+
         navigate("/orders/list");
       } catch (err) {
         toast.error(
@@ -277,7 +277,7 @@ const OrderPage = () => {
   const handleHoldOrder = async () => {
     try {
       await updateOrderStatus({ id, status: "ONHOLD" }).unwrap();
-      toast.success("Order status updated to ONHOLD.");
+
       refetchOrder();
     } catch (err) {
       toast.error(
@@ -312,7 +312,7 @@ const OrderPage = () => {
         userId: user.userId,
         comment: newComment,
       }).unwrap();
-      toast.success("Comment added successfully.");
+
       setNewComment("");
     } catch (err) {
       const errorMessage =
@@ -336,7 +336,6 @@ const OrderPage = () => {
     if (window.confirm("Are you sure you want to delete this comment?")) {
       try {
         await deleteComment({ commentId, userId: user.userId }).unwrap();
-        toast.success("Comment deleted successfully.");
       } catch (err) {
         toast.error(
           `Failed to delete comment: ${err?.data?.message || "Unknown error"}`
