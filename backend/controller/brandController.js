@@ -1,6 +1,11 @@
 const Brand = require("../models/brand");
 const Product = require("../models/product");
+const { sendNotification } = require("./notificationController"); // Import sendNotification
 
+// Assume an admin user ID or system channel for notifications
+const ADMIN_USER_ID = "56a3ba45-0557-47ac-bb5d-409f93d6661d"; // Replace with actual admin user ID or channel
+
+// Get total products of a brand (no notification needed)
 const getTotalProductOfBrand = async (req, res) => {
   try {
     const { brandId } = req.params;
@@ -15,16 +20,26 @@ const getTotalProductOfBrand = async (req, res) => {
   }
 };
 
+// Create a new brand
 const createBrand = async (req, res) => {
   try {
     const { brandName, brandSlug } = req.body;
     const brand = await Brand.create({ brandName, brandSlug });
+
+    // Send notification to admin or system channel
+    await sendNotification({
+      userId: ADMIN_USER_ID,
+      title: "New Brand Created",
+      message: `A new brand "${brandName}" with slug "${brandSlug}" has been created.`,
+    });
+
     res.status(201).json(brand);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
+// Get all brands (no notification needed)
 const getBrands = async (req, res) => {
   try {
     const brands = await Brand.findAll();
@@ -34,6 +49,7 @@ const getBrands = async (req, res) => {
   }
 };
 
+// Get a brand by ID (no notification needed)
 const getBrandById = async (req, res) => {
   try {
     const brand = await Brand.findByPk(req.params.id);
@@ -47,6 +63,7 @@ const getBrandById = async (req, res) => {
   }
 };
 
+// Update a brand
 const updateBrand = async (req, res) => {
   try {
     const { id } = req.params;
@@ -59,16 +76,31 @@ const updateBrand = async (req, res) => {
 
     await brand.update({ brandName, brandSlug });
 
+    // Send notification to admin or system channel
+    await sendNotification({
+      userId: ADMIN_USER_ID,
+      title: "Brand Updated",
+      message: `The brand "${brandName}" with slug "${brandSlug}" has been updated.`,
+    });
+
     res.json({ message: "Brand updated successfully.", brand });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
+// Delete a brand
 const deleteBrand = async (req, res) => {
   try {
     const brand = await Brand.findByPk(req.params.id);
     if (brand) {
+      // Send notification to admin or system channel before deletion
+      await sendNotification({
+        userId: ADMIN_USER_ID,
+        title: "Brand Deleted",
+        message: `The brand "${brand.brandName}" with slug "${brand.brandSlug}" has been deleted.`,
+      });
+
       await brand.destroy();
       res.status(204).send();
     } else {

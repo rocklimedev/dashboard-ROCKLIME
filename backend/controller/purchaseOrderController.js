@@ -4,6 +4,10 @@ const Vendor = require("../models/vendor");
 const { Op } = require("sequelize");
 const sequelize = require("../config/database");
 const { v4: uuidv4 } = require("uuid");
+const { sendNotification } = require("./notificationController"); // Import sendNotification
+
+// Assume an admin user ID or system channel for notifications
+const ADMIN_USER_ID = "admin-system"; // Replace with actual admin user ID or channel
 
 // Helper function to validate items
 const validateItems = async (items, transaction) => {
@@ -32,13 +36,13 @@ const validateItems = async (items, transaction) => {
   return totalAmount.toFixed(2);
 };
 
-// Create a new purchase order
 // Utility function to generate random PO number
 function generateRandomPONumber() {
   const randomNumber = Math.floor(100000 + Math.random() * 900000); // 6-digit number
   return `PO-${randomNumber}`;
 }
 
+// Create a new purchase order
 exports.createPurchaseOrder = async (req, res) => {
   const t = await sequelize.transaction();
   try {
@@ -92,6 +96,13 @@ exports.createPurchaseOrder = async (req, res) => {
       { transaction: t }
     );
 
+    // Send notification to admin
+    await sendNotification({
+      userId: ADMIN_USER_ID,
+      title: `New Purchase Order Created #${poNumber}`,
+      message: `Purchase order #${poNumber} created for vendor ${vendor.vendorName} with total amount $${totalAmount}.`,
+    });
+
     await t.commit();
     return res.status(201).json({
       message: "Purchase order created successfully",
@@ -102,7 +113,6 @@ exports.createPurchaseOrder = async (req, res) => {
     });
   } catch (error) {
     await t.rollback();
-
     return res.status(500).json({
       message: "Error creating purchase order",
       error: error.message,
@@ -158,23 +168,33 @@ exports.updatePurchaseOrder = async (req, res) => {
     // Update Sequelize PurchaseOrder
     await purchaseOrder.update(updateData, { transaction: t });
 
-    // Commit transaction
+    // Fetch updated vendor if not already fetched
+    vendor =
+      vendor ||
+      (purchaseOrder.vendorId
+        ? await Vendor.findByPk(purchaseOrder.vendorId, { transaction: t })
+        : null);
+
+    // Send notification to admin
+    await sendNotification({
+      userId: ADMIN_USER_ID,
+      title: `Purchase Order Updated #${purchaseOrder.poNumber}`,
+      message: `Purchase order #${purchaseOrder.poNumber} for ${
+        vendor?.vendorName || "Vendor"
+      } has been updated.`,
+    });
+
     await t.commit();
     return res.status(200).json({
       message: "Purchase order updated successfully",
       purchaseOrder: {
         ...purchaseOrder.toJSON(),
         items: purchaseOrder.items || [],
-        Vendor:
-          vendor ||
-          (purchaseOrder.vendorId
-            ? await Vendor.findByPk(purchaseOrder.vendorId, { transaction: t })
-            : null),
+        Vendor: vendor,
       },
     });
   } catch (error) {
     await t.rollback();
-
     return res.status(400).json({
       message: "Error updating purchase order",
       error: error.message,
@@ -182,7 +202,7 @@ exports.updatePurchaseOrder = async (req, res) => {
   }
 };
 
-// Get a purchase order by ID
+// Get a purchase order by ID (no notification needed)
 exports.getPurchaseOrderById = async (req, res) => {
   try {
     const purchaseOrder = await PurchaseOrder.findByPk(req.params.id, {
@@ -200,7 +220,7 @@ exports.getPurchaseOrderById = async (req, res) => {
 
     return res.status(200).json({
       ...purchaseOrder.toJSON(),
-      items: purchaseOrder.items || [], // Return JSON items directly
+      items: purchaseOrder.items || [],
     });
   } catch (error) {
     return res.status(500).json({
@@ -210,7 +230,7 @@ exports.getPurchaseOrderById = async (req, res) => {
   }
 };
 
-// Get all purchase orders
+// Get all purchase orders (no notification needed)
 exports.getAllPurchaseOrders = async (req, res) => {
   try {
     const purchaseOrders = await PurchaseOrder.findAll({
@@ -226,7 +246,7 @@ exports.getAllPurchaseOrders = async (req, res) => {
     // Map purchase orders to include items directly
     const result = purchaseOrders.map((po) => ({
       ...po.toJSON(),
-      items: po.items || [], // Return JSON items directly
+      items: po.items || [],
     }));
 
     return res.status(200).json(result);
@@ -250,6 +270,20 @@ exports.deletePurchaseOrder = async (req, res) => {
       return res.status(404).json({ message: "Purchase order not found" });
     }
 
+    // Fetch vendor for notification
+    const vendor = await Vendor.findByPk(purchaseOrder.vendorId, {
+      transaction: t,
+    });
+
+    // Send notification to admin
+    await sendNotification({
+      userId: ADMIN_USER_ID,
+      title: `Purchase Order Deleted #${purchaseOrder.poNumber}`,
+      message: `Purchase order #${purchaseOrder.poNumber} for ${
+        vendor?.vendorName || "Vendor"
+      } has been deleted.`,
+    });
+
     // Delete PurchaseOrder from MySQL
     await purchaseOrder.destroy({ transaction: t });
 
@@ -259,7 +293,6 @@ exports.deletePurchaseOrder = async (req, res) => {
       .json({ message: "Purchase order deleted successfully" });
   } catch (error) {
     await t.rollback();
-
     return res.status(500).json({
       message: "Error deleting purchase order",
       error: error.message,
@@ -299,6 +332,20 @@ exports.confirmPurchaseOrder = async (req, res) => {
     // Update purchase order status
     await purchaseOrder.update({ status: "delivered" }, { transaction: t });
 
+    // Fetch vendor for notification
+    const vendor = await Vendor.findByPk(purchaseOrder.vendorId, {
+      transaction: t,
+    });
+
+    // Send notification to admin
+    await sendNotification({
+      userId: ADMIN_USER_ID,
+      title: `Purchase Order Confirmed #${purchaseOrder.poNumber}`,
+      message: `Purchase order #${purchaseOrder.poNumber} for ${
+        vendor?.vendorName || "Vendor"
+      } has been confirmed and marked as delivered.`,
+    });
+
     await t.commit();
     return res.status(200).json({
       message: "Purchase order confirmed and stock updated",
@@ -309,7 +356,6 @@ exports.confirmPurchaseOrder = async (req, res) => {
     });
   } catch (error) {
     await t.rollback();
-
     return res.status(500).json({
       message: "Error confirming purchase order",
       error: error.message,
@@ -317,7 +363,7 @@ exports.confirmPurchaseOrder = async (req, res) => {
   }
 };
 
-// Get purchase orders by vendor
+// Get purchase orders by vendor (no notification needed)
 exports.getPurchaseOrdersByVendor = async (req, res) => {
   try {
     const { vendorId } = req.params;
@@ -336,7 +382,7 @@ exports.getPurchaseOrdersByVendor = async (req, res) => {
     // Map purchase orders to include items directly
     const result = purchaseOrders.map((po) => ({
       ...po.toJSON(),
-      items: po.items || [], // Return JSON items directly
+      items: po.items || [],
     }));
 
     return res.status(200).json(result);
@@ -395,7 +441,22 @@ exports.updatePurchaseOrderStatus = async (req, res) => {
     }
 
     // Update status
+    const oldStatus = purchaseOrder.status;
     await purchaseOrder.update({ status }, { transaction: t });
+
+    // Fetch vendor for notification
+    const vendor = await Vendor.findByPk(purchaseOrder.vendorId, {
+      transaction: t,
+    });
+
+    // Send notification to admin
+    await sendNotification({
+      userId: ADMIN_USER_ID,
+      title: `Purchase Order Status Updated #${purchaseOrder.poNumber}`,
+      message: `Purchase order #${purchaseOrder.poNumber} for ${
+        vendor?.vendorName || "Vendor"
+      } status changed from ${oldStatus} to ${status}.`,
+    });
 
     await t.commit();
     return res.status(200).json({

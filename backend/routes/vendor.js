@@ -8,6 +8,7 @@ const {
   getVendors,
   updateVendor,
   deleteVendor,
+  checkVendorId,
 } = require("../controller/vendorController");
 const checkPermission = require("../middleware/permission");
 const { ROLES } = require("../config/constant");
@@ -50,5 +51,6 @@ router.get(
   // checkPermission("view", "get_vendor_by_id", "vendors", "/vendors/:id"),
   getVendorById
 ); // Get vendor by ID
-
+// routes/vendorRoutes.js
+router.get("/check-vendor-id/:vendorId", auth, checkVendorId);
 module.exports = router;

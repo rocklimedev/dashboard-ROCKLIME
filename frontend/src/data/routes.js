@@ -12,6 +12,7 @@ import {
   BiCategory,
   BiUser,
   BiCoinStack,
+  BiNotification,
 } from "react-icons/bi";
 import { FaFileCircleCheck } from "react-icons/fa6";
 import { FaTeamspeak } from "react-icons/fa";
@@ -74,6 +75,7 @@ import POWrapper from "../components/Orders/POWrapper";
 import AddPurchaseOrder from "../components/Orders/AddPurchaseOrder";
 import PODetails from "../components/Orders/PODetails";
 import LogTable from "../components/Logs/LogTable";
+import NotificationsWrapper from "../components/Notifications/NotificationsWrapper";
 const masterRoutes = [
   {
     path: "/",
@@ -434,6 +436,13 @@ const masterRoutes = [
         icon: <MdError />,
         isSidebarActive: false,
         element: <ComingSoon />,
+      },
+      {
+        path: "/notifications",
+        name: "Notifications",
+        icon: <BiNotification />,
+        isSidebarActive: false,
+        element: <NotificationsWrapper />,
       },
     ],
   },

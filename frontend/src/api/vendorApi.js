@@ -52,6 +52,10 @@ export const vendorApi = createApi({
       }),
       invalidatesTags: (result, error, { id }) => [{ type: "Vendors", id }],
     }),
+    checkVendorId: builder.query({
+      query: (vendorId) => `/check-vendor-id/${vendorId}`,
+      transformResponse: (response) => response.isUnique,
+    }),
     deleteVendor: builder.mutation({
       query: (id) => ({
         url: `/${id}`,
@@ -71,4 +75,5 @@ export const {
   useCreateVendorMutation,
   useUpdateVendorMutation,
   useDeleteVendorMutation,
+  useCheckVendorIdQuery,
 } = vendorApi;

@@ -27,6 +27,7 @@ import { contactApi } from "../api/contactApi";
 import emailReducer from "../api/emailSlice";
 import { poApi } from "../api/poApi";
 import { logApi } from "../api/logApi";
+import { notificationApi } from "../api/notificationApi";
 export const store = configureStore({
   reducer: {
     email: emailReducer,
@@ -57,6 +58,7 @@ export const store = configureStore({
     [searchApi.reducerPath]: searchApi.reducer,
     [poApi.reducerPath]: poApi.reducer,
     [attendanceApi.reducerPath]: attendanceApi.reducer,
+    [notificationApi.reducerPath]: notificationApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -86,7 +88,8 @@ export const store = configureStore({
       teamApi.middleware,
       rolePermissionsApi.middleware,
       searchApi.middleware,
-      attendanceApi.middleware
+      attendanceApi.middleware,
+      notificationApi.middleware
     ),
 });
 

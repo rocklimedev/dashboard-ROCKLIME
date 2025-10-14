@@ -6,6 +6,7 @@ const Brand = require("./brand");
 const Keyword = require("./keyword"); // Import Keyword Model
 const BrandParentCategory = require("./brandParentCategory");
 const Vendor = require("./vendor");
+
 const Product = sequelize.define(
   "Product",
   {
@@ -52,6 +53,21 @@ const Product = sequelize.define(
       defaultValue: false,
     },
 
+    // ✅ Managerial & Operational Fields
+    status: {
+      type: DataTypes.ENUM(
+        "active",
+        "inactive",
+        "expired",
+        "out_of_stock",
+        "bulk_stocked"
+      ),
+      allowNull: false,
+      defaultValue: "active",
+      comment:
+        "Indicates the product's current operational status (stock/sale condition)",
+    },
+
     // Optional Foreign Keys
     brandId: {
       type: DataTypes.UUID,
@@ -93,19 +109,19 @@ const Product = sequelize.define(
     },
   },
   {
-    tableName: "products", // Force lowercase table name
+    tableName: "products",
     timestamps: true,
   }
 );
 
-// Assign productGroup dynamically before saving
+// 🧠 Automatically determine product group before saving
 Product.beforeCreate(async (product) => {
   product.productGroup = await determineProductGroup(product.name);
 });
 
-// Function to determine the product group from the database
+// Helper function to detect product group based on keywords
 async function determineProductGroup(name) {
-  const keywords = await Keyword.findAll(); // Fetch all keywords from DB
+  const keywords = await Keyword.findAll();
 
   let ceramicsMatches = keywords.filter(
     (k) =>
@@ -126,9 +142,7 @@ async function determineProductGroup(name) {
     return ceramicsMatches >= sanitaryMatches ? "Ceramics" : "Sanitary";
   }
 
-  return "Uncategorized"; // Default category if no match is found
+  return "Uncategorized";
 }
-
-// Relationship with Category
 
 module.exports = Product;

@@ -89,6 +89,11 @@ const QuotationForm = ({
   setActiveTab,
   handleCreateDocument,
 }) => {
+  // Filter addresses to only include those for the selected customer
+  const filteredAddresses = addresses.filter(
+    (address) => address.customerId === selectedCustomer
+  );
+
   return (
     <Row gutter={[16, 16]} justify="center">
       <Col xs={24} sm={24} md={16} lg={16}>
@@ -140,7 +145,7 @@ const QuotationForm = ({
                 aria-label="Select customer"
               >
                 {customersLoading ? (
-                  <Option disabled>Select a customer</Option>
+                  <Option disabled>Loading customers...</Option>
                 ) : customersError ? (
                   <Option disabled>Error fetching customers</Option>
                 ) : customers.length === 0 ? (
@@ -166,48 +171,49 @@ const QuotationForm = ({
               <Divider />
               <Text strong>Shipping Address</Text>
               <Select
-                value={quotationData.shipTo}
+                value={quotationData.shipTo || undefined}
                 onChange={(value) => handleQuotationChange("shipTo", value)}
                 placeholder="Select shipping address"
-                loading={
-                  addressesLoading ||
-                  userQueries.some((q) => q.isLoading) ||
-                  customerQueries.some((q) => q.isLoading)
-                }
+                loading={addressesLoading}
                 disabled={
+                  !selectedCustomer ||
                   addressesLoading ||
                   addressesError ||
-                  !selectedCustomer ||
-                  userQueries.some((q) => q.isLoading) ||
-                  customerQueries.some((q) => q.isLoading)
+                  filteredAddresses.length === 0
                 }
                 style={{ width: "100%", marginTop: 8 }}
                 aria-label="Select shipping address"
               >
-                {addressesLoading ? (
-                  <Option disabled>Select Shipping Address</Option>
+                {!selectedCustomer ? (
+                  <Option disabled>Please select a customer first</Option>
+                ) : addressesLoading ? (
+                  <Option disabled>Loading addresses...</Option>
                 ) : addressesError ? (
                   <Option disabled>
                     Error fetching addresses:{" "}
                     {addressesError?.data?.message || "Unknown error"}
                   </Option>
-                ) : addresses.length === 0 ? (
-                  <Option disabled>No addresses available</Option>
+                ) : filteredAddresses.length === 0 ? (
+                  <Option disabled>
+                    No addresses available for this customer
+                  </Option>
                 ) : (
-                  addresses.map((address) => (
-                    <Option key={address.addressId} value={address.addressId}>
-                      {`${address.street}, ${address.city}${
-                        address.state ? `, ${address.state}` : ""
-                      }, ${address.country} (${
-                        address.customerId
-                          ? customerMap[address.customerId] ||
-                            "Unknown Customer"
-                          : address.userId
-                          ? userMap[address.userId] || "Unknown User"
-                          : "No associated name"
-                      })`}
-                    </Option>
-                  ))
+                  filteredAddresses.map((address) => {
+                    const customerName =
+                      customerMap[address.customerId]?.name ||
+                      "Unknown Customer";
+                    const addressDetails = address.addressDetails || address;
+                    const addressLabel = `${customerName} - ${
+                      addressDetails.street
+                    }, ${addressDetails.city}, ${addressDetails.state}, ${
+                      addressDetails.postalCode || addressDetails.zip
+                    }, ${addressDetails.country || "India"}`;
+                    return (
+                      <Option key={address.addressId} value={address.addressId}>
+                        {addressLabel}
+                      </Option>
+                    );
+                  })
                 )}
               </Select>
               <Button

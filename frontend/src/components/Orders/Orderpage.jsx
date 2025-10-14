@@ -393,10 +393,7 @@ const OrderPage = () => {
   }
 
   return (
-    <div
-      className="page-wrapper"
-      style={{ padding: "20px", backgroundColor: "#f7f7f7" }}
-    >
+    <div className="page-wrapper">
       <div className="content">
         {/* Page Header */}
         <div className="page-header d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-4">
