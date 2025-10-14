@@ -14,11 +14,10 @@ const Customer = sequelize.define(
     name: { type: DataTypes.STRING(100), allowNull: false },
     email: { type: DataTypes.STRING(100), unique: true, allowNull: false },
     mobileNumber: { type: DataTypes.STRING(20), allowNull: false },
-    phone2: { type: DataTypes.STRING(20), allowNull: true }, // Added second phone
+    phone2: { type: DataTypes.STRING(20), allowNull: true }, // Second phone
 
     companyName: { type: DataTypes.STRING(150), allowNull: true },
 
-    // New field for customer type dropdown
     customerType: {
       type: DataTypes.ENUM(
         "Retail",
@@ -48,6 +47,9 @@ const Customer = sequelize.define(
       type: DataTypes.ENUM(...Object.values(INVOICE_STATUS)),
       allowNull: true,
     },
+
+    // NEW FIELD: GST Number
+    gstNumber: { type: DataTypes.STRING(20), allowNull: true },
   },
   {
     tableName: "customers",

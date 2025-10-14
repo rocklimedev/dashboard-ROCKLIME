@@ -511,6 +511,7 @@ const OrderPage = () => {
               </div>
               <div className="card-body">
                 {/* Invoice Upload Form */}
+                {/* Invoice Upload Form */}
                 <Form onSubmit={handleInvoiceFormSubmit} className="mb-4">
                   <Form.Group controlId="invoiceUpload" className="mb-3">
                     <Form.Label>Upload Invoice (PDF only)</Form.Label>
@@ -518,22 +519,19 @@ const OrderPage = () => {
                       type="file"
                       accept="application/pdf"
                       onChange={handleFileChange}
-                      disabled={order.status !== "INVOICE" || isUploading}
+                      disabled={isUploading} // Only disable during upload
                       className="rounded-3"
                       aria-describedby="invoiceUploadHelp"
                     />
                     <Form.Text id="invoiceUploadHelp" muted>
-                      Upload a PDF invoice. Available only when order status is
-                      INVOICE.
+                      Upload a PDF invoice.
                     </Form.Text>
                   </Form.Group>
                   <Button
                     type="submit"
                     variant="primary"
                     className="rounded-3"
-                    disabled={
-                      !invoiceFile || order.status !== "INVOICE" || isUploading
-                    }
+                    disabled={!invoiceFile || isUploading} // Disable if no file or uploading
                   >
                     {isUploading ? (
                       <Spinner animation="border" size="sm" className="me-2" />
@@ -541,11 +539,9 @@ const OrderPage = () => {
                     Upload Invoice
                   </Button>
                 </Form>
-
                 {/* Invoice Display */}
-                {order.status === "INVOICE" &&
-                order.invoiceLink &&
-                order.invoiceLink !== "" ? (
+                {/* Invoice Display */}
+                {order.invoiceLink && order.invoiceLink !== "" ? (
                   <div className="d-flex align-items-center p-3 border rounded-3 bg-light shadow-sm">
                     <span
                       style={{
@@ -590,14 +586,10 @@ const OrderPage = () => {
                       Download
                     </Button>
                   </div>
-                ) : order.status === "INVOICE" ? (
+                ) : (
                   <Alert variant="warning" className="rounded-3">
                     No invoice uploaded for this order.
                   </Alert>
-                ) : (
-                  <p className="text-muted mb-0">
-                    Invoice viewer available when order status is INVOICE.
-                  </p>
                 )}
               </div>
             </div>

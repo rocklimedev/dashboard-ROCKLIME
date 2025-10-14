@@ -1,13 +1,22 @@
 const Address = require("../models/address");
 const User = require("../models/users");
 const Customer = require("../models/customers");
-const { sendNotification } = require("./notificationController"); // Import sendNotification
+const { sendNotification } = require("./notificationController");
+const { Op } = require("sequelize");
 
 // Create a new address
 exports.createAddress = async (req, res) => {
   try {
-    const { street, city, state, postalCode, country, userId, customerId } =
-      req.body;
+    const {
+      street,
+      city,
+      state,
+      postalCode,
+      country,
+      userId,
+      customerId,
+      status,
+    } = req.body;
 
     // Validate userId if provided
     if (userId) {
@@ -32,6 +41,28 @@ exports.createAddress = async (req, res) => {
         .json({ message: "Either userId or customerId is required" });
     }
 
+    let finalStatus = status || "ADDITIONAL";
+
+    // Enforce status rules for customer addresses
+    if (customerId) {
+      const existingAddresses = await Address.findAll({
+        where: { customerId },
+        order: [["createdAt", "ASC"]],
+      });
+
+      if (existingAddresses.length === 0) {
+        finalStatus = "BILLING";
+      } else if (existingAddresses.length === 1) {
+        finalStatus = "PRIMARY";
+      } else if (status === "BILLING" || status === "PRIMARY") {
+        await Address.update(
+          { status: "ADDITIONAL" },
+          { where: { customerId, status } }
+        );
+        finalStatus = status;
+      }
+    }
+
     // Create address
     const address = await Address.create({
       addressId: require("uuid").v4(),
@@ -40,19 +71,21 @@ exports.createAddress = async (req, res) => {
       state,
       postalCode,
       country,
+      status: finalStatus,
       userId,
       customerId,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
 
-    // Send notification to user or customer
-    const recipientId = "56a3ba45-0557-47ac-bb5d-409f93d6661d";
+    // Send notification
+    const recipientId =
+      userId || customerId || "56a3ba45-0557-47ac-bb5d-409f93d6661d";
     const recipientType = userId ? "User" : "Customer";
     await sendNotification({
       userId: recipientId,
       title: "New Address Created",
-      message: `A new address has been added: ${street}, ${city}, ${state}, ${postalCode}, ${country}`,
+      message: `A new ${finalStatus} address has been added: ${street}, ${city}, ${state}, ${postalCode}, ${country}`,
     });
 
     res.status(201).json({
@@ -74,8 +107,16 @@ exports.createAddress = async (req, res) => {
 exports.updateAddress = async (req, res) => {
   try {
     const { addressId } = req.params;
-    const { street, city, state, postalCode, country, userId, customerId } =
-      req.body;
+    const {
+      street,
+      city,
+      state,
+      postalCode,
+      country,
+      userId,
+      customerId,
+      status,
+    } = req.body;
 
     // Find address
     const address = await Address.findByPk(addressId);
@@ -99,6 +140,27 @@ exports.updateAddress = async (req, res) => {
       }
     }
 
+    let finalStatus = status || address.status;
+
+    // Enforce status rules for customer addresses
+    if (
+      customerId &&
+      status &&
+      (status === "BILLING" || status === "PRIMARY")
+    ) {
+      await Address.update(
+        { status: "ADDITIONAL" },
+        {
+          where: {
+            customerId,
+            status,
+            addressId: { [Op.ne]: addressId },
+          },
+        }
+      );
+      finalStatus = status;
+    }
+
     // Update address
     await address.update({
       street,
@@ -106,18 +168,23 @@ exports.updateAddress = async (req, res) => {
       state,
       postalCode,
       country,
+      status: finalStatus,
       userId,
       customerId,
       updatedAt: new Date(),
     });
 
-    // Send notification to user or customer
-    const recipientId = "56a3ba45-0557-47ac-bb5d-409f93d6661d";
+    // Send notification
+    const recipientId =
+      userId ||
+      customerId ||
+      address.customerId ||
+      "56a3ba45-0557-47ac-bb5d-409f93d6661d";
     const recipientType = userId || address.userId ? "User" : "Customer";
     await sendNotification({
       userId: recipientId,
       title: "Address Updated",
-      message: `Your address has been updated: ${street}, ${city}, ${state}, ${postalCode}, ${country}`,
+      message: `Your ${finalStatus} address has been updated: ${street}, ${city}, ${state}, ${postalCode}, ${country}`,
     });
 
     res.json({
@@ -145,13 +212,39 @@ exports.deleteAddress = async (req, res) => {
       return res.status(404).json({ message: "Address not found" });
     }
 
-    // Send notification to user or customer
-    const recipientId = "56a3ba45-0557-47ac-bb5d-409f93d6661d";
+    // Reassign statuses if deleting BILLING or PRIMARY
+    if (
+      address.customerId &&
+      (address.status === "BILLING" || address.status === "PRIMARY")
+    ) {
+      const remainingAddresses = await Address.findAll({
+        where: {
+          customerId: address.customerId,
+          addressId: { [Op.ne]: addressId },
+        },
+        order: [["createdAt", "ASC"]],
+      });
+
+      if (remainingAddresses.length > 0) {
+        if (address.status === "BILLING") {
+          await remainingAddresses[0].update({ status: "BILLING" });
+        }
+        if (address.status === "PRIMARY" && remainingAddresses.length > 1) {
+          await remainingAddresses[1].update({ status: "PRIMARY" });
+        }
+      }
+    }
+
+    // Send notification
+    const recipientId =
+      address.userId ||
+      address.customerId ||
+      "56a3ba45-0557-47ac-bb5d-409f93d6661d";
     const recipientType = address.userId ? "User" : "Customer";
     await sendNotification({
       userId: recipientId,
       title: "Address Deleted",
-      message: `Your address has been deleted: ${address.street}, ${address.city}, ${address.state}, ${address.postalCode}, ${address.country}`,
+      message: `Your ${address.status} address has been deleted: ${address.street}, ${address.city}, ${address.state}, ${address.postalCode}, ${address.country}`,
     });
 
     await address.destroy();
@@ -163,7 +256,7 @@ exports.deleteAddress = async (req, res) => {
   }
 };
 
-// Get all addresses (no notification needed here)
+// Get all addresses
 exports.getAllAddresses = async (req, res) => {
   try {
     const { userId, customerId } = req.query;
@@ -185,7 +278,7 @@ exports.getAllAddresses = async (req, res) => {
   }
 };
 
-// Get a specific address by ID (no notification needed here)
+// Get a specific address by ID
 exports.getAddressById = async (req, res) => {
   try {
     const { addressId } = req.params;

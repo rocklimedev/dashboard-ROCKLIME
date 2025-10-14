@@ -33,18 +33,13 @@ export default function useProductsData(products = []) {
         productIds.map(async (productId) => {
           if (!productId) return null;
           try {
-            console.log(
-              `Fetching product ${productId} from ${API_URL}/products/${productId}`
-            );
             const response = await fetch(`${API_URL}/products/${productId}`);
-            console.log(`Response status for ${productId}: ${response.status}`);
             if (!response.ok) {
               throw new Error(
                 `Failed to fetch product ${productId}: ${response.statusText}`
               );
             }
             const data = await response.json();
-            console.log(`Product data for ${productId}:`, data);
             return { productId, ...data };
           } catch (error) {
             console.error(`Error fetching product ${productId}:`, error);
@@ -55,7 +50,6 @@ export default function useProductsData(products = []) {
       );
 
       const validResults = results.filter(Boolean);
-      console.log("Valid fetched products:", validResults);
       setProductsData(validResults);
       setErrors(tempErrors);
       setLoading(false);

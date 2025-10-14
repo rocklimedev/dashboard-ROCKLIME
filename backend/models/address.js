@@ -32,6 +32,11 @@ const Address = sequelize.define(
       type: DataTypes.STRING(100),
       allowNull: true,
     },
+    status: {
+      type: DataTypes.ENUM("BILLING", "PRIMARY", "ADDITIONAL"),
+      allowNull: false,
+      defaultValue: "ADDITIONAL",
+    },
     userId: {
       type: DataTypes.UUID,
       allowNull: true,
@@ -42,7 +47,7 @@ const Address = sequelize.define(
     },
     customerId: {
       type: DataTypes.UUID,
-      allowNull: true, // Make customerId nullable
+      allowNull: true,
       references: {
         model: "customers",
         key: "customerId",
