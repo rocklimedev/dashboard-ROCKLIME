@@ -2,7 +2,6 @@ const Customer = require("../models/customers"); // Import the Customer model
 const Invoice = require("../models/invoice"); // Import Invoice model
 const { sendNotification } = require("./notificationController"); // Import sendNotification
 
-// Assume an admin user ID or system channel for notifications
 const ADMIN_USER_ID = "admin-system"; // Replace with actual admin user ID or channel
 
 // Get invoices by customer ID (no notification needed)
@@ -37,7 +36,7 @@ exports.getInvoicesByCustomerId = async (req, res) => {
 // Create a new customer
 exports.createCustomer = async (req, res) => {
   try {
-    const requiredFields = ["name", "email"]; // phone2 and customerType are optional
+    const requiredFields = ["name", "email"]; // phone2, customerType, gstNumber optional
 
     for (const field of requiredFields) {
       if (!req.body[field]) {
@@ -72,9 +71,10 @@ exports.createCustomer = async (req, res) => {
       ...req.body,
       phone2: req.body.phone2 || null,
       customerType: req.body.customerType || null,
+      gstNumber: req.body.gstNumber || null, // Add GST number here
     });
 
-    // Send notification to admin or system channel
+    // Send notification to admin/system
     await sendNotification({
       userId: ADMIN_USER_ID,
       title: "New Customer Created",
@@ -131,7 +131,6 @@ exports.updateCustomer = async (req, res) => {
         .json({ success: false, message: "Customer not found" });
     }
 
-    // Validate customerType if provided
     const allowedTypes = [
       "Retail",
       "Architect",
@@ -158,9 +157,13 @@ exports.updateCustomer = async (req, res) => {
         req.body.customerType !== undefined
           ? req.body.customerType
           : customer.customerType,
+      gstNumber:
+        req.body.gstNumber !== undefined
+          ? req.body.gstNumber
+          : customer.gstNumber, // Update GST number
     });
 
-    // Send notification to admin or system channel
+    // Send notification to admin/system
     await sendNotification({
       userId: ADMIN_USER_ID,
       title: "Customer Updated",
@@ -191,7 +194,7 @@ exports.deleteCustomer = async (req, res) => {
         .json({ success: false, message: "Customer not found" });
     }
 
-    // Send notification to admin or system channel
+    // Send notification to admin/system
     await sendNotification({
       userId: ADMIN_USER_ID,
       title: "Customer Deleted",

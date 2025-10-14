@@ -42,7 +42,7 @@ const AddCustomer = () => {
   const [formData, setFormData] = useState({
     name: "",
     companyName: "",
-    customerType: "", // Added
+    customerType: "",
     email: "",
     mobileNumber: "",
     phone2: "",
@@ -57,6 +57,7 @@ const AddCustomer = () => {
     invoices: [],
     quotations: [],
     vendorId: "",
+    gstNumber: "", // NEW
   });
 
   const getInvoiceData = useCallback(() => {
@@ -104,9 +105,9 @@ const AddCustomer = () => {
 
       setFormData({
         ...existingCustomer,
-        customerType: existingCustomer.customerType || "", // Added
-        phone2: existingCustomer.phone2 || "", // Added
-        isVendor: existingCustomer.isVendor.toString(),
+        customerType: existingCustomer.customerType || "",
+        phone2: existingCustomer.phone2 || "",
+        gstNumber: existingCustomer.gstNumber || "", // NEW
         address: existingCustomer.address || {
           street: "",
           city: "",
@@ -212,8 +213,9 @@ const AddCustomer = () => {
 
       const payload = {
         ...formData,
-        customerType: formData.customerType || null, // Added
-        phone2: formData.phone2 || null, // Ensure phone2 is included
+        customerType: formData.customerType || null,
+        phone2: formData.phone2 || null,
+        gstNumber: formData.gstNumber || null, // NEW
         isVendor: formData.isVendor === "true",
         totalAmount: existingCustomer
           ? parseFloat(formData.totalAmount) || 0
@@ -371,6 +373,17 @@ const AddCustomer = () => {
                         className="form-control"
                         value={formData.phone2}
                         onChange={handleChange}
+                      />
+                    </div>
+                    <div className="col-lg-6 mb-3">
+                      <label className="form-label">GST Number</label>
+                      <input
+                        type="text"
+                        name="gstNumber"
+                        className="form-control"
+                        value={formData.gstNumber}
+                        onChange={handleChange}
+                        placeholder="Enter GST Number"
                       />
                     </div>
 
