@@ -1,21 +1,17 @@
 import React, { useState } from "react";
 import { Modal, Button, Form } from "react-bootstrap";
-import {
-  useAddStockMutation,
-  useRemoveStockMutation,
-} from "../../api/productApi";
+import { useAddStockMutation } from "../../api/productApi";
+import { toast } from "sonner"; // Import Sonner
 
 const StockModal = ({ show, onHide, product }) => {
   const [quantity, setQuantity] = useState("");
-  const [action, setAction] = useState("in"); // "in" for stock-in, "out" for stock-out
 
-  // RTK Mutations
+  // RTK Mutation
   const [addStock, { isLoading: addingStock }] = useAddStockMutation();
-  const [removeStock, { isLoading: removingStock }] = useRemoveStockMutation();
 
   const handleSubmit = async () => {
     if (!quantity || isNaN(quantity) || quantity <= 0) {
-      alert("Please enter a valid quantity.");
+      toast.error("Please enter a valid quantity."); // Sonner toast
       return;
     }
 
@@ -25,31 +21,23 @@ const StockModal = ({ show, onHide, product }) => {
     };
 
     try {
-      if (action === "in") {
-        await addStock(stockData).unwrap();
-        alert("Stock added successfully!");
-      } else {
-        await removeStock(stockData).unwrap();
-        alert("Stock removed successfully!");
-      }
+      await addStock(stockData).unwrap();
     } catch (error) {
-      alert(error?.data?.message || "Something went wrong!");
+      toast.error(error?.data?.message || "Something went wrong!"); // Error toast
     }
 
     setQuantity("");
-    setAction("in");
     onHide();
   };
 
   return (
     <Modal show={show} onHide={onHide} centered>
       <Modal.Header closeButton>
-        <Modal.Title>Manage Stock</Modal.Title>
+        <Modal.Title>
+          Add Stock - <strong>{product?.name}</strong>
+        </Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <p>
-          Product: <strong>{product?.name}</strong>
-        </p>
         <Form>
           <Form.Group>
             <Form.Label>Quantity</Form.Label>
@@ -58,48 +46,17 @@ const StockModal = ({ show, onHide, product }) => {
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
               min="1"
-              disabled={addingStock || removingStock}
+              disabled={addingStock}
             />
-          </Form.Group>
-          <Form.Group className="mt-3">
-            <Form.Label>Action</Form.Label>
-            <div>
-              <Form.Check
-                inline
-                label="Stock In"
-                type="radio"
-                name="stockAction"
-                checked={action === "in"}
-                onChange={() => setAction("in")}
-                disabled={addingStock || removingStock}
-              />
-              <Form.Check
-                inline
-                label="Stock Out"
-                type="radio"
-                name="stockAction"
-                checked={action === "out"}
-                onChange={() => setAction("out")}
-                disabled={addingStock || removingStock}
-              />
-            </div>
           </Form.Group>
         </Form>
       </Modal.Body>
       <Modal.Footer>
-        <Button
-          variant="secondary"
-          onClick={onHide}
-          disabled={addingStock || removingStock}
-        >
+        <Button variant="secondary" onClick={onHide} disabled={addingStock}>
           Cancel
         </Button>
-        <Button
-          variant="primary"
-          onClick={handleSubmit}
-          disabled={addingStock || removingStock}
-        >
-          {addingStock || removingStock ? "Processing..." : "Submit"}
+        <Button variant="primary" onClick={handleSubmit} disabled={addingStock}>
+          {addingStock ? "Processing..." : "Submit"}
         </Button>
       </Modal.Footer>
     </Modal>

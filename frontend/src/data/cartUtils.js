@@ -8,18 +8,29 @@ export const generateQuotationNumber = () => {
 };
 
 // Generate Order Number
-export const generateOrderNumber = (orders) => {
-  const today = moment();
-  const day = today.format("D");
-  const month = today.format("M");
-  const year = today.format("YY");
-  const todayOrders = orders.filter((order) =>
-    moment(order.createdAt).isSame(today, "day")
-  );
-  const serialNumber = todayOrders.length + 101;
-  return `${day}${month}${year}${serialNumber}`;
-};
+export const generateOrderNumber = (orders = []) => {
+  const today = new Date();
+  const day = today.getDate(); // No leading zero (e.g., 1 instead of 01)
+  const month = today.getMonth() + 1; // No leading zero (e.g., 1 instead of 01)
+  const year = "25"; // Hardcode to 25 for 2025
 
+  // Find the highest sequence number for orders with today's prefix (DDMM25)
+  const prefix = `${day}${month}${year}`;
+  const existingOrders = orders.filter((order) =>
+    order.orderNo.startsWith(prefix)
+  );
+  let sequence = 101; // Start from 101
+
+  if (existingOrders.length > 0) {
+    const sequenceNumbers = existingOrders
+      .map((order) => parseInt(order.orderNo.slice(prefix.length), 10))
+      .filter((num) => !isNaN(num));
+    const maxSequence = Math.max(...sequenceNumbers, 100); // Ensure at least 100
+    sequence = maxSequence + 1; // Increment from the highest sequence
+  }
+
+  return `${prefix}${sequence}`;
+};
 // Generate Purchase Order Number
 export const generatePurchaseOrderNumber = (orders) => {
   const today = moment().format("DDMMYYYY");

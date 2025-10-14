@@ -5,21 +5,25 @@ import {
   useExportQuotationMutation,
 } from "../../api/quotationApi";
 import { useGetCustomerByIdQuery } from "../../api/customerApi";
-import { useGetUserByIdQuery } from "../../api/userApi";
-import { useGetAllUsersQuery } from "../../api/userApi";
+import { useGetUserByIdQuery, useGetAllUsersQuery } from "../../api/userApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetCompanyByIdQuery } from "../../api/companyApi";
+import { useGetAddressByIdQuery } from "../../api/addressApi";
 import { toast } from "sonner";
 import logo from "../../assets/img/logo.png";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import ExcelJS from "exceljs";
+import { PDFDocument } from "pdf-lib"; // Added for PDF merging
+import numberToWords from "number-to-words"; // Added for number to words conversion
 import "./quotation.css";
 import useProductsData from "../../data/useProductdata";
-import { useGetAddressByIdQuery } from "../../api/addressApi";
 import { Buffer } from "buffer";
 import { LeftOutlined, ExportOutlined } from "@ant-design/icons";
+import termsAndConditionsPdf from "../../assets/QUOT-10.pdf";
 
+// Path to the Terms & Conditions PDF (adjust as needed)
+const termsAndConditionsPdfUrl = termsAndConditionsPdf;
 const QuotationsDetails = () => {
   const { id } = useParams();
   const {
@@ -120,11 +124,42 @@ const QuotationsDetails = () => {
     return customer ? customer.name : "Unknown";
   };
 
-  // Function to validate image URLs (including base64)
-  const isValidImageUrl = (url) => {
-    if (!url || typeof url !== "string") {
-      return false;
+  // Convert number to words
+  const amountInWords = (amount) => {
+    try {
+      const integerPart = Math.floor(Number(amount));
+      const decimalPart = Math.round((Number(amount) - integerPart) * 100);
+      let words = numberToWords.toWords(integerPart);
+      words = words.charAt(0).toUpperCase() + words.slice(1) + " rupees";
+      if (decimalPart > 0) {
+        words += ` and ${numberToWords.toWords(decimalPart)} paisa`;
+      }
+      return words + " only";
+    } catch {
+      return "N/A";
     }
+  };
+  const subtotal = products.reduce(
+    (sum, product) => sum + Number(product.total || 0),
+    0
+  );
+  const gstAmount =
+    quotation && quotation.include_gst && quotation.gst_value
+      ? (subtotal * Number(quotation.gst_value)) / 100
+      : 0;
+  const finalTotal = subtotal + gstAmount;
+
+  // Placeholder for ACC/Details
+  const accountDetails = company?.bankDetails || {
+    bankName: "Example Bank",
+    accountNumber: "1234567890",
+    ifscCode: "EXMP0001234",
+    branch: "Main Branch",
+  };
+
+  // Image handling functions
+  const isValidImageUrl = (url) => {
+    if (!url || typeof url !== "string") return false;
     if (url.startsWith("data:image/")) {
       return /data:image\/(png|jpg|jpeg|gif|bmp|webp);base64,/.test(url);
     }
@@ -136,7 +171,6 @@ const QuotationsDetails = () => {
     }
   };
 
-  // Placeholder image
   const placeholderImage = {
     buffer: Buffer.from(
       "iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAMAAAC7IEhfAAAAA1BMVEX///+nxBvIAAAAIElEQVR4nGNgGAWjYBSMglEwCkbBKBgFo2AUjIJRMAoGAK8rB3N0S2o0AAAAAElFTkSuQmCC",
@@ -204,6 +238,7 @@ const QuotationsDetails = () => {
         return;
       }
       setIsExporting(true);
+
       if (exportFormat === "excel") {
         if (!products || products.length === 0) {
           toast.error("No products available to export.");
@@ -226,7 +261,7 @@ const QuotationsDetails = () => {
           const sellingPrice =
             productDetail?.metaDetails?.find((m) => m.title === "sellingPrice")
               ?.value ||
-            product.total || // Fallback to total
+            product.total ||
             0;
 
           return {
@@ -239,13 +274,13 @@ const QuotationsDetails = () => {
               ? product.discountType === "percent"
                 ? `${product.discount}%`
                 : `₹${Number(product.discount).toFixed(2)}`
-              : "0", // Show 0 instead of N/A for clarity
+              : "0",
             rate: product.rate
               ? `₹${Number(product.rate).toFixed(2)}`
               : sellingPrice
               ? `₹${Number(sellingPrice).toFixed(2)}`
-              : `₹${Number(product.total).toFixed(2)}`, // Fallback to total
-            qty: product.quantity || "1", // Use quantity, default to 1
+              : `₹${Number(product.total).toFixed(2)}`,
+            qty: product.quantity || "1",
             total: product.total
               ? `₹${Number(product.total).toFixed(2)}`
               : "N/A",
@@ -470,17 +505,8 @@ const QuotationsDetails = () => {
           currentRow++;
         });
 
-        // Totals section
-        const subtotal = products.reduce(
-          (sum, product) => sum + Number(product.total || 0),
-          0
-        );
-        const gstAmount =
-          quotation.include_gst && quotation.gst_value
-            ? (subtotal * Number(quotation.gst_value)) / 100
-            : 0;
-        const finalTotal = subtotal + gstAmount;
-
+        // Totals section (in the middle)
+        worksheet.addRow([]); // Spacer
         const subtotalRow = worksheet.addRow([
           "",
           "",
@@ -553,6 +579,47 @@ const QuotationsDetails = () => {
           }
         });
 
+        // Amount in words and digits
+        worksheet.addRow([]); // Spacer
+        worksheet.mergeCells(`A${currentRow + 1}:I${currentRow + 1}`);
+        worksheet.getCell(
+          `A${currentRow + 1}`
+        ).value = `Amount in Words: ${amountInWords(subtotal)}`;
+        worksheet.getCell(`A${currentRow + 1}`).alignment = {
+          vertical: "middle",
+          wrapText: true,
+        };
+        worksheet.getCell(`A${currentRow + 1}`).font = { bold: true };
+
+        worksheet.addRow([]); // Spacer
+        worksheet.mergeCells(`A${currentRow + 3}:I${currentRow + 3}`);
+        worksheet.getCell(
+          `A${currentRow + 3}`
+        ).value = `Amount in Digits (Excl. Tax): ₹${subtotal.toFixed(2)}`;
+        worksheet.getCell(`A${currentRow + 3}`).alignment = {
+          vertical: "middle",
+          wrapText: true,
+        };
+        worksheet.getCell(`A${currentRow + 3}`).font = { bold: true };
+
+        // Account Details
+        worksheet.addRow([]); // Spacer
+        worksheet.mergeCells(`A${currentRow + 5}:I${currentRow + 5}`);
+        worksheet.getCell(`A${currentRow + 5}`).value =
+          "Account Details:\n" +
+          `Bank: ${accountDetails.bankName}\n` +
+          `Account Number: ${accountDetails.accountNumber}\n` +
+          `IFSC Code: ${accountDetails.ifscCode}\n` +
+          `Branch: ${accountDetails.branch}`;
+        worksheet.getCell(`A${currentRow + 5}`).alignment = {
+          vertical: "middle",
+          wrapText: true,
+        };
+        worksheet.getCell(`A${currentRow + 5}`).font = { bold: true };
+
+        // Note: Terms & Conditions are not included in Excel export
+        // If required, you can add a cell with a note or link to the T&C PDF
+
         // Generate and download Excel file
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], {
@@ -571,6 +638,7 @@ const QuotationsDetails = () => {
           toast.error("Quotation content not found.");
           return;
         }
+        // Create the quotation PDF
         const canvas = await html2canvas(quotationRef.current, {
           scale: 2,
           useCORS: true,
@@ -595,6 +663,30 @@ const QuotationsDetails = () => {
           pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
           heightLeft -= pageHeight - 20;
         }
+
+        // Load and append Terms & Conditions PDF
+        try {
+          const response = await fetch(termsAndConditionsPdfUrl, {
+            mode: "cors",
+            credentials: "omit",
+          });
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          const tncArrayBuffer = await response.arrayBuffer();
+          const tncPdfDoc = await PDFDocument.load(tncArrayBuffer);
+          const copiedPages = await pdf.copyPages(
+            tncPdfDoc,
+            tncPdfDoc.getPageIndices()
+          );
+          copiedPages.forEach((page) => pdf.addPage(page));
+        } catch (error) {
+          toast.warning(
+            "Failed to load Terms & Conditions PDF. Exporting without T&C."
+          );
+        }
+
+        // Save the combined PDF
         pdf.save(`Quotation_${id}.pdf`);
       }
     } catch (error) {
@@ -639,16 +731,6 @@ const QuotationsDetails = () => {
       </div>
     );
   }
-
-  const subtotal = products.reduce(
-    (sum, product) => sum + Number(product.total || 0),
-    0
-  );
-  const gstAmount =
-    quotation.include_gst && quotation.gst_value
-      ? (subtotal * Number(quotation.gst_value)) / 100
-      : 0;
-  const finalTotal = subtotal + gstAmount;
 
   return (
     <div className="page-wrapper">
@@ -753,7 +835,7 @@ const QuotationsDetails = () => {
                             const imgs = JSON.parse(productDetail.images);
                             imageUrl = Array.isArray(imgs) ? imgs[0] : null;
                           } else if (product.image) {
-                            imageUrl = product.image; // Fallback to product.image if available
+                            imageUrl = product.image;
                           }
                         } catch {
                           imageUrl = null;
@@ -762,7 +844,7 @@ const QuotationsDetails = () => {
                           productDetail?.product_code ||
                           productDetail?.meta
                             ?.d11da9f9_3f2e_4536_8236_9671200cca4a ||
-                          product.productCode || // Fallback to product.productCode
+                          product.productCode ||
                           "N/A";
                         const sellingPrice =
                           productDetail?.metaDetails?.find(
@@ -823,6 +905,7 @@ const QuotationsDetails = () => {
                   </tbody>
                 </table>
 
+                {/* Totals Section (Moved to Middle) */}
                 <table className="quotation-table full-width bordered">
                   <tbody>
                     <tr>
@@ -844,6 +927,55 @@ const QuotationsDetails = () => {
                         Total
                       </td>
                       <td className="fw-bold">₹{finalTotal.toFixed(2)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                {/* Amount in Words and Digits */}
+                <table className="quotation-table full-width">
+                  <tbody>
+                    <tr>
+                      <td colSpan="9">
+                        <strong>Amount in Words:</strong>{" "}
+                        {amountInWords(subtotal)}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td colSpan="9">
+                        <strong>Amount in Digits (Excl. Tax):</strong> ₹
+                        {subtotal.toFixed(2)}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                {/* Account Details */}
+                <table className="quotation-table full-width">
+                  <tbody>
+                    <tr>
+                      <td colSpan="9">
+                        <strong>Account Details:</strong>
+                        <br />
+                        Bank: {accountDetails.bankName}
+                        <br />
+                        Account Number: {accountDetails.accountNumber}
+                        <br />
+                        IFSC Code: {accountDetails.ifscCode}
+                        <br />
+                        Branch: {accountDetails.branch}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                {/* Terms & Conditions Note */}
+                <table className="quotation-table full-width">
+                  <tbody>
+                    <tr>
+                      <td colSpan="9">
+                        <strong>Terms & Conditions:</strong> Please refer to the
+                        attached document for Terms and Conditions.
+                      </td>
                     </tr>
                   </tbody>
                 </table>

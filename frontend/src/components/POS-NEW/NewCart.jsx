@@ -48,13 +48,14 @@ import OrderForm from "./OrderForm";
 import PurchaseOrderForm from "./PurchaseOrderForm";
 import AddAddress from "../Address/AddAddressModal";
 import AddVendorModal from "./AddVendorModal";
+import AddNewTeam from "../Orders/AddNewTeam";
 import {
   generateQuotationNumber,
   generateOrderNumber,
   generatePurchaseOrderNumber,
 } from "../../data/cartUtils";
 import { useCreateVendorMutation } from "../../api/vendorApi";
-
+import { useGetAllUsersQuery } from "../../api/userApi";
 const { TabPane } = Tabs;
 const { Text } = Typography;
 
@@ -83,6 +84,12 @@ const NewCart = ({ onConvertToOrder }) => {
     isLoading: profileLoading,
     error: profileError,
   } = useGetProfileQuery();
+  const {
+    data: users,
+    isLoading: usersLoading,
+    error: usersError,
+  } = useGetAllUsersQuery();
+
   const userId = profileData?.user?.userId;
 
   // State declarations
@@ -92,6 +99,7 @@ const NewCart = ({ onConvertToOrder }) => {
   const [showClearCartModal, setShowClearCartModal] = useState(false);
   const [showAddAddressModal, setShowAddAddressModal] = useState(false);
   const [showAddVendorModal, setShowAddVendorModal] = useState(false);
+  const [showAddTeamModal, setShowAddTeamModal] = useState(false); // State for AddNewTeam modal
   const [documentType, setDocumentType] = useState("Quotation");
   const [quotationNumber, setQuotationNumber] = useState(
     generateQuotationNumber()
@@ -185,9 +193,10 @@ const NewCart = ({ onConvertToOrder }) => {
 
   // Memoized data
   const addresses = useMemo(
-    () => (Array.isArray(addressesData?.data) ? addressesData.data : []),
+    () => (Array.isArray(addressesData) ? addressesData : []),
     [addressesData]
   );
+
   const userIds = useMemo(
     () => [...new Set(addresses.map((addr) => addr.userId).filter(Boolean))],
     [addresses]
@@ -334,40 +343,50 @@ const NewCart = ({ onConvertToOrder }) => {
   ]);
 
   useEffect(() => {
-    if (selectedCustomer && addresses.length > 0) {
+    if (selectedCustomer) {
       const selectedCustomerData = customerList.find(
         (customer) => customer.customerId === selectedCustomer
       );
       if (selectedCustomerData) {
-        setQuotationData((prev) => {
-          const newBillTo = selectedCustomerData.name || prev.billTo;
-          let newShipTo = prev.shipTo;
-          if (selectedCustomerData.address) {
-            const customerAddress = selectedCustomerData.address;
-            const matchingAddress = addresses.find((addr) => {
-              const addrDetails = addr.addressDetails || addr;
-              return (
-                addrDetails.street === customerAddress.street &&
-                addrDetails.city === customerAddress.city &&
-                addrDetails.state === customerAddress.state &&
-                (addrDetails.postalCode === customerAddress.zipCode ||
-                  addrDetails.postalCode === customerAddress.postalCode) &&
-                addrDetails.country === customerAddress.country
-              );
-            });
-            if (matchingAddress && matchingAddress.addressId) {
-              newShipTo = matchingAddress.addressId;
-            }
-          }
-          return { ...prev, billTo: newBillTo, shipTo: newShipTo };
-        });
+        setQuotationData((prev) => ({
+          ...prev,
+          billTo: selectedCustomerData.name || prev.billTo,
+        }));
         setOrderData((prev) => ({
           ...prev,
           createdFor: selectedCustomerData.customerId,
         }));
       }
     }
-  }, [selectedCustomer, customerList, addresses]);
+  }, [selectedCustomer, customerList]);
+
+  useEffect(() => {
+    if (selectedCustomer && addresses.length > 0 && quotationData.billTo) {
+      const selectedCustomerData = customerList.find(
+        (customer) => customer.customerId === selectedCustomer
+      );
+      if (selectedCustomerData && selectedCustomerData.address) {
+        const customerAddress = selectedCustomerData.address;
+        const matchingAddress = addresses.find((addr) => {
+          const addrDetails = addr.addressDetails || addr;
+          return (
+            addrDetails.street === customerAddress.street &&
+            addrDetails.city === customerAddress.city &&
+            addrDetails.state === customerAddress.state &&
+            (addrDetails.postalCode === customerAddress.zipCode ||
+              addrDetails.postalCode === customerAddress.postalCode) &&
+            addrDetails.country === customerAddress.country
+          );
+        });
+        if (matchingAddress && matchingAddress.addressId) {
+          setQuotationData((prev) => ({
+            ...prev,
+            shipTo: matchingAddress.addressId,
+          }));
+        }
+      }
+    }
+  }, [selectedCustomer, customerList, addresses, quotationData.billTo]);
 
   useEffect(() => {
     const { quotationDate, dueDate } = quotationData;
@@ -385,6 +404,11 @@ const NewCart = ({ onConvertToOrder }) => {
       dueDate: quotationData.dueDate,
     }));
   }, [quotationData.quotationDate, quotationData.dueDate]);
+
+  useEffect(() => {
+    console.log("selectedCustomer:", selectedCustomer);
+    console.log("customerList:", customerList);
+  }, [selectedCustomer, customerList]);
 
   // Handlers
   const handleQuotationChange = (key, value) => {
@@ -464,6 +488,14 @@ const NewCart = ({ onConvertToOrder }) => {
       toast.error(`Error: ${error.data?.message || "Unknown error"}`);
     } finally {
       setUpdatingItems((prev) => ({ ...prev, [productId]: false }));
+    }
+  };
+
+  // Handle team addition
+  const handleTeamAdded = (showModal) => {
+    setShowAddTeamModal(showModal);
+    if (!showModal) {
+      refetchTeams(); // Refresh teams list when modal is closed
     }
   };
 
@@ -998,6 +1030,9 @@ const NewCart = ({ onConvertToOrder }) => {
                   customerQueries={customerQueries}
                   teams={teams}
                   teamsLoading={teamsLoading}
+                  users={users} // Pass users to OrderForm
+                  usersLoading={usersLoading}
+                  usersError={usersError}
                   quotationData={quotationData}
                   setQuotationData={setQuotationData}
                   handleQuotationChange={handleQuotationChange}
@@ -1016,6 +1051,7 @@ const NewCart = ({ onConvertToOrder }) => {
                   handleAddAddress={handleAddAddress}
                   setActiveTab={setActiveTab}
                   handleCreateDocument={handleCreateDocument}
+                  handleTeamAdded={handleTeamAdded} // Pass handleTeamAdded
                 />
               ) : (
                 <QuotationForm
@@ -1083,6 +1119,20 @@ const NewCart = ({ onConvertToOrder }) => {
             onSave={createVendor}
             isCreatingVendor={isCreatingVendor}
           />
+
+          {showAddTeamModal && (
+            <AddNewTeam
+              onClose={() => handleTeamAdded(false)}
+              onTeamAdded={(newTeamId) => {
+                handleTeamAdded(false); // Close modal
+                setOrderData((prev) => ({
+                  ...prev,
+                  assignedTeamId: newTeamId, // Set the new team ID
+                }));
+              }}
+              visible={showAddTeamModal}
+            />
+          )}
         </CartContainer>
       </PageWrapper>
     </div>

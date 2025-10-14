@@ -1,11 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Modal, Form, Input, Select, Button, Alert, Spin } from "antd";
-import { useGetAllBrandsQuery } from "../../api/brandsApi";
+import {
+  useCheckVendorIdQuery,
+  useGetVendorByIdQuery,
+  useCreateVendorMutation,
+} from "../../api/vendorApi"; // Assume vendorApi
+import { useSendNotificationMutation } from "../../api/notificationApi";
 import { toast } from "sonner";
-
+import { useGetAllBrandsQuery } from "../../api/brandsApi";
+import { useAuth } from "../../context/AuthContext";
 const { Option } = Select;
 
-const AddVendorModal = ({ show, onClose, onSave, isCreatingVendor }) => {
+const AddVendorModal = ({ show, onClose, isCreatingVendor }) => {
+  const { auth } = useAuth();
   const {
     data: brandsData,
     isLoading: isBrandsLoading,
@@ -13,6 +20,8 @@ const AddVendorModal = ({ show, onClose, onSave, isCreatingVendor }) => {
   } = useGetAllBrandsQuery(undefined, {
     refetchOnMountOrArgChange: true,
   });
+  const [sendNotification] = useSendNotificationMutation();
+  const [createVendor, { isLoading: isCreating }] = useCreateVendorMutation();
   const brands = brandsData || [];
   const [form] = Form.useForm();
   const [vendorData, setVendorData] = useState({
@@ -21,10 +30,30 @@ const AddVendorModal = ({ show, onClose, onSave, isCreatingVendor }) => {
     brandId: "",
     brandSlug: "",
   });
+  const [vendorIdError, setVendorIdError] = useState(null);
+
+  // Check vendorId uniqueness
+  const { data: isVendorIdUnique, error: vendorIdCheckError } =
+    useCheckVendorIdQuery(vendorData.vendorId, {
+      skip: !vendorData.vendorId || vendorData.vendorId.length < 3, // Debounce-like effect
+    });
+
+  useEffect(() => {
+    if (vendorIdCheckError) {
+      setVendorIdError("Error checking Vendor ID availability");
+    } else if (isVendorIdUnique === false) {
+      setVendorIdError("Vendor ID already exists");
+    } else {
+      setVendorIdError(null);
+    }
+  }, [isVendorIdUnique, vendorIdCheckError]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setVendorData((prev) => ({ ...prev, [name]: value }));
+    if (name === "vendorId") {
+      setVendorIdError(null); // Reset error on change
+    }
   };
 
   const handleBrandChange = (value) => {
@@ -38,17 +67,27 @@ const AddVendorModal = ({ show, onClose, onSave, isCreatingVendor }) => {
   };
 
   const handleSubmit = async () => {
-    if (!vendorData.vendorId || !vendorData.vendorName) {
-      toast.error("Vendor ID and Name are required.");
-      return;
-    }
     try {
-      await onSave({
+      await form.validateFields();
+      if (vendorIdError || isVendorIdUnique === false) {
+        toast.error("Please fix the Vendor ID error before submitting.");
+        return;
+      }
+      const vendor = await createVendor({
         vendorId: vendorData.vendorId,
         vendorName: vendorData.vendorName,
         brandId: vendorData.brandId || null,
         brandSlug: vendorData.brandSlug || null,
       }).unwrap();
+
+      // Send notification
+      await sendNotification({
+        userId: auth?.user?.userId, // Adjust based on AuthContext
+        title: "New Vendor Created",
+        message: `Vendor ${vendorData.vendorName} (${vendorData.vendorId}) has been created.`,
+      }).unwrap();
+
+      toast.success("Vendor created successfully");
       setVendorData({
         vendorId: "",
         vendorName: "",
@@ -81,12 +120,18 @@ const AddVendorModal = ({ show, onClose, onSave, isCreatingVendor }) => {
             description={brandsError?.data?.message || "Unknown error"}
             type="error"
             showIcon
+            className="mb-3"
           />
         )}
         <Form.Item
           label="Vendor ID"
           name="vendorId"
-          rules={[{ required: true, message: "Please enter a Vendor ID" }]}
+          rules={[
+            { required: true, message: "Please enter a Vendor ID" },
+            { min: 3, message: "Vendor ID must be at least 3 characters" },
+          ]}
+          validateStatus={vendorIdError ? "error" : ""}
+          help={vendorIdError}
         >
           <Input
             name="vendorId"
@@ -94,10 +139,12 @@ const AddVendorModal = ({ show, onClose, onSave, isCreatingVendor }) => {
             onChange={handleChange}
             placeholder="e.g., VEND123"
           />
-          <div style={{ color: "#8c8c8c", fontSize: "12px" }}>
-            Must be unique (e.g., VEND123).
-          </div>
         </Form.Item>
+        <div
+          style={{ color: "#8c8c8c", fontSize: "12px", marginBottom: "16px" }}
+        >
+          Must be unique (e.g., VEND123).
+        </div>
         <Form.Item
           label="Vendor Name"
           name="vendorName"
@@ -130,7 +177,7 @@ const AddVendorModal = ({ show, onClose, onSave, isCreatingVendor }) => {
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
           <Button
             onClick={onClose}
-            disabled={isCreatingVendor}
+            disabled={isCreating || isBrandsLoading}
             style={{ marginRight: "10px" }}
           >
             Cancel
@@ -138,9 +185,10 @@ const AddVendorModal = ({ show, onClose, onSave, isCreatingVendor }) => {
           <Button
             type="primary"
             htmlType="submit"
-            disabled={isCreatingVendor || isBrandsLoading}
+            disabled={isCreating || isBrandsLoading || vendorIdError}
+            loading={isCreating}
           >
-            {isCreatingVendor ? <Spin size="small" /> : "Save Vendor"}
+            Save Vendor
           </Button>
         </div>
       </Form>

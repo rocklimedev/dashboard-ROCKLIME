@@ -1,6 +1,7 @@
 const Address = require("../models/address");
 const User = require("../models/users");
 const Customer = require("../models/customers");
+const { sendNotification } = require("./notificationController"); // Import sendNotification
 
 // Create a new address
 exports.createAddress = async (req, res) => {
@@ -43,6 +44,15 @@ exports.createAddress = async (req, res) => {
       customerId,
       createdAt: new Date(),
       updatedAt: new Date(),
+    });
+
+    // Send notification to user or customer
+    const recipientId = "56a3ba45-0557-47ac-bb5d-409f93d6661d";
+    const recipientType = userId ? "User" : "Customer";
+    await sendNotification({
+      userId: recipientId,
+      title: "New Address Created",
+      message: `A new address has been added: ${street}, ${city}, ${state}, ${postalCode}, ${country}`,
     });
 
     res.status(201).json({
@@ -101,6 +111,15 @@ exports.updateAddress = async (req, res) => {
       updatedAt: new Date(),
     });
 
+    // Send notification to user or customer
+    const recipientId = "56a3ba45-0557-47ac-bb5d-409f93d6661d";
+    const recipientType = userId || address.userId ? "User" : "Customer";
+    await sendNotification({
+      userId: recipientId,
+      title: "Address Updated",
+      message: `Your address has been updated: ${street}, ${city}, ${state}, ${postalCode}, ${country}`,
+    });
+
     res.json({
       message: "Address updated successfully",
       addressId: address.addressId,
@@ -116,7 +135,35 @@ exports.updateAddress = async (req, res) => {
   }
 };
 
-// Get all addresses
+// Delete an address
+exports.deleteAddress = async (req, res) => {
+  try {
+    const { addressId } = req.params;
+
+    const address = await Address.findByPk(addressId);
+    if (!address) {
+      return res.status(404).json({ message: "Address not found" });
+    }
+
+    // Send notification to user or customer
+    const recipientId = "56a3ba45-0557-47ac-bb5d-409f93d6661d";
+    const recipientType = address.userId ? "User" : "Customer";
+    await sendNotification({
+      userId: recipientId,
+      title: "Address Deleted",
+      message: `Your address has been deleted: ${address.street}, ${address.city}, ${address.state}, ${address.postalCode}, ${address.country}`,
+    });
+
+    await address.destroy();
+
+    res.json({ message: "Address deleted successfully" });
+  } catch (error) {
+    console.error("Error in deleteAddress:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+// Get all addresses (no notification needed here)
 exports.getAllAddresses = async (req, res) => {
   try {
     const { userId, customerId } = req.query;
@@ -138,7 +185,7 @@ exports.getAllAddresses = async (req, res) => {
   }
 };
 
-// Get a specific address by ID
+// Get a specific address by ID (no notification needed here)
 exports.getAddressById = async (req, res) => {
   try {
     const { addressId } = req.params;
@@ -156,25 +203,6 @@ exports.getAddressById = async (req, res) => {
     res.json(address);
   } catch (error) {
     console.error("Error in getAddressById:", error);
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-};
-
-// Delete an address
-exports.deleteAddress = async (req, res) => {
-  try {
-    const { addressId } = req.params;
-
-    const address = await Address.findByPk(addressId);
-    if (!address) {
-      return res.status(404).json({ message: "Address not found" });
-    }
-
-    await address.destroy();
-
-    res.json({ message: "Address deleted successfully" });
-  } catch (error) {
-    console.error("Error in deleteAddress:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };

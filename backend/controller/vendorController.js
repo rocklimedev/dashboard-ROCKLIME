@@ -65,11 +65,20 @@ const deleteVendor = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
+const checkVendorId = async (req, res) => {
+  try {
+    const { vendorId } = req.params;
+    const vendor = await Vendor.findOne({ where: { vendorId } });
+    res.status(200).json({ isUnique: !vendor });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 module.exports = {
   createVendor,
   getVendors,
   getVendorById,
   updateVendor,
   deleteVendor,
+  checkVendorId,
 };

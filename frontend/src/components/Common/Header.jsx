@@ -2,8 +2,9 @@ import React, { useState } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import { useGetProfileQuery } from "../../api/userApi";
 import { useGetCartQuery } from "../../api/cartApi";
+import { useGetNotificationsQuery } from "../../api/notificationApi"; // New import
 import { Dropdown, Button, Menu } from "antd";
-import { FaUserCircle, FaSearch } from "react-icons/fa";
+import { FaUserCircle, FaSearch, FaBell } from "react-icons/fa"; // Added FaBell
 import { BiFullscreen, BiLogOut } from "react-icons/bi";
 import { toast } from "sonner";
 import Avatar from "react-avatar";
@@ -33,7 +34,7 @@ const styles = `
     height: 50px;
     display: inline-block;
   }
-  .cart-badge {
+  .cart-badge, .notification-badge {
     position: absolute;
     top: -10px;
     right: -10px;
@@ -103,8 +104,16 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     isLoading: isCartLoading,
     error: cartError,
   } = useGetCartQuery(user?.user?.userId, { skip: !user?.user?.userId });
+  const {
+    data: notifications,
+    isLoading: isNotificationsLoading,
+    error: notificationsError,
+  } = useGetNotificationsQuery(user?.user?.userId, {
+    skip: !user?.user?.userId,
+  });
 
   const cartItemCount = cart?.cart?.items?.length || 0;
+  const notificationCount = notifications?.notifications?.length || 0; // Adjust based on your API response
 
   const handleLogout = async () => {
     try {
@@ -160,6 +169,17 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
           <i className="ti ti-settings-2 me-2" /> Settings
         </div>
       </Menu.Item>
+      <Menu.Item key="notifications">
+        <div onClick={() => navigate("/notifications")}>
+          <FaBell className="me-2" />
+          Notifications
+          {notificationCount > 0 && (
+            <span className="notification-badge" style={{ marginLeft: "8px" }}>
+              {notificationCount}
+            </span>
+          )}
+        </div>
+      </Menu.Item>
       <Menu.Divider />
       <Menu.Item
         key="logout"
@@ -185,6 +205,24 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
       label: "Settings",
       icon: <i className="ti ti-settings-2 me-2" />,
       onClick: () => navigate("/settings"),
+    },
+    {
+      key: "notifications",
+      label: (
+        <span style={{ position: "relative" }}>
+          Notifications
+          {notificationCount > 0 && (
+            <span
+              className="notification-badge"
+              style={{ top: "-5px", right: "-20px" }}
+            >
+              {notificationCount}
+            </span>
+          )}
+        </span>
+      ),
+      icon: <FaBell className="me-2" />,
+      onClick: () => navigate("/notifications"),
     },
     {
       key: "cart",
@@ -277,6 +315,18 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
             >
               <BiFullscreen />
             </Button>
+          </li>
+          <li className="nav-item nav-item-box">
+            <Link
+              to="/notifications"
+              style={{ position: "relative" }}
+              aria-label={`Notifications with ${notificationCount} unread`}
+            >
+              <FaBell />
+              {notificationCount > 0 && (
+                <span className="notification-badge">{notificationCount}</span>
+              )}
+            </Link>
           </li>
           <li className="nav-item nav-item-box">
             <Link

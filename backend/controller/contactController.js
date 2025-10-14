@@ -4,6 +4,10 @@ const {
   contactFormEmail,
   adminContactNotification,
 } = require("../middleware/sendMail");
+const { sendNotification } = require("./notificationController"); // Import sendNotification
+
+// Assume an admin user ID or system channel for notifications
+const ADMIN_USER_ID = "admin-system"; // Replace with actual admin user ID or channel
 
 // Submit a new contact form
 exports.submitContactForm = async (req, res) => {
@@ -49,6 +53,15 @@ exports.submitContactForm = async (req, res) => {
       adminEmail.html
     );
 
+    // Send real-time notification to admin or system channel
+    await sendNotification({
+      userId: ADMIN_USER_ID,
+      title: "New Contact Form Submission",
+      message: `A new contact form has been submitted by ${firstName} ${
+        lastName || ""
+      } (${email}): "${message}"`,
+    });
+
     // Send success response
     res.status(201).json({
       success: true,
@@ -71,7 +84,7 @@ exports.submitContactForm = async (req, res) => {
   }
 };
 
-// Fetch all contact queries
+// Fetch all contact queries (no notification needed)
 exports.getAllQueries = async (req, res) => {
   try {
     const queries = await Contact.find().sort({ createdAt: -1 }); // Sort by newest first
@@ -89,7 +102,7 @@ exports.getAllQueries = async (req, res) => {
   }
 };
 
-// Fetch a single query by ID
+// Fetch a single query by ID (no notification needed)
 exports.getQueryById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -137,13 +150,24 @@ exports.deleteQuery = async (req, res) => {
       });
     }
 
-    const query = await Contact.findByIdAndDelete(id);
+    const query = await Contact.findById(id);
     if (!query) {
       return res.status(404).json({
         success: false,
         message: "Query not found",
       });
     }
+
+    // Send real-time notification to admin or system channel
+    await sendNotification({
+      userId: ADMIN_USER_ID,
+      title: "Contact Query Deleted",
+      message: `Contact query from ${query.firstName} ${
+        query.lastName || ""
+      } (${query.email}) has been deleted.`,
+    });
+
+    await Contact.findByIdAndDelete(id);
 
     res.status(200).json({
       success: true,
@@ -157,7 +181,7 @@ exports.deleteQuery = async (req, res) => {
     });
   }
 };
-// Reply to a contact query via email
+
 // Reply to a contact query via email
 exports.replyToEmail = async (req, res) => {
   try {
@@ -208,6 +232,18 @@ exports.replyToEmail = async (req, res) => {
       replyEmail.text,
       replyEmail.html
     );
+
+    // Send real-time notification to the user (if userId is available)
+    // Note: Since Contact model doesn't have userId, we assume a lookup or skip
+    // If you have a User model with email-to-userId mapping, you can add it here
+    // For now, notify admin as a fallback
+    await sendNotification({
+      userId: ADMIN_USER_ID, // Replace with actual userId if available
+      title: "Reply Sent to Contact Query",
+      message: `A reply has been sent to ${query.firstName} ${
+        query.lastName || ""
+      } (${query.email}): "${replyMessage}"`,
+    });
 
     // Send success response
     res.status(200).json({

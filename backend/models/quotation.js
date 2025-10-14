@@ -28,13 +28,19 @@ const Quotation = sequelize.define(
     reference_number: {
       type: DataTypes.STRING(50),
     },
+
+    // ✅ Re-added fields
     include_gst: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
+      type: DataTypes.BOOLEAN, // TINYINT(1) equivalent
+      allowNull: true,
+      defaultValue: null,
     },
     gst_value: {
       type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      defaultValue: null,
     },
+
     products: {
       type: DataTypes.JSON,
       allowNull: false,
@@ -75,7 +81,6 @@ const Quotation = sequelize.define(
       onDelete: "RESTRICT",
       onUpdate: "CASCADE",
     },
-
     shipTo: {
       type: DataTypes.UUID,
       allowNull: true, // Optional, as shipping address may not always be required

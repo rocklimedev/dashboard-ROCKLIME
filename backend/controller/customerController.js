@@ -1,7 +1,11 @@
 const Customer = require("../models/customers"); // Import the Customer model
 const Invoice = require("../models/invoice"); // Import Invoice model
+const { sendNotification } = require("./notificationController"); // Import sendNotification
 
-// Get invoices by customer ID
+// Assume an admin user ID or system channel for notifications
+const ADMIN_USER_ID = "admin-system"; // Replace with actual admin user ID or channel
+
+// Get invoices by customer ID (no notification needed)
 exports.getInvoicesByCustomerId = async (req, res) => {
   try {
     const { id } = req.params;
@@ -70,6 +74,13 @@ exports.createCustomer = async (req, res) => {
       customerType: req.body.customerType || null,
     });
 
+    // Send notification to admin or system channel
+    await sendNotification({
+      userId: ADMIN_USER_ID,
+      title: "New Customer Created",
+      message: `A new customer "${newCustomer.name}" (${newCustomer.email}) has been created.`,
+    });
+
     res.status(201).json({
       success: true,
       data: newCustomer,
@@ -82,7 +93,7 @@ exports.createCustomer = async (req, res) => {
   }
 };
 
-// Get all customers
+// Get all customers (no notification needed)
 exports.getCustomers = async (req, res) => {
   try {
     const customers = await Customer.findAll();
@@ -92,7 +103,7 @@ exports.getCustomers = async (req, res) => {
   }
 };
 
-// Get a single customer by ID
+// Get a single customer by ID (no notification needed)
 exports.getCustomerById = async (req, res) => {
   try {
     const customer = await Customer.findByPk(req.params.id);
@@ -149,13 +160,23 @@ exports.updateCustomer = async (req, res) => {
           : customer.customerType,
     });
 
+    // Send notification to admin or system channel
+    await sendNotification({
+      userId: ADMIN_USER_ID,
+      title: "Customer Updated",
+      message: `Customer "${customer.name}" (${customer.email}) has been updated.`,
+    });
+
     res.status(200).json({
       success: true,
       message: "Customer updated successfully",
       data: customer,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
@@ -170,12 +191,22 @@ exports.deleteCustomer = async (req, res) => {
         .json({ success: false, message: "Customer not found" });
     }
 
+    // Send notification to admin or system channel
+    await sendNotification({
+      userId: ADMIN_USER_ID,
+      title: "Customer Deleted",
+      message: `Customer "${customer.name}" (${customer.email}) has been deleted.`,
+    });
+
     await customer.destroy();
 
     res
       .status(200)
       .json({ success: true, message: "Customer deleted successfully" });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };

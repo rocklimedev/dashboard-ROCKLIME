@@ -1,9 +1,15 @@
 require("dotenv").config();
-const socketio = require("socket.io");
 const express = require("express");
+const socketio = require("socket.io");
 const cors = require("cors");
+const helmet = require("helmet");
 const db = require("./config/database");
-const logger = require("./middleware/logger"); // Import logger middleware
+const connectMongoDB = require("./config/dbMongo");
+const setupDB = require("./utils/db");
+const keys = require("./config/keys");
+const { initSocket } = require("./controller/notificationController");
+
+// Import routes
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
 const vendorRoutes = require("./routes/vendor");
@@ -28,15 +34,12 @@ const companiesRoutes = require("./routes/company");
 const quotationRoutes = require("./routes/quotation");
 const invoiceRoutes = require("./routes/invoices");
 const teamRoutes = require("./routes/teams");
-const connectMongoDB = require("./config/dbMongo");
-const setupDB = require("./utils/db");
-const helmet = require("helmet");
-const keys = require("./config/keys");
 const otpRoutes = require("./routes/otp");
 const productMetaRoutes = require("./routes/productMeta");
 const purchaseOrderRoutes = require("./routes/purchaseOrder");
-const logsRoutes = require("./routes/apiLog"); // Add logs route
-
+const logsRoutes = require("./routes/apiLog");
+const notificationRoutes = require("./routes/notification");
+// Initialize Express app
 const app = express();
 
 // CORS configuration
@@ -54,32 +57,24 @@ const corsOptions = {
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 };
-app.use(cors(corsOptions));
 
-// Parse JSON bodies
+// Middleware
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Security headers
 app.use(
   helmet({
     contentSecurityPolicy: false,
     frameguard: true,
   })
 );
-
-// Apply logger middleware globally
 app.use(require("./middleware/logger"));
 
-// Log incoming requests for debugging (optional)
+// Log incoming requests for debugging
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.url}`);
   next();
 });
-
-// Database Setup
-connectMongoDB();
-setupDB();
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -109,8 +104,8 @@ app.use("/api/teams", teamRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/purchase-orders", purchaseOrderRoutes);
 app.use("/api/product-meta", productMetaRoutes);
-app.use("/api/logs", logsRoutes); // Add logs route
-
+app.use("/api/logs", logsRoutes);
+app.use("/api/notifications", notificationRoutes);
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error("Server error:", err);
@@ -118,6 +113,10 @@ app.use((err, req, res, next) => {
     .status(500)
     .json({ error: "Internal server error", details: err.message });
 });
+
+// Database Setup
+connectMongoDB();
+setupDB();
 
 // Sync Database
 db.sync()
@@ -131,8 +130,9 @@ const server = app.listen(keys.port, async () => {
   );
 });
 
-// Initialize Socket
-const io = socketio(server, {
-  cors: corsOptions,
-});
+// Initialize Socket.IO
+const io = socketio(server, { cors: corsOptions });
 require("./socket")(io);
+initSocket(io);
+
+module.exports = { app, server, io };
