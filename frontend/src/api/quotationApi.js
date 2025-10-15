@@ -64,6 +64,18 @@ export const quotationApi = createApi({
         responseHandler: async (response) => response.blob(),
       }),
     }),
+    // New endpoints for versioning
+    getQuotationVersions: builder.query({
+      query: (id) => `/${id}/versions`,
+      providesTags: ["Quotation"],
+    }),
+    restoreQuotationVersion: builder.mutation({
+      query: ({ id, version }) => ({
+        url: `/${id}/restore/${version}`,
+        method: "POST",
+      }),
+      invalidatesTags: ["Quotation"],
+    }),
   }),
 });
 
@@ -74,4 +86,6 @@ export const {
   useUpdateQuotationMutation,
   useDeleteQuotationMutation,
   useExportQuotationMutation,
+  useGetQuotationVersionsQuery,
+  useRestoreQuotationVersionMutation,
 } = quotationApi;

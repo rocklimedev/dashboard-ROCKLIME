@@ -24,7 +24,6 @@ const NotificationsWrapper = () => {
   const handleMarkAsRead = async (notificationId) => {
     try {
       await markNotificationAsRead(notificationId).unwrap();
-      toast.success("Notification marked as read");
     } catch (err) {
       toast.error("Failed to mark notification as read");
     }

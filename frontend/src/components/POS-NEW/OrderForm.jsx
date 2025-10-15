@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Card,
   Button,
@@ -26,7 +26,8 @@ import OrderTotal from "./OrderTotal";
 import moment from "moment";
 import { toast } from "sonner";
 import { debounce } from "lodash";
-
+import { useCreateAddressMutation } from "../../api/addressApi";
+import { useGetAllOrdersQuery } from "../../api/orderApi";
 const { Text } = Typography;
 const { Option } = Select;
 
@@ -77,11 +78,12 @@ const STATUS_VALUES = [
   "ONHOLD",
 ];
 
-const INVOICE_EDITABLE_STATUSES = [
-  "INVOICE",
-  "DISPATCHED",
-  "DELIVERED",
-  "PARTIALLY_DELIVERED",
+const SOURCE_TYPES = [
+  "Retail",
+  "Architect",
+  "Interior",
+  "Builder",
+  "Contractor",
 ];
 
 const OrderForm = ({
@@ -127,6 +129,8 @@ const OrderForm = ({
   isAllOrdersLoading,
   allOrdersError,
   handleTeamAdded,
+  useBillingAddress,
+  setUseBillingAddress,
 }) => {
   const [assignmentType, setAssignmentType] = useState(
     orderData?.assignedTeamId
@@ -136,34 +140,188 @@ const OrderForm = ({
       : "team"
   );
   const [customerSearch, setCustomerSearch] = useState("");
+  const [sourceType, setSourceType] = useState("");
   const [filteredCustomers, setFilteredCustomers] = useState(customers || []);
   const [descriptionLength, setDescriptionLength] = useState(
     orderData?.description?.length || 0
   );
+  const [isCreatingAddress, setIsCreatingAddress] = useState(false);
+  const [createAddress] = useCreateAddressMutation();
 
-  // Debounced customer search
+  // Find the selected customer's default address (prefer BILLING)
+  const selectedCustomerData = useMemo(
+    () =>
+      customers.find((customer) => customer.customerId === selectedCustomer),
+    [customers, selectedCustomer]
+  );
+  const defaultAddress = useMemo(() => {
+    const billingAddress = addresses.find(
+      (addr) =>
+        addr.customerId === selectedCustomer && addr.status === "BILLING"
+    );
+    return billingAddress || selectedCustomerData?.address || null;
+  }, [selectedCustomerData, addresses, selectedCustomer]);
+
+  // Filter addresses for the selected customer
+  const filteredAddresses = useMemo(
+    () =>
+      addresses.filter((address) => address.customerId === selectedCustomer),
+    [addresses, selectedCustomer]
+  );
+
+  // Filter customers for the source dropdown based on sourceType
+  const sourceCustomers = useMemo(() => {
+    if (!sourceType) return [];
+    return (customers || []).filter(
+      (customer) => customer.customerType === sourceType
+    );
+  }, [customers, sourceType]);
+
+  // Debounced customer search for Customer dropdown
   const debouncedCustomerSearch = useCallback(
     debounce((value) => {
       setCustomerSearch(value);
+      let filtered = customers || [];
+      if (sourceType) {
+        filtered = filtered.filter(
+          (customer) => customer.customerType === sourceType
+        );
+      }
       if (value) {
-        const filtered = (customers || []).filter((customer) =>
+        filtered = filtered.filter((customer) =>
           customer?.name?.toLowerCase().includes(value.toLowerCase())
         );
-        setFilteredCustomers(filtered);
-      } else {
-        setFilteredCustomers(customers || []);
       }
+      setFilteredCustomers(filtered);
     }, 300),
-    [customers]
+    [customers, sourceType]
   );
 
+  // Update filtered customers when sourceType or customers change
   useEffect(() => {
-    setFilteredCustomers(customers || []);
-  }, [customers]);
+    let filtered = customers || [];
+    if (sourceType) {
+      filtered = filtered.filter(
+        (customer) => customer.customerType === sourceType
+      );
+    }
+    if (customerSearch) {
+      filtered = filtered.filter((customer) =>
+        customer?.name?.toLowerCase().includes(customerSearch.toLowerCase())
+      );
+    }
+    setFilteredCustomers(filtered);
+  }, [customers, sourceType, customerSearch]);
+
+  // Reset source when sourceType changes
+  useEffect(() => {
+    if (orderData.source && sourceType) {
+      const sourceCustomer = customers.find(
+        (c) =>
+          c.customerId === orderData.source && c.customerType === sourceType
+      );
+      if (!sourceCustomer) {
+        handleOrderChange("source", "");
+      }
+    }
+  }, [sourceType, orderData.source, customers, handleOrderChange]);
+
+  // Debounced toast
+  const debouncedToast = useMemo(
+    () =>
+      debounce((message) => {
+        toast.warning(message);
+      }, 500),
+    []
+  );
 
   useEffect(() => {
     setDescriptionLength(orderData?.description?.length || 0);
   }, [orderData?.description]);
+
+  // Sync shipTo with default address when useBillingAddress is true
+  useEffect(() => {
+    if (useBillingAddress && defaultAddress && selectedCustomer) {
+      const normalizeString = (str) => (str ? str.trim().toLowerCase() : "");
+
+      const matchingAddress = filteredAddresses.find((addr) => {
+        const match = {
+          streetMatch:
+            normalizeString(addr.street) ===
+            normalizeString(defaultAddress.street),
+          cityMatch:
+            normalizeString(addr.city) === normalizeString(defaultAddress.city),
+          stateMatch:
+            normalizeString(addr.state) ===
+            normalizeString(defaultAddress.state),
+          postalMatch:
+            normalizeString(addr.postalCode || addr.zip) ===
+              normalizeString(
+                defaultAddress.postalCode || defaultAddress.zip
+              ) ||
+            normalizeString(addr.postalCode || addr.zip) ===
+              normalizeString(defaultAddress.zip || defaultAddress.postalCode),
+          countryMatch:
+            normalizeString(addr.country || "India") ===
+            normalizeString(defaultAddress.country || "India"),
+        };
+
+        return (
+          match.streetMatch &&
+          match.cityMatch &&
+          match.stateMatch &&
+          match.postalMatch &&
+          match.countryMatch
+        );
+      });
+
+      if (matchingAddress) {
+        handleQuotationChange("shipTo", matchingAddress.addressId);
+      } else {
+        setIsCreatingAddress(true);
+        const createBillingAddress = async () => {
+          try {
+            const newAddress = {
+              customerId: selectedCustomer,
+              street: defaultAddress.street,
+              city: defaultAddress.city,
+              state: defaultAddress.state,
+              postalCode: defaultAddress.postalCode || defaultAddress.zip || "",
+              country: defaultAddress.country || "India",
+              status: "BILLING",
+            };
+            const result = await createAddress(newAddress).unwrap();
+            handleQuotationChange("shipTo", result.data.addressId);
+            debouncedToast("Billing address created successfully.");
+          } catch (err) {
+            debouncedToast(
+              `Failed to create billing address: ${
+                err.data?.message || "Unknown error"
+              }`
+            );
+            handleQuotationChange("shipTo", null);
+          } finally {
+            setIsCreatingAddress(false);
+          }
+        };
+        createBillingAddress();
+      }
+    } else if (!useBillingAddress) {
+      handleQuotationChange("shipTo", null);
+    }
+
+    return () => {
+      debouncedToast.cancel();
+    };
+  }, [
+    useBillingAddress,
+    defaultAddress,
+    filteredAddresses,
+    handleQuotationChange,
+    selectedCustomer,
+    createAddress,
+    debouncedToast,
+  ]);
 
   const handleFollowupDateChange = (index, date) => {
     const updatedDates = [...(orderData?.followupDates || [])];
@@ -201,17 +359,47 @@ const OrderForm = ({
 
   const validateOrderNo = (orderNo) => {
     if (!orderNo) return false;
-    const orderNoRegex = /^\d{8}\d{5}$/;
-    return orderNoRegex.test(orderNo);
+    const orderNoRegex = /^\d{6}\d{3,}$/; // DDMMYY followed by 3 or more digits
+    const isValidFormat = orderNoRegex.test(orderNo);
+    if (!isValidFormat) return false;
+    const serialPart = parseInt(orderNo.slice(6), 10);
+    return serialPart >= 101; // Ensure serial number is at least 101
   };
 
   const checkOrderNoUniqueness = useCallback(
-    (orderNo) => {
-      if (!orderNo || !orders) return false;
-      return !orders.some((order) => order.orderNo === orderNo);
+    (orderNo, setNewOrderNo = true) => {
+      if (!orderNo) return true;
+      const isUnique = !orders.some((order) => order.orderNo === orderNo);
+      if (!isUnique && setNewOrderNo) {
+        const today = moment().format("DDMMYY"); // Changed from DDMMYYYY to DDMMYY
+        const todayOrders = orders.filter((order) =>
+          moment(order.createdAt).isSame(moment(), "day")
+        );
+        const newSerial = todayOrders.length + 102; // Increment to next available number
+        const newOrderNo = `${today}${newSerial}`;
+        setOrderData((prev) => ({
+          ...prev,
+          orderNo: newOrderNo,
+        }));
+        toast.warning(
+          `Order number ${orderNo} already exists. Generated new number: ${newOrderNo}`
+        );
+        return false;
+      }
+      return isUnique;
     },
     [orders]
   );
+
+  // Handle address selection
+  const handleAddressChange = (value) => {
+    if (value === "sameAsBilling") {
+      setUseBillingAddress(true);
+    } else {
+      setUseBillingAddress(false);
+      handleQuotationChange("shipTo", value);
+    }
+  };
 
   return (
     <Row gutter={[16, 16]} justify="center">
@@ -251,6 +439,29 @@ const OrderForm = ({
                 <Option value="Purchase Order">Purchase Order</Option>
               </Select>
               <Divider />
+              <Text strong>Source Type</Text>
+              <Select
+                value={sourceType}
+                onChange={(value) => {
+                  setSourceType(value);
+                  setSelectedCustomer("");
+                  handleOrderChange("createdFor", "");
+                  handleOrderChange("source", ""); // Reset source
+                  setQuotationData((prev) => ({ ...prev, shipTo: null }));
+                  setUseBillingAddress(false);
+                }}
+                style={{ width: "100%", marginTop: 8 }}
+                placeholder="Select source type"
+                allowClear
+                aria-label="Select source type"
+              >
+                {SOURCE_TYPES.map((type) => (
+                  <Option key={type} value={type}>
+                    {type}
+                  </Option>
+                ))}
+              </Select>
+              <Divider />
               <Text strong>
                 Customer <span style={{ color: "red" }}>*</span>
               </Text>
@@ -261,6 +472,7 @@ const OrderForm = ({
                   setSelectedCustomer(value);
                   handleOrderChange("createdFor", value);
                   setQuotationData((prev) => ({ ...prev, shipTo: null }));
+                  setUseBillingAddress(false);
                 }}
                 onSearch={debouncedCustomerSearch}
                 placeholder="Select a customer"
@@ -294,76 +506,92 @@ const OrderForm = ({
               <Divider />
               <Text strong>Shipping Address</Text>
               <Select
-                value={quotationData?.shipTo}
-                onChange={(value) => handleQuotationChange("shipTo", value)}
+                value={
+                  useBillingAddress
+                    ? "sameAsBilling"
+                    : quotationData?.shipTo || undefined
+                }
+                onChange={handleAddressChange}
                 placeholder="Select shipping address"
                 loading={
                   addressesLoading ||
+                  isCreatingAddress ||
                   userQueries.some((q) => q.isLoading) ||
                   customerQueries.some((q) => q.isLoading)
                 }
                 disabled={
+                  !selectedCustomer ||
                   addressesLoading ||
                   addressesError ||
-                  !selectedCustomer ||
+                  isCreatingAddress ||
                   userQueries.some((q) => q.isLoading) ||
                   customerQueries.some((q) => q.isLoading)
                 }
                 style={{ width: "100%", marginTop: 8 }}
                 aria-label="Select shipping address"
               >
-                {addressesLoading ? (
+                {selectedCustomer && defaultAddress && (
+                  <Option value="sameAsBilling">Same as Billing Address</Option>
+                )}
+                {!selectedCustomer ? (
+                  <Option disabled>Please select a customer first</Option>
+                ) : addressesLoading || isCreatingAddress ? (
                   <Option disabled>Loading addresses...</Option>
                 ) : addressesError ? (
                   <Option disabled>
                     Error fetching addresses:{" "}
                     {addressesError?.data?.message || "Unknown error"}
                   </Option>
-                ) : (addresses?.length ?? 0) === 0 ? (
-                  <Option disabled>No addresses available</Option>
+                ) : (filteredAddresses?.length ?? 0) === 0 ? (
+                  <Option disabled>
+                    No addresses available for this customer
+                  </Option>
                 ) : (
-                  addresses.map((address) => (
+                  filteredAddresses.map((address) => (
                     <Option key={address.addressId} value={address.addressId}>
-                      {`${address.street}, ${address.city}${
-                        address.state ? `, ${address.state}` : ""
-                      }, ${address.country} (${
-                        address.customerId
-                          ? customerMap[address.customerId] ||
-                            "Unknown Customer"
-                          : address.userId
-                          ? userMap[address.userId] || "Unknown User"
-                          : "No associated name"
-                      })`}
+                      {`${address.street}, ${address.city}, ${
+                        address.state || ""
+                      }, ${address.postalCode}, ${
+                        address.country || "India"
+                      } (${address.status})`}
                     </Option>
                   ))
                 )}
               </Select>
+              {useBillingAddress && defaultAddress && (
+                <div style={{ marginTop: 8 }}>
+                  <Text strong>Billing Address:</Text>
+                  <p style={{ margin: 0 }}>
+                    {`${defaultAddress.street}, ${defaultAddress.city}, ${
+                      defaultAddress.state || ""
+                    }, ${
+                      defaultAddress.postalCode || defaultAddress.zip || ""
+                    }${
+                      defaultAddress.country
+                        ? `, ${defaultAddress.country}`
+                        : ""
+                    } (${defaultAddress.status || "BILLING"})`}
+                  </p>
+                </div>
+              )}
               <Button
                 type="link"
                 icon={<UserAddOutlined />}
                 onClick={handleAddAddress}
                 style={{ padding: 0, marginTop: 8 }}
                 aria-label="Add new address"
-                disabled={!selectedCustomer}
+                disabled={!selectedCustomer || isCreatingAddress}
               >
                 Add New Address
               </Button>
               <Divider />
-              <Text strong>Created By</Text>
-              <Input
-                value={userMap[orderData?.createdBy] || "N/A"}
-                disabled
-                style={{ marginTop: 8 }}
-                placeholder="Auto-filled from profile"
-              />
-              <Divider />
               <Text strong>Order Number</Text>
               <Input
-                value={orderData?.orderNo}
+                value={orderData.orderNo}
                 onChange={(e) => handleOrderChange("orderNo", e.target.value)}
-                placeholder={orderNumber || "Generating..."}
+                placeholder="Enter order number (e.g., 151025101)"
                 style={{ marginTop: 8 }}
-                disabled
+                disabled={true}
               />
               <Divider />
               <Text strong>Quotation Number</Text>
@@ -373,6 +601,32 @@ const OrderForm = ({
                 style={{ marginTop: 8 }}
                 placeholder="Quotation number (auto-filled if converted)"
               />
+              <Divider />
+              <Text strong>Source</Text>
+              <Select
+                value={orderData?.source || undefined}
+                onChange={(value) => handleOrderChange("source", value)}
+                style={{ width: "100%", marginTop: 8 }}
+                placeholder="Select source customer"
+                disabled={!sourceType || customersLoading || customersError}
+                allowClear
+                aria-label="Select source customer"
+              >
+                {(sourceCustomers?.length ?? 0) > 0 ? (
+                  sourceCustomers.map((customer) => (
+                    <Option
+                      key={customer.customerId}
+                      value={customer.customerId}
+                    >
+                      {customer.name} ({customer.email})
+                    </Option>
+                  ))
+                ) : (
+                  <Option value="" disabled>
+                    No customers available for this source type
+                  </Option>
+                )}
+              </Select>
               <Divider />
               <Text strong>Master Pipeline Number</Text>
               <Select
@@ -440,20 +694,6 @@ const OrderForm = ({
                 onChange={(e) => handleOrderChange("pipeline", e.target.value)}
                 placeholder="Enter pipeline"
                 style={{ marginTop: 8 }}
-              />
-              <Divider />
-              <Text strong>Invoice Link</Text>
-              <Input
-                value={orderData?.invoiceLink || ""}
-                onChange={(e) =>
-                  handleOrderChange("invoiceLink", e.target.value)
-                }
-                placeholder="Enter invoice link"
-                style={{ marginTop: 8 }}
-                maxLength={500}
-                disabled={
-                  !INVOICE_EDITABLE_STATUSES.includes(orderData?.status || "")
-                }
               />
               <Divider />
               <Text strong>Status</Text>
@@ -653,15 +893,6 @@ const OrderForm = ({
                 <PlusOutlined /> Add Follow-up Date
               </Button>
               <Divider />
-              <Text strong>Source</Text>
-              <Input
-                value={orderData?.source}
-                onChange={(e) => handleOrderChange("source", e.target.value)}
-                placeholder="Enter source"
-                style={{ marginTop: 8 }}
-                maxLength={255}
-              />
-              <Divider />
               <Text strong>Description</Text>
               <Input.TextArea
                 value={orderData?.description}
@@ -783,6 +1014,10 @@ const OrderForm = ({
                 );
                 return;
               }
+              if (!quotationData?.shipTo && !useBillingAddress) {
+                toast.error("Please select a shipping address.");
+                return;
+              }
               handleCreateDocument();
             }}
             disabled={
@@ -798,7 +1033,8 @@ const OrderForm = ({
                 (date) =>
                   !date ||
                   moment(date).isSameOrBefore(moment(orderData?.dueDate), "day")
-              )
+              ) ||
+              (!quotationData?.shipTo && !useBillingAddress)
             }
             block
             size="large"
@@ -821,4 +1057,4 @@ const OrderForm = ({
   );
 };
 
-export default OrderForm;
+export default React.memo(OrderForm);

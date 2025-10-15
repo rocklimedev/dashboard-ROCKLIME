@@ -87,7 +87,6 @@ const AddVendorModal = ({ show, onClose, isCreatingVendor }) => {
         message: `Vendor ${vendorData.vendorName} (${vendorData.vendorId}) has been created.`,
       }).unwrap();
 
-      toast.success("Vendor created successfully");
       setVendorData({
         vendorId: "",
         vendorName: "",

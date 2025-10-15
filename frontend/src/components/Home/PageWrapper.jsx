@@ -160,16 +160,27 @@ const PageWrapper = () => {
       toast.error("Invalid product price");
       return;
     }
+    const quantity = product.quantity || 1;
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      toast.error("Invalid quantity");
+      return;
+    }
     const productId = product.productId;
     setCartLoadingStates((prev) => ({ ...prev, [productId]: true }));
     try {
       await addProductToCart({
         userId,
         productId,
-        quantity: product.quantity || 1,
+        quantity,
       }).unwrap();
     } catch (error) {
-      toast.error(`Error: ${error.data?.message || "Unknown error"}`);
+      const message =
+        error.status === 400
+          ? "Invalid request. Please check product details."
+          : error.status === 401
+          ? "Unauthorized. Please log in again."
+          : error.data?.message || "Unknown error";
+      toast.error(`Error: ${message}`);
     } finally {
       setCartLoadingStates((prev) => ({ ...prev, [productId]: false }));
     }
@@ -345,12 +356,12 @@ const PageWrapper = () => {
           productId,
           name: product?.name || "Unknown Product",
           quantity,
+          metaDetails: product?.metaDetails || [], // Include metaDetails
         };
       })
       .sort((a, b) => b.quantity - a.quantity)
       .slice(0, 5);
   }, [quotationData, products, loadingQuotations]);
-
   const topProductsChartData = useMemo(
     () =>
       topSellingProducts.map((product) => ({

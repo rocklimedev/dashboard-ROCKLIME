@@ -145,7 +145,6 @@ const ProductDetails = () => {
         productId,
         quantity,
       }).unwrap();
-      toast.success(`${product.name} (${quantity}) added to cart!`);
       setQuantity(1);
     } catch (error) {
       toast.error(`Error: ${error.data?.message || "Unknown error"}`);

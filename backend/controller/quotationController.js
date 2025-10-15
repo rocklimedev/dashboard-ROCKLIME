@@ -6,12 +6,19 @@ const sequelize = require("../config/database");
 const { sendNotification } = require("./notificationController");
 const fs = require("fs");
 const path = require("path");
+const QuotationVersion = require("../models/quotationVersion");
 
 // Create a new quotation
 exports.createQuotation = async (req, res) => {
   try {
-    let { products, items, include_gst, gst_value, ...quotationData } =
-      req.body;
+    let {
+      products,
+      items,
+      include_gst,
+      gst_value,
+      followupDates,
+      ...quotationData
+    } = req.body;
 
     const quotationItems = items || products || [];
 
@@ -29,6 +36,11 @@ exports.createQuotation = async (req, res) => {
     // Include GST fields
     quotationData.include_gst = include_gst ?? null;
     quotationData.gst_value = gst_value ?? null;
+
+    // ✅ Include followupDates if provided
+    quotationData.followupDates = followupDates
+      ? JSON.stringify(followupDates)
+      : null;
 
     const quotation = await Quotation.create({
       ...quotationData,
@@ -64,13 +76,43 @@ exports.updateQuotation = async (req, res) => {
   const t = await sequelize.transaction();
   try {
     const { id } = req.params;
-    const { items, products, include_gst, gst_value, ...quotationData } =
-      req.body;
+    const {
+      items,
+      products,
+      include_gst,
+      gst_value,
+      followupDates,
+      ...quotationData
+    } = req.body;
 
     if (!id) {
       await t.rollback();
       return res.status(400).json({ message: "Quotation ID is required" });
     }
+
+    const currentQuotation = await Quotation.findOne({
+      where: { quotationId: id },
+      transaction: t,
+    });
+    if (!currentQuotation) {
+      await t.rollback();
+      return res.status(404).json({ message: "Quotation not found" });
+    }
+
+    const currentItems = await QuotationItem.findOne({ quotationId: id });
+    const latestVersion = await QuotationVersion.findOne({
+      quotationId: id,
+    }).sort({ version: -1 });
+    const newVersionNumber = latestVersion ? latestVersion.version + 1 : 1;
+
+    await QuotationVersion.create({
+      quotationId: id,
+      version: newVersionNumber,
+      quotationData: currentQuotation.toJSON(),
+      quotationItems: currentItems ? currentItems.items : [],
+      updatedBy: req.user.userId,
+      updatedAt: new Date(),
+    });
 
     const quotationItems = items || products || [];
     const formattedItems = quotationItems.map((item) => ({
@@ -81,34 +123,24 @@ exports.updateQuotation = async (req, res) => {
       total: Number(item.total) || 0,
     }));
 
-    if (quotationItems.length > 0) {
-      quotationData.products = JSON.stringify(formattedItems);
-    } else {
-      quotationData.products = null;
-    }
+    quotationData.products =
+      formattedItems.length > 0 ? JSON.stringify(formattedItems) : null;
 
     // Update GST fields if provided
     if (include_gst !== undefined) quotationData.include_gst = include_gst;
     if (gst_value !== undefined) quotationData.gst_value = gst_value;
 
-    const check = await Quotation.findOne({
+    // ✅ Update followupDates if provided
+    if (followupDates !== undefined)
+      quotationData.followupDates = JSON.stringify(followupDates);
+
+    const updated = await Quotation.update(quotationData, {
       where: { quotationId: id },
       transaction: t,
     });
-    if (!check) {
+    if (!updated[0]) {
       await t.rollback();
       return res.status(404).json({ message: "Quotation not found" });
-    }
-
-    if (Object.keys(quotationData).length > 0) {
-      const updated = await Quotation.update(quotationData, {
-        where: { quotationId: id },
-        transaction: t,
-      });
-      if (!updated[0]) {
-        await t.rollback();
-        return res.status(404).json({ message: "Quotation not found" });
-      }
     }
 
     if (formattedItems.length > 0) {
@@ -126,7 +158,7 @@ exports.updateQuotation = async (req, res) => {
     await sendNotification({
       userId: req.user.userId,
       title: "Quotation Updated",
-      message: `Quotation "${id}" was updated successfully.`,
+      message: `Quotation "${id}" was updated successfully (Version ${newVersionNumber}).`,
     });
 
     res.status(200).json({ message: "Quotation updated successfully" });
@@ -141,20 +173,39 @@ exports.updateQuotation = async (req, res) => {
 // Export quotation to Excel
 exports.exportQuotation = async (req, res) => {
   try {
-    const quotation = await Quotation.findByPk(req.params.id);
-    if (!quotation)
-      return res.status(404).json({ message: "Quotation not found" });
+    const { id, version } = req.params;
 
-    const quotationItems = await QuotationItem.findAll({
-      where: { quotationId: req.params.id },
-    });
+    let quotation;
+    let quotationItems = [];
 
+    if (version) {
+      // Fetch specific version from QuotationVersion
+      const versionData = await QuotationVersion.findOne({
+        quotationId: id,
+        version: Number(version),
+      });
+      if (!versionData) {
+        return res.status(404).json({ message: "Quotation version not found" });
+      }
+      quotation = versionData.quotationData;
+      quotationItems = versionData.quotationItems || [];
+    } else {
+      // Fetch current quotation
+      quotation = await Quotation.findByPk(id);
+      if (!quotation) {
+        return res.status(404).json({ message: "Quotation not found" });
+      }
+      const items = await QuotationItem.findOne({ quotationId: id });
+      quotationItems = items ? items.items : [];
+    }
+
+    // Prepare sheet data
     const sheetData = [
       ["Estimate / Quotation", "", "", "", "GROHE / AMERICAN STANDARD"],
       [""],
       [
         "M/s",
-        quotation.companyName || "CHHABRA MARBLE",
+        quotation.companyName || quotation.customerId || "CHHABRA MARBLE",
         "",
         "Date",
         quotation.quotation_date
@@ -177,34 +228,28 @@ exports.exportQuotation = async (req, res) => {
     ];
 
     let index = 0;
-    quotationItems.forEach((item) => {
-      const products =
-        item.items && Array.isArray(item.items) ? item.items : [];
-      products.forEach((product) => {
-        sheetData.push([
-          ++index,
-          product.imageUrl || "N/A",
-          product.productName || product.name || "N/A",
-          product.productCode || "N/A",
-          Number(product.mrp) || 0,
-          product.discount
-            ? product.discountType === "percent"
-              ? Number(product.discount) / 100
-              : Number(product.discount)
-            : 0,
-          Number(product.rate) || Number(product.mrp) || 0,
-          product.unit || product.qty || 0,
-          Number(product.total) || 0,
-        ]);
-      });
+    quotationItems.forEach((product) => {
+      sheetData.push([
+        ++index,
+        product.imageUrl || "N/A",
+        product.name || "N/A",
+        product.productCode || "N/A",
+        Number(product.mrp) || Number(product.total) || 0,
+        product.discount
+          ? product.discountType === "percent"
+            ? `${Number(product.discount)}%`
+            : Number(product.discount)
+          : 0,
+        Number(product.rate) || Number(product.total) || 0,
+        product.quantity || product.qty || 1,
+        Number(product.total) || 0,
+      ]);
     });
 
-    const subtotal = quotationItems.reduce((sum, item) => {
-      const products =
-        item.items && Array.isArray(item.items) ? item.items : [];
-      return sum + products.reduce((s, p) => s + Number(p.total || 0), 0);
-    }, 0);
-
+    const subtotal = quotationItems.reduce(
+      (sum, product) => sum + Number(product.total || 0),
+      0
+    );
     const gstAmount =
       quotation.include_gst && quotation.gst_value
         ? (subtotal * Number(quotation.gst_value)) / 100
@@ -212,7 +257,17 @@ exports.exportQuotation = async (req, res) => {
     const finalTotal = subtotal + gstAmount;
 
     sheetData.push([]);
-    sheetData.push(["", "", "", "", "", "", "Subtotal", "", subtotal]);
+    sheetData.push([
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "Subtotal",
+      "",
+      subtotal.toFixed(2),
+    ]);
     if (quotation.include_gst && quotation.gst_value) {
       sheetData.push([
         "",
@@ -223,10 +278,20 @@ exports.exportQuotation = async (req, res) => {
         "",
         `GST (${quotation.gst_value}%)`,
         "",
-        gstAmount,
+        gstAmount.toFixed(2),
       ]);
     }
-    sheetData.push(["", "", "", "", "", "", "Total", "", finalTotal]);
+    sheetData.push([
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "Total",
+      "",
+      finalTotal.toFixed(2),
+    ]);
 
     const workbook = XLSX.utils.book_new();
     const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
@@ -254,7 +319,9 @@ exports.exportQuotation = async (req, res) => {
     );
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=quotation_${req.params.id}.xlsx`
+      `attachment; filename=quotation_${id}${
+        version ? `_version_${version}` : ""
+      }.xlsx`
     );
 
     res.send(buffer);
@@ -266,32 +333,26 @@ exports.exportQuotation = async (req, res) => {
 };
 
 // Clone quotation
-// Clone a quotation
 exports.cloneQuotation = async (req, res) => {
   try {
-    // Fetch the original quotation
     const originalQuotation = await Quotation.findByPk(req.params.id);
     if (!originalQuotation) {
       return res.status(404).json({ message: "Quotation not found" });
     }
 
-    // Fetch original quotation items
     const originalItems = await QuotationItem.findOne({
       quotationId: req.params.id,
     });
-
-    // Generate a new unique ID for the cloned quotation
     const newQuotationId = uuidv4();
 
-    // Create cloned quotation
     const clonedQuotation = await Quotation.create({
       quotationId: newQuotationId,
       document_title: `${originalQuotation.document_title} (Copy)`,
-      quotation_date: new Date(), // New date for the cloned quotation
+      quotation_date: new Date(),
       due_date: originalQuotation.due_date,
       reference_number: originalQuotation.reference_number,
       customerId: originalQuotation.customerId,
-      createdBy: req.user.userId, // Current user is creator
+      createdBy: req.user.userId,
       shipTo: originalQuotation.shipTo,
       include_gst: originalQuotation.include_gst,
       gst_value: originalQuotation.gst_value,
@@ -301,9 +362,10 @@ exports.cloneQuotation = async (req, res) => {
       finalAmount: originalQuotation.finalAmount,
       signature_name: originalQuotation.signature_name,
       signature_image: originalQuotation.signature_image,
+      // ✅ Clone followupDates too
+      followupDates: originalQuotation.followupDates,
     });
 
-    // Clone quotation items
     if (originalItems && Array.isArray(originalItems.items)) {
       const clonedItems = originalItems.items.map((item) => ({ ...item }));
       await QuotationItem.create({
@@ -312,17 +374,15 @@ exports.cloneQuotation = async (req, res) => {
       });
     }
 
-    // Send notification
     await sendNotification({
       userId: req.user.userId,
       title: "Quotation Cloned",
       message: `Quotation "${originalQuotation.document_title}" has been cloned successfully as "${clonedQuotation.document_title}".`,
     });
 
-    res.status(201).json({
-      message: "Quotation cloned successfully",
-      clonedQuotation,
-    });
+    res
+      .status(201)
+      .json({ message: "Quotation cloned successfully", clonedQuotation });
   } catch (error) {
     res
       .status(500)
@@ -392,5 +452,84 @@ exports.deleteQuotation = async (req, res) => {
     res.status(200).json({ message: "Quotation deleted successfully" });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+};
+exports.getQuotationVersions = async (req, res) => {
+  try {
+    const { id, version } = req.params;
+
+    // Query to find versions for the given quotationId
+    const query = { quotationId: id };
+
+    // If a specific version is requested, add it to the query
+    if (version) {
+      query.version = Number(version);
+    }
+
+    const versions = await QuotationVersion.find(query).sort({ version: 1 }); // Sort by version number (ascending)
+
+    if (!versions || versions.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No versions found for this quotation" });
+    }
+
+    res.status(200).json(versions);
+  } catch (error) {
+    res.status(500).json({
+      error: "Failed to retrieve quotation versions",
+      details: error.message,
+    });
+  }
+};
+exports.restoreQuotationVersion = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const { id, version } = req.params;
+
+    // Fetch the specific version
+    const versionData = await QuotationVersion.findOne({
+      quotationId: id,
+      version: Number(version),
+    });
+
+    if (!versionData) {
+      await t.rollback();
+      return res.status(404).json({ message: "Version not found" });
+    }
+
+    // Update Quotation in Sequelize
+    await Quotation.update(
+      { ...versionData.quotationData },
+      { where: { quotationId: id }, transaction: t }
+    );
+
+    // Update QuotationItem in MongoDB
+    if (versionData.quotationItems.length > 0) {
+      await QuotationItem.updateOne(
+        { quotationId: id },
+        { $set: { items: versionData.quotationItems } },
+        { upsert: true }
+      );
+    } else {
+      await QuotationItem.deleteOne({ quotationId: id });
+    }
+
+    await t.commit();
+
+    await sendNotification({
+      userId: req.user.userId,
+      title: "Quotation Restored",
+      message: `Quotation "${id}" has been restored to version ${version}.`,
+    });
+
+    res
+      .status(200)
+      .json({ message: `Quotation restored to version ${version}` });
+  } catch (error) {
+    await t.rollback();
+    res
+      .status(500)
+      .json({ error: "Failed to restore quotation", details: error.message });
   }
 };

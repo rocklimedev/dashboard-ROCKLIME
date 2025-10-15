@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import {
   useGetQuotationByIdQuery,
   useExportQuotationMutation,
+  useGetQuotationVersionsQuery, // Added for fetching versions
 } from "../../api/quotationApi";
 import { useGetCustomerByIdQuery } from "../../api/customerApi";
 import { useGetUserByIdQuery, useGetAllUsersQuery } from "../../api/userApi";
@@ -10,20 +11,21 @@ import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetCompanyByIdQuery } from "../../api/companyApi";
 import { useGetAddressByIdQuery } from "../../api/addressApi";
 import { toast } from "sonner";
+import { Tabs } from "antd"; // Added for tabbed interface
 import logo from "../../assets/img/logo.png";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import ExcelJS from "exceljs";
-import { PDFDocument } from "pdf-lib"; // Added for PDF merging
-import numberToWords from "number-to-words"; // Added for number to words conversion
+import { PDFDocument } from "pdf-lib";
+import numberToWords from "number-to-words";
 import "./quotation.css";
 import useProductsData from "../../data/useProductdata";
 import { Buffer } from "buffer";
 import { LeftOutlined, ExportOutlined } from "@ant-design/icons";
 import termsAndConditionsPdf from "../../assets/QUOT-10.pdf";
-
-// Path to the Terms & Conditions PDF (adjust as needed)
 const termsAndConditionsPdfUrl = termsAndConditionsPdf;
+const { TabPane } = Tabs;
+
 const QuotationsDetails = () => {
   const { id } = useParams();
   const {
@@ -31,6 +33,11 @@ const QuotationsDetails = () => {
     error,
     isLoading: isQuotationLoading,
   } = useGetQuotationByIdQuery(id);
+  const {
+    data: versionsData,
+    isLoading: isVersionsLoading,
+    error: versionsError,
+  } = useGetQuotationVersionsQuery(id); // Fetch versions
   const [isExporting, setIsExporting] = useState(false);
   const { data: usersData } = useGetAllUsersQuery();
   const { data: customersData } = useGetCustomersQuery();
@@ -56,7 +63,7 @@ const QuotationsDetails = () => {
   const company = companyData?.data || {};
   const quotationRef = useRef(null);
   const [exportFormat, setExportFormat] = useState("pdf");
-
+  const [activeVersion, setActiveVersion] = useState("current"); // Track active version
   // Parse products JSON string
   const products = useMemo(() => {
     try {
@@ -71,7 +78,51 @@ const QuotationsDetails = () => {
       return [];
     }
   }, [quotation?.products]);
-  const { productsData, errors, loading } = useProductsData(products);
+
+  // Combine current quotation and versions
+  const versions = useMemo(() => {
+    const versionList = versionsData ? [...versionsData] : [];
+    // Add current quotation as the "latest" version
+    if (quotation) {
+      versionList.unshift({
+        version: "current",
+        quotationId: quotation.quotationId,
+        quotationData: quotation,
+        quotationItems: products,
+        updatedBy: quotation.createdBy,
+        updatedAt: quotation.updatedAt || new Date(),
+      });
+    }
+    return versionList.sort((a, b) => {
+      if (a.version === "current") return -1;
+      if (b.version === "current") return 1;
+      return b.version - a.version; // Sort descending by version number
+    });
+  }, [quotation, versionsData, products]);
+
+  // Get data for the active version
+  const activeVersionData = useMemo(() => {
+    const version = versions.find((v) => v.version === activeVersion) || {};
+    return {
+      quotation: version.quotationData || quotation,
+      products: version.quotationItems || products,
+      updatedBy: version.updatedBy,
+      updatedAt: version.updatedAt,
+    };
+  }, [activeVersion, versions, quotation, products]);
+
+  // Parse products for the active version
+  const activeProducts = useMemo(() => {
+    try {
+      const prods = activeVersionData.products || [];
+      return Array.isArray(prods) ? prods : [];
+    } catch (error) {
+      console.error("Error parsing active version products:", error);
+      return [];
+    }
+  }, [activeVersionData.products]);
+
+  const { productsData, errors, loading } = useProductsData(activeProducts);
 
   // Display errors for failed product fetches
   useEffect(() => {
@@ -82,10 +133,17 @@ const QuotationsDetails = () => {
     }
   }, [errors]);
 
+  // Display errors for version fetching
+  useEffect(() => {
+    if (versionsError) {
+      toast.error("Failed to load version history.");
+    }
+  }, [versionsError]);
+
   // Fix for brand displaying as UUID
   const brandNames = useMemo(() => {
     const uniqueBrands = new Set();
-    products.forEach((product) => {
+    activeProducts.forEach((product) => {
       const productDetail =
         productsData?.find((p) => p.productId === product.productId) || {};
       let brandName = "N/A";
@@ -107,7 +165,7 @@ const QuotationsDetails = () => {
       }
     });
     return Array.from(uniqueBrands).join(" / ") || "GROHE / AMERICAN STANDARD";
-  }, [products, productsData]);
+  }, [activeProducts, productsData]);
 
   const getUserName = (createdBy) => {
     if (!users || users.length === 0 || !createdBy)
@@ -139,13 +197,16 @@ const QuotationsDetails = () => {
       return "N/A";
     }
   };
-  const subtotal = products.reduce(
+
+  const subtotal = activeProducts.reduce(
     (sum, product) => sum + Number(product.total || 0),
     0
   );
   const gstAmount =
-    quotation && quotation.include_gst && quotation.gst_value
-      ? (subtotal * Number(quotation.gst_value)) / 100
+    activeVersionData.quotation &&
+    activeVersionData.quotation.include_gst &&
+    activeVersionData.quotation.gst_value
+      ? (subtotal * Number(activeVersionData.quotation.gst_value)) / 100
       : 0;
   const finalTotal = subtotal + gstAmount;
 
@@ -240,12 +301,12 @@ const QuotationsDetails = () => {
       setIsExporting(true);
 
       if (exportFormat === "excel") {
-        if (!products || products.length === 0) {
+        if (!activeProducts || activeProducts.length === 0) {
           toast.error("No products available to export.");
           return;
         }
         // Prepare export rows
-        const exportRows = products.map((product, index) => {
+        const exportRows = activeProducts.map((product, index) => {
           const productDetail =
             productsData?.find((p) => p.productId === product.productId) || {};
           let imageUrl = null;
@@ -382,7 +443,9 @@ const QuotationsDetails = () => {
         worksheet.getCell("A4").alignment = { vertical: "middle" };
 
         worksheet.mergeCells("B4:E5");
-        worksheet.getCell("B4").value = getCustomerName(quotation.customerId);
+        worksheet.getCell("B4").value = getCustomerName(
+          activeVersionData.quotation?.customerId
+        );
         worksheet.getCell("B4").alignment = {
           vertical: "middle",
           wrapText: true,
@@ -394,8 +457,11 @@ const QuotationsDetails = () => {
         worksheet.getCell("F4").alignment = { vertical: "middle" };
 
         worksheet.mergeCells("G4:I5");
-        worksheet.getCell("G4").value = quotation.quotation_date
-          ? new Date(quotation.quotation_date).toLocaleDateString()
+        worksheet.getCell("G4").value = activeVersionData.quotation
+          ?.quotation_date
+          ? new Date(
+              activeVersionData.quotation.quotation_date
+            ).toLocaleDateString()
           : new Date().toLocaleDateString();
         worksheet.getCell("G4").alignment = { vertical: "middle" };
 
@@ -409,7 +475,8 @@ const QuotationsDetails = () => {
           ? `${addressData.street || ""}, ${addressData.city || ""}, ${
               addressData.state || ""
             }, ${addressData.postalCode || ""}, ${addressData.country || ""}`
-          : quotation.shipTo || "456, Park Avenue, New York, USA";
+          : activeVersionData.quotation?.shipTo ||
+            "456, Park Avenue, New York, USA";
         worksheet.getCell("B6").alignment = {
           vertical: "middle",
           wrapText: true,
@@ -530,7 +597,10 @@ const QuotationsDetails = () => {
           }
         });
 
-        if (quotation.include_gst && quotation.gst_value) {
+        if (
+          activeVersionData.quotation?.include_gst &&
+          activeVersionData.quotation?.gst_value
+        ) {
           const gstRow = worksheet.addRow([
             "",
             "",
@@ -539,7 +609,7 @@ const QuotationsDetails = () => {
             "",
             "",
             "",
-            `GST (${quotation.gst_value}%)`,
+            `GST (${activeVersionData.quotation.gst_value}%)`,
             `₹${gstAmount.toFixed(2)}`,
           ]);
           gstRow.eachCell((cell, colNumber) => {
@@ -617,9 +687,6 @@ const QuotationsDetails = () => {
         };
         worksheet.getCell(`A${currentRow + 5}`).font = { bold: true };
 
-        // Note: Terms & Conditions are not included in Excel export
-        // If required, you can add a cell with a note or link to the T&C PDF
-
         // Generate and download Excel file
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], {
@@ -628,7 +695,7 @@ const QuotationsDetails = () => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `Quotation_${id}.xlsx`;
+        a.download = `Quotation_${id}_Version_${activeVersion}.xlsx`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -687,7 +754,7 @@ const QuotationsDetails = () => {
         }
 
         // Save the combined PDF
-        pdf.save(`Quotation_${id}.pdf`);
+        pdf.save(`Quotation_${id}_Version_${activeVersion}.pdf`);
       }
     } catch (error) {
       toast.error(
@@ -700,7 +767,7 @@ const QuotationsDetails = () => {
     }
   };
 
-  if (isQuotationLoading || isCompanyLoading || loading) {
+  if (isQuotationLoading || isCompanyLoading || loading || isVersionsLoading) {
     return (
       <div className="page-wrapper">
         <div className="content text-center">
@@ -774,15 +841,17 @@ const QuotationsDetails = () => {
                         M/s
                       </td>
                       <td style={{ width: "55%" }}>
-                        {getCustomerName(quotation.customerId)}
+                        {getCustomerName(
+                          activeVersionData.quotation?.customerId
+                        )}
                       </td>
                       <td className="label-cell" style={{ width: "15%" }}>
                         Date
                       </td>
                       <td style={{ width: "15%" }}>
-                        {quotation.quotation_date
+                        {activeVersionData.quotation?.quotation_date
                           ? new Date(
-                              quotation.quotation_date
+                              activeVersionData.quotation.quotation_date
                             ).toLocaleDateString()
                           : new Date().toLocaleDateString()}
                       </td>
@@ -796,12 +865,25 @@ const QuotationsDetails = () => {
                             }, ${addressData.state || ""}, ${
                               addressData.postalCode || ""
                             }, ${addressData.country || ""}`
-                          : quotation.shipTo ||
+                          : activeVersionData.quotation?.shipTo ||
                             "456, Park Avenue, New York, USA"}
                       </td>
                       <td></td>
                       <td></td>
                     </tr>
+                    {activeVersion !== "current" && (
+                      <tr>
+                        <td className="label-cell">Version Info</td>
+                        <td colSpan="3">
+                          Version {activeVersion}, Updated by:{" "}
+                          {getUserName(activeVersionData.updatedBy)}, Updated
+                          at:{" "}
+                          {new Date(
+                            activeVersionData.updatedAt
+                          ).toLocaleString()}
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
 
@@ -823,8 +905,8 @@ const QuotationsDetails = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {products.length > 0 ? (
-                      products.map((product, index) => {
+                    {activeProducts.length > 0 ? (
+                      activeProducts.map((product, index) => {
                         const productDetail =
                           productsData?.find(
                             (p) => p.productId === product.productId
@@ -898,14 +980,14 @@ const QuotationsDetails = () => {
                     ) : (
                       <tr>
                         <td colSpan="9" className="text-center">
-                          No products available for this quotation.
+                          No products available for this quotation version.
                         </td>
                       </tr>
                     )}
                   </tbody>
                 </table>
 
-                {/* Totals Section (Moved to Middle) */}
+                {/* Totals Section */}
                 <table className="quotation-table full-width bordered">
                   <tbody>
                     <tr>
@@ -914,14 +996,15 @@ const QuotationsDetails = () => {
                       </td>
                       <td>₹{subtotal.toFixed(2)}</td>
                     </tr>
-                    {quotation.include_gst && quotation.gst_value && (
-                      <tr>
-                        <td colSpan="8" className="text-right">
-                          GST ({quotation.gst_value}%)
-                        </td>
-                        <td>₹{gstAmount.toFixed(2)}</td>
-                      </tr>
-                    )}
+                    {activeVersionData.quotation?.include_gst &&
+                      activeVersionData.quotation?.gst_value && (
+                        <tr>
+                          <td colSpan="8" className="text-right">
+                            GST ({activeVersionData.quotation.gst_value}%)
+                          </td>
+                          <td>₹{gstAmount.toFixed(2)}</td>
+                        </tr>
+                      )}
                     <tr>
                       <td colSpan="8" className="text-right fw-bold">
                         Total
@@ -980,25 +1063,50 @@ const QuotationsDetails = () => {
                   </tbody>
                 </table>
               </div>
-            </div>
 
-            <div className="d-flex justify-content-center align-items-center mb-4">
-              <div className="d-flex align-items-center me-2">
-                <select
-                  className="form-select me-2"
-                  value={exportFormat}
-                  onChange={(e) => setExportFormat(e.target.value)}
-                >
-                  <option value="pdf">Export as PDF</option>
-                  <option value="excel">Export as Excel</option>
-                </select>
-                <button
-                  className="btn btn-primary d-flex justify-content-center align-items-center"
-                  onClick={handleExport}
-                >
-                  <ExportOutlined />
-                  Export Quotation
-                </button>
+              {/* Version Tabs */}
+              <Tabs
+                activeKey={activeVersion}
+                onChange={setActiveVersion}
+                className="mt-3"
+              >
+                {versions.map((version) => (
+                  <TabPane
+                    key={version.version}
+                    tab={
+                      version.version === "current"
+                        ? "Current"
+                        : `Version ${version.version}`
+                    }
+                  />
+                ))}
+              </Tabs>
+
+              <div className="d-flex justify-content-center align-items-center mb-4">
+                <div className="d-flex align-items-center me-2">
+                  <select
+                    className="form-select me-2"
+                    value={exportFormat}
+                    onChange={(e) => setExportFormat(e.target.value)}
+                  >
+                    <option value="pdf">Export as PDF</option>
+                    <option value="excel">Export as Excel</option>
+                  </select>
+                  <button
+                    className="btn btn-primary d-flex justify-content-center align-items-center"
+                    onClick={handleExport}
+                    disabled={isExporting}
+                  >
+                    <ExportOutlined />
+                    {isExporting
+                      ? "Exporting..."
+                      : `Export Version ${
+                          activeVersion === "current"
+                            ? "Current"
+                            : activeVersion
+                        }`}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
