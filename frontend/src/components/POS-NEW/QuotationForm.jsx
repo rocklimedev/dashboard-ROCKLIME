@@ -10,11 +10,14 @@ import {
   Col,
   Empty,
   Typography,
+  DatePicker,
 } from "antd";
 import {
   UserAddOutlined,
   CheckCircleOutlined,
   ArrowLeftOutlined,
+  DeleteOutlined,
+  PlusOutlined,
 } from "@ant-design/icons";
 import { FcEmptyTrash } from "react-icons/fc";
 import styled from "styled-components";
@@ -22,6 +25,7 @@ import OrderTotal from "./OrderTotal";
 import { toast } from "sonner";
 import { debounce } from "lodash";
 import { useCreateAddressMutation } from "../../api/addressApi";
+import moment from "moment"; // Added for date handling
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -217,6 +221,51 @@ const QuotationForm = ({
     debouncedToast,
   ]);
 
+  // Follow-up dates handlers
+  const validateFollowupDates = () => {
+    if (!quotationData.dueDate || quotationData.followupDates.length === 0)
+      return true;
+
+    const dueDate = moment(quotationData.dueDate);
+    return quotationData.followupDates.every((followupDate) => {
+      if (!followupDate || new Date(followupDate).toString() === "Invalid Date")
+        return true;
+      return moment(followupDate).isSameOrBefore(dueDate, "day");
+    });
+  };
+
+  const handleFollowupDateChange = (index, date) => {
+    const updatedDates = [...quotationData.followupDates];
+    updatedDates[index] = date ? date.format("YYYY-MM-DD") : "";
+
+    if (
+      quotationData.dueDate &&
+      date &&
+      moment(date).isAfter(moment(quotationData.dueDate), "day")
+    ) {
+      toast.warning(`Timeline date ${index + 1} cannot be after the due date.`);
+    }
+    if (date && moment(date).isBefore(moment().startOf("day"))) {
+      toast.warning(`Timeline date ${index + 1} cannot be before today.`);
+    }
+
+    handleQuotationChange("followupDates", updatedDates);
+  };
+
+  const addFollowupDate = () => {
+    handleQuotationChange("followupDates", [
+      ...quotationData.followupDates,
+      "",
+    ]);
+  };
+
+  const removeFollowupDate = (index) => {
+    handleQuotationChange(
+      "followupDates",
+      quotationData.followupDates.filter((_, i) => i !== index)
+    );
+  };
+
   // Handle address selection
   const handleAddressChange = (value) => {
     if (value === "sameAsBilling") {
@@ -343,11 +392,11 @@ const QuotationForm = ({
                     const customerName =
                       customerMap[address.customerId]?.name ||
                       "Unknown Customer";
-                    const addressLabel = `${customerName} - ${
-                      address.street
-                    }, ${address.city}, ${address.state}, ${
-                      address.postalCode
-                    }, ${address.country || "India"} (${address.status})`;
+                    const addressLabel = `${address.street}, ${address.city}, ${
+                      address.state
+                    }, ${address.postalCode}, ${address.country || "India"} (${
+                      address.status
+                    })`;
                     return (
                       <Option key={address.addressId} value={address.addressId}>
                         {addressLabel}
@@ -403,6 +452,44 @@ const QuotationForm = ({
                 }
                 style={{ marginTop: 8, width: "100%" }}
               />
+              {/* Follow-up Dates Section */}
+              <Text strong>Timeline Dates</Text>
+              {quotationData.followupDates.map((date, index) => (
+                <div
+                  key={index}
+                  className="d-flex align-items-center"
+                  style={{ marginTop: 8 }}
+                >
+                  <DatePicker
+                    style={{ width: "100%" }}
+                    value={date ? moment(date) : null}
+                    onChange={(date) => handleFollowupDateChange(index, date)}
+                    format="YYYY-MM-DD"
+                    disabledDate={(current) =>
+                      current &&
+                      (current < moment().startOf("day") ||
+                        (quotationData.dueDate &&
+                          current > moment(quotationData.dueDate).endOf("day")))
+                    }
+                  />
+                  <Button
+                    type="text"
+                    danger
+                    icon={<DeleteOutlined />}
+                    onClick={() => removeFollowupDate(index)}
+                    aria-label="Remove Timeline date"
+                    style={{ marginLeft: 8 }}
+                  />
+                </div>
+              ))}
+              <Button
+                type="primary"
+                onClick={addFollowupDate}
+                aria-label="Add Timeline date"
+                style={{ marginTop: 8 }}
+              >
+                <PlusOutlined /> Add Timeline Date
+              </Button>
               {error && (
                 <Alert
                   message={error}
@@ -481,7 +568,13 @@ const QuotationForm = ({
           <CheckoutButton
             type="primary"
             icon={<CheckCircleOutlined />}
-            onClick={handleCreateDocument}
+            onClick={() => {
+              if (!validateFollowupDates()) {
+                toast.error("Timeline dates cannot be after the due date.");
+                return;
+              }
+              handleCreateDocument();
+            }}
             disabled={
               cartItems.length === 0 ||
               !selectedCustomer ||

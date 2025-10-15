@@ -63,15 +63,10 @@ router.delete(
 
 // ✅ Export a quotation by ID (Admins, Managers & Sales Team)
 router.post(
-  "/export/:id",
+  "/export/:id/:version?",
   auth,
-  //  role.check([ROLES.Admin, ROLES.Accounts, ROLES.SALES]),
-  // checkPermission(
-  //   "export",
-  //   "export_quotation",
-  //   "quotations",
-  //   "/quotations/:id"
-  // ),
+  // role.check([ROLES.Admin, ROLES.Accounts, ROLES.Sales]),
+  // checkPermission("export", "export_quotation", "quotations", "/quotations/export/:id"),
   quotationController.exportQuotation
 );
 router.post(
@@ -84,4 +79,12 @@ router.post(
   // ),
   quotationController.cloneQuotation
 );
+
+// New routes for versioning
+router.get("/:id/versions/:version?", quotationController.getQuotationVersions);
+router.post(
+  "/:id/restore/:version",
+  quotationController.restoreQuotationVersion
+);
+
 module.exports = router;

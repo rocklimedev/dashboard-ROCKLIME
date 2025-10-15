@@ -25,11 +25,19 @@ const Quotation = sequelize.define(
       type: DataTypes.DATEONLY,
       allowNull: false,
     },
+
+    // ✅ New field like in orders
+    followupDates: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      defaultValue: null,
+      comment: "Array of follow-up date objects or timestamps",
+    },
+
     reference_number: {
       type: DataTypes.STRING(50),
     },
 
-    // ✅ Re-added fields
     include_gst: {
       type: DataTypes.BOOLEAN, // TINYINT(1) equivalent
       allowNull: true,

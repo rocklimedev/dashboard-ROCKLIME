@@ -40,7 +40,6 @@ const Signup = () => {
 
     try {
       await register(formData).unwrap();
-      toast.success("Registration successful! Redirecting to login...");
       navigate("/login");
     } catch (err) {
       toast.error(err?.data?.message || "Something went wrong. Try again.");

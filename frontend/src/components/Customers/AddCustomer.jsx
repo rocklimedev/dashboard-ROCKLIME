@@ -9,15 +9,40 @@ import {
 import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetVendorsQuery } from "../../api/vendorApi";
 import { toast } from "sonner";
-import { Tab, Tabs } from "react-bootstrap";
 import { useNavigate, useLocation } from "react-router-dom";
+import { Form, Input, Select, Button, Tabs, Row, Col, Spin, Alert } from "antd";
 import PageHeader from "../Common/PageHeader";
+
+const { TabPane } = Tabs;
+const { Option } = Select;
 
 const AddCustomer = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
   const existingCustomer = location.state?.customer || null;
+
+  const [form] = Form.useForm();
+  const [formData, setFormData] = useState({
+    name: "",
+    companyName: "",
+    customerType: "",
+    email: "",
+    mobileNumber: "",
+    phone2: "",
+    address: { street: "", city: "", state: "", zip: "" },
+    isVendor: "false",
+    totalAmount: "0.00",
+    paidAmount: "0.00",
+    balance: "0.00",
+    dueDate: "",
+    paymentMode: "",
+    invoiceStatus: "Draft",
+    invoices: [],
+    quotations: [],
+    vendorId: "",
+    gstNumber: "",
+  });
 
   const [createCustomer, { isLoading: isCreating, error: createError }] =
     useCreateCustomerMutation();
@@ -38,27 +63,6 @@ const AddCustomer = () => {
     isLoading: isVendorsLoading,
     error: vendorsError,
   } = useGetVendorsQuery();
-
-  const [formData, setFormData] = useState({
-    name: "",
-    companyName: "",
-    customerType: "",
-    email: "",
-    mobileNumber: "",
-    phone2: "",
-    address: { street: "", city: "", state: "", zip: "" },
-    isVendor: "false",
-    totalAmount: "0.00",
-    paidAmount: "0.00",
-    balance: "0.00",
-    dueDate: "",
-    paymentMode: "",
-    invoiceStatus: "Draft",
-    invoices: [],
-    quotations: [],
-    vendorId: "",
-    gstNumber: "", // NEW
-  });
 
   const getInvoiceData = useCallback(() => {
     if (!invoices?.data?.length) return { totalAmount: 0, dueDate: null };
@@ -103,11 +107,11 @@ const AddCustomer = () => {
       const paid = parseFloat(existingCustomer.paidAmount || 0);
       const balance = totalAmount - paid;
 
-      setFormData({
+      const updatedFormData = {
         ...existingCustomer,
         customerType: existingCustomer.customerType || "",
         phone2: existingCustomer.phone2 || "",
-        gstNumber: existingCustomer.gstNumber || "", // NEW
+        gstNumber: existingCustomer.gstNumber || "",
         address: existingCustomer.address || {
           street: "",
           city: "",
@@ -121,9 +125,12 @@ const AddCustomer = () => {
         invoices: existingCustomer.invoices || [],
         quotations: existingCustomer.quotations || [],
         vendorId: existingCustomer.vendorId || "",
-      });
+      };
+
+      setFormData(updatedFormData);
+      form.setFieldsValue(updatedFormData);
     }
-  }, [existingCustomer, invoices, getInvoiceData]);
+  }, [existingCustomer, invoices, getInvoiceData, form]);
 
   useEffect(() => {
     if (existingCustomer) {
@@ -135,33 +142,33 @@ const AddCustomer = () => {
         ...prev,
         balance: balance < 0 ? "0.00" : balance.toFixed(2),
       }));
+      form.setFieldsValue({
+        balance: balance < 0 ? "0.00" : balance.toFixed(2),
+      });
     }
-  }, [existingCustomer, formData.totalAmount, formData.paidAmount]);
+  }, [existingCustomer, formData.totalAmount, formData.paidAmount, form]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-
-    if (name === "paidAmount" && existingCustomer) {
-      if (value === "" || parseFloat(value) < 0) return;
+  const handleChange = (changedValues) => {
+    if (changedValues.paidAmount && existingCustomer) {
+      if (
+        changedValues.paidAmount === "" ||
+        parseFloat(changedValues.paidAmount) < 0
+      )
+        return;
 
       const total = parseFloat(formData.totalAmount || 0);
-      const paid = parseFloat(value || 0);
+      const paid = parseFloat(changedValues.paidAmount || 0);
       if (paid > total) {
         toast.error("Paid Amount cannot exceed Total Amount");
         return;
       }
     }
 
-    if (name === "isVendor" && value === "false") {
-      setFormData((prev) => ({ ...prev, isVendor: value, vendorId: "" }));
-    } else if (name.startsWith("address.")) {
-      const field = name.split(".")[1];
-      setFormData((prev) => ({
-        ...prev,
-        address: { ...prev.address, [field]: value },
-      }));
+    if (changedValues.isVendor === "false") {
+      setFormData((prev) => ({ ...prev, isVendor: "false", vendorId: "" }));
+      form.setFieldsValue({ vendorId: "" });
     } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
+      setFormData((prev) => ({ ...prev, ...changedValues }));
     }
   };
 
@@ -192,15 +199,13 @@ const AddCustomer = () => {
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
+  const handleSubmit = async (values) => {
     try {
       if (!existingCustomer && allCustomersData?.data?.length > 0) {
         const isDuplicate = allCustomersData.data.some(
           (cust) =>
-            cust.email === formData.email.trim() ||
-            cust.mobileNumber === formData.mobileNumber.trim()
+            cust.email === values.email.trim() ||
+            cust.mobileNumber === values.mobileNumber.trim()
         );
 
         if (isDuplicate) {
@@ -212,29 +217,27 @@ const AddCustomer = () => {
       }
 
       const payload = {
-        ...formData,
-        customerType: formData.customerType || null,
-        phone2: formData.phone2 || null,
-        gstNumber: formData.gstNumber || null, // NEW
-        isVendor: formData.isVendor === "true",
-        totalAmount: existingCustomer
-          ? parseFloat(formData.totalAmount) || 0
-          : 0,
-        paidAmount: existingCustomer ? parseFloat(formData.paidAmount) || 0 : 0,
-        balance: existingCustomer ? parseFloat(formData.balance) || 0 : 0,
+        ...values,
+        customerType: values.customerType || null,
+        phone2: values.phone2 || null,
+        gstNumber: values.gstNumber || null,
+        isVendor: values.isVendor === "true",
+        totalAmount: existingCustomer ? parseFloat(values.totalAmount) || 0 : 0,
+        paidAmount: existingCustomer ? parseFloat(values.paidAmount) || 0 : 0,
+        balance: existingCustomer ? parseFloat(values.balance) || 0 : 0,
         address:
-          formData.address.street ||
-          formData.address.city ||
-          formData.address.state ||
-          formData.address.zip
-            ? formData.address
+          values.address.street ||
+          values.address.city ||
+          values.address.state ||
+          values.address.zip
+            ? values.address
             : null,
         invoices: null,
         quotations: null,
-        dueDate: formData.dueDate || null,
+        dueDate: values.dueDate || null,
         vendorId:
-          formData.isVendor === "true" && formData.vendorId?.trim()
-            ? formData.vendorId
+          values.isVendor === "true" && values.vendorId?.trim()
+            ? values.vendorId
             : null,
       };
 
@@ -274,178 +277,158 @@ const AddCustomer = () => {
             buttonText="Back to Customers"
           />
           <div className="card-body">
-            <form onSubmit={handleSubmit}>
-              {isInvoicesLoading && existingCustomer && (
-                <p>Loading invoice data...</p>
-              )}
-              {invoicesError && existingCustomer && (
-                <p className="text-danger">
-                  Failed to load invoices:{" "}
-                  {invoicesError?.data?.message || "Error"}
-                </p>
-              )}
-              {isVendorsLoading && formData.isVendor === "true" && (
-                <p>Loading vendors...</p>
-              )}
-              {vendorsError && formData.isVendor === "true" && (
-                <p className="text-danger">
-                  Failed to load vendors:{" "}
-                  {vendorsError?.data?.message || "Error"}
-                </p>
-              )}
-
-              <Tabs
-                defaultActiveKey="general"
-                id="customer-tabs"
+            {isInvoicesLoading && existingCustomer && (
+              <Spin tip="Loading invoice data..." />
+            )}
+            {invoicesError && existingCustomer && (
+              <Alert
+                message="Error"
+                description={
+                  invoicesError?.data?.message || "Failed to load invoices"
+                }
+                type="error"
+                showIcon
                 className="mb-3"
-              >
-                <Tab eventKey="general" title="General">
-                  <div className="row">
-                    <div className="col-lg-6 mb-3">
-                      <label className="form-label">
-                        Name<span className="text-danger ms-1">*</span>
-                      </label>
-                      <input
-                        type="text"
+              />
+            )}
+            {isVendorsLoading && formData.isVendor === "true" && (
+              <Spin tip="Loading vendors..." />
+            )}
+            {vendorsError && formData.isVendor === "true" && (
+              <Alert
+                message="Error"
+                description={
+                  vendorsError?.data?.message || "Failed to load vendors"
+                }
+                type="error"
+                showIcon
+                className="mb-3"
+              />
+            )}
+
+            <Form
+              form={form}
+              layout="vertical"
+              onFinish={handleSubmit}
+              onValuesChange={handleChange}
+              initialValues={formData}
+            >
+              <Tabs defaultActiveKey="general">
+                <TabPane tab="General" key="general">
+                  <Row gutter={16}>
+                    <Col lg={12} xs={24}>
+                      <Form.Item
+                        label="Name"
                         name="name"
-                        className="form-control"
-                        value={formData.name}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                    <div className="col-lg-6 mb-3">
-                      <label className="form-label">Customer Type</label>
-                      <select
-                        name="customerType"
-                        className="form-select"
-                        value={formData.customerType}
-                        onChange={handleChange}
+                        rules={[
+                          { required: true, message: "Please enter name" },
+                        ]}
                       >
-                        <option value="">Select Type</option>
-                        <option value="Retail">Retail</option>
-                        <option value="Architect">Architect</option>
-                        <option value="Interior">Interior</option>
-                        <option value="Builder">Builder</option>
-                        <option value="Contractor">Contractor</option>
-                      </select>
-                    </div>
-
-                    <div className="col-lg-6 mb-3">
-                      <label className="form-label">Company Name</label>
-                      <input
-                        type="text"
-                        name="companyName"
-                        className="form-control"
-                        value={formData.companyName}
-                        onChange={handleChange}
-                      />
-                    </div>
-                    <div className="col-lg-6 mb-3">
-                      <label className="form-label">Email</label>
-                      <input
-                        type="email"
+                        <Input />
+                      </Form.Item>
+                    </Col>
+                    <Col lg={12} xs={24}>
+                      <Form.Item label="Customer Type" name="customerType">
+                        <Select placeholder="Select Type">
+                          <Option value="">Select Type</Option>
+                          <Option value="Retail">Retail</Option>
+                          <Option value="Architect">Architect</Option>
+                          <Option value="Interior">Interior</Option>
+                          <Option value="Builder">Builder</Option>
+                          <Option value="Contractor">Contractor</Option>
+                        </Select>
+                      </Form.Item>
+                    </Col>
+                    <Col lg={12} xs={24}>
+                      <Form.Item label="Company Name" name="companyName">
+                        <Input />
+                      </Form.Item>
+                    </Col>
+                    <Col lg={12} xs={24}>
+                      <Form.Item
+                        label="Email"
                         name="email"
-                        className="form-control"
-                        value={formData.email}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                    <div className="col-lg-6 mb-3">
-                      <label className="form-label">
-                        Phone<span className="text-danger ms-1">*</span>
-                      </label>
-                      <input
-                        type="tel"
+                        rules={[
+                          { required: true, message: "Please enter email" },
+                          {
+                            type: "email",
+                            message: "Please enter a valid email",
+                          },
+                        ]}
+                      >
+                        <Input />
+                      </Form.Item>
+                    </Col>
+                    <Col lg={12} xs={24}>
+                      <Form.Item
+                        label="Phone"
                         name="mobileNumber"
-                        className="form-control"
-                        value={formData.mobileNumber}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                    <div className="col-lg-6 mb-3">
-                      <label className="form-label">Phone 2</label>
-                      <input
-                        type="tel"
-                        name="phone2"
-                        className="form-control"
-                        value={formData.phone2}
-                        onChange={handleChange}
-                      />
-                    </div>
-                    <div className="col-lg-6 mb-3">
-                      <label className="form-label">GST Number</label>
-                      <input
-                        type="text"
-                        name="gstNumber"
-                        className="form-control"
-                        value={formData.gstNumber}
-                        onChange={handleChange}
-                        placeholder="Enter GST Number"
-                      />
-                    </div>
-
-                    <div className="col-lg-12 mb-3">
-                      <label className="form-label">Address</label>
-                      <div className="row">
-                        <div className="col-lg-6 mb-2">
-                          <input
-                            type="text"
-                            name="address.street"
-                            className="form-control"
-                            placeholder="Street"
-                            value={formData.address.street}
-                            onChange={handleChange}
-                          />
-                        </div>
-                        <div className="col-lg-6 mb-2">
-                          <input
-                            type="text"
-                            name="address.city"
-                            className="form-control"
-                            placeholder="City"
-                            value={formData.address.city}
-                            onChange={handleChange}
-                          />
-                        </div>
-                        <div className="col-lg-6 mb-2">
-                          <input
-                            type="text"
-                            name="address.state"
-                            className="form-control"
-                            placeholder="State"
-                            value={formData.address.state}
-                            onChange={handleChange}
-                          />
-                        </div>
-                        <div className="col-lg-6 mb-2">
-                          <input
-                            type="text"
-                            name="address.zip"
-                            className="form-control"
-                            placeholder="ZIP Code"
-                            value={formData.address.zip}
-                            onChange={handleChange}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </Tab>
+                        rules={[
+                          {
+                            required: true,
+                            message: "Please enter phone number",
+                          },
+                        ]}
+                      >
+                        <Input />
+                      </Form.Item>
+                    </Col>
+                    <Col lg={12} xs={24}>
+                      <Form.Item label="Phone 2" name="phone2">
+                        <Input />
+                      </Form.Item>
+                    </Col>
+                    <Col lg={12} xs={24}>
+                      <Form.Item label="GST Number" name="gstNumber">
+                        <Input placeholder="Enter GST Number" />
+                      </Form.Item>
+                    </Col>
+                    <Col lg={24} xs={24}>
+                      <Form.Item label="Address">
+                        <Row gutter={16}>
+                          <Col lg={12} xs={24}>
+                            <Form.Item name={["address", "street"]} noStyle>
+                              <Input placeholder="Street" />
+                            </Form.Item>
+                          </Col>
+                          <Col lg={12} xs={24}>
+                            <Form.Item name={["address", "city"]} noStyle>
+                              <Input placeholder="City" />
+                            </Form.Item>
+                          </Col>
+                          <Col lg={12} xs={24}>
+                            <Form.Item name={["address", "state"]} noStyle>
+                              <Input placeholder="State" />
+                            </Form.Item>
+                          </Col>
+                          <Col lg={12} xs={24}>
+                            <Form.Item name={["address", "zip"]} noStyle>
+                              <Input placeholder="ZIP Code" />
+                            </Form.Item>
+                          </Col>
+                        </Row>
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                </TabPane>
               </Tabs>
-              <div className="d-flex justify-content-end mt-4">
-                <button
-                  type="button"
-                  className="btn btn-secondary me-2"
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  marginTop: 24,
+                }}
+              >
+                <Button
                   onClick={() => navigate("/customers/list")}
+                  style={{ marginRight: 8 }}
                 >
                   Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
+                </Button>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  loading={isCreating || isEditing}
                   disabled={
                     isCreating ||
                     isEditing ||
@@ -458,16 +441,22 @@ const AddCustomer = () => {
                     : existingCustomer
                     ? "Update Customer"
                     : "Add Customer"}
-                </button>
+                </Button>
               </div>
               {(createError || editError) && (
-                <p className="text-danger mt-3">
-                  {createError?.data?.message ||
+                <Alert
+                  message="Error"
+                  description={
+                    createError?.data?.message ||
                     editError?.data?.message ||
-                    "Error processing request"}
-                </p>
+                    "Error processing request"
+                  }
+                  type="error"
+                  showIcon
+                  style={{ marginTop: 16 }}
+                />
               )}
-            </form>
+            </Form>
           </div>
         </div>
       </div>

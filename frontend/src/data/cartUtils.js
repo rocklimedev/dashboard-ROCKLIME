@@ -9,7 +9,7 @@ export const generateQuotationNumber = () => {
 
 // Generate Order Number
 export const generateOrderNumber = (orders = []) => {
-  const today = new Date();
+  const today = moment().format("DDMMYY"); // Changed from DDMMYYYY to DDMMYY
   const day = today.getDate(); // No leading zero (e.g., 1 instead of 01)
   const month = today.getMonth() + 1; // No leading zero (e.g., 1 instead of 01)
   const year = "25"; // Hardcode to 25 for 2025

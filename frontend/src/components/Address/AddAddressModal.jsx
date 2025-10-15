@@ -12,6 +12,49 @@ import { Modal, Button, Input, Select, Form, Radio } from "antd";
 
 const { Option } = Select;
 
+// Country and states data
+const countryData = {
+  name: "India",
+  states: [
+    "Andaman and Nicobar Islands",
+    "Andhra Pradesh",
+    "Arunachal Pradesh",
+    "Assam",
+    "Bihar",
+    "Chandigarh",
+    "Chhattisgarh",
+    "Dadra and Nagar Haveli and Daman and Diu",
+    "Delhi",
+    "Goa",
+    "Gujarat",
+    "Haryana",
+    "Himachal Pradesh",
+    "Jammu and Kashmir",
+    "Jharkhand",
+    "Karnataka",
+    "Kerala",
+    "Ladakh",
+    "Lakshadweep",
+    "Madhya Pradesh",
+    "Maharashtra",
+    "Manipur",
+    "Meghalaya",
+    "Mizoram",
+    "Nagaland",
+    "Odisha",
+    "Puducherry",
+    "Punjab",
+    "Rajasthan",
+    "Sikkim",
+    "Tamil Nadu",
+    "Telangana",
+    "Tripura",
+    "Uttar Pradesh",
+    "Uttarakhand",
+    "West Bengal",
+  ],
+};
+
 const AddAddress = ({ onClose, onSave, existingAddress, selectedCustomer }) => {
   const isEdit = !!existingAddress;
   const [form] = Form.useForm();
@@ -58,7 +101,6 @@ const AddAddress = ({ onClose, onSave, existingAddress, selectedCustomer }) => {
     const existingCount = customerAddresses.length;
 
     if (isEdit) {
-      // Allow current status or ADDITIONAL
       const currentStatus = existingAddress.status;
       const options = ["ADDITIONAL"];
       if (currentStatus === "BILLING" || !hasBilling) options.push("BILLING");
@@ -66,7 +108,6 @@ const AddAddress = ({ onClose, onSave, existingAddress, selectedCustomer }) => {
         options.push("PRIMARY");
       return options;
     } else {
-      // New address: Allow BILLING if none exists, PRIMARY if only BILLING exists, else ADDITIONAL
       if (!hasBilling) return ["BILLING"];
       if (!hasPrimary && existingCount === 1) return ["PRIMARY"];
       return ["ADDITIONAL"];
@@ -89,7 +130,8 @@ const AddAddress = ({ onClose, onSave, existingAddress, selectedCustomer }) => {
     } else if (selectedCustomer) {
       form.setFieldsValue({
         customerId: selectedCustomer,
-        status: getAvailableStatuses()[0], // Default to first available status
+        status: getAvailableStatuses()[0],
+        country: "India", // Default to India
       });
       setAddressType("customer");
     }
@@ -102,6 +144,8 @@ const AddAddress = ({ onClose, onSave, existingAddress, selectedCustomer }) => {
       userId: undefined,
       customerId: undefined,
       status: "ADDITIONAL",
+      country: "India", // Reset to India
+      state: undefined,
       ...(type === "customer" && selectedCustomer
         ? { customerId: selectedCustomer }
         : {}),
@@ -202,10 +246,45 @@ const AddAddress = ({ onClose, onSave, existingAddress, selectedCustomer }) => {
         >
           <Input />
         </Form.Item>
-        <Form.Item label="State" name="state">
-          <Input />
+        <Form.Item
+          label="State"
+          name="state"
+          rules={[{ required: true, message: "State is required" }]}
+        >
+          <Select
+            showSearch
+            allowClear
+            placeholder="Select or type a state"
+            filterOption={(input, option) =>
+              option.children.toLowerCase().includes(input.toLowerCase())
+            }
+            // Allow custom input by not restricting to predefined options
+            onSearch={(value) => {
+              if (value) {
+                form.setFieldsValue({ state: value });
+              }
+            }}
+            onChange={(value) => {
+              form.setFieldsValue({ state: value });
+            }}
+          >
+            {countryData.states.map((state) => (
+              <Option key={state} value={state}>
+                {state}
+              </Option>
+            ))}
+          </Select>
         </Form.Item>
-        <Form.Item label="Postal Code" name="postalCode">
+        <Form.Item
+          label="Postal Code"
+          name="postalCode"
+          rules={[
+            {
+              pattern: /^[0-9]{6}$/,
+              message: "Postal code must be a 6-digit number",
+            },
+          ]}
+        >
           <Input />
         </Form.Item>
         <Form.Item
@@ -213,7 +292,35 @@ const AddAddress = ({ onClose, onSave, existingAddress, selectedCustomer }) => {
           name="country"
           rules={[{ required: true, message: "Country is required" }]}
         >
-          <Input />
+          <Select
+            showSearch
+            allowClear
+            placeholder="Select or type a country"
+            filterOption={(input, option) =>
+              option.children.toLowerCase().includes(input.toLowerCase())
+            }
+            // Allow custom input
+            onSearch={(value) => {
+              if (value) {
+                form.setFieldsValue({ country: value });
+              }
+            }}
+            onChange={(value) => {
+              form.setFieldsValue({ country: value });
+              // Reset state if country changes to non-India
+              if (value !== "India") {
+                form.setFieldsValue({ state: undefined });
+              }
+            }}
+          >
+            <Option key={countryData.name} value={countryData.name}>
+              {countryData.name}
+            </Option>
+            {/* Add more countries if needed */}
+            <Option key="Other" value="Other">
+              Other
+            </Option>
+          </Select>
         </Form.Item>
         {addressType === "customer" && (
           <Form.Item

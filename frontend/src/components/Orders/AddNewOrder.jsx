@@ -11,6 +11,7 @@ import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
 import { Select, DatePicker, Button, Input, Radio } from "antd";
 import { toast } from "sonner";
 import { debounce } from "lodash";
+import Avatar from "react-avatar"; // Import react-avatar
 import PageHeader from "../Common/PageHeader";
 import {
   useCreateOrderMutation,
@@ -146,19 +147,18 @@ const AddNewOrder = ({ adminName }) => {
   // Generate orderNo in create mode
   useEffect(() => {
     if (!isEditMode && !isAllOrdersLoading && allOrdersData !== undefined) {
-      const today = moment().format("DDMMYYYY");
+      const today = moment().format("DDMMYY"); // Changed from DDMMYYYY to DDMMYY
       const todayOrders = orders.filter((order) =>
         moment(order.createdAt).isSame(moment(), "day")
       );
-      const serialNumber = String(todayOrders.length + 1).padStart(5, "0");
-      const generatedOrderNo = `${today}${serialNumber}`;
+      const serialNumber = todayOrders.length + 101; // Start from 101 instead of 1
+      const generatedOrderNo = `${today}${serialNumber}`; // No padding with zeros
       setFormData((prev) => ({
         ...prev,
         orderNo: generatedOrderNo,
       }));
     }
   }, [isEditMode, isAllOrdersLoading, allOrdersData, orders]);
-
   // Populate form in edit mode
   useEffect(() => {
     if (isEditMode && order && formData.orderNo !== order.orderNo) {
@@ -190,12 +190,12 @@ const AddNewOrder = ({ adminName }) => {
     }
   }, [isEditMode, order, user.userId]);
 
-  // Update createdBy when user profile loads
+  // Ensure createdBy is set to the logged-in user's ID and not editable
   useEffect(() => {
-    if (!isEditMode && user.userId && formData.createdBy !== user.userId) {
+    if (user.userId && formData.createdBy !== user.userId) {
       setFormData((prev) => ({ ...prev, createdBy: user.userId }));
     }
-  }, [user.userId, isEditMode, formData.createdBy]);
+  }, [user.userId, formData.createdBy]);
 
   // Debounced customer search
   const debouncedCustomerSearch = useCallback(
@@ -219,6 +219,8 @@ const AddNewOrder = ({ adminName }) => {
 
   // Handlers
   const handleChange = (name, value) => {
+    // Prevent changes to createdBy
+    if (name === "createdBy") return;
     if (name === "description") {
       setDescriptionLength(value.length);
     }
@@ -302,11 +304,11 @@ const AddNewOrder = ({ adminName }) => {
       if (!orderNo || isEditMode) return true;
       const isUnique = !orders.some((order) => order.orderNo === orderNo);
       if (!isUnique && setNewOrderNo) {
-        const today = moment().format("DDMMYYYY");
+        const today = moment().format("DDMMYY"); // Changed from DDMMYYYY to DDMMYY
         const todayOrders = orders.filter((order) =>
           moment(order.createdAt).isSame(moment(), "day")
         );
-        const newSerial = String(todayOrders.length + 2).padStart(5, "0");
+        const newSerial = todayOrders.length + 102; // Increment to next available number
         const newOrderNo = `${today}${newSerial}`;
         setFormData((prev) => ({
           ...prev,
@@ -324,10 +326,12 @@ const AddNewOrder = ({ adminName }) => {
 
   const validateOrderNo = (orderNo) => {
     if (!orderNo) return false;
-    const orderNoRegex = /^\d{8}\d{5}$/;
-    return orderNoRegex.test(orderNo);
+    const orderNoRegex = /^\d{6}\d{3,}$/; // DDMMYY followed by 3 or more digits
+    const isValidFormat = orderNoRegex.test(orderNo);
+    if (!isValidFormat) return false;
+    const serialPart = parseInt(orderNo.slice(6), 10);
+    return serialPart >= 101; // Ensure serial number is at least 101
   };
-
   // Check orderNo uniqueness only after initial generation
   useEffect(() => {
     if (!isEditMode && formData.orderNo && !isAllOrdersLoading) {
@@ -531,11 +535,21 @@ const AddNewOrder = ({ adminName }) => {
     <div className="page-wrapper">
       <div className="content">
         <div className="card">
-          <PageHeader
-            title={isEditMode ? "Edit Order" : "Add New Order"}
-            subtitle="Fill out the order details"
-            exportOptions={{ pdf: false, excel: false }}
-          />
+          {/* Add Avatar at the top of the card */}
+          <div className="card-header d-flex align-items-center">
+            <PageHeader
+              title={isEditMode ? "Edit Order" : "Add New Order"}
+              subtitle="Fill out the order details"
+              exportOptions={{ pdf: false, excel: false }}
+            />
+            <Avatar
+              name={user.name || "Unknown User"}
+              size="40"
+              round={true}
+              className="me-2"
+              title={`Created by ${user.name || "Unknown User"}`}
+            />
+          </div>
           <div className="card-body">
             <div className="d-flex justify-content-end mb-3">
               <Link to="/orders/list" className="btn btn-secondary me-2">
@@ -589,18 +603,6 @@ const AddNewOrder = ({ adminName }) => {
                     </div>
                   </Form.Group>
                 </div>
-                <div className="col-lg-6">
-                  <Form.Group className="mb-3">
-                    <Form.Label>Created By</Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="createdBy"
-                      value={user.name || "N/A"}
-                      readOnly
-                      placeholder="Auto-filled from profile"
-                    />
-                  </Form.Group>
-                </div>
               </div>
 
               <div className="row">
@@ -614,7 +616,7 @@ const AddNewOrder = ({ adminName }) => {
                       onChange={(e) =>
                         handleChange(e.target.name, e.target.value)
                       }
-                      placeholder="Enter order number (e.g., 2708202500001)"
+                      placeholder="Enter order number (e.g., 151025101)"
                       disabled={true}
                     />
                   </Form.Group>

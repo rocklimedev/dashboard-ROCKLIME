@@ -1,14 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Spin,
-  Alert,
-  Tabs,
-  Modal,
-  Button,
-  Typography,
-  InputNumber,
-} from "antd";
+import { Spin, Alert, Tabs, Modal, Button, Typography } from "antd";
 import { ShoppingCartOutlined, CheckCircleOutlined } from "@ant-design/icons";
 import {
   useGetCustomersQuery,
@@ -118,6 +110,7 @@ const NewCart = ({ onConvertToOrder }) => {
     gstValue: "",
     discountType: "percent",
     roundOff: "",
+    followupDates: [], // Added
   });
   const [orderData, setOrderData] = useState({
     createdFor: "",
@@ -171,6 +164,7 @@ const NewCart = ({ onConvertToOrder }) => {
     isLoading: teamsLoading,
     refetch: refetchTeams,
   } = useGetAllTeamsQuery();
+  // Optimize address fetching
   const {
     data: addressesData,
     isLoading: addressesLoading,
@@ -178,7 +172,11 @@ const NewCart = ({ onConvertToOrder }) => {
     refetch: refetchAddresses,
   } = useGetAllAddressesQuery(
     { customerId: selectedCustomer },
-    { skip: !selectedCustomer }
+    {
+      skip: !selectedCustomer, // Skip until selectedCustomer is set
+      refetchOnMountOrArgChange: false, // Prevent refetch on mount or arg change
+      refetchOnReconnect: false, // Prevent refetch on reconnect
+    }
   );
   const { data: productsData, isLoading: isProductsLoading } =
     useGetAllProductsQuery();
@@ -327,7 +325,16 @@ const NewCart = ({ onConvertToOrder }) => {
   // Effects
   useEffect(() => {
     if (!orderNumber && !isAllOrdersLoading && allOrdersData !== undefined) {
-      setOrderNumber(generateOrderNumber(orders));
+      const today = moment().format("DDMMYY");
+      const todayOrders = orders.filter((order) =>
+        moment(order.createdAt).isSame(moment(), "day")
+      );
+      const serialNumber = todayOrders.length + 101;
+      const generatedOrderNo = `${today}${serialNumber}`;
+      setOrderData((prev) => ({
+        ...prev,
+        orderNo: generatedOrderNo,
+      }));
     }
     if (
       !purchaseOrderNumber &&
@@ -362,7 +369,6 @@ const NewCart = ({ onConvertToOrder }) => {
     }
   }, [selectedCustomer, customerList]);
 
-  // Remove the redundant useEffect for address matching, as it's handled in QuotationForm/OrderForm
   useEffect(() => {
     const { quotationDate, dueDate } = quotationData;
     if (quotationDate && dueDate) {
@@ -470,16 +476,17 @@ const NewCart = ({ onConvertToOrder }) => {
 
   const handleAddressSave = async (newAddressId) => {
     setQuotationData((prev) => ({ ...prev, shipTo: newAddressId }));
-    setOrderData((prev) => ({ ...prev, shipTo: newAddressId })); // Sync for OrderForm
+    setOrderData((prev) => ({ ...prev, shipTo: newAddressId }));
     setShowAddAddressModal(false);
-    await refetchAddresses();
+    await refetchAddresses(); // Only refetch after saving a new address
     if (useBillingAddress) {
-      setUseBillingAddress(true); // Re-trigger billing address matching
+      setUseBillingAddress(true); // Re-trigger billing address logic
     }
   };
 
   const handleCreateDocument = async () => {
     if (documentType === "Purchase Order") {
+      // Purchase Order creation logic (unchanged)
       if (!selectedVendor) return toast.error("Please select a vendor.");
       if (cartItems.length === 0 && purchaseOrderData.items.length === 0)
         return toast.error("Please add at least one product.");
@@ -585,7 +592,7 @@ const NewCart = ({ onConvertToOrder }) => {
           const result = await createAddress(newAddress).unwrap();
           setQuotationData((prev) => ({ ...prev, shipTo: result.addressId }));
           setOrderData((prev) => ({ ...prev, shipTo: result.addressId }));
-          await refetchAddresses();
+          await refetchAddresses(); // Refetch only after creating a new address
         } catch (err) {
           toast.error(
             `Failed to create address: ${err.data?.message || "Unknown error"}`
@@ -636,6 +643,9 @@ const NewCart = ({ onConvertToOrder }) => {
         customerId: selectedCustomerData.customerId,
         shipTo: quotationData.shipTo || null,
         createdBy: userId,
+        followupDates: quotationData.followupDates.filter(
+          (date) => date && moment(date).isValid()
+        ), // Added
         products: cartItems.map((item) => {
           const itemSubtotal = parseFloat(
             (item.price * item.quantity).toFixed(2)
@@ -711,7 +721,7 @@ const NewCart = ({ onConvertToOrder }) => {
         description: orderData.description || "",
         invoiceLink: null,
         quotationId: "",
-        shipTo: orderData.shipTo || null, // Include shipTo
+        shipTo: orderData.shipTo || null,
         products: cartItems.map((item) => {
           const itemSubtotal = parseFloat(
             (item.price * item.quantity).toFixed(2)
@@ -761,6 +771,7 @@ const NewCart = ({ onConvertToOrder }) => {
       gstValue: "",
       discountType: "percent",
       roundOff: "",
+      followupDates: [], // Added
     });
     setOrderData({
       createdFor: "",
@@ -777,7 +788,7 @@ const NewCart = ({ onConvertToOrder }) => {
       invoiceLink: null,
       orderNo: "",
       quotationId: "",
-      shipTo: null, // Reset shipTo
+      shipTo: null,
     });
     setPurchaseOrderData({
       vendorId: "",

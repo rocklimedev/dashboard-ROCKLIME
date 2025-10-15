@@ -7,8 +7,8 @@ import {
   Button as BootstrapButton,
 } from "react-bootstrap";
 import { FaArrowLeft, FaSearch } from "react-icons/fa";
-import { DeleteOutlined } from "@ant-design/icons";
-import { Select, Button } from "antd";
+import { DeleteOutlined, PlusOutlined } from "@ant-design/icons"; // Added PlusOutlined
+import { Select, Button, Modal, List, Typography, DatePicker } from "antd"; // Added DatePicker
 import { toast } from "sonner";
 import { debounce } from "lodash";
 import PageHeader from "../Common/PageHeader";
@@ -16,6 +16,8 @@ import {
   useCreateQuotationMutation,
   useGetQuotationByIdQuery,
   useUpdateQuotationMutation,
+  useGetQuotationVersionsQuery,
+  useRestoreQuotationVersionMutation,
 } from "../../api/quotationApi";
 import { useGetAllProductsQuery } from "../../api/productApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
@@ -26,7 +28,10 @@ import {
 import { useGetProfileQuery } from "../../api/userApi";
 import { v4 as uuidv4 } from "uuid";
 import AddAddress from "../Address/AddAddressModal";
+import moment from "moment"; // Added for date handling
+
 const { Option } = Select;
+const { Text } = Typography;
 
 const AddQuotation = () => {
   const { id } = useParams();
@@ -40,6 +45,11 @@ const AddQuotation = () => {
     error: fetchError,
     isSuccess: isFetchSuccess,
   } = useGetQuotationByIdQuery(id, { skip: !isEditMode });
+  const {
+    data: versionsData,
+    isLoading: isVersionsLoading,
+    error: versionsError,
+  } = useGetQuotationVersionsQuery(id, { skip: !isEditMode });
   const { data: userData, isLoading: isUserLoading } = useGetProfileQuery();
   const { data: customersData, isLoading: isCustomersLoading } =
     useGetCustomersQuery();
@@ -51,6 +61,8 @@ const AddQuotation = () => {
     useCreateQuotationMutation();
   const [updateQuotation, { isLoading: isUpdating }] =
     useUpdateQuotationMutation();
+  const [restoreVersion, { isLoading: isRestoring }] =
+    useRestoreQuotationVersionMutation();
   const [createAddress, { isLoading: isCreatingAddress }] =
     useCreateAddressMutation();
 
@@ -59,8 +71,9 @@ const AddQuotation = () => {
   const customers = customersData?.data || [];
   const addresses = Array.isArray(addressesData) ? addressesData : [];
   const products = productsData || [];
+  const versions = versionsData || [];
 
-  // Initial form data
+  // State
   const initialFormData = {
     document_title: "",
     quotation_date: "",
@@ -77,14 +90,15 @@ const AddQuotation = () => {
     customerId: "",
     shipTo: "",
     createdBy: userId,
+    followupDates: [], // Added followupDates
   };
 
-  // State
   const [formData, setFormData] = useState(initialFormData);
   const [productSearch, setProductSearch] = useState("");
   const [showAddressModal, setShowAddressModal] = useState(false);
-  const [addressType, setAddressType] = useState("customer"); // Default to customer
+  const [addressType, setAddressType] = useState("customer");
   const [filteredProducts, setFilteredProducts] = useState([]);
+  const [showVersionsModal, setShowVersionsModal] = useState(false);
 
   // Handle fetch errors
   useEffect(() => {
@@ -96,7 +110,17 @@ const AddQuotation = () => {
       toast.error("Quotation not found. Redirecting to quotations list...");
       setTimeout(() => navigate("/orders/list"), 2000);
     }
-  }, [fetchError, isEditMode, navigate, isFetchSuccess, existingQuotation]);
+    if (isEditMode && versionsError) {
+      toast.error("Failed to load version history.");
+    }
+  }, [
+    fetchError,
+    isEditMode,
+    navigate,
+    isFetchSuccess,
+    existingQuotation,
+    versionsError,
+  ]);
 
   // Pre-fill form in edit mode
   useEffect(() => {
@@ -126,7 +150,7 @@ const AddQuotation = () => {
               sellingPrice: sellingPrice,
               discount: Number(p.discount) || 0,
               tax: Number(p.tax) || 0,
-              total: Number(p.total) || sellingPrice, // Use stored total or recalculate
+              total: Number(p.total) || sellingPrice,
             };
           })
         : [];
@@ -155,9 +179,11 @@ const AddQuotation = () => {
         shipTo: existingQuotation.shipTo || "",
         createdBy: userId,
         products: updatedProducts,
+        followupDates: existingQuotation.followupDates || [], // Added followupDates
       });
     }
   }, [existingQuotation, userId, isEditMode, products]);
+
   // Debounced product search
   const debouncedSearch = useCallback(
     debounce((value) => {
@@ -195,7 +221,7 @@ const AddQuotation = () => {
       sellingPrice: sellingPrice,
       discount: 0,
       tax: 0,
-      total: sellingPrice, // Initial total is sellingPrice * qty (1)
+      total: sellingPrice,
     };
     setFormData((prev) => ({
       ...prev,
@@ -261,6 +287,7 @@ const AddQuotation = () => {
       return { ...prev, products: updatedProducts };
     });
   };
+
   // Handle form changes
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -299,6 +326,64 @@ const AddQuotation = () => {
     setFilteredProducts([]);
   };
 
+  // Handle restore version
+  const handleRestoreVersion = async (version) => {
+    try {
+      await restoreVersion({ id, version }).unwrap();
+      setShowVersionsModal(false);
+    } catch (err) {
+      toast.error(
+        `Failed to restore version ${version}: ${
+          err.data?.message || "Unknown error"
+        }`
+      );
+    }
+  };
+
+  // Follow-up dates handlers
+  const validateFollowupDates = () => {
+    if (!formData.due_date || formData.followupDates.length === 0) return true;
+
+    const dueDate = moment(formData.due_date);
+    return formData.followupDates.every((followupDate) => {
+      if (!followupDate || new Date(followupDate).toString() === "Invalid Date")
+        return true;
+      return moment(followupDate).isSameOrBefore(dueDate, "day");
+    });
+  };
+
+  const handleFollowupDateChange = (index, date) => {
+    const updatedDates = [...formData.followupDates];
+    updatedDates[index] = date ? date.format("YYYY-MM-DD") : "";
+
+    if (
+      formData.due_date &&
+      date &&
+      moment(date).isAfter(moment(formData.due_date), "day")
+    ) {
+      toast.warning(`Timeline date ${index + 1} cannot be after the due date.`);
+    }
+    if (date && moment(date).isBefore(moment().startOf("day"))) {
+      toast.warning(`Timeline date ${index + 1} cannot be before today.`);
+    }
+
+    setFormData({ ...formData, followupDates: updatedDates });
+  };
+
+  const addFollowupDate = () => {
+    setFormData({
+      ...formData,
+      followupDates: [...formData.followupDates, ""],
+    });
+  };
+
+  const removeFollowupDate = (index) => {
+    setFormData({
+      ...formData,
+      followupDates: formData.followupDates.filter((_, i) => i !== index),
+    });
+  };
+
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -312,6 +397,10 @@ const AddQuotation = () => {
     }
     if (isEditMode && (!existingQuotation || isFetching)) {
       toast.error("Quotation data is still loading or not found.");
+      return;
+    }
+    if (!validateFollowupDates()) {
+      toast.error("Timeline dates cannot be after the due date.");
       return;
     }
 
@@ -333,6 +422,9 @@ const AddQuotation = () => {
       items: formattedProducts,
       products: formattedProducts,
       shipTo: formData.shipTo || null,
+      followupDates: formData.followupDates.filter(
+        (date) => date && moment(date).isValid()
+      ), // Filter valid dates
     };
 
     try {
@@ -344,7 +436,6 @@ const AddQuotation = () => {
         navigate("/orders/list");
       } else {
         await createQuotation(formattedFormData).unwrap();
-
         setFormData({ ...initialFormData, createdBy: userId });
       }
     } catch (err) {
@@ -413,6 +504,16 @@ const AddQuotation = () => {
               <Link to="/orders/list" className="btn btn-secondary me-2">
                 <FaArrowLeft className="me-2" /> Back to Quotations
               </Link>
+              {isEditMode && (
+                <BootstrapButton
+                  variant="outline-primary"
+                  className="me-2"
+                  onClick={() => setShowVersionsModal(true)}
+                  disabled={isVersionsLoading}
+                >
+                  {isVersionsLoading ? "Loading Versions..." : "View Versions"}
+                </BootstrapButton>
+              )}
               <BootstrapButton variant="outline-secondary" onClick={clearForm}>
                 Clear Form
               </BootstrapButton>
@@ -531,6 +632,51 @@ const AddQuotation = () => {
                       onChange={handleChange}
                       required
                     />
+                  </Form.Group>
+                </div>
+              </div>
+              {/* Follow-up Dates Section */}
+              <div className="row">
+                <div className="col-lg-12">
+                  <Form.Group className="mb-3">
+                    <Form.Label>Timeline Dates</Form.Label>
+                    {formData.followupDates.map((date, index) => (
+                      <div
+                        key={index}
+                        className="d-flex align-items-center mb-2"
+                      >
+                        <DatePicker
+                          style={{ width: "100%" }}
+                          value={date ? moment(date) : null}
+                          onChange={(date) =>
+                            handleFollowupDateChange(index, date)
+                          }
+                          format="YYYY-MM-DD"
+                          disabledDate={(current) =>
+                            current &&
+                            (current < moment().startOf("day") ||
+                              (formData.due_date &&
+                                current >
+                                  moment(formData.due_date).endOf("day")))
+                          }
+                        />
+                        <Button
+                          type="text"
+                          danger
+                          icon={<DeleteOutlined />}
+                          onClick={() => removeFollowupDate(index)}
+                          aria-label="Remove Timeline date"
+                          className="ms-2"
+                        />
+                      </div>
+                    ))}
+                    <Button
+                      type="primary"
+                      onClick={addFollowupDate}
+                      aria-label="Add Timeline date"
+                    >
+                      <PlusOutlined /> Add Timeline Date
+                    </Button>
                   </Form.Group>
                 </div>
               </div>
@@ -765,7 +911,7 @@ const AddQuotation = () => {
                   variant="secondary"
                   className="me-2"
                   onClick={() => navigate("/orders/list")}
-                  disabled={isCreating || isUpdating}
+                  disabled={isCreating || isUpdating || isRestoring}
                 >
                   Cancel
                 </BootstrapButton>
@@ -775,6 +921,7 @@ const AddQuotation = () => {
                   disabled={
                     isCreating ||
                     isUpdating ||
+                    isRestoring ||
                     (isEditMode && !existingQuotation)
                   }
                 >
@@ -787,10 +934,81 @@ const AddQuotation = () => {
                 open={showAddressModal}
                 onClose={() => setShowAddressModal(false)}
                 onSave={handleAddressSave}
-                existingAddress={null} // Pass null since we're creating a new address
-                selectedCustomer={formData.customerId} // Pass the selected customer ID
+                existingAddress={null}
+                selectedCustomer={formData.customerId}
               />
             )}
+            <Modal
+              title="Quotation Version History"
+              open={showVersionsModal}
+              onCancel={() => setShowVersionsModal(false)}
+              footer={[
+                <Button key="close" onClick={() => setShowVersionsModal(false)}>
+                  Close
+                </Button>,
+              ]}
+              width={800}
+            >
+              {isVersionsLoading ? (
+                <div className="text-center">
+                  <Spinner animation="border" variant="primary" />
+                  <p>Loading versions...</p>
+                </div>
+              ) : versions.length === 0 ? (
+                <Text>No version history available.</Text>
+              ) : (
+                <List
+                  dataSource={versions}
+                  renderItem={(version) => (
+                    <List.Item
+                      actions={[
+                        <Button
+                          type="primary"
+                          onClick={() => handleRestoreVersion(version.version)}
+                          disabled={isRestoring}
+                        >
+                          {isRestoring ? "Restoring..." : "Restore"}
+                        </Button>,
+                      ]}
+                    >
+                      <List.Item.Meta
+                        title={`Version ${version.version}`}
+                        description={
+                          <>
+                            <Text>
+                              Updated by: {version.updatedBy || "Unknown"}
+                            </Text>
+                            <br />
+                            <Text>
+                              Updated at:{" "}
+                              {new Date(version.updatedAt).toLocaleString()}
+                            </Text>
+                            <br />
+                            <Text>
+                              Products: {version.quotationItems.length}
+                            </Text>
+                            <br />
+                            <Text>
+                              Final Amount: ₹
+                              {Number(
+                                version.quotationData.finalAmount || 0
+                              ).toFixed(2)}
+                            </Text>
+                            <br />
+                            <Text>
+                              Follow-up Dates:{" "}
+                              {version.quotationData.followupDates?.join(
+                                ", "
+                              ) || "None"}
+                            </Text>
+                          </>
+                        }
+                      />
+                    </List.Item>
+                  )}
+                />
+              )}
+            </Modal>
           </div>
         </div>
       </div>

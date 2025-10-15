@@ -71,7 +71,6 @@ const NoAccess = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      toast.success("Logged out successfully.");
       navigate("/login", { replace: true });
     } catch (error) {
       toast.error("Logout failed. Please try again.");
