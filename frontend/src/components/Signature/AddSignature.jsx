@@ -6,7 +6,14 @@ import {
 } from "../../api/signatureApi";
 import { useGetProfileQuery } from "../../api/userApi";
 
-const AddSignature = ({ signatureId, existingSignature, onClose }) => {
+const AddSignature = ({
+  signatureId,
+  existingSignature,
+  entityType = "user", // "user" | "customer" | "vendor"
+  entityId = null,
+  onClose,
+  onSuccess, // callback to refresh parent list
+}) => {
   const [signatureName, setSignatureName] = useState("");
   const [signatureImage, setSignatureImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -17,6 +24,7 @@ const AddSignature = ({ signatureId, existingSignature, onClose }) => {
     isLoading: isProfileLoading,
     error: profileError,
   } = useGetProfileQuery();
+
   const [createSignature, { isLoading: isAdding }] =
     useCreateSignatureMutation();
   const [updateSignature, { isLoading: isUpdating }] =
@@ -32,10 +40,7 @@ const AddSignature = ({ signatureId, existingSignature, onClose }) => {
 
   useEffect(() => {
     if (profileError) {
-      toast.error(profileError?.data?.error || "Failed to load user profile.", {
-        position: "top-right",
-        autoClose: 5000,
-      });
+      toast.error(profileError?.data?.error || "Failed to load profile.");
     }
   }, [profileError]);
 
@@ -50,33 +55,35 @@ const AddSignature = ({ signatureId, existingSignature, onClose }) => {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
 
-    const userId = profile?.user?.userId; // Confirm nested structure
-    if (!userId) {
-      toast.error("User ID is required. Please log in again.", {
-        position: "top-right",
-        autoClose: 5000,
-      });
+    const userId = profile?.user?.userId;
+
+    if (!userId && entityType === "user") {
+      toast.error("User ID is required. Please log in again.");
       return;
     }
 
     const formData = new FormData();
     formData.append("signature_name", signatureName);
     if (signatureImage) formData.append("file", signatureImage);
-    formData.append("mark_as_default", markAsDefault.toString()); // Convert to string explicitly
-    formData.append("userId", userId);
+    formData.append("mark_as_default", markAsDefault.toString());
+
+    // Attach entity based on type
+    if (entityType === "user") formData.append("userId", userId);
+    if (entityType === "customer") formData.append("customerId", entityId);
+    if (entityType === "vendor") formData.append("vendorId", entityId);
 
     try {
       if (signatureId) {
         await updateSignature({ id: signatureId, body: formData }).unwrap();
+        toast.success("Signature updated successfully.");
       } else {
         await createSignature(formData).unwrap();
+        toast.success("Signature created successfully.");
       }
       handleClose();
+      if (onSuccess) onSuccess(); // refresh parent list
     } catch (error) {
-      toast.error(error?.data?.error || "Failed to save signature.", {
-        position: "top-right",
-        autoClose: 5000,
-      });
+      toast.error(error?.data?.error || "Failed to save signature.");
     }
   };
 
@@ -85,10 +92,7 @@ const AddSignature = ({ signatureId, existingSignature, onClose }) => {
     if (file) {
       const validTypes = ["image/png", "image/jpeg", "image/jpg"];
       if (!validTypes.includes(file.type)) {
-        toast.error("Only PNG or JPEG images are allowed.", {
-          position: "top-right",
-          autoClose: 5000,
-        });
+        toast.error("Only PNG or JPEG images are allowed.");
         return;
       }
       setSignatureImage(file);
@@ -101,15 +105,8 @@ const AddSignature = ({ signatureId, existingSignature, onClose }) => {
       <div className="modal-dialog modal-dialog-centered">
         <div className="modal-content">
           <div className="modal-header">
-            <div className="page-title">
-              <h4>{signatureId ? "Edit Signature" : "Add Signature"}</h4>
-            </div>
-            <button
-              type="button"
-              className="btn-close"
-              onClick={handleClose}
-              aria-label="Close"
-            ></button>
+            <h4>{signatureId ? "Edit Signature" : "Add Signature"}</h4>
+            <button type="button" className="btn-close" onClick={handleClose} />
           </div>
 
           <form onSubmit={handleFormSubmit}>
@@ -124,8 +121,7 @@ const AddSignature = ({ signatureId, existingSignature, onClose }) => {
                 <>
                   <div className="mb-3">
                     <label className="form-label">
-                      Signature Name
-                      <span className="text-danger ms-1">*</span>
+                      Signature Name <span className="text-danger ms-1">*</span>
                     </label>
                     <input
                       type="text"
@@ -138,7 +134,7 @@ const AddSignature = ({ signatureId, existingSignature, onClose }) => {
 
                   <div className="mb-3">
                     <label className="form-label">
-                      Signature Image
+                      Signature Image{" "}
                       {!signatureId && (
                         <span className="text-danger ms-1">*</span>
                       )}
@@ -180,7 +176,7 @@ const AddSignature = ({ signatureId, existingSignature, onClose }) => {
             <div className="modal-footer">
               <button
                 type="button"
-                className="btn me-2 btn-secondary"
+                className="btn btn-secondary me-2"
                 onClick={handleClose}
               >
                 Cancel
@@ -188,9 +184,7 @@ const AddSignature = ({ signatureId, existingSignature, onClose }) => {
               <button
                 type="submit"
                 className="btn btn-primary"
-                disabled={
-                  isProfileLoading || isAdding || isUpdating || profileError
-                }
+                disabled={isProfileLoading || isAdding || isUpdating}
               >
                 {isAdding || isUpdating
                   ? "Saving..."

@@ -94,17 +94,24 @@ const ProductsList = () => {
   };
 
   const formatPrice = (value, unit) => {
-    if (typeof value === "object" && Array.isArray(unit)) {
+    if (Array.isArray(unit)) {
       const metaDetails = unit;
       const sellingPriceEntry = metaDetails?.find(
-        (detail) => detail.slug === "sellingPrice"
+        (detail) => detail.slug?.toLowerCase() === "sellingprice"
       );
-      const price = sellingPriceEntry
-        ? parseFloat(sellingPriceEntry.value)
-        : null;
-      return price !== null && !isNaN(price) ? `₹ ${price.toFixed(2)}` : "N/A";
+      if (sellingPriceEntry && typeof sellingPriceEntry.value !== "undefined") {
+        const cleanedValue = String(sellingPriceEntry.value).replace(
+          /[^0-9.]/g,
+          ""
+        );
+        const price = parseFloat(cleanedValue);
+        return price !== null && !isNaN(price)
+          ? `₹ ${price.toFixed(2)}`
+          : "N/A";
+      }
+      return "N/A";
     }
-    return value !== null && !isNaN(value) ? `₹ ${value.toFixed(2)}` : "N/A";
+    return "N/A";
   };
 
   const parseImages = (images) => {
