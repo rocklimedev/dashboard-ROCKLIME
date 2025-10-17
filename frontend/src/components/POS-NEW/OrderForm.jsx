@@ -28,26 +28,22 @@ import { toast } from "sonner";
 import { debounce } from "lodash";
 import { useCreateAddressMutation } from "../../api/addressApi";
 import { useGetAllOrdersQuery } from "../../api/orderApi";
+
 const { Text } = Typography;
 const { Option } = Select;
 
 const CartSummaryCard = styled(Card)`
+  margin-bottom: 16px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  position: sticky;
-  top: 16px;
-  @media (min-width: 768px) {
-    top: 20px;
-  }
 `;
 
-const CheckoutButton = styled(Button)`
-  background: #e31e24;
-  border-color: #e31e24;
-  &:hover {
-    background: #e31e24;
-    border-color: #e31e24;
-  }
+const EmptyCartWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
 `;
 
 const CustomerSelect = styled(Select)`
@@ -55,16 +51,22 @@ const CustomerSelect = styled(Select)`
   margin-top: 8px;
 `;
 
-const EmptyCartWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 20px 0;
-  @media (min-width: 768px) {
-    padding: 40px 0;
+const CheckoutButton = styled(Button)`
+  background-color: #1890ff;
+  border-color: #1890ff;
+  &:hover {
+    background-color: #40a9ff;
+    border-color: #40a9ff;
   }
 `;
 
+const SOURCE_TYPES = [
+  "Retail",
+  "Architect",
+  "Interior",
+  "Builder",
+  "Contractor",
+];
 const STATUS_VALUES = [
   "CREATED",
   "PREPARING",
@@ -76,14 +78,6 @@ const STATUS_VALUES = [
   "CANCELED",
   "DRAFT",
   "ONHOLD",
-];
-
-const SOURCE_TYPES = [
-  "Retail",
-  "Architect",
-  "Interior",
-  "Builder",
-  "Contractor",
 ];
 
 const OrderForm = ({
@@ -107,9 +101,6 @@ const OrderForm = ({
   users = [],
   usersLoading,
   usersError,
-  quotationData,
-  setQuotationData,
-  handleQuotationChange,
   error,
   orderNumber,
   documentType,
@@ -125,9 +116,6 @@ const OrderForm = ({
   handleAddAddress,
   setActiveTab,
   handleCreateDocument,
-  orders = [],
-  isAllOrdersLoading,
-  allOrdersError,
   handleTeamAdded,
   useBillingAddress,
   setUseBillingAddress,
@@ -147,257 +135,208 @@ const OrderForm = ({
   );
   const [isCreatingAddress, setIsCreatingAddress] = useState(false);
   const [createAddress] = useCreateAddressMutation();
-
-  // Find the selected customer's default address (prefer BILLING)
-  const selectedCustomerData = useMemo(
-    () =>
-      customers.find((customer) => customer.customerId === selectedCustomer),
-    [customers, selectedCustomer]
+  const {
+    data: allOrdersData,
+    isLoading: isAllOrdersLoading,
+    error: allOrdersError,
+  } = useGetAllOrdersQuery();
+  const orders = useMemo(
+    () => (Array.isArray(allOrdersData?.orders) ? allOrdersData.orders : []),
+    [allOrdersData]
   );
+
+  // Memoized filtered addresses
+  const filteredAddresses = useMemo(() => {
+    if (!selectedCustomer) return [];
+    return addresses.filter((addr) => addr.customerId === selectedCustomer);
+  }, [addresses, selectedCustomer]);
+
+  // Memoized default address
   const defaultAddress = useMemo(() => {
-    const billingAddress = addresses.find(
-      (addr) =>
-        addr.customerId === selectedCustomer && addr.status === "BILLING"
-    );
-    return billingAddress || selectedCustomerData?.address || null;
-  }, [selectedCustomerData, addresses, selectedCustomer]);
+    const customer = customers.find((c) => c.customerId === selectedCustomer);
+    return customer?.address || null;
+  }, [customers, selectedCustomer]);
 
-  // Filter addresses for the selected customer
-  const filteredAddresses = useMemo(
-    () =>
-      addresses.filter((address) => address.customerId === selectedCustomer),
-    [addresses, selectedCustomer]
-  );
-
-  // Filter customers for the source dropdown based on sourceType
   const sourceCustomers = useMemo(() => {
     if (!sourceType) return [];
-    return (customers || []).filter(
-      (customer) => customer.customerType === sourceType
-    );
+    return customers.filter((customer) => {
+      switch (sourceType) {
+        case "Retail":
+          return customer.type === "Retail";
+        case "Architect":
+          return customer.type === "Architect";
+        case "Interior":
+          return customer.type === "Interior";
+        case "Builder":
+          return customer.type === "Builder";
+        case "Contractor":
+          return customer.type === "Contractor";
+        default:
+          return true;
+      }
+    });
   }, [customers, sourceType]);
 
-  // Debounced customer search for Customer dropdown
+  // Debounced customer search
   const debouncedCustomerSearch = useCallback(
     debounce((value) => {
       setCustomerSearch(value);
-      let filtered = customers || [];
-      if (sourceType) {
-        filtered = filtered.filter(
-          (customer) => customer.customerType === sourceType
-        );
-      }
       if (value) {
-        filtered = filtered.filter((customer) =>
-          customer?.name?.toLowerCase().includes(value.toLowerCase())
+        const filtered = customers.filter(
+          (customer) =>
+            customer.name.toLowerCase().includes(value.toLowerCase()) ||
+            customer.email?.toLowerCase().includes(value.toLowerCase())
         );
+        setFilteredCustomers(filtered);
+      } else {
+        setFilteredCustomers(customers);
       }
-      setFilteredCustomers(filtered);
     }, 300),
-    [customers, sourceType]
+    [customers]
   );
 
-  // Update filtered customers when sourceType or customers change
-  useEffect(() => {
-    let filtered = customers || [];
-    if (sourceType) {
-      filtered = filtered.filter(
-        (customer) => customer.customerType === sourceType
-      );
-    }
-    if (customerSearch) {
-      filtered = filtered.filter((customer) =>
-        customer?.name?.toLowerCase().includes(customerSearch.toLowerCase())
-      );
-    }
-    setFilteredCustomers(filtered);
-  }, [customers, sourceType, customerSearch]);
-
-  // Reset source when sourceType changes
-  useEffect(() => {
-    if (orderData.source && sourceType) {
-      const sourceCustomer = customers.find(
-        (c) =>
-          c.customerId === orderData.source && c.customerType === sourceType
-      );
-      if (!sourceCustomer) {
-        handleOrderChange("source", "");
-      }
-    }
-  }, [sourceType, orderData.source, customers, handleOrderChange]);
-
   // Debounced toast
-  const debouncedToast = useMemo(
-    () =>
-      debounce((message) => {
-        toast.warning(message);
-      }, 500),
+  const debouncedToast = useCallback(
+    debounce((message, type = "error") => {
+      toast[type](message);
+    }, 300),
     []
   );
 
+  // Initialize dueDate if not set
   useEffect(() => {
-    setDescriptionLength(orderData?.description?.length || 0);
-  }, [orderData?.description]);
+    if (!orderData.dueDate) {
+      setOrderData((prev) => ({
+        ...prev,
+        dueDate: moment().add(1, "days").format("YYYY-MM-DD"),
+      }));
+    }
+  }, [orderData.dueDate, setOrderData]);
 
   // Sync shipTo with default address when useBillingAddress is true
   useEffect(() => {
-    if (useBillingAddress && defaultAddress && selectedCustomer) {
-      const normalizeString = (str) => (str ? str.trim().toLowerCase() : "");
-
-      const matchingAddress = filteredAddresses.find((addr) => {
-        const match = {
-          streetMatch:
-            normalizeString(addr.street) ===
-            normalizeString(defaultAddress.street),
-          cityMatch:
-            normalizeString(addr.city) === normalizeString(defaultAddress.city),
-          stateMatch:
-            normalizeString(addr.state) ===
-            normalizeString(defaultAddress.state),
-          postalMatch:
-            normalizeString(addr.postalCode || addr.zip) ===
-              normalizeString(
-                defaultAddress.postalCode || defaultAddress.zip
-              ) ||
-            normalizeString(addr.postalCode || addr.zip) ===
-              normalizeString(defaultAddress.zip || defaultAddress.postalCode),
-          countryMatch:
-            normalizeString(addr.country || "India") ===
-            normalizeString(defaultAddress.country || "India"),
-        };
-
-        return (
-          match.streetMatch &&
-          match.cityMatch &&
-          match.stateMatch &&
-          match.postalMatch &&
-          match.countryMatch
-        );
-      });
-
-      if (matchingAddress) {
-        handleQuotationChange("shipTo", matchingAddress.addressId);
-      } else {
-        setIsCreatingAddress(true);
-        const createBillingAddress = async () => {
-          try {
-            const newAddress = {
-              customerId: selectedCustomer,
-              street: defaultAddress.street,
-              city: defaultAddress.city,
-              state: defaultAddress.state,
-              postalCode: defaultAddress.postalCode || defaultAddress.zip || "",
-              country: defaultAddress.country || "India",
-              status: "BILLING",
-            };
-            const result = await createAddress(newAddress).unwrap();
-            handleQuotationChange("shipTo", result.data.addressId);
-            debouncedToast("Billing address created successfully.");
-          } catch (err) {
-            debouncedToast(
-              `Failed to create billing address: ${
-                err.data?.message || "Unknown error"
-              }`
-            );
-            handleQuotationChange("shipTo", null);
-          } finally {
-            setIsCreatingAddress(false);
-          }
-        };
-        createBillingAddress();
-      }
-    } else if (!useBillingAddress) {
-      handleQuotationChange("shipTo", null);
+    if (
+      !selectedCustomer ||
+      !defaultAddress ||
+      isCreatingAddress ||
+      !useBillingAddress ||
+      orderData?.shipTo
+    ) {
+      return;
     }
 
-    return () => {
-      debouncedToast.cancel();
+    const normalizeString = (str) => (str ? str.trim().toLowerCase() : "");
+    const matchingAddress = filteredAddresses.find((addr) => {
+      const match = {
+        streetMatch:
+          normalizeString(addr.street) ===
+          normalizeString(defaultAddress.street),
+        cityMatch:
+          normalizeString(addr.city) === normalizeString(defaultAddress.city),
+        stateMatch:
+          normalizeString(addr.state) === normalizeString(defaultAddress.state),
+        postalMatch:
+          normalizeString(addr.postalCode || addr.zip) ===
+            normalizeString(defaultAddress.postalCode || defaultAddress.zip) ||
+          normalizeString(addr.postalCode || addr.zip) ===
+            normalizeString(defaultAddress.zip || defaultAddress.postalCode),
+        countryMatch:
+          normalizeString(addr.country || "India") ===
+          normalizeString(defaultAddress.country || "India"),
+      };
+      return (
+        match.streetMatch &&
+        match.cityMatch &&
+        match.stateMatch &&
+        match.postalMatch &&
+        match.countryMatch
+      );
+    });
+
+    if (matchingAddress) {
+      handleOrderChange("shipTo", matchingAddress.addressId);
+      return;
+    }
+
+    const createBillingAddress = async () => {
+      setIsCreatingAddress(true);
+      try {
+        const newAddress = {
+          customerId: selectedCustomer,
+          street: defaultAddress.street || "",
+          city: defaultAddress.city || "",
+          state: defaultAddress.state || "",
+          postalCode: defaultAddress.postalCode || defaultAddress.zip || "",
+          country: defaultAddress.country || "India",
+          status: "BILLING",
+        };
+        const result = await createAddress(newAddress).unwrap();
+        handleOrderChange("shipTo", result.data.addressId);
+        debouncedToast("Billing address created successfully.", "success");
+      } catch (err) {
+        debouncedToast(
+          `Failed to create billing address: ${
+            err.data?.message || "Unknown error"
+          }`
+        );
+        handleOrderChange("shipTo", null);
+      } finally {
+        setIsCreatingAddress(false);
+      }
     };
+
+    createBillingAddress();
   }, [
     useBillingAddress,
     defaultAddress,
     filteredAddresses,
-    handleQuotationChange,
     selectedCustomer,
+    orderData?.shipTo,
+    isCreatingAddress,
+    handleOrderChange,
     createAddress,
     debouncedToast,
   ]);
 
+  // Handle follow-up date changes
   const handleFollowupDateChange = (index, date) => {
-    const updatedDates = [...(orderData?.followupDates || [])];
-    updatedDates[index] = date ? date.format("YYYY-MM-DD") : "";
-    if (
-      orderData?.dueDate &&
-      date &&
-      moment(date).isAfter(moment(orderData.dueDate), "day")
-    ) {
-      toast.warning(
-        `Follow-up date ${index + 1} cannot be after the due date.`
-      );
-    }
-    if (date && moment(date).isBefore(moment().startOf("day"))) {
-      toast.warning(`Follow-up date ${index + 1} cannot be before today.`);
-    }
-    setOrderData({ ...orderData, followupDates: updatedDates });
+    const newFollowupDates = [...(orderData.followupDates || [])];
+    newFollowupDates[index] = date ? date.format("YYYY-MM-DD") : null;
+    handleOrderChange("followupDates", newFollowupDates);
   };
 
+  // Add new follow-up date
   const addFollowupDate = () => {
-    setOrderData({
-      ...orderData,
-      followupDates: [...(orderData?.followupDates || []), ""],
-    });
+    const newFollowupDates = [...(orderData.followupDates || []), null];
+    handleOrderChange("followupDates", newFollowupDates);
   };
 
+  // Remove follow-up date
   const removeFollowupDate = (index) => {
-    setOrderData({
-      ...orderData,
-      followupDates: (orderData?.followupDates || []).filter(
-        (_, i) => i !== index
-      ),
-    });
+    const newFollowupDates = orderData.followupDates.filter(
+      (_, i) => i !== index
+    );
+    handleOrderChange("followupDates", newFollowupDates);
   };
 
+  // Validate order number format
   const validateOrderNo = (orderNo) => {
-    if (!orderNo) return false;
-    const orderNoRegex = /^\d{6}\d{3,}$/; // DDMMYY followed by 3 or more digits
-    const isValidFormat = orderNoRegex.test(orderNo);
-    if (!isValidFormat) return false;
-    const serialPart = parseInt(orderNo.slice(6), 10);
-    return serialPart >= 101; // Ensure serial number is at least 101
+    const orderNoRegex = /^\d{1,2}\d{1,2}25\d{3,}$/;
+    return orderNoRegex.test(orderNo);
   };
 
-  const checkOrderNoUniqueness = useCallback(
-    (orderNo, setNewOrderNo = true) => {
-      if (!orderNo) return true;
-      const isUnique = !orders.some((order) => order.orderNo === orderNo);
-      if (!isUnique && setNewOrderNo) {
-        const today = moment().format("DDMMYY"); // Changed from DDMMYYYY to DDMMYY
-        const todayOrders = orders.filter((order) =>
-          moment(order.createdAt).isSame(moment(), "day")
-        );
-        const newSerial = todayOrders.length + 102; // Increment to next available number
-        const newOrderNo = `${today}${newSerial}`;
-        setOrderData((prev) => ({
-          ...prev,
-          orderNo: newOrderNo,
-        }));
-        toast.warning(
-          `Order number ${orderNo} already exists. Generated new number: ${newOrderNo}`
-        );
-        return false;
-      }
-      return isUnique;
-    },
-    [orders]
-  );
+  // Check order number uniqueness
+  const checkOrderNoUniqueness = (orderNo) => {
+    return !orders.some((order) => order.orderNo === orderNo);
+  };
 
-  // Handle address selection
+  // Handle address change
   const handleAddressChange = (value) => {
     if (value === "sameAsBilling") {
       setUseBillingAddress(true);
     } else {
       setUseBillingAddress(false);
-      handleQuotationChange("shipTo", value);
+      handleOrderChange("shipTo", value);
     }
   };
 
@@ -427,6 +366,7 @@ const OrderForm = ({
             </EmptyCartWrapper>
           ) : (
             <>
+              {/* Document Type */}
               <Text strong>Document Type</Text>
               <Select
                 value={documentType}
@@ -439,6 +379,7 @@ const OrderForm = ({
                 <Option value="Purchase Order">Purchase Order</Option>
               </Select>
               <Divider />
+              {/* Source Type */}
               <Text strong>Source Type</Text>
               <Select
                 value={sourceType}
@@ -446,8 +387,8 @@ const OrderForm = ({
                   setSourceType(value);
                   setSelectedCustomer("");
                   handleOrderChange("createdFor", "");
-                  handleOrderChange("source", ""); // Reset source
-                  setQuotationData((prev) => ({ ...prev, shipTo: null }));
+                  handleOrderChange("source", "");
+                  handleOrderChange("shipTo", null);
                   setUseBillingAddress(false);
                 }}
                 style={{ width: "100%", marginTop: 8 }}
@@ -462,6 +403,7 @@ const OrderForm = ({
                 ))}
               </Select>
               <Divider />
+              {/* Customer Selection */}
               <Text strong>
                 Customer <span style={{ color: "red" }}>*</span>
               </Text>
@@ -471,7 +413,7 @@ const OrderForm = ({
                 onChange={(value) => {
                   setSelectedCustomer(value);
                   handleOrderChange("createdFor", value);
-                  setQuotationData((prev) => ({ ...prev, shipTo: null }));
+                  handleOrderChange("shipTo", null);
                   setUseBillingAddress(false);
                 }}
                 onSearch={debouncedCustomerSearch}
@@ -500,16 +442,20 @@ const OrderForm = ({
                 type="link"
                 icon={<UserAddOutlined />}
                 onClick={handleAddCustomer}
+                aria-label="Add new customer"
               >
                 Add New Customer
               </Button>
               <Divider />
-              <Text strong>Shipping Address</Text>
+              {/* Shipping Address */}
+              <Text strong>
+                Shipping Address <span style={{ color: "red" }}>*</span>
+              </Text>
               <Select
                 value={
                   useBillingAddress
                     ? "sameAsBilling"
-                    : quotationData?.shipTo || undefined
+                    : orderData?.shipTo || undefined
                 }
                 onChange={handleAddressChange}
                 placeholder="Select shipping address"
@@ -566,11 +512,9 @@ const OrderForm = ({
                       defaultAddress.state || ""
                     }, ${
                       defaultAddress.postalCode || defaultAddress.zip || ""
-                    }${
-                      defaultAddress.country
-                        ? `, ${defaultAddress.country}`
-                        : ""
-                    } (${defaultAddress.status || "BILLING"})`}
+                    }, ${defaultAddress.country || "India"} (${
+                      defaultAddress.status || "BILLING"
+                    })`}
                   </p>
                 </div>
               )}
@@ -585,6 +529,7 @@ const OrderForm = ({
                 Add New Address
               </Button>
               <Divider />
+              {/* Order Number */}
               <Text strong>Order Number</Text>
               <Input
                 value={orderData.orderNo}
@@ -594,14 +539,7 @@ const OrderForm = ({
                 disabled={true}
               />
               <Divider />
-              <Text strong>Quotation Number</Text>
-              <Input
-                value={orderData?.source || "N/A"}
-                disabled
-                style={{ marginTop: 8 }}
-                placeholder="Quotation number (auto-filled if converted)"
-              />
-              <Divider />
+              {/* Source */}
               <Text strong>Source</Text>
               <Select
                 value={orderData?.source || undefined}
@@ -628,6 +566,7 @@ const OrderForm = ({
                 )}
               </Select>
               <Divider />
+              {/* Master Pipeline Number */}
               <Text strong>Master Pipeline Number</Text>
               <Select
                 style={{ width: "100%", marginTop: 8 }}
@@ -637,6 +576,7 @@ const OrderForm = ({
                 }
                 placeholder="Select master pipeline order"
                 allowClear
+                aria-label="Select master pipeline order"
               >
                 {isAllOrdersLoading ? (
                   <Option disabled>Loading orders...</Option>
@@ -658,6 +598,7 @@ const OrderForm = ({
                 )}
               </Select>
               <Divider />
+              {/* Previous Order Number */}
               <Text strong>Previous Order Number</Text>
               <Select
                 style={{ width: "100%", marginTop: 8 }}
@@ -667,6 +608,7 @@ const OrderForm = ({
                 }
                 placeholder="Select previous order"
                 allowClear
+                aria-label="Select previous order"
               >
                 {isAllOrdersLoading ? (
                   <Option disabled>Loading orders...</Option>
@@ -688,19 +630,23 @@ const OrderForm = ({
                 )}
               </Select>
               <Divider />
+              {/* Pipeline */}
               <Text strong>Pipeline</Text>
               <Input
                 value={orderData?.pipeline}
                 onChange={(e) => handleOrderChange("pipeline", e.target.value)}
                 placeholder="Enter pipeline"
                 style={{ marginTop: 8 }}
+                aria-label="Enter pipeline"
               />
               <Divider />
+              {/* Status */}
               <Text strong>Status</Text>
               <Select
                 value={orderData?.status}
                 onChange={(value) => handleOrderChange("status", value)}
                 style={{ width: "100%", marginTop: 8 }}
+                aria-label="Select status"
               >
                 {STATUS_VALUES.map((status) => (
                   <Option key={status} value={status}>
@@ -710,18 +656,21 @@ const OrderForm = ({
                 ))}
               </Select>
               <Divider />
+              {/* Priority */}
               <Text strong>Priority</Text>
               <Select
                 value={orderData?.priority}
                 onChange={(value) => handleOrderChange("priority", value)}
                 style={{ width: "100%", marginTop: 8 }}
                 placeholder="Select priority"
+                aria-label="Select priority"
               >
                 <Option value="high">High</Option>
                 <Option value="medium">Medium</Option>
                 <Option value="low">Low</Option>
               </Select>
               <Divider />
+              {/* Assigned To */}
               <Text strong>Assigned To</Text>
               <Radio.Group
                 value={assignmentType}
@@ -738,6 +687,7 @@ const OrderForm = ({
                   }));
                 }}
                 style={{ marginTop: 8 }}
+                aria-label="Select assignment type"
               >
                 <Radio value="team">Team</Radio>
                 <Radio value="users">Users</Radio>
@@ -761,6 +711,7 @@ const OrderForm = ({
                       }
                       placeholder="Select team"
                       disabled={teamsLoading}
+                      aria-label="Select team"
                     >
                       {(teams?.length ?? 0) > 0 ? (
                         teams.map((team) => (
@@ -796,6 +747,7 @@ const OrderForm = ({
                     }
                     placeholder="Select primary user"
                     disabled={usersLoading}
+                    aria-label="Select primary user"
                   >
                     {(users?.length ?? 0) > 0 ? (
                       users.map((user) => (
@@ -820,6 +772,7 @@ const OrderForm = ({
                     placeholder="Select secondary user"
                     disabled={usersLoading}
                     allowClear
+                    aria-label="Select secondary user"
                   >
                     {(users?.length ?? 0) > 0 ? (
                       users.map((user) => (
@@ -836,7 +789,10 @@ const OrderForm = ({
                 </>
               )}
               <Divider />
-              <Text strong>Due Date</Text>
+              {/* Due Date */}
+              <Text strong>
+                Due Date <span style={{ color: "red" }}>*</span>
+              </Text>
               <DatePicker
                 style={{ width: "100%", marginTop: 8 }}
                 value={orderData?.dueDate ? moment(orderData.dueDate) : null}
@@ -850,8 +806,10 @@ const OrderForm = ({
                 disabledDate={(current) =>
                   current && current < moment().startOf("day")
                 }
+                aria-label="Select due date"
               />
               <Divider />
+              {/* Follow-up Dates */}
               <Text strong>Follow-up Dates</Text>
               {(orderData?.followupDates || []).map((date, index) => (
                 <div
@@ -873,6 +831,7 @@ const OrderForm = ({
                         (orderData?.dueDate &&
                           current > moment(orderData.dueDate).endOf("day")))
                     }
+                    aria-label={`Select follow-up date ${index + 1}`}
                   />
                   <Button
                     type="text"
@@ -893,6 +852,7 @@ const OrderForm = ({
                 <PlusOutlined /> Add Follow-up Date
               </Button>
               <Divider />
+              {/* Description */}
               <Text strong>Description</Text>
               <Input.TextArea
                 value={orderData?.description}
@@ -904,6 +864,7 @@ const OrderForm = ({
                 placeholder="Enter description"
                 style={{ marginTop: 8 }}
                 maxLength={60}
+                aria-label="Enter description"
               />
               <Text
                 style={{
@@ -966,7 +927,7 @@ const OrderForm = ({
               }
               if (!validateOrderNo(orderData?.orderNo)) {
                 toast.error(
-                  "Order Number must be in the format DDMMYYYYXXXXX (e.g., 2708202500001)."
+                  "Order Number must be in the format DDMM25XXX (e.g., 151025101)."
                 );
                 return;
               }
@@ -979,7 +940,7 @@ const OrderForm = ({
                 !validateOrderNo(orderData?.masterPipelineNo)
               ) {
                 toast.error(
-                  "Master Pipeline Number must be in the format DDMMYYYYXXXXX (e.g., 2708202500001)."
+                  "Master Pipeline Number must be in the format DDMM25XXX (e.g., 151025101)."
                 );
                 return;
               }
@@ -988,7 +949,7 @@ const OrderForm = ({
                 !validateOrderNo(orderData?.previousOrderNo)
               ) {
                 toast.error(
-                  "Previous Order Number must be in the format DDMMYYYYXXXXX (e.g., 2708202500001)."
+                  "Previous Order Number must be in the format DDMM25XXX (e.g., 151025101)."
                 );
                 return;
               }
@@ -1014,8 +975,12 @@ const OrderForm = ({
                 );
                 return;
               }
-              if (!quotationData?.shipTo && !useBillingAddress) {
+              if (!orderData?.shipTo && !useBillingAddress) {
                 toast.error("Please select a shipping address.");
+                return;
+              }
+              if (!orderData?.dueDate) {
+                toast.error("Please select a due date.");
                 return;
               }
               handleCreateDocument();
@@ -1024,8 +989,7 @@ const OrderForm = ({
               (cartItems?.length ?? 0) === 0 ||
               !selectedCustomer ||
               error ||
-              !quotationData?.quotationDate ||
-              !quotationData?.dueDate ||
+              !orderData?.dueDate ||
               !orderData?.orderNo ||
               (assignmentType === "team" && !orderData?.assignedTeamId) ||
               (assignmentType === "users" && !orderData?.assignedUserId) ||
@@ -1034,7 +998,7 @@ const OrderForm = ({
                   !date ||
                   moment(date).isSameOrBefore(moment(orderData?.dueDate), "day")
               ) ||
-              (!quotationData?.shipTo && !useBillingAddress)
+              (!orderData?.shipTo && !useBillingAddress)
             }
             block
             size="large"

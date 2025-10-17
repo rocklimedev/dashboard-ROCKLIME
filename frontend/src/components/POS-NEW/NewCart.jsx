@@ -78,12 +78,13 @@ const NewCart = ({ onConvertToOrder }) => {
     error: profileError,
   } = useGetProfileQuery();
   const {
-    data: users,
+    data: usersData,
     isLoading: usersLoading,
     error: usersError,
   } = useGetAllUsersQuery();
-
-  const userId = profileData?.user?.userId;
+  const users = Array.isArray(usersData?.users) ? usersData.users : [];
+  const user = profileData?.user || {};
+  const userId = user.userId;
   const [useBillingAddress, setUseBillingAddress] = useState(false);
 
   // State declarations
@@ -110,23 +111,27 @@ const NewCart = ({ onConvertToOrder }) => {
     gstValue: "",
     discountType: "percent",
     roundOff: "",
-    followupDates: [], // Added
+    followupDates: [],
   });
   const [orderData, setOrderData] = useState({
     createdFor: "",
     createdBy: userId || "",
-    assignedTo: "",
+    assignedTeamId: "",
+    assignedUserId: "",
+    secondaryUserId: "",
     pipeline: "",
     status: "CREATED",
-    dueDate: "",
+    dueDate: moment().add(1, "days").format("YYYY-MM-DD"), // Initialize dueDate
     followupDates: [],
     source: "",
-    teamId: "",
     priority: "medium",
     description: "",
     invoiceLink: null,
     orderNo: "",
     quotationId: "",
+    masterPipelineNo: "",
+    previousOrderNo: "",
+    shipTo: "",
   });
   const [purchaseOrderData, setPurchaseOrderData] = useState({
     vendorId: "",
@@ -164,7 +169,6 @@ const NewCart = ({ onConvertToOrder }) => {
     isLoading: teamsLoading,
     refetch: refetchTeams,
   } = useGetAllTeamsQuery();
-  // Optimize address fetching
   const {
     data: addressesData,
     isLoading: addressesLoading,
@@ -173,9 +177,9 @@ const NewCart = ({ onConvertToOrder }) => {
   } = useGetAllAddressesQuery(
     { customerId: selectedCustomer },
     {
-      skip: !selectedCustomer, // Skip until selectedCustomer is set
-      refetchOnMountOrArgChange: false, // Prevent refetch on mount or arg change
-      refetchOnReconnect: false, // Prevent refetch on reconnect
+      skip: !selectedCustomer,
+      refetchOnMountOrArgChange: false,
+      refetchOnReconnect: false,
     }
   );
   const { data: productsData, isLoading: isProductsLoading } =
@@ -335,6 +339,7 @@ const NewCart = ({ onConvertToOrder }) => {
         ...prev,
         orderNo: generatedOrderNo,
       }));
+      setOrderNumber(generatedOrderNo);
     }
     if (
       !purchaseOrderNumber &&
@@ -369,29 +374,9 @@ const NewCart = ({ onConvertToOrder }) => {
     }
   }, [selectedCustomer, customerList]);
 
-  useEffect(() => {
-    const { quotationDate, dueDate } = quotationData;
-    if (quotationDate && dueDate) {
-      const quotation = new Date(quotationDate);
-      const due = new Date(dueDate);
-      if (due <= quotation) {
-        setError("Due date must be after quotation date");
-      } else {
-        setError("");
-      }
-    }
-    setOrderData((prev) => ({
-      ...prev,
-      dueDate: quotationData.dueDate,
-    }));
-  }, [quotationData.quotationDate, quotationData.dueDate]);
-
   // Handlers
   const handleQuotationChange = (key, value) => {
     setQuotationData((prev) => ({ ...prev, [key]: value }));
-    if (key === "dueDate") {
-      setOrderData((prev) => ({ ...prev, dueDate: value }));
-    }
   };
 
   const handleOrderChange = (key, value) => {
@@ -475,18 +460,16 @@ const NewCart = ({ onConvertToOrder }) => {
   };
 
   const handleAddressSave = async (newAddressId) => {
-    setQuotationData((prev) => ({ ...prev, shipTo: newAddressId }));
     setOrderData((prev) => ({ ...prev, shipTo: newAddressId }));
     setShowAddAddressModal(false);
-    await refetchAddresses(); // Only refetch after saving a new address
+    await refetchAddresses();
     if (useBillingAddress) {
-      setUseBillingAddress(true); // Re-trigger billing address logic
+      setUseBillingAddress(true);
     }
   };
 
   const handleCreateDocument = async () => {
     if (documentType === "Purchase Order") {
-      // Purchase Order creation logic (unchanged)
       if (!selectedVendor) return toast.error("Please select a vendor.");
       if (cartItems.length === 0 && purchaseOrderData.items.length === 0)
         return toast.error("Please add at least one product.");
@@ -539,19 +522,35 @@ const NewCart = ({ onConvertToOrder }) => {
 
     if (!selectedCustomer) return toast.error("Please select a customer.");
     if (!userId) return toast.error("User not logged in!");
-    if (!quotationData.quotationDate || !quotationData.dueDate)
-      return toast.error("Please provide quotation and due dates.");
-    if (!quotationData.billTo)
-      return toast.error("Please provide a billing name.");
-    if (error) return toast.error("Please fix the errors before submitting.");
     if (cartItems.length === 0)
       return toast.error("Cart is empty. Add items to proceed.");
 
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateRegex.test(quotationData.quotationDate))
-      return toast.error("Invalid quotation date format. Use YYYY-MM-DD.");
-    if (!dateRegex.test(quotationData.dueDate))
-      return toast.error("Invalid due date format. Use YYYY-MM-DD.");
+    if (documentType === "Order") {
+      if (!orderData.dueDate || !dateRegex.test(orderData.dueDate)) {
+        return toast.error("Invalid due date format. Use YYYY-MM-DD.");
+      }
+      if (moment(orderData.dueDate).isBefore(moment().startOf("day"))) {
+        return toast.error("Due date cannot be in the past.");
+      }
+    } else {
+      if (
+        !quotationData.quotationDate ||
+        !dateRegex.test(quotationData.quotationDate)
+      ) {
+        return toast.error("Invalid quotation date format. Use YYYY-MM-DD.");
+      }
+      if (!quotationData.dueDate || !dateRegex.test(quotationData.dueDate)) {
+        return toast.error("Invalid due date format. Use YYYY-MM-DD.");
+      }
+      if (
+        moment(quotationData.dueDate).isBefore(
+          moment(quotationData.quotationDate)
+        )
+      ) {
+        return toast.error("Due date must be after quotation date.");
+      }
+    }
 
     if (isNaN(totalAmount) || totalAmount <= 0)
       return toast.error("Invalid total amount.");
@@ -572,7 +571,12 @@ const NewCart = ({ onConvertToOrder }) => {
     }
 
     // Auto-create address if useBillingAddress is true and no shipTo is set
-    if (useBillingAddress && !quotationData.shipTo && selectedCustomer) {
+    if (
+      useBillingAddress &&
+      !orderData.shipTo &&
+      selectedCustomer &&
+      documentType === "Order"
+    ) {
       const selectedCustomerData = customerList.find(
         (customer) => customer.customerId === selectedCustomer
       );
@@ -590,9 +594,8 @@ const NewCart = ({ onConvertToOrder }) => {
             },
           };
           const result = await createAddress(newAddress).unwrap();
-          setQuotationData((prev) => ({ ...prev, shipTo: result.addressId }));
           setOrderData((prev) => ({ ...prev, shipTo: result.addressId }));
-          await refetchAddresses(); // Refetch only after creating a new address
+          await refetchAddresses();
         } catch (err) {
           toast.error(
             `Failed to create address: ${err.data?.message || "Unknown error"}`
@@ -603,8 +606,9 @@ const NewCart = ({ onConvertToOrder }) => {
     }
 
     if (
-      quotationData.shipTo &&
-      !addresses.find((addr) => addr.addressId === quotationData.shipTo)
+      documentType === "Order" &&
+      orderData.shipTo &&
+      !addresses.find((addr) => addr.addressId === orderData.shipTo)
     ) {
       return toast.error("Invalid shipping address selected.");
     }
@@ -615,9 +619,9 @@ const NewCart = ({ onConvertToOrder }) => {
     if (!selectedCustomerData)
       return toast.error("Selected customer not found.");
 
-    if (quotationData.shipTo) {
+    if (documentType === "Order" && orderData.shipTo) {
       const selectedAddress = addresses.find(
-        (addr) => addr.addressId === quotationData.shipTo
+        (addr) => addr.addressId === orderData.shipTo
       );
       if (selectedAddress && selectedAddress.customerId !== selectedCustomer) {
         return toast.error(
@@ -645,7 +649,7 @@ const NewCart = ({ onConvertToOrder }) => {
         createdBy: userId,
         followupDates: quotationData.followupDates.filter(
           (date) => date && moment(date).isValid()
-        ), // Added
+        ),
         products: cartItems.map((item) => {
           const itemSubtotal = parseFloat(
             (item.price * item.quantity).toFixed(2)
@@ -696,7 +700,7 @@ const NewCart = ({ onConvertToOrder }) => {
       const orderNoRegex = /^\d{1,2}\d{1,2}25\d{3,}$/;
       if (!orderData.orderNo || !orderNoRegex.test(orderData.orderNo)) {
         return toast.error(
-          "Order Number must be in the format DDMM25XXX (e.g., 2825101)."
+          "Order Number must be in the format DDMM25XXX (e.g., 151025101)."
         );
       }
 
@@ -705,38 +709,39 @@ const NewCart = ({ onConvertToOrder }) => {
       }
 
       const orderPayload = {
+        id: uuidv4(),
         orderNo: orderData.orderNo,
         createdFor: selectedCustomerData.customerId,
         createdBy: userId,
-        assignedTo: orderData.teamId || null,
-        pipeline: orderData.pipeline || "",
+        assignedTeamId: orderData.assignedTeamId || null,
+        assignedUserId: orderData.assignedUserId || null,
+        secondaryUserId: orderData.secondaryUserId || null,
+        pipeline: orderData.pipeline || null,
         status: orderData.status || "CREATED",
-        dueDate: orderData.dueDate || quotationData.dueDate,
+        dueDate: orderData.dueDate,
         followupDates: orderData.followupDates.filter(
           (date) => date && moment(date).isValid()
         ),
-        source: orderData.source || "",
-        teamId: orderData.teamId || "",
+        source: orderData.source || null,
         priority: orderData.priority || "medium",
-        description: orderData.description || "",
+        description: orderData.description || null,
         invoiceLink: null,
-        quotationId: "",
+        quotationId: orderData.quotationId || null,
+        masterPipelineNo: orderData.masterPipelineNo || null,
+        previousOrderNo: orderData.previousOrderNo || null,
         shipTo: orderData.shipTo || null,
         products: cartItems.map((item) => {
-          const itemSubtotal = parseFloat(
-            (item.price * item.quantity).toFixed(2)
-          );
-          const itemDiscount = parseFloat(itemDiscounts[item.productId]) || 0;
+          const price = parseFloat(item.price) || 0.01; // Fallback to 0.01 if price is invalid
+          const quantity = parseInt(item.quantity, 10) || 1; // Fallback to 1 if quantity is invalid
+          const discount = parseFloat(itemDiscounts[item.productId]) || 0; // Fallback to 0 if discount is invalid
+          const itemSubtotal = parseFloat((price * quantity).toFixed(2));
+          const total = parseFloat((itemSubtotal - discount).toFixed(2));
+
           return {
-            productId: item.productId,
-            name: item.name || "Unnamed Product",
-            quantity: item.quantity || 1,
-            sellingPrice: parseFloat(item.price || 0),
-            discount: itemDiscount,
-            tax: quotationData.includeGst
-              ? parseFloat(quotationData.gstValue) || 0
-              : 0,
-            total: parseFloat((itemSubtotal - itemDiscount).toFixed(2)),
+            id: item.productId, // Use 'id' instead of 'productId'
+            price: price, // Use 'price' instead of 'sellingPrice'
+            discount: discount,
+            total: total >= 0 ? total : 0, // Ensure total is non-negative
           };
         }),
       };
@@ -771,23 +776,26 @@ const NewCart = ({ onConvertToOrder }) => {
       gstValue: "",
       discountType: "percent",
       roundOff: "",
-      followupDates: [], // Added
+      followupDates: [],
     });
     setOrderData({
       createdFor: "",
       createdBy: userId || "",
-      assignedTo: "",
+      assignedTeamId: "",
+      assignedUserId: "",
+      secondaryUserId: "",
       pipeline: "",
       status: "CREATED",
-      dueDate: "",
+      dueDate: moment().add(1, "days").format("YYYY-MM-DD"),
       followupDates: [],
       source: "",
-      teamId: "",
       priority: "medium",
       description: "",
       invoiceLink: null,
       orderNo: "",
       quotationId: "",
+      masterPipelineNo: "",
+      previousOrderNo: "",
       shipTo: null,
     });
     setPurchaseOrderData({
@@ -1045,9 +1053,6 @@ const NewCart = ({ onConvertToOrder }) => {
                   users={users}
                   usersLoading={usersLoading}
                   usersError={usersError}
-                  quotationData={quotationData}
-                  setQuotationData={setQuotationData}
-                  handleQuotationChange={handleQuotationChange}
                   error={error}
                   orderNumber={orderData.orderNo}
                   documentType={documentType}

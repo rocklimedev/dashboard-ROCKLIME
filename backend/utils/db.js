@@ -84,7 +84,8 @@ const setupDB = async () => {
     // Created For
     Customer.hasMany(Order, { foreignKey: "createdFor", as: "customerOrders" });
     Order.belongsTo(Customer, { foreignKey: "createdFor", as: "customer" });
-
+    Order.belongsTo(Address, { foreignKey: "shipTo", as: "shippingAddress" });
+    Address.hasMany(Order, { foreignKey: "shipTo", as: "orders" });
     // Assigned user / team
     User.hasMany(Order, { foreignKey: "assignedUserId", as: "assignedOrders" });
     Order.belongsTo(User, { foreignKey: "assignedUserId", as: "assignedUser" });

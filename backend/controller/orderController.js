@@ -4,6 +4,7 @@ const Team = require("../models/team");
 const Invoice = require("../models/invoice");
 const Customer = require("../models/customers");
 const Quotation = require("../models/quotation");
+const Address = require("../models/address");
 const Comment = require("../models/comment");
 const User = require("../models/users");
 const Product = require("../models/product");
@@ -384,6 +385,7 @@ exports.createOrder = async (req, res) => {
       products,
       masterPipelineNo,
       previousOrderNo,
+      shipTo, // Add shipTo
     } = req.body;
 
     // Validate required fields
@@ -565,6 +567,20 @@ exports.createOrder = async (req, res) => {
       return sendErrorResponse(res, 400, "Order number already exists");
     }
 
+    // Validate shipTo if provided
+    let addressDetails = null;
+    if (shipTo) {
+      const address = await Address.findByPk(shipTo);
+      if (!address) {
+        return sendErrorResponse(
+          res,
+          404,
+          `Address with ID ${shipTo} not found`
+        );
+      }
+      addressDetails = address.toJSON(); // Store for notification
+    }
+
     // Validate priority
     if (priority) {
       const validPriorities = ["high", "medium", "low"];
@@ -610,17 +626,24 @@ exports.createOrder = async (req, res) => {
       products,
       masterPipelineNo,
       previousOrderNo,
+      shipTo, // Include shipTo
     });
 
     // Send notification to creator, assignedUserId, and secondaryUserId
     const recipients = new Set(
       [createdBy, assignedUserId, secondaryUserId].filter((id) => id)
     );
+    const addressInfo =
+      shipTo && addressDetails
+        ? `, to be shipped to ${
+            addressDetails.address || "address ID " + shipTo
+          }`
+        : "";
     for (const recipientId of recipients) {
       await sendNotification({
         userId: recipientId,
         title: `New Order Created #${orderNo}`,
-        message: `Order #${orderNo} has been created for ${customer.name}.`,
+        message: `Order #${orderNo} has been created for ${customer.name}${addressInfo}.`,
       });
     }
 
@@ -628,7 +651,7 @@ exports.createOrder = async (req, res) => {
     await sendNotification({
       userId: ADMIN_USER_ID,
       title: `New Order Created #${orderNo}`,
-      message: `Order #${orderNo} created for ${customer.name} by ${user.name}.`,
+      message: `Order #${orderNo} created for ${customer.name} by ${user.name}${addressInfo}.`,
     });
 
     // If assigned to a team, notify team members
@@ -647,7 +670,7 @@ exports.createOrder = async (req, res) => {
         await sendNotification({
           userId: member.userId,
           title: `Order Assigned to Team #${orderNo}`,
-          message: `Order #${orderNo} has been assigned to your team for ${customer.name}.`,
+          message: `Order #${orderNo} has been assigned to your team for ${customer.name}${addressInfo}.`,
         });
       }
     }
@@ -701,6 +724,11 @@ exports.getAllOrders = async (req, res) => {
           as: "masterOrder",
           attributes: ["id", "orderNo"],
         },
+        {
+          model: Address,
+          as: "shippingAddress", // Alias for the association
+          attributes: ["addressId"], // Adjust attributes as needed
+        },
       ],
       order: [["createdAt", "DESC"]],
     });
@@ -713,7 +741,6 @@ exports.getAllOrders = async (req, res) => {
     return sendErrorResponse(res, 500, "Failed to fetch orders", err.message);
   }
 };
-
 // Get order details (no notification needed)
 exports.getOrderDetails = async (req, res) => {
   try {
@@ -765,6 +792,11 @@ exports.getOrderDetails = async (req, res) => {
           model: Order,
           as: "pipelineOrders",
           attributes: ["id", "orderNo"],
+        },
+        {
+          model: Address,
+          as: "shipToAddress",
+          attributes: ["addressId", "address"],
         },
       ],
     });
@@ -1041,6 +1073,11 @@ exports.orderById = async (req, res) => {
           model: Order,
           as: "pipelineOrders",
           attributes: ["id", "orderNo"],
+        },
+        {
+          model: Address,
+          as: "shipToAddress",
+          attributes: ["addressId", "address"],
         },
       ],
     });
@@ -1326,6 +1363,22 @@ exports.updateOrderById = async (req, res) => {
       }
     }
 
+    // Validate shipTo if provided
+    let addressDetails = null;
+    if (updates.shipTo !== undefined) {
+      if (updates.shipTo === null || updates.shipTo === "") {
+        updates.shipTo = null;
+      } else {
+        const address = await Address.findByPk(updates.shipTo);
+        if (!address) {
+          return res
+            .status(404)
+            .json({ message: `Address with ID ${updates.shipTo} not found` });
+        }
+        addressDetails = address.toJSON(); // Store for notification
+      }
+    }
+
     // Fetch customer for notification
     const customer = await Customer.findByPk(order.createdFor);
 
@@ -1340,13 +1393,21 @@ exports.updateOrderById = async (req, res) => {
         updates.secondaryUserId || order.secondaryUserId,
       ].filter((id) => id)
     );
+    const addressInfo =
+      updates.shipTo !== undefined && addressDetails
+        ? `, shipping updated to ${
+            addressDetails.address || "address ID " + updates.shipTo
+          }`
+        : updates.shipTo === null
+        ? ", shipping address removed"
+        : "";
     for (const recipientId of recipients) {
       await sendNotification({
         userId: recipientId,
         title: `Order Updated #${order.orderNo}`,
         message: `Order #${order.orderNo} for ${
           customer?.name || "Customer"
-        } has been updated.`,
+        } has been updated${addressInfo}.`,
       });
     }
 
@@ -1356,7 +1417,7 @@ exports.updateOrderById = async (req, res) => {
       title: `Order Updated #${order.orderNo}`,
       message: `Order #${order.orderNo} for ${
         customer?.name || "Customer"
-      } has been updated.`,
+      } has been updated${addressInfo}.`,
     });
 
     // If assignedTeamId is updated, notify team members
@@ -1382,7 +1443,7 @@ exports.updateOrderById = async (req, res) => {
             order.orderNo
           } has been assigned to your team for ${
             customer?.name || "Customer"
-          }.`,
+          }${addressInfo}.`,
         });
       }
     }
@@ -1407,6 +1468,7 @@ exports.draftOrder = async (req, res) => {
       products,
       masterPipelineNo,
       previousOrderNo,
+      shipTo, // Add shipTo
     } = req.body;
 
     if (!assignedTeamId) {
@@ -1511,6 +1573,20 @@ exports.draftOrder = async (req, res) => {
       }
     }
 
+    // Validate shipTo if provided
+    let addressDetails = null;
+    if (shipTo) {
+      const address = await Address.findByPk(shipTo);
+      if (!address) {
+        return sendErrorResponse(
+          res,
+          404,
+          `Address with ID ${shipTo} not found`
+        );
+      }
+      addressDetails = address.toJSON();
+    }
+
     // Generate unique orderNo for draft order
     const today = moment().format("DDMMYYYY");
     const todayOrders = await Order.findAll({
@@ -1532,13 +1608,20 @@ exports.draftOrder = async (req, res) => {
       masterPipelineNo,
       previousOrderNo,
       orderNo: parseInt(orderNo),
+      shipTo, // Include shipTo
     });
 
     // Send notification to admin
+    const addressInfo =
+      shipTo && addressDetails
+        ? `, to be shipped to ${
+            addressDetails.address || "address ID " + shipTo
+          }`
+        : "";
     await sendNotification({
       userId: ADMIN_USER_ID,
       title: `Draft Order Created #${orderNo}`,
-      message: `A draft order #${orderNo} has been created.`,
+      message: `A draft order #${orderNo} has been created${addressInfo}.`,
     });
 
     // Notify team members
@@ -1556,7 +1639,7 @@ exports.draftOrder = async (req, res) => {
       await sendNotification({
         userId: member.userId,
         title: `Draft Order Assigned to Team #${orderNo}`,
-        message: `Draft order #${orderNo} has been assigned to your team.`,
+        message: `Draft order #${orderNo} has been assigned to your team${addressInfo}.`,
       });
     }
 
@@ -1586,6 +1669,7 @@ exports.getFilteredOrders = async (req, res) => {
       limit = 10,
       masterPipelineNo,
       previousOrderNo,
+      shipTo, // Add shipTo filter
     } = req.query;
 
     const pageNum = parseInt(page);
@@ -1688,6 +1772,18 @@ exports.getFilteredOrders = async (req, res) => {
       filters.previousOrderNo = previousOrderNo;
     }
 
+    if (shipTo) {
+      const address = await Address.findByPk(shipTo);
+      if (!address) {
+        return sendErrorResponse(
+          res,
+          404,
+          `Address with ID ${shipTo} not found`
+        );
+      }
+      filters.shipTo = shipTo;
+    }
+
     const searchFilter = search
       ? {
           [Op.or]: [
@@ -1733,6 +1829,11 @@ exports.getFilteredOrders = async (req, res) => {
         model: Order,
         as: "masterOrder",
         attributes: ["id", "orderNo"],
+      },
+      {
+        model: Address,
+        as: "shipToAddress",
+        attributes: ["addressId", "address"],
       },
     ];
 
@@ -1791,7 +1892,15 @@ exports.updateOrderTeam = async (req, res) => {
       return sendErrorResponse(res, 400, "Order ID is required");
     }
 
-    const order = await Order.findByPk(id);
+    const order = await Order.findByPk(id, {
+      include: [
+        {
+          model: Address,
+          as: "shipToAddress",
+          attributes: ["addressId", "address"],
+        },
+      ],
+    });
     if (!order) {
       return sendErrorResponse(res, 404, "Order not found");
     }
@@ -1809,6 +1918,12 @@ exports.updateOrderTeam = async (req, res) => {
 
     // Fetch customer for notification
     const customer = await Customer.findByPk(order.createdFor);
+    const addressInfo =
+      order.shipTo && order.shipToAddress
+        ? `, to be shipped to ${
+            order.shipToAddress.address || "address ID " + order.shipTo
+          }`
+        : "";
 
     // Send notification to creator, assignedUserId, and secondaryUserId
     const recipients = new Set(
@@ -1822,7 +1937,7 @@ exports.updateOrderTeam = async (req, res) => {
         title: `Order Team Updated #${order.orderNo}`,
         message: `The team for order #${order.orderNo} for ${
           customer?.name || "Customer"
-        } has been updated.`,
+        }${addressInfo} has been updated.`,
       });
     }
 
@@ -1832,7 +1947,7 @@ exports.updateOrderTeam = async (req, res) => {
       title: `Order Team Updated #${order.orderNo}`,
       message: `The team for order #${order.orderNo} for ${
         customer?.name || "Customer"
-      } has been updated.`,
+      }${addressInfo} has been updated.`,
     });
 
     // Notify new team members if assignedTeamId changed
@@ -1855,7 +1970,7 @@ exports.updateOrderTeam = async (req, res) => {
             order.orderNo
           } has been assigned to your team for ${
             customer?.name || "Customer"
-          }.`,
+          }${addressInfo}.`,
         });
       }
     }

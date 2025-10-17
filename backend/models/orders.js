@@ -126,6 +126,19 @@ const Order = sequelize.define(
       type: DataTypes.STRING(20),
       allowNull: true,
     },
+    // ===============================
+    // SHIPPING ADDRESS
+    // ===============================
+    shipTo: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: "addresses",
+        key: "addressId",
+      },
+      onDelete: "SET NULL",
+      onUpdate: "CASCADE",
+    },
   },
   {
     tableName: "orders",

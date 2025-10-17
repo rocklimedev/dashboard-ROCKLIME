@@ -4,19 +4,35 @@ import AddSignature from "./AddSignature";
 import {
   useGetAllSignaturesQuery,
   useDeleteSignatureMutation,
+  useSetDefaultSignatureMutation,
+  useGetDefaultSignatureQuery,
+  useGetSignaturesByUserQuery,
 } from "../../api/signatureApi";
 import { toast } from "sonner";
 import { AiOutlineEdit } from "react-icons/ai";
 import { FcEmptyTrash } from "react-icons/fc";
+import { BsCheckCircle } from "react-icons/bs";
 
-const SignatureWrapper = () => {
-  const { data: signatures, error, isLoading } = useGetAllSignaturesQuery();
+const SignatureWrapper = ({ userId }) => {
+  // Fetch all signatures for current user by default
+  const {
+    data: signatures,
+    error,
+    isLoading,
+    refetch,
+  } = useGetSignaturesByUserQuery(userId);
+
   const [deleteSignature, { isLoading: isDeleting }] =
     useDeleteSignatureMutation();
+  const [setDefaultSignature, { isLoading: isSettingDefault }] =
+    useSetDefaultSignatureMutation();
+
   const [selectedSignature, setSelectedSignature] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
 
-  // Format signatures for tableData prop (if used in PageHeader)
+  // -------------------------------
+  // Format signatures for table/grid
+  // -------------------------------
   const formattedSignatures = (signatures || []).map((signature) => ({
     signatureId: signature.signatureId,
     signatureName: signature.signature_name || "N/A",
@@ -26,6 +42,9 @@ const SignatureWrapper = () => {
     createdAt: new Date(signature.createdAt).toLocaleString(),
   }));
 
+  // -------------------------------
+  // Handlers
+  // -------------------------------
   const handleAdd = () => {
     setSelectedSignature(null);
     setModalOpen(true);
@@ -40,21 +59,33 @@ const SignatureWrapper = () => {
     if (window.confirm("Are you sure you want to delete this signature?")) {
       try {
         await deleteSignature(signatureId).unwrap();
+        toast.success("Signature deleted successfully.");
+        refetch();
       } catch (error) {
-        toast.error(error?.data?.error || "Failed to delete signature.", {
-          position: "top-right",
-          autoClose: 5000,
-        });
+        toast.error(error?.data?.error || "Failed to delete signature.");
       }
     }
   };
 
+  const handleSetDefault = async (signatureId) => {
+    try {
+      await setDefaultSignature(signatureId).unwrap();
+      toast.success("Default signature updated successfully.");
+      refetch();
+    } catch (error) {
+      toast.error(error?.data?.error || "Failed to set default signature.");
+    }
+  };
+
+  // -------------------------------
+  // Render
+  // -------------------------------
   return (
     <div className="page-wrapper">
       <div className="content">
         <PageHeader
-          title="Signature"
-          subtitle="List of your all Signatures."
+          title="Signatures"
+          subtitle="Manage your signatures"
           onAdd={handleAdd}
           tableData={formattedSignatures}
         />
@@ -89,7 +120,13 @@ const SignatureWrapper = () => {
                             : "bg-secondary"
                         }`}
                       >
-                        {signature.mark_as_default ? "Default" : "Inactive"}
+                        {signature.mark_as_default ? (
+                          <>
+                            <BsCheckCircle /> Default
+                          </>
+                        ) : (
+                          "Inactive"
+                        )}
                       </span>
                     </div>
                   </div>
@@ -98,7 +135,7 @@ const SignatureWrapper = () => {
                       className="action-button"
                       onClick={() => handleEdit(signature)}
                       aria-label={`Edit signature ${signature.signature_name}`}
-                      disabled={isDeleting}
+                      disabled={isDeleting || isSettingDefault}
                     >
                       <AiOutlineEdit />
                     </button>
@@ -106,10 +143,20 @@ const SignatureWrapper = () => {
                       className="action-button"
                       onClick={() => handleDelete(signature.signatureId)}
                       aria-label={`Delete signature ${signature.signature_name}`}
-                      disabled={isDeleting}
+                      disabled={isDeleting || isSettingDefault}
                     >
                       <FcEmptyTrash />
                     </button>
+                    {!signature.mark_as_default && (
+                      <button
+                        className="action-button bg-info text-white"
+                        onClick={() => handleSetDefault(signature.signatureId)}
+                        aria-label={`Set signature ${signature.signature_name} as default`}
+                        disabled={isDeleting || isSettingDefault}
+                      >
+                        Set Default
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
