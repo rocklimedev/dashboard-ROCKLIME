@@ -141,19 +141,9 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
         key="profile-header"
         className="d-flex align-items-center p-3 profileset"
       >
-        <span className="menu-avatar-container me-2">
-          <Avatar
-            name={user?.user?.name || "John Smilga"}
-            src={user?.user?.profileImage || "/assets/img/profiles/avator1.jpg"}
-            size="50"
-            round={true}
-            className="circular-avatar"
-            color="#e31e24"
-          />
-        </span>
         <div>
           <h6 className="fw-medium mb-0">
-            {user?.user?.name || "John Smilga"}
+            @{user?.user?.username || "John Smilga"}
           </h6>
           <p className="mb-0">{user?.user?.roles?.join(", ") || "Admin"}</p>
         </div>
