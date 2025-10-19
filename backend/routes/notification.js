@@ -6,6 +6,7 @@ const {
   sendNotification,
 } = require("../controller/notificationController");
 const { auth } = require("../middleware/auth"); // Authentication Middleware
+
 // Get all notifications for the authenticated user
 router.get("/", auth, async (req, res) => {
   try {
@@ -18,7 +19,7 @@ router.get("/", auth, async (req, res) => {
 });
 
 // Mark a notification as read
-router.put("/:id/read", async (req, res) => {
+router.put("/:id/read", auth, async (req, res) => {
   try {
     const notification = await markAsRead(req.params.id);
     if (!notification) {
@@ -35,7 +36,7 @@ router.put("/:id/read", async (req, res) => {
   }
 });
 
-// Optional: Send a notification (e.g., for admin or testing purposes)
+// Send a notification (e.g., for admin or testing purposes)
 router.post("/", auth, async (req, res) => {
   try {
     const { userId, title, message } = req.body;

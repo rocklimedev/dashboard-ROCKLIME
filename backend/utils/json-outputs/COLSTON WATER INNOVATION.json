@@ -1,0 +1,33 @@
+{
+  "WALL HUNG WC": [],
+  "NICOLA": [],
+  "HERITAGE": [],
+  "BIDET WC": [],
+  "ELITE": [],
+  "WASH BASINS": [],
+  "HBX": [],
+  "RBX": [],
+  "SEMI PEDESTAL": [],
+  "COUNTER TOP": [],
+  "SLEEK": [],
+  "TEXTURE BASIN": [],
+  "SEMI RECESSED": [],
+  "COUPE COLLECTION": [],
+  "LAVA": [],
+  "THEO": [],
+  "ZEN SKIER": [],
+  "ROVER SHOWER COLLECTION": [
+    {
+      "Name": "ROVER BLACK - 920 * 420 mm",
+      "Code": "2034",
+      "Price": 79998,
+      "Image": "2034.jpg"
+    },
+    {
+      "Name": "ROVER CHROME - 920 * 420 mm",
+      "Code": "2035",
+      "Price": 69998,
+      "Image": "2035.jpg"
+    }
+  ]
+}

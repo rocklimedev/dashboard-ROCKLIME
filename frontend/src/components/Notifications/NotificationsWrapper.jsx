@@ -7,7 +7,7 @@ import { useAuth } from "../../context/AuthContext";
 import Avatar from "react-avatar";
 import { toast } from "sonner";
 import { formatDistanceToNow, parseISO } from "date-fns";
-import { Tooltip } from "antd"; // Import Ant Design Tooltip
+import { Tooltip } from "antd";
 
 const NotificationsWrapper = () => {
   const { auth } = useAuth();
@@ -17,7 +17,7 @@ const NotificationsWrapper = () => {
     data: notifications,
     isLoading,
     error,
-  } = useGetNotificationsQuery(userId, { skip: !userId });
+  } = useGetNotificationsQuery(undefined, { skip: !userId });
 
   const [markNotificationAsRead] = useMarkNotificationAsReadMutation();
 
@@ -28,16 +28,6 @@ const NotificationsWrapper = () => {
       toast.error("Failed to mark notification as read");
     }
   };
-
-  // Placeholder names for fallback
-  const placeholderNames = [
-    "Elwis Mathew",
-    "Elizabeth Olsen",
-    "William Smith",
-    "Lesley Grauer",
-    "Carl Evans",
-    "Minerva Rameriz",
-  ];
 
   return (
     <div className="page-wrapper">
@@ -78,15 +68,12 @@ const NotificationsWrapper = () => {
                   <div className="d-flex align-items-center">
                     <div className="d-flex me-2">
                       <a
-                        href={`/u/${notification.userId || "profile"}`}
+                        href={`/u/${notification.userId?._id || "profile"}`}
                         className="avatar avatar-lg avatar-rounded"
                       >
                         <Avatar
-                          name={
-                            placeholderNames[index % placeholderNames.length] ||
-                            "Unknown User"
-                          }
-                          src={notification.profileImage} // Use profileImage if available
+                          name={notification.userId?.username || "Unknown User"}
+                          src={notification.userId?.profileImage}
                           size="40"
                           round={true}
                           className="circular-avatar"
@@ -98,11 +85,10 @@ const NotificationsWrapper = () => {
                     <div className="flex-fill ml-3">
                       <p className="text-sm lh-140 mb-0">
                         <a
-                          href={`/u/${notification.userId || "profile"}`}
+                          href={`/u/${notification.userId?._id || "profile"}`}
                           className="h6"
                         >
-                          {placeholderNames[index % placeholderNames.length] ||
-                            "Unknown User"}
+                          {notification.userId?.username || "Unknown User"}
                         </a>{" "}
                         <span>{notification.title}</span>{" "}
                         <a href="javascript:void(0);" className="h6">

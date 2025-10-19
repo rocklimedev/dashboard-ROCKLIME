@@ -1,10 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useGetTeamByIdQuery } from "../../api/teamApi";
-import {
-  useGetCustomersQuery,
-  useGetCustomerByIdQuery,
-} from "../../api/customerApi";
 import {
   useGetOrderDetailsQuery,
   useAddCommentMutation,
@@ -13,20 +8,50 @@ import {
   useDeleteOrderMutation,
   useUpdateOrderStatusMutation,
   useUploadInvoiceMutation,
-  orderApi,
 } from "../../api/orderApi";
+import {
+  useGetCustomerByIdQuery,
+  useGetCustomersQuery,
+} from "../../api/customerApi";
+import { useGetAllAddressesQuery } from "../../api/addressApi";
 import { useGetAllTeamsQuery } from "../../api/teamApi";
 import { useGetProfileQuery } from "../../api/userApi";
-import { Dropdown, Form, Button, Spinner, Alert } from "react-bootstrap";
-import { BsThreeDotsVertical } from "react-icons/bs";
+import {
+  Button,
+  Form,
+  Input,
+  Spin,
+  Alert,
+  Dropdown,
+  Menu,
+  Row,
+  Col,
+  Card,
+  Table,
+  Space,
+  Typography,
+  Upload,
+  Badge,
+} from "antd";
+import {
+  EllipsisOutlined,
+  UserOutlined,
+  MailOutlined,
+  PhoneOutlined,
+  EditOutlined,
+} from "@ant-design/icons";
 import { toast } from "sonner";
-import AddNewOrder from "./AddNewOrder";
 import { Document, Page, pdfjs } from "react-pdf";
+import useProductsData from "../../data/useProductdata";
+import AddAddress from "../Address/AddAddressModal";
+import "./orderpage.css";
 
-// Dynamically use the pdfjs version installed with react-pdf
-pdfjs.GlobalWorkerOptions.workerSrc = `${process.env.PUBLIC_URL}/pdf.worker.min.js`;
+// Set PDF.js worker
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
 
-// CommentRow Component
+const { Text, Title } = Typography;
+
+// Updated CommentRow Component
 const CommentRow = ({ comment, onDelete, currentUserId }) => {
   const isCurrentUser = comment.userId === currentUserId;
   const userInitial = comment.user?.name
@@ -35,58 +60,69 @@ const CommentRow = ({ comment, onDelete, currentUserId }) => {
 
   return (
     <div
-      className={`d-flex mb-3 ${
-        isCurrentUser ? "justify-content-end" : "justify-content-start"
-      } chat-bubble`}
+      className={`comment-row ${isCurrentUser ? "comment-row--own" : ""}`}
+      style={{
+        display: "flex",
+        marginBottom: 12,
+        justifyContent: isCurrentUser ? "flex-end" : "flex-start",
+        padding: "0 8px",
+      }}
     >
       <div
-        className={`d-flex align-items-start ${
-          isCurrentUser ? "flex-row-reverse" : ""
-        }`}
-        style={{ maxWidth: "70%" }}
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          maxWidth: "80%",
+          flexDirection: isCurrentUser ? "row-reverse" : "row",
+        }}
       >
-        {/* Avatar */}
+        <div className="avatar">{userInitial}</div>
         <div
-          className="avatar bg-secondary text-white"
-          style={{ fontSize: "1.2rem" }}
+          className="comment-bubble"
+          style={{
+            background: isCurrentUser ? "#1890ff" : "#f0f2f5",
+            color: isCurrentUser ? "#fff" : "#000",
+            borderRadius: 12,
+            padding: "8px 12px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          }}
         >
-          {userInitial}
-        </div>
-        {/* Chat Bubble */}
-        <div
-          className={`card border-0 shadow-sm ${
-            isCurrentUser ? "bg-primary text-white" : "bg-light"
-          }`}
-        >
-          <div className="card-body">
-            <div className="d-flex justify-content-between align-items-center mb-1">
-              <strong>{comment.user?.name || "Unknown User"}</strong>
-              {isCurrentUser && (
-                <Button
-                  variant="link"
-                  className={`p-0 ${
-                    isCurrentUser ? "text-white" : "text-danger"
-                  }`}
-                  onClick={() => onDelete(comment._id)}
-                  aria-label={`Delete comment by ${
-                    comment.user?.username || "user"
-                  }`}
-                >
-                  Delete
-                </Button>
-              )}
-            </div>
-            <p className="mb-1">{comment.comment}</p>
-            <small
-              className={`text-muted ${isCurrentUser ? "text-white-50" : ""}`}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 4,
+            }}
+          >
+            <Text strong>{comment.user?.name || "Unknown User"}</Text>
+            {isCurrentUser && (
+              <Button
+                type="link"
+                danger
+                style={{
+                  color: isCurrentUser ? "#fff" : "#ff4d4f",
+                  padding: 0,
+                  fontSize: "0.85rem",
+                }}
+                onClick={() => onDelete(comment._id)}
+              >
+                Delete
+              </Button>
+            )}
+          </div>
+          <Text>{comment.comment}</Text>
+          <div>
+            <Text
+              type={isCurrentUser ? "secondary" : "default"}
+              style={{ fontSize: "0.75rem", display: "block", marginTop: 4 }}
             >
               {new Date(comment.createdAt).toLocaleTimeString([], {
                 hour: "2-digit",
                 minute: "2-digit",
-              })}
-              {" • "}
-              {new Date(comment.createdAt).toLocaleDateString()}
-            </small>
+              })}{" "}
+              • {new Date(comment.createdAt).toLocaleDateString()}
+            </Text>
           </div>
         </div>
       </div>
@@ -105,24 +141,23 @@ const OrderPage = () => {
   const [uploadInvoice, { isLoading: isUploading }] =
     useUploadInvoiceMutation();
   const [teamMap, setTeamMap] = useState({});
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState(null);
   const [newComment, setNewComment] = useState("");
   const [commentPage, setCommentPage] = useState(1);
   const [invoiceFile, setInvoiceFile] = useState(null);
   const [pdfPageNum, setPdfPageNum] = useState(1);
   const [numPages, setNumPages] = useState(null);
+  const [isBillingModalVisible, setIsBillingModalVisible] = useState(false);
+  const [isShippingModalVisible, setIsShippingModalVisible] = useState(false);
   const commentLimit = 10;
 
-  // Fetch current user profile
+  // Fetch data (unchanged)
   const {
     data: profileData,
     isLoading: profileLoading,
     error: profileError,
   } = useGetProfileQuery();
   const user = profileData?.user || {};
-  const { data: customersData } = useGetCustomersQuery();
-  // Fetch order details
+
   const {
     data: orderData,
     isLoading: orderLoading,
@@ -131,7 +166,6 @@ const OrderPage = () => {
   } = useGetOrderDetailsQuery(id);
   const order = orderData?.order || {};
 
-  // Fetch comments
   const {
     data: commentData,
     isLoading: commentLoading,
@@ -146,21 +180,131 @@ const OrderPage = () => {
     { skip: !id }
   );
 
-  // Fetch customer
-  const { data: customerData } = useGetCustomerByIdQuery(order.createdFor, {
+  const {
+    data: customerData,
+    isLoading: customerLoading,
+    error: customerError,
+  } = useGetCustomerByIdQuery(order.createdFor, {
     skip: !order.createdFor,
   });
+  const customer = customerData?.data || customerData || {};
+
+  const {
+    data: addressesData,
+    isLoading: addressesLoading,
+    error: addressesError,
+    refetch: refetchAddresses,
+  } = useGetAllAddressesQuery(
+    { customerId: order.createdFor },
+    { skip: !order.createdFor }
+  );
+
   const {
     data: teamData,
     isLoading: teamLoading,
     error: teamError,
   } = useGetAllTeamsQuery();
+  const { data: customersData } = useGetCustomersQuery();
 
-  // Parse comments
+  // Product and other data processing (unchanged)
+  const products = useMemo(() => {
+    try {
+      if (!order.products) return [];
+      return Array.isArray(order.products) ? order.products : [];
+    } catch (error) {
+      console.error("Error parsing order products:", error);
+      return [];
+    }
+  }, [order.products]);
+
+  const productInputs = useMemo(
+    () =>
+      products.map((product) => ({
+        productId: product.id,
+        price: product.price || 0,
+        total: product.total || 0,
+        discount: product.discount || 0,
+        quantity: product.quantity || 1,
+      })),
+    [products]
+  );
+
+  const {
+    productsData,
+    errors: productErrors,
+    loading: productsLoading,
+  } = useProductsData(productInputs);
+
+  useEffect(() => {
+    if (productErrors.length > 0) {
+      productErrors.forEach(({ productId, error }) => {
+        toast.error(`Failed to fetch product ${productId}: ${error}`);
+      });
+    }
+  }, [productErrors]);
+
+  const mergedProducts = useMemo(() => {
+    return productInputs.map((orderProduct) => {
+      const productDetail =
+        productsData.find((p) => p.productId === orderProduct.productId) || {};
+
+      let imageUrl = "https://via.placeholder.com/60";
+      try {
+        if (productDetail.images) {
+          const imgs = JSON.parse(productDetail.images);
+          imageUrl =
+            Array.isArray(imgs) && imgs.length > 0 ? imgs[0] : imageUrl;
+        }
+      } catch {
+        // Fallback to placeholder
+      }
+
+      let brandName = "N/A";
+      if (productDetail.brandName) {
+        brandName = productDetail.brandName;
+      } else if (productDetail.metaDetails) {
+        const brandMeta = productDetail.metaDetails.find(
+          (m) => m.title === "brandName" || m.title === "brand"
+        );
+        brandName = brandMeta?.value || "N/A";
+      }
+
+      if (
+        /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
+          brandName
+        )
+      ) {
+        brandName = "N/A";
+      }
+
+      const productCode =
+        productDetail?.product_code ||
+        productDetail?.meta?.d11da9f9_3f2e_4536_8236_9671200cca4a ||
+        "N/A";
+
+      const sellingPrice =
+        productDetail.metaDetails?.find((m) => m.title === "Selling Price")
+          ?.value ||
+        orderProduct.price ||
+        0;
+
+      return {
+        productId: orderProduct.productId,
+        price: sellingPrice,
+        total: orderProduct.total || sellingPrice * orderProduct.quantity,
+        discount: orderProduct.discount || 0,
+        quantity: orderProduct.quantity,
+        name: productDetail?.name || orderProduct.name || "Unnamed Product",
+        brand: brandName,
+        sku: productCode,
+        image: imageUrl,
+      };
+    });
+  }, [productsData, productInputs]);
+
   const comments = useMemo(() => commentData?.comments || [], [commentData]);
   const totalComments = commentData?.totalCount || 0;
 
-  // Maps for customer, user, and team
   useEffect(() => {
     if (customersData?.data) {
       const map = customersData.data.reduce((acc, customer) => {
@@ -193,29 +337,25 @@ const OrderPage = () => {
     return map;
   }, [teamData]);
 
-  const normalizedTeamMembers = useMemo(() => {
-    if (!order.assignedTo || !teamData?.teams) return [];
-    const teamIds = order.assignedTo.split(",").map((id) => id.trim());
-    return teamIds
-      .map((teamId) => {
-        const team = teamData.teams.find((t) => t.id === teamId);
-        if (!team) return null;
-        return {
-          teamId: team.id,
-          teamName: team.teamName || "Unknown Team",
-          members: team.teammembers.map((member) => ({
-            name: member.userName || "Unknown",
-            role: member.roleName || "N/A",
-            email: member.email || "N/A",
-          })),
-        };
-      })
-      .filter((team) => team !== null);
-  }, [order.assignedTo, teamData]);
+  const billingAddress = useMemo(
+    () =>
+      addressesData?.find(
+        (addr) =>
+          addr.status === "BILLING" && addr.customerId === order.createdFor
+      ) || null,
+    [addressesData, order.createdFor]
+  );
 
-  // Handle file selection
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
+  const shippingAddress = useMemo(
+    () =>
+      addressesData?.find(
+        (addr) =>
+          addr.status === "SHIPPING" && addr.customerId === order.createdFor
+      ) || null,
+    [addressesData, order.createdFor]
+  );
+
+  const handleFileChange = ({ file }) => {
     if (file && file.type === "application/pdf") {
       setInvoiceFile(file);
     } else {
@@ -223,9 +363,7 @@ const OrderPage = () => {
     }
   };
 
-  // Handle invoice upload form submission
-  const handleInvoiceFormSubmit = async (e) => {
-    e.preventDefault();
+  const handleInvoiceFormSubmit = async () => {
     if (!invoiceFile) {
       toast.error("Please select a PDF file to upload.");
       return;
@@ -238,11 +376,10 @@ const OrderPage = () => {
     try {
       const formData = new FormData();
       formData.append("invoice", invoiceFile);
-      const response = await uploadInvoice({ orderId: id, formData }).unwrap();
-
+      await uploadInvoice({ orderId: id, formData }).unwrap();
       setInvoiceFile(null);
-      document.getElementById("invoiceUpload").value = null;
-      refetchOrder();
+      await refetchOrder();
+      toast.success("Invoice uploaded successfully.");
     } catch (err) {
       toast.error(
         `Upload error: ${err.data?.message || "Failed to upload invoice"}`
@@ -250,7 +387,6 @@ const OrderPage = () => {
     }
   };
 
-  // PDF viewer controls
   const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
     setPdfPageNum(1);
@@ -264,7 +400,6 @@ const OrderPage = () => {
     if (window.confirm("Are you sure you want to delete this order?")) {
       try {
         await deleteOrder(id).unwrap();
-
         navigate("/orders/list");
       } catch (err) {
         toast.error(
@@ -277,7 +412,6 @@ const OrderPage = () => {
   const handleHoldOrder = async () => {
     try {
       await updateOrderStatus({ id, status: "ONHOLD" }).unwrap();
-
       refetchOrder();
     } catch (err) {
       toast.error(
@@ -288,13 +422,7 @@ const OrderPage = () => {
     }
   };
 
-  const handleModalClose = () => {
-    setSelectedOrder(null);
-    setShowEditModal(false);
-  };
-
-  const handleAddComment = async (e) => {
-    e.preventDefault();
+  const handleAddComment = async () => {
     if (!newComment.trim()) {
       toast.error("Comment cannot be empty");
       return;
@@ -312,7 +440,6 @@ const OrderPage = () => {
         userId: user.userId,
         comment: newComment,
       }).unwrap();
-
       setNewComment("");
     } catch (err) {
       const errorMessage =
@@ -350,349 +477,689 @@ const OrderPage = () => {
     }
   };
 
-  // Construct PDF URL
+  const handleAddressSave = async () => {
+    await refetchAddresses();
+    toast.success("Address saved successfully.");
+  };
+
+  const handleBillingModalClose = () => {
+    setIsBillingModalVisible(false);
+  };
+
+  const handleShippingModalClose = () => {
+    setIsShippingModalVisible(false);
+  };
+
   const pdfUrl =
-    order.status === "INVOICE" && order.invoiceLink && order.invoiceLink !== ""
+    order.invoiceLink && order.invoiceLink !== ""
       ? order.invoiceLink.startsWith("http")
         ? order.invoiceLink
         : `${process.env.REACT_APP_FTP_BASE_URL}${order.invoiceLink}`
       : null;
 
-  // Redirect to login if not authenticated
   if (profileError && profileError.status === 401) {
     toast.error("Please log in to access this page.");
     navigate("/login");
     return null;
   }
 
-  if (profileLoading || orderLoading || teamLoading) {
+  if (
+    profileLoading ||
+    orderLoading ||
+    teamLoading ||
+    productsLoading ||
+    customerLoading ||
+    addressesLoading
+  ) {
     return (
-      <div
-        className="page-wrapper notes-page-wrapper d-flex justify-content-center align-items-center"
-        style={{ minHeight: "100vh" }}
-      >
-        <Spinner animation="border" /> <span className="ms-2">Loading...</span>
+      <div className="loading-container">
+        <Spin /> <Text style={{ marginLeft: 8 }}>Loading...</Text>
       </div>
     );
   }
 
-  if (profileError || orderError || teamError) {
+  if (
+    profileError ||
+    orderError ||
+    teamError ||
+    customerError ||
+    addressesError ||
+    productErrors.length > 0
+  ) {
     return (
-      <div
-        className="page-wrapper notes-page-wrapper d-flex justify-content-center align-items-center"
-        style={{ minHeight: "100vh" }}
-      >
-        <Alert variant="danger">
-          {profileError?.data?.message ||
+      <div className="error-container">
+        <Alert
+          message={
+            profileError?.data?.message ||
             orderError?.data?.message ||
             teamError?.data?.message ||
-            "Error loading data. Please try again."}
-        </Alert>
+            customerError?.data?.message ||
+            addressesError?.data?.message ||
+            productErrors.map((err) => err.error).join(", ") ||
+            "Error loading data. Please try again."
+          }
+          type="error"
+        />
       </div>
     );
   }
+
+  const subTotal = mergedProducts.reduce(
+    (acc, product) => acc + product.total,
+    0
+  );
+  const discount = mergedProducts.reduce(
+    (acc, product) => acc + product.discount,
+    0
+  );
+  const vat = subTotal * 0.1;
+  const total = subTotal - discount + vat;
+
+  const totalOrders = customerData?.invoices?.length || 0;
+
+  const menu = (
+    <Menu>
+      <Menu.Item key="edit" onClick={handleEditOrder}>
+        Edit Order
+      </Menu.Item>
+      <Menu.Item key="delete" danger onClick={handleDeleteOrder}>
+        Delete
+      </Menu.Item>
+      <Menu.Item key="hold" onClick={handleHoldOrder}>
+        Put on Hold
+      </Menu.Item>
+    </Menu>
+  );
+
+  const columns = [
+    {
+      title: "Product",
+      dataIndex: "product",
+      key: "product",
+      render: (_, record) => (
+        <div className="product-cell">
+          <img
+            src={record.image}
+            alt={record.name}
+            className="product-image"
+            onError={(e) => {
+              e.target.src = "https://via.placeholder.com/60";
+            }}
+          />
+          <div>
+            <Text strong>{record.name}</Text>
+          </div>
+        </div>
+      ),
+    },
+    {
+      title: "SKU",
+      dataIndex: "sku",
+      key: "sku",
+      render: (sku) => <Text type="secondary">{sku}</Text>,
+    },
+    {
+      title: "Quantity",
+      dataIndex: "quantity",
+      key: "quantity",
+      align: "center",
+      render: (quantity) => quantity || 1,
+    },
+    {
+      title: "Price Per Unit",
+      dataIndex: "price",
+      key: "price",
+      render: (price) => `₹${price.toFixed(2)}`,
+    },
+    {
+      title: "Total",
+      dataIndex: "total",
+      key: "total",
+      align: "right",
+      render: (total) => `₹${total.toFixed(2)}`,
+    },
+  ];
 
   return (
     <div className="page-wrapper">
       <div className="content">
-        {/* Page Header */}
-        <div className="page-header d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-4">
-          <div className="page-title">
-            <h4 className="mb-2">Orders</h4>
-            <h6 className="text-muted mb-0">Manage your orders</h6>
-          </div>
-          <Button
-            variant="primary"
-            onClick={() => navigate("/orders/list")}
-            className="mt-2 mt-sm-0"
-          >
-            Back to Orders
-          </Button>
-        </div>
-
-        <div className="row g-4">
-          {/* Order Details Card */}
-          <div className="col-lg-6 col-md-12">
-            <div className="card border-0 rounded-3 shadow-sm">
-              <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                <h5 className="mb-0">🧾 Order Details</h5>
-                <Dropdown align="end">
-                  <Dropdown.Toggle
-                    variant="link"
-                    className="text-white p-0"
-                    aria-label="Order actions"
+        <div className="container-fluid">
+          <Row gutter={[16, 16]}>
+            <Col xs={24} lg={16} xxl={18}>
+              <Row gutter={[16, 16]}>
+                <Col xs={24}>
+                  <Card
+                    title={
+                      <Space>
+                        <Title level={5} style={{ margin: 0 }}>
+                          Order #{order.orderNo}
+                        </Title>
+                        <Dropdown overlay={menu} trigger={["click"]}>
+                          <Button
+                            type="text"
+                            icon={<EllipsisOutlined />}
+                            aria-label="Order actions"
+                          />
+                        </Dropdown>
+                      </Space>
+                    }
+                    className="order-card"
                   >
-                    <BsThreeDotsVertical />
-                  </Dropdown.Toggle>
-                  <Dropdown.Menu>
-                    <Dropdown.Item onClick={handleEditOrder}>
-                      Edit
-                    </Dropdown.Item>
-                    <Dropdown.Item
-                      onClick={handleDeleteOrder}
-                      className="text-danger"
-                    >
-                      Delete
-                    </Dropdown.Item>
-                    <Dropdown.Item onClick={handleHoldOrder}>
-                      Put on Hold
-                    </Dropdown.Item>
-                  </Dropdown.Menu>
-                </Dropdown>
-              </div>
-              <div className="card-body">
-                <div className="row g-3">
-                  <div className="col-6">
-                    <small className="text-muted d-block mb-1">Title</small>
-                    <p className="fw-semibold mb-0">{order.title || "N/A"}</p>
-                  </div>
-                  <div className="col-6">
-                    <small className="text-muted d-block mb-1">Status</small>
-                    <span className="badge bg-info text-white">
-                      {order.status || "N/A"}
-                    </span>
-                  </div>
-                  <div className="col-6">
-                    <small className="text-muted d-block mb-1">Customer</small>
-                    <p className="mb-0">
-                      {order.createdFor
-                        ? customerMap[order.createdFor] || "Loading..."
-                        : "N/A"}
-                    </p>
-                  </div>
-                  <div className="col-6">
-                    <small className="text-muted d-block mb-1">Due Date</small>
-                    <p className="mb-0">
-                      {order.dueDate
-                        ? new Date(order.dueDate).toLocaleDateString()
-                        : "N/A"}
-                    </p>
-                  </div>
-                  <div className="col-6">
-                    <small className="text-muted d-block mb-1">Priority</small>
-                    <span className="badge bg-warning text-dark">
-                      {order.priority || "N/A"}
-                    </span>
-                  </div>
-                  <div className="col-12">
-                    <small className="text-muted d-block mb-1">
-                      Description
-                    </small>
-                    <p className="mb-0">{order.description || "N/A"}</p>
-                  </div>
-                  <div className="col-6">
-                    <small className="text-muted d-block mb-1">
-                      Assigned To
-                    </small>
-                    <p className="mb-0">
-                      {order.assignedTo
-                        ? teamMap[order.assignedTo] || "—"
-                        : "—"}
-                    </p>
-                  </div>
-                  <div className="col-6">
-                    <small className="text-muted d-block mb-1">Pipeline</small>
-                    <p className="mb-0">{order.pipeline || "N/A"}</p>
-                  </div>
-                  <div className="col-6">
-                    <small className="text-muted d-block mb-1">Source</small>
-                    <p className="mb-0">{order.source || "N/A"}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Invoice Upload and Viewer */}
-          <div className="col-lg-6 col-md-12">
-            <div className="card border-0 rounded-3 shadow-sm">
-              <div className="card-header bg-success text-white">
-                <h5 className="mb-0">📄 Invoice</h5>
-              </div>
-              <div className="card-body">
-                {/* Invoice Upload Form */}
-                {/* Invoice Upload Form */}
-                <Form onSubmit={handleInvoiceFormSubmit} className="mb-4">
-                  <Form.Group controlId="invoiceUpload" className="mb-3">
-                    <Form.Label>Upload Invoice (PDF only)</Form.Label>
-                    <Form.Control
-                      type="file"
-                      accept="application/pdf"
-                      onChange={handleFileChange}
-                      disabled={isUploading} // Only disable during upload
-                      className="rounded-3"
-                      aria-describedby="invoiceUploadHelp"
+                    <Table
+                      columns={columns}
+                      dataSource={mergedProducts}
+                      pagination={false}
+                      rowKey={(record) => record.productId}
+                      className="product-table"
+                      scroll={{ x: "max-content" }} // Enable horizontal scroll on small screens
+                      footer={() => (
+                        <div className="table-footer">
+                          <table>
+                            <tbody>
+                              <tr>
+                                <td>Sub Total:</td>
+                                <td>
+                                  <Text strong>₹{subTotal.toFixed(2)}</Text>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td>Avail Discount:</td>
+                                <td>
+                                  <Text strong>-₹{discount.toFixed(2)}</Text>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td>Vat:</td>
+                                <td>
+                                  <Text strong>₹{vat.toFixed(2)}</Text>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td>Total:</td>
+                                <td>
+                                  <Text strong className="total-amount">
+                                    ₹{total.toFixed(2)}
+                                  </Text>
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
                     />
-                    <Form.Text id="invoiceUploadHelp" muted>
-                      Upload a PDF invoice.
-                    </Form.Text>
-                  </Form.Group>
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    className="rounded-3"
-                    disabled={!invoiceFile || isUploading} // Disable if no file or uploading
+                  </Card>
+                </Col>
+
+                <Col xs={24} md={12} xl={14}>
+                  <Card title="Order Activity" className="activity-card">
+                    <ul className="activity-list">
+                      <li>
+                        <Row justify="space-between">
+                          <Col xs={24} sm={12}>
+                            <Text strong>Order Placed</Text>
+                            <div>
+                              <Text type="secondary">
+                                Order successfully placed and awaiting
+                                processing.
+                              </Text>
+                            </div>
+                          </Col>
+                          <Col xs={24} sm={12} className="activity-time">
+                            <Text>
+                              {new Date(order.createdAt).toLocaleDateString()}
+                            </Text>
+                            <br />
+                            <Text type="secondary">
+                              {new Date(order.createdAt).toLocaleTimeString(
+                                [],
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                }
+                              )}
+                            </Text>
+                          </Col>
+                        </Row>
+                      </li>
+                      {order.status === "CREATED" && (
+                        <li className="activity-pending">
+                          <Row justify="space-between">
+                            <Col xs={24} sm={12}>
+                              <Text strong>Payment Confirmed</Text>
+                              <div style={{ display: "none" }}>
+                                <Text type="secondary">
+                                  Payment successfully processed.
+                                </Text>
+                              </div>
+                            </Col>
+                            <Col
+                              xs={24}
+                              sm={12}
+                              className="activity-time"
+                              style={{ display: "none" }}
+                            >
+                              <Text>-</Text>
+                              <br />
+                              <Text type="secondary">-</Text>
+                            </Col>
+                          </Row>
+                        </li>
+                      )}
+                    </ul>
+                  </Card>
+                </Col>
+
+                <Col xs={24} md={12} xl={10}>
+                  <Card
+                    title="Billing Address"
+                    extra={
+                      <Button
+                        type="primary"
+                        ghost
+                        icon={<EditOutlined />}
+                        onClick={() => setIsBillingModalVisible(true)}
+                      >
+                        {billingAddress ? "Edit" : "Add"}
+                      </Button>
+                    }
+                    className="address-card"
                   >
-                    {isUploading ? (
-                      <Spinner animation="border" size="sm" className="me-2" />
-                    ) : null}
+                    {billingAddress ? (
+                      <>
+                        <Text strong className="address-name">
+                          {customer.name || "N/A"}
+                        </Text>
+                        <ul className="address-list">
+                          <li>{billingAddress.street || "N/A"}</li>
+                          <li>
+                            {billingAddress.city}, {billingAddress.state}{" "}
+                            {billingAddress.postalCode || billingAddress.zip}
+                          </li>
+                          <li>{billingAddress.country || "India"}</li>
+                          <li>{customer.mobileNumber || "N/A"}</li>
+                        </ul>
+                      </>
+                    ) : (
+                      <Text type="secondary">No billing address available</Text>
+                    )}
+                  </Card>
+                  <Card
+                    title="Shipping Address"
+                    extra={
+                      <Button
+                        type="primary"
+                        ghost
+                        icon={<EditOutlined />}
+                        onClick={() => setIsShippingModalVisible(true)}
+                      >
+                        {shippingAddress ? "Edit" : "Add"}
+                      </Button>
+                    }
+                    className="address-card"
+                  >
+                    {shippingAddress ? (
+                      <>
+                        <Text strong className="address-name">
+                          {customerData?.name || "N/A"}
+                        </Text>
+                        <ul className="address-list">
+                          <li>{shippingAddress.street || "N/A"}</li>
+                          <li>
+                            {shippingAddress.city}, {shippingAddress.state}{" "}
+                            {shippingAddress.postalCode}
+                          </li>
+                          <li>{shippingAddress.country || "India"}</li>
+                          <li>{customerData?.mobileNumber || "N/A"}</li>
+                        </ul>
+                      </>
+                    ) : (
+                      <Text type="secondary">
+                        No shipping address available
+                      </Text>
+                    )}
+                    <Text strong className="payment-method-title">
+                      Payment Method
+                    </Text>
+                    <Text>{customerData?.paymentMode || "N/A"}</Text>
+                  </Card>
+                </Col>
+              </Row>
+            </Col>
+
+            <Col xs={24} lg={8} xxl={6}>
+              <Row gutter={[16, 16]}>
+                <Col xs={24}>
+                  <Card
+                    title="Customer Details"
+                    extra={
+                      <Badge
+                        count={`${totalOrders} Orders`}
+                        style={{ backgroundColor: "#1890ff" }}
+                      />
+                    }
+                    className="customer-card"
+                  >
+                    <ul className="customer-details">
+                      <li>
+                        <Text type="secondary">
+                          <UserOutlined className="icon" />
+                          Full Name
+                        </Text>
+                        <Space>
+                          <div className="avatar small">
+                            {customer.name?.[0]?.toUpperCase() || "N/A"}
+                          </div>
+                          <Text strong>{customer.name || "N/A"}</Text>
+                        </Space>
+                      </li>
+                      <li>
+                        <Text type="secondary">
+                          <MailOutlined className="icon" />
+                          Email
+                        </Text>
+                        <Text strong>
+                          <a href={`mailto:${customer.email || "N/A"}`}>
+                            {customer.email || "N/A"}
+                          </a>
+                        </Text>
+                      </li>
+                      <li>
+                        <Text type="secondary">
+                          <PhoneOutlined className="icon" />
+                          Phone
+                        </Text>
+                        <Text strong>{customer.mobileNumber || "N/A"}</Text>
+                      </li>
+                    </ul>
+                  </Card>
+                </Col>
+                <Col xs={24}>
+                  <Card title="Payment Details" className="payment-card">
+                    <ul className="payment-details">
+                      <li>
+                        <Text type="secondary">Order ID</Text>
+                        <Text strong>{order.orderNo || "N/A"}</Text>
+                      </li>
+                      <li>
+                        <Text type="secondary">Payment Method</Text>
+                        <Text strong>{customerData?.paymentMode || "N/A"}</Text>
+                      </li>
+                      <li>
+                        <Text type="secondary">Card Number</Text>
+                        <Text strong>
+                          {customerData?.paymentMode === "Credit Card"
+                            ? "**** **** **** 1234"
+                            : "N/A"}
+                        </Text>
+                      </li>
+                      <li>
+                        <Text type="secondary">Payment Status</Text>
+                        <Badge
+                          status={
+                            order.status === "CREATED" ? "warning" : "success"
+                          }
+                          text={
+                            order.status === "CREATED" ? "Pending" : "Completed"
+                          }
+                        />
+                      </li>
+                      <li>
+                        <Text type="secondary">Amount Paid</Text>
+                        <Text strong>
+                          ₹{customerData?.paidAmount?.toFixed(2) || "0.00"}
+                        </Text>
+                      </li>
+                      <li>
+                        <Text type="secondary">Payment Date</Text>
+                        <Text strong>
+                          {order.createdAt
+                            ? new Date(order.createdAt).toLocaleString()
+                            : "N/A"}
+                        </Text>
+                      </li>
+                    </ul>
+                  </Card>
+                </Col>
+              </Row>
+            </Col>
+          </Row>
+
+          <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
+            <Col xs={24}>
+              <Card title="📄 Invoice" className="invoice-card">
+                <Form onFinish={handleInvoiceFormSubmit} layout="vertical">
+                  <Form.Item label="Upload Invoice (PDF only)" name="invoice">
+                    <Upload
+                      accept="application/pdf"
+                      beforeUpload={() => false}
+                      onChange={handleFileChange}
+                      fileList={
+                        invoiceFile
+                          ? [
+                              {
+                                uid: "-1",
+                                name: invoiceFile.name,
+                                status: "done",
+                              },
+                            ]
+                          : []
+                      }
+                      disabled={isUploading}
+                    >
+                      <Button>Choose File</Button>
+                    </Upload>
+                    <Text type="secondary" className="upload-hint">
+                      Upload a PDF invoice.
+                    </Text>
+                  </Form.Item>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    disabled={!invoiceFile || isUploading}
+                    loading={isUploading}
+                  >
                     Upload Invoice
                   </Button>
                 </Form>
-                {/* Invoice Display */}
-                {/* Invoice Display */}
-                {order.invoiceLink && order.invoiceLink !== "" ? (
-                  <div className="d-flex align-items-center p-3 border rounded-3 bg-light shadow-sm">
-                    <span
-                      style={{
-                        fontSize: "2rem",
-                        color: "#d9534f",
-                        marginRight: "10px",
-                      }}
-                    >
-                      📄
-                    </span>
-                    <div style={{ flexGrow: 1 }}>
-                      <strong>
+                {pdfUrl ? (
+                  <div className="pdf-viewer">
+                    <div className="pdf-header">
+                      <span className="pdf-icon">📄</span>
+                      <div>
                         <a
                           href={pdfUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-primary"
                         >
-                          {order.invoiceLink.split("/").pop() || "Invoice.pdf"}
+                          <Text strong>
+                            {order.invoiceLink.split("/").pop() ||
+                              "Invoice.pdf"}
+                          </Text>
                         </a>
-                      </strong>
-                      <div
-                        className="text-muted"
-                        style={{ fontSize: "0.85rem" }}
-                      >
-                        PDF Document
+                        <Text type="secondary" className="pdf-type">
+                          PDF Document
+                        </Text>
                       </div>
+                      <Button
+                        type="default"
+                        onClick={() => {
+                          const link = document.createElement("a");
+                          link.href = pdfUrl;
+                          link.download =
+                            order.invoiceLink.split("/").pop() || "invoice.pdf";
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }}
+                      >
+                        Download
+                      </Button>
                     </div>
-                    <Button
-                      variant="outline-primary"
-                      className="rounded-3"
-                      onClick={() => {
-                        const link = document.createElement("a");
-                        link.href = pdfUrl;
-                        link.download =
-                          order.invoiceLink.split("/").pop() || "invoice.pdf";
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                      }}
-                    >
-                      Download
-                    </Button>
+                    <div className="pdf-container">
+                      <Document
+                        file={pdfUrl}
+                        onLoadSuccess={onDocumentLoadSuccess}
+                        onLoadError={(error) => {
+                          console.error("PDF loading error:", error);
+                          toast.error("Failed to load PDF invoice.");
+                        }}
+                      >
+                        <Page pageNumber={pdfPageNum} width={600} />
+                      </Document>
+                      {numPages && (
+                        <div className="pdf-controls">
+                          <Button
+                            disabled={pdfPageNum <= 1}
+                            onClick={() => setPdfPageNum(pdfPageNum - 1)}
+                          >
+                            Previous
+                          </Button>
+                          <Text>
+                            Page {pdfPageNum} of {numPages}
+                          </Text>
+                          <Button
+                            disabled={pdfPageNum >= numPages}
+                            onClick={() => setPdfPageNum(pdfPageNum + 1)}
+                          >
+                            Next
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ) : (
-                  <Alert variant="warning" className="rounded-3">
-                    No invoice uploaded for this order.
-                  </Alert>
+                  <Alert
+                    message="No invoice uploaded for this order."
+                    type="warning"
+                    style={{ marginTop: 16 }}
+                  />
                 )}
-              </div>
-            </div>
-          </div>
-        </div>
+              </Card>
+            </Col>
+          </Row>
 
-        {/* Comments Section */}
-        <div className="mt-5">
-          <h5 className="mb-3">Comments</h5>
-          <div className="chat-container card border-0 rounded-3 shadow-sm">
-            {commentLoading ? (
-              <div className="text-center p-3">
-                <Spinner animation="border" size="sm" /> Loading comments...
-              </div>
-            ) : commentError ? (
-              <Alert variant="danger" className="text-center m-3 rounded-3">
-                Unable to load comments:{" "}
-                {commentError?.data?.message || "Please try again later."}
-              </Alert>
-            ) : comments.length > 0 ? (
-              comments.map((comment) => (
-                <CommentRow
-                  key={comment._id}
-                  comment={comment}
-                  onDelete={handleDeleteComment}
-                  currentUserId={user.userId}
-                />
-              ))
-            ) : (
-              <p className="text-muted text-center p-3 mb-0">
-                No comments found for this order.
-              </p>
-            )}
-          </div>
+          <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
+            <Col xs={24}>
+              <Card title="Comments" className="comments-card">
+                <div className="comments-container">
+                  {commentLoading ? (
+                    <div className="comments-loading">
+                      <Spin /> Loading comments...
+                    </div>
+                  ) : commentError ? (
+                    <Alert
+                      message={`Unable to load comments: ${
+                        commentError?.data?.message || "Please try again later."
+                      }`}
+                      type="error"
+                    />
+                  ) : comments.length > 0 ? (
+                    <div className="comments-list">
+                      {comments.map((comment) => (
+                        <CommentRow
+                          key={comment._id}
+                          comment={comment}
+                          onDelete={handleDeleteComment}
+                          currentUserId={user.userId}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <Text className="no-comments">
+                      No comments found for this order.
+                    </Text>
+                  )}
+                </div>
+                {!user.userId ? (
+                  <Alert
+                    message={
+                      <span>
+                        You must be logged in to add comments.{" "}
+                        <Button
+                          type="link"
+                          onClick={() => navigate("/login")}
+                          style={{ padding: 0 }}
+                        >
+                          Log in
+                        </Button>
+                      </span>
+                    }
+                    type="warning"
+                    style={{ marginTop: 16 }}
+                  />
+                ) : (
+                  <Form
+                    onFinish={handleAddComment}
+                    className="comment-form"
+                    layout="inline"
+                  >
+                    <Form.Item style={{ flex: 1 }}>
+                      <Input.TextArea
+                        rows={2}
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        placeholder="Type your comment here..."
+                        maxLength={1000}
+                        className="comment-input"
+                      />
+                    </Form.Item>
+                    <Form.Item>
+                      <Button
+                        type="primary"
+                        htmlType="submit"
+                        disabled={!newComment.trim()}
+                        className="comment-submit"
+                      >
+                        Send
+                      </Button>
+                    </Form.Item>
+                    <Text type="secondary" className="comment-hint">
+                      Maximum 1000 characters. You can add up to 3 comments per
+                      order.
+                    </Text>
+                  </Form>
+                )}
+                {comments.length > 0 && (
+                  <div className="comments-pagination">
+                    <Button
+                      disabled={commentPage === 1}
+                      onClick={() => handlePageChange(commentPage - 1)}
+                    >
+                      Previous
+                    </Button>
+                    <Text>
+                      Page {commentPage} of{" "}
+                      {Math.ceil(totalComments / commentLimit)}
+                    </Text>
+                    <Button
+                      disabled={
+                        commentPage >= Math.ceil(totalComments / commentLimit)
+                      }
+                      onClick={() => handlePageChange(commentPage + 1)}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                )}
+              </Card>
+            </Col>
+          </Row>
 
-          {/* Comment Input Form */}
-          {!user.userId ? (
-            <Alert variant="warning" className="mt-3 rounded-3">
-              You must be logged in to add comments.{" "}
-              <Button
-                variant="link"
-                onClick={() => navigate("/login")}
-                className="p-0 text-primary"
-              >
-                Log in
-              </Button>
-            </Alert>
-          ) : (
-            <Form onSubmit={handleAddComment} className="mt-3 comment-input">
-              <div className="d-flex align-items-center">
-                <Form.Control
-                  as="textarea"
-                  rows={1}
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Type your comment here..."
-                  maxLength={1000}
-                  className="rounded-3 me-2"
-                  style={{ resize: "none", borderColor: "#ced4da" }}
-                  aria-describedby="commentHelp"
-                />
-                <Button
-                  type="submit"
-                  variant="primary"
-                  className="rounded-3"
-                  disabled={!newComment.trim()}
-                >
-                  Send
-                </Button>
-              </div>
-              <Form.Text id="commentHelp" muted>
-                Maximum 1000 characters. You can add up to 3 comments per order.
-              </Form.Text>
-            </Form>
+          {isBillingModalVisible && (
+            <AddAddress
+              onClose={handleBillingModalClose}
+              onSave={handleAddressSave}
+              existingAddress={billingAddress}
+              selectedCustomer={order.createdFor}
+            />
           )}
-
-          {/* Pagination */}
-          {comments.length > 0 && (
-            <div className="d-flex justify-content-between align-items-center mt-3">
-              <Button
-                variant="outline-secondary"
-                className="rounded-3"
-                disabled={commentPage === 1}
-                onClick={() => handlePageChange(commentPage - 1)}
-                aria-label="Previous comments page"
-              >
-                Previous
-              </Button>
-              <span className="text-muted">
-                Page {commentPage} of {Math.ceil(totalComments / commentLimit)}
-              </span>
-              <Button
-                variant="outline-secondary"
-                className="rounded-3"
-                disabled={
-                  commentPage >= Math.ceil(totalComments / commentLimit)
-                }
-                onClick={() => handlePageChange(commentPage + 1)}
-                aria-label="Next comments page"
-              >
-                Next
-              </Button>
-            </div>
+          {isShippingModalVisible && (
+            <AddAddress
+              onClose={handleShippingModalClose}
+              onSave={handleAddressSave}
+              existingAddress={shippingAddress}
+              selectedCustomer={order.createdFor}
+            />
           )}
         </div>
       </div>

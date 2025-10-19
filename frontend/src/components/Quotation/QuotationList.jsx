@@ -14,11 +14,11 @@ import {
   FaWhatsapp,
 } from "react-icons/fa";
 import { EditOutlined } from "@ant-design/icons";
+import { BsThreeDotsVertical } from "react-icons/bs";
 import QuotationProductModal from "./QuotationProductModal";
 import DeleteModal from "../Common/DeleteModal";
 import { toast } from "sonner";
 import { Table, Dropdown, Menu, Button, Input, DatePicker, Select } from "antd";
-import { MoreOutlined } from "@ant-design/icons";
 import PageHeader from "../Common/PageHeader";
 import DataTablePagination from "../Common/DataTablePagination";
 import { useCreateInvoiceMutation } from "../../api/invoiceApi";
@@ -64,7 +64,7 @@ const QuotationList = () => {
   });
   const itemsPerPage = 10;
 
-  // Helper functions
+  // Helper functions (unchanged)
   const getProductCount = (products) => {
     const parsedProducts =
       typeof products === "string"
@@ -192,7 +192,6 @@ const QuotationList = () => {
   }, [filteredQuotations, currentPage]);
 
   const handleShareOnWhatsApp = (quotation) => {
-    // Ensure we have an array of items
     let itemsArray = [];
     if (quotation.items && Array.isArray(quotation.items)) {
       itemsArray = quotation.items;
@@ -249,11 +248,13 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
       title: "S.No.",
       dataIndex: "sNo",
       key: "sNo",
+      width: 70, // Fixed width for better layout control
     },
     {
       title: "Quotation Title",
       dataIndex: "quotationTitle",
       key: "quotationTitle",
+      width: 150,
       render: (text, record) => (
         <Link to={`/quotations/${record.quotationId}`}>{text || "N/A"}</Link>
       ),
@@ -262,6 +263,7 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
       title: "Quotation Date",
       dataIndex: "quotationDate",
       key: "quotationDate",
+      width: 120,
       filterDropdown: ({
         setSelectedKeys,
         selectedKeys,
@@ -314,6 +316,7 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
       title: "Due Date",
       dataIndex: "dueDate",
       key: "dueDate",
+      width: 120,
       filterDropdown: ({
         setSelectedKeys,
         selectedKeys,
@@ -372,11 +375,13 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
       title: "Quotation Number",
       dataIndex: "referenceNumber",
       key: "referenceNumber",
+      width: 150,
     },
     {
       title: "Products",
       dataIndex: "products",
       key: "products",
+      width: 120,
       render: (text, record) => (
         <button
           className="btn btn-link"
@@ -392,6 +397,7 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
       title: "Customer",
       dataIndex: "customer",
       key: "customer",
+      width: 150,
       filterDropdown: ({
         setSelectedKeys,
         selectedKeys,
@@ -452,6 +458,7 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
       title: "Final Amount",
       dataIndex: "finalAmount",
       key: "finalAmount",
+      width: 120,
       sorter: (a, b) =>
         parseFloat(a.finalAmount.replace("₹", "")) -
         parseFloat(b.finalAmount.replace("₹", "")),
@@ -504,18 +511,22 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
       ),
     },
     {
-      title: "",
+      title: "Actions",
       key: "actions",
+      width: 100, // Fixed width to prevent cropping
+      fixed: "right", // Fix the Actions column to the right for better accessibility
       render: (_, record) => (
-        <>
-          <span>
-            <Link
-              to={`/quotations/${record.quotationId}/edit`}
-              style={{ textDecoration: "none", color: "inherit" }}
-              title="Edit Quotation"
-            >
-              <EditOutlined style={{ marginRight: 8 }} />
-            </Link>
+        <div className="d-flex align-items-center">
+          <span
+            onClick={() =>
+              navigate(`/quotations/${record.quotationId}/edit`, {
+                state: { quotation: record },
+              })
+            }
+            style={{ cursor: "pointer", marginRight: 8 }}
+            title="Edit Quotation"
+          >
+            <EditOutlined />
           </span>
           <Dropdown
             overlay={
@@ -530,7 +541,6 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
                     View
                   </Link>
                 </Menu.Item>
-
                 <Menu.Item
                   key="delete"
                   onClick={() => handleDeleteClick(record)}
@@ -553,7 +563,7 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
                   key="share-whatsapp"
                   onClick={() => handleShareOnWhatsApp(record)}
                   title="Share on WhatsApp"
-                  style={{ color: "#25D366" }} // WhatsApp green color
+                  style={{ color: "#25D366" }}
                 >
                   <FaWhatsapp style={{ marginRight: 8 }} />
                   Share on WhatsApp
@@ -565,11 +575,11 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
           >
             <Button
               type="text"
-              icon={<MoreOutlined />}
+              icon={<BsThreeDotsVertical />}
               aria-label="More actions"
             />
           </Dropdown>
-        </>
+        </div>
       ),
     },
   ];
@@ -771,13 +781,17 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
                       filters
                     </p>
                   ) : (
-                    <div className="table-responsive">
+                    <div
+                      className="table-responsive"
+                      style={{ overflowX: "auto" }}
+                    >
                       <Table
                         className="table table-hover"
                         columns={columns}
                         dataSource={formattedTableData}
                         pagination={false}
                         rowKey="key"
+                        scroll={{ x: "max-content" }} // Enable horizontal scrolling
                       />
                       {filteredQuotations.length > itemsPerPage && (
                         <div className="pagination-section mt-4">
