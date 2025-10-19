@@ -795,8 +795,8 @@ exports.getOrderDetails = async (req, res) => {
         },
         {
           model: Address,
-          as: "shipToAddress",
-          attributes: ["addressId", "address"],
+          as: "shippingAddress",
+          attributes: ["addressId"],
         },
       ],
     });
@@ -1076,8 +1076,8 @@ exports.orderById = async (req, res) => {
         },
         {
           model: Address,
-          as: "shipToAddress",
-          attributes: ["addressId", "address"],
+          as: "shippingAddress",
+          attributes: ["addressId"],
         },
       ],
     });
@@ -1832,8 +1832,8 @@ exports.getFilteredOrders = async (req, res) => {
       },
       {
         model: Address,
-        as: "shipToAddress",
-        attributes: ["addressId", "address"],
+        as: "shippingAddress",
+        attributes: ["addressId"],
       },
     ];
 
@@ -1896,8 +1896,8 @@ exports.updateOrderTeam = async (req, res) => {
       include: [
         {
           model: Address,
-          as: "shipToAddress",
-          attributes: ["addressId", "address"],
+          as: "shippingAddress",
+          attributes: ["addressId"],
         },
       ],
     });

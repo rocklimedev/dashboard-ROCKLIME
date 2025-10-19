@@ -1,62 +1,80 @@
+/* General container for the quotation */
 .quotation-container {
   width: 100%;
   max-width: 1000px;
-  margin: auto;
+  margin: 0 auto;
   font-family: Arial, sans-serif;
+  padding: 10px;
 }
 
+/* Ensure full-width tables */
 .full-width {
   width: 100%;
 }
 
+/* Quotation table styling */
 .quotation-table {
   border-collapse: collapse;
   width: 100%;
-  table-layout: fixed;
+  table-layout: auto; /* Changed from fixed to auto for better content fitting */
+  margin-bottom: 20px;
 }
 
+/* Table cells and headers */
 .quotation-table td,
 .quotation-table th {
   border: 1px solid black;
-  padding: 6px;
+  padding: 8px; /* Slightly increased padding for better touch targets */
   vertical-align: middle;
+  font-size: 14px; /* Base font size for readability */
 }
 
+/* Remove border for no-border class */
 .no-border td {
   border: none !important;
 }
 
+/* Logo cell */
 .logo-cell {
   width: 30%;
   text-align: left;
 }
 
+/* Title cell */
 .title-cell {
   width: 40%;
   text-align: center;
   font-weight: bold;
-  font-size: 18px;
+  font-size: clamp(16px, 4vw, 18px); /* Responsive font size */
 }
 
+/* Brand cell */
 .brand-cell {
   width: 30%;
   text-align: right;
   font-weight: bold;
 }
 
+/* Logo image */
 .logo-img {
   height: 50px;
+  max-width: 100%; /* Ensure logo doesn't overflow */
 }
 
+/* Product image */
 .product-img {
   max-width: 50px;
   height: auto;
+  display: block;
+  margin: 0 auto; /* Center images */
 }
 
+/* Label cell */
 .label-cell {
   font-weight: bold;
 }
 
+/* Text alignment utilities */
 .text-right {
   text-align: right;
 }
@@ -68,3 +86,169 @@
 .fw-bold {
   font-weight: bold;
 }
+
+/* Responsive table adjustments */
+@media screen and (max-width: 768px) {
+  .quotation-table {
+    display: block;
+    overflow-x: auto; /* Enable horizontal scrolling for tables */
+    white-space: nowrap; /* Prevent text wrapping */
+  }
+
+  .quotation-table thead,
+  .quotation-table tbody,
+  .quotation-table tr,
+  .quotation-table th,
+  .quotation-table td {
+    display: table-cell; /* Ensure cells behave correctly in scrollable table */
+  }
+
+  .quotation-table th,
+  .quotation-table td {
+    font-size: 12px; /* Smaller font size for mobile */
+    padding: 6px; /* Reduced padding for compact display */
+  }
+
+  .logo-img {
+    height: 40px; /* Slightly smaller logo for mobile */
+  }
+
+  .product-img {
+    max-width: 40px; /* Smaller product images for mobile */
+  }
+
+  /* Adjust column widths for mobile */
+  .logo-cell,
+  .title-cell,
+  .brand-cell {
+    width: auto; /* Allow flexible widths */
+  }
+
+  .quotation-table th,
+  .quotation-table td {
+    min-width: 80px; /* Minimum width to prevent collapse */
+  }
+
+  /* Hide less critical columns on small screens */
+  .quotation-table th:nth-child(2), /* Product Image */
+  .quotation-table td:nth-child(2),
+  .quotation-table th:nth-child(4), /* Product Code */
+  .quotation-table td:nth-child(4) {
+    display: none; /* Hide Product Image and Product Code on mobile */
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .quotation-table th,
+  .quotation-table td {
+    font-size: 10px; /* Further reduce font size for very small screens */
+    padding: 4px; /* Further reduce padding */
+  }
+
+  .logo-img {
+    height: 30px; /* Even smaller logo */
+  }
+
+  .product-img {
+    max-width: 30px; /* Even smaller product images */
+  }
+}
+
+/* Version Tabs */
+.ant-tabs {
+  margin-top: 20px;
+}
+
+.ant-tabs-nav {
+  margin-bottom: 20px;
+}
+
+.ant-tabs-tab {
+  padding: 8px 16px;
+  font-size: clamp(12px, 3vw, 14px); /* Responsive tab font size */
+}
+
+/* Responsive tabs */
+@media screen and (max-width: 768px) {
+  .ant-tabs-nav {
+    display: flex;
+    flex-wrap: wrap; /* Allow tabs to wrap on smaller screens */
+    justify-content: center;
+  }
+
+  .ant-tabs-tab {
+    flex: 1 1 auto; /* Flexible tab width */
+    text-align: center;
+    margin: 5px;
+  }
+}
+
+/* Export Button and Select */
+.d-flex.justify-content-center.align-items-center.mb-4 {
+  flex-direction: row;
+  gap: 10px; /* Space between select and button */
+  flex-wrap: wrap; /* Allow wrapping on smaller screens */
+  justify-content: center;
+}
+
+.form-select {
+  max-width: 200px; /* Limit select width */
+  font-size: clamp(12px, 3vw, 14px);
+}
+
+.btn-primary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: clamp(12px, 3vw, 14px);
+}
+
+/* Responsive export controls */
+@media screen and (max-width: 576px) {
+  .d-flex.justify-content-center.align-items-center.mb-4 {
+    flex-direction: column; /* Stack vertically on small screens */
+    align-items: stretch;
+  }
+
+  .form-select,
+  .btn-primary {
+    width: 100%; /* Full width for select and button */
+    max-width: none;
+  }
+}
+
+/* Back Link */
+.back-icon {
+  font-size: clamp(12px, 3vw, 14px);
+  margin-bottom: 15px;
+}
+
+.back-icon span {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Card and content */
+.card {
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+
+@media screen and (max-width: 768px) {
+  .card {
+    padding: 10px; /* Reduce padding on smaller screens */
+  }
+
+  .col-sm-10 {
+    width: 100%; /* Full width on smaller screens */
+    padding: 0 10px;
+  }
+}
+

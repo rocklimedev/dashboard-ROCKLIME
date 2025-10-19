@@ -3,7 +3,7 @@ const path = require("path");
 const excelToJson = require("convert-excel-to-json");
 
 // File paths
-const inputFilePath = path.join(__dirname, "categoriesKeywords.xlsx");
+const inputFilePath = path.join(__dirname, "OnePager_JUNE2025.xlsx");
 const outputFolder = path.join(__dirname, "json-outputs");
 
 console.log("Looking for file at:", inputFilePath);
@@ -55,10 +55,10 @@ Object.keys(rawData).forEach((sheetName) => {
 
       if (currentCategory) {
         formattedData[sheetName][currentCategory].push({
-          Name: name.trim(),
-          Code: code.trim(),
+          Name: String(name || "").trim(),
+          Code: String(code || "").trim(),
           Price: price,
-          Image: `${code.trim()}.jpg`,
+          Image: `${String(code || "").trim()}.jpg`,
         });
       } else {
         console.warn(

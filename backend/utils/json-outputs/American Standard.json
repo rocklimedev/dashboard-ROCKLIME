@@ -1,0 +1,2561 @@
+{
+  "E*BIDET": [
+    {
+      "Name": "Pristine E-bidet (w/Deodorizer)",
+      "Code": "CEAS7SL1-0100510A0",
+      "Price": 54600,
+      "Image": "CEAS7SL1-0100510A0.jpg"
+    }
+  ],
+  "MANUAL BIDET": [
+    {
+      "Name": "Axisse Slim Smart Washer - Euro U Style",
+      "Code": "CFB10400-FAST3",
+      "Price": 9000,
+      "Image": "CFB10400-FAST3.jpg"
+    },
+    {
+      "Name": "Axisse Slim Smart Washer - Amer R Style",
+      "Code": "CEBFB108",
+      "Price": 9000,
+      "Image": "CEBFB108.jpg"
+    },
+    {
+      "Name": "Axisse Slim Smart Washer-250mm hse(left)",
+      "Code": "CFB10400-ASI2",
+      "Price": 8580,
+      "Image": "CFB10400-ASI2.jpg"
+    },
+    {
+      "Name": "Axisse Slim Smart Washer-250mm hs(right)",
+      "Code": "CFB10400-ASI3",
+      "Price": 8580,
+      "Image": "CFB10400-ASI3.jpg"
+    },
+    {
+      "Name": "Smart Washer Manual Bidet",
+      "Code": "1007372080",
+      "Price": 11450,
+      "Image": "1007372080.jpg"
+    }
+  ],
+  "TOILETS": [
+    {
+      "Name": "Acacia E Vortex BTW",
+      "Code": "CL3229B-6DACTCB",
+      "Price": 36850,
+      "Image": "CL3229B-6DACTCB.jpg"
+    },
+    {
+      "Name": "CITY 3 / 4.5L Double Vortex WH WT",
+      "Code": "CL3119B-6DACTPTY",
+      "Price": 28350,
+      "Image": "CL3119B-6DACTPTY.jpg"
+    }
+  ],
+  "ACACIA SUPASLEEK SQUARE WH TOILET": [
+    {
+      "Name": "Acacia SupaSleek Square WH",
+      "Code": "CCAS3120-5W20410F0",
+      "Price": 36200,
+      "Image": "CCAS3120-5W20410F0.jpg"
+    }
+  ],
+  "ACACIA E WH TOILET": [
+    {
+      "Name": "Acacia E",
+      "Code": "CL3119B-6DACTPT",
+      "Price": 27700,
+      "Image": "CL3119B-6DACTPT.jpg"
+    }
+  ],
+  "SIGNATURE WH TOILET": [
+    {
+      "Name": "Signature",
+      "Code": "CCAS3140-3W20400F0",
+      "Price": 23250,
+      "Image": "CCAS3140-3W20400F0.jpg"
+    }
+  ],
+  "LOVEN WH TOILET": [
+    {
+      "Name": "Loven wall hung",
+      "Code": "1013962080",
+      "Price": 22250,
+      "Image": "1013962080.jpg"
+    }
+  ],
+  "KASTELLO WH TOILET": [
+    {
+      "Name": "Kastello Square toilet_Bowl",
+      "Code": "CCAS3131-3W20400F0",
+      "Price": 19250,
+      "Image": "CCAS3131-3W20400F0.jpg"
+    }
+  ],
+  "CONCEPT WH TOILET": [
+    {
+      "Name": "Concept",
+      "Code": "CCAS3105-4W20410A0",
+      "Price": 15500,
+      "Image": "CCAS3105-4W20410A0.jpg"
+    }
+  ],
+  "COMPACT CODIE WH TOILET": [
+    {
+      "Name": "Compact Codie toilet_Bowl",
+      "Code": "CCAS3207-3W20410F0",
+      "Price": 11800,
+      "Image": "CCAS3207-3W20410F0.jpg"
+    }
+  ],
+  "WINSTON WH TOILET": [
+    {
+      "Name": "Winston 3/6lpf Wall Hung Toilet bowl",
+      "Code": "CCAS3130-3W20410A0",
+      "Price": 10350,
+      "Image": "CCAS3130-3W20410A0.jpg"
+    }
+  ],
+  "CADET WH TOILET": [
+    {
+      "Name": "Cadet 3/6lpf Wall Hung Toilet Bowl x w/o S&C",
+      "Code": "CCAS3128-3W20410A0",
+      "Price": 7800,
+      "Image": "CCAS3128-3W20410A0.jpg"
+    },
+    {
+      "Name": "Kastello One Piece Toilet",
+      "Code": "CCAS2025-111A410C0",
+      "Price": 81250,
+      "Image": "CCAS2025-111A410C0.jpg"
+    }
+  ],
+  "NEO NOBILE OP TOILET": [
+    {
+      "Name": "Neo Nobile",
+      "Code": "CCAS2060-5110410F0",
+      "Price": 74230,
+      "Image": "CCAS2060-5110410F0.jpg"
+    }
+  ],
+  "LA MODA OP TOILET": [
+    {
+      "Name": "La Moda",
+      "Code": "CCAS2009-1120410F0",
+      "Price": 65650,
+      "Image": "CCAS2009-1120410F0.jpg"
+    }
+  ],
+  "ACACIA E OP TOILET": [
+    {
+      "Name": "Acacia E SupaSleek",
+      "Code": "CL20075-6DACTCBT",
+      "Price": 63650,
+      "Image": "CL20075-6DACTCBT.jpg"
+    }
+  ],
+  "SIGNATURE OP TOILET": [
+    {
+      "Name": "Signature OnexPiece Toilet",
+      "Code": "CCAS1880-111A410F0",
+      "Price": 60650,
+      "Image": "CCAS1880-111A410F0.jpg"
+    }
+  ],
+  "MILANO OP TOILET": [
+    {
+      "Name": "Milano",
+      "Code": "CCAS1860-112A410F0",
+      "Price": 42700,
+      "Image": "CCAS1860-112A410F0.jpg"
+    }
+  ],
+  "NEO MODERN OP TOILET": [
+    {
+      "Name": "Neo Modern",
+      "Code": "CCAS2073-1110410F0",
+      "Price": 37150,
+      "Image": "CCAS2073-1110410F0.jpg"
+    }
+  ],
+  "CADET OP TOILET": [
+    {
+      "Name": "Cadet",
+      "Code": "CCAS1841-1120410C0",
+      "Price": 28800,
+      "Image": "CCAS1841-1120410C0.jpg"
+    }
+  ],
+  "YOKA OP TOILET": [
+    {
+      "Name": "Yoka",
+      "Code": "CCAS2090-1120410F0",
+      "Price": 26450,
+      "Image": "CCAS2090-1120410F0.jpg"
+    }
+  ],
+  "FLEXIO OP TOILET": [
+    {
+      "Name": "Flexio",
+      "Code": "C2530300-1MA21",
+      "Price": 20450,
+      "Image": "C2530300-1MA21.jpg"
+    }
+  ],
+  "LOVEN OP TOILET": [
+    {
+      "Name": "Loven One Piece Toilet",
+      "Code": "CCAS1862-1320411A0",
+      "Price": 14400,
+      "Image": "CCAS1862-1320411A0.jpg"
+    },
+    {
+      "Name": "Acacia E Vortex",
+      "Code": "CL23075-6DACTCB",
+      "Price": 55900,
+      "Image": "CL23075-6DACTCB.jpg"
+    }
+  ],
+  "CYGNET CC TOILET": [
+    {
+      "Name": "Cygnet Square",
+      "Code": "CL23095-6DACTCB",
+      "Price": 44200,
+      "Image": "CL23095-6DACTCB.jpg"
+    }
+  ],
+  "COMPACT CODIE CC TOILET": [
+    {
+      "Name": "Compact Codie",
+      "Code": "CL24075-6DACTCB",
+      "Price": 38600,
+      "Image": "CL24075-6DACTCB.jpg"
+    }
+  ],
+  "CONCEPT CUBE CC TOILET": [
+    {
+      "Name": "Concept Cube",
+      "Code": "CL27045-6DACTST",
+      "Price": 37250,
+      "Image": "CL27045-6DACTST.jpg"
+    }
+  ],
+  "CONCEPT D CC TOILET": [
+    {
+      "Name": "Concept D",
+      "Code": "CL27055-6DACTST",
+      "Price": 34700,
+      "Image": "CL27055-6DACTST.jpg"
+    }
+  ],
+  "TONIC CC TOILET": [
+    {
+      "Name": "Tonic New Wave",
+      "Code": "CL21030-6DACTST",
+      "Price": 34700,
+      "Image": "CL21030-6DACTST.jpg"
+    }
+  ],
+  "NEW SIBIA CC TOILET": [
+    {
+      "Name": "New Sibia",
+      "Code": "CL27935-6DAWDPT",
+      "Price": 32300,
+      "Image": "CL27935-6DAWDPT.jpg"
+    }
+  ],
+  "NEO MODERN CC TOILET": [
+    {
+      "Name": "Neo Modern",
+      "Code": "CL26305-6DACTST",
+      "Price": 30750,
+      "Image": "CL26305-6DACTST.jpg"
+    }
+  ],
+  "HALO CC TOILET": [
+    {
+      "Name": "Halo",
+      "Code": "CL28930-6DAWDST",
+      "Price": 25300,
+      "Image": "CL28930-6DAWDST.jpg"
+    }
+  ],
+  "BECCA CC TOILET": [
+    {
+      "Name": "Becca",
+      "Code": "CL25915-6DAWDPT",
+      "Price": 21450,
+      "Image": "CL25915-6DAWDPT.jpg"
+    }
+  ],
+  "WINSTON CC TOILET": [
+    {
+      "Name": "Winston",
+      "Code": "CCAS3396-1120410A0",
+      "Price": 10400,
+      "Image": "CCAS3396-1120410A0.jpg"
+    }
+  ],
+  "WASH BASINS": [],
+  "COUNTER TOP": [
+    {
+      "Name": "(Single Hole) Fecility",
+      "Code": "CCASF521-1000410F0",
+      "Price": 38000,
+      "Image": "CCASF521-1000410F0.jpg"
+    },
+    {
+      "Name": "Fecility",
+      "Code": "CCASF521-1010410F0",
+      "Price": 38000,
+      "Image": "CCASF521-1010410F0.jpg"
+    },
+    {
+      "Name": "Neo Nobile",
+      "Code": "CCASF507-1010410F0",
+      "Price": 17900,
+      "Image": "CCASF507-1010410F0.jpg"
+    },
+    {
+      "Name": "Signature 550 mm",
+      "Code": "CCAS0420-1010410F0",
+      "Price": 11350,
+      "Image": "CCAS0420-1010410F0.jpg"
+    },
+    {
+      "Name": "Concept Sphere",
+      "Code": "CL0452I-6DAWDLT",
+      "Price": 8150,
+      "Image": "CL0452I-6DAWDLT.jpg"
+    },
+    {
+      "Name": "Ceros",
+      "Code": "CL0477I-6DAWDLU",
+      "Price": 6650,
+      "Image": "CL0477I-6DAWDLU.jpg"
+    },
+    {
+      "Name": "Aqualyn",
+      "Code": "CL0476I-6DACTLT",
+      "Price": 6150,
+      "Image": "CL0476I-6DACTLT.jpg"
+    }
+  ],
+  "ABOVE COUNTER/VESSEL": [
+    {
+      "Name": "La Moda Vessel",
+      "Code": "CCASF602-1000410F0",
+      "Price": 22500,
+      "Image": "CCASF602-1000410F0.jpg"
+    },
+    {
+      "Name": "Acacia SupaSleek Vessel 600mm",
+      "Code": "CCASF420-1010411F0",
+      "Price": 21350,
+      "Image": "CCASF420-1010411F0.jpg"
+    },
+    {
+      "Name": "KASTELLO 600mm",
+      "Code": "CCASF525-1010410F0",
+      "Price": 20000,
+      "Image": "CCASF525-1010410F0.jpg"
+    },
+    {
+      "Name": "KASTELLO 600mm Vessel Basin (8” hole)",
+      "Code": "CCASF525-1080410F0",
+      "Price": 20000,
+      "Image": "CCASF525-1080410F0.jpg"
+    },
+    {
+      "Name": "Acacia Neo Vessel 600mm",
+      "Code": "CCAS0620-1010411A0",
+      "Price": 19200,
+      "Image": "CCAS0620-1010411A0.jpg"
+    },
+    {
+      "Name": "Acacia SupaSleek Vessel 550mm",
+      "Code": "CCASF412-1000410F0",
+      "Price": 18700,
+      "Image": "CCASF412-1000410F0.jpg"
+    },
+    {
+      "Name": "Signature 550mm Vessel w Deck SH",
+      "Code": "CCAS0618-1010410F0",
+      "Price": 18000,
+      "Image": "CCAS0618-1010410F0.jpg"
+    },
+    {
+      "Name": "Signature 550mm Vessel w Deck (8” hole)",
+      "Code": "CCAS0618-1080410F0",
+      "Price": 18000,
+      "Image": "CCAS0618-1080410F0.jpg"
+    },
+    {
+      "Name": "Signature 550mm Vessel",
+      "Code": "CCAS0628-0000410F0",
+      "Price": 15350,
+      "Image": "CCAS0628-0000410F0.jpg"
+    },
+    {
+      "Name": "Acacia SupaSleek Vessel 420mm",
+      "Code": "CCASF411-1000410F0",
+      "Price": 15350,
+      "Image": "CCASF411-1000410F0.jpg"
+    },
+    {
+      "Name": "Luxus 600mm",
+      "Code": "CCAS0428-1000410F0",
+      "Price": 26550,
+      "Image": "CCAS0428-1000410F0.jpg"
+    },
+    {
+      "Name": "Neo Modern",
+      "Code": "CCASF633-0000410F0",
+      "Price": 14400,
+      "Image": "CCASF633-0000410F0.jpg"
+    },
+    {
+      "Name": "Ova Oval",
+      "Code": "CCASF608-0000410F0",
+      "Price": 14400,
+      "Image": "CCASF608-0000410F0.jpg"
+    },
+    {
+      "Name": "Square Thin 500mm",
+      "Code": "CCASF611-0000410F0",
+      "Price": 14400,
+      "Image": "CCASF611-0000410F0.jpg"
+    },
+    {
+      "Name": "Mizu (600mm)",
+      "Code": "CCASF446-1010410F0",
+      "Price": 14000,
+      "Image": "CCASF446-1010410F0.jpg"
+    },
+    {
+      "Name": "Cygnet Vessel 550mm",
+      "Code": "CCASF646-0000410F0",
+      "Price": 14700,
+      "Image": "CCASF646-0000410F0.jpg"
+    },
+    {
+      "Name": "Milano Vessel 550mm",
+      "Code": "CCASF650-1000410F0",
+      "Price": 13250,
+      "Image": "CCASF650-1000410F0.jpg"
+    },
+    {
+      "Name": "Acacia E Round Vessel Basin WT",
+      "Code": "CL0509I-6DACTLA",
+      "Price": 12800,
+      "Image": "CL0509I-6DACTLA.jpg"
+    },
+    {
+      "Name": "Mizu (450mm)",
+      "Code": "CCASF445-1010410F0",
+      "Price": 12150,
+      "Image": "CCASF445-1010410F0.jpg"
+    },
+    {
+      "Name": "Vallo Above Countertop Basin",
+      "Code": "CL0500I-6DACTLA",
+      "Price": 11350,
+      "Image": "CL0500I-6DACTLA.jpg"
+    },
+    {
+      "Name": "Active",
+      "Code": "CL0950I-6DACTLA",
+      "Price": 10800,
+      "Image": "CL0950I-6DACTLA.jpg"
+    },
+    {
+      "Name": "White Square",
+      "Code": "CCASF606-0000410F0",
+      "Price": 10300,
+      "Image": "CCASF606-0000410F0.jpg"
+    },
+    {
+      "Name": "White Round",
+      "Code": "CCASF605-0000410F0",
+      "Price": 9850,
+      "Image": "CCASF605-0000410F0.jpg"
+    },
+    {
+      "Name": "Flexio Vessel 500 mm",
+      "Code": "CL0613I1-1MA00",
+      "Price": 7100,
+      "Image": "CL0613I1-1MA00.jpg"
+    },
+    {
+      "Name": "Concept (New Cerla)",
+      "Code": "CL0294F1-6DA10",
+      "Price": 5350,
+      "Image": "CL0294F1-6DA10.jpg"
+    }
+  ],
+  "SEMI COUNTER": [
+    {
+      "Name": "Acacia SupaSleek Semi Counter Basin 550mm (3hole)",
+      "Code": "CCASF419-1080411F0",
+      "Price": 20700,
+      "Image": "CCASF419-1080411F0.jpg"
+    },
+    {
+      "Name": "Acacia SupaSleek Semi Counter Basin 550mm",
+      "Code": "CCASF419-1010411F0",
+      "Price": 20700,
+      "Image": "CCASF419-1010411F0.jpg"
+    },
+    {
+      "Name": "Neo Nobile",
+      "Code": "CCASF316-1010410F0",
+      "Price": 19550,
+      "Image": "CCASF316-1010410F0.jpg"
+    },
+    {
+      "Name": "Acacia E",
+      "Code": "CL0519I-6DACTLS",
+      "Price": 12700,
+      "Image": "CL0519I-6DACTLS.jpg"
+    },
+    {
+      "Name": "Acacia",
+      "Code": "CCASF372-1010410F0",
+      "Price": 12000,
+      "Image": "CCASF372-1010410F0.jpg"
+    },
+    {
+      "Name": "Signature 550mm",
+      "Code": "CCAS0320-1010410F0",
+      "Price": 12000,
+      "Image": "CCAS0320-1010410F0.jpg"
+    },
+    {
+      "Name": "Paramount",
+      "Code": "CL0518I-6DACTLS",
+      "Price": 11750,
+      "Image": "CL0518I-6DACTLS.jpg"
+    },
+    {
+      "Name": "Milano",
+      "Code": "CCASF301-1010410F0",
+      "Price": 10050,
+      "Image": "CCASF301-1010410F0.jpg"
+    },
+    {
+      "Name": "White",
+      "Code": "CCASF307-1010410F0",
+      "Price": 8950,
+      "Image": "CCASF307-1010410F0.jpg"
+    }
+  ],
+  "UNDER COUNTER": [
+    {
+      "Name": "Concept Cube",
+      "Code": "CL0451I-6DAWDLU",
+      "Price": 15250,
+      "Image": "CL0451I-6DAWDLU.jpg"
+    },
+    {
+      "Name": "Square Thin 600mm",
+      "Code": "CCASF513-1000410F0",
+      "Price": 13750,
+      "Image": "CCASF513-1000410F0.jpg"
+    },
+    {
+      "Name": "Square Thin 500mm",
+      "Code": "CCASF514-1000410F0",
+      "Price": 12700,
+      "Image": "CCASF514-1000410F0.jpg"
+    },
+    {
+      "Name": "Studio",
+      "Code": "CL0474I-6DACTLU",
+      "Price": 8800,
+      "Image": "CL0474I-6DACTLU.jpg"
+    },
+    {
+      "Name": "Activa",
+      "Code": "CCAS0440-1000410F0",
+      "Price": 8000,
+      "Image": "CCAS0440-1000410F0.jpg"
+    },
+    {
+      "Name": "Active",
+      "Code": "CCAS0426-1000410F0",
+      "Price": 7350,
+      "Image": "CCAS0426-1000410F0.jpg"
+    },
+    {
+      "Name": "Cadet Under Counter 550mm",
+      "Code": "CL2216I1-1MA00",
+      "Price": 4650,
+      "Image": "CL2216I1-1MA00.jpg"
+    },
+    {
+      "Name": "OVALYN (19”x16”)",
+      "Code": "CL0470I-6DAWDLU",
+      "Price": 4650,
+      "Image": "CL0470I-6DAWDLU.jpg"
+    }
+  ],
+  "WALL*HUNG": [
+    {
+      "Name": "Town Square",
+      "Code": "CCASF479-0040410C0",
+      "Price": 22700,
+      "Image": "CCASF479-0040410C0.jpg"
+    },
+    {
+      "Name": "Acacia E",
+      "Code": "CL0507I-6DACTLWW",
+      "Price": 14300,
+      "Image": "CL0507I-6DACTLWW.jpg"
+    },
+    {
+      "Name": "Cygnet",
+      "Code": "CCAS1511-1010410F0",
+      "Price": 13750,
+      "Image": "CCAS1511-1010410F0.jpg"
+    },
+    {
+      "Name": "Concept D",
+      "Code": "CL0553I-6DACTLW",
+      "Price": 10650,
+      "Image": "CL0553I-6DACTLW.jpg"
+    },
+    {
+      "Name": "Concept Cube",
+      "Code": "CCASF550-1010410F0",
+      "Price": 10300,
+      "Image": "CCASF550-1010410F0.jpg"
+    },
+    {
+      "Name": "Active",
+      "Code": "CL0955I-6DACTLW",
+      "Price": 9850,
+      "Image": "CL0955I-6DACTLW.jpg"
+    },
+    {
+      "Name": "Concept Sphere",
+      "Code": "CL0552I-6DACTLW",
+      "Price": 9100,
+      "Image": "CL0552I-6DACTLW.jpg"
+    },
+    {
+      "Name": "New Modern WallxHung Basin 55cm wt",
+      "Code": "CL0953I-6DACTLW",
+      "Price": 8800,
+      "Image": "CL0953I-6DACTLW.jpg"
+    },
+    {
+      "Name": "New Codie Square",
+      "Code": "CCAS1560-1010410F0",
+      "Price": 8150,
+      "Image": "CCAS1560-1010410F0.jpg"
+    },
+    {
+      "Name": "New Codie Round",
+      "Code": "CCAS1530-1010410F0",
+      "Price": 7700,
+      "Image": "CCAS1530-1010410F0.jpg"
+    },
+    {
+      "Name": "New Codie 350mm",
+      "Code": "CL0945I-6DAWDLW",
+      "Price": 5350,
+      "Image": "CL0945I-6DAWDLW.jpg"
+    },
+    {
+      "Name": "Winston (with Rag Bolt holes)",
+      "Code": "CCAS0279-1110410A0",
+      "Price": 4650,
+      "Image": "CCAS0279-1110410A0.jpg"
+    }
+  ],
+  "CORNER": [
+    {
+      "Name": "New Codie",
+      "Code": "CCAS0220-1010410F0",
+      "Price": 7500,
+      "Image": "CCAS0220-1010410F0.jpg"
+    }
+  ],
+  "FLOOR STANDING": [
+    {
+      "Name": "Luxus Floor Standing Vessel",
+      "Code": "CCASF523-1000410C0",
+      "Price": 65350,
+      "Image": "CCASF523-1000410C0.jpg"
+    }
+  ],
+  "FULL PEDESTAL": [
+    {
+      "Name": "Universal Pedestal",
+      "Code": "CL900PI1-1MA00",
+      "Price": 2950,
+      "Image": "CL900PI1-1MA00.jpg"
+    }
+  ],
+  "SEMI-PEDESTAL": [
+    {
+      "Name": "Cygnet SemixPedestal",
+      "Code": "CCASF712-1000410F0",
+      "Price": 6000,
+      "Image": "CCASF712-1000410F0.jpg"
+    },
+    {
+      "Name": "Acacia E Semi Pedestal",
+      "Code": "CL0707S-6DACT",
+      "Price": 5700,
+      "Image": "CL0707S-6DACT.jpg"
+    },
+    {
+      "Name": "Active Semi Pedestal",
+      "Code": "CLO755F-6DACT",
+      "Price": 5350,
+      "Image": "CLO755F-6DACT.jpg"
+    },
+    {
+      "Name": "Concept Semi Pedestal",
+      "Code": "CLO740S-6DACT",
+      "Price": 4900,
+      "Image": "CLO740S-6DACT.jpg"
+    },
+    {
+      "Name": "Universal Semi Pedestal",
+      "Code": "CLO741PI1-1MA00",
+      "Price": 2800,
+      "Image": "CLO741PI1-1MA00.jpg"
+    }
+  ],
+  "BATHROOM FITTINGS": [],
+  "LUxUS": [],
+  "BASIN MI*ER": [
+    {
+      "Name": "Luxus Inwall Vessel Faucet",
+      "Code": "FFAS0104-101500BC0",
+      "Price": 52450,
+      "Image": "FFAS0104-101500BC0.jpg"
+    },
+    {
+      "Name": "Luxus SH Vessel Faucet",
+      "Code": "FFAS0102-101500BC0",
+      "Price": 47700,
+      "Image": "FFAS0102-101500BC0.jpg"
+    },
+    {
+      "Name": "Luxus SH Basin Faucet",
+      "Code": "FFAS0101-101500BC0",
+      "Price": 41550,
+      "Image": "FFAS0101-101500BC0.jpg"
+    }
+  ],
+  "SIGNATURE": [
+    {
+      "Name": "Signature Exposed With Integrated Rain Shower Kit",
+      "Code": "FFAS1772-701500BC0",
+      "Price": 63200,
+      "Image": "FFAS1772-701500BC0.jpg"
+    },
+    {
+      "Name": "Signature Exposed",
+      "Code": "FFAS1711-609500BC0",
+      "Price": 33100,
+      "Image": "FFAS1711-609500BC0.jpg"
+    },
+    {
+      "Name": "Signature Concealed",
+      "Code": "FFAS1721-609500BC0",
+      "Price": 20600,
+      "Image": "FFAS1721-609500BC0.jpg"
+    }
+  ],
+  "CITY": [
+    {
+      "Name": "CITY Deck Mounted PullxOut Basin Mixer",
+      "Code": "FFAS4801-101500BC0",
+      "Price": 20450,
+      "Image": "FFAS4801-101500BC0.jpg"
+    }
+  ],
+  "LA MODA": [
+    {
+      "Name": "Basin Mixer With Popxup Vessel",
+      "Code": "FFAS0802-101500BF0",
+      "Price": 25200,
+      "Image": "FFAS0802-101500BF0.jpg"
+    },
+    {
+      "Name": "Basin Mixer With Popxup",
+      "Code": "FFAS0104-101500BC0",
+      "Price": 18850,
+      "Image": "FFAS0104-101500BC0.jpg"
+    }
+  ],
+  "ACACIA E": [
+    {
+      "Name": "Acacia E Robe Hook",
+      "Code": "FFAS1381-908500BC0",
+      "Price": 2850,
+      "Image": "FFAS1381-908500BC0.jpg"
+    },
+    {
+      "Name": "Acacia E Toilet Brush",
+      "Code": "FFAS1386-908500BC0",
+      "Price": 6450,
+      "Image": "FFAS1386-908500BC0.jpg"
+    },
+    {
+      "Name": "Acacia E Towel Rack",
+      "Code": "FFAS1393-908500BC0",
+      "Price": 6300,
+      "Image": "FFAS1393-908500BC0.jpg"
+    },
+    {
+      "Name": "Acacia E Towel Ring",
+      "Code": "FFAS1390-908500BC0",
+      "Price": 5150,
+      "Image": "FFAS1390-908500BC0.jpg"
+    },
+    {
+      "Name": "Acacia E Tissue Holder",
+      "Code": "FFAS1387-908500BC0",
+      "Price": 3450,
+      "Image": "FFAS1387-908500BC0.jpg"
+    }
+  ],
+  "KASTELLO": [
+    {
+      "Name": "KASTELLO Concealed (w/o UxBox)",
+      "Code": "FFAS1621-608500ZF0",
+      "Price": 28950,
+      "Image": "FFAS1621-608500ZF0.jpg"
+    }
+  ],
+  "CONCEPT ROUND": [
+    {
+      "Name": "Concept Round Double Tissue Holder with Shelf",
+      "Code": "FFAS1499-908500BC0",
+      "Price": 8300,
+      "Image": "FFAS1499-908500BC0.jpg"
+    },
+    {
+      "Name": "Concept Round Single Tissue Holder with Shelf",
+      "Code": "FFAS1498-908500BC0",
+      "Price": 6200,
+      "Image": "FFAS1498-908500BC0.jpg"
+    },
+    {
+      "Name": "Concept Round Towel Rack",
+      "Code": "FFAS1495-908500BF0",
+      "Price": 12850,
+      "Image": "FFAS1495-908500BF0.jpg"
+    },
+    {
+      "Name": "Concept Round Towel Holder 60cm",
+      "Code": "FFAS1493-908500BF0",
+      "Price": 9100,
+      "Image": "FFAS1493-908500BF0.jpg"
+    },
+    {
+      "Name": "Concept Round Glass Shelf With Bar",
+      "Code": "FFAS1492-908500BF0",
+      "Price": 6200,
+      "Image": "FFAS1492-908500BF0.jpg"
+    },
+    {
+      "Name": "Concept Round Double Towel Holder 60cm",
+      "Code": "FFAS1494-908500BF0",
+      "Price": 6200,
+      "Image": "FFAS1494-908500BF0.jpg"
+    },
+    {
+      "Name": "Concept Round Soap Bracket",
+      "Code": "FFAS1483-908500BF0",
+      "Price": 5950,
+      "Image": "FFAS1483-908500BF0.jpg"
+    },
+    {
+      "Name": "Concept Round Brush Holder",
+      "Code": "FFAS1486-908500BF0",
+      "Price": 5800,
+      "Image": "FFAS1486-908500BF0.jpg"
+    },
+    {
+      "Name": "Concept Round Double Grass",
+      "Code": "FFAS1485-908500BF0",
+      "Price": 5150,
+      "Image": "FFAS1485-908500BF0.jpg"
+    },
+    {
+      "Name": "Concept Round Soap Holder",
+      "Code": "FFAS1482-908500BF0",
+      "Price": 3250,
+      "Image": "FFAS1482-908500BF0.jpg"
+    },
+    {
+      "Name": "Concept Round Double Hook",
+      "Code": "FFAS1481-908500BF0",
+      "Price": 2100,
+      "Image": "FFAS1481-908500BF0.jpg"
+    },
+    {
+      "Name": "Concept Round Glass Shelf",
+      "Code": "FFAS1491-908500BF0",
+      "Price": 5150,
+      "Image": "FFAS1491-908500BF0.jpg"
+    },
+    {
+      "Name": "Concept Round Paper Holder (Vertical)",
+      "Code": "FFAS1488-908500BF0",
+      "Price": 4650,
+      "Image": "FFAS1488-908500BF0.jpg"
+    },
+    {
+      "Name": "Concept Round Paper Holder (Horizontal)",
+      "Code": "FFAS1487-908500BF0",
+      "Price": 4250,
+      "Image": "FFAS1487-908500BF0.jpg"
+    },
+    {
+      "Name": "Concept Round Paper Holder",
+      "Code": "FFAS1489-908500BF0",
+      "Price": 4250,
+      "Image": "FFAS1489-908500BF0.jpg"
+    },
+    {
+      "Name": "Concept Round Towel Ring",
+      "Code": "FFAS1490-908500BF0",
+      "Price": 3600,
+      "Image": "FFAS1490-908500BF0.jpg"
+    },
+    {
+      "Name": "Concept Round Glass Holder",
+      "Code": "FFAS1484-908500BF0",
+      "Price": 3550,
+      "Image": "FFAS1484-908500BF0.jpg"
+    }
+  ],
+  "CONCEPT SQUARE": [
+    {
+      "Name": "Concept Square Double Tissue Holder with Shelf",
+      "Code": "FFAS0499-908500BC0",
+      "Price": 8550,
+      "Image": "FFAS0499-908500BC0.jpg"
+    },
+    {
+      "Name": "Concept Square Single Tissue Holder with Shelf",
+      "Code": "FFAS0498-908500BC0",
+      "Price": 6450,
+      "Image": "FFAS0498-908500BC0.jpg"
+    },
+    {
+      "Name": "Concept Square Towel Rack",
+      "Code": "FFAS0495-908500BF0",
+      "Price": 20050,
+      "Image": "FFAS0495-908500BF0.jpg"
+    },
+    {
+      "Name": "Concept Square Double Towel Holder 60cm",
+      "Code": "FFAS0494-908500BF0",
+      "Price": 9500,
+      "Image": "FFAS0494-908500BF0.jpg"
+    },
+    {
+      "Name": "Concept Square Brush Holder",
+      "Code": "FFAS0486-908500BF0",
+      "Price": 7350,
+      "Image": "FFAS0486-908500BF0.jpg"
+    },
+    {
+      "Name": "Concept Square Double Glass Holder",
+      "Code": "FFAS0485-908500BF0",
+      "Price": 7050,
+      "Image": "FFAS0485-908500BF0.jpg"
+    },
+    {
+      "Name": "Concept Square Glass Shelf With Bar",
+      "Code": "FFAS0492-908500BF0",
+      "Price": 6450,
+      "Image": "FFAS0492-908500BF0.jpg"
+    },
+    {
+      "Name": "Concept Square Single Towel Holder 60cm",
+      "Code": "FFAS0493-908500BF0",
+      "Price": 6350,
+      "Image": "FFAS0493-908500BF0.jpg"
+    },
+    {
+      "Name": "Concept Square Soap Bracket",
+      "Code": "FFAS0483-908500BF0",
+      "Price": 5950,
+      "Image": "FFAS0483-908500BF0.jpg"
+    },
+    {
+      "Name": "Concept Square Glass Shelf",
+      "Code": "FFAS0491-908500BF0",
+      "Price": 5350,
+      "Image": "FFAS0491-908500BF0.jpg"
+    },
+    {
+      "Name": "Concept Square Glass Holder",
+      "Code": "FFAS0484-908500BF0",
+      "Price": 5300,
+      "Image": "FFAS0484-908500BF0.jpg"
+    },
+    {
+      "Name": "Concept Square Paper Holder",
+      "Code": "FFAS0489-908500BF0",
+      "Price": 5200,
+      "Image": "FFAS0489-908500BF0.jpg"
+    },
+    {
+      "Name": "Concept Square Paper Holder (Vertical)",
+      "Code": "FFAS0488-908500BF0",
+      "Price": 5100,
+      "Image": "FFAS0488-908500BF0.jpg"
+    },
+    {
+      "Name": "Concept Square Soap Holder",
+      "Code": "FFAS0482-908500BF0",
+      "Price": 4800,
+      "Image": "FFAS0482-908500BF0.jpg"
+    },
+    {
+      "Name": "Concept Square Towel Ring",
+      "Code": "FFAS0490-908500BF0",
+      "Price": 4650,
+      "Image": "FFAS0490-908500BF0.jpg"
+    },
+    {
+      "Name": "Concept Square Paper Holder (Horizontal)",
+      "Code": "FFAS0487-908500BF0",
+      "Price": 4650,
+      "Image": "FFAS0487-908500BF0.jpg"
+    },
+    {
+      "Name": "Concept Square Double Hook",
+      "Code": "FFAS0481-908500BF0",
+      "Price": 3150,
+      "Image": "FFAS0481-908500BF0.jpg"
+    }
+  ],
+  "CYGNET": [
+    {
+      "Name": "Cygnet Concealed",
+      "Code": "FFAS0321-659500BA0",
+      "Price": 15700,
+      "Image": "FFAS0321-659500BA0.jpg"
+    }
+  ],
+  "MILANO": [
+    {
+      "Name": "Milano Exposed",
+      "Code": "FFAS0911-602501BF0",
+      "Price": 21500,
+      "Image": "FFAS0911-602501BF0.jpg"
+    },
+    {
+      "Name": "Milano Concealed",
+      "Code": "FFAS0921-609500BF0",
+      "Price": 16600,
+      "Image": "FFAS0921-609500BF0.jpg"
+    }
+  ],
+  "NEO MODERN": [
+    {
+      "Name": "Neo Modern Exposed",
+      "Code": "FFAS0711-651500BA0",
+      "Price": 11500,
+      "Image": "FFAS0711-651500BA0.jpg"
+    },
+    {
+      "Name": "Neo Modern LxBend Mixer (Chrome)",
+      "Code": "FFAS0714-604500BA0",
+      "Price": 9300,
+      "Image": "FFAS0714-604500BA0.jpg"
+    },
+    {
+      "Name": "Neo Modern Concealed",
+      "Code": "FFAS0721-659500BA0",
+      "Price": 9300,
+      "Image": "FFAS0721-659500BA0.jpg"
+    }
+  ],
+  "CODIE": [
+    {
+      "Name": "Codie Concealed",
+      "Code": "FFASB221-609500BF0",
+      "Price": 14250,
+      "Image": "FFASB221-609500BF0.jpg"
+    }
+  ],
+  "SIMPLICITY SQUARE": [
+    {
+      "Name": "Simplicity Square Concealed",
+      "Code": "FFAST521-659500BF0",
+      "Price": 10750,
+      "Image": "FFAST521-659500BF0.jpg"
+    }
+  ],
+  "SEVA": [
+    {
+      "Name": "Seva Towel Shelf(Round)",
+      "Code": "FFAS6589-908500BF0",
+      "Price": 8200,
+      "Image": "FFAS6589-908500BF0.jpg"
+    },
+    {
+      "Name": "Seva Towel Holder",
+      "Code": "FFAS6588-908500BF0",
+      "Price": 3000,
+      "Image": "FFAS6588-908500BF0.jpg"
+    },
+    {
+      "Name": "Seva Towel Ring",
+      "Code": "FFAS6590-908500BF0",
+      "Price": 3000,
+      "Image": "FFAS6590-908500BF0.jpg"
+    },
+    {
+      "Name": "Seva Glass Holder",
+      "Code": "FFAS6583-908500BF0",
+      "Price": 2400,
+      "Image": "FFAS6583-908500BF0.jpg"
+    },
+    {
+      "Name": "Seva Robe Hook",
+      "Code": "FFAS6581-908500BF0",
+      "Price": 1750,
+      "Image": "FFAS6581-908500BF0.jpg"
+    }
+  ],
+  "NOBILE": [
+    {
+      "Name": "Basin Mixer with Pop Up x Joystick",
+      "Code": "FFAS0602-101500BF0",
+      "Price": 19900,
+      "Image": "FFAS0602-101500BF0.jpg"
+    }
+  ],
+  "CERAPLAN": [
+    {
+      "Name": "Ceraplan Single Hole Lava Faucet x Long",
+      "Code": "FFAS1261-105500BC0",
+      "Price": 20700,
+      "Image": "FFAS1261-105500BC0.jpg"
+    }
+  ],
+  "CHI": [
+    {
+      "Name": "CHI Extended Mono Faucet",
+      "Code": "FTP0051",
+      "Price": 6100,
+      "Image": "FTP0051.jpg"
+    }
+  ],
+  "MONO FAUCETS": [
+    {
+      "Name": "Signature Extended w/o Popxup Drain",
+      "Code": "FFAS1707-1015L0BA0",
+      "Price": 19400,
+      "Image": "FFAS1707-1015L0BA0.jpg"
+    },
+    {
+      "Name": "Neo Modern",
+      "Code": "FFAS0707-101500BF0",
+      "Price": 9050,
+      "Image": "FFAS0707-101500BF0.jpg"
+    },
+    {
+      "Name": "Concept Square Single Hole",
+      "Code": "FFAS0406-151500BA0",
+      "Price": 11050,
+      "Image": "FFAS0406-151500BA0.jpg"
+    },
+    {
+      "Name": "Signature w/o Popxup Drain",
+      "Code": "FFAS1706-1015L0BA0",
+      "Price": 9450,
+      "Image": "FFAS1706-1015L0BA0.jpg"
+    },
+    {
+      "Name": "Cygnet",
+      "Code": "FFAS0306-101500BF0",
+      "Price": 8650,
+      "Image": "FFAS0306-101500BF0.jpg"
+    },
+    {
+      "Name": "Milano",
+      "Code": "FFAS0906-102500BF0",
+      "Price": 8950,
+      "Image": "FFAS0906-102500BF0.jpg"
+    },
+    {
+      "Name": "Codie",
+      "Code": "FFASB206-101500BF0",
+      "Price": 8500,
+      "Image": "FFASB206-101500BF0.jpg"
+    },
+    {
+      "Name": "Acacia E",
+      "Code": "FFAS1306-101500BF0",
+      "Price": 10000,
+      "Image": "FFAS1306-101500BF0.jpg"
+    },
+    {
+      "Name": "Easy Flo Basin Mono",
+      "Code": "FFAST823-109500BF0",
+      "Price": 8150,
+      "Image": "FFAST823-109500BF0.jpg"
+    },
+    {
+      "Name": "Simplicity Square",
+      "Code": "FFAST506-151500BA0",
+      "Price": 7900,
+      "Image": "FFAST506-151500BA0.jpg"
+    },
+    {
+      "Name": "Seva Basin Mono w/o Popxup Drain",
+      "Code": "FFAS6506-101500BF0",
+      "Price": 7500,
+      "Image": "FFAS6506-101500BF0.jpg"
+    },
+    {
+      "Name": "Neo Modern",
+      "Code": "FFAS0706-151500BA0",
+      "Price": 5600,
+      "Image": "FFAS0706-151500BA0.jpg"
+    }
+  ],
+  "SELF CLOSING MONO FAUCETS": [
+    {
+      "Name": "Cool",
+      "Code": "F22400-CHACTN",
+      "Price": 20700,
+      "Image": "F22400-CHACTN.jpg"
+    },
+    {
+      "Name": "Frost",
+      "Code": "FFAS4609-101500BF0",
+      "Price": 11050,
+      "Image": "FFAS4609-101500BF0.jpg"
+    },
+    {
+      "Name": "La Moda Freestanding",
+      "Code": "FFAS0816-602500BF0",
+      "Price": 117450,
+      "Image": "FFAS0816-602500BF0.jpg"
+    },
+    {
+      "Name": "La Moda Concealed (w/o UxBox)",
+      "Code": "FFAS0821-608500BF0",
+      "Price": 20900,
+      "Image": "FFAS0821-608500BF0.jpg"
+    }
+  ],
+  "SHOWER MIXER": [
+    {
+      "Name": "Acacia ExExposed",
+      "Code": "FFAS1312-701500BF0",
+      "Price": 30800,
+      "Image": "FFAS1312-701500BF0.jpg"
+    },
+    {
+      "Name": "Signature Exposed",
+      "Code": "FFAS1712-709500BC0",
+      "Price": 19750,
+      "Image": "FFAS1712-709500BC0.jpg"
+    },
+    {
+      "Name": "Acacia ExConcealed",
+      "Code": "FFAS1322-708500BF0",
+      "Price": 16450,
+      "Image": "FFAS1322-708500BF0.jpg"
+    },
+    {
+      "Name": "Signature Concealed",
+      "Code": "FFAS1722-709500BC0",
+      "Price": 14500,
+      "Image": "FFAS1722-709500BC0.jpg"
+    },
+    {
+      "Name": "Milanox Concealed",
+      "Code": "FFAS0922-709500BF0",
+      "Price": 14500,
+      "Image": "FFAS0922-709500BF0.jpg"
+    },
+    {
+      "Name": "Seva Exposed",
+      "Code": "FFAS6512-701500BF0",
+      "Price": 11250,
+      "Image": "FFAS6512-701500BF0.jpg"
+    },
+    {
+      "Name": "Concept Round x Concealed",
+      "Code": "FFAS1422-709500BF0",
+      "Price": 10650,
+      "Image": "FFAS1422-709500BF0.jpg"
+    },
+    {
+      "Name": "Seva Concealed",
+      "Code": "FFAS6521-609500BF0",
+      "Price": 7850,
+      "Image": "FFAS6521-609500BF0.jpg"
+    }
+  ],
+  "UNIVERSAL": [
+    {
+      "Name": "Universal Installation Box",
+      "Code": "FFAS0625-000990BF0",
+      "Price": 8900,
+      "Image": "FFAS0625-000990BF0.jpg"
+    }
+  ],
+  "SHOWER MONO": [
+    {
+      "Name": "Signature Exposed",
+      "Code": "FFAS1726-701500BA0",
+      "Price": 7900,
+      "Image": "FFAS1726-701500BA0.jpg"
+    },
+    {
+      "Name": "Simplicity SquarexExposed",
+      "Code": "FFAST526-701500BF0",
+      "Price": 7750,
+      "Image": "FFAST526-701500BF0.jpg"
+    },
+    {
+      "Name": "Neo ModernxConcealed",
+      "Code": "FFAS0722-709500BF0",
+      "Price": 6100,
+      "Image": "FFAS0722-709500BF0.jpg"
+    },
+    {
+      "Name": "Neo ModernxExposed",
+      "Code": "FFAS0726-701500BF0",
+      "Price": 5800,
+      "Image": "FFAS0726-701500BF0.jpg"
+    },
+    {
+      "Name": "Easy Flo Concealed Shower Mono",
+      "Code": "FFAST826-709500BF0",
+      "Price": 5400,
+      "Image": "FFAST826-709500BF0.jpg"
+    },
+    {
+      "Name": "Easy Flo Exposed Shower Mono",
+      "Code": "FFAST825-709500BF0",
+      "Price": 4800,
+      "Image": "FFAST825-709500BF0.jpg"
+    }
+  ],
+  "BATH SPOUT": [
+    {
+      "Name": "Deck Mount Bath & Shower Mixer with Shower Kit",
+      "Code": "FFAS1600-601500BF0",
+      "Price": 51150,
+      "Image": "FFAS1600-601500BF0.jpg"
+    },
+    {
+      "Name": "La Moda",
+      "Code": "FFAS9713-001500BF0",
+      "Price": 20400,
+      "Image": "FFAS9713-001500BF0.jpg"
+    },
+    {
+      "Name": "Onyx",
+      "Code": "FF1-CN521-00000460",
+      "Price": 6650,
+      "Image": "FF1-CN521-00000460.jpg"
+    },
+    {
+      "Name": "Acacia ExMilano",
+      "Code": "FFAS9714-000500BF0",
+      "Price": 6950,
+      "Image": "FFAS9714-000500BF0.jpg"
+    },
+    {
+      "Name": "Rectangle",
+      "Code": "FF1-CN521-00000461",
+      "Price": 6900,
+      "Image": "FF1-CN521-00000461.jpg"
+    },
+    {
+      "Name": "Minialistic",
+      "Code": "FF1-CN521-00000458",
+      "Price": 5650,
+      "Image": "FF1-CN521-00000458.jpg"
+    },
+    {
+      "Name": "Cygnet",
+      "Code": "FF1-CN521-00000478",
+      "Price": 4650,
+      "Image": "FF1-CN521-00000478.jpg"
+    },
+    {
+      "Name": "Simplicity Square",
+      "Code": "FF1-CN521-00000480",
+      "Price": 4200,
+      "Image": "FF1-CN521-00000480.jpg"
+    },
+    {
+      "Name": "Neo Modern",
+      "Code": "FF1-CN521-00000477",
+      "Price": 3150,
+      "Image": "FF1-CN521-00000477.jpg"
+    }
+  ],
+  "FREE STANDING BATH FILLER": [
+    {
+      "Name": "Floor Standing Bath Filler",
+      "Code": "FFAS6816-601500BF0",
+      "Price": 99500,
+      "Image": "FFAS6816-601500BF0.jpg"
+    }
+  ],
+  "WINSTON FAUCETS": [
+    {
+      "Name": "Winston Exposed B&S Mono (2 ways) (Cross)",
+      "Code": "FFAST703-601500BF0",
+      "Price": 4900,
+      "Image": "FFAST703-601500BF0.jpg"
+    },
+    {
+      "Name": "Winston Pillar TapxCross HandlexExport",
+      "Code": "FFAST701-101500BF0",
+      "Price": 3950,
+      "Image": "FFAST701-101500BF0.jpg"
+    },
+    {
+      "Name": "Winston Exposed B&S Mono (2 ways) (Lever)",
+      "Code": "FFAST603-601500BF0",
+      "Price": 4550,
+      "Image": "FFAST603-601500BF0.jpg"
+    },
+    {
+      "Name": "Winston Pillar TapxLever HandlexExport",
+      "Code": "FFAST601-101500BF0",
+      "Price": 3700,
+      "Image": "FFAST601-101500BF0.jpg"
+    },
+    {
+      "Name": "Winston Concealed Shower Mono (Cross)",
+      "Code": "FFAST705-709500BF0",
+      "Price": 3250,
+      "Image": "FFAST705-709500BF0.jpg"
+    },
+    {
+      "Name": "Winston Concealed Shower Mono (Lever)",
+      "Code": "FFAST605-709500BF0",
+      "Price": 3250,
+      "Image": "FFAST605-709500BF0.jpg"
+    },
+    {
+      "Name": "Winston Wall Tap (Cross Handle)",
+      "Code": "FFAST702-000500BF0",
+      "Price": 2550,
+      "Image": "FFAST702-000500BF0.jpg"
+    },
+    {
+      "Name": "Winston Wall Tap (Lever Handle)",
+      "Code": "FFAST602-000500BF0",
+      "Price": 2450,
+      "Image": "FFAST602-000500BF0.jpg"
+    },
+    {
+      "Name": "Winston Exposed Shower Mono (Cross)",
+      "Code": "FFAST704-701500BF0",
+      "Price": 2300,
+      "Image": "FFAST704-701500BF0.jpg"
+    },
+    {
+      "Name": "Winston Exposed Shower Mono (Lever)",
+      "Code": "FFAST604-701500BF0",
+      "Price": 2150,
+      "Image": "FFAST604-701500BF0.jpg"
+    }
+  ],
+  "HYGIENE SPRAY & ANGLE VALVE": [
+    {
+      "Name": "DuoSTix Hygiene Spray (Chrome & Matte Black)",
+      "Code": "FFASTS28-000440BF0",
+      "Price": 3200,
+      "Image": "FFASTS28-000440BF0.jpg"
+    },
+    {
+      "Name": "DuoSTix Hygiene Spray (Chrome/Glossy White)",
+      "Code": "FFASTS28-000090BF0",
+      "Price": 3200,
+      "Image": "FFASTS28-000090BF0.jpg"
+    },
+    {
+      "Name": "DuoSTix Hygiene Spray (Glossy White)",
+      "Code": "FFASTS28-000091BF0",
+      "Price": 2950,
+      "Image": "FFASTS28-000091BF0.jpg"
+    },
+    {
+      "Name": "Jet Washer With 120cm PVC Hose And Holder",
+      "Code": "CLTP405-CHZZ",
+      "Price": 2450,
+      "Image": "CLTP405-CHZZ.jpg"
+    },
+    {
+      "Name": "Angle Stop",
+      "Code": "F54400-CHACT",
+      "Price": 950,
+      "Image": "F54400-CHACT.jpg"
+    }
+  ],
+  "EASYSET": [
+    {
+      "Name": "Easy Set exposed bath & shower\r\n3xway rainshower System",
+      "Code": "FFAS4956-601500BC0",
+      "Price": 92200,
+      "Image": "FFAS4956-601500BC0.jpg"
+    },
+    {
+      "Name": "Easy Set exposed bath & shower auto temperature\r\nmixer with integrated rainxshower kit",
+      "Code": "FFAS4955-701500BC0",
+      "Price": 79000,
+      "Image": "FFAS4955-701500BC0.jpg"
+    },
+    {
+      "Name": "Easy Set exposed bath & shower auto temperature\r\nmixer with shower kit",
+      "Code": "FFAS4954-601500BC0",
+      "Price": 65850,
+      "Image": "FFAS4954-601500BC0.jpg"
+    },
+    {
+      "Name": "Easy Set exposed bath & shower auto\r\ntemperature mixer",
+      "Code": "FFAS4954-609500BC0",
+      "Price": 59100,
+      "Image": "FFAS4954-609500BC0.jpg"
+    },
+    {
+      "Name": "Conceal Thermostatic Mixer With Trim\r\nThermostats",
+      "Code": "FFAS0930-000500BC0",
+      "Price": 25100,
+      "Image": "FFAS0930-000500BC0.jpg"
+    },
+    {
+      "Name": "Easy Dial For Body Shower",
+      "Code": "FFAS0927-709500BC0",
+      "Price": 16550,
+      "Image": "FFAS0927-709500BC0.jpg"
+    },
+    {
+      "Name": "Easy Dial For Hand Shower",
+      "Code": "FFAS0925-709500BC0",
+      "Price": 16550,
+      "Image": "FFAS0925-709500BC0.jpg"
+    },
+    {
+      "Name": "Easy Dial For Head Shower",
+      "Code": "FFAS0926-709500BC0",
+      "Price": 16550,
+      "Image": "FFAS0926-709500BC0.jpg"
+    },
+    {
+      "Name": "Body Showers With Conceal Body",
+      "Code": "FFASS054-000500BC0",
+      "Price": 9200,
+      "Image": "FFASS054-000500BC0.jpg"
+    },
+    {
+      "Name": "Wall Outlet With Holder x Square (G1/2”)",
+      "Code": "FFAS9143-000500BC0",
+      "Price": 7500,
+      "Image": "FFAS9143-000500BC0.jpg"
+    },
+    {
+      "Name": "Wall Outlet With Holder x Round (G1/2”)",
+      "Code": "FFAS9141-000500BC0",
+      "Price": 5500,
+      "Image": "FFAS9141-000500BC0.jpg"
+    },
+    {
+      "Name": "Wall Outlet x Square (G1/2”)",
+      "Code": "FFAS9142-000500BC0",
+      "Price": 4100,
+      "Image": "FFAS9142-000500BC0.jpg"
+    },
+    {
+      "Name": "Wall Outlet x Round (G1/2”)",
+      "Code": "FFAS9140-000500BC0",
+      "Price": 3950,
+      "Image": "FFAS9140-000500BC0.jpg"
+    }
+  ],
+  "SHOWERS & SHOWER SYSTEM": [
+    {
+      "Name": "NAME",
+      "Code": "CODE",
+      "Price": "PRICE",
+      "Image": "CODE.jpg"
+    },
+    {
+      "Name": "Spectra ExTouch",
+      "Code": "FFASS057-000500BC0",
+      "Price": 20700,
+      "Image": "FFASS057-000500BC0.jpg"
+    },
+    {
+      "Name": "Spectra Touch",
+      "Code": "FFASS056-000500BC0",
+      "Price": 16600,
+      "Image": "FFASS056-000500BC0.jpg"
+    },
+    {
+      "Name": "Spectra Duo",
+      "Code": "FFASS055-000500BC0",
+      "Price": 15200,
+      "Image": "FFASS055-000500BC0.jpg"
+    }
+  ],
+  "RAIN SHOWER - BRASS (SQUARE)": [
+    {
+      "Name": "Square 300x300mm Brass Rain Shower Head",
+      "Code": "FFASTS06-006500BF0",
+      "Price": 44400,
+      "Image": "FFASTS06-006500BF0.jpg"
+    },
+    {
+      "Name": "254mm Square Brass Rain Shower Head",
+      "Code": "FFASS038-000500BC0",
+      "Price": 30100,
+      "Image": "FFASS038-000500BC0.jpg"
+    },
+    {
+      "Name": "Square 250x250mm Brass Rain Shower Head",
+      "Code": "FFASTS05-006500BF0",
+      "Price": 28450,
+      "Image": "FFASTS05-006500BF0.jpg"
+    },
+    {
+      "Name": "Square 200x200mm Brass Rain Shower Head",
+      "Code": "FFASS037-000500BF0",
+      "Price": 18950,
+      "Image": "FFASS037-000500BF0.jpg"
+    }
+  ],
+  "RAIN SHOWER * BRASS (ROUND)": [
+    {
+      "Name": "12” Round Brass Rain Shower Head With AirxIn",
+      "Code": "FFASTS04-006500BF0",
+      "Price": 38050,
+      "Image": "FFASTS04-006500BF0.jpg"
+    },
+    {
+      "Name": "10” Round Brass Rain Shower Head With AirxIn",
+      "Code": "FFASTS03-006500BF0",
+      "Price": 23750,
+      "Image": "FFASTS03-006500BF0.jpg"
+    },
+    {
+      "Name": "8” Round Brass Rain Shower Head (w/o sh)",
+      "Code": "FFASS035-000500BF0",
+      "Price": 14100,
+      "Image": "FFASS035-000500BF0.jpg"
+    }
+  ],
+  "RAIN SHOWER * STAINLESS STEEL (SQUARE)": [
+    {
+      "Name": "Super Thin 300mm Square Rain Shower Head",
+      "Code": "FFASS034-000500BC0",
+      "Price": 23200,
+      "Image": "FFASS034-000500BC0.jpg"
+    },
+    {
+      "Name": "Super Thin 250mm Square Rain Shower Head",
+      "Code": "FFASS033-000500BC0",
+      "Price": 18800,
+      "Image": "FFASS033-000500BC0.jpg"
+    },
+    {
+      "Name": "Super Thin 200mm Square Airxin Rain Shower Head",
+      "Code": "FFASS032-006500BC0",
+      "Price": 10500,
+      "Image": "FFASS032-006500BC0.jpg"
+    }
+  ],
+  "RAIN SHOWER * STAINLESS STEEL (ROUND)": [
+    {
+      "Name": "12” Round Stainless Steel Rain Shower Head",
+      "Code": "FFASTS02-006500BF0",
+      "Price": 22100,
+      "Image": "FFASTS02-006500BF0.jpg"
+    },
+    {
+      "Name": "10” Round Stainless Steel Rain Shower Head",
+      "Code": "FFASTS01-006500BF0",
+      "Price": 17450,
+      "Image": "FFASTS01-006500BF0.jpg"
+    },
+    {
+      "Name": "8” Round Stainless Steel Rain Shower Head",
+      "Code": "FFASS029-000500BF0",
+      "Price": 9500,
+      "Image": "FFASS029-000500BF0.jpg"
+    }
+  ],
+  "SHOWER HEAD": [
+    {
+      "Name": "202mm Rain Shower x Square",
+      "Code": "FFASS026-006500BC0",
+      "Price": 7100,
+      "Image": "FFASS026-006500BC0.jpg"
+    },
+    {
+      "Name": "200mm Rain Shower x Round",
+      "Code": "FFASS025-006500BC0",
+      "Price": 6500,
+      "Image": "FFASS025-006500BC0.jpg"
+    },
+    {
+      "Name": "Shower Head 100mm 5xFunction",
+      "Code": "F40011-CHADY",
+      "Price": 6450,
+      "Image": "F40011-CHADY.jpg"
+    },
+    {
+      "Name": "Idyll Inxwall Shower Head With Arm",
+      "Code": "FFAS9033-000500BC0",
+      "Price": 3800,
+      "Image": "FFAS9033-000500BC0.jpg"
+    },
+    {
+      "Name": "Celia Inxwall Shower Head With Arm",
+      "Code": "FFAS9036-000500BC0",
+      "Price": 3600,
+      "Image": "FFAS9036-000500BC0.jpg"
+    },
+    {
+      "Name": "Olyos Inxwall Shower Head With Arm",
+      "Code": "FFAS9031-000500BC0",
+      "Price": 2750,
+      "Image": "FFAS9031-000500BC0.jpg"
+    }
+  ],
+  "SHOWER ARMS": [
+    {
+      "Name": "Shower Arm",
+      "Code": "FF163505050",
+      "Price": 2850,
+      "Image": "FF163505050.jpg"
+    },
+    {
+      "Name": "Top Installation Shower Arm",
+      "Code": "FFAS9908-000500BC0",
+      "Price": 2850,
+      "Image": "FFAS9908-000500BC0.jpg"
+    },
+    {
+      "Name": "Shower Arm With Escutcheon x Chrome",
+      "Code": "F46022-CHACT",
+      "Price": 1700,
+      "Image": "F46022-CHACT.jpg"
+    }
+  ],
+  "HAND SHOWER": [
+    {
+      "Name": "3xFunction Hand Shower Set With Push Button",
+      "Code": "F40017-CHADY",
+      "Price": 7450,
+      "Image": "F40017-CHADY.jpg"
+    },
+    {
+      "Name": "Hand Shower",
+      "Code": "F46014-CHADYHS",
+      "Price": 5350,
+      "Image": "F46014-CHADYHS.jpg"
+    }
+  ],
+  "GENIE": [
+    {
+      "Name": "Genie Hand Shower (Steel Grey)",
+      "Code": "FFASS505-000440BA0",
+      "Price": 3400,
+      "Image": "FFASS505-000440BA0.jpg"
+    },
+    {
+      "Name": "Genie Hand Shower (Petal Pink)",
+      "Code": "FFASS505-000560BA0",
+      "Price": 3400,
+      "Image": "FFASS505-000560BA0.jpg"
+    },
+    {
+      "Name": "Genie Hand Shower (Aquamarine)",
+      "Code": "FFASS505-000600BA0",
+      "Price": 3400,
+      "Image": "FFASS505-000600BA0.jpg"
+    }
+  ],
+  "SLIDE BAR": [
+    {
+      "Name": "Slide Bar With Soap Dish (Brass)",
+      "Code": "F40013-CHADY",
+      "Price": 9700,
+      "Image": "F40013-CHADY.jpg"
+    },
+    {
+      "Name": "Curved Slide Bar w/o Soap Dish (Brass)",
+      "Code": "F40014-CHADY",
+      "Price": 8150,
+      "Image": "F40014-CHADY.jpg"
+    },
+    {
+      "Name": "Slide Bar With Soap Dish",
+      "Code": "F40015-CHADY",
+      "Price": 13100,
+      "Image": "F40015-CHADY.jpg"
+    }
+  ],
+  "BATHROOM ACCESSORIES": [],
+  "HERITAGE": [
+    {
+      "Name": "Heritage Towel Shelf",
+      "Code": "FFAS0295-908500BC0",
+      "Price": 16600,
+      "Image": "FFAS0295-908500BC0.jpg"
+    },
+    {
+      "Name": "Heritage Dual Towel Rack",
+      "Code": "FFAS0294-908500BC0",
+      "Price": 11350,
+      "Image": "FFAS0294-908500BC0.jpg"
+    },
+    {
+      "Name": "Heritage Towel Rack",
+      "Code": "FFAS0293-908500BC0",
+      "Price": 6900,
+      "Image": "FFAS0293-908500BC0.jpg"
+    },
+    {
+      "Name": "Heritage Tissue Holder",
+      "Code": "FFAS0287-908500BC0",
+      "Price": 6900,
+      "Image": "FFAS0287-908500BC0.jpg"
+    },
+    {
+      "Name": "Heritage Toilet Brush",
+      "Code": "FFAS0286-908500BC0",
+      "Price": 6450,
+      "Image": "FFAS0286-908500BC0.jpg"
+    },
+    {
+      "Name": "Heritage Soap Dish",
+      "Code": "FFAS0282-908500BC0",
+      "Price": 4550,
+      "Image": "FFAS0282-908500BC0.jpg"
+    },
+    {
+      "Name": "Heritage Cup Holder",
+      "Code": "FFAS0284-908500BC0",
+      "Price": 4550,
+      "Image": "FFAS0284-908500BC0.jpg"
+    },
+    {
+      "Name": "Heritage Towel Ring",
+      "Code": "FFAS0290-908500BC0",
+      "Price": 3650,
+      "Image": "FFAS0290-908500BC0.jpg"
+    },
+    {
+      "Name": "Heritage Robe Hook",
+      "Code": "FFAS0281-908500BC0",
+      "Price": 2400,
+      "Image": "FFAS0281-908500BC0.jpg"
+    }
+  ],
+  "SIMPLE": [
+    {
+      "Name": "Seva Towel Shelf",
+      "Code": "FFAS6587-908500BF0",
+      "Price": 6800,
+      "Image": "FFAS6587-908500BF0.jpg"
+    },
+    {
+      "Name": "Simple Tissue Holder",
+      "Code": "FFAS6586-908500BF0",
+      "Price": 2950,
+      "Image": "FFAS6586-908500BF0.jpg"
+    },
+    {
+      "Name": "Simple Soap Dish",
+      "Code": "FFAS6582-908500BF0",
+      "Price": 2300,
+      "Image": "FFAS6582-908500BF0.jpg"
+    }
+  ],
+  "WASTE & OVERFLOW": [
+    {
+      "Name": "Brass Floor Drain 10x10 cm",
+      "Code": "F78205-CHADY",
+      "Price": 3050,
+      "Image": "F78205-CHADY.jpg"
+    },
+    {
+      "Name": "Waste & Over\u001fow For Lavatory x Chrome",
+      "Code": "F78007-CHADY",
+      "Price": 2300,
+      "Image": "F78007-CHADY.jpg"
+    },
+    {
+      "Name": "Waste & Over\u001fow For Lavatory",
+      "Code": "F78006-CHADYN",
+      "Price": 2100,
+      "Image": "F78006-CHADYN.jpg"
+    },
+    {
+      "Name": "Floordrain With Cover PlatexStainless",
+      "Code": "F78200-CHADYN",
+      "Price": 1200,
+      "Image": "F78200-CHADYN.jpg"
+    },
+    {
+      "Name": "FLOORDRAIN x STAINLESS",
+      "Code": "F78201-CHADYN",
+      "Price": 1100,
+      "Image": "F78201-CHADYN.jpg"
+    }
+  ],
+  "SENSOR FAUCET": [
+    {
+      "Name": "Linexsensor Technology Extend",
+      "Code": "FFAS8507-D00500BC0",
+      "Price": 44450,
+      "Image": "FFAS8507-D00500BC0.jpg"
+    },
+    {
+      "Name": "Linexsensor Technology In Wall Square",
+      "Code": "FFAS8511-D00500BF0",
+      "Price": 44800,
+      "Image": "FFAS8511-D00500BF0.jpg"
+    },
+    {
+      "Name": "Linex sensor Technology Square Extended",
+      "Code": "FFAS8510-A00500BC0",
+      "Price": 44650,
+      "Image": "FFAS8510-A00500BC0.jpg"
+    },
+    {
+      "Name": "Linex sensor Technology Sensor Extended",
+      "Code": "FFAS8507-A00500BC0",
+      "Price": 44250,
+      "Image": "FFAS8507-A00500BC0.jpg"
+    },
+    {
+      "Name": "Linexsensor Technology In Wall",
+      "Code": "FFAS8508-D00500BF0",
+      "Price": 44000,
+      "Image": "FFAS8508-D00500BF0.jpg"
+    },
+    {
+      "Name": "Linex sensor Technology Sensor InxWall",
+      "Code": "FFAS8508-A00500BC0",
+      "Price": 41200,
+      "Image": "FFAS8508-A00500BC0.jpg"
+    },
+    {
+      "Name": "Linexsensor Technology Square",
+      "Code": "FFAS8509-D00500BF0",
+      "Price": 40650,
+      "Image": "FFAS8509-D00500BF0.jpg"
+    },
+    {
+      "Name": "Linex sensor Technology InxWall",
+      "Code": "FFAS8511-A00500BC0",
+      "Price": 40650,
+      "Image": "FFAS8511-A00500BC0.jpg"
+    },
+    {
+      "Name": "Linexsensor Technology",
+      "Code": "FFAS8506-D00500BF0",
+      "Price": 39950,
+      "Image": "FFAS8506-D00500BF0.jpg"
+    },
+    {
+      "Name": "Linex sensor Technology Square",
+      "Code": "FFAS8509-A00500BC0",
+      "Price": 37900,
+      "Image": "FFAS8509-A00500BC0.jpg"
+    },
+    {
+      "Name": "SENSEFLOW SENSOR FAUCET (AC)",
+      "Code": "FFAS8611-000500BF0",
+      "Price": 35800,
+      "Image": "FFAS8611-000500BF0.jpg"
+    },
+    {
+      "Name": "SENSEFLOW SENSOR FAUCET (DC)",
+      "Code": "FFAS8601-000500BF0",
+      "Price": 33050,
+      "Image": "FFAS8601-000500BF0.jpg"
+    }
+  ],
+  "PRO & COMMERCIAL": [],
+  "URINALS": [
+    {
+      "Name": "Lynbrook FSD Intergrated Urinal x AC",
+      "Code": "CCAS6606-312A410F0",
+      "Price": 99800,
+      "Image": "CCAS6606-312A410F0.jpg"
+    },
+    {
+      "Name": "Lynbrook FSD Intergrated Urinal x DC",
+      "Code": "CCAS6606-311A410F0",
+      "Price": 98550,
+      "Image": "CCAS6606-311A410F0.jpg"
+    },
+    {
+      "Name": "Concept 1.9 L Urinal",
+      "Code": "CCAS6507-3100410C0",
+      "Price": 91650,
+      "Image": "CCAS6507-3100410C0.jpg"
+    },
+    {
+      "Name": "Integrated Sensor Urinal",
+      "Code": "CCAS6506-4110410F0",
+      "Price": 68600,
+      "Image": "CCAS6506-4110410F0.jpg"
+    },
+    {
+      "Name": "Lynbrook Int WH Urinal_0.5L_AC",
+      "Code": "CCAS6519-3120410F0",
+      "Price": 57650,
+      "Image": "CCAS6519-3120410F0.jpg"
+    },
+    {
+      "Name": "Lynbrook Int WH Urinal_0.5L_DC",
+      "Code": "CCAS6519-3110410F0",
+      "Price": 56350,
+      "Image": "CCAS6519-3110410F0.jpg"
+    },
+    {
+      "Name": "Lynbrook 0.9L Waterxsaving Floor Standing",
+      "Code": "CCAS6605-3200420F0",
+      "Price": 45850,
+      "Image": "CCAS6605-3200420F0.jpg"
+    },
+    {
+      "Name": "Lynbrook 0.9L Waterxsaving Floor Standing",
+      "Code": "CCAS6605-3100420F0",
+      "Price": 44000,
+      "Image": "CCAS6605-3100420F0.jpg"
+    },
+    {
+      "Name": "Lynbrook 0.5L Waterxsaving Wallxhung Urinal",
+      "Code": "CCAS6509-3100410C0",
+      "Price": 34050,
+      "Image": "CCAS6509-3100410C0.jpg"
+    },
+    {
+      "Name": "Washbrook Pro (With Back Inlet Only)",
+      "Code": "CCAS6591-3100410C0",
+      "Price": 29600,
+      "Image": "CCAS6591-3100410C0.jpg"
+    },
+    {
+      "Name": "New Contour Urinal Back Inlet 1.9LPF",
+      "Code": "CCAS6737-3100410F0",
+      "Price": 27350,
+      "Image": "CCAS6737-3100410F0.jpg"
+    },
+    {
+      "Name": "Neo Modern 0.9L Water-saving Urinal",
+      "Code": "CCAS6747-3100410C1",
+      "Price": 26200,
+      "Image": "CCAS6747-3100410C1.jpg"
+    },
+    {
+      "Name": "Flexbrook Urinal 0.5 litres",
+      "Code": "CCAS6510-3200410C0",
+      "Price": 26200,
+      "Image": "CCAS6510-3200410C0.jpg"
+    },
+    {
+      "Name": "AS Mini Washbrook Top Inlet Urinal",
+      "Code": "CCAS6401-3200410F0",
+      "Price": 23200,
+      "Image": "CCAS6401-3200410F0.jpg"
+    },
+    {
+      "Name": "AS Mini Washbrook Back Inlet Urinal",
+      "Code": "CCAS6401-3100410F0",
+      "Price": 23200,
+      "Image": "CCAS6401-3100410F0.jpg"
+    },
+    {
+      "Name": "Active WallxHung Urinal(Top inlet)",
+      "Code": "CCAS6728-3200410F0",
+      "Price": 18690,
+      "Image": "CCAS6728-3200410F0.jpg"
+    },
+    {
+      "Name": "Active WallxHung Urinal (Back Inlet)",
+      "Code": "CCAS6728-3100410F0",
+      "Price": 20550,
+      "Image": "CCAS6728-3100410F0.jpg"
+    },
+    {
+      "Name": "Penta Urinal",
+      "Code": "CL6734U-6DACTUS",
+      "Price": 19650,
+      "Image": "CL6734U-6DACTUS.jpg"
+    },
+    {
+      "Name": "Wall Urinal",
+      "Code": "CL0412U-6DACTUS",
+      "Price": 8150,
+      "Image": "CL0412U-6DACTUS.jpg"
+    }
+  ],
+  "URINAL SENSOR": [
+    {
+      "Name": "Sense Flow Concealed Urinal Sensor AC",
+      "Code": "FFAS8614-000500BF0",
+      "Price": 32900,
+      "Image": "FFAS8614-000500BF0.jpg"
+    },
+    {
+      "Name": "Sense Flow Exposed Urinal Sensor DC",
+      "Code": "FFAS8609-000500BF0",
+      "Price": 28900,
+      "Image": "FFAS8609-000500BF0.jpg"
+    },
+    {
+      "Name": "Sense Flow Concealed Urinal Sensor DC",
+      "Code": "FFAS8604-000500BF0",
+      "Price": 28900,
+      "Image": "FFAS8604-000500BF0.jpg"
+    }
+  ],
+  "TOILET SENSOR": [
+    {
+      "Name": "Concealed Sensor Toilet Flush Valve x DC",
+      "Code": "FFAS8603-000500BF0",
+      "Price": 47850,
+      "Image": "FFAS8603-000500BF0.jpg"
+    },
+    {
+      "Name": "Sense ow Concealed SensorToilet FV,(AC)",
+      "Code": "FFAS8613-000500BF0",
+      "Price": 50450,
+      "Image": "FFAS8613-000500BF0.jpg"
+    },
+    {
+      "Name": "Sense ow II Concealed Sensor Toilet FV",
+      "Code": "FFAS8703-000500BC0",
+      "Price": 52550,
+      "Image": "FFAS8703-000500BC0.jpg"
+    },
+    {
+      "Name": "Sense ow II Concealed Sensor Toilet FV (AC)",
+      "Code": "FFAS8713-000500BC0",
+      "Price": 55300,
+      "Image": "FFAS8713-000500BC0.jpg"
+    }
+  ],
+  "CISTERN & FLUSH PLATES": [
+    {
+      "Name": "Concept Oblong Flush Plate x Chrome Finish",
+      "Code": "CLCN59ZZ",
+      "Price": 3500,
+      "Image": "CLCN59ZZ.jpg"
+    },
+    {
+      "Name": "Concept Pillow Flush Plate x Chrome Finish",
+      "Code": "CLCN60ZZ",
+      "Price": 3500,
+      "Image": "CLCN60ZZ.jpg"
+    },
+    {
+      "Name": "Little Square Flush Plate x Chrome Finish",
+      "Code": "FA2315A0-CH",
+      "Price": 3500,
+      "Image": "FA2315A0-CH.jpg"
+    },
+    {
+      "Name": "Dynamic Dots Flush Plate x Chrome Finish",
+      "Code": "FA0325A0-CH",
+      "Price": 3500,
+      "Image": "FA0325A0-CH.jpg"
+    },
+    {
+      "Name": "Stretch Square Flush Plate x Chrome Finish",
+      "Code": "FA1325A0-CH",
+      "Price": 3500,
+      "Image": "FA1325A0-CH.jpg"
+    },
+    {
+      "Name": "Wide Square Flush Plate x Chrome Finish",
+      "Code": "F0A1350A-ACH",
+      "Price": 2600,
+      "Image": "F0A1350A-ACH.jpg"
+    },
+    {
+      "Name": "Step Square Flush Plate x Chrome Finish",
+      "Code": "FA4305A0-CH",
+      "Price": 2600,
+      "Image": "FA4305A0-CH.jpg"
+    }
+  ],
+  "MANUAL FLUSH VALVE": [
+    {
+      "Name": "Urinal Flush Valve",
+      "Code": "FFAS9802-007500BC0",
+      "Price": 8150,
+      "Image": "FFAS9802-007500BC0.jpg"
+    },
+    {
+      "Name": "Concept Arc Dual Flush Valve x 40mm",
+      "Code": "FFAS9808-000500BA0",
+      "Price": 5550,
+      "Image": "FFAS9808-000500BA0.jpg"
+    },
+    {
+      "Name": "Concept Arc Dual Flush Valve x 32mm",
+      "Code": "FFAS9809-000500BA0",
+      "Price": 5450,
+      "Image": "FFAS9809-000500BA0.jpg"
+    },
+    {
+      "Name": "Manual Urinal Flush Valve with\r\n Volume adjustment",
+      "Code": "FFAS9802-009500BF0",
+      "Price": 5850,
+      "Image": "FFAS9802-009500BF0.jpg"
+    },
+    {
+      "Name": "Manual Urinal Flush Valve",
+      "Code": "FFAS9859-000500BF0",
+      "Price": 5050,
+      "Image": "FFAS9859-000500BF0.jpg"
+    }
+  ],
+  "HAND DRYER": [
+    {
+      "Name": "High Speed Hand Dryer (White)",
+      "Code": "FFAS8017-000090BA0",
+      "Price": 53850,
+      "Image": "FFAS8017-000090BA0.jpg"
+    },
+    {
+      "Name": "High Speed Hand Dryer (Silver)",
+      "Code": "FFAS8017-000230BA0",
+      "Price": 53850,
+      "Image": "FFAS8017-000230BA0.jpg"
+    }
+  ],
+  "HANDICAP ACCESSORIES": [
+    {
+      "Name": "Floor Stand Nylon Grab Bar",
+      "Code": "FFAS9403-000040BC0",
+      "Price": 154700,
+      "Image": "FFAS9403-000040BC0.jpg"
+    },
+    {
+      "Name": "Shower Nylon Chair",
+      "Code": "FFAS9407-000040BC0",
+      "Price": 146100,
+      "Image": "FFAS9407-000040BC0.jpg"
+    },
+    {
+      "Name": "Turnup Nylon Grab Bar",
+      "Code": "FFAS9401-000040BC0",
+      "Price": 131450,
+      "Image": "FFAS9401-000040BC0.jpg"
+    },
+    {
+      "Name": "L Nylon Grab Bar (Left)",
+      "Code": "FFAS9404-000040BC0",
+      "Price": 54600,
+      "Image": "FFAS9404-000040BC0.jpg"
+    },
+    {
+      "Name": "L Nylon Grab Bar (Right)",
+      "Code": "FFAS9405-000040BC0",
+      "Price": 54600,
+      "Image": "FFAS9405-000040BC0.jpg"
+    },
+    {
+      "Name": "Nylon Grab Bar",
+      "Code": "FFAS9402-000040BC0",
+      "Price": 49750,
+      "Image": "FFAS9402-000040BC0.jpg"
+    },
+    {
+      "Name": "Shower Nylon Grab Bar",
+      "Code": "FFAS9406-000040BC0",
+      "Price": 29150,
+      "Image": "FFAS9406-000040BC0.jpg"
+    }
+  ],
+  "DRAIN TECHNOLOGY": [
+    {
+      "Name": "Brass Chromed/ABS 40cm Long",
+      "Code": "F78108-CHADYBR",
+      "Price": 6650,
+      "Image": "F78108-CHADYBR.jpg"
+    },
+    {
+      "Name": "Tubing Trap For Lavatory Slide Pack",
+      "Code": "F78100-CHADY",
+      "Price": 5650,
+      "Image": "F78100-CHADY.jpg"
+    },
+    {
+      "Name": "Pxtrap For Lavatory, Long Tail Piece, C",
+      "Code": "F78100-CHACTLS",
+      "Price": 5400,
+      "Image": "F78100-CHACTLS.jpg"
+    },
+    {
+      "Name": "Pxtrap For Lava Long Tail Top 25cm",
+      "Code": "F78100-CHACTLST",
+      "Price": 5500,
+      "Image": "F78100-CHACTLST.jpg"
+    },
+    {
+      "Name": "Tubing Trap For Lavatory x Chrome",
+      "Code": "F78100-CHACTN",
+      "Price": 5450,
+      "Image": "F78100-CHACTN.jpg"
+    },
+    {
+      "Name": "Pxtrap For Lava Tail Top 30cm",
+      "Code": "F78100-CHACTLSTT",
+      "Price": 5450,
+      "Image": "F78100-CHACTLSTT.jpg"
+    },
+    {
+      "Name": "Bottle Trap For Lavatory x Chrome",
+      "Code": "F78102-CHADYN",
+      "Price": 5450,
+      "Image": "F78102-CHADYN.jpg"
+    },
+    {
+      "Name": "ABS Bottle Trap (Chrome Plated)",
+      "Code": "F78104-CHADYN",
+      "Price": 2950,
+      "Image": "F78104-CHADYN.jpg"
+    },
+    {
+      "Name": "Stainless Steel/ABS Long 25cm Long",
+      "Code": "F78106-CHADYST",
+      "Price": 2800,
+      "Image": "F78106-CHADYST.jpg"
+    },
+    {
+      "Name": "Bottle Trap 25cm (Brass)",
+      "Code": "F78107-CHADYBR",
+      "Price": 2600,
+      "Image": "F78107-CHADYBR.jpg"
+    }
+  ],
+  "SOAP DISPENSER": [
+    {
+      "Name": "Automatic Soap Dispenser",
+      "Code": "FFAS8006-010090BF0",
+      "Price": 27100,
+      "Image": "FFAS8006-010090BF0.jpg"
+    }
+  ],
+  "KITCHEN DEVICES": [],
+  "KITCHEN MIXER": [
+    {
+      "Name": "Touch Sensor Kitchen Faucet",
+      "Code": "FFAS5644-5015L0BF0",
+      "Price": 74650,
+      "Image": "FFAS5644-5015L0BF0.jpg"
+    },
+    {
+      "Name": "GL890 Multifunction Kitchen Faucet (EdgeWater)",
+      "Code": "FFAS5634-5015L0BF0",
+      "Price": 39950,
+      "Image": "FFAS5634-5015L0BF0.jpg"
+    },
+    {
+      "Name": "Ceraplan Single Hole Deck Kitchen Faucet",
+      "Code": "FFAS5637-501500BF0",
+      "Price": 13850,
+      "Image": "FFAS5637-501500BF0.jpg"
+    }
+  ],
+  "KITCHEN MONO": [
+    {
+      "Name": "Winston Deck Mounted Kitchen Tap (Cross)",
+      "Code": "FFAST706-501500BF0",
+      "Price": 4700,
+      "Image": "FFAST706-501500BF0.jpg"
+    },
+    {
+      "Name": "Winston Deck Mounted Kitchen",
+      "Code": "FFAST606-501500BF0",
+      "Price": 4550,
+      "Image": "FFAST606-501500BF0.jpg"
+    },
+    {
+      "Name": "Winston Wall Mounted Kitchen Tap (Cross)",
+      "Code": "FFAST707-501500BF0",
+      "Price": 4000,
+      "Image": "FFAST707-501500BF0.jpg"
+    },
+    {
+      "Name": "Winston Wall Mounted Kitchen",
+      "Code": "FFAST607-501500BF0",
+      "Price": 4000,
+      "Image": "FFAST607-501500BF0.jpg"
+    }
+  ],
+  "BATH TUBS": [],
+  "WELLNESS TUBS": [
+    {
+      "Name": "IDS Round Freestanding Tub",
+      "Code": "B70212-6DAWD",
+      "Price": 987150,
+      "Image": "B70212-6DAWD.jpg"
+    },
+    {
+      "Name": "IDS Round Freestanding Tub",
+      "Code": "B70211-6DAWD",
+      "Price": 800400,
+      "Image": "B70211-6DAWD.jpg"
+    },
+    {
+      "Name": "Concept DropxIn Tub",
+      "Code": "BTAS6716-2650403C5",
+      "Price": 306500,
+      "Image": "BTAS6716-2650403C5.jpg"
+    },
+    {
+      "Name": "Concept DropxIn Tub",
+      "Code": "BTAS6716-2350403C5",
+      "Price": 240150,
+      "Image": "BTAS6716-2350403C5.jpg"
+    }
+  ],
+  "FREESTANDING TUBS": [
+    {
+      "Name": "ZeniStone oor standingtub (rectangle)",
+      "Code": "BTAS9831-0020400C5",
+      "Price": 660300,
+      "Image": "BTAS9831-0020400C5.jpg"
+    },
+    {
+      "Name": "ZeniStone oor standingtub (oval)",
+      "Code": "BTAS9761-0020400C5",
+      "Price": 633600,
+      "Image": "BTAS9761-0020400C5.jpg"
+    },
+    {
+      "Name": "IDS FS Round Tub 1.7",
+      "Code": "B70210-6DAWD",
+      "Price": 560300,
+      "Image": "B70210-6DAWD.jpg"
+    },
+    {
+      "Name": "Acacia II 1.7 m cast iron FloorxStanding Tub",
+      "Code": "BTAS2732-2520400C5",
+      "Price": 413450,
+      "Image": "BTAS2732-2520400C5.jpg"
+    },
+    {
+      "Name": "Acacia 1.6M Cast Iron FloorxStanding Tub",
+      "Code": "BTAS2601-0320400C0",
+      "Price": 366800,
+      "Image": "BTAS2601-0320400C0.jpg"
+    },
+    {
+      "Name": "Acacia Floorxstanding Tub,HEAII",
+      "Code": "BTAS6704-0020403C5",
+      "Price": 220150,
+      "Image": "BTAS6704-0020403C5.jpg"
+    },
+    {
+      "Name": "Acacia 1.6M Acrylic FloorxStanding Tub",
+      "Code": "BTAS6601-0320403C0",
+      "Price": 176100,
+      "Image": "BTAS6601-0320403C0.jpg"
+    },
+    {
+      "Name": "Acacia Evolution Freestanding Tub",
+      "Code": "BTAS6719-032ASXJF0",
+      "Price": 306500,
+      "Image": "BTAS6719-032ASXJF0.jpg"
+    },
+    {
+      "Name": "AcaciaxE 1.7M Seamless",
+      "Code": "BTAS6719-632AS00C5",
+      "Price": 320150,
+      "Image": "BTAS6719-632AS00C5.jpg"
+    },
+    {
+      "Name": "AcaciaxE FSD Tub(with faucet hole)",
+      "Code": "BTAS6719-602AS-JF0",
+      "Price": 320150,
+      "Image": "BTAS6719-602AS-JF0.jpg"
+    }
+  ],
+  "STEEL TUBS": [
+    {
+      "Name": "STL Dxi 1.5M GZ Dx350",
+      "Code": "BTAS1550-0020403C0",
+      "Price": 72750,
+      "Image": "BTAS1550-0020403C0.jpg"
+    }
+  ],
+  "DROP*IN TUBS": [
+    {
+      "Name": "Active 1.7M Cast Iron Dropxin Tub, HEA I w/ handle",
+      "Code": "BTAS2702-2520403C5",
+      "Price": 176100,
+      "Image": "BTAS2702-2520403C5.jpg"
+    },
+    {
+      "Name": "Milano DropxIn Tub (1.7M)",
+      "Code": "BTAS2708-0520403C5",
+      "Price": 153700,
+      "Image": "BTAS2708-0520403C5.jpg"
+    },
+    {
+      "Name": "Milano DropxIn Tub (1.5M)",
+      "Code": "BTAS2508-2520403C5",
+      "Price": 130700,
+      "Image": "BTAS2508-2520403C5.jpg"
+    },
+    {
+      "Name": "Active 1.7M Acrylic Dropxin Tub w/ handle",
+      "Code": "BTAS6722-2020403C5",
+      "Price": 126750,
+      "Image": "BTAS6722-2020403C5.jpg"
+    },
+    {
+      "Name": "New Codie DropxIn Tub (1.5M)",
+      "Code": "BTAS6512-0520403C5",
+      "Price": 113400,
+      "Image": "BTAS6512-0520403C5.jpg"
+    },
+    {
+      "Name": "New Codie 1.5M DropxIn Tub WT",
+      "Code": "B70280-6DACT",
+      "Price": 66750,
+      "Image": "B70280-6DACT.jpg"
+    },
+    {
+      "Name": "1.7M cast iron Dropxin Tub w/Hand",
+      "Code": "BTAS2715-2020403C5",
+      "Price": 220150,
+      "Image": "BTAS2715-2020403C5.jpg"
+    },
+    {
+      "Name": "New Codie 1.5M DropxIn Tub w/PopxUp WT",
+      "Code": "B70280-6DACTPW",
+      "Price": 66750,
+      "Image": "B70280-6DACTPW.jpg"
+    }
+  ]
+}
