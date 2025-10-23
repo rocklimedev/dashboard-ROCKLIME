@@ -15,7 +15,6 @@ const ProductCard = ({
   product,
   getBrandsName,
   getCategoryName,
-  formatPrice,
   handleAddToCart,
   cartLoadingStates,
   menu,
@@ -25,13 +24,12 @@ const ProductCard = ({
   // Safely parse images from JSON string
   const parseImages = (images) => {
     try {
-      // Check if images is a non-empty string
       if (typeof images === "string" && images.trim() !== "") {
         return JSON.parse(images);
       }
-      return [pos]; // Fallback to default image if empty or not a string
+      return [pos];
     } catch (error) {
-      return [pos]; // Fallback to default image on error
+      return [pos];
     }
   };
 
@@ -46,11 +44,10 @@ const ProductCard = ({
     : null;
   const priceUnit = sellingPriceMeta ? sellingPriceMeta.unit : null;
 
-  // Fallback formatting if formatPrice fails
+  // Format price directly
   const displayPrice =
     sellingPrice !== null && !isNaN(sellingPrice)
-      ? formatPrice(sellingPrice, priceUnit) ||
-        `₹${sellingPrice.toFixed(2)} ${priceUnit || ""}`
+      ? `₹${sellingPrice.toFixed(2)}`
       : "Price not available";
 
   const handleIncrement = () => {
@@ -66,7 +63,7 @@ const ProductCard = ({
     if (!isNaN(value) && value >= 1 && value <= product.quantity) {
       setQuantity(value);
     } else if (e.target.value === "") {
-      setQuantity(1); // Reset to 1 if input is cleared
+      setQuantity(1);
     }
   };
 

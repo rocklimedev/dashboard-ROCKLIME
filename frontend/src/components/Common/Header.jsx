@@ -113,7 +113,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
   });
 
   const cartItemCount = cart?.cart?.items?.length || 0;
-  const notificationCount = notifications?.notifications?.length || 0; // Adjust based on your API response
+  const notificationCount = notifications?.length || 0; // Adjust based on your API response
 
   const handleLogout = async () => {
     try {

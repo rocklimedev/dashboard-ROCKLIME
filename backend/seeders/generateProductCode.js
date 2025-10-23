@@ -2,10 +2,15 @@ const fs = require("fs").promises;
 const path = require("path");
 
 // JSON data to process
-const jsonData = require("../seeder/backup/index.json");
+const jsonData = require("./newproduct.json");
 
 // Mock brand
-const mockBrand = { brandName: "Plumbing" };
+const mockBrand = { brandName: "Grohe" };
+
+// Generate a random 3-digit number as a string
+function generateRandomSuffix() {
+  return Math.floor(Math.random() * 900 + 100).toString(); // 100-999
+}
 
 async function generateCode(product, existingCodes) {
   let last4;
@@ -22,25 +27,25 @@ async function generateCode(product, existingCodes) {
     last4 = cleanedSize.slice(-4) || "0000";
   }
 
-  // Use productType or default to "UN" (unknown) if undefined
-  const productType = "PLU";
+  const productType = "GR";
 
-  // Generate prefix: E + first 2 chars of productType + first 2 chars of brandName + last4
+  // Prefix: E + first 2 of productType + first 2 of brandName + last4
   const prefix = `E${productType.slice(0, 2).toUpperCase()}${mockBrand.brandName
     .slice(0, 2)
     .toUpperCase()}${last4}`;
 
-  // Collect existing suffixes for this prefix
-  const suffixes = existingCodes
-    .filter((code) => code.startsWith(prefix))
-    .map((code) => code.replace(prefix, ""))
-    .filter((s) => /^\d{3}$/.test(s))
-    .map(Number);
+  let newCode;
+  let attempts = 0;
 
-  let suffix = 1;
-  while (suffixes.includes(suffix)) suffix++;
+  // Keep generating random suffix until it's unique
+  do {
+    if (attempts++ > 1000)
+      throw new Error("Too many attempts generating unique code!");
+    const suffix = generateRandomSuffix();
+    newCode = `${prefix}${suffix}`;
+  } while (existingCodes.includes(newCode));
 
-  return `${prefix}${suffix.toString().padStart(3, "0")}`;
+  return newCode;
 }
 
 async function updateProductJson() {
@@ -53,7 +58,7 @@ async function updateProductJson() {
       .map((item) => item.productCode);
 
     for (const product of jsonData) {
-      // If already has productCode, skip
+      // Skip if already has productCode
       if (product.productCode) {
         console.log(
           `ℹ️ Already has code: ${product.name} (${product.productCode})`

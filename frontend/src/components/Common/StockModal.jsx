@@ -32,7 +32,7 @@ const StockModal = ({ show, onHide, product }) => {
 
   return (
     <Modal show={show} onHide={onHide} centered>
-      <Modal.Header closeButton>
+      <Modal.Header>
         <Modal.Title>
           Add Stock - <strong>{product?.name}</strong>
         </Modal.Title>
@@ -52,9 +52,6 @@ const StockModal = ({ show, onHide, product }) => {
         </Form>
       </Modal.Body>
       <Modal.Footer>
-        <Button variant="secondary" onClick={onHide} disabled={addingStock}>
-          Cancel
-        </Button>
         <Button variant="primary" onClick={handleSubmit} disabled={addingStock}>
           {addingStock ? "Processing..." : "Submit"}
         </Button>

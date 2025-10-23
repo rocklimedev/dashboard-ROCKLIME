@@ -2,14 +2,16 @@ import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Spin, Empty } from "antd";
 import { useGetBrandParentCategoriesQuery } from "../../api/brandParentCategoryApi";
-
+import Breadcrumb from "./Breadcrumb"; // Adjust the path as needed
 import "./productwrapper.css";
+
 const surfaces = "https://static.cmtradingco.com/brands/SIURFACE.png";
 const tiles = "https://static.cmtradingco.com/brands/tiles.png";
 const plumbing = "https://static.cmtradingco.com/brands/plumbing.jpg";
 const fittings = "https://static.cmtradingco.com/brands/CP FITTING.png";
 const accessories = "https://static.cmtradingco.com/brands/ACCESORIES.png";
 const adhesive = "https://static.cmtradingco.com/brands/ADHESIVE.png";
+
 const Product = () => {
   const {
     data: bpcList,
@@ -55,10 +57,15 @@ const Product = () => {
         slug: bpc.slug,
         image,
         alt: `${bpc.name} products`,
-        url: `/brand-parent-categories/${bpc.id}`,
+        url: `/category-selector/${bpc.id}`,
       };
     });
   }, [bpcList]);
+
+  const breadcrumbItems = [
+    { label: "Home", url: "/" },
+    { label: "Categories" },
+  ];
 
   if (isLoading) {
     return (
@@ -90,6 +97,7 @@ const Product = () => {
   return (
     <section className="page-wrapper">
       <div className="content">
+        <Breadcrumb items={breadcrumbItems} />
         <div className="banner-container">
           <div className="banner-overlay">
             <h2 className="banner-title">Our Categories</h2>

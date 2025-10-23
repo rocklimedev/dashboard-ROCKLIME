@@ -3,7 +3,7 @@ const BrandParentCategory = require("../models/brandParentCategory");
 const Product = require("../models/product");
 
 // JSON data to seed
-const jsonData = require("./product.json");
+const jsonData = require("./products_backup.json");
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {

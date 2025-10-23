@@ -28,6 +28,8 @@ import emailReducer from "../api/emailSlice";
 import { poApi } from "../api/poApi";
 import { logApi } from "../api/logApi";
 import { notificationApi } from "../api/notificationApi";
+import { taskApi } from "../api/taskApi";
+import { taskBoardApi } from "../api/taskboardApi";
 export const store = configureStore({
   reducer: {
     email: emailReducer,
@@ -59,6 +61,8 @@ export const store = configureStore({
     [poApi.reducerPath]: poApi.reducer,
     [attendanceApi.reducerPath]: attendanceApi.reducer,
     [notificationApi.reducerPath]: notificationApi.reducer,
+    [taskApi.reducerPath]: taskApi.reducer,
+    [taskBoardApi.reducerPath]: taskBoardApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -89,7 +93,9 @@ export const store = configureStore({
       rolePermissionsApi.middleware,
       searchApi.middleware,
       attendanceApi.middleware,
-      notificationApi.middleware
+      notificationApi.middleware,
+      taskApi.middleware,
+      taskBoardApi.middleware
     ),
 });
 

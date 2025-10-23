@@ -40,6 +40,7 @@ import HistoryModal from "../Common/HistoryModal";
 import StockModal from "../Common/StockModal";
 import ProductCard from "./ProductCard";
 import PageHeader from "../Common/PageHeader";
+import Breadcrumb from "./Breadcrumb"; // Adjust the path as needed
 import pos from "../../assets/img/default.png";
 
 const ProductsList = () => {
@@ -134,9 +135,9 @@ const ProductsList = () => {
     const companyCodeEntry = metaDetails.find(
       (detail) => detail.slug?.toLowerCase() === "companycode"
     );
-    // Coerce the value to a string, default to "N/A" if undefined or null
     return companyCodeEntry ? String(companyCodeEntry.value) : "N/A";
   };
+
   const products = useMemo(
     () => (Array.isArray(productsData) ? productsData : []),
     [productsData]
@@ -450,6 +451,24 @@ const ProductsList = () => {
     },
   ];
 
+  const breadcrumbItems = brandId
+    ? [
+        { label: "Home", url: "/" },
+        { label: "Brands", url: "/inventory/products" }, // Adjust if there's a specific brands route
+        { label: "Products" },
+      ]
+    : bpcId
+    ? [
+        { label: "Home", url: "/" },
+        { label: "Categories", url: "/inventory/products" },
+        {
+          label: bpcData?.name || "Category",
+          url: `/brand-parent-categories/${bpcId}`,
+        },
+        { label: "Products" },
+      ]
+    : [{ label: "Home", url: "/" }, { label: "Products" }];
+
   if (isLoading || userLoading || categoriesLoading) {
     return (
       <div className="loading-container text-center py-5">
@@ -486,6 +505,7 @@ const ProductsList = () => {
   return (
     <div className="page-wrapper">
       <div className="content">
+        <Breadcrumb items={breadcrumbItems} />
         <PageHeader
           title={pageTitle}
           subtitle="Explore our latest collection"

@@ -582,13 +582,9 @@ const PageWrapper = () => {
                         }}
                       >
                         <div>
-                          <span className="product-name">{product.name}</span>
-                          <span
-                            className="product-quantity"
-                            style={{ marginLeft: "10px" }}
-                          >
-                            Sold: {product.quantity}{" "}
-                            {product.quantity === 1 ? "time" : "times"}
+                          <span className="product-name">
+                            {product.name} ({product.quantity}{" "}
+                            {product.quantity === 1} Sold )
                           </span>
                         </div>
                         <button
