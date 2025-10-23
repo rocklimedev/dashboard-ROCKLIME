@@ -3,8 +3,8 @@ import { useGetRolesQuery, useDeleteRoleMutation } from "../../api/rolesApi";
 import { useGetAllPermissionsQuery } from "../../api/permissionApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
 import { FaSearch, FaShieldAlt, FaTrash } from "react-icons/fa";
-import Avatar from "react-avatar"; // Import react-avatar
-import { Link } from "react-router-dom"; // Import Link for navigation
+import Avatar from "react-avatar";
+import { Link } from "react-router-dom";
 import AddRoleModal from "./AddRoleModal";
 import DeleteModal from "../Common/DeleteModal";
 import PermissionsTable from "./PermissionsTable";
@@ -89,7 +89,7 @@ const RolePermission = () => {
         break;
       case "Descending":
         result = [...result].sort((a, b) =>
-          b.roleName.localeCompare(a.roleName)
+          b.roleName.localeCompare(b.roleName)
         );
         break;
       case "Recently Added":
@@ -135,30 +135,6 @@ const RolePermission = () => {
 
     return result;
   }, [permissions, searchTerm, sortBy, activeTab]);
-
-  // Paginated permissions
-  const paginatedPermissions = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredPermissions.slice(startIndex, startIndex + itemsPerPage);
-  }, [filteredPermissions, currentPage]);
-
-  // Calculate stats for roles
-  const roleStats = useMemo(
-    () => ({
-      totalRoles: rolesList.length,
-      active: groupedRoles.Active.length,
-      inactive: groupedRoles.Inactive.length,
-    }),
-    [rolesList, groupedRoles]
-  );
-
-  // Calculate stats for permissions
-  const permissionStats = useMemo(
-    () => ({
-      totalPermissions: permissions.length,
-    }),
-    [permissions]
-  );
 
   const handleOpenRoleModal = () => {
     setShowModal(true);
@@ -360,7 +336,6 @@ const RolePermission = () => {
                       </thead>
                       <tbody>
                         {paginatedRoles.map((role) => {
-                          // Filter users for the current role
                           const roleUsers = usersList.filter(
                             (user) => user.roleId === role.roleId
                           );
@@ -454,29 +429,16 @@ const RolePermission = () => {
                 role="tabpanel"
                 aria-labelledby="tab-permissions"
               >
-                {paginatedPermissions.length === 0 ? (
+                {filteredPermissions.length === 0 ? (
                   <p className="text-muted">
                     No permissions match the applied filters
                   </p>
                 ) : (
                   <PermissionsTable
-                    permissions={paginatedPermissions}
+                    permissions={filteredPermissions}
                     searchTerm={searchTerm}
                     sortBy={sortBy}
-                    currentPage={currentPage}
-                    itemsPerPage={itemsPerPage}
-                    onPageChange={handlePageChange}
                   />
-                )}
-                {filteredPermissions.length > itemsPerPage && (
-                  <div className="pagination-section mt-4">
-                    <DataTablePagination
-                      totalItems={filteredPermissions.length}
-                      itemNo={itemsPerPage}
-                      onPageChange={handlePageChange}
-                      currentPage={currentPage}
-                    />
-                  </div>
                 )}
               </div>
             </div>

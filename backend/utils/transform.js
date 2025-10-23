@@ -58,7 +58,8 @@ seederData.forEach((prod) => {
     const currentPrice = Number(prod.meta?.[PRICE_KEY]);
 
     if (currentPrice !== referencePrice) {
-      prod.meta[PRICE_KEY] = referencePrice; // store as number, not string
+      prod.meta[PRICE_KEY] = String(referencePrice);
+      // store as number, not string
       updatedCount++;
       console.log(
         `🔄 Updated price for ${code}: ${currentPrice} → ${referencePrice}`

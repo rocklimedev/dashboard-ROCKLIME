@@ -10,14 +10,16 @@ import DeleteModal from "../Common/DeleteModal";
 import DataTablePagination from "../Common/DataTablePagination";
 import PageHeader from "../Common/PageHeader";
 import { BsThreeDotsVertical } from "react-icons/bs";
-import { Dropdown, Button, Menu } from "antd";
+import { Dropdown, Button, Menu, Tabs } from "antd";
 import { useNavigate } from "react-router-dom";
 import { EditOutlined } from "@ant-design/icons";
+
+const { TabPane } = Tabs;
 
 const CustomerList = () => {
   const navigate = useNavigate();
   const { data, error, isLoading } = useGetCustomersQuery();
-  const customers = Array.isArray(data?.data) ? data.data : []; // Ensure customers is always an array
+  const customers = Array.isArray(data?.data) ? data.data : [];
   const [deleteCustomer] = useDeleteCustomerMutation();
 
   // State for delete modal, pagination, and filters
@@ -29,17 +31,39 @@ const CustomerList = () => {
   const [activeTab, setActiveTab] = useState("All");
   const itemsPerPage = 20;
 
+  // Define customer types from the schema
+  const customerTypes = [
+    "Retail",
+    "Architect",
+    "Interior",
+    "Builder",
+    "Contractor",
+  ];
+
   // Memoized grouped customers for tab-based filtering
   const groupedCustomers = useMemo(() => {
     if (!Array.isArray(customers)) {
-      return { All: [], Active: [], Inactive: [] }; // Return empty arrays if customers is not ready
+      const initialGroups = { All: [], Active: [], Inactive: [] };
+      customerTypes.forEach((type) => {
+        initialGroups[type] = [];
+      });
+      return initialGroups;
     }
 
-    return {
+    const groups = {
       All: customers,
       Active: customers.filter((c) => c.isActive !== false),
       Inactive: customers.filter((c) => c.isActive === false),
     };
+
+    // Add groups for each customer type
+    customerTypes.forEach((type) => {
+      groups[type] = customers.filter(
+        (c) => c.customerType === type || (type === "Retail" && !c.customerType)
+      ); // Treat null customerType as Retail for backward compatibility
+    });
+
+    return groups;
   }, [customers]);
 
   // Filtered and sorted customers
@@ -109,7 +133,7 @@ const CustomerList = () => {
 
     try {
       await deleteCustomer(customerToDelete).unwrap();
-
+      toast.success("Customer deleted successfully!");
       if (paginatedCustomers.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
@@ -197,8 +221,22 @@ const CustomerList = () => {
                 </div>
               </div>
             </div>
+            <Tabs
+              activeKey={activeTab}
+              onChange={(key) => {
+                setActiveTab(key);
+                setCurrentPage(1); // Reset pagination when switching tabs
+              }}
+            >
+              <TabPane tab="All" key="All" />
+              <TabPane tab="Active" key="Active" />
+              <TabPane tab="Inactive" key="Inactive" />
+              {customerTypes.map((type) => (
+                <TabPane tab={type} key={type} />
+              ))}
+            </Tabs>
             <div className="tab-content" id="pills-tabContent">
-              {Object.entries(groupedCustomers).map(([status, list]) => (
+              {Object.keys(groupedCustomers).map((status) => (
                 <div
                   className={`tab-pane fade ${
                     activeTab === status ? "show active" : ""
@@ -260,7 +298,6 @@ const CustomerList = () => {
                                           View
                                         </a>
                                       </Menu.Item>
-
                                       <Menu.Item
                                         key="delete"
                                         onClick={() =>

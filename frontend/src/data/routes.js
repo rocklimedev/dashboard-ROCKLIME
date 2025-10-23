@@ -13,6 +13,7 @@ import {
   BiUser,
   BiCoinStack,
   BiNotification,
+  BiTask,
 } from "react-icons/bi";
 import { FaFileCircleCheck } from "react-icons/fa6";
 import { FaTeamspeak } from "react-icons/fa";
@@ -69,13 +70,15 @@ import OrderPage from "../components/Orders/Orderpage";
 import NewCart from "../components/POS-NEW/NewCart";
 import AccountVerify from "../components/Auth/AccountVerify";
 import AddCustomer from "../components/Customers/AddCustomer";
-
+import CategoryDetails from "../components/Categories/CategoryDetails";
 import EmailVerification from "../components/Auth/EmailVerifications";
 import POWrapper from "../components/Orders/POWrapper";
 import AddPurchaseOrder from "../components/Orders/AddPurchaseOrder";
 import PODetails from "../components/Orders/PODetails";
 import LogTable from "../components/Logs/LogTable";
 import NotificationsWrapper from "../components/Notifications/NotificationsWrapper";
+import TaskWrapper from "../components/Tasks/TaskWrapper";
+import InventoryWrapper from "../components/Common/InventoryWrapper";
 const masterRoutes = [
   {
     path: "/",
@@ -199,11 +202,48 @@ const masterRoutes = [
     ],
   },
   {
+    path: "/tasks",
+    name: "Tasks",
+    icon: <BiTask />,
+    isSidebarActive: true,
+    element: <TaskWrapper />,
+  },
+  {
     path: "/cart",
     name: "Cart",
     icon: <BiCart />,
     isSidebarActive: false,
     element: <NewCart />,
+  },
+  {
+    path: "#",
+    name: "Product Essentials",
+    icon: <BiCoinStack />,
+    isSidebarActive: true,
+
+    submenu: [
+      {
+        path: "/inventory/list",
+        name: "Inventory",
+        icon: <BiCoinStack />,
+        isSidebarActive: true,
+        element: <InventoryWrapper />,
+      },
+      {
+        path: "/inventory/categories-keywords",
+        element: <CategoryManagement />,
+        name: "Categories",
+        icon: <BiCategory />,
+        isSidebarActive: true,
+      },
+      {
+        path: "/categories/:parentId",
+        element: <CategoryDetails />,
+        name: "Category Details",
+        icon: <BiCategory />,
+        isSidebarActive: false,
+      },
+    ],
   },
   {
     path: "#",
@@ -289,7 +329,7 @@ const masterRoutes = [
         isSidebarActive: false,
       },
       {
-        path: "/brand-parent-categories/:bpcId",
+        path: "/category-selector/:bpcId",
         name: "Products",
         icon: <AiOutlineProduct />,
         element: <BrandSelection />,
@@ -451,14 +491,6 @@ const masterRoutes = [
     name: "Logs",
     icon: <IoDocumentAttach />,
     element: <LogTable />,
-    isSidebarActive: false,
-  },
-
-  {
-    path: "/inventory/categories-keywords",
-    element: <CategoryManagement />,
-    name: "Categories",
-    icon: <BiCategory />,
     isSidebarActive: false,
   },
 

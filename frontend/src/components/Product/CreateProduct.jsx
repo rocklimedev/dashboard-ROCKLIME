@@ -77,7 +77,7 @@ const CreateProduct = () => {
     name: "",
     product_code: "",
     quantity: "",
-    productType: "",
+
     isFeatured: "false",
     description: "",
     tax: "",
@@ -98,7 +98,7 @@ const CreateProduct = () => {
         name: existingProduct.name || "",
         product_code: existingProduct.product_code || "",
         quantity: existingProduct.quantity || "",
-        productType: existingProduct.productType || "",
+
         isFeatured: existingProduct.isFeatured?.toString() || "false",
         description: existingProduct.description || "",
         tax: existingProduct.tax || "",
@@ -231,7 +231,7 @@ const CreateProduct = () => {
       name: values.name,
       product_code: values.product_code,
       quantity: values.quantity,
-      productType: values.productType,
+
       userId: userId,
     };
 
@@ -268,7 +268,6 @@ const CreateProduct = () => {
     formDataToSend.append("name", values.name);
     formDataToSend.append("product_code", values.product_code);
     formDataToSend.append("quantity", Number(values.quantity) || 0);
-    formDataToSend.append("productType", values.productType);
     formDataToSend.append("isFeatured", values.isFeatured === "true");
     formDataToSend.append("description", values.description);
     formDataToSend.append("tax", values.tax ? Number(values.tax) : "");
@@ -393,21 +392,6 @@ const CreateProduct = () => {
                     ]}
                   >
                     <Input />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item
-                    label="Product Type"
-                    name="productType"
-                    rules={[
-                      { required: true, message: "Please select product type" },
-                    ]}
-                  >
-                    <Select>
-                      <Option value="">Select Product Type</Option>
-                      <Option value="tiles">Tiles</Option>
-                      <Option value="sanitary">Sanitary</Option>
-                    </Select>
                   </Form.Item>
                 </Col>
                 <Col xs={24} md={12}>

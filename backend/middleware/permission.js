@@ -1,101 +1,77 @@
+// middleware/checkPermission.js
 const jwt = require("jsonwebtoken");
-const User = require("../models/users");
-const Permission = require("../models/permisson"); // Fixed typo
 const Role = require("../models/roles");
+const Permission = require("../models/permisson");
+const RolePermission = require("../models/rolePermission");
 
-const checkPermission = (
-  requiredApi,
-  requiredName,
-  requiredModule,
-  requiredRoute
-) => {
+const checkPermission = (api, name, module, route) => {
   return async (req, res, next) => {
     try {
-      // Extract token from Authorization header
+      // 1️⃣ Extract JWT
       const token = req.headers.authorization?.split(" ")[1];
-      if (!token) {
+      if (!token)
         return res
           .status(401)
           .json({ message: "Unauthorized: No token provided" });
-      }
 
-      // Verify JWT token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      if (!decoded.id) {
+      if (!decoded.id)
         return res.status(401).json({ message: "Unauthorized: Invalid token" });
-      }
 
-      // Find user with associated roles
+      // 2️⃣ Fetch user with roles + permissions in a single query
       const user = await User.findByPk(decoded.id, {
-        include: [
-          {
-            model: Role,
-            as: "roles",
-            through: { attributes: [] }, // Exclude junction table attributes
-          },
-        ],
+        include: {
+          model: Role,
+          include: Permission,
+        },
       });
-      if (!user) {
-        return res.status(401).json({ message: "User not found" });
-      }
 
-      // Check for Super Admin role
-      const userRoles = user.roles || [];
-      if (
-        userRoles.some((role) => role.roleName.toUpperCase() === "SUPER_ADMIN")
-      ) {
-        return next();
-      }
+      if (!user) return res.status(404).json({ message: "User not found" });
 
-      // Validate permission parameters
-      if (!requiredApi || !requiredName || !requiredModule || !requiredRoute) {
+      const roles = user.Roles || [];
+
+      // 3️⃣ Super Admin bypass
+      const isSuperAdmin = roles.some(
+        (r) => r.roleName.toUpperCase() === "SUPER_ADMIN"
+      );
+      if (isSuperAdmin) return next();
+
+      // 4️⃣ Validate middleware parameters
+      if (!api || !name || !module || !route) {
         return res
           .status(500)
           .json({ message: "Invalid permission configuration" });
       }
 
-      // Check permissions for non-Super Admin users
-      const rolesWithPermission = await Role.findAll({
-        where: {
-          roleId: userRoles.map((role) => role.roleId),
-        },
-        include: [
-          {
-            model: Permission,
-            through: { model: require("../models/rolePermission") }, // Use rolePermissions junction table
-            where: {
-              api: requiredApi,
-              name: requiredName,
-              module: requiredModule,
-              route: requiredRoute,
-            },
-          },
-        ],
-      });
-
-      // Check if any role has the required permission
-      const hasPermission = rolesWithPermission.some(
-        (role) => role.Permissions && role.Permissions.length > 0
+      // 5️⃣ Check if any role has this exact permission
+      const hasPermission = roles.some((role) =>
+        role.Permissions.some(
+          (perm) =>
+            perm.api === api &&
+            perm.name === name &&
+            perm.module === module &&
+            perm.route === route
+        )
       );
 
       if (!hasPermission) {
-        return res
-          .status(403)
-          .json({ message: "Forbidden: Insufficient permissions" });
+        return res.status(403).json({
+          message: `Forbidden: Role lacks permission "${name}" (${api.toUpperCase()} - ${module})`,
+        });
       }
 
+      // 6️⃣ Pass control
       next();
     } catch (error) {
-      if (error.name === "JsonWebTokenError") {
-        return res.status(401).json({ message: "Unauthorized: Invalid token" });
-      }
-      if (error.name === "TokenExpiredError") {
-        return res.status(401).json({ message: "Unauthorized: Token expired" });
-      }
-      if (error.name === "SequelizeDatabaseError") {
-        return res.status(500).json({ message: "Database error occurred" });
-      }
-      res.status(500).json({ message: "Internal Server Error" });
+      console.error("checkPermission Error:", error);
+
+      if (error.name === "JsonWebTokenError")
+        return res.status(401).json({ message: "Invalid token" });
+
+      if (error.name === "TokenExpiredError")
+        return res.status(401).json({ message: "Token expired" });
+
+      return res.status(500).json({ message: "Permission validation failed" });
     }
   };
 };
