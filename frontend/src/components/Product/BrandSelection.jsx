@@ -68,7 +68,7 @@ const BrandSelection = () => {
 
   const breadcrumbItems = [
     { label: "Home", url: "/" },
-    { label: "Categories", url: "/products" },
+    { label: "Categories", url: "/inventory/products" },
     { label: bpc?.name || "Category" },
   ];
 
