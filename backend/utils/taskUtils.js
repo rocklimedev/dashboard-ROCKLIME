@@ -8,6 +8,8 @@ const Team = require("../models/team");
 const Task = require("../models/tasks");
 const { sendNotification } = require("../controller/notificationController");
 const TaskBoard = require("../models/taskBoard");
+const { Op } = require("sequelize");
+const TeamMember = require("../models/teamMember");
 
 require("dotenv").config();
 
@@ -99,42 +101,118 @@ const validateTaskBoard = async (taskBoardId) => {
   return { valid: true, taskBoard };
 };
 // Validate task data (MySQL for User/Team, MongoDB for Task dependencies)
-const validateTaskData = async ({
+
+async function validateTaskData({
   title,
   assignedTo,
   assignedBy,
   assignedTeamId,
+  secondaryAssignedTo,
   priority,
   status,
   dueDate,
   startDate,
-  watchers,
-  dependsOn,
-  taskBoard, // Add taskBoard parameter
-}) => {
+  watchers = [],
+  dependsOn = [],
+  taskBoard,
+}) {
+  const errors = [];
+
+  // Validate title
   if (!title?.trim()) {
-    throw new Error("Title is required");
+    errors.push("Title is required");
   }
 
-  const [assignedToUser, assignedByUser, taskBoardValidation] =
-    await Promise.all([
-      User.findByPk(assignedTo, { attributes: ["userId"] }),
-      User.findByPk(assignedBy, { attributes: ["userId"] }),
-      validateTaskBoard(taskBoard),
-    ]);
-
-  if (!assignedToUser) throw new Error("Assigned user not found");
-  if (!assignedByUser) throw new Error("Assigner user not found");
-  if (taskBoard && !taskBoardValidation.valid) {
-    throw new Error(taskBoardValidation.error);
+  // Validate assignedTo (userId from MySQL)
+  let assignedToUser = null;
+  if (assignedTo) {
+    assignedToUser = await User.findByPk(assignedTo, {
+      attributes: ["userId", "username", "name", "email"],
+    });
+    if (!assignedToUser) {
+      errors.push("Assigned user not found");
+    }
+  } else {
+    errors.push("assignedTo is required");
   }
 
-  // Existing validations for priority, status, etc.
+  // Validate assignedBy (userId from MySQL)
+  let assignedByUser = null;
+  if (assignedBy) {
+    assignedByUser = await User.findByPk(assignedBy, {
+      attributes: ["userId", "username", "name", "email"],
+    });
+    if (!assignedByUser) {
+      errors.push("Assigned by user not found");
+    }
+  } else {
+    errors.push("assignedBy is required");
+  }
+
+  // Validate secondaryAssignedTo (if provided)
+  let secondaryAssignedToUser = null;
+  if (secondaryAssignedTo) {
+    secondaryAssignedToUser = await User.findByPk(secondaryAssignedTo, {
+      attributes: ["userId", "username", "name", "email"],
+    });
+    if (!secondaryAssignedToUser) {
+      errors.push("Secondary assigned user not found");
+    }
+  }
+
+  // Validate team assignment
+  if (assignedTeamId) {
+    // Fetch team members in a single query for efficiency
+    const teamMembers = await TeamMember.findAll({
+      where: { teamId: assignedTeamId },
+      attributes: ["userId"],
+    });
+    const teamMemberIds = teamMembers.map((tm) => tm.userId);
+
+    // Check assignedTo
+    if (!teamMemberIds.includes(assignedTo)) {
+      errors.push(
+        `User ${assignedTo} is not a member of team ${assignedTeamId}`
+      );
+    }
+
+    // Check secondaryAssignedTo (if provided)
+    if (secondaryAssignedTo && !teamMemberIds.includes(secondaryAssignedTo)) {
+      errors.push(
+        `Secondary user ${secondaryAssignedTo} is not a member of team ${assignedTeamId}`
+      );
+    }
+
+    // Optional: Restrict watchers to team members
+    if (watchers.length) {
+      const invalidWatchers = watchers.filter(
+        (w) => !teamMemberIds.includes(w)
+      );
+      if (invalidWatchers.length) {
+        errors.push(
+          `Watchers ${invalidWatchers.join(
+            ", "
+          )} are not members of team ${assignedTeamId}`
+        );
+      }
+    }
+  } else {
+    // No team: Ensure only two assignees (assignedTo and secondaryAssignedTo)
+    const assignees = [assignedTo, secondaryAssignedTo].filter(Boolean);
+    if (assignees.length > 2) {
+      errors.push(
+        "Cannot assign more than two users when no team is specified"
+      );
+    }
+  }
+
+  // Validate priority
   const validPriorities = ["critical", "high", "medium", "low"];
   if (priority && !validPriorities.includes(priority.toLowerCase())) {
-    throw new Error(`Invalid priority: ${priority}`);
+    errors.push(`Invalid priority: ${priority}`);
   }
 
+  // Validate status
   const validStatuses = [
     "PENDING",
     "IN_PROGRESS",
@@ -144,58 +222,100 @@ const validateTaskData = async ({
     "ON_HOLD",
   ];
   if (status && !validStatuses.includes(status.toUpperCase())) {
-    throw new Error(`Invalid status: ${status}`);
+    errors.push(`Invalid status: ${status}`);
   }
 
+  // Validate dueDate and startDate
   if (dueDate && isNaN(new Date(dueDate).getTime())) {
-    throw new Error("Invalid due date");
+    errors.push("Invalid dueDate");
   }
   if (startDate && isNaN(new Date(startDate).getTime())) {
-    throw new Error("Invalid start date");
+    errors.push("Invalid startDate");
+  }
+
+  // Validate watchers (userIds from MySQL)
+  if (watchers.length) {
+    const validWatchers = await User.findAll({
+      where: { userId: { [Op.in]: watchers } },
+      attributes: ["userId"],
+    });
+    if (validWatchers.length !== watchers.length) {
+      errors.push("One or more watchers not found");
+    }
+  }
+
+  // Validate dependsOn (task IDs from MongoDB)
+  if (dependsOn.length) {
+    const validDependsOn = await Task.find({
+      _id: { $in: dependsOn },
+      isArchived: false,
+    });
+    if (validDependsOn.length !== dependsOn.length) {
+      errors.push("One or more dependent tasks not found or archived");
+    }
+  }
+
+  // Validate taskBoard (MongoDB)
+  let taskBoardDoc = null;
+  if (taskBoard) {
+    if (!mongoose.isValidObjectId(taskBoard)) {
+      errors.push("Invalid TaskBoard ID");
+    } else {
+      taskBoardDoc = await TaskBoard.findById(taskBoard);
+      if (!taskBoardDoc) {
+        errors.push("TaskBoard not found");
+      } else if (taskBoardDoc.isArchived) {
+        errors.push("Cannot assign task to an archived TaskBoard");
+      }
+    }
+  } else {
+    errors.push("taskBoard is required");
+  }
+
+  if (errors.length) {
+    throw new Error(errors.join("; "));
   }
 
   return {
-    assignedToUser,
-    assignedByUser,
-    taskBoard: taskBoardValidation.taskBoard,
+    assignedToUser: assignedToUser?.toJSON() || null,
+    assignedByUser: assignedByUser?.toJSON() || null,
+    secondaryAssignedToUser: secondaryAssignedToUser?.toJSON() || null,
+    taskBoard: taskBoardDoc,
   };
-};
+}
 
 // Notify task stakeholders
-const notifyTaskStakeholders = async (
+async function notifyTaskStakeholders(
   task,
   assignedByUser,
   assignedTo,
   watchers,
   assignedTeamId,
   action
-) => {
+) {
+  const notificationRecipients = new Set([
+    assignedTo,
+    task.secondaryAssignedTo,
+    ...(watchers || []),
+  ]).filter(Boolean);
   const notifications = [];
-  const recipients = new Set([assignedTo, ...(watchers || [])]);
-
-  // If task is part of a TaskBoard, notify the TaskBoard owner
-  if (task.taskBoard) {
-    const taskBoard = await TaskBoard.findById(task.taskBoard);
-    if (taskBoard && taskBoard.owner) {
-      recipients.add(taskBoard.owner);
-    }
-  }
-
-  for (const userId of recipients) {
-    if (userId !== assignedByUser.userId) {
-      notifications.push(
-        sendNotification({
-          userId,
-          title: `Task ${action}: ${task.taskId}`,
-          message: `Task "${task.title}" has been ${action.toLowerCase()}${
-            task.taskBoard ? ` in TaskBoard ${task.taskBoard}` : ""
-          }`,
-        })
-      );
-    }
+  for (const userId of notificationRecipients) {
+    notifications.push(
+      sendNotification({
+        userId,
+        title: `Task ${action}: ${task.taskId}`,
+        message: `Task "${task.title}" has been ${action.toLowerCase()}${
+          userId === assignedTo
+            ? " (primary assignee)"
+            : userId === task.secondaryAssignedTo
+            ? " (secondary assignee)"
+            : " (watcher)"
+        }`,
+      })
+    );
   }
   await Promise.all(notifications);
-};
+}
 module.exports = {
   uploadToCDN,
   validateResourceLink,

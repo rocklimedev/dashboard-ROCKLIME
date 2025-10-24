@@ -352,6 +352,7 @@ const TeamsList = ({ adminName }) => {
                                     onClick={() => handleEditTeam(team)}
                                   />
                                 </span>
+
                                 <Dropdown
                                   overlay={
                                     <Menu>

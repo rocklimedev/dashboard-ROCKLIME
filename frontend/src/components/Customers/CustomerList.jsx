@@ -207,7 +207,38 @@ const CustomerList = () => {
           />
           <div className="card-body">
             <div className="row">
-              <div className="col-lg-12">
+              <div className="col-lg-4">
+                <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
+                  <ul
+                    className="nav nav-pills border d-inline-flex p-1 rounded bg-light todo-tabs"
+                    id="pills-tab"
+                    role="tablist"
+                  >
+                    {Object.keys(groupedCustomers).map((status) => (
+                      <li className="nav-item" role="presentation" key={status}>
+                        <button
+                          className={`nav-link btn btn-sm btn-icon py-3 d-flex align-items-center justify-content-center w-auto ${
+                            activeTab === status ? "active" : ""
+                          }`}
+                          id={`tab-${status}`}
+                          data-bs-toggle="pill"
+                          data-bs-target={`#pills-${status}`}
+                          type="button"
+                          role="tab"
+                          aria-selected={activeTab === status}
+                          onClick={() => {
+                            setActiveTab(status);
+                            setCurrentPage(1); // Reset pagination when switching tabs
+                          }}
+                        >
+                          {status} ({groupedCustomers[status].length})
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <div className="col-lg-8">
                 <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
                   <div className="input-icon-start position-relative">
                     <span className="input-icon-addon">
@@ -225,20 +256,7 @@ const CustomerList = () => {
                 </div>
               </div>
             </div>
-            <Tabs
-              activeKey={activeTab}
-              onChange={(key) => {
-                setActiveTab(key);
-                setCurrentPage(1); // Reset pagination when switching tabs
-              }}
-            >
-              <TabPane tab="All" key="All" />
-              <TabPane tab="Active" key="Active" />
-              <TabPane tab="Inactive" key="Inactive" />
-              {customerTypes.map((type) => (
-                <TabPane tab={type} key={type} />
-              ))}
-            </Tabs>
+
             <div className="tab-content" id="pills-tabContent">
               {Object.keys(groupedCustomers).map((status) => (
                 <div

@@ -177,6 +177,30 @@ const OrderForm = ({
     });
   }, [customers, sourceType]);
 
+  // Auto-select previousOrderNo based on masterPipelineNo
+  useEffect(() => {
+    if (orderData?.masterPipelineNo) {
+      // Find orders with the selected masterPipelineNo
+      const relatedOrders = orders.filter(
+        (order) =>
+          order.masterPipelineNo === orderData.masterPipelineNo &&
+          order.orderNo !== orderData.orderNo
+      );
+
+      // Sort by createdAt date (most recent first) or use another criterion
+      const sortedOrders = relatedOrders.sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );
+
+      // Select the most recent order as previousOrderNo
+      const previousOrder = sortedOrders[0]?.orderNo || "";
+      handleOrderChange("previousOrderNo", previousOrder);
+    } else {
+      // Clear previousOrderNo if no masterPipelineNo is selected
+      handleOrderChange("previousOrderNo", "");
+    }
+  }, [orderData?.masterPipelineNo, orders, handleOrderChange]);
+
   // Debounced customer search
   const debouncedCustomerSearch = useCallback(
     debounce((value) => {
@@ -597,48 +621,7 @@ const OrderForm = ({
                     ))
                 )}
               </Select>
-              <Divider />
-              {/* Previous Order Number */}
-              <Text strong>Previous Order Number</Text>
-              <Select
-                style={{ width: "100%", marginTop: 8 }}
-                value={orderData?.previousOrderNo || undefined}
-                onChange={(value) =>
-                  handleOrderChange("previousOrderNo", value)
-                }
-                placeholder="Select previous order"
-                allowClear
-                aria-label="Select previous order"
-              >
-                {isAllOrdersLoading ? (
-                  <Option disabled>Loading orders...</Option>
-                ) : allOrdersError ? (
-                  <Option disabled>Error loading orders</Option>
-                ) : (orders?.length ?? 0) === 0 ? (
-                  <Option disabled>No orders available</Option>
-                ) : (
-                  orders
-                    .filter(
-                      (order) =>
-                        order.orderNo && order.orderNo !== orderData?.orderNo
-                    )
-                    .map((order) => (
-                      <Option key={order.orderNo} value={order.orderNo}>
-                        {order.orderNo}
-                      </Option>
-                    ))
-                )}
-              </Select>
-              <Divider />
-              {/* Pipeline */}
-              <Text strong>Pipeline</Text>
-              <Input
-                value={orderData?.pipeline}
-                onChange={(e) => handleOrderChange("pipeline", e.target.value)}
-                placeholder="Enter pipeline"
-                style={{ marginTop: 8 }}
-                aria-label="Enter pipeline"
-              />
+
               <Divider />
               {/* Status */}
               <Text strong>Status</Text>
@@ -712,11 +695,32 @@ const OrderForm = ({
                       placeholder="Select team"
                       disabled={teamsLoading}
                       aria-label="Select team"
+                      dropdownRender={(menu) => (
+                        <>
+                          {menu}
+                          <Divider style={{ margin: "8px 0" }} />
+                          <Button
+                            type="primary"
+                            icon={<PlusOutlined />}
+                            onClick={() => handleTeamAdded(true)}
+                            style={{ width: "100%" }}
+                            aria-label="Add new team"
+                          >
+                            Add New Team
+                          </Button>
+                        </>
+                      )}
                     >
                       {(teams?.length ?? 0) > 0 ? (
                         teams.map((team) => (
                           <Option key={team.id} value={team.id}>
-                            {team.teamName}
+                            {team.teamName} (
+                            {team.teammembers?.length > 0
+                              ? team.teammembers
+                                  .map((member) => member.userName)
+                                  .join(", ")
+                              : "No members"}
+                            )
                           </Option>
                         ))
                       ) : (
@@ -725,13 +729,6 @@ const OrderForm = ({
                         </Option>
                       )}
                     </Select>
-                    <Button
-                      type="primary"
-                      icon={<PlusOutlined />}
-                      onClick={() => handleTeamAdded(true)}
-                      style={{ marginLeft: 8 }}
-                      aria-label="Add new team"
-                    ></Button>
                   </div>
                 </>
               )}
@@ -810,7 +807,7 @@ const OrderForm = ({
               />
               <Divider />
               {/* Follow-up Dates */}
-              <Text strong>Follow-up Dates</Text>
+              <Text strong>Timeline Dates</Text>
               {(orderData?.followupDates || []).map((date, index) => (
                 <div
                   key={index}

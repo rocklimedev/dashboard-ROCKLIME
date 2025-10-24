@@ -7,7 +7,7 @@ const taskSchema = new mongoose.Schema(
       required: true,
       unique: true,
       index: true,
-      default: () => require("uuid").v4(), // Generate UUID by default
+      default: () => require("uuid").v4(),
     },
     title: {
       type: String,
@@ -39,10 +39,13 @@ const taskSchema = new mongoose.Schema(
       default: "medium",
       index: true,
     },
-    // Assignment
     assignedTo: {
       type: String, // userId from MySQL
       required: true,
+      index: true,
+    },
+    secondaryAssignedTo: {
+      type: String, // userId from MySQL (second assignee)
       index: true,
     },
     assignedBy: {
@@ -54,7 +57,6 @@ const taskSchema = new mongoose.Schema(
       type: String, // teamId from MySQL
       index: true,
     },
-    // Dates
     dueDate: {
       type: Date,
       index: true,
@@ -65,7 +67,6 @@ const taskSchema = new mongoose.Schema(
     completedDate: {
       type: Date,
     },
-    // Linked resources (polymorphic)
     linkedResource: {
       resourceType: {
         type: String,
@@ -75,7 +76,6 @@ const taskSchema = new mongoose.Schema(
         type: String,
       },
     },
-    // Task metadata
     tags: [
       {
         type: String,
@@ -93,7 +93,6 @@ const taskSchema = new mongoose.Schema(
         uploadedBy: String, // userId
       },
     ],
-    // Checklist
     checklist: [
       {
         item: {
@@ -108,7 +107,6 @@ const taskSchema = new mongoose.Schema(
         completedBy: String, // userId
       },
     ],
-    // Time tracking
     estimatedHours: {
       type: Number,
       min: 0,
@@ -118,13 +116,11 @@ const taskSchema = new mongoose.Schema(
       min: 0,
       default: 0,
     },
-    // Watchers (users who want to be notified)
     watchers: [
       {
         type: String, // userId
       },
     ],
-    // Dependencies
     dependsOn: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -137,7 +133,6 @@ const taskSchema = new mongoose.Schema(
         ref: "Task",
       },
     ],
-    // Recurrence (for recurring tasks)
     recurrence: {
       enabled: {
         type: Boolean,
@@ -154,13 +149,12 @@ const taskSchema = new mongoose.Schema(
       endDate: Date,
       lastGenerated: Date,
     },
-    // Add to taskSchema
     taskBoard: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "TaskBoard",
       index: true,
+      required: true, // Enforce taskBoard requirement
     },
-    // Archival
     isArchived: {
       type: Boolean,
       default: false,
@@ -188,6 +182,7 @@ taskSchema.index({ tags: 1 });
 taskSchema.index({ createdAt: -1 });
 taskSchema.index({ isArchived: 1, status: 1 });
 taskSchema.index({ taskBoard: 1 });
+
 // Virtual for progress percentage
 taskSchema.virtual("progress").get(function () {
   if (!this.checklist || this.checklist.length === 0) {

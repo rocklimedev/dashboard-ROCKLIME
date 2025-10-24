@@ -79,10 +79,10 @@ const AddQuotation = () => {
     quotation_date: "",
     due_date: "",
     reference_number: "",
-    include_gst: false,
+
     gst_value: "",
     products: [],
-    discountType: "percent",
+
     roundOff: "",
     finalAmount: "",
     signature_name: "",
@@ -168,9 +168,8 @@ const AddQuotation = () => {
           ? new Date(existingQuotation.due_date).toISOString().split("T")[0]
           : "",
         reference_number: existingQuotation.reference_number || "",
-        include_gst: existingQuotation.include_gst || false,
+        discountAmount: existingQuotation.discountAmount || "",
         gst_value: existingQuotation.gst_value || "",
-        discountType: existingQuotation.discountType || "percent",
         roundOff: existingQuotation.roundOff || "",
         finalAmount: existingQuotation.finalAmount || "",
         signature_name: existingQuotation.signature_name || "",
@@ -245,7 +244,7 @@ const AddQuotation = () => {
       (sum, product) => sum + Number(product.total || 0),
       0
     );
-    const gstAmount = formData.include_gst
+    const gstAmount = formData.gst_value
       ? (subtotal * (parseFloat(formData.gst_value) || 0)) / 100
       : 0;
     const finalAmount =
@@ -254,12 +253,7 @@ const AddQuotation = () => {
       ...prev,
       finalAmount: finalAmount.toFixed(2),
     }));
-  }, [
-    formData.products,
-    formData.include_gst,
-    formData.gst_value,
-    formData.roundOff,
-  ]);
+  }, [formData.products, formData.gst_value, formData.roundOff]);
 
   useEffect(() => {
     calculateFinalAmount();
@@ -819,17 +813,6 @@ const AddQuotation = () => {
               <div className="row mt-3">
                 <div className="col-lg-4">
                   <Form.Group className="mb-3">
-                    <Form.Label>Include GST</Form.Label>
-                    <Form.Check
-                      type="checkbox"
-                      name="include_gst"
-                      checked={formData.include_gst}
-                      onChange={handleChange}
-                    />
-                  </Form.Group>
-                </div>
-                <div className="col-lg-4">
-                  <Form.Group className="mb-3">
                     <Form.Label>GST Value (%)</Form.Label>
                     <Form.Control
                       type="number"
@@ -842,19 +825,14 @@ const AddQuotation = () => {
                 </div>
                 <div className="col-lg-4">
                   <Form.Group className="mb-3">
-                    <Form.Label>Discount Type</Form.Label>
-                    <Select
-                      style={{ width: "100%" }}
-                      value={formData.discountType}
-                      onChange={(value) =>
-                        handleChange({
-                          target: { name: "discountType", value },
-                        })
-                      }
-                    >
-                      <Option value="percent">Percent</Option>
-                      <Option value="fixed">Fixed</Option>
-                    </Select>
+                    <Form.Label>Discount(if any)</Form.Label>
+                    <Form.Control
+                      type="number"
+                      name="discountAmount"
+                      value={formData.discountAmount}
+                      onChange={handleChange}
+                      min="0"
+                    />
                   </Form.Group>
                 </div>
               </div>

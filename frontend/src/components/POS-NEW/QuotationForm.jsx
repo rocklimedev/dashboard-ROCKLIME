@@ -499,45 +499,32 @@ const QuotationForm = ({
                 />
               )}
               <Divider />
-              <Text strong>Include GST</Text>
-              <div>
-                <input
-                  type="checkbox"
-                  checked={quotationData.includeGst}
-                  onChange={(e) =>
-                    handleQuotationChange("includeGst", e.target.checked)
-                  }
-                  className="form-check-input"
-                />
-              </div>
-              {quotationData.includeGst && (
-                <>
-                  <Text strong>GST Value (%)</Text>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={quotationData.gstValue}
-                    onChange={(e) =>
-                      handleQuotationChange("gstValue", e.target.value)
-                    }
-                    min="0"
-                    style={{ marginTop: 8, width: "100%" }}
-                  />
-                </>
-              )}
-              <Divider />
-              <Text strong>Discount Type</Text>
-              <Select
-                value={quotationData.discountType}
-                onChange={(value) =>
-                  handleQuotationChange("discountType", value)
+
+              <Text strong>GST Value (%)</Text>
+              <input
+                type="number"
+                className="form-control"
+                value={quotationData.gstValue}
+                onChange={(e) =>
+                  handleQuotationChange("gstValue", e.target.value)
                 }
-                style={{ width: "100%", marginTop: 8 }}
-              >
-                <Option value="percent">Percent</Option>
-                <Option value="fixed">Fixed</Option>
-              </Select>
+                min="0"
+                style={{ marginTop: 8, width: "100%" }}
+              />
+              <Text strong>Discount (if any)</Text>
+              <input
+                type="number"
+                className="form-control"
+                value={quotationData.discountAmount}
+                onChange={(e) =>
+                  handleQuotationChange("discountAmount", e.target.value)
+                }
+                min="0"
+                style={{ marginTop: 8, width: "100%" }}
+              />
+
               <Divider />
+
               <Text strong>Round Off</Text>
               <input
                 type="number"

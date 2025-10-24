@@ -13,17 +13,13 @@ const Order = sequelize.define(
       primaryKey: true,
       defaultValue: DataTypes.UUIDV4,
     },
-    pipeline: {
-      type: DataTypes.JSON,
-      allowNull: true,
-    },
+
     products: {
       type: DataTypes.JSON,
       allowNull: true,
     },
     status: {
       type: DataTypes.ENUM(
-        "CREATED",
         "PREPARING",
         "CHECKING",
         "INVOICE",
