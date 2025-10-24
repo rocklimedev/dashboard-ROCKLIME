@@ -2,9 +2,9 @@ import React, { useState } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import { useGetProfileQuery } from "../../api/userApi";
 import { useGetCartQuery } from "../../api/cartApi";
-import { useGetNotificationsQuery } from "../../api/notificationApi"; // New import
+import { useGetNotificationsQuery } from "../../api/notificationApi";
 import { Dropdown, Button, Menu } from "antd";
-import { FaUserCircle, FaSearch, FaBell } from "react-icons/fa"; // Added FaBell
+import { FaUserCircle, FaSearch, FaBell } from "react-icons/fa";
 import { BiFullscreen, BiLogOut } from "react-icons/bi";
 import { toast } from "sonner";
 import Avatar from "react-avatar";
@@ -15,6 +15,7 @@ import { useLogoutMutation } from "../../api/authApi";
 import { useAuth } from "../../context/AuthContext";
 import { FaEllipsisV } from "react-icons/fa";
 
+// CSS styles (unchanged from the provided code)
 const styles = `
   .circular-avatar {
     width: 100% !important;
@@ -112,8 +113,10 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     skip: !user?.user?.userId,
   });
 
+  // Count only unread notifications (read: false)
+  const notificationCount =
+    notifications?.filter((notification) => !notification.read).length || 0;
   const cartItemCount = cart?.cart?.items?.length || 0;
-  const notificationCount = notifications?.length || 0; // Adjust based on your API response
 
   const handleLogout = async () => {
     try {
