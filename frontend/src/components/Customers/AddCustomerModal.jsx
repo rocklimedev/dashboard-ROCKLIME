@@ -376,7 +376,7 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
                   </Form.Item>
                 </Col>
                 <Col lg={12} xs={24}>
-                  <Form.Item label="Phone 2" name="phone2">
+                  <Form.Item label="Optional Mobile Number" name="phone2">
                     <Input />
                   </Form.Item>
                 </Col>

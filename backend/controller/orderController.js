@@ -370,7 +370,7 @@ exports.createOrder = async (req, res) => {
     const {
       createdFor,
       createdBy,
-      pipeline,
+
       status,
       dueDate,
       assignedTeamId,
@@ -591,7 +591,6 @@ exports.createOrder = async (req, res) => {
 
     // Validate status
     const validStatuses = [
-      "CREATED",
       "PREPARING",
       "CHECKING",
       "INVOICE",
@@ -602,7 +601,7 @@ exports.createOrder = async (req, res) => {
       "DRAFT",
       "ONHOLD",
     ];
-    const normalizedStatus = status ? status.toUpperCase() : "CREATED";
+    const normalizedStatus = status ? status.toUpperCase() : "PREPARING";
     if (!validStatuses.includes(normalizedStatus)) {
       return sendErrorResponse(res, 400, `Invalid status: ${status}`);
     }
@@ -611,7 +610,7 @@ exports.createOrder = async (req, res) => {
     const order = await Order.create({
       createdFor,
       createdBy,
-      pipeline,
+
       status: normalizedStatus,
       dueDate,
       assignedTeamId,
@@ -838,7 +837,6 @@ exports.updateOrderStatus = async (req, res) => {
     }
 
     const validStatuses = [
-      "CREATED",
       "PREPARING",
       "CHECKING",
       "INVOICE",
@@ -1117,7 +1115,6 @@ exports.updateOrderById = async (req, res) => {
 
     if (updates.status) {
       const validStatuses = [
-        "CREATED",
         "PREPARING",
         "CHECKING",
         "INVOICE",
@@ -1691,7 +1688,6 @@ exports.getFilteredOrders = async (req, res) => {
     if (status) {
       const normalizedStatus = status.toUpperCase();
       const validStatuses = [
-        "CREATED",
         "PREPARING",
         "CHECKING",
         "INVOICE",

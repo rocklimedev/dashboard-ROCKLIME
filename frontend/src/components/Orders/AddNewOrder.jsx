@@ -111,7 +111,7 @@ const AddNewOrder = ({ adminName }) => {
     assignedTeamId: "",
     assignedUserId: "",
     secondaryUserId: "",
-    pipeline: "",
+
     status: "CREATED",
     dueDate: quotationData.dueDate || "",
     followupDates: [],
@@ -168,7 +168,7 @@ const AddNewOrder = ({ adminName }) => {
         assignedTeamId: order.assignedTeamId || "",
         assignedUserId: order.assignedUserId || "",
         secondaryUserId: order.secondaryUserId || "",
-        pipeline: order.pipeline || "",
+
         status: order.status || "CREATED",
         dueDate: order.dueDate || "",
         followupDates: order.followupDates || [],
@@ -237,7 +237,7 @@ const AddNewOrder = ({ adminName }) => {
       assignedTeamId: "",
       assignedUserId: "",
       secondaryUserId: "",
-      pipeline: "",
+
       status: "CREATED",
       dueDate: "",
       followupDates: [],
@@ -440,7 +440,7 @@ const AddNewOrder = ({ adminName }) => {
           assignmentType === "users" ? formData.assignedUserId : null,
         secondaryUserId:
           assignmentType === "users" ? formData.secondaryUserId : null,
-        pipeline: formData.pipeline || null,
+
         status: formData.status,
         dueDate: formData.dueDate || null,
         followupDates: formData.followupDates.filter(
@@ -689,20 +689,6 @@ const AddNewOrder = ({ adminName }) => {
               </div>
 
               <div className="row">
-                <div className="col-lg-6">
-                  <Form.Group className="mb-3">
-                    <Form.Label>Pipeline</Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="pipeline"
-                      value={formData.pipeline}
-                      onChange={(e) =>
-                        handleChange(e.target.name, e.target.value)
-                      }
-                      placeholder="Enter pipeline"
-                    />
-                  </Form.Group>
-                </div>
                 {isEditMode && (
                   <div className="col-lg-6">
                     <Form.Group className="mb-3">

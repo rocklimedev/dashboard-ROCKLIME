@@ -11,14 +11,8 @@ const QuotationVersion = require("../models/quotationVersion");
 // Create a new quotation
 exports.createQuotation = async (req, res) => {
   try {
-    let {
-      products,
-      items,
-      include_gst,
-      gst_value,
-      followupDates,
-      ...quotationData
-    } = req.body;
+    let { products, items, followupDates, discountAmount, ...quotationData } =
+      req.body;
 
     const quotationItems = items || products || [];
 
@@ -26,18 +20,14 @@ exports.createQuotation = async (req, res) => {
       ...item,
       productId: item.productId || null,
       quantity: Number(item.quantity) || 1,
-      discount: Number(item.discount) || 0,
+      discount: Number(item.discount) || 0, // Optional per item
       tax: Number(item.tax) || 0,
       total: Number(item.total) || 0,
     }));
 
     quotationData.products = JSON.stringify(formattedItems);
+    quotationData.discountAmount = discountAmount ?? null;
 
-    // Include GST fields
-    quotationData.include_gst = include_gst ?? null;
-    quotationData.gst_value = gst_value ?? null;
-
-    // ✅ Include followupDates if provided
     quotationData.followupDates = followupDates
       ? JSON.stringify(followupDates)
       : null;
@@ -76,14 +66,8 @@ exports.updateQuotation = async (req, res) => {
   const t = await sequelize.transaction();
   try {
     const { id } = req.params;
-    const {
-      items,
-      products,
-      include_gst,
-      gst_value,
-      followupDates,
-      ...quotationData
-    } = req.body;
+    const { items, products, followupDates, discountAmount, ...quotationData } =
+      req.body;
 
     if (!id) {
       await t.rollback();
@@ -125,12 +109,8 @@ exports.updateQuotation = async (req, res) => {
 
     quotationData.products =
       formattedItems.length > 0 ? JSON.stringify(formattedItems) : null;
+    quotationData.discountAmount = discountAmount ?? null;
 
-    // Update GST fields if provided
-    if (include_gst !== undefined) quotationData.include_gst = include_gst;
-    if (gst_value !== undefined) quotationData.gst_value = gst_value;
-
-    // ✅ Update followupDates if provided
     if (followupDates !== undefined)
       quotationData.followupDates = JSON.stringify(followupDates);
 
@@ -233,7 +213,7 @@ exports.exportQuotation = async (req, res) => {
         ++index,
         product.imageUrl || "N/A",
         product.name || "N/A",
-        product.productCode || "N/A",
+        product.product_code || "N/A",
         Number(product.mrp) || Number(product.total) || 0,
         product.discount
           ? product.discountType === "percent"
@@ -250,11 +230,12 @@ exports.exportQuotation = async (req, res) => {
       (sum, product) => sum + Number(product.total || 0),
       0
     );
-    const gstAmount =
-      quotation.include_gst && quotation.gst_value
-        ? (subtotal * Number(quotation.gst_value)) / 100
-        : 0;
-    const finalTotal = subtotal + gstAmount;
+
+    // Apply discountAmount (could be fixed or % — frontend decides)
+    let discountValue = quotation.discountAmount ?? 0;
+    const totalAfterDiscount = subtotal - discountValue;
+
+    const finalTotal = totalAfterDiscount; // GST handled in frontend if needed
 
     sheetData.push([]);
     sheetData.push([
@@ -344,7 +325,6 @@ exports.cloneQuotation = async (req, res) => {
       quotationId: req.params.id,
     });
     const newQuotationId = uuidv4();
-
     const clonedQuotation = await Quotation.create({
       quotationId: newQuotationId,
       document_title: `${originalQuotation.document_title} (Copy)`,
@@ -354,15 +334,12 @@ exports.cloneQuotation = async (req, res) => {
       customerId: originalQuotation.customerId,
       createdBy: req.user.userId,
       shipTo: originalQuotation.shipTo,
-      include_gst: originalQuotation.include_gst,
-      gst_value: originalQuotation.gst_value,
+      discountAmount: originalQuotation.discountAmount,
       products: originalQuotation.products,
-      discountType: originalQuotation.discountType,
       roundOff: originalQuotation.roundOff,
       finalAmount: originalQuotation.finalAmount,
       signature_name: originalQuotation.signature_name,
       signature_image: originalQuotation.signature_image,
-      // ✅ Clone followupDates too
       followupDates: originalQuotation.followupDates,
     });
 

@@ -112,7 +112,7 @@ const NewCart = ({ onConvertToOrder }) => {
     billTo: "",
     shipTo: null,
     signatureName: "CM TRADING CO",
-    includeGst: false,
+
     gstValue: "",
     discountType: "percent",
     roundOff: "",
@@ -295,7 +295,7 @@ const NewCart = ({ onConvertToOrder }) => {
     [cartItems, itemDiscounts, quotationData.discountType]
   );
   const shipping = 40;
-  const tax = quotationData.includeGst
+  const tax = quotationData.gstValue
     ? (subTotal * (parseFloat(quotationData.gstValue) || 0)) / 100
     : 25;
   const roundOff = parseFloat(quotationData.roundOff) || 0;
@@ -644,7 +644,7 @@ const NewCart = ({ onConvertToOrder }) => {
         quotation_date: quotationData.quotationDate,
         due_date: quotationData.dueDate,
         reference_number: quotationNumber,
-        include_gst: quotationData.includeGst,
+
         gst_value: parseFloat(quotationData.gstValue) || 0,
         discountType: quotationData.discountType,
         roundOff: parseFloat(quotationData.roundOff) || 0,
@@ -668,7 +668,7 @@ const NewCart = ({ onConvertToOrder }) => {
             quantity: item.quantity || 1,
             sellingPrice: parseFloat(item.price || 0),
             discount: itemDiscount,
-            tax: quotationData.includeGst
+            tax: quotationData.gstValue
               ? parseFloat(quotationData.gstValue) || 0
               : 0,
             total: parseFloat((itemSubtotal - itemDiscount).toFixed(2)),
@@ -683,7 +683,7 @@ const NewCart = ({ onConvertToOrder }) => {
             productId: item.productId,
             quantity: item.quantity || 1,
             discount: itemDiscount,
-            tax: quotationData.includeGst
+            tax: quotationData.gstValue
               ? parseFloat(quotationData.gstValue) || 0
               : 0,
             total: parseFloat((itemSubtotal - itemDiscount).toFixed(2)),
@@ -779,7 +779,7 @@ const NewCart = ({ onConvertToOrder }) => {
       billTo: "",
       shipTo: null,
       signatureName: "CM TRADING CO",
-      includeGst: false,
+
       gstValue: "",
       discountType: "percent",
       roundOff: "",
@@ -897,291 +897,301 @@ const NewCart = ({ onConvertToOrder }) => {
 
   return (
     <div className="page-wrapper">
-      <PageWrapper>
-        <CartContainer>
-          <Tabs
-            activeKey={activeTab}
-            onChange={setActiveTab}
-            type="card"
-            style={{ marginBottom: 16 }}
-            role="tablist"
-          >
-            <TabPane
-              tab={
-                <span
-                  role="tab"
-                  aria-label={`Cart tab with ${totalItems} items`}
-                >
-                  <ShoppingCartOutlined /> Cart ({totalItems})
-                </span>
-              }
-              key="cart"
+      <div className="content">
+        <PageWrapper>
+          <CartContainer>
+            <Tabs
+              activeKey={activeTab}
+              onChange={setActiveTab}
+              type="card"
+              style={{ marginBottom: 16 }}
+              role="tablist"
             >
-              <CartTab
-                cartItems={cartItems}
-                cartProductsData={cartProductsData}
-                totalItems={totalItems}
-                shipping={shipping}
-                tax={tax}
-                discount={totalDiscount}
-                roundOff={roundOff}
-                subTotal={subTotal}
-                quotationData={quotationData}
-                itemDiscounts={itemDiscounts}
-                updatingItems={updatingItems}
-                handleUpdateQuantity={handleUpdateQuantity}
-                handleRemoveItem={handleRemoveItem}
-                handleDiscountChange={handleDiscountChange}
-                setShowClearCartModal={setShowClearCartModal}
-                setActiveTab={setActiveTab}
-              />
-            </TabPane>
-            <TabPane
-              tab={
-                <span role="tab" aria-label="Checkout tab">
-                  <CheckCircleOutlined /> Checkout
-                </span>
-              }
-              key="checkout"
-            >
-              {documentType === "Purchase Order" ? (
-                <PurchaseOrderForm
-                  purchaseOrderData={purchaseOrderData}
-                  setPurchaseOrderData={setPurchaseOrderData}
-                  selectedVendor={selectedVendor}
-                  setSelectedVendor={setSelectedVendor}
-                  vendors={vendors}
-                  isVendorsLoading={isVendorsLoading}
-                  products={products}
-                  isProductsLoading={isProductsLoading}
-                  productSearch={productSearch}
-                  filteredProducts={filteredProducts}
-                  debouncedSearch={debouncedSearch}
-                  addPurchaseOrderProduct={(productId) => {
-                    const product = products.find(
-                      (p) => p.productId === productId
-                    );
-                    if (
-                      !product ||
-                      purchaseOrderData.items.some(
-                        (item) => item.productId === productId
-                      ) ||
-                      cartItems.some((item) => item.productId === productId)
-                    ) {
-                      if (!product) toast.error("Product not found.");
-                      else toast.error("Product already added.");
-                      return;
-                    }
-                    const sellingPrice =
-                      product.metaDetails?.find(
-                        (meta) => meta.slug === "sellingPrice"
-                      )?.value || 0;
-                    if (sellingPrice <= 0) {
-                      toast.error(
-                        `Product ${product.name} has an invalid MRP (₹${sellingPrice}).`
-                      );
-                      return;
-                    }
-                    const quantity = 1;
-                    const total = quantity * sellingPrice;
-                    setPurchaseOrderData((prev) => {
-                      const newItems = [
-                        ...prev.items,
-                        {
-                          id: product.productId,
-                          productId: product.productId,
-                          name: product.name || "Unknown",
-                          quantity,
-                          mrp: sellingPrice,
-                          total,
-                        },
-                      ];
-                      const totalAmount = newItems
-                        .reduce((sum, item) => sum + Number(item.total || 0), 0)
-                        .toFixed(2);
-                      return {
-                        ...prev,
-                        items: newItems,
-                        totalAmount,
-                      };
-                    });
-                    setProductSearch("");
-                    setFilteredProducts([]);
-                  }}
-                  removePurchaseOrderProduct={(index) => {
-                    setPurchaseOrderData((prev) => {
-                      const newItems = prev.items.filter((_, i) => i !== index);
-                      const totalAmount = newItems
-                        .reduce((sum, item) => sum + Number(item.total || 0), 0)
-                        .toFixed(2);
-                      return {
-                        ...prev,
-                        items: newItems,
-                        totalAmount,
-                      };
-                    });
-                  }}
-                  updatePurchaseOrderProductField={(index, field, value) => {
-                    const updatedItems = [...purchaseOrderData.items];
-                    updatedItems[index][field] = value;
-                    if (["quantity", "mrp"].includes(field)) {
-                      const quantity =
-                        Number(updatedItems[index].quantity) || 1;
-                      const mrp = Number(updatedItems[index].mrp) || 0.01;
-                      updatedItems[index].total = quantity * mrp;
-                    }
-                    const totalAmount = updatedItems
-                      .reduce((sum, item) => sum + Number(item.total || 0), 0)
-                      .toFixed(2);
-                    setPurchaseOrderData({
-                      ...purchaseOrderData,
-                      items: updatedItems,
-                      totalAmount,
-                    });
-                  }}
-                  handlePurchaseOrderChange={handlePurchaseOrderChange}
-                  purchaseOrderTotal={purchaseOrderTotal}
-                  purchaseOrderNumber={purchaseOrderNumber}
-                  documentType={documentType}
-                  setDocumentType={setDocumentType}
+              <TabPane
+                tab={
+                  <span
+                    role="tab"
+                    aria-label={`Cart tab with ${totalItems} items`}
+                  >
+                    <ShoppingCartOutlined /> Cart ({totalItems})
+                  </span>
+                }
+                key="cart"
+              >
+                <CartTab
                   cartItems={cartItems}
-                  setActiveTab={setActiveTab}
-                  handleCreateDocument={handleCreateDocument}
-                  setShowAddVendorModal={setShowAddVendorModal}
-                />
-              ) : documentType === "Order" ? (
-                <OrderForm
-                  orderData={orderData}
-                  setOrderData={setOrderData}
-                  handleOrderChange={handleOrderChange}
-                  selectedCustomer={selectedCustomer}
-                  setSelectedCustomer={setSelectedCustomer}
-                  customers={customerList}
-                  customersLoading={customersLoading}
-                  customersError={customersError}
-                  addresses={addresses}
-                  addressesLoading={addressesLoading}
-                  addressesError={addressesError}
-                  userMap={userMap}
-                  customerMap={customerMap}
-                  userQueries={userQueries}
-                  customerQueries={customerQueries}
-                  teams={teams}
-                  teamsLoading={teamsLoading}
-                  users={users}
-                  usersLoading={usersLoading}
-                  usersError={usersError}
-                  error={error}
-                  orderNumber={orderData.orderNo}
-                  documentType={documentType}
-                  setDocumentType={setDocumentType}
-                  cartItems={cartItems}
-                  totalAmount={totalAmount}
+                  cartProductsData={cartProductsData}
+                  totalItems={totalItems}
                   shipping={shipping}
                   tax={tax}
                   discount={totalDiscount}
                   roundOff={roundOff}
                   subTotal={subTotal}
-                  handleAddCustomer={handleAddCustomer} // Pass updated handler
-                  handleAddAddress={handleAddAddress}
-                  setActiveTab={setActiveTab}
-                  handleCreateDocument={handleCreateDocument}
-                  handleTeamAdded={handleTeamAdded}
-                  useBillingAddress={useBillingAddress}
-                  setUseBillingAddress={setUseBillingAddress}
-                />
-              ) : (
-                <QuotationForm
                   quotationData={quotationData}
-                  setQuotationData={setQuotationData}
-                  handleQuotationChange={handleQuotationChange}
-                  selectedCustomer={selectedCustomer}
-                  setSelectedCustomer={setSelectedCustomer}
-                  customers={customerList}
-                  customersLoading={customersLoading}
-                  customersError={customersError}
-                  addresses={addresses}
-                  addressesLoading={addressesLoading}
-                  addressesError={addressesError}
-                  userMap={userMap}
-                  customerMap={customerMap}
-                  userQueries={userQueries}
-                  customerQueries={customerQueries}
-                  error={error}
-                  quotationNumber={quotationNumber}
-                  documentType={documentType}
-                  setDocumentType={setDocumentType}
-                  cartItems={cartItems}
-                  totalAmount={totalAmount}
-                  shipping={shipping}
-                  tax={tax}
-                  discount={totalDiscount}
-                  roundOff={roundOff}
-                  subTotal={subTotal}
-                  handleAddCustomer={handleAddCustomer} // Pass updated handler
-                  handleAddAddress={handleAddAddress}
+                  itemDiscounts={itemDiscounts}
+                  updatingItems={updatingItems}
+                  handleUpdateQuantity={handleUpdateQuantity}
+                  handleRemoveItem={handleRemoveItem}
+                  handleDiscountChange={handleDiscountChange}
+                  setShowClearCartModal={setShowClearCartModal}
                   setActiveTab={setActiveTab}
-                  handleCreateDocument={handleCreateDocument}
-                  useBillingAddress={useBillingAddress}
-                  setUseBillingAddress={setUseBillingAddress}
                 />
-              )}
-            </TabPane>
-          </Tabs>
+              </TabPane>
+              <TabPane
+                tab={
+                  <span role="tab" aria-label="Checkout tab">
+                    <CheckCircleOutlined /> Checkout
+                  </span>
+                }
+                key="checkout"
+              >
+                {documentType === "Purchase Order" ? (
+                  <PurchaseOrderForm
+                    purchaseOrderData={purchaseOrderData}
+                    setPurchaseOrderData={setPurchaseOrderData}
+                    selectedVendor={selectedVendor}
+                    setSelectedVendor={setSelectedVendor}
+                    vendors={vendors}
+                    isVendorsLoading={isVendorsLoading}
+                    products={products}
+                    isProductsLoading={isProductsLoading}
+                    productSearch={productSearch}
+                    filteredProducts={filteredProducts}
+                    debouncedSearch={debouncedSearch}
+                    addPurchaseOrderProduct={(productId) => {
+                      const product = products.find(
+                        (p) => p.productId === productId
+                      );
+                      if (
+                        !product ||
+                        purchaseOrderData.items.some(
+                          (item) => item.productId === productId
+                        ) ||
+                        cartItems.some((item) => item.productId === productId)
+                      ) {
+                        if (!product) toast.error("Product not found.");
+                        else toast.error("Product already added.");
+                        return;
+                      }
+                      const sellingPrice =
+                        product.metaDetails?.find(
+                          (meta) => meta.slug === "sellingPrice"
+                        )?.value || 0;
+                      if (sellingPrice <= 0) {
+                        toast.error(
+                          `Product ${product.name} has an invalid MRP (₹${sellingPrice}).`
+                        );
+                        return;
+                      }
+                      const quantity = 1;
+                      const total = quantity * sellingPrice;
+                      setPurchaseOrderData((prev) => {
+                        const newItems = [
+                          ...prev.items,
+                          {
+                            id: product.productId,
+                            productId: product.productId,
+                            name: product.name || "Unknown",
+                            quantity,
+                            mrp: sellingPrice,
+                            total,
+                          },
+                        ];
+                        const totalAmount = newItems
+                          .reduce(
+                            (sum, item) => sum + Number(item.total || 0),
+                            0
+                          )
+                          .toFixed(2);
+                        return {
+                          ...prev,
+                          items: newItems,
+                          totalAmount,
+                        };
+                      });
+                      setProductSearch("");
+                      setFilteredProducts([]);
+                    }}
+                    removePurchaseOrderProduct={(index) => {
+                      setPurchaseOrderData((prev) => {
+                        const newItems = prev.items.filter(
+                          (_, i) => i !== index
+                        );
+                        const totalAmount = newItems
+                          .reduce(
+                            (sum, item) => sum + Number(item.total || 0),
+                            0
+                          )
+                          .toFixed(2);
+                        return {
+                          ...prev,
+                          items: newItems,
+                          totalAmount,
+                        };
+                      });
+                    }}
+                    updatePurchaseOrderProductField={(index, field, value) => {
+                      const updatedItems = [...purchaseOrderData.items];
+                      updatedItems[index][field] = value;
+                      if (["quantity", "mrp"].includes(field)) {
+                        const quantity =
+                          Number(updatedItems[index].quantity) || 1;
+                        const mrp = Number(updatedItems[index].mrp) || 0.01;
+                        updatedItems[index].total = quantity * mrp;
+                      }
+                      const totalAmount = updatedItems
+                        .reduce((sum, item) => sum + Number(item.total || 0), 0)
+                        .toFixed(2);
+                      setPurchaseOrderData({
+                        ...purchaseOrderData,
+                        items: updatedItems,
+                        totalAmount,
+                      });
+                    }}
+                    handlePurchaseOrderChange={handlePurchaseOrderChange}
+                    purchaseOrderTotal={purchaseOrderTotal}
+                    purchaseOrderNumber={purchaseOrderNumber}
+                    documentType={documentType}
+                    setDocumentType={setDocumentType}
+                    cartItems={cartItems}
+                    setActiveTab={setActiveTab}
+                    handleCreateDocument={handleCreateDocument}
+                    setShowAddVendorModal={setShowAddVendorModal}
+                  />
+                ) : documentType === "Order" ? (
+                  <OrderForm
+                    orderData={orderData}
+                    setOrderData={setOrderData}
+                    handleOrderChange={handleOrderChange}
+                    selectedCustomer={selectedCustomer}
+                    setSelectedCustomer={setSelectedCustomer}
+                    customers={customerList}
+                    customersLoading={customersLoading}
+                    customersError={customersError}
+                    addresses={addresses}
+                    addressesLoading={addressesLoading}
+                    addressesError={addressesError}
+                    userMap={userMap}
+                    customerMap={customerMap}
+                    userQueries={userQueries}
+                    customerQueries={customerQueries}
+                    teams={teams}
+                    teamsLoading={teamsLoading}
+                    users={users}
+                    usersLoading={usersLoading}
+                    usersError={usersError}
+                    error={error}
+                    orderNumber={orderData.orderNo}
+                    documentType={documentType}
+                    setDocumentType={setDocumentType}
+                    cartItems={cartItems}
+                    totalAmount={totalAmount}
+                    shipping={shipping}
+                    tax={tax}
+                    discount={totalDiscount}
+                    roundOff={roundOff}
+                    subTotal={subTotal}
+                    handleAddCustomer={handleAddCustomer} // Pass updated handler
+                    handleAddAddress={handleAddAddress}
+                    setActiveTab={setActiveTab}
+                    handleCreateDocument={handleCreateDocument}
+                    handleTeamAdded={handleTeamAdded}
+                    useBillingAddress={useBillingAddress}
+                    setUseBillingAddress={setUseBillingAddress}
+                  />
+                ) : (
+                  <QuotationForm
+                    quotationData={quotationData}
+                    setQuotationData={setQuotationData}
+                    handleQuotationChange={handleQuotationChange}
+                    selectedCustomer={selectedCustomer}
+                    setSelectedCustomer={setSelectedCustomer}
+                    customers={customerList}
+                    customersLoading={customersLoading}
+                    customersError={customersError}
+                    addresses={addresses}
+                    addressesLoading={addressesLoading}
+                    addressesError={addressesError}
+                    userMap={userMap}
+                    customerMap={customerMap}
+                    userQueries={userQueries}
+                    customerQueries={customerQueries}
+                    error={error}
+                    quotationNumber={quotationNumber}
+                    documentType={documentType}
+                    setDocumentType={setDocumentType}
+                    cartItems={cartItems}
+                    totalAmount={totalAmount}
+                    shipping={shipping}
+                    tax={tax}
+                    discount={totalDiscount}
+                    roundOff={roundOff}
+                    subTotal={subTotal}
+                    handleAddCustomer={handleAddCustomer} // Pass updated handler
+                    handleAddAddress={handleAddAddress}
+                    setActiveTab={setActiveTab}
+                    handleCreateDocument={handleCreateDocument}
+                    useBillingAddress={useBillingAddress}
+                    setUseBillingAddress={setUseBillingAddress}
+                  />
+                )}
+              </TabPane>
+            </Tabs>
 
-          <Modal
-            title="Confirm Clear Cart"
-            open={showClearCartModal}
-            onOk={handleClearCart}
-            onCancel={() => setShowClearCartModal(false)}
-            okText="Clear"
-            okButtonProps={{ danger: true }}
-            cancelText="Cancel"
-            width={window.innerWidth < 576 ? "90%" : 520}
-          >
-            <Text>
-              Are you sure you want to clear all items from your cart?
-            </Text>
-          </Modal>
+            <Modal
+              title="Confirm Clear Cart"
+              open={showClearCartModal}
+              onOk={handleClearCart}
+              onCancel={() => setShowClearCartModal(false)}
+              okText="Clear"
+              okButtonProps={{ danger: true }}
+              cancelText="Cancel"
+              width={window.innerWidth < 576 ? "90%" : 520}
+            >
+              <Text>
+                Are you sure you want to clear all items from your cart?
+              </Text>
+            </Modal>
 
-          {showAddAddressModal && (
-            <AddAddress
-              onClose={() => setShowAddAddressModal(false)}
-              onSave={handleAddressSave}
-              selectedCustomer={selectedCustomer}
+            {showAddAddressModal && (
+              <AddAddress
+                onClose={() => setShowAddAddressModal(false)}
+                onSave={handleAddressSave}
+                selectedCustomer={selectedCustomer}
+              />
+            )}
+
+            <AddVendorModal
+              show={showAddVendorModal}
+              onClose={() => setShowAddVendorModal(false)}
+              onSave={createVendor}
+              isCreatingVendor={isCreatingVendor}
             />
-          )}
 
-          <AddVendorModal
-            show={showAddVendorModal}
-            onClose={() => setShowAddVendorModal(false)}
-            onSave={createVendor}
-            isCreatingVendor={isCreatingVendor}
-          />
+            {showAddTeamModal && (
+              <AddNewTeam
+                onClose={() => handleTeamAdded(false)}
+                onTeamAdded={(newTeamId) => {
+                  handleTeamAdded(false);
+                  setOrderData((prev) => ({
+                    ...prev,
+                    assignedTeamId: newTeamId,
+                  }));
+                }}
+                visible={showAddTeamModal}
+              />
+            )}
 
-          {showAddTeamModal && (
-            <AddNewTeam
-              onClose={() => handleTeamAdded(false)}
-              onTeamAdded={(newTeamId) => {
-                handleTeamAdded(false);
-                setOrderData((prev) => ({
-                  ...prev,
-                  assignedTeamId: newTeamId,
-                }));
-              }}
-              visible={showAddTeamModal}
-            />
-          )}
-
-          {showAddCustomerModal && (
-            <AddCustomerModal
-              visible={showAddCustomerModal}
-              onClose={() => setShowAddCustomerModal(false)}
-              customer={null} // Pass null for new customer creation
-            />
-          )}
-        </CartContainer>
-      </PageWrapper>
+            {showAddCustomerModal && (
+              <AddCustomerModal
+                visible={showAddCustomerModal}
+                onClose={() => setShowAddCustomerModal(false)}
+                customer={null} // Pass null for new customer creation
+              />
+            )}
+          </CartContainer>
+        </PageWrapper>
+      </div>
     </div>
   );
 };

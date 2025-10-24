@@ -25,36 +25,24 @@ const Quotation = sequelize.define(
       type: DataTypes.DATEONLY,
       allowNull: false,
     },
-
-    // ✅ New field like in orders
     followupDates: {
       type: DataTypes.JSON,
       allowNull: true,
       defaultValue: null,
       comment: "Array of follow-up date objects or timestamps",
     },
-
     reference_number: {
       type: DataTypes.STRING(50),
     },
-
-    include_gst: {
-      type: DataTypes.BOOLEAN, // TINYINT(1) equivalent
-      allowNull: true,
-      defaultValue: null,
-    },
-    gst_value: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: true,
-      defaultValue: null,
-    },
-
     products: {
       type: DataTypes.JSON,
       allowNull: false,
     },
-    discountType: {
-      type: DataTypes.ENUM("percent", "fixed"),
+    discountAmount: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      comment:
+        "Stores either fixed amount or percentage; interpretation handled in frontend",
     },
     roundOff: {
       type: DataTypes.DECIMAL(10, 2),
@@ -91,7 +79,7 @@ const Quotation = sequelize.define(
     },
     shipTo: {
       type: DataTypes.UUID,
-      allowNull: true, // Optional, as shipping address may not always be required
+      allowNull: true,
       references: {
         model: Address,
         key: "addressId",

@@ -20,6 +20,7 @@ exports.createTask = async (req, res) => {
       assignedTo,
       assignedBy,
       assignedTeamId,
+      secondaryAssignedTo,
       priority = "medium",
       status = "PENDING",
       dueDate,
@@ -31,26 +32,28 @@ exports.createTask = async (req, res) => {
       watchers = [],
       dependsOn = [],
       recurrence = {},
-      taskBoard, // Add taskBoard
+      taskBoard,
     } = req.body;
 
     // Validate task data
     const {
       assignedToUser,
       assignedByUser,
+      secondaryAssignedToUser,
       taskBoard: taskBoardDoc,
     } = await validateTaskData({
       title,
       assignedTo,
       assignedBy,
       assignedTeamId,
+      secondaryAssignedTo,
       priority,
       status,
       dueDate,
       startDate,
       watchers,
       dependsOn,
-      taskBoard, // Include taskBoard in validation
+      taskBoard,
     });
 
     // Validate linked resource
@@ -79,6 +82,7 @@ exports.createTask = async (req, res) => {
       assignedTo,
       assignedBy,
       assignedTeamId,
+      secondaryAssignedTo,
       priority: priority.toLowerCase(),
       status: status.toUpperCase(),
       dueDate: dueDate ? new Date(dueDate) : undefined,
@@ -90,18 +94,34 @@ exports.createTask = async (req, res) => {
       watchers,
       dependsOn,
       recurrence,
-      taskBoard, // Add taskBoard to task creation
+      taskBoard,
     });
 
     // Notify stakeholders
-    await notifyTaskStakeholders(
-      task,
-      assignedByUser,
+    const notificationRecipients = new Set([
       assignedTo,
-      watchers,
-      assignedTeamId,
-      "Created"
-    );
+      secondaryAssignedTo,
+      ...watchers,
+    ]).filter(Boolean);
+    const notifications = [];
+    for (const userId of notificationRecipients) {
+      notifications.push(
+        sendNotification({
+          userId,
+          title: `Task Created: ${task.taskId}`,
+          message: `Task "${
+            task.title
+          }" has been created and assigned to you as ${
+            userId === assignedTo
+              ? "primary assignee"
+              : userId === secondaryAssignedTo
+              ? "secondary assignee"
+              : "watcher"
+          }`,
+        })
+      );
+    }
+    await Promise.all(notifications);
 
     return sendSuccessResponse(res, task, "Task created successfully");
   } catch (err) {
@@ -267,9 +287,25 @@ exports.updateTask = async (req, res) => {
     const task = await Task.findById(id);
     if (!task) return sendErrorResponse(res, 404, "Task not found");
 
-    // Validate updates (MySQL for User/Team, MongoDB for Task dependencies)
-    if (updates.assignedTo || updates.assignedBy || updates.assignedTeamId) {
-      await validateTaskData({ ...updates, title: task.title });
+    // Validate updates
+    if (
+      updates.assignedTo ||
+      updates.assignedBy ||
+      updates.assignedTeamId ||
+      updates.secondaryAssignedTo ||
+      updates.watchers
+    ) {
+      await validateTaskData({
+        title: task.title,
+        assignedTo: updates.assignedTo || task.assignedTo,
+        assignedBy: updates.assignedBy || task.assignedBy,
+        assignedTeamId: updates.assignedTeamId || task.assignedTeamId,
+        secondaryAssignedTo:
+          updates.secondaryAssignedTo !== undefined
+            ? updates.secondaryAssignedTo
+            : task.secondaryAssignedTo,
+        watchers: updates.watchers || task.watchers,
+      });
     }
 
     if (
@@ -285,18 +321,42 @@ exports.updateTask = async (req, res) => {
       }
     }
 
+    // Track changes for notifications
+    const oldAssignedTo = task.assignedTo;
+    const oldSecondaryAssignedTo = task.secondaryAssignedTo;
+    const oldWatchers = task.watchers || [];
+
     Object.assign(task, updates);
     await task.save();
 
     // Notify stakeholders
-    await notifyTaskStakeholders(
-      task,
-      { name: "System" },
+    const notificationRecipients = new Set([
       task.assignedTo,
-      task.watchers,
-      task.assignedTeamId,
-      "Updated"
-    );
+      task.secondaryAssignedTo,
+      ...(task.watchers || []),
+    ]).filter(Boolean);
+    const notifications = [];
+    for (const userId of notificationRecipients) {
+      let message = `Task "${task.title}" has been updated`;
+      if (userId === task.assignedTo && userId !== oldAssignedTo) {
+        message = `Task "${task.title}" has been assigned to you as primary assignee`;
+      } else if (
+        userId === task.secondaryAssignedTo &&
+        userId !== oldSecondaryAssignedTo
+      ) {
+        message = `Task "${task.title}" has been assigned to you as secondary assignee`;
+      } else if (!oldWatchers.includes(userId)) {
+        message = `You have been added as a watcher to task "${task.title}"`;
+      }
+      notifications.push(
+        sendNotification({
+          userId,
+          title: `Task Updated: ${task.taskId}`,
+          message,
+        })
+      );
+    }
+    await Promise.all(notifications);
 
     return sendSuccessResponse(res, task, "Task updated successfully");
   } catch (err) {
