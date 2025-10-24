@@ -4,6 +4,7 @@ const {
   getNotifications,
   markAsRead,
   sendNotification,
+  deleteOldNotifications, // Add the new function
 } = require("../controller/notificationController");
 const { auth } = require("../middleware/auth"); // Authentication Middleware
 
@@ -48,6 +49,22 @@ router.post("/", auth, async (req, res) => {
     res.status(201).json(notification);
   } catch (error) {
     console.error("Error sending notification:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Manually delete notifications older than 7 days (admin only)
+router.delete("/old", auth, async (req, res) => {
+  if (!req.user.isAdmin) {
+    return res.status(403).json({ message: "Unauthorized" });
+  }
+  try {
+    const result = await deleteOldNotifications();
+    res
+      .status(200)
+      .json({ message: `${result.deletedCount} notifications deleted` });
+  } catch (error) {
+    console.error("Error deleting old notifications:", error);
     res.status(500).json({ message: "Server error" });
   }
 });

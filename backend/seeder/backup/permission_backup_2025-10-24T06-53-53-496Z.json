@@ -10,7 +10,7 @@
   },
   {
     "permissionId": "00d4c58e-d09c-4255-bd94-23cc94bd0ad7",
-    "api": "write",
+    "api": "",
     "name": "create_signature",
     "route": "/api/signatures",
     "module": "signatures",
@@ -46,7 +46,7 @@
   },
   {
     "permissionId": "089ee1ec-4817-409b-a916-b51c965b97d2",
-    "api": "edit",
+    "api": "",
     "name": "update_team",
     "route": "/api/teams/update/:teamId",
     "module": "teams",
@@ -91,7 +91,7 @@
   },
   {
     "permissionId": "0a328ae8-9934-4160-bd8a-706bcc2f0226",
-    "api": "edit",
+    "api": "",
     "name": "update_signature",
     "route": "/api/signatures/:id",
     "module": "signatures",
@@ -181,7 +181,7 @@
   },
   {
     "permissionId": "12fd553c-31ca-4870-a577-cdfdc1be9f31",
-    "api": "write",
+    "api": "",
     "name": "send_notification",
     "route": "/api/notifications",
     "module": "notifications",
@@ -199,7 +199,7 @@
   },
   {
     "permissionId": "139a97a4-1107-4ce6-a30c-f040b87dfbd9",
-    "api": "write",
+    "api": "",
     "name": "create_order",
     "route": "/api/orders/create",
     "module": "orders",
@@ -208,7 +208,7 @@
   },
   {
     "permissionId": "147fc378-5039-493e-9a9a-fc24acb69bee",
-    "api": "write",
+    "api": "",
     "name": "add_order_comment",
     "route": "/api/orders/comments",
     "module": "orders",
@@ -253,7 +253,7 @@
   },
   {
     "permissionId": "17ea0641-f198-4212-95cf-d749f95207e2",
-    "api": "write",
+    "api": "",
     "name": "add_team_member",
     "route": "/api/teams/members/add",
     "module": "teams",
@@ -271,7 +271,7 @@
   },
   {
     "permissionId": "1847de8e-2289-4e4c-ad80-91e3ecfc3531",
-    "api": "write",
+    "api": "",
     "name": "clock_in",
     "route": "/api/attendance/clock-in",
     "module": "attendance",
@@ -316,7 +316,7 @@
   },
   {
     "permissionId": "1ef78f20-0bdc-4f5b-aa12-d190ecaca3e5",
-    "api": "edit",
+    "api": "",
     "name": "update_team_member",
     "route": "/api/teams/members/update/:memberId",
     "module": "teams",
@@ -343,7 +343,7 @@
   },
   {
     "permissionId": "1f9aa348-a90b-4042-8f9b-ed1aaaf9897a",
-    "api": "write",
+    "api": "",
     "name": "assign_role",
     "route": "/api/users/assign-role/:userId",
     "module": "users",
@@ -370,7 +370,7 @@
   },
   {
     "permissionId": "22d49ed7-732c-43c9-8fe7-bc6625bab7a9",
-    "api": "edit",
+    "api": "",
     "name": "bulk_update_tasks",
     "route": "/api/tasks/bulk-update",
     "module": "tasks",
@@ -388,7 +388,7 @@
   },
   {
     "permissionId": "251b31ef-d97d-4cde-b7e8-2e87ef8bd0f0",
-    "api": "edit",
+    "api": "",
     "name": "update_order_team",
     "route": "/api/orders/update-team",
     "module": "orders",
@@ -415,7 +415,7 @@
   },
   {
     "permissionId": "27b1f8e7-75b6-4f94-a8f0-f1f8d3567ea9",
-    "api": "edit",
+    "api": "",
     "name": "report_user",
     "route": "/api/users/report/:userId",
     "module": "users",
@@ -424,7 +424,7 @@
   },
   {
     "permissionId": "29569cde-8571-4aad-beba-10406b73dab6",
-    "api": "write",
+    "api": "",
     "name": "submit_contact_form",
     "route": "/api/contact",
     "module": "contact",
@@ -451,7 +451,7 @@
   },
   {
     "permissionId": "2fe2a24e-eddc-48e5-8fba-c15a81aef493",
-    "api": "write",
+    "api": "",
     "name": "create_product_meta",
     "route": "/api/product-meta",
     "module": "product_meta",
@@ -469,7 +469,7 @@
   },
   {
     "permissionId": "35d235cf-a7b8-436f-8f86-5d7d18ce6f23",
-    "api": "write",
+    "api": "",
     "name": "upload_invoice_and_link_order",
     "route": "/api/orders/invoice-upload/:orderId",
     "module": "orders",
@@ -478,7 +478,7 @@
   },
   {
     "permissionId": "37fb70e3-87d8-4156-a12b-ff3bdc1b1004",
-    "api": "edit",
+    "api": "",
     "name": "set_default_signature",
     "route": "/api/signatures/:id/default",
     "module": "signatures",
@@ -487,7 +487,7 @@
   },
   {
     "permissionId": "386a79b2-e47d-42fe-b123-a3f1f0a9b266",
-    "api": "write",
+    "api": "",
     "name": "add_task_attachment",
     "route": "/api/tasks/:id/attachments",
     "module": "tasks",
@@ -532,7 +532,7 @@
   },
   {
     "permissionId": "49a3d1fb-a8ce-4ed9-8f4e-91d461bae51a",
-    "api": "write",
+    "api": "",
     "name": "reply_to_email",
     "route": "/api/contact/reply/:id",
     "module": "contact",
@@ -568,7 +568,7 @@
   },
   {
     "permissionId": "4c582ab2-d158-49d4-b141-985d3441b8f4",
-    "api": "edit",
+    "api": "",
     "name": "update_task_board",
     "route": "/api/task-boards/:id",
     "module": "task_boards",
@@ -604,7 +604,7 @@
   },
   {
     "permissionId": "4db5c6eb-6e72-4316-90af-bed881346ca9",
-    "api": "edit",
+    "api": "",
     "name": "change_status_to_inactive",
     "route": "/api/users/:userId",
     "module": "users",
@@ -613,7 +613,7 @@
   },
   {
     "permissionId": "4edffc93-c12a-4ed2-a28b-19b7ee1e3ce4",
-    "api": "edit",
+    "api": "",
     "name": "update_product_featured",
     "route": "/api/products/:productId/featured",
     "module": "products",
@@ -667,7 +667,7 @@
   },
   {
     "permissionId": "586300df-ce6f-415d-acf6-49ca85382273",
-    "api": "edit",
+    "api": "",
     "name": "manage_task_watcher",
     "route": "/api/tasks/:id/watchers",
     "module": "tasks",
@@ -712,7 +712,7 @@
   },
   {
     "permissionId": "63bfe1eb-cdec-4af6-ae5b-8a1152045529",
-    "api": "edit",
+    "api": "",
     "name": "update_product_meta",
     "route": "/api/product-meta/:id",
     "module": "product_meta",
@@ -766,7 +766,7 @@
   },
   {
     "permissionId": "6bd32033-4b36-41b2-8d72-1548bd12baf9",
-    "api": "edit",
+    "api": "",
     "name": "archive_task",
     "route": "/api/tasks/:id/archive",
     "module": "tasks",
@@ -793,7 +793,7 @@
   },
   {
     "permissionId": "6e3adc59-1fc3-4030-b769-a3694bba4a76",
-    "api": "edit",
+    "api": "",
     "name": "confirm_purchase_order",
     "route": "/api/purchase-orders/:id/confirm",
     "module": "purchase_orders",
@@ -901,7 +901,7 @@
   },
   {
     "permissionId": "7a5f3e42-66cd-4a9d-9701-5645ca6000b2",
-    "api": "write",
+    "api": "",
     "name": "create_task",
     "route": "/api/tasks",
     "module": "tasks",
@@ -910,7 +910,7 @@
   },
   {
     "permissionId": "7b8999ea-7e3a-4ad7-9808-170fbb9eaa5e",
-    "api": "edit",
+    "api": "",
     "name": "update_order_by_id",
     "route": "/api/orders/:id",
     "module": "orders",
@@ -919,7 +919,7 @@
   },
   {
     "permissionId": "7bc157de-9942-484e-b0a4-cd71b43c9511",
-    "api": "edit",
+    "api": "",
     "name": "update_purchase_order_status",
     "route": "/api/purchase-orders/:id/status",
     "module": "purchase_orders",
@@ -973,7 +973,7 @@
   },
   {
     "permissionId": "8052db95-8a0e-4d4d-9ea2-d94038a32267",
-    "api": "edit",
+    "api": "",
     "name": "update_checklist_item",
     "route": "/api/tasks/:id/checklist",
     "module": "tasks",
@@ -982,7 +982,7 @@
   },
   {
     "permissionId": "80f58472-3099-40f3-a972-c80d0be60b13",
-    "api": "edit",
+    "api": "",
     "name": "update_user",
     "route": "/api/users/:userId",
     "module": "users",
@@ -1009,7 +1009,7 @@
   },
   {
     "permissionId": "85781c8a-3dae-455e-a210-6649568fba9e",
-    "api": "edit",
+    "api": "",
     "name": "update_purchase_order",
     "route": "/api/purchase-orders/:id",
     "module": "purchase_orders",
@@ -1036,7 +1036,7 @@
   },
   {
     "permissionId": "869bd958-cf95-4755-b25e-3fe8fa77acf5",
-    "api": "write",
+    "api": "",
     "name": "attach_brands_to_bpc",
     "route": "/api/brand-parent/:id/brands",
     "module": "brand_parentcategories",
@@ -1135,7 +1135,7 @@
   },
   {
     "permissionId": "90c56869-06ff-48cc-aa98-ff956dcbb915",
-    "api": "edit",
+    "api": "",
     "name": "update_time_tracking",
     "route": "/api/tasks/:id/time-tracking",
     "module": "tasks",
@@ -1180,7 +1180,7 @@
   },
   {
     "permissionId": "94e242f1-c98c-46f7-8a1d-8af83ce98401",
-    "api": "edit",
+    "api": "",
     "name": "mark_notification_as_read",
     "route": "/api/notifications/:id/read",
     "module": "notifications",
@@ -1225,7 +1225,7 @@
   },
   {
     "permissionId": "9b63dc21-eb5a-4623-9abd-5e483c391ae9",
-    "api": "write",
+    "api": "",
     "name": "create_task_board",
     "route": "/api/task-boards",
     "module": "task_boards",
@@ -1261,7 +1261,7 @@
   },
   {
     "permissionId": "a0090a8f-2b09-421b-9f06-9164cb123eb5",
-    "api": "write",
+    "api": "",
     "name": "create_purchase_order",
     "route": "/api/purchase-orders",
     "module": "purchase_orders",
@@ -1279,7 +1279,7 @@
   },
   {
     "permissionId": "a2f8ce29-1cb2-4432-bc31-90da3eb30f10",
-    "api": "write",
+    "api": "",
     "name": "resend_verification_email",
     "route": "/api/auth/resend-verification",
     "module": "auth",
@@ -1342,7 +1342,7 @@
   },
   {
     "permissionId": "aa4a4c9d-1f5b-44c4-b1af-0d9a21485eae",
-    "api": "write",
+    "api": "",
     "name": "create_team",
     "route": "/api/teams/create",
     "module": "teams",
@@ -1369,7 +1369,7 @@
   },
   {
     "permissionId": "b07785a8-0d7a-4a73-bb5d-6cec8d39132e",
-    "api": "edit",
+    "api": "",
     "name": "archive_task_board",
     "route": "/api/task-boards/:id/archive",
     "module": "task_boards",
@@ -1396,7 +1396,7 @@
   },
   {
     "permissionId": "b5be2925-f440-4c23-8b0a-fd9e39af4f58",
-    "api": "edit",
+    "api": "",
     "name": "manage_task_board_member",
     "route": "/api/task-boards/:id/members",
     "module": "task_boards",
@@ -1486,7 +1486,7 @@
   },
   {
     "permissionId": "c58ac74b-07e4-4b19-b83b-a75c4cc785c2",
-    "api": "write",
+    "api": "",
     "name": "clone_task",
     "route": "/api/tasks/:id/clone",
     "module": "tasks",
@@ -1585,7 +1585,7 @@
   },
   {
     "permissionId": "c9bd056f-2461-476b-a228-1d711e9973f0",
-    "api": "write",
+    "api": "",
     "name": "create_user",
     "route": "/api/users/add",
     "module": "users",
@@ -1603,7 +1603,7 @@
   },
   {
     "permissionId": "ca68e20c-9e4d-46c7-9bc9-54cd1bd14825",
-    "api": "edit",
+    "api": "",
     "name": "update_order_status",
     "route": "/api/orders/update-status",
     "module": "orders",
@@ -1783,7 +1783,7 @@
   },
   {
     "permissionId": "ebdba236-e8f6-4e85-b652-fa3cf4d22e07",
-    "api": "edit",
+    "api": "",
     "name": "update_task",
     "route": "/api/tasks/:id",
     "module": "tasks",
@@ -1846,7 +1846,7 @@
   },
   {
     "permissionId": "f1c070b0-ce7c-43bf-9213-7f2d73a483b6",
-    "api": "edit",
+    "api": "",
     "name": "update_profile",
     "route": "/api/users",
     "module": "users",
@@ -1864,7 +1864,7 @@
   },
   {
     "permissionId": "f3e5bafe-846c-44ea-afe7-430683d6e6b4",
-    "api": "edit",
+    "api": "",
     "name": "clock_out",
     "route": "/api/attendance/clock-out",
     "module": "attendance",
@@ -1909,7 +1909,7 @@
   },
   {
     "permissionId": "f7893d00-44ef-4d0f-99ce-b73068db1738",
-    "api": "write",
+    "api": "",
     "name": "draft_order",
     "route": "/api/orders/draft",
     "module": "orders",
@@ -1954,7 +1954,7 @@
   },
   {
     "permissionId": "fd679f93-c4fd-4a3d-ae1e-95faf3f472b0",
-    "api": "write",
+    "api": "",
     "name": "create_brand_parent_category",
     "route": "/api/brand-parent",
     "module": "brand_parentcategories",
@@ -1963,7 +1963,7 @@
   },
   {
     "permissionId": "fe032d6f-b36f-45f0-bcc8-94a38fc579bc",
-    "api": "write",
+    "api": "",
     "name": "restore_quotation_version",
     "route": "/api/quotations/:id/restore/:version",
     "module": "quotations",
