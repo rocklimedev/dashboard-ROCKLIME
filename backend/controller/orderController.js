@@ -19,7 +19,7 @@ const moment = require("moment");
 const { sendNotification } = require("./notificationController"); // Import sendNotification
 
 // Assume an admin user ID or system channel for notifications
-const ADMIN_USER_ID = "admin-system"; // Replace with actual admin user ID or channel
+const ADMIN_USER_ID = "2ef0f07a-a275-4fe1-832d-fe9a5d145f60"; // Replace with actual admin user ID or channel
 
 function bufferToStream(buffer) {
   const stream = new Readable();
@@ -954,8 +954,13 @@ exports.deleteOrder = async (req, res) => {
       } has been deleted.`,
     });
 
+    // Delete associated comments (Mongoose)
     await Comment.deleteMany({ resourceId: id, resourceType: "Order" });
-    await OrderItem.destroy({ where: { orderId: id } });
+
+    // Delete associated OrderItems (Mongoose)
+    await OrderItem.deleteMany({ orderId: id });
+
+    // Delete the order (Sequelize)
     await order.destroy();
 
     return res

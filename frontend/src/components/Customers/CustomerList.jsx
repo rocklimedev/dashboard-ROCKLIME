@@ -138,7 +138,11 @@ const CustomerList = () => {
         setCurrentPage(currentPage - 1);
       }
     } catch (err) {
-      if (
+      if (err?.status === 500) {
+        toast.error(
+          "Server error occurred while deleting customer. Please try again later."
+        );
+      } else if (
         err?.data?.message?.toLowerCase().includes("quotation") ||
         err?.status === 400
       ) {
