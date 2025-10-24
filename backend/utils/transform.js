@@ -1,75 +1,60 @@
 const fs = require("fs");
 const path = require("path");
 
-const referenceFolder = path.join(__dirname, "json-outputs"); // folder with price data
-const seederFilePath = path.join(__dirname, "products_backup.json"); // your main seeder JSON file
-const outputFilePath = path.join(__dirname, "seeder-updated.json");
+// Input and output file paths
+const inputFilePath = path.join(__dirname, "permissions.csv");
+const outputFilePath = path.join(__dirname, "permissions.json");
 
-// Map to store code → price from all JSON files
-const codePriceMap = new Map();
+// Helper function to parse CSV lines safely
+function parseCSVLine(line) {
+  // Split by tab or comma
+  return line
+    .split(/\t|,(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)/)
+    .map((field) => field.replace(/^"|"$/g, "").trim());
+}
 
-// ✅ Step 1: Load all reference JSON files
-const referenceFiles = fs
-  .readdirSync(referenceFolder)
-  .filter((f) => f.endsWith(".json"));
+// Read and convert CSV to JSON grouped by module
+fs.readFile(inputFilePath, "utf8", (err, data) => {
+  if (err) {
+    console.error("❌ Error reading the CSV file:", err);
+    return;
+  }
 
-for (const file of referenceFiles) {
-  const filePath = path.join(referenceFolder, file);
-  const data = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+  // Split lines and clean empty ones
+  const lines = data.split(/\r?\n/).filter((line) => line.trim() !== "");
 
-  // Each file contains categories → array of products
-  for (const category in data) {
-    const products = data[category];
-    products.forEach((prod) => {
-      if (prod.Code && prod.Price !== undefined && prod.Price !== null) {
-        const code = String(prod.Code).trim();
-        const price = Number(prod.Price);
-        codePriceMap.set(code, price);
-      }
+  // Extract headers
+  const headers = parseCSVLine(lines[0]);
+
+  // Convert each line into an object
+  const allObjects = lines.slice(1).map((line) => {
+    const values = parseCSVLine(line);
+    const obj = {};
+    headers.forEach((header, i) => {
+      obj[header] = values[i] || "";
     });
-  }
-}
+    return obj;
+  });
 
-console.log(
-  `✅ Loaded ${codePriceMap.size} product prices from reference JSONs.`
-);
+  // Group objects by module
+  const groupedData = allObjects.reduce((acc, item) => {
+    const moduleName = item.module || "unknown";
+    if (!acc[moduleName]) acc[moduleName] = [];
+    acc[moduleName].push(item);
+    return acc;
+  }, {});
 
-// ✅ Step 2: Load seeder JSON
-if (!fs.existsSync(seederFilePath)) {
-  console.error("❌ Seeder file not found:", seederFilePath);
-  process.exit(1);
-}
-
-const seederData = JSON.parse(fs.readFileSync(seederFilePath, "utf-8"));
-
-// Keys to match inside meta
-const CODE_KEY = "d11da9f9-3f2e-4536-8236-9671200cca4a";
-const PRICE_KEY = "9ba862ef-f993-4873-95ef-1fef10036aa5";
-
-let updatedCount = 0;
-
-// ✅ Step 3: Update prices in seeder
-seederData.forEach((prod) => {
-  const code = prod?.meta?.[CODE_KEY];
-  if (!code) return;
-
-  const referencePrice = codePriceMap.get(String(code).trim());
-  if (referencePrice !== undefined) {
-    const currentPrice = Number(prod.meta?.[PRICE_KEY]);
-
-    if (currentPrice !== referencePrice) {
-      prod.meta[PRICE_KEY] = String(referencePrice);
-      // store as number, not string
-      updatedCount++;
-      console.log(
-        `🔄 Updated price for ${code}: ${currentPrice} → ${referencePrice}`
-      );
+  // Write grouped JSON file
+  fs.writeFile(
+    outputFilePath,
+    JSON.stringify(groupedData, null, 2),
+    "utf8",
+    (err) => {
+      if (err) {
+        console.error("❌ Error writing JSON file:", err);
+      } else {
+        console.log(`✅ Successfully grouped and saved: ${outputFilePath}`);
+      }
     }
-  }
+  );
 });
-
-console.log(`✅ Updated ${updatedCount} products in seeder.`);
-
-// ✅ Step 4: Save updated JSON
-fs.writeFileSync(outputFilePath, JSON.stringify(seederData, null, 2), "utf-8");
-console.log(`💾 Saved updated seeder file at: ${outputFilePath}`);

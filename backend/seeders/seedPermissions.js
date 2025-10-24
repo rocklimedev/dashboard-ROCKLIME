@@ -6,7 +6,7 @@ const Permission = require("../models/permisson");
 
 (async () => {
   try {
-    const dataPath = path.join(__dirname, "../permissions.json");
+    const dataPath = path.join(__dirname, "permissions.json");
     const permissionsData = JSON.parse(fs.readFileSync(dataPath, "utf8"));
 
     let totalParsed = 0;

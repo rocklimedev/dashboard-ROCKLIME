@@ -5,6 +5,8 @@ import { ShoppingCartOutlined, CheckCircleOutlined } from "@ant-design/icons";
 import {
   useGetCustomersQuery,
   useGetCustomerByIdQuery,
+  useCreateCustomerMutation,
+  customerApi,
 } from "../../api/customerApi";
 import {
   useGetCartQuery,
@@ -28,6 +30,7 @@ import { useCreatePurchaseOrderMutation } from "../../api/poApi";
 import { useGetAllProductsQuery } from "../../api/productApi";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
+import { useDispatch } from "react-redux";
 import useUserAndCustomerData from "../../data/useUserAndCustomerData";
 import useProductsData from "../../data/useProductdata";
 import { debounce } from "lodash";
@@ -48,7 +51,7 @@ import {
 } from "../../data/cartUtils";
 import { useCreateVendorMutation } from "../../api/vendorApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
-
+import AddCustomerModal from "../Customers/AddCustomerModal";
 const { TabPane } = Tabs;
 const { Text } = Typography;
 
@@ -72,6 +75,7 @@ const CartContainer = styled.div`
 
 const NewCart = ({ onConvertToOrder }) => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const {
     data: profileData,
     isLoading: profileLoading,
@@ -95,6 +99,7 @@ const NewCart = ({ onConvertToOrder }) => {
   const [showAddAddressModal, setShowAddAddressModal] = useState(false);
   const [showAddVendorModal, setShowAddVendorModal] = useState(false);
   const [showAddTeamModal, setShowAddTeamModal] = useState(false);
+  const [showAddCustomerModal, setShowAddCustomerModal] = useState(false); // New state for customer modal
   const [documentType, setDocumentType] = useState("Quotation");
   const [quotationNumber, setQuotationNumber] = useState(
     generateQuotationNumber()
@@ -121,7 +126,7 @@ const NewCart = ({ onConvertToOrder }) => {
     secondaryUserId: "",
     pipeline: "",
     status: "CREATED",
-    dueDate: moment().add(1, "days").format("YYYY-MM-DD"), // Initialize dueDate
+    dueDate: moment().add(1, "days").format("YYYY-MM-DD"),
     followupDates: [],
     source: "",
     priority: "medium",
@@ -195,6 +200,8 @@ const NewCart = ({ onConvertToOrder }) => {
   const [createVendor, { isLoading: isCreatingVendor }] =
     useCreateVendorMutation();
   const [createAddress] = useCreateAddressMutation();
+  const [createCustomer, { isLoading: isCreatingCustomer }] =
+    useCreateCustomerMutation(); // Add createCustomer mutation
 
   // Memoized data
   const addresses = useMemo(
@@ -731,17 +738,17 @@ const NewCart = ({ onConvertToOrder }) => {
         previousOrderNo: orderData.previousOrderNo || null,
         shipTo: orderData.shipTo || null,
         products: cartItems.map((item) => {
-          const price = parseFloat(item.price) || 0.01; // Fallback to 0.01 if price is invalid
-          const quantity = parseInt(item.quantity, 10) || 1; // Fallback to 1 if quantity is invalid
-          const discount = parseFloat(itemDiscounts[item.productId]) || 0; // Fallback to 0 if discount is invalid
+          const price = parseFloat(item.price) || 0.01;
+          const quantity = parseInt(item.quantity, 10) || 1;
+          const discount = parseFloat(itemDiscounts[item.productId]) || 0;
           const itemSubtotal = parseFloat((price * quantity).toFixed(2));
           const total = parseFloat((itemSubtotal - discount).toFixed(2));
 
           return {
-            id: item.productId, // Use 'id' instead of 'productId'
-            price: price, // Use 'price' instead of 'sellingPrice'
+            id: item.productId,
+            price: price,
             discount: discount,
-            total: total >= 0 ? total : 0, // Ensure total is non-negative
+            total: total >= 0 ? total : 0,
           };
         }),
       };
@@ -830,9 +837,20 @@ const NewCart = ({ onConvertToOrder }) => {
   };
 
   const handleAddCustomer = () => {
-    navigate("/customers/add");
+    setShowAddCustomerModal(true); // Open the customer modal
   };
 
+  const handleCustomerSave = async (newCustomer) => {
+    try {
+      await createCustomer(newCustomer).unwrap();
+      dispatch(customerApi.util.invalidateTags(["Customer"])); // Invalidate customer cache
+      setSelectedCustomer(newCustomer.customerId || ""); // Optionally set the new customer as selected
+      setShowAddCustomerModal(false); // Close the modal
+      toast.success("Customer created successfully!");
+    } catch (err) {
+      toast.error(err?.data?.message || "Failed to create customer.");
+    }
+  };
   const handleAddAddress = () => {
     setShowAddAddressModal(true);
   };
@@ -1064,7 +1082,7 @@ const NewCart = ({ onConvertToOrder }) => {
                   discount={totalDiscount}
                   roundOff={roundOff}
                   subTotal={subTotal}
-                  handleAddCustomer={handleAddCustomer}
+                  handleAddCustomer={handleAddCustomer} // Pass updated handler
                   handleAddAddress={handleAddAddress}
                   setActiveTab={setActiveTab}
                   handleCreateDocument={handleCreateDocument}
@@ -1100,7 +1118,7 @@ const NewCart = ({ onConvertToOrder }) => {
                   discount={totalDiscount}
                   roundOff={roundOff}
                   subTotal={subTotal}
-                  handleAddCustomer={handleAddCustomer}
+                  handleAddCustomer={handleAddCustomer} // Pass updated handler
                   handleAddAddress={handleAddAddress}
                   setActiveTab={setActiveTab}
                   handleCreateDocument={handleCreateDocument}
@@ -1152,6 +1170,14 @@ const NewCart = ({ onConvertToOrder }) => {
                 }));
               }}
               visible={showAddTeamModal}
+            />
+          )}
+
+          {showAddCustomerModal && (
+            <AddCustomerModal
+              visible={showAddCustomerModal}
+              onClose={() => setShowAddCustomerModal(false)}
+              customer={null} // Pass null for new customer creation
             />
           )}
         </CartContainer>

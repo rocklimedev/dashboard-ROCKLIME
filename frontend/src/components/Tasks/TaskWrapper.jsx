@@ -1,9 +1,6 @@
 import React, { useState } from "react";
 import {
-  Button,
-  Modal,
   Form,
-  Input,
   Select,
   DatePicker,
   Checkbox,
@@ -17,6 +14,8 @@ import {
   Collapse,
   List,
   Badge,
+  Modal,
+  Button,
   Tabs,
 } from "antd";
 import {
@@ -39,9 +38,10 @@ import {
   useDeleteTaskMutation,
 } from "../../api/taskApi";
 import { useGetAllOrdersQuery } from "../../api/orderApi";
-import { useGetTaskBoardsByOwnerQuery } from "../../api/taskboardApi"; // Fixed import path (ensure case matches)
+import { useGetTaskBoardsByOwnerQuery } from "../../api/taskboardApi";
 import { useAuth } from "../../context/AuthContext";
-
+import AddNewTaskModal from "./AddNewTaskModal"; // Assuming this is in the same directory
+import DeleteModal from "../Common/DeleteModal";
 const { Option } = Select;
 const { Panel } = Collapse;
 const { TabPane } = Tabs;
@@ -60,13 +60,13 @@ const TaskWrapper = () => {
     page: 1,
     limit: 20,
   });
-  const [taskBoardPage, setTaskBoardPage] = useState(1); // Separate pagination for TaskBoards
+  const [taskBoardPage, setTaskBoardPage] = useState(1);
   const [activeTab, setActiveTab] = useState("all");
-  const [isAddModalVisible, setIsAddModalVisible] = useState(false);
-  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [isTaskModalVisible, setIsTaskModalVisible] = useState(false);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const [isViewModalVisible, setIsViewModalVisible] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [editMode, setEditMode] = useState(false);
 
   // Get auth context
   const { auth } = useAuth();
@@ -147,23 +147,24 @@ const TaskWrapper = () => {
   };
 
   // Handle modals
-  const showAddModal = () => {
-    form.resetFields();
-    setIsAddModalVisible(true);
-  };
-
-  const showEditModal = (task) => {
-    setSelectedTask(task);
-    editForm.setFieldsValue({
-      title: task.title,
-      description: task.description,
-      priority: task.priority,
-      status: task.status,
-      dueDate: task.dueDate ? moment(task.dueDate) : null,
-      tags: task.tags || [],
-      linkedResource: task.linkedResource?.resourceId || null,
-    });
-    setIsEditModalVisible(true);
+  const showTaskModal = (task = null) => {
+    if (task) {
+      setSelectedTask(task);
+      setEditMode(true);
+      editForm.setFieldsValue({
+        title: task.title,
+        description: task.description,
+        priority: task.priority,
+        status: task.status,
+        dueDate: task.dueDate ? moment(task.dueDate) : null,
+        tags: task.tags || [],
+        linkedResource: task.linkedResource?.resourceId || null,
+      });
+    } else {
+      setEditMode(false);
+      form.resetFields();
+    }
+    setIsTaskModalVisible(true);
   };
 
   const showDeleteModal = (task) => {
@@ -193,7 +194,7 @@ const TaskWrapper = () => {
           : undefined,
       }).unwrap();
       message.success("Task created successfully");
-      setIsAddModalVisible(false);
+      setIsTaskModalVisible(false);
       form.resetFields();
     } catch (err) {
       message.error(
@@ -213,9 +214,10 @@ const TaskWrapper = () => {
           : undefined,
       }).unwrap();
       message.success("Task updated successfully");
-      setIsEditModalVisible(false);
+      setIsTaskModalVisible(false);
       editForm.resetFields();
       setSelectedTask(null);
+      setEditMode(false);
     } catch (err) {
       message.error(
         `Failed to update task: ${err.data?.message || "Unknown error"}`
@@ -223,9 +225,9 @@ const TaskWrapper = () => {
     }
   };
 
-  const handleDeleteTask = async () => {
+  const handleDeleteTask = async (task) => {
     try {
-      await deleteTask(selectedTask._id).unwrap();
+      await deleteTask(task._id).unwrap();
       message.success("Task deleted successfully");
       setIsDeleteModalVisible(false);
       setSelectedTask(null);
@@ -279,7 +281,7 @@ const TaskWrapper = () => {
   // Dropdown menu for task actions
   const getMenu = (task) => (
     <Menu>
-      <Menu.Item key="edit" onClick={() => showEditModal(task)}>
+      <Menu.Item key="edit" onClick={() => showTaskModal(task)}>
         <i className="anticon anticon-edit" /> Edit
       </Menu.Item>
       <Menu.Item key="delete" onClick={() => showDeleteModal(task)}>
@@ -406,7 +408,7 @@ const TaskWrapper = () => {
           )}
         />
         <Space style={{ marginTop: 8 }}>
-          <Button type="default" onClick={showAddModal}>
+          <Button type="default" onClick={() => showTaskModal()}>
             <PlusCircleOutlined /> Add New
           </Button>
           <Button type="text">
@@ -528,7 +530,7 @@ const TaskWrapper = () => {
         <PageHeader
           title="Tasks"
           subtitle="Manage your Tasks & Task Boards"
-          onAdd={showAddModal}
+          onAdd={() => showTaskModal()}
         />
         <div style={{ background: "#fff", padding: 24, borderRadius: 8 }}>
           {/* Task Summary */}
@@ -579,10 +581,6 @@ const TaskWrapper = () => {
             style={{ marginBottom: 16 }}
           >
             <TabPane tab="All" key="all" />
-            <TabPane tab="Critical" key="critical" />
-            <TabPane tab="High" key="high" />
-            <TabPane tab="Medium" key="medium" />
-            <TabPane tab="Low" key="low" />
             <TabPane tab="Task Boards" key="taskboards" />
           </Tabs>
 
@@ -726,191 +724,40 @@ const TaskWrapper = () => {
             </div>
           )}
 
-          {/* Add Task Modal */}
-          <Modal
-            title="Create New Task"
-            open={isAddModalVisible}
-            onCancel={() => setIsAddModalVisible(false)}
-            footer={null}
-          >
-            <Form form={form} onFinish={handleCreateTask} layout="vertical">
-              <Form.Item
-                name="title"
-                label="Title"
-                rules={[{ required: true, message: "Please enter a title" }]}
-              >
-                <Input />
-              </Form.Item>
-              <Form.Item name="description" label="Description">
-                <Input.TextArea />
-              </Form.Item>
-              <Form.Item name="priority" label="Priority" initialValue="medium">
-                <Select>
-                  <Option value="critical">Critical</Option>
-                  <Option value="high">High</Option>
-                  <Option value="medium">Medium</Option>
-                  <Option value="low">Low</Option>
-                </Select>
-              </Form.Item>
-              <Form.Item name="status" label="Status" initialValue="PENDING">
-                <Select>
-                  <Option value="PENDING">Pending</Option>
-                  <Option value="IN_PROGRESS">In Progress</Option>
-                  <Option value="REVIEW">Review</Option>
-                  <Option value="ON_HOLD">On Hold</Option>
-                  <Option value="COMPLETED">Completed</Option>
-                  <Option value="CANCELLED">Cancelled</Option>
-                </Select>
-              </Form.Item>
-              <Form.Item name="dueDate" label="Due Date">
-                <DatePicker format="YYYY-MM-DD" />
-              </Form.Item>
-              <Form.Item name="tags" label="Tags">
-                <Select mode="multiple">
-                  {[
-                    "Internal",
-                    "Projects",
-                    "Meetings",
-                    "Reminder",
-                    "Research",
-                    "Order Review",
-                    "Invoice",
-                    "Finance",
-                    "Customer",
-                    "Follow-up",
-                    "Shipping",
-                    "Logistics",
-                    "Admin",
-                  ].map((tag) => (
-                    <Option key={tag} value={tag}>
-                      {tag}
-                    </Option>
-                  ))}
-                </Select>
-              </Form.Item>
-              <Form.Item name="linkedResource" label="Linked Order">
-                <Select allowClear>
-                  {ordersData?.orders?.map((order) => (
-                    <Option key={order.id} value={order.id}>
-                      Order #{order.orderNo}
-                    </Option>
-                  ))}
-                </Select>
-              </Form.Item>
-              <Form.Item>
-                <Button type="primary" htmlType="submit" loading={isCreating}>
-                  Create Task
-                </Button>
-              </Form.Item>
-            </Form>
-          </Modal>
-
-          {/* Edit Task Modal */}
-          <Modal
-            title="Edit Task"
-            open={isEditModalVisible}
-            onCancel={() => setIsEditModalVisible(false)}
-            footer={null}
-          >
-            <Form form={editForm} onFinish={handleUpdateTask} layout="vertical">
-              <Form.Item
-                name="title"
-                label="Title"
-                rules={[{ required: true, message: "Please enter a title" }]}
-              >
-                <Input />
-              </Form.Item>
-              <Form.Item name="description" label="Description">
-                <Input.TextArea />
-              </Form.Item>
-              <Form.Item name="priority" label="Priority">
-                <Select>
-                  <Option value="critical">Critical</Option>
-                  <Option value="high">High</Option>
-                  <Option value="medium">Medium</Option>
-                  <Option value="low">Low</Option>
-                </Select>
-              </Form.Item>
-              <Form.Item name="status" label="Status">
-                <Select>
-                  <Option value="PENDING">Pending</Option>
-                  <Option value="IN_PROGRESS">In Progress</Option>
-                  <Option value="REVIEW">Review</Option>
-                  <Option value="ON_HOLD">On Hold</Option>
-                  <Option value="COMPLETED">Completed</Option>
-                  <Option value="CANCELLED">Cancelled</Option>
-                </Select>
-              </Form.Item>
-              <Form.Item name="dueDate" label="Due Date">
-                <DatePicker format="YYYY-MM-DD" />
-              </Form.Item>
-              <Form.Item name="tags" label="Tags">
-                <Select mode="multiple">
-                  {[
-                    "Internal",
-                    "Projects",
-                    "Meetings",
-                    "Reminder",
-                    "Research",
-                    "Order Review",
-                    "Invoice",
-                    "Finance",
-                    "Customer",
-                    "Follow-up",
-                    "Shipping",
-                    "Logistics",
-                    "Admin",
-                  ].map((tag) => (
-                    <Option key={tag} value={tag}>
-                      {tag}
-                    </Option>
-                  ))}
-                </Select>
-              </Form.Item>
-              <Form.Item name="linkedResource" label="Linked Order">
-                <Select allowClear>
-                  {ordersData?.orders?.map((order) => (
-                    <Option key={order.id} value={order.id}>
-                      Order #{order.orderNo}
-                    </Option>
-                  ))}
-                </Select>
-              </Form.Item>
-              <Form.Item>
-                <Button type="primary" htmlType="submit" loading={isUpdating}>
-                  Update Task
-                </Button>
-              </Form.Item>
-            </Form>
-          </Modal>
+          {/* Task Modal (Add/Edit) */}
+          <AddNewTaskModal
+            visible={isTaskModalVisible}
+            onCancel={() => setIsTaskModalVisible(false)}
+            onSubmit={editMode ? handleUpdateTask : handleCreateTask}
+            isLoading={editMode ? isUpdating : isCreating}
+            editMode={editMode}
+            initialValues={
+              editMode && selectedTask
+                ? {
+                    title: selectedTask.title,
+                    description: selectedTask.description,
+                    priority: selectedTask.priority,
+                    status: selectedTask.status,
+                    dueDate: selectedTask.dueDate
+                      ? moment(selectedTask.dueDate)
+                      : null,
+                    tags: selectedTask.tags || [],
+                    linkedResource:
+                      selectedTask.linkedResource?.resourceId || null,
+                  }
+                : {}
+            }
+            formInstance={editMode ? editForm : form}
+          />
 
           {/* Delete Task Modal */}
-          <Modal
-            title="Delete Task"
-            open={isDeleteModalVisible}
+          <DeleteModal
+            item={selectedTask}
+            itemType="Task"
+            onConfirm={handleDeleteTask}
             onCancel={() => setIsDeleteModalVisible(false)}
-            footer={[
-              <Button
-                key="cancel"
-                onClick={() => setIsDeleteModalVisible(false)}
-              >
-                Cancel
-              </Button>,
-              <Button
-                key="delete"
-                type="primary"
-                danger
-                onClick={handleDeleteTask}
-                loading={isDeleting}
-              >
-                Delete
-              </Button>,
-            ]}
-          >
-            <p>
-              Are you sure you want to delete the task "{selectedTask?.title}"?
-            </p>
-          </Modal>
+            isVisible={isDeleteModalVisible}
+          />
 
           {/* View Task Modal */}
           <Modal
