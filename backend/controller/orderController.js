@@ -742,9 +742,10 @@ exports.getAllOrders = async (req, res) => {
 };
 // Get order details (no notification needed)
 exports.getOrderDetails = async (req, res) => {
-  try {
-    const { id } = req.params;
+  const { id } = req.params; // Declare id outside the try block
 
+  try {
+    // Fetch the order with associated models
     const order = await Order.findByPk(id, {
       include: [
         {
@@ -797,6 +798,27 @@ exports.getOrderDetails = async (req, res) => {
           as: "shippingAddress",
           attributes: ["addressId"],
         },
+        {
+          model: Quotation,
+          as: "quotation",
+          attributes: [
+            "quotationId",
+            "document_title",
+            "quotation_date",
+            "due_date",
+            "followupDates",
+            "reference_number",
+            "products",
+            "discountAmount",
+            "roundOff",
+            "finalAmount",
+            "signature_name",
+            "signature_image",
+            "createdBy",
+            "customerId",
+            "shipTo",
+          ],
+        },
       ],
     });
 
@@ -804,15 +826,130 @@ exports.getOrderDetails = async (req, res) => {
       return sendErrorResponse(res, 404, `Order with ID ${id} not found`);
     }
 
+    // Fetch comments for the order
     const { comments } = await fetchCommentsWithUsers(id, "Order", 1, 10);
 
-    const orderWithComments = {
-      ...order.toJSON(),
-      comments,
-    };
+    // Prepare the order data
+    let orderWithDetails = order.toJSON();
 
-    return res.status(200).json({ order: orderWithComments });
+    // Handle products or quotation items
+    if (order.quotationId && order.quotation) {
+      try {
+        // Parse quotation products
+        let quotationProducts = order.quotation.products || [];
+        if (typeof quotationProducts === "string") {
+          try {
+            quotationProducts = JSON.parse(quotationProducts);
+          } catch (parseErr) {
+            console.error(
+              `Error parsing quotation products for order ${id}:`,
+              parseErr
+            );
+            quotationProducts = [];
+          }
+        }
+
+        if (!Array.isArray(quotationProducts)) {
+          console.warn(`Quotation products for order ${id} is not an array`);
+          quotationProducts = [];
+        }
+
+        // Fetch product details in bulk
+        const productIds = quotationProducts
+          .map((item) => item.productId)
+          .filter((id) => id);
+        const products = productIds.length
+          ? await Product.findAll({
+              where: { id: productIds },
+              attributes: [
+                "id",
+                "name",
+                "description",
+                "price",
+                "discountType",
+              ],
+            })
+          : [];
+
+        const productMap = products.reduce((map, product) => {
+          map[product.id] = product.toJSON();
+          return map;
+        }, {});
+
+        // Enrich quotation products
+        const enrichedProducts = quotationProducts.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity || 1,
+          discount: item.discount || 0,
+          tax: item.tax || 0,
+          total: item.total || 0,
+          productDetails: productMap[item.productId] || null,
+        }));
+
+        orderWithDetails.products = enrichedProducts;
+        orderWithDetails.quotationDetails = {
+          quotationId: order.quotation.quotationId,
+          document_title: order.quotation.document_title,
+          quotation_date: order.quotation.quotation_date,
+          due_date: order.quotation.due_date,
+          followupDates: order.quotation.followupDates,
+          reference_number: order.quotation.reference_number,
+          discountAmount: order.quotation.discountAmount || 0,
+          roundOff: order.quotation.roundOff || 0,
+          finalAmount: order.quotation.finalAmount || 0,
+          signature_name: order.quotation.signature_name,
+          signature_image: order.quotation.signature_image,
+          createdBy: order.quotation.createdBy,
+          customerId: order.quotation.customerId,
+          shipTo: order.quotation.shipTo,
+          status: order.quotation.status,
+        };
+      } catch (err) {
+        console.error(`Error processing quotation for order ${id}:`, err);
+        orderWithDetails.products = [];
+        orderWithDetails.quotationDetails = null;
+      }
+    } else if (order.products && Array.isArray(order.products)) {
+      // Fetch product details in bulk for order products
+      const productIds = order.products
+        .map((item) => item.id)
+        .filter((id) => id);
+      const products = productIds.length
+        ? await Product.findAll({
+            where: { id: productIds },
+            attributes: ["id", "name", "description", "price", "discountType"],
+          })
+        : [];
+
+      const productMap = products.reduce((map, product) => {
+        map[product.id] = product.toJSON();
+        return map;
+      }, {});
+
+      // Enrich order products
+      const enrichedProducts = order.products.map((item) => ({
+        productId: item.id,
+        quantity: item.quantity || 1,
+        price: item.price || 0,
+        discount: item.discount || 0,
+        total: item.total || item.price * (item.quantity || 1),
+        productDetails: productMap[item.id] || null,
+      }));
+
+      orderWithDetails.products = enrichedProducts;
+    } else {
+      orderWithDetails.products = [];
+    }
+
+    // Include comments in the response
+    orderWithDetails.comments = comments;
+
+    return res.status(200).json({ order: orderWithDetails });
   } catch (err) {
+    console.error(
+      `Error fetching order details for order ${req.params.id}:`,
+      err
+    ); // Use req.params.id
     return sendErrorResponse(
       res,
       500,
@@ -821,7 +958,6 @@ exports.getOrderDetails = async (req, res) => {
     );
   }
 };
-
 // Update order status
 exports.updateOrderStatus = async (req, res) => {
   try {

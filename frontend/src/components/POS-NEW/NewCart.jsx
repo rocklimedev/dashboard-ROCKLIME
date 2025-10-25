@@ -907,7 +907,6 @@ const NewCart = ({ onConvertToOrder }) => {
       dispatch(customerApi.util.invalidateTags(["Customer"]));
       setSelectedCustomer(newCustomer.customerId || "");
       setShowAddCustomerModal(false);
-      toast.success("Customer created successfully!");
     } catch (err) {
       toast.error(err?.data?.message || "Failed to create customer.");
     }

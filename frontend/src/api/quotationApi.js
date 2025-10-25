@@ -7,7 +7,7 @@ export const quotationApi = baseApi.injectEndpoints({
       providesTags: ["Quotations"],
     }),
     getQuotationById: builder.query({
-      query: (id) => `/${id}`,
+      query: (id) => `/quotation/${id}`,
       providesTags: (result, error, id) => [{ type: "Quotations", id }],
     }),
     createQuotation: builder.mutation({

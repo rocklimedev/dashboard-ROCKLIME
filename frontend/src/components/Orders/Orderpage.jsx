@@ -45,13 +45,14 @@ import { Document, Page, pdfjs } from "react-pdf";
 import useProductsData from "../../data/useProductdata";
 import AddAddress from "../Address/AddAddressModal";
 import "./orderpage.css";
+import { PiPaperPlaneTiltFill } from "react-icons/pi";
 
 // Set PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
 
 const { Text, Title } = Typography;
 
-// Updated CommentRow Component
+// CommentRow Component (unchanged)
 const CommentRow = ({ comment, onDelete, currentUserId }) => {
   const isCurrentUser = comment.userId === currentUserId;
   const userInitial = comment.user?.name
@@ -150,7 +151,7 @@ const OrderPage = () => {
   const [isShippingModalVisible, setIsShippingModalVisible] = useState(false);
   const commentLimit = 10;
 
-  // Fetch data (unchanged)
+  // Fetch data
   const {
     data: profileData,
     isLoading: profileLoading,
@@ -206,21 +207,68 @@ const OrderPage = () => {
   } = useGetAllTeamsQuery();
   const { data: customersData } = useGetCustomersQuery();
 
-  // Product and other data processing (unchanged)
+  // Process quotation details with fallback to order.quotation
+  const quotationDetails = useMemo(() => {
+    const details = order.quotationDetails || order.quotation || {};
+    return {
+      quotationId: details.quotationId || null,
+      document_title: details.document_title || "N/A",
+      quotation_date: details.quotation_date || null,
+      due_date: details.due_date || null,
+      followupDates: details.followupDates
+        ? typeof details.followupDates === "string"
+          ? JSON.parse(details.followupDates)
+          : details.followupDates
+        : [],
+      reference_number: details.reference_number || "N/A",
+      discountAmount: parseFloat(details.discountAmount || 0),
+      roundOff: parseFloat(details.roundOff || 0),
+      finalAmount: parseFloat(details.finalAmount || 0),
+      signature_name: details.signature_name || null,
+      signature_image: details.signature_image || null,
+      createdBy: details.createdBy || null,
+      customerId: details.customerId || null,
+      shipTo: details.shipTo || null,
+      status: details.status || "N/A",
+    };
+  }, [order.quotationDetails, order.quotation]);
+
+  // Product data processing
   const products = useMemo(() => {
     try {
-      if (!order.products) return [];
-      return Array.isArray(order.products) ? order.products : [];
+      // First, try to use order.products if it exists and is an array
+      if (
+        order.products &&
+        Array.isArray(order.products) &&
+        order.products.length > 0
+      ) {
+        return order.products;
+      }
+      // Fallback to order.quotation.products if available
+      if (order.quotation?.products) {
+        try {
+          const quotationProducts =
+            typeof order.quotation.products === "string"
+              ? JSON.parse(order.quotation.products)
+              : order.quotation.products;
+
+          if (Array.isArray(quotationProducts)) {
+            return quotationProducts;
+          }
+        } catch (error) {
+          toast.error("Error parsing quotation products:", error);
+        }
+      }
+      return [];
     } catch (error) {
-      console.error("Error parsing order products:", error);
+      toast.error("Error processing order products:", error);
       return [];
     }
-  }, [order.products]);
-
+  }, [order.products, order.quotation]);
   const productInputs = useMemo(
     () =>
       products.map((product) => ({
-        productId: product.id,
+        productId: product.productId || product.id,
         price: product.price || 0,
         total: product.total || 0,
         discount: product.discount || 0,
@@ -286,14 +334,17 @@ const OrderPage = () => {
         productDetail.metaDetails?.find((m) => m.title === "Selling Price")
           ?.value ||
         orderProduct.price ||
+        productDetail.price ||
         0;
 
       return {
         productId: orderProduct.productId,
-        price: sellingPrice,
-        total: orderProduct.total || sellingPrice * orderProduct.quantity,
-        discount: orderProduct.discount || 0,
-        quantity: orderProduct.quantity,
+        price: parseFloat(sellingPrice),
+        total:
+          parseFloat(orderProduct.total) ||
+          sellingPrice * orderProduct.quantity,
+        discount: parseFloat(orderProduct.discount) || 0,
+        quantity: orderProduct.quantity || 1,
         name: productDetail?.name || orderProduct.name || "Unnamed Product",
         brand: brandName,
         sku: productCode,
@@ -351,8 +402,10 @@ const OrderPage = () => {
       addressesData?.find(
         (addr) =>
           addr.status === "SHIPPING" && addr.customerId === order.createdFor
-      ) || null,
-    [addressesData, order.createdFor]
+      ) ||
+      order.shippingAddress ||
+      null,
+    [addressesData, order.createdFor, order.shippingAddress]
   );
 
   const handleFileChange = ({ file }) => {
@@ -379,7 +432,6 @@ const OrderPage = () => {
       await uploadInvoice({ orderId: id, formData }).unwrap();
       setInvoiceFile(null);
       await refetchOrder();
-      toast.success("Invoice uploaded successfully.");
     } catch (err) {
       toast.error(
         `Upload error: ${err.data?.message || "Failed to upload invoice"}`
@@ -479,7 +531,6 @@ const OrderPage = () => {
 
   const handleAddressSave = async () => {
     await refetchAddresses();
-    toast.success("Address saved successfully.");
   };
 
   const handleBillingModalClose = () => {
@@ -544,15 +595,16 @@ const OrderPage = () => {
     );
   }
 
+  // Financial calculations
   const subTotal = mergedProducts.reduce(
-    (acc, product) => acc + product.total,
+    (acc, product) => acc + (product.total || product.price * product.quantity),
     0
   );
   const discount = mergedProducts.reduce(
-    (acc, product) => acc + product.discount,
+    (acc, product) => acc + (product.discount || 0),
     0
   );
-  const vat = subTotal * 0.1;
+  const vat = subTotal * 0.1; // Assuming 10% VAT
   const total = subTotal - discount + vat;
 
   const totalOrders = customerData?.invoices?.length || 0;
@@ -593,7 +645,7 @@ const OrderPage = () => {
       ),
     },
     {
-      title: "SKU",
+      title: "Product Code",
       dataIndex: "sku",
       key: "sku",
       render: (sku) => <Text type="secondary">{sku}</Text>,
@@ -609,14 +661,21 @@ const OrderPage = () => {
       title: "Price Per Unit",
       dataIndex: "price",
       key: "price",
-      render: (price) => `₹${price.toFixed(2)}`,
+      render: (price) => `₹${parseFloat(price).toFixed(2)}`,
+    },
+    {
+      title: "Discount",
+      dataIndex: "discount",
+      key: "discount",
+      render: (discount) => `₹${parseFloat(discount || 0).toFixed(2)}`,
     },
     {
       title: "Total",
       dataIndex: "total",
       key: "total",
       align: "right",
-      render: (total) => `₹${total.toFixed(2)}`,
+      render: (total, record) =>
+        `₹${parseFloat(total || record.price * record.quantity).toFixed(2)}`,
     },
   ];
 
@@ -634,6 +693,16 @@ const OrderPage = () => {
                         <Title level={5} style={{ margin: 0 }}>
                           Order #{order.orderNo}
                         </Title>
+                        <Badge
+                          status={
+                            order.status === "DRAFT"
+                              ? "warning"
+                              : order.status === "ONHOLD"
+                              ? "error"
+                              : "success"
+                          }
+                          text={order.status}
+                        />
                         <Dropdown overlay={menu} trigger={["click"]}>
                           <Button
                             type="text"
@@ -651,7 +720,7 @@ const OrderPage = () => {
                       pagination={false}
                       rowKey={(record) => record.productId}
                       className="product-table"
-                      scroll={{ x: "max-content" }} // Enable horizontal scroll on small screens
+                      scroll={{ x: "max-content" }}
                       footer={() => (
                         <div className="table-footer">
                           <table>
@@ -669,7 +738,7 @@ const OrderPage = () => {
                                 </td>
                               </tr>
                               <tr>
-                                <td>Vat:</td>
+                                <td>Tax:</td>
                                 <td>
                                   <Text strong>₹{vat.toFixed(2)}</Text>
                                 </td>
@@ -682,6 +751,44 @@ const OrderPage = () => {
                                   </Text>
                                 </td>
                               </tr>
+                              {(quotationDetails.quotationId ||
+                                order.quotation) && (
+                                <>
+                                  <tr>
+                                    <td>Quotation Discount:</td>
+                                    <td>
+                                      <Text strong>
+                                        -₹
+                                        {parseFloat(
+                                          quotationDetails.discountAmount
+                                        ).toFixed(2)}
+                                      </Text>
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td>Round Off:</td>
+                                    <td>
+                                      <Text strong>
+                                        ₹
+                                        {parseFloat(
+                                          quotationDetails.roundOff
+                                        ).toFixed(2)}
+                                      </Text>
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td>Final Quotation Total:</td>
+                                    <td>
+                                      <Text strong className="total-amount">
+                                        ₹
+                                        {parseFloat(
+                                          quotationDetails.finalAmount
+                                        ).toFixed(2)}
+                                      </Text>
+                                    </td>
+                                  </tr>
+                                </>
+                              )}
                             </tbody>
                           </table>
                         </div>
@@ -800,16 +907,20 @@ const OrderPage = () => {
                     {shippingAddress ? (
                       <>
                         <Text strong className="address-name">
-                          {customerData?.name || "N/A"}
+                          {customer.name || "N/A"}
                         </Text>
                         <ul className="address-list">
-                          <li>{shippingAddress.street || "N/A"}</li>
+                          <li>
+                            {shippingAddress.street ||
+                              shippingAddress.address ||
+                              "N/A"}
+                          </li>
                           <li>
                             {shippingAddress.city}, {shippingAddress.state}{" "}
-                            {shippingAddress.postalCode}
+                            {shippingAddress.postalCode || shippingAddress.zip}
                           </li>
                           <li>{shippingAddress.country || "India"}</li>
-                          <li>{customerData?.mobileNumber || "N/A"}</li>
+                          <li>{customer.mobileNumber || "N/A"}</li>
                         </ul>
                       </>
                     ) : (
@@ -820,7 +931,7 @@ const OrderPage = () => {
                     <Text strong className="payment-method-title">
                       Payment Method
                     </Text>
-                    <Text>{customerData?.paymentMode || "N/A"}</Text>
+                    <Text>{customer.paymentMode || "N/A"}</Text>
                   </Card>
                 </Col>
               </Row>
@@ -882,12 +993,12 @@ const OrderPage = () => {
                       </li>
                       <li>
                         <Text type="secondary">Payment Method</Text>
-                        <Text strong>{customerData?.paymentMode || "N/A"}</Text>
+                        <Text strong>{customer.paymentMode || "N/A"}</Text>
                       </li>
                       <li>
                         <Text type="secondary">Card Number</Text>
                         <Text strong>
-                          {customerData?.paymentMode === "Credit Card"
+                          {customer.paymentMode === "Credit Card"
                             ? "**** **** **** 1234"
                             : "N/A"}
                         </Text>
@@ -906,7 +1017,7 @@ const OrderPage = () => {
                       <li>
                         <Text type="secondary">Amount Paid</Text>
                         <Text strong>
-                          ₹{customerData?.paidAmount?.toFixed(2) || "0.00"}
+                          ₹{customer.paidAmount?.toFixed(2) || "0.00"}
                         </Text>
                       </li>
                       <li>
@@ -918,6 +1029,70 @@ const OrderPage = () => {
                         </Text>
                       </li>
                     </ul>
+                  </Card>
+                </Col>
+                <Col xs={24}>
+                  <Card>
+                    {(quotationDetails.quotationId || order.quotation) && (
+                      <div style={{ marginBottom: 16 }}>
+                        <Text strong>Quotation Details:</Text>
+                        <ul className="quotation-details">
+                          <li>
+                            <Text type="secondary">Reference Number:</Text>{" "}
+                            <Text>{quotationDetails.reference_number}</Text>
+                          </li>
+                          <li>
+                            <Text type="secondary">Document Title:</Text>{" "}
+                            <Text>{quotationDetails.document_title}</Text>
+                          </li>
+                          <li>
+                            <Text type="secondary">Quotation Date:</Text>{" "}
+                            <Text>
+                              {quotationDetails.quotation_date
+                                ? new Date(
+                                    quotationDetails.quotation_date
+                                  ).toLocaleDateString()
+                                : "N/A"}
+                            </Text>
+                          </li>
+                          <li>
+                            <Text type="secondary">Due Date:</Text>{" "}
+                            <Text>
+                              {quotationDetails.due_date
+                                ? new Date(
+                                    quotationDetails.due_date
+                                  ).toLocaleDateString()
+                                : "N/A"}
+                            </Text>
+                          </li>
+                          <li>
+                            <Text type="secondary">Follow-up Dates:</Text>{" "}
+                            <Text>
+                              {quotationDetails.followupDates.length > 0
+                                ? quotationDetails.followupDates
+                                    .map((date) =>
+                                      new Date(date).toLocaleDateString()
+                                    )
+                                    .join(", ")
+                                : "N/A"}
+                            </Text>
+                          </li>
+                          <li>
+                            <Text type="secondary">Status:</Text>{" "}
+                            <Text>{quotationDetails.status}</Text>
+                          </li>
+                          <li>
+                            <Text type="secondary">Final Amount:</Text>{" "}
+                            <Text>
+                              ₹
+                              {parseFloat(quotationDetails.finalAmount).toFixed(
+                                2
+                              )}
+                            </Text>
+                          </li>
+                        </ul>
+                      </div>
+                    )}
                   </Card>
                 </Col>
               </Row>
@@ -1000,7 +1175,6 @@ const OrderPage = () => {
                         file={pdfUrl}
                         onLoadSuccess={onDocumentLoadSuccess}
                         onLoadError={(error) => {
-                          console.error("PDF loading error:", error);
                           toast.error("Failed to load PDF invoice.");
                         }}
                       >
@@ -1040,8 +1214,53 @@ const OrderPage = () => {
 
           <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
             <Col xs={24}>
-              <Card title="Comments" className="comments-card">
+              <Card className="comments-card">
                 <div className="comments-container">
+                  {!user.userId ? (
+                    <Alert
+                      message={
+                        <span>
+                          You must be logged in to add comments.{" "}
+                          <Button
+                            type="link"
+                            onClick={() => navigate("/login")}
+                            style={{ padding: 0 }}
+                          >
+                            Log in
+                          </Button>
+                        </span>
+                      }
+                      type="warning"
+                      style={{ marginTop: 16 }}
+                    />
+                  ) : (
+                    <Form
+                      onFinish={handleAddComment}
+                      className="comment-form"
+                      layout="inline"
+                    >
+                      <Form.Item style={{ flex: 1 }}>
+                        <Input.TextArea
+                          rows={2}
+                          value={newComment}
+                          onChange={(e) => setNewComment(e.target.value)}
+                          placeholder="Type your comment here..."
+                          maxLength={1000}
+                          className="comment-input"
+                        />
+                      </Form.Item>
+                      <Form.Item>
+                        <Button
+                          type="primary"
+                          htmlType="submit"
+                          disabled={!newComment.trim()}
+                          className="comment-submit"
+                        >
+                          <PiPaperPlaneTiltFill />
+                        </Button>
+                      </Form.Item>
+                    </Form>
+                  )}
                   {commentLoading ? (
                     <div className="comments-loading">
                       <Spin /> Loading comments...
@@ -1070,55 +1289,7 @@ const OrderPage = () => {
                     </Text>
                   )}
                 </div>
-                {!user.userId ? (
-                  <Alert
-                    message={
-                      <span>
-                        You must be logged in to add comments.{" "}
-                        <Button
-                          type="link"
-                          onClick={() => navigate("/login")}
-                          style={{ padding: 0 }}
-                        >
-                          Log in
-                        </Button>
-                      </span>
-                    }
-                    type="warning"
-                    style={{ marginTop: 16 }}
-                  />
-                ) : (
-                  <Form
-                    onFinish={handleAddComment}
-                    className="comment-form"
-                    layout="inline"
-                  >
-                    <Form.Item style={{ flex: 1 }}>
-                      <Input.TextArea
-                        rows={2}
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        placeholder="Type your comment here..."
-                        maxLength={1000}
-                        className="comment-input"
-                      />
-                    </Form.Item>
-                    <Form.Item>
-                      <Button
-                        type="primary"
-                        htmlType="submit"
-                        disabled={!newComment.trim()}
-                        className="comment-submit"
-                      >
-                        Send
-                      </Button>
-                    </Form.Item>
-                    <Text type="secondary" className="comment-hint">
-                      Maximum 1000 characters. You can add up to 3 comments per
-                      order.
-                    </Text>
-                  </Form>
-                )}
+
                 {comments.length > 0 && (
                   <div className="comments-pagination">
                     <Button

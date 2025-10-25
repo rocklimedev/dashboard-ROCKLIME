@@ -73,6 +73,7 @@ const setupDB = async () => {
     // User ↔ Address (1:M)
     Address.belongsTo(User, { foreignKey: "userId", as: "users" });
     User.hasMany(Address, { foreignKey: "userId", as: "addresses" });
+
     // ======================================
     // 🔥 ORDER RELATIONSHIPS
     // ======================================
@@ -84,8 +85,11 @@ const setupDB = async () => {
     // Created For
     Customer.hasMany(Order, { foreignKey: "createdFor", as: "customerOrders" });
     Order.belongsTo(Customer, { foreignKey: "createdFor", as: "customer" });
+
+    // Shipping Address
     Order.belongsTo(Address, { foreignKey: "shipTo", as: "shippingAddress" });
     Address.hasMany(Order, { foreignKey: "shipTo", as: "orders" });
+
     // Assigned user / team
     User.hasMany(Order, { foreignKey: "assignedUserId", as: "assignedOrders" });
     Order.belongsTo(User, { foreignKey: "assignedUserId", as: "assignedUser" });
@@ -102,6 +106,10 @@ const setupDB = async () => {
       foreignKey: "secondaryUserId",
       as: "secondaryUser",
     });
+
+    // Order ↔ Quotation (1:1)
+    Order.belongsTo(Quotation, { foreignKey: "quotationId", as: "quotation" });
+    Quotation.hasMany(Order, { foreignKey: "quotationId", as: "orders" });
 
     // ===============================
     // PIPELINE RELATIONSHIPS
