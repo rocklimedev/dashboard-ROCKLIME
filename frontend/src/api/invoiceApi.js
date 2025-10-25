@@ -1,39 +1,26 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../data/config";
+import { baseApi } from "./baseApi";
 
-export const invoiceApi = createApi({
-  reducerPath: "invoiceApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}/invoices`,
-    prepareHeaders: (headers) => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
-  tagTypes: ["Invoices"], // Define tag type for invoices
+export const invoiceApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     createInvoice: builder.mutation({
       query: (invoiceData) => ({
-        url: "/",
+        url: "/invoices/",
         method: "POST",
         body: invoiceData,
       }),
       invalidatesTags: ["Invoices"], // Invalidate to refetch invoices
     }),
     getAllInvoices: builder.query({
-      query: () => "/",
+      query: () => "/invoices/",
       providesTags: ["Invoices"], // Tag to allow invalidation
     }),
     getInvoiceById: builder.query({
-      query: (id) => `/${id}`,
+      query: (id) => `/invoices/${id}`,
       providesTags: ["Invoices"], // Tag for specific invoice data
     }),
     updateInvoice: builder.mutation({
       query: ({ invoiceId, ...invoiceData }) => ({
-        url: `/${invoiceId}`,
+        url: `/invoices/${invoiceId}`,
         method: "PUT",
         body: invoiceData,
       }),
@@ -41,14 +28,14 @@ export const invoiceApi = createApi({
     }),
     deleteInvoice: builder.mutation({
       query: (id) => ({
-        url: `/${id}`,
+        url: `/invoices/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: ["Invoices"], // Invalidate to refetch invoices
     }),
     changeInvoiceStatus: builder.mutation({
       query: ({ invoiceId, status }) => ({
-        url: `/${invoiceId}/status`,
+        url: `/invoices/${invoiceId}/status`,
         method: "PATCH",
         body: { status },
       }),

@@ -1,23 +1,10 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../data/config";
+import { baseApi } from "./baseApi";
 
-export const cartApi = createApi({
-  reducerPath: "cartApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}/carts`,
-    prepareHeaders: (headers) => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
-  tagTypes: ["Carts"], // Define tag type for carts
+export const cartApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     addToCart: builder.mutation({
       query: (cartData) => ({
-        url: "/add",
+        url: "/carts/add",
         method: "POST",
         body: cartData,
       }),
@@ -25,23 +12,23 @@ export const cartApi = createApi({
     }),
     addProductToCart: builder.mutation({
       query: ({ userId, productId }) => ({
-        url: "/add-to-cart",
+        url: "/carts/add-to-cart",
         method: "POST",
         body: { userId, productId },
       }),
       invalidatesTags: ["Carts"], // Invalidate to refetch carts
     }),
     getCart: builder.query({
-      query: (userId) => `/${userId}`,
+      query: (userId) => `/carts/${userId}`,
       providesTags: ["Carts"], // Tag to allow invalidation
     }),
     getAllCarts: builder.query({
-      query: () => "/all",
+      query: () => "/carts/all",
       providesTags: ["Carts"], // Tag to allow invalidation
     }),
     removeFromCart: builder.mutation({
       query: (data) => ({
-        url: "/remove",
+        url: "/carts/remove",
         method: "POST",
         body: data,
       }),
@@ -49,7 +36,7 @@ export const cartApi = createApi({
     }),
     reduceQuantity: builder.mutation({
       query: ({ userId, productId }) => ({
-        url: "/reduce",
+        url: "/carts/reduce",
         method: "POST",
         body: { userId, productId },
       }),
@@ -57,14 +44,14 @@ export const cartApi = createApi({
     }),
     convertToCart: builder.mutation({
       query: (quotationId) => ({
-        url: `/convert-to-cart/${quotationId}`,
+        url: `/carts/convert-to-cart/${quotationId}`,
         method: "POST",
       }),
       invalidatesTags: ["Carts"], // Invalidate to refetch carts
     }),
     clearCart: builder.mutation({
       query: ({ userId }) => ({
-        url: "/clear",
+        url: "/carts/clear",
         method: "POST",
         body: { userId },
       }),
@@ -72,7 +59,7 @@ export const cartApi = createApi({
     }),
     updateCart: builder.mutation({
       query: (data) => ({
-        url: "/update",
+        url: "/carts/update",
         method: "POST",
         body: data,
       }),

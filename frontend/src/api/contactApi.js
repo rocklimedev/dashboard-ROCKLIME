@@ -1,15 +1,11 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../data/config";
+import { baseApi } from "./baseApi";
 
-export const contactApi = createApi({
-  reducerPath: "contactApi",
-  baseQuery: fetchBaseQuery({ baseUrl: `${API_URL}/contact` }), // Adjust base URL as per backend route
-  tagTypes: ["Contact"],
+export const contactApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // POST: submit contact form
     submitContactForm: builder.mutation({
       query: (data) => ({
-        url: "/",
+        url: "/contact/",
         method: "POST",
         body: data,
       }),
@@ -18,20 +14,20 @@ export const contactApi = createApi({
 
     // GET: fetch all queries
     getAllQueries: builder.query({
-      query: () => "/",
+      query: () => "/contact/",
       providesTags: ["Contact"],
     }),
 
     // GET: fetch single query by ID
     getQueryById: builder.query({
-      query: (id) => `/${id}`,
+      query: (id) => `/contact/${id}`,
       providesTags: ["Contact"],
     }),
 
     // DELETE: delete query by ID
     deleteQuery: builder.mutation({
       query: (id) => ({
-        url: `/${id}`,
+        url: `/contact/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: ["Contact"],
@@ -40,7 +36,7 @@ export const contactApi = createApi({
     // POST: reply to a contact query by ID
     replyToEmail: builder.mutation({
       query: ({ id, replyData }) => ({
-        url: `/reply/${id}`,
+        url: `/contact/reply/${id}`,
         method: "POST",
         body: replyData,
       }),

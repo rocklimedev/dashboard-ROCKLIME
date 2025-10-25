@@ -1,22 +1,9 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../data/config";
+import { baseApi } from "./baseApi";
 
-export const permissionsApi = createApi({
-  reducerPath: "permissionsApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}/permission`,
-    prepareHeaders: (headers) => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
-  tagTypes: ["Permissions"], // Define tag type for permissions
+export const permissionsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAllPermissions: builder.query({
-      query: () => "/",
+      query: () => "/permission/",
       providesTags: ["Permissions"], // Tag to allow invalidation
     }),
     getPermission: builder.query({
@@ -25,7 +12,7 @@ export const permissionsApi = createApi({
     }),
     createPermission: builder.mutation({
       query: (newPermission) => ({
-        url: "/",
+        url: "/permission/",
         method: "POST",
         body: newPermission,
       }),
@@ -33,7 +20,7 @@ export const permissionsApi = createApi({
     }),
     updatePermission: builder.mutation({
       query: ({ permissionId, ...updatedData }) => ({
-        url: `/${permissionId}`,
+        url: `/permission/${permissionId}`,
         method: "PUT",
         body: updatedData,
       }),
@@ -41,14 +28,14 @@ export const permissionsApi = createApi({
     }),
     deletePermission: builder.mutation({
       query: (permissionId) => ({
-        url: `/${permissionId}`,
+        url: `/permission/${permissionId}`,
         method: "DELETE",
       }),
       invalidatesTags: ["Permissions"], // Invalidate to refetch permissions
     }),
     assignPermissionsToRole: builder.mutation({
       query: ({ roleId, permissionId }) => ({
-        url: "/assign-permission",
+        url: "/permission/assign-permission",
         method: "POST",
         body: { roleId, permissionId },
       }),
@@ -56,7 +43,7 @@ export const permissionsApi = createApi({
     }),
     removePermissionFromRole: builder.mutation({
       query: ({ roleId, permissionId }) => ({
-        url: "/remove-permission",
+        url: "/permission/remove-permission",
         method: "POST",
         body: { roleId, permissionId },
       }),

@@ -1,20 +1,6 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../data/config";
+import { baseApi } from "./baseApi";
 
-export const logApi = createApi({
-  reducerPath: "logApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}`,
-    credentials: "include",
-    prepareHeaders: (headers) => {
-      const token =
-        localStorage.getItem("token") || sessionStorage.getItem("token");
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
+export const logApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // GET /api/logs - Fetch logs with filtering, sorting, and pagination
     getLogs: builder.query({

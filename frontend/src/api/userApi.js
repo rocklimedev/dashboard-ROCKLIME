@@ -1,63 +1,48 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../data/config";
+import { baseApi } from "./baseApi";
 
-export const userApi = createApi({
-  reducerPath: "userApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}/user`,
-    credentials: "include",
-    prepareHeaders: (headers) => {
-      const token =
-        localStorage.getItem("token") || sessionStorage.getItem("token");
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
-  tagTypes: ["Users"],
+export const userApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getProfile: builder.query({
-      query: () => "/me",
+      query: () => "/user/me",
       providesTags: ["Users"],
     }),
     updateProfile: builder.mutation({
       query: (data) => ({
-        url: "/", // Use /user/ instead of /user/:userId
+        url: "/user/", // Use /user/ instead of /user/:userId
         method: "PUT",
         body: data,
       }),
       invalidatesTags: ["Users"],
     }),
     getAllUsers: builder.query({
-      query: () => "/",
+      query: () => "/user/",
       providesTags: ["Users"],
     }),
     searchUser: builder.query({
-      query: (query) => `/search?query=${query}`,
+      query: (query) => `/user/search?query=${query}`,
       providesTags: ["Users"],
     }),
     getUserById: builder.query({
-      query: (userId) => `/${userId}`,
+      query: (userId) => `/user/${userId}`,
       providesTags: ["Users"],
     }),
     deleteUser: builder.mutation({
       query: (userId) => ({
-        url: `/${userId}`,
+        url: `/user/${userId}`,
         method: "DELETE",
       }),
       invalidatesTags: ["Users"],
     }),
     reportUser: builder.mutation({
       query: (userId) => ({
-        url: `/report/${userId}`,
+        url: `/user/report/${userId}`,
         method: "POST",
       }),
       invalidatesTags: ["Users"],
     }),
     inactiveUser: builder.mutation({
       query: (userId) => ({
-        url: `/${userId}`,
+        url: `/user/${userId}`,
         method: "PUT",
         body: { status: false },
       }),
@@ -65,7 +50,7 @@ export const userApi = createApi({
     }),
     createUser: builder.mutation({
       query: (data) => ({
-        url: "/add",
+        url: "/user/add",
         method: "POST",
         body: data,
       }),
@@ -73,7 +58,7 @@ export const userApi = createApi({
     }),
     updateUser: builder.mutation({
       query: ({ userId, ...data }) => ({
-        url: `/${userId}`,
+        url: `/user/${userId}`,
         method: "PUT",
         body: data,
       }),
@@ -81,7 +66,7 @@ export const userApi = createApi({
     }),
     assignRole: builder.mutation({
       query: ({ userId, roleId }) => ({
-        url: `/assign-role/${userId}`,
+        url: `/user/assign-role/${userId}`,
         method: "PUT",
         body: { roleId },
       }),

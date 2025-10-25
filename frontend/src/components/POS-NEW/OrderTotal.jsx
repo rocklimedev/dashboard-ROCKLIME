@@ -12,9 +12,7 @@ const OrderTotal = ({
   roundOff = 0,
   subTotal = 0,
   discount = 0,
-  gstValue = 0,
-  includeGst = false,
-  items = [], // Optional: For itemized discount display
+  items = [],
 }) => {
   const totalPayable = Number(
     subTotal + shipping + tax + roundOff - discount
@@ -35,7 +33,7 @@ const OrderTotal = ({
                 <td className="text-end">{formatCurrency(shipping)}</td>
               </tr>
               <tr>
-                <td>Tax {includeGst ? `(${gstValue}%)` : ""}</td>
+                <td>Tax</td>
                 <td className="text-end">{formatCurrency(tax)}</td>
               </tr>
               <tr>
@@ -48,24 +46,35 @@ const OrderTotal = ({
                 <td>Round Off</td>
                 <td className="text-end">{formatCurrency(roundOff)}</td>
               </tr>
-              {/* Optional: Itemized discount breakdown */}
-              {/* {items.length > 0 && (
+              {/* Optional: Itemized discount and tax breakdown */}
+              {items.length > 0 && (
                 <>
                   <tr>
                     <td colSpan="2" className="text-start">
-                      <strong>Discount Breakdown:</strong>
+                      <strong>Item Breakdown:</strong>
                     </td>
                   </tr>
                   {items.map((item) => (
                     <tr key={item.productId}>
                       <td>{item.name}</td>
-                      <td className="text-danger text-end">
-                        -{formatCurrency(item.discount || 0)}
+                      <td className="text-end">
+                        <div>
+                          Discount: -{formatCurrency(item.discount || 0)}
+                        </div>
+                        <div>
+                          Tax ({item.tax}%):{" "}
+                          {formatCurrency(
+                            ((item.price || 0) *
+                              (item.quantity || 1) *
+                              (item.tax || 0)) /
+                              100
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
                 </>
-              )} */}
+              )}
               <tr>
                 <td>
                   <strong>Grand Total</strong>
@@ -88,13 +97,14 @@ OrderTotal.propTypes = {
   roundOff: PropTypes.number,
   subTotal: PropTypes.number,
   discount: PropTypes.number,
-  gstValue: PropTypes.number,
-  includeGst: PropTypes.bool,
   items: PropTypes.arrayOf(
     PropTypes.shape({
       productId: PropTypes.string,
       name: PropTypes.string,
       discount: PropTypes.number,
+      tax: PropTypes.number, // Add tax to PropTypes
+      price: PropTypes.number, // Add price for tax calculation
+      quantity: PropTypes.number, // Add quantity for tax calculation
     })
   ),
 };

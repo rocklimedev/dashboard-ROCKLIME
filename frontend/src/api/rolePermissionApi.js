@@ -1,13 +1,9 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../data/config";
-export const rolePermissionsApi = createApi({
-  reducerPath: "rolePermissionApi",
-  baseQuery: fetchBaseQuery({ baseUrl: `${API_URL}/role-permissions/` }), // Adjust baseUrl as needed
-  tagTypes: ["RolePermission"],
+import { baseApi } from "./baseApi";
+export const rolePermissionsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     assignPermissionToRole: builder.mutation({
       query: (data) => ({
-        url: "/assign-permission",
+        url: "/role-permissions/assign-permission",
         method: "POST",
         body: data,
       }),
@@ -15,23 +11,23 @@ export const rolePermissionsApi = createApi({
     }),
     removePermissionFromRole: builder.mutation({
       query: (data) => ({
-        url: "/remove-permission",
+        url: "/role-permissions/remove-permission",
         method: "POST",
         body: data,
       }),
       invalidatesTags: ["RolePermission"],
     }),
     getAllRolePermissions: builder.query({
-      query: () => "/",
+      query: () => "/role-permissions/",
       providesTags: ["RolePermission"],
     }),
     getAllRolePermissionsByRoleId: builder.query({
-      query: (roleId) => `/${roleId}/permissions`,
+      query: (roleId) => `/role-permissions/${roleId}/permissions`,
       providesTags: ["RolePermission"],
     }),
     getRolePermissionByRoleIdAndPermissionId: builder.query({
       query: ({ roleId, permissionId }) =>
-        `/${roleId}/permission/${permissionId}`,
+        `/role-permissions/${roleId}/permission/${permissionId}`,
       providesTags: ["RolePermission"],
     }),
   }),

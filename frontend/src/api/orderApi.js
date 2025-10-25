@@ -1,19 +1,6 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../data/config";
+import { baseApi } from "./baseApi";
 
-export const orderApi = createApi({
-  reducerPath: "orderApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}/order`, // Add /api to match backend route
-    prepareHeaders: (headers) => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
-  tagTypes: ["Orders", "Comment"],
+export const orderApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getComments: builder.query({
       query: ({ resourceId, resourceType, page = 1, limit = 10 }) => {
@@ -23,13 +10,13 @@ export const orderApi = createApi({
           page,
           limit,
         });
-        return `/comments?${params.toString()}`;
+        return `/order/comments?${params.toString()}`;
       },
       providesTags: ["Comment"],
     }),
     addComment: builder.mutation({
       query: (comment) => ({
-        url: "/comments",
+        url: "/order/comments",
         method: "POST",
         body: comment,
       }),
@@ -37,7 +24,7 @@ export const orderApi = createApi({
     }),
     deleteComment: builder.mutation({
       query: ({ commentId, userId }) => ({
-        url: `/comments/${commentId}`,
+        url: `/order/comments/${commentId}`,
         method: "DELETE",
         body: { userId },
       }),
@@ -45,7 +32,7 @@ export const orderApi = createApi({
     }),
     deleteCommentsByResource: builder.mutation({
       query: ({ resourceId, resourceType }) => ({
-        url: "/delete-comment",
+        url: "/order/delete-comment",
         method: "POST",
         body: { resourceId, resourceType },
       }),
@@ -53,7 +40,7 @@ export const orderApi = createApi({
     }),
     uploadInvoice: builder.mutation({
       query: ({ orderId, formData }) => ({
-        url: `/invoice-upload/${orderId}`,
+        url: `/order/invoice-upload/${orderId}`,
         method: "PUT",
         body: formData,
       }),
@@ -64,7 +51,7 @@ export const orderApi = createApi({
     }),
     createOrder: builder.mutation({
       query: (orderData) => ({
-        url: "/create",
+        url: "/order/create",
         method: "POST",
         body: {
           ...orderData,
@@ -75,14 +62,14 @@ export const orderApi = createApi({
       invalidatesTags: ["Orders"],
     }),
     getOrderDetails: builder.query({
-      query: (orderId) => `/${orderId}`,
+      query: (orderId) => `/order/${orderId}`,
       providesTags: (result, error, orderId) => [
         { type: "Orders", id: orderId },
       ],
     }),
     updateOrderStatus: builder.mutation({
       query: (statusData) => ({
-        url: "/update-status",
+        url: "/order/update-status",
         method: "PUT",
         body: statusData,
       }),
@@ -90,17 +77,17 @@ export const orderApi = createApi({
     }),
     deleteOrder: builder.mutation({
       query: (orderId) => ({
-        url: `/delete/${orderId}`,
+        url: `/order/delete/${orderId}`,
         method: "DELETE",
       }),
       invalidatesTags: ["Orders"],
     }),
     recentOrders: builder.query({
-      query: () => "/recent",
+      query: () => "/order/recent",
       providesTags: ["Orders"],
     }),
     getAllOrders: builder.query({
-      query: () => "/all",
+      query: () => "/order/all",
       providesTags: ["Orders"],
     }),
     orderById: builder.query({
@@ -109,7 +96,7 @@ export const orderApi = createApi({
     }),
     updateOrderById: builder.mutation({
       query: ({ id, ...orderData }) => ({
-        url: `/${id}`,
+        url: `/order/${id}`,
         method: "PUT",
         body: {
           ...orderData,
@@ -121,7 +108,7 @@ export const orderApi = createApi({
     }),
     draftOrder: builder.mutation({
       query: (orderData) => ({
-        url: "/draft",
+        url: "/order/draft",
         method: "POST",
         body: {
           ...orderData,
@@ -133,7 +120,7 @@ export const orderApi = createApi({
     }),
     updateOrderTeam: builder.mutation({
       query: (teamData) => ({
-        url: "/update-team",
+        url: "/order/update-team",
         method: "PUT",
         body: teamData,
       }),
@@ -153,7 +140,7 @@ export const orderApi = createApi({
           }
         });
         const params = new URLSearchParams(validFilters);
-        return `/filter?${params.toString()}`;
+        return `/order/filter?${params.toString()}`;
       },
       providesTags: ["Orders"],
     }),

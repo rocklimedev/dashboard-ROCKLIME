@@ -1,18 +1,12 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { toast } from "sonner"; // Change import to sonner
-import { API_URL } from "../data/config";
+import { baseApi } from "./baseApi";
 
-export const attendanceApi = createApi({
-  reducerPath: "attendanceApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}/attendance`,
-  }),
-  tagTypes: ["Attendance"], // For cache invalidation
+export const attendanceApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // Clock In
     clockIn: builder.mutation({
       query: ({ userId }) => ({
-        url: "/clock-in",
+        url: "/attendance/clock-in",
         method: "POST",
         body: { userId },
       }),
@@ -34,7 +28,7 @@ export const attendanceApi = createApi({
     // Clock Out
     clockOut: builder.mutation({
       query: ({ userId }) => ({
-        url: "/clock-out",
+        url: "/attendance/clock-out",
         method: "POST",
         body: { userId },
       }),
@@ -56,7 +50,7 @@ export const attendanceApi = createApi({
     // Get Attendance for a Specific User
     getAttendance: builder.query({
       query: ({ userId, startDate, endDate }) => ({
-        url: "/",
+        url: "/attendance",
         params: { userId, startDate, endDate },
       }),
       transformResponse: (response) => {
@@ -76,7 +70,7 @@ export const attendanceApi = createApi({
     // Get All Attendance Records
     getAllAttendance: builder.query({
       query: ({ page = 1, limit = 10, startDate, endDate, status }) => ({
-        url: "/all",
+        url: "/attendance/all",
         params: { page, limit, startDate, endDate, status },
       }),
       transformResponse: (response) => {

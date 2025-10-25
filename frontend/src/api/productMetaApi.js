@@ -1,15 +1,10 @@
-// src/services/productMetaApi.js
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../data/config";
-export const productMetaApi = createApi({
-  reducerPath: "productMetaApi",
-  baseQuery: fetchBaseQuery({ baseUrl: `${API_URL}/product-meta` }), // adjust base URL if needed
-  tagTypes: ["ProductMeta"],
+import { baseApi } from "./baseApi";
+export const productMetaApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // POST /
     createProductMeta: builder.mutation({
       query: (newData) => ({
-        url: "/",
+        url: "/product-meta/",
         method: "POST",
         body: newData,
       }),
@@ -18,26 +13,27 @@ export const productMetaApi = createApi({
 
     // GET /
     getAllProductMeta: builder.query({
-      query: () => "/",
+      query: () => "/product-meta/",
       providesTags: ["ProductMeta"],
     }),
 
     // GET /search?title=...
     getProductMetaByTitle: builder.query({
-      query: (title) => `/search?title=${encodeURIComponent(title)}`,
+      query: (title) =>
+        `/product-meta/search?title=${encodeURIComponent(title)}`,
       providesTags: ["ProductMeta"],
     }),
 
     // GET /:id
     getProductMetaById: builder.query({
-      query: (id) => `/${id}`,
+      query: (id) => `/product-meta/${id}`,
       providesTags: (result, error, id) => [{ type: "ProductMeta", id }],
     }),
 
     // PUT /:id
     updateProductMeta: builder.mutation({
       query: ({ id, ...data }) => ({
-        url: `/${id}`,
+        url: `/product-meta/${id}`,
         method: "PUT",
         body: data,
       }),
@@ -47,7 +43,7 @@ export const productMetaApi = createApi({
     // DELETE /:id
     deleteProductMeta: builder.mutation({
       query: (id) => ({
-        url: `/${id}`,
+        url: `/product-meta/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: (result, error, id) => [{ type: "ProductMeta", id }],

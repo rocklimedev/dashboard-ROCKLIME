@@ -1,21 +1,17 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../data/config";
-export const keywordApi = createApi({
-  reducerPath: "keywordApi",
-  baseQuery: fetchBaseQuery({ baseUrl: `${API_URL}/keyword` }), // Adjust base URL if needed
-  tagTypes: ["Keyword"], // Helps with caching and auto-refetching
+import { baseApi } from "./baseApi";
+export const keywordApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAllKeywords: builder.query({
-      query: () => "/",
+      query: () => "/keyword/",
       providesTags: ["Keyword"],
     }),
     getKeywordById: builder.query({
-      query: (id) => `/${id}`,
+      query: (id) => `/keyword/${id}`,
       providesTags: (result, error, id) => [{ type: "Keyword", id }],
     }),
     createKeyword: builder.mutation({
       query: (newKeyword) => ({
-        url: "/",
+        url: "/keyword/",
         method: "POST",
         body: newKeyword,
       }),
@@ -23,7 +19,7 @@ export const keywordApi = createApi({
     }),
     updateKeyword: builder.mutation({
       query: ({ id, updatedData }) => ({
-        url: `/${id}`,
+        url: `/keyword/${id}`,
         method: "PUT",
         body: updatedData,
       }),
@@ -31,7 +27,7 @@ export const keywordApi = createApi({
     }),
     deleteKeyword: builder.mutation({
       query: (id) => ({
-        url: `/${id}`,
+        url: `/keyword/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: ["Keyword"],

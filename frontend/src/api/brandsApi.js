@@ -1,31 +1,17 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../data/config";
-
-export const brandApi = createApi({
-  reducerPath: "brandApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}/brands`,
-    prepareHeaders: (headers) => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
-  tagTypes: ["Brands"], // Define tag type for brands
+import { baseApi } from "./baseApi";
+export const brandApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAllBrands: builder.query({
-      query: () => "/",
+      query: () => "/brands",
       providesTags: ["Brands"], // Tag to allow invalidation
     }),
     getBrandById: builder.query({
-      query: (id) => `/${id}`,
+      query: (id) => `/brands/${id}`,
       providesTags: ["Brands"], // Tag for specific brand data
     }),
     createBrand: builder.mutation({
       query: (brandData) => ({
-        url: "/add",
+        url: "/brands/add",
         method: "POST",
         body: brandData,
       }),
@@ -33,7 +19,7 @@ export const brandApi = createApi({
     }),
     updateBrand: builder.mutation({
       query: ({ id, ...brandData }) => ({
-        url: `/${id}`,
+        url: `/brands/${id}`,
         method: "PUT",
         body: brandData,
       }),
@@ -41,7 +27,7 @@ export const brandApi = createApi({
     }),
     deleteBrand: builder.mutation({
       query: (id) => ({
-        url: `/${id}`,
+        url: `/brands/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: ["Brands"], // Invalidate to refetch brands

@@ -1,23 +1,9 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../data/config";
+import { baseApi } from "./baseApi";
 
-export const vendorApi = createApi({
-  reducerPath: "vendorApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}/vendors`,
-    credentials: "include",
-    prepareHeaders: (headers) => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
-  tagTypes: ["Vendors"], // define tag type
+export const vendorApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getVendors: builder.query({
-      query: () => "/",
+      query: () => "/vendors/",
       providesTags: (result) =>
         result
           ? [
@@ -27,12 +13,12 @@ export const vendorApi = createApi({
           : [{ type: "Vendors", id: "LIST" }],
     }),
     getVendorById: builder.query({
-      query: (id) => `/${id}`,
+      query: (id) => `/vendors/${id}`,
       providesTags: (result, error, id) => [{ type: "Vendors", id }],
     }),
     createVendor: builder.mutation({
       query: (newVendor) => ({
-        url: "/",
+        url: "/vendors/",
         method: "POST",
         body: newVendor,
         headers: {
@@ -43,7 +29,7 @@ export const vendorApi = createApi({
     }),
     updateVendor: builder.mutation({
       query: ({ id, updatedVendor }) => ({
-        url: `/${id}`,
+        url: `/vendors/${id}`,
         method: "PUT",
         body: updatedVendor,
         headers: {
@@ -53,12 +39,12 @@ export const vendorApi = createApi({
       invalidatesTags: (result, error, { id }) => [{ type: "Vendors", id }],
     }),
     checkVendorId: builder.query({
-      query: (vendorId) => `/check-vendor-id/${vendorId}`,
+      query: (vendorId) => `/vendors/check-vendor-id/${vendorId}`,
       transformResponse: (response) => response.isUnique,
     }),
     deleteVendor: builder.mutation({
       query: (id) => ({
-        url: `/${id}`,
+        url: `/vendors/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: (result, error, id) => [

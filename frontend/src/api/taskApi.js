@@ -1,32 +1,12 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../data/config";
+import { baseApi } from "./baseApi";
 
 // Define the task API
-export const taskApi = createApi({
-  reducerPath: "taskApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}/tasks`,
-    prepareHeaders: (headers) => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
-  tagTypes: [
-    "Tasks",
-    "Task",
-    "TaskStats",
-    "UserTasks",
-    "CreatedTasks",
-    "OverdueTasks",
-  ],
+export const taskApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // Create a task
     createTask: builder.mutation({
       query: (taskData) => ({
-        url: "/",
+        url: "/tasks/",
         method: "POST",
         body: taskData,
       }),
@@ -54,7 +34,7 @@ export const taskApi = createApi({
           sortOrder = "desc",
         } = params;
         return {
-          url: "/",
+          url: "/tasks/",
           params: {
             status,
             priority,
@@ -78,14 +58,14 @@ export const taskApi = createApi({
     }),
     // Get task by ID
     getTaskById: builder.query({
-      query: (id) => `/${id}`,
+      query: (id) => `/tasks/${id}`,
       providesTags: (result, error, id) => [{ type: "Task", id }],
     }),
 
     // Update task
     updateTask: builder.mutation({
       query: ({ id, ...updates }) => ({
-        url: `/${id}`,
+        url: `/tasks/${id}`,
         method: "PUT",
         body: updates,
       }),
@@ -101,7 +81,7 @@ export const taskApi = createApi({
     // Add or remove watcher
     manageWatcher: builder.mutation({
       query: ({ id, userId, action }) => ({
-        url: `/${id}/watchers`,
+        url: `/tasks/${id}/watchers`,
         method: "PUT",
         body: { userId, action },
       }),
@@ -118,7 +98,7 @@ export const taskApi = createApi({
         formData.append("file", file);
         formData.append("userId", userId);
         return {
-          url: `/${id}/attachments`,
+          url: `/tasks/${id}/attachments`,
           method: "POST",
           body: formData,
         };
@@ -132,7 +112,7 @@ export const taskApi = createApi({
     // Get task statistics
     getTaskStats: builder.query({
       query: ({ userId, teamId, startDate, endDate }) => ({
-        url: "/stats",
+        url: "/tasks/stats",
         params: { userId, teamId, startDate, endDate },
       }),
       providesTags: ["TaskStats"],
@@ -141,14 +121,14 @@ export const taskApi = createApi({
     // Get tasks by linked resource
     getTasksByResource: builder.query({
       query: ({ resourceType, resourceId }) =>
-        `/resource/${resourceType}/${resourceId}`,
+        `/tasks/resource/${resourceType}/${resourceId}`,
       providesTags: ["Tasks"],
     }),
 
     // Bulk update tasks
     bulkUpdateTasks: builder.mutation({
       query: ({ taskIds, updates }) => ({
-        url: "/bulk-update",
+        url: "/tasks/bulk-update",
         method: "PUT",
         body: { taskIds, updates },
       }),
@@ -158,7 +138,7 @@ export const taskApi = createApi({
     // Get tasks assigned to a user
     getMyTasks: builder.query({
       query: ({ userId, status, priority, page, limit }) => ({
-        url: `/user/${userId}`,
+        url: `/tasks/user/${userId}`,
         params: { status, priority, page, limit },
       }),
       providesTags: ["UserTasks"],
@@ -167,7 +147,7 @@ export const taskApi = createApi({
     // Get tasks created by a user
     getCreatedTasks: builder.query({
       query: ({ userId, page, limit }) => ({
-        url: `/created/${userId}`,
+        url: `/tasks/created/${userId}`,
         params: { page, limit },
       }),
       providesTags: ["CreatedTasks"],
@@ -176,7 +156,7 @@ export const taskApi = createApi({
     // Get overdue tasks
     getOverdueTasks: builder.query({
       query: ({ userId, teamId }) => ({
-        url: "/overdue",
+        url: "/tasks/overdue",
         params: { userId, teamId },
       }),
       providesTags: ["OverdueTasks"],
@@ -185,7 +165,7 @@ export const taskApi = createApi({
     // Clone a task
     cloneTask: builder.mutation({
       query: ({ id, ...data }) => ({
-        url: `/${id}/clone`,
+        url: `/tasks/${id}/clone`,
         method: "POST",
         body: data,
       }),
@@ -195,7 +175,7 @@ export const taskApi = createApi({
     // Update time tracking
     updateTimeTracking: builder.mutation({
       query: ({ id, actualHours }) => ({
-        url: `/${id}/time-tracking`,
+        url: `/tasks/${id}/time-tracking`,
         method: "PUT",
         body: { actualHours },
       }),
@@ -208,7 +188,7 @@ export const taskApi = createApi({
     // Delete a task
     deleteTask: builder.mutation({
       query: (id) => ({
-        url: `/${id}`,
+        url: `/tasks/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: ["Tasks", "UserTasks", "CreatedTasks", "OverdueTasks"],
@@ -217,7 +197,7 @@ export const taskApi = createApi({
     // Archive or unarchive a task
     archiveTask: builder.mutation({
       query: ({ id, archive, userId }) => ({
-        url: `/${id}/archive`,
+        url: `/tasks/${id}/archive`,
         method: "PUT",
         body: { archive, userId },
       }),
@@ -232,7 +212,7 @@ export const taskApi = createApi({
     // Update checklist item
     updateChecklistItem: builder.mutation({
       query: ({ id, checklistIndex, isCompleted, userId }) => ({
-        url: `/${id}/checklist`,
+        url: `/tasks/${id}/checklist`,
         method: "PUT",
         body: { checklistIndex, isCompleted, userId },
       }),
