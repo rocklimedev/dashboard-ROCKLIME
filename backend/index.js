@@ -41,6 +41,7 @@ const logsRoutes = require("./routes/apiLog");
 const notificationRoutes = require("./routes/notification");
 const taskRoutes = require("./routes/tasks");
 const taskBoardRoutes = require("./routes/taskBoardRoutes");
+const feedbackRoutes = require("./routes/feedback");
 // Initialize Express app
 const app = express();
 
@@ -110,6 +111,7 @@ app.use("/api/logs", logsRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/taskboards", taskBoardRoutes);
+app.use("/api/feedback", feedbackRoutes);
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error("Server error:", err);

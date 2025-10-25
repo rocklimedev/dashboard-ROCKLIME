@@ -10,7 +10,7 @@ const DatesModal = ({ show, onHide, dueDate, followupDates }) => {
 
   return (
     <Modal show={show} onHide={onHide} centered>
-      <Modal.Header closeButton>
+      <Modal.Header>
         <Modal.Title>Order Dates</Modal.Title>
       </Modal.Header>
       <Modal.Body>
@@ -26,11 +26,6 @@ const DatesModal = ({ show, onHide, dueDate, followupDates }) => {
           <p>No dates available.</p>
         )}
       </Modal.Body>
-      <Modal.Footer>
-        <button className="btn btn-secondary" onClick={onHide}>
-          Close
-        </button>
-      </Modal.Footer>
     </Modal>
   );
 };

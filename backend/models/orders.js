@@ -30,7 +30,7 @@ const Order = sequelize.define(
         "DRAFT",
         "ONHOLD"
       ),
-      defaultValue: "CREATED",
+      defaultValue: "PREPARING",
     },
     dueDate: {
       type: DataTypes.DATEONLY,
