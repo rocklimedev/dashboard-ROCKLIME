@@ -31,22 +31,8 @@ const Customer = sequelize.define(
 
     address: { type: DataTypes.JSON, allowNull: true },
 
-    quotations: { type: DataTypes.JSON, allowNull: true },
-    invoices: { type: DataTypes.JSON, allowNull: true },
-
     isVendor: { type: DataTypes.BOOLEAN, defaultValue: false },
     vendorId: { type: DataTypes.UUID, allowNull: true },
-
-    totalAmount: { type: DataTypes.FLOAT, defaultValue: 0 },
-    paidAmount: { type: DataTypes.FLOAT, defaultValue: 0 },
-    balance: { type: DataTypes.FLOAT, defaultValue: 0 },
-    dueDate: { type: DataTypes.DATE, allowNull: true },
-    paymentMode: { type: DataTypes.STRING(50), allowNull: true },
-
-    invoiceStatus: {
-      type: DataTypes.ENUM(...Object.values(INVOICE_STATUS)),
-      allowNull: true,
-    },
 
     // NEW FIELD: GST Number
     gstNumber: { type: DataTypes.STRING(20), allowNull: true },

@@ -1,21 +1,6 @@
-// src/api/poApi.js
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../data/config";
+import { baseApi } from "./baseApi";
 
-export const poApi = createApi({
-  reducerPath: "poApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}`,
-    prepareHeaders: (headers) => {
-      // Add authentication token if available
-      const token = localStorage.getItem("token"); // Adjust based on your auth setup
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
-  tagTypes: ["PurchaseOrders"],
+export const poApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // Get all purchase orders with pagination, filtering, and sorting
     getPurchaseOrders: builder.query({

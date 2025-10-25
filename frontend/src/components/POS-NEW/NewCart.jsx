@@ -4,7 +4,6 @@ import { Spin, Alert, Tabs, Modal, Button, Typography } from "antd";
 import { ShoppingCartOutlined, CheckCircleOutlined } from "@ant-design/icons";
 import {
   useGetCustomersQuery,
-  useGetCustomerByIdQuery,
   useCreateCustomerMutation,
   customerApi,
 } from "../../api/customerApi";
@@ -25,7 +24,10 @@ import {
   useCreateAddressMutation,
 } from "../../api/addressApi";
 import { useGetAllTeamsQuery } from "../../api/teamApi";
-import { useGetVendorsQuery } from "../../api/vendorApi";
+import {
+  useGetVendorsQuery,
+  useCreateVendorMutation,
+} from "../../api/vendorApi";
 import { useCreatePurchaseOrderMutation } from "../../api/poApi";
 import { useGetAllProductsQuery } from "../../api/productApi";
 import { toast } from "sonner";
@@ -49,9 +51,9 @@ import {
   generateOrderNumber,
   generatePurchaseOrderNumber,
 } from "../../data/cartUtils";
-import { useCreateVendorMutation } from "../../api/vendorApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
 import AddCustomerModal from "../Customers/AddCustomerModal";
+
 const { TabPane } = Tabs;
 const { Text } = Typography;
 
@@ -99,7 +101,7 @@ const NewCart = ({ onConvertToOrder }) => {
   const [showAddAddressModal, setShowAddAddressModal] = useState(false);
   const [showAddVendorModal, setShowAddVendorModal] = useState(false);
   const [showAddTeamModal, setShowAddTeamModal] = useState(false);
-  const [showAddCustomerModal, setShowAddCustomerModal] = useState(false); // New state for customer modal
+  const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
   const [documentType, setDocumentType] = useState("Quotation");
   const [quotationNumber, setQuotationNumber] = useState(
     generateQuotationNumber()
@@ -112,9 +114,8 @@ const NewCart = ({ onConvertToOrder }) => {
     billTo: "",
     shipTo: null,
     signatureName: "CM TRADING CO",
-
-    gstValue: "",
     discountType: "percent",
+    discountAmount: "",
     roundOff: "",
     followupDates: [],
   });
@@ -147,6 +148,7 @@ const NewCart = ({ onConvertToOrder }) => {
     status: "pending",
   });
   const [itemDiscounts, setItemDiscounts] = useState({});
+  const [itemTaxes, setItemTaxes] = useState({}); // New state for per-item taxes
   const [error, setError] = useState("");
   const [updatingItems, setUpdatingItems] = useState({});
   const [productSearch, setProductSearch] = useState("");
@@ -201,7 +203,7 @@ const NewCart = ({ onConvertToOrder }) => {
     useCreateVendorMutation();
   const [createAddress] = useCreateAddressMutation();
   const [createCustomer, { isLoading: isCreatingCustomer }] =
-    useCreateCustomerMutation(); // Add createCustomer mutation
+    useCreateCustomerMutation();
 
   // Memoized data
   const addresses = useMemo(
@@ -257,22 +259,39 @@ const NewCart = ({ onConvertToOrder }) => {
           quantity: item.quantity || 1,
           mrp: item.price || 0.01,
           total: (item.quantity || 1) * (item.price || 0.01),
+          tax: itemTaxes[item.productId] || 0, // Include tax
         })),
         totalAmount: cartItems
-          .reduce(
-            (sum, item) => sum + (item.quantity || 1) * (item.price || 0),
-            0
-          )
+          .reduce((sum, item) => {
+            const price = item.price || 0.01;
+            const quantity = item.quantity || 1;
+            const tax = itemTaxes[item.productId] || 0;
+            const itemTotal = price * quantity * (1 + tax / 100);
+            return sum + itemTotal;
+          }, 0)
           .toFixed(2),
       }));
     }
-  }, [cartItems, documentType]);
+  }, [cartItems, itemTaxes, documentType]);
 
   // Total calculations
   const totalItems = useMemo(
     () => cartItems.reduce((acc, item) => acc + (item.quantity || 0), 0),
     [cartItems]
   );
+
+  const totalDiscount = useMemo(() => {
+    const baseTotal = cartItems.reduce(
+      (acc, item) => acc + (item.price || 0) * (item.quantity || 0),
+      0
+    );
+    const discountAmount = parseFloat(quotationData.discountAmount) || 0;
+    if (quotationData.discountType === "percent") {
+      return (baseTotal * discountAmount) / 100;
+    }
+    return discountAmount;
+  }, [cartItems, quotationData.discountAmount, quotationData.discountType]);
+
   const subTotal = useMemo(
     () =>
       cartItems.reduce(
@@ -281,23 +300,18 @@ const NewCart = ({ onConvertToOrder }) => {
       ),
     [cartItems]
   );
-  const totalDiscount = useMemo(
+
+  const tax = useMemo(
     () =>
       cartItems.reduce((acc, item) => {
-        const discount = parseFloat(itemDiscounts[item.productId]) || 0;
-        const quantity = item.quantity || 1;
-        const price = item.price || 0;
-        if (quotationData.discountType === "percent") {
-          return acc + (price * quantity * discount) / 100;
-        }
-        return acc + discount * quantity;
+        const itemSubtotal = (item.price || 0) * (item.quantity || 1);
+        const itemTax = parseFloat(itemTaxes[item.productId]) || 0;
+        return acc + (itemSubtotal * itemTax) / 100;
       }, 0),
-    [cartItems, itemDiscounts, quotationData.discountType]
+    [cartItems, itemTaxes]
   );
+
   const shipping = 40;
-  const tax = quotationData.gstValue
-    ? (subTotal * (parseFloat(quotationData.gstValue) || 0)) / 100
-    : 25;
   const roundOff = parseFloat(quotationData.roundOff) || 0;
   const totalAmount = subTotal + shipping + tax - totalDiscount + roundOff;
 
@@ -305,7 +319,11 @@ const NewCart = ({ onConvertToOrder }) => {
   const purchaseOrderTotal = useMemo(
     () =>
       purchaseOrderData.items
-        .reduce((sum, item) => sum + Number(item.total || 0), 0)
+        .reduce((sum, item) => {
+          const itemTotal =
+            Number(item.total || 0) * (1 + (item.tax || 0) / 100);
+          return sum + itemTotal;
+        }, 0)
         .toFixed(2),
     [purchaseOrderData.items]
   );
@@ -401,6 +419,13 @@ const NewCart = ({ onConvertToOrder }) => {
     }));
   };
 
+  const handleTaxChange = (productId, value) => {
+    setItemTaxes((prev) => ({
+      ...prev,
+      [productId]: value >= 0 ? value : 0,
+    }));
+  };
+
   const handleClearCart = async () => {
     if (!userId) return toast.error("User not logged in!");
     try {
@@ -408,6 +433,7 @@ const NewCart = ({ onConvertToOrder }) => {
       setQuotationNumber(generateQuotationNumber());
       setPurchaseOrderNumber(generatePurchaseOrderNumber(orders));
       setItemDiscounts({});
+      setItemTaxes({}); // Clear taxes
       setPurchaseOrderData((prev) => ({ ...prev, items: [] }));
       refetch();
       setShowClearCartModal(false);
@@ -424,6 +450,10 @@ const NewCart = ({ onConvertToOrder }) => {
       if (newQuantity <= 0) {
         await removeFromCart({ userId, productId }).unwrap();
         setItemDiscounts((prev) => {
+          const { [productId]: _, ...rest } = prev;
+          return rest;
+        });
+        setItemTaxes((prev) => {
           const { [productId]: _, ...rest } = prev;
           return rest;
         });
@@ -448,6 +478,10 @@ const NewCart = ({ onConvertToOrder }) => {
     try {
       await removeFromCart({ userId, productId }).unwrap();
       setItemDiscounts((prev) => {
+        const { [productId]: _, ...rest } = prev;
+        return rest;
+      });
+      setItemTaxes((prev) => {
         const { [productId]: _, ...rest } = prev;
         return rest;
       });
@@ -497,6 +531,7 @@ const NewCart = ({ onConvertToOrder }) => {
         productId: item.productId,
         quantity: Number(item.quantity) || 1,
         mrp: Number(item.mrp) || 0.01,
+        tax: Number(item.tax) || 0, // Include tax
       }));
 
       const formattedFormData = {
@@ -644,9 +679,8 @@ const NewCart = ({ onConvertToOrder }) => {
         quotation_date: quotationData.quotationDate,
         due_date: quotationData.dueDate,
         reference_number: quotationNumber,
-
-        gst_value: parseFloat(quotationData.gstValue) || 0,
         discountType: quotationData.discountType,
+        discountAmount: parseFloat(quotationData.discountAmount) || 0,
         roundOff: parseFloat(quotationData.roundOff) || 0,
         finalAmount: parseFloat(totalAmount.toFixed(2)),
         signature_name: quotationData.signatureName || "CM TRADING CO",
@@ -661,32 +695,46 @@ const NewCart = ({ onConvertToOrder }) => {
           const itemSubtotal = parseFloat(
             (item.price * item.quantity).toFixed(2)
           );
-          const itemDiscount = parseFloat(itemDiscounts[item.productId]) || 0;
+          const itemDiscount =
+            quotationData.discountType === "percent"
+              ? (itemSubtotal *
+                  (parseFloat(quotationData.discountAmount) || 0)) /
+                100
+              : (parseFloat(quotationData.discountAmount) || 0) /
+                cartItems.length;
+          const itemTax = parseFloat(itemTaxes[item.productId]) || 0;
+          const itemTaxAmount = (itemSubtotal * itemTax) / 100;
+          const total = itemSubtotal + itemTaxAmount - itemDiscount;
           return {
             productId: item.productId,
             name: item.name || "Unnamed Product",
             quantity: item.quantity || 1,
             sellingPrice: parseFloat(item.price || 0),
             discount: itemDiscount,
-            tax: quotationData.gstValue
-              ? parseFloat(quotationData.gstValue) || 0
-              : 0,
-            total: parseFloat((itemSubtotal - itemDiscount).toFixed(2)),
+            tax: itemTax,
+            total: parseFloat(total.toFixed(2)),
           };
         }),
         items: cartItems.map((item) => {
           const itemSubtotal = parseFloat(
             (item.price * item.quantity).toFixed(2)
           );
-          const itemDiscount = parseFloat(itemDiscounts[item.productId]) || 0;
+          const itemDiscount =
+            quotationData.discountType === "percent"
+              ? (itemSubtotal *
+                  (parseFloat(quotationData.discountAmount) || 0)) /
+                100
+              : (parseFloat(quotationData.discountAmount) || 0) /
+                cartItems.length;
+          const itemTax = parseFloat(itemTaxes[item.productId]) || 0;
+          const itemTaxAmount = (itemSubtotal * itemTax) / 100;
+          const total = itemSubtotal + itemTaxAmount - itemDiscount;
           return {
             productId: item.productId,
             quantity: item.quantity || 1,
             discount: itemDiscount,
-            tax: quotationData.gstValue
-              ? parseFloat(quotationData.gstValue) || 0
-              : 0,
-            total: parseFloat((itemSubtotal - itemDiscount).toFixed(2)),
+            tax: itemTax,
+            total: parseFloat(total.toFixed(2)),
           };
         }),
       };
@@ -740,15 +788,24 @@ const NewCart = ({ onConvertToOrder }) => {
         products: cartItems.map((item) => {
           const price = parseFloat(item.price) || 0.01;
           const quantity = parseInt(item.quantity, 10) || 1;
-          const discount = parseFloat(itemDiscounts[item.productId]) || 0;
+          const discount =
+            quotationData.discountType === "percent"
+              ? (price *
+                  quantity *
+                  (parseFloat(quotationData.discountAmount) || 0)) /
+                100
+              : (parseFloat(quotationData.discountAmount) || 0) /
+                cartItems.length;
+          const itemTax = parseFloat(itemTaxes[item.productId]) || 0;
           const itemSubtotal = parseFloat((price * quantity).toFixed(2));
-          const total = parseFloat((itemSubtotal - discount).toFixed(2));
-
+          const itemTaxAmount = (itemSubtotal * itemTax) / 100;
+          const total = itemSubtotal + itemTaxAmount - discount;
           return {
             id: item.productId,
             price: price,
             discount: discount,
-            total: total >= 0 ? total : 0,
+            tax: itemTax,
+            total: total >= 0 ? parseFloat(total.toFixed(2)) : 0,
           };
         }),
       };
@@ -765,8 +822,12 @@ const NewCart = ({ onConvertToOrder }) => {
             : error?.status === 404
             ? `Not Found: ${error.data?.message || "Resource not found."}`
             : error?.status === 500
-            ? "Server error. Please try again later."
-            : "Something went wrong. Please try again.";
+            ? `Server error: ${
+                error.data?.message || "Please try again later."
+              }`
+            : `Something went wrong: ${
+                error.data?.message || "Please try again."
+              }`;
         toast.error(errorMessage);
       }
     }
@@ -779,9 +840,8 @@ const NewCart = ({ onConvertToOrder }) => {
       billTo: "",
       shipTo: null,
       signatureName: "CM TRADING CO",
-
-      gstValue: "",
       discountType: "percent",
+      discountAmount: "",
       roundOff: "",
       followupDates: [],
     });
@@ -816,6 +876,7 @@ const NewCart = ({ onConvertToOrder }) => {
     setSelectedCustomer("");
     setSelectedVendor("");
     setItemDiscounts({});
+    setItemTaxes({});
     setQuotationNumber(generateQuotationNumber());
     setOrderNumber("");
     setPurchaseOrderNumber("");
@@ -837,20 +898,21 @@ const NewCart = ({ onConvertToOrder }) => {
   };
 
   const handleAddCustomer = () => {
-    setShowAddCustomerModal(true); // Open the customer modal
+    setShowAddCustomerModal(true);
   };
 
   const handleCustomerSave = async (newCustomer) => {
     try {
       await createCustomer(newCustomer).unwrap();
-      dispatch(customerApi.util.invalidateTags(["Customer"])); // Invalidate customer cache
-      setSelectedCustomer(newCustomer.customerId || ""); // Optionally set the new customer as selected
-      setShowAddCustomerModal(false); // Close the modal
+      dispatch(customerApi.util.invalidateTags(["Customer"]));
+      setSelectedCustomer(newCustomer.customerId || "");
+      setShowAddCustomerModal(false);
       toast.success("Customer created successfully!");
     } catch (err) {
       toast.error(err?.data?.message || "Failed to create customer.");
     }
   };
+
   const handleAddAddress = () => {
     setShowAddAddressModal(true);
   };
@@ -929,10 +991,12 @@ const NewCart = ({ onConvertToOrder }) => {
                   subTotal={subTotal}
                   quotationData={quotationData}
                   itemDiscounts={itemDiscounts}
+                  itemTaxes={itemTaxes}
                   updatingItems={updatingItems}
                   handleUpdateQuantity={handleUpdateQuantity}
                   handleRemoveItem={handleRemoveItem}
                   handleDiscountChange={handleDiscountChange}
+                  handleTaxChange={handleTaxChange}
                   setShowClearCartModal={setShowClearCartModal}
                   setActiveTab={setActiveTab}
                 />
@@ -995,11 +1059,15 @@ const NewCart = ({ onConvertToOrder }) => {
                             quantity,
                             mrp: sellingPrice,
                             total,
+                            tax: 0, // Default tax
                           },
                         ];
                         const totalAmount = newItems
                           .reduce(
-                            (sum, item) => sum + Number(item.total || 0),
+                            (sum, item) =>
+                              sum +
+                              Number(item.total || 0) *
+                                (1 + (item.tax || 0) / 100),
                             0
                           )
                           .toFixed(2);
@@ -1019,7 +1087,10 @@ const NewCart = ({ onConvertToOrder }) => {
                         );
                         const totalAmount = newItems
                           .reduce(
-                            (sum, item) => sum + Number(item.total || 0),
+                            (sum, item) =>
+                              sum +
+                              Number(item.total || 0) *
+                                (1 + (item.tax || 0) / 100),
                             0
                           )
                           .toFixed(2);
@@ -1033,14 +1104,22 @@ const NewCart = ({ onConvertToOrder }) => {
                     updatePurchaseOrderProductField={(index, field, value) => {
                       const updatedItems = [...purchaseOrderData.items];
                       updatedItems[index][field] = value;
-                      if (["quantity", "mrp"].includes(field)) {
+                      if (["quantity", "mrp", "tax"].includes(field)) {
                         const quantity =
                           Number(updatedItems[index].quantity) || 1;
                         const mrp = Number(updatedItems[index].mrp) || 0.01;
-                        updatedItems[index].total = quantity * mrp;
+                        const tax = Number(updatedItems[index].tax) || 0;
+                        updatedItems[index].total =
+                          quantity * mrp * (1 + tax / 100);
                       }
                       const totalAmount = updatedItems
-                        .reduce((sum, item) => sum + Number(item.total || 0), 0)
+                        .reduce(
+                          (sum, item) =>
+                            sum +
+                            Number(item.total || 0) *
+                              (1 + (item.tax || 0) / 100),
+                          0
+                        )
                         .toFixed(2);
                       setPurchaseOrderData({
                         ...purchaseOrderData,
@@ -1091,7 +1170,7 @@ const NewCart = ({ onConvertToOrder }) => {
                     discount={totalDiscount}
                     roundOff={roundOff}
                     subTotal={subTotal}
-                    handleAddCustomer={handleAddCustomer} // Pass updated handler
+                    handleAddCustomer={handleAddCustomer}
                     handleAddAddress={handleAddAddress}
                     setActiveTab={setActiveTab}
                     handleCreateDocument={handleCreateDocument}
@@ -1127,12 +1206,14 @@ const NewCart = ({ onConvertToOrder }) => {
                     discount={totalDiscount}
                     roundOff={roundOff}
                     subTotal={subTotal}
-                    handleAddCustomer={handleAddCustomer} // Pass updated handler
+                    handleAddCustomer={handleAddCustomer}
                     handleAddAddress={handleAddAddress}
                     setActiveTab={setActiveTab}
                     handleCreateDocument={handleCreateDocument}
                     useBillingAddress={useBillingAddress}
                     setUseBillingAddress={setUseBillingAddress}
+                    itemDiscounts={itemDiscounts} // Add this
+                    itemTaxes={itemTaxes} // Add this
                   />
                 )}
               </TabPane>
@@ -1186,7 +1267,7 @@ const NewCart = ({ onConvertToOrder }) => {
               <AddCustomerModal
                 visible={showAddCustomerModal}
                 onClose={() => setShowAddCustomerModal(false)}
-                customer={null} // Pass null for new customer creation
+                customer={null}
               />
             )}
           </CartContainer>

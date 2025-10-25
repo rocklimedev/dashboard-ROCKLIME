@@ -1,24 +1,9 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../data/config";
+import { baseApi } from "./baseApi";
 
-export const quotationApi = createApi({
-  reducerPath: "quotationApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}/quotation/`,
-    credentials: "include",
-    prepareHeaders: (headers) => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-      headers.set("Content-Type", "application/json");
-      return headers;
-    },
-  }),
-  tagTypes: ["Quotations"],
+export const quotationApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAllQuotations: builder.query({
-      query: () => "/",
+      query: () => "/quotation/",
       providesTags: ["Quotations"],
     }),
     getQuotationById: builder.query({
@@ -27,7 +12,7 @@ export const quotationApi = createApi({
     }),
     createQuotation: builder.mutation({
       query: (newQuotation) => ({
-        url: "/add",
+        url: "/quotation/add",
         method: "POST",
         body: newQuotation,
       }),
@@ -36,7 +21,7 @@ export const quotationApi = createApi({
     updateQuotation: builder.mutation({
       query: ({ id, updatedQuotation }) => {
         return {
-          url: `/${id}`,
+          url: `/quotation/${id}`,
           method: "PUT",
           body: updatedQuotation,
           headers: {
@@ -48,14 +33,14 @@ export const quotationApi = createApi({
     }),
     deleteQuotation: builder.mutation({
       query: (id) => ({
-        url: `/${id}`,
+        url: `/quotation/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: ["Quotations"],
     }),
     exportQuotation: builder.mutation({
       query: (id) => ({
-        url: `/export/${id}`,
+        url: `/quotation/export/${id}`,
         method: "POST",
         headers: {
           Accept:
@@ -66,12 +51,12 @@ export const quotationApi = createApi({
     }),
     // New endpoints for versioning
     getQuotationVersions: builder.query({
-      query: (id) => `/${id}/versions`,
+      query: (id) => `/quotation/${id}/versions`,
       providesTags: ["Quotation"],
     }),
     restoreQuotationVersion: builder.mutation({
       query: ({ id, version }) => ({
-        url: `/${id}/restore/${version}`,
+        url: `/quotation/${id}/restore/${version}`,
         method: "POST",
       }),
       invalidatesTags: ["Quotation"],

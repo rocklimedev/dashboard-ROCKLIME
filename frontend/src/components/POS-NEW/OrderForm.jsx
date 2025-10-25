@@ -5,13 +5,14 @@ import {
   Select,
   Input,
   Alert,
-  Divider,
   Row,
   Col,
   Empty,
   DatePicker,
   Typography,
   Radio,
+  Space,
+  Divider,
 } from "antd";
 import {
   UserAddOutlined,
@@ -32,10 +33,23 @@ import { useGetAllOrdersQuery } from "../../api/orderApi";
 const { Text } = Typography;
 const { Option } = Select;
 
+// Styled Components
 const CartSummaryCard = styled(Card)`
-  margin-bottom: 16px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+`;
+
+const FormContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+`;
+
+const FormSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 `;
 
 const EmptyCartWrapper = styled.div`
@@ -48,7 +62,6 @@ const EmptyCartWrapper = styled.div`
 
 const CustomerSelect = styled(Select)`
   width: 100%;
-  margin-top: 8px;
 `;
 
 const CheckoutButton = styled(Button)`
@@ -60,6 +73,11 @@ const CheckoutButton = styled(Button)`
   }
 `;
 
+const ActionButton = styled(Button)`
+  padding: 0;
+  height: auto;
+`;
+
 const SOURCE_TYPES = [
   "Retail",
   "Architect",
@@ -68,7 +86,6 @@ const SOURCE_TYPES = [
   "Contractor",
 ];
 const STATUS_VALUES = [
-  "CREATED",
   "PREPARING",
   "CHECKING",
   "INVOICE",
@@ -157,46 +174,41 @@ const OrderForm = ({
     return customer?.address || null;
   }, [customers, selectedCustomer]);
 
+  // Memoized source customers
   const sourceCustomers = useMemo(() => {
     if (!sourceType) return [];
+    const normalizedSourceType = sourceType.toLowerCase();
     return customers.filter((customer) => {
-      switch (sourceType) {
-        case "Retail":
-          return customer.type === "Retail";
-        case "Architect":
-          return customer.type === "Architect";
-        case "Interior":
-          return customer.type === "Interior";
-        case "Builder":
-          return customer.type === "Builder";
-        case "Contractor":
-          return customer.type === "Contractor";
-        default:
-          return true;
-      }
+      const customerType = customer.customerType
+        ? customer.customerType.toLowerCase()
+        : "";
+      return customerType === normalizedSourceType;
     });
   }, [customers, sourceType]);
+  // Debug logging
+  useEffect(() => {
+    console.log("OrderForm Debug:", {
+      sourceType,
+      customers,
+      sourceCustomers,
+      filteredCustomers,
+    });
+  }, [sourceType, customers, sourceCustomers, filteredCustomers]);
 
   // Auto-select previousOrderNo based on masterPipelineNo
   useEffect(() => {
     if (orderData?.masterPipelineNo) {
-      // Find orders with the selected masterPipelineNo
       const relatedOrders = orders.filter(
         (order) =>
           order.masterPipelineNo === orderData.masterPipelineNo &&
           order.orderNo !== orderData.orderNo
       );
-
-      // Sort by createdAt date (most recent first) or use another criterion
       const sortedOrders = relatedOrders.sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
       );
-
-      // Select the most recent order as previousOrderNo
       const previousOrder = sortedOrders[0]?.orderNo || "";
       handleOrderChange("previousOrderNo", previousOrder);
     } else {
-      // Clear previousOrderNo if no masterPipelineNo is selected
       handleOrderChange("previousOrderNo", "");
     }
   }, [orderData?.masterPipelineNo, orders, handleOrderChange]);
@@ -368,10 +380,6 @@ const OrderForm = ({
     <Row gutter={[16, 16]} justify="center">
       <Col xs={24} sm={24} md={16} lg={16}>
         <CartSummaryCard>
-          <Text strong style={{ fontSize: "18px" }}>
-            Checkout
-          </Text>
-          <Divider />
           {(cartItems?.length ?? 0) === 0 ? (
             <EmptyCartWrapper>
               <Empty
@@ -389,496 +397,495 @@ const OrderForm = ({
               </Button>
             </EmptyCartWrapper>
           ) : (
-            <>
-              {/* Document Type */}
-              <Text strong>Document Type</Text>
-              <Select
-                value={documentType}
-                onChange={setDocumentType}
-                style={{ width: "100%", marginTop: 8 }}
-                aria-label="Select document type"
-              >
-                <Option value="Quotation">Quotation</Option>
-                <Option value="Order">Order</Option>
-                <Option value="Purchase Order">Purchase Order</Option>
-              </Select>
-              <Divider />
-              {/* Source Type */}
-              <Text strong>Source Type</Text>
-              <Select
-                value={sourceType}
-                onChange={(value) => {
-                  setSourceType(value);
-                  setSelectedCustomer("");
-                  handleOrderChange("createdFor", "");
-                  handleOrderChange("source", "");
-                  handleOrderChange("shipTo", null);
-                  setUseBillingAddress(false);
-                }}
-                style={{ width: "100%", marginTop: 8 }}
-                placeholder="Select source type"
-                allowClear
-                aria-label="Select source type"
-              >
-                {SOURCE_TYPES.map((type) => (
-                  <Option key={type} value={type}>
-                    {type}
-                  </Option>
-                ))}
-              </Select>
-              <Divider />
-              {/* Customer Selection */}
-              <Text strong>
-                Customer <span style={{ color: "red" }}>*</span>
+            <FormContainer>
+              <Text strong style={{ fontSize: "18px" }}>
+                Checkout
               </Text>
-              <CustomerSelect
-                showSearch
-                value={selectedCustomer}
-                onChange={(value) => {
-                  setSelectedCustomer(value);
-                  handleOrderChange("createdFor", value);
-                  handleOrderChange("shipTo", null);
-                  setUseBillingAddress(false);
-                }}
-                onSearch={debouncedCustomerSearch}
-                placeholder="Select a customer"
-                loading={customersLoading}
-                disabled={customersLoading || customersError}
-                filterOption={false}
-                aria-label="Select customer"
-              >
-                {(filteredCustomers?.length ?? 0) > 0 ? (
-                  filteredCustomers.map((customer) => (
-                    <Option
-                      key={customer.customerId}
-                      value={customer.customerId}
-                    >
-                      {customer.name} ({customer.email})
+              <FormSection>
+                <Text strong>Document Type</Text>
+                <Select
+                  value={documentType}
+                  onChange={setDocumentType}
+                  placeholder="Select document type"
+                  aria-label="Select document type"
+                >
+                  <Option value="Quotation">Quotation</Option>
+                  <Option value="Order">Order</Option>
+                  <Option value="Purchase Order">Purchase Order</Option>
+                </Select>
+              </FormSection>
+
+              <FormSection>
+                <Text strong>
+                  Customer <span style={{ color: "red" }}>*</span>
+                </Text>
+                <Space direction="vertical" style={{ width: "100%" }}>
+                  <CustomerSelect
+                    showSearch
+                    value={selectedCustomer}
+                    onChange={(value) => {
+                      setSelectedCustomer(value);
+                      handleOrderChange("createdFor", value);
+                      handleOrderChange("shipTo", null);
+                      setUseBillingAddress(false);
+                    }}
+                    onSearch={debouncedCustomerSearch}
+                    placeholder="Select a customer"
+                    loading={customersLoading}
+                    disabled={customersLoading || customersError}
+                    filterOption={false}
+                    aria-label="Select customer"
+                  >
+                    {(filteredCustomers?.length ?? 0) > 0 ? (
+                      filteredCustomers.map((customer) => (
+                        <Option
+                          key={customer.customerId}
+                          value={customer.customerId}
+                        >
+                          {customer.name} ({customer.email})
+                        </Option>
+                      ))
+                    ) : (
+                      <Option value="" disabled>
+                        No customers available
+                      </Option>
+                    )}
+                  </CustomerSelect>
+                  <ActionButton
+                    type="link"
+                    icon={<UserAddOutlined />}
+                    onClick={handleAddCustomer}
+                    aria-label="Add new customer"
+                  >
+                    Add New Customer
+                  </ActionButton>
+                </Space>
+              </FormSection>
+
+              <FormSection>
+                <Text strong>Source Type</Text>
+                <Select
+                  value={sourceType}
+                  onChange={(value) => {
+                    setSourceType(value);
+                    if (value) {
+                      handleOrderChange("source", "");
+                    }
+                  }}
+                  placeholder="Select source type"
+                  allowClear
+                  aria-label="Select source type"
+                >
+                  {SOURCE_TYPES.map((type) => (
+                    <Option key={type} value={type}>
+                      {type}
                     </Option>
-                  ))
-                ) : (
-                  <Option value="" disabled>
-                    No customers available
-                  </Option>
-                )}
-              </CustomerSelect>
-              <Button
-                type="link"
-                icon={<UserAddOutlined />}
-                onClick={handleAddCustomer}
-                aria-label="Add new customer"
-              >
-                Add New Customer
-              </Button>
-              <Divider />
-              {/* Shipping Address */}
-              <Text strong>
-                Shipping Address <span style={{ color: "red" }}>*</span>
-              </Text>
-              <Select
-                value={
-                  useBillingAddress
-                    ? "sameAsBilling"
-                    : orderData?.shipTo || undefined
-                }
-                onChange={handleAddressChange}
-                placeholder="Select shipping address"
-                loading={
-                  addressesLoading ||
-                  isCreatingAddress ||
-                  userQueries.some((q) => q.isLoading) ||
-                  customerQueries.some((q) => q.isLoading)
-                }
-                disabled={
-                  !selectedCustomer ||
-                  addressesLoading ||
-                  addressesError ||
-                  isCreatingAddress ||
-                  userQueries.some((q) => q.isLoading) ||
-                  customerQueries.some((q) => q.isLoading)
-                }
-                style={{ width: "100%", marginTop: 8 }}
-                aria-label="Select shipping address"
-              >
-                {selectedCustomer && defaultAddress && (
-                  <Option value="sameAsBilling">Same as Billing Address</Option>
-                )}
-                {!selectedCustomer ? (
-                  <Option disabled>Please select a customer first</Option>
-                ) : addressesLoading || isCreatingAddress ? (
-                  <Option disabled>Loading addresses...</Option>
-                ) : addressesError ? (
-                  <Option disabled>
-                    Error fetching addresses:{" "}
-                    {addressesError?.data?.message || "Unknown error"}
-                  </Option>
-                ) : (filteredAddresses?.length ?? 0) === 0 ? (
-                  <Option disabled>
-                    No addresses available for this customer
-                  </Option>
-                ) : (
-                  filteredAddresses.map((address) => (
-                    <Option key={address.addressId} value={address.addressId}>
-                      {`${address.street}, ${address.city}, ${
-                        address.state || ""
-                      }, ${address.postalCode}, ${
-                        address.country || "India"
-                      } (${address.status})`}
+                  ))}
+                </Select>
+              </FormSection>
+
+              <FormSection>
+                <Text strong>Source Customer</Text>
+                <Select
+                  value={orderData?.source || undefined}
+                  onChange={(value) => handleOrderChange("source", value)}
+                  placeholder="Select source customer"
+                  disabled={!sourceType || customersLoading || customersError}
+                  allowClear
+                  aria-label="Select source customer"
+                >
+                  {customersLoading ? (
+                    <Option value="" disabled>
+                      Loading customers...
                     </Option>
-                  ))
-                )}
-              </Select>
-              {useBillingAddress && defaultAddress && (
-                <div style={{ marginTop: 8 }}>
-                  <Text strong>Billing Address:</Text>
-                  <p style={{ margin: 0 }}>
-                    {`${defaultAddress.street}, ${defaultAddress.city}, ${
-                      defaultAddress.state || ""
-                    }, ${
-                      defaultAddress.postalCode || defaultAddress.zip || ""
-                    }, ${defaultAddress.country || "India"} (${
-                      defaultAddress.status || "BILLING"
-                    })`}
-                  </p>
-                </div>
-              )}
-              <Button
-                type="link"
-                icon={<UserAddOutlined />}
-                onClick={handleAddAddress}
-                style={{ padding: 0, marginTop: 8 }}
-                aria-label="Add new address"
-                disabled={!selectedCustomer || isCreatingAddress}
-              >
-                Add New Address
-              </Button>
-              <Divider />
-              {/* Order Number */}
-              <Text strong>Order Number</Text>
-              <Input
-                value={orderData.orderNo}
-                onChange={(e) => handleOrderChange("orderNo", e.target.value)}
-                placeholder="Enter order number (e.g., 151025101)"
-                style={{ marginTop: 8 }}
-                disabled={true}
-              />
-              <Divider />
-              {/* Source */}
-              <Text strong>Source</Text>
-              <Select
-                value={orderData?.source || undefined}
-                onChange={(value) => handleOrderChange("source", value)}
-                style={{ width: "100%", marginTop: 8 }}
-                placeholder="Select source customer"
-                disabled={!sourceType || customersLoading || customersError}
-                allowClear
-                aria-label="Select source customer"
-              >
-                {(sourceCustomers?.length ?? 0) > 0 ? (
-                  sourceCustomers.map((customer) => (
-                    <Option
-                      key={customer.customerId}
-                      value={customer.customerId}
-                    >
-                      {customer.name} ({customer.email})
+                  ) : customersError ? (
+                    <Option value="" disabled>
+                      Error fetching customers:{" "}
+                      {customersError?.data?.message || "Unknown error"}
                     </Option>
-                  ))
-                ) : (
-                  <Option value="" disabled>
-                    No customers available for this source type
-                  </Option>
-                )}
-              </Select>
-              <Divider />
-              {/* Master Pipeline Number */}
-              <Text strong>Master Pipeline Number</Text>
-              <Select
-                style={{ width: "100%", marginTop: 8 }}
-                value={orderData?.masterPipelineNo || undefined}
-                onChange={(value) =>
-                  handleOrderChange("masterPipelineNo", value)
-                }
-                placeholder="Select master pipeline order"
-                allowClear
-                aria-label="Select master pipeline order"
-              >
-                {isAllOrdersLoading ? (
-                  <Option disabled>Loading orders...</Option>
-                ) : allOrdersError ? (
-                  <Option disabled>Error loading orders</Option>
-                ) : (orders?.length ?? 0) === 0 ? (
-                  <Option disabled>No orders available</Option>
-                ) : (
-                  orders
-                    .filter(
-                      (order) =>
-                        order.orderNo && order.orderNo !== orderData?.orderNo
-                    )
-                    .map((order) => (
-                      <Option key={order.orderNo} value={order.orderNo}>
-                        {order.orderNo}
+                  ) : (sourceCustomers?.length ?? 0) > 0 ? (
+                    sourceCustomers.map((customer) => (
+                      <Option
+                        key={customer.customerId}
+                        value={customer.customerId}
+                      >
+                        {customer.name} ({customer.email})
                       </Option>
                     ))
-                )}
-              </Select>
+                  ) : (
+                    <Option value="" disabled>
+                      {sourceType
+                        ? `No customers available for ${sourceType} type`
+                        : "Please select a source type first"}
+                    </Option>
+                  )}
+                </Select>
+              </FormSection>
 
-              <Divider />
-              {/* Status */}
-              <Text strong>Status</Text>
-              <Select
-                value={orderData?.status}
-                onChange={(value) => handleOrderChange("status", value)}
-                style={{ width: "100%", marginTop: 8 }}
-                aria-label="Select status"
-              >
-                {STATUS_VALUES.map((status) => (
-                  <Option key={status} value={status}>
-                    {status.charAt(0).toUpperCase() +
-                      status.slice(1).toLowerCase().replace("_", " ")}
-                  </Option>
-                ))}
-              </Select>
-              <Divider />
-              {/* Priority */}
-              <Text strong>Priority</Text>
-              <Select
-                value={orderData?.priority}
-                onChange={(value) => handleOrderChange("priority", value)}
-                style={{ width: "100%", marginTop: 8 }}
-                placeholder="Select priority"
-                aria-label="Select priority"
-              >
-                <Option value="high">High</Option>
-                <Option value="medium">Medium</Option>
-                <Option value="low">Low</Option>
-              </Select>
-              <Divider />
-              {/* Assigned To */}
-              <Text strong>Assigned To</Text>
-              <Radio.Group
-                value={assignmentType}
-                onChange={(e) => {
-                  setAssignmentType(e.target.value);
-                  setOrderData((prev) => ({
-                    ...prev,
-                    assignedTeamId:
-                      e.target.value === "team" ? prev.assignedTeamId : "",
-                    assignedUserId:
-                      e.target.value === "users" ? prev.assignedUserId : "",
-                    secondaryUserId:
-                      e.target.value === "users" ? prev.secondaryUserId : "",
-                  }));
-                }}
-                style={{ marginTop: 8 }}
-                aria-label="Select assignment type"
-              >
-                <Radio value="team">Team</Radio>
-                <Radio value="users">Users</Radio>
-              </Radio.Group>
-              {assignmentType === "team" && (
-                <>
-                  <Divider />
-                  <Text strong>Team</Text>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      marginTop: 8,
-                    }}
+              <FormSection>
+                <Text strong>
+                  Shipping Address <span style={{ color: "red" }}>*</span>
+                </Text>
+                <Space direction="vertical" style={{ width: "100%" }}>
+                  <Select
+                    value={
+                      useBillingAddress
+                        ? "sameAsBilling"
+                        : orderData?.shipTo || undefined
+                    }
+                    onChange={handleAddressChange}
+                    placeholder="Select shipping address"
+                    loading={
+                      addressesLoading ||
+                      isCreatingAddress ||
+                      userQueries.some((q) => q.isLoading) ||
+                      customerQueries.some((q) => q.isLoading)
+                    }
+                    disabled={
+                      !selectedCustomer ||
+                      addressesLoading ||
+                      addressesError ||
+                      isCreatingAddress ||
+                      userQueries.some((q) => q.isLoading) ||
+                      customerQueries.some((q) => q.isLoading)
+                    }
+                    aria-label="Select shipping address"
                   >
+                    {selectedCustomer && defaultAddress && (
+                      <Option value="sameAsBilling">
+                        Same as Billing Address
+                      </Option>
+                    )}
+                    {!selectedCustomer ? (
+                      <Option disabled>Please select a customer first</Option>
+                    ) : addressesLoading || isCreatingAddress ? (
+                      <Option disabled>Loading addresses...</Option>
+                    ) : addressesError ? (
+                      <Option disabled>
+                        Error fetching addresses:{" "}
+                        {addressesError?.data?.message || "Unknown error"}
+                      </Option>
+                    ) : (filteredAddresses?.length ?? 0) === 0 ? (
+                      <Option disabled>
+                        No addresses available for this customer
+                      </Option>
+                    ) : (
+                      filteredAddresses.map((address) => (
+                        <Option
+                          key={address.addressId}
+                          value={address.addressId}
+                        >
+                          {`${address.street}, ${address.city}, ${
+                            address.state || ""
+                          }, ${address.postalCode}, ${
+                            address.country || "India"
+                          } (${address.status})`}
+                        </Option>
+                      ))
+                    )}
+                  </Select>
+                  {useBillingAddress && defaultAddress && (
+                    <Text>
+                      <strong>Billing Address:</strong>{" "}
+                      {`${defaultAddress.street}, ${defaultAddress.city}, ${
+                        defaultAddress.state || ""
+                      }, ${
+                        defaultAddress.postalCode || defaultAddress.zip || ""
+                      }, ${defaultAddress.country || "India"} (${
+                        defaultAddress.status || "BILLING"
+                      })`}
+                    </Text>
+                  )}
+                  <ActionButton
+                    type="link"
+                    icon={<UserAddOutlined />}
+                    onClick={handleAddAddress}
+                    disabled={!selectedCustomer || isCreatingAddress}
+                    aria-label="Add new address"
+                  >
+                    Add New Address
+                  </ActionButton>
+                </Space>
+              </FormSection>
+
+              <FormSection>
+                <Text strong>Order Number</Text>
+                <Input
+                  value={orderData.orderNo}
+                  onChange={(e) => handleOrderChange("orderNo", e.target.value)}
+                  placeholder="Enter order number (e.g., 151025101)"
+                  disabled={true}
+                  aria-label="Order number"
+                />
+              </FormSection>
+
+              <FormSection>
+                <Text strong>Master Pipeline Number</Text>
+                <Select
+                  value={orderData?.masterPipelineNo || undefined}
+                  onChange={(value) =>
+                    handleOrderChange("masterPipelineNo", value)
+                  }
+                  placeholder="Select master pipeline order"
+                  allowClear
+                  aria-label="Select master pipeline order"
+                >
+                  {isAllOrdersLoading ? (
+                    <Option disabled>Loading orders...</Option>
+                  ) : allOrdersError ? (
+                    <Option disabled>Error loading orders</Option>
+                  ) : (orders?.length ?? 0) === 0 ? (
+                    <Option disabled>No orders available</Option>
+                  ) : (
+                    orders
+                      .filter(
+                        (order) =>
+                          order.orderNo && order.orderNo !== orderData?.orderNo
+                      )
+                      .map((order) => (
+                        <Option key={order.orderNo} value={order.orderNo}>
+                          {order.orderNo}
+                        </Option>
+                      ))
+                  )}
+                </Select>
+              </FormSection>
+
+              <FormSection>
+                <Text strong>Status</Text>
+                <Select
+                  value={orderData?.status}
+                  onChange={(value) => handleOrderChange("status", value)}
+                  placeholder="Select status"
+                  aria-label="Select status"
+                >
+                  {STATUS_VALUES.map((status) => (
+                    <Option key={status} value={status}>
+                      {status.charAt(0).toUpperCase() +
+                        status.slice(1).toLowerCase().replace("_", " ")}
+                    </Option>
+                  ))}
+                </Select>
+              </FormSection>
+
+              <FormSection>
+                <Text strong>Priority</Text>
+                <Select
+                  value={orderData?.priority}
+                  onChange={(value) => handleOrderChange("priority", value)}
+                  placeholder="Select priority"
+                  aria-label="Select priority"
+                >
+                  <Option value="high">High</Option>
+                  <Option value="medium">Medium</Option>
+                  <Option value="low">Low</Option>
+                </Select>
+              </FormSection>
+
+              <FormSection>
+                <Text strong>Assigned To</Text>
+                <Radio.Group
+                  value={assignmentType}
+                  onChange={(e) => {
+                    setAssignmentType(e.target.value);
+                    setOrderData((prev) => ({
+                      ...prev,
+                      assignedTeamId:
+                        e.target.value === "team" ? prev.assignedTeamId : "",
+                      assignedUserId:
+                        e.target.value === "users" ? prev.assignedUserId : "",
+                      secondaryUserId:
+                        e.target.value === "users" ? prev.secondaryUserId : "",
+                    }));
+                  }}
+                  aria-label="Select assignment type"
+                >
+                  <Radio value="team">Team</Radio>
+                  <Radio value="users">Users</Radio>
+                </Radio.Group>
+              </FormSection>
+
+              {assignmentType === "team" && (
+                <FormSection>
+                  <Text strong>Team</Text>
+                  <Select
+                    value={orderData?.assignedTeamId || undefined}
+                    onChange={(value) =>
+                      handleOrderChange("assignedTeamId", value)
+                    }
+                    placeholder="Select team"
+                    disabled={teamsLoading}
+                    aria-label="Select team"
+                    dropdownRender={(menu) => (
+                      <>
+                        {menu}
+                        <Divider style={{ margin: "8px 0" }} />
+                        <Button
+                          type="primary"
+                          icon={<PlusOutlined />}
+                          onClick={() => handleTeamAdded(true)}
+                          style={{ width: "100%" }}
+                          aria-label="Add new team"
+                        >
+                          Add New Team
+                        </Button>
+                      </>
+                    )}
+                  >
+                    {(teams?.length ?? 0) > 0 ? (
+                      teams.map((team) => (
+                        <Option key={team.id} value={team.id}>
+                          {team.teamName} (
+                          {team.teammembers?.length > 0
+                            ? team.teammembers
+                                .map((member) => member.userName)
+                                .join(", ")
+                            : "No members"}
+                          )
+                        </Option>
+                      ))
+                    ) : (
+                      <Option value="" disabled>
+                        No teams available
+                      </Option>
+                    )}
+                  </Select>
+                </FormSection>
+              )}
+
+              {assignmentType === "users" && (
+                <>
+                  <FormSection>
+                    <Text strong>Primary User</Text>
                     <Select
-                      style={{ width: "100%" }}
-                      value={orderData?.assignedTeamId || undefined}
+                      value={orderData?.assignedUserId || undefined}
                       onChange={(value) =>
-                        handleOrderChange("assignedTeamId", value)
+                        handleOrderChange("assignedUserId", value)
                       }
-                      placeholder="Select team"
-                      disabled={teamsLoading}
-                      aria-label="Select team"
-                      dropdownRender={(menu) => (
-                        <>
-                          {menu}
-                          <Divider style={{ margin: "8px 0" }} />
-                          <Button
-                            type="primary"
-                            icon={<PlusOutlined />}
-                            onClick={() => handleTeamAdded(true)}
-                            style={{ width: "100%" }}
-                            aria-label="Add new team"
-                          >
-                            Add New Team
-                          </Button>
-                        </>
-                      )}
+                      placeholder="Select primary user"
+                      disabled={usersLoading}
+                      aria-label="Select primary user"
                     >
-                      {(teams?.length ?? 0) > 0 ? (
-                        teams.map((team) => (
-                          <Option key={team.id} value={team.id}>
-                            {team.teamName} (
-                            {team.teammembers?.length > 0
-                              ? team.teammembers
-                                  .map((member) => member.userName)
-                                  .join(", ")
-                              : "No members"}
-                            )
+                      {(users?.length ?? 0) > 0 ? (
+                        users.map((user) => (
+                          <Option key={user.userId} value={user.userId}>
+                            {user.username || user.name || "—"}
                           </Option>
                         ))
                       ) : (
                         <Option value="" disabled>
-                          No teams available
+                          No users available
                         </Option>
                       )}
                     </Select>
-                  </div>
+                  </FormSection>
+                  <FormSection>
+                    <Text strong>Secondary User (Optional)</Text>
+                    <Select
+                      value={orderData?.secondaryUserId || undefined}
+                      onChange={(value) =>
+                        handleOrderChange("secondaryUserId", value)
+                      }
+                      placeholder="Select secondary user"
+                      disabled={usersLoading}
+                      allowClear
+                      aria-label="Select secondary user"
+                    >
+                      {(users?.length ?? 0) > 0 ? (
+                        users.map((user) => (
+                          <Option key={user.userId} value={user.userId}>
+                            {user.username || user.name || "—"}
+                          </Option>
+                        ))
+                      ) : (
+                        <Option value="" disabled>
+                          No users available
+                        </Option>
+                      )}
+                    </Select>
+                  </FormSection>
                 </>
               )}
-              {assignmentType === "users" && (
-                <>
-                  <Divider />
-                  <Text strong>Primary User</Text>
-                  <Select
-                    style={{ width: "100%", marginTop: 8 }}
-                    value={orderData?.assignedUserId || undefined}
-                    onChange={(value) =>
-                      handleOrderChange("assignedUserId", value)
-                    }
-                    placeholder="Select primary user"
-                    disabled={usersLoading}
-                    aria-label="Select primary user"
-                  >
-                    {(users?.length ?? 0) > 0 ? (
-                      users.map((user) => (
-                        <Option key={user.userId} value={user.userId}>
-                          {user.username || user.name || "—"}
-                        </Option>
-                      ))
-                    ) : (
-                      <Option value="" disabled>
-                        No users available
-                      </Option>
-                    )}
-                  </Select>
-                  <Divider />
-                  <Text strong>Secondary User (Optional)</Text>
-                  <Select
-                    style={{ width: "100%", marginTop: 8 }}
-                    value={orderData?.secondaryUserId || undefined}
-                    onChange={(value) =>
-                      handleOrderChange("secondaryUserId", value)
-                    }
-                    placeholder="Select secondary user"
-                    disabled={usersLoading}
-                    allowClear
-                    aria-label="Select secondary user"
-                  >
-                    {(users?.length ?? 0) > 0 ? (
-                      users.map((user) => (
-                        <Option key={user.userId} value={user.userId}>
-                          {user.username || user.name || "—"}
-                        </Option>
-                      ))
-                    ) : (
-                      <Option value="" disabled>
-                        No users available
-                      </Option>
-                    )}
-                  </Select>
-                </>
-              )}
-              <Divider />
-              {/* Due Date */}
-              <Text strong>
-                Due Date <span style={{ color: "red" }}>*</span>
-              </Text>
-              <DatePicker
-                style={{ width: "100%", marginTop: 8 }}
-                value={orderData?.dueDate ? moment(orderData.dueDate) : null}
-                onChange={(date) =>
-                  handleOrderChange(
-                    "dueDate",
-                    date ? date.format("YYYY-MM-DD") : ""
-                  )
-                }
-                format="YYYY-MM-DD"
-                disabledDate={(current) =>
-                  current && current < moment().startOf("day")
-                }
-                aria-label="Select due date"
-              />
-              <Divider />
-              {/* Follow-up Dates */}
-              <Text strong>Timeline Dates</Text>
-              {(orderData?.followupDates || []).map((date, index) => (
-                <div
-                  key={index}
+
+              <FormSection>
+                <Text strong>
+                  Due Date <span style={{ color: "red" }}>*</span>
+                </Text>
+                <DatePicker
+                  value={orderData?.dueDate ? moment(orderData.dueDate) : null}
+                  onChange={(date) =>
+                    handleOrderChange(
+                      "dueDate",
+                      date ? date.format("YYYY-MM-DD") : ""
+                    )
+                  }
+                  format="YYYY-MM-DD"
+                  disabledDate={(current) =>
+                    current && current < moment().startOf("day")
+                  }
+                  aria-label="Select due date"
+                />
+              </FormSection>
+
+              <FormSection>
+                <Text strong>Timeline Dates</Text>
+                {(orderData?.followupDates || []).map((date, index) => (
+                  <Space key={index} align="center" style={{ width: "100%" }}>
+                    <DatePicker
+                      value={date ? moment(date) : null}
+                      onChange={(date) => handleFollowupDateChange(index, date)}
+                      format="YYYY-MM-DD"
+                      disabledDate={(current) =>
+                        current &&
+                        (current < moment().startOf("day") ||
+                          (orderData?.dueDate &&
+                            current > moment(orderData.dueDate).endOf("day")))
+                      }
+                      aria-label={`Select follow-up date ${index + 1}`}
+                    />
+                    <Button
+                      type="text"
+                      danger
+                      icon={<DeleteOutlined />}
+                      onClick={() => removeFollowupDate(index)}
+                      aria-label="Remove follow-up date"
+                    />
+                  </Space>
+                ))}
+                <Button
+                  type="primary"
+                  onClick={addFollowupDate}
+                  icon={<PlusOutlined />}
+                  aria-label="Add follow-up date"
+                >
+                  Add Follow-up Date
+                </Button>
+              </FormSection>
+
+              <FormSection>
+                <Text strong>Description</Text>
+                <Input.TextArea
+                  value={orderData?.description}
+                  onChange={(e) => {
+                    handleOrderChange("description", e.target.value);
+                    setDescriptionLength(e.target.value?.length || 0);
+                  }}
+                  rows={3}
+                  placeholder="Enter description"
+                  maxLength={60}
+                  aria-label="Enter description"
+                />
+                <Text
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    marginTop: 8,
+                    color: descriptionLength > 60 ? "red" : "inherit",
                   }}
                 >
-                  <DatePicker
-                    style={{ width: "100%" }}
-                    value={date ? moment(date) : null}
-                    onChange={(date) => handleFollowupDateChange(index, date)}
-                    format="YYYY-MM-DD"
-                    disabledDate={(current) =>
-                      current &&
-                      (current < moment().startOf("day") ||
-                        (orderData?.dueDate &&
-                          current > moment(orderData.dueDate).endOf("day")))
-                    }
-                    aria-label={`Select follow-up date ${index + 1}`}
-                  />
-                  <Button
-                    type="text"
-                    danger
-                    icon={<DeleteOutlined />}
-                    onClick={() => removeFollowupDate(index)}
-                    aria-label="Remove follow-up date"
-                    style={{ marginLeft: 8 }}
-                  />
-                </div>
-              ))}
-              <Button
-                type="primary"
-                onClick={addFollowupDate}
-                style={{ marginTop: 8 }}
-                aria-label="Add follow-up date"
-              >
-                <PlusOutlined /> Add Follow-up Date
-              </Button>
-              <Divider />
-              {/* Description */}
-              <Text strong>Description</Text>
-              <Input.TextArea
-                value={orderData?.description}
-                onChange={(e) => {
-                  handleOrderChange("description", e.target.value);
-                  setDescriptionLength(e.target.value?.length || 0);
-                }}
-                rows={4}
-                placeholder="Enter description"
-                style={{ marginTop: 8 }}
-                maxLength={60}
-                aria-label="Enter description"
-              />
-              <Text
-                style={{
-                  color: descriptionLength > 60 ? "red" : "inherit",
-                }}
-              >
-                {descriptionLength}/60 Characters (Recommended)
-              </Text>
-              {error && (
-                <Alert
-                  message={error}
-                  type="error"
-                  showIcon
-                  style={{ marginTop: 8 }}
-                />
-              )}
-            </>
+                  {descriptionLength}/60 Characters (Recommended)
+                </Text>
+              </FormSection>
+
+              {error && <Alert message={error} type="error" showIcon />}
+            </FormContainer>
           )}
         </CartSummaryCard>
       </Col>
@@ -901,6 +908,12 @@ const OrderForm = ({
             onClick={() => {
               if (!selectedCustomer) {
                 toast.error("Please select a Customer.");
+                return;
+              }
+              if (sourceType && !orderData?.source) {
+                toast.error(
+                  "Please select a Source Customer for the selected Source Type."
+                );
                 return;
               }
               if (assignmentType === "team" && !orderData?.assignedTeamId) {
@@ -988,6 +1001,7 @@ const OrderForm = ({
               error ||
               !orderData?.dueDate ||
               !orderData?.orderNo ||
+              (sourceType && !orderData?.source) ||
               (assignmentType === "team" && !orderData?.assignedTeamId) ||
               (assignmentType === "users" && !orderData?.assignedUserId) ||
               !(orderData?.followupDates || []).every(

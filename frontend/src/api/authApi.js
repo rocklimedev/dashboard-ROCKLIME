@@ -1,25 +1,9 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../data/config";
-
-export const authApi = createApi({
-  reducerPath: "authApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}/auth`,
-    credentials: "include",
-    prepareHeaders: (headers) => {
-      const token =
-        localStorage.getItem("token") || sessionStorage.getItem("token");
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
-  tagTypes: ["Auth", "Users"],
+import { baseApi } from "./baseApi";
+export const authApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     register: builder.mutation({
       query: (userData) => ({
-        url: "/register",
+        url: "/auth/register",
         method: "POST",
         body: userData,
       }),
@@ -27,7 +11,7 @@ export const authApi = createApi({
     }),
     login: builder.mutation({
       query: (credentials) => ({
-        url: "/login",
+        url: "/auth/login",
         method: "POST",
         body: credentials,
         headers: {
@@ -39,7 +23,7 @@ export const authApi = createApi({
     }),
     logout: builder.mutation({
       query: () => ({
-        url: "/logout",
+        url: "/auth/logout",
         method: "POST",
         body: {},
       }),
@@ -57,42 +41,42 @@ export const authApi = createApi({
     }),
     forgotPassword: builder.mutation({
       query: (payload) => ({
-        url: "/forgot-password",
+        url: "/auth/forgot-password",
         method: "POST",
         body: payload,
       }),
     }),
     verifyAccount: builder.mutation({
       query: ({ token }) => ({
-        url: "/verify-account",
+        url: "/auth/verify-account",
         method: "POST",
         body: { token },
       }),
     }),
     resetPassword: builder.mutation({
       query: (data) => ({
-        url: "/reset-password",
+        url: "/auth/reset-password",
         method: "POST",
         body: data,
       }),
     }),
     refreshToken: builder.mutation({
       query: (token) => ({
-        url: "/refresh-token",
+        url: "/auth/refresh-token",
         method: "POST",
         body: { token },
       }),
     }),
     verifyEmail: builder.mutation({
       query: (data) => ({
-        url: "/verify-email",
+        url: "/auth/verify-email",
         method: "POST",
         body: data,
       }),
     }),
     changePassword: builder.mutation({
       query: (data) => ({
-        url: "/change-password",
+        url: "/auth/change-password",
         method: "POST",
         body: data,
       }),
@@ -100,13 +84,13 @@ export const authApi = createApi({
     }),
     validateResetToken: builder.query({
       query: (token) => ({
-        url: `/validate-reset-token/${token}`,
+        url: `/auth/validate-reset-token/${token}`,
         method: "GET",
       }),
     }),
     resendVerificationEmail: builder.mutation({
       query: (email) => ({
-        url: "/resend-verification",
+        url: "/auth/resend-verification",
         method: "POST",
         body: email,
       }),

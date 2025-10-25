@@ -1,21 +1,8 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../data/config";
-export const rolesApi = createApi({
-  reducerPath: "rolesApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}/roles`,
-    prepareHeaders: (headers) => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
-  tagTypes: ["Roles"],
+import { baseApi } from "./baseApi";
+export const rolesApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getRoles: builder.query({
-      query: () => "/",
+      query: () => "/roles/",
       providesTags: ["Roles"],
     }),
     getRole: builder.query({
@@ -24,7 +11,7 @@ export const rolesApi = createApi({
     }),
     createRole: builder.mutation({
       query: (newRole) => ({
-        url: "/",
+        url: "/roles/",
         method: "POST",
         body: newRole,
       }),
@@ -32,7 +19,7 @@ export const rolesApi = createApi({
     }),
     updateRolePermissions: builder.mutation({
       query: ({ roleId, permissions }) => ({
-        url: `/${roleId}`,
+        url: `/roles/${roleId}`,
         method: "PUT",
         body: permissions,
       }),
@@ -40,25 +27,25 @@ export const rolesApi = createApi({
     }),
     deleteRole: builder.mutation({
       query: (roleId) => ({
-        url: `/${roleId}`,
+        url: `/roles/${roleId}`,
         method: "DELETE",
       }),
       invalidatesTags: ["Roles"],
     }),
     assignPermissionsToRole: builder.mutation({
       query: ({ roleId, permissions }) => ({
-        url: `/${roleId}/permissions`,
+        url: `/roles/${roleId}/permissions`,
         method: "POST",
         body: permissions,
       }),
       invalidatesTags: ["Roles"],
     }),
     getRolePermissions: builder.query({
-      query: (roleId) => `/${roleId}`,
+      query: (roleId) => `/roles/${roleId}`,
       invalidatesTags: ["Roles"],
     }),
     getRecentRoleToGive: builder.query({
-      query: "/recent",
+      query: "/roles/recent",
       invalidatesTags: ["Roles"],
     }),
   }),

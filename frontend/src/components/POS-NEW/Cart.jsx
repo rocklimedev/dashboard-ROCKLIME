@@ -106,6 +106,14 @@ const DiscountInput = styled(InputNumber)`
   }
 `;
 
+const TaxInput = styled(InputNumber)`
+  width: 80px;
+  margin-left: 8px;
+  @media (min-width: 768px) {
+    width: 100px;
+  }
+`;
+
 const CartTab = ({
   cartItems,
   cartProductsData,
@@ -117,10 +125,12 @@ const CartTab = ({
   subTotal,
   quotationData,
   itemDiscounts,
+  itemTaxes, // New prop for per-item taxes
   updatingItems,
   handleUpdateQuantity,
   handleRemoveItem,
   handleDiscountChange,
+  handleTaxChange, // New handler for tax changes
   setShowClearCartModal,
   setActiveTab,
 }) => {
@@ -184,6 +194,17 @@ const CartTab = ({
                 } catch {
                   imageUrl = null;
                 }
+                const itemTax = itemTaxes[item.productId] || 0;
+                const itemSubtotal = (item.price || 0) * (item.quantity || 1);
+                const itemDiscount =
+                  quotationData.discountType === "percent"
+                    ? (itemSubtotal * (itemDiscounts[item.productId] || 0)) /
+                      100
+                    : (itemDiscounts[item.productId] || 0) *
+                      (item.quantity || 1);
+                const itemTaxAmount = (itemSubtotal * itemTax) / 100;
+                const itemTotal = itemSubtotal + itemTaxAmount - itemDiscount;
+
                 return (
                   <CartItem key={item.productId}>
                     <Row gutter={[12, 12]} align="middle">
@@ -199,15 +220,7 @@ const CartTab = ({
                         <Text strong>{item.name}</Text>
                         <br />
                         <Text type="secondary" block style={{ color: "green" }}>
-                          Price: ₹
-                          {(
-                            item.price +
-                            (quotationData.includeGst
-                              ? (item.price *
-                                  (parseFloat(quotationData.gstValue) || 0)) /
-                                100
-                              : 0)
-                          ).toFixed(2)}
+                          Price: ₹{item.price.toFixed(2)}
                         </Text>
                         <br />
                         <Text>Discount:</Text>
@@ -221,6 +234,17 @@ const CartTab = ({
                             quotationData.discountType === "percent" ? "%" : "₹"
                           }
                           aria-label={`Discount for ${item.name}`}
+                        />
+                        <br />
+                        <Text>Tax:</Text>
+                        <TaxInput
+                          min={0}
+                          value={itemTax}
+                          onChange={(value) =>
+                            handleTaxChange(item.productId, value)
+                          }
+                          addonAfter="%"
+                          aria-label={`Tax for ${item.name}`}
                         />
                       </Col>
                       <Col xs={12} sm={6}>
@@ -261,23 +285,7 @@ const CartTab = ({
                       </Col>
                       <Col xs={12} sm={4} style={{ textAlign: "right" }}>
                         <Text strong style={{ color: "green" }}>
-                          ₹
-                          {(
-                            (item.price +
-                              (quotationData.includeGst
-                                ? (item.price *
-                                    (parseFloat(quotationData.gstValue) || 0)) /
-                                  100
-                                : 0)) *
-                              item.quantity -
-                            (quotationData.discountType === "percent"
-                              ? (item.price *
-                                  item.quantity *
-                                  (itemDiscounts[item.productId] || 0)) /
-                                100
-                              : (itemDiscounts[item.productId] || 0) *
-                                item.quantity)
-                          ).toFixed(2)}
+                          ₹{itemTotal.toFixed(2)}
                         </Text>
                         <RemoveButton
                           type="text"
@@ -315,8 +323,10 @@ const CartTab = ({
               productId: item.productId,
               name: item.name,
               discount: parseFloat(itemDiscounts[item.productId]) || 0,
-              quantity: item.quantity || 1,
+              tax: parseFloat(itemTaxes[item.productId]) || 0, // Pass per-item tax
             }))}
+            gstValue={0} // Set to 0 since per-item taxes are used
+            includeGst={false}
           />
           <Divider />
           <CheckoutButton

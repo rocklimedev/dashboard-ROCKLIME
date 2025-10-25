@@ -1,24 +1,13 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../data/config";
+import { baseApi } from "./baseApi";
 
-export const signatureApi = createApi({
-  reducerPath: "signatureApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}/signature`,
-    prepareHeaders: (headers) => {
-      const token = localStorage.getItem("token");
-      if (token) headers.set("Authorization", `Bearer ${token}`);
-      return headers;
-    },
-  }),
-  tagTypes: ["Signature"],
+export const signatureApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // -------------------------------
     // CREATE / UPDATE / DELETE
     // -------------------------------
     createSignature: builder.mutation({
       query: (formData) => ({
-        url: "/",
+        url: "/signature/",
         method: "POST",
         body: formData,
       }),
@@ -26,7 +15,7 @@ export const signatureApi = createApi({
     }),
     updateSignature: builder.mutation({
       query: ({ id, body }) => ({
-        url: `/${id}`,
+        url: `/signature/${id}`,
         method: "PUT",
         body,
       }),
@@ -34,14 +23,14 @@ export const signatureApi = createApi({
     }),
     deleteSignature: builder.mutation({
       query: (id) => ({
-        url: `/${id}`,
+        url: `/signature/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: ["Signature"],
     }),
     deleteAllSignaturesByEntity: builder.mutation({
       query: ({ userId, customerId, vendorId }) => ({
-        url: "/",
+        url: "/signature/",
         method: "DELETE",
         params: { userId, customerId, vendorId },
       }),
@@ -52,23 +41,23 @@ export const signatureApi = createApi({
     // GET SIGNATURES
     // -------------------------------
     getAllSignatures: builder.query({
-      query: () => "/",
+      query: () => "/signature/",
       providesTags: ["Signature"],
     }),
     getSignatureById: builder.query({
-      query: (id) => `/${id}`,
+      query: (id) => `/signature/${id}`,
       providesTags: ["Signature"],
     }),
     getSignaturesByUser: builder.query({
-      query: (userId) => `/user/${userId}`,
+      query: (userId) => `/signature/user/${userId}`,
       providesTags: ["Signature"],
     }),
     getSignaturesByCustomer: builder.query({
-      query: (customerId) => `/customer/${customerId}`,
+      query: (customerId) => `/signature/customer/${customerId}`,
       providesTags: ["Signature"],
     }),
     getSignaturesByVendor: builder.query({
-      query: (vendorId) => `/vendor/${vendorId}`,
+      query: (vendorId) => `/signature/vendor/${vendorId}`,
       providesTags: ["Signature"],
     }),
 
@@ -77,7 +66,7 @@ export const signatureApi = createApi({
     // -------------------------------
     setDefaultSignature: builder.mutation({
       query: (id) => ({
-        url: `/${id}/default`,
+        url: `/signature/${id}/default`,
         method: "PUT",
       }),
       invalidatesTags: ["Signature"],
@@ -88,7 +77,7 @@ export const signatureApi = createApi({
         if (userId) params.append("userId", userId);
         if (customerId) params.append("customerId", customerId);
         if (vendorId) params.append("vendorId", vendorId);
-        return `/default?${params.toString()}`;
+        return `/signature/default?${params.toString()}`;
       },
       providesTags: ["Signature"],
     }),

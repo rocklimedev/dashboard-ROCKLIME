@@ -1,19 +1,6 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../data/config";
+import { baseApi } from "./baseApi";
 
-export const taskBoardApi = createApi({
-  reducerPath: "taskBoardApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}`,
-    prepareHeaders: (headers) => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
-  tagTypes: ["TaskBoard", "Task"],
+export const taskBoardApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // Get TaskBoards by resource type and ID
     getTaskBoards: builder.query({
