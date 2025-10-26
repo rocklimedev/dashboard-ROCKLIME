@@ -4,8 +4,8 @@ const apiLogSchema = new mongoose.Schema(
   {
     method: {
       type: String,
+      enum: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
       required: true,
-      enum: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     },
     route: {
       type: String,

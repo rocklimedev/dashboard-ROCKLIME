@@ -1,27 +1,42 @@
 const fs = require("fs");
 
-// The brandId you want to filter
-const BRAND_ID = "acbe7061-9b76-47d1-a509-e4b1f982a36f";
-
-// Input and output file paths
-const INPUT_FILE = "seeder/backup/products.json";
-const OUTPUT_FILE = "./new.json";
+// Input and output files
+const INPUT_FILE = "./seeder/backup/products_backup.json";
+const OUTPUT_FILE = "./duplicates.json";
 
 try {
   // Read and parse product.json
   const data = fs.readFileSync(INPUT_FILE, "utf8");
   const products = JSON.parse(data);
 
-  // Filter products by brandId
-  const filteredProducts = products.filter((item) => item.brandId === BRAND_ID);
+  // Map to track unique combinations
+  const seen = new Map();
+  const duplicates = [];
 
-  // Write filtered products to new.json
-  fs.writeFileSync(OUTPUT_FILE, JSON.stringify(filteredProducts, null, 2));
+  for (const product of products) {
+    const name = (product.name || "").trim().toLowerCase();
+    const meta = product.meta || {};
+    const price = meta["9ba862ef-f993-4873-95ef-1fef10036aa5"];
+    const companyCode = meta["d11da9f9-3f2e-4536-8236-9671200cca4a"];
 
-  console.log(
-    `✅ Filtered ${filteredProducts.length} products for brandId: ${BRAND_ID}`
-  );
+    // Unique key = name + price + companyCode
+    const key = `${name}__${price}__${companyCode}`;
+
+    if (seen.has(key)) {
+      // If already seen, push both current and first duplicate if not already added
+      const firstProduct = seen.get(key);
+      if (!duplicates.includes(firstProduct)) duplicates.push(firstProduct);
+      duplicates.push(product);
+    } else {
+      seen.set(key, product);
+    }
+  }
+
+  // Write duplicates to new file
+  fs.writeFileSync(OUTPUT_FILE, JSON.stringify(duplicates, null, 2));
+
+  console.log(`✅ Found ${duplicates.length} duplicate entries.`);
   console.log(`💾 Saved to ${OUTPUT_FILE}`);
-} catch (error) {
-  console.error("❌ Error processing file:", error.message);
+} catch (err) {
+  console.error("❌ Error:", err.message);
 }
