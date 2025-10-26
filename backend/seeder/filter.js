@@ -1,68 +1,27 @@
 const fs = require("fs");
-const path = require("path");
-// Example product data (replace with actual data source)
-const products = require("./backup/products_backup_2025-08-22T06-45-50-132Z.json"); // Assume products.json is in the same directory
 
-// Categories mapping (id → slug)
-const categories = [
-  {
-    id: "158dd2fa-7421-11f0-9e84-52540021303b",
-    name: "Plumbing",
-    slug: "plumbing",
-  },
-  {
-    id: "94b8daf8-d026-4983-a567-85381c8faded",
-    name: "Chemicals & Adhesive",
-    slug: "chemicals_and_adhesive",
-  },
-  {
-    id: "a733afe9-78ee-11f0-9e84-52540021303b",
-    name: "Accessories & Add Ons",
-    slug: "accessories_and_add_ons",
-  },
-  {
-    id: "a73fa5fa-78ee-11f0-9e84-52540021303b",
-    name: "Stone",
-    slug: "stone",
-  },
-  {
-    id: "dfe98ae0-3437-4d6b-933d-e51623b7dc34",
-    name: "Tiles",
-    slug: "tiles",
-  },
-  {
-    id: "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    name: "CP Fittings & Sanitary",
-    slug: "cp_fittings_and_sanitary",
-  },
-];
+// The brandId you want to filter
+const BRAND_ID = "acbe7061-9b76-47d1-a509-e4b1f982a36f";
 
-// Make quick lookup map (id → slug)
-const idToSlug = categories.reduce((acc, c) => {
-  acc[c.id] = c.slug;
-  return acc;
-}, {});
+// Input and output file paths
+const INPUT_FILE = "seeder/backup/products.json";
+const OUTPUT_FILE = "./new.json";
 
-// Group products by parent category
-const grouped = products.reduce((acc, product) => {
-  const key = product.brand_parentcategoriesId || "unknown";
-  if (!acc[key]) {
-    acc[key] = [];
-  }
-  acc[key].push(product);
-  return acc;
-}, {});
+try {
+  // Read and parse product.json
+  const data = fs.readFileSync(INPUT_FILE, "utf8");
+  const products = JSON.parse(data);
 
-// Ensure output directory exists
-const outputDir = path.join(__dirname, "output");
-if (!fs.existsSync(outputDir)) {
-  fs.mkdirSync(outputDir);
+  // Filter products by brandId
+  const filteredProducts = products.filter((item) => item.brandId === BRAND_ID);
+
+  // Write filtered products to new.json
+  fs.writeFileSync(OUTPUT_FILE, JSON.stringify(filteredProducts, null, 2));
+
+  console.log(
+    `✅ Filtered ${filteredProducts.length} products for brandId: ${BRAND_ID}`
+  );
+  console.log(`💾 Saved to ${OUTPUT_FILE}`);
+} catch (error) {
+  console.error("❌ Error processing file:", error.message);
 }
-
-// Write grouped products into files named by slug
-Object.entries(grouped).forEach(([id, productList]) => {
-  const slug = idToSlug[id] || "unknown";
-  const filePath = path.join(outputDir, `${slug}.json`);
-  fs.writeFileSync(filePath, JSON.stringify(productList, null, 2));
-  console.log(`✅ File written: ${filePath}`);
-});
