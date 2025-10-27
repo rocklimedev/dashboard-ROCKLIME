@@ -17,6 +17,7 @@ import { BiTrash } from "react-icons/bi";
 import styled from "styled-components";
 import OrderTotal from "./OrderTotal";
 import { ShoppingCartOutlined, CheckCircleOutlined } from "@ant-design/icons";
+
 const { Title, Text } = Typography;
 
 const CartItemsCard = styled(Card)`
@@ -119,21 +120,28 @@ const CartTab = ({
   cartProductsData,
   totalItems,
   shipping,
-  tax,
   discount,
   roundOff,
   subTotal,
   quotationData,
   itemDiscounts,
-  itemTaxes, // New prop for per-item taxes
+  itemTaxes,
   updatingItems,
   handleUpdateQuantity,
   handleRemoveItem,
   handleDiscountChange,
-  handleTaxChange, // New handler for tax changes
+  handleTaxChange,
   setShowClearCartModal,
   setActiveTab,
 }) => {
+  // Calculate total tax based on per-item taxes
+  const totalTax = cartItems.reduce((acc, item) => {
+    const itemSubtotal = (item.price || 0) * (item.quantity || 1);
+    const itemTax = parseFloat(itemTaxes[item.productId]) || 0;
+    const itemTaxAmount = (itemSubtotal * itemTax) / 100;
+    return acc + itemTaxAmount;
+  }, 0);
+
   return (
     <Row gutter={[16, 16]}>
       <Col xs={24} sm={24} md={16} lg={16}>
@@ -194,7 +202,7 @@ const CartTab = ({
                 } catch {
                   imageUrl = null;
                 }
-                const itemTax = itemTaxes[item.productId] || 0;
+                const itemTax = parseFloat(itemTaxes[item.productId]) || 0;
                 const itemSubtotal = (item.price || 0) * (item.quantity || 1);
                 const itemDiscount =
                   quotationData.discountType === "percent"
@@ -234,17 +242,6 @@ const CartTab = ({
                             quotationData.discountType === "percent" ? "%" : "₹"
                           }
                           aria-label={`Discount for ${item.name}`}
-                        />
-                        <br />
-                        <Text>Tax:</Text>
-                        <TaxInput
-                          min={0}
-                          value={itemTax}
-                          onChange={(value) =>
-                            handleTaxChange(item.productId, value)
-                          }
-                          addonAfter="%"
-                          aria-label={`Tax for ${item.name}`}
                         />
                       </Col>
                       <Col xs={12} sm={6}>
@@ -314,7 +311,7 @@ const CartTab = ({
           <Divider />
           <OrderTotal
             shipping={shipping}
-            tax={tax}
+            tax={totalTax} // Use calculated totalTax
             coupon={0}
             discount={discount}
             roundOff={roundOff}
@@ -323,7 +320,7 @@ const CartTab = ({
               productId: item.productId,
               name: item.name,
               discount: parseFloat(itemDiscounts[item.productId]) || 0,
-              tax: parseFloat(itemTaxes[item.productId]) || 0, // Pass per-item tax
+              tax: parseFloat(itemTaxes[item.productId]) || 0,
             }))}
             gstValue={0} // Set to 0 since per-item taxes are used
             includeGst={false}

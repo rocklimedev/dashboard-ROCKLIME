@@ -385,7 +385,7 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
       render: (text, record) => (
         <button
           className="btn btn-link"
-          onClick={() => handleOpenProductModal(record.products)}
+          onClick={() => handleOpenProductModal(record.products, record)} // Pass record as quotation
           style={{ color: "#e31e24" }}
           aria-label="Quick View"
         >
@@ -634,12 +634,13 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
     }
   };
 
-  const handleOpenProductModal = (products) => {
+  const handleOpenProductModal = (products, quotation) => {
     const parsedProducts =
       typeof products === "string"
         ? JSON.parse(products || "[]")
         : products || [];
     setSelectedProducts(parsedProducts);
+    setSelectedQuotation(quotation); // Set the quotation object
     setShowProductModal(true);
   };
 
@@ -815,6 +816,7 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
           show={showProductModal}
           onHide={handleCloseProductModal}
           products={selectedProducts}
+          selectedQuotation={selectedQuotation} // Pass selectedQuotation
         />
         {showDeleteModal && (
           <DeleteModal

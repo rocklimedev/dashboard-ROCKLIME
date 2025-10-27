@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import {
   useGetProductByIdQuery,
   useGetAllProductsByCategoryQuery,
+  useGetAllProductsQuery, // Added for brand fallback
 } from "../../api/productApi";
 import { useGetCategoryByIdQuery } from "../../api/categoryApi";
 import { useGetParentCategoryByIdQuery } from "../../api/parentCategoryApi";
@@ -49,6 +50,13 @@ const ProductDetails = () => {
   } = useGetAllProductsByCategoryQuery(product?.categoryId, {
     skip: !product?.categoryId,
   });
+  const {
+    data: allProducts,
+    isLoading: isAllProductsLoading,
+    error: allProductsError,
+  } = useGetAllProductsQuery({
+    skip: !!recommendedProducts?.length, // Skip if category products are available
+  });
   const { data: user, isLoading: userLoading } = useGetProfileQuery();
   const userId = user?.user?.userId;
   const [addProductToCart, { isLoading: isCartLoading }] =
@@ -56,7 +64,7 @@ const ProductDetails = () => {
   const [cartLoadingStates, setCartLoadingStates] = useState({});
   const [barcodeData, setBarcodeData] = useState("");
   const [quantity, setQuantity] = useState(1);
-  const [activeImage, setActiveImage] = useState(0); // Replaced activeSlide with activeImage
+  const [activeImage, setActiveImage] = useState(0);
 
   const barcodeRef = useRef(null);
 
@@ -221,23 +229,26 @@ const ProductDetails = () => {
     if (brandError) {
       toast.error("Failed to load brand information.");
     }
-    if (recommendedError) {
+
+    if (allProductsError) {
       toast.error(
-        recommendedError.status === 401 || recommendedError.status === 403
-          ? "Unauthorized to view recommended products."
-          : recommendedError.status === 404
-          ? "No recommended products found."
-          : "Failed to load recommended products."
+        allProductsError.status === 401 || allProductsError.status === 403
+          ? "Unauthorized to view products."
+          : allProductsError.status === 404
+          ? "No products found."
+          : "Failed to load products."
       );
     }
-  }, [product, brandError, recommendedError]);
+  }, [product, brandError, recommendedError, allProductsError]);
 
   if (
     isProductLoading ||
     isCategoryLoading ||
     isParentCategoryLoading ||
     isBrandLoading ||
-    userLoading
+    userLoading ||
+    isRecommendedLoading ||
+    isAllProductsLoading
   ) {
     return (
       <div className="loading-container">
@@ -286,15 +297,18 @@ const ProductDetails = () => {
   const images = getParsedImages(product.images);
   const sellingPrice = getSellingPrice(product.metaDetails);
 
-  // Filter related products by brandId and brand_parentcategoriesId
-  const relatedProducts = recommendedProducts
-    ?.filter(
-      (recProduct) =>
-        recProduct.productId !== product.productId &&
-        recProduct.brandId === product.brandId &&
-        recProduct.brand_parentcategoriesId === product.brand_parentcategoriesId
-    )
-    ?.slice(0, 4);
+  // Filter related products: prioritize category, fallback to brand
+  const relatedProducts = (
+    recommendedProducts?.length
+      ? recommendedProducts.filter(
+          (recProduct) => recProduct.productId !== product.productId
+        )
+      : allProducts?.filter(
+          (recProduct) =>
+            recProduct.productId !== product.productId &&
+            recProduct.brandId === product.brandId
+        ) || []
+  ).slice(0, 6); // Limit to 6 products
 
   return (
     <div className="page-wrapper">
@@ -508,7 +522,7 @@ const ProductDetails = () => {
             <div className="shop-section__top shop-section-top">
               <h3 className="shop-section-top__title">Related Products</h3>
             </div>
-            {isRecommendedLoading ? (
+            {isRecommendedLoading || isAllProductsLoading ? (
               <div className="loading-container">
                 <Spin size="large" />
               </div>

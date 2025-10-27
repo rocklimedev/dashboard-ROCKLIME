@@ -510,12 +510,6 @@ const PageWrapper = () => {
     <div className="page-wrapper">
       <div className="content">
         <div className="dashboard">
-          <div className="dashboard-header">
-            <div>
-              <h1>{username}</h1>
-            </div>
-          </div>
-
           <section className="summary-cards">
             {[
               {
@@ -603,7 +597,7 @@ const PageWrapper = () => {
               </div>
             </div>
             <div className="card">
-              <h4>All Order Trends</h4>
+              <h4>Orders This Month</h4>
               <div className="card-body">
                 {orders.length > 0 ? (
                   <ul className="orders-list">

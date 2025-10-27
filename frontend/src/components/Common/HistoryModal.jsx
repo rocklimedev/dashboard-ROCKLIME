@@ -14,7 +14,7 @@ const HistoryModal = ({ show, onHide, product }) => {
 
   return (
     <Modal show={show} onHide={onHide} size="lg" centered>
-      <Modal.Header closeButton>
+      <Modal.Header>
         <Modal.Title>Stock History - {product?.name}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
@@ -58,11 +58,6 @@ const HistoryModal = ({ show, onHide, product }) => {
             </Table>
           )}
       </Modal.Body>
-      <Modal.Footer>
-        <Button variant="secondary" onClick={onHide}>
-          Close
-        </Button>
-      </Modal.Footer>
     </Modal>
   );
 };

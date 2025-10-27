@@ -1,6 +1,5 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database"); // Sequelize instance
-const { INVOICE_STATUS } = require("../config/constant");
 
 const Customer = sequelize.define(
   "Customer",
@@ -12,9 +11,12 @@ const Customer = sequelize.define(
     },
 
     name: { type: DataTypes.STRING(100), allowNull: false },
-    email: { type: DataTypes.STRING(100), unique: true, allowNull: false },
+
+    // Make email nullable and remove unique constraint if duplicates allowed
+    email: { type: DataTypes.STRING(100), allowNull: true, unique: false },
+
     mobileNumber: { type: DataTypes.STRING(20), allowNull: false },
-    phone2: { type: DataTypes.STRING(20), allowNull: true }, // Second phone
+    phone2: { type: DataTypes.STRING(20), allowNull: true },
 
     companyName: { type: DataTypes.STRING(150), allowNull: true },
 
@@ -34,7 +36,6 @@ const Customer = sequelize.define(
     isVendor: { type: DataTypes.BOOLEAN, defaultValue: false },
     vendorId: { type: DataTypes.UUID, allowNull: true },
 
-    // NEW FIELD: GST Number
     gstNumber: { type: DataTypes.STRING(20), allowNull: true },
   },
   {

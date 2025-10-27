@@ -91,7 +91,7 @@ export const orderApi = baseApi.injectEndpoints({
       providesTags: ["Orders"],
     }),
     orderById: builder.query({
-      query: (orderId) => `/${orderId}`,
+      query: (orderId) => `/order/${orderId}`,
       providesTags: ["Orders"],
     }),
     updateOrderById: builder.mutation({

@@ -2,7 +2,12 @@ import React, { useState } from "react";
 import { Modal, Button, Table } from "react-bootstrap";
 import useProductsData from "../../data/useProductdata";
 
-const QuotationProductModal = ({ show, onHide, products = [] }) => {
+const QuotationProductModal = ({
+  show,
+  onHide,
+  products = [],
+  selectedQuotation,
+}) => {
   const [expandedProductId, setExpandedProductId] = useState(null);
 
   // Normalize products to ensure it's an array
@@ -57,8 +62,12 @@ const QuotationProductModal = ({ show, onHide, products = [] }) => {
 
   return (
     <Modal show={show} onHide={onHide} size="xl" centered>
-      <Modal.Header closeButton>
-        <Modal.Title>Quotation Products</Modal.Title>
+      <Modal.Header>
+        <Modal.Title>
+          {selectedQuotation?.document_title
+            ? `Products for ${selectedQuotation.document_title}`
+            : "Products"}
+        </Modal.Title>
       </Modal.Header>
       <Modal.Body style={{ overflowX: "auto" }}>
         {loading ? (

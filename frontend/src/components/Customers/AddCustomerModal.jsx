@@ -26,6 +26,49 @@ import {
 const { TabPane } = Tabs;
 const { Option } = Select;
 
+// JSON data for Indian states
+const indiaStates = {
+  name: "India",
+  states: [
+    "Andaman and Nicobar Islands",
+    "Andhra Pradesh",
+    "Arunachal Pradesh",
+    "Assam",
+    "Bihar",
+    "Chandigarh",
+    "Chhattisgarh",
+    "Dadra and Nagar Haveli and Daman and Diu",
+    "Delhi",
+    "Goa",
+    "Gujarat",
+    "Haryana",
+    "Himachal Pradesh",
+    "Jammu and Kashmir",
+    "Jharkhand",
+    "Karnataka",
+    "Kerala",
+    "Ladakh",
+    "Lakshadweep",
+    "Madhya Pradesh",
+    "Maharashtra",
+    "Manipur",
+    "Meghalaya",
+    "Mizoram",
+    "Nagaland",
+    "Odisha",
+    "Puducherry",
+    "Punjab",
+    "Rajasthan",
+    "Sikkim",
+    "Tamil Nadu",
+    "Telangana",
+    "Tripura",
+    "Uttar Pradesh",
+    "Uttarakhand",
+    "West Bengal",
+  ],
+};
+
 const AddCustomerModal = ({ visible, onClose, customer }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -266,7 +309,6 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
       }
 
       onClose(); // Close the modal
-      navigate("/customers/list");
     } catch (err) {
       toast.error(err?.data?.message || "Failed to process request.");
     }
@@ -400,7 +442,14 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
                       </Col>
                       <Col lg={12} xs={24}>
                         <Form.Item name={["address", "state"]} noStyle>
-                          <Input placeholder="State" />
+                          <Select placeholder="Select State">
+                            <Option value="">Select State</Option>
+                            {indiaStates.states.map((state) => (
+                              <Option key={state} value={state}>
+                                {state}
+                              </Option>
+                            ))}
+                          </Select>
                         </Form.Item>
                       </Col>
                       <Col lg={12} xs={24}>

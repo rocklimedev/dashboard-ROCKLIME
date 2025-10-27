@@ -204,6 +204,7 @@ const NewCart = ({ onConvertToOrder }) => {
   const [createAddress] = useCreateAddressMutation();
   const [createCustomer, { isLoading: isCreatingCustomer }] =
     useCreateCustomerMutation();
+  const [shipping, setShipping] = useState(40); // New state for shipping
 
   // Memoized data
   const addresses = useMemo(
@@ -311,7 +312,12 @@ const NewCart = ({ onConvertToOrder }) => {
     [cartItems, itemTaxes]
   );
 
-  const shipping = 40;
+  const handleShippingChange = (newShipping) => {
+    setShipping(newShipping);
+  };
+
+  // Update totalAmount calculation to use the state-based shipping
+
   const roundOff = parseFloat(quotationData.roundOff) || 0;
   const totalAmount = subTotal + shipping + tax - totalDiscount + roundOff;
 
