@@ -126,7 +126,7 @@ const NewCart = ({ onConvertToOrder }) => {
     assignedUserId: "",
     secondaryUserId: "",
     pipeline: "",
-    status: "CREATED",
+    status: "PREPARING",
     dueDate: moment().add(1, "days").format("YYYY-MM-DD"),
     followupDates: [],
     source: "",
@@ -772,7 +772,7 @@ const NewCart = ({ onConvertToOrder }) => {
         assignedUserId: orderData.assignedUserId || null,
         secondaryUserId: orderData.secondaryUserId || null,
         pipeline: orderData.pipeline || null,
-        status: orderData.status || "CREATED",
+        status: orderData.status || "PREPARING",
         dueDate: orderData.dueDate,
         followupDates: orderData.followupDates.filter(
           (date) => date && moment(date).isValid()
@@ -809,13 +809,14 @@ const NewCart = ({ onConvertToOrder }) => {
           };
         }),
       };
-
+      console.log("Order Payload:", JSON.stringify(orderPayload, null, 2));
       try {
         await createOrder(orderPayload).unwrap();
         await handleClearCart();
         resetForm();
         navigate("/orders/list");
       } catch (error) {
+        console.error("Order creation error:", error); // Log the full error object
         const errorMessage =
           error?.status === 400
             ? `Bad Request: ${error.data?.message || "Invalid data provided."}`
@@ -852,7 +853,7 @@ const NewCart = ({ onConvertToOrder }) => {
       assignedUserId: "",
       secondaryUserId: "",
       pipeline: "",
-      status: "CREATED",
+      status: "PREPARING",
       dueDate: moment().add(1, "days").format("YYYY-MM-DD"),
       followupDates: [],
       source: "",

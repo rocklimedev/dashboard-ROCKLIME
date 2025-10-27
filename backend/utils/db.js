@@ -73,6 +73,18 @@ const setupDB = async () => {
     // User ↔ Address (1:M)
     Address.belongsTo(User, { foreignKey: "userId", as: "users" });
     User.hasMany(Address, { foreignKey: "userId", as: "addresses" });
+    User.belongsToMany(Team, {
+      through: TeamMember,
+      foreignKey: "userId",
+      otherKey: "teamId",
+      as: "teams",
+    });
+    Team.belongsToMany(User, {
+      through: TeamMember,
+      foreignKey: "teamId",
+      otherKey: "userId",
+      as: "members",
+    });
 
     // ======================================
     // 🔥 ORDER RELATIONSHIPS
