@@ -8,6 +8,7 @@ const Address = require("../models/address");
 const Comment = require("../models/comment");
 const User = require("../models/users");
 const Product = require("../models/product");
+const InventoryHistory = require("../models/history");
 const path = require("path");
 const { v4: uuidv4 } = require("uuid");
 const ftp = require("basic-ftp");
@@ -370,7 +371,6 @@ exports.createOrder = async (req, res) => {
     const {
       createdFor,
       createdBy,
-
       status,
       dueDate,
       assignedTeamId,
@@ -385,7 +385,7 @@ exports.createOrder = async (req, res) => {
       products,
       masterPipelineNo,
       previousOrderNo,
-      shipTo, // Add shipTo
+      shipTo,
     } = req.body;
 
     // Validate required fields
@@ -459,25 +459,32 @@ exports.createOrder = async (req, res) => {
       }
     }
 
-    // Validate products array
+    // Validate products array if provided
+    let productUpdates = [];
     if (products) {
-      if (!Array.isArray(products)) {
-        return sendErrorResponse(res, 400, "Products must be an array");
+      if (!Array.isArray(products) || products.length === 0) {
+        return sendErrorResponse(
+          res,
+          400,
+          "Products must be a non-empty array"
+        );
       }
 
       for (const product of products) {
-        const { id, price, discount, total } = product;
+        const { id, price, discount, total, quantity } = product;
 
         if (
           !id ||
           price === undefined ||
           discount === undefined ||
-          total === undefined
+          total === undefined ||
+          quantity === undefined ||
+          quantity < 1
         ) {
           return sendErrorResponse(
             res,
             400,
-            "Each product must have id, price, discount, and total"
+            "Each product must have id, price, discount, total, and quantity (>= 1)"
           );
         }
 
@@ -503,9 +510,9 @@ exports.createOrder = async (req, res) => {
         const discountType = productRecord.discountType || "fixed";
         let expectedTotal;
         if (discountType === "percent") {
-          expectedTotal = price * (1 - discount / 100);
+          expectedTotal = price * (1 - discount / 100) * quantity;
         } else {
-          expectedTotal = price - discount;
+          expectedTotal = (price - discount) * quantity;
         }
 
         if (Math.abs(total - expectedTotal) > 0.01) {
@@ -514,9 +521,25 @@ exports.createOrder = async (req, res) => {
             400,
             `Invalid total for product ${id}. Expected ${expectedTotal.toFixed(
               2
-            )} based on price and discount`
+            )} based on price, discount, and quantity`
           );
         }
+
+        // Check if sufficient quantity is available
+        if (productRecord.quantity < quantity) {
+          return sendErrorResponse(
+            res,
+            400,
+            `Insufficient stock for product ${id}. Available: ${productRecord.quantity}, Requested: ${quantity}`
+          );
+        }
+
+        // Prepare product quantity update
+        productUpdates.push({
+          productId: id,
+          quantityToReduce: quantity,
+          productRecord,
+        });
       }
     }
 
@@ -578,7 +601,7 @@ exports.createOrder = async (req, res) => {
           `Address with ID ${shipTo} not found`
         );
       }
-      addressDetails = address.toJSON(); // Store for notification
+      addressDetails = address.toJSON();
     }
 
     // Validate priority
@@ -610,7 +633,6 @@ exports.createOrder = async (req, res) => {
     const order = await Order.create({
       createdFor,
       createdBy,
-
       status: normalizedStatus,
       dueDate,
       assignedTeamId,
@@ -625,8 +647,71 @@ exports.createOrder = async (req, res) => {
       products,
       masterPipelineNo,
       previousOrderNo,
-      shipTo, // Include shipTo
+      shipTo,
     });
+
+    // Update product quantities and inventory history if products are provided
+    if (productUpdates.length > 0) {
+      for (const update of productUpdates) {
+        const { productId, quantityToReduce, productRecord } = update;
+
+        // Update product quantity
+        const newQuantity = productRecord.quantity - quantityToReduce;
+        await Product.update(
+          { quantity: newQuantity },
+          { where: { productId } }
+        );
+
+        // Update inventory history
+        await InventoryHistory.findOneAndUpdate(
+          { productId },
+          {
+            $push: {
+              history: {
+                quantity: -quantityToReduce, // Negative to indicate removal
+                action: "remove-stock",
+                timestamp: new Date(),
+                orderNo: order.orderNo, // Add orderNo to track which order caused the change
+                userId: createdBy, // Add userId to track who created the order
+              },
+            },
+          },
+          { upsert: true, new: true }
+        );
+
+        // Update product status based on new quantity
+        let newStatus = productRecord.status;
+        if (newQuantity === 0) {
+          newStatus = "out_of_stock";
+        } else if (
+          productRecord.alert_quantity &&
+          newQuantity <= productRecord.alert_quantity
+        ) {
+          newStatus = "low_stock";
+        } else {
+          newStatus = "active";
+        }
+        if (newStatus !== productRecord.status) {
+          await Product.update({ status: newStatus }, { where: { productId } });
+        }
+
+        // Notify admin if product is out of stock or low stock
+        if (newStatus === "out_of_stock" || newStatus === "low_stock") {
+          await sendNotification({
+            userId: ADMIN_USER_ID,
+            title: `Product ${newStatus.replace("_", " ")}: ${
+              productRecord.name
+            }`,
+            message: `Product ${
+              productRecord.name
+            } (ID: ${productId}) is now ${newStatus.replace(
+              "_",
+              " "
+            )} with quantity ${newQuantity} due to order #${orderNo}.`,
+          });
+        }
+      }
+    }
 
     // Send notification to creator, assignedUserId, and secondaryUserId
     const recipients = new Set(

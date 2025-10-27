@@ -77,7 +77,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
     roleId: "",
     status: "inactive",
     password: "",
-    avatar: null,
+
     about: "",
     street: "",
     country: "",
@@ -121,7 +121,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
           ? userToEdit.status
           : "inactive",
         password: "",
-        avatar: userToEdit.avatar || null,
+
         about: userToEdit.about || "",
         addressId: userToEdit.addressId || null,
       });
@@ -163,13 +163,6 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
     setFormData((prevData) => ({
       ...prevData,
       [name]: value,
-    }));
-  };
-
-  const handleFileChange = (e) => {
-    setFormData((prevData) => ({
-      ...prevData,
-      avatar: e.target.files[0],
     }));
   };
 
@@ -268,34 +261,6 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
         }
       }
 
-      let avatarUrl = formData.avatar;
-      if (formData.avatar instanceof File) {
-        try {
-          const formDataUpload = new FormData();
-          formDataUpload.append("file", formData.avatar);
-          const uploadResponse = await fetch("/api/upload", {
-            method: "POST",
-            body: formDataUpload,
-          });
-          const uploadData = await uploadResponse.json();
-
-          if (!uploadData.success) {
-            toast.error(
-              `Failed to upload avatar: ${
-                uploadData.message || "Unknown error"
-              }`
-            );
-            return;
-          }
-          avatarUrl = uploadData.data.url;
-        } catch (uploadErr) {
-          toast.error(
-            `Avatar upload failed: ${uploadErr.message || "Unknown error"}`
-          );
-          return;
-        }
-      }
-
       const userPayload = {
         username: formData.username,
         name: formData.name,
@@ -310,7 +275,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
         roleId: selectedRoleObj.roleId,
         status: formData.status,
         password: formData.password || undefined,
-        avatar: avatarUrl || null,
+
         about: formData.about || null,
       };
 
@@ -379,7 +344,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
       roleId: "",
       status: "inactive",
       password: "",
-      avatar: null,
+
       about: "",
       street: "",
       country: "",
@@ -708,16 +673,6 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                                 handleChange("password", e.target.value)
                               }
                               required={!isEditMode}
-                            />
-                          </div>
-                        </div>
-                        <div className="col-lg-4 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">Avatar</label>
-                            <Input
-                              type="file"
-                              onChange={handleFileChange}
-                              accept="image/*"
                             />
                           </div>
                         </div>

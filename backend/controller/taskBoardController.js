@@ -6,6 +6,7 @@ const {
   sendErrorResponse,
   sendSuccessResponse,
 } = require("../utils/taskUtils");
+const mongoose = require("mongoose");
 
 // Create TaskBoard
 exports.createTaskBoard = async (req, res) => {

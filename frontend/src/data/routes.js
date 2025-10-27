@@ -123,39 +123,27 @@ const masterRoutes = [
     isSidebarActive: true,
     element: <CustomerList />,
   },
+
   {
-    path: "#",
-    name: "Products",
-    icon: <AiOutlineProduct />,
+    path: "/tasks",
+    name: "Tasks",
+    icon: <BiTask />,
     isSidebarActive: false,
-    submenu: [
-      {
-        path: "/inventory/list",
-        name: "Products",
-        icon: <AiOutlineProduct />,
-        isSidebarActive: false,
-      },
-      {
-        path: "/inventory/all-products/",
-        name: "Products",
-        icon: <AiOutlineProduct />,
-        element: <Product />,
-        isSidebarActive: false,
-      },
-    ],
+    element: <TaskWrapper />,
   },
   {
-    path: "/settings",
-    name: "Settings",
-    icon: <MdOutlineSettings />,
+    path: "/cart",
+    name: "Cart",
+    icon: <BiCart />,
     isSidebarActive: false,
-    element: <GeneralSettings />,
+    element: <NewCart />,
   },
   {
     path: "#",
-    name: "Team",
-    icon: <PiMicrosoftTeamsLogoLight />,
+    name: "Master Table",
+    icon: <BiCoinStack />,
     isSidebarActive: true,
+
     submenu: [
       {
         path: "/users/list",
@@ -199,29 +187,6 @@ const masterRoutes = [
         element: <RolePermission />,
         isSidebarActive: true,
       },
-    ],
-  },
-  {
-    path: "/tasks",
-    name: "Tasks",
-    icon: <BiTask />,
-    isSidebarActive: true,
-    element: <TaskWrapper />,
-  },
-  {
-    path: "/cart",
-    name: "Cart",
-    icon: <BiCart />,
-    isSidebarActive: false,
-    element: <NewCart />,
-  },
-  {
-    path: "#",
-    name: "Product Essentials",
-    icon: <BiCoinStack />,
-    isSidebarActive: true,
-
-    submenu: [
       {
         path: "/inventory/list",
         name: "Inventory",
@@ -251,6 +216,14 @@ const masterRoutes = [
     icon: <FaFileCircleCheck />,
     isSidebarActive: false,
     submenu: [
+      {
+        path: "/settings",
+        name: "Settings",
+        icon: <MdOutlineSettings />,
+        isSidebarActive: false,
+        element: <GeneralSettings />,
+      },
+
       {
         path: "/customer/:id",
         name: "Customer Details",
@@ -478,6 +451,20 @@ const masterRoutes = [
         element: <ComingSoon />,
       },
       {
+        path: "/customers/add",
+        element: <AddCustomer />,
+        name: "Add Customer",
+        icon: <BiCart />,
+        isSidebarActive: false,
+      },
+      {
+        path: "/customers/edit/:customerId",
+        element: <AddCustomer />,
+        name: "Edit Customer",
+        icon: <BiCart />,
+        isSidebarActive: false,
+      },
+      {
         path: "/notifications",
         name: "Notifications",
         icon: <BiNotification />,
@@ -491,21 +478,6 @@ const masterRoutes = [
     name: "Logs",
     icon: <IoDocumentAttach />,
     element: <LogTable />,
-    isSidebarActive: false,
-  },
-
-  {
-    path: "/customers/add",
-    element: <AddCustomer />,
-    name: "Add Customer",
-    icon: <BiCart />,
-    isSidebarActive: false,
-  },
-  {
-    path: "/customers/edit/:customerId",
-    element: <AddCustomer />,
-    name: "Edit Customer",
-    icon: <BiCart />,
     isSidebarActive: false,
   },
 ];
