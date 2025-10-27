@@ -185,15 +185,6 @@ const OrderForm = ({
       return customerType === normalizedSourceType;
     });
   }, [customers, sourceType]);
-  // Debug logging
-  useEffect(() => {
-    console.log("OrderForm Debug:", {
-      sourceType,
-      customers,
-      sourceCustomers,
-      filteredCustomers,
-    });
-  }, [sourceType, customers, sourceCustomers, filteredCustomers]);
 
   // Auto-select previousOrderNo based on masterPipelineNo
   useEffect(() => {

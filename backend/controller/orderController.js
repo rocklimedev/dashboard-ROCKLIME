@@ -742,10 +742,9 @@ exports.getAllOrders = async (req, res) => {
 };
 // Get order details (no notification needed)
 exports.getOrderDetails = async (req, res) => {
-  const { id } = req.params; // Declare id outside the try block
+  const { id } = req.params;
 
   try {
-    // Fetch the order with associated models
     const order = await Order.findByPk(id, {
       include: [
         {
@@ -826,16 +825,11 @@ exports.getOrderDetails = async (req, res) => {
       return sendErrorResponse(res, 404, `Order with ID ${id} not found`);
     }
 
-    // Fetch comments for the order
     const { comments } = await fetchCommentsWithUsers(id, "Order", 1, 10);
-
-    // Prepare the order data
     let orderWithDetails = order.toJSON();
 
-    // Handle products or quotation items
     if (order.quotationId && order.quotation) {
       try {
-        // Parse quotation products
         let quotationProducts = order.quotation.products || [];
         if (typeof quotationProducts === "string") {
           try {
@@ -854,37 +848,45 @@ exports.getOrderDetails = async (req, res) => {
           quotationProducts = [];
         }
 
-        // Fetch product details in bulk
         const productIds = quotationProducts
           .map((item) => item.productId)
           .filter((id) => id);
+
         const products = productIds.length
           ? await Product.findAll({
-              where: { id: productIds },
+              where: { productId: productIds }, // FIXED
               attributes: [
-                "id",
+                "productId",
                 "name",
                 "description",
-                "price",
                 "discountType",
+                "meta",
               ],
             })
           : [];
 
         const productMap = products.reduce((map, product) => {
-          map[product.id] = product.toJSON();
+          map[product.productId] = product.toJSON();
           return map;
         }, {});
 
-        // Enrich quotation products
-        const enrichedProducts = quotationProducts.map((item) => ({
-          productId: item.productId,
-          quantity: item.quantity || 1,
-          discount: item.discount || 0,
-          tax: item.tax || 0,
-          total: item.total || 0,
-          productDetails: productMap[item.productId] || null,
-        }));
+        const enrichedProducts = quotationProducts.map((item) => {
+          const product = productMap[item.productId] || {};
+          const sellingPrice =
+            product.meta && product.meta["9ba862ef-f993-4873-95ef-1fef10036aa5"]
+              ? product.meta["9ba862ef-f993-4873-95ef-1fef10036aa5"]
+              : null;
+
+          return {
+            productId: item.productId,
+            quantity: item.quantity || 1,
+            discount: item.discount || 0,
+            tax: item.tax || 0,
+            total: item.total || 0,
+            sellingPrice,
+            productDetails: product,
+          };
+        });
 
         orderWithDetails.products = enrichedProducts;
         orderWithDetails.quotationDetails = {
@@ -910,38 +912,45 @@ exports.getOrderDetails = async (req, res) => {
         orderWithDetails.quotationDetails = null;
       }
     } else if (order.products && Array.isArray(order.products)) {
-      // Fetch product details in bulk for order products
       const productIds = order.products
         .map((item) => item.id)
         .filter((id) => id);
+
       const products = productIds.length
         ? await Product.findAll({
-            where: { id: productIds },
-            attributes: ["id", "name", "description", "price", "discountType"],
+            where: { productId: productIds }, // FIXED
+            attributes: ["productId", "name", "discountType", "meta"],
           })
         : [];
 
       const productMap = products.reduce((map, product) => {
-        map[product.id] = product.toJSON();
+        map[product.productId] = product.toJSON();
         return map;
       }, {});
 
-      // Enrich order products
-      const enrichedProducts = order.products.map((item) => ({
-        productId: item.id,
-        quantity: item.quantity || 1,
-        price: item.price || 0,
-        discount: item.discount || 0,
-        total: item.total || item.price * (item.quantity || 1),
-        productDetails: productMap[item.id] || null,
-      }));
+      const enrichedProducts = order.products.map((item) => {
+        const product = productMap[item.id] || {};
+        const sellingPrice =
+          product.meta && product.meta["9ba862ef-f993-4873-95ef-1fef10036aa5"]
+            ? product.meta["9ba862ef-f993-4873-95ef-1fef10036aa5"]
+            : null;
+
+        return {
+          productId: item.id,
+          quantity: item.quantity || 1,
+          price: item.price || 0,
+          discount: item.discount || 0,
+          total: item.total || item.price * (item.quantity || 1),
+          sellingPrice,
+          productDetails: product,
+        };
+      });
 
       orderWithDetails.products = enrichedProducts;
     } else {
       orderWithDetails.products = [];
     }
 
-    // Include comments in the response
     orderWithDetails.comments = comments;
 
     return res.status(200).json({ order: orderWithDetails });
@@ -949,7 +958,7 @@ exports.getOrderDetails = async (req, res) => {
     console.error(
       `Error fetching order details for order ${req.params.id}:`,
       err
-    ); // Use req.params.id
+    );
     return sendErrorResponse(
       res,
       500,
@@ -958,6 +967,7 @@ exports.getOrderDetails = async (req, res) => {
     );
   }
 };
+
 // Update order status
 exports.updateOrderStatus = async (req, res) => {
   try {
