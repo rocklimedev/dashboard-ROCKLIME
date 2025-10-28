@@ -5,6 +5,7 @@ import { useGetCartQuery } from "../../api/cartApi";
 import { useGetNotificationsQuery } from "../../api/notificationApi";
 import { Dropdown, Button, Menu } from "antd";
 import { FaUserCircle, FaSearch, FaBell } from "react-icons/fa";
+import { SettingOutlined } from "@ant-design/icons";
 import { BiFullscreen, BiLogOut } from "react-icons/bi";
 import { toast } from "sonner";
 import Avatar from "react-avatar";
@@ -159,20 +160,10 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
       </Menu.Item>
       <Menu.Item key="settings">
         <div onClick={() => navigate("/settings")}>
-          <i className="ti ti-settings-2 me-2" /> Settings
+          <SettingOutlined className="me-2" /> Settings
         </div>
       </Menu.Item>
-      <Menu.Item key="notifications">
-        <div onClick={() => navigate("/notifications")}>
-          <FaBell className="me-2" />
-          Notifications
-          {notificationCount > 0 && (
-            <span className="notification-badge" style={{ marginLeft: "8px" }}>
-              {notificationCount}
-            </span>
-          )}
-        </div>
-      </Menu.Item>
+
       <Menu.Divider />
       <Menu.Item
         key="logout"

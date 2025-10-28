@@ -1,171 +1,100 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
+import { Modal, Form, Input, Select, Button } from "antd";
 import {
   useCreateKeywordMutation,
   useUpdateKeywordMutation,
 } from "../../api/keywordApi";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
-import { toast } from "sonner"; // Changed import
+import { toast } from "sonner";
 
-const AddKeywordModal = ({ onClose, editData }) => {
+const AddKeywordModal = ({ open, onClose, editData, selectedCategoryId }) => {
+  const [form] = Form.useForm();
   const isEditMode = !!editData;
 
-  const [formData, setFormData] = useState({
-    keyword: "",
-    categoryId: "",
-  });
+  const { data: categoryData, isLoading: categoryLoading } =
+    useGetAllCategoriesQuery();
 
-  const {
-    data: categoryData,
-    isLoading: categoryLoading,
-    error: categoryError,
-  } = useGetAllCategoriesQuery();
-
-  const [createKeyword, { isLoading: isCreating, error: createError }] =
-    useCreateKeywordMutation();
-
-  const [updateKeyword, { isLoading: isUpdating, error: updateError }] =
-    useUpdateKeywordMutation();
+  const [createKeyword, { isLoading: isCreating }] = useCreateKeywordMutation();
+  const [updateKeyword, { isLoading: isUpdating }] = useUpdateKeywordMutation();
 
   useEffect(() => {
-    if (isEditMode) {
-      setFormData({
+    if (isEditMode && editData) {
+      form.setFieldsValue({
         keyword: editData.keyword || "",
         categoryId: editData.categoryId || "",
       });
+    } else if (selectedCategoryId) {
+      form.setFieldsValue({ categoryId: selectedCategoryId });
+    } else {
+      form.resetFields();
     }
-  }, [editData]);
+  }, [editData, selectedCategoryId, form, isEditMode]);
 
-  const handleChange = (e) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const onFinish = async (values) => {
     try {
       if (isEditMode) {
-        await updateKeyword({ id: editData.id, ...formData }).unwrap();
+        await updateKeyword({ id: editData.id, ...values }).unwrap();
+        toast.success("Keyword updated");
       } else {
-        await createKeyword(formData).unwrap();
+        await createKeyword(values).unwrap();
+        toast.success("Keyword added");
       }
       onClose();
     } catch (err) {
-      toast.error(err?.data?.message || "Failed to save keyword ❌"); // Sonner toast
+      toast.error(err?.data?.message || "Failed to save keyword");
     }
   };
 
   return (
-    <div className="modal fade show" style={{ display: "block" }}>
-      <div className="modal-dialog modal-dialog-centered modal-md">
-        <div className="modal-content">
-          <div className="modal-header border-0 pb-0">
-            <h4 className="mb-0">
-              {isEditMode ? "Edit Keyword" : "Add Keyword"}
-            </h4>
-            <button type="button" className="close" onClick={onClose}>
-              <span>&times;</span>
-            </button>
+    <Modal
+      title={isEditMode ? "Edit Keyword" : "Add Keyword"}
+      open={open}
+      onCancel={onClose}
+      footer={null}
+      width={500}
+    >
+      <Form form={form} layout="vertical" onFinish={onFinish}>
+        <Form.Item
+          name="keyword"
+          label="Keyword"
+          rules={[{ required: true, message: "Please enter keyword" }]}
+        >
+          <Input placeholder="Enter keyword" />
+        </Form.Item>
+
+        <Form.Item
+          name="categoryId"
+          label="Category"
+          rules={[{ required: true, message: "Please select a category" }]}
+        >
+          <Select
+            placeholder="Select category"
+            loading={categoryLoading}
+            showSearch
+            optionFilterProp="children"
+          >
+            {categoryData?.categories?.map((cat) => (
+              <Select.Option key={cat.categoryId} value={cat.categoryId}>
+                {cat.name}
+              </Select.Option>
+            ))}
+          </Select>
+        </Form.Item>
+
+        <Form.Item style={{ marginBottom: 0 }}>
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+            <Button onClick={onClose}>Cancel</Button>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={isCreating || isUpdating}
+            >
+              {isEditMode ? "Update" : "Add"} Keyword
+            </Button>
           </div>
-          <form onSubmit={handleSubmit}>
-            <div className="modal-body">
-              <div className="row">
-                <div className="col-md-12">
-                  <div className="card-body">
-                    <div className="form-group-item border-0 pb-0 mb-0">
-                      <div className="row">
-                        {/* Keyword Field */}
-                        <div className="col-lg-12 col-sm-12">
-                          <div className="input-block mb-3">
-                            <label>
-                              Keyword <span className="text-danger">*</span>
-                            </label>
-                            <input
-                              type="text"
-                              name="keyword"
-                              className="form-control"
-                              placeholder="Enter Keyword"
-                              value={formData.keyword}
-                              onChange={handleChange}
-                              required
-                            />
-                          </div>
-                        </div>
-
-                        {/* Category Dropdown */}
-                        <div className="col-lg-12 col-sm-12">
-                          <div className="input-block mb-3">
-                            <label>
-                              Category <span className="text-danger">*</span>
-                            </label>
-                            <select
-                              name="categoryId"
-                              className="form-select"
-                              value={formData.categoryId}
-                              onChange={handleChange}
-                              required
-                            >
-                              <option value="">-- Select Category --</option>
-                              {categoryLoading ? (
-                                <option>Loading categories...</option>
-                              ) : categoryError ? (
-                                <option>Error loading categories</option>
-                              ) : (
-                                categoryData?.categories?.map((cat) => (
-                                  <option
-                                    key={cat.categoryId}
-                                    value={cat.categoryId}
-                                  >
-                                    {cat.name}
-                                  </option>
-                                ))
-                              )}
-                            </select>
-                          </div>
-                        </div>
-
-                        {/* Error Message */}
-                        {(createError || updateError) && (
-                          <div className="col-12">
-                            <p className="text-danger">
-                              {createError?.data?.message ||
-                                updateError?.data?.message ||
-                                "Failed to save keyword."}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Footer Buttons */}
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-back cancel-btn me-2"
-                onClick={onClose}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="btn btn-primary paid-continue-btn"
-                disabled={isCreating || isUpdating}
-              >
-                {isCreating || isUpdating
-                  ? isEditMode
-                    ? "Updating..."
-                    : "Adding..."
-                  : isEditMode
-                  ? "Update Keyword"
-                  : "Add Keyword"}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+        </Form.Item>
+      </Form>
+    </Modal>
   );
 };
 

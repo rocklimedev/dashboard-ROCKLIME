@@ -89,6 +89,7 @@ const DiscountContainer = styled.div`
   gap: 8px;
 `;
 
+// Main Component
 const QuotationForm = ({
   quotationData,
   setQuotationData,
@@ -128,43 +129,44 @@ const QuotationForm = ({
   const [isCreatingAddress, setIsCreatingAddress] = useState(false);
   const [createAddress] = useCreateAddressMutation();
 
-  // Find the selected customer's default address (prefer BILLING)
+  // === Auto-calculate Round Off ===
+  useEffect(() => {
+    const calculatedRoundOff = Math.round(totalAmount) - totalAmount;
+    handleQuotationChange(
+      "roundOff",
+      parseFloat(calculatedRoundOff.toFixed(2))
+    );
+  }, [totalAmount, handleQuotationChange]);
+
+  // === Customer & Address Logic ===
   const selectedCustomerData = useMemo(
-    () =>
-      customers.find((customer) => customer.customerId === selectedCustomer),
+    () => customers.find((c) => c.customerId === selectedCustomer),
     [customers, selectedCustomer]
   );
+
   const defaultAddress = useMemo(() => {
-    const billingAddress = addresses.find(
-      (addr) =>
-        addr.customerId === selectedCustomer && addr.status === "BILLING"
+    const billing = addresses.find(
+      (a) => a.customerId === selectedCustomer && a.status === "BILLING"
     );
-    return billingAddress || selectedCustomerData?.address || null;
+    return billing || selectedCustomerData?.address || null;
   }, [selectedCustomerData, addresses, selectedCustomer]);
 
-  // Filter addresses for the selected customer
   const filteredAddresses = useMemo(
-    () =>
-      addresses.filter((address) => address.customerId === selectedCustomer),
+    () => addresses.filter((a) => a.customerId === selectedCustomer),
     [addresses, selectedCustomer]
   );
 
-  // Debounce toast
   const debouncedToast = useMemo(
-    () =>
-      debounce((message) => {
-        toast.warning(message);
-      }, 500),
+    () => debounce((msg) => toast.warning(msg), 500),
     []
   );
 
-  // Normalize address fields for comparison
   const normalizeString = (str) => (str ? str.trim().toLowerCase() : "");
 
-  // Sync shipTo with default address when useBillingAddress is true
+  // Sync shipTo with billing address
   useEffect(() => {
     if (useBillingAddress && defaultAddress && selectedCustomer) {
-      const matchingAddress = filteredAddresses.find((addr) => {
+      const match = filteredAddresses.find((addr) => {
         return (
           normalizeString(addr.street) ===
             normalizeString(defaultAddress.street) &&
@@ -180,13 +182,13 @@ const QuotationForm = ({
         );
       });
 
-      if (matchingAddress) {
-        handleQuotationChange("shipTo", matchingAddress.addressId);
+      if (match) {
+        handleQuotationChange("shipTo", match.addressId);
       } else {
         setIsCreatingAddress(true);
-        const createBillingAddress = async () => {
+        const createBilling = async () => {
           try {
-            const newAddress = {
+            const newAddr = {
               customerId: selectedCustomer,
               street: defaultAddress.street || "",
               city: defaultAddress.city || "",
@@ -195,7 +197,7 @@ const QuotationForm = ({
               country: defaultAddress.country || "India",
               status: "BILLING",
             };
-            const result = await createAddress(newAddress).unwrap();
+            const result = await createAddress(newAddr).unwrap();
             handleQuotationChange("shipTo", result.addressId);
             debouncedToast("Billing address created successfully.");
           } catch (err) {
@@ -208,62 +210,58 @@ const QuotationForm = ({
             setIsCreatingAddress(false);
           }
         };
-        createBillingAddress();
+        createBilling();
       }
     } else if (
       selectedCustomer &&
       filteredAddresses.length === 1 &&
       !quotationData.shipTo
     ) {
-      // Auto-select the only available address
       handleQuotationChange("shipTo", filteredAddresses[0].addressId);
     } else if (
       !useBillingAddress &&
       quotationData.shipTo &&
       filteredAddresses.length === 0
     ) {
-      // Clear shipTo if no addresses are available
       handleQuotationChange("shipTo", null);
     }
   }, [
     useBillingAddress,
     defaultAddress,
     filteredAddresses,
-    handleQuotationChange,
     selectedCustomer,
     createAddress,
     debouncedToast,
+    handleQuotationChange,
   ]);
 
-  // Follow-up dates handlers
+  // === Follow-up Dates ===
   const validateFollowupDates = () => {
     if (!quotationData.dueDate || quotationData.followupDates.length === 0)
       return true;
-
-    const dueDate = moment(quotationData.dueDate);
-    return quotationData.followupDates.every((followupDate) => {
-      if (!followupDate || new Date(followupDate).toString() === "Invalid Date")
-        return true;
-      return moment(followupDate).isSameOrBefore(dueDate, "day");
+    const due = moment(quotationData.dueDate);
+    return quotationData.followupDates.every((d) => {
+      if (!d || new Date(d).toString() === "Invalid Date") return true;
+      return moment(d).isSameOrBefore(due, "day");
     });
   };
 
   const handleFollowupDateChange = (index, date) => {
-    const updatedDates = [...quotationData.followupDates];
-    updatedDates[index] = date ? date.format("YYYY-MM-DD") : "";
+    const updated = [...quotationData.followupDates];
+    updated[index] = date ? date.format("YYYY-MM-DD") : "";
 
     if (
       quotationData.dueDate &&
       date &&
-      moment(date).isAfter(moment(quotationData.dueDate), "day")
+      moment(date).isAfter(quotationData.dueDate, "day")
     ) {
-      toast.warning(`Timeline date ${index + 1} cannot be after the due date.`);
+      toast.warning(`Follow-up date ${index + 1} cannot be after due date.`);
     }
     if (date && moment(date).isBefore(moment().startOf("day"))) {
-      toast.warning(`Timeline date ${index + 1} cannot be before today.`);
+      toast.warning(`Follow-up date ${index + 1} cannot be in the past.`);
     }
 
-    handleQuotationChange("followupDates", updatedDates);
+    handleQuotationChange("followupDates", updated);
   };
 
   const addFollowupDate = () => {
@@ -280,22 +278,26 @@ const QuotationForm = ({
     );
   };
 
-  // Handle address selection
+  // === Address & Discount Handlers ===
   const handleAddressChange = (value) => {
     if (value === "sameAsBilling") {
       setUseBillingAddress(true);
-      // shipTo will be set by useEffect
     } else {
       setUseBillingAddress(false);
       handleQuotationChange("shipTo", value);
     }
   };
-  // Handle discount type change
+
   const handleDiscountTypeChange = (value) => {
     handleQuotationChange("discountType", value);
     handleQuotationChange("discountAmount", "");
   };
 
+  // === Final Rounded Total ===
+  const finalRoundedTotal = useMemo(
+    () => Math.round(totalAmount),
+    [totalAmount]
+  );
   return (
     <Row gutter={[16, 16]} justify="center">
       <Col xs={24} sm={24} md={16} lg={16}>
@@ -321,13 +323,14 @@ const QuotationForm = ({
               <Text strong style={{ fontSize: "18px" }}>
                 Checkout
               </Text>
+
+              {/* Document Type */}
               <FormSection>
                 <Text strong>Document Type</Text>
                 <Select
                   value={documentType}
                   onChange={setDocumentType}
                   placeholder="Select document type"
-                  aria-label="Select document type"
                 >
                   <Option value="Quotation">Quotation</Option>
                   <Option value="Order">Order</Option>
@@ -335,6 +338,7 @@ const QuotationForm = ({
                 </Select>
               </FormSection>
 
+              {/* Customer */}
               <FormSection>
                 <Text strong>
                   Customer <span style={{ color: "red" }}>*</span>
@@ -342,29 +346,25 @@ const QuotationForm = ({
                 <Space direction="vertical" style={{ width: "100%" }}>
                   <CustomerSelect
                     value={selectedCustomer}
-                    onChange={(value) => {
-                      setSelectedCustomer(value);
+                    onChange={(val) => {
+                      setSelectedCustomer(val);
                       setQuotationData((prev) => ({ ...prev, shipTo: null }));
                       setUseBillingAddress(false);
                     }}
                     placeholder="Select a customer"
                     loading={customersLoading}
                     disabled={customersLoading || customersError}
-                    aria-label="Select customer"
                   >
                     {customersLoading ? (
-                      <Option disabled>Loading customers...</Option>
+                      <Option disabled>Loading...</Option>
                     ) : customersError ? (
-                      <Option disabled>Error fetching customers</Option>
+                      <Option disabled>Error loading customers</Option>
                     ) : customers.length === 0 ? (
-                      <Option disabled>No customers available</Option>
+                      <Option disabled>No customers</Option>
                     ) : (
-                      customers.map((customer) => (
-                        <Option
-                          key={customer.customerId}
-                          value={customer.customerId}
-                        >
-                          {customer.name} ({customer.email})
+                      customers.map((c) => (
+                        <Option key={c.customerId} value={c.customerId}>
+                          {c.name} ({c.email})
                         </Option>
                       ))
                     )}
@@ -373,13 +373,13 @@ const QuotationForm = ({
                     type="link"
                     icon={<UserAddOutlined />}
                     onClick={handleAddCustomer}
-                    aria-label="Add new customer"
                   >
                     Add New Customer
                   </ActionButton>
                 </Space>
               </FormSection>
 
+              {/* Shipping Address */}
               <FormSection>
                 <Text strong>
                   Shipping Address <span style={{ color: "red" }}>*</span>
@@ -404,46 +404,6 @@ const QuotationForm = ({
                       isCreatingAddress ||
                       filteredAddresses.length === 0
                     }
-                    aria-label="Select shipping address"
-                    onDropdownVisibleChange={(open) => {
-                      if (
-                        !open &&
-                        useBillingAddress &&
-                        defaultAddress &&
-                        !quotationData.shipTo
-                      ) {
-                        const matchingAddress = filteredAddresses.find(
-                          (addr) => {
-                            return (
-                              normalizeString(addr.street) ===
-                                normalizeString(defaultAddress.street) &&
-                              normalizeString(addr.city) ===
-                                normalizeString(defaultAddress.city) &&
-                              normalizeString(addr.state) ===
-                                normalizeString(defaultAddress.state) &&
-                              normalizeString(
-                                addr.postalCode || addr.zip || ""
-                              ) ===
-                                normalizeString(
-                                  defaultAddress.postalCode ||
-                                    defaultAddress.zip ||
-                                    ""
-                                ) &&
-                              normalizeString(addr.country || "India") ===
-                                normalizeString(
-                                  defaultAddress.country || "India"
-                                )
-                            );
-                          }
-                        );
-                        if (matchingAddress) {
-                          handleQuotationChange(
-                            "shipTo",
-                            matchingAddress.addressId
-                          );
-                        }
-                      }
-                    }}
                   >
                     {selectedCustomer && defaultAddress && (
                       <Option value="sameAsBilling">
@@ -451,42 +411,32 @@ const QuotationForm = ({
                       </Option>
                     )}
                     {!selectedCustomer ? (
-                      <Option disabled>Please select a customer first</Option>
+                      <Option disabled>Select customer first</Option>
                     ) : addressesLoading || isCreatingAddress ? (
-                      <Option disabled>Loading addresses...</Option>
+                      <Option disabled>Loading...</Option>
                     ) : addressesError ? (
-                      <Option disabled>
-                        Error fetching addresses:{" "}
-                        {addressesError?.data?.message || "Unknown error"}
-                      </Option>
+                      <Option disabled>Error loading addresses</Option>
                     ) : filteredAddresses.length === 0 ? (
-                      <Option disabled>
-                        No addresses available for this customer
-                      </Option>
+                      <Option disabled>No addresses available</Option>
                     ) : (
-                      filteredAddresses.map((address) => {
-                        const customerName =
-                          customerMap[address.customerId]?.name ||
-                          "Unknown Customer";
-                        const addressLabel = `${address.street}, ${
-                          address.city
-                        }, ${address.state}, ${
-                          address.postalCode || address.zip
-                        }, ${address.country || "India"} (${address.status})`;
+                      filteredAddresses.map((addr) => {
+                        const label = `${addr.street}, ${addr.city}, ${
+                          addr.state
+                        }, ${addr.postalCode || addr.zip}, ${
+                          addr.country || "India"
+                        } (${addr.status})`;
                         return (
-                          <Option
-                            key={address.addressId}
-                            value={address.addressId}
-                          >
-                            {addressLabel}
+                          <Option key={addr.addressId} value={addr.addressId}>
+                            {label}
                           </Option>
                         );
                       })
                     )}
                   </Select>
+
                   {useBillingAddress && defaultAddress && (
-                    <Text>
-                      <strong>Billing Address:</strong>{" "}
+                    <Text type="secondary">
+                      <strong>Billing:</strong>{" "}
                       {`${defaultAddress.street}, ${defaultAddress.city}, ${
                         defaultAddress.state
                       }, ${
@@ -498,18 +448,19 @@ const QuotationForm = ({
                       }`}
                     </Text>
                   )}
+
                   <ActionButton
                     type="link"
                     icon={<UserAddOutlined />}
                     onClick={handleAddAddress}
                     disabled={!selectedCustomer || isCreatingAddress}
-                    aria-label="Add new address"
                   >
                     Add New Address
                   </ActionButton>
                 </Space>
               </FormSection>
 
+              {/* Dates */}
               <FormSection>
                 <Text strong>Quotation/Order Date</Text>
                 <DatePicker
@@ -518,15 +469,14 @@ const QuotationForm = ({
                       ? moment(quotationData.quotationDate)
                       : null
                   }
-                  onChange={(date) =>
+                  onChange={(d) =>
                     handleQuotationChange(
                       "quotationDate",
-                      date ? date.format("YYYY-MM-DD") : ""
+                      d ? d.format("YYYY-MM-DD") : ""
                     )
                   }
                   format="YYYY-MM-DD"
                   style={{ width: "100%" }}
-                  aria-label="Select quotation date"
                 />
               </FormSection>
 
@@ -538,45 +488,40 @@ const QuotationForm = ({
                   value={
                     quotationData.dueDate ? moment(quotationData.dueDate) : null
                   }
-                  onChange={(date) =>
+                  onChange={(d) =>
                     handleQuotationChange(
                       "dueDate",
-                      date ? date.format("YYYY-MM-DD") : ""
+                      d ? d.format("YYYY-MM-DD") : ""
                     )
                   }
                   format="YYYY-MM-DD"
-                  disabledDate={(current) =>
-                    current && current < moment().startOf("day")
-                  }
+                  disabledDate={(c) => c && c < moment().startOf("day")}
                   style={{ width: "100%" }}
-                  aria-label="Select due date"
                 />
               </FormSection>
 
+              {/* Follow-up Dates */}
               <FormSection>
-                <Text strong>Timeline Dates</Text>
-                {quotationData.followupDates.map((date, index) => (
-                  <Space key={index} align="center" style={{ width: "100%" }}>
+                <Text strong>Follow-up Dates</Text>
+                {quotationData.followupDates.map((date, i) => (
+                  <Space key={i} style={{ width: "100%" }}>
                     <DatePicker
                       value={date ? moment(date) : null}
-                      onChange={(date) => handleFollowupDateChange(index, date)}
+                      onChange={(d) => handleFollowupDateChange(i, d)}
                       format="YYYY-MM-DD"
-                      disabledDate={(current) =>
-                        current &&
-                        (current < moment().startOf("day") ||
+                      disabledDate={(c) =>
+                        c &&
+                        (c < moment().startOf("day") ||
                           (quotationData.dueDate &&
-                            current >
-                              moment(quotationData.dueDate).endOf("day")))
+                            c > moment(quotationData.dueDate).endOf("day")))
                       }
                       style={{ width: "100%" }}
-                      aria-label={`Select timeline date ${index + 1}`}
                     />
                     <Button
                       type="text"
                       danger
                       icon={<DeleteOutlined />}
-                      onClick={() => removeFollowupDate(index)}
-                      aria-label="Remove timeline date"
+                      onClick={() => removeFollowupDate(i)}
                     />
                   </Space>
                 ))}
@@ -584,12 +529,12 @@ const QuotationForm = ({
                   type="primary"
                   onClick={addFollowupDate}
                   icon={<PlusOutlined />}
-                  aria-label="Add timeline date"
                 >
-                  Add Timeline Date
+                  Add Follow-up
                 </Button>
               </FormSection>
 
+              {/* Discount */}
               <FormSection>
                 <Text strong>Discount (if any)</Text>
                 <DiscountContainer>
@@ -597,41 +542,37 @@ const QuotationForm = ({
                     value={quotationData.discountType}
                     onChange={handleDiscountTypeChange}
                     style={{ width: 120 }}
-                    aria-label="Select discount type"
                   >
-                    <Option value="percent">Percentage</Option>
-                    <Option value="fixed">Fixed</Option>
+                    <Option value="percent">%</Option>
+                    <Option value="fixed">₹</Option>
                   </Select>
                   <InputNumber
                     value={quotationData.discountAmount}
-                    onChange={(value) =>
-                      handleQuotationChange("discountAmount", value)
-                    }
+                    onChange={(v) => handleQuotationChange("discountAmount", v)}
                     min={0}
                     placeholder={
                       quotationData.discountType === "percent"
-                        ? "Enter discount percentage"
-                        : "Enter discount amount"
+                        ? "Enter %"
+                        : "Enter amount"
                     }
                     style={{ flex: 1 }}
-                    aria-label={
-                      quotationData.discountType === "percent"
-                        ? "Enter discount percentage"
-                        : "Enter discount amount"
-                    }
                   />
                 </DiscountContainer>
               </FormSection>
 
+              {/* Auto Round Off (Disabled Input) */}
               <FormSection>
-                <Text strong>Round Off</Text>
+                <Text strong>Round Off (Auto)</Text>
                 <InputNumber
-                  value={quotationData.roundOff}
-                  onChange={(value) => handleQuotationChange("roundOff", value)}
-                  placeholder="Enter round off amount"
-                  style={{ width: "100%" }}
-                  aria-label="Enter round off amount"
+                  value={quotationData.roundOff || 0}
+                  disabled
+                  prefix="₹"
+                  style={{ width: "100%", backgroundColor: "#f9f9f9" }}
                 />
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  Auto-rounded to nearest rupee:{" "}
+                  <strong>₹{finalRoundedTotal}</strong>
+                </Text>
               </FormSection>
 
               {error && <Alert message={error} type="error" showIcon />}
@@ -639,17 +580,21 @@ const QuotationForm = ({
           )}
         </CartSummaryCard>
       </Col>
+
+      {/* Summary Sidebar */}
       <Col xs={24} sm={24} md={8} lg={8}>
         <CartSummaryCard>
           <Text strong>Quotation #: {quotationNumber}</Text>
           <Divider />
+
           <OrderTotal
             shipping={shipping}
             tax={tax}
             coupon={0}
             discount={discount}
-            roundOff={roundOff}
+            roundOff={quotationData.roundOff || 0}
             subTotal={subTotal}
+            finalTotal={finalRoundedTotal}
             items={cartItems.map((item) => ({
               productId: item.productId,
               name: item.name,
@@ -659,13 +604,15 @@ const QuotationForm = ({
               quantity: item.quantity || 1,
             }))}
           />
+
           <Divider />
+
           <CheckoutButton
             type="primary"
             icon={<CheckCircleOutlined />}
             onClick={() => {
               if (!validateFollowupDates()) {
-                toast.error("Timeline dates cannot be after the due date.");
+                toast.error("Follow-up dates cannot be after due date.");
                 return;
               }
               handleCreateDocument();
@@ -680,16 +627,15 @@ const QuotationForm = ({
             }
             block
             size="large"
-            aria-label="Create quotation"
           >
-            Create Quotation
+            Create {documentType}
           </CheckoutButton>
+
           <Button
             type="default"
             onClick={() => setActiveTab("cart")}
             block
             style={{ marginTop: 8 }}
-            aria-label="Back to cart"
           >
             Back to Cart
           </Button>
@@ -699,6 +645,7 @@ const QuotationForm = ({
   );
 };
 
+// PropTypes
 QuotationForm.propTypes = {
   quotationData: PropTypes.shape({
     quotationDate: PropTypes.string,
@@ -715,28 +662,10 @@ QuotationForm.propTypes = {
   handleQuotationChange: PropTypes.func.isRequired,
   selectedCustomer: PropTypes.string,
   setSelectedCustomer: PropTypes.func.isRequired,
-  customers: PropTypes.arrayOf(
-    PropTypes.shape({
-      customerId: PropTypes.string,
-      name: PropTypes.string,
-      email: PropTypes.string,
-      address: PropTypes.object,
-    })
-  ).isRequired,
+  customers: PropTypes.array.isRequired,
   customersLoading: PropTypes.bool.isRequired,
   customersError: PropTypes.object,
-  addresses: PropTypes.arrayOf(
-    PropTypes.shape({
-      addressId: PropTypes.string,
-      customerId: PropTypes.string,
-      street: PropTypes.string,
-      city: PropTypes.string,
-      state: PropTypes.string,
-      postalCode: PropTypes.string,
-      country: PropTypes.string,
-      status: PropTypes.string,
-    })
-  ).isRequired,
+  addresses: PropTypes.array.isRequired,
   addressesLoading: PropTypes.bool.isRequired,
   addressesError: PropTypes.object,
   userMap: PropTypes.object.isRequired,
@@ -747,14 +676,7 @@ QuotationForm.propTypes = {
   quotationNumber: PropTypes.string.isRequired,
   documentType: PropTypes.string.isRequired,
   setDocumentType: PropTypes.func.isRequired,
-  cartItems: PropTypes.arrayOf(
-    PropTypes.shape({
-      productId: PropTypes.string,
-      name: PropTypes.string,
-      price: PropTypes.number,
-      quantity: PropTypes.number,
-    })
-  ).isRequired,
+  cartItems: PropTypes.array.isRequired,
   totalAmount: PropTypes.number.isRequired,
   shipping: PropTypes.number.isRequired,
   tax: PropTypes.number.isRequired,

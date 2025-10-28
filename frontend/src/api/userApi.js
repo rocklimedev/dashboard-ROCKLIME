@@ -8,7 +8,7 @@ export const userApi = baseApi.injectEndpoints({
     }),
     updateProfile: builder.mutation({
       query: (data) => ({
-        url: "/user/", // Use /user/ instead of /user/:userId
+        url: "/user/",
         method: "PUT",
         body: data,
       }),
@@ -72,9 +72,20 @@ export const userApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Users"],
     }),
+
+    // NEW: Update User Status (active, inactive, restricted)
+    updateStatus: builder.mutation({
+      query: ({ userId, status }) => ({
+        url: `/user/${userId}/status`,
+        method: "PATCH",
+        body: { status },
+      }),
+      invalidatesTags: ["Users"],
+    }),
   }),
 });
 
+// Export all hooks including the new one
 export const {
   useGetProfileQuery,
   useUpdateProfileMutation,
@@ -87,4 +98,5 @@ export const {
   useAssignRoleMutation,
   useUpdateUserMutation,
   useInactiveUserMutation,
+  useUpdateStatusMutation,
 } = userApi;

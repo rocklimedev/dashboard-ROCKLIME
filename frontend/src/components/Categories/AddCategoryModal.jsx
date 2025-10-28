@@ -1,175 +1,117 @@
 import React, { useState, useEffect } from "react";
+import { Modal, Form, Input, Select, Button, message } from "antd";
 import {
   useCreateCategoryMutation,
   useUpdateCategoryMutation,
 } from "../../api/categoryApi";
-import { toast } from "sonner"; // Changed import
-import { useGetAllParentCategoriesQuery } from "../../api/parentCategoryApi.js";
+import { useGetAllParentCategoriesQuery } from "../../api/parentCategoryApi";
+import { toast } from "sonner";
 
-const AddCategoryModal = ({ onClose, editMode = false, categoryData = {} }) => {
-  const [createCategory, { isLoading: isCreating, error: createError }] =
+const AddCategoryModal = ({
+  open,
+  onClose,
+  editMode = false,
+  categoryData = {},
+}) => {
+  const [form] = Form.useForm();
+  const [createCategory, { isLoading: isCreating }] =
     useCreateCategoryMutation();
-  const [updateCategory, { isLoading: isUpdating, error: updateError }] =
+  const [updateCategory, { isLoading: isUpdating }] =
     useUpdateCategoryMutation();
-  const { data: parentCategoryData } = useGetAllParentCategoriesQuery();
-  const parentCategories = Array.isArray(parentCategoryData?.data)
-    ? parentCategoryData.data
-    : [];
+  const { data: parentCategoryData, isLoading: parentLoading } =
+    useGetAllParentCategoriesQuery();
 
-  const [formData, setFormData] = useState({
-    name: "",
-    parentCategoryId: "",
-    parentCategory: "0",
-  });
+  const parentCategories = parentCategoryData?.data || [];
 
   useEffect(() => {
     if (editMode && categoryData) {
-      setFormData({
+      form.setFieldsValue({
         name: categoryData.name || "",
         parentCategoryId: categoryData.parentCategoryId || "",
         parentCategory: categoryData.parentCategory || "0",
       });
+    } else {
+      form.resetFields();
     }
-  }, [editMode, categoryData]);
+  }, [editMode, categoryData, form]);
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const onFinish = async (values) => {
     try {
       if (editMode) {
         await updateCategory({
           id: categoryData.categoryId,
-          ...formData,
+          ...values,
         }).unwrap();
+        toast.success("Category updated successfully");
       } else {
-        await createCategory(formData).unwrap();
+        await createCategory(values).unwrap();
+        toast.success("Category added successfully");
       }
       onClose();
     } catch (err) {
-      toast.error("Failed to process category."); // Sonner toast
+      toast.error(err?.data?.message || "Failed to save category");
     }
   };
 
   return (
-    <div className="modal fade show" style={{ display: "block" }}>
-      <div className="modal-dialog modal-dialog-centered modal-md">
-        <div className="modal-content">
-          <div className="modal-header border-0 pb-0">
-            <h4 className="mb-0">
-              {editMode ? "Edit Category" : "Add Category"}
-            </h4>
-            <button type="button" className="close" onClick={onClose}>
-              <span>&times;</span>
-            </button>
+    <Modal
+      title={editMode ? "Edit Category" : "Add Category"}
+      open={open}
+      onCancel={onClose}
+      footer={null}
+      width={500}
+    >
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={onFinish}
+        initialValues={{
+          parentCategory: "0",
+        }}
+      >
+        <Form.Item
+          name="name"
+          label="Name"
+          rules={[{ required: true, message: "Please enter category name" }]}
+        >
+          <Input placeholder="Enter category name" />
+        </Form.Item>
+
+        <Form.Item name="parentCategoryId" label="Parent Category">
+          <Select
+            placeholder="Select parent category"
+            loading={parentLoading}
+            allowClear
+          >
+            {parentCategories.map((cat) => (
+              <Select.Option key={cat.id} value={cat.id}>
+                {cat.name}
+              </Select.Option>
+            ))}
+          </Select>
+        </Form.Item>
+
+        <Form.Item name="parentCategory" label="Parent Category (Legacy)">
+          <Select>
+            <Select.Option value="1">1</Select.Option>
+            <Select.Option value="0">0</Select.Option>
+          </Select>
+        </Form.Item>
+
+        <Form.Item style={{ marginBottom: 0 }}>
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+            <Button onClick={onClose}>Cancel</Button>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={isCreating || isUpdating}
+            >
+              {editMode ? "Update" : "Add"} Category
+            </Button>
           </div>
-          <form onSubmit={handleSubmit}>
-            <div className="modal-body">
-              <div className="row">
-                <div className="col-md-12">
-                  <div className="card-body">
-                    <div className="form-group-item border-0 pb-0 mb-0">
-                      <div className="row">
-                        {/* Name Field */}
-                        <div className="col-lg-12 col-sm-12">
-                          <div className="input-block mb-3">
-                            <label>
-                              Name <span className="text-danger">*</span>
-                            </label>
-                            <input
-                              type="text"
-                              name="name"
-                              className="form-control"
-                              placeholder="Enter Title"
-                              value={formData.name}
-                              onChange={handleChange}
-                              required
-                            />
-                          </div>
-                        </div>
-
-                        {/* Parent Category ID Dropdown */}
-                        <div className="col-lg-12 col-sm-12">
-                          <div className="input-block mb-3">
-                            <label>Parent Category</label>
-                            <select
-                              name="parentCategoryId"
-                              className="form-control"
-                              value={formData.parentCategoryId}
-                              onChange={handleChange}
-                            >
-                              <option value="">Select Parent Category</option>
-                              {parentCategories.map((cat) => (
-                                <option key={cat.id} value={cat.id}>
-                                  {cat.name}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-
-                        {/* Parent Category Field (Static or Business Logic Based) */}
-                        <div className="col-lg-12 col-sm-12">
-                          <div className="input-block mb-3">
-                            <label>Parent Category</label>
-                            <select
-                              name="parentCategory"
-                              className="form-control"
-                              value={formData.parentCategory}
-                              onChange={handleChange}
-                            >
-                              <option value="1">1</option>
-                              <option value="0">0</option>
-                            </select>
-                          </div>
-                        </div>
-
-                        {/* Error Message */}
-                        {(createError || updateError) && (
-                          <div className="col-12">
-                            <p className="text-danger">
-                              {createError?.data?.message ||
-                                updateError?.data?.message ||
-                                "Failed to process category"}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Footer Buttons */}
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-back cancel-btn me-2"
-                onClick={onClose}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="btn btn-primary paid-continue-btn"
-                disabled={isCreating || isUpdating}
-              >
-                {isCreating || isUpdating
-                  ? editMode
-                    ? "Updating..."
-                    : "Adding..."
-                  : editMode
-                  ? "Update Category"
-                  : "Add Category"}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+        </Form.Item>
+      </Form>
+    </Modal>
   );
 };
 
