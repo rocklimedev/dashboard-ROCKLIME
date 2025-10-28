@@ -22,6 +22,7 @@ const Login = () => {
       const token = response.accessToken;
       if (!token) throw new Error("No access token received");
 
+      // Store token based on rememberMe
       if (rememberMe) {
         localStorage.setItem("token", token);
         sessionStorage.removeItem("token");
@@ -30,8 +31,11 @@ const Login = () => {
         localStorage.removeItem("token");
       }
 
+      // Update auth context
       await authLogin(token, response.user || null);
-      // Let App.js handle redirects
+
+      // Navigate immediately after login
+      navigate("/", { replace: true });
     } catch (err) {
       toast.error("Login failed! " + (err?.data?.message || err.message));
     }

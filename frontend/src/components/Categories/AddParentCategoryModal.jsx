@@ -1,110 +1,112 @@
-import React, { useState } from "react";
-import { Modal, Button, Form } from "react-bootstrap";
-import { toast } from "sonner";
+import React, { useState, useEffect } from "react";
+import { Modal, Form, Input, Select, Button } from "antd";
 import {
   useCreateParentCategoryMutation,
   useUpdateParentCategoryMutation,
 } from "../../api/parentCategoryApi";
 import { useGetAllBrandsQuery } from "../../api/brandsApi";
+import { toast } from "sonner";
 
-const AddParentCategoryModal = ({ editMode, parentCategoryData, onClose }) => {
-  const [name, setName] = useState(
-    parentCategoryData ? parentCategoryData.name : ""
-  );
-  const [slug, setSlug] = useState(
-    parentCategoryData ? parentCategoryData.slug : ""
-  );
-  const [brandId, setBrandId] = useState(
-    parentCategoryData ? parentCategoryData.brandId : ""
-  );
-  const [addParentCategory] = useCreateParentCategoryMutation();
-  const [updateParentCategory] = useUpdateParentCategoryMutation();
-  const {
-    data: brands,
-    isLoading: isBrandsLoading,
-    error: brandsError,
-  } = useGetAllBrandsQuery();
+const AddParentCategoryModal = ({
+  open,
+  onClose,
+  editMode = false,
+  parentCategoryData = {},
+}) => {
+  const [form] = Form.useForm();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    // Validate brandId
-    if (!brandId) {
-      toast.error("Please select a brand.");
+  const [createParent] = useCreateParentCategoryMutation();
+  const [updateParent] = useUpdateParentCategoryMutation();
+  const { data: brands, isLoading: brandsLoading } = useGetAllBrandsQuery();
+
+  useEffect(() => {
+    if (editMode && parentCategoryData) {
+      form.setFieldsValue({
+        name: parentCategoryData.name || "",
+        slug: parentCategoryData.slug || "",
+        brandId: parentCategoryData.brandId || "",
+      });
+    } else {
+      form.resetFields();
+    }
+  }, [editMode, parentCategoryData, form]);
+
+  const onFinish = async (values) => {
+    if (!values.brandId) {
+      toast.error("Please select a brand");
       return;
     }
+
     try {
       if (editMode) {
-        await updateParentCategory({
+        await updateParent({
           id: parentCategoryData.id,
-          name,
-          slug,
-          brandId,
+          ...values,
         }).unwrap();
+        toast.success("Parent category updated");
       } else {
-        await addParentCategory({ name, slug, brandId }).unwrap();
+        await createParent(values).unwrap();
+        toast.success("Parent category added");
       }
       onClose();
-    } catch (error) {
-      toast.error(error?.data?.message || "Operation failed");
+    } catch (err) {
+      toast.error(err?.data?.message || "Operation failed");
     }
   };
 
   return (
-    <Modal show={true} onHide={onClose}>
-      <Modal.Header closeButton>
-        <Modal.Title>
-          {editMode ? "Edit Parent Category" : "Add Parent Category"}
-        </Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-3">
-            <Form.Label>Name</Form.Label>
-            <Form.Control
-              type="text"
-              placeholder="Enter parent category name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>Slug</Form.Label>
-            <Form.Control
-              type="text"
-              placeholder="Enter slug (e.g., category-name)"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              required
-            />
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>Brand</Form.Label>
-            <Form.Select
-              value={brandId || ""} // Ensure value is controlled
-              onChange={(e) => setBrandId(e.target.value)}
-              required
-              disabled={isBrandsLoading}
-            >
-              <option value="">Select a brand</option>
-              {brands?.map((brand) => (
-                <option key={brand.id} value={brand.id}>
-                  {brand.brandName}
-                </option>
-              ))}
-            </Form.Select>
-            {brandsError && (
-              <p className="text-danger">Failed to load brands</p>
-            )}
-          </Form.Group>
-          <Button variant="primary" type="submit">
-            {editMode ? "Update" : "Add"}
-          </Button>
-          <Button variant="secondary" onClick={onClose} className="ms-2">
-            Cancel
-          </Button>
-        </Form>
-      </Modal.Body>
+    <Modal
+      title={editMode ? "Edit Parent Category" : "Add Parent Category"}
+      open={open}
+      onCancel={onClose}
+      footer={null}
+      width={500}
+    >
+      <Form form={form} layout="vertical" onFinish={onFinish}>
+        <Form.Item
+          name="name"
+          label="Name"
+          rules={[{ required: true, message: "Please enter name" }]}
+        >
+          <Input placeholder="Enter parent category name" />
+        </Form.Item>
+
+        <Form.Item
+          name="slug"
+          label="Slug"
+          rules={[{ required: true, message: "Please enter slug" }]}
+        >
+          <Input placeholder="e.g., electronics" />
+        </Form.Item>
+
+        <Form.Item
+          name="brandId"
+          label="Brand"
+          rules={[{ required: true, message: "Please select a brand" }]}
+        >
+          <Select
+            placeholder="Select brand"
+            loading={brandsLoading}
+            showSearch
+            optionFilterProp="children"
+          >
+            {brands?.map((brand) => (
+              <Select.Option key={brand.id} value={brand.id}>
+                {brand.brandName}
+              </Select.Option>
+            ))}
+          </Select>
+        </Form.Item>
+
+        <Form.Item style={{ marginBottom: 0 }}>
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+            <Button onClick={onClose}>Cancel</Button>
+            <Button type="primary" htmlType="submit">
+              {editMode ? "Update" : "Add"}
+            </Button>
+          </div>
+        </Form.Item>
+      </Form>
     </Modal>
   );
 };

@@ -124,9 +124,9 @@ const CustomerDetails = () => {
 
   // Calculate financial summary from quotations
   const quotations = Array.isArray(quotationsData?.data)
-    ? quotationsData.data
+    ? quotationsData.data.filter((q) => q.customerId === customer.customerId)
     : Array.isArray(quotationsData)
-    ? quotationsData
+    ? quotationsData.filter((q) => q.customerId === customer.customerId)
     : [];
   const totalAmount = (
     Number(

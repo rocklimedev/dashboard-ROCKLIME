@@ -6,7 +6,7 @@ export const rolesApi = baseApi.injectEndpoints({
       providesTags: ["Roles"],
     }),
     getRole: builder.query({
-      query: (roleId) => `/${roleId}`,
+      query: (roleId) => `/roles/${roleId}`,
       providesTags: ["Roles"],
     }),
     createRole: builder.mutation({

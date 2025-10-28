@@ -1,6 +1,31 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { debounce } from "lodash";
-import { Modal, Table } from "react-bootstrap";
+import {
+  Tree,
+  Card,
+  Input,
+  Button,
+  Table,
+  Space,
+  Tag,
+  Tooltip,
+  Empty,
+  Spin,
+  message,
+  Popconfirm,
+} from "antd";
+import {
+  SearchOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  PlusOutlined,
+  FolderOutlined,
+  TagOutlined,
+  CheckCircleOutlined,
+  ExclamationCircleOutlined,
+} from "@ant-design/icons";
+import { Link } from "react-router-dom";
+
 import {
   useGetAllCategoriesQuery,
   useDeleteCategoryMutation,
@@ -14,1016 +39,764 @@ import {
   useDeleteParentCategoryMutation,
 } from "../../api/parentCategoryApi";
 import { useGetAllProductCodesQuery } from "../../api/productApi";
-import { Link } from "react-router-dom";
-import PageHeader from "../Common/PageHeader";
-import AddCategoryModal from "./AddCategoryModal";
+
 import AddParentCategoryModal from "./AddParentCategoryModal";
+import AddCategoryModal from "./AddCategoryModal";
 import AddKeywordModal from "./AddKeywordModal";
-import DeleteModal from "../Common/DeleteModal";
-import DataTablePagination from "../Common/DataTablePagination";
-import { AiOutlineEdit } from "react-icons/ai";
-import { BiTrash } from "react-icons/bi";
-import { toast } from "sonner";
-import "../Product/checkproductcodestatus.css";
-import {
-  SearchOutlined,
-  CheckOutlined,
-  ExclamationCircleFilled,
-  CheckCircleOutlined,
-} from "@ant-design/icons";
-const styles = {
-  searchCard: {
-    borderRadius: "8px",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-    backgroundColor: "#fff",
-    padding: "20px",
-    marginBottom: "20px",
-  },
-  searchInputWrapper: {
-    position: "relative",
-    maxWidth: "400px",
-    margin: "0 auto 15px",
-  },
-  searchInput: {
-    borderRadius: "20px",
-    paddingLeft: "40px",
-    height: "40px",
-    fontSize: "14px",
-    border: "1px solid #ddd",
-    boxShadow: "inset 0 1px 3px rgba(0,0,0,0.05)",
-  },
-  searchIcon: {
-    position: "absolute",
-    left: "12px",
-    top: "50%",
-    transform: "translateY(-50%)",
-    color: "#666",
-  },
-  resultSection: {
-    marginTop: "20px",
-    padding: "15px",
-    borderRadius: "8px",
-    backgroundColor: "#f9f9f9",
-    border: "1px solid #eee",
-  },
-  resultTitle: {
-    fontSize: "18px",
-    fontWeight: "500",
-    marginBottom: "10px",
-    color: "#333",
-  },
-  resultText: {
-    fontSize: "14px",
-    color: "#444",
-    lineHeight: "1.6",
-  },
-  categoryCard: {
-    borderRadius: "8px",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-    backgroundColor: "#fff",
-    padding: "20px",
-    marginBottom: "20px",
-  },
-  categoryTitle: {
-    fontSize: "16px",
-    fontWeight: "500",
-    color: "#333",
-    margin: "0",
-  },
-  categoryBadge: {
-    fontSize: "12px",
-    padding: "4px 8px",
-    borderRadius: "12px",
-    backgroundColor: "#333",
-    color: "#fff",
-  },
-  categoryParent: {
-    fontSize: "12px",
-    color: "#777",
-    marginTop: "5px",
-  },
-  modalHeader: {
-    backgroundColor: "#e31e24",
-    color: "#fff",
-    borderTopLeftRadius: "8px",
-    borderTopRightRadius: "8px",
-  },
-  modalTitle: {
-    fontSize: "18px",
-    fontWeight: "500",
-    color: "#fff",
-  },
-  table: {
-    fontSize: "14px",
-    borderRadius: "8px",
-    overflow: "hidden",
-  },
-  pagination: {
-    marginTop: "20px",
-  },
-  pageTitle: {
-    fontSize: "24px",
-    fontWeight: "600",
-    color: "#333",
-  },
-  pageSubtitle: {
-    fontSize: "14px",
-    color: "#666",
-  },
-};
+
+const { Search } = Input;
 
 const CategoryManagement = () => {
-  // State
-  const [showParentCategoryModal, setShowParentCategoryModal] = useState(false);
+  // === State ===
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedNode, setSelectedNode] = useState(null);
+  const [expandedKeys, setExpandedKeys] = useState([]);
+  const [showParentModal, setShowParentModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showKeywordModal, setShowKeywordModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showProductModal, setShowProductModal] = useState(false);
-  const [editingParentCategory, setEditingParentCategory] = useState(null);
-  const [editingCategory, setEditingCategory] = useState(null);
-  const [editingKeyword, setEditingKeyword] = useState(null);
-  const [itemToDelete, setItemToDelete] = useState(null);
-  const [deleteItemType, setDeleteItemType] = useState(null);
-  const [selectedParentId, setSelectedParentId] = useState(null);
-  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
-  const [parentCategoryPage, setParentCategoryPage] = useState(1);
-  const [categoryPage, setCategoryPage] = useState(1);
-  const [keywordPage, setKeywordPage] = useState(1);
-  const [productPage, setProductPage] = useState(1);
-  const [parentCategorySearchTerm, setParentCategorySearchTerm] = useState("");
-  const [categorySearchTerm, setCategorySearchTerm] = useState("");
-  const [keywordSearchTerm, setKeywordSearchTerm] = useState("");
-  const [productSearchCode, setProductSearchCode] = useState("");
+  const [editingItem, setEditingItem] = useState(null);
+  const [productSearch, setProductSearch] = useState("");
   const [filteredProduct, setFilteredProduct] = useState(null);
   const [productNotFound, setProductNotFound] = useState(false);
-  const [modalProductSearch, setModalProductSearch] = useState("");
 
-  const itemsPerPage = 20;
-  const productPageSize = 25;
-
-  // API hooks
+  // === API ===
   const {
-    data: parentCategoryData,
-    isLoading: parentCategoryLoading,
-    error: parentCategoryError,
+    data: parentData,
+    isLoading: parentLoading,
+    error: parentError,
   } = useGetAllParentCategoriesQuery();
   const {
-    data: categoryData,
-    isLoading: categoryLoading,
-    error: categoryError,
+    data: catData,
+    isLoading: catLoading,
+    error: catError,
   } = useGetAllCategoriesQuery();
   const {
-    data: keywordData,
-    isLoading: keywordLoading,
-    error: keywordError,
+    data: kwData,
+    isLoading: kwLoading,
+    error: kwError,
   } = useGetAllKeywordsQuery();
   const {
-    data: productData,
-    isLoading: productsLoading,
-    error: productsError,
+    data: prodData,
+    isLoading: prodLoading,
+    error: prodError,
   } = useGetAllProductCodesQuery();
-  const [deleteParentCategory] = useDeleteParentCategoryMutation();
+
+  const [deleteParent] = useDeleteParentCategoryMutation();
   const [deleteCategory] = useDeleteCategoryMutation();
   const [deleteKeyword] = useDeleteKeywordMutation();
 
-  // Data normalization
-  const parentCategories = Array.isArray(parentCategoryData?.data)
-    ? parentCategoryData.data
-    : [];
-  const categories = Array.isArray(categoryData?.categories)
-    ? categoryData.categories
-    : [];
-  const keywords = Array.isArray(keywordData?.keywords)
-    ? keywordData.keywords
-    : [];
-  const products = Array.isArray(productData?.data) ? productData.data : [];
+  // === Data ===
+  const parentCategories = parentData?.data || [];
+  const categories = catData?.categories || [];
+  const keywords = kwData?.keywords || [];
+  const products = prodData?.data || [];
 
-  // Category ID to name mapping
+  // === Mappings ===
   const categoryMap = useMemo(() => {
     const map = {};
-    categories.forEach((cat) => {
-      map[cat.categoryId] = cat.name;
-    });
+    categories.forEach((c) => (map[c.categoryId] = c.name));
     return map;
   }, [categories]);
 
-  // Memoized filtering
-  const filteredParentCategories = useMemo(
-    () =>
-      parentCategories.filter((pc) =>
-        pc.name.toLowerCase().includes(parentCategorySearchTerm.toLowerCase())
-      ),
-    [parentCategories, parentCategorySearchTerm]
-  );
+  const parentMap = useMemo(() => {
+    const map = {};
+    parentCategories.forEach((p) => (map[p.id] = p.name));
+    return map;
+  }, [parentCategories]);
 
-  const filteredCategories = useMemo(
-    () =>
-      categories.filter((c) => {
-        const categoryNameMatch = c.name
-          .toLowerCase()
-          .includes(categorySearchTerm.toLowerCase());
-        const parentMatch = selectedParentId
-          ? c.parentCategoryId === selectedParentId
-          : true;
-        return categoryNameMatch && parentMatch;
-      }),
-    [categories, categorySearchTerm, selectedParentId]
-  );
+  // === Tree Title Renderer ===
+  const renderTreeTitle = (item, type) => {
+    const name =
+      type === "parent"
+        ? item.name
+        : type === "category"
+        ? item.name
+        : item.keyword;
 
-  const filteredKeywords = useMemo(
-    () =>
-      keywords.filter((k) => {
-        const keywordMatch = k.keyword
-          .toLowerCase()
-          .includes(keywordSearchTerm.toLowerCase());
-        const categoryMatch = selectedCategoryId
-          ? k.categoryId === selectedCategoryId
-          : true;
-        return keywordMatch && categoryMatch;
-      }),
-    [keywords, keywordSearchTerm, selectedCategoryId]
-  );
+    const count =
+      type === "category"
+        ? products.filter((p) => p.categoryId === item.categoryId).length
+        : 0;
 
-  // Filter products in modal
-  const filteredModalProducts = useMemo(() => {
-    if (!selectedCategoryId) return [];
-    let result = products.filter((p) => p.categoryId === selectedCategoryId);
-    if (modalProductSearch) {
-      result = result.filter((p) =>
-        p.product_code?.toLowerCase().includes(modalProductSearch.toLowerCase())
-      );
+    return (
+      <div className="tree-title">
+        <span className="tree-title-text">
+          {name}
+          {type === "category" && count > 0 && (
+            <Tag color="blue" style={{ marginLeft: 8, fontSize: 11 }}>
+              {count}
+            </Tag>
+          )}
+        </span>
+        <Space size={4} className="tree-actions">
+          <Tooltip title="Edit">
+            <EditOutlined
+              style={{ fontSize: 12, color: "#1890ff", cursor: "pointer" }}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEdit(item, type);
+              }}
+            />
+          </Tooltip>
+          <Popconfirm
+            title={`Delete this ${type}?`}
+            onConfirm={(e) => {
+              e.stopPropagation();
+              handleDelete(item, type);
+            }}
+            onCancel={(e) => e.stopPropagation()}
+            okText="Yes"
+            cancelText="No"
+          >
+            <DeleteOutlined
+              style={{ fontSize: 12, color: "#ff4d4f", cursor: "pointer" }}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </Popconfirm>
+        </Space>
+      </div>
+    );
+  };
+
+  // === Handlers ===
+  const handleEdit = (item, type) => {
+    setEditingItem({ ...item, type });
+    if (type === "parent") setShowParentModal(true);
+    else if (type === "category") setShowCategoryModal(true);
+    else if (type === "keyword") setShowKeywordModal(true);
+  };
+
+  const handleDelete = async (item, type) => {
+    try {
+      if (type === "parent") await deleteParent(item.id).unwrap();
+      else if (type === "category")
+        await deleteCategory(item.categoryId).unwrap();
+      else if (type === "keyword") await deleteKeyword(item.id).unwrap();
+
+      message.success(`${type} deleted`);
+      if (
+        selectedNode?.id === item.id ||
+        selectedNode?.id === item.categoryId ||
+        selectedNode?.id === item.id
+      ) {
+        setSelectedNode(null);
+      }
+    } catch (err) {
+      message.error(err?.data?.message || "Delete failed");
     }
-    return result;
-  }, [products, selectedCategoryId, modalProductSearch]);
+  };
 
-  // Pagination
-  const paginatedParentCategories = useMemo(
-    () =>
-      filteredParentCategories.slice(
-        (parentCategoryPage - 1) * itemsPerPage,
-        parentCategoryPage * itemsPerPage
-      ),
-    [filteredParentCategories, parentCategoryPage]
-  );
-  const paginatedCategories = useMemo(
-    () =>
-      filteredCategories.slice(
-        (categoryPage - 1) * itemsPerPage,
-        categoryPage * itemsPerPage
-      ),
-    [filteredCategories, categoryPage]
-  );
-  const paginatedKeywords = useMemo(
-    () =>
-      filteredKeywords.slice(
-        (keywordPage - 1) * itemsPerPage,
-        keywordPage * itemsPerPage
-      ),
-    [filteredKeywords, keywordPage]
-  );
-  const paginatedProducts = useMemo(
-    () =>
-      filteredModalProducts.slice(
-        (productPage - 1) * productPageSize,
-        productPage * productPageSize
-      ),
-    [filteredModalProducts, productPage]
-  );
+  const handleNodeSelect = (keys, info) => {
+    const { node } = info;
+    if (!node || (node.children && node.children.length > 0)) return;
 
-  // Debounced search handlers
-  const debouncedSetParentCategorySearch = useCallback(
-    debounce((value) => {
-      setParentCategorySearchTerm(value);
-      setParentCategoryPage(1); // Reset page when searching
-    }, 300),
-    []
-  );
-  const debouncedSetCategorySearch = useCallback(
-    debounce((value) => {
-      setCategorySearchTerm(value);
-      setCategoryPage(1); // Reset page when searching
-    }, 300),
-    []
-  );
-  const debouncedSetKeywordSearch = useCallback(
-    debounce((value) => {
-      setKeywordSearchTerm(value);
-      setKeywordPage(1); // Reset page when searching
-    }, 300),
-    []
-  );
-  const debouncedSetModalProductSearch = useCallback(
-    debounce((value) => {
-      setModalProductSearch(value);
-      setProductPage(1); // Reset page when searching
-    }, 300),
+    const id =
+      node.type === "parent"
+        ? node.data.id
+        : node.type === "category"
+        ? node.data.categoryId
+        : node.data.id;
+
+    setSelectedNode({
+      type: node.type,
+      id,
+      data: node.data,
+    });
+  };
+
+  const debouncedSearch = useCallback(
+    debounce((value) => setSearchTerm(value), 300),
     []
   );
 
-  // Handlers
-  const handleAddParentCategory = useCallback(() => {
-    setEditingParentCategory(null);
-    setShowParentCategoryModal(true);
-  }, []);
+  const handleProductSearch = () => {
+    const code = productSearch.trim().toLowerCase();
+    if (!code) return;
 
-  const handleAddCategory = useCallback(() => {
-    setEditingCategory(null);
-    setShowCategoryModal(true);
-  }, []);
+    const found = products.find((p) => p.product_code?.toLowerCase() === code);
+    setFilteredProduct(found || null);
+    setProductNotFound(!found);
+  };
 
-  const handleAddKeyword = useCallback(() => {
-    setEditingKeyword(null);
-    setShowKeywordModal(true);
-  }, []);
-
-  const handleCategoryClick = useCallback((categoryId) => {
-    setSelectedCategoryId(categoryId);
-    setShowProductModal(true);
-    setProductPage(1);
-    setModalProductSearch("");
-  }, []);
-
-  const handleDelete = useCallback(
-    async (item, itemType) => {
-      if (!item || !item.id) {
-        toast.error(`Invalid ${itemType.toLowerCase()} or ID`);
-        return;
-      }
-
-      try {
-        if (itemType === "ParentCategory") {
-          await deleteParentCategory(item.id).unwrap();
-          if (
-            paginatedParentCategories.length === 1 &&
-            parentCategoryPage > 1
-          ) {
-            setParentCategoryPage((prev) => Math.max(1, prev - 1));
-          }
-          if (selectedParentId === item.id) {
-            setSelectedParentId(null);
-            setSelectedCategoryId(null);
-            setShowProductModal(false);
-          }
-        } else if (itemType === "Category") {
-          await deleteCategory(item.categoryId).unwrap();
-          if (paginatedCategories.length === 1 && categoryPage > 1) {
-            setCategoryPage((prev) => Math.max(1, prev - 1));
-          }
-          if (selectedCategoryId === item.categoryId) {
-            setSelectedCategoryId(null);
-            setShowProductModal(false);
-          }
-        } else if (itemType === "Keyword") {
-          await deleteKeyword(item.id).unwrap();
-          if (paginatedKeywords.length === 1 && keywordPage > 1) {
-            setKeywordPage((prev) => Math.max(1, prev - 1));
-          }
-        }
-        setShowDeleteModal(false);
-        setItemToDelete(null);
-        setDeleteItemType(null);
-      } catch (err) {
-        toast.error(
-          err?.data?.message || `Failed to delete ${itemType.toLowerCase()}`
-        );
-      }
+  // === Table Columns ===
+  const productColumns = [
+    {
+      title: "#",
+      key: "index",
+      width: 60,
+      render: (_, __, index) => index + 1,
     },
-    [
-      paginatedParentCategories,
-      parentCategoryPage,
-      selectedParentId,
-      selectedCategoryId,
-      paginatedCategories,
-      categoryPage,
-      paginatedKeywords,
-      keywordPage,
-      deleteParentCategory,
-      deleteCategory,
-      deleteKeyword,
-    ]
-  );
+    {
+      title: "Image",
+      key: "image",
+      width: 70,
+      render: (_, record) => {
+        let imageUrl = null;
+        try {
+          if (record?.images) {
+            const images = JSON.parse(record.images || "[]");
+            imageUrl = Array.isArray(images) ? images[0] : null;
+          }
+        } catch (e) {}
 
-  const handleBack = useCallback(() => {
-    if (selectedCategoryId) {
-      setSelectedCategoryId(null);
-      setKeywordPage(1);
-      setKeywordSearchTerm("");
-      setShowProductModal(false);
-    } else if (selectedParentId) {
-      setSelectedParentId(null);
-      setCategoryPage(1);
-      setCategorySearchTerm("");
-    }
-  }, [selectedCategoryId, selectedParentId]);
+        return imageUrl ? (
+          <img src={imageUrl} alt={record.name} className="product-image" />
+        ) : (
+          <div className="no-image">No img</div>
+        );
+      },
+    },
+    {
+      title: "Name",
+      dataIndex: "name",
+      key: "name",
+      ellipsis: true,
+    },
+    {
+      title: "Code",
+      dataIndex: "product_code",
+      key: "code",
+    },
+    {
+      title: "Action",
+      key: "action",
+      width: 100,
+      render: (_, record) => (
+        <Link to={`/product/${record.productId}/edit`}>
+          <Button size="small" type="link">
+            Edit
+          </Button>
+        </Link>
+      ),
+    },
+  ];
 
-  const handleCloseParentCategoryModal = useCallback(() => {
-    setShowParentCategoryModal(false);
-    setEditingParentCategory(null);
-  }, []);
+  const selectedCategoryProducts =
+    selectedNode?.type === "category"
+      ? products.filter((p) => p.categoryId === selectedNode.id)
+      : [];
 
-  const handleCloseCategoryModal = useCallback(() => {
-    setShowCategoryModal(false);
-    setEditingCategory(null);
-  }, []);
+  // === Tree Data ===
+  const treeData = useMemo(() => {
+    const filteredParents = parentCategories.filter((p) =>
+      p.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
-  const handleCloseKeywordModal = useCallback(() => {
-    setShowKeywordModal(false);
-    setEditingKeyword(null);
-  }, []);
-
-  const handleProductSearch = useCallback(() => {
-    let result = products;
-    if (productSearchCode) {
-      result = result.filter((p) =>
-        p.product_code
-          ?.toLowerCase()
-          .includes(productSearchCode.trim().toLowerCase())
+    return filteredParents.map((parent) => {
+      const childCats = categories.filter(
+        (c) => c.parentCategoryId === parent.id
       );
-    }
-    setFilteredProduct(result.length > 0 ? result[0] : null);
-    setProductNotFound(result.length === 0);
-  }, [products, productSearchCode]);
+      const filteredCats = childCats.filter((c) =>
+        c.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
 
-  // Loading and error states
-  if (
-    parentCategoryLoading ||
-    categoryLoading ||
-    keywordLoading ||
-    productsLoading
-  )
-    return <p>Loading data...</p>;
-  if (parentCategoryError || categoryError || keywordError || productsError)
-    return <p>Error fetching data.</p>;
+      const catNodes = filteredCats.map((cat) => {
+        const catKeywords = keywords
+          .filter((k) => k.categoryId === cat.categoryId)
+          .filter((k) =>
+            k.keyword.toLowerCase().includes(searchTerm.toLowerCase())
+          );
+
+        return {
+          title: (
+            <div className="tree-node">{renderTreeTitle(cat, "category")}</div>
+          ),
+          key: `cat-${cat.categoryId}`,
+          icon: <FolderOutlined />,
+          children: catKeywords.map((kw) => ({
+            title: (
+              <div className="tree-node">{renderTreeTitle(kw, "keyword")}</div>
+            ),
+            key: `kw-${kw.id}`,
+            icon: <TagOutlined />,
+            isLeaf: true,
+          })),
+          data: cat,
+          type: "category",
+        };
+      });
+
+      return {
+        title: (
+          <div className="tree-node">{renderTreeTitle(parent, "parent")}</div>
+        ),
+        key: `parent-${parent.id}`,
+        icon: <FolderOutlined style={{ color: "#1890ff" }} />,
+        children: catNodes,
+        data: parent,
+        type: "parent",
+      };
+    });
+  }, [parentCategories, categories, keywords, searchTerm, products]);
+
+  // === Modal Close ===
+  const handleCloseParentCategoryModal = () => {
+    setShowParentModal(false);
+    setEditingItem(null);
+  };
+
+  const handleCloseCategoryModal = () => {
+    setShowCategoryModal(false);
+    setEditingItem(null);
+  };
+
+  const handleCloseKeywordModal = () => {
+    setShowKeywordModal(false);
+    setEditingItem(null);
+  };
+
+  // === Loading & Error ===
+  if (parentLoading || catLoading || kwLoading || prodLoading)
+    return (
+      <div className="page-wrapper">
+        <div
+          className="content"
+          style={{ padding: "24px", textAlign: "center" }}
+        >
+          <Spin size="large" />
+        </div>
+      </div>
+    );
+
+  if (parentError || catError || kwError || prodError)
+    return (
+      <div className="page-wrapper">
+        <div className="content" style={{ padding: "24px" }}>
+          <Empty description="Failed to load data" />
+        </div>
+      </div>
+    );
 
   return (
-    <div className="page-wrapper">
-      <div className="content">
-        {/* Breadcrumb Navigation */}
-        <nav aria-label="breadcrumb">
-          <ol className="breadcrumb">
-            <li
-              className={`breadcrumb-item ${!selectedParentId ? "active" : ""}`}
-              onClick={handleBack}
-              style={{ cursor: selectedParentId ? "pointer" : "default" }}
-            >
-              Parent Categories /
-            </li>
-            {selectedParentId && (
-              <>
-                <li className="breadcrumb-item">
-                  <span
+    <>
+      {/* Embedded CSS */}
+      <style jsx>{`
+        /* Global Styles */
+
+        .main-layout {
+          flex: 1;
+          display: flex;
+          height: 100%;
+          overflow: hidden;
+        }
+
+        /* Left Panel */
+        .left-panel {
+          width: 360px;
+          min-width: 300px;
+          border-right: 1px solid #f0f0f0;
+          background: #fafafa;
+          display: flex;
+          flex-direction: column;
+          transition: all 0.3s ease;
+        }
+
+        .left-header {
+          padding: 16px;
+          border-bottom: 1px solid #f0f0f0;
+          background: #fff;
+        }
+
+        .action-buttons {
+          margin-top: 8px;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+        }
+
+        .action-buttons button {
+          flex: 1;
+          min-width: 70px;
+          font-size: 13px;
+        }
+
+        .tree-container {
+          flex: 1;
+          overflow-y: auto;
+          padding: 8px 0;
+          background: #fafafa;
+        }
+
+        /* Tree Node */
+        .tree-node {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+        }
+
+        .tree-title {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+          padding: 0 4px;
+        }
+
+        .tree-title-text {
+          flex: 1;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          font-size: 14px;
+        }
+
+        .tree-actions {
+          opacity: 0;
+          transition: opacity 0.2s;
+        }
+
+        .tree-node:hover .tree-actions {
+          opacity: 1;
+        }
+
+        /* Right Panel */
+        .right-panel {
+          flex: 1;
+          overflow-y: auto;
+          padding: 24px;
+          background: #fff;
+        }
+
+        .product-checker-card {
+          margin-bottom: 16px;
+        }
+
+        .result-box {
+          margin-top: 12px;
+          padding: 12px;
+          border-radius: 6px;
+          font-size: 14px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .result-success {
+          background: #f6ffed;
+          border: 1px solid #b7eb8f;
+          color: #52c41a;
+        }
+
+        .result-warning {
+          background: #fffbe6;
+          border: 1px solid #ffe58f;
+          color: #faad14;
+        }
+
+        .details-card {
+          min-height: 300px;
+        }
+
+        .empty-state {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          height: 200px;
+          color: #999;
+        }
+
+        /* Table */
+        .product-table :global(.ant-table) {
+          font-size: 13px;
+        }
+
+        .product-table :global(.ant-table-thead > tr > th) {
+          font-size: 12px;
+          padding: 8px 12px !important;
+        }
+
+        .product-table :global(.ant-table-tbody > tr > td) {
+          padding: 8px 12px !important;
+        }
+
+        .product-image {
+          width: 40px;
+          height: 40px;
+          object-fit: cover;
+          border-radius: 4px;
+          border: 1px solid #f0f0f0;
+        }
+
+        .no-image {
+          width: 40px;
+          height: 40px;
+          background: #f5f5f5;
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 10px;
+          color: #999;
+          border: 1px solid #f0f0f0;
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+          .main-layout {
+            flex-direction: column;
+          }
+
+          .left-panel {
+            width: 100% !important;
+            max-height: 50vh;
+            border-right: none;
+            border-bottom: 1px solid #f0f0f0;
+          }
+
+          .right-panel {
+            padding: 16px;
+          }
+
+          .action-buttons {
+            justify-content: center;
+          }
+
+          .action-buttons button {
+            flex: none;
+            width: auto;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .left-header {
+            padding: 12px;
+          }
+
+          .action-buttons {
+            flex-direction: column;
+          }
+
+          .action-buttons button {
+            width: 100%;
+          }
+
+          .right-panel {
+            padding: 12px;
+          }
+
+          .product-image,
+          .no-image {
+            width: 32px;
+            height: 32px;
+          }
+
+          .tree-title-text {
+            font-size: 13px;
+          }
+        }
+
+        @media (max-width: 576px) {
+          .left-panel {
+            max-height: 45vh;
+          }
+
+          .result-box {
+            font-size: 13px;
+          }
+
+          .details-card :global(.ant-card-head-title) {
+            font-size: 15px;
+          }
+        }
+      `}</style>
+
+      {/* JSX */}
+      <div className="page-wrapper">
+        <div className="content">
+          <div className="main-layout">
+            {/* Left: Tree */}
+            <div className="left-panel">
+              <div className="left-header">
+                <Search
+                  placeholder="Search hierarchy..."
+                  allowClear
+                  onChange={(e) => debouncedSearch(e.target.value)}
+                  style={{ width: "100%" }}
+                />
+                <Space className="action-buttons" wrap>
+                  <Button
+                    type="primary"
+                    size="small"
+                    icon={<PlusOutlined />}
                     onClick={() => {
-                      setSelectedCategoryId(null);
-                      setShowProductModal(false);
+                      setEditingItem(null);
+                      setShowParentModal(true);
                     }}
-                    style={{ cursor: "pointer" }}
                   >
-                    {
-                      parentCategories.find((pc) => pc.id === selectedParentId)
-                        ?.name
-                    }
-                  </span>{" "}
-                  /
-                </li>
-                {selectedCategoryId && (
-                  <li className="breadcrumb-item active">
-                    {
-                      categories.find(
-                        (c) => c.categoryId === selectedCategoryId
-                      )?.name
-                    }
-                  </li>
-                )}
-              </>
-            )}
-          </ol>
-        </nav>
-
-        {/* Product Code Search */}
-        <div className="card" style={styles.searchCard}>
-          <div className="card-body p-4">
-            <div
-              style={{
-                display: "flex",
-                gap: "15px",
-                flexWrap: "wrap",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <div
-                style={{
-                  ...styles.searchInputWrapper,
-                  flex: "1 1 300px",
-                  maxWidth: "400px",
-                }}
-              >
-                <span style={styles.searchIcon}>
-                  <SearchOutlined />
-                </span>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Search Product Code"
-                  value={productSearchCode}
-                  onChange={(e) => setProductSearchCode(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleProductSearch()}
-                  style={styles.searchInput}
-                  aria-label="Search product code"
-                />
-              </div>
-
-              <button
-                className="btn btn-primary"
-                onClick={handleProductSearch}
-                style={{ height: "40px", borderRadius: "20px" }}
-              >
-                Search
-              </button>
-            </div>
-
-            {/* Result display */}
-            {filteredProduct && (
-              <div style={styles.resultSection}>
-                <h5 style={styles.resultTitle}>
-                  <CheckOutlined />
-                  Product Found
-                </h5>
-                <p style={styles.resultText}>
-                  <strong>Name:</strong> {filteredProduct.name}
-                  <br />
-                  <strong>Product Code:</strong> {filteredProduct.product_code}
-                  <br />
-                  <strong>Category:</strong>{" "}
-                  {categoryMap[filteredProduct.categoryId] || "Unknown"}
-                </p>
-                <Link
-                  to={`/product/${filteredProduct.productId}/edit`}
-                  className="btn btn-sm btn-outline-primary mt-2"
-                >
-                  Edit Product
-                </Link>
-              </div>
-            )}
-
-            {!filteredProduct && productSearchCode && productNotFound && (
-              <div style={styles.resultSection}>
-                <h5 style={styles.resultTitle}>
-                  <ExclamationCircleFilled />
-                  No Product Found
-                </h5>
-                <p className="text-success" style={styles.resultText}>
-                  <CheckCircleOutlined />
-                  Product Code is available to use.
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Parent Categories View */}
-        {!selectedParentId && (
-          <>
-            <PageHeader
-              title="Parent Categories"
-              subtitle="Manage your parent categories and check product availability"
-              onAdd={handleAddParentCategory}
-              tableData={filteredParentCategories.map((pc) => ({
-                id: pc.id,
-                name: pc.name,
-                createdAt: new Date(pc.createdAt).toLocaleDateString(),
-              }))}
-            />
-            <div className="row mb-3">
-              <div className="col-md-6">
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Search Parent Category..."
-                  onChange={(e) =>
-                    debouncedSetParentCategorySearch(e.target.value)
-                  }
-                />
-              </div>
-            </div>
-            <div className="row g-3">
-              <div className="col-md-4 col-lg-3">
-                <div
-                  className="card h-100 add-card"
-                  style={{ cursor: "pointer" }}
-                  onClick={handleAddParentCategory}
-                >
-                  <div className="card-body text-center d-flex flex-column justify-content-center">
-                    <h5 className="card-title">Add New Parent Category</h5>
-                    <p className="card-text">
-                      Click here to create a new parent category
-                    </p>
-                    <button className="btn btn-primary mt-2">
-                      Add Parent Category
-                    </button>
-                  </div>
-                </div>
-              </div>
-              {paginatedParentCategories.map((parentCategory) => (
-                <div key={parentCategory.id} className="col-md-4 col-lg-3">
-                  <div
-                    className="card h-100"
-                    style={{ cursor: "pointer" }}
+                    Parent
+                  </Button>
+                  <Button
+                    size="small"
+                    icon={<PlusOutlined />}
                     onClick={() => {
-                      setSelectedParentId(parentCategory.id);
-                      setCategoryPage(1);
-                      setCategorySearchTerm("");
+                      if (!selectedNode || selectedNode.type !== "parent") {
+                        message.warning("Select a parent category first");
+                        return;
+                      }
+                      setEditingItem(null);
+                      setShowCategoryModal(true);
                     }}
+                    disabled={!selectedNode || selectedNode.type !== "parent"}
                   >
-                    <div className="card-body d-flex flex-column">
-                      <h5 className="card-title text-truncate">
-                        {parentCategory.name}
-                      </h5>
-                      <p className="card-text">
-                        Created:{" "}
-                        {new Date(
-                          parentCategory.createdAt
-                        ).toLocaleDateString()}
-                      </p>
-                      <div className="d-flex justify-content-end mt-auto">
-                        <a
-                          className="me-2"
-                          title="Edit"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingParentCategory(parentCategory);
-                            setShowParentCategoryModal(true);
-                          }}
-                          style={{ cursor: "pointer" }}
-                        >
-                          <AiOutlineEdit size={20} />
-                        </a>
-                        <a
-                          title="Delete"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setItemToDelete(parentCategory);
-                            setDeleteItemType("ParentCategory");
-                            setShowDeleteModal(true);
-                          }}
-                          style={{ cursor: "pointer" }}
-                        >
-                          <BiTrash size={20} />
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {paginatedParentCategories.length === 0 && (
-                <div className="col-12">
-                  <p className="text-center">No parent categories found.</p>
-                </div>
-              )}
-            </div>
-            <DataTablePagination
-              totalItems={filteredParentCategories.length}
-              itemNo={itemsPerPage}
-              onPageChange={setParentCategoryPage}
-              currentPage={parentCategoryPage}
-            />
-          </>
-        )}
-
-        {/* Categories View */}
-        {selectedParentId && !selectedCategoryId && (
-          <>
-            <PageHeader
-              title="Categories"
-              subtitle={`Manage categories under ${
-                parentCategories.find((pc) => pc.id === selectedParentId)?.name
-              }`}
-              onAdd={handleAddCategory}
-              tableData={filteredCategories.map((c) => ({
-                categoryId: c.categoryId,
-                name: c.name,
-                createdAt: new Date(c.createdAt).toLocaleDateString(),
-              }))}
-            />
-            <div className="row mb-3">
-              <div className="col-md-6">
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Search Category..."
-                  onChange={(e) => debouncedSetCategorySearch(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="row g-3">
-              <div className="col-md-4 col-lg-3">
-                <div
-                  className="card h-100 add-card"
-                  style={{ cursor: "pointer" }}
-                  onClick={handleAddCategory}
-                >
-                  <div className="card-body text-center d-flex flex-column justify-content-center">
-                    <h5 className="card-title">Add New Category</h5>
-                    <p className="card-text">
-                      Click here to create a new category
-                    </p>
-                    <button className="btn btn-primary mt-2">
-                      Add Category
-                    </button>
-                  </div>
-                </div>
-              </div>
-              {paginatedCategories.map((category) => (
-                <div key={category.categoryId} className="col-md-4 col-lg-3">
-                  <div
-                    className="card h-100"
-                    style={{ cursor: "pointer" }}
-                    onClick={() => handleCategoryClick(category.categoryId)}
+                    Category
+                  </Button>
+                  <Button
+                    size="small"
+                    icon={<PlusOutlined />}
+                    onClick={() => {
+                      if (!selectedNode || selectedNode.type !== "category") {
+                        message.warning("Select a category first");
+                        return;
+                      }
+                      setEditingItem(null);
+                      setShowKeywordModal(true);
+                    }}
+                    disabled={!selectedNode || selectedNode.type !== "category"}
                   >
-                    <div className="card-body d-flex flex-column">
-                      <div className="d-flex justify-content-between align-items-center">
-                        <h5 className="card-title text-truncate">
-                          {category.name}
-                        </h5>
-                        <span style={styles.categoryBadge}>
-                          {
-                            products.filter(
-                              (p) => p.categoryId === category.categoryId
-                            ).length
-                          }
-                        </span>
-                      </div>
-                      <p className="card-text">
-                        Created:{" "}
-                        {new Date(category.createdAt).toLocaleDateString()}
-                      </p>
-                      <div className="d-flex justify-content-end mt-auto">
-                        <a
-                          className="me-2"
-                          title="Edit"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingCategory(category);
-                            setShowCategoryModal(true);
-                          }}
-                          style={{ cursor: "pointer" }}
-                        >
-                          <AiOutlineEdit size={20} />
-                        </a>
-                        <a
-                          title="Delete"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setItemToDelete(category);
-                            setDeleteItemType("Category");
-                            setShowDeleteModal(true);
-                          }}
-                          style={{ cursor: "pointer" }}
-                        >
-                          <BiTrash size={20} />
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {paginatedCategories.length === 0 && (
-                <div className="col-12">
-                  <p className="text-center">No categories found.</p>
-                </div>
-              )}
-            </div>
-            <DataTablePagination
-              totalItems={filteredCategories.length}
-              itemNo={itemsPerPage}
-              onPageChange={setCategoryPage}
-              currentPage={categoryPage}
-            />
-          </>
-        )}
-
-        {/* Keywords View */}
-        {selectedCategoryId && (
-          <>
-            <PageHeader
-              title="Keywords"
-              subtitle={`Manage keywords for ${
-                categories.find((c) => c.categoryId === selectedCategoryId)
-                  ?.name
-              }`}
-              onAdd={handleAddKeyword}
-              tableData={filteredKeywords.map((k) => ({
-                id: k.id,
-                keyword: k.keyword,
-                createdAt: new Date(k.createdAt).toLocaleDateString(),
-              }))}
-            />
-            <div className="row mb-3">
-              <div className="col-md-6">
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Search Keyword..."
-                  onChange={(e) => debouncedSetKeywordSearch(e.target.value)}
-                />
+                    Keyword
+                  </Button>
+                </Space>
               </div>
-            </div>
-            <div className="row g-3">
-              <div className="col-md-4 col-lg-3">
-                <div
-                  className="card h-100 add-card"
-                  style={{ cursor: "pointer" }}
-                  onClick={handleAddKeyword}
-                >
-                  <div className="card-body text-center d-flex flex-column justify-content-center">
-                    <h5 className="card-title">Add New Keyword</h5>
-                    <p className="card-text">
-                      Click here to create a new keyword
-                    </p>
-                    <button className="btn btn-primary mt-2">
-                      Add Keyword
-                    </button>
-                  </div>
-                </div>
-              </div>
-              {paginatedKeywords.map((keyword) => (
-                <div key={keyword.id} className="col-md-4 col-lg-3">
-                  <div className="card h-100">
-                    <div className="card-body d-flex flex-column">
-                      <h5 className="card-title text-truncate">
-                        {keyword.keyword}
-                      </h5>
-                      <p className="card-text">
-                        Created:{" "}
-                        {new Date(keyword.createdAt).toLocaleDateString()}
-                      </p>
-                      <div className="d-flex justify-content-end mt-auto">
-                        <a
-                          className="me-2"
-                          title="Edit"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingKeyword(keyword);
-                            setShowKeywordModal(true);
-                          }}
-                          style={{ cursor: "pointer" }}
-                        >
-                          <AiOutlineEdit size={20} />
-                        </a>
-                        <a
-                          title="Delete"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setItemToDelete(keyword);
-                            setDeleteItemType("Keyword");
-                            setShowDeleteModal(true);
-                          }}
-                          style={{ cursor: "pointer" }}
-                        >
-                          <BiTrash size={20} />
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {paginatedKeywords.length === 0 && (
-                <div className="col-12">
-                  <p className="text-center">No keywords found.</p>
-                </div>
-              )}
-            </div>
-            <DataTablePagination
-              totalItems={filteredKeywords.length}
-              itemNo={itemsPerPage}
-              onPageChange={setKeywordPage}
-              currentPage={keywordPage}
-            />
-          </>
-        )}
 
-        {/* Modals */}
-        {showDeleteModal && (
-          <DeleteModal
-            isVisible={showDeleteModal}
-            item={itemToDelete}
-            itemType={deleteItemType}
-            onConfirm={() => handleDelete(itemToDelete, deleteItemType)}
-            onCancel={() => {
-              setShowDeleteModal(false);
-              setItemToDelete(null);
-              setDeleteItemType(null);
-            }}
-          />
-        )}
-
-        {showParentCategoryModal && (
-          <AddParentCategoryModal
-            editMode={!!editingParentCategory}
-            parentCategoryData={editingParentCategory}
-            onClose={handleCloseParentCategoryModal}
-          />
-        )}
-
-        {showCategoryModal && (
-          <AddCategoryModal
-            editMode={!!editingCategory}
-            categoryData={editingCategory}
-            onClose={handleCloseCategoryModal}
-            selectedParentId={selectedParentId}
-          />
-        )}
-
-        {showKeywordModal && (
-          <AddKeywordModal
-            onClose={handleCloseKeywordModal}
-            editData={editingKeyword}
-            selectedCategoryId={selectedCategoryId}
-          />
-        )}
-
-        {/* Product Modal */}
-        {showProductModal && (
-          <Modal
-            show={showProductModal}
-            onHide={() => {
-              setShowProductModal(false);
-              setModalProductSearch("");
-              setProductPage(1);
-            }}
-            size="lg"
-          >
-            <Modal.Header style={styles.modalHeader}>
-              <Modal.Title style={styles.modalTitle}>
-                Products in{" "}
-                {categoryMap[selectedCategoryId] || "Selected Category"}
-              </Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-              <div style={styles.searchInputWrapper}>
-                <span style={styles.searchIcon}>
-                  <SearchOutlined />
-                </span>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Search Products in Category..."
-                  value={modalProductSearch}
-                  onChange={(e) =>
-                    debouncedSetModalProductSearch(e.target.value)
-                  }
-                  style={styles.searchInput}
-                  aria-label="Search products in category"
-                />
-              </div>
-              {paginatedProducts.length > 0 ? (
-                <>
-                  <Table striped bordered hover style={styles.table}>
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Name</th>
-                        <th>Product Code</th>
-                        <th>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {paginatedProducts.map((product, idx) => (
-                        <tr key={product.productId}>
-                          <td>
-                            {(productPage - 1) * productPageSize + idx + 1}
-                          </td>
-                          <td>{product.name}</td>
-                          <td>{product.product_code}</td>
-                          <td>
-                            <Link
-                              to={`/product/${product.productId}/edit`}
-                              className="btn btn-sm btn-outline-primary"
-                            >
-                              Edit
-                            </Link>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </Table>
-                  <DataTablePagination
-                    totalItems={filteredModalProducts.length}
-                    itemNo={productPageSize}
-                    onPageChange={setProductPage}
-                    currentPage={productPage}
+              <div className="tree-container">
+                {treeData.length > 0 ? (
+                  <Tree
+                    showIcon
+                    defaultExpandAll
+                    expandedKeys={expandedKeys}
+                    onExpand={setExpandedKeys}
+                    onSelect={handleNodeSelect}
+                    selectedKeys={
+                      selectedNode
+                        ? [`${selectedNode.type}-${selectedNode.id}`]
+                        : []
+                    }
+                    treeData={treeData}
+                    height={window.innerHeight - 200}
                   />
-                </>
+                ) : (
+                  <Empty
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                    style={{ margin: 32 }}
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* Right: Details */}
+            <div className="right-panel">
+              <Card className="product-checker-card">
+                <Space direction="vertical" style={{ width: "100%" }}>
+                  <Search
+                    placeholder="Check Product Code"
+                    enterButton="Check"
+                    value={productSearch}
+                    onChange={(e) => setProductSearch(e.target.value)}
+                    onSearch={handleProductSearch}
+                    style={{ width: 300, maxWidth: "100%" }}
+                  />
+
+                  {filteredProduct && (
+                    <div className="result-box result-success">
+                      <CheckCircleOutlined />
+                      <strong>{filteredProduct.name}</strong> |{" "}
+                      {filteredProduct.product_code}
+                      <Link to={`/product/${filteredProduct.productId}/edit`}>
+                        <Button size="small" type="link">
+                          Edit
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
+
+                  {productNotFound && (
+                    <div className="result-box result-warning">
+                      <ExclamationCircleOutlined />
+                      <span>Code available</span>
+                    </div>
+                  )}
+                </Space>
+              </Card>
+
+              {selectedNode ? (
+                <Card
+                  className="details-card"
+                  title={
+                    <Space>
+                      {selectedNode.type === "parent" && <FolderOutlined />}
+                      {selectedNode.type === "category" && <FolderOutlined />}
+                      {selectedNode.type === "keyword" && <TagOutlined />}
+                      <span>
+                        {selectedNode.type === "parent"
+                          ? parentMap[selectedNode.id]
+                          : selectedNode.type === "category"
+                          ? categoryMap[selectedNode.id]
+                          : selectedNode.data.keyword}
+                      </span>
+                    </Space>
+                  }
+                >
+                  {selectedNode.type === "category" && (
+                    <Table
+                      className="product-table"
+                      columns={productColumns}
+                      dataSource={selectedCategoryProducts}
+                      pagination={{ pageSize: 10 }}
+                      rowKey="productId"
+                      locale={{ emptyText: "No products" }}
+                    />
+                  )}
+                  {selectedNode.type === "parent" && (
+                    <p>Select a category to view products.</p>
+                  )}
+                  {selectedNode.type === "keyword" && (
+                    <p>
+                      Keyword: <Tag>{selectedNode.data.keyword}</Tag>
+                    </p>
+                  )}
+                </Card>
               ) : (
-                <p className="text-center">
-                  No products found for this category.
-                </p>
+                <Card className="details-card">
+                  <div className="empty-state">
+                    <Empty description="Select a parent, category, or keyword to view details" />
+                  </div>
+                </Card>
               )}
-            </Modal.Body>
-          </Modal>
-        )}
+            </div>
+          </div>
+
+          {/* Modals */}
+          <AddParentCategoryModal
+            open={showParentModal}
+            onClose={handleCloseParentCategoryModal}
+            editMode={!!editingItem && editingItem.type === "parent"}
+            parentCategoryData={
+              editingItem?.type === "parent" ? editingItem : null
+            }
+          />
+
+          <AddCategoryModal
+            open={showCategoryModal}
+            onClose={handleCloseCategoryModal}
+            editMode={!!editingItem && editingItem.type === "category"}
+            categoryData={editingItem?.type === "category" ? editingItem : null}
+            selectedParentId={
+              selectedNode?.type === "parent" ? selectedNode.id : null
+            }
+          />
+
+          <AddKeywordModal
+            open={showKeywordModal}
+            onClose={handleCloseKeywordModal}
+            editData={editingItem?.type === "keyword" ? editingItem : null}
+            selectedCategoryId={
+              selectedNode?.type === "category" ? selectedNode.id : null
+            }
+          />
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

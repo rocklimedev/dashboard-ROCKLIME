@@ -86,6 +86,25 @@ const PurchaseOrderForm = ({
   handleCreateDocument,
   setShowAddVendorModal,
 }) => {
+  /* ------------------------------------------------------------------ */
+  /* Helper: recompute total for a row (quantity × mrp)                */
+  /* ------------------------------------------------------------------ */
+  const recomputeRowTotal = (index) => {
+    const items = [...purchaseOrderData.items];
+    const item = items[index];
+    if (item) {
+      item.total = (item.quantity ?? 1) * (item.mrp ?? 0);
+      setPurchaseOrderData((prev) => ({
+        ...prev,
+        items,
+        totalAmount: items.reduce((sum, i) => sum + i.total, 0).toFixed(2),
+      }));
+    }
+  };
+
+  /* ------------------------------------------------------------------ */
+  /* Table columns – MRP & Total are now disabled / read-only          */
+  /* ------------------------------------------------------------------ */
   const purchaseOrderColumns = [
     {
       title: "Product",
@@ -99,9 +118,10 @@ const PurchaseOrderForm = ({
         <InputNumber
           min={1}
           value={record.quantity}
-          onChange={(value) =>
-            updatePurchaseOrderProductField(index, "quantity", value || 1)
-          }
+          onChange={(value) => {
+            updatePurchaseOrderProductField(index, "quantity", value || 1);
+            recomputeRowTotal(index);
+          }}
           aria-label={`Quantity for ${record.name}`}
         />
       ),
@@ -109,23 +129,19 @@ const PurchaseOrderForm = ({
     {
       title: "MRP (₹)",
       key: "mrp",
-      render: (_, record, index) => (
+      render: (_, record) => (
         <InputNumber
-          min={0.01}
-          step={0.01}
-          value={record.mrp}
-          onChange={(value) =>
-            updatePurchaseOrderProductField(index, "mrp", value || 0.01)
-          }
-          aria-label={`MRP for ${record.name}`}
+          disabled
+          value={Number(record.mrp ?? 0).toFixed(2)}
+          style={{ backgroundColor: "#f5f5f5" }}
+          aria-label={`MRP for ${record.name} (auto-filled)`}
         />
       ),
     },
     {
       title: "Total (₹)",
-      dataIndex: "total",
       key: "total",
-      render: (total) => Number(total || 0).toFixed(2),
+      render: (_, record) => Number(record.total ?? 0).toFixed(2),
     },
     {
       title: "Action",
@@ -135,7 +151,20 @@ const PurchaseOrderForm = ({
           type="text"
           danger
           icon={<DeleteOutlined />}
-          onClick={() => removePurchaseOrderProduct(index)}
+          onClick={() => {
+            removePurchaseOrderProduct(index);
+            // recompute grand total after removal
+            const newItems = purchaseOrderData.items.filter(
+              (_, i) => i !== index
+            );
+            setPurchaseOrderData((prev) => ({
+              ...prev,
+              items: newItems,
+              totalAmount: newItems
+                .reduce((sum, i) => sum + i.total, 0)
+                .toFixed(2),
+            }));
+          }}
           aria-label={`Remove ${purchaseOrderData.items[index].name}`}
         />
       ),
@@ -174,22 +203,19 @@ const PurchaseOrderForm = ({
                 onChange={(value) => {
                   setDocumentType(value);
                   if (value === "Purchase Order") {
+                    const poItems = cartItems.map((item) => ({
+                      id: item.productId,
+                      productId: item.productId,
+                      name: item.name || "Unknown",
+                      quantity: item.quantity || 1,
+                      mrp: item.price || 0.01,
+                      total: (item.quantity || 1) * (item.price || 0.01),
+                    }));
                     setPurchaseOrderData((prev) => ({
                       ...prev,
-                      items: cartItems.map((item) => ({
-                        id: item.productId,
-                        productId: item.productId,
-                        name: item.name || "Unknown",
-                        quantity: item.quantity || 1,
-                        mrp: item.price || 0.01,
-                        total: (item.quantity || 1) * (item.price || 0.01),
-                      })),
-                      totalAmount: cartItems
-                        .reduce(
-                          (sum, item) =>
-                            sum + (item.quantity || 1) * (item.price || 0),
-                          0
-                        )
+                      items: poItems,
+                      totalAmount: poItems
+                        .reduce((sum, i) => sum + i.total, 0)
                         .toFixed(2),
                     }));
                   }
@@ -244,7 +270,32 @@ const PurchaseOrderForm = ({
                 style={{ width: "100%", marginTop: 8 }}
                 placeholder="Search by product name or code"
                 onSearch={debouncedSearch}
-                onChange={addPurchaseOrderProduct}
+                onChange={(productId) => {
+                  // Find the product that was just selected
+                  const product = filteredProducts.find(
+                    (p) => p.productId === productId
+                  );
+                  if (product) {
+                    addPurchaseOrderProduct(productId);
+                    // Auto-fill MRP & compute total
+                    const newItem = {
+                      id: product.productId,
+                      productId: product.productId,
+                      name: product.name,
+                      quantity: 1,
+                      mrp: product.price ?? 0.01,
+                      total: 1 * (product.price ?? 0.01),
+                    };
+                    setPurchaseOrderData((prev) => ({
+                      ...prev,
+                      items: [...prev.items, newItem],
+                      totalAmount: (
+                        prev.items.reduce((s, i) => s + i.total, 0) +
+                        newItem.total
+                      ).toFixed(2),
+                    }));
+                  }
+                }}
                 filterOption={false}
                 loading={isProductsLoading}
                 aria-label="Search products"
@@ -325,6 +376,7 @@ const PurchaseOrderForm = ({
           )}
         </CartSummaryCard>
       </Col>
+
       <Col xs={24} sm={24} md={8} lg={8}>
         <CartSummaryCard>
           <Text strong>Purchase Order #: {purchaseOrderNumber}</Text>

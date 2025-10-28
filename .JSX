@@ -12,7 +12,6 @@ import {
   useUpdateCartMutation,
   useClearCartMutation,
   useRemoveFromCartMutation,
-  cartApi,
 } from "../../api/cartApi";
 import { useGetProfileQuery } from "../../api/userApi";
 import { useCreateQuotationMutation } from "../../api/quotationApi";
@@ -446,50 +445,25 @@ const NewCart = ({ onConvertToOrder }) => {
       toast.error(`Error: ${error.data?.message || "Failed to clear cart"}`);
     }
   };
-  // ────────────────────────────────────────────────────────────────────────
-  //  Optimistic quantity update ( + / – )  –  NO PAGE REFRESH
-  // ────────────────────────────────────────────────────────────────────────
+
   const handleUpdateQuantity = async (productId, newQuantity) => {
     if (!userId) return toast.error("User not logged in!");
-
-    // 1. Optimistic UI update
-    const oldItem = cartItems.find((i) => i.productId === productId);
-    if (!oldItem) return;
-
-    const optimisticItems =
-      newQuantity <= 0
-        ? cartItems.filter((i) => i.productId !== productId) // remove
-        : cartItems.map((i) =>
-            i.productId === productId ? { ...i, quantity: newQuantity } : i
-          );
-
-    // update RTK-Query cache instantly → all derived totals recalc
-    dispatch(
-      cartApi.util.updateQueryData("getCart", userId, (draft) => {
-        draft.cart.items = optimisticItems;
-      })
-    );
-
-    // clean per-item state when item is removed
-    if (newQuantity <= 0) {
-      setItemDiscounts((p) => {
-        const { [productId]: _, ...r } = p;
-        return r;
-      });
-      setItemTaxes((p) => {
-        const { [productId]: _, ...r } = p;
-        return r;
-      });
-      setItemDiscountTypes((p) => {
-        const { [productId]: _, ...r } = p;
-        return r;
-      });
-    }
-
-    // 2. Real mutation
+    setUpdatingItems((prev) => ({ ...prev, [productId]: true }));
     try {
       if (newQuantity <= 0) {
         await removeFromCart({ userId, productId }).unwrap();
+        setItemDiscounts((prev) => {
+          const { [productId]: _, ...rest } = prev;
+          return rest;
+        });
+        setItemTaxes((prev) => {
+          const { [productId]: _, ...rest } = prev;
+          return rest;
+        });
+        setItemDiscountTypes((prev) => {
+          const { [productId]: _, ...rest } = prev;
+          return rest;
+        });
       } else {
         await updateCart({
           userId,
@@ -497,62 +471,36 @@ const NewCart = ({ onConvertToOrder }) => {
           quantity: Number(newQuantity),
         }).unwrap();
       }
-      refetch(); // keep cache in sync
-    } catch (err) {
-      toast.error(`Error: ${err?.data?.message || "Failed"}`);
-      // 3. Roll-back
-      dispatch(
-        cartApi.util.updateQueryData("getCart", userId, (draft) => {
-          draft.cart.items = cartItems; // original list
-        })
-      );
+      refetch();
+    } catch (error) {
+      toast.error(`Error: ${error.data?.message || "Unknown error"}`);
     } finally {
-      setUpdatingItems((p) => ({ ...p, [productId]: false }));
+      setUpdatingItems((prev) => ({ ...prev, [productId]: false }));
     }
   };
 
-  // ────────────────────────────────────────────────────────────────────────
-  //  Optimistic remove (trash icon)  –  NO PAGE REFRESH
-  // ────────────────────────────────────────────────────────────────────────
   const handleRemoveItem = async (productId) => {
     if (!userId) return toast.error("User not logged in!");
-
-    // optimistic removal
-    dispatch(
-      cartApi.util.updateQueryData("getCart", userId, (draft) => {
-        draft.cart.items = draft.cart.items.filter(
-          (i) => i.productId !== productId
-        );
-      })
-    );
-
-    // clean per-item state
-    setItemDiscounts((p) => {
-      const { [productId]: _, ...r } = p;
-      return r;
-    });
-    setItemTaxes((p) => {
-      const { [productId]: _, ...r } = p;
-      return r;
-    });
-    setItemDiscountTypes((p) => {
-      const { [productId]: _, ...r } = p;
-      return r;
-    });
-
+    setUpdatingItems((prev) => ({ ...prev, [productId]: true }));
     try {
       await removeFromCart({ userId, productId }).unwrap();
+      setItemDiscounts((prev) => {
+        const { [productId]: _, ...rest } = prev;
+        return rest;
+      });
+      setItemTaxes((prev) => {
+        const { [productId]: _, ...rest } = prev;
+        return rest;
+      });
+      setItemDiscountTypes((prev) => {
+        const { [productId]: _, ...rest } = prev;
+        return rest;
+      });
       refetch();
-    } catch (err) {
-      toast.error(`Error: ${err?.data?.message || "Failed"}`);
-      // roll-back
-      dispatch(
-        cartApi.util.updateQueryData("getCart", userId, (draft) => {
-          draft.cart.items = cartItems;
-        })
-      );
+    } catch (error) {
+      toast.error(`Error: ${error.data?.message || "Unknown error"}`);
     } finally {
-      setUpdatingItems((p) => ({ ...p, [productId]: false }));
+      setUpdatingItems((prev) => ({ ...prev, [productId]: false }));
     }
   };
 
@@ -567,9 +515,7 @@ const NewCart = ({ onConvertToOrder }) => {
     await refetchAddresses();
     if (useBillingAddress) setUseBillingAddress(true);
   };
-  const handleQuotationChange = useCallback((key, value) => {
-    setQuotationData((prev) => ({ ...prev, [key]: value }));
-  }, []);
+
   const handleCreateDocument = async () => {
     if (documentType === "Purchase Order") {
       if (!selectedVendor) return toast.error("Please select a vendor.");
@@ -1220,7 +1166,9 @@ const NewCart = ({ onConvertToOrder }) => {
                   <QuotationForm
                     quotationData={quotationData}
                     setQuotationData={setQuotationData}
-                    handleQuotationChange={handleQuotationChange}
+                    handleQuotationChange={(key, value) =>
+                      setQuotationData((prev) => ({ ...prev, [key]: value }))
+                    }
                     selectedCustomer={selectedCustomer}
                     setSelectedCustomer={setSelectedCustomer}
                     customers={customerList}

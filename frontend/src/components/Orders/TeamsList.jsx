@@ -28,7 +28,7 @@ import {
 import { toast } from "sonner";
 import Avatar from "react-avatar"; // Imported react-avatar
 import { Dropdown, Menu } from "antd";
-
+import { BsThreeDotsVertical } from "react-icons/bs";
 const { Option } = Select;
 const { Text, Title } = Typography;
 
@@ -350,6 +350,7 @@ const TeamsList = ({ adminName }) => {
                                 <span>
                                   <EditOutlined
                                     onClick={() => handleEditTeam(team)}
+                                    className="me-2"
                                   />
                                 </span>
 
@@ -359,7 +360,9 @@ const TeamsList = ({ adminName }) => {
                                       <Menu.Item
                                         key="delete"
                                         onClick={() => handleDeleteTeam(team)}
-                                        icon={<DeleteOutlined />}
+                                        icon={
+                                          <DeleteOutlined className="me-2" />
+                                        }
                                         disabled={isDeleting}
                                         danger
                                       >
@@ -368,9 +371,10 @@ const TeamsList = ({ adminName }) => {
                                     </Menu>
                                   }
                                   trigger={["click"]}
+                                  placement="bottomRight"
                                 >
                                   <Button
-                                    icon={<MoreOutlined />}
+                                    icon={<BsThreeDotsVertical />}
                                     size="small"
                                     aria-label={`Actions for team ${team.teamName}`}
                                   />

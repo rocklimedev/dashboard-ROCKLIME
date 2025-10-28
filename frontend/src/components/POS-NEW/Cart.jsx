@@ -1,3 +1,4 @@
+// CartTab.jsx
 import React from "react";
 import {
   Card,
@@ -9,40 +10,33 @@ import {
   Col,
   Empty,
   InputNumber,
+  Select,
 } from "antd";
-import { ArrowLeftOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, ShoppingCartOutlined } from "@ant-design/icons";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import { FcEmptyTrash } from "react-icons/fc";
 import { BiTrash } from "react-icons/bi";
 import styled from "styled-components";
 import OrderTotal from "./OrderTotal";
-import { ShoppingCartOutlined, CheckCircleOutlined } from "@ant-design/icons";
-
+import { CheckCircleOutlined } from "@ant-design/icons";
 const { Title, Text } = Typography;
+const { Option } = Select;
 
+/* ────────────────────── Styled Components ────────────────────── */
 const CartItemsCard = styled(Card)`
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   margin-bottom: 16px;
-  @media (min-width: 768px) {
-    margin-bottom: 24px;
-  }
 `;
-
 const CartHeader = styled.div`
   width: 100%;
 `;
-
 const CartItem = styled.div`
   padding: 12px 0;
   &:hover {
     background: #fafafa;
   }
-  @media (min-width: 768px) {
-    padding: 16px 0;
-  }
 `;
-
 const CartItemImage = styled(LazyLoadImage)`
   border-radius: 4px;
   object-fit: cover;
@@ -53,33 +47,22 @@ const CartItemImage = styled(LazyLoadImage)`
     height: 80px;
   }
 `;
-
 const QuantityButton = styled(Button)`
   width: 28px;
   height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  @media (min-width: 768px) {
-    width: 32px;
-    height: 32px;
-  }
 `;
-
 const RemoveButton = styled(Button)`
   margin-left: 8px;
 `;
-
 const CartSummaryCard = styled(Card)`
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   position: sticky;
   top: 16px;
-  @media (min-width: 768px) {
-    top: 20px;
-  }
 `;
-
 const CheckoutButton = styled(Button)`
   background: #e31e24;
   border-color: #e31e24;
@@ -88,82 +71,86 @@ const CheckoutButton = styled(Button)`
     border-color: #e31e24;
   }
 `;
-
 const EmptyCartWrapper = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 20px 0;
-  @media (min-width: 768px) {
-    padding: 40px 0;
-  }
 `;
-
-const DiscountInput = styled(InputNumber)`
-  width: 80px;
-  margin-left: 8px;
-  @media (min-width: 768px) {
-    width: 100px;
-  }
-`;
-
-const TaxInput = styled(InputNumber)`
-  width: 80px;
-  margin-left: 8px;
-  @media (min-width: 768px) {
-    width: 100px;
-  }
-`;
+/* ────────────────────── End Styled ────────────────────── */
 
 const CartTab = ({
   cartItems,
   cartProductsData,
   totalItems,
   shipping,
-  discount,
+  discount, // global discount (used only for display)
   roundOff,
   subTotal,
   quotationData,
-  itemDiscounts,
-  itemTaxes,
+  itemDiscounts, // {productId: number}
+  itemDiscountTypes, // {productId: "percent" | "fixed"}  <-- NEW
+  itemTaxes, // {productId: number}
   updatingItems,
   handleUpdateQuantity,
   handleRemoveItem,
   handleDiscountChange,
+  handleDiscountTypeChange, // <-- NEW
   handleTaxChange,
   setShowClearCartModal,
   setActiveTab,
+  onShippingChange, // <-- NEW – comes from NewCart
 }) => {
-  // Calculate total tax based on per-item taxes
-  const totalTax = cartItems.reduce((acc, item) => {
-    const itemSubtotal = (item.price || 0) * (item.quantity || 1);
-    const itemTax = parseFloat(itemTaxes[item.productId]) || 0;
-    const itemTaxAmount = (itemSubtotal * itemTax) / 100;
-    return acc + itemTaxAmount;
+  /* ────── Helper: line-item total (price × qty – discount + tax) ────── */
+  const lineTotal = (item) => {
+    const price = item.price || 0;
+    const qty = item.quantity || 1;
+    const subtotal = price * qty;
+
+    const discVal = Number(itemDiscounts[item.productId]) || 0;
+    const disc =
+      itemDiscountTypes[item.productId] === "percent"
+        ? (subtotal * discVal) / 100
+        : discVal * qty; // fixed amount per unit
+
+    const taxPct = Number(itemTaxes[item.productId]) || 0;
+    const tax = (subtotal * taxPct) / 100;
+
+    return (subtotal - disc + tax).toFixed(2);
+  };
+
+  /* ────── Global totals (used in OrderTotal) ────── */
+  const totalTax = cartItems.reduce((sum, it) => {
+    const subtotal = (it.price || 0) * (it.quantity || 1);
+    const taxPct = Number(itemTaxes[it.productId]) || 0;
+    return sum + (subtotal * taxPct) / 100;
+  }, 0);
+
+  const totalDiscount = cartItems.reduce((sum, it) => {
+    const subtotal = (it.price || 0) * (it.quantity || 1);
+    const discVal = Number(itemDiscounts[it.productId]) || 0;
+    const disc =
+      itemDiscountTypes[it.productId] === "percent"
+        ? (subtotal * discVal) / 100
+        : discVal * (it.quantity || 1);
+    return sum + disc;
   }, 0);
 
   return (
     <Row gutter={[16, 16]}>
-      <Col xs={24} sm={24} md={16} lg={16}>
+      {/* ────── LEFT – CART ITEMS ────── */}
+      <Col xs={24} md={16} lg={16}>
         <CartItemsCard>
           <CartHeader>
-            <Space
-              align="center"
-              style={{
-                justifyContent: "space-between",
-                width: "100%",
-                flexWrap: "wrap",
-              }}
-            >
-              <Title level={3} style={{ fontSize: "18px", marginBottom: 0 }}>
+            <Space style={{ justifyContent: "space-between", width: "100%" }}>
+              <Title level={3} style={{ fontSize: "18px", margin: 0 }}>
                 Your Cart <ShoppingCartOutlined /> ({totalItems} items)
               </Title>
               <Button
                 type="link"
                 danger
                 onClick={() => setShowClearCartModal(true)}
-                disabled={cartItems.length === 0}
-                aria-label="Clear cart"
+                disabled={!cartItems.length}
               >
                 Clear Cart
               </Button>
@@ -182,128 +169,134 @@ const CartTab = ({
                 icon={<ArrowLeftOutlined />}
                 href="/inventory/products"
                 style={{ marginTop: 16 }}
-                aria-label="Continue shopping"
               >
                 Continue Shopping
               </Button>
             </EmptyCartWrapper>
           ) : (
-            <div>
-              {cartItems.map((item) => {
-                const product = cartProductsData?.find(
-                  (p) => p.productId === item.productId
-                );
-                let imageUrl = null;
-                try {
-                  if (product?.images) {
-                    const imgs = JSON.parse(product.images);
-                    imageUrl = Array.isArray(imgs) ? imgs[0] : null;
-                  }
-                } catch {
-                  imageUrl = null;
+            cartItems.map((item) => {
+              const product = cartProductsData?.find(
+                (p) => p.productId === item.productId
+              );
+              let imageUrl = null;
+              try {
+                if (product?.images) {
+                  const imgs = JSON.parse(product.images);
+                  imageUrl = Array.isArray(imgs) ? imgs[0] : null;
                 }
-                const itemTax = parseFloat(itemTaxes[item.productId]) || 0;
-                const itemSubtotal = (item.price || 0) * (item.quantity || 1);
-                const itemDiscount =
-                  quotationData.discountType === "percent"
-                    ? (itemSubtotal * (itemDiscounts[item.productId] || 0)) /
-                      100
-                    : (itemDiscounts[item.productId] || 0) *
-                      (item.quantity || 1);
-                const itemTaxAmount = (itemSubtotal * itemTax) / 100;
-                const itemTotal = itemSubtotal + itemTaxAmount - itemDiscount;
+              } catch {}
+              const discType = itemDiscountTypes[item.productId] || "percent";
 
-                return (
-                  <CartItem key={item.productId}>
-                    <Row gutter={[12, 12]} align="middle">
-                      <Col xs={6} sm={4}>
-                        <CartItemImage
-                          src={imageUrl}
-                          alt={item.name}
-                          effect="blur"
-                          placeholderSrc="https://via.placeholder.com/100"
-                        />
-                      </Col>
-                      <Col xs={18} sm={10}>
-                        <Text strong>{item.name}</Text>
-                        <br />
-                        <Text type="secondary" block style={{ color: "green" }}>
-                          Price: ₹{item.price.toFixed(2)}
-                        </Text>
-                        <br />
-                        <Text>Discount:</Text>
-                        <DiscountInput
-                          min={0}
-                          value={itemDiscounts[item.productId] || 0}
-                          onChange={(value) =>
-                            handleDiscountChange(item.productId, value)
-                          }
-                          addonAfter={
-                            quotationData.discountType === "percent" ? "%" : "₹"
-                          }
-                          aria-label={`Discount for ${item.name}`}
-                        />
-                      </Col>
-                      <Col xs={12} sm={6}>
-                        <Space size="small">
-                          <QuantityButton
+              return (
+                <CartItem key={item.productId}>
+                  <Row gutter={[12, 12]} align="middle">
+                    {/* IMAGE */}
+                    <Col xs={6} sm={4}>
+                      <CartItemImage
+                        src={imageUrl}
+                        alt={item.name}
+                        effect="blur"
+                        placeholderSrc="https://via.placeholder.com/100"
+                      />
+                    </Col>
+
+                    {/* NAME / PRICE / DISCOUNT */}
+                    <Col xs={18} sm={10}>
+                      <Text strong>{item.name}</Text>
+                      <br />
+                      <Text type="secondary" style={{ color: "green" }}>
+                        ₹{item.price?.toFixed(2)}
+                      </Text>
+
+                      {/* ---- Discount selector ---- */}
+                      <div style={{ marginTop: 8 }}>
+                        <Space>
+                          <Select
                             size="small"
-                            onClick={() =>
-                              handleUpdateQuantity(
-                                item.productId,
-                                item.quantity - 1
-                              )
+                            value={discType}
+                            onChange={(v) =>
+                              handleDiscountTypeChange(item.productId, v)
                             }
-                            disabled={
-                              item.quantity <= 1 ||
-                              updatingItems[item.productId]
-                            }
-                            loading={updatingItems[item.productId]}
-                            aria-label={`Decrease quantity of ${item.name}`}
+                            style={{ width: 80 }}
                           >
-                            -
-                          </QuantityButton>
-                          <Text>{item.quantity}</Text>
-                          <QuantityButton
+                            <Option value="percent">%</Option>
+                            <Option value="fixed">₹</Option>
+                          </Select>
+
+                          <InputNumber
+                            min={0}
                             size="small"
-                            onClick={() =>
-                              handleUpdateQuantity(
-                                item.productId,
-                                item.quantity + 1
-                              )
+                            value={itemDiscounts[item.productId] ?? 0}
+                            onChange={(v) =>
+                              handleDiscountChange(item.productId, v)
                             }
-                            disabled={updatingItems[item.productId]}
-                            loading={updatingItems[item.productId]}
-                            aria-label={`Increase quantity of ${item.name}`}
-                          >
-                            +
-                          </QuantityButton>
+                            addonAfter={discType === "percent" ? "%" : "₹"}
+                            style={{ width: 90 }}
+                          />
                         </Space>
-                      </Col>
-                      <Col xs={12} sm={4} style={{ textAlign: "right" }}>
-                        <Text strong style={{ color: "green" }}>
-                          ₹{itemTotal.toFixed(2)}
-                        </Text>
-                        <RemoveButton
-                          type="text"
-                          danger
-                          icon={<BiTrash />}
-                          onClick={() => handleRemoveItem(item.productId)}
+                      </div>
+                    </Col>
+
+                    {/* QUANTITY */}
+                    <Col xs={12} sm={6}>
+                      <Space size="small">
+                        <QuantityButton
+                          size="small"
+                          onClick={() =>
+                            handleUpdateQuantity(
+                              item.productId,
+                              item.quantity - 1
+                            )
+                          }
+                          disabled={
+                            item.quantity <= 1 || updatingItems[item.productId]
+                          }
+                          loading={updatingItems[item.productId]}
+                        >
+                          -
+                        </QuantityButton>
+                        <Text>{item.quantity}</Text>
+                        <QuantityButton
+                          size="small"
+                          onClick={() =>
+                            handleUpdateQuantity(
+                              item.productId,
+                              item.quantity + 1
+                            )
+                          }
                           disabled={updatingItems[item.productId]}
                           loading={updatingItems[item.productId]}
-                          aria-label={`Remove ${item.name} from cart`}
-                        />
-                      </Col>
-                    </Row>
-                    <Divider />
-                  </CartItem>
-                );
-              })}
-            </div>
+                        >
+                          +
+                        </QuantityButton>
+                      </Space>
+                    </Col>
+
+                    {/* LINE TOTAL + REMOVE */}
+                    <Col xs={12} sm={4} style={{ textAlign: "right" }}>
+                      <Text strong style={{ color: "green" }}>
+                        ₹{lineTotal(item)}
+                      </Text>
+                      <RemoveButton
+                        type="text"
+                        danger
+                        icon={<BiTrash />}
+                        onClick={() => handleRemoveItem(item.productId)}
+                        disabled={updatingItems[item.productId]}
+                        loading={updatingItems[item.productId]}
+                      />
+                    </Col>
+                  </Row>
+                  <Divider />
+                </CartItem>
+              );
+            })
           )}
         </CartItemsCard>
       </Col>
-      <Col xs={24} sm={24} md={8} lg={8}>
+
+      {/* ────── RIGHT – ORDER SUMMARY ────── */}
+      <Col xs={24} md={8} lg={8}>
         <CartSummaryCard>
           <Title level={4} style={{ fontSize: "16px" }}>
             Order Summary
@@ -311,29 +304,20 @@ const CartTab = ({
           <Divider />
           <OrderTotal
             shipping={shipping}
-            tax={totalTax} // Use calculated totalTax
-            coupon={0}
-            discount={discount}
+            tax={totalTax}
+            discount={totalDiscount} // <-- now per-item aggregated
             roundOff={roundOff}
             subTotal={subTotal}
-            items={cartItems.map((item) => ({
-              productId: item.productId,
-              name: item.name,
-              discount: parseFloat(itemDiscounts[item.productId]) || 0,
-              tax: parseFloat(itemTaxes[item.productId]) || 0,
-            }))}
-            gstValue={0} // Set to 0 since per-item taxes are used
-            includeGst={false}
+            onShippingChange={onShippingChange}
           />
           <Divider />
           <CheckoutButton
             type="primary"
             icon={<CheckCircleOutlined />}
             onClick={() => setActiveTab("checkout")}
-            disabled={cartItems.length === 0}
+            disabled={!cartItems.length}
             block
             size="large"
-            aria-label="Proceed to checkout"
           >
             Proceed to Checkout
           </CheckoutButton>
@@ -342,7 +326,6 @@ const CartTab = ({
             href="/inventory/products"
             block
             style={{ marginTop: 8 }}
-            aria-label="Continue shopping"
           >
             Continue Shopping
           </Button>

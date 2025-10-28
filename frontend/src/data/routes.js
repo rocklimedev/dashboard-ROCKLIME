@@ -70,7 +70,6 @@ import OrderPage from "../components/Orders/Orderpage";
 import NewCart from "../components/POS-NEW/NewCart";
 import AccountVerify from "../components/Auth/AccountVerify";
 import AddCustomer from "../components/Customers/AddCustomer";
-import CategoryDetails from "../components/Categories/CategoryDetails";
 import EmailVerification from "../components/Auth/EmailVerifications";
 import POWrapper from "../components/Orders/POWrapper";
 import AddPurchaseOrder from "../components/Orders/AddPurchaseOrder";
@@ -200,13 +199,6 @@ const masterRoutes = [
         name: "Categories",
         icon: <BiCategory />,
         isSidebarActive: true,
-      },
-      {
-        path: "/categories/:parentId",
-        element: <CategoryDetails />,
-        name: "Category Details",
-        icon: <BiCategory />,
-        isSidebarActive: false,
       },
     ],
   },

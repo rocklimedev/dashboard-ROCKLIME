@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
   useGetAllQuotationsQuery,
@@ -35,7 +35,7 @@ const QuotationList = () => {
     isLoading,
     isError,
     refetch,
-  } = useGetAllQuotationsQuery();
+  } = useGetAllQuotationsQuery({ sort: "quotation_date", order: "desc" });
   const { data: customersData } = useGetCustomersQuery();
   const { data: usersData } = useGetAllUsersQuery();
   const [deleteQuotation, { isLoading: isDeleting }] =
@@ -64,7 +64,21 @@ const QuotationList = () => {
   });
   const itemsPerPage = 10;
 
-  // Helper functions (unchanged)
+  // Reset filters and sorting on component mount
+  useEffect(() => {
+    setSortBy("Recently Added");
+    setSearchTerm("");
+    setActiveTab("All");
+    setFilters({
+      finalAmount: null,
+      quotationDate: null,
+      customerId: null,
+      dateRange: null,
+    });
+    setCurrentPage(1);
+  }, []);
+
+  // Helper functions
   const getProductCount = (products) => {
     const parsedProducts =
       typeof products === "string"
@@ -165,9 +179,15 @@ const QuotationList = () => {
         );
         break;
       case "Recently Added":
-        result = [...result].sort(
-          (a, b) => new Date(b.quotation_date) - new Date(a.quotation_date)
-        );
+        result = [...result].sort((a, b) => {
+          const dateA = a.quotation_date
+            ? new Date(a.quotation_date)
+            : new Date(0);
+          const dateB = b.quotation_date
+            ? new Date(b.quotation_date)
+            : new Date(0);
+          return dateB - dateA;
+        });
         break;
       case "Price High":
         result = [...result].sort(
@@ -248,7 +268,7 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
       title: "S.No.",
       dataIndex: "sNo",
       key: "sNo",
-      width: 70, // Fixed width for better layout control
+      width: 70,
     },
     {
       title: "Quotation Title",
@@ -338,7 +358,7 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
           />
           <div>
             <Button
-              type="primary"
+              type="जनता primary"
               onClick={() => {
                 setFilters((prev) => ({
                   ...prev,
@@ -385,7 +405,7 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
       render: (text, record) => (
         <button
           className="btn btn-link"
-          onClick={() => handleOpenProductModal(record.products, record)} // Pass record as quotation
+          onClick={() => handleOpenProductModal(record.products, record)}
           style={{ color: "#e31e24" }}
           aria-label="Quick View"
         >
@@ -513,8 +533,8 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
     {
       title: "Actions",
       key: "actions",
-      width: 100, // Fixed width to prevent cropping
-      fixed: "right", // Fix the Actions column to the right for better accessibility
+      width: 100,
+      fixed: "right",
       render: (_, record) => (
         <div className="d-flex align-items-center">
           <span
@@ -640,7 +660,7 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
         ? JSON.parse(products || "[]")
         : products || [];
     setSelectedProducts(parsedProducts);
-    setSelectedQuotation(quotation); // Set the quotation object
+    setSelectedQuotation(quotation);
     setShowProductModal(true);
   };
 
@@ -792,7 +812,7 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
                         dataSource={formattedTableData}
                         pagination={false}
                         rowKey="key"
-                        scroll={{ x: "max-content" }} // Enable horizontal scrolling
+                        scroll={{ x: "max-content" }}
                       />
                       {filteredQuotations.length > itemsPerPage && (
                         <div className="pagination-section mt-4">
@@ -816,7 +836,7 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
           show={showProductModal}
           onHide={handleCloseProductModal}
           products={selectedProducts}
-          selectedQuotation={selectedQuotation} // Pass selectedQuotation
+          selectedQuotation={selectedQuotation}
         />
         {showDeleteModal && (
           <DeleteModal

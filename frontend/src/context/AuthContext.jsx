@@ -10,10 +10,37 @@ export const AuthProvider = ({ children }) => {
     const token =
       localStorage.getItem("token") || sessionStorage.getItem("token");
     if (token) {
-      setAuth({ token, user: null });
+      setAuth((prev) => {
+        if (prev?.token !== token) {
+          return { token, user: null };
+        }
+        return prev;
+      });
+    } else if (auth?.token) {
+      setAuth(null);
     }
-  }, []);
+  }, []); // Still only on mount
 
+  // Add this: Listen for storage events (cross-tab or programmatic changes)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const token =
+        localStorage.getItem("token") || sessionStorage.getItem("token");
+      if (token && (!auth || auth.token !== token)) {
+        setAuth({ token, user: null });
+      } else if (!token && auth?.token) {
+        setAuth(null);
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    // Also check immediately in case sessionStorage was set programmatically
+    handleStorageChange();
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, [auth]);
   const login = (token, user) => {
     return new Promise((resolve) => {
       setAuth({ token, user });

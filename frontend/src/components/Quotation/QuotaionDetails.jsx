@@ -1097,14 +1097,7 @@ const QuotationsDetails = () => {
                     onClick={handleExport}
                     disabled={isExporting}
                   >
-                    <ExportOutlined />
-                    {isExporting
-                      ? "Exporting..."
-                      : `Export Version ${
-                          activeVersion === "current"
-                            ? "Current"
-                            : activeVersion
-                        }`}
+                    <ExportOutlined /> Export
                   </button>
                 </div>
               </div>

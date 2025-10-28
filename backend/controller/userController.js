@@ -490,3 +490,57 @@ exports.assignRole = async (req, res) => {
     res.status(500).json({ message: "Server Error", error: err.message });
   }
 };
+
+// Update User Status (Admin/SuperAdmin only)
+exports.updateStatus = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { status } = req.body; // Expected: "active", "inactive", or "restricted"
+
+    // Validate status value
+    const validStatuses = ["active", "inactive", "restricted"];
+    if (!status || !validStatuses.includes(status)) {
+      return res.status(400).json({
+        message: "Invalid status. Must be one of: active, inactive, restricted",
+      });
+    }
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Prevent changing own status if current user is the target (optional security)
+    if (req.user.userId === userId) {
+      return res.status(403).json({
+        message: "You cannot change your own status",
+      });
+    }
+
+    // Optional: Prevent deactivating the last SuperAdmin
+    if (user.roles === ROLES.SuperAdmin && status !== "active") {
+      const superAdminCount = await User.count({
+        where: { roles: { [Op.like]: `%${ROLES.SuperAdmin}%` } },
+      });
+      if (superAdminCount <= 1) {
+        return res.status(400).json({
+          message: "Cannot deactivate or restrict the only SuperAdmin",
+        });
+      }
+    }
+
+    user.status = status;
+    await user.save();
+
+    res.status(200).json({
+      message: "User status updated successfully",
+      user: await User.findByPk(user.userId, excludeSensitiveFields),
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: `Failed to update status: ${
+        err.message || "Unknown server error"
+      }`,
+    });
+  }
+};

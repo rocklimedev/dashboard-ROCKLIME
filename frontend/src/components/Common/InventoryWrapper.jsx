@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Form,
@@ -10,19 +10,30 @@ import {
   Button,
   Dropdown,
   Menu,
+  Tabs,
+  InputNumber,
+  Badge,
+  Space,
+  Typography,
 } from "antd";
-import { SearchOutlined, MoreOutlined } from "@ant-design/icons";
+import {
+  SearchOutlined,
+  MoreOutlined,
+  FilterOutlined,
+} from "@ant-design/icons";
 import {
   useGetAllProductsQuery,
   useAddStockMutation,
   useRemoveStockMutation,
-  useGetHistoryByProductIdQuery,
 } from "../../api/productApi";
 import { toast } from "sonner";
-import StockModal from "../Common/StockModal"; // Using the provided StockModal
-import HistoryModal from "../Common/HistoryModal"; // Assuming this exists
+import StockModal from "../Common/StockModal";
+import HistoryModal from "../Common/HistoryModal";
 import PageHeader from "../Common/PageHeader";
 import pos from "../../assets/img/default.png";
+
+const { TabPane } = Tabs;
+const { Text } = Typography;
 
 const InventoryWrapper = () => {
   const navigate = useNavigate();
@@ -31,16 +42,22 @@ const InventoryWrapper = () => {
   const [removeStock, { isLoading: isRemovingStock }] =
     useRemoveStockMutation();
 
-  const [viewMode, setViewMode] = useState("list");
+  // State
   const [currentPage, setCurrentPage] = useState(1);
+  const [activeTab, setActiveTab] = useState("all");
+  const [search, setSearch] = useState("");
+  const [lowStockThreshold, setLowStockThreshold] = useState(10); // User-defined
+  const [maxStockFilter, setMaxStockFilter] = useState(null); // ≤ quantity filter
+
   const [isStockModalVisible, setStockModalVisible] = useState(false);
   const [isHistoryModalVisible, setHistoryModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [stockHistoryMap, setStockHistoryMap] = useState({});
+
   const [form] = Form.useForm();
-  const [search, setSearch] = useState("");
   const itemsPerPage = 30;
 
+  // Parse images safely
   const parseImages = (images) => {
     try {
       if (typeof images === "string") {
@@ -48,54 +65,74 @@ const InventoryWrapper = () => {
         return Array.isArray(parsed) ? parsed : [pos];
       }
       return Array.isArray(images) ? images : [pos];
-    } catch (error) {
+    } catch {
       return [pos];
     }
   };
 
+  // Extract company code
   const getCompanyCode = (metaDetails) => {
     if (!Array.isArray(metaDetails)) return "N/A";
-    const companyCodeEntry = metaDetails.find(
-      (detail) => detail.slug?.toLowerCase() === "companycode"
+    const entry = metaDetails.find(
+      (d) => d.slug?.toLowerCase() === "companycode"
     );
-    return companyCodeEntry ? String(companyCodeEntry.value) : "N/A";
+    return entry ? String(entry.value) : "N/A";
   };
 
+  // Base products
   const products = useMemo(
     () => (Array.isArray(productsData) ? productsData : []),
     [productsData]
   );
 
-  const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
-      const searchTerm = search.toLowerCase();
-      const companyCode = getCompanyCode(product.metaDetails);
-      return (
-        !searchTerm ||
-        product.name?.toLowerCase().includes(searchTerm) ||
-        product.product_code?.toLowerCase().includes(searchTerm) ||
-        companyCode?.toLowerCase().includes(searchTerm)
-      );
-    });
-  }, [products, search]);
+  // Filter: Search + Max Stock
+  const searchedAndFiltered = useMemo(() => {
+    const term = search.toLowerCase();
+    return products.filter((p) => {
+      const matchesSearch =
+        !term ||
+        p.name?.toLowerCase().includes(term) ||
+        p.product_code?.toLowerCase().includes(term) ||
+        getCompanyCode(p.metaDetails)?.toLowerCase().includes(term);
 
-  const formattedTableData = useMemo(
-    () =>
-      filteredProducts.map((product) => ({
-        ...product,
-        Name: product.name || "N/A",
-        Stock:
-          product.quantity > 0
-            ? `${product.quantity} in stock`
-            : "Out of Stock",
-        company_code: getCompanyCode(product.metaDetails),
-      })),
-    [filteredProducts]
+      const matchesMaxStock =
+        maxStockFilter === null || p.quantity <= maxStockFilter;
+
+      return matchesSearch && matchesMaxStock;
+    });
+  }, [products, search, maxStockFilter]);
+
+  // Tab-based filtering
+  const tabFilteredProducts = useMemo(() => {
+    switch (activeTab) {
+      case "in-stock":
+        return searchedAndFiltered.filter((p) => p.quantity > 0);
+      case "out-of-stock":
+        return searchedAndFiltered.filter((p) => p.quantity === 0);
+      case "low-stock":
+        return searchedAndFiltered.filter(
+          (p) => p.quantity > 0 && p.quantity <= lowStockThreshold
+        );
+      default:
+        return searchedAndFiltered;
+    }
+  }, [searchedAndFiltered, activeTab, lowStockThreshold]);
+
+  // Pagination
+  const offset = (currentPage - 1) * itemsPerPage;
+  const currentItems = useMemo(
+    () => tabFilteredProducts.slice(offset, offset + itemsPerPage),
+    [tabFilteredProducts, currentPage, itemsPerPage]
   );
 
-  const offset = (currentPage - 1) * itemsPerPage;
-  const currentItems = formattedTableData.slice(offset, offset + itemsPerPage);
+  const totalItems = tabFilteredProducts.length;
 
+  // Reset page on filter/tab change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, search, maxStockFilter]);
+
+  // Actions
   const handleAddProduct = () => navigate("/inventory/product/add");
 
   const handleStockClick = (product, action = "add") => {
@@ -113,10 +150,10 @@ const InventoryWrapper = () => {
     try {
       if (action === "add") {
         await addStock({ productId, quantity }).unwrap();
-        toast.success(`Added ${quantity} units to stock`);
+        toast.success(`Added ${quantity} units`);
       } else {
         await removeStock({ productId, quantity }).unwrap();
-        toast.success(`Removed ${quantity} units from stock`);
+        toast.success(`Removed ${quantity} units`);
       }
       setStockHistoryMap((prev) => ({
         ...prev,
@@ -125,37 +162,28 @@ const InventoryWrapper = () => {
           { quantity, action, date: new Date(), productId },
         ],
       }));
-    } catch (error) {
-      toast.error(
-        `Failed to ${action} stock: ${error.data?.message || "Unknown error"}`
-      );
+    } catch (err) {
+      toast.error(`Failed: ${err.data?.message || "Unknown error"}`);
     } finally {
       setStockModalVisible(false);
       setSelectedProduct(null);
     }
   };
 
-  const handleSearchChange = (e) => {
-    setSearch(e.target.value);
-    setCurrentPage(1);
-  };
-
   const menu = (product) => (
     <Menu>
-      <Menu.Item
-        key="add-stock"
-        onClick={() => handleStockClick(product, "add")}
-      >
+      <Menu.Item key="add" onClick={() => handleStockClick(product, "add")}>
         Add Stock
       </Menu.Item>
       <Menu.Item
-        key="remove-stock"
+        key="remove"
         onClick={() => handleStockClick(product, "remove")}
+        disabled={product.quantity === 0}
       >
         Remove Stock
       </Menu.Item>
-      <Menu.Item key="view-history" onClick={() => handleHistoryClick(product)}>
-        View Stock History
+      <Menu.Item key="history" onClick={() => handleHistoryClick(product)}>
+        View History
       </Menu.Item>
     </Menu>
   );
@@ -165,46 +193,81 @@ const InventoryWrapper = () => {
       title: "Image",
       dataIndex: "images",
       key: "images",
+      width: 80,
       render: (images) => (
         <img
           src={parseImages(images)[0] || pos}
           alt="Product"
-          style={{ width: 50, height: 50, objectFit: "cover" }}
+          style={{ width: 50, height: 50, objectFit: "cover", borderRadius: 6 }}
         />
       ),
-      width: 80,
     },
     {
       title: "Name",
       dataIndex: "name",
       key: "name",
       render: (text, record) => (
-        <Link to={`/product/${record.productId}`}>{text || "N/A"}</Link>
+        <Link to={`/product/${record.productId}`} style={{ fontWeight: 500 }}>
+          {text || "N/A"}
+        </Link>
       ),
     },
     {
       title: "Product Code",
-      dataIndex: "company_code",
+      dataIndex: "product_code",
+      key: "product_code",
+      render: (text) => <Text code>{text || "N/A"}</Text>,
+    },
+    {
+      title: "Company Code",
+      dataIndex: "metaDetails",
       key: "company_code",
-      render: (text) => <p>{text || "N/A"}</p>,
+      render: (meta) => <Text type="secondary">{getCompanyCode(meta)}</Text>,
     },
     {
       title: "Stock",
       dataIndex: "quantity",
       key: "quantity",
-      render: (quantity) =>
-        quantity > 0 ? `${quantity} in stock` : "Out of Stock",
+      render: (qty) => (
+        <Badge
+          status={
+            qty > 0
+              ? qty <= lowStockThreshold
+                ? "warning"
+                : "success"
+              : "error"
+          }
+          text={
+            qty > 0 ? (
+              `${qty} in stock`
+            ) : (
+              <span style={{ color: "#ff4d4f" }}>Out of Stock</span>
+            )
+          }
+        />
+      ),
     },
     {
       title: "Actions",
       key: "actions",
+      width: 80,
       render: (_, record) => (
         <Dropdown overlay={menu(record)} trigger={["click"]}>
-          <Button type="text" icon={<MoreOutlined />} />
+          <Button type="text" icon={<MoreOutlined />} size="small" />
         </Dropdown>
       ),
     },
   ];
+
+  // Count for tabs
+  const counts = useMemo(() => {
+    const inStock = products.filter((p) => p.quantity > 0).length;
+    const outStock = products.filter((p) => p.quantity === 0).length;
+    const lowStock = products.filter(
+      (p) => p.quantity > 0 && p.quantity <= lowStockThreshold
+    ).length;
+    return { all: products.length, inStock, outStock, lowStock };
+  }, [products, lowStockThreshold]);
 
   if (isLoading) {
     return (
@@ -234,78 +297,176 @@ const InventoryWrapper = () => {
       <div className="content">
         <PageHeader
           title="Inventory Management"
-          subtitle="Manage product stock and history"
+          subtitle="Manage stock levels, track history, and filter products"
           exportOptions={{ pdf: false, excel: false }}
+          extra={
+            <Button type="primary" onClick={handleAddProduct}>
+              Add Product
+            </Button>
+          }
         />
-        <div className="filter-bar bg-white p-3 shadow-sm">
-          <Form layout="inline" form={form} className="filter-form">
-            <Form.Item className="filter-item">
-              <Input
-                prefix={<SearchOutlined />}
-                placeholder="Search products..."
-                allowClear
-                size="large"
-                onChange={handleSearchChange}
+
+        {/* Filters Bar */}
+        <div className="filter-bar bg-white p-3 shadow-sm mb-3 border-radius-md">
+          <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+            <Form
+              layout="inline"
+              style={{ justifyContent: "space-between", flexWrap: "wrap" }}
+            >
+              <Space wrap>
+                <Input
+                  prefix={<SearchOutlined />}
+                  placeholder="Search by name, code..."
+                  allowClear
+                  size="large"
+                  style={{ minWidth: 250 }}
+                  onChange={(e) => setSearch(e.target.value)}
+                  value={search}
+                />
+
+                <Space>
+                  <Text>Show products with stock ≤</Text>
+                  <InputNumber
+                    min={0}
+                    placeholder="Qty"
+                    size="middle"
+                    value={maxStockFilter}
+                    onChange={(val) => setMaxStockFilter(val)}
+                    style={{ width: 100 }}
+                  />
+                  <Button
+                    icon={<FilterOutlined />}
+                    onClick={() => setMaxStockFilter(null)}
+                    disabled={maxStockFilter === null}
+                  >
+                    Clear
+                  </Button>
+                </Space>
+              </Space>
+            </Form>
+
+            {/* Low Stock Threshold */}
+            <Space align="center">
+              <Text type="secondary">Low stock threshold:</Text>
+              <InputNumber
+                min={1}
+                max={1000}
+                value={lowStockThreshold}
+                onChange={(val) => setLowStockThreshold(val || 10)}
+                style={{ width: 80 }}
               />
-            </Form.Item>
-          </Form>
+              <Text type="secondary">units</Text>
+            </Space>
+          </Space>
         </div>
-        {filteredProducts.length === 0 ? (
-          <div className="page-wrapper">
-            <div className="content">
-              <div className="empty-container text-center py-5">
-                <Empty description="No products available." />
-              </div>
-            </div>
+
+        {/* Tabs */}
+        <Tabs activeKey={activeTab} onChange={setActiveTab} type="card">
+          <TabPane
+            tab={
+              <span>
+                All{" "}
+                <Badge
+                  count={counts.all}
+                  style={{ backgroundColor: "#52c41a" }}
+                />
+              </span>
+            }
+            key="all"
+          />
+          <TabPane
+            tab={
+              <span>
+                In Stock{" "}
+                <Badge
+                  count={counts.inStock}
+                  style={{ backgroundColor: "#1890ff" }}
+                />
+              </span>
+            }
+            key="in-stock"
+          />
+          <TabPane
+            tab={
+              <span>
+                Out of Stock{" "}
+                <Badge
+                  count={counts.outStock}
+                  style={{ backgroundColor: "#ff4d4f" }}
+                />
+              </span>
+            }
+            key="out-of-stock"
+          />
+          <TabPane
+            tab={
+              <span>
+                Low Stock{" "}
+                <Badge
+                  count={counts.lowStock}
+                  style={{ backgroundColor: "#faad14" }}
+                />
+              </span>
+            }
+            key="low-stock"
+          />
+        </Tabs>
+
+        {/* Table */}
+        {totalItems === 0 ? (
+          <div className="bg-white p-5 text-center">
+            <Empty description="No products match your filters." />
           </div>
         ) : (
-          <div className="products-section">
+          <div className="products-section bg-white shadow-sm">
             <Table
               columns={columns}
               dataSource={currentItems}
               rowKey="productId"
               pagination={false}
-              scroll={{ x: true }}
+              scroll={{ x: 800 }}
             />
             <div
               className="pagination-container"
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                marginTop: "16px",
-              }}
+              style={{ padding: "16px", textAlign: "right" }}
             >
               <Pagination
                 current={currentPage}
-                total={filteredProducts.length}
+                total={totalItems}
                 pageSize={itemsPerPage}
-                onChange={(page) => setCurrentPage(page)}
+                onChange={setCurrentPage}
                 showSizeChanger={false}
                 showQuickJumper
-                size="small"
+                size="default"
               />
             </div>
           </div>
         )}
       </div>
-      {isStockModalVisible && selectedProduct && (
-        <StockModal
-          show={isStockModalVisible}
-          onHide={() => setStockModalVisible(false)}
-          product={selectedProduct}
-          onSubmit={(data) =>
-            handleStockSubmit({ ...data, action: selectedProduct.action })
-          }
-        />
-      )}
-      {isHistoryModalVisible && selectedProduct && (
-        <HistoryModal
-          show={isHistoryModalVisible}
-          onHide={() => setHistoryModalVisible(false)}
-          product={selectedProduct}
-          stockHistory={stockHistoryMap[selectedProduct.productId] || []}
-        />
-      )}
+
+      {/* Modals */}
+      <StockModal
+        visible={isStockModalVisible}
+        onHide={() => {
+          setStockModalVisible(false);
+          setSelectedProduct(null);
+        }}
+        product={selectedProduct}
+        onSubmit={(data) =>
+          handleStockSubmit({ ...data, action: selectedProduct?.action })
+        }
+        loading={isAddingStock || isRemovingStock}
+      />
+
+      <HistoryModal
+        visible={isHistoryModalVisible}
+        onHide={() => {
+          setHistoryModalVisible(false);
+          setSelectedProduct(null);
+        }}
+        product={selectedProduct}
+        stockHistory={stockHistoryMap[selectedProduct?.productId] || []}
+      />
     </div>
   );
 };

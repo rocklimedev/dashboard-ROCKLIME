@@ -454,7 +454,7 @@ const OrderForm = ({
               </FormSection>
 
               <FormSection>
-                <Text strong>Source Type</Text>
+                <Text strong>Reference Type</Text>
                 <Select
                   value={sourceType}
                   onChange={(value) => {
@@ -463,9 +463,9 @@ const OrderForm = ({
                       handleOrderChange("source", "");
                     }
                   }}
-                  placeholder="Select source type"
+                  placeholder="Select reference type"
                   allowClear
-                  aria-label="Select source type"
+                  aria-label="Select reference type"
                 >
                   {SOURCE_TYPES.map((type) => (
                     <Option key={type} value={type}>
@@ -476,14 +476,14 @@ const OrderForm = ({
               </FormSection>
 
               <FormSection>
-                <Text strong>Source Customer</Text>
+                <Text strong>Reference Customer</Text>
                 <Select
                   value={orderData?.source || undefined}
                   onChange={(value) => handleOrderChange("source", value)}
-                  placeholder="Select source customer"
+                  placeholder="Select reference customer"
                   disabled={!sourceType || customersLoading || customersError}
                   allowClear
-                  aria-label="Select source customer"
+                  aria-label="Select reference customer"
                 >
                   {customersLoading ? (
                     <Option value="" disabled>
@@ -507,7 +507,7 @@ const OrderForm = ({
                     <Option value="" disabled>
                       {sourceType
                         ? `No customers available for ${sourceType} type`
-                        : "Please select a source type first"}
+                        : "Please select a reference type first"}
                     </Option>
                   )}
                 </Select>
@@ -903,7 +903,7 @@ const OrderForm = ({
               }
               if (sourceType && !orderData?.source) {
                 toast.error(
-                  "Please select a Source Customer for the selected Source Type."
+                  "Please select a Reference Customer for the selected Reference Type."
                 );
                 return;
               }

@@ -1,40 +1,40 @@
-import React, { useState, useMemo } from "react";
-import { FaSearch } from "react-icons/fa";
+import React, { useState, useMemo, useEffect } from "react";
+import { FaSearch, FaPen } from "react-icons/fa"; // <-- add FaPen
 import {
   useGetAllUsersQuery,
   useGetUserByIdQuery,
   useReportUserMutation,
-  useInactiveUserMutation,
   useDeleteUserMutation,
+  useUpdateStatusMutation, // <-- NEW
 } from "../../api/userApi";
 import {
   EyeOutlined,
   EditOutlined,
-  StopOutlined,
   ExclamationCircleOutlined,
   DeleteOutlined,
   MoreOutlined,
+  MailOutlined,
 } from "@ant-design/icons";
-import { Dropdown, Menu, Button, Pagination } from "antd";
+import { Dropdown, Menu, Button, Pagination, Popover } from "antd";
 import DeleteModal from "../Common/DeleteModal";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "../Common/PageHeader";
 import { useResendVerificationEmailMutation } from "../../api/authApi";
-import { MailOutlined } from "@ant-design/icons";
 
 const UserList = () => {
+  /* ----------------------- STATE ----------------------- */
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("Recently Added");
   const [activeTab, setActiveTab] = useState("All");
   const itemsPerPage = 20;
 
-  const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
   const [resendUserId, setResendUserId] = useState(null);
 
+  /* ----------------------- QUERIES / MUTATIONS ----------------------- */
   const { data, error, isLoading, isFetching, refetch } = useGetAllUsersQuery({
     page: currentPage,
     limit: itemsPerPage,
@@ -42,64 +42,53 @@ const UserList = () => {
 
   const users = data?.users || [];
   const totalUsers = data?.total || 0;
-  const totalPages = data?.totalPages || 1;
 
   const navigate = useNavigate();
+
   const [reportUser, { isLoading: isReporting }] = useReportUserMutation();
-  const [inactiveUser, { isLoading: isInactivating }] =
-    useInactiveUserMutation();
   const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
   const [resendVerificationEmail, { isLoading: isResending }] =
     useResendVerificationEmailMutation();
 
-  // Fetch user by ID for resend verification
+  // NEW mutation
+  const [updateStatus, { isLoading: isUpdatingStatus }] =
+    useUpdateStatusMutation();
+
   const {
     data: selectedUserData,
     isLoading: isUserLoading,
     error: userError,
-  } = useGetUserByIdQuery(resendUserId, {
-    skip: !resendUserId,
-  });
+  } = useGetUserByIdQuery(resendUserId, { skip: !resendUserId });
 
-  // Extract user object, handling potential nesting
   const selectedUser =
     selectedUserData?.data?.user || selectedUserData?.user || selectedUserData;
 
-  // Calculate stats using useMemo
+  /* ----------------------- MEMOIZED VALUES ----------------------- */
   const stats = useMemo(() => {
     if (!users.length) {
-      return {
-        totalEmployees: 0,
-        active: 0,
-        inactive: 0,
-        newJoiners: 0,
-      };
+      return { totalEmployees: 0, active: 0, inactive: 0, newJoiners: 0 };
     }
-
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     return {
       totalEmployees: totalUsers,
-      active: users.filter((user) => user.status === "active").length,
-      inactive: users.filter((user) => user.status !== "active").length,
-      newJoiners: users.filter(
-        (user) => new Date(user.createdAt) >= thirtyDaysAgo
-      ).length,
+      active: users.filter((u) => u.status === "active").length,
+      inactive: users.filter((u) => u.status !== "active").length,
+      newJoiners: users.filter((u) => new Date(u.createdAt) >= thirtyDaysAgo)
+        .length,
     };
   }, [users, totalUsers]);
 
-  // Memoized grouped users for tab-based filtering
   const groupedUsers = useMemo(
     () => ({
       All: users,
-      Active: users.filter((user) => user.status === "active"),
-      Inactive: users.filter((user) => user.status !== "active"),
+      Active: users.filter((u) => u.status === "active"),
+      Inactive: users.filter((u) => u.status !== "active"),
     }),
     [users]
   );
 
-  // Filtered and sorted users
   const filteredUsers = useMemo(() => {
     let result = groupedUsers[activeTab] || [];
 
@@ -128,33 +117,71 @@ const UserList = () => {
       default:
         break;
     }
-
     return result;
   }, [groupedUsers, activeTab, searchTerm, sortBy]);
 
-  const handleAddUser = () => {
-    navigate("/user/add");
-  };
-
-  const handleEditUser = (user) => {
-    navigate(`/user/${user.userId}/edit`);
-  };
-
-  const handleViewUser = (user) => {
-    navigate(`/user/${user.userId}`);
-  };
+  /* ----------------------- HANDLERS ----------------------- */
+  const handleAddUser = () => navigate("/user/add");
+  const handleEditUser = (user) => navigate(`/user/${user.userId}/edit`);
+  const handleViewUser = (user) => navigate(`/user/${user.userId}`);
 
   const handleDeleteUser = (userId) => {
     setUserToDelete(userId);
     setShowDeleteModal(true);
   };
 
-  const handleResendVerification = async (userId) => {
-    setResendUserId(userId);
+  const handleResendVerification = (userId) => setResendUserId(userId);
+
+  const handleConfirmDelete = async () => {
+    if (!userToDelete) return;
+    try {
+      await deleteUser(userToDelete).unwrap();
+      if (filteredUsers.length === 1 && currentPage > 1) {
+        setCurrentPage((p) => p - 1);
+      }
+    } catch (err) {
+      toast.error(
+        `Failed to delete user: ${err.data?.message || "Unknown error"}`
+      );
+    } finally {
+      setShowDeleteModal(false);
+      setUserToDelete(null);
+    }
   };
 
-  // Effect to handle resend verification after user data is fetched
-  React.useEffect(() => {
+  const handleReportUser = async (userId) => {
+    try {
+      await reportUser(userId).unwrap();
+    } catch (err) {
+      toast.error(
+        `Failed to report user: ${err.data?.message || "Unknown error"}`
+      );
+    }
+  };
+
+  // NEW: change status via PATCH
+  const handleStatusChange = async (userId, newStatus) => {
+    try {
+      await updateStatus({ userId, status: newStatus }).unwrap();
+      toast.success(`User is now ${newStatus}`);
+    } catch (err) {
+      toast.error(
+        `Failed to update status: ${err.data?.message || "Unknown error"}`
+      );
+    }
+  };
+
+  const handlePageChange = (page) => setCurrentPage(page);
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setSortBy("Recently Added");
+    setActiveTab("All");
+    setCurrentPage(1);
+  };
+
+  /* ----------------------- RESEND VERIFICATION EFFECT ----------------------- */
+  useEffect(() => {
     if (resendUserId && !isUserLoading) {
       if (userError) {
         toast.error(
@@ -166,43 +193,28 @@ const UserList = () => {
         return;
       }
 
-      if (!selectedUser) {
-        toast.error("User data not found");
-        setResendUserId(null);
-        return;
-      }
-
-      const email = selectedUser.email;
-
-      if (!email || typeof email !== "string" || email.trim() === "") {
+      if (!selectedUser?.email) {
         toast.error("Invalid or missing user email");
         setResendUserId(null);
         return;
       }
 
-      // Validate email format
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
+      if (!emailRegex.test(selectedUser.email)) {
         toast.error("Invalid email format");
         setResendUserId(null);
         return;
       }
 
-      resendVerificationEmail({ email })
+      resendVerificationEmail({ email: selectedUser.email })
         .unwrap()
-        .then(() => {
-          toast.success("Verification link sent successfully");
-        })
-        .catch((error) => {
+        .then(() => toast.success("Verification link sent successfully"))
+        .catch((err) =>
           toast.error(
-            `Failed to resend verification link: ${
-              error.data?.message || error.message || "Unknown error"
-            }`
-          );
-        })
-        .finally(() => {
-          setResendUserId(null);
-        });
+            `Failed to resend: ${err.data?.message || "Unknown error"}`
+          )
+        )
+        .finally(() => setResendUserId(null));
     }
   }, [
     resendUserId,
@@ -212,64 +224,7 @@ const UserList = () => {
     resendVerificationEmail,
   ]);
 
-  const handleConfirmDelete = async () => {
-    if (!userToDelete) {
-      toast.error("No user selected for deletion");
-      setShowDeleteModal(false);
-      return;
-    }
-    try {
-      await deleteUser(userToDelete).unwrap();
-      if (filteredUsers.length === 1 && currentPage > 1) {
-        setCurrentPage(currentPage - 1);
-      }
-    } catch (error) {
-      toast.error(
-        `Failed to delete user: ${error.data?.message || "Unknown error"}`
-      );
-    } finally {
-      setShowDeleteModal(false);
-      setUserToDelete(null);
-    }
-  };
-
-  const handleReportUser = async (userId) => {
-    try {
-      await reportUser(userId).unwrap();
-    } catch (error) {
-      toast.error(
-        `Failed to report user: ${error.data?.message || "Unknown error"}`
-      );
-    }
-  };
-
-  const handleInactiveUser = async (userId) => {
-    try {
-      await inactiveUser(userId).unwrap();
-    } catch (error) {
-      toast.error(
-        `Failed to mark user as inactive: ${
-          error.data?.message || "Unknown error"
-        }`
-      );
-    }
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-  };
-
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-
-  const clearFilters = () => {
-    setSearchTerm("");
-    setSortBy("Recently Added");
-    setActiveTab("All");
-    setCurrentPage(1);
-  };
-
+  /* ----------------------- RENDER ----------------------- */
   if (isLoading || isFetching) {
     return (
       <div className="content">
@@ -313,7 +268,9 @@ const UserList = () => {
             onAdd={handleAddUser}
             tableData={filteredUsers}
           />
+
           <div className="card-body">
+            {/* ---------- FILTERS / TABS ---------- */}
             <div className="row">
               <div className="col-lg-4">
                 <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
@@ -329,12 +286,6 @@ const UserList = () => {
                           className={`nav-link btn btn-sm btn-icon py-3 d-flex align-items-center justify-content-center w-auto ${
                             activeTab === status ? "active" : ""
                           }`}
-                          id={`tab-${status}`}
-                          data-bs-toggle="pill"
-                          data-bs-target={`#pills-${status}`}
-                          type="button"
-                          role="tab"
-                          aria-selected={activeTab === status}
                           onClick={() => setActiveTab(status)}
                         >
                           {status} ({groupedUsers[status].length})
@@ -344,6 +295,7 @@ const UserList = () => {
                   </ul>
                 </div>
               </div>
+
               <div className="col-lg-8">
                 <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
                   <div className="input-icon-start position-relative">
@@ -368,190 +320,179 @@ const UserList = () => {
                 </div>
               </div>
             </div>
-            <div className="tab-content" id="pills-tabContent">
-              {Object.entries(groupedUsers).map(([status, list]) => (
-                <div
-                  className={`tab-pane fade ${
-                    activeTab === status ? "show active" : ""
-                  }`}
-                  id={`pills-${status}`}
-                  role="tabpanel"
-                  aria-labelledby={`tab-${status}`}
-                  key={status}
-                >
-                  {filteredUsers.length === 0 ? (
-                    <p className="text-muted">
-                      No {status.toLowerCase()} users match the applied filters
-                    </p>
-                  ) : (
-                    <div className="table-responsive">
-                      <table className="table table-hover">
-                        <thead>
-                          <tr>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Username</th>
-                            <th>Mobile Number</th>
-                            <th>Roles</th>
-                            <th>Status</th>
-                            <th></th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredUsers.map((user) => (
-                            <tr key={user.userId}>
-                              <td>
-                                <a onClick={() => handleViewUser(user)}>
-                                  {" "}
-                                  {user.name || "N/A"}
-                                </a>
-                              </td>
-                              <td>{user.email || "N/A"}</td>
-                              <td>
-                                {" "}
-                                <a onClick={() => handleViewUser(user)}>
-                                  {user.username || "N/A"}
-                                </a>
-                              </td>
-                              <td>{user.mobileNumber || "N/A"}</td>
-                              <td>{user.roles?.join(", ") || "N/A"}</td>
-                              <td>
-                                <span
-                                  className={`badge ${
-                                    user.status === "active"
-                                      ? "badge-success"
-                                      : "badge-danger"
-                                  }`}
-                                >
-                                  {user.status === "active"
-                                    ? "Active"
-                                    : "Inactive"}
-                                </span>
-                              </td>
-                              <td>
-                                <span
-                                  onClick={() => handleEditUser(user)}
-                                  title={`Edit ${user.name || "user"}`}
-                                >
-                                  <EditOutlined style={{ marginRight: 8 }} />
-                                </span>
-                                <Dropdown
-                                  overlay={
-                                    <Menu>
-                                      <Menu.Item
-                                        key="view"
-                                        onClick={() => handleViewUser(user)}
-                                        title={`View ${user.name || "user"}`}
-                                      >
-                                        <EyeOutlined
-                                          style={{ marginRight: 8 }}
-                                        />
-                                        View User
-                                      </Menu.Item>
 
-                                      <Menu.Item
-                                        key="inactive"
-                                        onClick={() =>
-                                          handleInactiveUser(user.userId)
-                                        }
-                                        disabled={isInactivating}
-                                        title={`Mark ${
-                                          user.name || "user"
-                                        } as inactive`}
-                                      >
-                                        <StopOutlined
-                                          style={{ marginRight: 8 }}
-                                        />
-                                        Inactive User
-                                      </Menu.Item>
-                                      <Menu.Item
-                                        key="report"
-                                        onClick={() =>
-                                          handleReportUser(user.userId)
-                                        }
-                                        disabled={isReporting}
-                                        title={`Report ${user.name || "user"}`}
-                                      >
-                                        <ExclamationCircleOutlined
-                                          style={{ marginRight: 8 }}
-                                        />
-                                        Report User
-                                      </Menu.Item>
-                                      {!user.isEmailVerified && (
-                                        <Menu.Item
-                                          key="resend-verification"
-                                          onClick={() =>
-                                            handleResendVerification(
-                                              user.userId
-                                            )
-                                          }
-                                          disabled={
-                                            isResending ||
-                                            (resendUserId === user.userId &&
-                                              isUserLoading)
-                                          }
-                                          title={`Resend verification link to ${
-                                            user.name || "user"
-                                          }`}
-                                        >
-                                          <MailOutlined
-                                            style={{ marginRight: 8 }}
-                                          />
-                                          Resend Verification
-                                        </Menu.Item>
-                                      )}
-                                      <Menu.Item
-                                        key="delete"
-                                        onClick={() =>
-                                          handleDeleteUser(user.userId)
-                                        }
-                                        disabled={isDeleting}
-                                        style={{ color: "#ff4d4f" }}
-                                        title={`Delete ${user.name || "user"}`}
-                                      >
-                                        <DeleteOutlined
-                                          style={{ marginRight: 8 }}
-                                        />
-                                        Delete User
-                                      </Menu.Item>
-                                    </Menu>
-                                  }
-                                  trigger={["click"]}
-                                  placement="bottomRight"
-                                >
-                                  <Button
-                                    type="text"
-                                    icon={<MoreOutlined />}
-                                    aria-label={`More actions for ${
-                                      user.name || "user"
-                                    }`}
-                                  />
-                                </Dropdown>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      {totalUsers > itemsPerPage && (
-                        <div className="pagination-section mt-4 d-flex justify-content-end">
-                          <Pagination
-                            current={currentPage}
-                            pageSize={itemsPerPage}
-                            total={totalUsers}
-                            onChange={handlePageChange}
-                            showSizeChanger={false}
-                            showQuickJumper
+            {/* ---------- TABLE ---------- */}
+            <div className="table-responsive">
+              <table className="table table-hover">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Username</th>
+                    <th>Mobile Number</th>
+                    <th>Roles</th>
+                    <th>Status</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredUsers.map((user) => {
+                    const isActive = user.status === "active";
+
+                    // Dropdown content for the pen button
+                    const statusMenu = (
+                      <Menu>
+                        <Menu.Item
+                          key="active"
+                          disabled={isActive || isUpdatingStatus}
+                          onClick={() =>
+                            handleStatusChange(user.userId, "active")
+                          }
+                        >
+                          Active
+                        </Menu.Item>
+                        <Menu.Item
+                          key="inactive"
+                          disabled={!isActive || isUpdatingStatus}
+                          onClick={() =>
+                            handleStatusChange(user.userId, "inactive")
+                          }
+                        >
+                          Inactive
+                        </Menu.Item>
+                      </Menu>
+                    );
+
+                    return (
+                      <tr key={user.userId}>
+                        <td>
+                          <a onClick={() => handleViewUser(user)}>
+                            {user.name || "N/A"}
+                          </a>
+                        </td>
+                        <td>{user.email || "N/A"}</td>
+                        <td>
+                          <a onClick={() => handleViewUser(user)}>
+                            {user.username || "N/A"}
+                          </a>
+                        </td>
+                        <td>{user.mobileNumber || "N/A"}</td>
+                        <td>{user.roles?.join(", ") || "N/A"}</td>
+
+                        {/* ---- STATUS BADGE + PEN ---- */}
+                        <td>
+                          <Dropdown
+                            overlay={statusMenu}
+                            trigger={["click"]}
+                            placement="bottomLeft"
+                          >
+                            <span
+                              className={`badge d-inline-flex align-items-center gap-1 cursor-pointer ${
+                                isActive ? "badge-success" : "badge-danger"
+                              }`}
+                            >
+                              {isActive ? "Active" : "Inactive"}
+                              <FaPen
+                                className="ms-1"
+                                style={{ fontSize: "0.85rem" }}
+                              />
+                            </span>
+                          </Dropdown>
+                        </td>
+
+                        {/* ---- ACTIONS ---- */}
+                        <td>
+                          <EditOutlined
+                            style={{ marginRight: 8, cursor: "pointer" }}
+                            onClick={() => handleEditUser(user)}
+                            title={`Edit ${user.name || "user"}`}
                           />
-                        </div>
-                      )}
-                    </div>
-                  )}
+
+                          <Dropdown
+                            overlay={
+                              <Menu>
+                                <Menu.Item
+                                  key="view"
+                                  onClick={() => handleViewUser(user)}
+                                >
+                                  <EyeOutlined style={{ marginRight: 8 }} />
+                                  View User
+                                </Menu.Item>
+
+                                <Menu.Item
+                                  key="report"
+                                  onClick={() => handleReportUser(user.userId)}
+                                  disabled={isReporting}
+                                >
+                                  <ExclamationCircleOutlined
+                                    style={{ marginRight: 8 }}
+                                  />
+                                  Report User
+                                </Menu.Item>
+
+                                {!user.isEmailVerified && (
+                                  <Menu.Item
+                                    key="resend-verification"
+                                    onClick={() =>
+                                      handleResendVerification(user.userId)
+                                    }
+                                    disabled={
+                                      isResending ||
+                                      (resendUserId === user.userId &&
+                                        isUserLoading)
+                                    }
+                                  >
+                                    <MailOutlined style={{ marginRight: 8 }} />
+                                    Resend Verification
+                                  </Menu.Item>
+                                )}
+
+                                <Menu.Item
+                                  key="delete"
+                                  onClick={() => handleDeleteUser(user.userId)}
+                                  disabled={isDeleting}
+                                  style={{ color: "#ff4d4f" }}
+                                >
+                                  <DeleteOutlined style={{ marginRight: 8 }} />
+                                  Delete User
+                                </Menu.Item>
+                              </Menu>
+                            }
+                            trigger={["click"]}
+                            placement="bottomRight"
+                          >
+                            <Button
+                              type="text"
+                              icon={<MoreOutlined />}
+                              aria-label={`More actions for ${
+                                user.name || "user"
+                              }`}
+                            />
+                          </Dropdown>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+
+              {totalUsers > itemsPerPage && (
+                <div className="pagination-section mt-4 d-flex justify-content-end">
+                  <Pagination
+                    current={currentPage}
+                    pageSize={itemsPerPage}
+                    total={totalUsers}
+                    onChange={handlePageChange}
+                    showSizeChanger={false}
+                    showQuickJumper
+                  />
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
 
+        {/* ----- DELETE MODAL ----- */}
         {showDeleteModal && (
           <DeleteModal
             item={userToDelete}

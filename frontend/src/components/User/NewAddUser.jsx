@@ -9,8 +9,7 @@ import {
   TimePicker,
 } from "antd";
 import { toast } from "sonner";
-import Flatpickr from "react-flatpickr";
-import "flatpickr/dist/flatpickr.min.css";
+import moment from "moment";
 import {
   useCreateUserMutation,
   useUpdateUserMutation,
@@ -28,19 +27,19 @@ import {
   InfoCircleOutlined,
   HomeOutlined,
 } from "@ant-design/icons";
-import moment from "moment";
 
 const { Option } = Select;
 
 const NewAddUser = ({ userToEdit: propUserToEdit }) => {
   const { userId } = useParams();
   const navigate = useNavigate();
+
   const {
     data: fetchedUser,
     isLoading: isFetchingUser,
     error: fetchUserError,
+    refetch, // ← Add this
   } = useGetUserByIdQuery(userId, { skip: !userId || !!propUserToEdit });
-
   const userToEdit = propUserToEdit || fetchedUser?.data || fetchedUser?.user;
 
   const [createUser, { isLoading: isCreating, error: createError }] =
@@ -62,7 +61,6 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
   } = useGetRolesQuery();
 
   const [isEditMode, setIsEditMode] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [manageAddress, setManageAddress] = useState(false);
   const [formData, setFormData] = useState({
     username: "",
@@ -77,7 +75,6 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
     roleId: "",
     status: "inactive",
     password: "",
-
     about: "",
     street: "",
     country: "",
@@ -100,13 +97,13 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
         shiftFrom: userToEdit.shiftFrom
           ? new Date(`1970-01-01T${userToEdit.shiftFrom}`).toLocaleTimeString(
               "en-US",
-              { hour12: false }
+              { hour12: false, hour: "2-digit", minute: "2-digit" }
             )
           : "",
         shiftTo: userToEdit.shiftTo
           ? new Date(`1970-01-01T${userToEdit.shiftTo}`).toLocaleTimeString(
               "en-US",
-              { hour12: false }
+              { hour12: false, hour: "2-digit", minute: "2-digit" }
             )
           : "",
         bloodGroup: userToEdit.bloodGroup || "",
@@ -121,7 +118,6 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
           ? userToEdit.status
           : "inactive",
         password: "",
-
         about: userToEdit.about || "",
         addressId: userToEdit.addressId || null,
       });
@@ -160,26 +156,24 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
   ]);
 
   const handleChange = (name, value) => {
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleDateChange = (name, date) => {
     const value = date ? date.format("YYYY-MM-DD") : "";
-    setFormData((prevData) => ({ ...prevData, [name]: value }));
+    handleChange(name, value);
   };
 
   const handleTimeChange = (name, time) => {
     const value = time ? time.format("HH:mm") : "";
-    setFormData((prevData) => ({ ...prevData, [name]: value }));
+    handleChange(name, value);
   };
 
-  const handleSubmit = async (values) => {
+  const handleSubmit = async () => {
     try {
       const requiredFields = ["username", "email", "name", "roleId"];
       if (!isEditMode) requiredFields.push("password");
+
       for (const field of requiredFields) {
         if (!formData[field]) {
           toast.error(
@@ -207,7 +201,6 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
       let addressId = isEditMode ? formData.addressId : null;
       let newUserId = null;
 
-      // Handle address creation/update
       if (manageAddress) {
         const hasAddressFields =
           formData.street ||
@@ -244,12 +237,10 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
               toast.error("Failed to obtain address ID");
               return;
             }
-          } catch (addressErr) {
+          } catch (err) {
             toast.error(
               `Address operation failed: ${
-                addressErr.data?.message ||
-                addressErr.message ||
-                "Unknown error"
+                err.data?.message || "Unknown error"
               }`
             );
             return;
@@ -275,7 +266,6 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
         roleId: selectedRoleObj.roleId,
         status: formData.status,
         password: formData.password || undefined,
-
         about: formData.about || null,
       };
 
@@ -290,11 +280,9 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
           userResponse = await createUser(userPayload).unwrap();
           newUserId = userResponse.userId || userResponse.data?.userId;
         }
-      } catch (userErr) {
+      } catch (err) {
         toast.error(
-          `User operation failed: ${
-            userErr.data?.message || userErr.message || "Unknown error"
-          }`
+          `User operation failed: ${err.data?.message || "Unknown error"}`
         );
         return;
       }
@@ -311,65 +299,162 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
             postalCode: formData.postalCode || null,
             updatedAt: new Date().toISOString(),
           }).unwrap();
-        } catch (addressErr) {
+        } catch (err) {
           toast.error(
-            `Failed to associate address with user: ${
-              addressErr.data?.message || addressErr.message || "Unknown error"
+            `Failed to associate address: ${
+              err.data?.message || "Unknown error"
             }`
           );
           return;
         }
       }
+
+      toast.success(
+        isEditMode ? "User updated successfully!" : "User created successfully!"
+      );
       navigate("/users/list");
     } catch (err) {
-      toast.error(
-        `Failed to process the request: ${
-          err.data?.message || err.message || "Unknown error"
-        }`
-      );
+      toast.error(`Operation failed: ${err.message || "Unknown error"}`);
     }
   };
 
-  const handleRefresh = () => {
-    setFormData({
-      username: "",
-      name: "",
-      email: "",
-      mobileNumber: "",
-      dateOfBirth: "",
-      shiftFrom: "",
-      shiftTo: "",
-      bloodGroup: "",
-      emergencyNumber: "",
-      roleId: "",
-      status: "inactive",
-      password: "",
-
-      about: "",
-      street: "",
-      country: "",
-      state: "",
-      city: "",
-      postalCode: "",
-      addressId: null,
-    });
-    setIsEditMode(false);
-    setManageAddress(false);
+  const handleRefresh = async () => {
+    if (isEditMode) {
+      // In Edit Mode: Reload original data from API (or props)
+      if (propUserToEdit) {
+        // If passed via props (e.g. from list), use that
+        setFormData({
+          username: propUserToEdit.username || "",
+          name: propUserToEdit.name || "",
+          email: propUserToEdit.email || "",
+          mobileNumber: propUserToEdit.mobileNumber || "",
+          dateOfBirth: propUserToEdit.dateOfBirth
+            ? new Date(propUserToEdit.dateOfBirth).toISOString().split("T")[0]
+            : "",
+          shiftFrom: propUserToEdit.shiftFrom
+            ? new Date(
+                `1970-01-01T${propUserToEdit.shiftFrom}`
+              ).toLocaleTimeString("en-US", {
+                hour12: false,
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : "",
+          shiftTo: propUserToEdit.shiftTo
+            ? new Date(
+                `1970-01-01T${propUserToEdit.shiftTo}`
+              ).toLocaleTimeString("en-US", {
+                hour12: false,
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : "",
+          bloodGroup: propUserToEdit.bloodGroup || "",
+          street: propUserToEdit.address?.street || "",
+          country: propUserToEdit.address?.country || "",
+          state: propUserToEdit.address?.state || "",
+          city: propUserToEdit.address?.city || "",
+          postalCode: propUserToEdit.address?.postalCode || "",
+          emergencyNumber: propUserToEdit.emergencyNumber || "",
+          roleId: propUserToEdit.roleId || "",
+          status: ["active", "inactive", "restricted"].includes(
+            propUserToEdit.status
+          )
+            ? propUserToEdit.status
+            : "inactive",
+          password: "",
+          about: propUserToEdit.about || "",
+          addressId: propUserToEdit.addressId || null,
+        });
+        setManageAddress(!!propUserToEdit.addressId);
+      } else if (userId) {
+        // If editing via URL, refetch from API
+        try {
+          const refetched = await refetch(); // We'll add this below
+          const user = refetched.data?.data || refetched.data?.user;
+          if (user) {
+            setFormData({
+              username: user.username || "",
+              name: user.name || "",
+              email: user.email || "",
+              mobileNumber: user.mobileNumber || "",
+              dateOfBirth: user.dateOfBirth
+                ? new Date(user.dateOfBirth).toISOString().split("T")[0]
+                : "",
+              shiftFrom: user.shiftFrom
+                ? new Date(`1970-01-01T${user.shiftFrom}`).toLocaleTimeString(
+                    "en-US",
+                    {
+                      hour12: false,
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }
+                  )
+                : "",
+              shiftTo: user.shiftTo
+                ? new Date(`1970-01-01T${user.shiftTo}`).toLocaleTimeString(
+                    "en-US",
+                    {
+                      hour12: false,
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }
+                  )
+                : "",
+              bloodGroup: user.bloodGroup || "",
+              street: user.address?.street || "",
+              country: user.address?.country || "",
+              state: user.address?.state || "",
+              city: user.address?.city || "",
+              postalCode: user.address?.postalCode || "",
+              emergencyNumber: user.emergencyNumber || "",
+              roleId: user.roleId || "",
+              status: ["active", "inactive", "restricted"].includes(user.status)
+                ? user.status
+                : "inactive",
+              password: "",
+              about: user.about || "",
+              addressId: user.addressId || null,
+            });
+            setManageAddress(!!user.addressId);
+          }
+        } catch (err) {
+          toast.error("Failed to reload user data");
+        }
+      }
+    } else {
+      // In Add Mode: Reset to empty
+      setFormData({
+        username: "",
+        name: "",
+        email: "",
+        mobileNumber: "",
+        dateOfBirth: "",
+        shiftFrom: "",
+        shiftTo: "",
+        bloodGroup: "",
+        emergencyNumber: "",
+        roleId: "",
+        status: "inactive",
+        password: "",
+        about: "",
+        street: "",
+        country: "",
+        state: "",
+        city: "",
+        postalCode: "",
+        addressId: null,
+      });
+      setManageAddress(false);
+    }
   };
-
-  const handleCollapse = () => {
-    setIsCollapsed((prev) => !prev);
-  };
-
-  const handleClose = () => {
-    navigate("/users/list");
-  };
+  const handleClose = () => navigate("/users/list");
 
   if (isFetchingUser || isRolesLoading) {
     return (
       <div className="page-wrapper">
         <div className="content text-center">
-          <p>Loading {isFetchingUser ? "user data" : "roles"}...</p>
+          <p>Loading...</p>
         </div>
       </div>
     );
@@ -389,433 +474,311 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
   return (
     <div className="page-wrapper">
       <div className="content">
+        {/* Header */}
         <div className="page-header">
           <div className="add-item d-flex">
             <div className="page-title">
               <h4>{isEditMode ? "Edit User" : "Add User"}</h4>
-              <h6>{isEditMode ? "Update Employee" : "Create new Employee"}</h6>
+              <h6>{isEditMode ? "Update user details" : "Create new user"}</h6>
             </div>
           </div>
           <ul className="table-top-head">
             <li className="me-2">
-              <a
-                href="#"
-                onClick={handleRefresh}
-                data-bs-toggle="tooltip"
-                title="Refresh"
-              >
+              <a href="#" onClick={handleRefresh} title="Refresh">
                 <ReloadOutlined />
-              </a>
-            </li>
-            <li className="me-2">
-              <a
-                href="#"
-                onClick={handleCollapse}
-                data-bs-toggle="tooltip"
-                title={isCollapsed ? "Expand" : "Collapse"}
-                id="collapse-header"
-              >
-                <i
-                  className={
-                    isCollapsed ? "ti ti-chevron-down" : "ti ti-chevron-up"
-                  }
-                ></i>
               </a>
             </li>
           </ul>
           <div className="page-btn">
-            <Button
-              onClick={() => navigate("/users/list")}
-              className="btn btn-secondary"
-            >
+            <Button onClick={handleClose} className="btn btn-secondary">
               <LeftOutlined /> Back to List
             </Button>
           </div>
         </div>
 
-        <div style={{ display: isCollapsed ? "none" : "block" }}>
-          <Form onFinish={handleSubmit}>
-            <div className="accordions-items-seperate" id="accordionExample">
-              {/* Employee Information */}
-              <div className="accordion-item border mb-4">
-                <h2 className="accordion-header" id="headingOne">
-                  <div
-                    className="accordion-button bg-white"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#collapseOne"
-                    aria-controls="collapseOne"
-                  >
-                    <h5 className="d-inline-flex align-items-center">
-                      <InfoCircleOutlined />
-                      <span>Employee Information</span>
-                    </h5>
-                  </div>
-                </h2>
-                <div
-                  id="collapseOne"
-                  className="accordion-collapse collapse show"
-                  aria-labelledby="headingOne"
-                  data-bs-parent="#accordionExample"
-                >
-                  <div className="accordion-body border-top">
-                    <div className="new-employee-field">
-                      <div className="row">
-                        <div className="col-lg-4 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">
-                              Username
-                              <span className="text-danger ms-1">*</span>
-                            </label>
-                            <Input
-                              name="username"
-                              value={formData.username}
-                              onChange={(e) =>
-                                handleChange("username", e.target.value)
-                              }
-                              required
-                            />
-                          </div>
-                        </div>
-                        <div className="col-lg-4 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">
-                              Full Name
-                              <span className="text-danger ms-1">*</span>
-                            </label>
-                            <Input
-                              name="name"
-                              value={formData.name}
-                              onChange={(e) =>
-                                handleChange("name", e.target.value)
-                              }
-                              required
-                            />
-                          </div>
-                        </div>
-                        <div className="col-lg-4 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">
-                              Email<span className="text-danger ms-1">*</span>
-                            </label>
-                            <Input
-                              type="email"
-                              name="email"
-                              value={formData.email}
-                              onChange={(e) =>
-                                handleChange("email", e.target.value)
-                              }
-                              required
-                            />
-                          </div>
-                        </div>
-                        <div className="col-lg-4 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">Mobile Number</label>
-                            <Input
-                              name="mobileNumber"
-                              value={formData.mobileNumber}
-                              onChange={(e) =>
-                                handleChange("mobileNumber", e.target.value)
-                              }
-                            />
-                          </div>
-                        </div>
-                        <div className="col-lg-4 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">Date of Birth</label>
-                            <DatePicker
-                              value={
-                                formData.dateOfBirth
-                                  ? moment(formData.dateOfBirth)
-                                  : null
-                              }
-                              onChange={(date) =>
-                                handleDateChange("dateOfBirth", date)
-                              }
-                              format="YYYY-MM-DD"
-                              className="form-control"
-                              placeholder="Select Date"
-                            />
-                          </div>
-                        </div>
-                        <div className="col-lg-4 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">Shift From</label>
-                            <TimePicker
-                              value={
-                                formData.shiftFrom
-                                  ? moment(formData.shiftFrom, "HH:mm")
-                                  : null
-                              }
-                              onChange={(time) =>
-                                handleTimeChange("shiftFrom", time)
-                              }
-                              format="HH:mm"
-                              className="form-control"
-                              placeholder="Select Time"
-                            />
-                          </div>
-                        </div>
-                        <div className="col-lg-4 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">Shift To</label>
-                            <TimePicker
-                              value={
-                                formData.shiftTo
-                                  ? moment(formData.shiftTo, "HH:mm")
-                                  : null
-                              }
-                              onChange={(time) =>
-                                handleTimeChange("shiftTo", time)
-                              }
-                              format="HH:mm"
-                              className="form-control"
-                              placeholder="Select Time"
-                            />
-                          </div>
-                        </div>
-                        <div className="col-lg-4 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">Blood Group</label>
-                            <Select
-                              name="bloodGroup"
-                              value={formData.bloodGroup}
-                              onChange={(value) =>
-                                handleChange("bloodGroup", value)
-                              }
-                              placeholder="Select"
-                            >
-                              {[
-                                "A+",
-                                "A-",
-                                "B+",
-                                "B-",
-                                "AB+",
-                                "AB-",
-                                "O+",
-                                "O-",
-                              ].map((bg) => (
-                                <Option key={bg} value={bg}>
-                                  {bg}
-                                </Option>
-                              ))}
-                            </Select>
-                          </div>
-                        </div>
-                        <div className="col-lg-4 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">
-                              Role<span className="text-danger ms-1">*</span>
-                            </label>
-                            <Select
-                              name="roleId"
-                              value={formData.roleId}
-                              onChange={(value) =>
-                                handleChange("roleId", value)
-                              }
-                              disabled={isRolesLoading}
-                              placeholder="Select"
-                              required
-                            >
-                              {roles?.map((role) => (
-                                <Option key={role.roleId} value={role.roleId}>
-                                  {role.roleName}
-                                </Option>
-                              ))}
-                            </Select>
-                          </div>
-                        </div>
-                        <div className="col-lg-4 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">
-                              Status<span className="text-danger ms-1">*</span>
-                            </label>
-                            <Select
-                              name="status"
-                              value={formData.status}
-                              onChange={(value) =>
-                                handleChange("status", value)
-                              }
-                              required
-                            >
-                              <Option value="active">Active</Option>
-                              <Option value="inactive">Inactive</Option>
-                              <Option value="restricted">Restricted</Option>
-                            </Select>
-                          </div>
-                        </div>
-                        <div className="col-lg-4 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">
-                              Emergency Contact Number
-                            </label>
-                            <Input
-                              name="emergencyNumber"
-                              value={formData.emergencyNumber}
-                              onChange={(e) =>
-                                handleChange("emergencyNumber", e.target.value)
-                              }
-                            />
-                          </div>
-                        </div>
-                        <div className="col-lg-4 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">
-                              Password
-                              {!isEditMode && (
-                                <span className="text-danger ms-1">*</span>
-                              )}
-                            </label>
-                            <Input.Password
-                              name="password"
-                              value={formData.password}
-                              onChange={(e) =>
-                                handleChange("password", e.target.value)
-                              }
-                              required={!isEditMode}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+        {/* Form Content - Always Visible */}
+        <Form onFinish={handleSubmit} layout="vertical">
+          {/* User Information Section */}
+          <div className="card mb-4">
+            <div className="card-header bg-white border-bottom">
+              <h5 className="d-inline-flex align-items-center">
+                <InfoCircleOutlined className="me-2" />
+                User Information
+              </h5>
+            </div>
+            <div className="card-body">
+              <div className="row">
+                <div className="col-lg-4 col-md-6">
+                  <Form.Item label="Username" required>
+                    <Input
+                      value={formData.username}
+                      onChange={(e) => handleChange("username", e.target.value)}
+                    />
+                  </Form.Item>
                 </div>
-              </div>
-
-              {/* Address Information */}
-              <div className="accordion-item border mb-4">
-                <h2 className="accordion-header" id="headingThree">
-                  <div
-                    className="accordion-button bg-white"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#collapseThree"
-                    aria-controls="collapseThree"
+                <div className="col-lg-4 col-md-6">
+                  <Form.Item label="Full Name" required>
+                    <Input
+                      value={formData.name}
+                      onChange={(e) => handleChange("name", e.target.value)}
+                    />
+                  </Form.Item>
+                </div>
+                <div className="col-lg-4 col-md-6">
+                  <Form.Item label="Email" required>
+                    <Input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => handleChange("email", e.target.value)}
+                    />
+                  </Form.Item>
+                </div>
+                <div className="col-lg-4 col-md-6">
+                  <Form.Item
+                    label="Mobile Number"
+                    validateStatus={
+                      formData.mobileNumber &&
+                      !/^\d{10}$/.test(formData.mobileNumber)
+                        ? "error"
+                        : ""
+                    }
+                    help={
+                      formData.mobileNumber &&
+                      !/^\d{10}$/.test(formData.mobileNumber)
+                        ? "Mobile number must be exactly 10 digits"
+                        : ""
+                    }
                   >
-                    <h5 className="d-inline-flex align-items-center">
-                      <HomeOutlined />
-                      <span>Address Information</span>
-                    </h5>
-                  </div>
-                </h2>
-                <div
-                  id="collapseThree"
-                  className="accordion-collapse collapse show"
-                  aria-labelledby="headingThree"
-                  data-bs-parent="#accordionExample"
-                >
-                  <div className="accordion-body border-top">
-                    <div className="mb-3">
-                      <Checkbox
-                        checked={manageAddress}
-                        onChange={(e) => setManageAddress(e.target.checked)}
-                      >
-                        {isEditMode && formData.addressId
-                          ? "Edit existing address"
-                          : "Add new address"}
-                      </Checkbox>
-                    </div>
-                    {manageAddress && (
-                      <div className="row">
-                        <div className="col-lg-4 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">Street</label>
-                            <Input
-                              name="street"
-                              value={formData.street}
-                              onChange={(e) =>
-                                handleChange("street", e.target.value)
-                              }
-                            />
-                          </div>
-                        </div>
-                        <div className="col-lg-4 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">Country</label>
-                            <Input
-                              name="country"
-                              value={formData.country}
-                              onChange={(e) =>
-                                handleChange("country", e.target.value)
-                              }
-                            />
-                          </div>
-                        </div>
-                        <div className="col-lg-4 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">State</label>
-                            <Input
-                              name="state"
-                              value={formData.state}
-                              onChange={(e) =>
-                                handleChange("state", e.target.value)
-                              }
-                            />
-                          </div>
-                        </div>
-                        <div className="col-lg-4 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">City</label>
-                            <Input
-                              name="city"
-                              value={formData.city}
-                              onChange={(e) =>
-                                handleChange("city", e.target.value)
-                              }
-                            />
-                          </div>
-                        </div>
-                        <div className="col-lg-4 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">Postal Code</label>
-                            <Input
-                              name="postalCode"
-                              value={formData.postalCode}
-                              onChange={(e) =>
-                                handleChange("postalCode", e.target.value)
-                              }
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                    <Input
+                      value={formData.mobileNumber}
+                      onChange={(e) => {
+                        const value = e.target.value
+                          .replace(/\D/g, "")
+                          .slice(0, 10); // Allow only digits, max 10
+                        handleChange("mobileNumber", value);
+                      }}
+                      placeholder="Enter 10-digit mobile number"
+                      maxLength={10}
+                    />
+                  </Form.Item>
+                </div>
+                <div className="col-lg-4 col-md-6">
+                  <Form.Item label="Date of Birth">
+                    <DatePicker
+                      value={
+                        formData.dateOfBirth
+                          ? moment(formData.dateOfBirth)
+                          : null
+                      }
+                      onChange={(date) => handleDateChange("dateOfBirth", date)}
+                      format="YYYY-MM-DD"
+                      style={{ width: "100%" }}
+                    />
+                  </Form.Item>
+                </div>
+                <div className="col-lg-4 col-md-6">
+                  <Form.Item label="Shift From">
+                    <TimePicker
+                      value={
+                        formData.shiftFrom
+                          ? moment(formData.shiftFrom, "HH:mm")
+                          : null
+                      }
+                      onChange={(time) => handleTimeChange("shiftFrom", time)}
+                      format="HH:mm"
+                      style={{ width: "100%" }}
+                    />
+                  </Form.Item>
+                </div>
+
+                <div className="col-lg-4 col-md-6">
+                  <Form.Item label="Shift To">
+                    <TimePicker
+                      value={
+                        formData.shiftTo
+                          ? moment(formData.shiftTo, "HH:mm")
+                          : null
+                      }
+                      onChange={(time) => handleTimeChange("shiftTo", time)}
+                      format="HH:mm"
+                      style={{ width: "100%" }}
+                    />
+                  </Form.Item>
+                </div>
+                <div className="col-lg-4 col-md-6">
+                  <Form.Item label="Blood Group">
+                    <Select
+                      value={formData.bloodGroup}
+                      onChange={(value) => handleChange("bloodGroup", value)}
+                      placeholder="Select blood group"
+                      style={{ width: "100%" }}
+                      dropdownStyle={{ minWidth: 120 }}
+                    >
+                      {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map(
+                        (bg) => (
+                          <Option key={bg} value={bg}>
+                            {bg}
+                          </Option>
+                        )
+                      )}
+                    </Select>
+                  </Form.Item>
+                </div>
+                <div className="col-lg-4 col-md-6">
+                  <Form.Item label="Role" required>
+                    <Select
+                      value={formData.roleId}
+                      onChange={(value) => handleChange("roleId", value)}
+                      placeholder="Select role"
+                      loading={isRolesLoading}
+                      style={{ width: "100%" }}
+                      dropdownStyle={{ minWidth: 200 }}
+                    >
+                      {roles?.map((role) => (
+                        <Option key={role.roleId} value={role.roleId}>
+                          {role.roleName}
+                        </Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </div>
+
+                <div className="col-lg-4 col-md-6">
+                  <Form.Item label="Status" required>
+                    <Select
+                      value={formData.status}
+                      onChange={(value) => handleChange("status", value)}
+                    >
+                      <Option value="active">Active</Option>
+                      <Option value="inactive">Inactive</Option>
+                      <Option value="restricted">Restricted</Option>
+                    </Select>
+                  </Form.Item>
+                </div>
+                <div className="col-lg-4 col-md-6">
+                  <Form.Item label="Emergency Contact">
+                    <Input
+                      value={formData.emergencyNumber}
+                      onChange={(e) =>
+                        handleChange("emergencyNumber", e.target.value)
+                      }
+                    />
+                  </Form.Item>
+                </div>
+                <div className="col-lg-4 col-md-6">
+                  <Form.Item label="Password" required={!isEditMode}>
+                    <Input.Password
+                      value={formData.password}
+                      onChange={(e) => handleChange("password", e.target.value)}
+                      placeholder={
+                        isEditMode
+                          ? "Leave blank to keep current"
+                          : "Enter password"
+                      }
+                    />
+                  </Form.Item>
                 </div>
               </div>
             </div>
+          </div>
 
-            <div className="text-end mb-3">
-              <Button
-                onClick={handleClose}
-                disabled={
-                  isCreating ||
-                  isUpdating ||
-                  (manageAddress && (isAddressCreating || isAddressUpdating))
-                }
-                style={{ marginRight: 8 }}
+          {/* Address Section */}
+          <div className="card mb-4">
+            <div className="card-header bg-white border-bottom d-flex align-items-center">
+              <h5 className="d-inline-flex align-items-center">
+                <HomeOutlined className="me-2" />
+                Address Information
+              </h5>
+              <Checkbox
+                checked={manageAddress}
+                onChange={(e) => setManageAddress(e.target.checked)}
+                className="ms-3"
               >
-                Cancel
-              </Button>
-              <Button
-                type="primary"
-                htmlType="submit"
-                disabled={
-                  isCreating ||
-                  isUpdating ||
-                  isRolesLoading ||
-                  (manageAddress && (isAddressCreating || isAddressUpdating))
-                }
-              >
-                {isCreating ||
+                {isEditMode && formData.addressId
+                  ? "Edit Address"
+                  : "Add Address"}
+              </Checkbox>
+            </div>
+            {manageAddress && (
+              <div className="card-body">
+                <div className="row">
+                  <div className="col-lg-4 col-md-6">
+                    <Form.Item label="Street">
+                      <Input
+                        value={formData.street}
+                        onChange={(e) => handleChange("street", e.target.value)}
+                      />
+                    </Form.Item>
+                  </div>
+                  <div className="col-lg-4 col-md-6">
+                    <Form.Item label="Country">
+                      <Input
+                        value={formData.country}
+                        onChange={(e) =>
+                          handleChange("country", e.target.value)
+                        }
+                      />
+                    </Form.Item>
+                  </div>
+                  <div className="col-lg-4 col-md-6">
+                    <Form.Item label="State">
+                      <Input
+                        value={formData.state}
+                        onChange={(e) => handleChange("state", e.target.value)}
+                      />
+                    </Form.Item>
+                  </div>
+                  <div className="col-lg-4 col-md-6">
+                    <Form.Item label="City">
+                      <Input
+                        value={formData.city}
+                        onChange={(e) => handleChange("city", e.target.value)}
+                      />
+                    </Form.Item>
+                  </div>
+                  <div className="col-lg-4 col-md-6">
+                    <Form.Item label="Postal Code">
+                      <Input
+                        value={formData.postalCode}
+                        onChange={(e) =>
+                          handleChange("postalCode", e.target.value)
+                        }
+                      />
+                    </Form.Item>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Submit Buttons */}
+          <div className="text-end">
+            <Button
+              onClick={handleClose}
+              disabled={
+                isCreating ||
                 isUpdating ||
-                (manageAddress && (isAddressCreating || isAddressUpdating))
-                  ? "Saving..."
-                  : isEditMode
-                  ? "Update Employee"
-                  : "Add Employee"}
-              </Button>
-            </div>
-          </Form>
-        </div>
+                isAddressCreating ||
+                isAddressUpdating
+              }
+              style={{ marginRight: 8 }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={
+                isCreating ||
+                isUpdating ||
+                isAddressCreating ||
+                isAddressUpdating
+              }
+            >
+              {isEditMode ? "Update User" : "Add User"}
+            </Button>
+          </div>
+        </Form>
       </div>
     </div>
   );
