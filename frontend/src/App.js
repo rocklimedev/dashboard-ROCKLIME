@@ -11,11 +11,10 @@ import SidebarNew from "./components/Common/SidebarNew2";
 import { useAuth } from "./context/AuthContext";
 
 function App() {
-  const { auth, setAuth } = useAuth();
+  const { auth, setAuth, authChecked } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [authChecked, setAuthChecked] = useState(false);
   const [isSidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 768);
   const [layoutMode, setLayoutMode] = useState("vertical");
   const [isLoggingOut, setIsLoggingOut] = useState(false); // New flag
@@ -35,14 +34,6 @@ function App() {
   ].includes(location.pathname);
 
   // Restore token from storage
-  useEffect(() => {
-    const token =
-      localStorage.getItem("token") || sessionStorage.getItem("token");
-    if (token) {
-      setAuth({ token, user: null });
-    }
-    setAuthChecked(true);
-  }, [setAuth]);
 
   // Toggle sidebar
   const toggleSidebar = (open) => setSidebarOpen(open);
@@ -94,17 +85,34 @@ function App() {
     location.pathname,
     isLoggingOut,
   ]);
-
-  // Fetch profile
   const {
     data: profileData,
     isLoading: isProfileLoading,
     error: profileError,
+    refetch: refetchProfile,
+    isUninitialized,
   } = useGetProfileQuery(undefined, {
-    skip: !auth?.token || isAuthPage,
-    refetchOnMountOrArgChange: true,
+    skip: !auth?.token || isAuthPage, // Skip auto-fetch if no token or on auth page
   });
 
+  // Manually trigger profile fetch only if needed
+  useEffect(() => {
+    if (
+      authChecked &&
+      auth?.token &&
+      !isAuthPage &&
+      (isUninitialized || !profileData)
+    ) {
+      refetchProfile();
+    }
+  }, [
+    auth?.token,
+    authChecked,
+    isAuthPage,
+    isUninitialized,
+    profileData,
+    refetchProfile,
+  ]);
   // Debug profile fetch
   useEffect(() => {
     if (profileError) {
@@ -115,15 +123,8 @@ function App() {
     }
   }, [profileData, profileError, navigate, isLoggingOut]);
 
-  // Access control based on profile
   useEffect(() => {
-    if (isProfileLoading || isAuthPage || !auth?.token || isLoggingOut) return;
-
-    if (!profileData?.user) {
-      toast.error("Access denied. No user profile found.");
-      navigate("/login", { replace: true });
-      return;
-    }
+    if (!profileData?.user || isAuthPage || !auth?.token) return;
 
     const user = profileData.user;
     let roles = user.roles || [];
@@ -147,20 +148,18 @@ function App() {
       navigate("/", { replace: true });
     }
 
+    // Update auth context with user
     if (auth?.user !== user) {
       setAuth((prev) => ({ ...prev, user }));
     }
   }, [
-    isProfileLoading,
     profileData,
+    auth?.token,
     location.pathname,
     navigate,
     isAuthPage,
-    auth,
     setAuth,
-    isLoggingOut,
   ]);
-
   // Maintenance mode
   useEffect(() => {
     if (MAINTENANCE_MODE && !isMaintenancePage) {

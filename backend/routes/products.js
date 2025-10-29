@@ -111,7 +111,7 @@ router.get(
   //  checkPermission("view", "search_products", "products", "/products/search"),
   productController.searchProducts
 );
-
+router.get("/codes/brand-wise", productController.getAllProductCodesBrandWise);
 // ✅ Unique Route for Product Codes
 // This will ensure that it is not mistaken for a product ID route
 router.get("/search/get-product-codes", productController.getAllProductCodes);

@@ -3,8 +3,11 @@ const User = require("../models/users");
 const Customer = require("../models/customers");
 const { sendNotification } = require("./notificationController");
 const { Op } = require("sequelize");
+const { v4: uuidv4 } = require("uuid");
 
-// Create a new address
+// ─────────────────────────────────────────────────────────────────────────────
+// CREATE ADDRESS
+// ─────────────────────────────────────────────────────────────────────────────
 exports.createAddress = async (req, res) => {
   try {
     const {
@@ -18,92 +21,90 @@ exports.createAddress = async (req, res) => {
       status,
     } = req.body;
 
-    // Validate userId if provided
-    if (userId) {
-      const user = await User.findByPk(userId);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-    }
-
-    // Validate customerId if provided
-    if (customerId) {
-      const customer = await Customer.findByPk(customerId);
-      if (!customer) {
-        return res.status(404).json({ message: "Customer not found" });
-      }
-    }
-
-    // Require at least one of userId or customerId
-    if (!userId && !customerId) {
+    // ── 1. Required fields ───────────────────────────────────────────────
+    if (!street || !city || !state || !country) {
       return res
         .status(400)
-        .json({ message: "Either userId or customerId is required" });
+        .json({ message: "Street, city, state, and country are required" });
     }
 
-    let finalStatus = status || "ADDITIONAL";
+    // ── 2. Exactly ONE of userId or customerId must be present ─────────────
+    if ((userId && customerId) || (!userId && !customerId)) {
+      return res.status(400).json({
+        message: "Address must belong to exactly one: User or Customer",
+      });
+    }
 
-    // Enforce status rules for customer addresses
+    // ── 3. Validate the owner (User OR Customer) ───────────────────────────
+    if (userId) {
+      const user = await User.findByPk(userId);
+      if (!user) return res.status(404).json({ message: "User not found" });
+    }
+
     if (customerId) {
-      const existingAddresses = await Address.findAll({
+      const customer = await Customer.findByPk(customerId);
+      if (!customer)
+        return res.status(404).json({ message: "Customer not found" });
+    }
+
+    // ── 4. Determine status (especially for customers) ───────────────────
+    let finalStatus = "ADDITIONAL";
+
+    if (customerId) {
+      const existing = await Address.findAll({
         where: { customerId },
         order: [["createdAt", "ASC"]],
       });
 
-      if (existingAddresses.length === 0) {
+      if (existing.length === 0) {
         finalStatus = "BILLING";
-      } else if (existingAddresses.length === 1) {
+      } else if (existing.length === 1) {
         finalStatus = "PRIMARY";
-      } else if (status === "BILLING" || status === "PRIMARY") {
+      } else if (["BILLING", "PRIMARY"].includes(status)) {
+        // Demote any other address with same status
         await Address.update(
           { status: "ADDITIONAL" },
           { where: { customerId, status } }
         );
         finalStatus = status;
       }
+    } else {
+      // For users, allow any status (or default to ADDITIONAL)
+      finalStatus = status || "ADDITIONAL";
     }
 
-    // Create address
+    // ── 5. Create address ─────────────────────────────────────────────────
     const address = await Address.create({
-      addressId: require("uuid").v4(),
+      addressId: uuidv4(),
       street,
       city,
       state,
       postalCode,
       country,
       status: finalStatus,
-      userId,
-      customerId,
+      userId: userId || null,
+      customerId: customerId || null,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
 
-    // Send notification
-    const recipientId =
-      userId || customerId || "56a3ba45-0557-47ac-bb5d-409f93d6661d";
-    const recipientType = userId ? "User" : "Customer";
-    await sendNotification({
-      userId: recipientId,
-      title: "New Address Created",
-      message: `A new ${finalStatus} address has been added: ${street}, ${city}, ${state}, ${postalCode}, ${country}`,
-    });
-
-    res.status(201).json({
+    return res.status(201).json({
       message: "Address created successfully",
       addressId: address.addressId,
       data: address,
     });
   } catch (error) {
-    console.error("Error in createAddress:", error);
-    res.status(500).json({
-      message: `Failed to create address: ${
-        error.message || "Unknown server error"
-      }`,
+    console.error("createAddress error:", error);
+    return res.status(500).json({
+      message: "Failed to create address",
+      error: error.message,
     });
   }
 };
 
-// Update an address
+// ─────────────────────────────────────────────────────────────────────────────
+// UPDATE ADDRESS
+// ─────────────────────────────────────────────────────────────────────────────
 exports.updateAddress = async (req, res) => {
   try {
     const { addressId } = req.params;
@@ -118,41 +119,41 @@ exports.updateAddress = async (req, res) => {
       status,
     } = req.body;
 
-    // Find address
     const address = await Address.findByPk(addressId);
-    if (!address) {
-      return res.status(404).json({ message: "Address not found" });
+    if (!address) return res.status(404).json({ message: "Address not found" });
+
+    // ── Prevent changing ownership type (user ↔ customer) ─────────────────
+    if (
+      (userId && address.customerId) ||
+      (customerId && address.userId) ||
+      (userId && customerId)
+    ) {
+      return res.status(400).json({
+        message:
+          "Cannot change address ownership from User to Customer or vice versa",
+      });
     }
 
-    // Validate userId if provided
-    if (userId) {
+    // ── Validate new owner if provided ─────────────────────────────────────
+    if (userId && userId !== address.userId) {
       const user = await User.findByPk(userId);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
+      if (!user) return res.status(404).json({ message: "User not found" });
     }
-
-    // Validate customerId if provided
-    if (customerId) {
+    if (customerId && customerId !== address.customerId) {
       const customer = await Customer.findByPk(customerId);
-      if (!customer) {
+      if (!customer)
         return res.status(404).json({ message: "Customer not found" });
-      }
     }
 
+    // ── Status logic for customer addresses ───────────────────────────────
     let finalStatus = status || address.status;
 
-    // Enforce status rules for customer addresses
-    if (
-      customerId &&
-      status &&
-      (status === "BILLING" || status === "PRIMARY")
-    ) {
+    if (address.customerId && ["BILLING", "PRIMARY"].includes(status)) {
       await Address.update(
         { status: "ADDITIONAL" },
         {
           where: {
-            customerId,
+            customerId: address.customerId,
             status,
             addressId: { [Op.ne]: addressId },
           },
@@ -161,63 +162,57 @@ exports.updateAddress = async (req, res) => {
       finalStatus = status;
     }
 
-    // Update address
+    // ── Update address ────────────────────────────────────────────────────
     await address.update({
-      street,
-      city,
-      state,
-      postalCode,
-      country,
+      street: street || address.street,
+      city: city || address.city,
+      state: state || address.state,
+      postalCode: postalCode || address.postalCode,
+      country: country || address.country,
       status: finalStatus,
-      userId,
-      customerId,
+      userId: userId ?? address.userId,
+      customerId: customerId ?? address.customerId,
       updatedAt: new Date(),
     });
 
-    // Send notification
+    // ── Notification ──────────────────────────────────────────────────────
     const recipientId =
-      userId ||
-      customerId ||
-      address.customerId ||
-      "56a3ba45-0557-47ac-bb5d-409f93d6661d";
-    const recipientType = userId || address.userId ? "User" : "Customer";
+      userId || customerId || address.userId || address.customerId;
     await sendNotification({
       userId: recipientId,
       title: "Address Updated",
-      message: `Your ${finalStatus} address has been updated: ${street}, ${city}, ${state}, ${postalCode}, ${country}`,
+      message: `Your ${finalStatus} address was updated.`,
     });
 
-    res.json({
+    return res.json({
       message: "Address updated successfully",
       addressId: address.addressId,
       data: address,
     });
   } catch (error) {
-    console.error("Error in updateAddress:", error);
-    res.status(500).json({
-      message: `Failed to update address: ${
-        error.message || "Unknown server error"
-      }`,
+    console.error("updateAddress error:", error);
+    return res.status(500).json({
+      message: "Failed to update address",
+      error: error.message,
     });
   }
 };
 
-// Delete an address
+// ─────────────────────────────────────────────────────────────────────────────
+// DELETE ADDRESS
+// ─────────────────────────────────────────────────────────────────────────────
 exports.deleteAddress = async (req, res) => {
   try {
     const { addressId } = req.params;
-
     const address = await Address.findByPk(addressId);
-    if (!address) {
-      return res.status(404).json({ message: "Address not found" });
-    }
+    if (!address) return res.status(404).json({ message: "Address not found" });
 
-    // Reassign statuses if deleting BILLING or PRIMARY
-    if (
-      address.customerId &&
-      (address.status === "BILLING" || address.status === "PRIMARY")
-    ) {
-      const remainingAddresses = await Address.findAll({
+    const isCustomerAddress = !!address.customerId;
+    const ownerId = address.userId || address.customerId;
+
+    // ── Reassign BILLING/PRIMARY if deleting one ──────────────────────────
+    if (isCustomerAddress && ["BILLING", "PRIMARY"].includes(address.status)) {
+      const others = await Address.findAll({
         where: {
           customerId: address.customerId,
           addressId: { [Op.ne]: addressId },
@@ -225,42 +220,40 @@ exports.deleteAddress = async (req, res) => {
         order: [["createdAt", "ASC"]],
       });
 
-      if (remainingAddresses.length > 0) {
+      if (others.length > 0) {
         if (address.status === "BILLING") {
-          await remainingAddresses[0].update({ status: "BILLING" });
+          await others[0].update({ status: "BILLING" });
         }
-        if (address.status === "PRIMARY" && remainingAddresses.length > 1) {
-          await remainingAddresses[1].update({ status: "PRIMARY" });
+        if (address.status === "PRIMARY" && others.length > 1) {
+          await others[1].update({ status: "PRIMARY" });
         }
       }
     }
 
-    // Send notification
-    const recipientId =
-      address.userId ||
-      address.customerId ||
-      "56a3ba45-0557-47ac-bb5d-409f93d6661d";
-    const recipientType = address.userId ? "User" : "Customer";
+    // ── Notification ──────────────────────────────────────────────────────
     await sendNotification({
-      userId: recipientId,
+      userId: ownerId,
       title: "Address Deleted",
-      message: `Your ${address.status} address has been deleted: ${address.street}, ${address.city}, ${address.state}, ${address.postalCode}, ${address.country}`,
+      message: `Your ${address.status} address was removed.`,
     });
 
     await address.destroy();
 
-    res.json({ message: "Address deleted successfully" });
+    return res.json({ message: "Address deleted successfully" });
   } catch (error) {
-    console.error("Error in deleteAddress:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+    console.error("deleteAddress error:", error);
+    return res.status(500).json({ message: "Failed to delete address" });
   }
 };
 
-// Get all addresses
+// ─────────────────────────────────────────────────────────────────────────────
+// GET ALL ADDRESSES (filter by userId OR customerId)
+// ─────────────────────────────────────────────────────────────────────────────
 exports.getAllAddresses = async (req, res) => {
   try {
     const { userId, customerId } = req.query;
     const where = {};
+
     if (userId) where.userId = userId;
     if (customerId) where.customerId = customerId;
 
@@ -270,15 +263,19 @@ exports.getAllAddresses = async (req, res) => {
         { model: User, attributes: ["userId", "name", "email"] },
         { model: Customer, attributes: ["customerId", "name", "email"] },
       ],
+      order: [["createdAt", "DESC"]],
     });
-    res.json(addresses);
+
+    return res.json(addresses);
   } catch (error) {
-    console.error("Error in getAllAddresses:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+    console.error("getAllAddresses error:", error);
+    return res.status(500).json({ message: "Failed to fetch addresses" });
   }
 };
 
-// Get a specific address by ID
+// ─────────────────────────────────────────────────────────────────────────────
+// GET ADDRESS BY ID
+// ─────────────────────────────────────────────────────────────────────────────
 exports.getAddressById = async (req, res) => {
   try {
     const { addressId } = req.params;
@@ -289,13 +286,11 @@ exports.getAddressById = async (req, res) => {
       ],
     });
 
-    if (!address) {
-      return res.status(404).json({ message: "Address not found" });
-    }
+    if (!address) return res.status(404).json({ message: "Address not found" });
 
-    res.json(address);
+    return res.json(address);
   } catch (error) {
-    console.error("Error in getAddressById:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+    console.error("getAddressById error:", error);
+    return res.status(500).json({ message: "Failed to fetch address" });
   }
 };

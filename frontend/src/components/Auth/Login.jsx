@@ -15,6 +15,16 @@ const Login = () => {
   const { login: authLogin, auth } = useAuth();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (auth?.token) {
+      navigate("/", { replace: true });
+    }
+  }, [auth?.token, navigate]);
+  // At top of Login component
+  if (auth?.token) {
+    return null; // Let App handle redirect
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -40,12 +50,6 @@ const Login = () => {
       toast.error("Login failed! " + (err?.data?.message || err.message));
     }
   };
-
-  useEffect(() => {
-    if (auth?.token && auth?.user) {
-      navigate("/", { replace: true });
-    }
-  }, [auth, navigate]);
 
   return (
     <div className="account-content">

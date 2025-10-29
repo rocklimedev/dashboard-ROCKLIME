@@ -69,6 +69,7 @@ const ProductCard = ({
 
   const handleAddToCartWithQuantity = () => {
     if (quantity > 0 && sellingPrice !== null && !isNaN(sellingPrice)) {
+      // ← pass the selected quantity
       handleAddToCart({ ...product, quantity });
     } else {
       toast.error(

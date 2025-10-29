@@ -11,8 +11,10 @@ import {
   YAxis,
   CartesianGrid,
 } from "recharts";
+
 import Alert from "./Alert";
 import "./pagewrapper.css";
+
 import {
   useClockInMutation,
   useClockOutMutation,
@@ -28,25 +30,31 @@ import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
 import StockModal from "../Common/StockModal";
 import DataTablePagination from "../Common/DataTablePagination";
-import {
-  useAddProductToCartMutation,
-  useGetCartQuery,
-  useRemoveFromCartMutation,
-} from "../../api/cartApi";
+import { useAddProductToCartMutation } from "../../api/cartApi";
 import { useUpdateOrderStatusMutation } from "../../api/orderApi";
+import useTopProducts from "../../data/useTopProducts";
+
 const PageWrapper = () => {
+  // ──────────────────────────────────────────────────────
+  //  BASIC STATE
+  // ──────────────────────────────────────────────────────
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [lowStockListModal, setLowStockListModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [cartLoadingStates, setCartLoadingStates] = useState({});
+
   const [addProductToCart, { isLoading: mutationLoading }] =
     useAddProductToCartMutation();
+
+  // ──────────────────────────────────────────────────────
+  //  DATE HELPERS
+  // ──────────────────────────────────────────────────────
   const today = useMemo(() => {
-    const date = new Date();
-    date.setHours(0, 0, 0, 0);
-    return date;
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
   }, []);
 
   const startDate = today.toISOString().split("T")[0];
@@ -54,77 +62,55 @@ const PageWrapper = () => {
     .toISOString()
     .split("T")[0];
 
+  // ──────────────────────────────────────────────────────
+  //  PROFILE
+  // ──────────────────────────────────────────────────────
   const {
     data: profile,
     isLoading: loadingProfile,
     error: profileError,
   } = useGetProfileQuery();
-  // Enable polling for real-time order updates (every 30 seconds)
+
+  const userId = profile?.user?.userId;
+
+  // ──────────────────────────────────────────────────────
+  //  CORE DATA QUERIES
+  // ──────────────────────────────────────────────────────
   const {
     data: ordersData,
     isLoading: loadingOrders,
     refetch: refetchOrders,
-  } = useGetAllOrdersQuery(undefined, { pollingInterval: 30000 }); // Poll every 30 seconds
-  const {
-    data: customersData,
-    isLoading: isCustomersLoading,
-    error: customersError,
-    refetch: refetchCustomers,
-  } = useGetCustomersQuery();
-  const {
-    data: categoriesData,
-    isLoading: isCategoriesLoading,
-    error: categoriesError,
-    refetch: refetchCategories,
-  } = useGetAllCategoriesQuery();
-  const {
-    data: usersData,
-    isLoading: isUsersLoading,
-    error: usersError,
-    refetch: refetchUsers,
-  } = useGetAllUsersQuery();
-  const {
-    data: productsData,
-    isLoading: isProductsLoading,
-    error: productsError,
-    refetch: refetchProducts,
-  } = useGetAllProductsQuery();
-  const {
-    data: quotationData = [],
-    isLoading: loadingQuotations,
-    error: quotationsError,
-    refetch: refetchQuotations,
-  } = useGetAllQuotationsQuery();
+  } = useGetAllOrdersQuery(undefined, { pollingInterval: 30000 });
+
+  const { data: quotationData = [], isLoading: loadingQuotations } =
+    useGetAllQuotationsQuery();
+
+  const { data: productsData, isLoading: isProductsLoading } =
+    useGetAllProductsQuery();
+
+  const { data: customersData, isLoading: isCustomersLoading } =
+    useGetCustomersQuery();
+
+  const { data: categoriesData, isLoading: isCategoriesLoading } =
+    useGetAllCategoriesQuery();
+
+  const { data: usersData, isLoading: isUsersLoading } = useGetAllUsersQuery();
+
   const { data: invoiceData, isLoading: loadingInvoices } =
     useGetAllInvoicesQuery();
-  const [clockIn, { isLoading: isClockInLoading }] = useClockInMutation();
-  const [clockOut, { isLoading: isClockOutLoading }] = useClockOutMutation();
 
-  const userId = profile?.user?.userId;
-  const username = useMemo(() => {
-    if (profile?.user?.name) {
-      return profile.user.name
-        .split(" ")
-        .map(
-          (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-        )
-        .join(" ");
-    }
-    return "Admin";
-  }, [profile]);
-
+  // ──────────────────────────────────────────────────────
+  //  TOP-SELLING PRODUCTS (Quotations + Orders)
+  // ──────────────────────────────────────────────────────
   const orders = ordersData?.orders || [];
-  const products = Array.isArray(productsData)
-    ? productsData
-    : productsData?.data || [];
-  const customers = customersData?.data || [];
-  const categories = categoriesData?.categories || [];
-  const users = usersData?.users || [];
-  const productCount = products.length;
-  const quotationCount = quotationData.length || 0;
-  const invoiceCount = invoiceData?.data?.length || 0;
-  const orderCount = orders.length;
+  const { topProducts, loading: topProductsLoading } = useTopProducts({
+    quotations: quotationData,
+    orders,
+  });
 
+  // ──────────────────────────────────────────────────────
+  //  ATTENDANCE
+  // ──────────────────────────────────────────────────────
   const {
     data: attendance,
     isLoading: loadingAttendance,
@@ -137,302 +123,108 @@ const PageWrapper = () => {
   const hasClockedIn = attendance?.length > 0 && !!attendance[0]?.clockIn;
   const hasClockedOut = hasClockedIn && !!attendance[0]?.clockOut;
 
-  const totalRevenue = useMemo(
-    () => orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0),
-    [orders]
-  );
-  const avgOrderValue = useMemo(
-    () => (orderCount > 0 ? totalRevenue / orderCount : 0).toFixed(2),
-    [totalRevenue, orderCount]
-  );
+  // ──────────────────────────────────────────────────────
+  //  CLOCK-IN / OUT
+  // ──────────────────────────────────────────────────────
+  const [clockIn] = useClockInMutation();
+  const [clockOut] = useClockOutMutation();
+
+  const handleClockIn = async () => {
+    if (!userId) return toast.error("User ID missing");
+    try {
+      await clockIn({ userId }).unwrap();
+    } catch {
+      toast.error("Clock-in failed");
+    }
+  };
+  const handleClockOut = async () => {
+    if (!userId) return toast.error("User ID missing");
+    try {
+      await clockOut({ userId }).unwrap();
+    } catch {
+      toast.error("Clock-out failed");
+    }
+  };
+
+  // ──────────────────────────────────────────────────────
+  //  CART HELPERS
+  // ──────────────────────────────────────────────────────
   const handleAddToCart = async (product) => {
-    if (!userId) {
-      toast.error("User not logged in!");
-      return;
-    }
-    const sellingPriceEntry = Array.isArray(product.metaDetails)
-      ? product.metaDetails.find((detail) => detail.slug === "sellingPrice")
+    if (!userId) return toast.error("User not logged in!");
+    const priceEntry = Array.isArray(product.metaDetails)
+      ? product.metaDetails.find((d) => d.slug === "sellingPrice")
       : null;
-    const sellingPrice = sellingPriceEntry
-      ? parseFloat(sellingPriceEntry.value)
-      : null;
-    if (!sellingPrice || isNaN(sellingPrice)) {
-      toast.error("Invalid product price");
-      return;
-    }
-    const quantity = product.quantity || 1;
-    if (!Number.isInteger(quantity) || quantity <= 0) {
-      toast.error("Invalid quantity");
-      return;
-    }
-    const productId = product.productId;
-    setCartLoadingStates((prev) => ({ ...prev, [productId]: true }));
+    const price = priceEntry ? parseFloat(priceEntry.value) : null;
+    if (!price) return toast.error("Invalid price");
+
+    const qty = product.quantity || 1;
+    if (!Number.isInteger(qty) || qty <= 0) return toast.error("Invalid qty");
+
+    setCartLoadingStates((s) => ({ ...s, [product.productId]: true }));
     try {
       await addProductToCart({
         userId,
-        productId,
-        quantity,
+        productId: product.productId,
+        quantity: qty,
       }).unwrap();
-    } catch (error) {
-      const message =
-        error.status === 400
-          ? "Invalid request. Please check product details."
-          : error.status === 401
-          ? "Unauthorized. Please log in again."
-          : error.data?.message || "Unknown error";
-      toast.error(`Error: ${message}`);
+      toast.success("Added to cart");
+    } catch (e) {
+      toast.error(e?.data?.message || "Add to cart failed");
     } finally {
-      setCartLoadingStates((prev) => ({ ...prev, [productId]: false }));
+      setCartLoadingStates((s) => ({ ...s, [product.productId]: false }));
     }
   };
 
-  const maxCounts = useMemo(
-    () => ({
-      orders: Math.max(orderCount, 1),
-      invoices: Math.max(invoiceCount, 1),
-      quotations: Math.max(quotationCount, 1),
-      products: Math.max(productCount, 1),
-      revenue: Math.max(totalRevenue, 1),
-      avgOrder: Math.max(avgOrderValue, 1),
-    }),
-    [
-      orderCount,
-      invoiceCount,
-      quotationCount,
-      productCount,
-      totalRevenue,
-      avgOrderValue,
-    ]
-  );
-
-  const filterByTime = (items, dateField) => {
-    if (!Array.isArray(items)) return [];
-    return items; // No time-based filtering for all trends
-  };
-
-  const filteredProducts = useMemo(
-    () => filterByTime(products, "updatedAt"),
-    [products]
-  );
-  const filteredCustomers = useMemo(
-    () => filterByTime(customers, "createdAt"),
-    [customers]
-  );
-  const filteredCategories = useMemo(
-    () => filterByTime(categories, "createdAt"),
-    [categories]
-  );
-  const filteredUsers = useMemo(
-    () => filterByTime(users, "createdAt"),
-    [users]
-  );
+  // ──────────────────────────────────────────────────────
+  //  LOW-STOCK LOGIC (unchanged)
+  // ──────────────────────────────────────────────────────
+  const products = Array.isArray(productsData)
+    ? productsData
+    : productsData?.data || [];
 
   const lowStockProducts = useMemo(
-    () => (products || []).filter((p) => p.quantity < p.alert_quantity),
+    () => products.filter((p) => p.quantity < p.alert_quantity),
     [products]
   );
 
   const paginatedLowStock = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return lowStockProducts.slice(startIndex, startIndex + itemsPerPage);
+    const start = (currentPage - 1) * itemsPerPage;
+    return lowStockProducts.slice(start, start + itemsPerPage);
   }, [lowStockProducts, currentPage]);
 
-  const handleProductClick = (product) => {
-    setSelectedProduct(product);
+  const handleProductClick = (p) => {
+    setSelectedProduct(p);
     setIsModalVisible(true);
   };
-
   const handleModalClose = () => {
     setIsModalVisible(false);
     setSelectedProduct(null);
   };
-  const [updateOrderStatus, { isLoading: isUpdatingStatus }] =
-    useUpdateOrderStatusMutation();
 
+  // ──────────────────────────────────────────────────────
+  //  ORDER STATUS UPDATE
+  // ──────────────────────────────────────────────────────
+  const [updateOrderStatus] = useUpdateOrderStatusMutation();
   const handleStatusChange = async (id, newStatus) => {
     try {
       await updateOrderStatus({ id, status: newStatus }).unwrap();
-      refetchOrders(); // Refresh orders to reflect the updated status
-    } catch (error) {
-      toast.error(
-        `Failed to update order status: ${
-          error.data?.message || "Unknown error"
-        }`
-      );
+      refetchOrders();
+    } catch (e) {
+      toast.error(e?.data?.message || "Status update failed");
     }
   };
 
-  const categoryProductCounts = useMemo(() => {
-    const productCountByCategory = filteredProducts.reduce((acc, product) => {
-      const categoryId =
-        product.categoryId || product.category?._id || product.category;
-      if (categoryId) acc[categoryId] = (acc[categoryId] || 0) + 1;
-      return acc;
-    }, {});
-    return filteredCategories.map((category) => ({
-      ...category,
-      productCount:
-        productCountByCategory[category.categoryId || category._id] || 0,
-    }));
-  }, [filteredProducts, filteredCategories]);
+  // ──────────────────────────────────────────────────────
+  //  SUMMARY NUMBERS
+  // ──────────────────────────────────────────────────────
+  const orderCount = orders.length;
+  const quotationCount = quotationData.length || 0;
+  const productCount = products.length;
+  const invoiceCount = invoiceData?.data?.length || 0;
 
-  const topCategories = useMemo(
-    () =>
-      [...categoryProductCounts]
-        .sort((a, b) => (b.productCount || 0) - (a.productCount || 0))
-        .slice(0, 3),
-    [categoryProductCounts]
-  );
-
-  const chartData = useMemo(
-    () =>
-      topCategories.map((cat) => ({
-        name: cat.name,
-        value: cat.productCount || 0,
-      })),
-    [topCategories]
-  );
-
-  const COLORS = ["#4A90E2", "#F5A623", "#7B68EE"];
-
-  // Modified barChartData to show all order trends, grouped by day
-  const barChartData = useMemo(() => {
-    // Create a map to group orders by date
-    const orderCountsByDate = orders.reduce((acc, order) => {
-      const orderDate = new Date(order.createdAt);
-      if (isNaN(orderDate)) return acc; // Skip invalid dates
-      const dateKey = orderDate.toISOString().split("T")[0]; // YYYY-MM-DD
-      acc[dateKey] = (acc[dateKey] || 0) + 1;
-      return acc;
-    }, {});
-
-    // Convert to array and sort by date
-    return Object.entries(orderCountsByDate)
-      .map(([date, orders]) => ({
-        date: new Date(date).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-        }),
-        orders,
-      }))
-      .sort((a, b) => new Date(a.date) - new Date(b.date)) // Sort by date ascending
-      .slice(-30); // Limit to last 30 days for performance (adjust as needed)
-  }, [orders]);
-
-  const topSellingProducts = useMemo(() => {
-    if (loadingQuotations) return [];
-    if (!Array.isArray(quotationData)) {
-      return [];
-    }
-
-    const productQuantities = {};
-    quotationData.forEach((quotation) => {
-      let products = quotation.products || [];
-      if (typeof products === "string") {
-        try {
-          products = JSON.parse(products);
-        } catch (e) {
-          products = [];
-        }
-      }
-      if (Array.isArray(products)) {
-        products.forEach((p) => {
-          const pid = p.productId?._id || p.productId;
-          if (pid && p.quantity) {
-            productQuantities[pid] = (productQuantities[pid] || 0) + p.quantity;
-          }
-        });
-      } else {
-        console.warn("quotation.products is not an array:", products);
-      }
-    });
-
-    return Object.entries(productQuantities)
-      .map(([productId, quantity]) => {
-        const product = products.find(
-          (prod) => prod._id === productId || prod.productId === productId
-        );
-        return {
-          productId,
-          name: product?.name || "Unknown Product",
-          quantity,
-          metaDetails: product?.metaDetails || [], // Include metaDetails
-        };
-      })
-      .sort((a, b) => b.quantity - a.quantity)
-      .slice(0, 5);
-  }, [quotationData, products, loadingQuotations]);
-  const topProductsChartData = useMemo(
-    () =>
-      topSellingProducts.map((product) => ({
-        name: product.name,
-        quantity: product.quantity,
-      })),
-    [topSellingProducts]
-  );
-
-  const topCustomer = useMemo(
-    () =>
-      filteredCustomers.reduce(
-        (top, customer) => {
-          const totalSpent = customer.paidAmount || 0;
-          return totalSpent > top.totalSpent
-            ? { ...customer, totalSpent, payable: customer.balance || 0 }
-            : top;
-        },
-        { totalSpent: 0, payable: 0 }
-      ),
-    [filteredCustomers]
-  );
-
-  const todaysOrders = useMemo(
-    () =>
-      orders.filter((order) => {
-        const rawDate = order.createdAt;
-        if (!rawDate || isNaN(new Date(rawDate))) return false;
-        return new Date(rawDate).toISOString().split("T")[0] === startDate;
-      }),
-    [orders, startDate]
-  );
-
-  const handleClockIn = async () => {
-    if (!userId) return toast.error("User ID is not available.");
-    try {
-      await clockIn({ userId }).unwrap();
-    } catch (error) {
-      toast.error("Failed to clock in.");
-    }
-  };
-
-  const handleClockOut = async () => {
-    if (!userId) return toast.error("User ID is not available.");
-    try {
-      await clockOut({ userId }).unwrap();
-    } catch (error) {
-      toast.error("Failed to clock out.");
-    }
-  };
-
-  const handlePageChange = (newPage) => {
-    setCurrentPage(newPage);
-  };
-
-  useEffect(() => {
-    if (profileError) {
-      const message =
-        profileError.status === 403 &&
-        profileError.data?.error.includes("roleId")
-          ? "Missing role information. Please contact support."
-          : profileError.status === 401 || profileError.status === 403
-          ? "Session expired. Please log in again."
-          : "Failed to load profile.";
-      toast.error(message, { id: "profileError" });
-    }
-    if (quotationsError) {
-      toast.error("Failed to load quotations.", { id: "quotationsError" });
-    }
-  }, [profileError, quotationsError]);
-
+  // ──────────────────────────────────────────────────────
+  //  EARLY RETURNS (loading / errors)
+  // ──────────────────────────────────────────────────────
   if (
     loadingProfile ||
     isCustomersLoading ||
@@ -444,138 +236,90 @@ const PageWrapper = () => {
     return (
       <div className="text-center p-5">
         <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
+          <span className="visually-hidden">Loading…</span>
         </div>
       </div>
     );
   }
 
-  if (
-    profileError ||
-    customersError ||
-    categoriesError ||
-    usersError ||
-    productsError ||
-    quotationsError
-  ) {
+  if (profileError) {
     return (
-      <div className="alert alert-danger m-3" role="alert">
-        <h5>Error loading data:</h5>
-        {profileError && (
-          <p>Profile: {profileError.data?.message || "Unknown error"}</p>
-        )}
-        {customersError && (
-          <p>Customers: {customersError.data?.message || "Unknown error"}</p>
-        )}
-        {categoriesError && (
-          <p>Categories: {categoriesError.data?.message || "Unknown error"}</p>
-        )}
-        {usersError && (
-          <p>Users: {usersError.data?.message || "Unknown error"}</p>
-        )}
-        {productsError && (
-          <p>Products: {productsError.data?.message || "Unknown error"}</p>
-        )}
-        {quotationsError && (
-          <p>Quotations: {quotationsError.data?.message || "Unknown error"}</p>
-        )}
-        <button
-          className="btn btn-primary mt-2"
-          onClick={() => {
-            if (customersError) refetchCustomers();
-            if (categoriesError) refetchCategories();
-            if (usersError) refetchUsers();
-            if (productsError) refetchProducts();
-            if (quotationsError) refetchQuotations();
-          }}
-        >
-          Retry
-        </button>
+      <div className="alert alert-danger m-3">
+        <h5>Profile error</h5>
+        <p>{profileError?.data?.message || "Unknown error"}</p>
       </div>
     );
   }
 
-  if (!profile) {
-    return (
-      <div className="page-wrapper">
-        <Alert
-          type="warning"
-          message="User profile not found. Please log in again."
-        />
-      </div>
-    );
-  }
-
+  // ──────────────────────────────────────────────────────
+  //  RENDER
+  // ──────────────────────────────────────────────────────
   return (
     <div className="page-wrapper">
       <div className="content">
         <div className="dashboard">
+          {/* ────── SUMMARY CARDS ────── */}
           <section className="summary-cards">
             {[
               {
                 link: "/quotations/list",
                 count: quotationCount,
                 label: "Total Quotations",
-                loading: loadingQuotations,
                 icon: <FaBox />,
-                max: maxCounts.quotations,
               },
               {
                 link: "/orders/list",
                 count: orderCount,
                 label: "Total Orders",
-                loading: loadingOrders,
                 icon: <FaChartBar />,
-                max: maxCounts.orders,
               },
               {
                 link: "/inventory/products",
                 count: productCount,
                 label: "Total Products",
-                loading: isProductsLoading,
                 icon: <FaBox />,
-                max: maxCounts.products,
               },
-            ].map(({ count, label, loading, icon, max, link }, index) => (
-              <div key={index} className="card stat">
+            ].map(({ count, label, icon, link }, i) => (
+              <div key={i} className="card stat">
                 <Link to={link}>
                   <div className="stat-header">
                     {icon}
-                    <h3>{loading ? "..." : count}</h3>
+                    <h3>{count}</h3>
                   </div>
                   <p>
-                    <a href={link}> {label}</a>
+                    <a href={link}>{label}</a>
                   </p>
                   <div
                     className="bar"
-                    style={{ width: `${(count / max) * 100}%` }}
-                  ></div>
+                    style={{ width: `${(count / Math.max(count, 1)) * 100}%` }}
+                  />
                 </Link>
               </div>
             ))}
           </section>
 
+          {/* ────── MAIN SECTION ────── */}
           <section className="dashboard-main">
+            {/* TOP SELLING PRODUCTS */}
             <div className="card">
-              <h4>Top Selling Products</h4>
+              <h4>Top Selling Products (Quotations + Orders)</h4>
               <div className="card-body">
-                {topSellingProducts.length > 0 ? (
+                {topProductsLoading ? (
+                  <p>Loading top products…</p>
+                ) : topProducts.length > 0 ? (
                   <ul className="top-products-list">
-                    {topSellingProducts.map((product, index) => {
-                      // Parse images safely
-                      let imageUrl = null;
+                    {topProducts.map((product, idx) => {
+                      // ----- IMAGE HANDLING -----
+                      let imgUrl = null;
                       if (product.images) {
                         try {
-                          const imagesArray = JSON.parse(product.images);
-                          if (
-                            Array.isArray(imagesArray) &&
-                            imagesArray.length > 0
-                          ) {
-                            imageUrl = imagesArray[0];
-                          }
-                        } catch (e) {
-                          // Fallback: treat as plain string
-                          imageUrl = product.images;
+                          const arr = JSON.parse(product.images);
+                          imgUrl =
+                            Array.isArray(arr) && arr[0]
+                              ? arr[0]
+                              : product.images;
+                        } catch {
+                          imgUrl = product.images;
                         }
                       }
 
@@ -588,7 +332,7 @@ const PageWrapper = () => {
                             justifyContent: "space-between",
                             padding: "12px 0",
                             borderBottom:
-                              index < topSellingProducts.length - 1
+                              idx < topProducts.length - 1
                                 ? "1px solid #e0e0e0"
                                 : "none",
                           }}
@@ -600,16 +344,16 @@ const PageWrapper = () => {
                               gap: "12px",
                             }}
                           >
-                            {/* Thumbnail */}
-                            {imageUrl ? (
+                            {/* Image / Placeholder */}
+                            {imgUrl ? (
                               <img
-                                src={imageUrl}
+                                src={imgUrl}
                                 alt={product.name}
                                 style={{
-                                  width: "40px",
-                                  height: "40px",
+                                  width: 40,
+                                  height: 40,
                                   objectFit: "cover",
-                                  borderRadius: "6px",
+                                  borderRadius: 6,
                                   border: "1px solid #eee",
                                 }}
                                 onError={(e) => {
@@ -619,32 +363,25 @@ const PageWrapper = () => {
                                 }}
                               />
                             ) : null}
-                            {/* Fallback placeholder */}
-                            {!imageUrl && (
-                              <div
-                                style={{
-                                  width: "40px",
-                                  height: "40px",
-                                  backgroundColor: "#f0f0f0",
-                                  borderRadius: "6px",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  fontSize: "12px",
-                                  color: "#999",
-                                  border: "1px dashed #ddd",
-                                }}
-                              >
-                                No Img
-                              </div>
-                            )}
+                            <div
+                              style={{
+                                width: 40,
+                                height: 40,
+                                background: "#f5f5f5",
+                                borderRadius: 6,
+                                display: imgUrl ? "none" : "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: 12,
+                                color: "#999",
+                              }}
+                            >
+                              No Img
+                            </div>
 
-                            {/* Product Info */}
+                            {/* Name + Qty */}
                             <div>
-                              <div
-                                className="product-name"
-                                style={{ fontWeight: "500" }}
-                              >
+                              <div style={{ fontWeight: 500 }}>
                                 {product.name}
                               </div>
                               <div
@@ -656,15 +393,15 @@ const PageWrapper = () => {
                             </div>
                           </div>
 
-                          {/* Add to Cart Button */}
+                          {/* Add to Cart */}
                           <button
                             className="btn btn-primary btn-sm"
                             onClick={() => handleAddToCart(product)}
                             disabled={cartLoadingStates[product.productId]}
-                            style={{ minWidth: "90px" }}
+                            style={{ minWidth: 90 }}
                           >
                             {cartLoadingStates[product.productId]
-                              ? "Adding"
+                              ? "Adding…"
                               : "Add to Cart"}
                           </button>
                         </li>
@@ -673,86 +410,86 @@ const PageWrapper = () => {
                   </ul>
                 ) : (
                   <p style={{ color: "#888", fontStyle: "italic" }}>
-                    No products sold recently.
+                    No sales data yet.
                   </p>
                 )}
               </div>
             </div>
+
+            {/* ORDERS THIS MONTH (unchanged) */}
             <div className="card">
               <h4>Orders This Month</h4>
               <div className="card-body">
-                {orders.length > 0 ? (
+                {orders.length ? (
                   <ul className="orders-list">
-                    {orders.map((order, index) => (
+                    {orders.map((o, i) => (
                       <li
-                        key={order.id}
+                        key={o.id}
                         style={{
                           display: "flex",
                           justifyContent: "space-between",
                           alignItems: "center",
                           padding: "10px 0",
                           borderBottom:
-                            index < orders.length - 1
+                            i < orders.length - 1
                               ? "1px solid #e0e0e0"
                               : "none",
                         }}
                       >
                         <div>
-                          <span className="order-number">
-                            <strong>Order No:</strong> {order.orderNo}
+                          <strong>Order No:</strong> {o.orderNo}{" "}
+                          <span style={{ marginLeft: 10, color: "#666" }}>
+                            {new Date(o.createdAt).toLocaleDateString()}
                           </span>
                           <span
-                            className="order-date"
-                            style={{ marginLeft: "10px", color: "#666" }}
-                          >
-                            {new Date(order.createdAt).toLocaleDateString()}
-                          </span>
-                          <span
-                            className="order-priority"
                             style={{
-                              marginLeft: "10px",
-                              fontWeight: "500",
+                              marginLeft: 10,
+                              fontWeight: 500,
                               color:
-                                order.priority === "high"
+                                o.priority === "high"
                                   ? "#e74c3c"
-                                  : order.priority === "medium"
+                                  : o.priority === "medium"
                                   ? "#f39c12"
                                   : "#27ae60",
                             }}
                           >
-                            {order.priority.toUpperCase()}
+                            {o.priority?.toUpperCase()}
                           </span>
                         </div>
-
                         <select
-                          value={order.status}
+                          value={o.status}
                           onChange={(e) =>
-                            handleStatusChange(order.id, e.target.value)
+                            handleStatusChange(o.id, e.target.value)
                           }
                           className="status-dropdown"
                         >
-                          <option value="CREATED">Created</option>
-                          <option value="PREPARING">Preparing</option>
-                          <option value="CHECKING">Checking</option>
-                          <option value="INVOICE">Invoice</option>
-                          <option value="DISPATCHED">Dispatched</option>
-                          <option value="DELIVERED">Delivered</option>
-                          <option value="PARTIALLY_DELIVERED">
-                            Partially Delivered
-                          </option>
-                          <option value="CANCELED">Canceled</option>
-                          <option value="DRAFT">Draft</option>
-                          <option value="ONHOLD">On Hold</option>
+                          {[
+                            "CREATED",
+                            "PREPARING",
+                            "CHECKING",
+                            "INVOICE",
+                            "DISPATCHED",
+                            "DELIVERED",
+                            "PARTIALLY_DELIVERED",
+                            "CANCELED",
+                            "DRAFT",
+                            "ONHOLD",
+                          ].map((s) => (
+                            <option key={s} value={s}>
+                              {s}
+                            </option>
+                          ))}
                         </select>
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <p>No orders available.</p>
+                  <p>No orders.</p>
                 )}
               </div>
             </div>
 
+            {/* LOW STOCK (unchanged) */}
             <div className="card low-stock">
               <div
                 style={{
@@ -777,16 +514,16 @@ const PageWrapper = () => {
                 )}
               </div>
               <ul>
-                {lowStockProducts.length > 0 ? (
-                  lowStockProducts.slice(0, 4).map((product) => (
+                {lowStockProducts.length ? (
+                  lowStockProducts.slice(0, 4).map((p) => (
                     <li
-                      key={product._id || product.productId}
-                      onClick={() => handleProductClick(product)}
+                      key={p._id || p.productId}
+                      onClick={() => handleProductClick(p)}
                       style={{ cursor: "pointer" }}
                     >
-                      <span className="product-name">{product.name}</span>
+                      <span className="product-name">{p.name}</span>
                       <span className="product-quantity">
-                        Qty: {product.quantity}
+                        Qty: {p.quantity}
                       </span>
                     </li>
                   ))
@@ -797,20 +534,14 @@ const PageWrapper = () => {
             </div>
           </section>
 
+          {/* LOW-STOCK MODAL */}
           {lowStockListModal && (
             <div
               className="modal fade show"
-              style={{
-                display: "block",
-                backgroundColor: "rgba(0,0,0,0.5)",
-              }}
+              style={{ display: "block", backgroundColor: "rgba(0,0,0,.5)" }}
               tabIndex="-1"
-              role="dialog"
             >
-              <div
-                className="modal-dialog modal-lg modal-dialog-centered"
-                role="document"
-              >
+              <div className="modal-dialog modal-lg modal-dialog-centered">
                 <div className="modal-content">
                   <div className="modal-header">
                     <h5 className="modal-title">All Low Stock Products</h5>
@@ -820,27 +551,24 @@ const PageWrapper = () => {
                       onClick={() => setLowStockListModal(false)}
                       style={{
                         fontSize: "1.5rem",
-                        lineHeight: "1",
+                        lineHeight: 1,
                         border: "none",
                         background: "transparent",
                       }}
                     >
-                      <span>&times;</span>
+                      &times;
                     </button>
                   </div>
                   <div className="modal-body">
-                    {paginatedLowStock.length > 0 ? (
+                    {paginatedLowStock.length ? (
                       <ul>
-                        {paginatedLowStock.map((product) => (
+                        {paginatedLowStock.map((p) => (
                           <li
-                            key={product._id || product.productId}
-                            onClick={() => handleProductClick(product)}
-                            style={{
-                              cursor: "pointer",
-                              marginBottom: "8px",
-                            }}
+                            key={p._id || p.productId}
+                            onClick={() => handleProductClick(p)}
+                            style={{ cursor: "pointer", marginBottom: 8 }}
                           >
-                            {product.name} (Qty: {product.quantity})
+                            {p.name} (Qty: {p.quantity})
                           </li>
                         ))}
                       </ul>
@@ -852,7 +580,7 @@ const PageWrapper = () => {
                     <DataTablePagination
                       totalItems={lowStockProducts.length}
                       itemNo={itemsPerPage}
-                      onPageChange={handlePageChange}
+                      onPageChange={setCurrentPage}
                       currentPage={currentPage}
                     />
                     <button
@@ -867,12 +595,13 @@ const PageWrapper = () => {
               </div>
             </div>
           )}
+
+          {/* STOCK DETAIL MODAL */}
           {isModalVisible && selectedProduct && (
             <StockModal
               show={isModalVisible}
-              onHide={() => handleModalClose(true)}
+              onHide={handleModalClose}
               product={selectedProduct}
-              refetch={refetchProducts}
             />
           )}
         </div>

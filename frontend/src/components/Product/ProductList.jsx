@@ -257,24 +257,42 @@ const ProductsList = () => {
       toast.error("User not logged in!");
       return;
     }
+
     const sellingPriceEntry = Array.isArray(product.metaDetails)
       ? product.metaDetails.find((detail) => detail.slug === "sellingPrice")
       : null;
     const sellingPrice = sellingPriceEntry
       ? parseFloat(sellingPriceEntry.value)
       : null;
+
     if (!sellingPrice || isNaN(sellingPrice)) {
       toast.error("Invalid product price");
       return;
     }
+
     const productId = product.productId;
+    const qtyToAdd = product.quantity; // this is now the quantity from ProductCard
+
     setCartLoadingStates((prev) => ({ ...prev, [productId]: true }));
+
     try {
-      await addProductToCart({
-        userId,
-        productId,
-        quantity: product.quantity || 1,
-      }).unwrap();
+      // Check if already in cart
+      const existingItem = cartItems.find((i) => i.productId === productId);
+      if (existingItem) {
+        // Update existing
+        await addProductToCart({
+          userId,
+          productId,
+          quantity: existingItem.quantity + qtyToAdd,
+        }).unwrap();
+      } else {
+        // Add new
+        await addProductToCart({
+          userId,
+          productId,
+          quantity: qtyToAdd,
+        }).unwrap();
+      }
     } catch (error) {
       toast.error(`Error: ${error.data?.message || "Unknown error"}`);
     } finally {
