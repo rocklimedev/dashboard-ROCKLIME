@@ -86,5 +86,5 @@ router.put(
   // ),
   userController.changeStatusToInactive
 );
-router.patch("/:userId/status", userController.updateStatus);
+router.patch("/:userId/status", auth, userController.updateStatus);
 module.exports = router;

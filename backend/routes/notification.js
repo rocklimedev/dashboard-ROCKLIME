@@ -1,14 +1,15 @@
+// routes/notification.js
 const express = require("express");
 const router = express.Router();
 const {
   getNotifications,
   markAsRead,
   sendNotification,
-  deleteOldNotifications, // Add the new function
+  deleteOldNotifications,
 } = require("../controller/notificationController");
-const { auth } = require("../middleware/auth"); // Authentication Middleware
+const { auth } = require("../middleware/auth");
 
-// Get all notifications for the authenticated user
+// GET all notifications
 router.get("/", auth, async (req, res) => {
   try {
     const notifications = await getNotifications(req.user.userId);
@@ -19,17 +20,19 @@ router.get("/", auth, async (req, res) => {
   }
 });
 
-// Mark a notification as read
+// MARK AS READ
 router.put("/:id/read", auth, async (req, res) => {
   try {
     const notification = await markAsRead(req.params.id);
     if (!notification) {
       return res.status(404).json({ message: "Notification not found" });
     }
-    // Optionally emit an update via Socket.IO
-    if (ioInstance) {
-      ioInstance.to(req.user.userId).emit("notificationUpdated", notification);
+
+    // Emit via Socket.IO
+    if (req.io) {
+      req.io.to(req.user.userId).emit("notificationUpdated", notification);
     }
+
     res.status(200).json(notification);
   } catch (error) {
     console.error("Error marking notification as read:", error);
@@ -37,11 +40,10 @@ router.put("/:id/read", auth, async (req, res) => {
   }
 });
 
-// Send a notification (e.g., for admin or testing purposes)
+// SEND NOTIFICATION
 router.post("/", auth, async (req, res) => {
   try {
     const { userId, title, message } = req.body;
-    // Optionally restrict to admin users
     if (!req.user.isAdmin && userId !== req.user.userId) {
       return res.status(403).json({ message: "Unauthorized" });
     }
@@ -53,13 +55,19 @@ router.post("/", auth, async (req, res) => {
   }
 });
 
-// Manually delete notifications older than 7 days (admin only)
+// DELETE OLD NOTIFICATIONS (admin only)
 router.delete("/old", auth, async (req, res) => {
   if (!req.user.isAdmin) {
     return res.status(403).json({ message: "Unauthorized" });
   }
   try {
     const result = await deleteOldNotifications();
+
+    // Notify ALL clients
+    if (req.io) {
+      req.io.emit("notificationsDeleted");
+    }
+
     res
       .status(200)
       .json({ message: `${result.deletedCount} notifications deleted` });

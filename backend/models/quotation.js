@@ -87,6 +87,15 @@ const Quotation = sequelize.define(
       onDelete: "SET NULL",
       onUpdate: "CASCADE",
     },
+    // In Quotation model
+    extraDiscount: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+    },
+    extraDiscountType: {
+      type: DataTypes.ENUM("percent", "fixed"),
+      allowNull: true,
+    },
   },
   {
     tableName: "quotations",

@@ -147,7 +147,7 @@ const CartTab = ({
                 Your Cart <ShoppingCartOutlined /> ({totalItems} items)
               </Title>
               <Button
-                type="link"
+                type="button" // ← ADD THIS
                 danger
                 onClick={() => setShowClearCartModal(true)}
                 disabled={!cartItems.length}
@@ -241,13 +241,15 @@ const CartTab = ({
                     <Col xs={12} sm={6}>
                       <Space size="small">
                         <QuantityButton
+                          type="button"
                           size="small"
-                          onClick={() =>
+                          onClick={(e) => {
+                            e.preventDefault();
                             handleUpdateQuantity(
                               item.productId,
                               item.quantity - 1
-                            )
-                          }
+                            );
+                          }}
                           disabled={
                             item.quantity <= 1 || updatingItems[item.productId]
                           }
@@ -255,15 +257,19 @@ const CartTab = ({
                         >
                           -
                         </QuantityButton>
+
                         <Text>{item.quantity}</Text>
+
                         <QuantityButton
+                          type="button"
                           size="small"
-                          onClick={() =>
+                          onClick={(e) => {
+                            e.preventDefault();
                             handleUpdateQuantity(
                               item.productId,
                               item.quantity + 1
-                            )
-                          }
+                            );
+                          }}
                           disabled={updatingItems[item.productId]}
                           loading={updatingItems[item.productId]}
                         >
@@ -278,10 +284,10 @@ const CartTab = ({
                         ₹{lineTotal(item)}
                       </Text>
                       <RemoveButton
-                        type="text"
+                        type="button" // ← ADD THIS
                         danger
                         icon={<BiTrash />}
-                        onClick={() => handleRemoveItem(item.productId)}
+                        onClick={(e) => handleRemoveItem(e, item.productId)} // ← PASS e
                         disabled={updatingItems[item.productId]}
                         loading={updatingItems[item.productId]}
                       />

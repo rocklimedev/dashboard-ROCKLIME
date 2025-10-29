@@ -1,31 +1,36 @@
+// models/InventoryHistory.js
 const mongoose = require("mongoose");
+
+const HistoryEntrySchema = new mongoose.Schema({
+  quantity: { type: Number, required: true },
+  action: {
+    type: String,
+    enum: ["add-stock", "remove-stock"],
+    required: true,
+  },
+  timestamp: { type: Date, default: Date.now },
+  orderNo: { type: Number, required: false },
+  userId: { type: String, required: false },
+});
 
 const InventoryHistorySchema = new mongoose.Schema(
   {
     productId: {
-      type: String, // Store productId as a String (UUID from Product model)
+      type: String,
       required: true,
-      unique: true, // Ensures each product has only one history entry
+      unique: true,
     },
-    history: [
-      {
-        quantity: { type: Number, required: true },
-        action: {
-          type: String,
-          enum: ["add-stock", "remove-stock"],
-          required: true,
-        },
-        timestamp: { type: Date, default: Date.now },
-        orderNo: { type: Number, required: false }, // Add orderNo to track the order
-        userId: { type: String, required: false }, // Add userId to track the user
-      },
-    ],
+    history: [HistoryEntrySchema],
   },
   { timestamps: true }
 );
+
+// Index for fast look-ups by productId
+InventoryHistorySchema.index({ productId: 1 });
 
 const InventoryHistory = mongoose.model(
   "InventoryHistory",
   InventoryHistorySchema
 );
-module.exports = { InventoryHistory };
+
+module.exports = InventoryHistory; // <-- Export the model directly

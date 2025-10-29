@@ -3,6 +3,7 @@ const User = require("../models/users");
 const Roles = require("../models/roles");
 const bcrypt = require("bcrypt");
 const Address = require("../models/address");
+const ROLES = require("../config/constant").ROLES;
 // Helper function to exclude sensitive fields
 const excludeSensitiveFields = {
   attributes: {
@@ -492,12 +493,13 @@ exports.assignRole = async (req, res) => {
 };
 
 // Update User Status (Admin/SuperAdmin only)
+
+// Update User Status (Admin/SuperAdmin only)
 exports.updateStatus = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { status } = req.body; // Expected: "active", "inactive", or "restricted"
+    const { status } = req.body;
 
-    // Validate status value
     const validStatuses = ["active", "inactive", "restricted"];
     if (!status || !validStatuses.includes(status)) {
       return res.status(400).json({
@@ -510,15 +512,13 @@ exports.updateStatus = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Prevent changing own status if current user is the target (optional security)
     if (req.user.userId === userId) {
       return res.status(403).json({
         message: "You cannot change your own status",
       });
     }
 
-    // Optional: Prevent deactivating the last SuperAdmin
-    if (user.roles === ROLES.SuperAdmin && status !== "active") {
+    if (user.roles.includes(ROLES.SuperAdmin) && status !== "active") {
       const superAdminCount = await User.count({
         where: { roles: { [Op.like]: `%${ROLES.SuperAdmin}%` } },
       });
@@ -532,11 +532,18 @@ exports.updateStatus = async (req, res) => {
     user.status = status;
     await user.save();
 
+    // Now safe to use excludeSensitiveFields
+    const updatedUser = await User.findByPk(
+      user.userId,
+      excludeSensitiveFields
+    );
+
     res.status(200).json({
       message: "User status updated successfully",
-      user: await User.findByPk(user.userId, excludeSensitiveFields),
+      user: updatedUser,
     });
   } catch (err) {
+    console.error("Update Status Error:", err);
     res.status(500).json({
       message: `Failed to update status: ${
         err.message || "Unknown server error"

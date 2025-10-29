@@ -475,10 +475,10 @@ exports.createOrder = async (req, res) => {
 
         if (
           !id ||
-          price === undefined ||
-          discount === undefined ||
-          total === undefined ||
-          quantity === undefined ||
+          price == null || // null or undefined
+          discount == null ||
+          total == null ||
+          quantity == null ||
           quantity < 1
         ) {
           return sendErrorResponse(
@@ -655,59 +655,60 @@ exports.createOrder = async (req, res) => {
       for (const update of productUpdates) {
         const { productId, quantityToReduce, productRecord } = update;
 
-        // Update product quantity
+        // 1. Update Product (Sequelize)
         const newQuantity = productRecord.quantity - quantityToReduce;
         await Product.update(
           { quantity: newQuantity },
           { where: { productId } }
         );
 
-        // Update inventory history
-        await InventoryHistory.findOneAndUpdate(
-          { productId },
-          {
-            $push: {
-              history: {
-                quantity: -quantityToReduce, // Negative to indicate removal
-                action: "remove-stock",
-                timestamp: new Date(),
-                orderNo: order.orderNo, // Add orderNo to track which order caused the change
-                userId: createdBy, // Add userId to track who created the order
+        // 2. Update InventoryHistory (Mongoose)
+        try {
+          await InventoryHistory.findOneAndUpdate(
+            { productId },
+            {
+              $push: {
+                history: {
+                  quantity: -quantityToReduce,
+                  action: "remove-stock",
+                  timestamp: new Date(),
+                  orderNo: order.orderNo,
+                  userId: createdBy,
+                },
               },
             },
-          },
-          { upsert: true, new: true }
-        );
+            { upsert: true, new: true }
+          );
+        } catch (err) {
+          console.error(
+            `Failed to log inventory history for ${productId}:`,
+            err
+          );
+          // Don't fail the order — just log
+        }
 
-        // Update product status based on new quantity
-        let newStatus = productRecord.status;
-        if (newQuantity === 0) {
-          newStatus = "out_of_stock";
-        } else if (
+        // 3. Update product status
+        let newStatus = "active";
+        if (newQuantity === 0) newStatus = "out_of_stock";
+        else if (
           productRecord.alert_quantity &&
           newQuantity <= productRecord.alert_quantity
-        ) {
+        )
           newStatus = "low_stock";
-        } else {
-          newStatus = "active";
-        }
+
         if (newStatus !== productRecord.status) {
           await Product.update({ status: newStatus }, { where: { productId } });
         }
 
-        // Notify admin if product is out of stock or low stock
+        // 4. Notify admin
         if (newStatus === "out_of_stock" || newStatus === "low_stock") {
           await sendNotification({
             userId: ADMIN_USER_ID,
-            title: `Product ${newStatus.replace("_", " ")}: ${
-              productRecord.name
-            }`,
-            message: `Product ${
-              productRecord.name
-            } (ID: ${productId}) is now ${newStatus.replace(
+            title: `Product ${newStatus.replace("_", " ")}`,
+            message: `Product ${productRecord.name} is now ${newStatus.replace(
               "_",
               " "
-            )} with quantity ${newQuantity} due to order #${orderNo}.`,
+            )} (Qty: ${newQuantity})`,
           });
         }
       }

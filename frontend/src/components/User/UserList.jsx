@@ -42,7 +42,7 @@ const UserList = () => {
 
   const users = data?.users || [];
   const totalUsers = data?.total || 0;
-
+  console.log(users);
   const navigate = useNavigate();
 
   const [reportUser, { isLoading: isReporting }] = useReportUserMutation();
@@ -64,21 +64,6 @@ const UserList = () => {
     selectedUserData?.data?.user || selectedUserData?.user || selectedUserData;
 
   /* ----------------------- MEMOIZED VALUES ----------------------- */
-  const stats = useMemo(() => {
-    if (!users.length) {
-      return { totalEmployees: 0, active: 0, inactive: 0, newJoiners: 0 };
-    }
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-    return {
-      totalEmployees: totalUsers,
-      active: users.filter((u) => u.status === "active").length,
-      inactive: users.filter((u) => u.status !== "active").length,
-      newJoiners: users.filter((u) => new Date(u.createdAt) >= thirtyDaysAgo)
-        .length,
-    };
-  }, [users, totalUsers]);
 
   const groupedUsers = useMemo(
     () => ({
@@ -339,30 +324,6 @@ const UserList = () => {
                   {filteredUsers.map((user) => {
                     const isActive = user.status === "active";
 
-                    // Dropdown content for the pen button
-                    const statusMenu = (
-                      <Menu>
-                        <Menu.Item
-                          key="active"
-                          disabled={isActive || isUpdatingStatus}
-                          onClick={() =>
-                            handleStatusChange(user.userId, "active")
-                          }
-                        >
-                          Active
-                        </Menu.Item>
-                        <Menu.Item
-                          key="inactive"
-                          disabled={!isActive || isUpdatingStatus}
-                          onClick={() =>
-                            handleStatusChange(user.userId, "inactive")
-                          }
-                        >
-                          Inactive
-                        </Menu.Item>
-                      </Menu>
-                    );
-
                     return (
                       <tr key={user.userId}>
                         <td>
@@ -382,7 +343,28 @@ const UserList = () => {
                         {/* ---- STATUS BADGE + PEN ---- */}
                         <td>
                           <Dropdown
-                            overlay={statusMenu}
+                            overlay={
+                              <Menu>
+                                <Menu.Item
+                                  key="active"
+                                  disabled={isActive || isUpdatingStatus}
+                                  onClick={() =>
+                                    handleStatusChange(user.userId, "active")
+                                  }
+                                >
+                                  Active
+                                </Menu.Item>
+                                <Menu.Item
+                                  key="inactive"
+                                  disabled={!isActive || isUpdatingStatus}
+                                  onClick={() =>
+                                    handleStatusChange(user.userId, "inactive")
+                                  }
+                                >
+                                  Inactive
+                                </Menu.Item>
+                              </Menu>
+                            }
                             trigger={["click"]}
                             placement="bottomLeft"
                           >

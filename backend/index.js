@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
-const socketio = require("socket.io");
+const { createServer } = require("http"); // <-- NEW
+const { Server } = require("socket.io"); // <-- NEW
 const cors = require("cors");
 const helmet = require("helmet");
 const db = require("./config/database");
@@ -9,7 +10,7 @@ const setupDB = require("./utils/db");
 const keys = require("./config/keys");
 const { initSocket } = require("./controller/notificationController");
 
-// Import routes
+// ------------------- Import Routes -------------------
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
 const vendorRoutes = require("./routes/vendor");
@@ -42,10 +43,11 @@ const notificationRoutes = require("./routes/notification");
 const taskRoutes = require("./routes/tasks");
 const taskBoardRoutes = require("./routes/taskBoardRoutes");
 const feedbackRoutes = require("./routes/feedback");
-// Initialize Express app
+
+// ------------------- Express App -------------------
 const app = express();
 
-// CORS configuration
+// ------------------- CORS -------------------
 const corsOptions = {
   origin: [
     "http://localhost:3000",
@@ -61,7 +63,6 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 
-// Middleware
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -73,13 +74,13 @@ app.use(
 );
 app.use(require("./middleware/logger"));
 
-// Log incoming requests for debugging
+// Debug request logger
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.url}`);
   next();
 });
 
-// Routes
+// ------------------- Routes -------------------
 app.use("/api/auth", authRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/user", userRoutes);
@@ -112,7 +113,8 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/taskboards", taskBoardRoutes);
 app.use("/api/feedback", feedbackRoutes);
-// Error handling middleware
+
+// ------------------- Error Handler -------------------
 app.use((err, req, res, next) => {
   console.error("Server error:", err);
   res
@@ -120,25 +122,33 @@ app.use((err, req, res, next) => {
     .json({ error: "Internal server error", details: err.message });
 });
 
-// Database Setup
+// ------------------- DB Setup -------------------
 connectMongoDB();
 setupDB();
 
-// Sync Database
 db.sync()
   .then(() => console.log("Database connected and synced successfully."))
   .catch((err) => console.error("Database connection failed:", err));
 
-// Start server
-const server = app.listen(keys.port, async () => {
-  console.log(
-    `✓ Listening on port ${keys.port}. Visit http://localhost:${keys.port}/`
-  );
+// ------------------- HTTP + Socket.IO Server -------------------
+const httpServer = createServer(app); // <-- NEW
+const io = new Server(httpServer, { cors: corsOptions }); // <-- NEW
+
+// Attach `io` to every request (so routes can use `req.io`)
+app.use((req, res, next) => {
+  req.io = io;
+  next();
 });
 
-// Initialize Socket.IO
-const io = socketio(server, { cors: corsOptions });
+// Your existing socket files
 require("./socket")(io);
 initSocket(io);
 
-module.exports = { app, server, io };
+// ------------------- Start Server -------------------
+const PORT = keys.port || 5000;
+httpServer.listen(PORT, () => {
+  console.log(`Listening on port ${PORT}. Visit http://localhost:${PORT}/`);
+});
+
+// Export for testing / other modules
+module.exports = { app, httpServer, io };

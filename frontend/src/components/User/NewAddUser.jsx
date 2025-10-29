@@ -26,6 +26,7 @@ import {
   ReloadOutlined,
   InfoCircleOutlined,
   HomeOutlined,
+  ClearOutlined,
 } from "@ant-design/icons";
 
 const { Option } = Select;
@@ -34,12 +35,14 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
   const { userId } = useParams();
   const navigate = useNavigate();
 
+  // === RTK Queries & Mutations ===
   const {
     data: fetchedUser,
     isLoading: isFetchingUser,
     error: fetchUserError,
-    refetch, // ← Add this
+    refetch,
   } = useGetUserByIdQuery(userId, { skip: !userId || !!propUserToEdit });
+
   const userToEdit = propUserToEdit || fetchedUser?.data || fetchedUser?.user;
 
   const [createUser, { isLoading: isCreating, error: createError }] =
@@ -60,8 +63,10 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
     error: rolesError,
   } = useGetRolesQuery();
 
+  // === Local State ===
   const [isEditMode, setIsEditMode] = useState(false);
   const [manageAddress, setManageAddress] = useState(false);
+
   const [formData, setFormData] = useState({
     username: "",
     name: "",
@@ -84,6 +89,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
     addressId: null,
   });
 
+  // === Populate Form on Load/Edit ===
   useEffect(() => {
     if (userToEdit) {
       setFormData({
@@ -129,6 +135,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
     }
   }, [userToEdit]);
 
+  // === Error Toasts ===
   useEffect(() => {
     if (createError)
       toast.error(createError?.data?.message || "Failed to create user");
@@ -155,6 +162,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
     fetchUserError,
   ]);
 
+  // === Input Handlers ===
   const handleChange = (name, value) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -169,6 +177,152 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
     handleChange(name, value);
   };
 
+  // === Reset & Clear Functions ===
+  const resetToOriginal = async () => {
+    if (isEditMode) {
+      if (propUserToEdit) {
+        // Reset from props
+        setFormData({
+          username: propUserToEdit.username || "",
+          name: propUserToEdit.name || "",
+          email: propUserToEdit.email || "",
+          mobileNumber: propUserToEdit.mobileNumber || "",
+          dateOfBirth: propUserToEdit.dateOfBirth
+            ? new Date(propUserToEdit.dateOfBirth).toISOString().split("T")[0]
+            : "",
+          shiftFrom: propUserToEdit.shiftFrom
+            ? new Date(
+                `1970-01-01T${propUserToEdit.shiftFrom}`
+              ).toLocaleTimeString("en-US", {
+                hour12: false,
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : "",
+          shiftTo: propUserToEdit.shiftTo
+            ? new Date(
+                `1970-01-01T${propUserToEdit.shiftTo}`
+              ).toLocaleTimeString("en-US", {
+                hour12: false,
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : "",
+          bloodGroup: propUserToEdit.bloodGroup || "",
+          street: propUserToEdit.address?.street || "",
+          country: propUserToEdit.address?.country || "",
+          state: propUserToEdit.address?.state || "",
+          city: propUserToEdit.address?.city || "",
+          postalCode: propUserToEdit.address?.postalCode || "",
+          emergencyNumber: propUserToEdit.emergencyNumber || "",
+          roleId: propUserToEdit.roleId || "",
+          status: ["active", "inactive", "restricted"].includes(
+            propUserToEdit.status
+          )
+            ? propUserToEdit.status
+            : "inactive",
+          password: "",
+          about: propUserToEdit.about || "",
+          addressId: propUserToEdit.addressId || null,
+        });
+        setManageAddress(!!propUserToEdit.addressId);
+      } else if (userId) {
+        // Refetch from API
+        try {
+          const refetched = await refetch();
+          const user = refetched.data?.data || refetched.data?.user;
+          if (user) {
+            setFormData({
+              username: user.username || "",
+              name: user.name || "",
+              email: user.email || "",
+              mobileNumber: user.mobileNumber || "",
+              dateOfBirth: user.dateOfBirth
+                ? new Date(user.dateOfBirth).toISOString().split("T")[0]
+                : "",
+              shiftFrom: user.shiftFrom
+                ? new Date(`1970-01-01T${user.shiftFrom}`).toLocaleTimeString(
+                    "en-US",
+                    {
+                      hour12: false,
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }
+                  )
+                : "",
+              shiftTo: user.shiftTo
+                ? new Date(`1970-01-01T${user.shiftTo}`).toLocaleTimeString(
+                    "en-US",
+                    {
+                      hour12: false,
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }
+                  )
+                : "",
+              bloodGroup: user.bloodGroup || "",
+              street: user.address?.street || "",
+              country: user.address?.country || "",
+              state: user.address?.state || "",
+              city: user.address?.city || "",
+              postalCode: user.address?.postalCode || "",
+              emergencyNumber: user.emergencyNumber || "",
+              roleId: user.roleId || "",
+              status: ["active", "inactive", "restricted"].includes(user.status)
+                ? user.status
+                : "inactive",
+              password: "",
+              about: user.about || "",
+              addressId: user.addressId || null,
+            });
+            setManageAddress(!!user.addressId);
+          }
+        } catch {
+          toast.error("Failed to reload user data");
+        }
+      }
+    } else {
+      // Add mode → clear all
+      clearForm();
+    }
+  };
+
+  const clearForm = () => {
+    setFormData({
+      username: "",
+      name: "",
+      email: "",
+      mobileNumber: "",
+      dateOfBirth: "",
+      shiftFrom: "",
+      shiftTo: "",
+      bloodGroup: "",
+      emergencyNumber: "",
+      roleId: "",
+      status: "inactive",
+      password: "",
+      about: "",
+      street: "",
+      country: "",
+      state: "",
+      city: "",
+      postalCode: "",
+      addressId: null,
+    });
+    setManageAddress(false);
+  };
+
+  const handleRefresh = async () => {
+    await resetToOriginal();
+  };
+
+  const handleClear = () => {
+    clearForm();
+  };
+
+  const handleClose = () => navigate("/users/list");
+
+  // === Form Submission ===
   const handleSubmit = async () => {
     try {
       const requiredFields = ["username", "email", "name", "roleId"];
@@ -201,6 +355,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
       let addressId = isEditMode ? formData.addressId : null;
       let newUserId = null;
 
+      // Handle Address
       if (manageAddress) {
         const hasAddressFields =
           formData.street ||
@@ -252,6 +407,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
         }
       }
 
+      // Prepare User Payload
       const userPayload = {
         username: formData.username,
         name: formData.name,
@@ -287,6 +443,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
         return;
       }
 
+      // Associate address with new user
       if (!isEditMode && addressId && newUserId) {
         try {
           await updateAddress({
@@ -318,138 +475,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
     }
   };
 
-  const handleRefresh = async () => {
-    if (isEditMode) {
-      // In Edit Mode: Reload original data from API (or props)
-      if (propUserToEdit) {
-        // If passed via props (e.g. from list), use that
-        setFormData({
-          username: propUserToEdit.username || "",
-          name: propUserToEdit.name || "",
-          email: propUserToEdit.email || "",
-          mobileNumber: propUserToEdit.mobileNumber || "",
-          dateOfBirth: propUserToEdit.dateOfBirth
-            ? new Date(propUserToEdit.dateOfBirth).toISOString().split("T")[0]
-            : "",
-          shiftFrom: propUserToEdit.shiftFrom
-            ? new Date(
-                `1970-01-01T${propUserToEdit.shiftFrom}`
-              ).toLocaleTimeString("en-US", {
-                hour12: false,
-                hour: "2-digit",
-                minute: "2-digit",
-              })
-            : "",
-          shiftTo: propUserToEdit.shiftTo
-            ? new Date(
-                `1970-01-01T${propUserToEdit.shiftTo}`
-              ).toLocaleTimeString("en-US", {
-                hour12: false,
-                hour: "2-digit",
-                minute: "2-digit",
-              })
-            : "",
-          bloodGroup: propUserToEdit.bloodGroup || "",
-          street: propUserToEdit.address?.street || "",
-          country: propUserToEdit.address?.country || "",
-          state: propUserToEdit.address?.state || "",
-          city: propUserToEdit.address?.city || "",
-          postalCode: propUserToEdit.address?.postalCode || "",
-          emergencyNumber: propUserToEdit.emergencyNumber || "",
-          roleId: propUserToEdit.roleId || "",
-          status: ["active", "inactive", "restricted"].includes(
-            propUserToEdit.status
-          )
-            ? propUserToEdit.status
-            : "inactive",
-          password: "",
-          about: propUserToEdit.about || "",
-          addressId: propUserToEdit.addressId || null,
-        });
-        setManageAddress(!!propUserToEdit.addressId);
-      } else if (userId) {
-        // If editing via URL, refetch from API
-        try {
-          const refetched = await refetch(); // We'll add this below
-          const user = refetched.data?.data || refetched.data?.user;
-          if (user) {
-            setFormData({
-              username: user.username || "",
-              name: user.name || "",
-              email: user.email || "",
-              mobileNumber: user.mobileNumber || "",
-              dateOfBirth: user.dateOfBirth
-                ? new Date(user.dateOfBirth).toISOString().split("T")[0]
-                : "",
-              shiftFrom: user.shiftFrom
-                ? new Date(`1970-01-01T${user.shiftFrom}`).toLocaleTimeString(
-                    "en-US",
-                    {
-                      hour12: false,
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    }
-                  )
-                : "",
-              shiftTo: user.shiftTo
-                ? new Date(`1970-01-01T${user.shiftTo}`).toLocaleTimeString(
-                    "en-US",
-                    {
-                      hour12: false,
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    }
-                  )
-                : "",
-              bloodGroup: user.bloodGroup || "",
-              street: user.address?.street || "",
-              country: user.address?.country || "",
-              state: user.address?.state || "",
-              city: user.address?.city || "",
-              postalCode: user.address?.postalCode || "",
-              emergencyNumber: user.emergencyNumber || "",
-              roleId: user.roleId || "",
-              status: ["active", "inactive", "restricted"].includes(user.status)
-                ? user.status
-                : "inactive",
-              password: "",
-              about: user.about || "",
-              addressId: user.addressId || null,
-            });
-            setManageAddress(!!user.addressId);
-          }
-        } catch (err) {
-          toast.error("Failed to reload user data");
-        }
-      }
-    } else {
-      // In Add Mode: Reset to empty
-      setFormData({
-        username: "",
-        name: "",
-        email: "",
-        mobileNumber: "",
-        dateOfBirth: "",
-        shiftFrom: "",
-        shiftTo: "",
-        bloodGroup: "",
-        emergencyNumber: "",
-        roleId: "",
-        status: "inactive",
-        password: "",
-        about: "",
-        street: "",
-        country: "",
-        state: "",
-        city: "",
-        postalCode: "",
-        addressId: null,
-      });
-      setManageAddress(false);
-    }
-  };
-  const handleClose = () => navigate("/users/list");
-
+  // === Loading & Error States ===
   if (isFetchingUser || isRolesLoading) {
     return (
       <div className="page-wrapper">
@@ -471,6 +497,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
     );
   }
 
+  // === Main Render ===
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -482,13 +509,35 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
               <h6>{isEditMode ? "Update user details" : "Create new user"}</h6>
             </div>
           </div>
+
+          {/* Action Icons: Refresh & Clear */}
           <ul className="table-top-head">
             <li className="me-2">
-              <a href="#" onClick={handleRefresh} title="Refresh">
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleRefresh();
+                }}
+                title="Reset to Original"
+              >
                 <ReloadOutlined />
               </a>
             </li>
+            <li className="me-2">
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleClear();
+                }}
+                title="Clear All Fields"
+              >
+                <ClearOutlined />
+              </a>
+            </li>
           </ul>
+
           <div className="page-btn">
             <Button onClick={handleClose} className="btn btn-secondary">
               <LeftOutlined /> Back to List
@@ -496,9 +545,9 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
           </div>
         </div>
 
-        {/* Form Content - Always Visible */}
+        {/* Form */}
         <Form onFinish={handleSubmit} layout="vertical">
-          {/* User Information Section */}
+          {/* User Information */}
           <div className="card mb-4">
             <div className="card-header bg-white border-bottom">
               <h5 className="d-inline-flex align-items-center">
@@ -533,6 +582,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                     />
                   </Form.Item>
                 </div>
+
                 <div className="col-lg-4 col-md-6">
                   <Form.Item
                     label="Mobile Number"
@@ -554,7 +604,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                       onChange={(e) => {
                         const value = e.target.value
                           .replace(/\D/g, "")
-                          .slice(0, 10); // Allow only digits, max 10
+                          .slice(0, 10);
                         handleChange("mobileNumber", value);
                       }}
                       placeholder="Enter 10-digit mobile number"
@@ -562,6 +612,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                     />
                   </Form.Item>
                 </div>
+
                 <div className="col-lg-4 col-md-6">
                   <Form.Item label="Date of Birth">
                     <DatePicker
@@ -576,6 +627,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                     />
                   </Form.Item>
                 </div>
+
                 <div className="col-lg-4 col-md-6">
                   <Form.Item label="Shift From">
                     <TimePicker
@@ -605,6 +657,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                     />
                   </Form.Item>
                 </div>
+
                 <div className="col-lg-4 col-md-6">
                   <Form.Item label="Blood Group">
                     <Select
@@ -612,7 +665,6 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                       onChange={(value) => handleChange("bloodGroup", value)}
                       placeholder="Select blood group"
                       style={{ width: "100%" }}
-                      dropdownStyle={{ minWidth: 120 }}
                     >
                       {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map(
                         (bg) => (
@@ -624,6 +676,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                     </Select>
                   </Form.Item>
                 </div>
+
                 <div className="col-lg-4 col-md-6">
                   <Form.Item label="Role" required>
                     <Select
@@ -632,7 +685,6 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                       placeholder="Select role"
                       loading={isRolesLoading}
                       style={{ width: "100%" }}
-                      dropdownStyle={{ minWidth: 200 }}
                     >
                       {roles?.map((role) => (
                         <Option key={role.roleId} value={role.roleId}>
@@ -655,6 +707,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                     </Select>
                   </Form.Item>
                 </div>
+
                 <div className="col-lg-4 col-md-6">
                   <Form.Item label="Emergency Contact">
                     <Input
@@ -665,6 +718,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                     />
                   </Form.Item>
                 </div>
+
                 <div className="col-lg-4 col-md-6">
                   <Form.Item label="Password" required={!isEditMode}>
                     <Input.Password

@@ -1,9 +1,11 @@
 const Product = require("../models/product");
 const ProductMeta = require("../models/productMeta");
 const { Op } = require("sequelize");
-const { InventoryHistory } = require("../models/history");
+const InventoryHistory = require("../models/history"); // Mongoose model (exported directly)
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Create a product with meta data
+// ─────────────────────────────────────────────────────────────────────────────
 exports.createProduct = async (req, res) => {
   try {
     const { meta, ...productData } = req.body;
@@ -17,7 +19,6 @@ exports.createProduct = async (req, res) => {
             .status(400)
             .json({ message: `Invalid ProductMeta ID: ${metaId}` });
         }
-        // Validate meta value based on fieldType (e.g., number, string)
         if (metaField.fieldType === "number" && isNaN(meta[metaId])) {
           return res
             .status(400)
@@ -37,7 +38,9 @@ exports.createProduct = async (req, res) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Get all products with their meta data
+// ─────────────────────────────────────────────────────────────────────────────
 exports.getAllProducts = async (req, res) => {
   try {
     const products = await Product.findAll();
@@ -79,7 +82,9 @@ exports.getAllProducts = async (req, res) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Get a single product by ID with meta data
+// ─────────────────────────────────────────────────────────────────────────────
 exports.getProductById = async (req, res) => {
   try {
     const product = await Product.findByPk(req.params.productId);
@@ -113,7 +118,9 @@ exports.getProductById = async (req, res) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Get products by category
+// ─────────────────────────────────────────────────────────────────────────────
 exports.getProductsByCategory = async (req, res) => {
   const { categoryId } = req.params;
 
@@ -165,7 +172,9 @@ exports.getProductsByCategory = async (req, res) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Update a product with meta data
+// ─────────────────────────────────────────────────────────────────────────────
 exports.updateProduct = async (req, res) => {
   try {
     const { meta, ...productData } = req.body;
@@ -174,7 +183,6 @@ exports.updateProduct = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    // Validate meta data if provided
     if (meta) {
       for (const metaId of Object.keys(meta)) {
         const metaField = await ProductMeta.findByPk(metaId);
@@ -202,7 +210,9 @@ exports.updateProduct = async (req, res) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Delete a product
+// ─────────────────────────────────────────────────────────────────────────────
 exports.deleteProduct = async (req, res) => {
   try {
     const product = await Product.findByPk(req.params.productId);
@@ -218,11 +228,13 @@ exports.deleteProduct = async (req, res) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Add stock to a product
+// ─────────────────────────────────────────────────────────────────────────────
 exports.addStock = async (req, res) => {
   try {
     const { productId } = req.params;
-    const { quantity } = req.body;
+    const { quantity, orderNo, userId } = req.body; // optional
 
     if (isNaN(quantity) || Number(quantity) <= 0) {
       return res.status(400).json({ message: "Invalid quantity value" });
@@ -236,24 +248,31 @@ exports.addStock = async (req, res) => {
     product.quantity += Number(quantity);
     await product.save();
 
-    const historyEntry = await InventoryHistory.findOneAndUpdate(
-      { productId: productId.toString() },
-      {
-        $push: {
-          history: {
-            quantity: Number(quantity),
-            action: "add-stock",
-            timestamp: new Date(),
+    // Log to MongoDB
+    try {
+      await InventoryHistory.findOneAndUpdate(
+        { productId: productId },
+        {
+          $push: {
+            history: {
+              quantity: Number(quantity),
+              action: "add-stock",
+              timestamp: new Date(),
+              orderNo: orderNo ? Number(orderNo) : undefined,
+              userId: userId || undefined,
+            },
           },
         },
-      },
-      { upsert: true, new: true }
-    );
+        { upsert: true, new: true }
+      );
+    } catch (mongoErr) {
+      console.error("Failed to log add-stock history:", mongoErr);
+      // Continue — don't fail the whole request
+    }
 
     return res.status(200).json({
       message: "Stock added successfully",
       product,
-      history: historyEntry,
     });
   } catch (error) {
     return res
@@ -262,11 +281,13 @@ exports.addStock = async (req, res) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Remove stock from a product
+// ─────────────────────────────────────────────────────────────────────────────
 exports.removeStock = async (req, res) => {
   try {
     const { productId } = req.params;
-    const { quantity } = req.body;
+    const { quantity, orderNo, userId } = req.body; // optional
 
     if (isNaN(quantity) || Number(quantity) <= 0) {
       return res.status(400).json({ message: "Invalid quantity value" });
@@ -284,24 +305,30 @@ exports.removeStock = async (req, res) => {
     product.quantity -= Number(quantity);
     await product.save();
 
-    const historyEntry = await InventoryHistory.findOneAndUpdate(
-      { productId: productId.toString() },
-      {
-        $push: {
-          history: {
-            quantity: Number(quantity),
-            action: "remove-stock",
-            timestamp: new Date(),
+    // Log to MongoDB
+    try {
+      await InventoryHistory.findOneAndUpdate(
+        { productId: productId },
+        {
+          $push: {
+            history: {
+              quantity: -Number(quantity),
+              action: "remove-stock",
+              timestamp: new Date(),
+              orderNo: orderNo ? Number(orderNo) : undefined,
+              userId: userId || undefined,
+            },
           },
         },
-      },
-      { upsert: true, new: true }
-    );
+        { upsert: true, new: true }
+      );
+    } catch (mongoErr) {
+      console.error("Failed to log remove-stock history:", mongoErr);
+    }
 
     return res.status(200).json({
       message: "Stock removed successfully",
       product,
-      history: historyEntry,
     });
   } catch (error) {
     return res
@@ -310,7 +337,9 @@ exports.removeStock = async (req, res) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Get low-stock products
+// ─────────────────────────────────────────────────────────────────────────────
 exports.getLowStockProducts = async (req, res) => {
   try {
     const threshold = req.query.threshold || 10;
@@ -363,16 +392,16 @@ exports.getLowStockProducts = async (req, res) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Get inventory history for a specific product
+// ─────────────────────────────────────────────────────────────────────────────
 exports.getHistoryByProductId = async (req, res) => {
   try {
     const { productId } = req.params;
 
-    const historyEntry = await InventoryHistory.findOne({
-      productId: productId.toString(),
-    });
+    const doc = await InventoryHistory.findOne({ productId });
 
-    if (!historyEntry || historyEntry.history.length === 0) {
+    if (!doc || doc.history.length === 0) {
       return res.status(200).json({
         message: "No history found for this product",
         history: [],
@@ -381,7 +410,7 @@ exports.getHistoryByProductId = async (req, res) => {
 
     return res.status(200).json({
       message: "Inventory history retrieved successfully",
-      history: historyEntry.history,
+      history: doc.history,
     });
   } catch (error) {
     return res.status(500).json({
@@ -391,7 +420,9 @@ exports.getHistoryByProductId = async (req, res) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Search products with meta data
+// ─────────────────────────────────────────────────────────────────────────────
 exports.searchProducts = async (req, res) => {
   try {
     const {
@@ -420,51 +451,27 @@ exports.searchProducts = async (req, res) => {
       ];
     }
 
-    if (name) {
-      filters.name = { [Op.iLike]: `%${name}%` };
-    }
-    if (sellingPrice) {
+    if (name) filters.name = { [Op.iLike]: `%${name}%` };
+    if (sellingPrice)
       filters["$meta.sellingPrice$"] = { [Op.eq]: Number(sellingPrice) };
-    }
-    if (minSellingPrice) {
-      filters["$meta.sellingPrice$"] = {
-        ...filters["$meta.sellingPrice$"],
-        [Op.gte]: Number(minSellingPrice),
-      };
-    }
-    if (maxSellingPrice) {
-      filters["$meta.sellingPrice$"] = {
-        ...filters["$meta.sellingPrice$"],
-        [Op.lte]: Number(maxSellingPrice),
-      };
-    }
-    if (purchasingPrice) {
+    if (minSellingPrice)
+      filters["$meta.sellingPrice$"] = { [Op.gte]: Number(minSellingPrice) };
+    if (maxSellingPrice)
+      filters["$meta.sellingPrice$"] = { [Op.lte]: Number(maxSellingPrice) };
+    if (purchasingPrice)
       filters["$meta.purchasingPrice$"] = { [Op.eq]: Number(purchasingPrice) };
-    }
-    if (minPurchasingPrice) {
+    if (minPurchasingPrice)
       filters["$meta.purchasingPrice$"] = {
-        ...filters["$meta.purchasingPrice$"],
         [Op.gte]: Number(minPurchasingPrice),
       };
-    }
-    if (maxPurchasingPrice) {
+    if (maxPurchasingPrice)
       filters["$meta.purchasingPrice$"] = {
-        ...filters["$meta.purchasingPrice$"],
         [Op.lte]: Number(maxPurchasingPrice),
       };
-    }
-    if (companyCode) {
-      filters.companyCode = companyCode;
-    }
-    if (productCode) {
-      filters.product_code = productCode;
-    }
-    if (brandId) {
-      filters.brandId = brandId;
-    }
-    if (categoryId) {
-      filters.categoryId = categoryId;
-    }
+    if (companyCode) filters.companyCode = companyCode;
+    if (productCode) filters.product_code = productCode;
+    if (brandId) filters.brandId = brandId;
+    if (categoryId) filters.categoryId = categoryId;
 
     const products = await Product.findAll({
       where: filters,
@@ -508,7 +515,9 @@ exports.searchProducts = async (req, res) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Get all product codes
+// ─────────────────────────────────────────────────────────────────────────────
 exports.getAllProductCodes = async (req, res) => {
   try {
     const products = await Product.findAll({
@@ -558,7 +567,9 @@ exports.getAllProductCodes = async (req, res) => {
   }
 };
 
-// Update isFeatured status of a product
+// ─────────────────────────────────────────────────────────────────────────────
+// Update isFeatured status
+// ─────────────────────────────────────────────────────────────────────────────
 exports.updateProductFeatured = async (req, res) => {
   const { productId } = req.params;
   const { isFeatured } = req.body;
@@ -585,35 +596,28 @@ exports.updateProductFeatured = async (req, res) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Get products by IDs
+// ─────────────────────────────────────────────────────────────────────────────
 exports.getProductsByIds = async (req, res) => {
   try {
     const { productIds } = req.body;
 
-    // Validate input
     if (!Array.isArray(productIds) || productIds.length === 0) {
-      return sendErrorResponse(
-        res,
-        400,
-        "productIds must be a non-empty array"
-      );
+      return res
+        .status(400)
+        .json({ message: "productIds must be a non-empty array" });
     }
 
-    // Validate each productId is a non-empty string
     if (productIds.some((id) => !id || typeof id !== "string")) {
-      return sendErrorResponse(
-        res,
-        400,
-        "All productIds must be non-empty strings"
-      );
+      return res
+        .status(400)
+        .json({ message: "All productIds must be non-empty strings" });
     }
 
-    // Fetch products
     const products = await Product.findAll({
       where: {
-        productId: {
-          [Op.in]: productIds,
-        },
+        productId: { [Op.in]: productIds },
       },
       attributes: [
         "productId",
@@ -633,21 +637,20 @@ exports.getProductsByIds = async (req, res) => {
       ],
     });
 
-    // Check if all requested productIds were found
     const foundProductIds = products.map((p) => p.productId);
     const missingIds = productIds.filter((id) => !foundProductIds.includes(id));
     if (missingIds.length > 0) {
-      return sendErrorResponse(
-        res,
-        404,
-        `Products not found for IDs: ${missingIds.join(", ")}`
-      );
+      return res.status(404).json({
+        message: `Products not found for IDs: ${missingIds.join(", ")}`,
+      });
     }
 
     return res.status(200).json({
       products: products.map((p) => p.toJSON()),
     });
   } catch (err) {
-    return sendErrorResponse(res, 500, "Failed to fetch products", err.message);
+    return res
+      .status(500)
+      .json({ message: "Failed to fetch products", error: err.message });
   }
 };
