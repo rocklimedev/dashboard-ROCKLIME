@@ -233,9 +233,9 @@ const CategoryManagement = () => {
       render: (_, record) => {
         let imageUrl = null;
         try {
-          if (record?.images) {
-            const images = JSON.parse(record.images || "[]");
-            imageUrl = Array.isArray(images) ? images[0] : null;
+          if (record.images) {
+            const images = JSON.parse(record.images);
+            imageUrl = Array.isArray(images) ? images[0] : record.images;
           }
         } catch (e) {}
 

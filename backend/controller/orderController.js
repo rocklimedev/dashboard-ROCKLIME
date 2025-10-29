@@ -386,6 +386,7 @@ exports.createOrder = async (req, res) => {
       masterPipelineNo,
       previousOrderNo,
       shipTo,
+      shipping, // <---- added
     } = req.body;
 
     // Validate required fields
@@ -396,7 +397,12 @@ exports.createOrder = async (req, res) => {
         "createdFor, createdBy, and orderNo are required"
       );
     }
-
+    if (shipping != null) {
+      const parsedShipping = parseFloat(shipping);
+      if (isNaN(parsedShipping) || parsedShipping < 0) {
+        return sendErrorResponse(res, 400, "Invalid shipping amount");
+      }
+    }
     // Validate user (createdBy)
     const user = await User.findByPk(createdBy);
     if (!user) {
@@ -648,6 +654,7 @@ exports.createOrder = async (req, res) => {
       masterPipelineNo,
       previousOrderNo,
       shipTo,
+      shipping: shipping ?? 0, // <---- added
     });
 
     // Update product quantities and inventory history if products are provided

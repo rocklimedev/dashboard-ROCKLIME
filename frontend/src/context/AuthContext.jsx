@@ -5,22 +5,16 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [auth, setAuth] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
     const token =
       localStorage.getItem("token") || sessionStorage.getItem("token");
     if (token) {
-      setAuth((prev) => {
-        if (prev?.token !== token) {
-          return { token, user: null };
-        }
-        return prev;
-      });
-    } else if (auth?.token) {
-      setAuth(null);
+      setAuth({ token, user: null });
     }
-  }, []); // Still only on mount
-
+    setAuthChecked(true); // ← Add this
+  }, []);
   // Add this: Listen for storage events (cross-tab or programmatic changes)
   useEffect(() => {
     const handleStorageChange = () => {
@@ -57,7 +51,7 @@ export const AuthProvider = ({ children }) => {
     });
   };
   return (
-    <AuthContext.Provider value={{ auth, setAuth, login, logout }}>
+    <AuthContext.Provider value={{ auth, setAuth, login, logout, authChecked }}>
       {children}
     </AuthContext.Provider>
   );

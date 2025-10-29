@@ -654,3 +654,45 @@ exports.getProductsByIds = async (req, res) => {
       .json({ message: "Failed to fetch products", error: err.message });
   }
 };
+/**
+ * GET /products/codes/brand-wise
+ * Returns: { "Brand A": ["ABC-001", "ABC-002"], "Brand B": [...] }
+ */
+exports.getAllProductCodesBrandWise = async (req, res) => {
+  try {
+    const products = await Product.findAll({
+      attributes: ["product_code"],
+      include: [
+        {
+          model: Brand,
+          as: "brand",
+          attributes: ["name"],
+          required: true, // Only products with a brand
+        },
+      ],
+      order: [[Brand, "name", "ASC"]],
+      raw: true, // Faster, flatter result
+    });
+
+    // Group by brand name
+    const grouped = products.reduce((acc, p) => {
+      const brandName = p["brand.name"] || "Unknown Brand";
+      if (!acc[brandName]) acc[brandName] = [];
+      acc[brandName].push(p.product_code);
+      return acc;
+    }, {});
+
+    return res.status(200).json({
+      success: true,
+      count: products.length,
+      data: grouped,
+    });
+  } catch (error) {
+    console.error("getAllProductCodesBrandWise error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch product codes",
+      error: error.message,
+    });
+  }
+};

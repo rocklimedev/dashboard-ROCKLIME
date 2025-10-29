@@ -129,15 +129,6 @@ const QuotationForm = ({
   const [isCreatingAddress, setIsCreatingAddress] = useState(false);
   const [createAddress] = useCreateAddressMutation();
 
-  // === Auto-calculate Round Off ===
-  useEffect(() => {
-    const calculatedRoundOff = Math.round(totalAmount) - totalAmount;
-    handleQuotationChange(
-      "roundOff",
-      parseFloat(calculatedRoundOff.toFixed(2))
-    );
-  }, [totalAmount, handleQuotationChange]);
-
   // === Customer & Address Logic ===
   const selectedCustomerData = useMemo(
     () => customers.find((c) => c.customerId === selectedCustomer),
@@ -301,12 +292,42 @@ const QuotationForm = ({
     handleQuotationChange("discountType", value);
     handleQuotationChange("discountAmount", "");
   };
+  // === Smart Round-Off: Last digit → 0 or 5 ===
+  useEffect(() => {
+    const baseAmount = subTotal + shipping + tax - discount - extraDiscount;
+    const totalInPaise = Math.round(baseAmount * 100); // Work in paise for precision
 
-  // === Final Rounded Total ===
-  const finalRoundedTotal = useMemo(
-    () => Math.round(totalAmount),
-    [totalAmount]
-  );
+    const rupees = Math.floor(totalInPaise / 100);
+    const lastDigit = rupees % 10;
+
+    let targetRupees;
+    if (lastDigit <= 4) {
+      targetRupees = rupees - lastDigit; // e.g., 1023 → 1020
+    } else if (lastDigit >= 6) {
+      targetRupees = rupees + (10 - lastDigit); // e.g., 1027 → 1030
+    } else {
+      targetRupees = rupees; // lastDigit is 5 → keep
+    }
+
+    const targetTotal = targetRupees;
+    const roundOffValue = parseFloat((targetTotal - baseAmount).toFixed(2));
+
+    handleQuotationChange("roundOff", roundOffValue);
+  }, [subTotal, shipping, tax, discount, extraDiscount, handleQuotationChange]);
+  const finalRoundedTotal = useMemo(() => {
+    const base = subTotal + shipping + tax - discount - extraDiscount;
+    const totalInPaise = Math.round(base * 100);
+    const rupees = Math.floor(totalInPaise / 100);
+    const lastDigit = rupees % 10;
+
+    if (lastDigit <= 4) {
+      return rupees - lastDigit;
+    } else if (lastDigit >= 6) {
+      return rupees + (10 - lastDigit);
+    } else {
+      return rupees;
+    }
+  }, [subTotal, shipping, tax, discount, extraDiscount]);
   return (
     <Row gutter={[16, 16]} justify="center">
       <Col xs={24} sm={24} md={16} lg={16}>

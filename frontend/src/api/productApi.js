@@ -10,6 +10,7 @@ export const productApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Product"],
     }),
+
     getProductsByIds: builder.query({
       query: (productIds) => ({
         url: "/products/by-ids",
@@ -18,6 +19,7 @@ export const productApi = baseApi.injectEndpoints({
       }),
       transformResponse: (response) => response,
     }),
+
     getAllProducts: builder.query({
       query: () => "/products/",
       providesTags: ["Product"],
@@ -93,17 +95,25 @@ export const productApi = baseApi.injectEndpoints({
       },
       providesTags: ["Product"],
     }),
+
     updateProductFeatured: builder.mutation({
       query: ({ productId, isFeatured }) => ({
         url: `/products/${productId}/featured`,
         method: "PATCH",
         body: { isFeatured },
       }),
-      invalidatesTags: ["Product"], // Refetch products after update
+      invalidatesTags: ["Product"],
+    }),
+
+    // NEW ENDPOINT
+    getAllProductCodesBrandWise: builder.query({
+      query: () => "/products/codes/brand-wise",
+      providesTags: ["Product"],
     }),
   }),
 });
 
+// Export all hooks including the new one
 export const {
   useGetProductsByIdsQuery,
   useUpdateProductFeaturedMutation,
@@ -119,4 +129,5 @@ export const {
   useSearchProductsQuery,
   useGetAllProductCodesQuery,
   useGetAllProductsByCategoryQuery,
+  useGetAllProductCodesBrandWiseQuery, // NEW
 } = productApi;

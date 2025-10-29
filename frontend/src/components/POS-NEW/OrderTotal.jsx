@@ -4,10 +4,12 @@ import { Input, Tag } from "antd";
 import { EditOutlined } from "@ant-design/icons";
 
 const formatCurrency = (value) =>
-  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(
-    Math.abs(value) || 0
-  );
-
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Math.abs(value) || 0);
 const OrderTotal = React.memo(
   ({
     shipping = 0,
@@ -74,9 +76,9 @@ const OrderTotal = React.memo(
     ]);
     const finalTotal = useMemo(() => {
       if (finalTotalProp != null && !isNaN(finalTotalProp)) {
-        return Math.round(finalTotalProp);
+        return finalTotalProp; // Already rounded to 0 or 5
       }
-      return Math.round(calculatedTotal);
+      return Math.round(calculatedTotal); // fallback
     }, [finalTotalProp, calculatedTotal]);
     return (
       <div className="block-section order-method bg-light m-0">
@@ -144,16 +146,6 @@ const OrderTotal = React.memo(
                     </td>
                   </tr>
                 )}
-                <tr>
-                  <td>Round Off</td>
-                  <td
-                    className="text-end"
-                    style={{ color: safeRoundOff >= 0 ? "green" : "red" }}
-                  >
-                    {safeRoundOff >= 0 ? "+" : ""}
-                    {formatCurrency(safeRoundOff)}
-                  </td>
-                </tr>
 
                 <tr className="border-top">
                   <td>
@@ -170,20 +162,6 @@ const OrderTotal = React.memo(
                     </strong>
                   </td>
                 </tr>
-
-                {safeRoundOff !== 0 && (
-                  <tr>
-                    <td
-                      colSpan={2}
-                      className="text-center text-muted"
-                      style={{ fontSize: "12px" }}
-                    >
-                      <em>
-                        (Before rounding: {formatCurrency(calculatedTotal)})
-                      </em>
-                    </td>
-                  </tr>
-                )}
               </tbody>
             </table>
           </div>

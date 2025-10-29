@@ -111,9 +111,6 @@ const Order = sequelize.define(
       onDelete: "SET NULL",
       onUpdate: "CASCADE",
     },
-    // ===============================
-    // PIPELINE SYSTEM
-    // ===============================
     masterPipelineNo: {
       type: DataTypes.STRING(20),
       allowNull: true,
@@ -122,9 +119,6 @@ const Order = sequelize.define(
       type: DataTypes.STRING(20),
       allowNull: true,
     },
-    // ===============================
-    // SHIPPING ADDRESS
-    // ===============================
     shipTo: {
       type: DataTypes.UUID,
       allowNull: true,
@@ -134,6 +128,14 @@ const Order = sequelize.define(
       },
       onDelete: "SET NULL",
       onUpdate: "CASCADE",
+    },
+    // ===============================
+    // SHIPPING AMOUNT
+    // ===============================
+    shipping: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      defaultValue: 0.0,
     },
   },
   {
