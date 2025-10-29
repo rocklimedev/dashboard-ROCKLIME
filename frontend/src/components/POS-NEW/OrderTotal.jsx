@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
 import { Input, Tag } from "antd";
 import { EditOutlined } from "@ant-design/icons";
 
 const formatCurrency = (value) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(
-    Math.abs(value)
+    Math.abs(value) || 0
   );
 
 const OrderTotal = React.memo(
@@ -15,7 +15,8 @@ const OrderTotal = React.memo(
     roundOff = 0,
     subTotal = 0,
     discount = 0,
-    finalTotal,
+    extraDiscount = 0, // ← NEW: extra discount from form
+    finalTotal: finalTotalProp, // ← may be undefined
     onShippingChange,
   }) => {
     const [isEditingShipping, setIsEditingShipping] = useState(false);
@@ -43,9 +44,40 @@ const OrderTotal = React.memo(
       if (e.key === "Enter") handleShippingSubmit();
     };
 
-    // Calculate total before rounding (for display)
-    const calculatedTotal = subTotal + shipping + tax - discount + roundOff;
+    // === SAFE NUMBERS ===
+    const safe = (n) => (typeof n === "number" && !isNaN(n) ? n : 0);
 
+    const safeSubTotal = safe(subTotal);
+    const safeShipping = safe(shipping);
+    const safeTax = safe(tax);
+    const safeDiscount = safe(discount);
+    const safeRoundOff = safe(roundOff);
+
+    const safeExtraDiscount = safe(extraDiscount);
+
+    const calculatedTotal = useMemo(() => {
+      return (
+        safeSubTotal +
+        safeShipping +
+        safeTax -
+        safeDiscount -
+        safeExtraDiscount +
+        safeRoundOff
+      );
+    }, [
+      safeSubTotal,
+      safeShipping,
+      safeTax,
+      safeDiscount,
+      safeExtraDiscount,
+      safeRoundOff,
+    ]);
+    const finalTotal = useMemo(() => {
+      if (finalTotalProp != null && !isNaN(finalTotalProp)) {
+        return Math.round(finalTotalProp);
+      }
+      return Math.round(calculatedTotal);
+    }, [finalTotalProp, calculatedTotal]);
     return (
       <div className="block-section order-method bg-light m-0">
         <div className="order-total">
@@ -54,7 +86,7 @@ const OrderTotal = React.memo(
               <tbody>
                 <tr>
                   <td>Sub Total</td>
-                  <td className="text-end">{formatCurrency(subTotal)}</td>
+                  <td className="text-end">{formatCurrency(safeSubTotal)}</td>
                 </tr>
 
                 <tr>
@@ -86,7 +118,7 @@ const OrderTotal = React.memo(
                         }}
                         onClick={() => setIsEditingShipping(true)}
                       >
-                        {formatCurrency(shipping)} <EditOutlined />
+                        {formatCurrency(safeShipping)} <EditOutlined />
                       </Tag>
                     )}
                   </td>
@@ -94,24 +126,32 @@ const OrderTotal = React.memo(
 
                 <tr>
                   <td>Tax</td>
-                  <td className="text-end">{formatCurrency(tax)}</td>
+                  <td className="text-end">{formatCurrency(safeTax)}</td>
                 </tr>
 
                 <tr>
-                  <td>Discount</td>
+                  <td>Discount (Items)</td>
                   <td className="text-danger text-end">
-                    -{formatCurrency(discount)}
+                    -{formatCurrency(safeDiscount)}
                   </td>
                 </tr>
-
+                {/* NEW ROW */}
+                {safeExtraDiscount > 0 && (
+                  <tr>
+                    <td>Extra Discount</td>
+                    <td className="text-danger text-end">
+                      -{formatCurrency(safeExtraDiscount)}
+                    </td>
+                  </tr>
+                )}
                 <tr>
                   <td>Round Off</td>
                   <td
                     className="text-end"
-                    style={{ color: roundOff >= 0 ? "green" : "red" }}
+                    style={{ color: safeRoundOff >= 0 ? "green" : "red" }}
                   >
-                    {roundOff >= 0 ? "+" : ""}
-                    {formatCurrency(roundOff)}
+                    {safeRoundOff >= 0 ? "+" : ""}
+                    {formatCurrency(safeRoundOff)}
                   </td>
                 </tr>
 
@@ -131,7 +171,7 @@ const OrderTotal = React.memo(
                   </td>
                 </tr>
 
-                {roundOff !== 0 && (
+                {safeRoundOff !== 0 && (
                   <tr>
                     <td
                       colSpan={2}
@@ -161,12 +201,13 @@ OrderTotal.propTypes = {
   roundOff: PropTypes.number,
   subTotal: PropTypes.number,
   discount: PropTypes.number,
-  finalTotal: PropTypes.number.isRequired,
+  finalTotal: PropTypes.number, // ← now optional
   onShippingChange: PropTypes.func,
 };
 
 OrderTotal.defaultProps = {
   onShippingChange: () => {},
+  finalTotal: undefined, // ← allow undefined
 };
 
 export default OrderTotal;

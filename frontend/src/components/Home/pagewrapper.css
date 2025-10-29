@@ -345,3 +345,21 @@
   border-color: #27ae60;
   outline: none;
 }
+.top-products-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.top-products-list .product-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.top-products-list img {
+  transition: transform 0.2s;
+}
+
+.top-products-list img:hover {
+  transform: scale(1.1);
+}

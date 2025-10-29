@@ -9,7 +9,6 @@ import {
   Col,
   Empty,
   Typography,
-  DatePicker,
   Space,
   Divider,
 } from "antd";
@@ -28,7 +27,8 @@ import { debounce } from "lodash";
 import { useCreateAddressMutation } from "../../api/addressApi";
 import moment from "moment";
 import PropTypes from "prop-types";
-
+import DatePicker from "react-datepicker"; // ← NEW
+import "react-datepicker/dist/react-datepicker.css"; // ← NEW
 const { Text } = Typography;
 const { Option } = Select;
 
@@ -160,7 +160,16 @@ const QuotationForm = ({
     () => debounce((msg) => toast.warning(msg), 500),
     []
   );
+  // Inside QuotationForm
+  const extraDiscount = useMemo(() => {
+    const amount = parseFloat(quotationData.discountAmount) || 0;
+    if (!amount) return 0;
 
+    if (quotationData.discountType === "percent") {
+      return parseFloat(((subTotal * amount) / 100).toFixed(2));
+    }
+    return amount;
+  }, [quotationData.discountType, quotationData.discountAmount, subTotal]);
   const normalizeString = (str) => (str ? str.trim().toLowerCase() : "");
 
   // Sync shipTo with billing address
@@ -460,62 +469,53 @@ const QuotationForm = ({
                 </Space>
               </FormSection>
 
-              {/* Dates */}
-              <FormSection>
-                <Text strong>Quotation/Order Date</Text>
-                <DatePicker
-                  value={
-                    quotationData.quotationDate
-                      ? moment(quotationData.quotationDate)
-                      : null
-                  }
-                  onChange={(d) =>
-                    handleQuotationChange(
-                      "quotationDate",
-                      d ? d.format("YYYY-MM-DD") : ""
-                    )
-                  }
-                  format="YYYY-MM-DD"
-                  style={{ width: "100%" }}
-                />
-              </FormSection>
-
               <FormSection>
                 <Text strong>
                   Due Date <span style={{ color: "red" }}>*</span>
                 </Text>
+
                 <DatePicker
-                  value={
-                    quotationData.dueDate ? moment(quotationData.dueDate) : null
+                  selected={
+                    quotationData.dueDate
+                      ? new Date(quotationData.dueDate)
+                      : null
                   }
-                  onChange={(d) =>
-                    handleQuotationChange(
-                      "dueDate",
-                      d ? d.format("YYYY-MM-DD") : ""
-                    )
-                  }
-                  format="YYYY-MM-DD"
-                  disabledDate={(c) => c && c < moment().startOf("day")}
-                  style={{ width: "100%" }}
+                  onChange={(date) => {
+                    const dateStr = date
+                      ? moment(date).format("YYYY-MM-DD")
+                      : "";
+                    handleQuotationChange("dueDate", dateStr);
+                  }}
+                  dateFormat="yyyy-MM-dd"
+                  minDate={new Date()} // disables past dates
+                  placeholderText="Select due date"
+                  className="ant-input" // makes it look like AntD input
+                  wrapperClassName="full-width"
+                  popperClassName="custom-datepicker-popper"
+                  showPopperArrow={false}
+                  customInput={<input style={{ width: "100%" }} />}
                 />
               </FormSection>
-
               {/* Follow-up Dates */}
               <FormSection>
                 <Text strong>Follow-up Dates</Text>
                 {quotationData.followupDates.map((date, i) => (
                   <Space key={i} style={{ width: "100%" }}>
                     <DatePicker
-                      value={date ? moment(date) : null}
-                      onChange={(d) => handleFollowupDateChange(i, d)}
-                      format="YYYY-MM-DD"
-                      disabledDate={(c) =>
-                        c &&
-                        (c < moment().startOf("day") ||
-                          (quotationData.dueDate &&
-                            c > moment(quotationData.dueDate).endOf("day")))
+                      selected={date ? new Date(date) : null}
+                      onChange={(d) =>
+                        handleFollowupDateChange(i, d ? moment(d) : null)
                       }
-                      style={{ width: "100%" }}
+                      dateFormat="yyyy-MM-dd"
+                      minDate={new Date()}
+                      maxDate={
+                        quotationData.dueDate
+                          ? new Date(quotationData.dueDate)
+                          : null
+                      }
+                      placeholderText="Follow-up date"
+                      className="ant-input"
+                      customInput={<input style={{ width: "100%" }} />}
                     />
                     <Button
                       type="text"
@@ -535,16 +535,17 @@ const QuotationForm = ({
               </FormSection>
 
               {/* Discount */}
+
               <FormSection>
-                <Text strong>Discount (if any)</Text>
+                <Text strong>Extra Discount (on total)</Text>
                 <DiscountContainer>
                   <Select
                     value={quotationData.discountType}
                     onChange={handleDiscountTypeChange}
                     style={{ width: 120 }}
                   >
-                    <Option value="percent">%</Option>
-                    <Option value="fixed">₹</Option>
+                    <Option value="percent">Percent</Option>
+                    <Option value="fixed">Rupees</Option>
                   </Select>
                   <InputNumber
                     value={quotationData.discountAmount}
@@ -552,14 +553,13 @@ const QuotationForm = ({
                     min={0}
                     placeholder={
                       quotationData.discountType === "percent"
-                        ? "Enter %"
-                        : "Enter amount"
+                        ? "Percent"
+                        : "Rupees"
                     }
                     style={{ flex: 1 }}
                   />
                 </DiscountContainer>
               </FormSection>
-
               {/* Auto Round Off (Disabled Input) */}
               <FormSection>
                 <Text strong>Round Off (Auto)</Text>
@@ -592,6 +592,7 @@ const QuotationForm = ({
             tax={tax}
             coupon={0}
             discount={discount}
+            extraDiscount={extraDiscount}
             roundOff={quotationData.roundOff || 0}
             subTotal={subTotal}
             finalTotal={finalRoundedTotal}

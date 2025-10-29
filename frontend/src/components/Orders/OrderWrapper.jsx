@@ -19,7 +19,6 @@ import {
 } from "@ant-design/icons";
 import { Dropdown, Menu, Button, Select } from "antd";
 import DatesModal from "./DateModal";
-import OnHoldModal from "./OnHoldOrder";
 import DeleteModal from "../Common/DeleteModal";
 import OrderPagination from "./OrderPagination";
 import PageHeader from "../Common/PageHeader";
@@ -130,7 +129,6 @@ const OrderWrapper = () => {
   // Helper to get status display
   const getStatusDisplay = (status) => {
     const statuses = [
-      "CREATED",
       "PREPARING",
       "CHECKING",
       "INVOICE",
@@ -141,7 +139,7 @@ const OrderWrapper = () => {
       "DRAFT",
       "ONHOLD",
     ];
-    return statuses.includes(status) ? status : "CREATED";
+    return statuses.includes(status) ? status : "PREPARING";
   };
 
   // Helper to get quotation status
@@ -408,7 +406,6 @@ const OrderWrapper = () => {
                     >
                       <option value="">All Statuses</option>
                       {[
-                        "CREATED",
                         "PREPARING",
                         "CHECKING",
                         "INVOICE",
@@ -671,21 +668,18 @@ const OrderWrapper = () => {
                             <td>
                               <span
                                 className="priority-badge"
-                                style={{ backgroundColor: "#f2f2f2" }}
+                                style={{
+                                  backgroundColor: "#f2f2f2",
+                                  marginRight: 8,
+                                }}
                               >
                                 {getStatusDisplay(order.status)}
                               </span>
+
                               <Dropdown
                                 overlay={
-                                  <Select
-                                    value={getStatusDisplay(order.status)}
-                                    onChange={(value) =>
-                                      handleStatusChange(order.id, value)
-                                    }
-                                    style={{ width: 150 }}
-                                  >
+                                  <Menu>
                                     {[
-                                      "CREATED",
                                       "PREPARING",
                                       "CHECKING",
                                       "INVOICE",
@@ -696,17 +690,24 @@ const OrderWrapper = () => {
                                       "DRAFT",
                                       "ONHOLD",
                                     ].map((status) => (
-                                      <Option key={status} value={status}>
+                                      <Menu.Item
+                                        key={status}
+                                        onClick={() =>
+                                          handleStatusChange(order.id, status)
+                                        }
+                                        disabled={order.status === status}
+                                      >
                                         {status}
-                                      </Option>
+                                      </Menu.Item>
                                     ))}
-                                  </Select>
+                                  </Menu>
                                 }
                                 trigger={["click"]}
+                                placement="bottomLeft"
                               >
                                 <EditOutlined
-                                  style={{ marginLeft: 8, cursor: "pointer" }}
-                                  aria-label="Edit status"
+                                  style={{ cursor: "pointer" }}
+                                  aria-label="Change status"
                                 />
                               </Dropdown>
                             </td>
@@ -808,15 +809,6 @@ const OrderWrapper = () => {
           </div>
         </div>
 
-        {/* Modals */}
-        {showHoldModal && (
-          <OnHoldModal
-            order={selectedOrder}
-            invoice={{ amount: selectedOrder?.totalAmount || 0 }}
-            onClose={handleModalClose}
-            onConfirm={handleConfirmHold}
-          />
-        )}
         {showDeleteModal && (
           <DeleteModal
             isVisible={showDeleteModal}

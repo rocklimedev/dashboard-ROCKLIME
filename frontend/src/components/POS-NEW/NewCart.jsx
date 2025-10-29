@@ -449,29 +449,108 @@ const NewCart = ({ onConvertToOrder }) => {
   // ────────────────────────────────────────────────────────────────────────
   //  Optimistic quantity update ( + / – )  –  NO PAGE REFRESH
   // ────────────────────────────────────────────────────────────────────────
-  const handleUpdateQuantity = async (productId, newQuantity) => {
-    if (!userId) return toast.error("User not logged in!");
+  const handleUpdateQuantity = useCallback(
+    async (productId, newQuantity) => {
+      if (!userId) {
+        toast.error("User not logged in!");
+        return;
+      }
 
-    // 1. Optimistic UI update
-    const oldItem = cartItems.find((i) => i.productId === productId);
-    if (!oldItem) return;
+      // 1. Optimistic UI update
+      const oldItem = cartItems.find((i) => i.productId === productId);
+      if (!oldItem) return;
 
-    const optimisticItems =
-      newQuantity <= 0
-        ? cartItems.filter((i) => i.productId !== productId) // remove
-        : cartItems.map((i) =>
-            i.productId === productId ? { ...i, quantity: newQuantity } : i
+      const optimisticItems =
+        newQuantity <= 0
+          ? cartItems.filter((i) => i.productId !== productId)
+          : cartItems.map((i) =>
+              i.productId === productId ? { ...i, quantity: newQuantity } : i
+            );
+
+      // Update RTK-Query cache instantly
+      dispatch(
+        cartApi.util.updateQueryData("getCart", userId, (draft) => {
+          draft.cart.items = optimisticItems;
+        })
+      );
+
+      // Clean per-item state when removing
+      if (newQuantity <= 0) {
+        setItemDiscounts((p) => {
+          const { [productId]: _, ...rest } = p;
+          return rest;
+        });
+        setItemTaxes((p) => {
+          const { [productId]: _, ...rest } = p;
+          return rest;
+        });
+        setItemDiscountTypes((p) => {
+          const { [productId]: _, ...rest } = p;
+          return rest;
+        });
+      }
+
+      // 2. Mark as updating
+      setUpdatingItems((p) => ({ ...p, [productId]: true }));
+
+      // 3. Real mutation
+      try {
+        if (newQuantity <= 0) {
+          await removeFromCart({ userId, productId }).unwrap();
+        } else {
+          await updateCart({
+            userId,
+            productId,
+            quantity: Number(newQuantity),
+          }).unwrap();
+        }
+        // Optional: refetch(); // if you want fresh data
+      } catch (err) {
+        toast.error(`Error: ${err?.data?.message || "Failed"}`);
+
+        // Rollback optimistic update
+        dispatch(
+          cartApi.util.updateQueryData("getCart", userId, (draft) => {
+            draft.cart.items = cartItems; // revert to original
+          })
+        );
+      } finally {
+        setUpdatingItems((p) => ({ ...p, [productId]: false }));
+      }
+    },
+    [
+      userId,
+      cartItems,
+      dispatch,
+      updateCart,
+      removeFromCart,
+      setItemDiscounts,
+      setItemTaxes,
+      setItemDiscountTypes,
+      setUpdatingItems,
+    ]
+  );
+
+  // ────────────────────────────────────────────────────────────────────────
+  //  Optimistic remove (trash icon)  –  NO PAGE REFRESH
+  // ────────────────────────────────────────────────────────────────────────
+  const handleRemoveItem = useCallback(
+    async (e, productId) => {
+      e.preventDefault(); // ← CRITICAL
+      e.stopPropagation();
+
+      if (!userId) return toast.error("User not logged in!");
+
+      // Optimistic removal
+      dispatch(
+        cartApi.util.updateQueryData("getCart", userId, (draft) => {
+          draft.cart.items = draft.cart.items.filter(
+            (i) => i.productId !== productId
           );
+        })
+      );
 
-    // update RTK-Query cache instantly → all derived totals recalc
-    dispatch(
-      cartApi.util.updateQueryData("getCart", userId, (draft) => {
-        draft.cart.items = optimisticItems;
-      })
-    );
-
-    // clean per-item state when item is removed
-    if (newQuantity <= 0) {
+      // Clean per-item state
       setItemDiscounts((p) => {
         const { [productId]: _, ...r } = p;
         return r;
@@ -484,78 +563,35 @@ const NewCart = ({ onConvertToOrder }) => {
         const { [productId]: _, ...r } = p;
         return r;
       });
-    }
 
-    // 2. Real mutation
-    try {
-      if (newQuantity <= 0) {
+      setUpdatingItems((p) => ({ ...p, [productId]: true }));
+
+      try {
         await removeFromCart({ userId, productId }).unwrap();
-      } else {
-        await updateCart({
-          userId,
-          productId,
-          quantity: Number(newQuantity),
-        }).unwrap();
-      }
-      refetch(); // keep cache in sync
-    } catch (err) {
-      toast.error(`Error: ${err?.data?.message || "Failed"}`);
-      // 3. Roll-back
-      dispatch(
-        cartApi.util.updateQueryData("getCart", userId, (draft) => {
-          draft.cart.items = cartItems; // original list
-        })
-      );
-    } finally {
-      setUpdatingItems((p) => ({ ...p, [productId]: false }));
-    }
-  };
-
-  // ────────────────────────────────────────────────────────────────────────
-  //  Optimistic remove (trash icon)  –  NO PAGE REFRESH
-  // ────────────────────────────────────────────────────────────────────────
-  const handleRemoveItem = async (productId) => {
-    if (!userId) return toast.error("User not logged in!");
-
-    // optimistic removal
-    dispatch(
-      cartApi.util.updateQueryData("getCart", userId, (draft) => {
-        draft.cart.items = draft.cart.items.filter(
-          (i) => i.productId !== productId
+        refetch();
+      } catch (err) {
+        toast.error(`Error: ${err?.data?.message || "Failed"}`);
+        // Rollback
+        dispatch(
+          cartApi.util.updateQueryData("getCart", userId, (draft) => {
+            draft.cart.items = cartItems;
+          })
         );
-      })
-    );
-
-    // clean per-item state
-    setItemDiscounts((p) => {
-      const { [productId]: _, ...r } = p;
-      return r;
-    });
-    setItemTaxes((p) => {
-      const { [productId]: _, ...r } = p;
-      return r;
-    });
-    setItemDiscountTypes((p) => {
-      const { [productId]: _, ...r } = p;
-      return r;
-    });
-
-    try {
-      await removeFromCart({ userId, productId }).unwrap();
-      refetch();
-    } catch (err) {
-      toast.error(`Error: ${err?.data?.message || "Failed"}`);
-      // roll-back
-      dispatch(
-        cartApi.util.updateQueryData("getCart", userId, (draft) => {
-          draft.cart.items = cartItems;
-        })
-      );
-    } finally {
-      setUpdatingItems((p) => ({ ...p, [productId]: false }));
-    }
-  };
-
+      } finally {
+        setUpdatingItems((p) => ({ ...p, [productId]: false }));
+      }
+    },
+    [
+      userId,
+      cartItems,
+      dispatch,
+      removeFromCart,
+      setItemDiscounts,
+      setItemTaxes,
+      setItemDiscountTypes,
+      setUpdatingItems,
+    ]
+  );
   const handleTeamAdded = (showModal) => {
     setShowAddTeamModal(showModal);
     if (!showModal) refetchTeams();
@@ -734,6 +770,7 @@ const NewCart = ({ onConvertToOrder }) => {
     }
 
     if (documentType === "Quotation") {
+      // Inside handleCreateDocument(), Quotation section
       const quotationPayload = {
         quotationId: uuidv4(),
         document_title: `Quotation for ${selectedCustomerData.name}`,
@@ -752,52 +789,39 @@ const NewCart = ({ onConvertToOrder }) => {
         followupDates: quotationData.followupDates.filter(
           (date) => date && moment(date).isValid()
         ),
+
+        // PER-ITEM PRODUCTS (with discount/tax/total)
         products: cartItems.map((item) => {
-          const itemSubtotal = parseFloat(
-            (item.price * item.quantity).toFixed(2)
-          );
+          const price = parseFloat(item.price) || 0;
+          const quantity = parseInt(item.quantity, 10) || 1;
+          const subtotal = price * quantity;
+
+          const itemDiscVal = Number(itemDiscounts[item.productId]) || 0;
+          const itemDiscType = itemDiscountTypes[item.productId] || "percent";
           const itemDiscount =
-            quotationData.discountType === "percent"
-              ? (itemSubtotal *
-                  (parseFloat(quotationData.discountAmount) || 0)) /
-                100
-              : (parseFloat(quotationData.discountAmount) || 0) /
-                cartItems.length;
-          const itemTax = parseFloat(itemTaxes[item.productId]) || 0;
-          const itemTaxAmount = (itemSubtotal * itemTax) / 100;
-          const total = itemSubtotal + itemTaxAmount - itemDiscount;
+            itemDiscType === "percent"
+              ? (subtotal * itemDiscVal) / 100
+              : itemDiscVal * quantity;
+
+          const itemTaxPct = Number(itemTaxes[item.productId]) || 0;
+          const itemTax = (subtotal * itemTaxPct) / 100;
+
+          const itemTotal = subtotal - itemDiscount + itemTax;
+
           return {
             productId: item.productId,
             name: item.name || "Unnamed Product",
-            quantity: item.quantity || 1,
-            sellingPrice: parseFloat(item.price || 0),
-            discount: itemDiscount,
-            tax: itemTax,
-            total: parseFloat(total.toFixed(2)),
+            quantity,
+            sellingPrice: price,
+            discount: parseFloat(itemDiscount.toFixed(2)), // per-item discount
+            tax: itemTaxPct,
+            total: parseFloat(itemTotal.toFixed(2)),
           };
         }),
-        items: cartItems.map((item) => {
-          const itemSubtotal = parseFloat(
-            (item.price * item.quantity).toFixed(2)
-          );
-          const itemDiscount =
-            quotationData.discountType === "percent"
-              ? (itemSubtotal *
-                  (parseFloat(quotationData.discountAmount) || 0)) /
-                100
-              : (parseFloat(quotationData.discountAmount) || 0) /
-                cartItems.length;
-          const itemTax = parseFloat(itemTaxes[item.productId]) || 0;
-          const itemTaxAmount = (itemSubtotal * itemTax) / 100;
-          const total = itemSubtotal + itemTaxAmount - itemDiscount;
-          return {
-            productId: item.productId,
-            quantity: item.quantity || 1,
-            discount: itemDiscount,
-            tax: itemTax,
-            total: parseFloat(total.toFixed(2)),
-          };
-        }),
+
+        // GLOBAL EXTRA DISCOUNT (on top of per-item)
+        extraDiscount: parseFloat(quotationData.discountAmount) || 0,
+        extraDiscountType: quotationData.discountType,
       };
 
       try {
@@ -847,26 +871,34 @@ const NewCart = ({ onConvertToOrder }) => {
         previousOrderNo: orderData.previousOrderNo || null,
         shipTo: orderData.shipTo || null,
         products: cartItems.map((item) => {
-          const price = parseFloat(item.price) || 0.01;
+          const price = parseFloat(item.price) || 0;
           const quantity = parseInt(item.quantity, 10) || 1;
-          const discount =
-            quotationData.discountType === "percent"
-              ? (price *
-                  quantity *
-                  (parseFloat(quotationData.discountAmount) || 0)) /
-                100
-              : (parseFloat(quotationData.discountAmount) || 0) /
-                cartItems.length;
-          const itemTax = parseFloat(itemTaxes[item.productId]) || 0;
-          const itemSubtotal = parseFloat((price * quantity).toFixed(2));
-          const itemTaxAmount = (itemSubtotal * itemTax) / 100;
-          const total = itemSubtotal + itemTaxAmount - discount;
+          const subtotal = price * quantity;
+
+          // Get per-item discount
+          const rawDiscount = Number(itemDiscounts[item.productId]) || 0;
+          const discountType = itemDiscountTypes[item.productId] || "percent";
+
+          let discountAmount = 0;
+          if (discountType === "percent") {
+            discountAmount = (subtotal * rawDiscount) / 100;
+          } else {
+            discountAmount = rawDiscount * quantity; // fixed per unit
+          }
+
+          // Get per-item tax
+          const taxPct = Number(itemTaxes[item.productId]) || 0;
+          const taxAmount = (subtotal * taxPct) / 100;
+
+          // Final total for this line item
+          const total = subtotal - discountAmount + taxAmount;
+
           return {
             id: item.productId,
-            price: price,
-            discount: discount,
-            tax: itemTax,
-            total: total >= 0 ? parseFloat(total.toFixed(2)) : 0,
+            price: parseFloat(price.toFixed(2)),
+            discount: parseFloat(rawDiscount.toFixed(2)), // raw value (percent or fixed)
+            total: parseFloat(total.toFixed(2)),
+            quantity,
           };
         }),
       };
@@ -1018,298 +1050,287 @@ const NewCart = ({ onConvertToOrder }) => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        <PageWrapper>
-          <CartContainer>
-            <Tabs
-              activeKey={activeTab}
-              onChange={setActiveTab}
-              type="card"
-              style={{ marginBottom: 16 }}
-            >
-              <TabPane
-                tab={
-                  <span>
-                    <ShoppingCartOutlined /> Cart ({totalItems})
-                  </span>
-                }
-                key="cart"
-              >
-                <CartTab
-                  cartItems={cartItems}
-                  cartProductsData={cartProductsData}
-                  totalItems={totalItems}
-                  shipping={shipping}
-                  tax={tax}
-                  discount={totalDiscount}
-                  roundOff={roundOff}
-                  subTotal={subTotal}
-                  quotationData={quotationData}
-                  itemDiscounts={itemDiscounts}
-                  itemDiscountTypes={itemDiscountTypes}
-                  itemTaxes={itemTaxes}
-                  updatingItems={updatingItems}
-                  handleUpdateQuantity={handleUpdateQuantity}
-                  handleRemoveItem={handleRemoveItem}
-                  handleDiscountChange={handleDiscountChange}
-                  handleDiscountTypeChange={handleDiscountTypeChange}
-                  handleTaxChange={handleTaxChange}
-                  setShowClearCartModal={setShowClearCartModal}
-                  setActiveTab={setActiveTab}
-                  onShippingChange={handleShippingChange}
-                />
-              </TabPane>
-
-              <TabPane
-                tab={
-                  <span>
-                    <CheckCircleOutlined /> Checkout
-                  </span>
-                }
-                key="checkout"
-              >
-                {documentType === "Purchase Order" ? (
-                  <PurchaseOrderForm
-                    purchaseOrderData={purchaseOrderData}
-                    setPurchaseOrderData={setPurchaseOrderData}
-                    selectedVendor={selectedVendor}
-                    setSelectedVendor={setSelectedVendor}
-                    vendors={vendors}
-                    isVendorsLoading={isVendorsLoading}
-                    products={products}
-                    isProductsLoading={isProductsLoading}
-                    productSearch={productSearch}
-                    filteredProducts={filteredProducts}
-                    debouncedSearch={debouncedSearch}
-                    addPurchaseOrderProduct={(productId) => {
-                      const product = products.find(
-                        (p) => p.productId === productId
-                      );
-                      if (
-                        !product ||
-                        purchaseOrderData.items.some(
-                          (i) => i.productId === productId
-                        ) ||
-                        cartItems.some((i) => i.productId === productId)
-                      ) {
-                        toast.error(
-                          product
-                            ? "Product already added."
-                            : "Product not found."
-                        );
-                        return;
-                      }
-                      const sellingPrice =
-                        product.metaDetails?.find(
-                          (m) => m.slug === "sellingPrice"
-                        )?.value || 0;
-                      if (sellingPrice <= 0) {
-                        toast.error(`Invalid MRP for ${product.name}`);
-                        return;
-                      }
-                      const quantity = 1;
-                      const total = quantity * sellingPrice;
-                      setPurchaseOrderData((prev) => {
-                        const newItems = [
-                          ...prev.items,
-                          {
-                            id: product.productId,
-                            productId: product.productId,
-                            name: product.name,
-                            quantity,
-                            mrp: sellingPrice,
-                            total,
-                            tax: 0,
-                          },
-                        ];
-                        const totalAmount = newItems
-                          .reduce((s, i) => s + i.total * (1 + i.tax / 100), 0)
-                          .toFixed(2);
-                        return { ...prev, items: newItems, totalAmount };
-                      });
-                      setProductSearch("");
-                      setFilteredProducts([]);
-                    }}
-                    removePurchaseOrderProduct={(index) => {
-                      setPurchaseOrderData((prev) => {
-                        const newItems = prev.items.filter(
-                          (_, i) => i !== index
-                        );
-                        const totalAmount = newItems
-                          .reduce((s, i) => s + i.total * (1 + i.tax / 100), 0)
-                          .toFixed(2);
-                        return { ...prev, items: newItems, totalAmount };
-                      });
-                    }}
-                    updatePurchaseOrderProductField={(index, field, value) => {
-                      const items = [...purchaseOrderData.items];
-                      items[index][field] = value;
-                      if (["quantity", "mrp", "tax"].includes(field)) {
-                        const q = Number(items[index].quantity) || 1;
-                        const m = Number(items[index].mrp) || 0.01;
-                        const t = Number(items[index].tax) || 0;
-                        items[index].total = q * m * (1 + t / 100);
-                      }
-                      const totalAmount = items
-                        .reduce((s, i) => s + i.total * (1 + i.tax / 100), 0)
-                        .toFixed(2);
-                      setPurchaseOrderData({
-                        ...purchaseOrderData,
-                        items,
-                        totalAmount,
-                      });
-                    }}
-                    handlePurchaseOrderChange={(key, value) =>
-                      setPurchaseOrderData((prev) => ({
-                        ...prev,
-                        [key]: value,
-                      }))
-                    }
-                    purchaseOrderTotal={purchaseOrderTotal}
-                    purchaseOrderNumber={purchaseOrderNumber}
-                    documentType={documentType}
-                    setDocumentType={setDocumentType}
-                    cartItems={cartItems}
-                    setActiveTab={setActiveTab}
-                    handleCreateDocument={handleCreateDocument}
-                    setShowAddVendorModal={setShowAddVendorModal}
-                  />
-                ) : documentType === "Order" ? (
-                  <OrderForm
-                    orderData={orderData}
-                    setOrderData={setOrderData}
-                    handleOrderChange={(key, value) =>
-                      setOrderData((prev) => ({ ...prev, [key]: value }))
-                    }
-                    selectedCustomer={selectedCustomer}
-                    setSelectedCustomer={setSelectedCustomer}
-                    customers={customerList}
-                    customersLoading={customersLoading}
-                    customersError={customersError}
-                    addresses={addresses}
-                    addressesLoading={addressesLoading}
-                    addressesError={addressesError}
-                    userMap={userMap}
-                    customerMap={customerMap}
-                    userQueries={userQueries}
-                    customerQueries={customerQueries}
-                    teams={teams}
-                    teamsLoading={teamsLoading}
-                    users={users}
-                    usersLoading={usersLoading}
-                    usersError={usersError}
-                    error={error}
-                    orderNumber={orderData.orderNo}
-                    documentType={documentType}
-                    setDocumentType={setDocumentType}
-                    cartItems={cartItems}
-                    totalAmount={totalAmount}
-                    shipping={shipping}
-                    tax={tax}
-                    discount={totalDiscount}
-                    roundOff={roundOff}
-                    subTotal={subTotal}
-                    handleAddCustomer={handleAddCustomer}
-                    handleAddAddress={handleAddAddress}
-                    setActiveTab={setActiveTab}
-                    handleCreateDocument={handleCreateDocument}
-                    handleTeamAdded={handleTeamAdded}
-                    useBillingAddress={useBillingAddress}
-                    setUseBillingAddress={setUseBillingAddress}
-                  />
-                ) : (
-                  <QuotationForm
-                    quotationData={quotationData}
-                    setQuotationData={setQuotationData}
-                    handleQuotationChange={handleQuotationChange}
-                    selectedCustomer={selectedCustomer}
-                    setSelectedCustomer={setSelectedCustomer}
-                    customers={customerList}
-                    customersLoading={customersLoading}
-                    customersError={customersError}
-                    addresses={addresses}
-                    addressesLoading={addressesLoading}
-                    addressesError={addressesError}
-                    userMap={userMap}
-                    customerMap={customerMap}
-                    userQueries={userQueries}
-                    customerQueries={customerQueries}
-                    error={error}
-                    quotationNumber={quotationNumber}
-                    documentType={documentType}
-                    setDocumentType={setDocumentType}
-                    cartItems={cartItems}
-                    totalAmount={totalAmount}
-                    shipping={shipping}
-                    tax={tax}
-                    discount={totalDiscount}
-                    roundOff={roundOff}
-                    subTotal={subTotal}
-                    handleAddCustomer={handleAddCustomer}
-                    handleAddAddress={handleAddAddress}
-                    setActiveTab={setActiveTab}
-                    handleCreateDocument={handleCreateDocument}
-                    useBillingAddress={useBillingAddress}
-                    setUseBillingAddress={setUseBillingAddress}
-                    itemDiscounts={itemDiscounts}
-                    itemTaxes={itemTaxes}
-                  />
-                )}
-              </TabPane>
-            </Tabs>
-
-            <Modal
-              title="Confirm Clear Cart"
-              open={showClearCartModal}
-              onOk={handleClearCart}
-              onCancel={() => setShowClearCartModal(false)}
-              okText="Clear"
-              okButtonProps={{ danger: true }}
-              cancelText="Cancel"
-            >
-              <Text>
-                Are you sure you want to clear all items from your cart?
-              </Text>
-            </Modal>
-
-            {showAddAddressModal && (
-              <AddAddress
-                onClose={() => setShowAddAddressModal(false)}
-                onSave={handleAddressSave}
-                selectedCustomer={selectedCustomer}
-              />
-            )}
-
-            <AddVendorModal
-              show={showAddVendorModal}
-              onClose={() => setShowAddVendorModal(false)}
-              onSave={createVendor}
-              isCreatingVendor={isCreatingVendor}
+        <Tabs
+          activeKey={activeTab}
+          onChange={setActiveTab}
+          type="card"
+          style={{ marginBottom: 16 }}
+        >
+          <TabPane
+            tab={
+              <span>
+                <ShoppingCartOutlined /> Cart ({totalItems})
+              </span>
+            }
+            key="cart"
+          >
+            <CartTab
+              cartItems={cartItems}
+              cartProductsData={cartProductsData}
+              totalItems={totalItems}
+              shipping={shipping}
+              tax={tax}
+              discount={totalDiscount}
+              roundOff={roundOff}
+              subTotal={subTotal}
+              quotationData={quotationData}
+              itemDiscounts={itemDiscounts}
+              itemDiscountTypes={itemDiscountTypes}
+              itemTaxes={itemTaxes}
+              updatingItems={updatingItems}
+              handleUpdateQuantity={handleUpdateQuantity}
+              handleRemoveItem={handleRemoveItem}
+              handleDiscountChange={handleDiscountChange}
+              handleDiscountTypeChange={handleDiscountTypeChange}
+              handleTaxChange={handleTaxChange}
+              setShowClearCartModal={setShowClearCartModal}
+              setActiveTab={setActiveTab}
+              onShippingChange={handleShippingChange}
             />
+          </TabPane>
 
-            {showAddTeamModal && (
-              <AddNewTeam
-                onClose={() => handleTeamAdded(false)}
-                onTeamAdded={(newTeamId) => {
-                  handleTeamAdded(false);
-                  setOrderData((prev) => ({
-                    ...prev,
-                    assignedTeamId: newTeamId,
-                  }));
+          <TabPane
+            tab={
+              <span>
+                <CheckCircleOutlined /> Checkout
+              </span>
+            }
+            key="checkout"
+          >
+            {documentType === "Purchase Order" ? (
+              <PurchaseOrderForm
+                purchaseOrderData={purchaseOrderData}
+                setPurchaseOrderData={setPurchaseOrderData}
+                selectedVendor={selectedVendor}
+                setSelectedVendor={setSelectedVendor}
+                vendors={vendors}
+                isVendorsLoading={isVendorsLoading}
+                products={products}
+                isProductsLoading={isProductsLoading}
+                productSearch={productSearch}
+                filteredProducts={filteredProducts}
+                debouncedSearch={debouncedSearch}
+                addPurchaseOrderProduct={(productId) => {
+                  const product = products.find(
+                    (p) => p.productId === productId
+                  );
+                  if (
+                    !product ||
+                    purchaseOrderData.items.some(
+                      (i) => i.productId === productId
+                    ) ||
+                    cartItems.some((i) => i.productId === productId)
+                  ) {
+                    toast.error(
+                      product ? "Product already added." : "Product not found."
+                    );
+                    return;
+                  }
+                  const sellingPrice =
+                    product.metaDetails?.find((m) => m.slug === "sellingPrice")
+                      ?.value || 0;
+                  if (sellingPrice <= 0) {
+                    toast.error(`Invalid MRP for ${product.name}`);
+                    return;
+                  }
+                  const quantity = 1;
+                  const total = quantity * sellingPrice;
+                  setPurchaseOrderData((prev) => {
+                    const newItems = [
+                      ...prev.items,
+                      {
+                        id: product.productId,
+                        productId: product.productId,
+                        name: product.name,
+                        quantity,
+                        mrp: sellingPrice,
+                        total,
+                        tax: 0,
+                      },
+                    ];
+                    const totalAmount = newItems
+                      .reduce((s, i) => s + i.total * (1 + i.tax / 100), 0)
+                      .toFixed(2);
+                    return { ...prev, items: newItems, totalAmount };
+                  });
+                  setProductSearch("");
+                  setFilteredProducts([]);
                 }}
-                visible={showAddTeamModal}
+                removePurchaseOrderProduct={(index) => {
+                  setPurchaseOrderData((prev) => {
+                    const newItems = prev.items.filter((_, i) => i !== index);
+                    const totalAmount = newItems
+                      .reduce((s, i) => s + i.total * (1 + i.tax / 100), 0)
+                      .toFixed(2);
+                    return { ...prev, items: newItems, totalAmount };
+                  });
+                }}
+                updatePurchaseOrderProductField={(index, field, value) => {
+                  const items = [...purchaseOrderData.items];
+                  items[index][field] = value;
+                  if (["quantity", "mrp", "tax"].includes(field)) {
+                    const q = Number(items[index].quantity) || 1;
+                    const m = Number(items[index].mrp) || 0.01;
+                    const t = Number(items[index].tax) || 0;
+                    items[index].total = q * m * (1 + t / 100);
+                  }
+                  const totalAmount = items
+                    .reduce((s, i) => s + i.total * (1 + i.tax / 100), 0)
+                    .toFixed(2);
+                  setPurchaseOrderData({
+                    ...purchaseOrderData,
+                    items,
+                    totalAmount,
+                  });
+                }}
+                handlePurchaseOrderChange={(key, value) =>
+                  setPurchaseOrderData((prev) => ({
+                    ...prev,
+                    [key]: value,
+                  }))
+                }
+                purchaseOrderTotal={purchaseOrderTotal}
+                purchaseOrderNumber={purchaseOrderNumber}
+                documentType={documentType}
+                setDocumentType={setDocumentType}
+                cartItems={cartItems}
+                setActiveTab={setActiveTab}
+                handleCreateDocument={handleCreateDocument}
+                setShowAddVendorModal={setShowAddVendorModal}
+              />
+            ) : documentType === "Order" ? (
+              <OrderForm
+                orderData={orderData}
+                setOrderData={setOrderData}
+                handleOrderChange={(key, value) =>
+                  setOrderData((prev) => ({ ...prev, [key]: value }))
+                }
+                selectedCustomer={selectedCustomer}
+                setSelectedCustomer={setSelectedCustomer}
+                customers={customerList}
+                customersLoading={customersLoading}
+                customersError={customersError}
+                addresses={addresses}
+                addressesLoading={addressesLoading}
+                addressesError={addressesError}
+                userMap={userMap}
+                customerMap={customerMap}
+                userQueries={userQueries}
+                customerQueries={customerQueries}
+                teams={teams}
+                teamsLoading={teamsLoading}
+                users={users}
+                usersLoading={usersLoading}
+                usersError={usersError}
+                error={error}
+                orderNumber={orderData.orderNo}
+                documentType={documentType}
+                setDocumentType={setDocumentType}
+                cartItems={cartItems}
+                totalAmount={totalAmount}
+                shipping={shipping}
+                tax={tax}
+                discount={totalDiscount}
+                roundOff={roundOff}
+                subTotal={subTotal}
+                handleAddCustomer={handleAddCustomer}
+                handleAddAddress={handleAddAddress}
+                setActiveTab={setActiveTab}
+                handleCreateDocument={handleCreateDocument}
+                handleTeamAdded={handleTeamAdded}
+                useBillingAddress={useBillingAddress}
+                setUseBillingAddress={setUseBillingAddress}
+              />
+            ) : (
+              <QuotationForm
+                quotationData={quotationData}
+                setQuotationData={setQuotationData}
+                handleQuotationChange={handleQuotationChange}
+                selectedCustomer={selectedCustomer}
+                setSelectedCustomer={setSelectedCustomer}
+                customers={customerList}
+                customersLoading={customersLoading}
+                customersError={customersError}
+                addresses={addresses}
+                addressesLoading={addressesLoading}
+                addressesError={addressesError}
+                userMap={userMap}
+                customerMap={customerMap}
+                userQueries={userQueries}
+                customerQueries={customerQueries}
+                error={error}
+                quotationNumber={quotationNumber}
+                documentType={documentType}
+                setDocumentType={setDocumentType}
+                cartItems={cartItems}
+                totalAmount={totalAmount}
+                shipping={shipping}
+                tax={tax}
+                discount={totalDiscount}
+                roundOff={roundOff}
+                subTotal={subTotal}
+                handleAddCustomer={handleAddCustomer}
+                handleAddAddress={handleAddAddress}
+                setActiveTab={setActiveTab}
+                handleCreateDocument={handleCreateDocument}
+                useBillingAddress={useBillingAddress}
+                setUseBillingAddress={setUseBillingAddress}
+                itemDiscounts={itemDiscounts}
+                itemTaxes={itemTaxes}
               />
             )}
+          </TabPane>
+        </Tabs>
 
-            {showAddCustomerModal && (
-              <AddCustomerModal
-                visible={showAddCustomerModal}
-                onClose={() => setShowAddCustomerModal(false)}
-                customer={null}
-                onSave={handleCustomerSave}
-              />
-            )}
-          </CartContainer>
-        </PageWrapper>
+        <Modal
+          title="Confirm Clear Cart"
+          open={showClearCartModal}
+          onOk={handleClearCart}
+          onCancel={() => setShowClearCartModal(false)}
+          okText="Clear"
+          okButtonProps={{ danger: true }}
+          cancelText="Cancel"
+        >
+          <Text>Are you sure you want to clear all items from your cart?</Text>
+        </Modal>
+
+        {showAddAddressModal && (
+          <AddAddress
+            onClose={() => setShowAddAddressModal(false)}
+            onSave={handleAddressSave}
+            selectedCustomer={selectedCustomer}
+          />
+        )}
+
+        <AddVendorModal
+          show={showAddVendorModal}
+          onClose={() => setShowAddVendorModal(false)}
+          onSave={createVendor}
+          isCreatingVendor={isCreatingVendor}
+        />
+
+        {showAddTeamModal && (
+          <AddNewTeam
+            onClose={() => handleTeamAdded(false)}
+            onTeamAdded={(newTeamId) => {
+              handleTeamAdded(false);
+              setOrderData((prev) => ({
+                ...prev,
+                assignedTeamId: newTeamId,
+              }));
+            }}
+            visible={showAddTeamModal}
+          />
+        )}
+
+        {showAddCustomerModal && (
+          <AddCustomerModal
+            visible={showAddCustomerModal}
+            onClose={() => setShowAddCustomerModal(false)}
+            customer={null}
+            onSave={handleCustomerSave}
+          />
+        )}
       </div>
     </div>
   );

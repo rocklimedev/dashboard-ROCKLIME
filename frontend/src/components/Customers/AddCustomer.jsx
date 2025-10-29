@@ -11,7 +11,7 @@ import { useGetVendorsQuery } from "../../api/vendorApi";
 import { toast } from "sonner";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Form, Input, Select, Button, Tabs, Row, Col, Spin, Alert } from "antd";
-import PageHeader from "../Common/PageHeader";
+import { ReloadOutlined, ClearOutlined, LeftOutlined } from "@ant-design/icons";
 
 const { TabPane } = Tabs;
 const { Option } = Select;
@@ -64,50 +64,31 @@ const AddCustomer = () => {
     error: vendorsError,
   } = useGetVendorsQuery();
 
+  // === Calculate Total & Due Date from Invoices ===
   const getInvoiceData = useCallback(() => {
     if (!invoices?.data?.length) return { totalAmount: 0, dueDate: null };
 
     const total = invoices.data.reduce((sum, invoice) => {
-      const payableAmount = parseFloat(invoice.amount || 0);
-      return sum + (isNaN(payableAmount) ? 0 : payableAmount);
+      const amount = parseFloat(invoice.amount || 0);
+      return sum + (isNaN(amount) ? 0 : amount);
     }, 0);
 
     const dueDate =
-      invoices.data.sort(
-        (a, b) => new Date(b.dueDate) - new Date(a.dueDate)
-      )?.[0]?.dueDate || null;
+      invoices.data
+        .sort((a, b) => new Date(b.dueDate) - new Date(a.dueDate))
+        .map((inv) => inv.dueDate)[0] || null;
 
     return { totalAmount: total, dueDate };
   }, [invoices]);
 
-  useEffect(() => {
-    if (!existingCustomer && allCustomersData?.data?.length > 0) {
-      const isDuplicate = allCustomersData.data.some(
-        (cust) =>
-          cust.email === formData.email.trim() ||
-          cust.mobileNumber === formData.mobileNumber.trim()
-      );
-
-      if (isDuplicate) {
-        toast.error(
-          "Customer with same email or mobile number already exists."
-        );
-      }
-    }
-  }, [
-    existingCustomer,
-    allCustomersData,
-    formData.email,
-    formData.mobileNumber,
-  ]);
-
+  // === Load Edit Data ===
   useEffect(() => {
     if (existingCustomer && invoices) {
       const { totalAmount, dueDate } = getInvoiceData();
       const paid = parseFloat(existingCustomer.paidAmount || 0);
       const balance = totalAmount - paid;
 
-      const updatedFormData = {
+      const updated = {
         ...existingCustomer,
         customerType: existingCustomer.customerType || "",
         phone2: existingCustomer.phone2 || "",
@@ -121,43 +102,35 @@ const AddCustomer = () => {
         totalAmount: totalAmount.toFixed(2),
         paidAmount: paid.toFixed(2),
         balance: balance < 0 ? "0.00" : balance.toFixed(2),
-        dueDate: dueDate || existingCustomer.dueDate || null,
-        invoices: existingCustomer.invoices || [],
-        quotations: existingCustomer.quotations || [],
+        dueDate: dueDate || existingCustomer.dueDate || "",
         vendorId: existingCustomer.vendorId || "",
       };
 
-      setFormData(updatedFormData);
-      form.setFieldsValue(updatedFormData);
+      setFormData(updated);
+      form.setFieldsValue(updated);
     }
   }, [existingCustomer, invoices, getInvoiceData, form]);
 
+  // === Update Balance when Paid Amount changes ===
   useEffect(() => {
     if (existingCustomer) {
       const total = parseFloat(formData.totalAmount || 0);
       const paid = parseFloat(formData.paidAmount || 0);
       const balance = total - paid;
 
-      setFormData((prev) => ({
-        ...prev,
-        balance: balance < 0 ? "0.00" : balance.toFixed(2),
-      }));
-      form.setFieldsValue({
-        balance: balance < 0 ? "0.00" : balance.toFixed(2),
-      });
+      const newBalance = balance < 0 ? "0.00" : balance.toFixed(2);
+      setFormData((prev) => ({ ...prev, balance: newBalance }));
+      form.setFieldsValue({ balance: newBalance });
     }
   }, [existingCustomer, formData.totalAmount, formData.paidAmount, form]);
 
+  // === Form Change Handler ===
   const handleChange = (changedValues) => {
     if (changedValues.paidAmount && existingCustomer) {
-      if (
-        changedValues.paidAmount === "" ||
-        parseFloat(changedValues.paidAmount) < 0
-      )
-        return;
+      const paid = parseFloat(changedValues.paidAmount || 0);
+      if (changedValues.paidAmount === "" || paid < 0) return;
 
       const total = parseFloat(formData.totalAmount || 0);
-      const paid = parseFloat(changedValues.paidAmount || 0);
       if (paid > total) {
         toast.error("Paid Amount cannot exceed Total Amount");
         return;
@@ -172,42 +145,90 @@ const AddCustomer = () => {
     }
   };
 
-  const handleJsonChange = (field, index, key, value) => {
-    setFormData((prev) => {
-      const updatedArray = [...prev[field]];
-      updatedArray[index] = { ...updatedArray[index], [key]: value };
-      return { ...prev, [field]: updatedArray };
-    });
+  // === Reset to Original (Edit) or Clear (Add) ===
+  const resetToOriginal = async () => {
+    if (existingCustomer) {
+      try {
+        const res = await refetch();
+        const freshInvoices = res.data;
+        const { totalAmount, dueDate } = getInvoiceData();
+        const paid = parseFloat(existingCustomer.paidAmount || 0);
+        const balance = totalAmount - paid;
+
+        const original = {
+          ...existingCustomer,
+          customerType: existingCustomer.customerType || "",
+          phone2: existingCustomer.phone2 || "",
+          gstNumber: existingCustomer.gstNumber || "",
+          address: existingCustomer.address || {
+            street: "",
+            city: "",
+            state: "",
+            zip: "",
+          },
+          totalAmount: totalAmount.toFixed(2),
+          paidAmount: paid.toFixed(2),
+          balance: balance < 0 ? "0.00" : balance.toFixed(2),
+          dueDate: dueDate || existingCustomer.dueDate || "",
+          vendorId: existingCustomer.vendorId || "",
+        };
+
+        setFormData(original);
+        form.setFieldsValue(original);
+      } catch {
+        toast.error("Failed to reload customer data");
+      }
+    } else {
+      clearForm();
+    }
   };
 
-  const addJsonEntry = (field) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: [
-        ...prev[field],
-        field === "invoices"
-          ? { invoiceNo: "", amount: "0.00", dueDate: "" }
-          : { quotationNo: "", amount: "0.00", date: "" },
-      ],
-    }));
+  // === Clear All Fields ===
+  const clearForm = () => {
+    const empty = {
+      name: "",
+      companyName: "",
+      customerType: "",
+      email: "",
+      mobileNumber: "",
+      phone2: "",
+      address: { street: "", city: "", state: "", zip: "" },
+      isVendor: "false",
+      totalAmount: "0.00",
+      paidAmount: "0.00",
+      balance: "0.00",
+      dueDate: "",
+      paymentMode: "",
+      invoiceStatus: "Draft",
+      invoices: [],
+      quotations: [],
+      vendorId: "",
+      gstNumber: "",
+    };
+
+    setFormData(empty);
+    form.setFieldsValue(empty);
+    toast.info("Form cleared");
   };
 
-  const removeJsonEntry = (field, index) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: prev[field].filter((_, i) => i !== index),
-    }));
+  const handleRefresh = async () => {
+    await resetToOriginal();
   };
 
+  const handleClear = () => {
+    clearForm();
+  };
+
+  // === Submit Handler ===
   const handleSubmit = async (values) => {
     try {
+      // Duplicate check for Add mode
       if (!existingCustomer && allCustomersData?.data?.length > 0) {
         const isDuplicate = allCustomersData.data.some(
           (cust) =>
             cust.email === values.email.trim() ||
             cust.mobileNumber === values.mobileNumber.trim()
         );
-
         if (isDuplicate) {
           toast.error(
             "Customer with same email or mobile number already exists."
@@ -256,6 +277,11 @@ const AddCustomer = () => {
         dispatch(api.util.invalidateTags(["Customer"]));
       }
 
+      toast.success(
+        existingCustomer
+          ? "Customer updated successfully!"
+          : "Customer created successfully!"
+      );
       navigate("/customers/list");
     } catch (err) {
       toast.error(err?.data?.message || "Failed to process request.");
@@ -266,19 +292,61 @@ const AddCustomer = () => {
     <div className="page-wrapper">
       <div className="content">
         <div className="card">
-          <PageHeader
-            title={existingCustomer ? "Edit Customer" : "Add Customer"}
-            subtitle={
-              existingCustomer
-                ? "Update customer details"
-                : "Create a new customer"
-            }
-            exportOptions={{ pdf: false, excel: false }}
-            buttonText="Back to Customers"
-          />
+          {/* Custom Header */}
+          <div className="page-header">
+            <div className="add-item d-flex">
+              <div className="page-title">
+                <h4>{existingCustomer ? "Edit Customer" : "Add Customer"}</h4>
+                <h6>
+                  {existingCustomer
+                    ? "Update customer details"
+                    : "Create a new customer"}
+                </h6>
+              </div>
+            </div>
+
+            {/* Action Buttons: Refresh & Clear */}
+            <ul className="table-top-head">
+              <li className="me-2">
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleRefresh();
+                  }}
+                  title="Reset to Original"
+                >
+                  <ReloadOutlined />
+                </a>
+              </li>
+              <li className="me-2">
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleClear();
+                  }}
+                  title="Clear Form"
+                >
+                  <ClearOutlined />
+                </a>
+              </li>
+            </ul>
+
+            <div className="page-btn">
+              <Button
+                onClick={() => navigate("/customers/list")}
+                className="btn btn-secondary"
+              >
+                <LeftOutlined /> Back to Customers
+              </Button>
+            </div>
+          </div>
+
           <div className="card-body">
+            {/* Loading States */}
             {isInvoicesLoading && existingCustomer && (
-              <Spin tip="Loading invoice data..." />
+              <Spin tip="Loading invoice data..." className="mb-3 d-block" />
             )}
             {invoicesError && existingCustomer && (
               <Alert
@@ -292,7 +360,7 @@ const AddCustomer = () => {
               />
             )}
             {isVendorsLoading && formData.isVendor === "true" && (
-              <Spin tip="Loading vendors..." />
+              <Spin tip="Loading vendors..." className="mb-3 d-block" />
             )}
             {vendorsError && formData.isVendor === "true" && (
               <Alert
@@ -306,6 +374,7 @@ const AddCustomer = () => {
               />
             )}
 
+            {/* Form */}
             <Form
               form={form}
               layout="vertical"
@@ -327,6 +396,7 @@ const AddCustomer = () => {
                         <Input />
                       </Form.Item>
                     </Col>
+
                     <Col lg={12} xs={24}>
                       <Form.Item label="Customer Type" name="customerType">
                         <Select placeholder="Select Type">
@@ -339,50 +409,50 @@ const AddCustomer = () => {
                         </Select>
                       </Form.Item>
                     </Col>
+
                     <Col lg={12} xs={24}>
                       <Form.Item label="Company Name" name="companyName">
                         <Input />
                       </Form.Item>
                     </Col>
+
                     <Col lg={12} xs={24}>
                       <Form.Item
                         label="Email"
                         name="email"
                         rules={[
                           { required: true, message: "Please enter email" },
-                          {
-                            type: "email",
-                            message: "Please enter a valid email",
-                          },
+                          { type: "email", message: "Enter a valid email" },
                         ]}
                       >
                         <Input />
                       </Form.Item>
                     </Col>
+
                     <Col lg={12} xs={24}>
                       <Form.Item
                         label="Phone"
                         name="mobileNumber"
                         rules={[
-                          {
-                            required: true,
-                            message: "Please enter phone number",
-                          },
+                          { required: true, message: "Please enter phone" },
                         ]}
                       >
                         <Input />
                       </Form.Item>
                     </Col>
+
                     <Col lg={12} xs={24}>
                       <Form.Item label="Phone 2" name="phone2">
                         <Input />
                       </Form.Item>
                     </Col>
+
                     <Col lg={12} xs={24}>
                       <Form.Item label="GST Number" name="gstNumber">
                         <Input placeholder="Enter GST Number" />
                       </Form.Item>
                     </Col>
+
                     <Col lg={24} xs={24}>
                       <Form.Item label="Address">
                         <Row gutter={16}>
@@ -412,6 +482,8 @@ const AddCustomer = () => {
                   </Row>
                 </TabPane>
               </Tabs>
+
+              {/* Submit Buttons */}
               <div
                 style={{
                   display: "flex",
@@ -422,6 +494,7 @@ const AddCustomer = () => {
                 <Button
                   onClick={() => navigate("/customers/list")}
                   style={{ marginRight: 8 }}
+                  disabled={isCreating || isEditing}
                 >
                   Cancel
                 </Button>
@@ -443,6 +516,8 @@ const AddCustomer = () => {
                     : "Add Customer"}
                 </Button>
               </div>
+
+              {/* Error Alert */}
               {(createError || editError) && (
                 <Alert
                   message="Error"

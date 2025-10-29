@@ -858,7 +858,9 @@ const QuotationsDetails = () => {
                     </tr>
                     <tr>
                       <td className="label-cell">Address</td>
-                      <td style={{ width: "55%" }}>
+                      <td colSpan="3">
+                        {" "}
+                        {/* spans the three columns + the empty one */}
                         {addressData
                           ? `${addressData.street || ""}, ${
                               addressData.city || ""
@@ -868,9 +870,8 @@ const QuotationsDetails = () => {
                           : activeVersionData.quotation?.shipTo ||
                             "456, Park Avenue, New York, USA"}
                       </td>
-                      <td></td>
-                      <td></td>
                     </tr>
+
                     {activeVersion !== "current" && (
                       <tr>
                         <td className="label-cell">Version Info</td>

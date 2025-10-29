@@ -561,38 +561,120 @@ const PageWrapper = () => {
               <div className="card-body">
                 {topSellingProducts.length > 0 ? (
                   <ul className="top-products-list">
-                    {topSellingProducts.map((product, index) => (
-                      <li
-                        key={product.productId}
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          padding: "10px 0",
-                          borderBottom:
-                            index < topSellingProducts.length - 1
-                              ? "1px solid #e0e0e0"
-                              : "none",
-                        }}
-                      >
-                        <div>
-                          <span className="product-name">
-                            {product.name} ({product.quantity}{" "}
-                            {product.quantity === 1} Sold )
-                          </span>
-                        </div>
-                        <button
-                          className="btn btn-primary btn-sm"
-                          onClick={() => handleAddToCart(product)}
-                          disabled={product.quantity === 0} // Disable if no stock, adjust based on actual stock data
+                    {topSellingProducts.map((product, index) => {
+                      // Parse images safely
+                      let imageUrl = null;
+                      if (product.images) {
+                        try {
+                          const imagesArray = JSON.parse(product.images);
+                          if (
+                            Array.isArray(imagesArray) &&
+                            imagesArray.length > 0
+                          ) {
+                            imageUrl = imagesArray[0];
+                          }
+                        } catch (e) {
+                          // Fallback: treat as plain string
+                          imageUrl = product.images;
+                        }
+                      }
+
+                      return (
+                        <li
+                          key={product.productId}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            padding: "12px 0",
+                            borderBottom:
+                              index < topSellingProducts.length - 1
+                                ? "1px solid #e0e0e0"
+                                : "none",
+                          }}
                         >
-                          Add to Cart
-                        </button>
-                      </li>
-                    ))}
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "12px",
+                            }}
+                          >
+                            {/* Thumbnail */}
+                            {imageUrl ? (
+                              <img
+                                src={imageUrl}
+                                alt={product.name}
+                                style={{
+                                  width: "40px",
+                                  height: "40px",
+                                  objectFit: "cover",
+                                  borderRadius: "6px",
+                                  border: "1px solid #eee",
+                                }}
+                                onError={(e) => {
+                                  e.target.style.display = "none";
+                                  e.target.nextElementSibling.style.display =
+                                    "block";
+                                }}
+                              />
+                            ) : null}
+                            {/* Fallback placeholder */}
+                            {!imageUrl && (
+                              <div
+                                style={{
+                                  width: "40px",
+                                  height: "40px",
+                                  backgroundColor: "#f0f0f0",
+                                  borderRadius: "6px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  fontSize: "12px",
+                                  color: "#999",
+                                  border: "1px dashed #ddd",
+                                }}
+                              >
+                                No Img
+                              </div>
+                            )}
+
+                            {/* Product Info */}
+                            <div>
+                              <div
+                                className="product-name"
+                                style={{ fontWeight: "500" }}
+                              >
+                                {product.name}
+                              </div>
+                              <div
+                                style={{ fontSize: "0.85rem", color: "#666" }}
+                              >
+                                {product.quantity}{" "}
+                                {product.quantity === 1 ? "unit" : "units"} sold
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Add to Cart Button */}
+                          <button
+                            className="btn btn-primary btn-sm"
+                            onClick={() => handleAddToCart(product)}
+                            disabled={cartLoadingStates[product.productId]}
+                            style={{ minWidth: "90px" }}
+                          >
+                            {cartLoadingStates[product.productId]
+                              ? "Adding"
+                              : "Add to Cart"}
+                          </button>
+                        </li>
+                      );
+                    })}
                   </ul>
                 ) : (
-                  <p>No products sold recently.</p>
+                  <p style={{ color: "#888", fontStyle: "italic" }}>
+                    No products sold recently.
+                  </p>
                 )}
               </div>
             </div>
@@ -792,15 +874,6 @@ const PageWrapper = () => {
               product={selectedProduct}
               refetch={refetchProducts}
             />
-          )}
-          {!hasClockedIn && !loadingAttendance && userId && (
-            <Alert
-              type="warning"
-              message="Please clock in to start your workday!"
-            />
-          )}
-          {attendanceError && (
-            <Alert type="danger" message="Failed to load attendance data." />
           )}
         </div>
       </div>
