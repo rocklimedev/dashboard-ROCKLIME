@@ -2,13 +2,10 @@ const express = require("express");
 const router = express.Router();
 const productController = require("../controller/productController");
 const checkPermission = require("../middleware/permission");
-const role = require("../middleware/role");
-const { ROLES } = require("../config/constant");
 
 // ✅ Product CRUD Routes
 router.post(
   "/",
-  //role.check(ROLES.Admin), // Only Admins can create products
   //checkPermission("write", "create_product", "products", "/products"),
   productController.createProduct
 );
@@ -31,7 +28,6 @@ router.get(
 );
 router.get(
   "/category/:categoryId",
-  // role.check(ROLES.Admin),
   // checkPermission(
   //   "view",
   //   "view_product_by_category",
@@ -42,14 +38,12 @@ router.get(
 );
 router.put(
   "/:productId",
-  //role.check(ROLES.Admin), // Only Admins can edit products
   // checkPermission("edit", "update_product", "products", "/products/:productId"),
   productController.updateProduct
 );
 router.post("/by-ids", productController.getProductsByIds);
 router.delete(
   "/:productId",
-  // role.check(ROLES.Admin), // Only Admins can delete products
   // checkPermission(
   //   "delete",
   //   "delete_product",
@@ -62,7 +56,6 @@ router.delete(
 // ✅ Inventory Management Routes
 router.post(
   "/:productId/add-stock",
-  // role.check(ROLES.Admin), // Only Admins can modify stock
   // checkPermission(
   //   "edit",
   //   "add_stock",
@@ -74,7 +67,6 @@ router.post(
 
 router.post(
   "/:productId/remove-stock",
-  //  role.check(ROLES.Admin), // Only Admins can modify stock
   // checkPermission(
   //   "edit",
   //   "remove_stock",

@@ -33,10 +33,11 @@ const BrandSelection = () => {
 
   const brands = useMemo(() => {
     const logoMap = {
-      AS_001: americanStandard,
-      GP_002: grohe,
-      colston: colston,
       GB_004: groheBau,
+      AS_001: americanStandard,
+      colston: colston,
+      GP_002: grohe,
+
       JA_003: groheBau,
       surface: groheBau,
       sgt: sgt,

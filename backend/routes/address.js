@@ -1,15 +1,11 @@
 const express = require("express");
 const addressController = require("../controller/addressController");
 const checkPermission = require("../middleware/permission");
-const role = require("../middleware/role"); // Role-based access control
-const { ROLES } = require("../config/constant");
-
 const router = express.Router();
 
 // Admin and Accounts can create an address
 router.post(
   "/",
-  // role.check(ROLES.Admin), // Only Admin can create addresses
   // checkPermission("write", "createAddress", "address", "/addresses"),
   addressController.createAddress
 );
@@ -17,7 +13,6 @@ router.post(
 // All roles can view addresses
 router.get(
   "/",
-  //  role.check(ROLES.Users), // Minimum Users role required
   // checkPermission("view", "getAllAddresses", "address", "/addresses"),
   addressController.getAllAddresses
 );
@@ -25,7 +20,6 @@ router.get(
 // All roles can view a specific address
 router.get(
   "/:addressId",
-  // role.check(ROLES.Users),
   // checkPermission("view", "getAddressById", "address", "/addresses/:addressId"),
   addressController.getAddressById
 );
@@ -33,7 +27,6 @@ router.get(
 // Only Admin and Accounts can edit an address
 router.put(
   "/:addressId",
-  //  role.check(ROLES.Admin), // Only Admin can edit
   // checkPermission("edit", "updateAddress", "address", "/addresses/:addressId"),
   addressController.updateAddress
 );
@@ -41,7 +34,6 @@ router.put(
 // Only Admin and SuperAdmin can delete an address
 router.delete(
   "/:addressId",
-  // role.check(ROLES.SuperAdmin), // Only SuperAdmin can delete
   // checkPermission(
   //   "delete",
   //   "deleteAddress",

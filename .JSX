@@ -1,558 +1,613 @@
-// controllers/quotationController.js
-const { v4: uuidv4 } = require("uuid");
-const Quotation = require("../models/quotation");
-const QuotationItem = require("../models/quotationItem");
-const QuotationVersion = require("../models/quotationVersion");
-const XLSX = require("xlsx");
-const sequelize = require("../config/database");
-const { sendNotification } = require("./notificationController");
+import React, { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { Link } from "react-router-dom";
+import { FaChartBar, FaBox } from "react-icons/fa6";
+import {
+  ResponsiveContainer,
+  Tooltip,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+} from "recharts";
 
-// ---------------------------------------------------------------------
-// Helper – calculate totals (used by create & update)
-const calculateTotals = (
-  products,
-  extraDiscount = 0,
-  extraDiscountType = null
-) => {
-  const subTotal = products.reduce(
-    (sum, p) => sum + p.sellingPrice * p.quantity,
-    0
+import Alert from "./Alert";
+import "./pagewrapper.css";
+
+import {
+  useClockInMutation,
+  useClockOutMutation,
+  useGetAttendanceQuery,
+} from "../../api/attendanceApi";
+import { useGetAllProductsQuery } from "../../api/productApi";
+import { useGetAllQuotationsQuery } from "../../api/quotationApi";
+import { useGetAllInvoicesQuery } from "../../api/invoiceApi";
+import { useGetProfileQuery } from "../../api/userApi";
+import { useGetAllOrdersQuery } from "../../api/orderApi";
+import { useGetCustomersQuery } from "../../api/customerApi";
+import { useGetAllCategoriesQuery } from "../../api/categoryApi";
+import { useGetAllUsersQuery } from "../../api/userApi";
+import StockModal from "../Common/StockModal";
+import DataTablePagination from "../Common/DataTablePagination";
+import { useAddProductToCartMutation } from "../../api/cartApi";
+import { useUpdateOrderStatusMutation } from "../../api/orderApi";
+import useTopProducts from "../../data/useTopProducts";
+
+const PageWrapper = () => {
+  // ──────────────────────────────────────────────────────
+  //  BASIC STATE
+  // ──────────────────────────────────────────────────────
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [lowStockListModal, setLowStockListModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const [cartLoadingStates, setCartLoadingStates] = useState({});
+
+  const [addProductToCart, { isLoading: mutationLoading }] =
+    useAddProductToCartMutation();
+
+  // ──────────────────────────────────────────────────────
+  //  DATE HELPERS
+  // ──────────────────────────────────────────────────────
+  const today = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
+
+  const startDate = today.toISOString().split("T")[0];
+  const endDate = new Date(today.getTime() + 24 * 60 * 60 * 1000)
+    .toISOString()
+    .split("T")[0];
+
+  // ──────────────────────────────────────────────────────
+  //  PROFILE
+  // ──────────────────────────────────────────────────────
+  const {
+    data: profile,
+    isLoading: loadingProfile,
+    error: profileError,
+  } = useGetProfileQuery();
+
+  const userId = profile?.user?.userId;
+
+  // ──────────────────────────────────────────────────────
+  //  CORE DATA QUERIES
+  // ──────────────────────────────────────────────────────
+  const {
+    data: ordersData,
+    isLoading: loadingOrders,
+    refetch: refetchOrders,
+  } = useGetAllOrdersQuery(undefined, { pollingInterval: 30000 });
+
+  const { data: quotationData = [], isLoading: loadingQuotations } =
+    useGetAllQuotationsQuery();
+
+  const { data: productsData, isLoading: isProductsLoading } =
+    useGetAllProductsQuery();
+
+  const { data: customersData, isLoading: isCustomersLoading } =
+    useGetCustomersQuery();
+
+  const { data: categoriesData, isLoading: isCategoriesLoading } =
+    useGetAllCategoriesQuery();
+
+  const { data: usersData, isLoading: isUsersLoading } = useGetAllUsersQuery();
+
+  const { data: invoiceData, isLoading: loadingInvoices } =
+    useGetAllInvoicesQuery();
+
+  // ──────────────────────────────────────────────────────
+  //  TOP-SELLING PRODUCTS (Quotations + Orders)
+  // ──────────────────────────────────────────────────────
+  const orders = ordersData?.orders || [];
+  const { topProducts, loading: topProductsLoading } = useTopProducts({
+    quotations: quotationData,
+    orders,
+  });
+
+  // ──────────────────────────────────────────────────────
+  //  ATTENDANCE
+  // ──────────────────────────────────────────────────────
+  const {
+    data: attendance,
+    isLoading: loadingAttendance,
+    error: attendanceError,
+  } = useGetAttendanceQuery(
+    { userId, startDate, endDate },
+    { skip: !userId || loadingProfile || !!profileError }
   );
-  const totalItemDiscount = products.reduce(
-    (sum, p) => sum + (p.discount || 0),
-    0
-  );
-  const totalTax = products.reduce((sum, p) => {
-    const itemSub = p.sellingPrice * p.quantity;
-    return sum + ((itemSub - (p.discount || 0)) * (p.tax || 0)) / 100;
-  }, 0);
 
-  // ----- extra global discount -----
-  let extraDiscountAmount = 0;
-  if (extraDiscount > 0 && extraDiscountType) {
-    extraDiscountAmount =
-      extraDiscountType === "percent"
-        ? (subTotal * extraDiscount) / 100
-        : extraDiscount;
-  }
+  const hasClockedIn = attendance?.length > 0 && !!attendance[0]?.clockIn;
+  const hasClockedOut = hasClockedIn && !!attendance[0]?.clockOut;
 
-  const finalAmount =
-    subTotal + totalTax - totalItemDiscount - extraDiscountAmount;
+  // ──────────────────────────────────────────────────────
+  //  CLOCK-IN / OUT
+  // ──────────────────────────────────────────────────────
+  const [clockIn] = useClockInMutation();
+  const [clockOut] = useClockOutMutation();
 
-  return {
-    subTotal: parseFloat(subTotal.toFixed(2)),
-    totalItemDiscount: parseFloat(totalItemDiscount.toFixed(2)),
-    totalTax: parseFloat(totalTax.toFixed(2)),
-    extraDiscountAmount: parseFloat(extraDiscountAmount.toFixed(2)),
-    finalAmount: parseFloat(finalAmount.toFixed(2)),
+  const handleClockIn = async () => {
+    if (!userId) return toast.error("User ID missing");
+    try {
+      await clockIn({ userId }).unwrap();
+    } catch {
+      toast.error("Clock-in failed");
+    }
   };
-};
-// ---------------------------------------------------------------------
-
-// CREATE QUOTATION
-exports.createQuotation = async (req, res) => {
-  const t = await sequelize.transaction();
-  try {
-    let {
-      products,
-      extraDiscount = 0,
-      extraDiscountType = null,
-      followupDates,
-      ...quotationData
-    } = req.body;
-
-    // ---- validation ----
-    if (!Array.isArray(products) || products.length === 0) {
-      return res
-        .status(400)
-        .json({ error: "At least one product is required" });
+  const handleClockOut = async () => {
+    if (!userId) return toast.error("User ID missing");
+    try {
+      await clockOut({ userId }).unwrap();
+    } catch {
+      toast.error("Clock-out failed");
     }
+  };
 
-    const {
-      subTotal,
-      totalItemDiscount,
-      totalTax,
-      extraDiscountAmount,
-      finalAmount,
-    } = calculateTotals(products, extraDiscount, extraDiscountType);
+  // ──────────────────────────────────────────────────────
+  //  CART HELPERS
+  // ──────────────────────────────────────────────────────
+  const handleAddToCart = async (product) => {
+    if (!userId) return toast.error("User not logged in!");
+    const priceEntry = Array.isArray(product.metaDetails)
+      ? product.metaDetails.find((d) => d.slug === "sellingPrice")
+      : null;
+    const price = priceEntry ? parseFloat(priceEntry.value) : null;
+    if (!price) return toast.error("Invalid price");
 
-    // ---- round-off (optional) ----
-    const roundOff = quotationData.roundOff
-      ? parseFloat(quotationData.roundOff)
-      : 0;
-    const finalAmountWithRound = parseFloat(
-      (finalAmount + roundOff).toFixed(2)
-    );
+    const qty = product.quantity || 1;
+    if (!Number.isInteger(qty) || qty <= 0) return toast.error("Invalid qty");
 
-    // ---- DB insert ----
-    const quotation = await Quotation.create(
-      {
-        ...quotationData,
-        quotationId: quotationData.quotationId || uuidv4(),
-        products: JSON.stringify(products),
-        extraDiscount: extraDiscount > 0 ? extraDiscount : null,
-        extraDiscountType: extraDiscountType,
-        discountAmount: extraDiscountAmount > 0 ? extraDiscountAmount : null, // legacy field
-        finalAmount: finalAmountWithRound,
-        followupDates: followupDates ? JSON.stringify(followupDates) : null,
-      },
-      { transaction: t }
-    );
-
-    // ---- items (Mongo) ----
-    if (products.length > 0) {
-      await QuotationItem.create(
-        {
-          quotationId: quotation.quotationId,
-          items: products.map((p) => ({
-            productId: p.productId,
-            quantity: p.quantity,
-            discount: p.discount || 0,
-            tax: p.tax || 0,
-            total: p.total || 0,
-          })),
-        },
-        { transaction: t }
-      );
+    setCartLoadingStates((s) => ({ ...s, [product.productId]: true }));
+    try {
+      await addProductToCart({
+        userId,
+        productId: product.productId,
+        quantity: qty,
+      }).unwrap();
+      toast.success("Added to cart");
+    } catch (e) {
+      toast.error(e?.data?.message || "Add to cart failed");
+    } finally {
+      setCartLoadingStates((s) => ({ ...s, [product.productId]: false }));
     }
+  };
 
-    await t.commit();
+  // ──────────────────────────────────────────────────────
+  //  LOW-STOCK LOGIC (unchanged)
+  // ──────────────────────────────────────────────────────
+  const products = Array.isArray(productsData)
+    ? productsData
+    : productsData?.data || [];
 
-    await sendNotification({
-      userId: req.user.userId,
-      title: "New Quotation Created",
-      message: `Quotation "${quotation.document_title}" created successfully.`,
-    });
+  const lowStockProducts = useMemo(
+    () => products.filter((p) => p.quantity < p.alert_quantity),
+    [products]
+  );
 
-    res.status(201).json({
-      quotation,
-      calculated: {
-        subTotal,
-        totalItemDiscount,
-        totalTax,
-        extraDiscountAmount,
-        finalAmount: finalAmountWithRound,
-      },
-      message: "Quotation created successfully",
-    });
-  } catch (error) {
-    await t.rollback();
-    console.error("Quotation creation error:", error);
-    res.status(500).json({ error: error.message });
+  const paginatedLowStock = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return lowStockProducts.slice(start, start + itemsPerPage);
+  }, [lowStockProducts, currentPage]);
+
+  const handleProductClick = (p) => {
+    setSelectedProduct(p);
+    setIsModalVisible(true);
+  };
+  const handleModalClose = () => {
+    setIsModalVisible(false);
+    setSelectedProduct(null);
+  };
+
+  // ──────────────────────────────────────────────────────
+  //  ORDER STATUS UPDATE
+  // ──────────────────────────────────────────────────────
+  const [updateOrderStatus] = useUpdateOrderStatusMutation();
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      await updateOrderStatus({ id, status: newStatus }).unwrap();
+      refetchOrders();
+    } catch (e) {
+      toast.error(e?.data?.message || "Status update failed");
+    }
+  };
+
+  // ──────────────────────────────────────────────────────
+  //  SUMMARY NUMBERS
+  // ──────────────────────────────────────────────────────
+  const orderCount = orders.length;
+  const quotationCount = quotationData.length || 0;
+  const productCount = products.length;
+  const invoiceCount = invoiceData?.data?.length || 0;
+
+  // ──────────────────────────────────────────────────────
+  //  EARLY RETURNS (loading / errors)
+  // ──────────────────────────────────────────────────────
+  if (
+    loadingProfile ||
+    isCustomersLoading ||
+    isCategoriesLoading ||
+    isUsersLoading ||
+    isProductsLoading ||
+    loadingQuotations
+  ) {
+    return (
+      <div className="text-center p-5">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading…</span>
+        </div>
+      </div>
+    );
   }
-};
 
-// UPDATE QUOTATION
-exports.updateQuotation = async (req, res) => {
-  const t = await sequelize.transaction();
-  try {
-    const { id } = req.params;
-    const {
-      items,
-      products: incomingProducts,
-      followupDates,
-      extraDiscount = 0,
-      extraDiscountType = null,
-      ...quotationData
-    } = req.body;
-
-    if (!id) {
-      await t.rollback();
-      return res.status(400).json({ message: "Quotation ID is required" });
-    }
-
-    const currentQuotation = await Quotation.findOne({
-      where: { quotationId: id },
-      transaction: t,
-    });
-    if (!currentQuotation) {
-      await t.rollback();
-      return res.status(404).json({ message: "Quotation not found" });
-    }
-
-    // ---- version snapshot ----
-    const currentItems = await QuotationItem.findOne({ quotationId: id });
-    const latestVersion = await QuotationVersion.findOne({
-      quotationId: id,
-    }).sort({ version: -1 });
-    const newVersionNumber = latestVersion ? latestVersion.version + 1 : 1;
-
-    await QuotationVersion.create({
-      quotationId: id,
-      version: newVersionNumber,
-      quotationData: currentQuotation.toJSON(),
-      quotationItems: currentItems ? currentItems.items : [],
-      updatedBy: req.user.userId,
-      updatedAt: new Date(),
-    });
-
-    // ---- product handling ----
-    const products = incomingProducts || items || [];
-    const formattedItems = products.map((item) => ({
-      productId: item.productId || null,
-      quantity: Number(item.quantity) || 1,
-      discount: Number(item.discount) || 0,
-      tax: Number(item.tax) || 0,
-      total: Number(item.total) || 0,
-    }));
-
-    const { extraDiscountAmount, finalAmount } = calculateTotals(
-      products,
-      extraDiscount,
-      extraDiscountType
+  if (profileError) {
+    return (
+      <div className="alert alert-danger m-3">
+        <h5>Profile error</h5>
+        <p>{profileError?.data?.message || "Unknown error"}</p>
+      </div>
     );
-
-    const roundOff = quotationData.roundOff
-      ? parseFloat(quotationData.roundOff)
-      : 0;
-    const finalAmountWithRound = parseFloat(
-      (finalAmount + roundOff).toFixed(2)
-    );
-
-    // ---- prepare update payload ----
-    const updatePayload = {
-      ...quotationData,
-      products:
-        formattedItems.length > 0 ? JSON.stringify(formattedItems) : null,
-      extraDiscount: extraDiscount > 0 ? extraDiscount : null,
-      extraDiscountType,
-      discountAmount: extraDiscountAmount > 0 ? extraDiscountAmount : null,
-      finalAmount: finalAmountWithRound,
-    };
-    if (followupDates !== undefined)
-      updatePayload.followupDates = JSON.stringify(followupDates);
-
-    await Quotation.update(updatePayload, {
-      where: { quotationId: id },
-      transaction: t,
-    });
-
-    // ---- items (Mongo) ----
-    if (formattedItems.length > 0) {
-      await QuotationItem.updateOne(
-        { quotationId: id },
-        { $set: { items: formattedItems } },
-        { upsert: true }
-      );
-    } else {
-      await QuotationItem.deleteOne({ quotationId: id });
-    }
-
-    await t.commit();
-
-    await sendNotification({
-      userId: req.user.userId,
-      title: "Quotation Updated",
-      message: `Quotation "${id}" was updated (Version ${newVersionNumber}).`,
-    });
-
-    res.status(200).json({ message: "Quotation updated successfully" });
-  } catch (error) {
-    await t.rollback();
-    res
-      .status(500)
-      .json({ error: "Failed to update quotation", details: error.message });
   }
+
+  // ──────────────────────────────────────────────────────
+  //  RENDER
+  // ──────────────────────────────────────────────────────
+  return (
+    <div className="page-wrapper">
+      <div className="content">
+        <div className="dashboard">
+          {/* ────── SUMMARY CARDS ────── */}
+          <section className="summary-cards">
+            {[
+              {
+                link: "/quotations/list",
+                count: quotationCount,
+                label: "Total Quotations",
+                icon: <FaBox />,
+              },
+              {
+                link: "/orders/list",
+                count: orderCount,
+                label: "Total Orders",
+                icon: <FaChartBar />,
+              },
+              {
+                link: "/inventory/products",
+                count: productCount,
+                label: "Total Products",
+                icon: <FaBox />,
+              },
+            ].map(({ count, label, icon, link }, i) => (
+              <div key={i} className="card stat">
+                <Link to={link}>
+                  <div className="stat-header">
+                    {icon}
+                    <h3>{count}</h3>
+                  </div>
+                  <p>
+                    <a href={link}>{label}</a>
+                  </p>
+                  <div
+                    className="bar"
+                    style={{ width: `${(count / Math.max(count, 1)) * 100}%` }}
+                  />
+                </Link>
+              </div>
+            ))}
+          </section>
+
+          {/* ────── MAIN SECTION ────── */}
+          <section className="dashboard-main">
+            {/* TOP SELLING PRODUCTS */}
+            <div className="card">
+              <h4>Top Selling Products (Quotations + Orders)</h4>
+              <div className="card-body">
+                {topProductsLoading ? (
+                  <p>Loading top products…</p>
+                ) : topProducts.length > 0 ? (
+                  <ul className="top-products-list">
+                    {topProducts.map((product, idx) => {
+                      // ----- IMAGE HANDLING -----
+                      let imgUrl = null;
+                      if (product.images) {
+                        try {
+                          const arr = JSON.parse(product.images);
+                          imgUrl =
+                            Array.isArray(arr) && arr[0]
+                              ? arr[0]
+                              : product.images;
+                        } catch {
+                          imgUrl = product.images;
+                        }
+                      }
+
+                      return (
+                        <li
+                          key={product.productId}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            padding: "12px 0",
+                            borderBottom:
+                              idx < topProducts.length - 1
+                                ? "1px solid #e0e0e0"
+                                : "none",
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "12px",
+                            }}
+                          >
+                            {/* Image / Placeholder */}
+                            {imgUrl ? (
+                              <img
+                                src={imgUrl}
+                                alt={product.name}
+                                style={{
+                                  width: 40,
+                                  height: 40,
+                                  objectFit: "cover",
+                                  borderRadius: 6,
+                                  border: "1px solid #eee",
+                                }}
+                                onError={(e) => {
+                                  e.target.style.display = "none";
+                                  e.target.nextElementSibling.style.display =
+                                    "block";
+                                }}
+                              />
+                            ) : null}
+                            <div
+                              style={{
+                                width: 40,
+                                height: 40,
+                                background: "#f5f5f5",
+                                borderRadius: 6,
+                                display: imgUrl ? "none" : "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: 12,
+                                color: "#999",
+                              }}
+                            >
+                              No Img
+                            </div>
+
+                            {/* Name + Qty */}
+                            <div>
+                              <div style={{ fontWeight: 500 }}>
+                                {product.name}
+                              </div>
+                              <div
+                                style={{ fontSize: "0.85rem", color: "#666" }}
+                              >
+                                {product.quantity}{" "}
+                                {product.quantity === 1 ? "unit" : "units"} sold
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Add to Cart */}
+                          <button
+                            className="btn btn-primary btn-sm"
+                            onClick={() => handleAddToCart(product)}
+                            disabled={cartLoadingStates[product.productId]}
+                            style={{ minWidth: 90 }}
+                          >
+                            {cartLoadingStates[product.productId]
+                              ? "Adding…"
+                              : "Add to Cart"}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <p style={{ color: "#888", fontStyle: "italic" }}>
+                    No sales data yet.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* ORDERS THIS MONTH (unchanged) */}
+            <div className="card">
+              <h4>Orders This Month</h4>
+              <div className="card-body">
+                {orders.length ? (
+                  <ul className="orders-list">
+                    {orders.map((o, i) => (
+                      <li
+                        key={o.id}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "10px 0",
+                          borderBottom:
+                            i < orders.length - 1
+                              ? "1px solid #e0e0e0"
+                              : "none",
+                        }}
+                      >
+                        <div>
+                          <strong>Order No:</strong> {o.orderNo}{" "}
+                          <span style={{ marginLeft: 10, color: "#666" }}>
+                            {new Date(o.createdAt).toLocaleDateString()}
+                          </span>
+                          <span
+                            style={{
+                              marginLeft: 10,
+                              fontWeight: 500,
+                              color:
+                                o.priority === "high"
+                                  ? "#e74c3c"
+                                  : o.priority === "medium"
+                                  ? "#f39c12"
+                                  : "#27ae60",
+                            }}
+                          >
+                            {o.priority?.toUpperCase()}
+                          </span>
+                        </div>
+                        <select
+                          value={o.status}
+                          onChange={(e) =>
+                            handleStatusChange(o.id, e.target.value)
+                          }
+                          className="status-dropdown"
+                        >
+                          {[
+                            "CREATED",
+                            "PREPARING",
+                            "CHECKING",
+                            "INVOICE",
+                            "DISPATCHED",
+                            "DELIVERED",
+                            "PARTIALLY_DELIVERED",
+                            "CANCELED",
+                            "DRAFT",
+                            "ONHOLD",
+                          ].map((s) => (
+                            <option key={s} value={s}>
+                              {s}
+                            </option>
+                          ))}
+                        </select>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>No orders.</p>
+                )}
+              </div>
+            </div>
+
+            {/* LOW STOCK (unchanged) */}
+            <div className="card low-stock">
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <h4>Low in Stock</h4>
+                {lowStockProducts.length > 0 && (
+                  <button
+                    onClick={() => setLowStockListModal(true)}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    View All
+                  </button>
+                )}
+              </div>
+              <ul>
+                {lowStockProducts.length ? (
+                  lowStockProducts.slice(0, 4).map((p) => (
+                    <li
+                      key={p._id || p.productId}
+                      onClick={() => handleProductClick(p)}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <span className="product-name">{p.name}</span>
+                      <span className="product-quantity">
+                        Qty: {p.quantity}
+                      </span>
+                    </li>
+                  ))
+                ) : (
+                  <li>No low stock products.</li>
+                )}
+              </ul>
+            </div>
+          </section>
+
+          {/* LOW-STOCK MODAL */}
+          {lowStockListModal && (
+            <div
+              className="modal fade show"
+              style={{ display: "block", backgroundColor: "rgba(0,0,0,.5)" }}
+              tabIndex="-1"
+            >
+              <div className="modal-dialog modal-lg modal-dialog-centered">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title">All Low Stock Products</h5>
+                    <button
+                      type="button"
+                      className="close"
+                      onClick={() => setLowStockListModal(false)}
+                      style={{
+                        fontSize: "1.5rem",
+                        lineHeight: 1,
+                        border: "none",
+                        background: "transparent",
+                      }}
+                    >
+                      &times;
+                    </button>
+                  </div>
+                  <div className="modal-body">
+                    {paginatedLowStock.length ? (
+                      <ul>
+                        {paginatedLowStock.map((p) => (
+                          <li
+                            key={p._id || p.productId}
+                            onClick={() => handleProductClick(p)}
+                            style={{ cursor: "pointer", marginBottom: 8 }}
+                          >
+                            {p.name} (Qty: {p.quantity})
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p>No low stock products.</p>
+                    )}
+                  </div>
+                  <div className="modal-footer">
+                    <DataTablePagination
+                      totalItems={lowStockProducts.length}
+                      itemNo={itemsPerPage}
+                      onPageChange={setCurrentPage}
+                      currentPage={currentPage}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => setLowStockListModal(false)}
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* STOCK DETAIL MODAL */}
+          {isModalVisible && selectedProduct && (
+            <StockModal
+              show={isModalVisible}
+              onHide={handleModalClose}
+              product={selectedProduct}
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
 };
 
-// EXPORT TO EXCEL (now shows extra discount)
-exports.exportQuotation = async (req, res) => {
-  try {
-    const { id, version } = req.params;
-
-    let quotation,
-      quotationItems = [];
-
-    if (version) {
-      const versionData = await QuotationVersion.findOne({
-        quotationId: id,
-        version: Number(version),
-      });
-      if (!versionData)
-        return res.status(404).json({ message: "Version not found" });
-      quotation = versionData.quotationData;
-      quotationItems = versionData.quotationItems || [];
-    } else {
-      quotation = await Quotation.findByPk(id);
-      if (!quotation)
-        return res.status(404).json({ message: "Quotation not found" });
-      const items = await QuotationItem.findOne({ quotationId: id });
-      quotationItems = items ? items.items : [];
-    }
-
-    // ---- recalc totals for display (same logic as create/update) ----
-    const { subTotal, totalItemDiscount, totalTax, extraDiscountAmount } =
-      calculateTotals(
-        quotationItems.map((i) => ({
-          sellingPrice: i.rate || i.mrp || 0,
-          quantity: i.quantity || i.qty || 1,
-          discount: i.discount || 0,
-          tax: i.tax || 0,
-        })),
-        quotation.extraDiscount || 0,
-        quotation.extraDiscountType
-      );
-
-    const finalTotal =
-      subTotal +
-      totalTax -
-      totalItemDiscount -
-      extraDiscountAmount +
-      (quotation.roundOff || 0);
-
-    // ---- sheet ----
-    const sheetData = [
-      ["Estimate / Quotation", "", "", "", "GROHE / AMERICAN STANDARD"],
-      [""],
-      [
-        "M/s",
-        quotation.companyName || quotation.customerId || "CHHABRA MARBLE",
-        "",
-        "Date",
-        quotation.quotation_date
-          ? new Date(quotation.quotation_date).toLocaleDateString()
-          : new Date().toLocaleDateString(),
-      ],
-      ["Address", quotation.shipTo || "456, Park Avenue, New York, USA"],
-      [""],
-      [
-        "S.No",
-        "Product Image",
-        "Product Name",
-        "Product Code",
-        "MRP",
-        "Discount",
-        "Rate",
-        "Unit",
-        "Total",
-      ],
-    ];
-
-    quotationItems.forEach((p, idx) => {
-      sheetData.push([
-        idx + 1,
-        p.imageUrl || "N/A",
-        p.name || "N/A",
-        p.product_code || "N/A",
-        Number(p.mrp) || 0,
-        p.discount
-          ? p.discountType === "percent"
-            ? `${Number(p.discount)}%`
-            : Number(p.discount)
-          : 0,
-        Number(p.rate) || Number(p.total) || 0,
-        p.quantity || p.qty || 1,
-        Number(p.total) || 0,
-      ]);
-    });
-
-    sheetData.push([]);
-    sheetData.push([
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "Subtotal",
-      "",
-      subTotal.toFixed(2),
-    ]);
-    sheetData.push([
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "Item Discount",
-      "",
-      totalItemDiscount.toFixed(2),
-    ]);
-    if (extraDiscountAmount) {
-      sheetData.push([
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        `Extra Discount ${
-          quotation.extraDiscountType === "percent"
-            ? `(${quotation.extraDiscount}%)`
-            : ""
-        }`,
-        "",
-        extraDiscountAmount.toFixed(2),
-      ]);
-    }
-    sheetData.push(["", "", "", "", "", "", "Tax", "", totalTax.toFixed(2)]);
-    sheetData.push([
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "Round-off",
-      "",
-      (quotation.roundOff || 0).toFixed(2),
-    ]);
-    sheetData.push([
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "TOTAL",
-      "",
-      finalTotal.toFixed(2),
-    ]);
-
-    const workbook = XLSX.utils.book_new();
-    const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
-    worksheet["!cols"] = [
-      { wch: 5 },
-      { wch: 20 },
-      { wch: 30 },
-      { wch: 15 },
-      { wch: 10 },
-      { wch: 10 },
-      { wch: 10 },
-      { wch: 10 },
-      { wch: 12 },
-    ];
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Quotation");
-
-    const buffer = XLSX.write(workbook, { bookType: "xlsx", type: "buffer" });
-
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    );
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=quotation_${id}${
-        version ? `_v${version}` : ""
-      }.xlsx`
-    );
-    res.send(buffer);
-  } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Failed to export quotation", error: error.message });
-  }
-};
-
-// CLONE QUOTATION
-exports.cloneQuotation = async (req, res) => {
-  try {
-    const original = await Quotation.findByPk(req.params.id);
-    if (!original)
-      return res.status(404).json({ message: "Quotation not found" });
-
-    const originalItems = await QuotationItem.findOne({
-      quotationId: req.params.id,
-    });
-    const newId = uuidv4();
-
-    const cloned = await Quotation.create({
-      quotationId: newId,
-      document_title: `${original.document_title} (Copy)`,
-      quotation_date: new Date(),
-      due_date: original.due_date,
-      reference_number: original.reference_number,
-      customerId: original.customerId,
-      createdBy: req.user.userId,
-      shipTo: original.shipTo,
-      extraDiscount: original.extraDiscount,
-      extraDiscountType: original.extraDiscountType,
-      discountAmount: original.discountAmount,
-      products: original.products,
-      roundOff: original.roundOff,
-      finalAmount: original.finalAmount,
-      signature_name: original.signature_name,
-      signature_image: original.signature_image,
-      followupDates: original.followupDates,
-    });
-
-    if (originalItems && Array.isArray(originalItems.items)) {
-      await QuotationItem.create({
-        quotationId: newId,
-        items: originalItems.items.map((i) => ({ ...i })),
-      });
-    }
-
-    await sendNotification({
-      userId: req.user.userId,
-      title: "Quotation Cloned",
-      message: `Quotation "${original.document_title}" cloned as "${cloned.document_title}".`,
-    });
-
-    res
-      .status(201)
-      .json({
-        message: "Quotation cloned successfully",
-        clonedQuotation: cloned,
-      });
-  } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Failed to clone quotation", error: error.message });
-  }
-};
-
-// RESTORE VERSION (now restores extraDiscount fields)
-exports.restoreQuotationVersion = async (req, res) => {
-  const t = await sequelize.transaction();
-  try {
-    const { id, version } = req.params;
-
-    const versionData = await QuotationVersion.findOne({
-      quotationId: id,
-      version: Number(version),
-    });
-    if (!versionData) {
-      await t.rollback();
-      return res.status(404).json({ message: "Version not found" });
-    }
-
-    await Quotation.update(
-      { ...versionData.quotationData },
-      { where: { quotationId: id }, transaction: t }
-    );
-
-    if (versionData.quotationItems?.length > 0) {
-      await QuotationItem.updateOne(
-        { quotationId: id },
-        { $set: { items: versionData.quotationItems } },
-        { upsert: true }
-      );
-    } else {
-      await QuotationItem.deleteOne({ quotationId: id });
-    }
-
-    await t.commit();
-
-    await sendNotification({
-      userId: req.user.userId,
-      title: "Quotation Restored",
-      message: `Quotation "${id}" restored to version ${version}.`,
-    });
-
-    res
-      .status(200)
-      .json({ message: `Quotation restored to version ${version}` });
-  } catch (error) {
-    await t.rollback();
-    res
-      .status(500)
-      .json({ error: "Failed to restore quotation", details: error.message });
-  }
-};
-
-/* ------------------------------------------------------------------ */
-/* The rest of your controller (getById, getAll, delete, getVersions) */
-/* remains unchanged – they already return the new fields via the model */
-/* ------------------------------------------------------------------ */
+export default PageWrapper;

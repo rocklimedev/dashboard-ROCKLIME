@@ -291,7 +291,61 @@ const QuotationsDetails = () => {
       return placeholderImage;
     }
   };
+  const preloadImagesForPDF = async () => {
+    const imgElements = quotationRef.current.querySelectorAll(".product-img");
 
+    const preloadPromises = Array.from(imgElements).map(async (img) => {
+      const src = img.getAttribute("src");
+      if (!src || src.startsWith("data:")) return;
+
+      try {
+        const response = await fetch(src, {
+          mode: "cors",
+          credentials: "omit",
+        });
+        if (!response.ok) throw new Error("Failed to fetch");
+
+        const blob = await response.blob();
+        const reader = new FileReader();
+
+        return new Promise((resolve) => {
+          reader.onloadend = () => {
+            img.crossOrigin = "anonymous"; // Add this
+            img.setAttribute("src", reader.result);
+            resolve();
+          };
+          reader.readAsDataURL(blob);
+        });
+      } catch (err) {
+        console.warn("Failed to load image for PDF:", src, err);
+        img.crossOrigin = "anonymous";
+        img.setAttribute(
+          "src",
+          "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+        );
+      }
+    });
+
+    await Promise.all(preloadPromises);
+  };
+  const imgToBase64 = (src) => {
+    return new Promise((resolve, reject) => {
+      if (src.startsWith("data:")) return resolve(src);
+
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL("image/png"));
+      };
+      img.onerror = () => resolve(null); // fallback → ignore
+      img.src = src;
+    });
+  };
   const handleExport = async () => {
     try {
       if (!id) {
@@ -705,65 +759,78 @@ const QuotationsDetails = () => {
           toast.error("Quotation content not found.");
           return;
         }
-        // Create the quotation PDF
-        const canvas = await html2canvas(quotationRef.current, {
-          scale: 2,
-          useCORS: true,
-          logging: false,
-        });
-        const pdf = new jsPDF({
-          orientation: "portrait",
-          unit: "mm",
-          format: "a4",
-        });
-        const imgWidth = 190;
-        const pageHeight = 297;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        let heightLeft = imgHeight;
-        let position = 10;
-        const imgData = canvas.toDataURL("image/png");
-        pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight - 20;
-        while (heightLeft > 0) {
-          pdf.addPage();
-          position = heightLeft - imgHeight + 10;
+
+        setIsExporting(true);
+
+        try {
+          // Step 1: Preload all images as base64
+          await preloadImagesForPDF();
+
+          // Step 2: Small delay to ensure DOM updates
+          await new Promise((resolve) => setTimeout(resolve, 500));
+
+          // Step 3: Now capture with html2canvas
+          const canvas = await html2canvas(quotationRef.current, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: false,
+            logging: false,
+            backgroundColor: "#ffffff",
+            imageTimeout: 15000,
+            removeContainer: true,
+          });
+
+          const imgData = canvas.toDataURL("image/png");
+          const pdf = new jsPDF({
+            orientation: "portrait",
+            unit: "mm",
+            format: "a4",
+          });
+
+          const imgWidth = 190;
+          const pageHeight = 297;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+          let heightLeft = imgHeight;
+          let position = 10;
+
           pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
           heightLeft -= pageHeight - 20;
-        }
 
-        // Load and append Terms & Conditions PDF
-        try {
-          const response = await fetch(termsAndConditionsPdfUrl, {
-            mode: "cors",
-            credentials: "omit",
-          });
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+          while (heightLeft > 0) {
+            pdf.addPage();
+            position = heightLeft - imgHeight + 10;
+            pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight - 20;
           }
-          const tncArrayBuffer = await response.arrayBuffer();
-          const tncPdfDoc = await PDFDocument.load(tncArrayBuffer);
-          const copiedPages = await pdf.copyPages(
-            tncPdfDoc,
-            tncPdfDoc.getPageIndices()
-          );
-          copiedPages.forEach((page) => pdf.addPage(page));
-        } catch (error) {
-          toast.warning(
-            "Failed to load Terms & Conditions PDF. Exporting without T&C."
-          );
-        }
 
-        // Save the combined PDF
-        pdf.save(`Quotation_${id}_Version_${activeVersion}.pdf`);
+          // Append T&C PDF
+          try {
+            const response = await fetch(termsAndConditionsPdfUrl, {
+              mode: "cors",
+            });
+            if (!response.ok) throw new Error("T&C fetch failed");
+            const tncArrayBuffer = await response.arrayBuffer();
+            const tncPdfDoc = await PDFDocument.load(tncArrayBuffer);
+            const copiedPages = await pdf.copyPages(
+              tncPdfDoc,
+              tncPdfDoc.getPageIndices()
+            );
+            copiedPages.forEach((page) => pdf.addPage(page));
+          } catch (error) {
+            toast.warning("Failed to attach T&C PDF.");
+          }
+
+          pdf.save(`Quotation_${id}_Version_${activeVersion}.pdf`);
+        } catch (error) {
+          console.error("PDF Export Error:", error);
+          toast.error("Failed to generate PDF. Check console for details.");
+        } finally {
+          setIsExporting(false);
+        }
       }
     } catch (error) {
-      toast.error(
-        `Failed to export quotation as ${exportFormat.toUpperCase()}: ${
-          error.message
-        }`
-      );
-    } finally {
-      setIsExporting(false);
+      console.error("PDF Export Error:", error);
+      toast.error("Failed to generate PDF. Check console for details.");
     }
   };
 
@@ -815,6 +882,7 @@ const QuotationsDetails = () => {
             </Link>
             <div className="card">
               <div className="quotation-container" ref={quotationRef}>
+                {/* ==================== HEADER (unchanged) ==================== */}
                 <table className="quotation-table full-width">
                   <tbody>
                     <tr>
@@ -827,14 +895,15 @@ const QuotationsDetails = () => {
                       </td>
                     </tr>
                     <tr>
-                      <td></td>
+                      <td />
                       <td className="title-cell">Estimate / Quotation</td>
                       <td className="brand-cell">{brandNames}</td>
                     </tr>
                   </tbody>
                 </table>
 
-                <table className="quotation-table full-width">
+                {/* ==================== CUSTOMER INFO (unchanged) ==================== */}
+                <table className="quotation-table full-width mt-2">
                   <tbody>
                     <tr>
                       <td className="label-cell" style={{ width: "15%" }}>
@@ -859,8 +928,6 @@ const QuotationsDetails = () => {
                     <tr>
                       <td className="label-cell">Address</td>
                       <td colSpan="3">
-                        {" "}
-                        {/* spans the three columns + the empty one */}
                         {addressData
                           ? `${addressData.street || ""}, ${
                               addressData.city || ""
@@ -871,7 +938,6 @@ const QuotationsDetails = () => {
                             "456, Park Avenue, New York, USA"}
                       </td>
                     </tr>
-
                     {activeVersion !== "current" && (
                       <tr>
                         <td className="label-cell">Version Info</td>
@@ -888,7 +954,8 @@ const QuotationsDetails = () => {
                   </tbody>
                 </table>
 
-                <table className="quotation-table full-width">
+                {/* ==================== PRODUCT TABLE (UNCHANGED) ==================== */}
+                <table className="quotation-table full-width mt-3">
                   <thead>
                     <tr>
                       <th rowSpan="2">S.No</th>
@@ -920,9 +987,7 @@ const QuotationsDetails = () => {
                           } else if (product.image) {
                             imageUrl = product.image;
                           }
-                        } catch {
-                          imageUrl = null;
-                        }
+                        } catch {}
                         const productCode =
                           productDetail?.product_code ||
                           productDetail?.meta
@@ -988,75 +1053,173 @@ const QuotationsDetails = () => {
                   </tbody>
                 </table>
 
-                {/* Totals Section */}
-                <table className="quotation-table full-width bordered">
+                {/* ==================== TOTALS & TAX BREAKDOWN (EXACT AS IMAGE) ==================== */}
+                <table className="quotation-table full-width mt-3">
                   <tbody>
                     <tr>
                       <td colSpan="8" className="text-right">
-                        Sub Total
+                        <strong>Amount Chargeable (in words)</strong>
                       </td>
-                      <td>₹{subtotal.toFixed(2)}</td>
-                    </tr>
-                    {activeVersionData.quotation?.include_gst &&
-                      activeVersionData.quotation?.gst_value && (
-                        <tr>
-                          <td colSpan="8" className="text-right">
-                            GST ({activeVersionData.quotation.gst_value}%)
-                          </td>
-                          <td>₹{gstAmount.toFixed(2)}</td>
-                        </tr>
-                      )}
-                    <tr>
-                      <td colSpan="8" className="text-right fw-bold">
-                        Total
-                      </td>
-                      <td className="fw-bold">₹{finalTotal.toFixed(2)}</td>
-                    </tr>
-                  </tbody>
-                </table>
-
-                {/* Amount in Words and Digits */}
-                <table className="quotation-table full-width">
-                  <tbody>
-                    <tr>
-                      <td colSpan="9">
-                        <strong>Amount in Words:</strong>{" "}
-                        {amountInWords(subtotal)}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td colSpan="9">
-                        <strong>Amount in Digits (Excl. Tax):</strong> ₹
-                        {subtotal.toFixed(2)}
+                      <td className="text-right">
+                        <strong>
+                          {amountInWords(finalTotal)
+                            .replace(/rupees/gi, "Rupees")
+                            .replace(/paisa/gi, "Paise")}
+                        </strong>
                       </td>
                     </tr>
                   </tbody>
                 </table>
 
-                {/* Account Details */}
-                <table className="quotation-table full-width">
+                {/* Tax Summary Table (2-column exact layout) */}
+                <table className="quotation-table full-width mt-2">
+                  <thead>
+                    <tr>
+                      <th>HSN/SAC</th>
+                      <th>Taxable Value</th>
+                      <th>CGST</th>
+                      <th>CGST Amount</th>
+                      <th>SGST/UTGST</th>
+                      <th>SGST/UTGST Amount</th>
+                      <th>Total Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(() => {
+                      const hsnMap = new Map();
+                      let totalTaxable = 0;
+                      let totalCGST = 0;
+                      let totalSGST = 0;
+
+                      activeProducts.forEach((product) => {
+                        const prod =
+                          productsData?.find(
+                            (p) => p.productId === product.productId
+                          ) || {};
+                        const hsn = prod?.hsnSac || "N/A";
+                        const taxable = Number(product.total || 0);
+                        const gstRate =
+                          activeVersionData.quotation?.gst_value || 0;
+                        const cgst = (taxable * gstRate) / 200;
+                        const sgst = cgst;
+
+                        totalTaxable += taxable;
+                        totalCGST += cgst;
+                        totalSGST += sgst;
+
+                        if (!hsnMap.has(hsn)) {
+                          hsnMap.set(hsn, { taxable: 0, cgst: 0, sgst: 0 });
+                        }
+                        const entry = hsnMap.get(hsn);
+                        entry.taxable += taxable;
+                        entry.cgst += cgst;
+                        entry.sgst += sgst;
+                      });
+
+                      return Array.from(hsnMap.entries()).map(
+                        ([hsn, { taxable, cgst, sgst }], idx) => (
+                          <tr key={idx}>
+                            <td>{hsn}</td>
+                            <td>₹{taxable.toFixed(2)}</td>
+                            <td>
+                              {(
+                                activeVersionData.quotation?.gst_value / 2 || 0
+                              ).toFixed(1)}
+                              %
+                            </td>
+                            <td>₹{cgst.toFixed(2)}</td>
+                            <td>
+                              {(
+                                activeVersionData.quotation?.gst_value / 2 || 0
+                              ).toFixed(1)}
+                              %
+                            </td>
+                            <td>₹{sgst.toFixed(2)}</td>
+                            <td>₹{(taxable + cgst + sgst).toFixed(2)}</td>
+                          </tr>
+                        )
+                      );
+                    })()}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colSpan="1" className="text-right">
+                        <strong>Total</strong>
+                      </td>
+                      <td className="text-right">
+                        <strong>₹{subtotal.toFixed(2)}</strong>
+                      </td>
+                      <td></td>
+                      <td className="text-right">
+                        <strong>₹{(gstAmount / 2).toFixed(2)}</strong>
+                      </td>
+                      <td></td>
+                      <td className="text-right">
+                        <strong>₹{(gstAmount / 2).toFixed(2)}</strong>
+                      </td>
+                      <td className="text-right">
+                        <strong>₹{finalTotal.toFixed(2)}</strong>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td colSpan="7" className="text-right">
+                        <strong>
+                          Tax Amount (in words) :{" "}
+                          {amountInWords(gstAmount)
+                            .replace(/rupees/gi, "Rupees")
+                            .replace(/paisa/gi, "Paise")}
+                        </strong>
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+
+                {/* ==================== BANK & COMPANY DETAILS (EXACT) ==================== */}
+                <table className="quotation-table full-width mt-3">
                   <tbody>
                     <tr>
-                      <td colSpan="9">
-                        <strong>Account Details:</strong>
+                      <td colSpan="2">
+                        <strong>Company's Bank Details</strong>
                         <br />
-                        Bank: {accountDetails.bankName}
+                        A/c Holder's Name : <strong>EMBARK ENTERPRISES</strong>
                         <br />
-                        Account Number: {accountDetails.accountNumber}
+                        Bank Name : <strong>IDFC FIRST BANK</strong>
                         <br />
-                        IFSC Code: {accountDetails.ifscCode}
+                        A/c No. : <strong>10179373657</strong>
                         <br />
-                        Branch: {accountDetails.branch}
+                        Branch & IFS Code :{" "}
+                        <strong>
+                          BHERA ENCLAVE PASCHIM VIHAR & IDFB0020149
+                        </strong>
+                      </td>
+                      <td colSpan="2" className="text-right">
+                        <strong>Company's PAN</strong> : AALFE0496K
+                        <br />
+                        <strong>Declaration</strong>
+                        <br />
+                        We declare that this quotation shows the actual price of
+                        the goods described and that all particulars are true
+                        and correct.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td colSpan="4" className="text-right pt-5">
+                        for <strong>EMBARK ENTERPRISES</strong>
+                        <br />
+                        <br />
+                        <br />
+                        <br />
+                        Authorised Signatory
                       </td>
                     </tr>
                   </tbody>
                 </table>
 
-                {/* Terms & Conditions Note */}
-                <table className="quotation-table full-width">
+                {/* ==================== T&C NOTE ==================== */}
+                <table className="quotation-table full-width mt-3">
                   <tbody>
                     <tr>
-                      <td colSpan="9">
+                      <td>
                         <strong>Terms & Conditions:</strong> Please refer to the
                         attached document for Terms and Conditions.
                       </td>

@@ -2,13 +2,10 @@ const express = require("express");
 const router = express.Router();
 const companyController = require("../controller/companyController");
 const checkPermission = require("../middleware/permission");
-const role = require("../middleware/role"); // Role-based access middleware
-const { ROLES } = require("../config/constant");
 
 // Only Admin and SuperAdmin can create a company
 router.post(
   "/",
-  //role.check(ROLES.Admin), // Only Admins can create companies
   // checkPermission("write", "create_company", "companies", "/companies"),
   companyController.createCompany
 );
@@ -16,7 +13,6 @@ router.post(
 // All users can view companies
 router.get(
   "/",
-  // role.check(ROLES.Users), // Minimum role required is Users
   //  checkPermission("view", "get_all_companies", "companies", "/companies"),
   companyController.getAllCompanies
 );
@@ -24,7 +20,6 @@ router.get(
 // All users can view a specific company
 router.get(
   "/:id",
-  //role.check(ROLES.Users),
   //checkPermission("view", "get_company_by_id", "companies", "/companies/:id"),
   companyController.getCompanyById
 );
@@ -32,7 +27,6 @@ router.get(
 // Only Admin, SuperAdmin, and Accounts can view child companies
 router.get(
   "/parent/:parentId",
-  // role.check(ROLES.Accounts), // Minimum role required is Accounts
   // checkPermission(
   //   "view",
   //   "get_child_companies",
@@ -45,7 +39,6 @@ router.get(
 // Only Admin and SuperAdmin can edit a company
 router.put(
   "/:id",
-  // role.check(ROLES.Admin), // Only Admins can edit companies
   //checkPermission("edit", "update_company", "companies", "/companies/:id"),
   companyController.updateCompany
 );
@@ -53,7 +46,6 @@ router.put(
 // Only SuperAdmin can delete a company
 router.delete(
   "/:id",
-  // role.check(ROLES.SuperAdmin), // Only SuperAdmin can delete companies
   // checkPermission("delete", "delete_company", "companies", "/companies/:id"),
   companyController.deleteCompany
 );

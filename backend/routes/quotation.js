@@ -3,14 +3,11 @@ const router = express.Router();
 const quotationController = require("../controller/quotationController");
 const { auth } = require("../middleware/auth"); // Authentication middleware
 const checkPermission = require("../middleware/permission"); // Permission middleware
-const role = require("../middleware/role"); // Role-based access control (RBAC)
-const { ROLES } = require("../config/constant"); // User role constants
 
 // ✅ Create a new quotation (Only Admins & Managers)
 router.post(
   "/add",
   auth,
-  // role.check([ROLES.Admin, ROLES.Manager]),
   //checkPermission("write", "create_quotation", "quotations", "/quotations/add"),
   quotationController.createQuotation
 );
@@ -18,8 +15,6 @@ router.post(
 // ✅ Get all quotations (Admins, Managers & Sales Team)
 router.get(
   "/",
-
-  // role.check([ROLES.Admin, ROLES.Manager, ROLES.Sales]),
   // checkPermission("view", "get_all_quotations", "quotations", "/quotations"),
   quotationController.getAllQuotations
 );
@@ -28,7 +23,6 @@ router.get(
 router.get(
   "/:id",
   auth,
-  //role.check([ROLES.Admin, ROLES.Accounts, ROLES.SALES]),
   // checkPermission(
   //   "view",
   //   "get_quotation_by_id",
@@ -42,7 +36,6 @@ router.get(
 router.put(
   "/:id",
   auth,
-  // role.check([ROLES.Admin, ROLES.Accounts]),
   // checkPermission("edit", "update_quotation", "quotations", "/quotations/:id"),
   quotationController.updateQuotation
 );
@@ -51,7 +44,6 @@ router.put(
 router.delete(
   "/:id",
   auth,
-  // role.check(ROLES.Admin),
   // checkPermission(
   //   "delete",
   //   "delete_quotation",
@@ -65,7 +57,6 @@ router.delete(
 router.post(
   "/export/:id/:version?",
   auth,
-  // role.check([ROLES.Admin, ROLES.Accounts, ROLES.Sales]),
   // checkPermission("export", "export_quotation", "quotations", "/quotations/export/:id"),
   quotationController.exportQuotation
 );

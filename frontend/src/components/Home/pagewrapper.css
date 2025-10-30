@@ -363,3 +363,102 @@
 .top-products-list img:hover {
   transform: scale(1.1);
 }
+/* ────── NEW GRID LAYOUT ────── */
+.dashboard-rearranged {
+  display: grid;
+  grid-template-columns: 1fr 1fr;      /* left = 4 cards, right = 3 cards */
+  gap: 1rem;
+}
+
+/* LEFT COLUMN – 4 cards stacked */
+.left-column {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+/* RIGHT COLUMN – 3 cards stacked */
+.right-column {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+/* Red underline for the right-hand cards */
+.with-underline {
+  position: relative;
+  padding-bottom: 0.4rem;
+}
+.with-underline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 2.5rem;
+  height: 3px;
+  background: #e31e24;
+}
+
+/* “Last five” list – plain text, no bullets */
+.last-five-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 0;
+}
+.last-five-list li {
+  padding: 0.35rem 0;
+  font-size: 0.875rem;
+  color: #555;
+}
+
+/* View-all button (top-right of Low in Stock) */
+.view-all-btn {
+  background: none;
+  border: none;
+  font-size: 0.85rem;
+  color: #666;
+  cursor: pointer;
+}
+.view-all-btn:hover { text-decoration: underline; }
+
+/* Placeholder card (keeps 4-card grid) */
+.placeholder-card { visibility: hidden; }
+
+/* Small tweaks for top-selling product list */
+.top-products-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid #eee;
+}
+.top-products-list .product-info { display: flex; align-items: center; gap: 0.75rem; }
+.top-products-list img { width: 40px; height: 40px; object-fit: cover; border-radius: 6px; }
+.top-products-list .no-img {
+  width: 40px; height: 40px; background:#f5f5f5; border-radius:6px;
+  display:flex; align-items:center; justify-content:center; font-size:0.7rem; color:#999;
+}
+.top-products-list .product-text .product-name { font-weight:500; }
+.top-products-list .product-text .product-qty { font-size:0.8rem; color:#666; }
+
+/* Low-stock list – name + qty */
+.low-stock li {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.45rem 0;
+  cursor: pointer;
+}
+.low-stock .product-name { flex-grow:1; }
+.low-stock .product-quantity { flex-shrink:0; color:#e74c3c; font-weight:500; }
+
+/* Card header flex for Low in Stock */
+.card-header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Responsive – stack everything on small screens */
+@media (max-width: 992px) {
+  .dashboard-rearranged { grid-template-columns: 1fr; }
+}

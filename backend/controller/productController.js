@@ -2,7 +2,7 @@ const Product = require("../models/product");
 const ProductMeta = require("../models/productMeta");
 const { Op } = require("sequelize");
 const InventoryHistory = require("../models/history"); // Mongoose model (exported directly)
-
+const Brand = require("../models/brand");
 // ─────────────────────────────────────────────────────────────────────────────
 // Create a product with meta data
 // ─────────────────────────────────────────────────────────────────────────────
@@ -661,24 +661,16 @@ exports.getProductsByIds = async (req, res) => {
 exports.getAllProductCodesBrandWise = async (req, res) => {
   try {
     const products = await Product.findAll({
-      attributes: ["product_code"],
-      include: [
-        {
-          model: Brand,
-          as: "brand",
-          attributes: ["name"],
-          required: true, // Only products with a brand
-        },
-      ],
-      order: [[Brand, "name", "ASC"]],
-      raw: true, // Faster, flatter result
+      attributes: ["product_code", "brandId"],
+      where: { status: "active" },
+      raw: true,
     });
 
-    // Group by brand name
+    // Group by brandId
     const grouped = products.reduce((acc, p) => {
-      const brandName = p["brand.name"] || "Unknown Brand";
-      if (!acc[brandName]) acc[brandName] = [];
-      acc[brandName].push(p.product_code);
+      const brandId = p.brandId || "unknown";
+      if (!acc[brandId]) acc[brandId] = [];
+      acc[brandId].push(p.product_code);
       return acc;
     }, {});
 

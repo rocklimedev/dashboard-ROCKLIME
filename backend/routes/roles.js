@@ -15,14 +15,11 @@ const {
 
 const { auth } = require("../middleware/auth"); // Authentication middleware
 const checkPermission = require("../middleware/permission"); // Permission middleware
-const role = require("../middleware/role"); // Role-based access control (RBAC)
-const { ROLES } = require("../config/constant"); // User role constants
 
 // ✅ Create a new role (Only Admins)
 router.post(
   "/",
   auth,
-  // role.check(ROLES.Admin),
   // checkPermission("write", "create_role", "roles", "/roles"),
   createRole
 );
@@ -31,7 +28,6 @@ router.post(
 router.get(
   "/",
   auth,
-  // role.check([ROLES.Admin, ROLES.Accounts]),
   //  checkPermission("view", "get_all_roles", "roles", "/roles"),
   getAllRoles
 );
@@ -40,7 +36,6 @@ router.get(
 router.put(
   "/:roleId",
   auth,
-  //  role.check(ROLES.Admin),
   // checkPermission("edit", "update_role_permissions", "roles", "/roles/:roleId"),
   updateRolePermissions
 );
@@ -49,7 +44,6 @@ router.put(
 router.delete(
   "/:roleId",
   auth,
-  // role.check(ROLES.Admin),
   // checkPermission("delete", "delete_role", "roles", "/roles/:roleId"),
   deleteRole
 );
@@ -58,7 +52,6 @@ router.delete(
 router.post(
   "/:roleId/permissions",
   auth,
-  // role.check(ROLES.Admin),
   // checkPermission(
   //   "edit",
   //   "assign_permissions_to_role",
@@ -70,7 +63,6 @@ router.post(
 router.delete(
   "/:roleId/permissions",
   auth,
-  // role.check(ROLES.Admin),
   // checkPermission(
   //   "delete",
   //   "remove_permission_from_role",

@@ -3,8 +3,6 @@ const router = express.Router();
 
 const bpc = require("../controller/brandParentCategoryController"); // uses the normalized controller
 const checkPermission = require("../middleware/permission");
-const role = require("../middleware/role");
-const { ROLES } = require("../config/constant");
 
 // ---------------------------------------------
 // BrandParentCategory (Entity) CRUD
@@ -13,7 +11,6 @@ const { ROLES } = require("../config/constant");
 // Create a BrandParentCategory (e.g., "CP Fitting", "Wellness")
 router.post(
   "/",
-
   // checkPermission("write", "create_brand_parent_category", "brand_parentcategories", "/"),
   bpc.create
 );
@@ -21,7 +18,6 @@ router.post(
 // List all BrandParentCategories with their attached brands
 router.get(
   "/",
-
   // checkPermission("view", "list_brand_parent_categories", "brand_parentcategories", "/"),
   bpc.list
 );
@@ -29,7 +25,6 @@ router.get(
 // Get one BrandParentCategory by id (optional endpoint if you added it)
 router.get(
   "/:id",
-
   // checkPermission("view", "get_brand_parent_category", "brand_parentcategories", "/:id"),
   bpc.getById // <-- implement in controller if you want a simple fetch-by-id
 );
@@ -37,7 +32,6 @@ router.get(
 // Delete a BrandParentCategory (does not delete brands)
 router.delete(
   "/:id",
-
   // checkPermission("delete", "delete_brand_parent_category", "brand_parentcategories", "/:id"),
   bpc.delete
 );
@@ -49,7 +43,6 @@ router.delete(
 // Attach one or many brands (body: { brandIds: string[] })
 router.post(
   "/:id/brands",
-
   // checkPermission("write", "attach_brands_to_bpc", "brand_parentcategories", "/:id/brands"),
   bpc.attachBrands
 );
@@ -57,7 +50,6 @@ router.post(
 // (Optional) Detach a single brand from a BPC
 router.delete(
   "/:id/brands/:brandId",
-
   // checkPermission("delete", "detach_brand_from_bpc", "brand_parentcategories", "/:id/brands/:brandId"),
   bpc.detachBrand // <-- implement in controller if you want fine-grained detach
 );

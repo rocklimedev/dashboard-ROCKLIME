@@ -1,8 +1,9 @@
-// middleware/checkPermission.js
 const jwt = require("jsonwebtoken");
+const User = require("../models/users");
 const Role = require("../models/roles");
 const Permission = require("../models/permisson");
-const RolePermission = require("../models/rolePermission");
+const CachedPermission = require("../models/cachedPermission"); // <-- new Mongo model
+require("dotenv").config();
 
 const checkPermission = (api, name, module, route) => {
   return async (req, res, next) => {
@@ -15,52 +16,87 @@ const checkPermission = (api, name, module, route) => {
           .json({ message: "Unauthorized: No token provided" });
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      if (!decoded.id)
+      if (!decoded.userId)
         return res.status(401).json({ message: "Unauthorized: Invalid token" });
 
-      // 2️⃣ Fetch user with roles + permissions in a single query
-      const user = await User.findByPk(decoded.id, {
-        include: {
-          model: Role,
-          include: Permission,
-        },
-      });
+      // 2️⃣ Check Mongo Cache First
+      let cached = await CachedPermission.findOne({ userId: decoded.userId });
 
-      if (!user) return res.status(404).json({ message: "User not found" });
+      // 3️⃣ If cache exists and is fresh (< 24 hours), use it
+      const isFresh =
+        cached && new Date() - new Date(cached.fetchedAt) < 24 * 60 * 60 * 1000;
 
-      const roles = user.Roles || [];
+      if (!isFresh) {
+        // 4️⃣ Otherwise, fetch from SQL
+        const user = await User.findByPk(decoded.userId, {
+          include: [
+            {
+              model: Role,
+              include: [
+                {
+                  model: Permission,
+                  through: { attributes: [] },
+                },
+              ],
+            },
+          ],
+        });
 
-      // 3️⃣ Super Admin bypass
-      const isSuperAdmin = roles.some(
-        (r) => r.roleName.toUpperCase() === "SUPER_ADMIN"
-      );
-      if (isSuperAdmin) return next();
+        if (!user) return res.status(404).json({ message: "User not found" });
 
-      // 4️⃣ Validate middleware parameters
+        const roles = user.Roles || [];
+
+        // Flatten all permissions
+        const permissions = roles.flatMap((r) =>
+          r.Permissions.map((perm) => ({
+            permissionId: perm.permissionId,
+            name: perm.name,
+            api: perm.api,
+            route: perm.route,
+            module: perm.module,
+          }))
+        );
+
+        // Update Mongo Cache
+        await CachedPermission.findOneAndUpdate(
+          { userId: decoded.userId },
+          {
+            roleId: roles[0]?.roleId,
+            roleName: roles[0]?.roleName || null,
+            permissions,
+            fetchedAt: new Date(),
+          },
+          { upsert: true, new: true }
+        );
+
+        cached = await CachedPermission.findOne({ userId: decoded.userId });
+      }
+
+      // 5️⃣ Super Admin Bypass
+      if (cached?.roleName?.toUpperCase() === "SUPER_ADMIN") return next();
+
+      // 6️⃣ Validate middleware config
       if (!api || !name || !module || !route) {
         return res
           .status(500)
-          .json({ message: "Invalid permission configuration" });
+          .json({ message: "Invalid permission configuration in route" });
       }
 
-      // 5️⃣ Check if any role has this exact permission
-      const hasPermission = roles.some((role) =>
-        role.Permissions.some(
-          (perm) =>
-            perm.api === api &&
-            perm.name === name &&
-            perm.module === module &&
-            perm.route === route
-        )
+      // 7️⃣ Check if permission exists in cache
+      const hasPermission = cached.permissions.some(
+        (perm) =>
+          perm.api === api &&
+          perm.name === name &&
+          perm.module === module &&
+          perm.route === route
       );
 
       if (!hasPermission) {
         return res.status(403).json({
-          message: `Forbidden: Role lacks permission "${name}" (${api.toUpperCase()} - ${module})`,
+          message: `Forbidden: Missing permission "${name}" (${api.toUpperCase()} - ${module})`,
         });
       }
 
-      // 6️⃣ Pass control
       next();
     } catch (error) {
       console.error("checkPermission Error:", error);

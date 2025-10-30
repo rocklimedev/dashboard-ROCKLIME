@@ -1,9 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { auth } = require("../middleware/auth"); // Authentication Middleware
-const role = require("../middleware/role").check; // Role-Based Access Control Middleware
 const userController = require("../controller/userController");
-const { ROLES } = require("../config/constant");
 const checkPermission = require("../middleware/permission");
 // ✅ General User Routes (For All Logged-in Users)
 router.get(
@@ -31,14 +29,12 @@ router.post(
   "/add",
   auth,
   //checkPermission("write", "create_user", "users", "/users/add"),
-  // role([ROLES.Admin]),
   userController.createUser
 ); // Add a new user
 router.delete(
   "/:userId",
   auth,
   //  checkPermission("delete", "delete_user", "users", "/users/:userId"),
-  // role([ROLES.Admin]),
   userController.deleteUser
 ); // Delete a user
 router.put(
@@ -51,14 +47,12 @@ router.put(
 router.get(
   "/search",
   auth,
-  //  role([ROLES.Admin, ROLES.SALES]),
   // checkPermission("view", "search_user", "users", "/users/search"),
   userController.searchUser
 );
 router.get(
   "/:userId",
   auth,
-  // role([ROLES.Admin, ROLES.SALES]),
   //checkPermission("view", "get_user_by_id", "users", "/users/:userId"),
   userController.getUserById
 );

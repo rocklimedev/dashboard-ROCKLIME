@@ -1,26 +1,26 @@
 import React from "react";
 import { Navigate, Outlet } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useAuth } from "../context/AuthContext";
 
 const PrivateRoute = ({ requiredPermission }) => {
-  const { isAuthenticated, permissions } = useSelector((state) => state.user);
+  const { auth, authChecked, isLoadingPermissions } = useAuth();
 
-  // Check if the user is authenticated and has the required permission
-  const hasPermission = requiredPermission
-    ? permissions.includes(requiredPermission)
-    : true;
+  if (!authChecked) return null;
+  if (!auth?.token) return <Navigate to="/login" replace />;
 
-  if (!isAuthenticated) {
-    // Redirect to login if not authenticated
-    return <Navigate to="/login" replace />;
-  }
+  if (isLoadingPermissions && !auth?.permissions) return null;
 
-  if (requiredPermission && !hasPermission) {
-    // Redirect to unauthorized page if permission is missing
-    return <Navigate to="/unauthorized" replace />;
-  }
+  // If no permission required, allow by default
+  if (!requiredPermission) return <Outlet />;
 
-  // If authenticated and has permission, render the route
+  const { api, module } = requiredPermission;
+
+  const hasPermission = auth?.permissions?.some(
+    (perm) => perm.api === api && perm.module === module
+  );
+
+  if (!hasPermission) return <Navigate to="/403" replace />;
+
   return <Outlet />;
 };
 

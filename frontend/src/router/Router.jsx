@@ -20,15 +20,29 @@ const generateRoutes = (routes) =>
     const routesArray = [];
 
     if (path && element) {
-      const routeElement = requiredPermission ? (
-        <PrivateRoute requiredPermission={requiredPermission}>
-          <RouteWithHelmet element={element} name={name} />
-        </PrivateRoute>
-      ) : (
-        <RouteWithHelmet element={element} name={name} />
-      );
+      if (requiredPermission) {
+        const { api, module } = requiredPermission;
 
-      routesArray.push(<Route key={path} path={path} element={routeElement} />);
+        routesArray.push(
+          <Route
+            key={path}
+            element={<PrivateRoute api={api} module={module} />}
+          >
+            <Route
+              path={path}
+              element={<RouteWithHelmet element={element} name={name} />}
+            />
+          </Route>
+        );
+      } else {
+        routesArray.push(
+          <Route
+            key={path}
+            path={path}
+            element={<RouteWithHelmet element={element} name={name} />}
+          />
+        );
+      }
     }
 
     if (submenu && submenu.length > 0) {

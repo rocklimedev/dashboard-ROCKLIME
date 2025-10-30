@@ -2,18 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { FaChartBar, FaBox } from "react-icons/fa6";
-import {
-  ResponsiveContainer,
-  Tooltip,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-} from "recharts";
 
 import Alert from "./Alert";
-import "./pagewrapper.css";
 
 import {
   useClockInMutation,
@@ -40,7 +30,6 @@ const PageWrapper = () => {
   // ──────────────────────────────────────────────────────
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [lowStockListModal, setLowStockListModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [cartLoadingStates, setCartLoadingStates] = useState({});
@@ -176,7 +165,7 @@ const PageWrapper = () => {
   };
 
   // ──────────────────────────────────────────────────────
-  //  LOW-STOCK LOGIC (unchanged)
+  //  LOW-STOCK LOGIC
   // ──────────────────────────────────────────────────────
   const products = Array.isArray(productsData)
     ? productsData
@@ -205,9 +194,9 @@ const PageWrapper = () => {
   //  ORDER STATUS UPDATE
   // ──────────────────────────────────────────────────────
   const [updateOrderStatus] = useUpdateOrderStatusMutation();
-  const handleStatusChange = async (id, newStatus) => {
+  const handleStatusChange = async (orderId, newStatus) => {
     try {
-      await updateOrderStatus({ id, status: newStatus }).unwrap();
+      await updateOrderStatus({ orderId, status: newStatus }).unwrap();
       refetchOrders();
     } catch (e) {
       toast.error(e?.data?.message || "Status update failed");
@@ -252,360 +241,590 @@ const PageWrapper = () => {
   }
 
   // ──────────────────────────────────────────────────────
+  //  LAST 5 LISTS (for right column)
+  // ──────────────────────────────────────────────────────
+  const lastFiveQuotations = quotationData.slice(-5).reverse();
+  const lastFiveOrders = orders.slice(-5).reverse();
+  const lastFiveProducts = products.slice(-5).reverse();
+
+  // ──────────────────────────────────────────────────────
   //  RENDER
   // ──────────────────────────────────────────────────────
   return (
     <div className="page-wrapper">
-      <div className="content">
-        <div className="dashboard">
-          {/* ────── SUMMARY CARDS ────── */}
-          <section className="summary-cards">
-            {[
-              {
-                link: "/quotations/list",
-                count: quotationCount,
-                label: "Total Quotations",
-                icon: <FaBox />,
-              },
-              {
-                link: "/orders/list",
-                count: orderCount,
-                label: "Total Orders",
-                icon: <FaChartBar />,
-              },
-              {
-                link: "/inventory/products",
-                count: productCount,
-                label: "Total Products",
-                icon: <FaBox />,
-              },
-            ].map(({ count, label, icon, link }, i) => (
-              <div key={i} className="card stat">
-                <Link to={link}>
-                  <div className="stat-header">
-                    {icon}
-                    <h3>{count}</h3>
-                  </div>
-                  <p>
-                    <a href={link}>{label}</a>
-                  </p>
-                  <div
-                    className="bar"
-                    style={{ width: `${(count / Math.max(count, 1)) * 100}%` }}
-                  />
-                </Link>
-              </div>
-            ))}
-          </section>
-
-          {/* ────── MAIN SECTION ────── */}
-          <section className="dashboard-main">
-            {/* TOP SELLING PRODUCTS */}
-            <div className="card">
-              <h4>Top Selling Products (Quotations + Orders)</h4>
-              <div className="card-body">
-                {topProductsLoading ? (
-                  <p>Loading top products…</p>
-                ) : topProducts.length > 0 ? (
-                  <ul className="top-products-list">
-                    {topProducts.map((product, idx) => {
-                      // ----- IMAGE HANDLING -----
-                      let imgUrl = null;
-                      if (product.images) {
-                        try {
-                          const arr = JSON.parse(product.images);
-                          imgUrl =
-                            Array.isArray(arr) && arr[0]
-                              ? arr[0]
-                              : product.images;
-                        } catch {
-                          imgUrl = product.images;
+      <div
+        className="content"
+        style={{
+          padding: "20px",
+          display: "grid",
+          gap: "20px",
+          gridTemplateColumns: "1fr 1fr 1fr",
+          gridTemplateRows: "auto auto auto",
+        }}
+      >
+        {/* LEFT COLUMN */}
+        <div
+          style={{
+            gridColumn: "1 / 2",
+            display: "flex",
+            flexDirection: "column",
+            gap: "20px",
+          }}
+        >
+          {/* ORDERS THIS MONTH */}
+          <div
+            className="card"
+            style={{ borderRadius: "12px", overflow: "hidden" }}
+          >
+            <div
+              className="card-header"
+              style={{
+                padding: "16px",
+                background: "#f8f9fa",
+                fontWeight: 600,
+              }}
+            >
+              Orders this month
+            </div>
+            <div className="card-body" style={{ padding: 0 }}>
+              {orders.length ? (
+                <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+                  {orders.map((o, i) => (
+                    <li
+                      key={o.id}
+                      style={{
+                        padding: "12px 16px",
+                        borderBottom:
+                          i < orders.length - 1 ? "1px solid #eee" : "none",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <div>
+                        <strong>Order No:</strong> {o.orderNo}
+                        <span
+                          style={{
+                            marginLeft: 8,
+                            color: "#666",
+                            fontSize: "0.9rem",
+                          }}
+                        >
+                          {new Date(o.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <select
+                        value={o.status}
+                        onChange={(e) =>
+                          handleStatusChange(o.id, e.target.value)
                         }
-                      }
+                        style={{
+                          fontSize: "0.85rem",
+                          padding: "4px 8px",
+                          borderRadius: "6px",
+                          border: "1px solid #ddd",
+                        }}
+                      >
+                        {[
+                          "PREPARING",
+                          "CHECKING",
+                          "INVOICE",
+                          "DISPATCHED",
+                          "DELIVERED",
+                          "PARTIALLY_DELIVERED",
+                          "CANCELED",
+                          "DRAFT",
+                          "ONHOLD",
+                        ].map((s) => (
+                          <option key={s} value={s}>
+                            {s}
+                          </option>
+                        ))}
+                      </select>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p
+                  style={{
+                    padding: "16px",
+                    color: "#888",
+                    fontStyle: "italic",
+                  }}
+                >
+                  No orders.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
 
-                      return (
-                        <li
-                          key={product.productId}
+        {/* MIDDLE COLUMN */}
+        <div
+          style={{
+            gridColumn: "2 / 3",
+            display: "flex",
+            flexDirection: "column",
+            gap: "20px",
+          }}
+        >
+          {/* TOP SELLING PRODUCT */}
+          <div
+            className="card"
+            style={{ borderRadius: "12px", overflow: "hidden" }}
+          >
+            <div
+              className="card-header"
+              style={{
+                padding: "16px",
+                background: "#f8f9fa",
+                fontWeight: 600,
+              }}
+            >
+              Top Selling product
+            </div>
+            <div className="card-body" style={{ padding: 0 }}>
+              {topProductsLoading ? (
+                <p style={{ padding: "16px" }}>Loading top products…</p>
+              ) : topProducts.length > 0 ? (
+                <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+                  {topProducts.slice(0, 5).map((product, idx) => {
+                    let imgUrl = null;
+                    if (product.images) {
+                      try {
+                        const arr = JSON.parse(product.images);
+                        imgUrl =
+                          Array.isArray(arr) && arr[0]
+                            ? arr[0]
+                            : product.images;
+                      } catch {
+                        imgUrl = product.images;
+                      }
+                    }
+
+                    return (
+                      <li
+                        key={product.productId}
+                        style={{
+                          padding: "12px 16px",
+                          borderBottom: idx < 4 ? "1px solid #eee" : "none",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <div
                           style={{
                             display: "flex",
                             alignItems: "center",
-                            justifyContent: "space-between",
-                            padding: "12px 0",
-                            borderBottom:
-                              idx < topProducts.length - 1
-                                ? "1px solid #e0e0e0"
-                                : "none",
+                            gap: "12px",
                           }}
                         >
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "12px",
-                            }}
-                          >
-                            {/* Image / Placeholder */}
-                            {imgUrl ? (
-                              <img
-                                src={imgUrl}
-                                alt={product.name}
-                                style={{
-                                  width: 40,
-                                  height: 40,
-                                  objectFit: "cover",
-                                  borderRadius: 6,
-                                  border: "1px solid #eee",
-                                }}
-                                onError={(e) => {
-                                  e.target.style.display = "none";
-                                  e.target.nextElementSibling.style.display =
-                                    "block";
-                                }}
-                              />
-                            ) : null}
-                            <div
+                          {imgUrl ? (
+                            <img
+                              src={imgUrl}
+                              alt={product.name}
                               style={{
                                 width: 40,
                                 height: 40,
-                                background: "#f5f5f5",
+                                objectFit: "cover",
                                 borderRadius: 6,
-                                display: imgUrl ? "none" : "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontSize: 12,
-                                color: "#999",
+                                border: "1px solid #eee",
                               }}
-                            >
-                              No Img
-                            </div>
-
-                            {/* Name + Qty */}
-                            <div>
-                              <div style={{ fontWeight: 500 }}>
-                                {product.name}
-                              </div>
-                              <div
-                                style={{ fontSize: "0.85rem", color: "#666" }}
-                              >
-                                {product.quantity}{" "}
-                                {product.quantity === 1 ? "unit" : "units"} sold
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Add to Cart */}
-                          <button
-                            className="btn btn-primary btn-sm"
-                            onClick={() => handleAddToCart(product)}
-                            disabled={cartLoadingStates[product.productId]}
-                            style={{ minWidth: 90 }}
-                          >
-                            {cartLoadingStates[product.productId]
-                              ? "Adding…"
-                              : "Add to Cart"}
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                ) : (
-                  <p style={{ color: "#888", fontStyle: "italic" }}>
-                    No sales data yet.
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* ORDERS THIS MONTH (unchanged) */}
-            <div className="card">
-              <h4>Orders This Month</h4>
-              <div className="card-body">
-                {orders.length ? (
-                  <ul className="orders-list">
-                    {orders.map((o, i) => (
-                      <li
-                        key={o.id}
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          padding: "10px 0",
-                          borderBottom:
-                            i < orders.length - 1
-                              ? "1px solid #e0e0e0"
-                              : "none",
-                        }}
-                      >
-                        <div>
-                          <strong>Order No:</strong> {o.orderNo}{" "}
-                          <span style={{ marginLeft: 10, color: "#666" }}>
-                            {new Date(o.createdAt).toLocaleDateString()}
-                          </span>
-                          <span
+                              onError={(e) => {
+                                e.target.style.display = "none";
+                                e.target.nextElementSibling.style.display =
+                                  "flex";
+                              }}
+                            />
+                          ) : null}
+                          <div
                             style={{
-                              marginLeft: 10,
-                              fontWeight: 500,
-                              color:
-                                o.priority === "high"
-                                  ? "#e74c3c"
-                                  : o.priority === "medium"
-                                  ? "#f39c12"
-                                  : "#27ae60",
+                              width: 40,
+                              height: 40,
+                              background: "#f5f5f5",
+                              borderRadius: 6,
+                              display: imgUrl ? "none" : "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: 12,
+                              color: "#999",
                             }}
                           >
-                            {o.priority?.toUpperCase()}
-                          </span>
+                            No Img
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 500 }}>
+                              {product.name}
+                            </div>
+                            <div style={{ fontSize: "0.8rem", color: "#666" }}>
+                              {product.quantity}{" "}
+                              {product.quantity === 1 ? "unit" : "units"} sold
+                            </div>
+                          </div>
                         </div>
-                        <select
-                          value={o.status}
-                          onChange={(e) =>
-                            handleStatusChange(o.id, e.target.value)
-                          }
-                          className="status-dropdown"
+                        <button
+                          className="btn btn-primary btn-sm"
+                          onClick={() => handleAddToCart(product)}
+                          disabled={cartLoadingStates[product.productId]}
+                          style={{ minWidth: 90, fontSize: "0.85rem" }}
                         >
-                          {[
-                            "CREATED",
-                            "PREPARING",
-                            "CHECKING",
-                            "INVOICE",
-                            "DISPATCHED",
-                            "DELIVERED",
-                            "PARTIALLY_DELIVERED",
-                            "CANCELED",
-                            "DRAFT",
-                            "ONHOLD",
-                          ].map((s) => (
-                            <option key={s} value={s}>
-                              {s}
-                            </option>
-                          ))}
-                        </select>
+                          {cartLoadingStates[product.productId]
+                            ? "Adding…"
+                            : "Add to Cart"}
+                        </button>
                       </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p>No orders.</p>
-                )}
-              </div>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p
+                  style={{
+                    padding: "16px",
+                    color: "#888",
+                    fontStyle: "italic",
+                  }}
+                >
+                  No sales data yet.
+                </p>
+              )}
             </div>
-
-            {/* LOW STOCK (unchanged) */}
-            <div className="card low-stock">
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <h4>Low in Stock</h4>
-                {lowStockProducts.length > 0 && (
-                  <button
-                    onClick={() => setLowStockListModal(true)}
+          </div>
+          {/* LOW IN STOCK */}
+          <div
+            className="card"
+            style={{ borderRadius: "12px", overflow: "hidden" }}
+          >
+            <div
+              className="card-header"
+              style={{
+                padding: "16px",
+                background: "#f8f9fa",
+                fontWeight: 600,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <span>Low in Stock</span>
+              <span style={{ fontSize: "0.9rem", color: "#e74c3c" }}>
+                {lowStockProducts.length} of {products.length} remaining
+              </span>
+            </div>
+            <div className="card-body" style={{ padding: 0 }}>
+              <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+                {lowStockProducts.slice(0, 5).map((p) => (
+                  <li
+                    key={p._id || p.productId}
+                    onClick={() => handleProductClick(p)}
                     style={{
-                      background: "none",
-                      border: "none",
+                      padding: "12px 16px",
+                      borderBottom: "1px solid #eee",
                       cursor: "pointer",
-                      fontSize: "0.9rem",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
                     }}
                   >
-                    View All
-                  </button>
+                    <span style={{ fontWeight: 500 }}>{p.name}</span>
+                    <span style={{ color: "#e74c3c", fontSize: "0.9rem" }}>
+                      Qty: {p.quantity}
+                    </span>
+                  </li>
+                ))}
+                {lowStockProducts.length === 0 && (
+                  <li
+                    style={{
+                      padding: "16px",
+                      color: "#888",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    No low stock products.
+                  </li>
                 )}
+              </ul>
+              <div
+                style={{
+                  padding: "12px 16px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <input
+                  type="text"
+                  placeholder="Add product..."
+                  style={{
+                    flex: 1,
+                    padding: "8px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid #ddd",
+                    fontSize: "0.9rem",
+                  }}
+                />
+                <button
+                  style={{
+                    background: "#e74c3c",
+                    color: "white",
+                    border: "none",
+                    padding: "8px 16px",
+                    borderRadius: "8px",
+                    fontSize: "0.9rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  Add
+                </button>
               </div>
-              <ul>
-                {lowStockProducts.length ? (
-                  lowStockProducts.slice(0, 4).map((p) => (
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN */}
+        <div
+          style={{
+            gridColumn: "3 / 4",
+            display: "flex",
+            flexDirection: "column",
+            gap: "20px",
+          }}
+        >
+          {/* TOTAL QUOTATIONS */}
+          <div
+            className="card"
+            style={{ borderRadius: "12px", overflow: "hidden" }}
+          >
+            <div
+              className="card-header"
+              style={{
+                padding: "16px",
+                background: "#f8f9fa",
+                fontWeight: 600,
+                display: "flex",
+                justifyContent: "space-between",
+              }}
+            >
+              <span>Total Quotations</span>
+              <span style={{ color: "#e74c3c", fontWeight: 600 }}>
+                {quotationCount}
+              </span>
+            </div>
+            <div className="card-body" style={{ padding: 0 }}>
+              <div
+                style={{
+                  padding: "8px 16px",
+                  fontSize: "0.85rem",
+                  color: "#666",
+                }}
+              >
+                Last five
+              </div>
+              <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+                {lastFiveQuotations.length > 0 ? (
+                  lastFiveQuotations.map((q) => (
                     <li
-                      key={p._id || p.productId}
-                      onClick={() => handleProductClick(p)}
-                      style={{ cursor: "pointer" }}
+                      key={q.id}
+                      style={{
+                        padding: "10px 16px",
+                        borderBottom: "1px solid #eee",
+                        fontSize: "0.9rem",
+                      }}
                     >
-                      <span className="product-name">{p.name}</span>
-                      <span className="product-quantity">
-                        Qty: {p.quantity}
-                      </span>
+                      {q.quotationNo || "Quotation"} -{" "}
+                      {new Date(q.createdAt).toLocaleDateString()}
                     </li>
                   ))
                 ) : (
-                  <li>No low stock products.</li>
+                  <li
+                    style={{
+                      padding: "16px",
+                      color: "#888",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    No quotations.
+                  </li>
                 )}
               </ul>
             </div>
-          </section>
+          </div>
 
-          {/* LOW-STOCK MODAL */}
-          {lowStockListModal && (
+          {/* TOTAL ORDERS */}
+          <div
+            className="card"
+            style={{ borderRadius: "12px", overflow: "hidden" }}
+          >
             <div
-              className="modal fade show"
-              style={{ display: "block", backgroundColor: "rgba(0,0,0,.5)" }}
-              tabIndex="-1"
+              className="card-header"
+              style={{
+                padding: "16px",
+                background: "#f8f9fa",
+                fontWeight: 600,
+                display: "flex",
+                justifyContent: "space-between",
+              }}
             >
-              <div className="modal-dialog modal-lg modal-dialog-centered">
-                <div className="modal-content">
-                  <div className="modal-header">
-                    <h5 className="modal-title">All Low Stock Products</h5>
-                    <button
-                      type="button"
-                      className="close"
-                      onClick={() => setLowStockListModal(false)}
+              <span>Total Orders</span>
+              <span style={{ color: "#e74c3c", fontWeight: 600 }}>
+                {orderCount}
+              </span>
+            </div>
+            <div className="card-body" style={{ padding: 0 }}>
+              <div
+                style={{
+                  padding: "8px 16px",
+                  fontSize: "0.85rem",
+                  color: "#666",
+                }}
+              >
+                Last five
+              </div>
+              <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+                {lastFiveOrders.length > 0 ? (
+                  lastFiveOrders.map((o) => (
+                    <li
+                      key={o.id}
                       style={{
-                        fontSize: "1.5rem",
-                        lineHeight: 1,
-                        border: "none",
-                        background: "transparent",
+                        padding: "10px 16px",
+                        borderBottom: "1px solid #eee",
+                        fontSize: "0.9rem",
                       }}
                     >
-                      &times;
-                    </button>
-                  </div>
-                  <div className="modal-body">
-                    {paginatedLowStock.length ? (
-                      <ul>
-                        {paginatedLowStock.map((p) => (
-                          <li
-                            key={p._id || p.productId}
-                            onClick={() => handleProductClick(p)}
-                            style={{ cursor: "pointer", marginBottom: 8 }}
-                          >
-                            {p.name} (Qty: {p.quantity})
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p>No low stock products.</p>
-                    )}
-                  </div>
-                  <div className="modal-footer">
-                    <DataTablePagination
-                      totalItems={lowStockProducts.length}
-                      itemNo={itemsPerPage}
-                      onPageChange={setCurrentPage}
-                      currentPage={currentPage}
-                    />
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      onClick={() => setLowStockListModal(false)}
-                    >
-                      Close
-                    </button>
-                  </div>
-                </div>
-              </div>
+                      {o.orderNo} - {new Date(o.createdAt).toLocaleDateString()}
+                    </li>
+                  ))
+                ) : (
+                  <li
+                    style={{
+                      padding: "16px",
+                      color: "#888",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    No orders.
+                  </li>
+                )}
+              </ul>
             </div>
-          )}
+          </div>
 
-          {/* STOCK DETAIL MODAL */}
-          {isModalVisible && selectedProduct && (
-            <StockModal
-              show={isModalVisible}
-              onHide={handleModalClose}
-              product={selectedProduct}
-            />
-          )}
+          {/* TOTAL PRODUCTS */}
+          <div
+            className="card"
+            style={{ borderRadius: "12px", overflow: "hidden" }}
+          >
+            <div
+              className="card-header"
+              style={{
+                padding: "16px",
+                background: "#f8f9fa",
+                fontWeight: 600,
+                display: "flex",
+                justifyContent: "space-between",
+              }}
+            >
+              <span>Total Products</span>
+              <span style={{ color: "#e74c3c", fontWeight: 600 }}>
+                {productCount}
+              </span>
+            </div>
+            <div className="card-body" style={{ padding: 0 }}>
+              <div
+                style={{
+                  padding: "8px 16px",
+                  fontSize: "0.85rem",
+                  color: "#666",
+                }}
+              >
+                Last five
+              </div>
+              <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+                {lastFiveProducts.length > 0 ? (
+                  lastFiveProducts.map((p, idx) => {
+                    let imgUrl = null;
+                    if (p.images) {
+                      try {
+                        const arr = JSON.parse(p.images);
+                        imgUrl =
+                          Array.isArray(arr) && arr[0] ? arr[0] : p.images;
+                      } catch {
+                        imgUrl = p.Numberimages;
+                      }
+                    }
+                    return (
+                      <li
+                        key={p.productId}
+                        style={{
+                          padding: "12px 16px",
+                          borderBottom: idx < 4 ? "1px solid #eee" : "none",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        {imgUrl ? (
+                          <img
+                            src={imgUrl}
+                            alt={p.name}
+                            style={{
+                              width: 40,
+                              height: 40,
+                              objectFit: "cover",
+                              borderRadius: 6,
+                              border: "1px solid #eee",
+                            }}
+                            onError={(e) => {
+                              e.target.style.display = "none";
+                              e.target.nextElementSibling.style.display =
+                                "flex";
+                            }}
+                          />
+                        ) : null}
+                        <div
+                          style={{
+                            width: 40,
+                            height: 40,
+                            background: "#f5f5f5",
+                            borderRadius: 6,
+                            display: imgUrl ? "none" : "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: 12,
+                            color: "#999",
+                          }}
+                        >
+                          No Img
+                        </div>
+                        {p.name}
+                      </li>
+                    );
+                  })
+                ) : (
+                  <li
+                    style={{
+                      padding: "16px",
+                      color: "#888",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    No products.
+                  </li>
+                )}
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* STOCK DETAIL MODAL */}
+      {isModalVisible && selectedProduct && (
+        <StockModal
+          show={isModalVisible}
+          onHide={handleModalClose}
+          product={selectedProduct}
+        />
+      )}
     </div>
   );
 };
