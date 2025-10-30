@@ -52,6 +52,7 @@ const calculateTotals = (
 // CREATE QUOTATION
 exports.createQuotation = async (req, res) => {
   const t = await sequelize.transaction();
+  let mongoItem; // to delete if rollback needed
   try {
     let {
       products,
@@ -76,7 +77,6 @@ exports.createQuotation = async (req, res) => {
       finalAmount,
     } = calculateTotals(products, extraDiscount, extraDiscountType);
 
-    // ---- round-off (optional) ----
     const roundOff = quotationData.roundOff
       ? parseFloat(quotationData.roundOff)
       : 0;
@@ -84,7 +84,7 @@ exports.createQuotation = async (req, res) => {
       (finalAmount + roundOff).toFixed(2)
     );
 
-    // ---- DB insert ----
+    // ---- DB insert (Sequelize) ----
     const quotation = await Quotation.create(
       {
         ...quotationData,
@@ -92,30 +92,33 @@ exports.createQuotation = async (req, res) => {
         products: JSON.stringify(products),
         extraDiscount: extraDiscount > 0 ? extraDiscount : null,
         extraDiscountType: extraDiscountType,
-        discountAmount: extraDiscountAmount > 0 ? extraDiscountAmount : null, // legacy field
+        discountAmount: extraDiscountAmount > 0 ? extraDiscountAmount : null,
         finalAmount: finalAmountWithRound,
         followupDates: followupDates ? JSON.stringify(followupDates) : null,
       },
       { transaction: t }
     );
 
-    // ---- items (Mongo) ----
-    if (products.length > 0) {
-      await QuotationItem.create(
-        {
-          quotationId: quotation.quotationId,
-          items: products.map((p) => ({
-            productId: p.productId,
-            quantity: p.quantity,
-            discount: p.discount || 0,
-            tax: p.tax || 0,
-            total: p.total || 0,
-          })),
-        },
-        { transaction: t }
-      );
+    // Ensure quotationId exists
+    if (!quotation.quotationId) {
+      throw new Error("Failed to generate quotationId");
     }
 
+    // ---- MongoDB: QuotationItem (NO transaction) ----
+    if (products.length > 0) {
+      mongoItem = await QuotationItem.create({
+        quotationId: quotation.quotationId,
+        items: products.map((p) => ({
+          productId: p.productId,
+          quantity: p.quantity,
+          discount: p.discount || 0,
+          tax: p.tax || 0,
+          total: p.total || p.sellingPrice * p.quantity - (p.discount || 0),
+        })),
+      });
+    }
+
+    // Only commit SQL transaction if Mongo succeeds
     await t.commit();
 
     await sendNotification({
@@ -136,7 +139,18 @@ exports.createQuotation = async (req, res) => {
       message: "Quotation created successfully",
     });
   } catch (error) {
-    await t.rollback();
+    // Rollback SQL
+    if (t) await t.rollback();
+
+    // Optional: Clean up Mongo if partial insert happened
+    if (mongoItem) {
+      try {
+        await QuotationItem.deleteOne({ _id: mongoItem._id });
+      } catch (cleanupErr) {
+        console.error("Failed to cleanup Mongo item:", cleanupErr);
+      }
+    }
+
     console.error("Quotation creation error:", error);
     res.status(500).json({ error: error.message });
   }
@@ -490,12 +504,10 @@ exports.cloneQuotation = async (req, res) => {
       message: `Quotation "${original.document_title}" cloned as "${cloned.document_title}".`,
     });
 
-    res
-      .status(201)
-      .json({
-        message: "Quotation cloned successfully",
-        clonedQuotation: cloned,
-      });
+    res.status(201).json({
+      message: "Quotation cloned successfully",
+      clonedQuotation: cloned,
+    });
   } catch (error) {
     res
       .status(500)

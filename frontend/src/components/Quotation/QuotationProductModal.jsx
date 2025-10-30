@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Modal, Button, Table } from "react-bootstrap";
+import { Modal, Table, Image, Spinner, Alert } from "react-bootstrap";
 import useProductsData from "../../data/useProductdata";
 
 const QuotationProductModal = ({
@@ -10,41 +10,51 @@ const QuotationProductModal = ({
 }) => {
   const [expandedProductId, setExpandedProductId] = useState(null);
 
-  // Normalize products to ensure it's an array
+  // ---------- Normalise products ----------
   const normalizedProducts = Array.isArray(products)
     ? products
     : typeof products === "string"
     ? JSON.parse(products || "[]")
     : [];
 
-  // Use the custom hook to fetch product details
+  // ---------- Fetch full product details ----------
   const { productsData, errors, loading } = useProductsData(normalizedProducts);
 
-  // Create a map of productId to product details for quick lookup
+  // ---------- Helper: get first image URL ----------
+  const getFirstImage = (imagesString) => {
+    if (!imagesString) return null;
+    try {
+      const parsed = JSON.parse(imagesString);
+      return Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : null;
+    } catch {
+      return null;
+    }
+  };
+
+  // ---------- Build product map (price + image) ----------
   const productMap = productsData.reduce((map, product) => {
-    // Extract sellingPrice from metaDetails
     const sellingPrice =
-      product.metaDetails?.find((meta) => meta.slug === "sellingPrice")
-        ?.value || 0;
+      product.metaDetails?.find((m) => m.slug === "sellingPrice")?.value || 0;
+    const imageUrl = getFirstImage(product.images);
+
     map[product.productId] = {
       ...product,
-      sellingPrice, // Add sellingPrice to the product object
+      sellingPrice,
+      imageUrl,
     };
     return map;
   }, {});
 
-  // Calculate totals
+  // ---------- Totals ----------
   const { total, amountWithoutTax } = normalizedProducts.reduce(
     (acc, product) => {
-      const productDetails = productMap[product.productId] || {};
-      const price = productDetails.sellingPrice || product.price || 0;
-      const quantity = product.quantity || product.qty || 0;
+      const details = productMap[product.productId] || {};
+      const price = details.sellingPrice || product.price || 0;
+      const qty = product.quantity || product.qty || 0;
       const discount = product.discount || 0;
       const tax = product.tax || 0;
 
-      // Calculate amount without tax for this product: price * quantity * (1 - discount/100)
-      const amount = price * quantity * (1 - discount / 100);
-      // Total includes tax: amount * (1 + tax/100)
+      const amount = price * qty * (1 - discount / 100);
       const productTotal = product.total || amount * (1 + tax / 100);
 
       return {
@@ -56,8 +66,7 @@ const QuotationProductModal = ({
   );
 
   const handleRowClick = (productId) => {
-    // Toggle expanded row: if the same row is clicked, collapse it; otherwise, expand the new row
-    setExpandedProductId(expandedProductId === productId ? null : productId);
+    setExpandedProductId((prev) => (prev === productId ? null : productId));
   };
 
   return (
@@ -69,19 +78,18 @@ const QuotationProductModal = ({
             : "Products"}
         </Modal.Title>
       </Modal.Header>
+
       <Modal.Body style={{ overflowX: "auto" }}>
         {loading ? (
-          <div className="text-center">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </div>
-            <p>Loading product details...</p>
+          <div className="text-center py-4">
+            <Spinner animation="border" role="status" />
+            <p className="mt-2">Loading product details...</p>
           </div>
         ) : errors.length > 0 ? (
-          <div className="alert alert-danger" role="alert">
+          <Alert variant="danger">
             Failed to load some product details:{" "}
             {errors.map((e) => e.error).join(", ")}
-          </div>
+          </Alert>
         ) : (
           <Table
             striped
@@ -93,65 +101,114 @@ const QuotationProductModal = ({
             <thead className="table-dark">
               <tr>
                 <th style={{ minWidth: "50px" }}>#</th>
+                <th style={{ minWidth: "80px" }}>Image</th> {/* NEW */}
                 <th style={{ minWidth: "200px" }}>Product Name</th>
-                <th style={{ minWidth: "100px" }}>Quantity</th>
+                <th style={{ minWidth: "100px" }}>Qty</th>
                 <th style={{ minWidth: "100px" }}>Price</th>
                 <th style={{ minWidth: "120px" }}>Discount (%)</th>
                 <th style={{ minWidth: "100px" }}>Tax (%)</th>
                 <th style={{ minWidth: "120px" }}>Total</th>
               </tr>
             </thead>
+
             <tbody>
               {normalizedProducts.length > 0 ? (
-                normalizedProducts.map((product, index) => {
-                  const productDetails = productMap[product.productId] || {};
+                normalizedProducts.map((product, idx) => {
+                  const details = productMap[product.productId] || {};
                   const isExpanded = expandedProductId === product.productId;
 
                   return (
-                    <React.Fragment key={index}>
+                    <React.Fragment key={idx}>
+                      {/* ---------- Compact Row ---------- */}
                       <tr
                         onClick={() => handleRowClick(product.productId)}
                         style={{ cursor: "pointer" }}
                       >
-                        <td>{index + 1}</td>
-                        <td>{productDetails.name || "N/A"}</td>
-                        <td>{product.quantity || product.qty || 0}</td>
+                        <td>{idx + 1}</td>
+
+                        {/* IMAGE CELL */}
                         <td>
-                          {productDetails.sellingPrice || product.price || 0}
+                          {details.imageUrl ? (
+                            <Image
+                              src={details.imageUrl}
+                              alt={details.name || "Product"}
+                              rounded
+                              style={{
+                                width: 60,
+                                height: 60,
+                                objectFit: "contain",
+                              }}
+                            />
+                          ) : (
+                            <div
+                              style={{
+                                width: 60,
+                                height: 60,
+                                background: "#eee",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "0.8rem",
+                                color: "#999",
+                              }}
+                            >
+                              No image
+                            </div>
+                          )}
                         </td>
+
+                        <td>{details.name || "N/A"}</td>
+                        <td>{product.quantity || product.qty || 0}</td>
+                        <td>{details.sellingPrice || product.price || 0}</td>
                         <td>{product.discount || 0}</td>
                         <td>{product.tax || 0}</td>
                         <td>{product.total || 0}</td>
                       </tr>
+
+                      {/* ---------- Expanded Details Row ---------- */}
                       {isExpanded && (
                         <tr>
-                          <td colSpan="7" className="bg-light">
-                            <div className="p-3">
-                              <h6>Product Details</h6>
-                              <p>
-                                <strong>Product Name:</strong>{" "}
-                                {productDetails.name || product.name || "N/A"}
-                              </p>
-                              <p>
-                                <strong>Quantity:</strong>{" "}
-                                {product.quantity || product.qty || 0}
-                              </p>
-                              <p>
-                                <strong>Price:</strong>{" "}
-                                {productDetails.sellingPrice ||
-                                  product.price ||
-                                  0}
-                              </p>
-                              <p>
-                                <strong>Discount:</strong>{" "}
-                                {product.discount || 0}%
-                              </p>
-                              <p>
-                                <strong>Tax:</strong> {product.tax || 0}%
-                              </p>
-                              <p>
-                                <strong>Total:</strong> {product.total || 0}
-                              </p>
+                          <td colSpan="8" className="bg-light">
+                            <div className="p-3 d-flex gap-4">
+                              {/* Larger image */}
+                              {details.imageUrl && (
+                                <Image
+                                  src={details.imageUrl}
+                                  alt={details.name}
+                                  rounded
+                                  style={{
+                                    width: 120,
+                                    height: 120,
+                                    objectFit: "contain",
+                                  }}
+                                />
+                              )}
+
+                              <div className="flex-grow-1">
+                                <h6>Product Details</h6>
+                                <p>
+                                  <strong>Name:</strong>{" "}
+                                  {details.name || product.name || "N/A"}
+                                </p>
+                                <p>
+                                  <strong>Quantity:</strong>{" "}
+                                  {product.quantity || product.qty || 0}
+                                </p>
+                                <p>
+                                  <strong>Price:</strong>{" "}
+                                  {details.sellingPrice || product.price || 0}
+                                </p>
+                                <p>
+                                  <strong>Discount:</strong>{" "}
+                                  {product.discount || 0}%
+                                </p>
+                                <p>
+                                  <strong>Tax:</strong> {product.tax || 0}%
+                                </p>
+                                <p>
+                                  <strong>Total:</strong> {product.total || 0}
+                                </p>
+                              </div>
                             </div>
                           </td>
                         </tr>
@@ -161,16 +218,18 @@ const QuotationProductModal = ({
                 })
               ) : (
                 <tr>
-                  <td colSpan="7" className="text-center">
+                  <td colSpan="8" className="text-center">
                     No products available
                   </td>
                 </tr>
               )}
             </tbody>
+
+            {/* ---------- Footer with totals ---------- */}
             {normalizedProducts.length > 0 && (
               <tfoot>
                 <tr className="table-info">
-                  <td colSpan="4"></td>
+                  <td colSpan="5"></td>
                   <td>
                     <strong>Amount (without tax):</strong>
                   </td>
@@ -179,7 +238,7 @@ const QuotationProductModal = ({
                   </td>
                 </tr>
                 <tr className="table-success">
-                  <td colSpan="4"></td>
+                  <td colSpan="5"></td>
                   <td>
                     <strong>Total:</strong>
                   </td>

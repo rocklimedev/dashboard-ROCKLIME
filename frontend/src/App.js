@@ -181,7 +181,7 @@ function App() {
       };
     }
   }, [auth]);
-
+  console.log(auth);
   if ((MAINTENANCE_MODE && !isMaintenancePage) || !authChecked) return null;
 
   return (

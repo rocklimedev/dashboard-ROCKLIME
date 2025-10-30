@@ -17,16 +17,36 @@ import {
   DeleteOutlined,
   MoreOutlined,
 } from "@ant-design/icons";
-import { Dropdown, Menu, Button, Select } from "antd";
+import { Dropdown, Menu, Button, Select, Pagination } from "antd"; // <-- added Pagination
 import DatesModal from "./DateModal";
 import DeleteModal from "../Common/DeleteModal";
-import OrderPagination from "./OrderPagination";
 import PageHeader from "../Common/PageHeader";
+import { useAuth } from "../../context/AuthContext";
 
 const { Option } = Select;
 
 const OrderWrapper = () => {
   const navigate = useNavigate();
+
+  // ──────────────────────────────────────────────────────
+  // PERMISSIONS
+  // ──────────────────────────────────────────────────────
+  const { auth } = useAuth();
+  const permissions = auth?.permissions || [];
+
+  const canEditOrder = permissions.some(
+    (p) => p.action === "edit" && p.module === "orders"
+  );
+  const canDeleteOrder = permissions.some(
+    (p) => p.action === "delete" && p.module === "orders"
+  );
+  const canUpdateOrderStatus = permissions.some(
+    (p) => p.action === "write" && p.module === "orders"
+  );
+
+  // ──────────────────────────────────────────────────────
+  // STATE
+  // ──────────────────────────────────────────────────────
   const [teamMap, setTeamMap] = useState({});
   const [customerMap, setCustomerMap] = useState({});
   const [userMap, setUserMap] = useState({});
@@ -56,7 +76,9 @@ const OrderWrapper = () => {
     endDate: "",
   });
 
-  // Fetch data from APIs
+  // ──────────────────────────────────────────────────────
+  // FETCH DATA
+  // ──────────────────────────────────────────────────────
   const { data: teamsData } = useGetAllTeamsQuery();
   const { data: customersData } = useGetCustomersQuery();
   const { data: usersData } = useGetAllUsersQuery();
@@ -67,6 +89,7 @@ const OrderWrapper = () => {
     isLoading: allLoading,
     isFetching: allFetching,
   } = useGetAllOrdersQuery();
+
   const orders = allData?.orders || [];
   const totalCount = allData?.totalCount || orders.length;
   const isLoading = allLoading;
@@ -76,16 +99,9 @@ const OrderWrapper = () => {
   const [deleteOrder] = useDeleteOrderMutation();
   const [updateOrderStatus] = useUpdateOrderStatusMutation();
 
-  const handleStatusChange = async (orderId, newStatus) => {
-    try {
-      await updateOrderStatus({ orderId, status: newStatus }).unwrap();
-    } catch (err) {
-      toast.error(
-        `Failed to update status: ${err.data?.message || "Unknown error"}`
-      );
-    }
-  };
-  // Map teams, customers, users, and quotations
+  // ──────────────────────────────────────────────────────
+  // MAP DATA
+  // ──────────────────────────────────────────────────────
   useEffect(() => {
     if (teamsData?.teams) {
       const map = teamsData.teams.reduce((acc, team) => {
@@ -126,7 +142,9 @@ const OrderWrapper = () => {
     }
   }, [quotationsData]);
 
-  // Helper to get status display
+  // ──────────────────────────────────────────────────────
+  // HELPERS
+  // ──────────────────────────────────────────────────────
   const getStatusDisplay = (status) => {
     const statuses = [
       "PREPARING",
@@ -142,12 +160,10 @@ const OrderWrapper = () => {
     return statuses.includes(status) ? status : "PREPARING";
   };
 
-  // Helper to get quotation status
   const getQuotationStatus = (quotationId) => {
     return quotationId ? "QUOTATIONED" : "IDLE";
   };
 
-  // Helper to format Assigned To field
   const getAssignedToDisplay = (order) => {
     const assignments = [];
     if (order.assignedTeamId && teamMap[order.assignedTeamId]) {
@@ -162,7 +178,9 @@ const OrderWrapper = () => {
     return assignments.length > 0 ? assignments.join(", ") : "—";
   };
 
-  // Filtered and sorted orders
+  // ──────────────────────────────────────────────────────
+  // FILTERED & SORTED ORDERS
+  // ──────────────────────────────────────────────────────
   const filteredOrders = useMemo(() => {
     let result = orders;
     if (filters.status) {
@@ -252,13 +270,11 @@ const OrderWrapper = () => {
     filters,
   ]);
 
-  // Paginated orders
   const paginatedOrders = useMemo(() => {
     const startIndex = (filters.page - 1) * filters.limit;
     return filteredOrders.slice(startIndex, startIndex + filters.limit);
   }, [filteredOrders, filters.page, filters.limit]);
 
-  // Formatted table data for export
   const tableDataForExport = useMemo(() => {
     return paginatedOrders.map((order, index) => ({
       "S.No.": (filters.page - 1) * filters.limit + index + 1,
@@ -287,12 +303,33 @@ const OrderWrapper = () => {
     quotationMap,
   ]);
 
-  // Handlers (unchanged)
+  // ──────────────────────────────────────────────────────
+  // HANDLERS
+  // ──────────────────────────────────────────────────────
+  const handleStatusChange = async (orderId, newStatus) => {
+    if (!canUpdateOrderStatus) {
+      toast.error("You don't have permission to update order status");
+      return;
+    }
+    try {
+      await updateOrderStatus({ orderId, status: newStatus }).unwrap();
+      toast.success("Status updated");
+    } catch (err) {
+      toast.error(
+        `Failed to update status: ${err.data?.message || "Unknown error"}`
+      );
+    }
+  };
+
   const handleOpenAddOrder = () => {
     navigate("/order/add");
   };
 
   const handleEditClick = (order) => {
+    if (!canEditOrder) {
+      toast.error("You don't have permission to edit orders");
+      return;
+    }
     navigate(`/order/${order.id}/edit`, { state: { order } });
   };
 
@@ -302,6 +339,10 @@ const OrderWrapper = () => {
   };
 
   const handleDeleteClick = (orderId) => {
+    if (!canDeleteOrder) {
+      toast.error("You don't have permission to delete orders");
+      return;
+    }
     setOrderToDelete(orderId);
     setShowDeleteModal(true);
   };
@@ -318,8 +359,10 @@ const OrderWrapper = () => {
   };
 
   const handleDeleteOrder = async (orderId) => {
+    if (!canDeleteOrder) return;
     try {
       await deleteOrder(orderId).unwrap();
+      toast.success("Order deleted");
       handleModalClose();
     } catch (err) {
       toast.error(
@@ -332,8 +375,12 @@ const OrderWrapper = () => {
     handleModalClose();
   };
 
-  const handlePageChange = (page) => {
-    setFilters((prev) => ({ ...prev, page }));
+  const handlePageChange = (page, pageSize) => {
+    setFilters((prev) => ({
+      ...prev,
+      page,
+      limit: pageSize,
+    }));
   };
 
   const handleClearFilters = () => {
@@ -378,6 +425,9 @@ const OrderWrapper = () => {
     return diffDays <= 3;
   };
 
+  // ──────────────────────────────────────────────────────
+  // RENDER
+  // ──────────────────────────────────────────────────────
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -389,6 +439,7 @@ const OrderWrapper = () => {
             exportOptions={{ pdf: true, excel: true }}
           />
           <div className="card-body">
+            {/* Filters & Search */}
             <div className="row">
               <div className="col-lg-6">
                 <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
@@ -524,8 +575,6 @@ const OrderWrapper = () => {
                     >
                       {[
                         "Recently Added",
-                        "Ascending",
-                        "Descending",
                         "Due Date Ascending",
                         "Due Date Descending",
                       ].map((option) => (
@@ -538,6 +587,8 @@ const OrderWrapper = () => {
                 </div>
               </div>
             </div>
+
+            {/* Table */}
             <div className="tab-content">
               {isLoading || isFetching ? (
                 <p>Loading...</p>
@@ -595,6 +646,7 @@ const OrderWrapper = () => {
                           ].includes(order.status) &&
                           order.invoiceLink &&
                           order.invoiceLink.trim() !== "";
+
                         const menuItems = [
                           showInvoiceOption && {
                             key: "viewInvoice",
@@ -605,7 +657,7 @@ const OrderWrapper = () => {
                               </span>
                             ),
                           },
-                          {
+                          canDeleteOrder && {
                             key: "delete",
                             label: (
                               <span
@@ -676,40 +728,43 @@ const OrderWrapper = () => {
                                 {getStatusDisplay(order.status)}
                               </span>
 
-                              <Dropdown
-                                overlay={
-                                  <Menu>
-                                    {[
-                                      "PREPARING",
-                                      "CHECKING",
-                                      "INVOICE",
-                                      "DISPATCHED",
-                                      "DELIVERED",
-                                      "PARTIALLY_DELIVERED",
-                                      "CANCELED",
-                                      "DRAFT",
-                                      "ONHOLD",
-                                    ].map((status) => (
-                                      <Menu.Item
-                                        key={status}
-                                        onClick={() =>
-                                          handleStatusChange(order.id, status)
-                                        }
-                                        disabled={order.status === status}
-                                      >
-                                        {status}
-                                      </Menu.Item>
-                                    ))}
-                                  </Menu>
-                                }
-                                trigger={["click"]}
-                                placement="bottomLeft"
-                              >
-                                <EditOutlined
-                                  style={{ cursor: "pointer" }}
-                                  aria-label="Change status"
-                                />
-                              </Dropdown>
+                              {/* Status Change Dropdown */}
+                              {canUpdateOrderStatus && (
+                                <Dropdown
+                                  overlay={
+                                    <Menu>
+                                      {[
+                                        "PREPARING",
+                                        "CHECKING",
+                                        "INVOICE",
+                                        "DISPATCHED",
+                                        "DELIVERED",
+                                        "PARTIALLY_DELIVERED",
+                                        "CANCELED",
+                                        "DRAFT",
+                                        "ONHOLD",
+                                      ].map((status) => (
+                                        <Menu.Item
+                                          key={status}
+                                          onClick={() =>
+                                            handleStatusChange(order.id, status)
+                                          }
+                                          disabled={order.status === status}
+                                        >
+                                          {status}
+                                        </Menu.Item>
+                                      ))}
+                                    </Menu>
+                                  }
+                                  trigger={["click"]}
+                                  placement="bottomLeft"
+                                >
+                                  <EditOutlined
+                                    style={{ cursor: "pointer" }}
+                                    aria-label="Change status"
+                                  />
+                                </Dropdown>
+                              )}
                             </td>
                             <td>
                               {order.quotationId ? (
@@ -770,36 +825,46 @@ const OrderWrapper = () => {
                               )}
                             </td>
                             <td>
-                              <span>
-                                <EditOutlined
-                                  style={{ marginRight: 8 }}
-                                  onClick={() => handleEditClick(order)}
-                                />
-                              </span>
-                              <Dropdown
-                                menu={{ items: menuItems }}
-                                trigger={["click"]}
-                                placement="bottomRight"
-                              >
-                                <Button
-                                  type="text"
-                                  icon={<MoreOutlined />}
-                                  aria-label="More actions"
-                                />
-                              </Dropdown>
+                              {canEditOrder && (
+                                <span>
+                                  <EditOutlined
+                                    style={{ marginRight: 8 }}
+                                    onClick={() => handleEditClick(order)}
+                                  />
+                                </span>
+                              )}
+
+                              {(canDeleteOrder || showInvoiceOption) && (
+                                <Dropdown
+                                  menu={{ items: menuItems }}
+                                  trigger={["click"]}
+                                  placement="bottomRight"
+                                >
+                                  <Button
+                                    type="text"
+                                    icon={<MoreOutlined />}
+                                    aria-label="More actions"
+                                  />
+                                </Dropdown>
+                              )}
                             </td>
                           </tr>
                         );
                       })}
                     </tbody>
                   </table>
+
+                  {/* ──────── Ant Design Pagination ──────── */}
                   {totalCount > filters.limit && (
-                    <div className="pagination-section mt-4">
-                      <OrderPagination
-                        currentPage={filters.page}
-                        totalCount={totalCount}
+                    <div className="d-flex justify-content-end mt-4">
+                      <Pagination
+                        current={filters.page}
                         pageSize={filters.limit}
-                        onPageChange={handlePageChange}
+                        total={totalCount}
+                        onChange={handlePageChange}
+                        showSizeChanger
+                        pageSizeOptions={["10", "20", "50", "100"]}
+                        showQuickJumper
                       />
                     </div>
                   )}
@@ -809,6 +874,7 @@ const OrderWrapper = () => {
           </div>
         </div>
 
+        {/* Modals */}
         {showDeleteModal && (
           <DeleteModal
             isVisible={showDeleteModal}

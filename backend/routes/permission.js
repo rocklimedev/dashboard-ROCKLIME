@@ -11,13 +11,9 @@ const {
 } = require("../controller/permissonController");
 
 const checkPermission = require("../middleware/permission");
-const role = require("../middleware/role"); // Middleware for RBAC
-const { ROLES } = require("../config/constant");
-
 // Create a new permission - Only SuperAdmin can create
 router.post(
   "/",
-  // role.check(ROLES.SuperAdmin),
   //checkPermission("write", "create_permission", "permissions", "/permissions"),
   createPermission
 );
@@ -25,7 +21,6 @@ router.post(
 // Get all permissions - Only Admin & SuperAdmin can view
 router.get(
   "/",
-  //role.check(ROLES.Admin),
   // checkPermission("view", "get_all_permission", "permissions", "/permissions"),
   getAllPermissions
 );
@@ -33,7 +28,6 @@ router.get(
 // edit a permission - Only SuperAdmin can edit
 router.put(
   "/:permissionId",
-  // role.check(ROLES.SuperAdmin),
   // checkPermission(
   //   "edit",
   //   "edit_permission",
@@ -46,7 +40,6 @@ router.put(
 // Delete a permission - Only SuperAdmin can delete
 router.delete(
   "/:permissionId",
-  //role.check(ROLES.SuperAdmin),
   // checkPermission(
   //   "delete",
   //   "delete_permission",

@@ -1,16 +1,15 @@
-// PermissionGate.js
-import { useAuth } from "./AuthContext";
-export default function PermissionGate({
-  api,
-  module,
-  children,
-  fallback = null,
-}) {
-  const { permissions, loadingPermissions } = useAuth();
+import { useAuth } from "../context/AuthContext";
 
-  if (loadingPermissions) return null; // or a spinner
+const PermissionsGate = ({ required, children, fallback = null }) => {
+  const { auth } = useAuth();
+  const userPermissions = auth?.permissions || [];
 
-  const allowed = permissions.some((p) => p.api === api && p.module === module);
+  if (!required) return children;
+  if (!userPermissions.length) return null;
 
-  return allowed ? children : fallback;
-}
+  const hasPermission = required.some((perm) => userPermissions.includes(perm));
+
+  return hasPermission ? children : fallback;
+};
+
+export default PermissionsGate;

@@ -277,7 +277,49 @@ const QuotationForm = ({
       quotationData.followupDates.filter((_, i) => i !== index)
     );
   };
+  const getOrCreateBillingAddress = async () => {
+    if (!selectedCustomer || !selectedCustomerData?.address) return null;
 
+    const primary = selectedCustomerData.address;
+
+    const existing = filteredAddresses.find((a) => {
+      return (
+        a.status === "BILLING" &&
+        normalizeString(a.street) === normalizeString(primary.street) &&
+        normalizeString(a.city) === normalizeString(primary.city) &&
+        normalizeString(a.state) === normalizeString(primary.state) &&
+        normalizeString(a.postalCode || a.zip || "") ===
+          normalizeString(primary.postalCode || primary.zip || "") &&
+        normalizeString(a.country || "India") ===
+          normalizeString(primary.country || "India")
+      );
+    });
+
+    if (existing) return existing.addressId;
+
+    setIsCreatingAddress(true);
+    try {
+      const payload = {
+        customerId: selectedCustomer,
+        street: primary.street || "",
+        city: primary.city || "",
+        state: primary.state || "",
+        postalCode: primary.postalCode || primary.zip || "",
+        country: primary.country || "India",
+        status: "BILLING",
+      };
+      const { addressId } = await createAddress(payload).unwrap();
+      toast.success("Billing address created from primary address.");
+      return addressId;
+    } catch (err) {
+      toast.error(
+        `Failed to create billing address: ${err?.data?.message || err}`
+      );
+      return null;
+    } finally {
+      setIsCreatingAddress(false);
+    }
+  };
   // === Address & Discount Handlers ===
   const handleAddressChange = (value) => {
     if (value === "sameAsBilling") {
@@ -409,11 +451,11 @@ const QuotationForm = ({
                 </Space>
               </FormSection>
 
-              {/* Shipping Address */}
               <FormSection>
                 <Text strong>
                   Shipping Address <span style={{ color: "red" }}>*</span>
                 </Text>
+
                 <Space direction="vertical" style={{ width: "100%" }}>
                   <Select
                     value={
@@ -424,35 +466,56 @@ const QuotationForm = ({
                             ? filteredAddresses[0].addressId
                             : undefined)
                     }
-                    onChange={handleAddressChange}
+                    onChange={async (val) => {
+                      if (val === "sameAsBilling") {
+                        setUseBillingAddress(true);
+                        const newAddrId = await getOrCreateBillingAddress();
+                        if (newAddrId) {
+                          handleQuotationChange("shipTo", newAddrId);
+                        }
+                      } else {
+                        setUseBillingAddress(false);
+                        handleQuotationChange("shipTo", val);
+                      }
+                    }}
                     placeholder="Select shipping address"
                     loading={addressesLoading || isCreatingAddress}
                     disabled={
                       !selectedCustomer ||
                       addressesLoading ||
                       addressesError ||
-                      isCreatingAddress ||
-                      filteredAddresses.length === 0
+                      isCreatingAddress
                     }
+                    dropdownRender={(menu) => (
+                      <>
+                        {menu}
+                        <Divider style={{ margin: "8px 0" }} />
+                        <Space style={{ padding: "0 8px 4px" }}>
+                          <ActionButton
+                            type="text"
+                            icon={<UserAddOutlined />}
+                            onClick={handleAddAddress}
+                            disabled={isCreatingAddress}
+                          >
+                            Add New Address
+                          </ActionButton>
+                        </Space>
+                      </>
+                    )}
                   >
-                    {selectedCustomer && defaultAddress && (
+                    {/* Option 1: Show "Same as Billing" if primary address exists */}
+                    {selectedCustomer && selectedCustomerData?.address && (
                       <Option value="sameAsBilling">
                         Same as Billing Address
                       </Option>
                     )}
-                    {!selectedCustomer ? (
-                      <Option disabled>Select customer first</Option>
-                    ) : addressesLoading || isCreatingAddress ? (
-                      <Option disabled>Loading...</Option>
-                    ) : addressesError ? (
-                      <Option disabled>Error loading addresses</Option>
-                    ) : filteredAddresses.length === 0 ? (
-                      <Option disabled>No addresses available</Option>
-                    ) : (
+
+                    {/* Option 2: Show all saved addresses */}
+                    {filteredAddresses.length > 0 ? (
                       filteredAddresses.map((addr) => {
                         const label = `${addr.street}, ${addr.city}, ${
                           addr.state
-                        }, ${addr.postalCode || addr.zip}, ${
+                        }, ${addr.postalCode || addr.zip || ""}, ${
                           addr.country || "India"
                         } (${addr.status})`;
                         return (
@@ -461,35 +524,47 @@ const QuotationForm = ({
                           </Option>
                         );
                       })
+                    ) : (
+                      <Option disabled>No saved addresses</Option>
                     )}
                   </Select>
 
-                  {useBillingAddress && defaultAddress && (
+                  {/* Show preview of primary address when "Same as Billing" is selected */}
+                  {useBillingAddress && selectedCustomerData?.address && (
                     <Text type="secondary">
-                      <strong>Billing:</strong>{" "}
-                      {`${defaultAddress.street}, ${defaultAddress.city}, ${
-                        defaultAddress.state
-                      }, ${
-                        defaultAddress.postalCode || defaultAddress.zip || ""
+                      <strong>Billing (from customer):</strong>{" "}
+                      {`${selectedCustomerData.address.street}, ${
+                        selectedCustomerData.address.city
+                      }, ${selectedCustomerData.address.state}, ${
+                        selectedCustomerData.address.postalCode ||
+                        selectedCustomerData.address.zip ||
+                        ""
                       }${
-                        defaultAddress.country
-                          ? `, ${defaultAddress.country}`
+                        selectedCustomerData.address.country
+                          ? `, ${selectedCustomerData.address.country}`
                           : ""
                       }`}
                     </Text>
                   )}
 
-                  <ActionButton
-                    type="link"
-                    icon={<UserAddOutlined />}
-                    onClick={handleAddAddress}
-                    disabled={!selectedCustomer || isCreatingAddress}
-                  >
-                    Add New Address
-                  </ActionButton>
+                  {/* Show preview of selected saved address */}
+                  {!useBillingAddress && quotationData.shipTo && (
+                    <Text type="secondary">
+                      <strong>Shipping:</strong>{" "}
+                      {(() => {
+                        const addr = filteredAddresses.find(
+                          (a) => a.addressId === quotationData.shipTo
+                        );
+                        return addr
+                          ? `${addr.street}, ${addr.city}, ${addr.state}, ${
+                              addr.postalCode || addr.zip || ""
+                            }, ${addr.country || "India"}`
+                          : "—";
+                      })()}
+                    </Text>
+                  )}
                 </Space>
               </FormSection>
-
               <FormSection>
                 <Text strong>
                   Due Date <span style={{ color: "red" }}>*</span>

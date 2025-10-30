@@ -2,12 +2,76 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { Op } = require("sequelize");
 const User = require("../models/users");
-const Roles = require("../models/roles");
-const { ROLES } = require("../config/constant");
-const emails = require("../middleware/sendMail");
-const VerificationToken = require("../models/verificationToken"); // MongoDB model
+const Role = require("../models/roles");
+const RolePermission = require("../models/rolePermission");
+const Permission = require("../models/permisson");
 require("dotenv").config();
 
+// Login, Logout, Refresh Token, and Resend Verification Email remain unchanged
+exports.login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ where: { email: email.toLowerCase() } });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    // Allow login regardless of isEmailVerified or status
+    const now = Math.floor(Date.now() / 1000);
+    const accessToken = jwt.sign(
+      {
+        userId: user.userId,
+        email: user.email,
+        roles: user.roles,
+        roleId: user.roleId,
+        iat: now,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    const refreshToken = jwt.sign(
+      {
+        userId: user.userId,
+        email: user.email,
+        roles: user.roles,
+        roleId: user.roleId,
+      },
+      process.env.REFRESH_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.status(200).json({
+      message: "Login successful",
+      accessToken,
+      user: {
+        userId: user.userId,
+        email: user.email,
+        username: user.username,
+        name: user.name,
+        mobileNumber: user.mobileNumber,
+        roles: user.roles,
+        roleId: user.roleId,
+        status: user.status,
+        isEmailVerified: user.isEmailVerified,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Server Error", error: err.message });
+  }
+};
 // Register
 exports.register = async (req, res, next) => {
   try {
@@ -325,70 +389,7 @@ exports.validateResetToken = async (req, res) => {
   }
 };
 // Login, Logout, Refresh Token, and Resend Verification Email remain unchanged
-exports.login = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ where: { email: email.toLowerCase() } });
-    if (!user) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
-
-    // Allow login regardless of isEmailVerified or status
-    const now = Math.floor(Date.now() / 1000);
-    const accessToken = jwt.sign(
-      {
-        userId: user.userId,
-        email: user.email,
-        roles: user.roles,
-        roleId: user.roleId,
-        iat: now,
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
-
-    const refreshToken = jwt.sign(
-      {
-        userId: user.userId,
-        email: user.email,
-        roles: user.roles,
-        roleId: user.roleId,
-      },
-      process.env.REFRESH_SECRET,
-      { expiresIn: "7d" }
-    );
-
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-
-    res.status(200).json({
-      message: "Login successful",
-      accessToken,
-      user: {
-        userId: user.userId,
-        email: user.email,
-        username: user.username,
-        name: user.name,
-        mobileNumber: user.mobileNumber,
-        roles: user.roles,
-        roleId: user.roleId,
-        status: user.status,
-        isEmailVerified: user.isEmailVerified,
-      },
-    });
-  } catch (err) {
-    res.status(500).json({ message: "Server Error", error: err.message });
-  }
-};
 exports.logout = async (req, res) => {
   try {
     res.clearCookie("refreshToken", {
@@ -567,5 +568,65 @@ exports.changePassword = async (req, res, next) => {
     res.status(200).json({ message: "Password changed successfully" });
   } catch (err) {
     next(err);
+  }
+};
+
+/**
+ * Get all permissions assigned to the logged-in user's role
+ * Assumes: req.user is populated by authentication middleware
+ *          req.user.roleId exists
+ */
+exports.getAllPermissionsOfLoggedInUser = async (req, res) => {
+  try {
+    // req.user is guaranteed by auth middleware
+    const { roleId } = req.user;
+
+    if (!roleId) {
+      return res.status(403).json({ message: "User role not found" });
+    }
+
+    // Fetch role with associated permissions
+    const role = await Role.findByPk(roleId, {
+      attributes: ["roleId", "roleName"],
+      include: [
+        {
+          model: RolePermission,
+          as: "rolepermissions",
+          attributes: ["permissionId"],
+          include: [
+            {
+              model: Permission,
+              as: "permissions",
+              attributes: ["permissionId", "name", "api", "route", "module"],
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!role) {
+      return res.status(404).json({ message: "Role not found" });
+    }
+
+    // Map to clean permission objects
+    const permissions = role.rolepermissions.map((rp) => ({
+      permissionId: rp.permissions.permissionId,
+      name: rp.permissions.name,
+      action: rp.permissions.api,
+      route: rp.permissions.route,
+      module: rp.permissions.module,
+    }));
+
+    return res.status(200).json({
+      message: "Permissions fetched successfully",
+      role: role.roleName,
+      permissions,
+    });
+  } catch (err) {
+    console.error("Error in getAllPermissionsOfLoggedInUser:", err);
+    return res.status(500).json({
+      message: "Failed to fetch permissions",
+      error: err.message,
+    });
   }
 };

@@ -243,6 +243,7 @@ const masterRoutes = [
         icon: <LiaFileSignatureSolid />,
         isSidebarActive: false,
         element: <AddPurchaseOrder />,
+        requiredPermission: { api: "write", module: "purchase_orders" },
       },
       {
         path: "/po/:id/edit",
@@ -250,6 +251,7 @@ const masterRoutes = [
         icon: <LiaFileSignatureSolid />,
         isSidebarActive: false,
         element: <AddPurchaseOrder />,
+        requiredPermission: { api: "edit", module: "purchase_orders" },
       },
       {
         path: "/signature/list",
@@ -271,6 +273,7 @@ const masterRoutes = [
         icon: <AiOutlineProduct />,
         isSidebarActive: false,
         element: <CreateProduct />,
+        requiredPermission: { api: "write", module: "products" },
       },
       {
         path: "/product/:id",
@@ -285,6 +288,7 @@ const masterRoutes = [
         icon: <AiOutlineProduct />,
         isSidebarActive: false,
         element: <CreateProduct />,
+        requiredPermission: { api: "edit", module: "products" },
       },
       {
         path: "/products/brand/:id",
@@ -313,6 +317,7 @@ const masterRoutes = [
         icon: <RiFileListLine />,
         isSidebarActive: false,
         element: <AddNewOrder />,
+        requiredPermission: { api: "write", module: "orders" },
       },
       {
         path: "/order/:id/edit",
@@ -320,6 +325,7 @@ const masterRoutes = [
         icon: <RiDashboardLine />,
         isSidebarActive: false,
         element: <AddNewOrder />,
+        requiredPermission: { api: "edit", module: "orders" },
       },
       {
         path: "/invoices/list",
@@ -341,6 +347,7 @@ const masterRoutes = [
         icon: <IoPricetagOutline />,
         isSidebarActive: false,
         element: <QuotationsDetails />,
+        requiredPermission: { api: "view", module: "quotations" },
       },
       {
         path: "/quotations/add",
@@ -348,6 +355,7 @@ const masterRoutes = [
         icon: <IoPricetagOutline />,
         element: <AddQuotation />,
         isSidebarActive: false,
+        requiredPermission: { api: "write", module: "quotations" },
       },
       {
         path: "/quotations/:id/edit",
@@ -355,13 +363,15 @@ const masterRoutes = [
         icon: <IoPricetagOutline />,
         element: <AddQuotation />,
         isSidebarActive: false,
+        requiredPermission: { api: "edit", module: "quotations" },
       },
       {
         path: "/roles-permission/permissions/:id",
-        name: "Permission Details",
+        name: "Grant Permissions",
         icon: <MdOutlinePerson />,
         isSidebarActive: false,
         element: <Permissions />,
+        requiredPermission: { api: "view", module: "rolepermissions" },
       },
 
       {
@@ -448,6 +458,7 @@ const masterRoutes = [
         name: "Add Customer",
         icon: <BiCart />,
         isSidebarActive: false,
+        requiredPermission: { api: "write", module: "customers" },
       },
       {
         path: "/customers/edit/:customerId",
@@ -455,6 +466,7 @@ const masterRoutes = [
         name: "Edit Customer",
         icon: <BiCart />,
         isSidebarActive: false,
+        requiredPermission: { api: "edit", module: "customers" },
       },
       {
         path: "/notifications",

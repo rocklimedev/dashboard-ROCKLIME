@@ -18,18 +18,35 @@ import { BsThreeDotsVertical } from "react-icons/bs";
 import QuotationProductModal from "./QuotationProductModal";
 import DeleteModal from "../Common/DeleteModal";
 import { toast } from "sonner";
-import { Table, Dropdown, Menu, Button, Input, DatePicker, Select } from "antd";
+import {
+  Table,
+  Dropdown,
+  Menu,
+  Button,
+  Input,
+  DatePicker,
+  Select,
+  Pagination, // <-- ADDED
+} from "antd";
 import PageHeader from "../Common/PageHeader";
-import DataTablePagination from "../Common/DataTablePagination";
 import { useCreateInvoiceMutation } from "../../api/invoiceApi";
 import CreateInvoiceFromQuotation from "../Invoices/CreateInvoiceFromQuotation";
 import moment from "moment";
 
+import PermissionGate from "../../context/PermissionGate";
+import { useAuth } from "../../context/AuthContext";
+
 const { RangePicker } = DatePicker;
 const { Option } = Select;
 
+/* -------------------------------------------------------------------------- */
+/*                               QuotationList                                */
+/* -------------------------------------------------------------------------- */
 const QuotationList = () => {
   const navigate = useNavigate();
+  const { auth } = useAuth();
+
+  /* ------------------------------ RTK Queries ----------------------------- */
   const {
     data: quotationsData,
     isLoading,
@@ -46,6 +63,7 @@ const QuotationList = () => {
   const customers = customersData?.data || [];
   const users = usersData?.users || [];
 
+  /* ------------------------------- State --------------------------------- */
   const [showProductModal, setShowProductModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
@@ -53,6 +71,7 @@ const QuotationList = () => {
   const [quotationToDelete, setQuotationToDelete] = useState(null);
   const [selectedQuotation, setSelectedQuotation] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10); // <-- now dynamic
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("Recently Added");
   const [activeTab, setActiveTab] = useState("All");
@@ -62,9 +81,8 @@ const QuotationList = () => {
     customerId: null,
     dateRange: null,
   });
-  const itemsPerPage = 10;
 
-  // Reset filters and sorting on component mount
+  /* -------------------------- Reset on mount --------------------------- */
   useEffect(() => {
     setSortBy("Recently Added");
     setSearchTerm("");
@@ -76,37 +94,31 @@ const QuotationList = () => {
       dateRange: null,
     });
     setCurrentPage(1);
+    setPageSize(10);
   }, []);
 
-  // Helper functions
+  /* --------------------------- Helper functions -------------------------- */
   const getProductCount = (products) => {
-    const parsedProducts =
+    const parsed =
       typeof products === "string"
         ? JSON.parse(products || "[]")
         : products || [];
-    return parsedProducts.length;
+    return parsed.length;
   };
 
   const getCustomerName = (customerId) => {
-    const customer = customers.find((c) => c.customerId === customerId);
-    return customer ? customer.name : "Unknown";
-  };
-
-  const getUserName = (createdBy) => {
-    if (!users || users.length === 0 || !createdBy) return "Unknown";
-    const user = users.find(
-      (u) => u.userId && u.userId.trim() === createdBy.trim()
-    );
-    return user ? user.name : "Unknown";
+    const cust = customers.find((c) => c.customerId === customerId);
+    return cust ? cust.name : "Unknown";
   };
 
   const customerMap = useMemo(() => {
-    return customers.reduce((map, customer) => {
-      map[customer.customerId] = customer.name;
+    return customers.reduce((map, c) => {
+      map[c.customerId] = c.name;
       return map;
     }, {});
   }, [customers]);
 
+  /* -------------------------- Grouped Quotations ------------------------- */
   const groupedQuotations = useMemo(
     () => ({
       All: quotations,
@@ -121,24 +133,25 @@ const QuotationList = () => {
     [quotations]
   );
 
+  /* ----------------------------- Filtering ------------------------------ */
   const filteredQuotations = useMemo(() => {
     let result = groupedQuotations[activeTab] || [];
 
-    // Apply search term filter
+    // ----- Search -----
     if (searchTerm.trim()) {
       result = result.filter((q) => {
-        const customerName = getCustomerName(q.customerId);
+        const cust = getCustomerName(q.customerId);
         return (
           q.document_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           q.reference_number
             ?.toLowerCase()
             .includes(searchTerm.toLowerCase()) ||
-          customerName.toLowerCase().includes(searchTerm.toLowerCase())
+          cust.toLowerCase().includes(searchTerm.toLowerCase())
         );
       });
     }
 
-    // Apply additional filters
+    // ----- Extra filters -----
     if (filters.finalAmount) {
       result = result.filter(
         (q) =>
@@ -166,7 +179,7 @@ const QuotationList = () => {
       );
     }
 
-    // Apply sorting
+    // ----- Sorting -----
     switch (sortBy) {
       case "Ascending":
         result = [...result].sort((a, b) =>
@@ -180,13 +193,13 @@ const QuotationList = () => {
         break;
       case "Recently Added":
         result = [...result].sort((a, b) => {
-          const dateA = a.quotation_date
+          const da = a.quotation_date
             ? new Date(a.quotation_date)
             : new Date(0);
-          const dateB = b.quotation_date
+          const db = b.quotation_date
             ? new Date(b.quotation_date)
             : new Date(0);
-          return dateB - dateA;
+          return db - da;
         });
         break;
       case "Price High":
@@ -207,10 +220,11 @@ const QuotationList = () => {
   }, [groupedQuotations, activeTab, searchTerm, sortBy, filters]);
 
   const currentQuotations = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredQuotations.slice(startIndex, startIndex + itemsPerPage);
-  }, [filteredQuotations, currentPage]);
+    const start = (currentPage - 1) * pageSize;
+    return filteredQuotations.slice(start, start + pageSize);
+  }, [filteredQuotations, currentPage, pageSize]);
 
+  /* -------------------------- WhatsApp Share -------------------------- */
   const handleShareOnWhatsApp = (quotation) => {
     let itemsArray = [];
     if (quotation.items && Array.isArray(quotation.items)) {
@@ -218,65 +232,58 @@ const QuotationList = () => {
     } else if (quotation.products) {
       try {
         itemsArray = JSON.parse(quotation.products);
-      } catch (e) {
+      } catch (_) {
         itemsArray = [];
       }
     }
 
     const items = itemsArray
       .map(
-        (item, index) =>
-          `  ${index + 1}. Product ID: ${item.productId}\n` +
-          `     Quantity: ${item.quantity}\n` +
-          `     Discount: ${item.discount}\n` +
-          `     Tax: ${item.tax}\n` +
-          `     Total: ₹${item.total}`
+        (it, i) =>
+          `  ${i + 1}. Product ID: ${it.productId}\n` +
+          `     Qty: ${it.quantity}\n` +
+          `     Disc: ${it.discount}\n` +
+          `     Tax: ${it.tax}\n` +
+          `     Total: ₹${it.total}`
       )
       .join("\n");
 
-    const message = `
+    const msg = `
 ==== QUOTATION DETAILS ====
-Document Title: ${quotation?.document_title || "N/A"}
-Quotation Date: ${quotation?.quotation_date || "N/A"}
-Due Date: ${quotation?.due_date || "N/A"}
-Reference Number: ${quotation?.reference_number || "N/A"}
-Include GST: ${quotation?.include_gst ? "Yes" : "No"}
-GST Value: ${quotation?.gst_value || 0}
-Discount Type: ${quotation?.discountType || "N/A"}
+Title: ${quotation?.document_title || "N/A"}
+Date: ${quotation?.quotation_date || "N/A"}
+Due: ${quotation?.due_date || "N/A"}
+Ref#: ${quotation?.reference_number || "N/A"}
+GST: ${quotation?.include_gst ? "Yes" : "No"}
+GST Val: ${quotation?.gst_value || 0}
+Disc Type: ${quotation?.discountType || "N/A"}
 Round Off: ₹${quotation?.roundOff || 0}
 
 -- ITEMS --
-${items || "No items found"}
+${items || "No items"}
 
-Final Amount: ₹${quotation?.finalAmount || 0}
-
+Final: ₹${quotation?.finalAmount || 0}
 Created By: ${quotation?.signature_name || "N/A"}
-Customer ID: ${quotation?.customerId || "N/A"}
+Customer: ${quotation?.customerId || "N/A"}
 Ship To: ${quotation?.shipTo || "N/A"}
 
-View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
-==========================
-  `;
+View: ${window.location.origin}/quotations/${quotation.quotationId}
+==========================`;
 
-    const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
-    window.open(whatsappUrl, "_blank");
+    const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+    window.open(url, "_blank");
   };
 
+  /* ------------------------------ Columns ------------------------------ */
   const columns = [
-    {
-      title: "S.No.",
-      dataIndex: "sNo",
-      key: "sNo",
-      width: 70,
-    },
+    { title: "S.No.", dataIndex: "sNo", key: "sNo", width: 70 },
     {
       title: "Quotation Title",
       dataIndex: "quotationTitle",
       key: "quotationTitle",
       width: 150,
-      render: (text, record) => (
-        <Link to={`/quotations/${record.quotationId}`}>{text || "N/A"}</Link>
+      render: (text, rec) => (
+        <Link to={`/quotations/${rec.quotationId}`}>{text || "N/A"}</Link>
       ),
     },
     {
@@ -294,42 +301,42 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
           <DatePicker
             style={{ width: "100%", marginBottom: 8 }}
             value={selectedKeys[0] ? moment(selectedKeys[0]) : null}
-            onChange={(date) => setSelectedKeys(date ? [date] : [])}
-            placeholder="Select Quotation Date"
+            onChange={(d) => setSelectedKeys(d ? [d] : [])}
+            placeholder="Select Date"
           />
           <div>
             <Button
               type="primary"
+              size="small"
+              style={{ width: 90, marginRight: 8 }}
               onClick={() => {
-                setFilters((prev) => ({
-                  ...prev,
+                setFilters((p) => ({
+                  ...p,
                   quotationDate: selectedKeys[0]
                     ? selectedKeys[0].toDate()
                     : null,
                 }));
                 confirm();
               }}
-              size="small"
-              style={{ width: 90, marginRight: 8 }}
             >
               OK
             </Button>
             <Button
-              onClick={() => {
-                clearFilters();
-                setFilters((prev) => ({ ...prev, quotationDate: null }));
-                confirm();
-              }}
               size="small"
               style={{ width: 90 }}
+              onClick={() => {
+                clearFilters();
+                setFilters((p) => ({ ...p, quotationDate: null }));
+                confirm();
+              }}
             >
               Reset
             </Button>
           </div>
         </div>
       ),
-      filterIcon: (filtered) => (
-        <FaSearch style={{ color: filtered ? "#1890ff" : undefined }} />
+      filterIcon: (f) => (
+        <FaSearch style={{ color: f ? "#1890ff" : undefined }} />
       ),
     },
     {
@@ -351,44 +358,42 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
                 ? [moment(selectedKeys[0][0]), moment(selectedKeys[0][1])]
                 : null
             }
-            onChange={(dates) =>
-              setSelectedKeys(dates ? [[dates[0], dates[1]]] : [])
-            }
-            placeholder={["Start Date", "End Date"]}
+            onChange={(d) => setSelectedKeys(d ? [[d[0], d[1]]] : [])}
+            placeholder={["Start", "End"]}
           />
           <div>
             <Button
-              type="जनता primary"
+              type="primary"
+              size="small"
+              style={{ width: 90, marginRight: 8 }}
               onClick={() => {
-                setFilters((prev) => ({
-                  ...prev,
+                setFilters((p) => ({
+                  ...p,
                   dateRange: selectedKeys[0]
                     ? [selectedKeys[0][0].toDate(), selectedKeys[0][1].toDate()]
                     : null,
                 }));
                 confirm();
               }}
-              size="small"
-              style={{ width: 90, marginRight: 8 }}
             >
               OK
             </Button>
             <Button
-              onClick={() => {
-                clearFilters();
-                setFilters((prev) => ({ ...prev, dateRange: null }));
-                confirm();
-              }}
               size="small"
               style={{ width: 90 }}
+              onClick={() => {
+                clearFilters();
+                setFilters((p) => ({ ...p, dateRange: null }));
+                confirm();
+              }}
             >
               Reset
             </Button>
           </div>
         </div>
       ),
-      filterIcon: (filtered) => (
-        <FaSearch style={{ color: filtered ? "#1890ff" : undefined }} />
+      filterIcon: (f) => (
+        <FaSearch style={{ color: f ? "#1890ff" : undefined }} />
       ),
     },
     {
@@ -402,14 +407,13 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
       dataIndex: "products",
       key: "products",
       width: 120,
-      render: (text, record) => (
+      render: (_, rec) => (
         <button
           className="btn btn-link"
-          onClick={() => handleOpenProductModal(record.products, record)}
+          onClick={() => handleOpenProductModal(rec.products, rec)}
           style={{ color: "#e31e24" }}
-          aria-label="Quick View"
         >
-          Quick View ({getProductCount(record.products)})
+          Quick View ({getProductCount(rec.products)})
         </button>
       ),
     },
@@ -428,50 +432,50 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
           <Select
             style={{ width: "100%", marginBottom: 8 }}
             value={selectedKeys[0]}
-            onChange={(value) => setSelectedKeys(value ? [value] : [])}
+            onChange={(v) => setSelectedKeys(v ? [v] : [])}
             placeholder="Select Customer"
             allowClear
           >
-            {customers.map((customer) => (
-              <Option key={customer.customerId} value={customer.customerId}>
-                {customer.name}
+            {customers.map((c) => (
+              <Option key={c.customerId} value={c.customerId}>
+                {c.name}
               </Option>
             ))}
           </Select>
           <div>
             <Button
               type="primary"
+              size="small"
+              style={{ width: 90, marginRight: 8 }}
               onClick={() => {
-                setFilters((prev) => ({
-                  ...prev,
+                setFilters((p) => ({
+                  ...p,
                   customerId: selectedKeys[0] || null,
                 }));
                 confirm();
               }}
-              size="small"
-              style={{ width: 90, marginRight: 8 }}
             >
               OK
             </Button>
             <Button
-              onClick={() => {
-                clearFilters();
-                setFilters((prev) => ({ ...prev, customerId: null }));
-                confirm();
-              }}
               size="small"
               style={{ width: 90 }}
+              onClick={() => {
+                clearFilters();
+                setFilters((p) => ({ ...p, customerId: null }));
+                confirm();
+              }}
             >
               Reset
             </Button>
           </div>
         </div>
       ),
-      filterIcon: (filtered) => (
-        <FaSearch style={{ color: filtered ? "#1890ff" : undefined }} />
+      filterIcon: (f) => (
+        <FaSearch style={{ color: f ? "#1890ff" : undefined }} />
       ),
-      render: (text, record) => (
-        <Link to={`/customer/${record.customerId}`}>{text}</Link>
+      render: (text, rec) => (
+        <Link to={`/customer/${rec.customerId}`}>{text}</Link>
       ),
     },
     {
@@ -490,7 +494,7 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
       }) => (
         <div style={{ padding: 8 }}>
           <Input
-            placeholder="Enter Final Amount"
+            placeholder="Enter Amount"
             value={selectedKeys[0]}
             onChange={(e) =>
               setSelectedKeys(e.target.value ? [e.target.value] : [])
@@ -500,34 +504,34 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
           <div>
             <Button
               type="primary"
+              size="small"
+              style={{ width: 90, marginRight: 8 }}
               onClick={() => {
-                setFilters((prev) => ({
-                  ...prev,
+                setFilters((p) => ({
+                  ...p,
                   finalAmount: selectedKeys[0] || null,
                 }));
                 confirm();
               }}
-              size="small"
-              style={{ width: 90, marginRight: 8 }}
             >
               OK
             </Button>
             <Button
-              onClick={() => {
-                clearFilters();
-                setFilters((prev) => ({ ...prev, finalAmount: null }));
-                confirm();
-              }}
               size="small"
               style={{ width: 90 }}
+              onClick={() => {
+                clearFilters();
+                setFilters((p) => ({ ...p, finalAmount: null }));
+                confirm();
+              }}
             >
               Reset
             </Button>
           </div>
         </div>
       ),
-      filterIcon: (filtered) => (
-        <FaSearch style={{ color: filtered ? "#1890ff" : undefined }} />
+      filterIcon: (f) => (
+        <FaSearch style={{ color: f ? "#1890ff" : undefined }} />
       ),
     },
     {
@@ -535,54 +539,62 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
       key: "actions",
       width: 100,
       fixed: "right",
-      render: (_, record) => (
+      render: (_, rec) => (
         <div className="d-flex align-items-center">
-          <span
-            onClick={() =>
-              navigate(`/quotations/${record.quotationId}/edit`, {
-                state: { quotation: record },
-              })
-            }
-            style={{ cursor: "pointer", marginRight: 8 }}
-            title="Edit Quotation"
-          >
-            <EditOutlined />
-          </span>
+          <PermissionGate api="edit" module="quotations">
+            <span
+              onClick={() =>
+                navigate(`/quotations/${rec.quotationId}/edit`, {
+                  state: { quotation: rec },
+                })
+              }
+              style={{ cursor: "pointer", marginRight: 8 }}
+              title="Edit Quotation"
+            >
+              <EditOutlined />
+            </span>
+          </PermissionGate>
+
           <Dropdown
             overlay={
               <Menu>
-                <Menu.Item key="view">
-                  <Link
-                    to={`/quotations/${record.quotationId}`}
-                    style={{ textDecoration: "none", color: "inherit" }}
-                    title="View Quotation"
+                <PermissionGate api="view" module="quotations">
+                  <Menu.Item key="view">
+                    <Link
+                      to={`/quotations/${rec.quotationId}`}
+                      style={{ textDecoration: "none", color: "inherit" }}
+                    >
+                      <FaEye style={{ marginRight: 8 }} />
+                      View
+                    </Link>
+                  </Menu.Item>
+                </PermissionGate>
+
+                <PermissionGate api="delete" module="quotations">
+                  <Menu.Item
+                    key="delete"
+                    onClick={() => handleDeleteClick(rec)}
+                    disabled={isDeleting}
+                    style={{ color: "#ff4d4f" }}
                   >
-                    <FaEye style={{ marginRight: 8 }} />
-                    View
-                  </Link>
-                </Menu.Item>
+                    <FaTrash style={{ marginRight: 8 }} />
+                    Delete
+                  </Menu.Item>
+                </PermissionGate>
+
+                <PermissionGate api="write" module="quotations">
+                  <Menu.Item
+                    key="convert"
+                    onClick={() => handleConvertToOrder(rec)}
+                  >
+                    <FaFileInvoice style={{ marginRight: 8 }} />
+                    Convert to Order
+                  </Menu.Item>
+                </PermissionGate>
+
                 <Menu.Item
-                  key="delete"
-                  onClick={() => handleDeleteClick(record)}
-                  disabled={isDeleting}
-                  style={{ color: "#ff4d4f" }}
-                  title="Delete Quotation"
-                >
-                  <FaTrash style={{ marginRight: 8 }} />
-                  Delete
-                </Menu.Item>
-                <Menu.Item
-                  key="convert-to-order"
-                  onClick={() => handleConvertToOrder(record)}
-                  title="Convert to Order"
-                >
-                  <FaFileInvoice style={{ marginRight: 8 }} />
-                  Convert to Order
-                </Menu.Item>
-                <Menu.Item
-                  key="share-whatsapp"
-                  onClick={() => handleShareOnWhatsApp(record)}
-                  title="Share on WhatsApp"
+                  key="whatsapp"
+                  onClick={() => handleShareOnWhatsApp(rec)}
                   style={{ color: "#25D366" }}
                 >
                   <FaWhatsapp style={{ marginRight: 8 }} />
@@ -593,47 +605,43 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
             trigger={["click"]}
             placement="bottomRight"
           >
-            <Button
-              type="text"
-              icon={<BsThreeDotsVertical />}
-              aria-label="More actions"
-            />
+            <Button type="text" icon={<BsThreeDotsVertical />} />
           </Dropdown>
         </div>
       ),
     },
   ];
 
+  /* -------------------------- Table Data --------------------------- */
   const formattedTableData = useMemo(() => {
-    return currentQuotations.map((quotation, index) => ({
-      key: quotation.quotationId,
-      sNo: (currentPage - 1) * itemsPerPage + index + 1,
-      quotationTitle: quotation.document_title || "N/A",
-      quotationDate: quotation.quotation_date
-        ? new Date(quotation.quotation_date).toLocaleDateString()
+    return currentQuotations.map((q, i) => ({
+      key: q.quotationId,
+      sNo: (currentPage - 1) * pageSize + i + 1,
+      quotationTitle: q.document_title || "N/A",
+      quotationDate: q.quotation_date
+        ? new Date(q.quotation_date).toLocaleDateString()
         : "N/A",
-      dueDate: quotation.due_date
-        ? new Date(quotation.due_date).toLocaleDateString()
-        : "N/A",
-      referenceNumber: quotation.reference_number || "N/A",
-      products: quotation.products,
-      customer: getCustomerName(quotation.customerId),
-      customerId: quotation.customerId,
-      finalAmount: `₹${quotation.finalAmount || 0}`,
-      quotationId: quotation.quotationId,
+      dueDate: q.due_date ? new Date(q.due_date).toLocaleDateString() : "N/A",
+      referenceNumber: q.reference_number || "N/A",
+      products: q.products,
+      customer: getCustomerName(q.customerId),
+      customerId: q.customerId,
+      finalAmount: `₹${q.finalAmount || 0}`,
+      quotationId: q.quotationId,
     }));
-  }, [currentQuotations, currentPage, customers]);
+  }, [currentQuotations, currentPage, pageSize, customers]);
 
+  /* --------------------------- Handlers --------------------------- */
   const handleAddQuotation = () => navigate("/quotations/add");
 
-  const handleDeleteClick = (quotation) => {
-    setQuotationToDelete(quotation);
+  const handleDeleteClick = (q) => {
+    setQuotationToDelete(q);
     setShowDeleteModal(true);
   };
 
   const handleConfirmDelete = async () => {
     if (!quotationToDelete?.quotationId) {
-      toast.error("No quotation selected for deletion");
+      toast.error("No quotation selected");
       setShowDeleteModal(false);
       return;
     }
@@ -643,63 +651,60 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
       setQuotationToDelete(null);
       refetch();
       if (currentQuotations.length === 1 && currentPage > 1) {
-        setCurrentPage(currentPage - 1);
+        setCurrentPage((p) => p - 1);
       }
-    } catch (err) {
+    } catch (e) {
       toast.error(
-        `Failed to delete quotation: ${
-          err.data?.message || err.data?.error || err.message || "Unknown error"
+        `Delete failed: ${
+          e.data?.message || e.data?.error || e.message || "unknown"
         }`
       );
     }
   };
 
   const handleOpenProductModal = (products, quotation) => {
-    const parsedProducts =
+    const parsed =
       typeof products === "string"
         ? JSON.parse(products || "[]")
         : products || [];
-    setSelectedProducts(parsedProducts);
+    setSelectedProducts(parsed);
     setSelectedQuotation(quotation);
     setShowProductModal(true);
   };
-
   const handleCloseProductModal = () => {
     setShowProductModal(false);
     setSelectedProducts([]);
   };
 
-  const handleOpenInvoiceModal = (quotation) => {
-    setSelectedQuotation(quotation);
+  const handleOpenInvoiceModal = (q) => {
+    setSelectedQuotation(q);
     setShowInvoiceModal(true);
   };
-
   const handleCloseInvoiceModal = () => {
     setShowInvoiceModal(false);
     setSelectedQuotation(null);
   };
 
-  const handleConvertToOrder = (quotation) => {
+  const handleConvertToOrder = (q) => {
     navigate("/order/add", {
       state: {
         quotationData: {
-          title: quotation.quotationTitle || "",
-          createdFor: quotation.customerId || "",
-          dueDate: quotation.due_date || "",
-          source: quotation.referenceNumber
-            ? `Quotation #${quotation.referenceNumber}`
-            : "",
+          title: q.document_title || "",
+          createdFor: q.customerId || "",
+          dueDate: q.due_date || "",
+          source: q.reference_number ? `Quotation #${q.reference_number}` : "",
           description: `Converted from Quotation #${
-            quotation.referenceNumber || "N/A"
+            q.reference_number || "N/A"
           }`,
-          quotationId: quotation.quotationId || "",
+          quotationId: q.quotationId || "",
         },
       },
     });
   };
 
-  const handlePageChange = ({ selected }) => {
-    setCurrentPage(selected + 1);
+  const handlePageChange = (page, newPageSize) => {
+    setCurrentPage(page);
+    setPageSize(newPageSize);
   };
 
   const clearFilters = () => {
@@ -713,8 +718,10 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
       dateRange: null,
     });
     setCurrentPage(1);
+    setPageSize(10);
   };
 
+  /* --------------------------- Loading / Error -------------------------- */
   if (isLoading) {
     return (
       <div className="content">
@@ -744,6 +751,7 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
     );
   }
 
+  /* ------------------------------- Render ------------------------------- */
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -754,7 +762,9 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
             tableData={formattedTableData}
             exportOptions={{ pdf: true, excel: true }}
           />
+
           <div className="card-body">
+            {/* ---------- Search & Sort ---------- */}
             <div className="row">
               <div className="col-lg-12">
                 <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
@@ -767,14 +777,20 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
                       className="form-control"
                       placeholder="Search Quotations"
                       value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      aria-label="Search quotations"
+                      onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        setCurrentPage(1); // Reset to first page on search
+                      }}
                     />
                   </div>
+
                   <Select
                     style={{ width: 200, marginLeft: 10 }}
                     value={sortBy}
-                    onChange={(value) => setSortBy(value)}
+                    onChange={(value) => {
+                      setSortBy(value);
+                      setCurrentPage(1);
+                    }}
                   >
                     <Option value="Recently Added">Recently Added</Option>
                     <Option value="Ascending">Reference Ascending</Option>
@@ -785,21 +801,21 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
                 </div>
               </div>
             </div>
+
+            {/* ---------- Tabs (All / Accepted / …) ---------- */}
             <div className="tab-content" id="pills-tabContent">
               {Object.entries(groupedQuotations).map(([status]) => (
                 <div
+                  key={status}
                   className={`tab-pane fade ${
                     activeTab === status ? "show active" : ""
                   }`}
                   id={`pills-${status}`}
                   role="tabpanel"
-                  aria-labelledby={`tab-${status}`}
-                  key={status}
                 >
                   {currentQuotations.length === 0 ? (
                     <p className="text-muted">
-                      No {status.toLowerCase()} quotations match the applied
-                      filters
+                      No {status.toLowerCase()} quotations match the filters.
                     </p>
                   ) : (
                     <div
@@ -814,13 +830,18 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
                         rowKey="key"
                         scroll={{ x: "max-content" }}
                       />
-                      {filteredQuotations.length > itemsPerPage && (
-                        <div className="pagination-section mt-4">
-                          <DataTablePagination
-                            totalItems={filteredQuotations.length}
-                            itemNo={itemsPerPage}
-                            onPageChange={handlePageChange}
-                            currentPage={currentPage}
+
+                      {/* ANT DESIGN PAGINATION */}
+                      {filteredQuotations.length > pageSize && (
+                        <div className="d-flex justify-content-end mt-4">
+                          <Pagination
+                            current={currentPage}
+                            pageSize={pageSize}
+                            total={filteredQuotations.length}
+                            onChange={handlePageChange}
+                            showSizeChanger
+                            pageSizeOptions={["10", "20", "50", "100"]}
+                            showQuickJumper
                           />
                         </div>
                       )}
@@ -832,12 +853,14 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
           </div>
         </div>
 
+        {/* -------------------------- Modals -------------------------- */}
         <QuotationProductModal
           show={showProductModal}
           onHide={handleCloseProductModal}
           products={selectedProducts}
           selectedQuotation={selectedQuotation}
         />
+
         {showDeleteModal && (
           <DeleteModal
             item={quotationToDelete}
@@ -851,6 +874,7 @@ View Quotation: ${window.location.origin}/quotations/${quotation.quotationId}
             isLoading={isDeleting}
           />
         )}
+
         {showInvoiceModal && selectedQuotation && (
           <CreateInvoiceFromQuotation
             quotation={selectedQuotation}

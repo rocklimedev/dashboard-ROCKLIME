@@ -95,6 +95,13 @@ export const authApi = baseApi.injectEndpoints({
         body: email,
       }),
     }),
+    getMyPermissions: builder.query({
+      query: () => ({
+        url: "/auth/me/permissions",
+        method: "GET",
+      }),
+      providesTags: ["Permissions", "Auth"],
+    }),
   }),
 });
 
@@ -110,4 +117,5 @@ export const {
   useVerifyEmailMutation,
   useChangePasswordMutation,
   useVerifyAccountMutation,
+  useGetMyPermissionsQuery,
 } = authApi;

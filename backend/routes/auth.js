@@ -10,11 +10,14 @@ const {
   resendVerificationEmail,
   validateResetToken,
   changePassword,
+  getAllPermissionsOfLoggedInUser,
 } = require("../controller/authController");
 const checkPermission = require("../middleware/permission");
+const { auth } = require("../middleware/auth"); // Authentication Middleware
 const router = express.Router();
 const { emailer } = require("../middleware/sendMail");
 const emails = require("../config/template");
+
 router.get("/validate-reset-token/:token", validateResetToken);
 router.get("/verify-account/:token", verifyAccount); // <-- token comes as param
 router.post(
@@ -54,4 +57,7 @@ router.post(
   refreshToken
 );
 router.post("/resend-verification", resendVerificationEmail); // New endpoint
+
+router.get("/me/permissions", auth, getAllPermissionsOfLoggedInUser);
+
 module.exports = router;

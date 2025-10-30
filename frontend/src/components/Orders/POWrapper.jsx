@@ -3,22 +3,23 @@ import { useNavigate, Link } from "react-router-dom";
 import { toast } from "sonner";
 import { FaSearch } from "react-icons/fa";
 import { EditOutlined, DeleteOutlined, MoreOutlined } from "@ant-design/icons";
-import { Dropdown, Menu, Button, Select, Spin } from "antd";
+import { Dropdown, Menu, Button, Select, Spin, Pagination } from "antd"; // <-- Pagination added
 import DeleteModal from "../Common/DeleteModal";
-import OrderPagination from "./OrderPagination";
 import PageHeader from "../Common/PageHeader";
 import DatesModal from "./DateModal";
+import PermissionGate from "../../context/PermissionGate";
 import {
   useGetPurchaseOrdersQuery,
   useDeletePurchaseOrderMutation,
   useGetVendorsQuery,
-  useUpdatePurchaseOrderStatusMutation, // Import the new mutation
+  useUpdatePurchaseOrderStatusMutation,
 } from "../../api/poApi";
 
 const { Option } = Select;
 
 const POWrapper = ({ activeTab, setActiveTab }) => {
   const navigate = useNavigate();
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [poToDelete, setPOToDelete] = useState(null);
   const [showDatesModal, setShowDatesModal] = useState(false);
@@ -33,9 +34,11 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
     page: 1,
     limit: 10,
   });
-  const [editingStatusId, setEditingStatusId] = useState(null); // Track which PO is being edited
+  const [editingStatusId, setEditingStatusId] = useState(null);
 
-  // Fetch purchase orders and vendors using RTK Query
+  // ──────────────────────────────────────────────────────
+  // RTK Queries
+  // ──────────────────────────────────────────────────────
   const {
     data: poData,
     isLoading,
@@ -54,11 +57,13 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
   const [updatePurchaseOrderStatus, { isLoading: isUpdatingStatus }] =
     useUpdatePurchaseOrderStatusMutation();
 
-  // Map vendors for quick lookup
+  // ──────────────────────────────────────────────────────
+  // Vendor map
+  // ──────────────────────────────────────────────────────
   const vendorMap = useMemo(() => {
     if (!vendorsData) return {};
-    return vendorsData.reduce((acc, vendor) => {
-      acc[vendor.id] = vendor.vendorName || "—";
+    return vendorsData.reduce((acc, v) => {
+      acc[v.id] = v.vendorName || "—";
       return acc;
     }, {});
   }, [vendorsData]);
@@ -66,10 +71,10 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
   const purchaseOrders = poData?.purchaseOrders || [];
   const totalCount = poData?.totalCount || 0;
 
-  // Statuses aligned with backend model
+  // ──────────────────────────────────────────────────────
+  // Statuses & Sorting
+  // ──────────────────────────────────────────────────────
   const statuses = ["pending", "confirmed", "delivered", "cancelled"];
-
-  // Sort options
   const sortOptions = [
     "Recently Added",
     "Ascending",
@@ -78,7 +83,9 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
     "Order Date Descending",
   ];
 
-  // Filtered purchase orders (client-side filtering for search and sort)
+  // ──────────────────────────────────────────────────────
+  // Client-side filtering & sorting
+  // ──────────────────────────────────────────────────────
   const filteredPOs = useMemo(() => {
     let result = purchaseOrders;
 
@@ -96,17 +103,13 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
 
     switch (sortBy) {
       case "Ascending":
-        return [...result].sort((a, b) => {
-          const aOrder = a.poNumber || "";
-          const bOrder = b.poNumber || "";
-          return aOrder.localeCompare(bOrder);
-        });
+        return [...result].sort((a, b) =>
+          (a.poNumber || "").localeCompare(b.poNumber || "")
+        );
       case "Descending":
-        return [...result].sort((a, b) => {
-          const aOrder = a.poNumber || "";
-          const bOrder = b.poNumber || "";
-          return bOrder.localeCompare(aOrder);
-        });
+        return [...result].sort((a, b) =>
+          (b.poNumber || "").localeCompare(a.poNumber || "")
+        );
       case "Recently Added":
         return [...result].sort(
           (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
@@ -128,18 +131,27 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
     }
   }, [purchaseOrders, searchTerm, sortBy, vendorMap]);
 
-  // Paginated purchase orders
   const paginatedPOs = filteredPOs;
 
-  // Compute filtered state
-  const isFiltered = useMemo(() => {
-    return filters.status !== "" || searchTerm.trim() !== "";
-  }, [filters, searchTerm]);
-
-  // Handlers
-  const handleOpenAddPO = () => {
-    navigate("/po/add");
+  // ──────────────────────────────────────────────────────
+  // Helpers
+  // ──────────────────────────────────────────────────────
+  const isDueDateClose = (dueDate) => {
+    if (!dueDate) return false;
+    const today = new Date();
+    const due = new Date(dueDate);
+    const diffDays = (due - today) / (1000 * 60 * 60 * 24);
+    return diffDays <= 3;
   };
+
+  const getStatusDisplay = (status) => {
+    return statuses.includes(status) ? status : "pending";
+  };
+
+  // ──────────────────────────────────────────────────────
+  // Handlers
+  // ──────────────────────────────────────────────────────
+  const handleOpenAddPO = () => navigate("/po/add");
 
   const handleEditClick = (po) => {
     navigate(`/po/${po.id}/edit`, { state: { po } });
@@ -159,6 +171,7 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
     try {
       await deletePurchaseOrder(poId).unwrap();
       handleModalClose();
+      toast.success("Purchase Order deleted");
     } catch (err) {
       toast.error(
         `Failed to delete purchase order: ${
@@ -171,7 +184,8 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
   const handleStatusChange = async (poId, newStatus) => {
     try {
       await updatePurchaseOrderStatus({ id: poId, status: newStatus }).unwrap();
-      setEditingStatusId(null); // Close the dropdown
+      setEditingStatusId(null);
+      toast.success("Status updated");
     } catch (err) {
       toast.error(
         `Failed to update status: ${err.data?.message || "Unknown error"}`
@@ -179,16 +193,16 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
     }
   };
 
-  const handlePageChange = (page) => {
-    setFilters((prev) => ({ ...prev, page }));
+  const handlePageChange = (page, pageSize) => {
+    setFilters((prev) => ({
+      ...prev,
+      page,
+      limit: pageSize,
+    }));
   };
 
   const handleClearFilters = () => {
-    setFilters({
-      status: "",
-      page: 1,
-      limit: 10,
-    });
+    setFilters({ status: "", page: 1, limit: 10 });
     setSearchTerm("");
     setSortBy("Recently Added");
   };
@@ -203,19 +217,9 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
     setSelectedDates({ dueDate: null, followupDates: [] });
   };
 
-  const isDueDateClose = (dueDate) => {
-    if (!dueDate) return false;
-    const today = new Date();
-    const due = new Date(dueDate);
-    const diffTime = due - today;
-    const diffDays = diffTime / (1000 * 60 * 60 * 24);
-    return diffDays <= 3;
-  };
-
-  const getStatusDisplay = (status) => {
-    return statuses.includes(status) ? status : "pending";
-  };
-
+  // ──────────────────────────────────────────────────────
+  // Render
+  // ──────────────────────────────────────────────────────
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -228,6 +232,7 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
           />
 
           <div className="card-body">
+            {/* ─────── Filters ─────── */}
             <div className="row">
               <div className="col-lg-6">
                 <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
@@ -244,28 +249,33 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
                       }
                     >
                       <option value="">All Statuses</option>
-                      {statuses.map((status) => (
-                        <option key={status} value={status}>
-                          {status.charAt(0).toUpperCase() + status.slice(1)}
+                      {statuses.map((s) => (
+                        <option key={s} value={s}>
+                          {s.charAt(0).toUpperCase() + s.slice(1)}
                         </option>
                       ))}
                     </select>
                   </div>
+
                   <div className="d-flex align-items-center">
                     <select
                       className="form-select"
                       value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value)}
+                      onChange={(e) => {
+                        setSortBy(e.target.value);
+                        setFilters((prev) => ({ ...prev, page: 1 }));
+                      }}
                     >
-                      {sortOptions.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
+                      {sortOptions.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
                         </option>
                       ))}
                     </select>
                   </div>
                 </div>
               </div>
+
               <div className="col-lg-6">
                 <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
                   <div className="input-icon-start position-relative me-2">
@@ -284,6 +294,7 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
                       aria-label="Search purchase orders"
                     />
                   </div>
+
                   <button
                     className="btn btn-outline-secondary"
                     onClick={handleClearFilters}
@@ -293,9 +304,13 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
                 </div>
               </div>
             </div>
+
+            {/* ─────── Table ─────── */}
             <div className="tab-content">
               {isLoading || isFetching ? (
-                <p>Loading...</p>
+                <p className="text-center">
+                  <Spin />
+                </p>
               ) : error ? (
                 <p className="text-danger">
                   Error: {error.data?.message || error.message}
@@ -320,7 +335,7 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
                       </tr>
                     </thead>
                     <tbody>
-                      {paginatedPOs.map((po, index) => {
+                      {paginatedPOs.map((po, idx) => {
                         const vendorName = po.vendorId
                           ? vendorMap[po.vendorId] || "Loading..."
                           : "N/A";
@@ -331,7 +346,7 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
                           ? "due-date-close"
                           : "";
                         const serialNumber =
-                          (filters.page - 1) * filters.limit + index + 1;
+                          (filters.page - 1) * filters.limit + idx + 1;
 
                         return (
                           <tr key={po.id}>
@@ -339,40 +354,61 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
                             <td>
                               <Link to={`/po/${po.id}`}>{po.poNumber}</Link>
                             </td>
+
+                            {/* ── STATUS (editable) ── */}
                             <td>
-                              {editingStatusId === po.id ? (
-                                <Select
-                                  value={status}
-                                  onChange={(value) =>
-                                    handleStatusChange(po.id, value)
+                              <PermissionGate
+                                api="write"
+                                module="Purchase Order Management"
+                              >
+                                {editingStatusId === po.id ? (
+                                  <Select
+                                    value={status}
+                                    onChange={(v) =>
+                                      handleStatusChange(po.id, v)
+                                    }
+                                    style={{ width: 120 }}
+                                    loading={isUpdatingStatus}
+                                    autoFocus
+                                    onBlur={() => setEditingStatusId(null)}
+                                  >
+                                    {statuses.map((s) => (
+                                      <Option key={s} value={s}>
+                                        {s.charAt(0).toUpperCase() + s.slice(1)}
+                                      </Option>
+                                    ))}
+                                  </Select>
+                                ) : (
+                                  <span
+                                    className="priority-badge"
+                                    style={{
+                                      backgroundColor: "#f2f2f2",
+                                      cursor: "pointer",
+                                    }}
+                                    onClick={() => setEditingStatusId(po.id)}
+                                  >
+                                    {status.charAt(0).toUpperCase() +
+                                      status.slice(1)}
+                                    <EditOutlined style={{ marginLeft: 8 }} />
+                                  </span>
+                                )}
+                              </PermissionGate>
+
+                              {/* Fallback if no write permission */}
+                              {!editingStatusId && (
+                                <PermissionGate
+                                  api="view"
+                                  module="Purchase Order Management"
+                                  fallback={
+                                    <span>
+                                      {status.charAt(0).toUpperCase() +
+                                        status.slice(1)}
+                                    </span>
                                   }
-                                  style={{ width: 120 }}
-                                  loading={isUpdatingStatus}
-                                  autoFocus
-                                  onBlur={() => setEditingStatusId(null)}
-                                  aria-label={`Update status for PO ${po.poNumber}`}
-                                >
-                                  {statuses.map((s) => (
-                                    <Option key={s} value={s}>
-                                      {s.charAt(0).toUpperCase() + s.slice(1)}
-                                    </Option>
-                                  ))}
-                                </Select>
-                              ) : (
-                                <span
-                                  className="priority-badge"
-                                  style={{
-                                    backgroundColor: "#f2f2f2",
-                                    cursor: "pointer",
-                                  }}
-                                  onClick={() => setEditingStatusId(po.id)}
-                                >
-                                  {status.charAt(0).toUpperCase() +
-                                    status.slice(1)}
-                                  <EditOutlined style={{ marginLeft: 8 }} />
-                                </span>
+                                />
                               )}
                             </td>
+
                             <td>{vendorName}</td>
                             <td>
                               {po.totalAmount ? `Rs. ${po.totalAmount}` : "—"}
@@ -385,63 +421,98 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
                             <td>
                               {po.expectDeliveryDate ? (
                                 <span
-                                  className="due-date-link"
+                                  className={`due-date-link ${dueDateClass}`}
                                   style={{
                                     color: "#e31e24",
                                     cursor: "pointer",
                                   }}
+                                  onClick={() =>
+                                    handleOpenDatesModal(
+                                      po.expectDeliveryDate,
+                                      po.followupDates
+                                    )
+                                  }
                                 >
-                                  {po.expectDeliveryDate
-                                    ? new Date(
-                                        po.expectDeliveryDate
-                                      ).toLocaleDateString()
-                                    : "—"}
+                                  {new Date(
+                                    po.expectDeliveryDate
+                                  ).toLocaleDateString()}
                                 </span>
                               ) : (
                                 "—"
                               )}
                             </td>
+
+                            {/* ── ACTIONS ── */}
                             <td>
-                              <span onClick={() => handleEditClick(po)}>
-                                <EditOutlined style={{ marginRight: 8 }} />
-                              </span>
-                              <Dropdown
-                                overlay={
-                                  <Menu>
-                                    <Menu.Item
-                                      key="delete"
-                                      onClick={() => handleDeleteClick(po.id)}
-                                      style={{ color: "#ff4d4f" }}
-                                    >
-                                      <DeleteOutlined
-                                        style={{ marginRight: 8 }}
-                                      />
-                                      Delete Purchase Order
-                                    </Menu.Item>
-                                  </Menu>
-                                }
-                                trigger={["click"]}
-                                placement="bottomRight"
-                              >
-                                <Button
-                                  type="text"
-                                  icon={<MoreOutlined />}
-                                  aria-label="More actions"
-                                />
-                              </Dropdown>
+                              <div className="d-flex align-items-center">
+                                {/* EDIT */}
+                                <PermissionGate
+                                  api="edit"
+                                  module="purchase_orders"
+                                >
+                                  <span
+                                    onClick={() => handleEditClick(po)}
+                                    style={{
+                                      cursor: "pointer",
+                                      marginRight: 8,
+                                    }}
+                                    title="Edit PO"
+                                  >
+                                    <EditOutlined />
+                                  </span>
+                                </PermissionGate>
+
+                                {/* MORE (Delete) */}
+                                <PermissionGate
+                                  api="delete"
+                                  module="purchase_orders"
+                                >
+                                  <Dropdown
+                                    overlay={
+                                      <Menu>
+                                        <Menu.Item
+                                          key="delete"
+                                          onClick={() =>
+                                            handleDeleteClick(po.id)
+                                          }
+                                          style={{ color: "#ff4d4f" }}
+                                        >
+                                          <DeleteOutlined
+                                            style={{ marginRight: 8 }}
+                                          />
+                                          Delete Purchase Order
+                                        </Menu.Item>
+                                      </Menu>
+                                    }
+                                    trigger={["click"]}
+                                    placement="bottomRight"
+                                  >
+                                    <Button
+                                      type="text"
+                                      icon={<MoreOutlined />}
+                                      aria-label="More actions"
+                                    />
+                                  </Dropdown>
+                                </PermissionGate>
+                              </div>
                             </td>
                           </tr>
                         );
                       })}
                     </tbody>
                   </table>
+
+                  {/* ── ANT DESIGN PAGINATION ── */}
                   {totalCount > filters.limit && (
-                    <div className="pagination-section mt-4">
-                      <OrderPagination
-                        currentPage={filters.page}
-                        totalCount={totalCount}
+                    <div className="d-flex justify-content-end mt-4">
+                      <Pagination
+                        current={filters.page}
                         pageSize={filters.limit}
-                        onPageChange={handlePageChange}
+                        total={totalCount}
+                        onChange={handlePageChange}
+                        showSizeChanger
+                        pageSizeOptions={["10", "20", "50", "100"]}
+                        showQuickJumper
                       />
                     </div>
                   )}
@@ -450,7 +521,7 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
             </div>
           </div>
 
-          {/* Modals */}
+          {/* ── Modals ── */}
           {showDeleteModal && (
             <DeleteModal
               isVisible={showDeleteModal}
@@ -460,6 +531,7 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
               onCancel={handleModalClose}
             />
           )}
+
           {showDatesModal && (
             <DatesModal
               show={showDatesModal}
