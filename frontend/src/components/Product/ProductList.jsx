@@ -68,7 +68,9 @@ const ProductsList = () => {
   const { data: user, isLoading: userLoading } = useGetProfileQuery();
 
   const userId = user?.user?.userId;
-  const { data: cartData } = useGetCartQuery(userId, { skip: !userId });
+  const { data: cartData, refetch: refetchCart } = useGetCartQuery(userId, {
+    skip: !userId,
+  });
 
   const [updateProductFeatured] = useUpdateProductFeaturedMutation();
   const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
@@ -234,19 +236,19 @@ const ProductsList = () => {
     }
   };
 
-  const handleAddToCart = async (product) => {
+  // ProductsList.jsx  (only the handler changes)
+  const handleAddToCart = async ({ productId, quantity }) => {
     if (!userId) return toast.error("User not logged in");
+    if (!quantity || quantity < 1) return toast.error("Invalid quantity");
 
-    const sellingPriceEntry = Array.isArray(product.metaDetails)
-      ? product.metaDetails.find((d) => d.slug === "sellingPrice")
-      : null;
-    const price = sellingPriceEntry
-      ? parseFloat(sellingPriceEntry.value)
-      : null;
-    if (!price || isNaN(price)) return toast.error("Invalid price");
+    const product = products.find((p) => p.productId === productId);
+    if (!product) return toast.error("Product not found");
 
-    const productId = product.productId;
-    const qtyToAdd = product.quantity;
+    const sellingPrice = product.metaDetails?.find(
+      (m) => m.slug === "sellingPrice"
+    )?.value;
+    if (!sellingPrice || isNaN(sellingPrice))
+      return toast.error("Invalid price");
 
     setCartLoadingStates((s) => ({ ...s, [productId]: true }));
 
@@ -257,15 +259,16 @@ const ProductsList = () => {
       await addProductToCart({
         userId,
         productId,
-        quantity: existing ? existing.quantity + qtyToAdd : qtyToAdd,
+        quantity, // just the amount user wants to add
       }).unwrap();
+      toast.success(`Added ${quantity} item(s) to cart`);
+      refetchCart();
     } catch (e) {
-      toast.error(e.data?.message || "Add to cart failed");
+      toast.error(e.data?.message || "Failed");
     } finally {
       setCartLoadingStates((s) => ({ ...s, [productId]: false }));
     }
   };
-
   const handleStockClick = (product) => {
     setSelectedProduct(product);
     setStockModalVisible(true);
@@ -443,13 +446,13 @@ const ProductsList = () => {
   const breadcrumbItems = brandId
     ? [
         { label: "Home", url: "/" },
-        { label: "Brands", url: "/inventory/products" },
+        { label: "Brands", url: "/category-selector/products" },
         { label: "Products" },
       ]
     : bpcId
     ? [
         { label: "Home", url: "/" },
-        { label: "Categories", url: "/inventory/products" },
+        { label: "Categories", url: "/category-selector/products" },
         {
           label: bpcData?.name || "Category",
           url: `/brand-parent-categories/${bpcId}`,

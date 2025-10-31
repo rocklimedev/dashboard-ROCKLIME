@@ -5,6 +5,9 @@ const User = require("../models/users");
 const Role = require("../models/roles");
 const RolePermission = require("../models/rolePermission");
 const Permission = require("../models/permisson");
+const VerificationToken = require("../models/verificationToken");
+const emails = require("../middleware/sendMail");
+const ROLES = require("../config/constant");
 require("dotenv").config();
 
 // Login, Logout, Refresh Token, and Resend Verification Email remain unchanged
@@ -87,7 +90,9 @@ exports.register = async (req, res, next) => {
         .json({ message: "Username or Email already exists" });
     }
 
-    const roleData = await Roles.findOne({ where: { roleName: ROLES.Users } });
+    const roleData = await Role.findOne({
+      where: { roleName: ROLES.ROLES.Users },
+    });
     if (!roleData) {
       return res.status(400).json({ message: "USERS role not found" });
     }
@@ -126,12 +131,12 @@ exports.register = async (req, res, next) => {
       req.headers.host,
       verificationToken
     );
-    await emails.sendMail(
-      newUser.email,
-      emailContent.subject,
-      emailContent.text,
-      emailContent.html
-    );
+    // await emails.sendMail(
+    //   newUser.email,
+    //   emailContent.subject,
+    //   emailContent.text,
+    //   emailContent.html
+    // );
 
     res.status(201).json({
       message: "User registered successfully. Verification email sent.",

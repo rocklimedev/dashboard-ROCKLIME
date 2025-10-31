@@ -165,8 +165,11 @@ const NewCart = ({ onConvertToOrder }) => {
     data: cartData,
     isLoading: cartLoading,
     isError: cartError,
-    refetch,
-  } = useGetCartQuery(userId, { skip: !userId });
+  } = useGetCartQuery(userId, {
+    skip: !userId,
+    refetchOnMountOrArgChange: false,
+    refetchOnReconnect: false,
+  });
   const {
     data: customerData,
     isLoading: customersLoading,
@@ -439,7 +442,7 @@ const NewCart = ({ onConvertToOrder }) => {
       setQuotationNumber(generateQuotationNumber());
       setPurchaseOrderNumber(generatePurchaseOrderNumber(orders));
       setPurchaseOrderData((prev) => ({ ...prev, items: [] }));
-      refetch();
+
       setShowClearCartModal(false);
       setActiveTab("cart");
     } catch (error) {
@@ -447,97 +450,12 @@ const NewCart = ({ onConvertToOrder }) => {
     }
   };
   // ────────────────────────────────────────────────────────────────────────
-  //  Optimistic quantity update ( + / – )  –  NO PAGE REFRESH
-  // ────────────────────────────────────────────────────────────────────────
-  const handleUpdateQuantity = useCallback(
-    async (productId, newQuantity) => {
-      if (!userId) {
-        toast.error("User not logged in!");
-        return;
-      }
-
-      // 1. Optimistic UI update
-      const oldItem = cartItems.find((i) => i.productId === productId);
-      if (!oldItem) return;
-
-      const optimisticItems =
-        newQuantity <= 0
-          ? cartItems.filter((i) => i.productId !== productId)
-          : cartItems.map((i) =>
-              i.productId === productId ? { ...i, quantity: newQuantity } : i
-            );
-
-      // Update RTK-Query cache instantly
-      dispatch(
-        cartApi.util.updateQueryData("getCart", userId, (draft) => {
-          draft.cart.items = optimisticItems;
-        })
-      );
-
-      // Clean per-item state when removing
-      if (newQuantity <= 0) {
-        setItemDiscounts((p) => {
-          const { [productId]: _, ...rest } = p;
-          return rest;
-        });
-        setItemTaxes((p) => {
-          const { [productId]: _, ...rest } = p;
-          return rest;
-        });
-        setItemDiscountTypes((p) => {
-          const { [productId]: _, ...rest } = p;
-          return rest;
-        });
-      }
-
-      // 2. Mark as updating
-      setUpdatingItems((p) => ({ ...p, [productId]: true }));
-
-      // 3. Real mutation
-      try {
-        if (newQuantity <= 0) {
-          await removeFromCart({ userId, productId }).unwrap();
-        } else {
-          await updateCart({
-            userId,
-            productId,
-            quantity: Number(newQuantity),
-          }).unwrap();
-        }
-        // Optional: refetch(); // if you want fresh data
-      } catch (err) {
-        toast.error(`Error: ${err?.data?.message || "Failed"}`);
-
-        // Rollback optimistic update
-        dispatch(
-          cartApi.util.updateQueryData("getCart", userId, (draft) => {
-            draft.cart.items = cartItems; // revert to original
-          })
-        );
-      } finally {
-        setUpdatingItems((p) => ({ ...p, [productId]: false }));
-      }
-    },
-    [
-      userId,
-      cartItems,
-      dispatch,
-      updateCart,
-      removeFromCart,
-      setItemDiscounts,
-      setItemTaxes,
-      setItemDiscountTypes,
-      setUpdatingItems,
-    ]
-  );
-
-  // ────────────────────────────────────────────────────────────────────────
   //  Optimistic remove (trash icon)  –  NO PAGE REFRESH
   // ────────────────────────────────────────────────────────────────────────
   const handleRemoveItem = useCallback(
     async (e, productId) => {
-      e.preventDefault(); // ← CRITICAL
-      e.stopPropagation();
+      if (e && e.preventDefault) e.preventDefault();
+      if (e && e.stopPropagation) e.stopPropagation();
 
       if (!userId) return toast.error("User not logged in!");
 
@@ -550,25 +468,25 @@ const NewCart = ({ onConvertToOrder }) => {
         })
       );
 
-      // Clean per-item state
+      // Clean state
       setItemDiscounts((p) => {
-        const { [productId]: _, ...r } = p;
-        return r;
+        const { [productId]: _, ...rest } = p;
+        return rest;
       });
       setItemTaxes((p) => {
-        const { [productId]: _, ...r } = p;
-        return r;
+        const { [productId]: _, ...rest } = p;
+        return rest;
       });
       setItemDiscountTypes((p) => {
-        const { [productId]: _, ...r } = p;
-        return r;
+        const { [productId]: _, ...rest } = p;
+        return rest;
       });
 
       setUpdatingItems((p) => ({ ...p, [productId]: true }));
 
       try {
         await removeFromCart({ userId, productId }).unwrap();
-        refetch();
+        // NO refetch()
       } catch (err) {
         toast.error(`Error: ${err?.data?.message || "Failed"}`);
         // Rollback
@@ -581,17 +499,32 @@ const NewCart = ({ onConvertToOrder }) => {
         setUpdatingItems((p) => ({ ...p, [productId]: false }));
       }
     },
-    [
-      userId,
-      cartItems,
-      dispatch,
-      removeFromCart,
-      setItemDiscounts,
-      setItemTaxes,
-      setItemDiscountTypes,
-      setUpdatingItems,
-    ]
+    [userId, cartItems, dispatch, removeFromCart]
   );
+  // ────────────────────────────────────────────────────────────────────────
+  //  Optimistic quantity update ( + / – )  –  NO PAGE REFRESH
+  // ────────────────────────────────────────────────────────────────────────
+  const handleUpdateQuantity = useCallback(
+    async (productId, newQuantity) => {
+      if (!userId || newQuantity < 1) return;
+
+      setUpdatingItems((p) => ({ ...p, [productId]: true }));
+
+      try {
+        await updateCart({
+          userId,
+          productId,
+          quantity: Number(newQuantity),
+        }).unwrap();
+      } catch (err) {
+        toast.error(`Error: ${err?.data?.message || "Failed"}`);
+      } finally {
+        setUpdatingItems((p) => ({ ...p, [productId]: false }));
+      }
+    },
+    [userId, updateCart]
+  );
+
   const handleTeamAdded = (showModal) => {
     setShowAddTeamModal(showModal);
     if (!showModal) refetchTeams();
@@ -1036,11 +969,7 @@ const NewCart = ({ onConvertToOrder }) => {
             "An unexpected error occurred"
           }
           type="error"
-          action={
-            <Button type="primary" onClick={refetch}>
-              Retry
-            </Button>
-          }
+          action={<Button type="primary">Retry</Button>}
           showIcon
         />
       </PageWrapper>

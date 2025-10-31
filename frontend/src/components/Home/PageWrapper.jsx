@@ -252,184 +252,200 @@ const PageWrapper = () => {
   // ──────────────────────────────────────────────────────
   return (
     <div className="page-wrapper">
-      <div
-        className="content"
-        style={{
-          padding: "20px",
-          display: "grid",
-          gap: "20px",
-          gridTemplateColumns: "1fr 1fr 1fr",
-          gridTemplateRows: "auto auto auto",
-        }}
-      >
-        {/* LEFT COLUMN */}
-        <div
-          style={{
-            gridColumn: "1 / 2",
-            display: "flex",
-            flexDirection: "column",
-            gap: "20px",
-          }}
-        >
-          {/* ORDERS THIS MONTH */}
-          <div
-            className="card"
-            style={{ borderRadius: "12px", overflow: "hidden" }}
-          >
-            <div
-              className="card-header"
-              style={{
-                padding: "16px",
-                background: "#f8f9fa",
-                fontWeight: 600,
-              }}
-            >
-              Orders this month
-            </div>
-            <div className="card-body" style={{ padding: 0 }}>
-              {orders.length ? (
-                <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
-                  {orders.map((o, i) => (
-                    <li
-                      key={o.id}
-                      style={{
-                        padding: "12px 16px",
-                        borderBottom:
-                          i < orders.length - 1 ? "1px solid #eee" : "none",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <div>
-                        <strong>Order No:</strong> {o.orderNo}
-                        <span
-                          style={{
-                            marginLeft: 8,
-                            color: "#666",
-                            fontSize: "0.9rem",
-                          }}
-                        >
-                          {new Date(o.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <select
-                        value={o.status}
-                        onChange={(e) =>
-                          handleStatusChange(o.id, e.target.value)
-                        }
-                        style={{
-                          fontSize: "0.85rem",
-                          padding: "4px 8px",
-                          borderRadius: "6px",
-                          border: "1px solid #ddd",
-                        }}
-                      >
-                        {[
-                          "PREPARING",
-                          "CHECKING",
-                          "INVOICE",
-                          "DISPATCHED",
-                          "DELIVERED",
-                          "PARTIALLY_DELIVERED",
-                          "CANCELED",
-                          "DRAFT",
-                          "ONHOLD",
-                        ].map((s) => (
-                          <option key={s} value={s}>
-                            {s}
-                          </option>
-                        ))}
-                      </select>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p
-                  style={{
-                    padding: "16px",
-                    color: "#888",
-                    fontStyle: "italic",
-                  }}
-                >
-                  No orders.
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* MIDDLE COLUMN */}
-        <div
-          style={{
-            gridColumn: "2 / 3",
-            display: "flex",
-            flexDirection: "column",
-            gap: "20px",
-          }}
-        >
-          {/* TOP SELLING PRODUCT */}
-          <div
-            className="card"
-            style={{ borderRadius: "12px", overflow: "hidden" }}
-          >
-            <div
-              className="card-header"
-              style={{
-                padding: "16px",
-                background: "#f8f9fa",
-                fontWeight: 600,
-              }}
-            >
-              Top Selling product
-            </div>
-            <div className="card-body" style={{ padding: 0 }}>
-              {topProductsLoading ? (
-                <p style={{ padding: "16px" }}>Loading top products…</p>
-              ) : topProducts.length > 0 ? (
-                <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
-                  {topProducts.slice(0, 5).map((product, idx) => {
-                    let imgUrl = null;
-                    if (product.images) {
-                      try {
-                        const arr = JSON.parse(product.images);
-                        imgUrl =
-                          Array.isArray(arr) && arr[0]
-                            ? arr[0]
-                            : product.images;
-                      } catch {
-                        imgUrl = product.images;
-                      }
-                    }
-
-                    return (
+      <div className="content">
+        <div className="row gx-3 gy-3">
+          {/* LEFT COLUMN */}
+          <div className="col-12 col-md-4 d-flex flex-column gap-3">
+            <div className="card shadow-sm rounded-3">
+              <div className="card-header bg-light fw-semibold">
+                Orders this month
+              </div>
+              <div className="card-body p-0">
+                {orders.length ? (
+                  <ul className="list-unstyled m-0">
+                    {orders.map((o, i) => (
                       <li
-                        key={product.productId}
+                        key={o.id}
+                        className="d-flex justify-content-between align-items-center border-bottom"
                         style={{
                           padding: "12px 16px",
-                          borderBottom: idx < 4 ? "1px solid #eee" : "none",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
+                          borderBottom:
+                            i < orders.length - 1 ? "1px solid #eee" : "none",
                         }}
                       >
-                        <div
+                        <div>
+                          <strong>Order No:</strong> {o.orderNo}
+                          <span className="ms-2 text-muted small">
+                            {new Date(o.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <select
+                          value={o.status}
+                          onChange={(e) =>
+                            handleStatusChange(o.id, e.target.value)
+                          }
+                          className="form-select form-select-sm"
+                          style={{ maxWidth: 150 }}
+                        >
+                          {[
+                            "PREPARING",
+                            "CHECKING",
+                            "INVOICE",
+                            "DISPATCHED",
+                            "DELIVERED",
+                            "PARTIALLY_DELIVERED",
+                            "CANCELED",
+                            "DRAFT",
+                            "ONHOLD",
+                          ].map((s) => (
+                            <option key={s} value={s}>
+                              {s}
+                            </option>
+                          ))}
+                        </select>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="p-3 text-muted fst-italic">No orders.</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* MIDDLE COLUMN */}
+          <div className="col-12 col-md-4 d-flex flex-column gap-3">
+            <div className="card shadow-sm rounded-3">
+              <div className="card-header bg-light fw-semibold">
+                Top Selling product
+              </div>
+              <div className="card-body p-0">
+                {topProductsLoading ? (
+                  <p className="p-3">Loading top products…</p>
+                ) : topProducts.length > 0 ? (
+                  <ul className="list-unstyled m-0">
+                    {topProducts.slice(0, 5).map((product, idx) => {
+                      let imgUrl = null;
+                      if (product.images) {
+                        try {
+                          const arr = JSON.parse(product.images);
+                          imgUrl =
+                            Array.isArray(arr) && arr[0]
+                              ? arr[0]
+                              : product.images;
+                        } catch {
+                          imgUrl = product.images;
+                        }
+                      }
+                      return (
+                        <li
+                          key={product.productId}
+                          className="d-flex align-items-center justify-content-between border-bottom"
                           style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "12px",
+                            padding: "12px 16px",
+                            borderBottom: idx < 4 ? "1px solid #eee" : "none",
+                          }}
+                        >
+                          <div className="d-flex align-items-center gap-2">
+                            {imgUrl ? (
+                              <img
+                                src={imgUrl}
+                                alt={product.name}
+                                className="rounded border"
+                                style={{
+                                  width: 40,
+                                  height: 40,
+                                  objectFit: "cover",
+                                }}
+                                onError={(e) => {
+                                  e.target.style.display = "none";
+                                  e.target.nextElementSibling.style.display =
+                                    "flex";
+                                }}
+                              />
+                            ) : null}
+                            <div
+                              style={{
+                                width: 40,
+                                height: 40,
+                                background: "#f5f5f5",
+                                borderRadius: 6,
+                                display: imgUrl ? "none" : "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: 12,
+                                color: "#999",
+                              }}
+                            >
+                              No Img
+                            </div>
+                            <div>
+                              <div className="fw-semibold">{product.name}</div>
+                              <div className="small text-muted">
+                                {product.quantity}{" "}
+                                {product.quantity === 1 ? "unit" : "units"} sold
+                              </div>
+                            </div>
+                          </div>
+                          <button
+                            className="btn btn-primary btn-sm"
+                            onClick={() => handleAddToCart(product)}
+                            disabled={cartLoadingStates[product.productId]}
+                            style={{ minWidth: 90, fontSize: "0.85rem" }}
+                          >
+                            {cartLoadingStates[product.productId]
+                              ? "Adding…"
+                              : "Add to Cart"}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <p className="p-3 text-muted fst-italic">
+                    No sales data yet.
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="card shadow-sm rounded-3">
+              <div className="card-header bg-light fw-semibold d-flex justify-content-between">
+                <span>Total Products</span>
+                <span className="text-danger fw-semibold">{productCount}</span>
+              </div>
+              <div className="card-body p-0">
+                <div className="px-3 py-2 small text-muted">Last five</div>
+                <ul className="list-unstyled m-0">
+                  {lastFiveProducts.length > 0 ? (
+                    lastFiveProducts.map((p, idx) => {
+                      let imgUrl = null;
+                      if (p.images) {
+                        try {
+                          const arr = JSON.parse(p.images);
+                          imgUrl =
+                            Array.isArray(arr) && arr[0] ? arr[0] : p.images;
+                        } catch {
+                          imgUrl = p.Numberimages;
+                        }
+                      }
+                      return (
+                        <li
+                          key={p.productId}
+                          className="d-flex align-items-center justify-content-between border-bottom"
+                          style={{
+                            padding: "12px 16px",
+                            borderBottom: idx < 4 ? "1px solid #eee" : "none",
                           }}
                         >
                           {imgUrl ? (
                             <img
                               src={imgUrl}
-                              alt={product.name}
+                              alt={p.name}
+                              className="rounded border"
                               style={{
                                 width: 40,
                                 height: 40,
                                 objectFit: "cover",
-                                borderRadius: 6,
-                                border: "1px solid #eee",
                               }}
                               onError={(e) => {
                                 e.target.style.display = "none";
@@ -453,378 +469,110 @@ const PageWrapper = () => {
                           >
                             No Img
                           </div>
-                          <div>
-                            <div style={{ fontWeight: 500 }}>
-                              {product.name}
-                            </div>
-                            <div style={{ fontSize: "0.8rem", color: "#666" }}>
-                              {product.quantity}{" "}
-                              {product.quantity === 1 ? "unit" : "units"} sold
-                            </div>
-                          </div>
-                        </div>
-                        <button
-                          className="btn btn-primary btn-sm"
-                          onClick={() => handleAddToCart(product)}
-                          disabled={cartLoadingStates[product.productId]}
-                          style={{ minWidth: 90, fontSize: "0.85rem" }}
-                        >
-                          {cartLoadingStates[product.productId]
-                            ? "Adding…"
-                            : "Add to Cart"}
-                        </button>
-                      </li>
-                    );
-                  })}
+                          {p.name}
+                        </li>
+                      );
+                    })
+                  ) : (
+                    <li className="p-3 text-muted fst-italic">No products.</li>
+                  )}
                 </ul>
-              ) : (
-                <p
-                  style={{
-                    padding: "16px",
-                    color: "#888",
-                    fontStyle: "italic",
-                  }}
-                >
-                  No sales data yet.
-                </p>
-              )}
-            </div>
-          </div>
-          {/* LOW IN STOCK */}
-          <div
-            className="card"
-            style={{ borderRadius: "12px", overflow: "hidden" }}
-          >
-            <div
-              className="card-header"
-              style={{
-                padding: "16px",
-                background: "#f8f9fa",
-                fontWeight: 600,
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <span>Low in Stock</span>
-              <span style={{ fontSize: "0.9rem", color: "#e74c3c" }}>
-                {lowStockProducts.length} of {products.length} remaining
-              </span>
-            </div>
-            <div className="card-body" style={{ padding: 0 }}>
-              <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
-                {lowStockProducts.slice(0, 5).map((p) => (
-                  <li
-                    key={p._id || p.productId}
-                    onClick={() => handleProductClick(p)}
-                    style={{
-                      padding: "12px 16px",
-                      borderBottom: "1px solid #eee",
-                      cursor: "pointer",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <span style={{ fontWeight: 500 }}>{p.name}</span>
-                    <span style={{ color: "#e74c3c", fontSize: "0.9rem" }}>
-                      Qty: {p.quantity}
-                    </span>
-                  </li>
-                ))}
-                {lowStockProducts.length === 0 && (
-                  <li
-                    style={{
-                      padding: "16px",
-                      color: "#888",
-                      fontStyle: "italic",
-                    }}
-                  >
-                    No low stock products.
-                  </li>
-                )}
-              </ul>
-              <div
-                style={{
-                  padding: "12px 16px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                }}
-              >
-                <input
-                  type="text"
-                  placeholder="Add product..."
-                  style={{
-                    flex: 1,
-                    padding: "8px 12px",
-                    borderRadius: "8px",
-                    border: "1px solid #ddd",
-                    fontSize: "0.9rem",
-                  }}
-                />
-                <button
-                  style={{
-                    background: "#e74c3c",
-                    color: "white",
-                    border: "none",
-                    padding: "8px 16px",
-                    borderRadius: "8px",
-                    fontSize: "0.9rem",
-                    cursor: "pointer",
-                  }}
-                >
-                  Add
-                </button>
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* RIGHT COLUMN */}
-        <div
-          style={{
-            gridColumn: "3 / 4",
-            display: "flex",
-            flexDirection: "column",
-            gap: "20px",
-          }}
-        >
-          {/* TOTAL QUOTATIONS */}
-          <div
-            className="card"
-            style={{ borderRadius: "12px", overflow: "hidden" }}
-          >
-            <div
-              className="card-header"
-              style={{
-                padding: "16px",
-                background: "#f8f9fa",
-                fontWeight: 600,
-                display: "flex",
-                justifyContent: "space-between",
-              }}
-            >
-              <span>Total Quotations</span>
-              <span style={{ color: "#e74c3c", fontWeight: 600 }}>
-                {quotationCount}
-              </span>
-            </div>
-            <div className="card-body" style={{ padding: 0 }}>
-              <div
-                style={{
-                  padding: "8px 16px",
-                  fontSize: "0.85rem",
-                  color: "#666",
-                }}
-              >
-                Last five
-              </div>
-              <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
-                {lastFiveQuotations.length > 0 ? (
-                  lastFiveQuotations.map((q) => (
-                    <li
-                      key={q.id}
-                      style={{
-                        padding: "10px 16px",
-                        borderBottom: "1px solid #eee",
-                        fontSize: "0.9rem",
-                      }}
-                    >
-                      {q.quotationNo || "Quotation"} -{" "}
-                      {new Date(q.createdAt).toLocaleDateString()}
-                    </li>
-                  ))
-                ) : (
-                  <li
-                    style={{
-                      padding: "16px",
-                      color: "#888",
-                      fontStyle: "italic",
-                    }}
-                  >
-                    No quotations.
-                  </li>
-                )}
-              </ul>
             </div>
           </div>
 
-          {/* TOTAL ORDERS */}
-          <div
-            className="card"
-            style={{ borderRadius: "12px", overflow: "hidden" }}
-          >
-            <div
-              className="card-header"
-              style={{
-                padding: "16px",
-                background: "#f8f9fa",
-                fontWeight: 600,
-                display: "flex",
-                justifyContent: "space-between",
-              }}
-            >
-              <span>Total Orders</span>
-              <span style={{ color: "#e74c3c", fontWeight: 600 }}>
-                {orderCount}
-              </span>
-            </div>
-            <div className="card-body" style={{ padding: 0 }}>
-              <div
-                style={{
-                  padding: "8px 16px",
-                  fontSize: "0.85rem",
-                  color: "#666",
-                }}
-              >
-                Last five
+          {/* RIGHT COLUMN */}
+          <div className="col-12 col-md-4 d-flex flex-column gap-3">
+            <div className="card shadow-sm rounded-3">
+              <div className="card-header bg-light fw-semibold d-flex justify-content-between">
+                <span>Total Quotations</span>
+                <span className="text-danger fw-semibold">
+                  {quotationCount}
+                </span>
               </div>
-              <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
-                {lastFiveOrders.length > 0 ? (
-                  lastFiveOrders.map((o) => (
-                    <li
-                      key={o.id}
-                      style={{
-                        padding: "10px 16px",
-                        borderBottom: "1px solid #eee",
-                        fontSize: "0.9rem",
-                      }}
-                    >
-                      {o.orderNo} - {new Date(o.createdAt).toLocaleDateString()}
-                    </li>
-                  ))
-                ) : (
-                  <li
-                    style={{
-                      padding: "16px",
-                      color: "#888",
-                      fontStyle: "italic",
-                    }}
-                  >
-                    No orders.
-                  </li>
-                )}
-              </ul>
-            </div>
-          </div>
-
-          {/* TOTAL PRODUCTS */}
-          <div
-            className="card"
-            style={{ borderRadius: "12px", overflow: "hidden" }}
-          >
-            <div
-              className="card-header"
-              style={{
-                padding: "16px",
-                background: "#f8f9fa",
-                fontWeight: 600,
-                display: "flex",
-                justifyContent: "space-between",
-              }}
-            >
-              <span>Total Products</span>
-              <span style={{ color: "#e74c3c", fontWeight: 600 }}>
-                {productCount}
-              </span>
-            </div>
-            <div className="card-body" style={{ padding: 0 }}>
-              <div
-                style={{
-                  padding: "8px 16px",
-                  fontSize: "0.85rem",
-                  color: "#666",
-                }}
-              >
-                Last five
-              </div>
-              <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
-                {lastFiveProducts.length > 0 ? (
-                  lastFiveProducts.map((p, idx) => {
-                    let imgUrl = null;
-                    if (p.images) {
-                      try {
-                        const arr = JSON.parse(p.images);
-                        imgUrl =
-                          Array.isArray(arr) && arr[0] ? arr[0] : p.images;
-                      } catch {
-                        imgUrl = p.Numberimages;
-                      }
-                    }
-                    return (
+              <div className="card-body p-0">
+                <div className="px-3 py-2 small text-muted">Last five</div>
+                <ul className="list-unstyled m-0">
+                  {lastFiveQuotations.length > 0 ? (
+                    lastFiveQuotations.map((q) => (
                       <li
-                        key={p.productId}
+                        key={q.id}
+                        className="border-bottom"
                         style={{
-                          padding: "12px 16px",
-                          borderBottom: idx < 4 ? "1px solid #eee" : "none",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
+                          padding: "10px 16px",
                         }}
                       >
-                        {imgUrl ? (
-                          <img
-                            src={imgUrl}
-                            alt={p.name}
-                            style={{
-                              width: 40,
-                              height: 40,
-                              objectFit: "cover",
-                              borderRadius: 6,
-                              border: "1px solid #eee",
-                            }}
-                            onError={(e) => {
-                              e.target.style.display = "none";
-                              e.target.nextElementSibling.style.display =
-                                "flex";
-                            }}
-                          />
-                        ) : null}
-                        <div
-                          style={{
-                            width: 40,
-                            height: 40,
-                            background: "#f5f5f5",
-                            borderRadius: 6,
-                            display: imgUrl ? "none" : "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: 12,
-                            color: "#999",
-                          }}
-                        >
-                          No Img
-                        </div>
-                        {p.name}
+                        {q.quotationNo || "Quotation"} -{" "}
+                        {new Date(q.createdAt).toLocaleDateString()}
                       </li>
-                    );
-                  })
-                ) : (
-                  <li
-                    style={{
-                      padding: "16px",
-                      color: "#888",
-                      fontStyle: "italic",
-                    }}
-                  >
-                    No products.
-                  </li>
-                )}
-              </ul>
+                    ))
+                  ) : (
+                    <li className="p-3 text-muted fst-italic">
+                      No quotations.
+                    </li>
+                  )}
+                </ul>
+              </div>
             </div>
+            {lowStockProducts.length > 0 && (
+              <div className="card shadow-sm rounded-3">
+                <div className="card-header bg-light fw-semibold d-flex justify-content-between align-items-center">
+                  <span>Low in Stock</span>
+                  <span className="small text-danger">
+                    {lowStockProducts.length} of {products.length} remaining
+                  </span>
+                </div>
+                <div className="card-body p-0">
+                  <ul className="list-unstyled m-0">
+                    {paginatedLowStock.map((p) => (
+                      <li
+                        key={p._id || p.productId}
+                        onClick={() => handleProductClick(p)}
+                        className="d-flex justify-content-between align-items-center border-bottom"
+                        style={{
+                          padding: "12px 16px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <span className="fw-semibold">{p.name}</span>
+                        <span className="text-danger small">
+                          Qty: {p.quantity}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  {lowStockProducts.length > itemsPerPage && (
+                    <DataTablePagination
+                      currentPage={currentPage}
+                      totalItems={lowStockProducts.length}
+                      itemsPerPage={itemsPerPage}
+                      onPageChange={setCurrentPage}
+                    />
+                  )}
+                  <div className="d-flex align-items-center gap-2 px-3 py-2">
+                    <input
+                      type="text"
+                      placeholder="Add product..."
+                      className="form-control form-control-sm"
+                      style={{ flex: 1 }}
+                    />
+                    <button className="btn btn-danger btn-sm">Add</button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-      </div>
 
-      {/* STOCK DETAIL MODAL */}
-      {isModalVisible && selectedProduct && (
-        <StockModal
-          show={isModalVisible}
-          onHide={handleModalClose}
-          product={selectedProduct}
-        />
-      )}
+        {/* STOCK DETAIL MODAL */}
+        {isModalVisible && selectedProduct && (
+          <StockModal
+            show={isModalVisible}
+            onHide={handleModalClose}
+            product={selectedProduct}
+          />
+        )}
+      </div>
     </div>
   );
 };

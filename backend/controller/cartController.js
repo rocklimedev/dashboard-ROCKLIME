@@ -23,11 +23,20 @@ const getSellingPrice = (meta) => {
 };
 
 // ✅ Add Product to Cart
+// ✅ Add Product to Cart
 exports.addProductToCart = async (req, res) => {
   try {
     const { userId, productId, quantity = 1 } = req.body;
 
+    // Log incoming request data
+    console.log("addProductToCart called with:", {
+      userId,
+      productId,
+      quantity,
+    });
+
     if (!userId || !productId || !Number.isInteger(quantity) || quantity < 1) {
+      console.log("Invalid request data");
       return res.status(400).json({
         message: "userId, productId, and valid quantity are required",
       });
@@ -36,12 +45,14 @@ exports.addProductToCart = async (req, res) => {
     // Check if user exists in MySQL
     const user = await User.findByPk(userId);
     if (!user) {
+      console.log("User not found:", userId);
       return res.status(404).json({ message: "User not found" });
     }
 
     // Check if product exists in MySQL
     const product = await Product.findOne({ where: { productId } });
     if (!product) {
+      console.log("Product not found:", productId);
       return res
         .status(404)
         .json({ message: `Product not found: ${productId}` });
@@ -50,6 +61,7 @@ exports.addProductToCart = async (req, res) => {
     // Extract and validate sellingPrice
     const sellingPrice = await getSellingPrice(product.meta, productId);
     if (sellingPrice === null) {
+      console.log("Invalid sellingPrice for product:", productId, product.meta);
       return res
         .status(400)
         .json({ message: `Invalid sellingPrice for product: ${productId}` });
@@ -57,6 +69,14 @@ exports.addProductToCart = async (req, res) => {
 
     // Check stock availability
     if (product.quantity < quantity) {
+      console.log(
+        "Insufficient stock for product:",
+        productId,
+        "Requested:",
+        quantity,
+        "Available:",
+        product.quantity
+      );
       return res
         .status(400)
         .json({ message: `Insufficient stock for product: ${productId}` });
@@ -66,6 +86,7 @@ exports.addProductToCart = async (req, res) => {
     let cart = await Cart.findOne({ userId });
     if (!cart) {
       cart = new Cart({ userId, items: [] });
+      console.log("New cart created for user:", userId);
     }
 
     // Check if the product is already in the cart
@@ -74,9 +95,19 @@ exports.addProductToCart = async (req, res) => {
     );
 
     if (existingItem) {
+      console.log(
+        "Product already in cart. Previous quantity:",
+        existingItem.quantity,
+        "Adding:",
+        quantity
+      );
       existingItem.quantity += quantity;
       existingItem.total = existingItem.price * existingItem.quantity;
     } else {
+      console.log(
+        "Product not in cart. Adding new item with quantity:",
+        quantity
+      );
       cart.items.push({
         productId,
         name: product.name,
@@ -88,9 +119,17 @@ exports.addProductToCart = async (req, res) => {
       });
     }
 
+    // Log cart state before saving
+    console.log("Cart before save:", JSON.stringify(cart, null, 2));
+
     await cart.save();
+
+    // Log cart state after saving
+    console.log("Cart saved successfully:", JSON.stringify(cart, null, 2));
+
     res.status(200).json({ message: "Product added to cart", cart });
   } catch (err) {
+    console.error("Error in addProductToCart:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };

@@ -1,7 +1,7 @@
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open("cm-trading-cache").then((cache) => {
-      return cache.addAll(["/", "/index.html"]);
+      return cache.addAll(["./", "./index.html"]);
     })
   );
 });

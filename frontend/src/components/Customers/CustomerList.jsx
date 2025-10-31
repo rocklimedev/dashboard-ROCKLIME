@@ -9,12 +9,10 @@ import { toast } from "sonner";
 import DeleteModal from "../Common/DeleteModal";
 import PageHeader from "../Common/PageHeader";
 import { BsThreeDotsVertical } from "react-icons/bs";
-import { Dropdown, Button, Menu, Tabs, Pagination } from "antd"; // <-- Pagination added
+import { Dropdown, Button, Menu, Pagination } from "antd";
 import { useNavigate } from "react-router-dom";
 import { EditOutlined } from "@ant-design/icons";
 import PermissionGate from "../../context/PermissionGate";
-
-const { TabPane } = Tabs;
 
 const CustomerList = () => {
   const navigate = useNavigate();
@@ -28,7 +26,7 @@ const CustomerList = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20); // dynamic
+  const [pageSize, setPageSize] = useState(20);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("Recently Added");
   const [activeTab, setActiveTab] = useState("All");
@@ -45,19 +43,17 @@ const CustomerList = () => {
   ];
 
   // ──────────────────────────────────────────────────────
-  // Grouped customers (tabs)
+  // Grouped customers (only All + type tabs)
   // ──────────────────────────────────────────────────────
   const groupedCustomers = useMemo(() => {
     if (!Array.isArray(customers)) {
-      const init = { All: [], Active: [], Inactive: [] };
+      const init = { All: [] };
       customerTypes.forEach((t) => (init[t] = []));
       return init;
     }
 
     const groups = {
       All: customers,
-      Active: customers.filter((c) => c.isActive !== false),
-      Inactive: customers.filter((c) => c.isActive === false),
     };
 
     customerTypes.forEach((type) => {
@@ -272,20 +268,6 @@ const CustomerList = () => {
                       aria-label="Search customers"
                     />
                   </div>
-
-                  <select
-                    className="form-select"
-                    style={{ width: 200 }}
-                    value={sortBy}
-                    onChange={(e) => {
-                      setSortBy(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                  >
-                    <option value="Recently Added">Recently Added</option>
-                    <option value="Ascending">Name A-Z</option>
-                    <option value="Descending">Name Z-A</option>
-                  </select>
 
                   <button
                     className="btn btn-outline-secondary ms-2"

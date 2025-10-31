@@ -6,7 +6,7 @@ require("dotenv").config();
    1. Transporter Setup
 ------------------------------------------------------------ */
 const transporter = nodemailer.createTransport({
-  host: "static.cmtradingco.com",
+  host: "sh200.bigrock.com",
   port: 465,
   secure: true,
   auth: {

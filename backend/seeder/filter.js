@@ -1,42 +1,57 @@
 const fs = require("fs");
+const path = require("path");
 
-// Input and output files
-const INPUT_FILE = "./seeder/backup/products_backup.json";
-const OUTPUT_FILE = "./duplicates.json";
+// Constants
+const PRODUCTS_FILE = "./seeder/backup/products_backup.json";
+const IMAGES_DIR = "./seeder/images";
+const OUTPUT_FILE = "./updated.json";
+const UNUSED_IMAGES_FILE = "./unused_images2.txt";
+const COMPANY_CODE_KEY = "d11da9f9-3f2e-4536-8236-9671200cca4a";
+const BASE_URL = "https://static.cmtradingco.com/product_images/";
 
-try {
-  // Read and parse product.json
-  const data = fs.readFileSync(INPUT_FILE, "utf8");
-  const products = JSON.parse(data);
+// Step 1: Load product data
+const products = JSON.parse(fs.readFileSync(PRODUCTS_FILE, "utf8"));
 
-  // Map to track unique combinations
-  const seen = new Map();
-  const duplicates = [];
+// Step 2: Get available image filenames
+const imageFiles = fs.readdirSync(IMAGES_DIR);
+const availableImages = new Set(
+  imageFiles.map((file) => path.parse(file).name)
+);
 
-  for (const product of products) {
-    const name = (product.name || "").trim().toLowerCase();
-    const meta = product.meta || {};
-    const price = meta["9ba862ef-f993-4873-95ef-1fef10036aa5"];
-    const companyCode = meta["d11da9f9-3f2e-4536-8236-9671200cca4a"];
+// Step 3: Update only matching products
+const updatedProducts = [];
+const usedImages = new Set();
 
-    // Unique key = name + price + companyCode
-    const key = `${name}__${price}__${companyCode}`;
+for (const product of products) {
+  const meta = product.meta || {};
+  const companyCode = meta[COMPANY_CODE_KEY];
 
-    if (seen.has(key)) {
-      // If already seen, push both current and first duplicate if not already added
-      const firstProduct = seen.get(key);
-      if (!duplicates.includes(firstProduct)) duplicates.push(firstProduct);
-      duplicates.push(product);
-    } else {
-      seen.set(key, product);
-    }
+  if (companyCode && availableImages.has(String(companyCode))) {
+    const extFile = imageFiles.find(
+      (f) => path.parse(f).name === String(companyCode)
+    );
+
+    const newImageURL = `${BASE_URL}${extFile}`;
+    product.images = JSON.stringify([newImageURL]);
+    product.updatedAt = new Date().toISOString();
+
+    updatedProducts.push(product);
+    usedImages.add(String(companyCode));
   }
-
-  // Write duplicates to new file
-  fs.writeFileSync(OUTPUT_FILE, JSON.stringify(duplicates, null, 2));
-
-  console.log(`✅ Found ${duplicates.length} duplicate entries.`);
-  console.log(`💾 Saved to ${OUTPUT_FILE}`);
-} catch (err) {
-  console.error("❌ Error:", err.message);
 }
+
+// Step 4: Write updated products
+fs.writeFileSync(OUTPUT_FILE, JSON.stringify(updatedProducts, null, 2));
+
+// Step 5: Write unused images to text file
+const unusedImages = imageFiles.filter(
+  (f) => !usedImages.has(path.parse(f).name)
+);
+fs.writeFileSync(UNUSED_IMAGES_FILE, unusedImages.join("\n"));
+
+console.log(
+  `✅ ${updatedProducts.length} products updated and written to ${OUTPUT_FILE}`
+);
+console.log(
+  `🗂️ ${unusedImages.length} unused images listed in ${UNUSED_IMAGES_FILE}`
+);

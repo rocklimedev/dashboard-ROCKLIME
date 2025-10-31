@@ -32,7 +32,7 @@
       property="og:description"
       content="Manage inventory, sales, and orders with CM Trading Co.’s Admin Dashboard."
     />
-    <meta property="og:image" content="%PUBLIC_URL%/fav_icon.png" />
+    <meta property="og:image" content="assets/img/fav_icon.png" />
     <meta property="og:url" content="https://cmtradingcompany.com/" />
     <meta property="og:type" content="website" />
 
@@ -46,58 +46,61 @@
       name="twitter:description"
       content="Manage inventory, sales, and customer orders efficiently with CM Trading Co."
     />
-    <meta name="twitter:image" content="%PUBLIC_URL%/fav_icon.png" />
+    <meta name="twitter:image" content="assets/img/fav_icon.png" />
+
     <!-- Select2 CSS -->
     <link rel="stylesheet" href="assets/plugins/select2/css/select2.min.css" />
 
-    <!-- Daterangepikcer CSS -->
+    <!-- Daterangepicker CSS -->
     <link
       rel="stylesheet"
       href="assets/plugins/daterangepicker/daterangepicker.css"
     />
 
-    <!-- Tabler Icon CSS -->
+    <!-- Font Awesome & Tabler Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
     <link
       rel="stylesheet"
       href="assets/plugins/tabler-icons/tabler-icons.css"
     />
-
-    <!-- Fontawesome CSS -->
     <link
       rel="stylesheet"
       href="assets/plugins/fontawesome/css/fontawesome.min.css"
     />
     <link rel="stylesheet" href="assets/plugins/fontawesome/css/all.min.css" />
 
-    <!-- Color Picker Css -->
+    <!-- Color Picker CSS -->
     <link
       rel="stylesheet"
-      href="assets/plugins/%40simonwep/pickr/themes/nano.min.css"
+      href="assets/plugins/@simonwep/pickr/themes/nano.min.css"
     />
-    <!-- Favicon -->
-    <link rel="icon" href="%PUBLIC_URL%/fav_icon.png" />
+
+    <!-- Favicon & Manifest -->
+    <link rel="icon" href="assets/img/fav_icon.png" />
     <link
       rel="apple-touch-icon"
       sizes="180x180"
-      href="%PUBLIC_URL%/fav_icon.png"
+      href="assets/img/fav_icon.png"
     />
-
-    <!-- Manifest -->
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <link rel="manifest" href="manifest.json" />
   </head>
 
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
+
     <!-- Register Service Worker -->
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {
           navigator.serviceWorker
-            .register("%PUBLIC_URL%/service-worker.js")
+            .register("./service-worker.js")
             .then(() => console.log("Service Worker registered"))
             .catch((err) =>
-              console.log("Service Worker registration failed:", err)
+              console.error("Service Worker registration failed:", err)
             );
         });
       }
@@ -121,80 +124,31 @@
         });
       });
     </script>
-    <!-- jQuery -->
-    <script
-      src="assets/js/jquery-3.7.1.min.js"
-      type="d3614f96d7b979489bf8cf23-text/javascript"
-    ></script>
 
-    <!-- Feather Icon JS -->
-    <script
-      src="assets/js/feather.min.js"
-      type="d3614f96d7b979489bf8cf23-text/javascript"
-    ></script>
+    <!-- Core JS Dependencies -->
+    <script src="assets/js/jquery-3.7.1.min.js"></script>
+    <script src="assets/js/feather.min.js"></script>
+    <script src="assets/js/jquery.slimscroll.min.js"></script>
+    <script src="assets/js/bootstrap.bundle.min.js"></script>
 
-    <!-- Slimscroll JS -->
-    <script
-      src="assets/js/jquery.slimscroll.min.js"
-      type="d3614f96d7b979489bf8cf23-text/javascript"
-    ></script>
+    <!-- Chart Libraries -->
+    <script src="assets/plugins/apexchart/apexcharts.min.js"></script>
+    <script src="assets/plugins/apexchart/chart-data.js"></script>
+    <script src="assets/plugins/chartjs/chart.min.js"></script>
+    <script src="assets/plugins/chartjs/chart-data.js"></script>
 
-    <!-- Bootstrap Core JS -->
-    <script
-      src="assets/js/bootstrap.bundle.min.js"
-      type="d3614f96d7b979489bf8cf23-text/javascript"
-    ></script>
+    <!-- Date Range Picker -->
+    <script src="assets/js/moment.min.js"></script>
+    <script src="assets/plugins/daterangepicker/daterangepicker.js"></script>
 
-    <!-- ApexChart JS -->
-    <script
-      src="assets/plugins/apexchart/apexcharts.min.js"
-      type="d3614f96d7b979489bf8cf23-text/javascript"
-    ></script>
-    <script
-      src="assets/plugins/apexchart/chart-data.js"
-      type="d3614f96d7b979489bf8cf23-text/javascript"
-    ></script>
+    <!-- Select2 -->
+    <script src="assets/plugins/select2/js/select2.min.js"></script>
 
-    <!-- Chart JS -->
-    <script
-      src="assets/plugins/chartjs/chart.min.js"
-      type="d3614f96d7b979489bf8cf23-text/javascript"
-    ></script>
-    <script
-      src="assets/plugins/chartjs/chart-data.js"
-      type="d3614f96d7b979489bf8cf23-text/javascript"
-    ></script>
-
-    <!-- Daterangepikcer JS -->
-    <script
-      src="assets/js/moment.min.js"
-      type="d3614f96d7b979489bf8cf23-text/javascript"
-    ></script>
-    <script
-      src="assets/plugins/daterangepicker/daterangepicker.js"
-      type="d3614f96d7b979489bf8cf23-text/javascript"
-    ></script>
-
-    <!-- Select2 JS -->
-    <script
-      src="assets/plugins/select2/js/select2.min.js"
-      type="d3614f96d7b979489bf8cf23-text/javascript"
-    ></script>
-
-    <!-- Color Picker JS -->
-    <script
-      src="assets/plugins/%40simonwep/pickr/pickr.es5.min.js"
-      type="d3614f96d7b979489bf8cf23-text/javascript"
-    ></script>
+    <!-- Color Picker -->
+    <script src="assets/plugins/@simonwep/pickr/pickr.es5.min.js"></script>
 
     <!-- Custom JS -->
-    <script
-      src="assets/js/theme-colorpicker.js"
-      type="d3614f96d7b979489bf8cf23-text/javascript"
-    ></script>
-    <script
-      src="assets/js/script.js"
-      type="d3614f96d7b979489bf8cf23-text/javascript"
-    ></script>
+    <script src="assets/js/theme-colorpicker.js"></script>
+    <script src="assets/js/script.js"></script>
   </body>
 </html>
