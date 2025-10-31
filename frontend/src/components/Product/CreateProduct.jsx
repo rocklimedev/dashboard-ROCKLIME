@@ -296,13 +296,13 @@ const CreateProduct = () => {
     try {
       if (isEditMode) {
         await updateProduct({ productId, formData: formDataToSend }).unwrap();
-        navigate("/inventory/products");
+        navigate("/category-selector/products");
       } else {
         await createProduct(formDataToSend).unwrap();
         form.resetFields();
         setNewImages([]);
         setMetaData({});
-        navigate("/inventory/products");
+        navigate("/category-selector/products");
       }
     } catch (error) {
       const message =
@@ -344,7 +344,7 @@ const CreateProduct = () => {
             </Col>
             <Col>
               <Button
-                href="/inventory/products"
+                href="/category-selector/products"
                 icon={<FaArrowLeft style={{ marginRight: 8 }} />}
               >
                 Back to Products

@@ -78,6 +78,8 @@ import LogTable from "../components/Logs/LogTable";
 import NotificationsWrapper from "../components/Notifications/NotificationsWrapper";
 import TaskWrapper from "../components/Tasks/TaskWrapper";
 import InventoryWrapper from "../components/Common/InventoryWrapper";
+import { element } from "prop-types";
+import Error403 from "../components/Error/Error403";
 const masterRoutes = [
   {
     path: "/",
@@ -88,7 +90,7 @@ const masterRoutes = [
     submenu: [],
   },
   {
-    path: "/inventory/products",
+    path: "/category-selector/products",
     name: "Products",
     element: <Product />,
     icon: <MdOutlineInventory2 />,
@@ -416,6 +418,13 @@ const masterRoutes = [
         icon: <MdError />,
         isSidebarActive: false,
         element: <Error404 />,
+      },
+      {
+        path: "/403",
+        name: "Error",
+        icon: <MdError />,
+        isSidebarActive: false,
+        element: <Error403 />,
       },
       {
         path: "/forgot-password",

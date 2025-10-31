@@ -52,6 +52,14 @@ export const quotationApi = baseApi.injectEndpoints({
     // New endpoints for versioning
     getQuotationVersions: builder.query({
       query: (id) => `/quotation/${id}/versions`,
+      transformResponse: (response) => response?.data || [],
+      transformErrorResponse: (response) => {
+        if (response.status === 404) {
+          return { data: [] }; // Treat 404 as "no versions"
+        }
+        throw response;
+      },
+
       providesTags: ["Quotation"],
     }),
     restoreQuotationVersion: builder.mutation({

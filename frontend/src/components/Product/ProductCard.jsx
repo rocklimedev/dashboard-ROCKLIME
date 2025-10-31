@@ -75,13 +75,9 @@ const ProductCard = ({
 
   const handleAddToCartWithQuantity = () => {
     if (quantity > 0 && sellingPrice !== null && !isNaN(sellingPrice)) {
-      handleAddToCart({ ...product, quantity });
+      handleAddToCart({ productId: product.productId, quantity });
     } else {
-      toast.error(
-        sellingPrice !== null && !isNaN(sellingPrice)
-          ? "Invalid quantity"
-          : "Invalid product price"
-      );
+      toast.error("Invalid quantity or price");
     }
   };
 
