@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { toast } from "sonner";
 
 import logo from "../../assets/img/logo.png";
-import termsAndConditionsPdf from "../../assets/QUOT-10.pdf";
+
 import {
   useGetQuotationByIdQuery,
   useGetQuotationVersionsQuery,
@@ -161,26 +161,26 @@ const QuotationsDetails = () => {
       if (exportFormat === "pdf") {
         await exportToPDF(quotationRef, id, activeVersion);
       } else {
-        await exportToExcel({
-          products: activeVersionData.products,
+        await exportToExcel(
+          activeVersionData.products,
           productsData,
           brandNames,
-          quotation: safeQuotation,
-          address: address
+          safeQuotation,
+          address
             ? `${address.street || ""}, ${address.city || ""}, ${
                 address.state || ""
               }, ${address.postalCode || ""}, ${address.country || ""}`
             : "N/A",
           logo,
-          accountDetails: company.bankDetails || {
+          company.bankDetails || {
             bankName: "IDFC FIRST BANK",
             accountNumber: "10179373657",
             ifscCode: "IDFB0020149",
             branch: "BHERA ENCLAVE PASCHIM VIHAR",
           },
           id,
-          activeVersion,
-        });
+          activeVersion
+        );
       }
       toast.success(`Exported as ${exportFormat.toUpperCase()}`);
     } catch (err) {
@@ -342,10 +342,12 @@ const QuotationsDetails = () => {
                           ) || {};
                         const img = pd.images ? JSON.parse(pd.images)[0] : null;
                         const code =
-                          pd.product_code ||
-                          pd.meta?.d11da9f9_3f2e_4536_8236_9671200cca4a ||
+                          pd.metaDetails?.find(
+                            (cc) => cc.title === "company_code"
+                          )?.value ||
                           p.productCode ||
                           "N/A";
+
                         const mrp =
                           pd.metaDetails?.find(
                             (m) => m.title === "sellingPrice"

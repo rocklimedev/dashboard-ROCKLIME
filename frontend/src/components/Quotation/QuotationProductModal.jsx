@@ -119,9 +119,7 @@ const QuotationProductModal = ({
   return (
     <Modal show={show} onHide={onHide} size="xl" centered>
       <Modal.Header closeButton>
-        <Modal.Title>
-          {`Products – ${selectedQuotation.document_title}`}
-        </Modal.Title>
+        <Modal.Title>{`Products`}</Modal.Title>
       </Modal.Header>
 
       <Modal.Body style={{ overflowX: "auto" }}>

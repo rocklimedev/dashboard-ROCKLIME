@@ -2,6 +2,33 @@
 const mongoose = require("mongoose");
 
 const feedbackSchema = new mongoose.Schema({
+  issueType: {
+    type: String,
+    required: [true, "Issue Type is required"],
+    enum: {
+      values: ["Website Issue", "Content Issue"],
+      message: "Invalid Issue Type",
+    },
+    trim: true,
+  },
+  subject: {
+    type: String,
+    required: [true, "Subject is required"],
+    trim: true,
+    minlength: [5, "Subject must be at least 5 characters long"],
+    maxlength: [200, "Subject cannot exceed 200 characters"],
+  },
+  message: {
+    type: String,
+    required: [true, "Message is required"],
+    trim: true,
+    minlength: [10, "Message must be at least 10 characters long"],
+    maxlength: [1000, "Message cannot exceed 1000 characters"],
+  },
+  consentToContact: {
+    type: Boolean,
+    required: [true, "Consent field must be selected"],
+  },
   tag: {
     type: String,
     required: [true, "Route tag is required"],
@@ -40,13 +67,6 @@ const feedbackSchema = new mongoose.Schema({
       ],
       message: "Invalid route tag",
     },
-  },
-  message: {
-    type: String,
-    required: [true, "Feedback message is required"],
-    trim: true,
-    minlength: [10, "Message must be at least 10 characters long"],
-    maxlength: [1000, "Message cannot exceed 1000 characters"],
   },
   userId: {
     type: mongoose.Schema.Types.ObjectId,

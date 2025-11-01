@@ -415,7 +415,12 @@ const ProductsList = () => {
                       <ShoppingCartOutlined />
                     )
                   }
-                  onClick={() => handleAddToCart(record)}
+                  onClick={() =>
+                    handleAddToCart({
+                      productId: record.productId,
+                      quantity: 1, // ← Explicitly add 1
+                    })
+                  }
                   disabled={
                     cartLoadingStates[record.productId] ||
                     record.quantity <= 0 ||

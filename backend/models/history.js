@@ -11,6 +11,9 @@ const HistoryEntrySchema = new mongoose.Schema({
   timestamp: { type: Date, default: Date.now },
   orderNo: { type: Number, required: false },
   userId: { type: String, required: false },
+
+  // NEW FIELD
+  message: { type: String, required: false },
 });
 
 const InventoryHistorySchema = new mongoose.Schema(
@@ -25,12 +28,12 @@ const InventoryHistorySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Index for fast look-ups by productId
 InventoryHistorySchema.index({ productId: 1 });
+InventoryHistorySchema.index({ "history.timestamp": -1 });
 
 const InventoryHistory = mongoose.model(
   "InventoryHistory",
   InventoryHistorySchema
 );
 
-module.exports = InventoryHistory; // <-- Export the model directly
+module.exports = InventoryHistory; // exported directly

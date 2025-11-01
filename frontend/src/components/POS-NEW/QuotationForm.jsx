@@ -152,15 +152,25 @@ const QuotationForm = ({
     []
   );
   // Inside QuotationForm
+
   const extraDiscount = useMemo(() => {
     const amount = parseFloat(quotationData.discountAmount) || 0;
     if (!amount) return 0;
 
-    if (quotationData.discountType === "percent") {
-      return parseFloat(((subTotal * amount) / 100).toFixed(2));
-    }
-    return amount;
-  }, [quotationData.discountType, quotationData.discountAmount, subTotal]);
+    // Apply extra discount on (subtotal - item_discounts + tax)
+    const taxableBase = subTotal - discount;
+    const afterTax = taxableBase + tax;
+
+    return quotationData.discountType === "percent"
+      ? parseFloat(((afterTax * amount) / 100).toFixed(2))
+      : amount;
+  }, [
+    quotationData.discountType,
+    quotationData.discountAmount,
+    subTotal,
+  discount,
+    tax,
+  ]);
   const normalizeString = (str) => (str ? str.trim().toLowerCase() : "");
 
   // Sync shipTo with billing address
@@ -684,21 +694,20 @@ const QuotationForm = ({
           <Divider />
 
           <OrderTotal
-            shipping={shipping}
-            tax={tax}
-            coupon={0}
-            discount={discount}
-            extraDiscount={extraDiscount}
-            roundOff={quotationData.roundOff || 0}
             subTotal={subTotal}
+            discount={discount} // <-- per-item total
+            extraDiscount={extraDiscount} // <-- amount after tax
+            tax={tax}
+            shipping={shipping}
+            roundOff={quotationData.roundOff || 0}
             finalTotal={finalRoundedTotal}
             items={cartItems.map((item) => ({
               productId: item.productId,
               name: item.name,
-              discount: parseFloat(itemDiscounts[item.productId]) || 0,
-              tax: parseFloat(itemTaxes[item.productId]) || 0,
               price: item.price || 0,
               quantity: item.quantity || 1,
+              discount: Number(itemDiscounts[item.productId]) || 0, // raw value
+              tax: Number(itemTaxes[item.productId]) || 0,
             }))}
           />
 

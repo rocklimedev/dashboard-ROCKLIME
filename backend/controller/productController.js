@@ -231,27 +231,42 @@ exports.deleteProduct = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // Add stock to a product
 // ─────────────────────────────────────────────────────────────────────────────
+
 exports.addStock = async (req, res) => {
   try {
     const { productId } = req.params;
-    const { quantity, orderNo, userId } = req.body; // optional
+    const { quantity, orderNo, userId, message: customMessage } = req.body;
 
     if (isNaN(quantity) || Number(quantity) <= 0) {
       return res.status(400).json({ message: "Invalid quantity value" });
     }
 
     const product = await Product.findByPk(productId);
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
-    }
+    if (!product) return res.status(404).json({ message: "Product not found" });
 
     product.quantity += Number(quantity);
     await product.save();
 
-    // Log to MongoDB
+    let finalMessage = customMessage?.trim();
+    let username = "unknown";
+
+    // Fetch user to get username
+    if (userId) {
+      const user = await User.findByPk(userId, { attributes: ["username"] });
+      if (user) username = user.username;
+    }
+
+    // Auto-generate message if not provided
+    if (!finalMessage) {
+      finalMessage = `Stock added by ${username}`;
+      if (orderNo) finalMessage += ` (Order #${orderNo})`;
+    }
+
+    let historyEntry = null;
+
     try {
-      await InventoryHistory.findOneAndUpdate(
-        { productId: productId },
+      const result = await InventoryHistory.findOneAndUpdate(
+        { productId },
         {
           $push: {
             history: {
@@ -260,19 +275,32 @@ exports.addStock = async (req, res) => {
               timestamp: new Date(),
               orderNo: orderNo ? Number(orderNo) : undefined,
               userId: userId || undefined,
+              message: finalMessage,
             },
           },
         },
         { upsert: true, new: true }
       );
+
+      historyEntry = result.history[result.history.length - 1];
     } catch (mongoErr) {
       console.error("Failed to log add-stock history:", mongoErr);
-      // Continue — don't fail the whole request
     }
 
     return res.status(200).json({
       message: "Stock added successfully",
       product,
+      inventoryHistory: historyEntry
+        ? {
+            _id: historyEntry._id,
+            action: historyEntry.action,
+            quantity: historyEntry.quantity,
+            timestamp: historyEntry.timestamp,
+            orderNo: historyEntry.orderNo,
+            userId: historyEntry.userId,
+            message: historyEntry.message,
+          }
+        : null,
     });
   } catch (error) {
     return res
@@ -287,16 +315,14 @@ exports.addStock = async (req, res) => {
 exports.removeStock = async (req, res) => {
   try {
     const { productId } = req.params;
-    const { quantity, orderNo, userId } = req.body; // optional
+    const { quantity, orderNo, userId, message: customMessage } = req.body;
 
     if (isNaN(quantity) || Number(quantity) <= 0) {
       return res.status(400).json({ message: "Invalid quantity value" });
     }
 
     const product = await Product.findByPk(productId);
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
-    }
+    if (!product) return res.status(404).json({ message: "Product not found" });
 
     if (product.quantity < quantity) {
       return res.status(400).json({ message: "Insufficient stock" });
@@ -305,10 +331,26 @@ exports.removeStock = async (req, res) => {
     product.quantity -= Number(quantity);
     await product.save();
 
-    // Log to MongoDB
+    let finalMessage = customMessage?.trim();
+    let username = "unknown";
+
+    // Fetch user to get username
+    if (userId) {
+      const user = await User.findByPk(userId, { attributes: ["username"] });
+      if (user) username = user.username;
+    }
+
+    // Auto-generate message if not provided
+    if (!finalMessage) {
+      finalMessage = `Stock removed by ${username}`;
+      if (orderNo) finalMessage += ` (Order #${orderNo})`;
+    }
+
+    let historyEntry = null;
+
     try {
-      await InventoryHistory.findOneAndUpdate(
-        { productId: productId },
+      const result = await InventoryHistory.findOneAndUpdate(
+        { productId },
         {
           $push: {
             history: {
@@ -317,11 +359,14 @@ exports.removeStock = async (req, res) => {
               timestamp: new Date(),
               orderNo: orderNo ? Number(orderNo) : undefined,
               userId: userId || undefined,
+              message: finalMessage,
             },
           },
         },
         { upsert: true, new: true }
       );
+
+      historyEntry = result.history[result.history.length - 1];
     } catch (mongoErr) {
       console.error("Failed to log remove-stock history:", mongoErr);
     }
@@ -329,6 +374,17 @@ exports.removeStock = async (req, res) => {
     return res.status(200).json({
       message: "Stock removed successfully",
       product,
+      inventoryHistory: historyEntry
+        ? {
+            _id: historyEntry._id,
+            action: historyEntry.action,
+            quantity: historyEntry.quantity,
+            timestamp: historyEntry.timestamp,
+            orderNo: historyEntry.orderNo,
+            userId: historyEntry.userId,
+            message: historyEntry.message,
+          }
+        : null,
     });
   } catch (error) {
     return res
