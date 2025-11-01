@@ -4,6 +4,8 @@ import { Link } from "react-router-dom";
 import { FaChartBar, FaBox } from "react-icons/fa6";
 
 import Alert from "./Alert";
+import StockModal from "../Common/StockModal";
+import DataTablePagination from "../Common/DataTablePagination";
 
 import {
   useClockInMutation,
@@ -18,28 +20,39 @@ import { useGetAllOrdersQuery } from "../../api/orderApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
-import StockModal from "../Common/StockModal";
-import DataTablePagination from "../Common/DataTablePagination";
 import { useAddProductToCartMutation } from "../../api/cartApi";
 import { useUpdateOrderStatusMutation } from "../../api/orderApi";
 import useTopProducts from "../../data/useTopProducts";
+import { BiPencil } from "react-icons/bi";
+// Import CSS
+import "./pagewrapper.css";
 
 const PageWrapper = () => {
-  // ──────────────────────────────────────────────────────
-  //  BASIC STATE
-  // ──────────────────────────────────────────────────────
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [cartLoadingStates, setCartLoadingStates] = useState({});
+  const [editingOrderId, setEditingOrderId] = useState(null);
 
+  const toggleEdit = (id) => {
+    setEditingOrderId(editingOrderId === id ? null : id);
+  };
+
+  const statuses = [
+    "PREPARING",
+    "CHECKING",
+    "INVOICE",
+    "DISPATCHED",
+    "DELIVERED",
+    "PARTIALLY_DELIVERED",
+    "CANCELED",
+    "DRAFT",
+    "ONHOLD",
+  ];
   const [addProductToCart, { isLoading: mutationLoading }] =
     useAddProductToCartMutation();
 
-  // ──────────────────────────────────────────────────────
-  //  DATE HELPERS
-  // ──────────────────────────────────────────────────────
   const today = useMemo(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -51,9 +64,6 @@ const PageWrapper = () => {
     .toISOString()
     .split("T")[0];
 
-  // ──────────────────────────────────────────────────────
-  //  PROFILE
-  // ──────────────────────────────────────────────────────
   const {
     data: profile,
     isLoading: loadingProfile,
@@ -62,9 +72,6 @@ const PageWrapper = () => {
 
   const userId = profile?.user?.userId;
 
-  // ──────────────────────────────────────────────────────
-  //  CORE DATA QUERIES
-  // ──────────────────────────────────────────────────────
   const {
     data: ordersData,
     isLoading: loadingOrders,
@@ -88,18 +95,12 @@ const PageWrapper = () => {
   const { data: invoiceData, isLoading: loadingInvoices } =
     useGetAllInvoicesQuery();
 
-  // ──────────────────────────────────────────────────────
-  //  TOP-SELLING PRODUCTS (Quotations + Orders)
-  // ──────────────────────────────────────────────────────
   const orders = ordersData?.orders || [];
   const { topProducts, loading: topProductsLoading } = useTopProducts({
     quotations: quotationData,
     orders,
   });
 
-  // ──────────────────────────────────────────────────────
-  //  ATTENDANCE
-  // ──────────────────────────────────────────────────────
   const {
     data: attendance,
     isLoading: loadingAttendance,
@@ -112,9 +113,6 @@ const PageWrapper = () => {
   const hasClockedIn = attendance?.length > 0 && !!attendance[0]?.clockIn;
   const hasClockedOut = hasClockedIn && !!attendance[0]?.clockOut;
 
-  // ──────────────────────────────────────────────────────
-  //  CLOCK-IN / OUT
-  // ──────────────────────────────────────────────────────
   const [clockIn] = useClockInMutation();
   const [clockOut] = useClockOutMutation();
 
@@ -126,6 +124,7 @@ const PageWrapper = () => {
       toast.error("Clock-in failed");
     }
   };
+
   const handleClockOut = async () => {
     if (!userId) return toast.error("User ID missing");
     try {
@@ -135,9 +134,6 @@ const PageWrapper = () => {
     }
   };
 
-  // ──────────────────────────────────────────────────────
-  //  CART HELPERS
-  // ──────────────────────────────────────────────────────
   const handleAddToCart = async (product) => {
     if (!userId) return toast.error("User not logged in!");
     const priceEntry = Array.isArray(product.metaDetails)
@@ -164,9 +160,6 @@ const PageWrapper = () => {
     }
   };
 
-  // ──────────────────────────────────────────────────────
-  //  LOW-STOCK LOGIC
-  // ──────────────────────────────────────────────────────
   const products = Array.isArray(productsData)
     ? productsData
     : productsData?.data || [];
@@ -185,14 +178,12 @@ const PageWrapper = () => {
     setSelectedProduct(p);
     setIsModalVisible(true);
   };
+
   const handleModalClose = () => {
     setIsModalVisible(false);
     setSelectedProduct(null);
   };
 
-  // ──────────────────────────────────────────────────────
-  //  ORDER STATUS UPDATE
-  // ──────────────────────────────────────────────────────
   const [updateOrderStatus] = useUpdateOrderStatusMutation();
   const handleStatusChange = async (orderId, newStatus) => {
     try {
@@ -203,17 +194,11 @@ const PageWrapper = () => {
     }
   };
 
-  // ──────────────────────────────────────────────────────
-  //  SUMMARY NUMBERS
-  // ──────────────────────────────────────────────────────
   const orderCount = orders.length;
   const quotationCount = quotationData.length || 0;
   const productCount = products.length;
   const invoiceCount = invoiceData?.data?.length || 0;
 
-  // ──────────────────────────────────────────────────────
-  //  EARLY RETURNS (loading / errors)
-  // ──────────────────────────────────────────────────────
   if (
     loadingProfile ||
     isCustomersLoading ||
@@ -240,16 +225,40 @@ const PageWrapper = () => {
     );
   }
 
-  // ──────────────────────────────────────────────────────
-  //  LAST 5 LISTS (for right column)
-  // ──────────────────────────────────────────────────────
   const lastFiveQuotations = quotationData.slice(-5).reverse();
   const lastFiveOrders = orders.slice(-5).reverse();
   const lastFiveProducts = products.slice(-5).reverse();
 
-  // ──────────────────────────────────────────────────────
-  //  RENDER
-  // ──────────────────────────────────────────────────────
+  const statusColors = {
+    PREPARING: "badge bg-warning text-dark",
+    CHECKING: "badge bg-info text-dark",
+    INVOICE: "badge bg-secondary",
+    DISPATCHED: "badge bg-primary",
+    DELIVERED: "badge bg-success",
+    PARTIALLY_DELIVERED: "badge bg-light text-dark border",
+    CANCELED: "badge bg-danger",
+    DRAFT: "badge bg-secondary",
+    ONHOLD: "badge bg-dark",
+  };
+
+  const getImageUrl = (images) => {
+    if (!images) return null;
+    try {
+      const arr = JSON.parse(images);
+      return Array.isArray(arr) && arr[0] ? arr[0] : images;
+    } catch {
+      return images;
+    }
+  };
+
+  const getSellingPrice = (product) => {
+    return (
+      product.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"] ||
+      product.metaDetails?.find((m) => m.slug === "sellingPrice")?.value ||
+      0
+    );
+  };
+
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -263,123 +272,108 @@ const PageWrapper = () => {
               <div className="card-body p-0">
                 {orders.length ? (
                   <ul className="list-unstyled m-0">
-                    {orders.map((o, i) => {
-                      const statusColors = {
-                        PREPARING: "badge bg-warning text-dark",
-                        CHECKING: "badge bg-info text-dark",
-                        INVOICE: "badge bg-secondary",
-                        DISPATCHED: "badge bg-primary",
-                        DELIVERED: "badge bg-success",
-                        PARTIALLY_DELIVERED: "badge bg-light text-dark border",
-                        CANCELED: "badge bg-danger",
-                        DRAFT: "badge bg-secondary",
-                        ONHOLD: "badge bg-dark",
-                      };
+                    {orders.map((o, i) => (
+                      <li
+                        key={o.id}
+                        className="list-item d-flex justify-content-between align-items-start p-2"
+                        style={{
+                          borderBottom:
+                            i < orders.length - 1 ? "1px solid #eee" : "none",
+                        }}
+                      >
+                        <div className="flex-grow-1">
+                          <a href={`/order/${o.id}`} className="order-link">
+                            #{o.orderNo}{" "}
+                            {o.priority && (
+                              <span
+                                className={`ms-2 fw-semibold ${
+                                  o.priority === "high"
+                                    ? "text-danger"
+                                    : o.priority === "medium"
+                                    ? "text-warning"
+                                    : "text-success"
+                                }`}
+                              >
+                                ({o.priority.toUpperCase()})
+                              </span>
+                            )}
+                          </a>
 
-                      return (
-                        <li
-                          key={o.id}
-                          className="d-flex justify-content-between align-items-start border-bottom"
-                          style={{
-                            padding: "14px 16px",
-                            borderBottom:
-                              i < orders.length - 1 ? "1px solid #eee" : "none",
-                          }}
-                        >
-                          <div className="flex-grow-1">
-                            <a
-                              href={`/order/${o.id}`}
-                              className="fw-semibold text-decoration-none"
-                              style={{ color: "#0d6efd" }}
-                            >
-                              #{o.orderNo}
-                            </a>
-                            <span className="ms-2 text-muted small">
-                              {new Date(o.createdAt).toLocaleDateString(
-                                "en-IN",
-                                {
-                                  day: "2-digit",
-                                  month: "short",
-                                  year: "numeric",
-                                }
-                              )}
+                          <div className="mt-1 info-text">
+                            <span className="me-2">
+                              <i className="bi bi-person info-icon"></i>
+                              {o.customer?.name || "Unknown Customer"}
                             </span>
-
-                            <div className="mt-1 small text-muted">
-                              <span className="me-2">
-                                <i className="bi bi-person me-1"></i>
-                                {o.customer?.name || "Unknown Customer"}
-                              </span>
-                              <span className="me-2">
-                                <i className="bi bi-person-badge me-1"></i>
-                                {o.assignedUser?.name || "Unassigned"}
-                              </span>
-                              <span>
-                                <i className="bi bi-flag me-1"></i>
-                                Priority:{" "}
-                                <span
-                                  className={`text-${
-                                    o.priority === "high"
-                                      ? "danger"
-                                      : o.priority === "medium"
-                                      ? "warning"
-                                      : "secondary"
-                                  } fw-semibold`}
-                                >
-                                  {o.priority?.toUpperCase() || "N/A"}
-                                </span>
-                              </span>
-                            </div>
+                            <span className="me-2">
+                              <i className="bi bi-person-badge info-icon"></i>
+                              {o.assignedUser?.name || "Unassigned"}
+                            </span>
                           </div>
+                          <span className="ms-2 info-text">
+                            {new Date(o.createdAt).toLocaleDateString("en-IN", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </span>
+                        </div>
 
-                          <div className="d-flex flex-column align-items-end">
+                        <div className="d-flex flex-column align-items-end position-relative">
+                          <div className="d-flex align-items-center gap-1">
                             <span
-                              className={`${
-                                statusColors[o.status] ||
-                                "badge bg-light text-dark"
+                              className={`status-badge px-2 py-1 rounded-2 ${
+                                statusColors[o.status] || "bg-light text-dark"
                               }`}
+                              style={{ fontSize: "0.8rem" }}
                             >
                               {o.status}
                             </span>
 
-                            <select
-                              value={o.status}
-                              onChange={(e) =>
-                                handleStatusChange(o.id, e.target.value)
-                              }
-                              className="form-select form-select-sm mt-2"
-                              style={{ width: 140 }}
-                            >
-                              {[
-                                "PREPARING",
-                                "CHECKING",
-                                "INVOICE",
-                                "DISPATCHED",
-                                "DELIVERED",
-                                "PARTIALLY_DELIVERED",
-                                "CANCELED",
-                                "DRAFT",
-                                "ONHOLD",
-                              ].map((s) => (
-                                <option key={s} value={s}>
-                                  {s}
-                                </option>
-                              ))}
-                            </select>
+                            <BiPencil
+                              size={16}
+                              className="text-secondary cursor-pointer"
+                              onClick={() => toggleEdit(o.id)}
+                              title="Edit Status"
+                            />
                           </div>
-                        </li>
-                      );
-                    })}
+
+                          {editingOrderId === o.id && (
+                            <div
+                              className="position-absolute bg-white shadow-sm rounded-2 border mt-1"
+                              style={{ top: "100%", right: 0, zIndex: 10 }}
+                            >
+                              <select
+                                size={statuses.length}
+                                value={o.status}
+                                onChange={(e) => {
+                                  handleStatusChange(o.id, e.target.value);
+                                  setEditingOrderId(null);
+                                }}
+                                className="form-select form-select-sm border-0"
+                                style={{
+                                  width: "160px",
+                                  fontSize: "0.85rem",
+                                  cursor: "pointer",
+                                }}
+                              >
+                                {statuses.map((s) => (
+                                  <option key={s} value={s}>
+                                    {s}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
+                        </div>
+                      </li>
+                    ))}
                   </ul>
                 ) : (
-                  <p className="p-3 text-muted fst-italic">
-                    No orders this month.
-                  </p>
+                  <p className="empty-state p-3">No orders this month.</p>
                 )}
               </div>
             </div>
           </div>
-
           {/* MIDDLE COLUMN */}
           <div className="col-12 col-md-4 d-flex flex-column gap-3">
             <div className="card shadow-sm rounded-3">
@@ -398,9 +392,8 @@ const PageWrapper = () => {
                     lastFiveQuotations.map((q, i) => (
                       <li
                         key={q.quotationId}
-                        className="d-flex justify-content-between align-items-start border-bottom"
+                        className="list-item"
                         style={{
-                          padding: "14px 16px",
                           borderBottom:
                             i < lastFiveQuotations.length - 1
                               ? "1px solid #eee"
@@ -410,13 +403,12 @@ const PageWrapper = () => {
                         <div className="flex-grow-1">
                           <a
                             href={`/quotation/${q.quotationId}`}
-                            className="fw-semibold text-decoration-none"
-                            style={{ color: "#0d6efd" }}
+                            className="order-link"
                           >
                             {q.reference_number || "Quotation"}
                           </a>
 
-                          <span className="ms-2 text-muted small">
+                          <span className="ms-2 info-text">
                             {new Date(q.createdAt).toLocaleDateString("en-IN", {
                               day: "2-digit",
                               month: "short",
@@ -424,13 +416,13 @@ const PageWrapper = () => {
                             })}
                           </span>
 
-                          <div className="mt-1 small text-muted">
+                          <div className="mt-1 info-text">
                             <span className="me-2">
-                              <i className="bi bi-person me-1"></i>
+                              <i className="bi bi-person info-icon"></i>
                               {q.customer?.name || "Customer"}
                             </span>
                             <span className="me-2">
-                              <i className="bi bi-calendar-event me-1"></i>
+                              <i className="bi bi-calendar-event info-icon"></i>
                               Due:{" "}
                               {new Date(q.due_date).toLocaleDateString(
                                 "en-IN",
@@ -441,7 +433,7 @@ const PageWrapper = () => {
                               )}
                             </span>
                             <span>
-                              <i className="bi bi-percent me-1"></i>
+                              <i className="bi bi-percent info-icon"></i>
                               Disc: {q.extraDiscount || 0}
                               {q.extraDiscountType === "percent" ? "%" : ""}
                             </span>
@@ -449,31 +441,30 @@ const PageWrapper = () => {
                         </div>
 
                         <div className="text-end">
-                          <div className="fw-semibold">
+                          <div className="amount">
                             ₹
                             {parseFloat(q.finalAmount || 0).toLocaleString(
                               "en-IN"
                             )}
                           </div>
-                          <div className="small text-muted">
+                          <div className="item-count">
                             {q.items?.length || 0} items
                           </div>
                         </div>
                       </li>
                     ))
                   ) : (
-                    <li className="p-3 text-muted fst-italic">
-                      No quotations.
-                    </li>
+                    <li className="empty-state">No quotations.</li>
                   )}
                 </ul>
               </div>
             </div>
+
             {lowStockProducts.length > 0 && (
               <div className="card shadow-sm rounded-3">
-                <div className="card-header bg-light fw-semibold d-flex justify-content-between align-items-center">
+                <div className="card-header bg-light fw-semibold low-stock-header">
                   <span>Low in Stock</span>
-                  <span className="small text-danger">
+                  <span className="low-stock-count">
                     {lowStockProducts.length} of {products.length} remaining
                   </span>
                 </div>
@@ -483,16 +474,10 @@ const PageWrapper = () => {
                       <li
                         key={p._id || p.productId}
                         onClick={() => handleProductClick(p)}
-                        className="d-flex justify-content-between align-items-center border-bottom"
-                        style={{
-                          padding: "12px 16px",
-                          cursor: "pointer",
-                        }}
+                        className="low-stock-item"
                       >
                         <span className="fw-semibold">{p.name}</span>
-                        <span className="text-danger small">
-                          Qty: {p.quantity}
-                        </span>
+                        <span className="low-stock-qty">Qty: {p.quantity}</span>
                       </li>
                     ))}
                   </ul>
@@ -504,12 +489,11 @@ const PageWrapper = () => {
                       onPageChange={setCurrentPage}
                     />
                   )}
-                  <div className="d-flex align-items-center gap-2 px-3 py-2">
+                  <div className="add-product-bar">
                     <input
                       type="text"
                       placeholder="Add product..."
                       className="form-control form-control-sm"
-                      style={{ flex: 1 }}
                     />
                     <button className="btn btn-danger btn-sm">Add</button>
                   </div>
@@ -520,7 +504,7 @@ const PageWrapper = () => {
 
           {/* RIGHT COLUMN */}
           <div className="col-12 col-md-4 d-flex flex-column gap-3">
-            {/* --- TOP SELLING PRODUCTS --- */}
+            {/* Top Selling Products */}
             <div className="card shadow-sm rounded-3">
               <div className="card-header bg-light fw-semibold">
                 Top Selling Products
@@ -531,32 +515,13 @@ const PageWrapper = () => {
                 ) : topProducts.length > 0 ? (
                   <ul className="list-unstyled m-0">
                     {topProducts.slice(0, 5).map((product, idx) => {
-                      let imgUrl = null;
-                      if (product.images) {
-                        try {
-                          const arr = JSON.parse(product.images);
-                          imgUrl =
-                            Array.isArray(arr) && arr[0]
-                              ? arr[0]
-                              : product.images;
-                        } catch {
-                          imgUrl = product.images;
-                        }
-                      }
-
-                      const sellingPrice =
-                        product.meta?.[
-                          "9ba862ef-f993-4873-95ef-1fef10036aa5"
-                        ] ||
-                        product.metaDetails?.find(
-                          (m) => m.slug === "sellingPrice"
-                        )?.value ||
-                        0;
+                      const imgUrl = getImageUrl(product.images);
+                      const sellingPrice = getSellingPrice(product);
 
                       return (
                         <li
                           key={product.productId}
-                          className="d-flex align-items-center justify-content-between border-bottom"
+                          className="d-flex align-items-center justify-content-between"
                           style={{
                             padding: "12px 16px",
                             borderBottom: idx < 4 ? "1px solid #eee" : "none",
@@ -567,12 +532,7 @@ const PageWrapper = () => {
                               <img
                                 src={imgUrl}
                                 alt={product.name}
-                                className="rounded border"
-                                style={{
-                                  width: 42,
-                                  height: 42,
-                                  objectFit: "cover",
-                                }}
+                                className="product-image"
                                 onError={(e) => {
                                   e.target.style.display = "none";
                                   e.target.nextElementSibling.style.display =
@@ -580,31 +540,15 @@ const PageWrapper = () => {
                                 }}
                               />
                             ) : null}
-                            <div
-                              style={{
-                                width: 42,
-                                height: 42,
-                                background: "#f5f5f5",
-                                borderRadius: 6,
-                                display: imgUrl ? "none" : "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontSize: 12,
-                                color: "#999",
-                              }}
-                            >
-                              No Img
-                            </div>
 
                             <div className="d-flex flex-column">
                               <a
                                 href={`/product/${product.productId}`}
-                                className="fw-semibold text-decoration-none"
-                                style={{ color: "#0d6efd" }}
+                                className="product-name-link"
                               >
                                 {product.name}
                               </a>
-                              <div className="small text-muted">
+                              <div className="sold-text">
                                 {product.quantity}{" "}
                                 {product.quantity === 1 ? "unit" : "units"} sold
                               </div>
@@ -612,15 +556,14 @@ const PageWrapper = () => {
                           </div>
 
                           <div className="text-end">
-                            <div className="fw-semibold">
+                            <div className="price">
                               ₹
                               {parseFloat(sellingPrice).toLocaleString("en-IN")}
                             </div>
                             <button
-                              className="btn btn-outline-primary btn-sm mt-1"
+                              className="btn btn-outline-primary btn-sm add-to-cart-btn"
                               onClick={() => handleAddToCart(product)}
                               disabled={cartLoadingStates[product.productId]}
-                              style={{ fontSize: "0.8rem", padding: "2px 8px" }}
                             >
                               {cartLoadingStates[product.productId]
                                 ? "Adding…"
@@ -632,14 +575,12 @@ const PageWrapper = () => {
                     })}
                   </ul>
                 ) : (
-                  <p className="p-3 text-muted fst-italic">
-                    No sales data yet.
-                  </p>
+                  <p className="empty-state">No sales data yet.</p>
                 )}
               </div>
             </div>
 
-            {/* --- LAST FIVE PRODUCTS --- */}
+            {/* Last Five Products */}
             <div className="card shadow-sm rounded-3">
               <div className="card-header bg-light fw-semibold d-flex justify-content-between align-items-center">
                 <span>
@@ -654,27 +595,13 @@ const PageWrapper = () => {
                 <ul className="list-unstyled m-0">
                   {lastFiveProducts.length > 0 ? (
                     lastFiveProducts.slice(0, 5).map((p, idx) => {
-                      let imgUrl = null;
-                      if (p.images) {
-                        try {
-                          const arr = JSON.parse(p.images);
-                          imgUrl =
-                            Array.isArray(arr) && arr[0] ? arr[0] : p.images;
-                        } catch {
-                          imgUrl = p.images;
-                        }
-                      }
-
-                      const sellingPrice =
-                        p.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"] ||
-                        p.metaDetails?.find((m) => m.slug === "sellingPrice")
-                          ?.value ||
-                        0;
+                      const imgUrl = getImageUrl(p.images);
+                      const sellingPrice = getSellingPrice(p);
 
                       return (
                         <li
                           key={p.productId}
-                          className="d-flex align-items-center justify-content-between border-bottom"
+                          className="d-flex align-items-center justify-content-between"
                           style={{
                             padding: "12px 16px",
                             borderBottom: idx < 4 ? "1px solid #eee" : "none",
@@ -685,12 +612,7 @@ const PageWrapper = () => {
                               <img
                                 src={imgUrl}
                                 alt={p.name}
-                                className="rounded border"
-                                style={{
-                                  width: 42,
-                                  height: 42,
-                                  objectFit: "cover",
-                                }}
+                                className="product-image"
                                 onError={(e) => {
                                   e.target.style.display = "none";
                                   e.target.nextElementSibling.style.display =
@@ -698,31 +620,15 @@ const PageWrapper = () => {
                                 }}
                               />
                             ) : null}
-                            <div
-                              style={{
-                                width: 42,
-                                height: 42,
-                                background: "#f5f5f5",
-                                borderRadius: 6,
-                                display: imgUrl ? "none" : "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontSize: 12,
-                                color: "#999",
-                              }}
-                            >
-                              No Img
-                            </div>
 
                             <div className="d-flex flex-column">
                               <a
                                 href={`/product/${p.productId}`}
-                                className="fw-semibold text-decoration-none"
-                                style={{ color: "#0d6efd" }}
+                                className="product-name-link"
                               >
                                 {p.name}
                               </a>
-                              <div className="small text-muted">
+                              <div className="info-text">
                                 Added on{" "}
                                 {new Date(p.createdAt).toLocaleDateString(
                                   "en-IN",
@@ -735,14 +641,14 @@ const PageWrapper = () => {
                             </div>
                           </div>
 
-                          <div className="text-end small text-muted">
+                          <div className="info-text">
                             ₹{parseFloat(sellingPrice).toLocaleString("en-IN")}
                           </div>
                         </li>
                       );
                     })
                   ) : (
-                    <li className="p-3 text-muted fst-italic">No products.</li>
+                    <li className="empty-state">No products.</li>
                   )}
                 </ul>
               </div>
@@ -750,7 +656,7 @@ const PageWrapper = () => {
           </div>
         </div>
 
-        {/* STOCK DETAIL MODAL */}
+        {/* Stock Modal */}
         {isModalVisible && selectedProduct && (
           <StockModal
             show={isModalVisible}

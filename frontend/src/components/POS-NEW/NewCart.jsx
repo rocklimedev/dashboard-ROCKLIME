@@ -330,10 +330,26 @@ const NewCart = ({ onConvertToOrder }) => {
       return sum + disc;
     }, 0);
   }, [cartItems, itemDiscounts, itemDiscountTypes]);
+  const extraDiscount = useMemo(() => {
+    const amount = parseFloat(quotationData.discountAmount) || 0;
+    if (!amount) return 0;
 
+    const taxableBase = subTotal - totalDiscount;
+    const afterTax = taxableBase + tax;
+
+    return quotationData.discountType === "percent"
+      ? parseFloat(((afterTax * amount) / 100).toFixed(2))
+      : amount;
+  }, [
+    quotationData.discountType,
+    quotationData.discountAmount,
+    subTotal,
+    totalDiscount,
+    tax,
+  ]);
   const roundOff = parseFloat(quotationData.roundOff) || 0;
-  const totalAmount = subTotal + shipping + tax - totalDiscount + roundOff;
-
+  const totalAmount =
+    subTotal + shipping + tax - totalDiscount - extraDiscount + roundOff;
   const purchaseOrderTotal = useMemo(
     () =>
       purchaseOrderData.items
@@ -524,6 +540,7 @@ const NewCart = ({ onConvertToOrder }) => {
     },
     [userId, updateCart]
   );
+  // Add this useMemo
 
   const handleTeamAdded = (showModal) => {
     setShowAddTeamModal(showModal);

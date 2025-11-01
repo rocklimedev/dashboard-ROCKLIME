@@ -1,21 +1,24 @@
 import React, { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { ChevronsLeft } from "react-feather";
 import masterRoutes from "../../data/routes";
 import logo from "../../assets/img/logo.png";
 import logo_small from "../../assets/img/fav_icon.png";
 import { DownCircleOutlined } from "@ant-design/icons";
-
+import { BiLogOut } from "react-icons/bi";
 import { useAuth } from "../../context/AuthContext"; // <-- your hook
-
+import { useLogoutMutation } from "../../api/authApi";
+import { toast } from "sonner";
 const SidebarNew = ({
   isSidebarOpen,
   toggleSidebar,
   layoutMode = "vertical",
 }) => {
+  const navigate = useNavigate();
   const [openMenu, setOpenMenu] = useState(null);
   const { auth } = useAuth(); // <-- role comes from here
-
+  const { logout } = useAuth();
+  const [logoutMutation, { isLoading: isLoggingOut }] = useLogoutMutation();
   const toggleDropdown = (index) => {
     setOpenMenu((prev) => (prev === index ? null : index));
   };
@@ -28,7 +31,15 @@ const SidebarNew = ({
   const MASTER_TABLE_ALLOWED_ROLES = ["SUPER_ADMIN", "DEVELOPER", "ADMIN"];
   const canSeeMasterTable =
     auth?.role && MASTER_TABLE_ALLOWED_ROLES.includes(auth.role);
-
+  const handleLogout = async () => {
+    try {
+      await logoutMutation().unwrap();
+      await logout();
+      navigate("/login", { replace: true });
+    } catch (error) {
+      toast.error("Logout failed. Please try again.");
+    }
+  };
   // --------------------------------------------------------------
   // 2. Filter masterRoutes – hide Master Table if not allowed
   // --------------------------------------------------------------
@@ -40,7 +51,10 @@ const SidebarNew = ({
   });
 
   const VerticalSidebar = () => (
-    <div className={`sidebar ${isSidebarOpen ? "active" : ""}`} id="sidebar">
+    <div
+      className={`sidebar d-flex flex-column ${isSidebarOpen ? "active" : ""}`}
+      id="sidebar"
+    >
       {/* ---------- LOGO ---------- */}
       <div className={`sidebar-logo ${isSidebarOpen ? "active" : ""}`}>
         <NavLink to="/" className="logo logo-normal">
@@ -62,119 +76,129 @@ const SidebarNew = ({
         </a>
       </div>
 
-      {/* ---------- MENU ---------- */}
-      <div className="sidebar-inner slimscroll">
-        <div id="sidebar-menu" className="sidebar-menu">
-          <ul>
-            {visibleRoutes.map((section, index) => (
-              <li
-                key={index}
-                className={section.submenu?.length ? "submenu" : ""}
-              >
-                {/* ----- TOP-LEVEL LINK (with dropdown) ----- */}
-                {section.submenu?.length > 0 ? (
-                  <a
-                    href="#"
-                    className={openMenu === index ? "subdrop active" : ""}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      toggleDropdown(index);
-                    }}
-                  >
-                    {section.icon || <DownCircleOutlined />}
-                    <span>{section.name}</span>
-                    <span className="menu-arrow"></span>
-                  </a>
-                ) : (
-                  <NavLink
-                    to={section.path}
-                    className={({ isActive }) => (isActive ? "active" : "")}
-                    onClick={handleRouteClick}
-                  >
-                    {section.icon || <DownCircleOutlined />}
-                    <span>{section.name}</span>
-                  </NavLink>
-                )}
+      {/* ---------- MENU + LOGOUT CONTAINER ---------- */}
+      <div className="d-flex flex-column flex-grow-1">
+        <div className="sidebar-inner slimscroll flex-grow-1">
+          <div id="sidebar-menu" className="sidebar-menu">
+            <ul>
+              {visibleRoutes.map((section, index) => (
+                <li
+                  key={index}
+                  className={section.submenu?.length ? "submenu" : ""}
+                >
+                  {section.submenu?.length > 0 ? (
+                    <a
+                      href="#"
+                      className={openMenu === index ? "subdrop active" : ""}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        toggleDropdown(index);
+                      }}
+                    >
+                      {section.icon || <DownCircleOutlined />}
+                      <span>{section.name}</span>
+                      <span className="menu-arrow"></span>
+                    </a>
+                  ) : (
+                    <NavLink
+                      to={section.path}
+                      className={({ isActive }) => (isActive ? "active" : "")}
+                      onClick={handleRouteClick}
+                    >
+                      {section.icon || <DownCircleOutlined />}
+                      <span>{section.name}</span>
+                    </NavLink>
+                  )}
 
-                {/* ----- SUBMENU (level 1) ----- */}
-                {section.submenu?.length > 0 && (
-                  <ul
-                    className={
-                      openMenu === index ? "submenu-open" : "submenu-closed"
-                    }
-                  >
-                    {section.submenu
-                      .filter((sub) => sub.isSidebarActive)
-                      .map((sub, subIdx) => (
-                        <li
-                          key={subIdx}
-                          className={sub.submenu?.length ? "submenu" : ""}
-                        >
-                          {/* ---- SUB-LEVEL LINK (with dropdown) ---- */}
-                          {sub.submenu?.length > 0 ? (
-                            <a
-                              href="#"
-                              className={
-                                openMenu === `${index}-${subIdx}`
-                                  ? "subdrop active"
-                                  : ""
-                              }
-                              onClick={(e) => {
-                                e.preventDefault();
-                                toggleDropdown(`${index}-${subIdx}`);
-                              }}
-                            >
-                              {sub.icon || <DownCircleOutlined />}
-                              <span>{sub.name}</span>
-                              <span className="menu-arrow inside-submenu"></span>
-                            </a>
-                          ) : (
-                            <NavLink
-                              to={sub.path}
-                              className={({ isActive }) =>
-                                isActive ? "active" : ""
-                              }
-                              onClick={handleRouteClick}
-                            >
-                              {sub.icon || <DownCircleOutlined />}
-                              <span>{sub.name}</span>
-                            </NavLink>
-                          )}
+                  {section.submenu?.length > 0 && (
+                    <ul
+                      className={
+                        openMenu === index ? "submenu-open" : "submenu-closed"
+                      }
+                    >
+                      {section.submenu
+                        .filter((sub) => sub.isSidebarActive)
+                        .map((sub, subIdx) => (
+                          <li
+                            key={subIdx}
+                            className={sub.submenu?.length ? "submenu" : ""}
+                          >
+                            {sub.submenu?.length > 0 ? (
+                              <a
+                                href="#"
+                                className={
+                                  openMenu === `${index}-${subIdx}`
+                                    ? "subdrop active"
+                                    : ""
+                                }
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  toggleDropdown(`${index}-${subIdx}`);
+                                }}
+                              >
+                                {sub.icon || <DownCircleOutlined />}
+                                <span>{sub.name}</span>
+                                <span className="menu-arrow inside-submenu"></span>
+                              </a>
+                            ) : (
+                              <NavLink
+                                to={sub.path}
+                                className={({ isActive }) =>
+                                  isActive ? "active" : ""
+                                }
+                                onClick={handleRouteClick}
+                              >
+                                {sub.icon || <DownCircleOutlined />}
+                                <span>{sub.name}</span>
+                              </NavLink>
+                            )}
 
-                          {/* ---- SUB-SUBMENU (level 2) ---- */}
-                          {sub.submenu?.length > 0 && (
-                            <ul
-                              className={
-                                openMenu === `${index}-${subIdx}`
-                                  ? "submenu-open"
-                                  : "submenu-closed"
-                              }
-                            >
-                              {sub.submenu
-                                .filter((subSub) => subSub.isSidebarActive)
-                                .map((subSub, subSubIdx) => (
-                                  <li key={subSubIdx}>
-                                    <NavLink
-                                      to={subSub.path}
-                                      className={({ isActive }) =>
-                                        isActive ? "active" : ""
-                                      }
-                                      onClick={handleRouteClick}
-                                    >
-                                      {subSub.icon || <DownCircleOutlined />}
-                                      <span>{subSub.name}</span>
-                                    </NavLink>
-                                  </li>
-                                ))}
-                            </ul>
-                          )}
-                        </li>
-                      ))}
-                  </ul>
-                )}
-              </li>
-            ))}
-          </ul>
+                            {sub.submenu?.length > 0 && (
+                              <ul
+                                className={
+                                  openMenu === `${index}-${subIdx}`
+                                    ? "submenu-open"
+                                    : "submenu-closed"
+                                }
+                              >
+                                {sub.submenu
+                                  .filter((subSub) => subSub.isSidebarActive)
+                                  .map((subSub, subSubIdx) => (
+                                    <li key={subSubIdx}>
+                                      <NavLink
+                                        to={subSub.path}
+                                        className={({ isActive }) =>
+                                          isActive ? "active" : ""
+                                        }
+                                        onClick={handleRouteClick}
+                                      >
+                                        {subSub.icon || <DownCircleOutlined />}
+                                        <span>{subSub.name}</span>
+                                      </NavLink>
+                                    </li>
+                                  ))}
+                              </ul>
+                            )}
+                          </li>
+                        ))}
+                    </ul>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* ---------- LOGOUT BUTTON ---------- */}
+        <div className="p-3 mt-auto border-top">
+          <button
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2"
+          >
+            <BiLogOut />
+            {isLoggingOut ? "Logging out..." : "Logout"}
+          </button>
         </div>
       </div>
     </div>
