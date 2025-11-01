@@ -15,6 +15,7 @@ import {
   Badge,
   Space,
   Typography,
+  message,
 } from "antd";
 import {
   SearchOutlined,
@@ -31,6 +32,7 @@ import StockModal from "../Common/StockModal";
 import HistoryModal from "../Common/HistoryModal";
 import PageHeader from "../Common/PageHeader";
 import pos from "../../assets/img/default.png";
+import { CopyOutlined } from "@ant-design/icons";
 
 const { TabPane } = Tabs;
 const { Text } = Typography;
@@ -134,6 +136,11 @@ const InventoryWrapper = () => {
 
   // Actions
   const handleAddProduct = () => navigate("/inventory/product/add");
+  const handleCopy = (value) => {
+    if (!value) return;
+    navigator.clipboard.writeText(value);
+    message.success("Copied to clipboard");
+  };
 
   const handleStockClick = (product, action = "add") => {
     setSelectedProduct({ ...product, action });
@@ -213,16 +220,38 @@ const InventoryWrapper = () => {
       ),
     },
     {
-      title: "Product Code",
+      title: "Company Code",
       dataIndex: "product_code",
       key: "product_code",
-      render: (text) => <Text code>{text || "N/A"}</Text>,
+      render: (text) => (
+        <Text
+          code
+          onClick={() => handleCopy(text)}
+          style={{ cursor: text ? "pointer" : "default", userSelect: "none" }}
+        >
+          {text || "N/A"}
+        </Text>
+      ),
     },
     {
-      title: "Company Code",
+      title: "Product Code",
       dataIndex: "metaDetails",
       key: "company_code",
-      render: (meta) => <Text type="secondary">{getCompanyCode(meta)}</Text>,
+      render: (meta) => {
+        const companyCode = getCompanyCode(meta);
+        return (
+          <Text
+            code
+            onClick={() => handleCopy(companyCode)}
+            style={{
+              cursor: companyCode ? "pointer" : "default",
+              userSelect: "none",
+            }}
+          >
+            {companyCode || "N/A"}
+          </Text>
+        );
+      },
     },
     {
       title: "Stock",

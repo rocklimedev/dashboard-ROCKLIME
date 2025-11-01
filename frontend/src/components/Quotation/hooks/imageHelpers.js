@@ -1,23 +1,44 @@
-import { Buffer } from "buffer";
+// ---------------------------------------------------------------
+// imageHelpers.js – returns { buffer: Uint8Array, extension }
+// ---------------------------------------------------------------
+const placeholderBase64 =
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
 
 export const placeholder = {
-  buffer: Buffer.from(
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
-    "base64"
-  ),
+  buffer: Uint8Array.from(atob(placeholderBase64), (c) => c.charCodeAt(0)),
   extension: "png",
 };
 
-export const fetchImg = async (url) => {
-  if (!url) return placeholder;
-  if (url.startsWith("data:")) {
-    const [, ext, b64] = url.match(/^data:image\/(\w+);base64,(.+)$/);
-    return { buffer: Buffer.from(b64, "base64"), extension: ext };
+/**
+ * Works with:
+ *   • data:image/... URLs
+ *   • remote URLs (CORS must be allowed)
+ *   • broken URLs → placeholder
+ */
+export const fetchImg = async (src) => {
+  if (!src) return placeholder;
+
+  // ---- data URL ------------------------------------------------
+  if (src.startsWith("data:")) {
+    const m = src.match(/^data:image\/(\w+);base64,(.*)$/);
+    if (m) {
+      const [, ext, b64] = m;
+      const buffer = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+      return { buffer, extension: ext };
+    }
+    return placeholder;
   }
-  const res = await fetch(url, { mode: "cors", credentials: "omit" });
-  if (!res.ok) return placeholder;
-  const ct = res.headers.get("content-type");
-  const ext = ct.split("/")[1].replace("jpeg", "jpg");
-  const buffer = Buffer.from(await res.arrayBuffer());
-  return { buffer, extension: ext };
+
+  // ---- remote URL ---------------------------------------------
+  try {
+    const res = await fetch(src, { mode: "cors" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    const buffer = new Uint8Array(await blob.arrayBuffer());
+    const extension = blob.type.split("/").pop() || "png";
+    return { buffer, extension };
+  } catch (e) {
+    console.warn("fetchImg failed → placeholder", src, e);
+    return placeholder;
+  }
 };

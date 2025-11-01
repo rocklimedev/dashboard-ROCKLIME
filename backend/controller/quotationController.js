@@ -9,42 +9,64 @@ const { sendNotification } = require("./notificationController");
 
 // ---------------------------------------------------------------------
 // Helper – calculate totals (used by create & update)
+// controllers/quotationController.js
 const calculateTotals = (
   products,
   extraDiscount = 0,
-  extraDiscountType = null
+  extraDiscountType = null,
+  shippingAmount = 0
 ) => {
+  // Step 1: Subtotal
   const subTotal = products.reduce(
     (sum, p) => sum + p.sellingPrice * p.quantity,
     0
   );
+
+  // Step 2: Total per-item discount
   const totalItemDiscount = products.reduce(
     (sum, p) => sum + (p.discount || 0),
     0
   );
+
+  // Step 3: Taxable amount = subtotal - item discounts
+  const taxableAmount = subTotal - totalItemDiscount;
+
+  // Step 4: Total tax
   const totalTax = products.reduce((sum, p) => {
     const itemSub = p.sellingPrice * p.quantity;
-    return sum + ((itemSub - (p.discount || 0)) * (p.tax || 0)) / 100;
+    const itemDisc = p.discount || 0;
+    const itemTaxable = itemSub - itemDisc;
+    return sum + (itemTaxable * (p.tax || 0)) / 100;
   }, 0);
 
-  // ----- extra global discount -----
+  // Step 5: Amount after tax
+  const amountAfterTax = taxableAmount + totalTax;
+
+  // Step 6: Apply extra discount ON amount after tax (common practice)
   let extraDiscountAmount = 0;
   if (extraDiscount > 0 && extraDiscountType) {
     extraDiscountAmount =
       extraDiscountType === "percent"
-        ? (subTotal * extraDiscount) / 100
+        ? (amountAfterTax * extraDiscount) / 100
         : extraDiscount;
   }
 
-  const finalAmount =
-    subTotal + totalTax - totalItemDiscount - extraDiscountAmount;
+  // Step 7: Final amount before shipping & round-off
+  const baseFinal = amountAfterTax - extraDiscountAmount;
+
+  // Step 8: Add shipping
+  const finalWithShipping = baseFinal + (shippingAmount || 0);
 
   return {
     subTotal: parseFloat(subTotal.toFixed(2)),
     totalItemDiscount: parseFloat(totalItemDiscount.toFixed(2)),
+    taxableAmount: parseFloat(taxableAmount.toFixed(2)),
     totalTax: parseFloat(totalTax.toFixed(2)),
+    amountAfterTax: parseFloat(amountAfterTax.toFixed(2)),
     extraDiscountAmount: parseFloat(extraDiscountAmount.toFixed(2)),
-    finalAmount: parseFloat(finalAmount.toFixed(2)),
+    baseFinal: parseFloat(baseFinal.toFixed(2)),
+    shippingAmount: parseFloat((shippingAmount || 0).toFixed(2)),
+    finalAmount: parseFloat(finalWithShipping.toFixed(2)), // before round-off
   };
 };
 // ---------------------------------------------------------------------
@@ -52,39 +74,44 @@ const calculateTotals = (
 // CREATE QUOTATION
 exports.createQuotation = async (req, res) => {
   const t = await sequelize.transaction();
-  let mongoItem; // to delete if rollback needed
+  let mongoItem;
   try {
     let {
       products,
       extraDiscount = 0,
       extraDiscountType = null,
       followupDates,
+      shippingAmount = 0,
       ...quotationData
     } = req.body;
 
-    // ---- validation ----
     if (!Array.isArray(products) || products.length === 0) {
       return res
         .status(400)
         .json({ error: "At least one product is required" });
     }
 
+    // Inside createQuotation
     const {
       subTotal,
       totalItemDiscount,
       totalTax,
       extraDiscountAmount,
-      finalAmount,
-    } = calculateTotals(products, extraDiscount, extraDiscountType);
+      finalAmount, // this is now AFTER shipping, BEFORE round-off
+    } = calculateTotals(
+      products,
+      extraDiscount,
+      extraDiscountType,
+      shippingAmount
+    );
 
     const roundOff = quotationData.roundOff
       ? parseFloat(quotationData.roundOff)
       : 0;
+
     const finalAmountWithRound = parseFloat(
       (finalAmount + roundOff).toFixed(2)
     );
-
-    // ---- DB insert (Sequelize) ----
     const quotation = await Quotation.create(
       {
         ...quotationData,
@@ -93,18 +120,16 @@ exports.createQuotation = async (req, res) => {
         extraDiscount: extraDiscount > 0 ? extraDiscount : null,
         extraDiscountType: extraDiscountType,
         discountAmount: extraDiscountAmount > 0 ? extraDiscountAmount : null,
+        shippingAmount: shippingAmount || null,
         finalAmount: finalAmountWithRound,
         followupDates: followupDates ? JSON.stringify(followupDates) : null,
       },
       { transaction: t }
     );
 
-    // Ensure quotationId exists
-    if (!quotation.quotationId) {
+    if (!quotation.quotationId)
       throw new Error("Failed to generate quotationId");
-    }
 
-    // ---- MongoDB: QuotationItem (NO transaction) ----
     if (products.length > 0) {
       mongoItem = await QuotationItem.create({
         quotationId: quotation.quotationId,
@@ -118,7 +143,6 @@ exports.createQuotation = async (req, res) => {
       });
     }
 
-    // Only commit SQL transaction if Mongo succeeds
     await t.commit();
 
     await sendNotification({
@@ -134,23 +158,18 @@ exports.createQuotation = async (req, res) => {
         totalItemDiscount,
         totalTax,
         extraDiscountAmount,
+        shippingAmount,
         finalAmount: finalAmountWithRound,
       },
       message: "Quotation created successfully",
     });
   } catch (error) {
-    // Rollback SQL
     if (t) await t.rollback();
-
-    // Optional: Clean up Mongo if partial insert happened
     if (mongoItem) {
       try {
         await QuotationItem.deleteOne({ _id: mongoItem._id });
-      } catch (cleanupErr) {
-        console.error("Failed to cleanup Mongo item:", cleanupErr);
-      }
+      } catch {}
     }
-
     console.error("Quotation creation error:", error);
     res.status(500).json({ error: error.message });
   }
@@ -167,6 +186,7 @@ exports.updateQuotation = async (req, res) => {
       followupDates,
       extraDiscount = 0,
       extraDiscountType = null,
+      shippingAmount = 0,
       ...quotationData
     } = req.body;
 
@@ -184,7 +204,6 @@ exports.updateQuotation = async (req, res) => {
       return res.status(404).json({ message: "Quotation not found" });
     }
 
-    // ---- version snapshot ----
     const currentItems = await QuotationItem.findOne({ quotationId: id });
     const latestVersion = await QuotationVersion.findOne({
       quotationId: id,
@@ -200,7 +219,6 @@ exports.updateQuotation = async (req, res) => {
       updatedAt: new Date(),
     });
 
-    // ---- product handling ----
     const products = incomingProducts || items || [];
     const formattedItems = products.map((item) => ({
       productId: item.productId || null,
@@ -213,7 +231,8 @@ exports.updateQuotation = async (req, res) => {
     const { extraDiscountAmount, finalAmount } = calculateTotals(
       products,
       extraDiscount,
-      extraDiscountType
+      extraDiscountType,
+      shippingAmount
     );
 
     const roundOff = quotationData.roundOff
@@ -223,7 +242,6 @@ exports.updateQuotation = async (req, res) => {
       (finalAmount + roundOff).toFixed(2)
     );
 
-    // ---- prepare update payload ----
     const updatePayload = {
       ...quotationData,
       products:
@@ -231,6 +249,7 @@ exports.updateQuotation = async (req, res) => {
       extraDiscount: extraDiscount > 0 ? extraDiscount : null,
       extraDiscountType,
       discountAmount: extraDiscountAmount > 0 ? extraDiscountAmount : null,
+      shippingAmount: shippingAmount || null,
       finalAmount: finalAmountWithRound,
     };
     if (followupDates !== undefined)
@@ -241,7 +260,6 @@ exports.updateQuotation = async (req, res) => {
       transaction: t,
     });
 
-    // ---- items (Mongo) ----
     if (formattedItems.length > 0) {
       await QuotationItem.updateOne(
         { quotationId: id },
@@ -269,7 +287,7 @@ exports.updateQuotation = async (req, res) => {
   }
 };
 
-// EXPORT TO EXCEL (now shows extra discount)
+// EXPORT TO EXCEL – includes shippingAmount
 exports.exportQuotation = async (req, res) => {
   try {
     const { id, version } = req.params;
@@ -294,7 +312,6 @@ exports.exportQuotation = async (req, res) => {
       quotationItems = items ? items.items : [];
     }
 
-    // ---- recalc totals for display (same logic as create/update) ----
     const { subTotal, totalItemDiscount, totalTax, extraDiscountAmount } =
       calculateTotals(
         quotationItems.map((i) => ({
@@ -304,17 +321,18 @@ exports.exportQuotation = async (req, res) => {
           tax: i.tax || 0,
         })),
         quotation.extraDiscount || 0,
-        quotation.extraDiscountType
+        quotation.extraDiscountType,
+        quotation.shippingAmount || 0
       );
 
     const finalTotal =
       subTotal +
-      totalTax -
+      totalTax +
+      (quotation.shippingAmount || 0) -
       totalItemDiscount -
       extraDiscountAmount +
       (quotation.roundOff || 0);
 
-    // ---- sheet ----
     const sheetData = [
       ["Estimate / Quotation", "", "", "", "GROHE / AMERICAN STANDARD"],
       [""],
@@ -408,6 +426,17 @@ exports.exportQuotation = async (req, res) => {
       "",
       "",
       "",
+      "Shipping",
+      "",
+      (quotation.shippingAmount || 0).toFixed(2),
+    ]);
+    sheetData.push([
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
       "Round-off",
       "",
       (quotation.roundOff || 0).toFixed(2),
@@ -459,7 +488,7 @@ exports.exportQuotation = async (req, res) => {
   }
 };
 
-// CLONE QUOTATION
+// CLONE QUOTATION – include shippingAmount
 exports.cloneQuotation = async (req, res) => {
   try {
     const original = await Quotation.findByPk(req.params.id);
@@ -483,6 +512,7 @@ exports.cloneQuotation = async (req, res) => {
       extraDiscount: original.extraDiscount,
       extraDiscountType: original.extraDiscountType,
       discountAmount: original.discountAmount,
+      shippingAmount: original.shippingAmount,
       products: original.products,
       roundOff: original.roundOff,
       finalAmount: original.finalAmount,
@@ -515,7 +545,7 @@ exports.cloneQuotation = async (req, res) => {
   }
 };
 
-// RESTORE VERSION (now restores extraDiscount fields)
+// RESTORE VERSION – already covered by QuotationVersion data
 exports.restoreQuotationVersion = async (req, res) => {
   const t = await sequelize.transaction();
   try {

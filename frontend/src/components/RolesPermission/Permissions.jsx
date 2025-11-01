@@ -53,47 +53,67 @@ const Permissions = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // Data assignments
+  // Data
   const permissions = Array.isArray(permissionsData?.permissions)
     ? permissionsData.permissions
     : [];
   const roleName = roleData?.roleName || "Unknown Role";
   const assignedPermissions = rolePermissionsData?.rolePermissions || [];
 
-  // Memoized data
-  const permissionTypes = useMemo(() => {
-    return [...new Set(permissions.map((p) => p.api))];
-  }, [permissions]);
-
-  const modules = useMemo(() => {
-    return [...new Set(permissions.map((p) => p.module))];
-  }, [permissions]);
-
-  const routeLookup = useMemo(() => {
+  /* ==================== VALID MODULES WITH API ONLY ==================== */
+  const { validModules, permissionTypes, routeLookup } = useMemo(() => {
+    const moduleMap = {};
+    const types = new Set();
     const lookup = {};
+
     permissions.forEach((perm) => {
-      if (!lookup[perm.module]) {
-        lookup[perm.module] = {};
+      const module = perm.module || "Uncategorized";
+      const hasApi =
+        perm.api && typeof perm.api === "string" && perm.api.trim() !== "";
+
+      // SKIP if no valid api
+      if (!hasApi) return;
+
+      // Track module
+      if (!moduleMap[module]) {
+        moduleMap[module] = {};
       }
-      lookup[perm.module][perm.api] = {
-        route: perm.route || "No route",
+      moduleMap[module][perm.api] = true;
+
+      // Track global types
+      types.add(perm.api);
+
+      // Build lookup
+      if (!lookup[module]) {
+        lookup[module] = {};
+      }
+      lookup[module][perm.api] = {
         permissionId: perm.permissionId,
+        route: perm.route || "No route",
       };
     });
-    return lookup;
+
+    // Only keep modules that have at least one valid permission
+    const validModules = Object.keys(moduleMap);
+
+    return {
+      validModules,
+      permissionTypes: Array.from(types),
+      routeLookup: lookup,
+    };
   }, [permissions]);
 
-  // Filtered modules based on search
+  /* ==================== FILTERED MODULES (SEARCH) ==================== */
   const filteredModules = useMemo(() => {
-    if (!searchTerm.trim()) return modules;
-    return modules.filter((module) =>
+    if (!searchTerm.trim()) return validModules;
+    return validModules.filter((module) =>
       module.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [modules, searchTerm]);
+  }, [validModules, searchTerm]);
 
-  // Handle permission change
+  /* ==================== HANDLE PERMISSION CHANGE ==================== */
   const handlePermissionChange = async (module, type, isChecked) => {
-    if (isUpdating) return;
+    if (isUpdating || isAssigning || isRemoving) return;
     setIsUpdating(true);
 
     try {
@@ -129,7 +149,7 @@ const Permissions = () => {
     return isGranted ? "badge bg-success" : "badge bg-warning";
   };
 
-  // Loading and error states
+  /* ==================== LOADING & ERROR STATES ==================== */
   const isLoading =
     isRoleLoading || isRolePermissionsLoading || isPermissionsLoading;
   const hasError = roleError || rolePermissionsError || permissionsError;
@@ -138,9 +158,9 @@ const Permissions = () => {
     return (
       <div className="content">
         <div className="card">
-          <div className="card-body text-center">
+          <div className="card-body text-center py-5">
             <Spinner animation="border" variant="primary" />
-            <p>Loading data...</p>
+            <p className="mt-3">Loading permissions...</p>
           </div>
         </div>
       </div>
@@ -153,8 +173,7 @@ const Permissions = () => {
         <div className="card">
           <div className="card-body">
             <Alert variant="danger">
-              Error loading data:{" "}
-              {JSON.stringify(hasError) || "Invalid role ID"}. Please try again.
+              Error loading data. Please try again.
             </Alert>
           </div>
         </div>
@@ -162,6 +181,7 @@ const Permissions = () => {
     );
   }
 
+  /* ==================== RENDER ==================== */
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -172,7 +192,9 @@ const Permissions = () => {
             tableData={filteredModules}
             exportOptions={{ pdf: false, excel: false }}
           />
+
           <div className="card-body">
+            {/* Search & Back Button */}
             <div className="row mb-3">
               <div className="col-lg-6">
                 <div className="input-icon-start position-relative">
@@ -191,46 +213,57 @@ const Permissions = () => {
               </div>
               <div className="col-lg-6 text-lg-end">
                 <Link to="/roles-permission/list" className="btn btn-secondary">
-                  <FaArrowLeft className="me-2" /> Back to Roles & Permissions
+                  <FaArrowLeft className="me-2" /> Back to Roles
                 </Link>
               </div>
             </div>
 
+            {/* No Modules Message */}
             {filteredModules.length === 0 ? (
-              <p className="text-muted">
-                {searchTerm
-                  ? "No modules match your search."
-                  : "No modules available."}
-              </p>
+              <div className="text-center py-5">
+                <p className="text-muted">
+                  {searchTerm
+                    ? "No modules match your search."
+                    : "No modules with API permissions available."}
+                </p>
+              </div>
             ) : (
               <div className="table-responsive">
-                <table className="table table-hover">
-                  <thead>
+                <table className="table table-hover align-middle">
+                  <thead className="table-light">
                     <tr>
-                      <th>Module</th>
+                      <th style={{ width: "25%" }}>Module</th>
                       {permissionTypes.map((type) => (
-                        <th key={type}>
+                        <th key={type} className="text-center">
                           {type.charAt(0).toUpperCase() + type.slice(1)}
                         </th>
                       ))}
-                      <th>Actions</th>
+                      <th className="text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredModules.map((module) => (
                       <tr key={module}>
-                        <td>{module}</td>
+                        <td className="fw-medium text-capitalize">
+                          {module.replace(/_/g, " ")}
+                        </td>
                         {permissionTypes.map((type) => {
                           const isGranted = assignedPermissions.some(
                             (rp) =>
                               rp.permissionId ===
                               routeLookup[module]?.[type]?.permissionId
                           );
+                          const isUpdatingThis =
+                            isUpdating || isAssigning || isRemoving;
+
                           return (
-                            <td key={type}>
+                            <td key={type} className="text-center">
                               <span
-                                className={getBadgeClass(isGranted)}
+                                className={`${getBadgeClass(
+                                  isGranted
+                                )} px-3 py-1 small`}
                                 onClick={() =>
+                                  !isUpdatingThis &&
                                   handlePermissionChange(
                                     module,
                                     type,
@@ -238,20 +271,21 @@ const Permissions = () => {
                                   )
                                 }
                                 style={{
-                                  cursor: isUpdating
+                                  cursor: isUpdatingThis
                                     ? "not-allowed"
                                     : "pointer",
+                                  opacity: isUpdatingThis ? 0.7 : 1,
                                 }}
                                 aria-label={`${
                                   isGranted ? "Remove" : "Assign"
-                                } ${type} permission for ${module}`}
+                                } ${type} permission`}
                               >
                                 {isGranted ? "Assigned" : "Unassigned"}
                               </span>
                             </td>
                           );
                         })}
-                        <td>
+                        <td className="text-center">
                           <Dropdown
                             overlay={
                               <Menu>
@@ -271,7 +305,9 @@ const Permissions = () => {
                                           !isGranted
                                         )
                                       }
-                                      disabled={isUpdating}
+                                      disabled={
+                                        isUpdating || isAssigning || isRemoving
+                                      }
                                     >
                                       {isGranted ? "Remove" : "Assign"}{" "}
                                       {type.charAt(0).toUpperCase() +
@@ -286,8 +322,9 @@ const Permissions = () => {
                           >
                             <Button
                               type="text"
+                              size="small"
                               icon={<MoreOutlined />}
-                              aria-label={`More actions for module ${module}`}
+                              disabled={isUpdating || isAssigning || isRemoving}
                             />
                           </Dropdown>
                         </td>

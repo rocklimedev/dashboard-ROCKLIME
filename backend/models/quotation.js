@@ -2,7 +2,7 @@ const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
 const User = require("./users");
 const Customer = require("./customers");
-const Address = require("./address"); // Import Address model
+const Address = require("./address");
 const { v4: uuidv4 } = require("uuid");
 
 const Quotation = sequelize.define(
@@ -87,13 +87,16 @@ const Quotation = sequelize.define(
       onDelete: "SET NULL",
       onUpdate: "CASCADE",
     },
-    // In Quotation model
     extraDiscount: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: true,
     },
     extraDiscountType: {
       type: DataTypes.ENUM("percent", "fixed"),
+      allowNull: true,
+    },
+    shippingAmount: {
+      type: DataTypes.DECIMAL(10, 2),
       allowNull: true,
     },
   },

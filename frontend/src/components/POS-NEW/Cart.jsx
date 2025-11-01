@@ -167,7 +167,7 @@ const CartTab = ({
               <Button
                 type="primary"
                 icon={<ArrowLeftOutlined />}
-                href="/inventory/products"
+                href="/category-selector/products"
                 style={{ marginTop: 16 }}
               >
                 Continue Shopping
@@ -329,7 +329,7 @@ const CartTab = ({
           </CheckoutButton>
           <Button
             type="default"
-            href="/inventory/products"
+            href="/category-selector/products"
             block
             style={{ marginTop: 8 }}
           >

@@ -7,29 +7,33 @@ import Avatar from "react-avatar";
 import { Link } from "react-router-dom";
 import AddRoleModal from "./AddRoleModal";
 import DeleteModal from "../Common/DeleteModal";
-import PermissionsTable from "./PermissionsTable";
 import DataTablePagination from "../Common/DataTablePagination";
 import { toast } from "sonner";
 import PageHeader from "../Common/PageHeader";
 
 const RolePermission = () => {
+  /* ==================== QUERIES ==================== */
   const {
     data: roles,
     isLoading: isRolesLoading,
     isError: isRolesError,
   } = useGetRolesQuery();
+
   const {
     data: permissionsData,
     isLoading: isPermissionsLoading,
     isError: isPermissionsError,
   } = useGetAllPermissionsQuery();
+
   const {
     data: users,
     isLoading: isUsersLoading,
     isError: isUsersError,
   } = useGetAllUsersQuery();
+
   const [deleteRole, { isLoading: isDeleting }] = useDeleteRoleMutation();
 
+  /* ==================== STATE ==================== */
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
@@ -40,13 +44,14 @@ const RolePermission = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  /* ==================== DATA PREP ==================== */
   const rolesList = Array.isArray(roles) ? roles : [];
   const permissions = Array.isArray(permissionsData?.permissions)
     ? permissionsData.permissions
     : [];
   const usersList = Array.isArray(users?.users) ? users?.users : [];
 
-  // Memoized user count per role
+  // User count per role
   const roleUserCounts = useMemo(() => {
     const counts = {};
     rolesList.forEach((role) => {
@@ -57,7 +62,7 @@ const RolePermission = () => {
     return counts;
   }, [rolesList, usersList]);
 
-  // Memoized grouped roles for tab-based filtering
+  // Grouped roles
   const groupedRoles = useMemo(
     () => ({
       All: rolesList,
@@ -71,7 +76,33 @@ const RolePermission = () => {
     [rolesList]
   );
 
-  // Filtered and sorted roles
+  /* ==================== PERMISSIONS: GROUP BY MODULE + VALID API ONLY ==================== */
+  const validModulePermissions = useMemo(() => {
+    const grouped = {};
+
+    permissions.forEach((perm) => {
+      const module = perm.module || "Uncategorized";
+      const hasApi =
+        perm.api && typeof perm.api === "string" && perm.api.trim() !== "";
+
+      // SKIP if no valid api
+      if (!hasApi) return;
+
+      if (!grouped[module]) {
+        grouped[module] = [];
+      }
+      grouped[module].push(perm);
+    });
+
+    // Remove modules with no valid permissions
+    return Object.fromEntries(
+      Object.entries(grouped).filter(([_, perms]) => perms.length > 0)
+    );
+  }, [permissions]);
+
+  const availableModules = Object.keys(validModulePermissions).sort();
+
+  /* ==================== ROLES: FILTER & SORT ==================== */
   const filteredRoles = useMemo(() => {
     let result = groupedRoles[roleStatus] || [];
 
@@ -89,7 +120,7 @@ const RolePermission = () => {
         break;
       case "Descending":
         result = [...result].sort((a, b) =>
-          b.roleName.localeCompare(b.roleName)
+          b.roleName.localeCompare(a.roleName)
         );
         break;
       case "Recently Added":
@@ -104,45 +135,14 @@ const RolePermission = () => {
     return result;
   }, [groupedRoles, roleStatus, searchTerm, sortBy]);
 
-  // Paginated roles
   const paginatedRoles = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredRoles.slice(startIndex, startIndex + itemsPerPage);
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredRoles.slice(start, start + itemsPerPage);
   }, [filteredRoles, currentPage]);
 
-  // Filtered and sorted permissions
-  const filteredPermissions = useMemo(() => {
-    let result = permissions;
-
-    if (searchTerm.trim() && activeTab === "permissions") {
-      result = result.filter((perm) =>
-        perm.name?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    switch (sortBy) {
-      case "Ascending":
-        result = [...result].sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      case "Descending":
-        result = [...result].sort((a, b) => b.name.localeCompare(b.name));
-        break;
-      case "Recently Added":
-        break;
-      default:
-        break;
-    }
-
-    return result;
-  }, [permissions, searchTerm, sortBy, activeTab]);
-
-  const handleOpenRoleModal = () => {
-    setShowModal(true);
-  };
-
-  const handleCloseRoleModal = () => {
-    setShowModal(false);
-  };
+  /* ==================== HANDLERS ==================== */
+  const handleOpenRoleModal = () => setShowModal(true);
+  const handleCloseRoleModal = () => setShowModal(false);
 
   const handleOpenDeleteModal = (role) => {
     setSelectedRole(role);
@@ -163,7 +163,7 @@ const RolePermission = () => {
     try {
       await deleteRole(selectedRole.roleId).unwrap();
       if (paginatedRoles.length === 1 && currentPage > 1) {
-        setCurrentPage(currentPage - 1);
+        setCurrentPage((p) => p - 1);
       }
     } catch (error) {
       toast.error(
@@ -175,9 +175,7 @@ const RolePermission = () => {
     }
   };
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
+  const handlePageChange = (page) => setCurrentPage(page);
 
   const clearFilters = () => {
     setSearchTerm("");
@@ -186,15 +184,26 @@ const RolePermission = () => {
     setCurrentPage(1);
   };
 
+  /* ==================== HELPER: Badge Color ==================== */
+  const getApiBadgeColor = (api) => {
+    const method = api?.toLowerCase();
+    if (["get", "view"].includes(method)) return "info";
+    if (["post", "write", "create"].includes(method)) return "success";
+    if (["put", "patch", "edit", "update"].includes(method)) return "warning";
+    if (["delete"].includes(method)) return "danger";
+    return "secondary";
+  };
+
+  /* ==================== LOADING / ERROR ==================== */
   if (isRolesLoading || isPermissionsLoading || isUsersLoading) {
     return (
       <div className="content">
         <div className="card">
-          <div className="card-body text-center">
+          <div className="card-body text-center py-5">
             <div className="spinner-border text-primary" role="status">
               <span className="visually-hidden">Loading...</span>
             </div>
-            <p>Loading data...</p>
+            <p className="mt-3">Loading data...</p>
           </div>
         </div>
       </div>
@@ -207,7 +216,7 @@ const RolePermission = () => {
         <div className="card">
           <div className="card-body">
             <div className="alert alert-danger" role="alert">
-              Error loading data!
+              Error loading data! Please try again later.
             </div>
           </div>
         </div>
@@ -215,6 +224,7 @@ const RolePermission = () => {
     );
   }
 
+  /* ==================== RENDER ==================== */
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -223,13 +233,14 @@ const RolePermission = () => {
             title={
               activeTab === "roles" ? "Roles & Permissions" : "Permissions"
             }
-            subtitle="Manage your roles"
+            subtitle="Manage your roles and permissions"
             onAdd={handleOpenRoleModal}
             tableData={paginatedRoles}
           />
 
           <div className="card-body">
-            <div className="d-flex align-items-center mb-3">
+            {/* ==================== TAB SWITCHER ==================== */}
+            <div className="d-flex align-items-center mb-4">
               <ul
                 className="nav nav-pills border d-inline-flex p-1 rounded bg-light"
                 id="pills-tab"
@@ -237,15 +248,9 @@ const RolePermission = () => {
               >
                 <li className="nav-item" role="presentation">
                   <button
-                    className={`nav-link btn btn-sm btn-icon py-3 d-flex align-items-center justify-content-center w-auto ${
+                    className={`nav-link btn btn-sm py-3 d-flex align-items-center justify-content-center ${
                       activeTab === "roles" ? "active" : ""
                     }`}
-                    id="tab-roles"
-                    data-bs-toggle="pill"
-                    data-bs-target="#pills-roles"
-                    type="button"
-                    role="tab"
-                    aria-selected={activeTab === "roles"}
                     onClick={() => {
                       setActiveTab("roles");
                       setSearchTerm("");
@@ -258,15 +263,9 @@ const RolePermission = () => {
                 </li>
                 <li className="nav-item" role="presentation">
                   <button
-                    className={`nav-link btn btn-sm btn-icon py-3 d-flex align-items-center justify-content-center w-auto ${
+                    className={`nav-link btn btn-sm py-3 d-flex align-items-center justify-content-center ${
                       activeTab === "permissions" ? "active" : ""
                     }`}
-                    id="tab-permissions"
-                    data-bs-toggle="pill"
-                    data-bs-target="#pills-permissions"
-                    type="button"
-                    role="tab"
-                    aria-selected={activeTab === "permissions"}
                     onClick={() => {
                       setActiveTab("permissions");
                       setSearchTerm("");
@@ -281,18 +280,17 @@ const RolePermission = () => {
             </div>
 
             <div className="tab-content" id="pills-tabContent">
-              {/* Roles Tab */}
+              {/* ==================== ROLES TAB ==================== */}
               <div
                 className={`tab-pane fade ${
                   activeTab === "roles" ? "show active" : ""
                 }`}
                 id="pills-roles"
                 role="tabpanel"
-                aria-labelledby="tab-roles"
               >
-                <div className="row">
+                <div className="row mb-3">
                   <div className="col-lg-12">
-                    <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
+                    <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
                       <div className="input-icon-start position-relative">
                         <span className="input-icon-addon">
                           <FaSearch />
@@ -300,18 +298,13 @@ const RolePermission = () => {
                         <input
                           type="text"
                           className="form-control"
-                          placeholder={`Search ${
-                            activeTab === "roles" ? "Roles" : "Permissions"
-                          }`}
+                          placeholder="Search Roles"
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
-                          aria-label={`Search ${
-                            activeTab === "roles" ? "roles" : "permissions"
-                          }`}
                         />
                       </div>
                       <button
-                        className="btn btn-outline-secondary ms-2"
+                        className="btn btn-outline-secondary"
                         onClick={clearFilters}
                       >
                         Clear Filters
@@ -319,10 +312,10 @@ const RolePermission = () => {
                     </div>
                   </div>
                 </div>
+
                 {paginatedRoles.length === 0 ? (
-                  <p className="text-muted">
-                    No {roleStatus.toLowerCase()} roles match the applied
-                    filters
+                  <p className="text-muted text-center py-4">
+                    No roles match the applied filters.
                   </p>
                 ) : (
                   <div className="table-responsive">
@@ -337,14 +330,16 @@ const RolePermission = () => {
                       <tbody>
                         {paginatedRoles.map((role) => {
                           const roleUsers = usersList.filter(
-                            (user) => user.roleId === role.roleId
+                            (u) => u.roleId === role.roleId
                           );
                           return (
                             <tr key={role.roleId}>
                               <td>{role.roleName || "N/A"}</td>
                               <td>
                                 {roleUsers.length === 0 ? (
-                                  <span>No users assigned</span>
+                                  <span className="text-muted">
+                                    No users assigned
+                                  </span>
                                 ) : (
                                   <div className="d-flex flex-wrap gap-2">
                                     {roleUsers.map((user) => (
@@ -356,7 +351,7 @@ const RolePermission = () => {
                                           user.name ||
                                           user.username ||
                                           user.email ||
-                                          "Unknown User"
+                                          "Unknown"
                                         }
                                       >
                                         <Avatar
@@ -364,7 +359,7 @@ const RolePermission = () => {
                                             user.name ||
                                             user.username ||
                                             user.email ||
-                                            "Unknown"
+                                            "U"
                                           }
                                           size="30"
                                           round={true}
@@ -377,7 +372,7 @@ const RolePermission = () => {
                                           {user.name ||
                                             user.username ||
                                             user.email ||
-                                            "Unknown User"}
+                                            "Unknown"}
                                         </span>
                                       </Link>
                                     ))}
@@ -388,17 +383,19 @@ const RolePermission = () => {
                                 <div className="action-buttons d-flex gap-2">
                                   <a
                                     href={`/roles-permission/permissions/${role.roleId}`}
-                                    className="btn btn-icon btn-sm"
+                                    className="btn btn-icon btn-sm text-primary"
                                     aria-label={`View permissions for ${role.roleName}`}
                                   >
                                     <FaShieldAlt />
                                   </a>
-                                  <FaTrash
-                                    className="btn btn-icon btn-sm"
+                                  <button
+                                    className="btn btn-icon btn-sm text-danger"
                                     onClick={() => handleOpenDeleteModal(role)}
                                     disabled={isDeleting}
                                     aria-label={`Delete ${role.roleName}`}
-                                  />
+                                  >
+                                    <FaTrash />
+                                  </button>
                                 </div>
                               </td>
                             </tr>
@@ -406,6 +403,7 @@ const RolePermission = () => {
                         })}
                       </tbody>
                     </table>
+
                     {filteredRoles.length > itemsPerPage && (
                       <div className="pagination-section mt-4">
                         <DataTablePagination
@@ -420,32 +418,130 @@ const RolePermission = () => {
                 )}
               </div>
 
-              {/* Permissions Tab */}
+              {/* ==================== PERMISSIONS TAB ==================== */}
               <div
                 className={`tab-pane fade ${
                   activeTab === "permissions" ? "show active" : ""
                 }`}
                 id="pills-permissions"
                 role="tabpanel"
-                aria-labelledby="tab-permissions"
               >
-                {filteredPermissions.length === 0 ? (
-                  <p className="text-muted">
-                    No permissions match the applied filters
-                  </p>
+                {/* Search Bar */}
+                <div className="row mb-4">
+                  <div className="col-lg-12">
+                    <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                      <div
+                        className="input-icon-start position-relative flex-fill"
+                        style={{ maxWidth: "400px" }}
+                      >
+                        <span className="input-icon-addon">
+                          <FaSearch />
+                        </span>
+                        <input
+                          type="text"
+                          className="form-control"
+                          placeholder="Search permissions by name or route..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                      </div>
+                      <button
+                        className="btn btn-outline-secondary"
+                        onClick={clearFilters}
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Render ONLY modules with valid API permissions */}
+                {availableModules.length === 0 ? (
+                  <div className="text-center py-5 text-muted">
+                    <p className="mb-0">
+                      No API permissions found in any module.
+                    </p>
+                  </div>
                 ) : (
-                  <PermissionsTable
-                    permissions={filteredPermissions}
-                    searchTerm={searchTerm}
-                    sortBy={sortBy}
-                  />
+                  availableModules.map((module) => {
+                    const modulePermissions = validModulePermissions[module];
+
+                    // Apply search filter
+                    const filtered = modulePermissions.filter(
+                      (p) =>
+                        p.name
+                          ?.toLowerCase()
+                          .includes(searchTerm.toLowerCase()) ||
+                        p.route
+                          ?.toLowerCase()
+                          .includes(searchTerm.toLowerCase())
+                    );
+
+                    if (filtered.length === 0) return null;
+
+                    // Apply sort
+                    let sorted = [...filtered];
+                    switch (sortBy) {
+                      case "Ascending":
+                        sorted.sort((a, b) => a.name.localeCompare(b.name));
+                        break;
+                      case "Descending":
+                        sorted.sort((a, b) => b.name.localeCompare(a.name));
+                        break;
+                      case "Recently Added":
+                      default:
+                        break;
+                    }
+
+                    return (
+                      <div key={module} className="mb-5">
+                        <h5 className="mb-3 text-primary text-capitalize fw-semibold">
+                          {module.replace(/_/g, " ")} ({sorted.length})
+                        </h5>
+                        <div className="table-responsive">
+                          <table className="table table-hover table-sm align-middle">
+                            <thead className="table-light">
+                              <tr>
+                                <th style={{ width: "35%" }}>Permission</th>
+                                <th style={{ width: "15%" }}>API</th>
+                                <th style={{ width: "50%" }}>Route</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {sorted.map((perm) => (
+                                <tr key={perm.permissionId}>
+                                  <td className="fw-medium">{perm.name}</td>
+                                  <td>
+                                    <span
+                                      className={`badge bg-${getApiBadgeColor(
+                                        perm.api
+                                      )} text-white`}
+                                    >
+                                      {perm.api.toUpperCase()}
+                                    </span>
+                                  </td>
+                                  <td>
+                                    <code className="small text-muted">
+                                      {perm.route}
+                                    </code>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    );
+                  })
                 )}
               </div>
             </div>
           </div>
         </div>
 
+        {/* ==================== MODALS ==================== */}
         <AddRoleModal show={showModal} onClose={handleCloseRoleModal} />
+
         {showDeleteModal && (
           <DeleteModal
             item={selectedRole}
