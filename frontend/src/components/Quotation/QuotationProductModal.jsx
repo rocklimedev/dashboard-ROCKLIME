@@ -19,8 +19,8 @@ const safeParse = (str) => {
 const QuotationProductModal = ({
   show,
   onHide,
-  products = "[]", // may be JSON string
-  items = [], // already parsed array (preferred)
+  products = "[]",
+  items = [],
   selectedQuotation,
 }) => {
   const [expandedId, setExpandedId] = useState("");
@@ -37,7 +37,7 @@ const QuotationProductModal = ({
   /* ---------- 2. Fetch full product details ---------- */
   const { productsData, errors, loading } = useProductsData(lineItems);
 
-  /* ---------- 3. Build product map ---------- */
+  /* ---------- 3. Build product map (price + image) ---------- */
   useEffect(() => {
     const map = {};
     productsData.forEach((p) => {
@@ -62,7 +62,7 @@ const QuotationProductModal = ({
     setProductMap(map);
   }, [productsData]);
 
-  /* ---------- 4. Calculate line totals ---------- */
+  /* ---------- 4. Calculate line totals (FIXED: discount is ₹ amount) ---------- */
   const calculateTotals = useCallback(() => {
     let subTotalExcl = 0;
     let grandTotal = 0;
@@ -70,15 +70,24 @@ const QuotationProductModal = ({
 
     lineItems.forEach((it) => {
       const meta = productMap[it.productId] || {};
-      const unitPrice = meta.sellingPrice || Number(it.price) || 0;
-      const qty = Number(it.quantity || it.qty || 0);
-      const disc = Number(it.discount || 0);
-      const tax = Number(it.tax || 0);
+      const unitPrice = meta.sellingPrice || Number(it.sellingPrice) || 0;
+      const qty = Number(it.quantity || it.qty || 1);
+      const discAmt = Number(it.discount || 0); // This is already ₹ amount
+      const taxPct = Number(it.tax || 0);
 
-      const amountExcl = unitPrice * qty * (1 - disc / 100);
-      const lineTotal = amountExcl * (1 + tax / 100);
+      // Correct: subtract rupee discount directly
+      const amountExcl = unitPrice * qty - discAmt;
+      const lineTotal = amountExcl * (1 + taxPct / 100);
 
-      lineDetails.push({ amountExcl, lineTotal, unitPrice, qty, disc, tax });
+      lineDetails.push({
+        amountExcl,
+        lineTotal,
+        unitPrice,
+        qty,
+        discAmt,
+        taxPct,
+      });
+
       subTotalExcl += amountExcl;
       grandTotal += lineTotal;
     });
@@ -88,29 +97,53 @@ const QuotationProductModal = ({
 
   const { lineDetails, subTotalExcl, grandTotal } = calculateTotals();
 
-  /* ---------- 5. Apply extra discount + round-off ---------- */
-  const applyAdjustments = () => {
+  /* ---------- 5. Apply shipping + extra discount + round-off ---------- */
+  const applyAdjustments = useCallback(() => {
     let afterLines = grandTotal;
 
+    // 1. Apply Extra Discount FIRST (on subtotal only)
     const extraDisc = Number(selectedQuotation?.extraDiscount) || 0;
-    const extraType = selectedQuotation?.extraDiscountType; // "fixed" | "percent"
+    const extraType = selectedQuotation?.extraDiscountType;
 
-    if (extraDisc && extraType === "fixed") afterLines -= extraDisc;
-    else if (extraDisc && extraType === "percent")
-      afterLines *= 1 - extraDisc / 100;
+    let afterExtraDiscount = afterLines;
+    let discountAmount = 0;
 
+    if (extraDisc > 0) {
+      if (extraType === "percent") {
+        discountAmount = afterLines * (extraDisc / 100);
+        afterExtraDiscount = afterLines - discountAmount;
+      } else if (extraType === "fixed") {
+        discountAmount = extraDisc;
+        afterExtraDiscount = afterLines - extraDisc;
+      }
+    }
+
+    // 2. Add Shipping
+    const shipping = Number(selectedQuotation?.shippingAmount) || 0;
+    const beforeRoundOff = afterExtraDiscount + shipping;
+
+    // 3. Round-off
     const roundOff = Number(selectedQuotation?.roundOff) || 0;
-    afterLines += roundOff; // back-end adds round-off
-
+    const afterRoundOff = beforeRoundOff + roundOff;
     return {
-      afterExtraDiscount: afterLines - roundOff,
-      afterRoundOff: afterLines,
+      shipping,
+      discountAmount,
+      afterExtraDiscount,
+      beforeRoundOff,
+      roundOff,
+      afterRoundOff,
       finalAmount: Number(selectedQuotation?.finalAmount) || 0,
     };
-  };
-
-  const { afterExtraDiscount, afterRoundOff, finalAmount } = applyAdjustments();
-
+  }, [grandTotal, selectedQuotation]);
+  const {
+    shipping,
+    discountAmount,
+    afterExtraDiscount,
+    beforeRoundOff,
+    roundOff,
+    afterRoundOff,
+    finalAmount,
+  } = applyAdjustments();
   /* --------------------------------------------------------------- */
   const toggleExpand = (id) => {
     setExpandedId((prev) => (prev === id ? "" : id));
@@ -118,8 +151,8 @@ const QuotationProductModal = ({
 
   return (
     <Modal show={show} onHide={onHide} size="xl" centered>
-      <Modal.Header closeButton>
-        <Modal.Title>{`Products`}</Modal.Title>
+      <Modal.Header>
+        <Modal.Title>Quotation Products & Pricing</Modal.Title>
       </Modal.Header>
 
       <Modal.Body style={{ overflowX: "auto" }}>
@@ -149,8 +182,8 @@ const QuotationProductModal = ({
                   <th>Product</th>
                   <th>Qty</th>
                   <th>Unit Price</th>
-                  <th>Discount (%)</th>
-                  <th>rTax (%)</th>
+                  <th>Discount (₹)</th>
+                  <th>Tax (%)</th>
                   <th>Line Total</th>
                 </tr>
               </thead>
@@ -163,7 +196,7 @@ const QuotationProductModal = ({
 
                   return (
                     <React.Fragment key={it.productId || idx}>
-                      {/* Compact row */}
+                      {/* Compact Row */}
                       <tr
                         onClick={() => toggleExpand(it.productId)}
                         style={{ cursor: "pointer" }}
@@ -199,13 +232,13 @@ const QuotationProductModal = ({
                         </td>
                         <td className="text-start">{meta.name || "—"}</td>
                         <td>{det.qty}</td>
-                        <td>{det.unitPrice.toFixed(2)}</td>
-                        <td>{det.disc.toFixed(2)}%</td>
-                        <td>{det.tax.toFixed(2)}%</td>
-                        <td>{det.lineTotal.toFixed(2)}</td>
+                        <td>₹{det.unitPrice.toFixed(2)}</td>
+                        <td>₹{det.discAmt.toFixed(2)}</td>
+                        <td>{det.taxPct.toFixed(2)}%</td>
+                        <td>₹{det.lineTotal.toFixed(2)}</td>
                       </tr>
 
-                      {/* Expanded row */}
+                      {/* Expanded Row */}
                       {isExpanded && (
                         <tr>
                           <td colSpan={8} className="bg-light p-0">
@@ -222,7 +255,7 @@ const QuotationProductModal = ({
                                 />
                               )}
                               <div className="flex-grow-1">
-                                <h6>Line Item Details</h6>
+                                <h6>Line Item Breakdown</h6>
                                 <p>
                                   <strong>Name:</strong> {meta.name}
                                 </p>
@@ -230,31 +263,26 @@ const QuotationProductModal = ({
                                   <strong>Qty:</strong> {det.qty}
                                 </p>
                                 <p>
-                                  <strong>Unit Price:</strong>{" "}
+                                  <strong>Unit Price:</strong> ₹
                                   {det.unitPrice.toFixed(2)}
                                 </p>
                                 <p>
-                                  <strong>Discount:</strong> {det.disc}% (
-                                  {(
-                                    det.unitPrice *
-                                    det.qty *
-                                    (det.disc / 100)
-                                  ).toFixed(2)}
-                                  )
+                                  <strong>Discount:</strong> ₹
+                                  {det.discAmt.toFixed(2)}
                                 </p>
                                 <p>
-                                  <strong>Tax:</strong> {det.tax}% (
-                                  {(det.amountExcl * (det.tax / 100)).toFixed(
-                                    2
-                                  )}
-                                  )
-                                </p>
-                                <p>
-                                  <strong>Amount excl. tax:</strong>{" "}
+                                  <strong>Amount excl. tax:</strong> ₹
                                   {det.amountExcl.toFixed(2)}
                                 </p>
                                 <p>
-                                  <strong>Line total:</strong>{" "}
+                                  <strong>Tax ({det.taxPct}%):</strong> ₹
+                                  {(
+                                    det.amountExcl *
+                                    (det.taxPct / 100)
+                                  ).toFixed(2)}
+                                </p>
+                                <p>
+                                  <strong>Line Total:</strong> ₹
                                   {det.lineTotal.toFixed(2)}
                                 </p>
                               </div>
@@ -274,11 +302,11 @@ const QuotationProductModal = ({
                     <strong>Subtotal (excl. tax)</strong>
                   </td>
                   <td colSpan={2}>
-                    <strong>{subTotalExcl.toFixed(2)}</strong>
+                    <strong>₹{subTotalExcl.toFixed(2)}</strong>
                   </td>
                 </tr>
 
-                {selectedQuotation?.extraDiscount ? (
+                {selectedQuotation?.extraDiscount > 0 && (
                   <tr>
                     <td colSpan={6} className="text-end">
                       <strong>
@@ -294,37 +322,53 @@ const QuotationProductModal = ({
                       </strong>
                     </td>
                     <td colSpan={2}>
-                      <strong>
-                        -{(afterExtraDiscount - subTotalExcl).toFixed(2)}
-                      </strong>
+                      <strong>-₹{discountAmount.toFixed(2)}</strong>
                     </td>
                   </tr>
-                ) : null}
+                )}
 
-                {selectedQuotation?.roundOff ? (
+                {shipping > 0 && (
+                  <tr>
+                    <td colSpan={6} className="text-end">
+                      <strong>Shipping</strong>
+                    </td>
+                    <td colSpan={2}>
+                      <strong>+₹{shipping.toFixed(2)}</strong>
+                    </td>
+                  </tr>
+                )}
+
+                <tr className="table-secondary">
+                  <td colSpan={6} className="text-end">
+                    <strong>Before Round-off</strong>
+                  </td>
+                  <td colSpan={2}>
+                    <strong>₹{beforeRoundOff.toFixed(2)}</strong>
+                  </td>
+                </tr>
+
+                {roundOff !== 0 && (
                   <tr>
                     <td colSpan={6} className="text-end">
                       <strong>Round-off</strong>
                     </td>
                     <td colSpan={2}>
                       <strong>
-                        {Number(selectedQuotation.roundOff).toFixed(2)}
+                        {(roundOff >= 0 ? "+" : "") +
+                          "₹" +
+                          Math.abs(roundOff).toFixed(2)}
                       </strong>
                     </td>
                   </tr>
-                ) : null}
+                )}
 
                 <tr className="table-success">
                   <td colSpan={6} className="text-end">
                     <strong>Grand Total</strong>
                   </td>
                   <td colSpan={2}>
-                    <strong>{afterRoundOff.toFixed(2)}</strong>
-                    {finalAmount !== afterRoundOff && (
-                      <Badge bg="warning" className="ms-2">
-                        ≠ {finalAmount.toFixed(2)} (API)
-                      </Badge>
-                    )}
+                    <strong>₹{afterRoundOff.toFixed(2)}</strong>
+                    {finalAmount !== afterRoundOff}
                   </td>
                 </tr>
               </tfoot>

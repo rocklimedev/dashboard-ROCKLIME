@@ -4,6 +4,27 @@
 @import url("./assets/css/animate.css");
 @import url("./assets/css/style.css");
 @import url("https://fonts.cdnfonts.com/css/neuropol-2");
+html[data-theme="light"] {
+  --bg-color: #ffffff;
+  --text-color: #212b36;
+  --sidebar-bg: #f8f9fa;
+  --card-bg: #ffffff;
+  /* Add more */
+}
+
+html[data-theme="dark"] {
+  --bg-color: #1a1a1a;
+  --text-color: #e0e0e0;
+  --sidebar-bg: #2d2d2d;
+  --card-bg: #242424;
+  /* Add more */
+}
+
+/* Use variables */
+body {
+  background: var(--bg-color);
+  color: var(--text-color);
+}
 @media (max-width: 768px) {
   .page-wrapper {
     margin-top: 49px;
