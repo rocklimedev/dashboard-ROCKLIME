@@ -45,7 +45,25 @@ const QuotationsDetails = () => {
   const { data: customersData } = useGetCustomersQuery();
   const { data: companyData } = useGetCompanyByIdQuery(companyId);
   const company = companyData?.data || {};
+  const productDetailsMap = useMemo(() => {
+    const map = {};
+    if (!quotation || !quotation.products) return map;
 
+    try {
+      const parsed = JSON.parse(quotation.products);
+      if (Array.isArray(parsed)) {
+        parsed.forEach((p) => {
+          map[p.productId] = {
+            sellingPrice: Number(p.sellingPrice || 0),
+            name: p.name,
+          };
+        });
+      }
+    } catch (e) {
+      console.error("Failed to parse quotation.products", e);
+    }
+    return map;
+  }, [quotation?.products]); // Safe access with optional chaining
   // === ACTIVE VERSION LOGIC ===
   const versions = useMemo(() => {
     const list = Array.isArray(versionsData) ? [...versionsData] : [];
@@ -139,9 +157,9 @@ const QuotationsDetails = () => {
   } = calcTotals(
     activeProducts,
     activeVersionData.quotation?.gst_value || 0,
-    activeVersionData.quotation?.include_gst
+    activeVersionData.quotation?.include_gst,
+    productDetailsMap // ← ADD THIS
   );
-
   // === EXPORT HANDLER ===
   const handleExport = async () => {
     if (!id || !quotation) return toast.error("Quotation missing");
@@ -184,7 +202,6 @@ const QuotationsDetails = () => {
       }
       toast.success(`Exported as ${exportFormat.toUpperCase()}`);
     } catch (err) {
-      console.error(err);
       toast.error("Export failed");
     } finally {
       setIsExporting(false);
@@ -251,17 +268,11 @@ const QuotationsDetails = () => {
                   <tbody>
                     <tr>
                       <td colSpan="3" style={{ textAlign: "center" }}>
-                        <img
-                          src={logo}
-                          alt="Logo"
-                          className="logo-img"
-                          style={{ height: 60 }}
-                        />
+                        <img src={logo} alt="Logo" className="logo-img" />
                       </td>
                     </tr>
                     <tr>
-                      <td />
-                      <td className="title-cell">Estimate / Quotation</td>
+                      <td className="title-cell">Quotation</td>
                       <td className="brand-cell">{brandNames}</td>
                     </tr>
                   </tbody>
@@ -334,65 +345,59 @@ const QuotationsDetails = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {activeProducts.length > 0 ? (
-                      activeProducts.map((p, i) => {
-                        const pd =
-                          productsData?.find(
-                            (x) => x.productId === p.productId
-                          ) || {};
-                        const img = pd.images ? JSON.parse(pd.images)[0] : null;
-                        const code =
-                          pd.metaDetails?.find(
-                            (cc) => cc.title === "company_code"
-                          )?.value ||
-                          p.productCode ||
-                          "N/A";
+                    {activeProducts.map((p, i) => {
+                      const pd =
+                        productsData?.find(
+                          (x) => x.productId === p.productId
+                        ) || {};
+                      const img = pd.images ? JSON.parse(pd.images)[0] : null;
+                      const code =
+                        pd.metaDetails?.find((cc) => cc.slug === "companyCode")
+                          ?.value ||
+                        p.productCode ||
+                        "N/A";
 
-                        const mrp =
-                          pd.metaDetails?.find(
-                            (m) => m.title === "sellingPrice"
-                          )?.value ||
-                          p.total ||
-                          0;
+                      const qty = p.quantity || 1;
 
-                        return (
-                          <tr key={i}>
-                            <td>{i + 1}</td>
-                            <td>
-                              {img ? (
-                                <img
-                                  src={img}
-                                  alt=""
-                                  className="product-img"
-                                  style={{ height: 50 }}
-                                />
-                              ) : (
-                                "—"
-                              )}
-                            </td>
-                            <td>{p.name || pd.name || "—"}</td>
-                            <td>{code}</td>
-                            <td>₹{Number(mrp).toFixed(2)}</td>
-                            <td>
-                              {p.discount
-                                ? p.discountType === "percent"
-                                  ? `${p.discount}%`
-                                  : `₹${p.discount}`
-                                : "0"}
-                            </td>
-                            <td>₹{(p.rate || mrp).toFixed(2)}</td>
-                            <td>{p.quantity || "1"}</td>
-                            <td>₹{Number(p.total).toFixed(2)}</td>
-                          </tr>
-                        );
-                      })
-                    ) : (
-                      <tr>
-                        <td colSpan="9" className="text-center">
-                          No products
-                        </td>
-                      </tr>
-                    )}
+                      // === USE sellingPrice from products string ===
+                      const productDetail =
+                        productDetailsMap[p.productId] || {};
+                      const mrp = productDetail.sellingPrice || 0; // ← REAL MRP
+
+                      // === Use p.total as line total BEFORE extra discount ===
+                      const lineTotalBeforeDiscount = Number(p.total || 0);
+
+                      // === Calculate discount amount ===
+                      const subtotal = mrp * qty;
+                      const discountAmt = subtotal - lineTotalBeforeDiscount;
+
+                      const rate = mrp - discountAmt / qty;
+
+                      return (
+                        <tr key={i}>
+                          <td>{i + 1}</td>
+                          <td>
+                            {img ? (
+                              <img
+                                src={img}
+                                alt=""
+                                className="product-img"
+                                style={{ height: 50 }}
+                              />
+                            ) : (
+                              "—"
+                            )}
+                          </td>
+                          <td>{p.name || pd.name || "—"}</td>
+                          <td>{code}</td>
+                          <td>₹{mrp.toFixed(2)}</td>
+                          <td>₹{discountAmt.toFixed(2)}</td>
+                          <td>₹{rate.toFixed(2)}</td>
+                          <td>{qty}</td>
+                          <td>₹{lineTotalBeforeDiscount.toFixed(2)}</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
 
@@ -404,94 +409,119 @@ const QuotationsDetails = () => {
                         <strong>Amount Chargeable (in words)</strong>
                       </td>
                       <td className="text-right">
-                        <strong>{amountInWords(finalTotal)}</strong>
+                        <strong>
+                          {amountInWords(
+                            Number(
+                              activeVersionData.quotation?.finalAmount ||
+                                finalTotal
+                            )
+                          )}
+                        </strong>
                       </td>
                     </tr>
                   </tbody>
                 </table>
-
                 {/* Tax Summary */}
-                <table className="quotation-table full-width mt-2">
+                {/* === FINAL AMOUNT BREAKDOWN (Same Style as HSN Table) === */}
+                <table className="quotation-table full-width mt-3">
                   <thead>
                     <tr>
-                      <th>HSN/SAC</th>
+                      <th>Description</th>
                       <th>Taxable Value</th>
                       <th>CGST</th>
                       <th>CGST Amt</th>
                       <th>SGST</th>
                       <th>SGST Amt</th>
-                      <th>Total</th>
+                      <th>Amount</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {(() => {
-                      const map = new Map();
-                      activeProducts.forEach((p) => {
-                        const pd =
-                          productsData?.find(
-                            (x) => x.productId === p.productId
-                          ) || {};
-                        const hsn = pd.hsnSac || "N/A";
-                        const taxable = Number(p.total || 0);
-                        const rate =
-                          activeVersionData.quotation?.gst_value || 0;
-                        const cgst = (taxable * rate) / 200;
-                        if (!map.has(hsn))
-                          map.set(hsn, { taxable: 0, cgst: 0 });
-                        const e = map.get(hsn);
-                        e.taxable += taxable;
-                        e.cgst += cgst;
-                      });
-                      return Array.from(map).map(
-                        ([hsn, { taxable, cgst }], i) => (
-                          <tr key={i}>
-                            <td>{hsn}</td>
-                            <td>₹{taxable.toFixed(2)}</td>
-                            <td>
-                              {(
-                                activeVersionData.quotation?.gst_value / 2 || 0
-                              ).toFixed(1)}
-                              %
-                            </td>
-                            <td>₹{cgst.toFixed(2)}</td>
-                            <td>
-                              {(
-                                activeVersionData.quotation?.gst_value / 2 || 0
-                              ).toFixed(1)}
-                              %
-                            </td>
-                            <td>₹{cgst.toFixed(2)}</td>
-                            <td>₹{(taxable + cgst * 2).toFixed(2)}</td>
-                          </tr>
-                        )
-                      );
-                    })()}
+                    {/* Subtotal Row */}
+                    <tr>
+                      <td>
+                        <strong>Subtotal</strong>
+                      </td>
+                      <td>₹{subtotal.toFixed(2)}</td>
+                      <td colSpan="4"></td>
+                      <td>₹{subtotal.toFixed(2)}</td>
+                    </tr>
+
+                    {/* Extra Discount */}
+                    {activeVersionData.quotation?.extraDiscount > 0 && (
+                      <tr>
+                        <td>
+                          <strong>
+                            Extra Discount (
+                            {activeVersionData.quotation?.extraDiscountType ===
+                            "percent"
+                              ? `${activeVersionData.quotation?.extraDiscount}%`
+                              : `₹${activeVersionData.quotation?.extraDiscount}`}
+                            )
+                          </strong>
+                        </td>
+                        <td colSpan="5"></td>
+                        <td className="text-danger">
+                          <strong>
+                            -₹
+                            {Number(
+                              activeVersionData.quotation?.extraDiscount
+                            ).toFixed(2)}
+                          </strong>
+                        </td>
+                      </tr>
+                    )}
+
+                    {/* Round-off */}
+                    {activeVersionData.quotation?.roundOff != null && (
+                      <tr>
+                        <td>
+                          <strong>Round-off</strong>
+                        </td>
+                        <td colSpan="5"></td>
+                        <td>
+                          <strong>
+                            {(Number(activeVersionData.quotation?.roundOff) >= 0
+                              ? "+"
+                              : "") +
+                              "₹" +
+                              Math.abs(
+                                Number(activeVersionData.quotation?.roundOff)
+                              ).toFixed(2)}
+                          </strong>
+                        </td>
+                      </tr>
+                    )}
+
+                    {/* Final Amount */}
+                    <tr className="table-success">
+                      <td>
+                        <strong>Final Amount</strong>
+                      </td>
+                      <td colSpan="5"></td>
+                      <td>
+                        <strong style={{ fontSize: "1.1rem" }}>
+                          ₹
+                          {Number(
+                            activeVersionData.quotation?.finalAmount || subtotal
+                          ).toFixed(2)}
+                        </strong>
+                      </td>
+                    </tr>
                   </tbody>
                   <tfoot>
                     <tr>
-                      <td>
-                        <strong>Total</strong>
-                      </td>
-                      <td>
-                        <strong>₹{subtotal.toFixed(2)}</strong>
-                      </td>
-                      <td></td>
-                      <td>
-                        <strong>₹{(gstAmount / 2).toFixed(2)}</strong>
-                      </td>
-                      <td></td>
-                      <td>
-                        <strong>₹{(gstAmount / 2).toFixed(2)}</strong>
-                      </td>
-                      <td>
-                        <strong>₹{finalTotal.toFixed(2)}</strong>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td colSpan="7" className="text-right">
-                        <strong>
-                          Tax Amount (in words): {amountInWords(gstAmount)}
-                        </strong>
+                      <td colSpan="7" className="text-end pt-2 border-0">
+                        <em>
+                          <strong>
+                            Amount in words:{" "}
+                            {amountInWords(
+                              Number(
+                                activeVersionData.quotation?.finalAmount ||
+                                  subtotal
+                              )
+                            )}
+                          </strong>
+                        </em>
                       </td>
                     </tr>
                   </tfoot>

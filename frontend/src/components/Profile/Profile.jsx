@@ -715,14 +715,6 @@ const Profile = () => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        <div className="page-header">
-          <div>
-            <Link to="/users/list" className="d-inline-flex align-items-center">
-              <LeftOutlined />
-              Back to List
-            </Link>
-          </div>
-        </div>
         <div className="row">
           <div className="col-xl-4 theiaStickySidebar">
             <div className="card rounded-0 border-0">

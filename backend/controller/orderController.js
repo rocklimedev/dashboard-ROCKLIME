@@ -924,16 +924,11 @@ exports.getOrderDetails = async (req, res) => {
           try {
             quotationProducts = JSON.parse(quotationProducts);
           } catch (parseErr) {
-            console.error(
-              `Error parsing quotation products for order ${id}:`,
-              parseErr
-            );
             quotationProducts = [];
           }
         }
 
         if (!Array.isArray(quotationProducts)) {
-          console.warn(`Quotation products for order ${id} is not an array`);
           quotationProducts = [];
         }
 
@@ -996,7 +991,6 @@ exports.getOrderDetails = async (req, res) => {
           status: order.quotation.status,
         };
       } catch (err) {
-        console.error(`Error processing quotation for order ${id}:`, err);
         orderWithDetails.products = [];
         orderWithDetails.quotationDetails = null;
       }
@@ -1044,10 +1038,6 @@ exports.getOrderDetails = async (req, res) => {
 
     return res.status(200).json({ order: orderWithDetails });
   } catch (err) {
-    console.error(
-      `Error fetching order details for order ${req.params.id}:`,
-      err
-    );
     return sendErrorResponse(
       res,
       500,

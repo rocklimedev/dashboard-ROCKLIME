@@ -152,7 +152,6 @@ const PageWrapper = () => {
         productId: product.productId,
         quantity: qty,
       }).unwrap();
-      toast.success("Added to cart");
     } catch (e) {
       toast.error(e?.data?.message || "Add to cart failed");
     } finally {
@@ -332,36 +331,57 @@ const PageWrapper = () => {
                             <BiPencil
                               size={16}
                               className="text-secondary cursor-pointer"
-                              onClick={() => toggleEdit(o.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleEdit(o.id);
+                              }}
                               title="Edit Status"
                             />
                           </div>
 
+                          {/* Fixed Dropdown */}
                           {editingOrderId === o.id && (
                             <div
                               className="position-absolute bg-white shadow-sm rounded-2 border mt-1"
-                              style={{ top: "100%", right: 0, zIndex: 10 }}
+                              style={{
+                                top: "100%",
+                                right: 0,
+                                zIndex: 1000,
+                                minWidth: "160px",
+                              }}
+                              onClick={(e) => e.stopPropagation()}
                             >
-                              <select
-                                size={statuses.length}
-                                value={o.status}
-                                onChange={(e) => {
-                                  handleStatusChange(o.id, e.target.value);
-                                  setEditingOrderId(null);
-                                }}
-                                className="form-select form-select-sm border-0"
+                              <ul
+                                className="list-unstyled m-0 p-1"
                                 style={{
-                                  width: "160px",
-                                  fontSize: "0.85rem",
-                                  cursor: "pointer",
+                                  maxHeight: "200px",
+                                  overflowY: "auto",
                                 }}
                               >
                                 {statuses.map((s) => (
-                                  <option key={s} value={s}>
-                                    {s}
-                                  </option>
+                                  <li key={s}>
+                                    <button
+                                      type="button"
+                                      className={`w-100 text-start px-3 py-2 small rounded-2 hover-bg-light ${
+                                        o.status === s
+                                          ? "bg-primary text-white"
+                                          : "text-dark"
+                                      }`}
+                                      style={{
+                                        fontSize: "0.85rem",
+                                        border: "none",
+                                        background: "none",
+                                      }}
+                                      onClick={() => {
+                                        handleStatusChange(o.id, s);
+                                        setEditingOrderId(null);
+                                      }}
+                                    >
+                                      {s}
+                                    </button>
+                                  </li>
                                 ))}
-                              </select>
+                              </ul>
                             </div>
                           )}
                         </div>
@@ -402,7 +422,7 @@ const PageWrapper = () => {
                       >
                         <div className="flex-grow-1">
                           <a
-                            href={`/quotation/${q.quotationId}`}
+                            href={`/quotations/${q.quotationId}`}
                             className="order-link"
                           >
                             {q.reference_number || "Quotation"}

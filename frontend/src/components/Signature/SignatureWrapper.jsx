@@ -59,7 +59,6 @@ const SignatureWrapper = ({ userId }) => {
     if (window.confirm("Are you sure you want to delete this signature?")) {
       try {
         await deleteSignature(signatureId).unwrap();
-        toast.success("Signature deleted successfully.");
         refetch();
       } catch (error) {
         toast.error(error?.data?.error || "Failed to delete signature.");
@@ -70,7 +69,6 @@ const SignatureWrapper = ({ userId }) => {
   const handleSetDefault = async (signatureId) => {
     try {
       await setDefaultSignature(signatureId).unwrap();
-      toast.success("Default signature updated successfully.");
       refetch();
     } catch (error) {
       toast.error(error?.data?.error || "Failed to set default signature.");

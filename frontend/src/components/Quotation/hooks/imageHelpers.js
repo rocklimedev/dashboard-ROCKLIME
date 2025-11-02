@@ -38,7 +38,6 @@ export const fetchImg = async (src) => {
     const extension = blob.type.split("/").pop() || "png";
     return { buffer, extension };
   } catch (e) {
-    console.warn("fetchImg failed → placeholder", src, e);
     return placeholder;
   }
 };

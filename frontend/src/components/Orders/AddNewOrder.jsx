@@ -568,7 +568,17 @@ const AddNewOrder = ({ adminName }) => {
       toast.error("Please select a Customer.");
       return;
     }
-
+    if (formData.secondaryUserId) {
+      const secondaryUserExists = users.some(
+        (user) => user.userId === formData.secondaryUserId
+      );
+      if (!secondaryUserExists) {
+        toast.error(
+          "Selected Secondary User does not exist. Please refresh and try again."
+        );
+        return;
+      }
+    }
     if (formData.sourceType && !formData.source) {
       toast.error(
         "Please select a Source Customer for the selected Source Type."

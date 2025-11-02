@@ -466,9 +466,6 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
         }
       }
 
-      toast.success(
-        isEditMode ? "User updated successfully!" : "User created successfully!"
-      );
       navigate("/users/list");
     } catch (err) {
       toast.error(`Operation failed: ${err.message || "Unknown error"}`);

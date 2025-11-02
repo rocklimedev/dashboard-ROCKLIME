@@ -16548,9 +16548,9 @@ svg.feather {
   display: inline-block;
   line-height: 0;
 }
-.header .header-left .logo img {
+/* .header .header-left .logo img {
   width: 130px;
-}
+} */
 @media (max-width: 991.96px) {
   .header .header-left .logo {
     text-align: center;

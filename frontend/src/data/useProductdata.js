@@ -42,7 +42,6 @@ export default function useProductsData(products = []) {
             const data = await response.json();
             return { productId, ...data };
           } catch (error) {
-            console.error(`Error fetching product ${productId}:`, error);
             tempErrors.push({ productId, error: error.message });
             return null;
           }

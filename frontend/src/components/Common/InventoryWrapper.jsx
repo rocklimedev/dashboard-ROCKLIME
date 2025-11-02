@@ -157,10 +157,8 @@ const InventoryWrapper = () => {
     try {
       if (action === "add") {
         await addStock({ productId, quantity }).unwrap();
-        toast.success(`Added ${quantity} units`);
       } else {
         await removeStock({ productId, quantity }).unwrap();
-        toast.success(`Removed ${quantity} units`);
       }
       setStockHistoryMap((prev) => ({
         ...prev,

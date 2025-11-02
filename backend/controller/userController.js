@@ -543,7 +543,6 @@ exports.updateStatus = async (req, res) => {
       user: updatedUser,
     });
   } catch (err) {
-    console.error("Update Status Error:", err);
     res.status(500).json({
       message: `Failed to update status: ${
         err.message || "Unknown server error"

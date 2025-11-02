@@ -42,10 +42,8 @@ const AddCategoryModal = ({
           id: categoryData.categoryId,
           ...values,
         }).unwrap();
-        toast.success("Category updated successfully");
       } else {
         await createCategory(values).unwrap();
-        toast.success("Category added successfully");
       }
       onClose();
     } catch (err) {

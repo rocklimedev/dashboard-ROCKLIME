@@ -32,7 +32,6 @@ const NoAccess = () => {
     try {
       roles = JSON.parse(roles);
     } catch (e) {
-      console.error("Failed to parse roles:", e);
       roles = [];
     }
   }

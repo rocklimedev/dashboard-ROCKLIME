@@ -48,7 +48,6 @@ const clockIn = async (req, res) => {
       data: attendance,
     });
   } catch (error) {
-    console.error("Clock-in error:", error);
     return res.status(500).json({
       success: false,
       message: error.message || "Failed to clock in",
@@ -101,7 +100,6 @@ const clockOut = async (req, res) => {
       data: attendance,
     });
   } catch (error) {
-    console.error("Clock-out error:", error);
     return res.status(500).json({
       success: false,
       message: error.message || "Failed to clock out",
@@ -148,7 +146,6 @@ const getAttendance = async (req, res) => {
       data: attendances,
     });
   } catch (error) {
-    console.error("Get attendance error:", error);
     return res.status(500).json({
       success: false,
       message: error.message || "Failed to retrieve attendance",
@@ -214,7 +211,6 @@ const getAllAttendance = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Get all attendance error:", error);
     return res.status(500).json({
       success: false,
       message: error.message || "Failed to retrieve all attendance records",
