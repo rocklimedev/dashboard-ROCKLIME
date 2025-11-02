@@ -99,9 +99,6 @@ const deleteOldNotifications = async () => {
     const result = await Notification.deleteMany({
       createdAt: { $lt: sevenDaysAgo },
     });
-    console.log(
-      `Deleted ${result.deletedCount} notifications older than 7 days`
-    );
 
     // Optionally emit an event to all users to refresh their notifications
     if (ioInstance) {
@@ -112,16 +109,12 @@ const deleteOldNotifications = async () => {
 
     return result;
   } catch (error) {
-    console.error("Error deleting old notifications:", error);
     throw new Error("Failed to delete old notifications");
   }
 };
 
 // Schedule deletion of old notifications (runs daily at midnight)
 cron.schedule("0 0 * * *", async () => {
-  console.log(
-    "Running scheduled task to delete notifications older than 7 days"
-  );
   try {
     await deleteOldNotifications();
   } catch (error) {

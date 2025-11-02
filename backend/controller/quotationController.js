@@ -170,7 +170,6 @@ exports.createQuotation = async (req, res) => {
         await QuotationItem.deleteOne({ _id: mongoItem._id });
       } catch {}
     }
-    console.error("Quotation creation error:", error);
     res.status(500).json({ error: error.message });
   }
 };

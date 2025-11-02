@@ -43,10 +43,8 @@ const AddParentCategoryModal = ({
           id: parentCategoryData.id,
           ...values,
         }).unwrap();
-        toast.success("Parent category updated");
       } else {
         await createParent(values).unwrap();
-        toast.success("Parent category added");
       }
       onClose();
     } catch (err) {

@@ -265,7 +265,6 @@ exports.forgotPassword = async (req, res, next) => {
       .status(200)
       .json({ message: "Password reset link sent", token: resetToken });
   } catch (err) {
-    console.error("Error in forgotPassword:", err);
     if (!res.headersSent) {
       res
         .status(500)
@@ -344,7 +343,6 @@ exports.resetPassword = async (req, res, next) => {
 
     res.status(200).json({ message: "Password changed successfully" });
   } catch (err) {
-    console.error("Reset password error:", err);
     next(err);
   }
 };
@@ -374,7 +372,6 @@ exports.validateResetToken = async (req, res) => {
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET);
     } catch (err) {
-      console.error("JWT Verification Error:", err.name, err.message);
       if (err.name === "TokenExpiredError") {
         await verificationToken.destroy();
         return res.status(400).json({ message: "Token has expired" });
@@ -389,7 +386,6 @@ exports.validateResetToken = async (req, res) => {
 
     res.json({ email: user.email });
   } catch (error) {
-    console.error("Validate reset token error:", error);
     res.status(500).json({ message: "Server error during token validation" });
   }
 };
@@ -628,7 +624,6 @@ exports.getAllPermissionsOfLoggedInUser = async (req, res) => {
       permissions,
     });
   } catch (err) {
-    console.error("Error in getAllPermissionsOfLoggedInUser:", err);
     return res.status(500).json({
       message: "Failed to fetch permissions",
       error: err.message,

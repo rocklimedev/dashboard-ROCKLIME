@@ -277,11 +277,6 @@ const AddCustomer = () => {
         dispatch(api.util.invalidateTags(["Customer"]));
       }
 
-      toast.success(
-        existingCustomer
-          ? "Customer updated successfully!"
-          : "Customer created successfully!"
-      );
       navigate("/customers/list");
     } catch (err) {
       toast.error(err?.data?.message || "Failed to process request.");

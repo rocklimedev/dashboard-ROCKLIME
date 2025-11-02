@@ -171,7 +171,6 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
     try {
       await deletePurchaseOrder(poId).unwrap();
       handleModalClose();
-      toast.success("Purchase Order deleted");
     } catch (err) {
       toast.error(
         `Failed to delete purchase order: ${
@@ -185,7 +184,6 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
     try {
       await updatePurchaseOrderStatus({ id: poId, status: newStatus }).unwrap();
       setEditingStatusId(null);
-      toast.success("Status updated");
     } catch (err) {
       toast.error(
         `Failed to update status: ${err.data?.message || "Unknown error"}`

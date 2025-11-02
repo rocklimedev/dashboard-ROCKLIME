@@ -852,14 +852,13 @@ const NewCart = ({ onConvertToOrder }) => {
           };
         }),
       };
-      console.log("Order Payload:", JSON.stringify(orderPayload, null, 2));
+
       try {
         await createOrder(orderPayload).unwrap();
         await handleClearCart();
         resetForm();
         navigate("/orders/list");
       } catch (error) {
-        console.error("Order creation error:", error); // Log the full error object
         const errorMessage =
           error?.status === 400
             ? `Bad Request: ${error.data?.message || "Invalid data provided."}`

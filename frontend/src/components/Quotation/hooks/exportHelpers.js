@@ -13,13 +13,16 @@ import { calcTotals, amountInWords } from "./calcHelpers";
 /* ------------------------------------------------------------------ */
 /*                              PDF EXPORT                            */
 /* ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------ */
+/*                              PDF EXPORT (JS)                       */
+/* ------------------------------------------------------------------ */
 export const exportToPDF = async (ref, id, activeVersion) => {
   if (!ref.current) throw new Error("Content missing");
 
   const clone = ref.current.cloneNode(true);
   document.body.appendChild(clone);
 
-  // ---- force printable area ---------------------------------------
+  /* ---- force printable area --------------------------------------- */
   clone.style.cssText = `
     position: absolute !important;
     left: -9999px !important;
@@ -29,7 +32,7 @@ export const exportToPDF = async (ref, id, activeVersion) => {
     overflow: visible !important;
   `;
 
-  // ---- print styles ------------------------------------------------
+  /* ---- print styles ------------------------------------------------ */
   const style = document.createElement("style");
   style.textContent = `
     * { font-family: Arial, sans-serif !important; }
@@ -40,48 +43,45 @@ export const exportToPDF = async (ref, id, activeVersion) => {
   `;
   clone.appendChild(style);
 
-  // ---- PRE-LOAD ALL IMAGES (logo + product images) ----------------
+  /* ---- PRE-LOAD & REPLACE ALL IMAGES ------------------------------ */
   const logoImgEl = clone.querySelector(".logo-img");
   const productImgEls = clone.querySelectorAll(".product-img");
 
+  const toDataUrl = async (src) => {
+    if (src.startsWith("data:")) return src; // already data-URL
+    const { buffer, extension } = await fetchImg(src);
+    const base64 = btoa(String.fromCharCode(...buffer));
+    return `data:image/${extension};base64,${base64}`;
+  };
+
   const imgPromises = [];
 
-  // logo
-  if (logoImgEl?.src && !logoImgEl.src.startsWith("data:")) {
+  if (logoImgEl && logoImgEl.src) {
     imgPromises.push(
-      fetchImg(logoImgEl.src).then(({ buffer, extension }) => {
-        const dataUrl = `data:image/${extension};base64,${btoa(
-          String.fromCharCode(...buffer)
-        )}`;
-        logoImgEl.src = dataUrl;
+      toDataUrl(logoImgEl.src).then((url) => {
+        logoImgEl.src = url;
       })
     );
   }
 
-  // product images
   productImgEls.forEach((el) => {
-    if (el.src && !el.src.startsWith("data:")) {
+    if (el.src) {
       imgPromises.push(
-        fetchImg(el.src).then(({ buffer, extension }) => {
-          const dataUrl = `data:image/${extension};base64,${btoa(
-            String.fromCharCode(...buffer)
-          )}`;
-          el.src = dataUrl;
+        toDataUrl(el.src).then((url) => {
+          el.src = url;
         })
       );
     }
   });
 
-  try {
-    await Promise.all(imgPromises);
-  } catch (e) {
-    console.warn("Some images failed – placeholder will be used", e);
-  }
+  await Promise.all(imgPromises);
 
-  // give the browser a moment to repaint
-  await new Promise((r) => setTimeout(r, 300));
+  /* give the DOM a tiny tick to repaint the new src values */
+  await new Promise((resolve) => {
+    requestAnimationFrame(() => setTimeout(resolve, 50));
+  });
 
-  // ---- render canvas ------------------------------------------------
+  /* ---- render canvas ------------------------------------------------ */
   let canvas;
   try {
     canvas = await html2canvas(clone, {
@@ -95,14 +95,11 @@ export const exportToPDF = async (ref, id, activeVersion) => {
       windowWidth: clone.scrollWidth,
       windowHeight: clone.scrollHeight,
     });
-  } catch (err) {
-    toast.error("Render failed");
-    throw err;
   } finally {
     document.body.removeChild(clone);
   }
 
-  // ---- generate PDF -------------------------------------------------
+  /* ---- generate PDF (unchanged) ------------------------------------ */
   const imgData = canvas.toDataURL("image/png");
   const pdf = new jsPDF("p", "mm", "a4");
   const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -124,7 +121,7 @@ export const exportToPDF = async (ref, id, activeVersion) => {
     heightLeft -= pdfHeight - margin * 2;
   }
 
-  // ---- attach T&C (optional) ---------------------------------------
+  /* ---- attach T&C (optional) -------------------------------------- */
   try {
     const tncRes = await fetch(termsAndConditionsPdf);
     const tncBuffer = await tncRes.arrayBuffer();
@@ -135,7 +132,6 @@ export const exportToPDF = async (ref, id, activeVersion) => {
     const bytes = await mainDoc.save();
     downloadBlob(bytes, `Quotation_${id}_Version_${activeVersion}.pdf`);
   } catch (err) {
-    console.warn("T&C attach failed", err);
     pdf.save(`Quotation_${id}_Version_${activeVersion}.pdf`);
   }
 };

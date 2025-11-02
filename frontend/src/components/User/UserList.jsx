@@ -42,7 +42,7 @@ const UserList = () => {
 
   const users = data?.users || [];
   const totalUsers = data?.total || 0;
-  console.log(users);
+
   const navigate = useNavigate();
 
   const [reportUser, { isLoading: isReporting }] = useReportUserMutation();
@@ -148,7 +148,6 @@ const UserList = () => {
   const handleStatusChange = async (userId, newStatus) => {
     try {
       await updateStatus({ userId, status: newStatus }).unwrap();
-      toast.success(`User is now ${newStatus}`);
     } catch (err) {
       toast.error(
         `Failed to update status: ${err.data?.message || "Unknown error"}`

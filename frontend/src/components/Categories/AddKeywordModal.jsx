@@ -34,10 +34,8 @@ const AddKeywordModal = ({ open, onClose, editData, selectedCategoryId }) => {
     try {
       if (isEditMode) {
         await updateKeyword({ id: editData.id, ...values }).unwrap();
-        toast.success("Keyword updated");
       } else {
         await createKeyword(values).unwrap();
-        toast.success("Keyword added");
       }
       onClose();
     } catch (err) {

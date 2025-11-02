@@ -75,10 +75,8 @@ const AddSignature = ({
     try {
       if (signatureId) {
         await updateSignature({ id: signatureId, body: formData }).unwrap();
-        toast.success("Signature updated successfully.");
       } else {
         await createSignature(formData).unwrap();
-        toast.success("Signature created successfully.");
       }
       handleClose();
       if (onSuccess) onSuccess(); // refresh parent list

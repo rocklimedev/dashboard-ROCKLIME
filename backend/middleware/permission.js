@@ -99,8 +99,6 @@ const checkPermission = (api, name, module, route) => {
 
       next();
     } catch (error) {
-      console.error("checkPermission Error:", error);
-
       if (error.name === "JsonWebTokenError")
         return res.status(401).json({ message: "Invalid token" });
 

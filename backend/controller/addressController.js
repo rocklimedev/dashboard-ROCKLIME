@@ -94,7 +94,6 @@ exports.createAddress = async (req, res) => {
       data: address,
     });
   } catch (error) {
-    console.error("createAddress error:", error);
     return res.status(500).json({
       message: "Failed to create address",
       error: error.message,
@@ -190,7 +189,6 @@ exports.updateAddress = async (req, res) => {
       data: address,
     });
   } catch (error) {
-    console.error("updateAddress error:", error);
     return res.status(500).json({
       message: "Failed to update address",
       error: error.message,
@@ -241,7 +239,6 @@ exports.deleteAddress = async (req, res) => {
 
     return res.json({ message: "Address deleted successfully" });
   } catch (error) {
-    console.error("deleteAddress error:", error);
     return res.status(500).json({ message: "Failed to delete address" });
   }
 };
@@ -268,7 +265,6 @@ exports.getAllAddresses = async (req, res) => {
 
     return res.json(addresses);
   } catch (error) {
-    console.error("getAllAddresses error:", error);
     return res.status(500).json({ message: "Failed to fetch addresses" });
   }
 };
@@ -290,7 +286,6 @@ exports.getAddressById = async (req, res) => {
 
     return res.json(address);
   } catch (error) {
-    console.error("getAddressById error:", error);
     return res.status(500).json({ message: "Failed to fetch address" });
   }
 };

@@ -261,7 +261,6 @@ const ProductsList = () => {
         productId,
         quantity, // just the amount user wants to add
       }).unwrap();
-      toast.success(`Added ${quantity} item(s) to cart`);
       refetchCart();
     } catch (e) {
       toast.error(e.data?.message || "Failed");

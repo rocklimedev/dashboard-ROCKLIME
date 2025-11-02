@@ -72,11 +72,16 @@ const QuotationProductModal = ({
       const meta = productMap[it.productId] || {};
       const unitPrice = meta.sellingPrice || Number(it.sellingPrice) || 0;
       const qty = Number(it.quantity || it.qty || 1);
-      const discAmt = Number(it.discount || 0); // This is already ₹ amount
+      const discVal = Number(it.discount || 0);
+      const discType = it.discountType || "amount"; // ← DEFAULT TO AMOUNT
       const taxPct = Number(it.tax || 0);
 
-      // Correct: subtract rupee discount directly
-      const amountExcl = unitPrice * qty - discAmt;
+      // === CORRECT DISCOUNT CALCULATION ===
+      const subtotal = unitPrice * qty;
+      const discountAmount =
+        discType === "percent" ? (subtotal * discVal) / 100 : discVal;
+
+      const amountExcl = subtotal - discountAmount;
       const lineTotal = amountExcl * (1 + taxPct / 100);
 
       lineDetails.push({
@@ -84,7 +89,9 @@ const QuotationProductModal = ({
         lineTotal,
         unitPrice,
         qty,
-        discAmt,
+        discountAmount, // ← now correct
+        discVal,
+        discType,
         taxPct,
       });
 
@@ -94,16 +101,14 @@ const QuotationProductModal = ({
 
     return { lineDetails, subTotalExcl, grandTotal };
   }, [lineItems, productMap]);
-
   const { lineDetails, subTotalExcl, grandTotal } = calculateTotals();
 
   /* ---------- 5. Apply shipping + extra discount + round-off ---------- */
   const applyAdjustments = useCallback(() => {
     let afterLines = grandTotal;
 
-    // 1. Apply Extra Discount FIRST (on subtotal only)
     const extraDisc = Number(selectedQuotation?.extraDiscount) || 0;
-    const extraType = selectedQuotation?.extraDiscountType;
+    const extraType = selectedQuotation?.extraDiscountType || "fixed";
 
     let afterExtraDiscount = afterLines;
     let discountAmount = 0;
@@ -112,19 +117,17 @@ const QuotationProductModal = ({
       if (extraType === "percent") {
         discountAmount = afterLines * (extraDisc / 100);
         afterExtraDiscount = afterLines - discountAmount;
-      } else if (extraType === "fixed") {
+      } else {
         discountAmount = extraDisc;
         afterExtraDiscount = afterLines - extraDisc;
       }
     }
 
-    // 2. Add Shipping
     const shipping = Number(selectedQuotation?.shippingAmount) || 0;
     const beforeRoundOff = afterExtraDiscount + shipping;
-
-    // 3. Round-off
     const roundOff = Number(selectedQuotation?.roundOff) || 0;
     const afterRoundOff = beforeRoundOff + roundOff;
+
     return {
       shipping,
       discountAmount,
@@ -133,8 +136,10 @@ const QuotationProductModal = ({
       roundOff,
       afterRoundOff,
       finalAmount: Number(selectedQuotation?.finalAmount) || 0,
+      extraType,
     };
   }, [grandTotal, selectedQuotation]);
+
   const {
     shipping,
     discountAmount,
@@ -143,6 +148,7 @@ const QuotationProductModal = ({
     roundOff,
     afterRoundOff,
     finalAmount,
+    extraType,
   } = applyAdjustments();
   /* --------------------------------------------------------------- */
   const toggleExpand = (id) => {
@@ -233,7 +239,11 @@ const QuotationProductModal = ({
                         <td className="text-start">{meta.name || "—"}</td>
                         <td>{det.qty}</td>
                         <td>₹{det.unitPrice.toFixed(2)}</td>
-                        <td>₹{det.discAmt.toFixed(2)}</td>
+                        <td>
+                          {det.discType === "percent"
+                            ? `${det.discVal}%`
+                            : `₹${det.discountAmount.toFixed(2)}`}
+                        </td>
                         <td>{det.taxPct.toFixed(2)}%</td>
                         <td>₹{det.lineTotal.toFixed(2)}</td>
                       </tr>
@@ -267,8 +277,12 @@ const QuotationProductModal = ({
                                   {det.unitPrice.toFixed(2)}
                                 </p>
                                 <p>
-                                  <strong>Discount:</strong> ₹
-                                  {det.discAmt.toFixed(2)}
+                                  <strong>Discount:</strong>{" "}
+                                  {det.discType === "percent"
+                                    ? `${
+                                        det.discVal
+                                      }% (₹${det.discountAmount.toFixed(2)})`
+                                    : `₹${det.discountAmount.toFixed(2)}`}
                                 </p>
                                 <p>
                                   <strong>Amount excl. tax:</strong> ₹
@@ -311,13 +325,9 @@ const QuotationProductModal = ({
                     <td colSpan={6} className="text-end">
                       <strong>
                         Extra Discount (
-                        {selectedQuotation.extraDiscountType === "fixed"
-                          ? "₹"
-                          : ""}
-                        {selectedQuotation.extraDiscount}
-                        {selectedQuotation.extraDiscountType === "percent"
-                          ? "%"
-                          : ""}
+                        {extraType === "percent"
+                          ? `${selectedQuotation.extraDiscount}%`
+                          : `₹${selectedQuotation.extraDiscount}`}
                         )
                       </strong>
                     </td>
@@ -326,7 +336,6 @@ const QuotationProductModal = ({
                     </td>
                   </tr>
                 )}
-
                 {shipping > 0 && (
                   <tr>
                     <td colSpan={6} className="text-end">

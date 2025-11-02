@@ -736,7 +736,6 @@ exports.getAllProductCodesBrandWise = async (req, res) => {
       data: grouped,
     });
   } catch (error) {
-    console.error("getAllProductCodesBrandWise error:", error);
     return res.status(500).json({
       success: false,
       message: "Failed to fetch product codes",

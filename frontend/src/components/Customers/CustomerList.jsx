@@ -125,7 +125,6 @@ const CustomerList = () => {
 
     try {
       await deleteCustomer(customerToDelete).unwrap();
-      toast.success("Customer deleted successfully");
 
       if (paginatedCustomers.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);

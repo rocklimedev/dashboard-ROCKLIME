@@ -14,7 +14,6 @@ const safeJsonParse = (str, fallback = []) => {
     const parsed = JSON.parse(str);
     return Array.isArray(parsed) ? parsed : fallback;
   } catch (err) {
-    console.warn("Failed to parse JSON string for products:", str, err);
     return fallback;
   }
 };

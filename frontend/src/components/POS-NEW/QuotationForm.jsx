@@ -319,7 +319,6 @@ const QuotationForm = ({
         status: "BILLING",
       };
       const { addressId } = await createAddress(payload).unwrap();
-      toast.success("Billing address created from primary address.");
       return addressId;
     } catch (err) {
       toast.error(

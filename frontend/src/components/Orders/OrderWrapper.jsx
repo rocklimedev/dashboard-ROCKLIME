@@ -313,7 +313,6 @@ const OrderWrapper = () => {
     }
     try {
       await updateOrderStatus({ orderId, status: newStatus }).unwrap();
-      toast.success("Status updated");
     } catch (err) {
       toast.error(
         `Failed to update status: ${err.data?.message || "Unknown error"}`
@@ -362,7 +361,6 @@ const OrderWrapper = () => {
     if (!canDeleteOrder) return;
     try {
       await deleteOrder(orderId).unwrap();
-      toast.success("Order deleted");
       handleModalClose();
     } catch (err) {
       toast.error(

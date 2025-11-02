@@ -56,7 +56,6 @@ const logger = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error("Error logging request:", error);
     await ApiLog.updateOne(
       { _id: logEntry._id },
       { $set: { error: error.message } }

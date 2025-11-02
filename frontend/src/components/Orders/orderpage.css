@@ -74,8 +74,6 @@ html[data-theme="dark"] a:hover {
 
 /* Buttons */
 html[data-theme="dark"] .ant-btn {
-  background: #333;
-  border-color: #555;
   color: var(--text-primary);
 }
 html[data-theme="dark"] .ant-btn:hover {

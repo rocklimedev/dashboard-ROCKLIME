@@ -77,8 +77,39 @@ export const amountInWords = (num) => {
   }
 };
 
-export const calcTotals = (products, gstValue, includeGst) => {
-  const subtotal = products.reduce((s, p) => s + Number(p.total || 0), 0);
-  const gst = includeGst ? (subtotal * gstValue) / 100 : 0;
-  return { subtotal, gst, total: subtotal + gst };
+export const calcTotals = (
+  products,
+  gstRate = 0,
+  includeGst = false,
+  productDetailsMap = {}
+) => {
+  let subtotal = 0;
+
+  products.forEach((p) => {
+    const qty = p.quantity || 1;
+
+    // === Use sellingPrice from productDetailsMap ===
+    const detail = productDetailsMap[p.productId] || {};
+    const mrp = detail.sellingPrice || 0;
+    const subtotalBeforeDiscount = mrp * qty;
+
+    // === Use p.total as line total AFTER discount ===
+    const lineTotal = Number(p.total || 0);
+
+    // === Validate: lineTotal should be <= subtotalBeforeDiscount ===
+    if (lineTotal > subtotalBeforeDiscount) {
+      console.warn("Invalid line total", p);
+    }
+
+    subtotal += lineTotal;
+  });
+
+  const gstAmount = includeGst ? (subtotal * gstRate) / 100 : 0;
+  const total = subtotal + gstAmount;
+
+  return {
+    subtotal: Number(subtotal.toFixed(2)),
+    gst: Number(gstAmount.toFixed(2)),
+    total: Number(total.toFixed(2)),
+  };
 };

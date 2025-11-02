@@ -6,7 +6,6 @@ exports.getAllCachedPermissions = async (req, res) => {
     const data = await CachedPermission.find().sort({ createdAt: -1 });
     res.status(200).json(data);
   } catch (err) {
-    console.error("Error fetching CachedPermission:", err);
     res.status(500).json({ error: "Failed to fetch cached permissions" });
   }
 };
@@ -21,7 +20,6 @@ exports.getCachedPermissionByRole = async (req, res) => {
 
     res.status(200).json(cached);
   } catch (err) {
-    console.error("Error fetching CachedPermission by role:", err);
     res.status(500).json({ error: "Failed to fetch cached permission" });
   }
 };
