@@ -555,69 +555,125 @@ const ProductsList = () => {
         ) : viewMode === "card" ? (
           <div className="products-section">
             <div
-              className="products-grid"
+              className="card-view-container"
               style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-                gap: "16px",
+                background: "#fff",
+                borderRadius: "8px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                border: "1px solid #f0f0f0",
+                padding: "16px",
               }}
             >
-              {currentItems.map((product) => (
-                <ProductCard
-                  key={product.productId}
-                  product={product}
-                  getBrandsName={getBrandsName}
-                  getCategoryName={getCategoryName}
-                  handleAddToCart={handleAddToCart}
-                  cartLoadingStates={cartLoadingStates}
-                  menu={menu}
-                />
-              ))}
-            </div>
+              <div
+                className="products-grid"
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+                  gap: "16px",
+                  marginBottom: "16px",
+                }}
+              >
+                {currentItems.map((product) => (
+                  <ProductCard
+                    key={product.productId}
+                    product={product}
+                    getBrandsName={getBrandsName}
+                    getCategoryName={getCategoryName}
+                    handleAddToCart={handleAddToCart}
+                    cartLoadingStates={cartLoadingStates}
+                    menu={menu}
+                  />
+                ))}
+              </div>
 
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                marginTop: "16px",
-              }}
-            >
-              <Pagination
-                current={currentPage}
-                total={filteredProducts.length}
-                pageSize={itemsPerPage}
-                onChange={setCurrentPage}
-                showSizeChanger={false}
-                showQuickJumper
-                size="small"
-              />
+              {/* Unified Pagination */}
+              <div
+                style={{
+                  paddingTop: "16px",
+                  borderTop: "1px solid #f0f0f0",
+                  backgroundColor: "#fafafa",
+                  borderRadius: "0 0 8px 8px",
+                  margin: "0 -16px -16px -16px",
+                  padding: "16px 24px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: "12px",
+                }}
+              >
+                <div style={{ color: "#666", fontSize: "14px" }}>
+                  Showing {offset + 1}–
+                  {Math.min(offset + itemsPerPage, filteredProducts.length)} of{" "}
+                  {filteredProducts.length}
+                </div>
+
+                <Pagination
+                  current={currentPage}
+                  total={filteredProducts.length}
+                  pageSize={itemsPerPage}
+                  onChange={setCurrentPage}
+                  showSizeChanger={false}
+                  showQuickJumper
+                  size="default"
+                />
+              </div>
             </div>
           </div>
         ) : (
           <div className="products-section">
-            <Table
-              columns={columns}
-              dataSource={currentItems}
-              rowKey="productId"
-              pagination={false}
-              scroll={{ x: true }}
-            />
             <div
+              className="table-container"
               style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                marginTop: "16px",
+                background: "#fff",
+                borderRadius: "8px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                overflow: "hidden",
+                border: "1px solid #f0f0f0",
               }}
             >
-              <Pagination
-                current={currentPage}
-                total={filteredProducts.length}
-                pageSize={itemsPerPage}
-                onChange={setCurrentPage}
-                showSizeChanger={false}
-                showQuickJumper
-                size="small"
+              {/* TABLE */}
+              <Table
+                columns={columns}
+                dataSource={currentItems}
+                rowKey="productId"
+                pagination={false}
+                scroll={{ x: true }}
+                style={{ borderBottom: "none" }}
               />
+
+              {/* PAGINATION - INSIDE container */}
+              <div
+                style={{
+                  padding: "16px 24px",
+                  borderTop: "1px solid #f0f0f0",
+                  backgroundColor: "#fafafa",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: "12px",
+                }}
+              >
+                {/* Optional: Show item count */}
+                <div style={{ color: "#666", fontSize: "14px" }}>
+                  Showing {offset + 1}–
+                  {Math.min(offset + itemsPerPage, filteredProducts.length)} of{" "}
+                  {filteredProducts.length} products
+                </div>
+
+                {/* Pagination */}
+                <Pagination
+                  current={currentPage}
+                  total={filteredProducts.length}
+                  pageSize={itemsPerPage}
+                  onChange={setCurrentPage}
+                  showSizeChanger={false}
+                  showQuickJumper
+                  size="default"
+                  style={{ margin: 0 }}
+                />
+              </div>
             </div>
           </div>
         )}

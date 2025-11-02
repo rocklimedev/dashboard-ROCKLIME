@@ -19,7 +19,411 @@ html[data-theme="dark"] {
   --card-bg: #242424;
   /* Add more */
 }
+/* ==========================================================================
+   DARK MODE – ADD / EDIT ORDER FORM
+   ========================================================================== */
+html[data-theme="dark"] {
+  /* Global variables */
+  --bg-primary: #1a1a1a;
+  --bg-card: #2d2d2d;
+  --text-primary: #e0e0e0;
+  --text-secondary: #aaaaaa;
+  --border: #444;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --input-bg: #333;
+  --input-border: #555;
+}
 
+/* Page background */
+html[data-theme="dark"] .page-wrapper,
+html[data-theme="dark"] .content {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Form container */
+html[data-theme="dark"] .form-container,
+html[data-theme="dark"] .ant-collapse,
+html[data-theme="dark"] .ant-collapse-content {
+  background: var(--bg-card) !important;
+  border-color: var(--border) !important;
+  box-shadow: var(--shadow);
+  color: var(--text-primary);
+}
+
+/* AntD Form Labels */
+html[data-theme="dark"] .ant-typography {
+  color: var(--text-primary);
+}
+html[data-theme="dark"] .ant-typography strong {
+  color: #e0e0e0;
+}
+
+/* Input, Select, DatePicker, TextArea */
+html[data-theme="dark"] .ant-input,
+html[data-theme="dark"] .ant-select-selector,
+html[data-theme="dark"] .ant-picker,
+html[data-theme="dark"] .ant-input-affix-wrapper,
+html[data-theme="dark"] .ant-input-textarea {
+  background: var(--input-bg) !important;
+  border-color: var(--input-border) !important;
+  color: var(--text-primary) !important;
+}
+html[data-theme="dark"] .ant-input::placeholder,
+html[data-theme="dark"] .ant-select-placeholder {
+  color: #888 !important;
+}
+
+/* Select dropdown */
+html[data-theme="dark"] .ant-select-dropdown {
+  background: #2d2d2d !important;
+  border-color: #444 !important;
+}
+html[data-theme="dark"] .ant-select-item {
+  color: var(--text-primary);
+}
+html[data-theme="dark"] .ant-select-item-option-active {
+  background: #383838 !important;
+}
+html[data-theme="dark"] .ant-select-item-option-selected {
+  background: #e31e24 !important;
+  color: white !important;
+}
+
+/* DatePicker calendar */
+html[data-theme="dark"] .ant-picker-panel {
+  background: #2d2d2d !important;
+  border-color: #444 !important;
+}
+html[data-theme="dark"] .ant-picker-cell,
+html[data-theme="dark"] .ant-picker-header {
+  color: var(--text-primary);
+}
+html[data-theme="dark"] .ant-picker-cell-in-view {
+  color: #e0e0e0;
+}
+html[data-theme="dark"] .ant-picker-cell:hover {
+  background: #383838 !important;
+}
+html[data-theme="dark"] .ant-picker-cell-selected .ant-picker-cell-inner {
+  background: #e31e24 !important;
+}
+
+/* Buttons */
+html[data-theme="dark"] .ant-btn {
+  background: #333;
+  border-color: #555;
+  color: var(--text-primary);
+}
+html[data-theme="dark"] .ant-btn:hover {
+  background: #444;
+  border-color: #e31e24;
+  color: #e31e24;
+}
+html[data-theme="dark"] .ant-btn-primary {
+  background: #e31e24;
+  border-color: #e31e24;
+}
+html[data-theme="dark"] .ant-btn-primary:hover {
+  background: #c71a20;
+  border-color: #c71a20;
+}
+html[data-theme="dark"] .ant-btn-link {
+  color: #e31e24;
+}
+html[data-theme="dark"] .ant-btn-link:hover {
+  color: #ff4d4f;
+}
+
+/* Radio */
+html[data-theme="dark"] .ant-radio-inner {
+  background: #333;
+  border-color: #555;
+}
+html[data-theme="dark"] .ant-radio-checked .ant-radio-inner {
+  border-color: #e31e24;
+}
+html[data-theme="dark"] .ant-radio-checked .ant-radio-inner::after {
+  background: #e31e24;
+}
+
+/* Divider */
+html[data-theme="dark"] .ant-divider {
+  border-top-color: #444;
+}
+
+/* Collapse arrow */
+html[data-theme="dark"] .ant-collapse-header {
+  color: #e0e0e0 !important;
+}
+html[data-theme="dark"] .ant-collapse-arrow {
+  color: #e0e0e0 !important;
+}
+
+/* Avatar */
+html[data-theme="dark"] .react-avatar {
+  filter: brightness(1.2);
+}
+
+/* Bootstrap Buttons (fallback) */
+html[data-theme="dark"] .btn-secondary {
+  background: #333;
+  border-color: #555;
+  color: #e0e0e0;
+}
+html[data-theme="dark"] .btn-secondary:hover {
+  background: #444;
+  border-color: #e31e24;
+  color: #e31e24;
+}
+html[data-theme="dark"] .btn-primary {
+  background: #e31e24;
+  border-color: #e31e24;
+}
+html[data-theme="dark"] .btn-primary:hover {
+  background: #c71a20;
+  border-color: #c71a20;
+}
+
+/* Links */
+html[data-theme="dark"] a,
+html[data-theme="dark"] .ant-typography a {
+  color: #e31e24;
+}
+html[data-theme="dark"] a:hover {
+  color: #ff4d4f;
+}
+
+/* Loading spinner */
+html[data-theme="dark"] .ant-spin-dot-item {
+  background-color: #e31e24;
+}
+
+/* Alert (Bootstrap) */
+html[data-theme="dark"] .alert-danger {
+  background: #3a1a1a;
+  border-color: #8c1a1a;
+  color: #ff6b6b;
+}
+/* ==========================================================================
+   DARK MODE – INVENTORY PAGE
+   ========================================================================== */
+html[data-theme="dark"] {
+  /* Global vars */
+  --bg-primary: #1a1a1a;
+  --bg-card: #2d2d2d;
+  --bg-filter: #333;
+  --text-primary: #e0e0e0;
+  --text-secondary: #aaaaaa;
+  --border: #444;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --input-bg: #333;
+  --input-border: #555;
+}
+
+/* Page background */
+html[data-theme="dark"] .page-wrapper,
+html[data-theme="dark"] .content {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Filter bar */
+html[data-theme="dark"] .filter-bar {
+  background: var(--bg-filter) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: var(--shadow);
+}
+html[data-theme="dark"] .filter-bar .ant-typography {
+  color: var(--text-secondary);
+}
+
+/* Tabs */
+html[data-theme="dark"] .ant-tabs-nav {
+  background: var(--bg-card);
+}
+html[data-theme="dark"] .ant-tabs-tab {
+  color: var(--text-secondary);
+}
+html[data-theme="dark"] .ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #e31e24 !important;
+}
+html[data-theme="dark"] .ant-tabs-ink-bar {
+  background: #e31e24;
+}
+
+/* Table */
+html[data-theme="dark"] .ant-table {
+  background: var(--bg-card) !important;
+  color: var(--text-primary);
+}
+html[data-theme="dark"] .ant-table-thead > tr > th {
+  background: #333 !important;
+  color: #ccc !important;
+  border-bottom: 1px solid var(--border);
+}
+html[data-theme="dark"] .ant-table-tbody > tr > td {
+  border-bottom: 1px solid var(--border);
+}
+html[data-theme="dark"] .ant-table-tbody > tr:hover > td {
+  background: #383838 !important;
+}
+html[data-theme="dark"] .ant-table-tbody > tr:nth-child(even) > td {
+  background: #2a2a2a;
+}
+
+/* Links */
+html[data-theme="dark"] a,
+html[data-theme="dark"] .ant-typography a {
+  color: #e31e24;
+}
+html[data-theme="dark"] a:hover {
+  color: #ff4d4f;
+}
+
+/* Inputs / Select / Number */
+html[data-theme="dark"] .ant-input,
+html[data-theme="dark"] .ant-select-selector,
+html[data-theme="dark"] .ant-input-number,
+html[data-theme="dark"] .ant-input-affix-wrapper {
+  background: var(--input-bg) !important;
+  border-color: var(--input-border) !important;
+  color: var(--text-primary) !important;
+}
+html[data-theme="dark"] .ant-input::placeholder,
+html[data-theme="dark"] .ant-select-placeholder {
+  color: #888 !important;
+}
+
+/* Dropdown menu */
+html[data-theme="dark"] .ant-dropdown-menu {
+  background: #2d2d2d !important;
+  border-color: #444 !important;
+}
+html[data-theme="dark"] .ant-dropdown-menu-item {
+  color: var(--text-primary);
+}
+html[data-theme="dark"] .ant-dropdown-menu-item:hover {
+  background: #383838 !important;
+  color: #e31e24 !important;
+}
+
+/* Buttons */
+html[data-theme="dark"] .ant-btn {
+  background: #333;
+  border-color: #555;
+  color: var(--text-primary);
+}
+html[data-theme="dark"] .ant-btn:hover {
+  background: #444;
+  border-color: #e31e24;
+  color: #e31e24;
+}
+html[data-theme="dark"] .ant-btn-primary {
+  background: #e31e24;
+  border-color: #e31e24;
+}
+html[data-theme="dark"] .ant-btn-primary:hover {
+  background: #c71a20;
+  border-color: #c71a20;
+}
+
+/* Badge */
+html[data-theme="dark"] .ant-badge-status-text {
+  color: var(--text-primary);
+}
+
+/* Pagination */
+html[data-theme="dark"] .ant-pagination-item {
+  background: #333;
+  border-color: #555;
+}
+html[data-theme="dark"] .ant-pagination-item a {
+  color: var(--text-primary);
+}
+html[data-theme="dark"] .ant-pagination-item-active {
+  background: #e31e24;
+  border-color: #e31e24;
+}
+html[data-theme="dark"] .ant-pagination-item-active a {
+  color: #fff;
+}
+
+/* Empty state */
+html[data-theme="dark"] .ant-empty-description {
+  color: var(--text-secondary);
+}
+
+/* Loading spinner */
+html[data-theme="dark"] .ant-spin-dot-item {
+  background-color: #e31e24;
+}
+
+/* Code tag (copyable) */
+html[data-theme="dark"] .ant-typography code {
+  background: #333;
+  color: #e31e24;
+  border: 1px solid #555;
+}
+
+/* PageHeader (assuming it uses AntD) */
+html[data-theme="dark"] .ant-page-header {
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+}
+html[data-theme="dark"] .ant-page-header-heading-title,
+html[data-theme="dark"] .ant-page-header-heading-sub-title {
+  color: var(--text-primary);
+}
+/* -------------------------------------------------
+   Existing styles (keep them exactly as you have)
+   ------------------------------------------------- */
+
+/* -------------------------------------------------
+   DARK-MODE OVERRIDES
+   ------------------------------------------------- */
+html[data-theme="dark"] .page-wrapper,
+html[data-theme="dark"] .content {
+  background: var(--bg-color);
+  color: var(--text-color);
+}
+
+/* Banner */
+html[data-theme="dark"] .banner-container img {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+/* Cards */
+html[data-theme="dark"] .categories-card,
+html[data-theme="dark"] .brands-selection-card {
+  background: var(--card-bg);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme="dark"] .categories-card:hover,
+html[data-theme="dark"] .brands-selection-card:hover {
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.45);
+}
+
+/* Text */
+html[data-theme="dark"] .categories-text,
+html[data-theme="dark"] .banner-title,
+html[data-theme="dark"] .banner-subtitle {
+  color: var(--text-color);
+}
+
+/* Loading / error states */
+html[data-theme="dark"] .loading-container,
+html[data-theme="dark"] .error-container,
+html[data-theme="dark"] .empty-container {
+  background: var(--bg-color);
+  color: var(--text-color);
+}
+
+/* Ant-Design Empty (optional – makes the description readable) */
+html[data-theme="dark"] .ant-empty-description {
+  color: var(--text-color);
+}
 /* Use variables */
 body {
   background: var(--bg-color);
