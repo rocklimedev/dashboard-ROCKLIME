@@ -63,6 +63,9 @@ const SidebarNew = ({
         <NavLink to="/" className="logo-small">
           <img src={logo_small} alt="Logo" />
         </NavLink>
+        <NavLink to="/" className="logo logo-white">
+          <img src={logo} alt="Logo" />
+        </NavLink>
 
         <a
           id="toggle_btn"

@@ -408,14 +408,6 @@ const PageWrapper = () => {
                             {q.reference_number || "Quotation"}
                           </a>
 
-                          <span className="ms-2 info-text">
-                            {new Date(q.createdAt).toLocaleDateString("en-IN", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                            })}
-                          </span>
-
                           <div className="mt-1 info-text">
                             <span className="me-2">
                               <i className="bi bi-person info-icon"></i>
@@ -432,11 +424,6 @@ const PageWrapper = () => {
                                 }
                               )}
                             </span>
-                            <span>
-                              <i className="bi bi-percent info-icon"></i>
-                              Disc: {q.extraDiscount || 0}
-                              {q.extraDiscountType === "percent" ? "%" : ""}
-                            </span>
                           </div>
                         </div>
 
@@ -447,9 +434,14 @@ const PageWrapper = () => {
                               "en-IN"
                             )}
                           </div>
-                          <div className="item-count">
-                            {q.items?.length || 0} items
-                          </div>
+
+                          <span className="ms-2 info-text">
+                            {new Date(q.createdAt).toLocaleDateString("en-IN", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </span>
                         </div>
                       </li>
                     ))

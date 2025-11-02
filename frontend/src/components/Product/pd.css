@@ -231,3 +231,122 @@
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 16px;
 }
+/* ==========================================================================
+   DARK MODE – PRODUCT DETAILS
+   ========================================================================== */
+html[data-theme="dark"] .pd-root {
+  background-color: #1a1a1a;
+  color: #e0e0e0;
+}
+
+/* Breadcrumbs */
+html[data-theme="dark"] .ant-breadcrumb a,
+html[data-theme="dark"] .ant-breadcrumb span {
+  color: #e0e0e0;
+}
+html[data-theme="dark"] .ant-breadcrumb a:hover {
+  color: #e31e24;
+}
+
+/* Gallery */
+html[data-theme="dark"] .pd-gallery,
+html[data-theme="dark"] .pd-summary,
+html[data-theme="dark"] .pd-tab-content {
+  background: #2d2d2d;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme="dark"] .pd-gallery__hero {
+  background: linear-gradient(180deg, #2d2d2d, #242424);
+}
+
+/* Text */
+html[data-theme="dark"] .pd-title,
+html[data-theme="dark"] .pd-price__current,
+html[data-theme="dark"] .pd-qty-label,
+html[data-theme="dark"] .pd-meta strong,
+html[data-theme="dark"] .pd-info-list li span {
+  color: #e0e0e0;
+}
+
+html[data-theme="dark"] .pd-price__mrp,
+html[data-theme="dark"] .pd-description,
+html[data-theme="dark"] .pd-meta,
+html[data-theme="dark"] .pd-info-list li {
+  color: #aaaaaa;
+}
+
+/* Barcode */
+html[data-theme="dark"] .pd-barcode__svg {
+  background: #333;
+  fill: #e0e0e0;
+}
+html[data-theme="dark"] .pd-barcode__svg text {
+  fill: #e0e0e0 !important;
+}
+html[data-theme="dark"] .pd-barcode__svg path {
+  stroke: #e0e0e0 !important;
+}
+
+/* Tabs */
+html[data-theme="dark"] .ant-tabs-tab {
+  color: #aaaaaa;
+}
+html[data-theme="dark"] .ant-tabs-tab-active .ant-tabs-tab-btn,
+html[data-theme="dark"] .ant-tabs-tab:hover .ant-tabs-tab-btn {
+  color: #e31e24;
+}
+html[data-theme="dark"] .ant-tabs-ink-bar {
+  background: #e31e24;
+}
+
+/* InputNumber */
+html[data-theme="dark"] .ant-input-number {
+  background: #333;
+  border-color: #555;
+  color: #e0e0e0;
+}
+html[data-theme="dark"] .ant-input-number-input {
+  background: transparent;
+  color: #e0e0e0;
+}
+html[data-theme="dark"] .ant-input-number-handler-wrap {
+  background: #333;
+  border-left-color: #555;
+}
+html[data-theme="dark"] .ant-input-number-handler {
+  color: #aaa;
+}
+html[data-theme="dark"] .ant-input-number-handler:hover {
+  color: #e31e24;
+}
+
+/* Buttons */
+html[data-theme="dark"] .ant-btn-primary {
+  background: #e31e24;
+  border-color: #e31e24;
+}
+html[data-theme="dark"] .ant-btn-primary:hover {
+  background: #c71a20;
+  border-color: #c71a20;
+}
+html[data-theme="dark"] .ant-btn-default {
+  background: #333;
+  border-color: #555;
+  color: #e0e0e0;
+}
+html[data-theme="dark"] .ant-btn-default:hover {
+  background: #444;
+  border-color: #e31e24;
+  color: #e31e24;
+}
+
+/* Related Products Header */
+html[data-theme="dark"] .pd-related__header h3 {
+  color: #e0e0e0;
+}
+
+/* Fix AntD Spin in dark mode */
+html[data-theme="dark"] .ant-spin-dot-item {
+  background-color: #e31e24;
+}

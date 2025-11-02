@@ -168,7 +168,7 @@ const QuotationForm = ({
     quotationData.discountType,
     quotationData.discountAmount,
     subTotal,
-  discount,
+    discount,
     tax,
   ]);
   const normalizeString = (str) => (str ? str.trim().toLowerCase() : "");
@@ -554,23 +554,6 @@ const QuotationForm = ({
                           ? `, ${selectedCustomerData.address.country}`
                           : ""
                       }`}
-                    </Text>
-                  )}
-
-                  {/* Show preview of selected saved address */}
-                  {!useBillingAddress && quotationData.shipTo && (
-                    <Text type="secondary">
-                      <strong>Shipping:</strong>{" "}
-                      {(() => {
-                        const addr = filteredAddresses.find(
-                          (a) => a.addressId === quotationData.shipTo
-                        );
-                        return addr
-                          ? `${addr.street}, ${addr.city}, ${addr.state}, ${
-                              addr.postalCode || addr.zip || ""
-                            }, ${addr.country || "India"}`
-                          : "—";
-                      })()}
                     </Text>
                   )}
                 </Space>
