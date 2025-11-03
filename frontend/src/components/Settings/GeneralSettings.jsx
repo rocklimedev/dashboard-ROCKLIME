@@ -52,14 +52,6 @@ const GeneralSettings = () => {
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmMessage, setConfirmMessage] = useState("");
 
-  // ---------- NEW: Edit Profile ----------
-  const handleEditProfile = () => {
-    if (profile?.user?.id) {
-      navigate(`/u/${profile.user.id}/edit`);
-    }
-  };
-  // -----------------------------------------
-
   // Handle password change
   const handlePasswordChange = async (e) => {
     e.preventDefault();
@@ -170,7 +162,10 @@ const GeneralSettings = () => {
                   </p>
                 </div>
               </div>
-              <Button variant="primary" onClick={handleEditProfile}>
+              <Button
+                variant="primary"
+                onClick={() => navigate(`/u/${profile?.user?.userId}/edit`)}
+              >
                 Edit Profile
               </Button>
             </div>

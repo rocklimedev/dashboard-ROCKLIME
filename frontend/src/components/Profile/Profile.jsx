@@ -322,6 +322,7 @@ const Profile = () => {
       ) ?? [],
     [purchaseOrdersData, userId]
   );
+  // ... [Keep all imports and queries the same until render]
 
   /* ──────────────────────── RENDER ──────────────────────── */
   if (
@@ -372,7 +373,7 @@ const Profile = () => {
         <div className="row">
           {/* ────── LEFT SIDEBAR ────── */}
           <div className="col-xl-4 theiaStickySidebar">
-            <div className="card rounded-0 border-0">
+            <div className="card rounded-0 border-0 mb-4">
               <div className="card-header rounded-0 bg-primary d-flex align-items-center">
                 <span className="avatar avatar-xl avatar-rounded flex-shrink-0 border border-white border-3 me-3">
                   <Avatar
@@ -383,7 +384,7 @@ const Profile = () => {
                     textSizeRatio={2.5}
                   />
                 </span>
-                <div className="me-3">
+                <div className="me-3 flex-grow-1">
                   <h6 className="text-white mb-1">{user.name || "N/A"}</h6>
                   <span className="badge bg-purple-transparent text-purple">
                     {Array.isArray(user.roles)
@@ -392,7 +393,13 @@ const Profile = () => {
                   </span>
                 </div>
                 <div>
-                  <button className="btn btn-white">Edit Profile</button>
+                  <Button
+                    type="primary"
+                    size="small"
+                    onClick={() => navigate(`/u/${userId}/edit`)}
+                  >
+                    Edit Profile
+                  </Button>
                 </div>
               </div>
 
@@ -417,11 +424,118 @@ const Profile = () => {
                 </div>
               </div>
             </div>
+            {/* ────── ADDRESS CARDS SECTION ────── */}
+            <div className="card rounded-0 border-0">
+              <div className="card-header d-flex justify-content-between align-items-center bg-light">
+                <h6 className="mb-0">My Addresses</h6>
+                <Button
+                  type="primary"
+                  size="small"
+                  onClick={() => openAddressModal()}
+                >
+                  Add Address
+                </Button>
+              </div>
+              <div className="card-body p-0">
+                {!userId || (myAddressesRaw.length === 0 && !embedded) ? (
+                  <div className="p-4 text-center text-muted">
+                    <em>No addresses added yet.</em>
+                  </div>
+                ) : (
+                  <div className="row g-3 p-3">
+                    {/* Embedded Address (Legacy) */}
+                    {embedded && (
+                      <div className="col-12">
+                        <div className="border rounded p-3 position-relative hover-shadow-sm">
+                          <div className="d-flex justify-content-between align-items-start">
+                            <div className="flex-grow-1">
+                              <div className="d-flex align-items-center mb-2">
+                                <h6 className="mb-0 me-2">
+                                  Primary Address (Profile)
+                                </h6>
+                                <span
+                                  className="badge bg-success text-white"
+                                  style={{ fontSize: "0.65rem" }}
+                                >
+                                  PRIMARY
+                                </span>
+                              </div>
+                              <p className="mb-0 text-muted small">
+                                {formatAddress(embedded)}
+                              </p>
+                            </div>
+                            <div className="text-muted small">
+                              <em>From profile</em>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Table Addresses */}
+                    {myAddressesRaw.map((addr) => {
+                      const isPrimary = addr.status === "PRIMARY";
+                      const isBilling = addr.status === "BILLING";
+                      const badgeClass = isPrimary
+                        ? "bg-success"
+                        : isBilling
+                        ? "bg-info"
+                        : "bg-secondary";
+
+                      return (
+                        <div key={addr.addressId} className="col-12">
+                          <div className="border rounded p-3 position-relative hover-shadow-sm">
+                            <div className="d-flex justify-content-between align-items-start">
+                              <div className="flex-grow-1">
+                                <div className="d-flex align-items-center mb-2">
+                                  <h6 className="mb-0 me-2">
+                                    {addr.street || "Unnamed Address"}
+                                  </h6>
+                                  <span
+                                    className={`badge ${badgeClass} text-white`}
+                                    style={{ fontSize: "0.65rem" }}
+                                  >
+                                    {addr.status}
+                                  </span>
+                                </div>
+                                <p className="mb-0 text-muted small">
+                                  {formatAddress(addr)}
+                                </p>
+                              </div>
+                              <div className="d-flex gap-1">
+                                <Button
+                                  type="text"
+                                  size="small"
+                                  icon={<i className="fas fa-pencil-alt"></i>}
+                                  onClick={() => openAddressModal(addr)}
+                                  title="Edit"
+                                />
+                                <Button
+                                  type="text"
+                                  size="small"
+                                  danger
+                                  icon={<i className="fas fa-trash"></i>}
+                                  onClick={() =>
+                                    handleDeleteAddress(addr.addressId)
+                                  }
+                                  loading={isDeletingAddress}
+                                  title="Delete"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* ────── MAIN CONTENT ────── */}
+          {/* ────── MAIN CONTENT (TABS WITHOUT ADDRESSES) ────── */}
           <div className="col-xl-8">
-            <div className="card rounded-0 border-0">
+            <div className="card rounded-0 border-0 mb-4">
               <div className="card-header border-0 rounded-0 bg-light d-flex align-items-center">
                 <h6>Basic Information</h6>
               </div>
@@ -456,14 +570,6 @@ const Profile = () => {
                       <p className="fs-13 mb-2">Birthday</p>
                       <span className="text-gray-900 fs-13">
                         {formatDate(user.dateOfBirth)}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="col-md-4">
-                    <div className="mb-3">
-                      <p className="fs-13 mb-2">Address</p>
-                      <span className="text-gray-900 fs-13">
-                        {primaryAddress}
                       </span>
                     </div>
                   </div>
@@ -506,7 +612,8 @@ const Profile = () => {
                 </div>
               </div>
             </div>
-            {/* ────── TABS ────── */}
+
+            {/* ────── TABS (Addresses Removed) ────── */}
             <div className="card rounded-0 border-0">
               <div className="card-header bg-light d-flex align-items-center justify-content-between">
                 <ul
@@ -518,15 +625,18 @@ const Profile = () => {
                     "Teams",
                     "Orders",
                     "Purchase Orders",
-                    "Addresses",
                     ...(isSuperAdmin ? ["Signatures"] : []),
                   ].map((tab) => (
                     <li className="nav-item" key={tab}>
                       <button
                         className={`nav-link btn btn-sm py-3 ${
-                          activeTab === tab.toLowerCase() ? "active" : ""
+                          activeTab === tab.toLowerCase().replace(" ", "")
+                            ? "active"
+                            : ""
                         }`}
-                        onClick={() => setActiveTab(tab.toLowerCase())}
+                        onClick={() =>
+                          setActiveTab(tab.toLowerCase().replace(" ", ""))
+                        }
                       >
                         {tab}
                       </button>
@@ -534,11 +644,6 @@ const Profile = () => {
                   ))}
                 </ul>
 
-                {activeTab === "addresses" && (
-                  <Button type="primary" onClick={() => openAddressModal()}>
-                    Add Address
-                  </Button>
-                )}
                 {activeTab === "signatures" && isSuperAdmin && (
                   <Button type="primary" onClick={() => openSignatureModal()}>
                     Add Signature
@@ -636,7 +741,7 @@ const Profile = () => {
                   {/* PURCHASE ORDERS */}
                   <div
                     className={`tab-pane fade ${
-                      activeTab === "purchase orders" ? "show active" : ""
+                      activeTab === "purchaseorders" ? "show active" : ""
                     }`}
                   >
                     <DataTable
@@ -658,21 +763,6 @@ const Profile = () => {
                       dataSource={myPurchaseOrders}
                       isLoading={isPurchaseOrdersLoading}
                       rowKey="id"
-                    />
-                  </div>
-
-                  {/* ADDRESSES */}
-                  <div
-                    className={`tab-pane fade ${
-                      activeTab === "addresses" ? "show active" : ""
-                    }`}
-                  >
-                    <DataTable
-                      title="My Addresses"
-                      columns={addressColumns}
-                      dataSource={myAddressesRaw}
-                      isLoading={isAddressesLoading}
-                      rowKey="addressId"
                     />
                   </div>
 
@@ -699,7 +789,7 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* ────── ADDRESS MODAL ────── */}
+      {/* ────── MODALS ────── */}
       {addressModalOpen && (
         <AddAddress
           onClose={closeAddressModal}
@@ -709,7 +799,6 @@ const Profile = () => {
         />
       )}
 
-      {/* ────── SIGNATURE MODAL ────── */}
       {signatureModalOpen && (
         <AddSignature
           signatureId={editingSignature?.signatureId}

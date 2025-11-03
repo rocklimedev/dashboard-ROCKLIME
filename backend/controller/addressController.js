@@ -257,8 +257,12 @@ exports.getAllAddresses = async (req, res) => {
     const addresses = await Address.findAll({
       where,
       include: [
-        { model: User, attributes: ["userId", "name", "email"] },
-        { model: Customer, attributes: ["customerId", "name", "email"] },
+        { model: User, as: "user", attributes: ["userId", "name", "email"] },
+        {
+          model: Customer,
+          as: "customer",
+          attributes: ["customerId", "name", "email"],
+        },
       ],
       order: [["createdAt", "DESC"]],
     });
@@ -277,8 +281,12 @@ exports.getAddressById = async (req, res) => {
     const { addressId } = req.params;
     const address = await Address.findByPk(addressId, {
       include: [
-        { model: User, attributes: ["userId", "name", "email"] },
-        { model: Customer, attributes: ["customerId", "name", "email"] },
+        { model: User, as: "user", attributes: ["userId", "name", "email"] },
+        {
+          model: Customer,
+          as: "customer",
+          attributes: ["customerId", "name", "email"],
+        },
       ],
     });
 
