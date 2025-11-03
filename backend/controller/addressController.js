@@ -289,3 +289,81 @@ exports.getAddressById = async (req, res) => {
     return res.status(500).json({ message: "Failed to fetch address" });
   }
 };
+// ─────────────────────────────────────────────────────────────────────────────
+// GET ALL USER ADDRESSES
+// ─────────────────────────────────────────────────────────────────────────────
+exports.getAllUserAddresses = async (req, res) => {
+  try {
+    const users = await User.findAll({
+      attributes: ["userId", "name", "email"],
+      include: [
+        {
+          model: Address,
+          as: "addresses", // must match association alias
+          attributes: [
+            "addressId",
+            "street",
+            "city",
+            "state",
+            "postalCode",
+            "country",
+            "status",
+            "createdAt",
+          ],
+          where: { userId: { [Op.ne]: null } },
+          required: false,
+        },
+      ],
+      order: [[{ model: Address, as: "addresses" }, "createdAt", "DESC"]],
+    });
+
+    return res.json({
+      message: "Fetched all user addresses successfully",
+      data: users,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to fetch user addresses",
+      error: error.message,
+    });
+  }
+};
+// ─────────────────────────────────────────────────────────────────────────────
+// GET ALL CUSTOMER ADDRESSES
+// ─────────────────────────────────────────────────────────────────────────────
+exports.getAllCustomerAddresses = async (req, res) => {
+  try {
+    const customers = await Customer.findAll({
+      attributes: ["customerId", "name", "email"],
+      include: [
+        {
+          model: Address,
+          as: "addresses", // must match association alias
+          attributes: [
+            "addressId",
+            "street",
+            "city",
+            "state",
+            "postalCode",
+            "country",
+            "status",
+            "createdAt",
+          ],
+          where: { customerId: { [Op.ne]: null } },
+          required: false,
+        },
+      ],
+      order: [[{ model: Address, as: "addresses" }, "createdAt", "DESC"]],
+    });
+
+    return res.json({
+      message: "Fetched all customer addresses successfully",
+      data: customers,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to fetch customer addresses",
+      error: error.message,
+    });
+  }
+};

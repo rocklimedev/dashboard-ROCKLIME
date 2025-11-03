@@ -22,6 +22,8 @@ const OrderTotal = React.memo(
     subTotal = 0,
     discount = 0, // ← total of **per-item** discounts
     extraDiscount = 0, // ← amount already calculated in the form
+    gst,
+    gstAmount,
     finalTotal: finalTotalProp,
     onShippingChange,
   }) => {
@@ -53,24 +55,29 @@ const OrderTotal = React.memo(
     const safeExtraDiscount = safe(extraDiscount);
     const safeShipping = safe(shipping);
     const safeRoundOff = safe(roundOff);
-
+    const safeGst = safe(gst);
+    const safeGstAmount = safe(gstAmount);
     /* --------------------------- Calculations --------------------------- */
     const calculations = useMemo(() => {
       const taxable = safeSubTotal - safeDiscount; // 1
       const afterTax = taxable + safeTax; // 2
       const afterExtra = afterTax - safeExtraDiscount; // 3
-      const beforeRound = afterExtra + safeShipping; // 4
-      const calculated = beforeRound + safeRoundOff; // 5
+      const afterShipping = afterExtra + safeShipping; // 4
+      const afterGst = afterShipping + safeGstAmount; // 5
+      const beforeRound = afterGst; // 6
+      const calculated = beforeRound + safeRoundOff; // 7
 
       const final =
         finalTotalProp != null && !isNaN(finalTotalProp)
           ? finalTotalProp
-          : Math.round(calculated); // fallback
+          : Math.round(calculated); // fallback to nearest rupee
 
       return {
         taxable,
         afterTax,
         afterExtra,
+        afterShipping,
+        afterGst,
         beforeRound,
         calculated,
         final,
@@ -80,6 +87,7 @@ const OrderTotal = React.memo(
       safeDiscount,
       safeTax,
       safeExtraDiscount,
+      safeGstAmount,
       safeShipping,
       safeRoundOff,
       finalTotalProp,
@@ -147,10 +155,20 @@ const OrderTotal = React.memo(
         isPositive: true,
         renderEdit: true,
       },
+      ...(safeGst > 0
+        ? [
+            {
+              key: "gst",
+              label: `GST (${safeGst}%)`,
+              amount: safeGstAmount,
+              isPositive: true,
+            },
+          ]
+        : []),
       {
         key: "before-round",
         label: "Before Round-off",
-        amount: calculations.beforeRound,
+        amount: calculations.afterGst,
       },
       ...(safeRoundOff !== 0
         ? [

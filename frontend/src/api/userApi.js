@@ -72,7 +72,20 @@ export const userApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Users"],
     }),
-
+    uploadPhoto: builder.mutation({
+      query: (file) => {
+        const formData = new FormData();
+        formData.append("photo", file);
+        return {
+          url: "/user/photo",
+          method: "POST",
+          body: formData,
+          // Important: let the browser set the Content-Type (multipart/form-data)
+          headers: {},
+        };
+      },
+      invalidatesTags: ["Users"], // refresh profile after upload
+    }),
     // NEW: Update User Status (active, inactive, restricted)
     updateStatus: builder.mutation({
       query: ({ userId, status }) => ({
@@ -96,6 +109,7 @@ export const {
   useReportUserMutation,
   useCreateUserMutation,
   useAssignRoleMutation,
+  useUploadPhotoMutation, // <-- NEW HOOK
   useUpdateUserMutation,
   useInactiveUserMutation,
   useUpdateStatusMutation,

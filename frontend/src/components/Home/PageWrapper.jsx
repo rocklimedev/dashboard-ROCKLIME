@@ -320,9 +320,7 @@ const PageWrapper = () => {
                         <div className="d-flex flex-column align-items-end position-relative">
                           <div className="d-flex align-items-center gap-1">
                             <span
-                              className={`status-badge px-2 py-1 rounded-2 ${
-                                statusColors[o.status] || "bg-light text-dark"
-                              }`}
+                              className="bg-light text-dark"
                               style={{ fontSize: "0.8rem" }}
                             >
                               {o.status}
@@ -397,14 +395,14 @@ const PageWrapper = () => {
           {/* MIDDLE COLUMN */}
           <div className="col-12 col-md-4 d-flex flex-column gap-3">
             <div className="card shadow-sm rounded-3">
-              <div className="card-header bg-light fw-semibold d-flex justify-content-between">
+              <div className="card-header bg-light fw-semibold">
                 <span>
                   Total Quotations{" "}
                   <span className="text-danger fw-semibold">
                     ({quotationCount})
                   </span>
                 </span>
-                <div className="px-3 py-2 small text-muted">Last five</div>
+                <div className="px-3 py-2 small text-muted">Latest five</div>
               </div>
               <div className="card-body p-0">
                 <ul className="list-unstyled m-0">

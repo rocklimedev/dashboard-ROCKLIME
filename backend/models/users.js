@@ -73,7 +73,7 @@ const User = sequelize.define(
       },
     },
     roleId: {
-      type: DataTypes.UUID, // Match Role model's primary key type
+      type: DataTypes.UUID,
       allowNull: false,
       references: {
         model: "roles",
@@ -83,7 +83,7 @@ const User = sequelize.define(
       onUpdate: "CASCADE",
     },
     roles: {
-      type: DataTypes.STRING, // Keep for backward compatibility or remove if roleId is used
+      type: DataTypes.STRING,
       allowNull: true,
       defaultValue: ROLES.Users,
       get() {
@@ -100,6 +100,15 @@ const User = sequelize.define(
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: false,
+    },
+    // Newly added fields
+    photo_thumbnail: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+    photo_original: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
     },
     status: {
       type: DataTypes.ENUM("active", "inactive", "restricted"),

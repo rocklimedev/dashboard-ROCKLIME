@@ -20,6 +20,7 @@ import {
   PlusOutlined,
 } from "@ant-design/icons";
 import { FcEmptyTrash } from "react-icons/fc";
+import { InfoCircleOutlined } from "@ant-design/icons";
 import styled from "styled-components";
 import OrderTotal from "./OrderTotal";
 import { toast } from "sonner";
@@ -125,6 +126,9 @@ const QuotationForm = ({
   setUseBillingAddress,
   itemDiscounts,
   itemTaxes,
+  gst, // <-- NEW
+  gstAmount, // <-- NEW
+  setGst,
 }) => {
   const [isCreatingAddress, setIsCreatingAddress] = useState(false);
   const [createAddress] = useCreateAddressMutation();
@@ -157,10 +161,9 @@ const QuotationForm = ({
     const amount = parseFloat(quotationData.discountAmount) || 0;
     if (!amount) return 0;
 
-    // Apply extra discount on (subtotal - item_discounts + tax)
+    // Apply extra discount on (subtotal - item_discounts + item-tax)
     const taxableBase = subTotal - discount;
     const afterTax = taxableBase + tax;
-
     return quotationData.discountType === "percent"
       ? parseFloat(((afterTax * amount) / 100).toFixed(2))
       : amount;
@@ -366,19 +369,23 @@ const QuotationForm = ({
     handleQuotationChange("roundOff", roundOffValue);
   }, [subTotal, shipping, tax, discount, extraDiscount, handleQuotationChange]);
   const finalRoundedTotal = useMemo(() => {
-    const base = subTotal + shipping + tax - discount - extraDiscount;
+    const base =
+      (subTotal || 0) +
+      (shipping || 0) +
+      (tax || 0) -
+      (discount || 0) -
+      (extraDiscount || 0) +
+      (gstAmount || 0);
+    if (isNaN(base)) return 0;
+
     const totalInPaise = Math.round(base * 100);
     const rupees = Math.floor(totalInPaise / 100);
     const lastDigit = rupees % 10;
 
-    if (lastDigit <= 4) {
-      return rupees - lastDigit;
-    } else if (lastDigit >= 6) {
-      return rupees + (10 - lastDigit);
-    } else {
-      return rupees;
-    }
-  }, [subTotal, shipping, tax, discount, extraDiscount]);
+    if (lastDigit <= 4) return rupees - lastDigit;
+    if (lastDigit >= 6) return rupees + (10 - lastDigit);
+    return rupees;
+  }, [subTotal, shipping, tax, discount, extraDiscount, gstAmount]);
   return (
     <Row gutter={[16, 16]} justify="center">
       <Col xs={24} sm={24} md={16} lg={16}>
@@ -648,6 +655,28 @@ const QuotationForm = ({
                   />
                 </DiscountContainer>
               </FormSection>
+              <FormSection>
+                <Text strong>
+                  GST (%){" "}
+                  <InfoCircleOutlined style={{ fontSize: 12, color: "#888" }} />
+                </Text>
+                <InputNumber
+                  value={gst}
+                  onChange={(v) => setGst(v ?? 0)}
+                  min={0}
+                  max={100}
+                  step={0.01}
+                  placeholder="e.g. 18"
+                  style={{ width: "100%" }}
+                  addonAfter="%"
+                />
+                <Text type="secondary" style={{ fontSize: 12, marginTop: 4 }}>
+                  + GST amount:{" "}
+                  <strong>
+                    ₹{(isNaN(gstAmount) ? 0 : Number(gstAmount)).toFixed(2)}
+                  </strong>
+                </Text>
+              </FormSection>
               {/* Auto Round Off (Disabled Input) */}
               <FormSection>
                 <Text strong>Round Off (Auto)</Text>
@@ -682,6 +711,8 @@ const QuotationForm = ({
             tax={tax}
             shipping={shipping}
             roundOff={quotationData.roundOff || 0}
+            gst={gst}
+            gstAmount={gstAmount}
             finalTotal={finalRoundedTotal}
             items={cartItems.map((item) => ({
               productId: item.productId,
@@ -703,7 +734,7 @@ const QuotationForm = ({
                 toast.error("Follow-up dates cannot be after due date.");
                 return;
               }
-              handleCreateDocument();
+              handleCreateDocument({ gst, gstAmount });
             }}
             disabled={
               cartItems.length === 0 ||
@@ -779,6 +810,9 @@ QuotationForm.propTypes = {
   setUseBillingAddress: PropTypes.func.isRequired,
   itemDiscounts: PropTypes.object.isRequired,
   itemTaxes: PropTypes.object.isRequired,
+  gst: PropTypes.number,
+  gstAmount: PropTypes.number,
+  setGst: PropTypes.func,
 };
 
 export default React.memo(QuotationForm);

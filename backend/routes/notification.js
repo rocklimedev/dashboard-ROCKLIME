@@ -6,6 +6,7 @@ const {
   markAsRead,
   sendNotification,
   deleteOldNotifications,
+  clearAllNotifications, // <-- NEW IMPORT
 } = require("../controller/notificationController");
 const { auth } = require("../middleware/auth");
 
@@ -77,4 +78,37 @@ router.delete("/old", auth, async (req, res) => {
   }
 });
 
+/* --------------------------------------------------------------
+   NEW ROUTE: Clear **all** notifications for the authenticated user
+   -------------------------------------------------------------- */
+router.delete("/clear", auth, async (req, res) => {
+  try {
+    const result = await clearAllNotifications(req.user.userId);
+
+    // Emit real-time event to the user whose notifications were cleared
+    if (req.io) {
+      req.io.to(req.user.userId).emit("notificationsCleared", result);
+    }
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error clearing user notifications:", error);
+    res.status(500).json({ message: error.message || "Server error" });
+  }
+});
+router.delete("/:id", auth, async (req, res) => {
+  try {
+    const result = await Notification.findByIdAndDelete(req.params.id);
+    if (!result) return res.status(404).json({ message: "Not found" });
+
+    if (req.io) {
+      req.io
+        .to(req.user.userId)
+        .emit("notificationDeleted", { id: req.params.id });
+    }
+    res.json({ message: "Deleted", id: req.params.id });
+  } catch (e) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
 module.exports = router;

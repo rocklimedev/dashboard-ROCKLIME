@@ -4,6 +4,11 @@ const Roles = require("../models/roles");
 const bcrypt = require("bcrypt");
 const Address = require("../models/address");
 const ROLES = require("../config/constant").ROLES;
+const path = require("path");
+const ftp = require("basic-ftp");
+const sharp = require("sharp"); // npm i sharp
+const { v4: uuidv4 } = require("uuid");
+const { Readable } = require("stream");
 // Helper function to exclude sensitive fields
 const excludeSensitiveFields = {
   attributes: {
@@ -11,6 +16,9 @@ const excludeSensitiveFields = {
   },
 };
 
+function bufferToStream(buffer) {
+  return Readable.from(buffer);
+}
 // Middleware to check if user is authorized (e.g., Admin or SuperAdmin)
 const isAdminOrSuperAdmin = async (req, res, next) => {
   const user = await User.findByPk(req.user.userId, excludeSensitiveFields);
@@ -548,5 +556,94 @@ exports.updateStatus = async (req, res) => {
         err.message || "Unknown server error"
       }`,
     });
+  }
+};
+/**
+ * POST /users/photo
+ * Body: multipart/form-data → field "photo"
+ * Auth: logged-in user (req.user.userId)
+ */
+exports.uploadUserPhoto = async (req, res) => {
+  try {
+    // 1. Validate file
+    if (!req.file) {
+      return res.status(400).json({ message: "No photo uploaded" });
+    }
+
+    const allowedMime = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!allowedMime.includes(req.file.mimetype)) {
+      return res
+        .status(400)
+        .json({ message: "Only JPEG, PNG or WEBP images are allowed" });
+    }
+
+    // 2. Generate unique names
+    const ext = path.extname(req.file.originalname);
+    const uid = uuidv4();
+    const originalName = `${uid}${ext}`;
+    const thumbName = `${uid}_thumb${ext}`;
+
+    // 3. Prepare FTP client
+    const client = new ftp.Client();
+    client.ftp.verbose = process.env.NODE_ENV === "development";
+
+    let originalUrl, thumbUrl;
+    try {
+      await client.access({
+        host: process.env.FTP_HOST,
+        port: process.env.FTP_PORT || 21,
+        user: process.env.FTP_USER,
+        password: process.env.FTP_PASSWORD,
+        secure: process.env.FTP_SECURE === "true",
+      });
+
+      const uploadDir = "/user_photos";
+      await client.ensureDir(uploadDir);
+      await client.cd(uploadDir);
+
+      // ---- Upload original ----
+      const originalStream = bufferToStream(req.file.buffer);
+      await client.uploadFrom(originalStream, originalName);
+      originalUrl = `${process.env.FTP_BASE_URL}${uploadDir}/${originalName}`;
+
+      // ---- Create & upload thumbnail (200×200) ----
+      const thumbBuffer = await sharp(req.file.buffer)
+        .resize(200, 200, { fit: "cover", withoutEnlargement: true })
+        .toBuffer();
+
+      const thumbStream = bufferToStream(thumbBuffer);
+      await client.uploadFrom(thumbStream, thumbName);
+      thumbUrl = `${process.env.FTP_BASE_URL}${uploadDir}/${thumbName}`;
+    } catch (ftpErr) {
+      return res
+        .status(500)
+        .json({ message: "FTP upload failed", error: ftpErr.message });
+    } finally {
+      client.close();
+    }
+
+    // 4. Update user record
+    const user = await User.findByPk(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.photo_original = originalUrl;
+    user.photo_thumbnail = thumbUrl;
+    await user.save();
+
+    // 5. Return updated user (no password, timestamps…)
+    const safeUser = await User.findByPk(user.userId, excludeSensitiveFields);
+
+    return res.status(200).json({
+      message: "Photo uploaded successfully",
+      photo_original: originalUrl,
+      photo_thumbnail: thumbUrl,
+      user: safeUser,
+    });
+  } catch (err) {
+    return res
+      .status(500)
+      .json({ message: "Server error", error: err.message });
   }
 };

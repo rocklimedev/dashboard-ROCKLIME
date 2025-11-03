@@ -2,7 +2,8 @@ const express = require("express");
 const addressController = require("../controller/addressController");
 const checkPermission = require("../middleware/permission");
 const router = express.Router();
-
+router.get("/all/users", addressController.getAllUserAddresses);
+router.get("/all/customers", addressController.getAllCustomerAddresses);
 // Admin and Accounts can create an address
 router.post(
   "/",

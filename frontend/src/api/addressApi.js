@@ -31,6 +31,24 @@ export const addressApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Addresses"],
     }),
+    getAllUserAddresses: builder.query({
+      query: () => ({
+        url: "/address/all/users",
+        method: "GET",
+      }),
+      providesTags: ["Addresses"],
+    }),
+
+    // ─────────────────────────────────────────────
+    // GET ALL CUSTOMER ADDRESSES
+    // ─────────────────────────────────────────────
+    getAllCustomerAddresses: builder.query({
+      query: () => ({
+        url: "/address/all/customers",
+        method: "GET",
+      }),
+      providesTags: ["Addresses"],
+    }),
     deleteAddress: builder.mutation({
       query: (addressId) => ({
         url: `/address/${addressId}`,
@@ -46,5 +64,7 @@ export const {
   useGetAllAddressesQuery,
   useGetAddressByIdQuery,
   useUpdateAddressMutation,
+  useGetAllUserAddressesQuery,
+  useGetAllCustomerAddressesQuery,
   useDeleteAddressMutation,
 } = addressApi;

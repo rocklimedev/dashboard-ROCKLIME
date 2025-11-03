@@ -71,8 +71,16 @@ const setupDB = async () => {
     User.belongsTo(Role, { foreignKey: "roleId", as: "role" });
 
     // User ↔ Address (1:M)
-    Address.belongsTo(User, { foreignKey: "userId", as: "users" });
-    User.hasMany(Address, { foreignKey: "userId", as: "addresses" });
+    User.hasMany(Address, {
+      foreignKey: "userId",
+      as: "addresses", // plural for user → many addresses
+    });
+
+    Address.belongsTo(User, {
+      foreignKey: "userId",
+      as: "user", // singular for address → one user
+    });
+
     User.belongsToMany(Team, {
       through: TeamMember,
       foreignKey: "userId",
@@ -97,6 +105,15 @@ const setupDB = async () => {
     // Created For
     Customer.hasMany(Order, { foreignKey: "createdFor", as: "customerOrders" });
     Order.belongsTo(Customer, { foreignKey: "createdFor", as: "customer" });
+    Customer.hasMany(Address, {
+      foreignKey: "customerId",
+      as: "addresses",
+    });
+
+    Address.belongsTo(Customer, {
+      foreignKey: "customerId",
+      as: "customer",
+    });
 
     // Shipping Address
     Order.belongsTo(Address, { foreignKey: "shipTo", as: "shippingAddress" });

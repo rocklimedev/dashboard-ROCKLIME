@@ -159,7 +159,7 @@ const NewCart = ({ onConvertToOrder }) => {
   const [productSearch, setProductSearch] = useState("");
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [shipping, setShipping] = useState(40);
-
+  const [gst, setGst] = useState(18);
   // ==================== QUERIES ====================
   const {
     data: cartData,
@@ -348,8 +348,15 @@ const NewCart = ({ onConvertToOrder }) => {
     tax,
   ]);
   const roundOff = parseFloat(quotationData.roundOff) || 0;
-  const totalAmount =
-    subTotal + shipping + tax - totalDiscount - extraDiscount + roundOff;
+
+  // ----- GST calculation (after shipping & extra discount) -----
+  const amountForGst =
+    subTotal + shipping + tax - totalDiscount - extraDiscount;
+  const gstAmount =
+    isNaN(amountForGst) || isNaN(gst)
+      ? 0
+      : parseFloat(((amountForGst * gst) / 100).toFixed(2));
+  const totalAmount = amountForGst + gstAmount + roundOff;
   const purchaseOrderTotal = useMemo(
     () =>
       purchaseOrderData.items
@@ -772,6 +779,9 @@ const NewCart = ({ onConvertToOrder }) => {
         // GLOBAL EXTRA DISCOUNT (on top of per-item)
         extraDiscount: parseFloat(quotationData.discountAmount) || 0,
         extraDiscountType: quotationData.discountType,
+        // Inside quotationPayload
+        gst: gst, // ← Use the state value (18%)
+        gstAmount: gstAmount, // ← Use calculated GST amount
       };
 
       try {
@@ -1209,6 +1219,9 @@ const NewCart = ({ onConvertToOrder }) => {
                 setDocumentType={setDocumentType}
                 cartItems={cartItems}
                 totalAmount={totalAmount}
+                gst={gst}
+                gstAmount={gstAmount}
+                setGst={setGst}
                 shipping={shipping}
                 tax={tax}
                 discount={totalDiscount}

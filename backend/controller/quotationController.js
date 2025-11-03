@@ -14,24 +14,21 @@ const calculateTotals = (
   products,
   extraDiscount = 0,
   extraDiscountType = null,
-  shippingAmount = 0
+  shippingAmount = 0,
+  gst = 0
 ) => {
-  // Step 1: Subtotal
   const subTotal = products.reduce(
     (sum, p) => sum + p.sellingPrice * p.quantity,
     0
   );
 
-  // Step 2: Total per-item discount
   const totalItemDiscount = products.reduce(
     (sum, p) => sum + (p.discount || 0),
     0
   );
 
-  // Step 3: Taxable amount = subtotal - item discounts
   const taxableAmount = subTotal - totalItemDiscount;
 
-  // Step 4: Total tax
   const totalTax = products.reduce((sum, p) => {
     const itemSub = p.sellingPrice * p.quantity;
     const itemDisc = p.discount || 0;
@@ -39,10 +36,8 @@ const calculateTotals = (
     return sum + (itemTaxable * (p.tax || 0)) / 100;
   }, 0);
 
-  // Step 5: Amount after tax
   const amountAfterTax = taxableAmount + totalTax;
 
-  // Step 6: Apply extra discount ON amount after tax (common practice)
   let extraDiscountAmount = 0;
   if (extraDiscount > 0 && extraDiscountType) {
     extraDiscountAmount =
@@ -51,11 +46,12 @@ const calculateTotals = (
         : extraDiscount;
   }
 
-  // Step 7: Final amount before shipping & round-off
   const baseFinal = amountAfterTax - extraDiscountAmount;
+  const withShipping = baseFinal + (shippingAmount || 0);
 
-  // Step 8: Add shipping
-  const finalWithShipping = baseFinal + (shippingAmount || 0);
+  // Apply GST on final (after discounts + shipping)
+  const gstAmount = gst > 0 ? (withShipping * gst) / 100 : 0;
+  const finalAmount = withShipping + gstAmount;
 
   return {
     subTotal: parseFloat(subTotal.toFixed(2)),
@@ -64,11 +60,12 @@ const calculateTotals = (
     totalTax: parseFloat(totalTax.toFixed(2)),
     amountAfterTax: parseFloat(amountAfterTax.toFixed(2)),
     extraDiscountAmount: parseFloat(extraDiscountAmount.toFixed(2)),
-    baseFinal: parseFloat(baseFinal.toFixed(2)),
     shippingAmount: parseFloat((shippingAmount || 0).toFixed(2)),
-    finalAmount: parseFloat(finalWithShipping.toFixed(2)), // before round-off
+    gstAmount: parseFloat(gstAmount.toFixed(2)),
+    finalAmount: parseFloat(finalAmount.toFixed(2)), // before round-off
   };
 };
+
 // ---------------------------------------------------------------------
 
 // CREATE QUOTATION
@@ -82,6 +79,7 @@ exports.createQuotation = async (req, res) => {
       extraDiscountType = null,
       followupDates,
       shippingAmount = 0,
+      gst = 0,
       ...quotationData
     } = req.body;
 
@@ -97,11 +95,13 @@ exports.createQuotation = async (req, res) => {
       totalItemDiscount,
       totalTax,
       extraDiscountAmount,
+      gstAmount,
       finalAmount, // this is now AFTER shipping, BEFORE round-off
     } = calculateTotals(
       products,
       extraDiscount,
       extraDiscountType,
+      gst,
       shippingAmount
     );
 
@@ -121,6 +121,8 @@ exports.createQuotation = async (req, res) => {
         extraDiscountType: extraDiscountType,
         discountAmount: extraDiscountAmount > 0 ? extraDiscountAmount : null,
         shippingAmount: shippingAmount || null,
+        gst: gst || null,
+        gstAmount: gstAmount || null, // ✅ ADD THIS LINE
         finalAmount: finalAmountWithRound,
         followupDates: followupDates ? JSON.stringify(followupDates) : null,
       },
@@ -186,6 +188,7 @@ exports.updateQuotation = async (req, res) => {
       extraDiscount = 0,
       extraDiscountType = null,
       shippingAmount = 0,
+      gst = 0,
       ...quotationData
     } = req.body;
 
@@ -227,11 +230,12 @@ exports.updateQuotation = async (req, res) => {
       total: Number(item.total) || 0,
     }));
 
-    const { extraDiscountAmount, finalAmount } = calculateTotals(
+    const { extraDiscountAmount, finalAmount, gstAmount } = calculateTotals(
       products,
       extraDiscount,
       extraDiscountType,
-      shippingAmount
+      shippingAmount,
+      gst
     );
 
     const roundOff = quotationData.roundOff
@@ -249,6 +253,8 @@ exports.updateQuotation = async (req, res) => {
       extraDiscountType,
       discountAmount: extraDiscountAmount > 0 ? extraDiscountAmount : null,
       shippingAmount: shippingAmount || null,
+      gst: gst || null,
+      gstAmount: gstAmount || null, // ✅ ADD THIS LINE
       finalAmount: finalAmountWithRound,
     };
     if (followupDates !== undefined)
@@ -311,27 +317,33 @@ exports.exportQuotation = async (req, res) => {
       quotationItems = items ? items.items : [];
     }
 
-    const { subTotal, totalItemDiscount, totalTax, extraDiscountAmount } =
-      calculateTotals(
-        quotationItems.map((i) => ({
-          sellingPrice: i.rate || i.mrp || 0,
-          quantity: i.quantity || i.qty || 1,
-          discount: i.discount || 0,
-          tax: i.tax || 0,
-        })),
-        quotation.extraDiscount || 0,
-        quotation.extraDiscountType,
-        quotation.shippingAmount || 0
-      );
+    const {
+      subTotal,
+      totalItemDiscount,
+      totalTax,
+      extraDiscountAmount,
+      gstAmount,
+    } = calculateTotals(
+      quotationItems.map((i) => ({
+        sellingPrice: i.rate || i.mrp || 0,
+        quantity: i.quantity || i.qty || 1,
+        discount: i.discount || 0,
+        tax: i.tax || 0,
+      })),
+      quotation.extraDiscount || 0,
+      quotation.extraDiscountType,
+      quotation.shippingAmount || 0,
+      quotation.gst || 0
+    );
 
     const finalTotal =
       subTotal +
       totalTax +
-      (quotation.shippingAmount || 0) -
+      (quotation.shippingAmount || 0) +
+      gstAmount -
       totalItemDiscount -
       extraDiscountAmount +
       (quotation.roundOff || 0);
-
     const sheetData = [
       ["Estimate / Quotation", "", "", "", "GROHE / AMERICAN STANDARD"],
       [""],
@@ -429,6 +441,7 @@ exports.exportQuotation = async (req, res) => {
       "",
       (quotation.shippingAmount || 0).toFixed(2),
     ]);
+    sheetData.push(["", "", "", "", "", "", "GST", "", gstAmount.toFixed(2)]);
     sheetData.push([
       "",
       "",
@@ -512,6 +525,7 @@ exports.cloneQuotation = async (req, res) => {
       extraDiscountType: original.extraDiscountType,
       discountAmount: original.discountAmount,
       shippingAmount: original.shippingAmount,
+      gst: original.gst,
       products: original.products,
       roundOff: original.roundOff,
       finalAmount: original.finalAmount,

@@ -1,157 +1,149 @@
-import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import {
-  useGetProfileQuery,
-  useUpdateProfileMutation,
-} from "../../api/userApi";
+import React, { useState, useEffect, useMemo } from "react";
+import { toast } from "react-toastify";
+import { useGetProfileQuery } from "../../api/userApi";
 import { useGetRolesQuery } from "../../api/rolesApi";
-import { useForgotPasswordMutation } from "../../api/authApi";
 import { useGetAllQuotationsQuery } from "../../api/quotationApi";
 import { useGetAllTeamsQuery } from "../../api/teamApi";
 import { useGetAllInvoicesQuery } from "../../api/invoiceApi";
 import { useGetAllOrdersQuery } from "../../api/orderApi";
 import { useGetPurchaseOrdersQuery } from "../../api/poApi";
 import {
-  useGetAllAddressesQuery,
-  useCreateAddressMutation,
-  useUpdateAddressMutation,
+  useGetAllUserAddressesQuery,
   useDeleteAddressMutation,
 } from "../../api/addressApi";
 import {
   useGetAllSignaturesQuery,
-  useCreateSignatureMutation,
-  useUpdateSignatureMutation,
   useDeleteSignatureMutation,
 } from "../../api/signatureApi";
 import moment from "moment";
-import { toast } from "react-toastify";
-import ProfileForm from "./ProfileForm";
 import DataTable from "./DataTable";
 import Avatar from "react-avatar";
+import AddAddress from "../Address/AddAddressModal";
+import AddSignature from "../Signature/AddSignature";
 import "./profile.css";
 import {
-  LeftOutlined,
   TeamOutlined,
   CalendarOutlined,
   EnvironmentOutlined,
 } from "@ant-design/icons";
-import { Button, Modal, Input, Form as AntdForm, Switch, Image } from "antd";
+import { Button, Image } from "antd";
+import { useNavigate } from "react-router-dom";
 
 const Profile = () => {
-  // Queries
+  /* ──────────────────────── QUERIES ──────────────────────── */
   const {
     data: profile,
     isLoading: isProfileLoading,
     error: profileError,
     refetch: refetchProfile,
   } = useGetProfileQuery();
+
   const {
     data: rolesData,
     isLoading: isRolesLoading,
     error: rolesError,
   } = useGetRolesQuery();
-  const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
-  const [forgotPassword, { isLoading: isResetting }] =
-    useForgotPasswordMutation();
-
+  const navigate = useNavigate();
   const userId = profile?.user?.userId;
 
-  const {
-    data: quotationsData,
-    isLoading: isQuotationsLoading,
-    error: quotationsError,
-  } = useGetAllQuotationsQuery({ userId }, { skip: !userId });
-  const {
-    data: invoicesData,
-    isLoading: isInvoicesLoading,
-    error: invoicesError,
-  } = useGetAllInvoicesQuery({ userId }, { skip: !userId });
-  const {
-    data: ordersData,
-    isLoading: isOrdersLoading,
-    error: ordersError,
-  } = useGetAllOrdersQuery({ userId }, { skip: !userId });
-  const {
-    data: teamsData,
-    isLoading: isTeamsLoading,
-    error: teamsError,
-  } = useGetAllTeamsQuery({ userId }, { skip: !userId });
-  const {
-    data: purchaseOrdersData,
-    isLoading: isPurchaseOrdersLoading,
-    error: purchaseOrdersError,
-  } = useGetPurchaseOrdersQuery(
-    { userId, page: 1, limit: 10 },
+  const { data: quotationsData, isLoading: isQuotationsLoading } =
+    useGetAllQuotationsQuery({ userId }, { skip: !userId });
+
+  const { data: teamsData, isLoading: isTeamsLoading } = useGetAllTeamsQuery(
+    { userId },
     { skip: !userId }
   );
+
+  const { data: ordersData, isLoading: isOrdersLoading } = useGetAllOrdersQuery(
+    { userId },
+    { skip: !userId }
+  );
+
+  const { data: purchaseOrdersData, isLoading: isPurchaseOrdersLoading } =
+    useGetPurchaseOrdersQuery(
+      { userId, page: 1, limit: 10 },
+      { skip: !userId }
+    );
+
   const {
-    data: addressesData,
+    data: usersWithAddresses = [],
     isLoading: isAddressesLoading,
     error: addressesError,
     refetch: refetchAddresses,
-  } = useGetAllAddressesQuery({}, { skip: !userId });
-  const [createAddress, { isLoading: isCreatingAddress }] =
-    useCreateAddressMutation();
-  const [updateAddress, { isLoading: isUpdatingAddress }] =
-    useUpdateAddressMutation();
-  const [deleteAddress, { isLoading: isDeletingAddress }] =
-    useDeleteAddressMutation();
+  } = useGetAllUserAddressesQuery(undefined, { skip: !userId });
+
+  const myAddressesRaw = useMemo(() => {
+    if (!Array.isArray(usersWithAddresses) || !userId) return [];
+    const currentUser = usersWithAddresses.find((u) => u.userId === userId);
+    return currentUser?.addresses || [];
+  }, [usersWithAddresses, userId]);
+
   const {
     data: signaturesData,
     isLoading: isSignaturesLoading,
     error: signaturesError,
     refetch: refetchSignatures,
   } = useGetAllSignaturesQuery({}, { skip: !userId });
-  const [createSignature, { isLoading: isCreatingSignature }] =
-    useCreateSignatureMutation();
-  const [updateSignature, { isLoading: isUpdatingSignature }] =
-    useUpdateSignatureMutation();
+
+  const [deleteAddress, { isLoading: isDeletingAddress }] =
+    useDeleteAddressMutation();
   const [deleteSignature, { isLoading: isDeletingSignature }] =
     useDeleteSignatureMutation();
 
-  // State management
-  const [isEditing, setIsEditing] = useState(false);
-  const [form] = AntdForm.useForm();
-  const [avatarUrl, setAvatarUrl] = useState(null);
+  /* ──────────────────────── STATE ──────────────────────── */
   const [activeTab, setActiveTab] = useState("profile");
-  const [isAddressModalVisible, setIsAddressModalVisible] = useState(false);
-  const [editingAddress, setEditingAddress] = useState(null);
-  const [addressForm] = AntdForm.useForm();
-  const [isSignatureModalVisible, setIsSignatureModalVisible] = useState(false);
-  const [editingSignature, setEditingSignature] = useState(null);
-  const [signatureForm] = AntdForm.useForm();
 
-  // Check if user is SUPER_ADMIN
+  // Modal states
+  const [addressModalOpen, setAddressModalOpen] = useState(false);
+  const [editingAddress, setEditingAddress] = useState(null);
+
+  const [signatureModalOpen, setSignatureModalOpen] = useState(false);
+  const [editingSignature, setEditingSignature] = useState(null);
+
   const isSuperAdmin = profile?.user?.roles?.includes("SUPER_ADMIN");
 
-  // Format roles
-  const roles = Array.isArray(profile?.user?.roles)
-    ? profile?.user?.roles.join(", ")
-    : profile?.user?.roles || "User";
+  /* ──────────────────────── HELPERS ──────────────────────── */
+  const formatAddress = (addr) => {
+    if (!addr) return "N/A";
+    const parts = [
+      addr.street,
+      addr.city,
+      addr.state,
+      addr.country,
+      addr.postalCode,
+    ].filter(Boolean);
+    return parts.length ? parts.join(", ") : "N/A";
+  };
 
-  // Handle address display
-  const address =
-    addressesData?.length > 0
-      ? `${addressesData[0].street || ""}, ${addressesData[0].city || ""}, ${
-          addressesData[0].state || ""
-        }, ${addressesData[0].country || ""} ${
-          addressesData[0].postalCode || ""
-        }`.trim()
-      : "N/A";
+  const PRIORITY = { PRIMARY: 3, BILLING: 2, ADDITIONAL: 1 };
+  const getPrimaryAddress = (list = []) => {
+    if (!Array.isArray(list) || list.length === 0) return null;
+    return list.reduce((best, cur) => {
+      const bestScore = best ? PRIORITY[best.status] ?? 0 : 0;
+      const curScore = PRIORITY[cur.status] ?? 0;
+      return curScore > bestScore ? cur : best;
+    }, null);
+  };
 
-  // Derive team from roles
+  const embedded = profile?.user?.address;
+  const primaryFromTable = getPrimaryAddress(myAddressesRaw);
+  const primaryAddressObj = embedded ?? primaryFromTable;
+  const primaryAddress = primaryAddressObj ? (
+    formatAddress(primaryAddressObj)
+  ) : (
+    <em style={{ color: "#999" }}>No address added</em>
+  );
+
   const team = profile?.user?.roles?.includes("SALES")
     ? "Sales Team"
     : profile?.user?.team || "N/A";
 
-  // Format time
   const formatTime = (time) => {
     if (!time) return "N/A";
     const date = new Date(`1970-01-01T${time}`);
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
-  // Format date
   const formatDate = (date) => {
     return date
       ? new Date(date).toLocaleDateString("en-US", {
@@ -162,7 +154,7 @@ const Profile = () => {
       : "N/A";
   };
 
-  // Initialize form
+  /* ──────────────────────── EFFECTS ──────────────────────── */
   useEffect(() => {
     const token =
       localStorage.getItem("token") || sessionStorage.getItem("token");
@@ -170,135 +162,29 @@ const Profile = () => {
       toast.error("No authentication token found. Redirecting to login...");
       window.location.href = "/login";
     }
+  }, []);
 
-    if (profile?.user) {
-      const user = profile.user;
-      form.setFieldsValue({
-        username: user.username || "",
-        name: user.name || "",
-        email: user.email || "",
-        mobileNumber: user.mobileNumber || "",
-        dateOfBirth: user.dateOfBirth ? moment(user.dateOfBirth) : null,
-        shiftFrom: user.shiftFrom ? moment(user.shiftFrom, "HH:mm:ss") : null,
-        shiftTo: user.shiftTo ? moment(user.shiftTo, "HH:mm:ss") : null,
-        bloodGroup: user.bloodGroup || null,
-        emergencyNumber: user.emergencyNumber || "",
-        street: user.address?.street || "",
-        city: user.address?.city || "",
-        state: user.address?.state || "",
-        postalCode: user.address?.postalCode || "",
-        country: user.address?.country || "",
-      });
-      setAvatarUrl(user.avatarUrl || null);
-    }
-  }, [profile, form]);
-
-  // Handlers
-  const handleAvatarUpload = ({ file }) => {
-    if (file.status === "done") {
-      setAvatarUrl(file.response.url);
-      localStorage.setItem(`avatar_${profile.user.userId}`, file.response.url);
-    } else if (file.status === "error") {
-      toast.error("Failed to upload avatar.");
-    }
-  };
-
-  const handleForgotPassword = async () => {
-    const email = form.getFieldValue("email");
-    if (!email) return toast.error("Email is required to reset password.");
-
-    try {
-      await forgotPassword({ email }).unwrap();
-      toast.success("Password reset link sent to your email!");
-    } catch (error) {
-      toast.error(
-        `Failed to send reset link: ${error.data?.error || "Unknown error"}`
-      );
-    }
-  };
-
-  const handleSave = async (values) => {
-    if (!profile?.user?.userId) return toast.error("User ID not found.");
-
-    const updatedData = {
-      username: values.username,
-      name: values.name,
-      email: values.email,
-      mobileNumber: values.mobileNumber,
-      dateOfBirth: values.dateOfBirth
-        ? moment(values.dateOfBirth).format("YYYY-MM-DD")
-        : null,
-      shiftFrom: values.shiftFrom
-        ? moment(values.shiftFrom).format("HH:mm:ss")
-        : null,
-      shiftTo: values.shiftTo
-        ? moment(values.shiftTo).format("HH:mm:ss")
-        : null,
-      bloodGroup: values.bloodGroup || null,
-      emergencyNumber: values.emergencyNumber || null,
-      address: {
-        street: values.street || "",
-        city: values.city || "",
-        state: values.state || "",
-        postalCode: values.postalCode || "",
-        country: values.country || "",
-      },
-      avatarUrl: avatarUrl || null,
-    };
-
-    try {
-      await updateProfile(updatedData).unwrap();
-      setIsEditing(false);
-    } catch (error) {
-      toast.error(
-        `Failed to update profile: ${error.data?.message || "Unknown error"}`
-      );
-    }
-  };
-
-  // Address Modal Handlers
-  const showAddressModal = (address = null) => {
+  /* ──────── ADDRESS MODAL HANDLERS ──────── */
+  const openAddressModal = (address = null) => {
     setEditingAddress(address);
-    if (address) {
-      addressForm.setFieldsValue({
-        street: address.street || "",
-        city: address.city || "",
-        state: address.state || "",
-        postalCode: address.postalCode || "",
-        country: address.country || "",
-      });
-    } else {
-      addressForm.resetFields();
-    }
-    setIsAddressModalVisible(true);
+    setAddressModalOpen(true);
   };
 
-  const handleAddressSubmit = async (values) => {
-    try {
-      if (editingAddress) {
-        await updateAddress({
-          addressId: editingAddress.addressId,
-          updatedData: { ...values, userId },
-        }).unwrap();
-      } else {
-        await createAddress({ ...values, userId }).unwrap();
-      }
-      setIsAddressModalVisible(false);
-      addressForm.resetFields();
-      refetchAddresses();
-    } catch (error) {
-      toast.error(
-        `Failed to ${editingAddress ? "update" : "add"} address: ${
-          error.data?.message || "Unknown error"
-        }`
-      );
-    }
+  const closeAddressModal = () => {
+    setAddressModalOpen(false);
+    setEditingAddress(null);
+  };
+
+  const onAddressSaved = () => {
+    toast.success(editingAddress ? "Address updated!" : "Address added!");
+    refetchAddresses();
+    closeAddressModal();
   };
 
   const handleDeleteAddress = async (addressId) => {
     try {
       await deleteAddress(addressId).unwrap();
-
+      toast.success("Address deleted");
       refetchAddresses();
     } catch (error) {
       toast.error(
@@ -307,47 +193,27 @@ const Profile = () => {
     }
   };
 
-  // Signature Modal Handlers
-  const showSignatureModal = (signature = null) => {
+  /* ──────── SIGNATURE MODAL HANDLERS ──────── */
+  const openSignatureModal = (signature = null) => {
     setEditingSignature(signature);
-    if (signature) {
-      signatureForm.setFieldsValue({
-        signature_name: signature.signature_name || "",
-        signature_image: signature.signature_image || "",
-        mark_as_default: signature.mark_as_default || false,
-      });
-    } else {
-      signatureForm.resetFields();
-    }
-    setIsSignatureModalVisible(true);
+    setSignatureModalOpen(true);
   };
 
-  const handleSignatureSubmit = async (values) => {
-    try {
-      if (editingSignature) {
-        await updateSignature({
-          id: editingSignature.signatureId,
-          body: { ...values, userId },
-        }).unwrap();
-      } else {
-        await createSignature({ ...values, userId }).unwrap();
-      }
-      setIsSignatureModalVisible(false);
-      signatureForm.resetFields();
-      refetchSignatures();
-    } catch (error) {
-      toast.error(
-        `Failed to ${editingSignature ? "update" : "add"} signature: ${
-          error.data?.message || "Unknown error"
-        }`
-      );
-    }
+  const closeSignatureModal = () => {
+    setSignatureModalOpen(false);
+    setEditingSignature(null);
+  };
+
+  const onSignatureSuccess = () => {
+    toast.success(editingSignature ? "Signature updated!" : "Signature added!");
+    refetchSignatures();
+    closeSignatureModal();
   };
 
   const handleDeleteSignature = async (signatureId) => {
     try {
       await deleteSignature(signatureId).unwrap();
-
+      toast.success("Signature deleted");
       refetchSignatures();
     } catch (error) {
       toast.error(
@@ -356,225 +222,26 @@ const Profile = () => {
     }
   };
 
-  // Table columns
-  const quotationColumns = [
-    {
-      title: "Document Title",
-      dataIndex: "document_title",
-      key: "document_title",
-      render: (text) => text || "N/A",
-    },
-    {
-      title: "Quotation Date",
-      dataIndex: "quotation_date",
-      key: "quotation_date",
-      render: (text) => formatDate(text),
-    },
-    {
-      title: "Due Date",
-      dataIndex: "due_date",
-      key: "due_date",
-      render: (text) => formatDate(text),
-    },
-    {
-      title: "Reference Number",
-      dataIndex: "reference_number",
-      key: "reference_number",
-      render: (text) => text || "N/A",
-    },
-    {
-      title: "Final Amount",
-      dataIndex: "finalAmount",
-      key: "finalAmount",
-      render: (text) => `₹${parseFloat(text).toFixed(2)}` || "N/A",
-    },
-    {
-      title: "Signature Name",
-      dataIndex: "signature_name",
-      key: "signature_name",
-      render: (text) => text || "N/A",
-    },
-    {
-      title: "Created At",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      render: (text) => formatDate(text),
-    },
-  ];
-
-  const teamColumns = [
-    {
-      title: "Team Name",
-      dataIndex: "teamName",
-      key: "teamName",
-      render: (text) => text || "N/A",
-    },
-    {
-      title: "Admin Name",
-      dataIndex: "adminName",
-      key: "adminName",
-      render: (text) => text || "N/A",
-    },
-    {
-      title: "Members",
-      dataIndex: "teammembers",
-      key: "teammembers",
-      render: (members) =>
-        members?.map((member) => member.userName).join(", ") || "N/A",
-    },
-    {
-      title: "Created At",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      render: (text) => formatDate(text),
-    },
-    {
-      title: "Updated At",
-      dataIndex: "updatedAt",
-      key: "updatedAt",
-      render: (text) => formatDate(text),
-    },
-  ];
-
-  const orderColumns = [
-    {
-      title: "Order Number",
-      dataIndex: "orderNo",
-      key: "orderNo",
-      render: (text) => text || "N/A",
-    },
-    {
-      title: "Customer",
-      dataIndex: "customers",
-      key: "customers",
-      render: (customers) => customers?.name || "N/A",
-    },
-    {
-      title: "Source",
-      dataIndex: "source",
-      key: "source",
-      render: (text) => text || "N/A",
-    },
-    {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-      render: (text) => text || "N/A",
-    },
-    {
-      title: "Due Date",
-      dataIndex: "dueDate",
-      key: "dueDate",
-      render: (text) => formatDate(text),
-    },
-    {
-      title: "Priority",
-      dataIndex: "priority",
-      key: "priority",
-      render: (text) => text || "N/A",
-    },
-    {
-      title: "Created By",
-      dataIndex: "users",
-      key: "users",
-      render: (users) => users?.name || "N/A",
-    },
-    {
-      title: "Created At",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      render: (text) => formatDate(text),
-    },
-  ];
-
-  const purchaseOrderColumns = [
-    {
-      title: "PO Number",
-      dataIndex: "poNumber",
-      key: "poNumber",
-      render: (text) => text || "N/A",
-    },
-    {
-      title: "Vendor",
-      dataIndex: "Vendor",
-      key: "Vendor",
-      render: (vendor) => vendor?.vendorName || "N/A",
-    },
-    {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-      render: (text) => text || "N/A",
-    },
-    {
-      title: "Order Date",
-      dataIndex: "orderDate",
-      key: "orderDate",
-      render: (text) => formatDate(text),
-    },
-    {
-      title: "Expected Delivery",
-      dataIndex: "expectDeliveryDate",
-      key: "expectDeliveryDate",
-      render: (text) => formatDate(text),
-    },
-    {
-      title: "Total Amount",
-      dataIndex: "totalAmount",
-      key: "totalAmount",
-      render: (text) => `₹${parseFloat(text).toFixed(2)}` || "N/A",
-    },
-    {
-      title: "Created At",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      render: (text) => formatDate(text),
-    },
-  ];
+  /* ──────────────────────── TABLE COLUMNS ──────────────────────── */
   const addressColumns = [
-    {
-      title: "Street",
-      dataIndex: "street",
-      key: "street",
-      render: (text) => text || "N/A",
-    },
-    {
-      title: "City",
-      dataIndex: "city",
-      key: "city",
-      render: (text) => text || "N/A",
-    },
-    {
-      title: "State",
-      dataIndex: "state",
-      key: "state",
-      render: (text) => text || "N/A",
-    },
-    {
-      title: "Postal Code",
-      dataIndex: "postalCode",
-      key: "postalCode",
-      render: (text) => text || "N/A",
-    },
-    {
-      title: "Country",
-      dataIndex: "country",
-      key: "country",
-      render: (text) => text || "N/A",
-    },
+    { title: "Street", dataIndex: "street", key: "street" },
+    { title: "City", dataIndex: "city", key: "city" },
+    { title: "State", dataIndex: "state", key: "state" },
+    { title: "Postal Code", dataIndex: "postalCode", key: "postalCode" },
+    { title: "Country", dataIndex: "country", key: "country" },
     {
       title: "Actions",
       key: "actions",
       render: (_, record) => (
         <div>
-          <Button type="link" onClick={() => showAddressModal(record)}>
+          <Button type="link" onClick={() => openAddressModal(record)}>
             Edit
           </Button>
           <Button
             type="link"
             danger
             onClick={() => handleDeleteAddress(record.addressId)}
-            disabled={isDeletingAddress}
+            loading={isDeletingAddress}
           >
             Delete
           </Button>
@@ -584,54 +251,38 @@ const Profile = () => {
   ];
 
   const signatureColumns = [
+    { title: "Name", dataIndex: "signature_name", key: "signature_name" },
     {
-      title: "Signature Name",
-      dataIndex: "signature_name",
-      key: "signature_name",
-      render: (text) => text || "N/A",
-    },
-    {
-      title: "Signature Image",
+      title: "Image",
       dataIndex: "signature_image",
       key: "signature_image",
-      render: (text) =>
-        text ? (
-          <Image src={text} alt="Signature" width={100} preview={true} />
-        ) : (
-          "N/A"
-        ),
+      render: (url) => (url ? <Image src={url} width={100} preview /> : "N/A"),
     },
     {
       title: "Default",
       dataIndex: "mark_as_default",
       key: "mark_as_default",
-      render: (value) => (value ? "Yes" : "No"),
+      render: (v) => (v ? "Yes" : "No"),
     },
     {
-      title: "Created At",
+      title: "Created",
       dataIndex: "createdAt",
       key: "createdAt",
-      render: (text) => formatDate(text),
-    },
-    {
-      title: "Updated At",
-      dataIndex: "updatedAt",
-      key: "updatedAt",
-      render: (text) => formatDate(text),
+      render: formatDate,
     },
     {
       title: "Actions",
       key: "actions",
       render: (_, record) => (
         <div>
-          <Button type="link" onClick={() => showSignatureModal(record)}>
+          <Button type="link" onClick={() => openSignatureModal(record)}>
             Edit
           </Button>
           <Button
             type="link"
             danger
             onClick={() => handleDeleteSignature(record.signatureId)}
-            disabled={isDeletingSignature}
+            loading={isDeletingSignature}
           >
             Delete
           </Button>
@@ -640,7 +291,39 @@ const Profile = () => {
     },
   ];
 
-  // Loading and error states
+  /* ──────────────────────── FILTERED DATA ──────────────────────── */
+  const myQuotations = useMemo(
+    () => quotationsData?.filter((q) => q.createdBy === userId) ?? [],
+    [quotationsData, userId]
+  );
+  const myTeams = useMemo(
+    () =>
+      teamsData?.teams?.filter(
+        (t) =>
+          t.adminId === userId ||
+          t.teammembers?.some((m) => m.userId === userId)
+      ) ?? [],
+    [teamsData, userId]
+  );
+  const myOrders = useMemo(
+    () =>
+      ordersData?.orders?.filter(
+        (o) =>
+          o.createdBy === userId ||
+          o.assignedUserId === userId ||
+          o.secondaryUserId === userId
+      ) ?? [],
+    [ordersData, userId]
+  );
+  const myPurchaseOrders = useMemo(
+    () =>
+      purchaseOrdersData?.purchaseOrders?.filter(
+        (po) => po.createdBy === userId
+      ) ?? [],
+    [purchaseOrdersData, userId]
+  );
+
+  /* ──────────────────────── RENDER ──────────────────────── */
   if (
     isProfileLoading ||
     isRolesLoading ||
@@ -649,11 +332,9 @@ const Profile = () => {
   ) {
     return (
       <div className="page-wrapper">
-        <div className="content">
-          <div className="text-center">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </div>
+        <div className="content text-center py-5">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
           </div>
         </div>
       </div>
@@ -664,14 +345,10 @@ const Profile = () => {
     return (
       <div className="page-wrapper">
         <div className="content">
-          <div className="alert alert-danger" role="alert">
-            Error loading data:{" "}
-            {profileError?.data?.message ||
-              addressesError?.data?.message ||
-              signaturesError?.data?.message ||
-              "Unknown error"}
+          <div className="alert alert-danger">
+            Error loading data.{" "}
             <button
-              className="btn btn-link"
+              className="btn btn-link p-0"
               onClick={() => {
                 refetchProfile();
                 refetchAddresses();
@@ -686,36 +363,14 @@ const Profile = () => {
     );
   }
 
-  if (rolesError) {
-    return (
-      <div className="page-wrapper">
-        <div className="content">
-          <div className="alert alert-danger" role="alert">
-            Error loading roles: {rolesError?.message || "Unknown error"}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!profile?.user || !userId) {
-    return (
-      <div className="page-wrapper">
-        <div className="content">
-          <div className="alert alert-info">
-            No user profile data available.
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   const user = profile.user;
+  const avatarUrl = user.avatarUrl;
 
   return (
     <div className="page-wrapper">
       <div className="content">
         <div className="row">
+          {/* ────── LEFT SIDEBAR ────── */}
           <div className="col-xl-4 theiaStickySidebar">
             <div className="card rounded-0 border-0">
               <div className="card-header rounded-0 bg-primary d-flex align-items-center">
@@ -724,451 +379,347 @@ const Profile = () => {
                     src={avatarUrl || undefined}
                     name={user.name || "User"}
                     size="60"
-                    round={true}
+                    round
                     textSizeRatio={2.5}
-                    alt="User Avatar"
                   />
                 </span>
                 <div className="me-3">
                   <h6 className="text-white mb-1">{user.name || "N/A"}</h6>
                   <span className="badge bg-purple-transparent text-purple">
-                    {roles}
+                    {Array.isArray(user.roles)
+                      ? user.roles.join(", ")
+                      : user.roles || "User"}
                   </span>
                 </div>
                 <div>
-                  <button
-                    className="btn btn-white"
-                    onClick={() => setIsEditing(true)}
-                    disabled={isEditing}
-                  >
-                    Edit Profile
-                  </button>
+                  <button className="btn btn-white">Edit Profile</button>
                 </div>
               </div>
+
               <div className="card-body">
                 <div className="d-flex align-items-center justify-content-between mb-2">
                   <span className="d-inline-flex align-items-center">
-                    <TeamOutlined />
-                    Team
+                    <TeamOutlined /> Team
                   </span>
                   <p className="text-dark">{team}</p>
                 </div>
-                <div className="d-flex align-items-center justify-content-between">
+                <div className="d-flex align-items-center justify-content-between mb-2">
                   <span className="d-inline-flex align-items-center">
-                    <CalendarOutlined />
-                    Date Of Join
+                    <CalendarOutlined /> Date Of Join
                   </span>
                   <p className="text-dark">{formatDate(user.createdAt)}</p>
                 </div>
                 <div className="d-flex align-items-center justify-content-between">
                   <span className="d-inline-flex align-items-center">
-                    <EnvironmentOutlined />
-                    Primary Address
+                    <EnvironmentOutlined /> Primary Address
                   </span>
-                  <p className="text-dark">{address}</p>
+                  <p className="text-dark">{primaryAddress}</p>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* ────── MAIN CONTENT ────── */}
           <div className="col-xl-8">
-            {isEditing ? (
-              <div className="card rounded-0 border-0">
-                <div className="card-header border-0 rounded-0 bg-light d-flex align-items-center">
-                  <h6>Edit Profile</h6>
-                </div>
-                <div className="card-body">
-                  <ProfileForm
-                    form={form}
-                    handleSave={handleSave}
-                    isUpdating={isUpdating}
-                    setIsEditing={setIsEditing}
-                    handleAvatarUpload={handleAvatarUpload}
-                  />
+            <div className="card rounded-0 border-0">
+              <div className="card-header border-0 rounded-0 bg-light d-flex align-items-center">
+                <h6>Basic Information</h6>
+              </div>
+              <div className="card-body pb-0">
+                <div className="row">
+                  <div className="col-md-4">
+                    <div className="mb-3">
+                      <p className="fs-13 mb-2">Phone</p>
+                      <span className="text-gray-900 fs-13">
+                        {user.mobileNumber || "N/A"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="col-md-4">
+                    <div className="mb-3">
+                      <p className="fs-13 mb-2">Email</p>
+                      <span className="text-gray-900 fs-13">
+                        <a href={`mailto:${user.email}`}>{user.email}</a>
+                      </span>
+                    </div>
+                  </div>
+                  <div className="col-md-4">
+                    <div className="mb-3">
+                      <p className="fs-13 mb-2">Username</p>
+                      <span className="text-gray-900 fs-13">
+                        {user.username || "N/A"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="col-md-4">
+                    <div className="mb-3">
+                      <p className="fs-13 mb-2">Birthday</p>
+                      <span className="text-gray-900 fs-13">
+                        {formatDate(user.dateOfBirth)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="col-md-4">
+                    <div className="mb-3">
+                      <p className="fs-13 mb-2">Address</p>
+                      <span className="text-gray-900 fs-13">
+                        {primaryAddress}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="col-md-4">
+                    <div className="mb-3">
+                      <p className="fs-13 mb-2">Blood Group</p>
+                      <span className="text-gray-900 fs-13">
+                        {user.bloodGroup || "N/A"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="col-md-4">
+                    <div className="mb-3">
+                      <p className="fs-13 mb-2">Shift</p>
+                      <span className="text-gray-900 fs-13">
+                        {user.shiftFrom && user.shiftTo
+                          ? `${formatTime(user.shiftFrom)} - ${formatTime(
+                              user.shiftTo
+                            )}`
+                          : "N/A"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="col-md-4">
+                    <div className="mb-3">
+                      <p className="fs-13 mb-2">Emergency Contact</p>
+                      <span className="text-gray-900 fs-13">
+                        {user.emergencyNumber || "N/A"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="col-md-4">
+                    <div className="mb-3">
+                      <p className="fs-13 mb-2">Status</p>
+                      <span className="text-gray-900 fs-13">
+                        {user.status || "N/A"}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            ) : (
-              <>
-                <div className="card rounded-0 border-0">
-                  <div className="card-header border-0 rounded-0 bg-light d-flex align-items-center">
-                    <h6>Basic Information</h6>
-                  </div>
-                  <div className="card-body pb-0">
-                    <div className="row">
-                      <div className="col-md-4">
-                        <div className="mb-3">
-                          <p className="fs-13 mb-2">Phone</p>
-                          <span className="text-gray-900 fs-13">
-                            {user.mobileNumber || "N/A"}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="col-md-4">
-                        <div className="mb-3">
-                          <p className="fs-13 mb-2">Email</p>
-                          <span className="text-gray-900 fs-13">
-                            <a href={`mailto:${user.email}`}>{user.email}</a>
-                          </span>
-                        </div>
-                      </div>
-                      <div className="col-md-4">
-                        <div className="mb-3">
-                          <p className="fs-13 mb-2">Username</p>
-                          <span className="text-gray-900 fs-13">
-                            {user.username || "N/A"}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="col-md-4">
-                        <div className="mb-3">
-                          <p className="fs-13 mb-2">Birthday</p>
-                          <span className="text-gray-900 fs-13">
-                            {formatDate(user.dateOfBirth)}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="col-md-4">
-                        <div className="mb-3">
-                          <p className="fs-13 mb-2">Address</p>
-                          <span className="text-gray-900 fs-13">{address}</span>
-                        </div>
-                      </div>
-                      <div className="col-md-4">
-                        <div className="mb-3">
-                          <p className="fs-13 mb-2">Blood Group</p>
-                          <span className="text-gray-900 fs-13">
-                            {user.bloodGroup || "N/A"}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="col-md-4">
-                        <div className="mb-3">
-                          <p className="fs-13 mb-2">Shift</p>
-                          <span className="text-gray-900 fs-13">
-                            {user.shiftFrom && user.shiftTo
-                              ? `${formatTime(user.shiftFrom)} - ${formatTime(
-                                  user.shiftTo
-                                )}`
-                              : "N/A"}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="col-md-4">
-                        <div className="mb-3">
-                          <p className="fs-13 mb-2">Emergency Contact</p>
-                          <span className="text-gray-900 fs-13">
-                            {user.emergencyNumber || "N/A"}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="col-md-4">
-                        <div className="mb-3">
-                          <p className="fs-13 mb-2">Status</p>
-                          <span className="text-gray-900 fs-13">
-                            {user.status || "N/A"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+            </div>
+            {/* ────── TABS ────── */}
+            <div className="card rounded-0 border-0">
+              <div className="card-header bg-light d-flex align-items-center justify-content-between">
+                <ul
+                  className="nav nav-pills border d-inline-flex p-1 rounded bg-light"
+                  role="tablist"
+                >
+                  {[
+                    "Quotations",
+                    "Teams",
+                    "Orders",
+                    "Purchase Orders",
+                    "Addresses",
+                    ...(isSuperAdmin ? ["Signatures"] : []),
+                  ].map((tab) => (
+                    <li className="nav-item" key={tab}>
+                      <button
+                        className={`nav-link btn btn-sm py-3 ${
+                          activeTab === tab.toLowerCase() ? "active" : ""
+                        }`}
+                        onClick={() => setActiveTab(tab.toLowerCase())}
+                      >
+                        {tab}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
 
-                <div className="card rounded-0 border-0">
-                  <div className="card-header border-0 rounded-0 bg-light">
-                    <ul
-                      className="nav nav-pills border d-inline-flex p-1 rounded bg-light"
-                      id="pills-tab"
-                      role="tablist"
+                {activeTab === "addresses" && (
+                  <Button type="primary" onClick={() => openAddressModal()}>
+                    Add Address
+                  </Button>
+                )}
+                {activeTab === "signatures" && isSuperAdmin && (
+                  <Button type="primary" onClick={() => openSignatureModal()}>
+                    Add Signature
+                  </Button>
+                )}
+              </div>
+
+              <div className="card-body">
+                <div className="tab-content">
+                  {/* QUOTATIONS */}
+                  <div
+                    className={`tab-pane fade ${
+                      activeTab === "quotations" ? "show active" : ""
+                    }`}
+                  >
+                    <DataTable
+                      title="My Quotations"
+                      columns={[
+                        { title: "Title", dataIndex: "document_title" },
+                        {
+                          title: "Date",
+                          dataIndex: "quotation_date",
+                          render: formatDate,
+                        },
+                        {
+                          title: "Due",
+                          dataIndex: "due_date",
+                          render: formatDate,
+                        },
+                        { title: "Ref", dataIndex: "reference_number" },
+                        {
+                          title: "Amount",
+                          dataIndex: "finalAmount",
+                          render: (t) => `₹${parseFloat(t).toFixed(2)}`,
+                        },
+                      ]}
+                      dataSource={myQuotations}
+                      isLoading={isQuotationsLoading}
+                      rowKey="quotationId"
+                    />
+                  </div>
+
+                  {/* TEAMS */}
+                  <div
+                    className={`tab-pane fade ${
+                      activeTab === "teams" ? "show active" : ""
+                    }`}
+                  >
+                    <DataTable
+                      title="My Teams"
+                      columns={[
+                        { title: "Name", dataIndex: "teamName" },
+                        { title: "Admin", dataIndex: "adminName" },
+                        {
+                          title: "Members",
+                          dataIndex: "teammembers",
+                          render: (m) =>
+                            m?.map((x) => x.userName).join(", ") || "N/A",
+                        },
+                      ]}
+                      dataSource={myTeams}
+                      isLoading={isTeamsLoading}
+                      rowKey="id"
+                    />
+                  </div>
+
+                  {/* ORDERS */}
+                  <div
+                    className={`tab-pane fade ${
+                      activeTab === "orders" ? "show active" : ""
+                    }`}
+                  >
+                    <DataTable
+                      title="My Orders"
+                      columns={[
+                        { title: "Order #", dataIndex: "orderNo" },
+                        {
+                          title: "Customer",
+                          dataIndex: "customers",
+                          render: (c) => c?.name,
+                        },
+                        { title: "Status", dataIndex: "status" },
+                        {
+                          title: "Due",
+                          dataIndex: "dueDate",
+                          render: formatDate,
+                        },
+                      ]}
+                      dataSource={myOrders}
+                      isLoading={isOrdersLoading}
+                      rowKey="id"
+                    />
+                  </div>
+
+                  {/* PURCHASE ORDERS */}
+                  <div
+                    className={`tab-pane fade ${
+                      activeTab === "purchase orders" ? "show active" : ""
+                    }`}
+                  >
+                    <DataTable
+                      title="My POs"
+                      columns={[
+                        { title: "PO #", dataIndex: "poNumber" },
+                        {
+                          title: "Vendor",
+                          dataIndex: "Vendor",
+                          render: (v) => v?.vendorName,
+                        },
+                        { title: "Status", dataIndex: "status" },
+                        {
+                          title: "Amount",
+                          dataIndex: "totalAmount",
+                          render: (t) => `₹${parseFloat(t).toFixed(2)}`,
+                        },
+                      ]}
+                      dataSource={myPurchaseOrders}
+                      isLoading={isPurchaseOrdersLoading}
+                      rowKey="id"
+                    />
+                  </div>
+
+                  {/* ADDRESSES */}
+                  <div
+                    className={`tab-pane fade ${
+                      activeTab === "addresses" ? "show active" : ""
+                    }`}
+                  >
+                    <DataTable
+                      title="My Addresses"
+                      columns={addressColumns}
+                      dataSource={myAddressesRaw}
+                      isLoading={isAddressesLoading}
+                      rowKey="addressId"
+                    />
+                  </div>
+
+                  {/* SIGNATURES */}
+                  {isSuperAdmin && (
+                    <div
+                      className={`tab-pane fade ${
+                        activeTab === "signatures" ? "show active" : ""
+                      }`}
                     >
-                      {[
-                        "Quotations",
-                        "Teams",
-                        "Orders",
-                        "Purchase Orders",
-                        "Addresses",
-                        ...(isSuperAdmin ? ["Signatures"] : []),
-                      ].map((tab) => (
-                        <li className="nav-item" role="presentation" key={tab}>
-                          <button
-                            className={`nav-link btn btn-sm btn-icon py-3 d-flex align-items-center justify-content-center w-auto ${
-                              activeTab === tab.toLowerCase() ? "active" : ""
-                            }`}
-                            id={`tab-${tab}`}
-                            data-bs-toggle="pill"
-                            data-bs-target={`#pills-${tab}`}
-                            type="button"
-                            role="tab"
-                            aria-selected={activeTab === tab.toLowerCase()}
-                            onClick={() => setActiveTab(tab.toLowerCase())}
-                          >
-                            {tab}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                    {activeTab === "addresses" && (
-                      <Button
-                        type="primary"
-                        className="float-end"
-                        onClick={() => showAddressModal()}
-                      >
-                        Add Address
-                      </Button>
-                    )}
-                    {activeTab === "signatures" && isSuperAdmin && (
-                      <Button
-                        type="primary"
-                        className="float-end"
-                        onClick={() => showSignatureModal()}
-                      >
-                        Add Signature
-                      </Button>
-                    )}
-                  </div>
-                  <div className="card-body">
-                    <div className="tab-content" id="pills-tabContent">
-                      <div
-                        className={`tab-pane fade ${
-                          activeTab === "quotations" ? "show active" : ""
-                        }`}
-                        id="pills-Quotations"
-                        role="tabpanel"
-                        aria-labelledby="tab-Quotations"
-                      >
-                        <DataTable
-                          title="My Quotations"
-                          columns={quotationColumns}
-                          dataSource={quotationsData || []}
-                          isLoading={isQuotationsLoading}
-                          error={quotationsError}
-                          rowKey="quotationId"
-                          className="table table-hover"
-                        />
-                      </div>
-                      <div
-                        className={`tab-pane fade ${
-                          activeTab === "teams" ? "show active" : ""
-                        }`}
-                        id="pills-Teams"
-                        role="tabpanel"
-                        aria-labelledby="tab-Teams"
-                      >
-                        <DataTable
-                          title="My Teams"
-                          columns={teamColumns}
-                          dataSource={teamsData?.teams || []}
-                          isLoading={isTeamsLoading}
-                          error={teamsError}
-                          rowKey="id"
-                          className="table table-hover"
-                        />
-                      </div>
-                      <div
-                        className={`tab-pane fade ${
-                          activeTab === "orders" ? "show active" : ""
-                        }`}
-                        id="pills-Orders"
-                        role="tabpanel"
-                        aria-labelledby="tab-Orders"
-                      >
-                        <DataTable
-                          title="My Orders"
-                          columns={orderColumns}
-                          dataSource={ordersData?.orders || []}
-                          isLoading={isOrdersLoading}
-                          error={ordersError}
-                          rowKey="id"
-                          className="table table-hover"
-                        />
-                      </div>
-                      <div
-                        className={`tab-pane fade ${
-                          activeTab === "purchase orders" ? "show active" : ""
-                        }`}
-                        id="pills-Purchase Orders"
-                        role="tabpanel"
-                        aria-labelledby="tab-Purchase Orders"
-                      >
-                        <DataTable
-                          title="My Purchase Orders"
-                          columns={purchaseOrderColumns}
-                          dataSource={purchaseOrdersData?.purchaseOrders || []}
-                          isLoading={isPurchaseOrdersLoading}
-                          error={purchaseOrdersError}
-                          rowKey="id"
-                          className="table table-hover"
-                        />
-                      </div>
-                      <div
-                        className={`tab-pane fade ${
-                          activeTab === "addresses" ? "show active" : ""
-                        }`}
-                        id="pills-Addresses"
-                        role="tabpanel"
-                        aria-labelledby="tab-Addresses"
-                      >
-                        <DataTable
-                          title="My Addresses"
-                          columns={addressColumns}
-                          dataSource={addressesData || []}
-                          isLoading={isAddressesLoading}
-                          error={addressesError}
-                          rowKey="addressId"
-                          className="table table-hover"
-                        />
-                      </div>
-                      {isSuperAdmin && (
-                        <div
-                          className={`tab-pane fade ${
-                            activeTab === "signatures" ? "show active" : ""
-                          }`}
-                          id="pills-Signatures"
-                          role="tabpanel"
-                          aria-labelledby="tab-Signatures"
-                        >
-                          <DataTable
-                            title="My Signatures"
-                            columns={signatureColumns}
-                            dataSource={signaturesData || []}
-                            isLoading={isSignaturesLoading}
-                            error={signaturesError}
-                            rowKey="signatureId"
-                            className="table table-hover"
-                          />
-                        </div>
-                      )}
+                      <DataTable
+                        title="My Signatures"
+                        columns={signatureColumns}
+                        dataSource={signaturesData || []}
+                        isLoading={isSignaturesLoading}
+                        rowKey="signatureId"
+                      />
                     </div>
-                  </div>
+                  )}
                 </div>
-              </>
-            )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Address Modal */}
-      <Modal
-        title={editingAddress ? "Edit Address" : "Add Address"}
-        visible={isAddressModalVisible}
-        onCancel={() => setIsAddressModalVisible(false)}
-        footer={null}
-      >
-        <AntdForm
-          form={addressForm}
-          onFinish={handleAddressSubmit}
-          layout="vertical"
-        >
-          <AntdForm.Item
-            name="street"
-            label="Street"
-            rules={[{ required: true, message: "Please enter the street" }]}
-          >
-            <Input />
-          </AntdForm.Item>
-          <AntdForm.Item
-            name="city"
-            label="City"
-            rules={[{ required: true, message: "Please enter the city" }]}
-          >
-            <Input />
-          </AntdForm.Item>
-          <AntdForm.Item
-            name="state"
-            label="State"
-            rules={[{ required: true, message: "Please enter the state" }]}
-          >
-            <Input />
-          </AntdForm.Item>
-          <AntdForm.Item
-            name="postalCode"
-            label="Postal Code"
-            rules={[
-              { required: true, message: "Please enter the postal code" },
-            ]}
-          >
-            <Input />
-          </AntdForm.Item>
-          <AntdForm.Item
-            name="country"
-            label="Country"
-            rules={[{ required: true, message: "Please enter the country" }]}
-          >
-            <Input />
-          </AntdForm.Item>
-          <AntdForm.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={isCreatingAddress || isUpdatingAddress}
-            >
-              {editingAddress ? "Update Address" : "Add Address"}
-            </Button>
-            <Button
-              className="ms-2"
-              onClick={() => setIsAddressModalVisible(false)}
-            >
-              Cancel
-            </Button>
-          </AntdForm.Item>
-        </AntdForm>
-      </Modal>
+      {/* ────── ADDRESS MODAL ────── */}
+      {addressModalOpen && (
+        <AddAddress
+          onClose={closeAddressModal}
+          onSave={onAddressSaved}
+          existingAddress={editingAddress}
+          selectedCustomer={null}
+        />
+      )}
 
-      {/* Signature Modal */}
-      <Modal
-        title={editingSignature ? "Edit Signature" : "Add Signature"}
-        visible={isSignatureModalVisible}
-        onCancel={() => setIsSignatureModalVisible(false)}
-        footer={null}
-      >
-        <AntdForm
-          form={signatureForm}
-          onFinish={handleSignatureSubmit}
-          layout="vertical"
-        >
-          <AntdForm.Item
-            name="signature_name"
-            label="Signature Name"
-            rules={[
-              { required: true, message: "Please enter the signature name" },
-            ]}
-          >
-            <Input />
-          </AntdForm.Item>
-          <AntdForm.Item
-            name="signature_image"
-            label="Signature Image URL"
-            rules={[
-              {
-                required: true,
-                message: "Please enter the signature image URL",
-              },
-            ]}
-          >
-            <Input />
-          </AntdForm.Item>
-          <AntdForm.Item
-            name="mark_as_default"
-            label="Mark as Default"
-            valuePropName="checked"
-          >
-            <Switch />
-          </AntdForm.Item>
-          <AntdForm.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={isCreatingSignature || isUpdatingSignature}
-            >
-              {editingSignature ? "Update Signature" : "Add Signature"}
-            </Button>
-            <Button
-              className="ms-2"
-              onClick={() => setIsSignatureModalVisible(false)}
-            >
-              Cancel
-            </Button>
-          </AntdForm.Item>
-        </AntdForm>
-      </Modal>
+      {/* ────── SIGNATURE MODAL ────── */}
+      {signatureModalOpen && (
+        <AddSignature
+          signatureId={editingSignature?.signatureId}
+          existingSignature={editingSignature}
+          entityType="user"
+          entityId={userId}
+          onClose={closeSignatureModal}
+          onSuccess={onSignatureSuccess}
+        />
+      )}
     </div>
   );
 };

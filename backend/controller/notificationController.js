@@ -121,11 +121,49 @@ cron.schedule("0 0 * * *", async () => {
     console.error("Scheduled deletion failed:", error);
   }
 });
+// Clear all notifications for a specific user
+const clearAllNotifications = async (userId) => {
+  try {
+    // Delete all notifications for the user from MongoDB
+    const result = await Notification.deleteMany({ userId });
+
+    // Verify user exists (optional, for consistency)
+    const user = await User.findOne({
+      where: { userId },
+      attributes: ["userId", "username"],
+    });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    // Emit real-time event to the specific user
+    if (ioInstance) {
+      ioInstance.to(userId).emit("notificationsCleared", {
+        userId,
+        deletedCount: result.deletedCount,
+        message: "All notifications cleared",
+      });
+    }
+
+    return {
+      userId: {
+        _id: user.userId,
+        username: user.username,
+      },
+      deletedCount: result.deletedCount,
+      message: "All notifications cleared successfully",
+    };
+  } catch (error) {
+    throw new Error(`Failed to clear notifications: ${error.message}`);
+  }
+};
 
 module.exports = {
   initSocket,
   sendNotification,
   getNotifications,
   markAsRead,
-  deleteOldNotifications, // Export for potential manual triggering
+  deleteOldNotifications,
+  clearAllNotifications, // Add this
 };

@@ -28,8 +28,8 @@ import {
   useRemoveStockMutation,
 } from "../../api/productApi";
 import { toast } from "sonner";
-import StockModal from "../Common/StockModal";
-import HistoryModal from "../Common/HistoryModal";
+import StockModal from "./StockModal";
+import HistoryModal from "./HistoryModal";
 import PageHeader from "../Common/PageHeader";
 import pos from "../../assets/img/default.png";
 import { CopyOutlined } from "@ant-design/icons";

@@ -8,7 +8,7 @@ import {
   useGetProfileQuery,
 } from "../../api/userApi";
 import {
-  useChangePasswordMutation, // Changed from useResetPasswordMutation
+  useChangePasswordMutation,
   useResendVerificationEmailMutation,
 } from "../../api/authApi";
 import { logout } from "../../api/userSlice";
@@ -19,14 +19,16 @@ import {
   MailOutlined,
   EyeOutlined,
   UserDeleteOutlined,
+  EditOutlined, // <-- new icon
 } from "@ant-design/icons";
 import PageHeader from "../Common/PageHeader";
+
 const GeneralSettings = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
   // RTK Query hooks
-  const [changePassword, { isLoading: isChangingPassword }] = // Changed from resetPassword
+  const [changePassword, { isLoading: isChangingPassword }] =
     useChangePasswordMutation();
   const [deactivateAccount, { isLoading: isDeactivating }] =
     useInactiveUserMutation();
@@ -41,34 +43,41 @@ const GeneralSettings = () => {
 
   // State
   const [activeSection, setActiveSection] = useState("Profile");
-
   const [passwordData, setPasswordData] = useState({
-    password: "",
-    newPassword: "",
+    password: "", // current password
+    newPassword: "", // new password
   });
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmMessage, setConfirmMessage] = useState("");
 
+  // ---------- NEW: Edit Profile ----------
+  const handleEditProfile = () => {
+    if (profile?.user?.id) {
+      navigate(`/u/${profile.user.id}/edit`);
+    }
+  };
+  // -----------------------------------------
+
   // Handle password change
   const handlePasswordChange = async (e) => {
     e.preventDefault();
     try {
-      await changePassword(passwordData).unwrap(); // Changed from resetPassword
-      setPasswordData({ currentPassword: "", newPassword: "" });
+      await changePassword(passwordData).unwrap();
+      setPasswordData({ password: "", newPassword: "" });
       setShowPasswordModal(false);
+      toast.success("Password changed successfully");
     } catch (error) {
       toast.error(error?.data?.message || "Failed to change password");
     }
   };
 
-  // ... (rest of the component remains unchanged)
-
   // Handle resend verification email
   const handleResendVerification = async () => {
     try {
       await resendVerificationEmail({ email: profile?.user?.email }).unwrap();
+      toast.success("Verification email sent");
     } catch (error) {
       toast.error(error?.data?.message || "Failed to send verification email");
     }
@@ -127,12 +136,10 @@ const GeneralSettings = () => {
 
   // Handle modal confirmation
   const handleConfirmAction = () => {
-    if (confirmAction) {
-      confirmAction();
-    }
+    if (confirmAction) confirmAction();
   };
 
-  // Handle profile loading and error states
+  // Loading / error states
   if (isProfileLoading) return <div>Loading...</div>;
   if (profileError) return <div>Error: {profileError.message}</div>;
 
@@ -147,7 +154,28 @@ const GeneralSettings = () => {
               exportOptions={{ pdf: false, excel: false }}
             />
           </div>
+
           <div className="card-body">
+            {/* ---------- NEW: Edit Profile Section ---------- */}
+            <div className="d-flex align-items-center justify-content-between flex-wrap row-gap-3 border-bottom mb-3 pb-3">
+              <div className="d-flex align-items-center">
+                <span className="avatar avatar-lg border bg-light fs-24 me-2">
+                  <EditOutlined />
+                </span>
+                <div>
+                  <h5 className="fs-16 fw-medium mb-1">Edit Profile</h5>
+                  <p className="fs-16">
+                    Update your personal information, avatar, and other profile
+                    details.
+                  </p>
+                </div>
+              </div>
+              <Button variant="primary" onClick={handleEditProfile}>
+                Edit Profile
+              </Button>
+            </div>
+            {/* ------------------------------------------------ */}
+
             {/* Email Verification Section */}
             <div className="d-flex align-items-center justify-content-between flex-wrap row-gap-3 border-bottom mb-3 pb-3">
               <div className="d-flex align-items-center">
@@ -199,7 +227,7 @@ const GeneralSettings = () => {
               <Button
                 variant="primary"
                 onClick={() => setShowPasswordModal(true)}
-                disabled={isChangingPassword} // Changed from isResettingPassword
+                disabled={isChangingPassword}
               >
                 {isChangingPassword ? "Saving..." : "Change Password"}
               </Button>
@@ -258,7 +286,7 @@ const GeneralSettings = () => {
             centered
             aria-labelledby="changePasswordLabel"
           >
-            <Modal.Header>
+            <Modal.Header closeButton>
               <Modal.Title id="changePasswordLabel">
                 Change Password
               </Modal.Title>
@@ -297,7 +325,7 @@ const GeneralSettings = () => {
                 <Button
                   type="submit"
                   variant="primary"
-                  disabled={isChangingPassword} // Changed from isResettingPassword
+                  disabled={isChangingPassword}
                 >
                   {isChangingPassword ? "Saving..." : "Save Changes"}
                 </Button>
