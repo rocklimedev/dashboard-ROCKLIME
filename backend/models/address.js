@@ -1,8 +1,5 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
-const User = require("./users");
-const Customer = require("./customers");
-const { v4: uuidv4 } = require("uuid");
 
 const Address = sequelize.define(
   "Address",
@@ -40,18 +37,10 @@ const Address = sequelize.define(
     userId: {
       type: DataTypes.UUID,
       allowNull: true,
-      references: {
-        model: "users",
-        key: "userId",
-      },
     },
     customerId: {
       type: DataTypes.UUID,
       allowNull: true,
-      references: {
-        model: "customers",
-        key: "customerId",
-      },
     },
   },
   {
@@ -59,17 +48,5 @@ const Address = sequelize.define(
     timestamps: true,
   }
 );
-
-// Relationships
-Address.belongsTo(User, {
-  foreignKey: "userId",
-  onDelete: "SET NULL",
-  onUpdate: "CASCADE",
-});
-Address.belongsTo(Customer, {
-  foreignKey: "customerId",
-  onDelete: "SET NULL",
-  onUpdate: "CASCADE",
-});
 
 module.exports = Address;

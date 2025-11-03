@@ -3,6 +3,21 @@ const router = express.Router();
 const { auth } = require("../middleware/auth"); // Authentication Middleware
 const userController = require("../controller/userController");
 const checkPermission = require("../middleware/permission");
+const multer = require("multer");
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB max
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Invalid file type. Only JPEG, PNG, and WEBP are allowed."));
+    }
+  },
+});
 // ✅ General User Routes (For All Logged-in Users)
 router.get(
   "/me",
@@ -81,4 +96,10 @@ router.put(
   userController.changeStatusToInactive
 );
 router.patch("/:userId/status", auth, userController.updateStatus);
+router.post(
+  "/photo",
+  auth,
+  upload.single("photo"), // 'photo' is the field name in FormData
+  userController.uploadUserPhoto
+);
 module.exports = router;

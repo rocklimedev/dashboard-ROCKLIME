@@ -11,9 +11,6 @@ import { fetchImg, placeholder } from "./imageHelpers";
 import { calcTotals, amountInWords } from "./calcHelpers";
 
 /* ------------------------------------------------------------------ */
-/*                              PDF EXPORT                            */
-/* ------------------------------------------------------------------ */
-/* ------------------------------------------------------------------ */
 /*                              PDF EXPORT (JS)                       */
 /* ------------------------------------------------------------------ */
 export const exportToPDF = async (ref, id, activeVersion) => {

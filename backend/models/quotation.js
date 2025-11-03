@@ -99,6 +99,11 @@ const Quotation = sequelize.define(
       type: DataTypes.DECIMAL(10, 2),
       allowNull: true,
     },
+    gst: {
+      type: DataTypes.DECIMAL(5, 2),
+      allowNull: true,
+      comment: "GST percentage applied on total amount",
+    },
   },
   {
     tableName: "quotations",

@@ -165,7 +165,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
           <div className="d-flex justify-content-between align-items-center w-100">
             <span>Notifications</span>
             {notificationCount > 0 && (
-              <Badge count={notificationCount} size="small" />
+              <Badge count={notificationCount} size="small" showZero={false} />
             )}
           </div>
         ),
@@ -177,7 +177,9 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
         label: (
           <div className="d-flex justify-content-between align-items-center w-100">
             <span>Cart</span>
-            {cartItemCount > 0 && <Badge count={cartItemCount} size="small" />}
+            {cartItemCount > 0 && (
+              <Badge count={cartItemCount} size="small" showZero={false} />
+            )}
           </div>
         ),
         icon: <CgShoppingCart className="me-2" />,
@@ -226,10 +228,10 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
             <img src={logo} alt="Logo" />
           </Link>
           <Link to="/" className="logo logo-white">
-            <img src={logo_small} alt="Logo" />
+            <img src={logo} alt="Logo" />
           </Link>
           <Link to="/" className="logo-small">
-            <img src={logo_small} alt="Logo" />
+            <img src={logo} alt="Logo" />
           </Link>
         </div>
 
@@ -279,7 +281,12 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
           {/* Notifications with Badge */}
           <li className="nav-item nav-item-box">
             <Link to="/notifications" style={{ position: "relative" }}>
-              <Badge count={notificationCount} size="small" offset={[-5, 5]}>
+              <Badge
+                count={notificationCount}
+                size="small"
+                offset={[-5, 5]}
+                showZero={false}
+              >
                 <FaBell style={{ fontSize: 18 }} />
               </Badge>
             </Link>
@@ -288,7 +295,12 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
           {/* Cart with Badge */}
           <li className="nav-item nav-item-box">
             <Link to="/cart" style={{ position: "relative" }}>
-              <Badge count={cartItemCount} size="small" offset={[-5, 5]}>
+              <Badge
+                count={cartItemCount}
+                size="small"
+                offset={[-5, 5]}
+                showZero={false}
+              >
                 <CgShoppingCart style={{ fontSize: 20 }} />
               </Badge>
             </Link>

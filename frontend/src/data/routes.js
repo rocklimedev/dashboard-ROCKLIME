@@ -79,6 +79,7 @@ import NotificationsWrapper from "../components/Notifications/NotificationsWrapp
 import TaskWrapper from "../components/Tasks/TaskWrapper";
 import InventoryWrapper from "../components/Common/InventoryWrapper";
 import { element } from "prop-types";
+import ProfileForm from "../components/Profile/ProfileForm";
 import Error403 from "../components/Error/Error403";
 const masterRoutes = [
   {
@@ -375,7 +376,13 @@ const masterRoutes = [
         element: <Permissions />,
         requiredPermission: { api: "view", module: "rolepermissions" },
       },
-
+      {
+        path: "/u/:id/edit",
+        name: "Edit Profile",
+        icon: <CgProfile />,
+        isSidebarActive: false,
+        element: <ProfileForm />,
+      },
       {
         path: "/u/:id",
         name: "Profile",

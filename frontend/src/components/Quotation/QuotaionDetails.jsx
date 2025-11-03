@@ -150,15 +150,20 @@ const QuotationsDetails = () => {
     return set.size ? [...set].join(" / ") : "GROHE / AMERICAN STANDARD";
   }, [activeProducts, productsData]);
 
+  // ----- 1. call calcTotals with the new params -----
   const {
     subtotal,
+    extraDiscountAmt, // <-- the amount that must be shown in red
     gst: gstAmount,
     total: finalTotal,
   } = calcTotals(
     activeProducts,
     activeVersionData.quotation?.gst_value || 0,
-    activeVersionData.quotation?.include_gst,
-    productDetailsMap // ← ADD THIS
+    activeVersionData.quotation?.include_gst || false,
+    productDetailsMap,
+    activeVersionData.quotation?.extraDiscount || 0,
+    activeVersionData.quotation?.extraDiscountType || "amount",
+    activeVersionData.quotation?.roundOff || 0
   );
   // === EXPORT HANDLER ===
   const handleExport = async () => {
@@ -401,26 +406,6 @@ const QuotationsDetails = () => {
                   </tbody>
                 </table>
 
-                {/* Amount in Words */}
-                <table className="quotation-table full-width mt-3">
-                  <tbody>
-                    <tr>
-                      <td colSpan="8" className="text-right">
-                        <strong>Amount Chargeable (in words)</strong>
-                      </td>
-                      <td className="text-right">
-                        <strong>
-                          {amountInWords(
-                            Number(
-                              activeVersionData.quotation?.finalAmount ||
-                                finalTotal
-                            )
-                          )}
-                        </strong>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
                 {/* Tax Summary */}
                 {/* === FINAL AMOUNT BREAKDOWN (Same Style as HSN Table) === */}
                 <table className="quotation-table full-width mt-3">
@@ -447,6 +432,7 @@ const QuotationsDetails = () => {
                     </tr>
 
                     {/* Extra Discount */}
+                    {/* ----- 2. Extra-discount row (label shows % or ₹, value shows the real amount) ----- */}
                     {activeVersionData.quotation?.extraDiscount > 0 && (
                       <tr>
                         <td>
@@ -454,19 +440,18 @@ const QuotationsDetails = () => {
                             Extra Discount (
                             {activeVersionData.quotation?.extraDiscountType ===
                             "percent"
-                              ? `${activeVersionData.quotation?.extraDiscount}%`
-                              : `₹${activeVersionData.quotation?.extraDiscount}`}
+                              ? `${parseFloat(
+                                  activeVersionData.quotation?.extraDiscount
+                                ).toFixed(2)}%`
+                              : `₹${parseFloat(
+                                  activeVersionData.quotation?.extraDiscount
+                                ).toFixed(2)}`}
                             )
                           </strong>
                         </td>
                         <td colSpan="5"></td>
                         <td className="text-danger">
-                          <strong>
-                            -₹
-                            {Number(
-                              activeVersionData.quotation?.extraDiscount
-                            ).toFixed(2)}
-                          </strong>
+                          <strong>-₹{extraDiscountAmt.toFixed(2)}</strong>
                         </td>
                       </tr>
                     )}
@@ -508,25 +493,27 @@ const QuotationsDetails = () => {
                       </td>
                     </tr>
                   </tbody>
-                  <tfoot>
+                </table>
+                {/* Amount in Words */}
+                <table className="quotation-table full-width mt-3">
+                  <tbody>
                     <tr>
-                      <td colSpan="7" className="text-end pt-2 border-0">
-                        <em>
-                          <strong>
-                            Amount in words:{" "}
-                            {amountInWords(
-                              Number(
-                                activeVersionData.quotation?.finalAmount ||
-                                  subtotal
-                              )
-                            )}
-                          </strong>
-                        </em>
+                      <td colSpan="8" className="text-right">
+                        <strong>Amount Chargeable (in words)</strong>
+                      </td>
+                      <td className="text-right">
+                        <strong>
+                          {amountInWords(
+                            Number(
+                              activeVersionData.quotation?.finalAmount ||
+                                finalTotal
+                            )
+                          )}
+                        </strong>
                       </td>
                     </tr>
-                  </tfoot>
+                  </tbody>
                 </table>
-
                 {/* Bank & Declaration */}
                 <table className="quotation-table full-width mt-3">
                   <tbody>
