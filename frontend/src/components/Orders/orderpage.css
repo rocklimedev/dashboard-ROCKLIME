@@ -65,9 +65,7 @@ html[data-theme="dark"] .ant-typography-secondary {
 }
 
 /* Links */
-html[data-theme="dark"] a {
-  color: #e31e24;
-}
+
 html[data-theme="dark"] a:hover {
   color: #ff4d4f;
 }

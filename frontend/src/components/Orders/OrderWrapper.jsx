@@ -156,6 +156,7 @@ const OrderWrapper = () => {
       "CANCELED",
       "DRAFT",
       "ONHOLD",
+      "CLOSED",
     ];
     return statuses.includes(status) ? status : "PREPARING";
   };
@@ -464,6 +465,7 @@ const OrderWrapper = () => {
                         "CANCELED",
                         "DRAFT",
                         "ONHOLD",
+                        "CLOSED",
                       ].map((status) => (
                         <option key={status} value={status}>
                           {status}
@@ -641,6 +643,7 @@ const OrderWrapper = () => {
                             "DISPATCHED",
                             "DELIVERED",
                             "PARTIALLY_DELIVERED",
+                            "CLOSED",
                           ].includes(order.status) &&
                           order.invoiceLink &&
                           order.invoiceLink.trim() !== "";
@@ -741,6 +744,7 @@ const OrderWrapper = () => {
                                         "CANCELED",
                                         "DRAFT",
                                         "ONHOLD",
+                                        "CLOSED",
                                       ].map((status) => (
                                         <Menu.Item
                                           key={status}

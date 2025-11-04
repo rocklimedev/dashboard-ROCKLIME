@@ -64,19 +64,23 @@ const Profile = () => {
       { userId, page: 1, limit: 10 },
       { skip: !userId }
     );
-
   const {
-    data: usersWithAddresses = [],
+    data: usersWithAddresses = {},
     isLoading: isAddressesLoading,
     error: addressesError,
     refetch: refetchAddresses,
   } = useGetAllUserAddressesQuery(undefined, { skip: !userId });
 
   const myAddressesRaw = useMemo(() => {
-    if (!Array.isArray(usersWithAddresses) || !userId) return [];
-    const currentUser = usersWithAddresses.find((u) => u.userId === userId);
+    if (!Array.isArray(usersWithAddresses.data) || !userId) return [];
+
+    const currentUser = usersWithAddresses.data.find(
+      (u) => u.userId === userId
+    );
     return currentUser?.addresses || [];
   }, [usersWithAddresses, userId]);
+
+  console.log("My Addresses:", myAddressesRaw);
 
   const {
     data: signaturesData,

@@ -11,6 +11,7 @@ import {
   Typography,
   Space,
   Divider,
+  Collapse,
 } from "antd";
 import {
   UserAddOutlined,
@@ -24,54 +25,54 @@ import { InfoCircleOutlined } from "@ant-design/icons";
 import styled from "styled-components";
 import OrderTotal from "./OrderTotal";
 import { toast } from "sonner";
-import { debounce } from "lodash";
 import { useCreateAddressMutation } from "../../api/addressApi";
 import moment from "moment";
-import PropTypes from "prop-types";
-import DatePicker from "react-datepicker"; // ← NEW
-import "react-datepicker/dist/react-datepicker.css"; // ← NEW
-const { Text } = Typography;
-const { Option } = Select;
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
-// Styled Components
-const CartSummaryCard = styled(Card)`
+const { Text, Title } = Typography;
+const { Option } = Select;
+const { Panel } = Collapse;
+
+// === Styled Components ===
+const CompactCard = styled(Card)`
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  padding: 16px;
-  position: sticky;
-  top: 16px;
-  @media (min-width: 768px) {
-    top: 20px;
+  .ant-card-body {
+    padding: 12px 16px;
   }
 `;
-
-const FormContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-`;
-
-const FormSection = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-`;
-
-const EmptyCartWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 20px 0;
-  @media (min-width: 768px) {
-    padding: 40px 0;
+const TightRow = styled(Row)`
+  margin-bottom: 6px;
+  .ant-col {
+    padding: 0 4px;
   }
 `;
-
-const CustomerSelect = styled(Select)`
+const MiniSelect = styled(Select)`
   width: 100%;
+  .ant-select-selector {
+    padding: 0 6px;
+    height: 28px;
+  }
 `;
-
-const CheckoutButton = styled(Button)`
+const MiniNumber = styled(InputNumber)`
+  width: 100%;
+  height: 28px;
+  .ant-input-number-input {
+    height: 26px;
+  }
+`;
+const MiniDate = styled(DatePicker)`
+  width: 100%;
+  height: 28px;
+  .react-datepicker-wrapper,
+  input {
+    height: 28px;
+  }
+`;
+const CheckoutBtn = styled(Button)`
+  height: 36px;
+  font-weight: 600;
   background: #e31e24;
   border-color: #e31e24;
   &:hover {
@@ -80,17 +81,11 @@ const CheckoutButton = styled(Button)`
   }
 `;
 
-const ActionButton = styled(Button)`
-  padding: 0;
-  height: auto;
-`;
+// === Helper ===
+const momentToDate = (m) => (m ? m.toDate() : null);
+const normalize = (s) => (s ? s.trim().toLowerCase() : "");
 
-const DiscountContainer = styled.div`
-  display: flex;
-  gap: 8px;
-`;
-
-// Main Component
+// === Main Component ===
 const QuotationForm = ({
   quotationData,
   setQuotationData,
@@ -103,37 +98,31 @@ const QuotationForm = ({
   addresses,
   addressesLoading,
   addressesError,
-  userMap,
-  customerMap,
-  userQueries,
-  customerQueries,
   error,
   quotationNumber,
   documentType,
   setDocumentType,
   cartItems,
-  totalAmount,
+  subTotal,
   shipping,
   tax,
   discount,
-  roundOff,
-  subTotal,
+  itemDiscounts,
+  itemTaxes,
+  gst,
+  gstAmount,
+  setGst,
   handleAddCustomer,
   handleAddAddress,
   setActiveTab,
   handleCreateDocument,
   useBillingAddress,
   setUseBillingAddress,
-  itemDiscounts,
-  itemTaxes,
-  gst, // <-- NEW
-  gstAmount, // <-- NEW
-  setGst,
 }) => {
   const [isCreatingAddress, setIsCreatingAddress] = useState(false);
   const [createAddress] = useCreateAddressMutation();
 
-  // === Customer & Address Logic ===
+  // === Memos ===
   const selectedCustomerData = useMemo(
     () => customers.find((c) => c.customerId === selectedCustomer),
     [customers, selectedCustomer]
@@ -144,28 +133,19 @@ const QuotationForm = ({
       (a) => a.customerId === selectedCustomer && a.status === "BILLING"
     );
     return billing || selectedCustomerData?.address || null;
-  }, [selectedCustomerData, addresses, selectedCustomer]);
+  }, [addresses, selectedCustomerData, selectedCustomer]);
 
   const filteredAddresses = useMemo(
     () => addresses.filter((a) => a.customerId === selectedCustomer),
     [addresses, selectedCustomer]
   );
 
-  const debouncedToast = useMemo(
-    () => debounce((msg) => toast.warning(msg), 500),
-    []
-  );
-  // Inside QuotationForm
-
   const extraDiscount = useMemo(() => {
     const amount = parseFloat(quotationData.discountAmount) || 0;
     if (!amount) return 0;
-
-    // Apply extra discount on (subtotal - item_discounts + item-tax)
-    const taxableBase = subTotal - discount;
-    const afterTax = taxableBase + tax;
+    const base = subTotal - discount + tax;
     return quotationData.discountType === "percent"
-      ? parseFloat(((afterTax * amount) / 100).toFixed(2))
+      ? parseFloat(((base * amount) / 100).toFixed(2))
       : amount;
   }, [
     quotationData.discountType,
@@ -174,540 +154,347 @@ const QuotationForm = ({
     discount,
     tax,
   ]);
-  const normalizeString = (str) => (str ? str.trim().toLowerCase() : "");
 
-  // Sync shipTo with billing address
+  const finalRoundedTotal = useMemo(() => {
+    const base =
+      subTotal + shipping + tax - discount - extraDiscount + (gstAmount || 0);
+    const rupees = Math.floor(Math.round(base * 100) / 100);
+    const last = rupees % 10;
+    if (last <= 4) return rupees - last;
+    if (last >= 6) return rupees + (10 - last);
+    return rupees;
+  }, [subTotal, shipping, tax, discount, extraDiscount, gstAmount]);
+
+  // === Address Sync ===
   useEffect(() => {
-    if (useBillingAddress && defaultAddress && selectedCustomer) {
-      const match = filteredAddresses.find((addr) => {
-        return (
-          normalizeString(addr.street) ===
-            normalizeString(defaultAddress.street) &&
-          normalizeString(addr.city) === normalizeString(defaultAddress.city) &&
-          normalizeString(addr.state) ===
-            normalizeString(defaultAddress.state) &&
-          normalizeString(addr.postalCode || addr.zip || "") ===
-            normalizeString(
-              defaultAddress.postalCode || defaultAddress.zip || ""
-            ) &&
-          normalizeString(addr.country || "India") ===
-            normalizeString(defaultAddress.country || "India")
-        );
-      });
+    if (!useBillingAddress || !defaultAddress || !selectedCustomer) return;
 
-      if (match) {
-        handleQuotationChange("shipTo", match.addressId);
-      } else {
+    const match = filteredAddresses.find(
+      (a) =>
+        normalize(a.street) === normalize(defaultAddress.street) &&
+        normalize(a.city) === normalize(defaultAddress.city) &&
+        normalize(a.state) === normalize(defaultAddress.state) &&
+        normalize(a.postalCode || a.zip) ===
+          normalize(defaultAddress.postalCode || defaultAddress.zip) &&
+        normalize(a.country || "india") ===
+          normalize(defaultAddress.country || "india")
+    );
+
+    if (match) {
+      handleQuotationChange("shipTo", match.addressId);
+    } else {
+      const create = async () => {
         setIsCreatingAddress(true);
-        const createBilling = async () => {
-          try {
-            const newAddr = {
-              customerId: selectedCustomer,
-              street: defaultAddress.street || "",
-              city: defaultAddress.city || "",
-              state: defaultAddress.state || "",
-              postalCode: defaultAddress.postalCode || defaultAddress.zip || "",
-              country: defaultAddress.country || "India",
-              status: "BILLING",
-            };
-            const result = await createAddress(newAddr).unwrap();
-            handleQuotationChange("shipTo", result.addressId);
-            debouncedToast("Billing address created successfully.");
-          } catch (err) {
-            debouncedToast(
-              `Failed to create billing address: ${
-                err.data?.message || "Unknown error"
-              }`
-            );
-          } finally {
-            setIsCreatingAddress(false);
-          }
-        };
-        createBilling();
-      }
-    } else if (
-      selectedCustomer &&
-      filteredAddresses.length === 1 &&
-      !quotationData.shipTo
-    ) {
-      handleQuotationChange("shipTo", filteredAddresses[0].addressId);
-    } else if (
-      !useBillingAddress &&
-      quotationData.shipTo &&
-      filteredAddresses.length === 0
-    ) {
-      handleQuotationChange("shipTo", null);
+        try {
+          const res = await createAddress({
+            customerId: selectedCustomer,
+            ...defaultAddress,
+            status: "BILLING",
+          }).unwrap();
+          handleQuotationChange("shipTo", res.addressId);
+          toast.success("Billing address created");
+        } catch (e) {
+          toast.error("Failed to create billing address");
+        } finally {
+          setIsCreatingAddress(false);
+        }
+      };
+      create();
     }
-  }, [
-    useBillingAddress,
-    defaultAddress,
-    filteredAddresses,
-    selectedCustomer,
-    createAddress,
-    debouncedToast,
-    handleQuotationChange,
-  ]);
+  }, [useBillingAddress, defaultAddress, filteredAddresses, selectedCustomer]);
 
   // === Follow-up Dates ===
-  const validateFollowupDates = () => {
-    if (!quotationData.dueDate || quotationData.followupDates.length === 0)
-      return true;
-    const due = moment(quotationData.dueDate);
-    return quotationData.followupDates.every((d) => {
-      if (!d || new Date(d).toString() === "Invalid Date") return true;
-      return moment(d).isSameOrBefore(due, "day");
-    });
-  };
-
-  const handleFollowupDateChange = (index, date) => {
-    const updated = [...quotationData.followupDates];
-    updated[index] = date ? date.format("YYYY-MM-DD") : "";
-
+  const handleFollowup = (i, d) => {
+    const arr = [...quotationData.followupDates];
+    arr[i] = d ? moment(d).format("YYYY-MM-DD") : "";
     if (
+      d &&
       quotationData.dueDate &&
-      date &&
-      moment(date).isAfter(quotationData.dueDate, "day")
+      moment(d).isAfter(quotationData.dueDate)
     ) {
-      toast.warning(`Follow-up date ${index + 1} cannot be after due date.`);
+      toast.warning("Follow-up cannot be after due date");
     }
-    if (date && moment(date).isBefore(moment().startOf("day"))) {
-      toast.warning(`Follow-up date ${index + 1} cannot be in the past.`);
-    }
-
-    handleQuotationChange("followupDates", updated);
+    handleQuotationChange("followupDates", arr);
   };
-
-  const addFollowupDate = () => {
+  const addFollow = () =>
     handleQuotationChange("followupDates", [
       ...quotationData.followupDates,
       "",
     ]);
-  };
-
-  const removeFollowupDate = (index) => {
+  const rmFollow = (i) =>
     handleQuotationChange(
       "followupDates",
-      quotationData.followupDates.filter((_, i) => i !== index)
+      quotationData.followupDates.filter((_, x) => x !== i)
     );
-  };
-  const getOrCreateBillingAddress = async () => {
-    if (!selectedCustomer || !selectedCustomerData?.address) return null;
 
-    const primary = selectedCustomerData.address;
+  // === Render ===
+  if (!cartItems.length) {
+    return (
+      <CompactCard>
+        <Empty
+          description="Cart empty"
+          image={<FcEmptyTrash style={{ fontSize: 48 }} />}
+        />
+        <Button
+          type="primary"
+          icon={<ArrowLeftOutlined />}
+          onClick={() => setActiveTab("cart")}
+          block
+        >
+          Back to Cart
+        </Button>
+      </CompactCard>
+    );
+  }
 
-    const existing = filteredAddresses.find((a) => {
-      return (
-        a.status === "BILLING" &&
-        normalizeString(a.street) === normalizeString(primary.street) &&
-        normalizeString(a.city) === normalizeString(primary.city) &&
-        normalizeString(a.state) === normalizeString(primary.state) &&
-        normalizeString(a.postalCode || a.zip || "") ===
-          normalizeString(primary.postalCode || primary.zip || "") &&
-        normalizeString(a.country || "India") ===
-          normalizeString(primary.country || "India")
-      );
-    });
-
-    if (existing) return existing.addressId;
-
-    setIsCreatingAddress(true);
-    try {
-      const payload = {
-        customerId: selectedCustomer,
-        street: primary.street || "",
-        city: primary.city || "",
-        state: primary.state || "",
-        postalCode: primary.postalCode || primary.zip || "",
-        country: primary.country || "India",
-        status: "BILLING",
-      };
-      const { addressId } = await createAddress(payload).unwrap();
-      return addressId;
-    } catch (err) {
-      toast.error(
-        `Failed to create billing address: ${err?.data?.message || err}`
-      );
-      return null;
-    } finally {
-      setIsCreatingAddress(false);
-    }
-  };
-  // === Address & Discount Handlers ===
-  const handleAddressChange = (value) => {
-    if (value === "sameAsBilling") {
-      setUseBillingAddress(true);
-    } else {
-      setUseBillingAddress(false);
-      handleQuotationChange("shipTo", value);
-    }
-  };
-
-  const handleDiscountTypeChange = (value) => {
-    handleQuotationChange("discountType", value);
-    handleQuotationChange("discountAmount", "");
-  };
-  // === Smart Round-Off: Last digit → 0 or 5 ===
-  useEffect(() => {
-    const baseAmount = subTotal + shipping + tax - discount - extraDiscount;
-    const totalInPaise = Math.round(baseAmount * 100); // Work in paise for precision
-
-    const rupees = Math.floor(totalInPaise / 100);
-    const lastDigit = rupees % 10;
-
-    let targetRupees;
-    if (lastDigit <= 4) {
-      targetRupees = rupees - lastDigit; // e.g., 1023 → 1020
-    } else if (lastDigit >= 6) {
-      targetRupees = rupees + (10 - lastDigit); // e.g., 1027 → 1030
-    } else {
-      targetRupees = rupees; // lastDigit is 5 → keep
-    }
-
-    const targetTotal = targetRupees;
-    const roundOffValue = parseFloat((targetTotal - baseAmount).toFixed(2));
-
-    handleQuotationChange("roundOff", roundOffValue);
-  }, [subTotal, shipping, tax, discount, extraDiscount, handleQuotationChange]);
-  const finalRoundedTotal = useMemo(() => {
-    const base =
-      (subTotal || 0) +
-      (shipping || 0) +
-      (tax || 0) -
-      (discount || 0) -
-      (extraDiscount || 0) +
-      (gstAmount || 0);
-    if (isNaN(base)) return 0;
-
-    const totalInPaise = Math.round(base * 100);
-    const rupees = Math.floor(totalInPaise / 100);
-    const lastDigit = rupees % 10;
-
-    if (lastDigit <= 4) return rupees - lastDigit;
-    if (lastDigit >= 6) return rupees + (10 - lastDigit);
-    return rupees;
-  }, [subTotal, shipping, tax, discount, extraDiscount, gstAmount]);
   return (
-    <Row gutter={[16, 16]} justify="center">
-      <Col xs={24} sm={24} md={16} lg={16}>
-        <CartSummaryCard>
-          {cartItems.length === 0 ? (
-            <EmptyCartWrapper>
-              <Empty
-                description="Your cart is empty"
-                image={<FcEmptyTrash style={{ fontSize: 64 }} />}
-              />
-              <Button
-                type="primary"
-                icon={<ArrowLeftOutlined />}
-                onClick={() => setActiveTab("cart")}
-                style={{ marginTop: 16 }}
-                aria-label="Back to cart"
-              >
-                Back to Cart
-              </Button>
-            </EmptyCartWrapper>
-          ) : (
-            <FormContainer>
-              <Text strong style={{ fontSize: "18px" }}>
-                Checkout
-              </Text>
+    <Row gutter={12}>
+      {/* LEFT: FORM */}
+      <Col xs={24} md={16}>
+        <CompactCard title={<Title level={5}>Quotation Checkout</Title>}>
+          <Collapse defaultActiveKey={["1", "2", "3"]} ghost>
+            {/* 1. Customer & Document */}
+            <Panel header="Customer & Document" key="1">
+              <TightRow gutter={8}>
+                <Col span={8}>
+                  <Text strong>Doc Type</Text>
+                </Col>
+                <Col span={16}>
+                  <MiniSelect value={documentType} onChange={setDocumentType}>
+                    {["Quotation", "Order", "Purchase Order"].map((v) => (
+                      <Option key={v} value={v}>
+                        {v}
+                      </Option>
+                    ))}
+                  </MiniSelect>
+                </Col>
+              </TightRow>
 
-              {/* Document Type */}
-              <FormSection>
-                <Text strong>Document Type</Text>
-                <Select
-                  value={documentType}
-                  onChange={setDocumentType}
-                  placeholder="Select document type"
-                >
-                  <Option value="Quotation">Quotation</Option>
-                  <Option value="Order">Order</Option>
-                  <Option value="Purchase Order">Purchase Order</Option>
-                </Select>
-              </FormSection>
-
-              {/* Customer */}
-              <FormSection>
-                <Text strong>
-                  Customer <span style={{ color: "red" }}>*</span>
-                </Text>
-                <Space direction="vertical" style={{ width: "100%" }}>
-                  <CustomerSelect
+              <TightRow gutter={8}>
+                <Col span={8}>
+                  <Text strong>
+                    Customer <span style={{ color: "red" }}>*</span>
+                  </Text>
+                </Col>
+                <Col span={16}>
+                  <MiniSelect
                     value={selectedCustomer}
-                    onChange={(val) => {
-                      setSelectedCustomer(val);
-                      setQuotationData((prev) => ({ ...prev, shipTo: null }));
+                    onChange={(v) => {
+                      setSelectedCustomer(v);
+                      setQuotationData((p) => ({ ...p, shipTo: null }));
                       setUseBillingAddress(false);
                     }}
-                    placeholder="Select a customer"
                     loading={customersLoading}
-                    disabled={customersLoading || customersError}
                   >
-                    {customersLoading ? (
-                      <Option disabled>Loading...</Option>
-                    ) : customersError ? (
-                      <Option disabled>Error loading customers</Option>
-                    ) : customers.length === 0 ? (
-                      <Option disabled>No customers</Option>
-                    ) : (
-                      customers.map((c) => (
-                        <Option key={c.customerId} value={c.customerId}>
-                          {c.name} ({c.email})
-                        </Option>
-                      ))
-                    )}
-                  </CustomerSelect>
-                  <ActionButton
+                    {customers.map((c) => (
+                      <Option key={c.customerId} value={c.customerId}>
+                        {c.name}
+                      </Option>
+                    ))}
+                  </MiniSelect>
+                  <Button
                     type="link"
                     icon={<UserAddOutlined />}
                     onClick={handleAddCustomer}
+                    block
+                    size="small"
                   >
-                    Add New Customer
-                  </ActionButton>
-                </Space>
-              </FormSection>
+                    Add
+                  </Button>
+                </Col>
+              </TightRow>
+            </Panel>
 
-              <FormSection>
-                <Text strong>
-                  Shipping Address <span style={{ color: "red" }}>*</span>
-                </Text>
-
-                <Space direction="vertical" style={{ width: "100%" }}>
-                  <Select
+            {/* 2. Address */}
+            <Panel header="Shipping Address" key="2">
+              <TightRow gutter={8}>
+                <Col span={8}>
+                  <Text strong>
+                    Address <span style={{ color: "red" }}>*</span>
+                  </Text>
+                </Col>
+                <Col span={16}>
+                  <MiniSelect
                     value={
-                      useBillingAddress
-                        ? "sameAsBilling"
-                        : quotationData.shipTo ||
-                          (filteredAddresses.length === 1
-                            ? filteredAddresses[0].addressId
-                            : undefined)
+                      useBillingAddress ? "sameAsBilling" : quotationData.shipTo
                     }
-                    onChange={async (val) => {
-                      if (val === "sameAsBilling") {
-                        setUseBillingAddress(true);
-                        const newAddrId = await getOrCreateBillingAddress();
-                        if (newAddrId) {
-                          handleQuotationChange("shipTo", newAddrId);
-                        }
-                      } else {
+                    onChange={(v) => {
+                      if (v === "sameAsBilling") setUseBillingAddress(true);
+                      else {
                         setUseBillingAddress(false);
-                        handleQuotationChange("shipTo", val);
+                        handleQuotationChange("shipTo", v);
                       }
                     }}
-                    placeholder="Select shipping address"
                     loading={addressesLoading || isCreatingAddress}
-                    disabled={
-                      !selectedCustomer ||
-                      addressesLoading ||
-                      addressesError ||
-                      isCreatingAddress
-                    }
-                    dropdownRender={(menu) => (
-                      <>
-                        {menu}
-                        <Divider style={{ margin: "8px 0" }} />
-                        <Space style={{ padding: "0 8px 4px" }}>
-                          <ActionButton
-                            type="text"
-                            icon={<UserAddOutlined />}
-                            onClick={handleAddAddress}
-                            disabled={isCreatingAddress}
-                          >
-                            Add New Address
-                          </ActionButton>
-                        </Space>
-                      </>
-                    )}
+                    disabled={!selectedCustomer}
                   >
-                    {/* Option 1: Show "Same as Billing" if primary address exists */}
-                    {selectedCustomer && selectedCustomerData?.address && (
-                      <Option value="sameAsBilling">
-                        Same as Billing Address
+                    {defaultAddress && (
+                      <Option value="sameAsBilling">Same as Billing</Option>
+                    )}
+                    {filteredAddresses.map((a) => (
+                      <Option key={a.addressId} value={a.addressId}>
+                        {`${a.street}, ${a.city} (${a.status})`}
                       </Option>
-                    )}
-
-                    {/* Option 2: Show all saved addresses */}
-                    {filteredAddresses.length > 0 ? (
-                      filteredAddresses.map((addr) => {
-                        const label = `${addr.street}, ${addr.city}, ${
-                          addr.state
-                        }, ${addr.postalCode || addr.zip || ""}, ${
-                          addr.country || "India"
-                        } (${addr.status})`;
-                        return (
-                          <Option key={addr.addressId} value={addr.addressId}>
-                            {label}
-                          </Option>
-                        );
-                      })
-                    ) : (
-                      <Option disabled>No saved addresses</Option>
-                    )}
-                  </Select>
-
-                  {/* Show preview of primary address when "Same as Billing" is selected */}
-                  {useBillingAddress && selectedCustomerData?.address && (
-                    <Text type="secondary">
-                      <strong>Billing (from customer):</strong>{" "}
-                      {`${selectedCustomerData.address.street}, ${
-                        selectedCustomerData.address.city
-                      }, ${selectedCustomerData.address.state}, ${
-                        selectedCustomerData.address.postalCode ||
-                        selectedCustomerData.address.zip ||
-                        ""
-                      }${
-                        selectedCustomerData.address.country
-                          ? `, ${selectedCustomerData.address.country}`
-                          : ""
-                      }`}
-                    </Text>
-                  )}
-                </Space>
-              </FormSection>
-              <FormSection>
-                <Text strong>
-                  Due Date <span style={{ color: "red" }}>*</span>
-                </Text>
-
-                <DatePicker
-                  selected={
-                    quotationData.dueDate
-                      ? new Date(quotationData.dueDate)
-                      : null
-                  }
-                  onChange={(date) => {
-                    const dateStr = date
-                      ? moment(date).format("YYYY-MM-DD")
-                      : "";
-                    handleQuotationChange("dueDate", dateStr);
-                  }}
-                  dateFormat="yyyy-MM-dd"
-                  minDate={new Date()} // disables past dates
-                  placeholderText="Select due date"
-                  className="ant-input" // makes it look like AntD input
-                  wrapperClassName="full-width"
-                  popperClassName="custom-datepicker-popper"
-                  showPopperArrow={false}
-                  customInput={<input style={{ width: "100%" }} />}
-                />
-              </FormSection>
-              {/* Follow-up Dates */}
-              <FormSection>
-                <Text strong>Follow-up Dates</Text>
-                {quotationData.followupDates.map((date, i) => (
-                  <Space key={i} style={{ width: "100%" }}>
-                    <DatePicker
-                      selected={date ? new Date(date) : null}
-                      onChange={(d) =>
-                        handleFollowupDateChange(i, d ? moment(d) : null)
-                      }
-                      dateFormat="yyyy-MM-dd"
-                      minDate={new Date()}
-                      maxDate={
-                        quotationData.dueDate
-                          ? new Date(quotationData.dueDate)
-                          : null
-                      }
-                      placeholderText="Follow-up date"
-                      className="ant-input"
-                      customInput={<input style={{ width: "100%" }} />}
-                    />
-                    <Button
-                      type="text"
-                      danger
-                      icon={<DeleteOutlined />}
-                      onClick={() => removeFollowupDate(i)}
-                    />
-                  </Space>
-                ))}
-                <Button
-                  type="primary"
-                  onClick={addFollowupDate}
-                  icon={<PlusOutlined />}
-                >
-                  Add Follow-up
-                </Button>
-              </FormSection>
-
-              {/* Discount */}
-
-              <FormSection>
-                <Text strong>Extra Discount (on total)</Text>
-                <DiscountContainer>
-                  <Select
-                    value={quotationData.discountType}
-                    onChange={handleDiscountTypeChange}
-                    style={{ width: 120 }}
+                    ))}
+                  </MiniSelect>
+                  <Button
+                    type="link"
+                    icon={<UserAddOutlined />}
+                    onClick={handleAddAddress}
+                    block
+                    size="small"
+                    disabled={!selectedCustomer}
                   >
-                    <Option value="percent">Percent</Option>
-                    <Option value="fixed">Rupees</Option>
-                  </Select>
-                  <InputNumber
-                    value={quotationData.discountAmount}
-                    onChange={(v) => handleQuotationChange("discountAmount", v)}
-                    min={0}
-                    placeholder={
-                      quotationData.discountType === "percent"
-                        ? "Percent"
-                        : "Rupees"
-                    }
-                    style={{ flex: 1 }}
-                  />
-                </DiscountContainer>
-              </FormSection>
-              <FormSection>
-                <Text strong>
-                  GST (%){" "}
-                  <InfoCircleOutlined style={{ fontSize: 12, color: "#888" }} />
-                </Text>
-                <InputNumber
-                  value={gst}
-                  onChange={(v) => setGst(v ?? 0)}
-                  min={0}
-                  max={100}
-                  step={0.01}
-                  placeholder="e.g. 18"
-                  style={{ width: "100%" }}
-                  addonAfter="%"
-                />
-                <Text type="secondary" style={{ fontSize: 12, marginTop: 4 }}>
-                  + GST amount:{" "}
-                  <strong>
-                    ₹{(isNaN(gstAmount) ? 0 : Number(gstAmount)).toFixed(2)}
-                  </strong>
-                </Text>
-              </FormSection>
-              {/* Auto Round Off (Disabled Input) */}
-              <FormSection>
-                <Text strong>Round Off (Auto)</Text>
-                <InputNumber
-                  value={quotationData.roundOff || 0}
-                  disabled
-                  prefix="₹"
-                  style={{ width: "100%", backgroundColor: "#f9f9f9" }}
-                />
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  Auto-rounded to nearest rupee:{" "}
-                  <strong>₹{finalRoundedTotal}</strong>
-                </Text>
-              </FormSection>
+                    Add
+                  </Button>
+                </Col>
+              </TightRow>
+            </Panel>
 
-              {error && <Alert message={error} type="error" showIcon />}
-            </FormContainer>
-          )}
-        </CartSummaryCard>
+            {/* 3. Dates & Discount */}
+            <Panel header="Dates & Discount" key="3">
+              <TightRow gutter={8}>
+                <Col span={8}>
+                  <Text strong>
+                    Due Date <span style={{ color: "red" }}>*</span>
+                  </Text>
+                </Col>
+                <Col span={16}>
+                  <MiniDate
+                    selected={momentToDate(
+                      quotationData.dueDate
+                        ? moment(quotationData.dueDate)
+                        : null
+                    )}
+                    onChange={(d) =>
+                      handleQuotationChange(
+                        "dueDate",
+                        d ? moment(d).format("YYYY-MM-DD") : ""
+                      )
+                    }
+                    minDate={new Date()}
+                  />
+                </Col>
+              </TightRow>
+
+              <TightRow gutter={8}>
+                <Col span={8}>
+                  <Text strong>Follow-ups</Text>
+                </Col>
+                <Col span={16}>
+                  {quotationData.followupDates.map((d, i) => (
+                    <Space key={i} style={{ width: "100%", marginBottom: 4 }}>
+                      <MiniDate
+                        selected={momentToDate(d ? moment(d) : null)}
+                        onChange={(v) => handleFollowup(i, v)}
+                        minDate={new Date()}
+                        maxDate={
+                          quotationData.dueDate
+                            ? moment(quotationData.dueDate).toDate()
+                            : null
+                        }
+                      />
+                      <Button
+                        danger
+                        size="small"
+                        icon={<DeleteOutlined />}
+                        onClick={() => rmFollow(i)}
+                      />
+                    </Space>
+                  ))}
+                  <Button
+                    size="small"
+                    icon={<PlusOutlined />}
+                    onClick={addFollow}
+                  >
+                    Add
+                  </Button>
+                </Col>
+              </TightRow>
+
+              <TightRow gutter={8}>
+                <Col span={8}>
+                  <Text strong>Extra Discount</Text>
+                </Col>
+                <Col span={16}>
+                  <Space.Compact block>
+                    <MiniSelect
+                      value={quotationData.discountType}
+                      onChange={(v) => {
+                        handleQuotationChange("discountType", v);
+                        handleQuotationChange("discountAmount", "");
+                      }}
+                      style={{ width: 80 }}
+                    >
+                      <Option value="percent">%</Option>
+                      <Option value="fixed">₹</Option>
+                    </MiniSelect>
+                    <MiniNumber
+                      value={quotationData.discountAmount}
+                      onChange={(v) =>
+                        handleQuotationChange("discountAmount", v)
+                      }
+                      placeholder={
+                        quotationData.discountType === "percent" ? "5" : "250"
+                      }
+                    />
+                  </Space.Compact>
+                </Col>
+              </TightRow>
+
+              <TightRow gutter={8}>
+                <Col span={8}>
+                  <Text strong>
+                    GST % <InfoCircleOutlined style={{ fontSize: 11 }} />
+                  </Text>
+                </Col>
+                <Col span={16}>
+                  <MiniNumber
+                    value={gst}
+                    onChange={(v) => setGst(v ?? 0)}
+                    min={0}
+                    max={100}
+                    step={0.01}
+                    addonAfter="%"
+                  />
+                  <Text type="secondary" style={{ fontSize: 11 }} block>
+                    +₹{(gstAmount || 0).toFixed(2)}
+                  </Text>
+                </Col>
+              </TightRow>
+
+              <TightRow gutter={8}>
+                <Col span={8}>
+                  <Text strong>Round Off</Text>
+                </Col>
+                <Col span={16}>
+                  <MiniNumber
+                    value={quotationData.roundOff || 0}
+                    disabled
+                    prefix="₹"
+                  />
+                  <Text type="secondary" style={{ fontSize: 11 }} block>
+                    Final: <strong>₹{finalRoundedTotal}</strong>
+                  </Text>
+                </Col>
+              </TightRow>
+            </Panel>
+          </Collapse>
+        </CompactCard>
       </Col>
 
-      {/* Summary Sidebar */}
-      <Col xs={24} sm={24} md={8} lg={8}>
-        <CartSummaryCard>
-          <Text strong>Quotation #: {quotationNumber}</Text>
-          <Divider />
-
+      {/* RIGHT: SUMMARY */}
+      <Col xs={24} md={8}>
+        <CompactCard
+          title={<Text strong>Summary</Text>}
+          style={{ position: "sticky", top: 16 }}
+        >
+          <Text strong>#{quotationNumber}</Text>
+          <Divider style={{ margin: "8px 0" }} />
           <OrderTotal
             subTotal={subTotal}
-            discount={discount} // <-- per-item total
-            extraDiscount={extraDiscount} // <-- amount after tax
+            discount={discount}
+            extraDiscount={extraDiscount}
             tax={tax}
             shipping={shipping}
             roundOff={quotationData.roundOff || 0}
@@ -715,104 +502,36 @@ const QuotationForm = ({
             gstAmount={gstAmount}
             finalTotal={finalRoundedTotal}
             items={cartItems.map((item) => ({
-              productId: item.productId,
-              name: item.name,
-              price: item.price || 0,
-              quantity: item.quantity || 1,
-              discount: Number(itemDiscounts[item.productId]) || 0, // raw value
+              ...item,
+              discount: Number(itemDiscounts[item.productId]) || 0,
               tax: Number(itemTaxes[item.productId]) || 0,
             }))}
           />
-
-          <Divider />
-
-          <CheckoutButton
-            type="primary"
+          <Divider style={{ margin: "8px 0" }} />
+          <CheckoutBtn
+            block
             icon={<CheckCircleOutlined />}
             onClick={() => {
-              if (!validateFollowupDates()) {
-                toast.error("Follow-up dates cannot be after due date.");
-                return;
-              }
+              if (!selectedCustomer) return toast.error("Select customer");
+              if (!quotationData.dueDate) return toast.error("Select due date");
+              if (!quotationData.shipTo && !useBillingAddress)
+                return toast.error("Select shipping");
               handleCreateDocument({ gst, gstAmount });
             }}
-            disabled={
-              cartItems.length === 0 ||
-              !selectedCustomer ||
-              error ||
-              !quotationData.quotationDate ||
-              !quotationData.dueDate ||
-              (!quotationData.shipTo && !(useBillingAddress && defaultAddress))
-            }
-            block
-            size="large"
           >
             Create {documentType}
-          </CheckoutButton>
-
+          </CheckoutBtn>
           <Button
-            type="default"
-            onClick={() => setActiveTab("cart")}
             block
-            style={{ marginTop: 8 }}
+            style={{ marginTop: 4 }}
+            onClick={() => setActiveTab("cart")}
           >
-            Back to Cart
+            Back
           </Button>
-        </CartSummaryCard>
+        </CompactCard>
       </Col>
     </Row>
   );
-};
-
-// PropTypes
-QuotationForm.propTypes = {
-  quotationData: PropTypes.shape({
-    quotationDate: PropTypes.string,
-    dueDate: PropTypes.string,
-    billTo: PropTypes.string,
-    shipTo: PropTypes.string,
-    signatureName: PropTypes.string,
-    discountType: PropTypes.oneOf(["percent", "fixed"]),
-    discountAmount: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-    roundOff: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-    followupDates: PropTypes.arrayOf(PropTypes.string),
-  }).isRequired,
-  setQuotationData: PropTypes.func.isRequired,
-  handleQuotationChange: PropTypes.func.isRequired,
-  selectedCustomer: PropTypes.string,
-  setSelectedCustomer: PropTypes.func.isRequired,
-  customers: PropTypes.array.isRequired,
-  customersLoading: PropTypes.bool.isRequired,
-  customersError: PropTypes.object,
-  addresses: PropTypes.array.isRequired,
-  addressesLoading: PropTypes.bool.isRequired,
-  addressesError: PropTypes.object,
-  userMap: PropTypes.object.isRequired,
-  customerMap: PropTypes.object.isRequired,
-  userQueries: PropTypes.array.isRequired,
-  customerQueries: PropTypes.array.isRequired,
-  error: PropTypes.string,
-  quotationNumber: PropTypes.string.isRequired,
-  documentType: PropTypes.string.isRequired,
-  setDocumentType: PropTypes.func.isRequired,
-  cartItems: PropTypes.array.isRequired,
-  totalAmount: PropTypes.number.isRequired,
-  shipping: PropTypes.number.isRequired,
-  tax: PropTypes.number.isRequired,
-  discount: PropTypes.number.isRequired,
-  roundOff: PropTypes.number.isRequired,
-  subTotal: PropTypes.number.isRequired,
-  handleAddCustomer: PropTypes.func.isRequired,
-  handleAddAddress: PropTypes.func.isRequired,
-  setActiveTab: PropTypes.func.isRequired,
-  handleCreateDocument: PropTypes.func.isRequired,
-  useBillingAddress: PropTypes.bool.isRequired,
-  setUseBillingAddress: PropTypes.func.isRequired,
-  itemDiscounts: PropTypes.object.isRequired,
-  itemTaxes: PropTypes.object.isRequired,
-  gst: PropTypes.number,
-  gstAmount: PropTypes.number,
-  setGst: PropTypes.func,
 };
 
 export default React.memo(QuotationForm);

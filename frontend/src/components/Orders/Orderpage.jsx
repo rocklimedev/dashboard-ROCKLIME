@@ -46,6 +46,7 @@ import useProductsData from "../../data/useProductdata";
 import AddAddress from "../Address/AddAddressModal";
 import "./orderpage.css";
 import { PiPaperPlaneTiltFill } from "react-icons/pi";
+import { Helmet } from "react-helmet";
 
 // Set PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
@@ -681,6 +682,9 @@ const OrderPage = () => {
 
   return (
     <div className="page-wrapper">
+      <Helmet>
+        <title>ORDER #{order.orderNo}</title>
+      </Helmet>
       <div className="content">
         <div className="container-fluid">
           <Row gutter={[16, 16]}>
@@ -928,10 +932,6 @@ const OrderPage = () => {
                         No shipping address available
                       </Text>
                     )}
-                    <Text strong className="payment-method-title">
-                      Payment Method
-                    </Text>
-                    <Text>{customer.paymentMode || "N/A"}</Text>
                   </Card>
                 </Col>
               </Row>
@@ -991,37 +991,15 @@ const OrderPage = () => {
                         <Text type="secondary">Order ID</Text>
                         <Text strong>{order.orderNo || "N/A"}</Text>
                       </li>
-                      <li>
-                        <Text type="secondary">Payment Method</Text>
-                        <Text strong>{customer.paymentMode || "N/A"}</Text>
-                      </li>
-                      <li>
-                        <Text type="secondary">Card Number</Text>
-                        <Text strong>
-                          {customer.paymentMode === "Credit Card"
-                            ? "**** **** **** 1234"
-                            : "N/A"}
-                        </Text>
-                      </li>
-                      <li>
-                        <Text type="secondary">Payment Status</Text>
-                        <Badge
-                          status={
-                            order.status === "CREATED" ? "warning" : "success"
-                          }
-                          text={
-                            order.status === "CREATED" ? "Pending" : "Completed"
-                          }
-                        />
-                      </li>
+
                       <li>
                         <Text type="secondary">Amount Paid</Text>
                         <Text strong>
-                          ₹{customer.paidAmount?.toFixed(2) || "0.00"}
+                          ₹{(parseFloat(order.finalAmount) || 0).toFixed(2)}
                         </Text>
                       </li>
                       <li>
-                        <Text type="secondary">Payment Date</Text>
+                        <Text type="secondary">Order Date</Text>
                         <Text strong>
                           {order.createdAt
                             ? new Date(order.createdAt).toLocaleString()

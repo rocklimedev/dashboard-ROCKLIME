@@ -25,6 +25,7 @@ import {
   Row,
   Col,
   Tooltip,
+  InputNumber,
 } from "antd";
 import { toast } from "sonner";
 import { debounce } from "lodash";
@@ -72,6 +73,7 @@ const STATUS_VALUES = [
   "CANCELED",
   "DRAFT",
   "ONHOLD",
+  "CLOSED",
 ];
 const INVOICE_EDITABLE_STATUSES = [
   "INVOICE",
@@ -158,6 +160,11 @@ const AddNewOrder = ({ adminName }) => {
     masterPipelineNo: null,
     previousOrderNo: null,
     shipTo: null,
+    // === NEW FIELDS ===
+    shipping: 0.0,
+    gst: null,
+    extraDiscount: null,
+    extraDiscountType: "fixed",
   });
 
   // Queries
@@ -265,6 +272,29 @@ const AddNewOrder = ({ adminName }) => {
     });
   }, [customers, formData.sourceType]);
 
+  // === AUTO-CALCULATE GST & DISCOUNT VALUES ===
+  const { gstValue, extraDiscountValue } = useMemo(() => {
+    let subtotal = 0;
+    // If you have products in quotation or order, calculate subtotal
+    // For now, assume products are not in form — skip or add later
+
+    const gst = parseFloat(formData.gst) || 0;
+    const gstVal = (subtotal * gst) / 100;
+
+    const extraDiscount = parseFloat(formData.extraDiscount) || 0;
+    let discountVal = 0;
+    if (formData.extraDiscountType === "percent") {
+      discountVal = (subtotal * extraDiscount) / 100;
+    } else {
+      discountVal = extraDiscount;
+    }
+
+    return {
+      gstValue: parseFloat(gstVal.toFixed(2)),
+      extraDiscountValue: parseFloat(discountVal.toFixed(2)),
+    };
+  }, [formData.gst, formData.extraDiscount, formData.extraDiscountType]);
+
   // Generate orderNo in create mode
   useEffect(() => {
     if (!isEditMode && !isAllOrdersLoading && allOrdersData !== undefined) {
@@ -303,6 +333,10 @@ const AddNewOrder = ({ adminName }) => {
         masterPipelineNo: order.masterPipelineNo || null,
         previousOrderNo: order.previousOrderNo || null,
         shipTo: order.shipTo || null,
+        shipping: order.shipping ?? 0.0,
+        gst: order.gst ?? null,
+        extraDiscount: order.extraDiscount ?? null,
+        extraDiscountType: order.extraDiscountType || "fixed",
       });
       setDescriptionLength((order.description || "").length);
       if (order.assignedTeamId) {
@@ -435,6 +469,14 @@ const AddNewOrder = ({ adminName }) => {
     }));
   };
 
+  const handleNumericChange = (name, value) => {
+    // Allow null or number
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value == null ? null : value,
+    }));
+  };
+
   const handleTeamAdded = (newTeamId) => {
     setShowNewTeamModal(false);
     setFormData((prev) => ({ ...prev, assignedTeamId: newTeamId }));
@@ -470,6 +512,10 @@ const AddNewOrder = ({ adminName }) => {
       masterPipelineNo: null,
       previousOrderNo: null,
       shipTo: null,
+      shipping: 0.0,
+      gst: null,
+      extraDiscount: null,
+      extraDiscountType: "fixed",
     });
     setAssignmentType("team");
     setCustomerSearch("");
@@ -675,6 +721,9 @@ const AddNewOrder = ({ adminName }) => {
     }
 
     try {
+      const sanitize = (value) =>
+        value === "" || value == null ? null : value;
+
       const payload = {
         createdFor: formData.createdFor,
         createdBy: formData.createdBy,
@@ -683,32 +732,50 @@ const AddNewOrder = ({ adminName }) => {
         assignedUserId:
           assignmentType === "users" ? formData.assignedUserId : null,
         secondaryUserId:
-          assignmentType === "users" ? formData.secondaryUserId : null,
+          assignmentType === "users"
+            ? sanitize(formData.secondaryUserId)
+            : null,
         status: formData.status,
         dueDate: formData.dueDate || null,
         followupDates: formData.followupDates.filter(
           (date) => date && moment(date).isValid()
         ),
-        source: formData.source || null,
-        sourceType: formData.sourceType || null,
+        source: sanitize(formData.source),
+        sourceType: sanitize(formData.sourceType),
         priority: formData.priority || null,
         description: formData.description || null,
         invoiceLink: isEditMode ? formData.invoiceLink || null : null,
         orderNo: formData.orderNo,
-        quotationId: formData.quotationId || null,
-        masterPipelineNo: formData.masterPipelineNo || null,
-        previousOrderNo: formData.previousOrderNo || null,
-        shipTo: formData.shipTo || null,
+        quotationId: sanitize(formData.quotationId),
+        masterPipelineNo: sanitize(formData.masterPipelineNo),
+        previousOrderNo: sanitize(formData.previousOrderNo),
+        shipTo: sanitize(formData.shipTo),
+        shipping: parseFloat(formData.shipping) || 0.0,
+        gst:
+          formData.gst != null && formData.gst !== ""
+            ? parseFloat(formData.gst)
+            : null,
+        extraDiscount:
+          formData.extraDiscount != null && formData.extraDiscount !== ""
+            ? parseFloat(formData.extraDiscount)
+            : null,
+        extraDiscountType:
+          formData.extraDiscount != null && formData.extraDiscount !== ""
+            ? formData.extraDiscountType
+            : null,
+        gstValue: gstValue || null,
+        extraDiscountValue: extraDiscountValue || null,
       };
-
       if (isEditMode) {
         if (!id) {
           toast.error("Cannot update order: Invalid order ID.");
           return;
         }
         await updateOrder({ id, ...payload }).unwrap();
+        toast.success("Order updated successfully!");
       } else {
         await createOrder(payload).unwrap();
+        toast.success("Order created successfully!");
       }
       navigate("/orders/list");
     } catch (err) {
@@ -774,17 +841,7 @@ const AddNewOrder = ({ adminName }) => {
   ) {
     return (
       <FormContainer>
-        <Alert variant="danger">
-          Error loading data:{" "}
-          {orderError?.data?.message ||
-            customersError?.data?.message ||
-            usersError?.data?.message ||
-            profileError?.data?.message ||
-            allOrdersError?.data?.message ||
-            addressesError?.data?.message ||
-            "Unknown error"}
-          . Please try again.
-        </Alert>
+        <Alert variant="danger">Error loading data. Please try again.</Alert>
       </FormContainer>
     );
   }
@@ -810,7 +867,7 @@ const AddNewOrder = ({ adminName }) => {
                 title={`Created by ${user.name || "Unknown User"}`}
               />
               <Link to="/orders/list" className="btn btn-secondary">
-                <FaArrowLeft /> Back
+                Back
               </Link>
               <BootstrapButton variant="outline-secondary" onClick={clearForm}>
                 Clear
@@ -1183,7 +1240,7 @@ const AddNewOrder = ({ adminName }) => {
                 </FormSection>
               </Col>
 
-              {/* Advanced Options (Collapsible) */}
+              {/* === ADVANCED OPTIONS === */}
               <Col xs={24}>
                 <Divider orientation="left">
                   <Button
@@ -1192,12 +1249,13 @@ const AddNewOrder = ({ adminName }) => {
                     aria-controls="advanced-options"
                     aria-expanded={advancedOpen}
                   >
-                    Advanced Options {advancedOpen ? "▲" : "▼"}
+                    Advanced Options {advancedOpen ? "Hide" : "Show"}
                   </Button>
                 </Divider>
                 <Collapse in={advancedOpen}>
                   <div id="advanced-options">
                     <Row gutter={[16, 12]}>
+                      {/* Source Type & Source Customer */}
                       <Col xs={24} md={12}>
                         <FormSection>
                           <Text strong>Source Type</Text>
@@ -1205,13 +1263,10 @@ const AddNewOrder = ({ adminName }) => {
                             value={formData.sourceType || undefined}
                             onChange={(value) => {
                               handleChange("sourceType", value);
-                              if (value) {
-                                handleChange("source", "");
-                              }
+                              handleChange("source", "");
                             }}
                             placeholder="Select source type"
                             allowClear
-                            aria-label="Select source type"
                           >
                             {SOURCE_TYPES.map((type) => (
                               <Option key={type} value={type}>
@@ -1228,44 +1283,22 @@ const AddNewOrder = ({ adminName }) => {
                             value={formData.source || undefined}
                             onChange={(value) => handleChange("source", value)}
                             placeholder="Select source customer"
-                            disabled={
-                              !formData.sourceType ||
-                              isCustomersLoading ||
-                              customersError
-                            }
+                            disabled={!formData.sourceType}
                             allowClear
-                            aria-label="Select source customer"
                           >
-                            {sourceCustomers.length > 0 ? (
-                              sourceCustomers.map((customer) => (
-                                <Option
-                                  key={customer.customerId}
-                                  value={customer.customerId}
-                                >
-                                  {customer.name} ({customer.email})
-                                </Option>
-                              ))
-                            ) : (
-                              <Option value="" disabled>
-                                {formData.sourceType
-                                  ? `No customers for ${formData.sourceType}`
-                                  : "Select source type first"}
+                            {sourceCustomers.map((customer) => (
+                              <Option
+                                key={customer.customerId}
+                                value={customer.customerId}
+                              >
+                                {customer.name} ({customer.email})
                               </Option>
-                            )}
+                            ))}
                           </CompactSelect>
                         </FormSection>
                       </Col>
-                      <Col xs={24} md={12}>
-                        <FormSection>
-                          <Text strong>Quotation Number</Text>
-                          <CompactInput
-                            value={formData.source || "N/A"}
-                            readOnly
-                            placeholder="Auto-filled if converted"
-                            aria-label="Quotation number"
-                          />
-                        </FormSection>
-                      </Col>
+
+                      {/* Master & Previous Order */}
                       <Col xs={24} md={12}>
                         <FormSection>
                           <Text strong>Master Pipeline Number</Text>
@@ -1274,28 +1307,19 @@ const AddNewOrder = ({ adminName }) => {
                             onChange={(value) =>
                               handleChange("masterPipelineNo", value)
                             }
-                            placeholder="Select master pipeline order"
+                            placeholder="Select master order"
                             allowClear
-                            aria-label="Select master pipeline order"
                           >
-                            {orders.length > 0 ? (
-                              orders
-                                .filter(
-                                  (order) =>
-                                    order.orderNo &&
-                                    order.orderNo !== formData.orderNo
-                                )
-                                .map((order) => (
-                                  <Option
-                                    key={order.orderNo}
-                                    value={order.orderNo}
-                                  >
-                                    {order.orderNo}
-                                  </Option>
-                                ))
-                            ) : (
-                              <Option disabled>No orders available</Option>
-                            )}
+                            {orders
+                              .filter(
+                                (o) =>
+                                  o.orderNo && o.orderNo !== formData.orderNo
+                              )
+                              .map((o) => (
+                                <Option key={o.orderNo} value={o.orderNo}>
+                                  {o.orderNo}
+                                </Option>
+                              ))}
                           </CompactSelect>
                         </FormSection>
                       </Col>
@@ -1309,29 +1333,86 @@ const AddNewOrder = ({ adminName }) => {
                             }
                             placeholder="Select previous order"
                             allowClear
-                            aria-label="Select previous order"
                           >
-                            {orders.length > 0 ? (
-                              orders
-                                .filter(
-                                  (order) =>
-                                    order.orderNo &&
-                                    order.orderNo !== formData.orderNo
-                                )
-                                .map((order) => (
-                                  <Option
-                                    key={order.orderNo}
-                                    value={order.orderNo}
-                                  >
-                                    {order.orderNo}
-                                  </Option>
-                                ))
-                            ) : (
-                              <Option disabled>No orders available</Option>
-                            )}
+                            {orders
+                              .filter(
+                                (o) =>
+                                  o.orderNo && o.orderNo !== formData.orderNo
+                              )
+                              .map((o) => (
+                                <Option key={o.orderNo} value={o.orderNo}>
+                                  {o.orderNo}
+                                </Option>
+                              ))}
                           </CompactSelect>
                         </FormSection>
                       </Col>
+
+                      {/* === SHIPPING & GST & DISCOUNTS === */}
+                      <Col xs={24} md={12}>
+                        <FormSection>
+                          <Text strong>Shipping Cost</Text>
+                          <InputNumber
+                            min={0}
+                            step={0.01}
+                            precision={2}
+                            style={{ width: "100%" }}
+                            value={formData.shipping}
+                            onChange={(v) => handleNumericChange("shipping", v)}
+                            placeholder="0.00"
+                            addonBefore="₹"
+                          />
+                        </FormSection>
+                      </Col>
+                      <Col xs={24} md={12}>
+                        <FormSection>
+                          <Text strong>GST (%)</Text>
+                          <InputNumber
+                            min={0}
+                            max={100}
+                            step={0.01}
+                            precision={2}
+                            style={{ width: "100%" }}
+                            value={formData.gst}
+                            onChange={(v) => handleNumericChange("gst", v)}
+                            placeholder="18.00"
+                            addonAfter="%"
+                          />
+                        </FormSection>
+                      </Col>
+                      <Col xs={24} md={12}>
+                        <FormSection>
+                          <Text strong>Extra Discount</Text>
+                          <InputNumber
+                            min={0}
+                            step={0.01}
+                            precision={2}
+                            style={{ width: "100%" }}
+                            value={formData.extraDiscount}
+                            onChange={(v) =>
+                              handleNumericChange("extraDiscount", v)
+                            }
+                            placeholder="0.00"
+                            addonBefore="₹"
+                          />
+                        </FormSection>
+                      </Col>
+                      <Col xs={24} md={12}>
+                        <FormSection>
+                          <Text strong>Discount Type</Text>
+                          <Radio.Group
+                            value={formData.extraDiscountType}
+                            onChange={(e) =>
+                              handleChange("extraDiscountType", e.target.value)
+                            }
+                          >
+                            <Radio value="fixed">Fixed (₹)</Radio>
+                            <Radio value="percent">Percent (%)</Radio>
+                          </Radio.Group>
+                        </FormSection>
+                      </Col>
+
+                      {/* Invoice Link */}
                       {isEditMode && (
                         <Col xs={24} md={12}>
                           <FormSection>
@@ -1347,11 +1428,12 @@ const AddNewOrder = ({ adminName }) => {
                                   formData.status
                                 )
                               }
-                              aria-label="Invoice link"
                             />
                           </FormSection>
                         </Col>
                       )}
+
+                      {/* Timeline Dates */}
                       <Col xs={24}>
                         <FormSection>
                           <Text strong>Timeline Dates</Text>
@@ -1364,27 +1446,23 @@ const AddNewOrder = ({ adminName }) => {
                             >
                               <CompactDatePicker
                                 value={date ? moment(date) : null}
-                                onChange={(date) =>
-                                  handleFollowupDateChange(index, date)
+                                onChange={(d) =>
+                                  handleFollowupDateChange(index, d)
                                 }
                                 format="YYYY-MM-DD"
-                                disabledDate={(current) =>
-                                  current &&
-                                  (current < moment().startOf("day") ||
+                                disabledDate={(c) =>
+                                  c &&
+                                  (c < moment().startOf("day") ||
                                     (formData.dueDate &&
-                                      current >
+                                      c >
                                         moment(formData.dueDate).endOf("day")))
                                 }
-                                aria-label={`Select follow-up date ${
-                                  index + 1
-                                }`}
                               />
                               <Button
                                 type="text"
                                 danger
                                 icon={<DeleteOutlined />}
                                 onClick={() => removeFollowupDate(index)}
-                                aria-label="Remove follow-up date"
                               />
                             </Space>
                           ))}
@@ -1392,7 +1470,6 @@ const AddNewOrder = ({ adminName }) => {
                             type="primary"
                             onClick={addFollowupDate}
                             icon={<PlusOutlined />}
-                            aria-label="Add follow-up date"
                           >
                             Add Timeline Date
                           </Button>
@@ -1409,29 +1486,10 @@ const AddNewOrder = ({ adminName }) => {
                   <BootstrapButton
                     variant="secondary"
                     onClick={() => navigate("/orders/list")}
-                    disabled={
-                      isOrderLoading ||
-                      isTeamsLoading ||
-                      isCustomersLoading ||
-                      isUsersLoading ||
-                      isAllOrdersLoading ||
-                      addressesLoading
-                    }
                   >
                     Cancel
                   </BootstrapButton>
-                  <BootstrapButton
-                    variant="primary"
-                    type="submit"
-                    disabled={
-                      isOrderLoading ||
-                      isTeamsLoading ||
-                      isCustomersLoading ||
-                      isUsersLoading ||
-                      isAllOrdersLoading ||
-                      addressesLoading
-                    }
-                  >
+                  <BootstrapButton variant="primary" type="submit">
                     {isEditMode ? "Update Order" : "Create Order"}
                   </BootstrapButton>
                 </Space>

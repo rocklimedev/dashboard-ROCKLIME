@@ -1,17 +1,17 @@
 // QuotationProductModal.jsx
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Modal, Table, Image, Spinner, Alert, Badge } from "react-bootstrap";
 import useProductsData from "../../data/useProductdata";
 
 /* --------------------------------------------------------------- */
-/* Safe JSON parse */
-const safeParse = (str) => {
+/* Safe JSON parse – works with string, array or null */
+const safeParse = (str, fallback = []) => {
   if (Array.isArray(str)) return str;
-  if (!str) return [];
+  if (!str) return fallback;
   try {
     return JSON.parse(str);
   } catch {
-    return [];
+    return fallback;
   }
 };
 
@@ -23,7 +23,6 @@ const QuotationProductModal = ({
   items = [],
   selectedQuotation,
 }) => {
-  const [expandedId, setExpandedId] = useState("");
   const [lineItems, setLineItems] = useState([]);
   const [productMap, setProductMap] = useState({});
 
@@ -62,21 +61,21 @@ const QuotationProductModal = ({
     setProductMap(map);
   }, [productsData]);
 
-  /* ---------- 4. Calculate line totals (FIXED: discount is ₹ amount) ---------- */
-  const calculateTotals = useCallback(() => {
+  /* ---------- 4. Line-item calculations (discount = amount by default) ---------- */
+  const lineCalculations = useMemo(() => {
+    const details = [];
+
     let subTotalExcl = 0;
     let grandTotal = 0;
-    const lineDetails = [];
 
     lineItems.forEach((it) => {
       const meta = productMap[it.productId] || {};
       const unitPrice = meta.sellingPrice || Number(it.sellingPrice) || 0;
       const qty = Number(it.quantity || it.qty || 1);
       const discVal = Number(it.discount || 0);
-      const discType = it.discountType || "amount"; // ← DEFAULT TO AMOUNT
+      const discType = it.discountType || "amount"; // default = fixed ₹
       const taxPct = Number(it.tax || 0);
 
-      // === CORRECT DISCOUNT CALCULATION ===
       const subtotal = unitPrice * qty;
       const discountAmount =
         discType === "percent" ? (subtotal * discVal) / 100 : discVal;
@@ -84,30 +83,33 @@ const QuotationProductModal = ({
       const amountExcl = subtotal - discountAmount;
       const lineTotal = amountExcl * (1 + taxPct / 100);
 
-      lineDetails.push({
-        amountExcl,
-        lineTotal,
+      details.push({
+        ...it,
         unitPrice,
         qty,
-        discountAmount, // ← now correct
         discVal,
         discType,
+        discountAmount,
         taxPct,
+        amountExcl,
+        lineTotal,
       });
 
       subTotalExcl += amountExcl;
       grandTotal += lineTotal;
     });
 
-    return { lineDetails, subTotalExcl, grandTotal };
+    return { details, subTotalExcl, grandTotal };
   }, [lineItems, productMap]);
-  const { lineDetails, subTotalExcl, grandTotal } = calculateTotals();
 
-  /* ---------- 5. Apply shipping + extra discount + round-off ---------- */
-  const applyAdjustments = useCallback(() => {
+  const { details: lineDetails, subTotalExcl, grandTotal } = lineCalculations;
+
+  /* ---------- 5. Apply all adjustments (extra-discount, shipping, GST, round-off) ---------- */
+  const finalBreakdown = useMemo(() => {
+    // ---- 1. Base from lines ----
     let afterLines = grandTotal;
 
-    // === Extra Discount ===
+    // ---- 2. Extra Discount ----
     const extraDisc = Number(selectedQuotation?.extraDiscount) || 0;
     const extraType = selectedQuotation?.extraDiscountType || "fixed";
 
@@ -116,65 +118,69 @@ const QuotationProductModal = ({
 
     if (extraDisc > 0) {
       if (extraType === "percent") {
-        discountAmount = afterLines * (extraDisc / 100);
-        afterExtraDiscount = afterLines - discountAmount;
+        discountAmount = (afterLines * extraDisc) / 100;
       } else {
         discountAmount = extraDisc;
-        afterExtraDiscount = afterLines - extraDisc;
       }
+      afterExtraDiscount = afterLines - discountAmount;
     }
 
-    // === Shipping ===
+    // ---- 3. Shipping ----
     const shipping = Number(selectedQuotation?.shippingAmount) || 0;
+    const amountAfterShipping = afterExtraDiscount + shipping;
 
-    // === GST (if any) ===
+    // ---- 4. GST (flat amount – not percentage) ----
     const gstAmount = Number(selectedQuotation?.gst) || 0;
-    const amountBeforeGst = afterExtraDiscount + shipping;
-    const amountWithGst = amountBeforeGst + gstAmount;
+    const amountWithGst = amountAfterShipping + gstAmount;
 
-    // === Round-off ===
+    // ---- 5. Round-off ----
     const roundOff = Number(selectedQuotation?.roundOff) || 0;
-    const beforeRoundOff = amountWithGst;
-    const afterRoundOff = beforeRoundOff + roundOff;
+    const amountAfterRoundOff = amountWithGst + roundOff;
 
-    // === Final Amount (from DB) ===
-    const finalAmount = Number(selectedQuotation?.finalAmount) || afterRoundOff;
+    // ---- 6. Final amount from DB (fallback) ----
+    const finalAmountFromDB = Number(selectedQuotation?.finalAmount) || 0;
+
+    // ---- 7. Use DB value if different (for audit) ----
+    const finalAmount = finalAmountFromDB;
 
     return {
-      shipping,
+      afterLines,
+      extraDisc,
+      extraType,
       discountAmount,
       afterExtraDiscount,
-      amountBeforeGst,
+      shipping,
+      amountAfterShipping,
       gstAmount,
-      amountWithGst: beforeRoundOff,
+      amountWithGst,
       roundOff,
-      afterRoundOff,
+      amountAfterRoundOff,
       finalAmount,
-      extraType,
+      finalAmountFromDB,
     };
   }, [grandTotal, selectedQuotation]);
 
   const {
-    shipping,
+    afterLines,
+    extraDisc,
+    extraType,
     discountAmount,
     afterExtraDiscount,
-    amountBeforeGst,
+    shipping,
+    amountAfterShipping,
     gstAmount,
     amountWithGst,
     roundOff,
-    afterRoundOff,
+    amountAfterRoundOff,
     finalAmount,
-    extraType,
-  } = applyAdjustments();
-  /* --------------------------------------------------------------- */
-  const toggleExpand = (id) => {
-    setExpandedId((prev) => (prev === id ? "" : id));
-  };
+    finalAmountFromDB,
+  } = finalBreakdown;
 
+  /* --------------------------------------------------------------- */
   return (
     <Modal show={show} onHide={onHide} size="xl" centered>
       <Modal.Header>
-        <Modal.Title>Quotation Products & Pricing</Modal.Title>
+        <Modal.Title>Quotation Products & Full Pricing</Modal.Title>
       </Modal.Header>
 
       <Modal.Body style={{ overflowX: "auto" }}>
@@ -190,12 +196,13 @@ const QuotationProductModal = ({
           </Alert>
         ) : (
           <>
+            {/* ==================== LINE ITEMS ==================== */}
             <Table
               striped
               bordered
               hover
               responsive
-              className="align-middle text-center"
+              className="align-middle text-center mb-4"
             >
               <thead className="table-dark">
                 <tr>
@@ -204,179 +211,159 @@ const QuotationProductModal = ({
                   <th>Product</th>
                   <th>Qty</th>
                   <th>Unit Price</th>
-                  <th>Discount (₹)</th>
+                  <th>Discount</th>
                   <th>Tax (%)</th>
                   <th>Line Total</th>
                 </tr>
               </thead>
-
               <tbody>
                 {lineDetails.map((det, idx) => {
-                  const it = lineItems[idx];
-                  const meta = productMap[it.productId] || {};
+                  const meta = productMap[det.productId] || {};
 
                   return (
-                    <React.Fragment key={it.productId || idx}>
-                      {/* Compact Row */}
-                      <tr style={{ cursor: "pointer" }}>
-                        <td>{idx + 1}</td>
-                        <td>
-                          {meta.imageUrl ? (
-                            <Image
-                              src={meta.imageUrl}
-                              rounded
-                              style={{
-                                width: 55,
-                                height: 55,
-                                objectFit: "contain",
-                              }}
-                            />
-                          ) : (
-                            <div
-                              style={{
-                                width: 55,
-                                height: 55,
-                                background: "#f1f1f1",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontSize: "0.7rem",
-                                color: "#999",
-                              }}
-                            >
-                              No image
-                            </div>
-                          )}
-                        </td>
-                        <td className="text-start">{meta.name || "—"}</td>
-                        <td>{det.qty}</td>
-                        <td>₹{det.unitPrice.toFixed(2)}</td>
-                        <td>
-                          {det.discType === "percent"
-                            ? `${det.discVal}%`
-                            : `₹${det.discountAmount.toFixed(2)}`}
-                        </td>
-                        <td>{det.taxPct.toFixed(2)}%</td>
-                        <td>₹{det.lineTotal.toFixed(2)}</td>
-                      </tr>
-                    </React.Fragment>
+                    <tr key={det.productId || idx}>
+                      <td>{idx + 1}</td>
+                      <td>
+                        {meta.imageUrl ? (
+                          <Image
+                            src={meta.imageUrl}
+                            rounded
+                            style={{
+                              width: 55,
+                              height: 55,
+                              objectFit: "contain",
+                            }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              width: 55,
+                              height: 55,
+                              background: "#f1f1f1",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: "0.7rem",
+                              color: "#999",
+                            }}
+                          >
+                            No image
+                          </div>
+                        )}
+                      </td>
+                      <td className="text-start">{meta.name || "—"}</td>
+                      <td>{det.qty}</td>
+                      <td>₹{det.unitPrice.toFixed(2)}</td>
+                      <td>
+                        {det.discType === "percent"
+                          ? `${det.discVal}%`
+                          : `₹${det.discountAmount.toFixed(2)}`}
+                      </td>
+                      <td>{det.taxPct.toFixed(2)}%</td>
+                      <td>₹{det.lineTotal.toFixed(2)}</td>
+                    </tr>
                   );
                 })}
               </tbody>
+            </Table>
 
-              {/* Footer – Totals */}
-              {/* Footer – Totals */}
-              <tfoot>
+            {/* ==================== FINANCIAL BREAKDOWN ==================== */}
+            <Table bordered className="table-sm">
+              <tbody>
+                {/* 1. Line subtotal (excl. tax) */}
                 <tr className="table-info">
-                  <td colSpan={6} className="text-end">
-                    <strong>Subtotal (excl. tax)</strong>
-                  </td>
-                  <td colSpan={2}>
-                    <strong>₹{subTotalExcl.toFixed(2)}</strong>
+                  <td className="text-end fw-bold">Subtotal (excl. tax)</td>
+                  <td className="text-end fw-bold">
+                    ₹{subTotalExcl.toFixed(2)}
                   </td>
                 </tr>
 
-                {/* Extra Discount */}
-                {discountAmount > 0 && (
+                {/* 2. Line total (incl. tax) */}
+                <tr>
+                  <td className="text-end">Line Total (incl. tax)</td>
+                  <td className="text-end">₹{afterLines.toFixed(2)}</td>
+                </tr>
+
+                {/* 3. Extra Discount */}
+                {extraDisc > 0 && (
                   <tr>
-                    <td colSpan={6} className="text-end">
-                      <strong>
-                        Extra Discount (
-                        {extraType === "percent"
-                          ? `${selectedQuotation.extraDiscount}%`
-                          : `₹${selectedQuotation.extraDiscount}`}
-                        )
-                      </strong>
+                    <td className="text-end">
+                      Extra Discount (
+                      {extraType === "percent"
+                        ? `${extraDisc}%`
+                        : `₹${extraDisc}`}
+                      )
                     </td>
-                    <td colSpan={2}>
-                      <strong>-₹{discountAmount.toFixed(2)}</strong>
+                    <td className="text-end text-danger">
+                      -₹{discountAmount.toFixed(2)}
                     </td>
                   </tr>
                 )}
 
-                {/* Shipping */}
+                {/* 4. After Extra Discount */}
+                {extraDisc > 0 && (
+                  <tr>
+                    <td className="text-end">After Extra Discount</td>
+                    <td className="text-end">
+                      ₹{afterExtraDiscount.toFixed(2)}
+                    </td>
+                  </tr>
+                )}
+
+                {/* 5. Shipping */}
                 {shipping > 0 && (
                   <tr>
-                    <td colSpan={6} className="text-end">
-                      <strong>Shipping</strong>
-                    </td>
-                    <td colSpan={2}>
-                      <strong>+₹{shipping.toFixed(2)}</strong>
+                    <td className="text-end">Shipping</td>
+                    <td className="text-end text-success">
+                      +₹{shipping.toFixed(2)}
                     </td>
                   </tr>
                 )}
 
-                {/* GST */}
+                {/* 6. GST (flat amount) */}
                 {gstAmount > 0 && (
                   <tr>
-                    <td colSpan={6} className="text-end">
-                      <strong>GST</strong>
-                    </td>
-                    <td colSpan={2}>
-                      <strong>+₹{gstAmount.toFixed(2)}</strong>
+                    <td className="text-end">GST</td>
+                    <td className="text-end text-success">
+                      +₹{gstAmount.toFixed(2)}
                     </td>
                   </tr>
                 )}
 
-                {/* Before Round-off */}
+                {/* 7. Amount before round-off */}
                 <tr className="table-secondary">
-                  <td colSpan={6} className="text-end">
-                    <strong>Before Round-off</strong>
-                  </td>
-                  <td colSpan={2}>
-                    <strong>₹{amountWithGst.toFixed(2)}</strong>
+                  <td className="text-end fw-bold">Before Round-off</td>
+                  <td className="text-end fw-bold">
+                    ₹{amountWithGst.toFixed(2)}
                   </td>
                 </tr>
 
-                {/* Round-off */}
+                {/* 8. Round-off */}
                 {roundOff !== 0 && (
                   <tr>
-                    <td colSpan={6} className="text-end">
-                      <strong>Round-off</strong>
+                    <td className="text-end">
+                      Round-off ({roundOff >= 0 ? "+" : "-"}₹
+                      {Math.abs(roundOff).toFixed(2)})
                     </td>
-                    <td colSpan={2}>
-                      <strong>
-                        {(roundOff >= 0 ? "+ " : "- ") +
-                          "₹" +
-                          Math.abs(roundOff).toFixed(2)}
-                      </strong>
+                    <td
+                      className={`text-end ${
+                        roundOff >= 0 ? "text-success" : "text-danger"
+                      }`}
+                    >
+                      {roundOff >= 0 ? "+" : "-"}₹
+                      {Math.abs(roundOff).toFixed(2)}
                     </td>
                   </tr>
                 )}
 
-                {/* Grand Total */}
+                {/* 9. Calculated Grand Total */}
                 <tr className="table-success">
-                  <td colSpan={6} className="text-end">
-                    <strong>Grand Total</strong>
-                    {finalAmount !== afterRoundOff && (
-                      <Badge
-                        bg="warning"
-                        className="ms-2"
-                        style={{ fontSize: "0.7rem" }}
-                      >
-                        DB: ₹{finalAmount.toFixed(2)}
-                      </Badge>
-                    )}
-                  </td>
-                  <td colSpan={2}>
-                    <strong>₹{afterRoundOff.toFixed(2)}</strong>
+                  <td className="text-end fw-bold">Grand Total (calc)</td>
+                  <td className="text-end fw-bold">
+                    ₹{amountAfterRoundOff.toFixed(2)}
                   </td>
                 </tr>
-
-                {/* Final Amount from DB */}
-                {finalAmount !== afterRoundOff && (
-                  <tr className="table-light">
-                    <td colSpan={6} className="text-end">
-                      <strong>Final Amount (as saved)</strong>
-                    </td>
-                    <td colSpan={2}>
-                      <strong className="text-primary">
-                        ₹{finalAmount.toFixed(2)}
-                      </strong>
-                    </td>
-                  </tr>
-                )}
-              </tfoot>
+              </tbody>
             </Table>
           </>
         )}

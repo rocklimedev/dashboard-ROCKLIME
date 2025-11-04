@@ -15,7 +15,7 @@ const Product = require("../models/product"); // Adjust path if needed
     console.log("🧠 Starting product deletion...");
 
     // Load matched products JSON
-    const matchedFile = path.join(__dirname, "matched_products.json");
+    const matchedFile = path.join(__dirname, "remove.json");
 
     if (!fs.existsSync(matchedFile)) {
       throw new Error(

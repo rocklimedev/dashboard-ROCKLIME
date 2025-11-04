@@ -20,10 +20,10 @@ const OrderTotal = React.memo(
     tax = 0,
     roundOff = 0,
     subTotal = 0,
-    discount = 0, // ← total of **per-item** discounts
-    extraDiscount = 0, // ← amount already calculated in the form
-    gst,
-    gstAmount,
+    discount = 0, // <-- **total of per-item discounts** (orig-price – discounted-price)
+    extraDiscount = 0, // <-- amount already calculated in the form
+    gst = 0,
+    gstAmount = 0,
     finalTotal: finalTotalProp,
     onShippingChange,
   }) => {
@@ -57,20 +57,22 @@ const OrderTotal = React.memo(
     const safeRoundOff = safe(roundOff);
     const safeGst = safe(gst);
     const safeGstAmount = safe(gstAmount);
-    /* --------------------------- Calculations --------------------------- */
+
+    /* --------------------------- Calculations (NO ITEM-LEVEL RE-CALC) --------------------------- */
     const calculations = useMemo(() => {
-      const taxable = safeSubTotal - safeDiscount; // 1
-      const afterTax = taxable + safeTax; // 2
-      const afterExtra = afterTax - safeExtraDiscount; // 3
-      const afterShipping = afterExtra + safeShipping; // 4
-      const afterGst = afterShipping + safeGstAmount; // 5
-      const beforeRound = afterGst; // 6
-      const calculated = beforeRound + safeRoundOff; // 7
+      // 1. Sub-total – already includes original prices
+      const taxable = safeSubTotal - safeDiscount; // after per-item discounts
+      const afterTax = taxable + safeTax; // any extra tax (rare)
+      const afterExtra = afterTax - safeExtraDiscount; // extra % / fixed discount
+      const afterShipping = afterExtra + safeShipping; // shipping
+      const afterGst = afterShipping + safeGstAmount; // GST
+      const beforeRound = afterGst;
+      const calculated = beforeRound + safeRoundOff;
 
       const final =
         finalTotalProp != null && !isNaN(finalTotalProp)
           ? finalTotalProp
-          : Math.round(calculated); // fallback to nearest rupee
+          : Math.round(calculated); // nearest rupee
 
       return {
         taxable,
@@ -126,6 +128,8 @@ const OrderTotal = React.memo(
 
     const dataSource = [
       { key: "subtotal", label: "Sub Total", amount: safeSubTotal },
+
+      // **Per-item discount** – comes straight from the cart API
       {
         key: "item-discount",
         label: "Discount (Items)",
@@ -133,11 +137,13 @@ const OrderTotal = React.memo(
         isNegative: true,
       },
 
+      // “Final Amount” = sub-total – item-discounts (no re-calc)
       {
         key: "after-tax",
         label: "Final Amount",
-        amount: calculations.afterTax,
+        amount: calculations.taxable,
       },
+
       ...(safeExtraDiscount > 0
         ? [
             {
@@ -148,6 +154,7 @@ const OrderTotal = React.memo(
             },
           ]
         : []),
+
       {
         key: "shipping",
         label: "Shipping",
@@ -155,6 +162,7 @@ const OrderTotal = React.memo(
         isPositive: true,
         renderEdit: true,
       },
+
       ...(safeGst > 0
         ? [
             {
@@ -165,11 +173,13 @@ const OrderTotal = React.memo(
             },
           ]
         : []),
+
       {
         key: "before-round",
         label: "Before Round-off",
         amount: calculations.afterGst,
       },
+
       ...(safeRoundOff !== 0
         ? [
             {
@@ -181,6 +191,7 @@ const OrderTotal = React.memo(
             },
           ]
         : []),
+
       {
         key: "final",
         label: "Grand Total",
@@ -202,7 +213,6 @@ const OrderTotal = React.memo(
             rowClassName={(record) =>
               record.isTotal ? "ant-table-row-total" : ""
             }
-            // ----- Inline editing for Shipping -----
             onRow={(record) => ({
               onClick: () => {
                 if (record.renderEdit) setIsEditingShipping(true);
@@ -210,10 +220,15 @@ const OrderTotal = React.memo(
             })}
           />
 
-          {/* Hidden editable input – shown only when editing */}
+          {/* Inline editing overlay */}
           {isEditingShipping && (
             <div
-              style={{ position: "absolute", right: 16, top: 16, zIndex: 10 }}
+              style={{
+                position: "absolute",
+                right: 16,
+                top: 16,
+                zIndex: 10,
+              }}
             >
               <Input
                 value={shippingInput}
@@ -230,7 +245,7 @@ const OrderTotal = React.memo(
             </div>
           )}
 
-          {/* Old Tag version (kept for fallback) */}
+          {/* Tag fallback (click-to-edit) */}
           {!isEditingShipping && safeShipping > 0 && (
             <Tag
               color="blue"
@@ -262,6 +277,8 @@ OrderTotal.propTypes = {
   subTotal: PropTypes.number,
   discount: PropTypes.number,
   extraDiscount: PropTypes.number,
+  gst: PropTypes.number,
+  gstAmount: PropTypes.number,
   finalTotal: PropTypes.number,
   onShippingChange: PropTypes.func,
 };

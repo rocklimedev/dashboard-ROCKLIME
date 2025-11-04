@@ -19,7 +19,7 @@ import { ShoppingCartOutlined } from "@ant-design/icons";
 import ProductCard from "./ProductCard";
 import "./pd.css";
 import noimage from "../../assets/img/default.png";
-
+import { Helmet } from "react-helmet";
 const ProductDetails = () => {
   const { id } = useParams();
 
@@ -282,6 +282,11 @@ const ProductDetails = () => {
 
   return (
     <div className="page-wrapper">
+      <Helmet>
+        <title>
+          {product.name} - {brandData?.brandName || "N/A"}
+        </title>
+      </Helmet>
       <div className="content">
         <div className="pd-root">
           <div className="pd-breadcrumbs">
@@ -397,7 +402,8 @@ const ProductDetails = () => {
 
                 <div className="pd-meta">
                   <div>
-                    <strong>SKU:</strong> {product.product_code || "N/A"}
+                    <strong>Product Code:</strong>{" "}
+                    {product.product_code || "N/A"}
                   </div>
                   <div>
                     <strong>Brand:</strong> {brandData?.brandName || "N/A"}
@@ -439,9 +445,7 @@ const ProductDetails = () => {
                             <span>Product Code:</span>{" "}
                             {product.product_code || "N/A"}
                           </li>
-                          <li>
-                            <span>SKU:</span> {product.product_code || "N/A"}
-                          </li>
+
                           <li>
                             <span>Category:</span>{" "}
                             {parentCategoryData?.data?.name ||

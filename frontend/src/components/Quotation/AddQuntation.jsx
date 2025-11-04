@@ -17,6 +17,7 @@ import {
   Card,
   Row,
   Col,
+  Radio,
 } from "antd";
 import {
   SearchOutlined,
@@ -89,9 +90,13 @@ const AddQuotation = () => {
     quotation_date: null,
     due_date: null,
     reference_number: "",
-    gst_value: "",
-    roundOff: "",
-    finalAmount: "",
+    gst: null,
+    shippingAmount: 0.0,
+    extraDiscount: null,
+    extraDiscountType: "fixed",
+    discountAmount: 0.0,
+    roundOff: 0.0,
+    finalAmount: 0.0,
     signature_name: "",
     signature_image: "",
     customerId: "",
@@ -157,9 +162,13 @@ const AddQuotation = () => {
           ? moment(existingQuotation.due_date)
           : null,
         reference_number: existingQuotation.reference_number || "",
-        gst_value: existingQuotation.gst_value || "",
-        roundOff: existingQuotation.roundOff || "",
-        finalAmount: existingQuotation.finalAmount || "",
+        gst: existingQuotation.gst ?? null,
+        shippingAmount: existingQuotation.shippingAmount ?? 0.0,
+        extraDiscount: existingQuotation.extraDiscount ?? null,
+        extraDiscountType: existingQuotation.extraDiscountType || "fixed",
+        discountAmount: existingQuotation.discountAmount ?? 0.0,
+        roundOff: existingQuotation.roundOff ?? 0.0,
+        finalAmount: existingQuotation.finalAmount ?? 0.0,
         signature_name: existingQuotation.signature_name || "",
         signature_image: existingQuotation.signature_image || "",
         customerId: existingQuotation.customerId || "",
@@ -243,18 +252,47 @@ const AddQuotation = () => {
   };
 
   /* ────────────────────── CALCULATE FINAL ────────────────────── */
+  /* ────────────────────── CALCULATE FINAL ────────────────────── */
   const calculateFinal = useCallback(() => {
     const subtotal = formData.products.reduce(
       (s, p) => s + Number(p.total || 0),
       0
     );
-    const gst = formData.gst_value
-      ? (subtotal * Number(formData.gst_value)) / 100
-      : 0;
-    const final = subtotal + gst + Number(formData.roundOff || 0);
-    setFormData((prev) => ({ ...prev, finalAmount: final.toFixed(2) }));
-  }, [formData.products, formData.gst_value, formData.roundOff]);
 
+    // Extra Discount
+    let extraDiscountAmount = 0;
+    const extraDiscount = Number(formData.extraDiscount) || 0;
+    if (extraDiscount > 0) {
+      if (formData.extraDiscountType === "percent") {
+        extraDiscountAmount = (subtotal * extraDiscount) / 100;
+      } else {
+        extraDiscountAmount = extraDiscount;
+      }
+    }
+
+    const afterDiscount = subtotal - extraDiscountAmount;
+
+    const gst = Number(formData.gst) || 0;
+    const gstAmount = (afterDiscount * gst) / 100;
+
+    const shipping = Number(formData.shippingAmount) || 0;
+    const roundOff = Number(formData.roundOff) || 0;
+
+    const final = afterDiscount + gstAmount + shipping + roundOff;
+
+    setFormData((prev) => ({
+      ...prev,
+      discountAmount: parseFloat(extraDiscountAmount.toFixed(2)),
+      finalAmount: isNaN(final) ? 0.0 : parseFloat(final.toFixed(2)),
+    }));
+  }, [
+    formData.products,
+    formData.gst,
+    formData.shippingAmount,
+    formData.extraDiscount,
+    formData.extraDiscountType,
+    formData.roundOff,
+  ]);
   useEffect(() => calculateFinal(), [calculateFinal]);
 
   /* ────────────────────── FOLLOW-UP DATES ────────────────────── */
@@ -298,15 +336,19 @@ const AddQuotation = () => {
       ...formData,
       quotation_date: formData.quotation_date?.format("YYYY-MM-DD"),
       due_date: formData.due_date?.format("YYYY-MM-DD"),
-      gst_value: Number(formData.gst_value) || 0,
-      roundOff: Number(formData.roundOff) || 0,
-      finalAmount: Number(formData.finalAmount) || 0,
+      gst: formData.gst ?? null,
+      shippingAmount: Number(formData.shippingAmount) || 0.0,
+      extraDiscount: formData.extraDiscount ?? null,
+      extraDiscountType: formData.extraDiscountType ?? null,
+      discountAmount: Number(formData.discountAmount) || 0.0,
+      roundOff: Number(formData.roundOff) || 0.0,
+      finalAmount: Number(formData.finalAmount) || 0.0,
       products: formData.products.map((p) => ({
         productId: p.productId,
-        quantity: p.qty,
-        discount: p.discount,
-        tax: p.tax,
-        total: p.total,
+        quantity: Number(p.qty) || 1,
+        discount: Number(p.discount) || 0,
+        tax: Number(p.tax) || 0,
+        total: Number(p.total) || 0,
       })),
       followupDates: formData.followupDates.filter((d) => d),
       shipTo: formData.shipTo || null,
@@ -320,7 +362,7 @@ const AddQuotation = () => {
         setFormData({ ...initialFormData, createdBy: userId });
       }
       message.success("Quotation saved");
-      navigate("/orders/list");
+      navigate("/quotations/list");
     } catch (e) {
       message.error(e.data?.message || "Failed to save");
     }
@@ -638,26 +680,82 @@ const AddQuotation = () => {
             />
           </Card>
 
-          {/* Totals Card */}
-          <Card title="Totals" style={{ marginBottom: 16 }}>
+          {/* Financials Card */}
+          <Card title="Financials" style={{ marginBottom: 16 }}>
             <Row gutter={16}>
               <Col xs={24} sm={8}>
                 <Form.Item label="GST (%)">
                   <InputNumber
                     min={0}
+                    max={100}
+                    step={0.01}
+                    precision={2}
                     style={{ width: "100%" }}
-                    value={formData.gst_value}
-                    onChange={(v) => setFormData({ ...formData, gst_value: v })}
+                    value={formData.gst}
+                    onChange={(v) => setFormData({ ...formData, gst: v })}
+                    addonAfter="%"
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={8}>
+                <Form.Item label="Shipping">
+                  <InputNumber
+                    min={0}
+                    step={0.01}
+                    precision={2}
+                    style={{ width: "100%" }}
+                    value={formData.shippingAmount}
+                    onChange={(v) =>
+                      setFormData({ ...formData, shippingAmount: v })
+                    }
+                    addonBefore="₹"
                   />
                 </Form.Item>
               </Col>
               <Col xs={24} sm={8}>
                 <Form.Item label="Round Off">
                   <InputNumber
+                    step={0.01}
+                    precision={2}
                     style={{ width: "100%" }}
                     value={formData.roundOff}
                     onChange={(v) => setFormData({ ...formData, roundOff: v })}
+                    addonBefore="₹"
                   />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Row gutter={16}>
+              <Col xs={24} sm={8}>
+                <Form.Item label="Extra Discount">
+                  <InputNumber
+                    min={0}
+                    step={0.01}
+                    precision={2}
+                    style={{ width: "100%" }}
+                    value={formData.extraDiscount}
+                    onChange={(v) =>
+                      setFormData({ ...formData, extraDiscount: v })
+                    }
+                    addonBefore="₹"
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={8}>
+                <Form.Item label="Discount Type">
+                  <Radio.Group
+                    value={formData.extraDiscountType}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        extraDiscountType: e.target.value,
+                      })
+                    }
+                  >
+                    <Radio value="fixed">Fixed (₹)</Radio>
+                    <Radio value="percent">Percent (%)</Radio>
+                  </Radio.Group>
                 </Form.Item>
               </Col>
               <Col xs={24} sm={8}>
@@ -666,6 +764,7 @@ const AddQuotation = () => {
                     readOnly
                     style={{ width: "100%" }}
                     value={formData.finalAmount}
+                    formatter={(value) => `₹ ${value}`}
                   />
                 </Form.Item>
               </Col>
@@ -706,7 +805,7 @@ const AddQuotation = () => {
 
           {/* Submit */}
           <Space style={{ marginTop: 24, float: "right" }}>
-            <Button onClick={() => navigate("/orders/list")}>Cancel</Button>
+            <Button onClick={() => navigate("/quotations/list")}>Cancel</Button>
             <Button
               type="primary"
               onClick={handleSubmit}
