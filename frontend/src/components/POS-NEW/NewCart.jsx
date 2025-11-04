@@ -751,31 +751,26 @@ const NewCart = ({ onConvertToOrder }) => {
         products: cartItems.map((item) => {
           const price = parseFloat(item.price) || 0;
           const quantity = parseInt(item.quantity, 10) || 1;
-          const subtotal = price * quantity;
 
-          const itemDiscVal = Number(itemDiscounts[item.productId]) || 0;
-          const itemDiscType = itemDiscountTypes[item.productId] || "percent";
-          const itemDiscount =
-            itemDiscType === "percent"
-              ? (subtotal * itemDiscVal) / 100
-              : itemDiscVal * quantity;
+          const rawDiscount = Number(itemDiscounts[item.productId]) || 0;
+          const discountType = itemDiscountTypes[item.productId] || "percent";
 
-          const itemTaxPct = Number(itemTaxes[item.productId]) || 0;
-          const itemTax = (subtotal * itemTaxPct) / 100;
+          const unitPriceAfterDiscount =
+            discountType === "percent"
+              ? price * (1 - rawDiscount / 100)
+              : price - rawDiscount;
 
-          const itemTotal = subtotal - itemDiscount + itemTax;
+          // CRITICAL FIX: Use Math.round() to ensure integer
+          const total = Math.round(unitPriceAfterDiscount * quantity);
 
           return {
-            productId: item.productId,
-            name: item.name || "Unnamed Product",
+            id: item.productId,
+            price: Number(price.toFixed(2)),
+            discount: Number(rawDiscount.toFixed(2)),
+            total, // Now guaranteed integer
             quantity,
-            sellingPrice: price,
-            discount: parseFloat(itemDiscount.toFixed(2)), // per-item discount
-            tax: itemTaxPct,
-            total: parseFloat(itemTotal.toFixed(2)),
           };
         }),
-
         // GLOBAL EXTRA DISCOUNT (on top of per-item)
         extraDiscount: parseFloat(quotationData.discountAmount) || 0,
         extraDiscountType: quotationData.discountType,
@@ -797,7 +792,7 @@ const NewCart = ({ onConvertToOrder }) => {
         );
       }
     } else if (documentType === "Order") {
-      const orderNoRegex = /^\d{1,2}\d{1,2}25\d{3,}$/;
+      const orderNoRegex = /^\d{1,2}\d{2}25\d{3,}$/;
       if (!orderData.orderNo || !orderNoRegex.test(orderData.orderNo)) {
         return toast.error(
           "Order Number must be in the format DDMM25XXX (e.g., 151025101)."
@@ -807,6 +802,19 @@ const NewCart = ({ onConvertToOrder }) => {
       if (!validateFollowupDates()) {
         return toast.error("Follow-up dates cannot be after the due date.");
       }
+
+      // Calculate extra discount value FIRST
+      const taxableBase = subTotal - totalDiscount + tax;
+      const afterTax = taxableBase + shipping;
+
+      const extraDiscountValue =
+        quotationData.discountType === "percent"
+          ? (afterTax * parseFloat(quotationData.discountAmount || 0)) / 100
+          : parseFloat(quotationData.discountAmount || 0);
+
+      const amountForGst =
+        subTotal + shipping + tax - totalDiscount - extraDiscountValue;
+      const gstAmount = Math.round((amountForGst * gst) / 100); // ← Integer
 
       const orderPayload = {
         id: uuidv4(),
@@ -818,6 +826,12 @@ const NewCart = ({ onConvertToOrder }) => {
         secondaryUserId: orderData.secondaryUserId || null,
         pipeline: orderData.pipeline || null,
         status: orderData.status || "PREPARING",
+        gst: gst,
+        gstValue: Number(gstAmount),
+        extraDiscount: parseFloat(quotationData.discountAmount || 0),
+        extraDiscountType: quotationData.discountType || "percent",
+        extraDiscountValue: Number(extraDiscountValue.toFixed(2)),
+
         dueDate: orderData.dueDate,
         followupDates: orderData.followupDates.filter(
           (date) => date && moment(date).isValid()
@@ -833,36 +847,29 @@ const NewCart = ({ onConvertToOrder }) => {
         products: cartItems.map((item) => {
           const price = parseFloat(item.price) || 0;
           const quantity = parseInt(item.quantity, 10) || 1;
-          const subtotal = price * quantity;
 
-          // Get per-item discount
           const rawDiscount = Number(itemDiscounts[item.productId]) || 0;
-          const discountType = itemDiscountTypes[item.productId] || "percent";
+          const discountType = itemDiscountTypes[item.productId] || "percent"; // ← CRITICAL
 
-          let discountAmount = 0;
-          if (discountType === "percent") {
-            discountAmount = (subtotal * rawDiscount) / 100;
-          } else {
-            discountAmount = rawDiscount * quantity; // fixed per unit
-          }
+          // CORRECT: Apply discount per unit
+          const unitPriceAfterDiscount =
+            discountType === "percent"
+              ? price * (1 - rawDiscount / 100)
+              : price - rawDiscount;
 
-          // Get per-item tax
-          const taxPct = Number(itemTaxes[item.productId]) || 0;
-          const taxAmount = (subtotal * taxPct) / 100;
-
-          // Final total for this line item
-          const total = subtotal - discountAmount + taxAmount;
+          // CORRECT: Line total (NO TAX)
+          const total = Number((unitPriceAfterDiscount * quantity).toFixed(2));
 
           return {
             id: item.productId,
-            price: parseFloat(price.toFixed(2)),
-            discount: parseFloat(rawDiscount.toFixed(2)), // raw value (percent or fixed)
-            total: parseFloat(total.toFixed(2)),
+            price: Number(price.toFixed(2)),
+            discount: Number(rawDiscount.toFixed(2)),
+            total, // ← will be 63.00 → 63
             quantity,
           };
         }),
       };
-
+      console.log(orderPayload);
       try {
         await createOrder(orderPayload).unwrap();
         await handleClearCart();
@@ -881,11 +888,21 @@ const NewCart = ({ onConvertToOrder }) => {
             : `Something went wrong: ${
                 error.data?.message || "Please try again."
               }`;
+        console.log(error);
         toast.error(errorMessage);
       }
     }
   };
-
+  // Sync OrderForm extra discount changes back to quotationData for consistent totals
+  useEffect(() => {
+    if (documentType === "Order") {
+      setQuotationData((prev) => ({
+        ...prev,
+        discountType: orderData.extraDiscountType || "percent",
+        discountAmount: orderData.extraDiscount?.toString() || "",
+      }));
+    }
+  }, [documentType, orderData.extraDiscountType, orderData.extraDiscount]);
   const resetForm = () => {
     setQuotationData({
       quotationDate: new Date().toISOString().split("T")[0],
@@ -1185,7 +1202,9 @@ const NewCart = ({ onConvertToOrder }) => {
                 totalAmount={totalAmount}
                 shipping={shipping}
                 tax={tax}
-                discount={totalDiscount}
+                totalDiscount={totalDiscount}
+                extraDiscount={orderData.extraDiscount}
+                extraDiscountType={orderData.extraDiscountType}
                 roundOff={roundOff}
                 subTotal={subTotal}
                 handleAddCustomer={handleAddCustomer}

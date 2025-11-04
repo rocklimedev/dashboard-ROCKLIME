@@ -19,116 +19,160 @@ export const exportToPDF = async (ref, id, activeVersion) => {
   const clone = ref.current.cloneNode(true);
   document.body.appendChild(clone);
 
-  /* ---- force printable area --------------------------------------- */
+  // --- Force styles for print ---
   clone.style.cssText = `
     position: absolute !important;
     left: -9999px !important;
-    top: 0 !important;
+    top: 0 !left;
     visibility: visible !important;
     width: ${ref.current.scrollWidth}px !important;
     overflow: visible !important;
+    background: white !important;
   `;
 
-  /* ---- print styles ------------------------------------------------ */
   const style = document.createElement("style");
   style.textContent = `
     * { font-family: Arial, sans-serif !important; }
     table { table-layout: fixed; width: 100%; border-collapse: collapse; }
     td, th { border: 1px solid #ddd; padding: 5px; font-size: 11px; word-wrap: break-word; }
-    img { max-width: 60px; height: auto; }
-    .product-img { height: 50px; width: auto; }
+    img { max-width: 60px; height: auto; object-fit: contain; }
+    .product-img { height: 50px; width: auto; display: block; }
+    .logo-img { height: 70px; width: auto; }
   `;
   clone.appendChild(style);
 
-  /* ---- PRE-LOAD & REPLACE ALL IMAGES ------------------------------ */
-  const logoImgEl = clone.querySelector(".logo-img");
-  const productImgEls = clone.querySelectorAll(".product-img");
+  // --- IMAGE PRELOAD FUNCTION ---
+  const loadImageAsDataURL = (src) => {
+    return new Promise((resolve, reject) => {
+      if (!src || src.startsWith("data:")) {
+        resolve(src);
+        return;
+      }
 
-  const toDataUrl = async (src) => {
-    if (src.startsWith("data:")) return src; // already data-URL
-    const { buffer, extension } = await fetchImg(src);
-    const base64 = btoa(String.fromCharCode(...buffer));
-    return `data:image/${extension};base64,${base64}`;
+      const img = new Image();
+      img.crossOrigin = "anonymous"; // Crucial for CORS
+
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+        try {
+          const dataURL = canvas.toDataURL("image/png");
+          resolve(dataURL);
+        } catch (err) {
+          console.warn("Image CORS blocked, using placeholder", src);
+          resolve(placeholder); // fallback
+        }
+      };
+
+      img.onerror = () => {
+        console.warn("Image failed to load", src);
+        resolve(placeholder);
+      };
+
+      img.src = src;
+    });
   };
 
-  const imgPromises = [];
+  // --- REPLACE ALL IMAGES WITH DATA URLS ---
+  const logoImgEl = clone.querySelector(".logo-img");
+  const productImgEls = Array.from(clone.querySelectorAll(".product-img"));
 
-  if (logoImgEl && logoImgEl.src) {
-    imgPromises.push(
-      toDataUrl(logoImgEl.src).then((url) => {
-        logoImgEl.src = url;
+  const imageReplacements = [];
+
+  if (logoImgEl?.src) {
+    imageReplacements.push(
+      loadImageAsDataURL(logoImgEl.src).then((dataURL) => {
+        logoImgEl.src = dataURL;
+        logoImgEl.style.opacity = "1";
       })
     );
   }
 
-  productImgEls.forEach((el) => {
-    if (el.src) {
-      imgPromises.push(
-        toDataUrl(el.src).then((url) => {
-          el.src = url;
+  productImgEls.forEach((imgEl) => {
+    if (imgEl.src && !imgEl.src.startsWith("data:")) {
+      imageReplacements.push(
+        loadImageAsDataURL(imgEl.src).then((dataURL) => {
+          imgEl.src = dataURL;
+          imgEl.style.opacity = "1";
         })
       );
     }
   });
 
-  await Promise.all(imgPromises);
+  // --- WAIT FOR ALL IMAGES ---
+  await Promise.all(imageReplacements);
 
-  /* give the DOM a tiny tick to repaint the new src values */
-  await new Promise((resolve) => {
-    requestAnimationFrame(() => setTimeout(resolve, 50));
-  });
+  // --- FORCE REPAINT (Critical!) ---
+  clone.style.display = "none";
+  void clone.offsetHeight; // Trigger reflow
+  clone.style.display = "";
 
-  /* ---- render canvas ------------------------------------------------ */
+  // Small delay to ensure browser renders images
+  await new Promise((r) => setTimeout(r, 100));
+
+  // --- RENDER CANVAS ---
   let canvas;
   try {
     canvas = await html2canvas(clone, {
       scale: 2,
       useCORS: true,
-      allowTaint: true,
+      allowTaint: false, // We already converted to data URL
       backgroundColor: "#ffffff",
       logging: false,
       width: clone.scrollWidth,
       height: clone.scrollHeight,
-      windowWidth: clone.scrollWidth,
-      windowHeight: clone.scrollHeight,
+      windowWidth: clone.scrollWidth + 100,
+      windowHeight: clone.scrollHeight + 100,
+      scrollX: 0,
+      scrollY: 0,
     });
+  } catch (err) {
+    console.error("html2canvas failed", err);
+    throw err;
   } finally {
     document.body.removeChild(clone);
   }
 
-  /* ---- generate PDF (unchanged) ------------------------------------ */
+  // --- GENERATE PDF ---
   const imgData = canvas.toDataURL("image/png");
   const pdf = new jsPDF("p", "mm", "a4");
   const pdfWidth = pdf.internal.pageSize.getWidth();
   const pdfHeight = pdf.internal.pageSize.getHeight();
   const margin = 10;
   const availableWidth = pdfWidth - 2 * margin;
-
   const imgHeight = (canvas.height * availableWidth) / canvas.width;
+
   let heightLeft = imgHeight;
   let position = margin;
 
   pdf.addImage(imgData, "PNG", margin, position, availableWidth, imgHeight);
-  heightLeft -= pdfHeight - margin * 2;
+  heightLeft -= pdfHeight - 2 * margin;
 
   while (heightLeft > 0) {
     position = heightLeft - imgHeight + margin;
     pdf.addPage();
     pdf.addImage(imgData, "PNG", margin, position, availableWidth, imgHeight);
-    heightLeft -= pdfHeight - margin * 2;
+    heightLeft -= pdfHeight - 2 * margin;
   }
 
-  /* ---- attach T&C (optional) -------------------------------------- */
+  // --- ATTACH T&C PDF ---
   try {
     const tncRes = await fetch(termsAndConditionsPdf);
+    if (!tncRes.ok) throw new Error("T&C fetch failed");
     const tncBuffer = await tncRes.arrayBuffer();
     const tncDoc = await PDFDocument.load(tncBuffer);
     const mainDoc = await PDFDocument.load(await pdf.output("arraybuffer"));
+
     const pages = await mainDoc.copyPages(tncDoc, tncDoc.getPageIndices());
     pages.forEach((p) => mainDoc.addPage(p));
-    const bytes = await mainDoc.save();
-    downloadBlob(bytes, `Quotation_${id}_Version_${activeVersion}.pdf`);
+
+    const finalBytes = await mainDoc.save();
+    downloadBlob(finalBytes, `Quotation_${id}_Version_${activeVersion}.pdf`);
   } catch (err) {
+    console.warn("T&C attachment failed, saving without it", err);
     pdf.save(`Quotation_${id}_Version_${activeVersion}.pdf`);
   }
 };

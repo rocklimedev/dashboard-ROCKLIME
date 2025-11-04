@@ -41,7 +41,7 @@ import "./customerdetails.css";
 import { LeftOutlined, CalendarOutlined } from "@ant-design/icons";
 import { Form as AntdForm, Input, Button as AntdButton } from "antd";
 import { toast } from "react-toastify";
-
+import { Helmet } from "react-helmet";
 const CustomerDetails = () => {
   const { id } = useParams();
 
@@ -377,6 +377,9 @@ const CustomerDetails = () => {
 
   return (
     <div className="page-wrapper">
+      <Helmet>
+        <title>{customer?.name}</title>
+      </Helmet>
       <div className="content">
         <div className="page-header">
           <div>

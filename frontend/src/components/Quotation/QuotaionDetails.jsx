@@ -18,6 +18,7 @@ import useProductsData from "../../data/useProductdata";
 
 import { exportToPDF, exportToExcel } from "./hooks/exportHelpers";
 import { calcTotals, amountInWords } from "./hooks/calcHelpers";
+import { Helmet } from "react-helmet";
 
 const companyId = "401df7ef-f350-4bc4-ba6f-bf36923af252";
 
@@ -252,6 +253,11 @@ const QuotationsDetails = () => {
   // === RENDER ===
   return (
     <div className="page-wrapper">
+      <Helmet>
+        <title>
+          {quotation?.document_title} - {quotation?.reference_number}
+        </title>
+      </Helmet>
       <div className="content">
         <div className="row">
           <div className="col-sm-10 mx-auto">

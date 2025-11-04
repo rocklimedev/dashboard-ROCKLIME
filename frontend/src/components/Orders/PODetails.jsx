@@ -18,6 +18,7 @@ import "./po.css"; // Assume a similar CSS file for styling
 import useProductsData from "../../data/useProductdata";
 import { Buffer } from "buffer";
 import { LeftOutlined, PrinterOutlined } from "@ant-design/icons";
+import { Helmet } from "react-helmet";
 const PODetails = () => {
   const { id } = useParams();
   const {
@@ -552,6 +553,9 @@ const PODetails = () => {
 
   return (
     <div className="page-wrapper">
+      <Helmet>
+        <title>{purchaseOrder?.poNumber}</title>
+      </Helmet>
       <div className="content">
         <div className="row">
           <div className="col-sm-10 mx-auto">

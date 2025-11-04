@@ -197,10 +197,13 @@ const SidebarNew = ({
           <button
             onClick={handleLogout}
             disabled={isLoggingOut}
-            className="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2"
+            className={`btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2 ${
+              isSidebarOpen ? "" : "py-2 px-0"
+            }`}
+            title="Logout"
           >
-            <BiLogOut />
-            {isLoggingOut ? "Logging out..." : "Logout"}
+            <BiLogOut size={20} />
+            {isSidebarOpen && (isLoggingOut ? "Logging out..." : "Logout")}
           </button>
         </div>
       </div>

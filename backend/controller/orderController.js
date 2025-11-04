@@ -18,6 +18,20 @@ const sanitizeHtml = require("sanitize-html");
 const { Readable } = require("stream");
 const moment = require("moment");
 const { sendNotification } = require("./notificationController"); // Import sendNotification
+// ──────── HELPERS ────────
+const VALID_STATUSES = [
+  "PREPARING",
+  "CHECKING",
+  "INVOICE",
+  "DISPATCHED",
+  "DELIVERED",
+  "PARTIALLY_DELIVERED",
+  "CANCELED",
+  "DRAFT",
+  "ONHOLD",
+  "CLOSED", // ← NEW
+];
+const VALID_PRIORITIES = ["high", "medium", "low"];
 
 // Assume an admin user ID or system channel for notifications
 const ADMIN_USER_ID = "2ef0f07a-a275-4fe1-832d-fe9a5d145f60"; // Replace with actual admin user ID or channel
@@ -365,7 +379,165 @@ exports.deleteComment = async (req, res) => {
   }
 };
 
-// Create an order
+/**
+ * Compute totals (GST, extra discount, final amount, amountPaid validation)
+ * @returns {{gstValue, extraDiscountValue, subTotal, finalTotal}}
+ */
+function computeTotals({
+  products = [],
+  shipping = 0,
+  gst = 0,
+  extraDiscount = 0,
+  extraDiscountType = "fixed",
+  amountPaid = 0,
+}) {
+  // 1. Sub-total (price * qty after line-discount)
+  const subTotal = products.reduce((sum, p) => sum + (p.total ?? 0), 0);
+
+  // 2. Shipping
+  const totalWithShipping = subTotal + Number(shipping);
+
+  // 3. GST
+  const gstValue = (totalWithShipping * Number(gst)) / 100;
+
+  // 4. Extra discount
+  let extraDiscountValue = 0;
+  if (extraDiscount > 0) {
+    extraDiscountValue =
+      extraDiscountType === "percent"
+        ? (totalWithShipping * Number(extraDiscount)) / 100
+        : Number(extraDiscount);
+  }
+
+  // 5. **FINAL AMOUNT**
+  const finalAmount = totalWithShipping + gstValue - extraDiscountValue;
+
+  // // 6. amountPaid must not exceed final amount
+  // if (Number(amountPaid) > finalAmount + 0.01) {
+  //   throw new Error(
+  //     `amountPaid (${amountPaid}) cannot exceed final amount (${finalAmount.toFixed(
+  //       2
+  //     )})`
+  //   );
+  // }
+
+  return {
+    subTotal,
+    totalWithShipping,
+    gstValue,
+    extraDiscountValue,
+    finalAmount, // <-- NEW
+  };
+}
+
+/**
+ * Reduce stock + log history (shared by create & update when products change)
+ */
+async function reduceStockAndLog({
+  productUpdates,
+  createdBy,
+  orderNo,
+  customMessage,
+}) {
+  const username = (
+    await User.findByPk(createdBy, { attributes: ["username"] })
+  ).username;
+  const autoMsg = `Stock removed by ${username} (Order #${orderNo})`;
+  const msg = customMessage?.trim() || autoMsg;
+
+  for (const upd of productUpdates) {
+    const { productId, quantityToReduce, productRecord } = upd;
+
+    // ---- update qty
+    const newQty = productRecord.quantity - quantityToReduce;
+    await Product.update({ quantity: newQty }, { where: { productId } });
+
+    // ---- mongo history
+    try {
+      await InventoryHistory.findOneAndUpdate(
+        { productId },
+        {
+          $push: {
+            history: {
+              quantity: -quantityToReduce,
+              action: "remove-stock",
+              timestamp: new Date(),
+              orderNo,
+              userId: createdBy,
+              message: msg,
+            },
+          },
+        },
+        { upsert: true, new: true }
+      );
+    } catch (e) {
+      console.error(`InventoryHistory error (pid ${productId}):`, e);
+    }
+
+    // ---- status
+    let newStatus = "active";
+    if (newQty === 0) newStatus = "out_of_stock";
+    else if (
+      productRecord.alert_quantity &&
+      newQty <= productRecord.alert_quantity
+    )
+      newStatus = "low_stock";
+
+    if (newStatus !== productRecord.status) {
+      await Product.update({ status: newStatus }, { where: { productId } });
+    }
+
+    // ---- low / out-of-stock admin notification
+    if (["out_of_stock", "low_stock"].includes(newStatus)) {
+      await sendNotification({
+        userId: ADMIN_USER_ID,
+        title: `Product ${newStatus.replace("_", " ")}`,
+        message: `Product ${productRecord.name} is now ${newStatus.replace(
+          "_",
+          " "
+        )} (Qty: ${newQty})`,
+      });
+    }
+  }
+}
+
+/**
+ * Re-add stock when order is canceled / deleted
+ */
+async function restoreStock({ products, orderNo }) {
+  if (!products?.length) return;
+
+  for (const p of products) {
+    const prod = await Product.findByPk(p.id);
+    if (!prod) continue;
+
+    const newQty = prod.quantity + (p.quantity ?? 0);
+    await Product.update({ quantity: newQty }, { where: { productId: p.id } });
+
+    // optional mongo log
+    try {
+      await InventoryHistory.findOneAndUpdate(
+        { productId: p.id },
+        {
+          $push: {
+            history: {
+              quantity: p.quantity,
+              action: "add-stock",
+              timestamp: new Date(),
+              orderNo,
+              message: `Stock restored (order ${orderNo} cancelled/deleted)`,
+            },
+          },
+        },
+        { upsert: true }
+      );
+    } catch (e) {
+      console.error(e);
+    }
+  }
+}
+
+// ──────── CREATE ORDER ────────
 exports.createOrder = async (req, res) => {
   try {
     const {
@@ -387,10 +559,14 @@ exports.createOrder = async (req, res) => {
       previousOrderNo,
       shipTo,
       shipping,
-      message: customMessage, // Optional override
+      message: customMessage,
+      gst = 0,
+      extraDiscount = 0,
+      extraDiscountType = "fixed",
+      amountPaid = 0, // ← NEW
     } = req.body;
 
-    // ──────── VALIDATIONS (unchanged) ────────
+    // ── BASIC REQUIRED ──
     if (!createdFor || !createdBy || !orderNo) {
       return sendErrorResponse(
         res,
@@ -399,75 +575,62 @@ exports.createOrder = async (req, res) => {
       );
     }
 
-    if (shipping != null) {
-      const parsedShipping = parseFloat(shipping);
-      if (isNaN(parsedShipping) || parsedShipping < 0) {
-        return sendErrorResponse(res, 400, "Invalid shipping amount");
-      }
+    // ── SHIPPING ──
+    const parsedShipping = shipping == null ? 0 : parseFloat(shipping);
+    if (isNaN(parsedShipping) || parsedShipping < 0) {
+      return sendErrorResponse(res, 400, "Invalid shipping amount");
     }
 
-    const user = await User.findByPk(createdBy, {
-      attributes: ["username", "name"],
-    });
-    if (!user) return sendErrorResponse(res, 404, "Creator user not found");
-
-    const customer = await Customer.findByPk(createdFor);
+    // ── USER / CUSTOMER ──
+    const [creator, customer] = await Promise.all([
+      User.findByPk(createdBy, { attributes: ["username", "name"] }),
+      Customer.findByPk(createdFor),
+    ]);
+    if (!creator) return sendErrorResponse(res, 404, "Creator user not found");
     if (!customer) return sendErrorResponse(res, 404, "Customer not found");
 
-    // Validate quotationId if provided
+    // ── QUOTATION (optional) ──
     if (quotationId) {
-      const quotation = await Quotation.findByPk(quotationId);
-      if (!quotation) {
-        return sendErrorResponse(res, 404, "Quotation not found");
-      }
+      const q = await Quotation.findByPk(quotationId);
+      if (!q) return sendErrorResponse(res, 404, "Quotation not found");
     }
 
-    // Validate masterPipelineNo if provided
+    // ── MASTER / PREVIOUS (optional) ──
     if (masterPipelineNo) {
-      const masterOrder = await Order.findOne({
-        where: { orderNo: masterPipelineNo },
-      });
-      if (!masterOrder) {
+      const m = await Order.findOne({ where: { orderNo: masterPipelineNo } });
+      if (!m)
         return sendErrorResponse(
           res,
           404,
-          `Master order with orderNo ${masterPipelineNo} not found`
+          `Master order ${masterPipelineNo} not found`
         );
-      }
-      if (masterPipelineNo === orderNo) {
+      if (masterPipelineNo === orderNo)
         return sendErrorResponse(
           res,
           400,
-          "Master pipeline number cannot be the same as order number"
+          "Master pipeline cannot equal orderNo"
         );
-      }
     }
-
-    // Validate previousOrderNo if provided
     if (previousOrderNo) {
-      const previousOrder = await Order.findOne({
-        where: { orderNo: previousOrderNo },
-      });
-      if (!previousOrder) {
+      const p = await Order.findOne({ where: { orderNo: previousOrderNo } });
+      if (!p)
         return sendErrorResponse(
           res,
           404,
-          `Previous order with orderNo ${previousOrderNo} not found`
+          `Previous order ${previousOrderNo} not found`
         );
-      }
-      if (previousOrderNo === orderNo) {
+      if (previousOrderNo === orderNo)
         return sendErrorResponse(
           res,
           400,
-          "Previous order number cannot be the same as order number"
+          "Previous order cannot equal orderNo"
         );
-      }
     }
 
-    // Validate products array if provided
+    // ── PRODUCTS ──
     let productUpdates = [];
     if (products) {
-      if (!Array.isArray(products) || products.length === 0) {
+      if (!Array.isArray(products) || !products.length) {
         return sendErrorResponse(
           res,
           400,
@@ -475,12 +638,11 @@ exports.createOrder = async (req, res) => {
         );
       }
 
-      for (const product of products) {
-        const { id, price, discount, total, quantity } = product;
-
+      for (const p of products) {
+        const { id, price, discount, total, quantity } = p;
         if (
           !id ||
-          price == null || // null or undefined
+          price == null ||
           discount == null ||
           total == null ||
           quantity == null ||
@@ -489,152 +651,155 @@ exports.createOrder = async (req, res) => {
           return sendErrorResponse(
             res,
             400,
-            "Each product must have id, price, discount, total, and quantity (>= 1)"
+            "Each product needs id, price, discount, total, quantity (>=1)"
           );
         }
 
-        const productRecord = await Product.findByPk(id);
-        if (!productRecord) {
-          return sendErrorResponse(res, 404, `Product with ID ${id} not found`);
+        const prod = await Product.findByPk(id);
+        if (!prod)
+          return sendErrorResponse(res, 404, `Product ${id} not found`);
+
+        // numeric checks
+        if (
+          typeof price !== "number" ||
+          price < 0 ||
+          typeof discount !== "number" ||
+          discount < 0 ||
+          typeof total !== "number" ||
+          total < 0
+        ) {
+          return sendErrorResponse(res, 400, `Invalid numeric field for ${id}`);
         }
 
-        if (typeof price !== "number" || price < 0) {
-          return sendErrorResponse(res, 400, `Invalid price for product ${id}`);
-        }
-        if (typeof discount !== "number" || discount < 0) {
+        // line-total validation
+        const discType = prod.discountType || "fixed";
+        const expected = Number(
+          (
+            (discType === "percent"
+              ? price * (1 - discount / 100)
+              : price - discount) * quantity
+          ).toFixed(2)
+        );
+
+        if (Math.abs(total - expected) > 0.01) {
           return sendErrorResponse(
             res,
             400,
-            `Invalid discount for product ${id}`
+            `Invalid total for ${id}. Expected ${expected}`
           );
         }
-        if (typeof total !== "number" || total < 0) {
-          return sendErrorResponse(res, 400, `Invalid total for product ${id}`);
-        }
 
-        const discountType = productRecord.discountType || "fixed";
-        let expectedTotal;
-        if (discountType === "percent") {
-          expectedTotal = price * (1 - discount / 100) * quantity;
-        } else {
-          expectedTotal = (price - discount) * quantity;
-        }
-
-        if (Math.abs(total - expectedTotal) > 0.01) {
+        // stock check
+        if (prod.quantity < quantity) {
           return sendErrorResponse(
             res,
             400,
-            `Invalid total for product ${id}. Expected ${expectedTotal.toFixed(
-              2
-            )} based on price, discount, and quantity`
+            `Insufficient stock for ${id}. Have ${prod.quantity}, need ${quantity}`
           );
         }
 
-        // Check if sufficient quantity is available
-        if (productRecord.quantity < quantity) {
-          return sendErrorResponse(
-            res,
-            400,
-            `Insufficient stock for product ${id}. Available: ${productRecord.quantity}, Requested: ${quantity}`
-          );
-        }
-
-        // Prepare product quantity update
         productUpdates.push({
           productId: id,
           quantityToReduce: quantity,
-          productRecord,
+          productRecord: prod,
         });
       }
     }
 
-    // Validate dueDate
+    // ── DATES ──
     if (dueDate && new Date(dueDate).toString() === "Invalid Date") {
-      return sendErrorResponse(res, 400, "Invalid dueDate format");
+      return sendErrorResponse(res, 400, "Invalid dueDate");
     }
-
-    // Validate and parse followupDates
-    const parsedFollowupDates = Array.isArray(followupDates)
+    const parsedFollowup = Array.isArray(followupDates)
       ? followupDates.filter(
-          (date) => date && new Date(date).toString() !== "Invalid Date"
+          (d) => d && new Date(d).toString() !== "Invalid Date"
         )
       : [];
 
-    // Validate assignedTeamId
+    // ── TEAM / USERS ──
     if (assignedTeamId) {
-      const team = await Team.findByPk(assignedTeamId);
-      if (!team) {
-        return sendErrorResponse(res, 400, "Assigned team not found");
-      }
+      const t = await Team.findByPk(assignedTeamId);
+      if (!t) return sendErrorResponse(res, 400, "Assigned team not found");
     }
-
-    // Validate assignedUserId
     if (assignedUserId) {
-      const assignedUser = await User.findByPk(assignedUserId);
-      if (!assignedUser) {
-        return sendErrorResponse(res, 400, "Assigned user not found");
-      }
+      const u = await User.findByPk(assignedUserId);
+      if (!u) return sendErrorResponse(res, 400, "Assigned user not found");
+    }
+    if (secondaryUserId != null && secondaryUserId !== "") {
+      const u = await User.findByPk(secondaryUserId);
+      if (!u) return sendErrorResponse(res, 400, "Secondary user not found");
+    } else {
+      secondaryUserId = null; // ensure clean null
     }
 
-    // Validate secondaryUserId
-    if (secondaryUserId) {
-      const secondaryUser = await User.findByPk(secondaryUserId);
-      if (!secondaryUser) {
-        return sendErrorResponse(res, 400, "Secondary user not found");
-      }
-    }
-
-    // Validate orderNo
+    // ── ORDERNO UNIQUENESS ──
     if (isNaN(parseInt(orderNo))) {
-      return sendErrorResponse(res, 400, "orderNo must be a valid number");
+      return sendErrorResponse(res, 400, "orderNo must be numeric");
     }
-    const existingOrder = await Order.findOne({
+    const existing = await Order.findOne({
       where: { orderNo: parseInt(orderNo) },
     });
-    if (existingOrder) {
-      return sendErrorResponse(res, 400, "Order number already exists");
-    }
+    if (existing) return sendErrorResponse(res, 400, "orderNo already used");
 
-    // Validate shipTo if provided
+    // ── SHIPTO ──
     let addressDetails = null;
     if (shipTo) {
-      const address = await Address.findByPk(shipTo);
-      if (!address) {
-        return sendErrorResponse(
-          res,
-          404,
-          `Address with ID ${shipTo} not found`
-        );
-      }
-      addressDetails = address.toJSON();
+      const a = await Address.findByPk(shipTo);
+      if (!a) return sendErrorResponse(res, 404, `Address ${shipTo} not found`);
+      addressDetails = a.toJSON();
     }
 
-    // Validate priority
-    if (priority) {
-      const validPriorities = ["high", "medium", "low"];
-      if (!validPriorities.includes(priority.toLowerCase())) {
-        return sendErrorResponse(res, 400, `Invalid priority: ${priority}`);
-      }
+    // ── PRIORITY ──
+    const prio = priority ? priority.toLowerCase() : "medium";
+    if (!VALID_PRIORITIES.includes(prio)) {
+      return sendErrorResponse(res, 400, `Invalid priority: ${priority}`);
     }
 
-    // Validate status
-    const validStatuses = [
-      "PREPARING",
-      "CHECKING",
-      "INVOICE",
-      "DISPATCHED",
-      "DELIVERED",
-      "PARTIALLY_DELIVERED",
-      "CANCELED",
-      "DRAFT",
-      "ONHOLD",
-    ];
+    // ── STATUS ──
     const normalizedStatus = status ? status.toUpperCase() : "PREPARING";
-    if (!validStatuses.includes(normalizedStatus)) {
+    if (!VALID_STATUSES.includes(normalizedStatus)) {
       return sendErrorResponse(res, 400, `Invalid status: ${status}`);
     }
+    // GST
+    const parsedGst = gst != null && gst !== "" ? parseFloat(gst) : null;
+    if (
+      parsedGst !== null &&
+      (isNaN(parsedGst) || parsedGst < 0 || parsedGst > 100)
+    ) {
+      return sendErrorResponse(res, 400, "Invalid GST %");
+    }
+    // Amount Paid
+    const parsedAmountPaid =
+      amountPaid != null && amountPaid !== "" ? parseFloat(amountPaid) : 0;
+    if (isNaN(parsedAmountPaid) || parsedAmountPaid < 0) {
+      return sendErrorResponse(res, 400, "Invalid amountPaid");
+    }
 
-    // ──────── CREATE ORDER ────────
+    // Extra Discount
+    const parsedExtra =
+      extraDiscount != null && extraDiscount !== ""
+        ? parseFloat(extraDiscount)
+        : null;
+    if (parsedExtra !== null && (isNaN(parsedExtra) || parsedExtra < 0)) {
+      return sendErrorResponse(res, 400, "Invalid extraDiscount");
+    }
+
+    // Type
+    const discountType = parsedExtra != null ? extraDiscountType : null;
+    if (parsedExtra != null && !["percent", "fixed"].includes(discountType)) {
+      return sendErrorResponse(res, 400, "Invalid extraDiscountType");
+    }
+    // ---- compute totals (throws if amountPaid > final)
+    const { gstValue, extraDiscountValue, finalAmount } = computeTotals({
+      products,
+      shipping: parsedShipping,
+      gst: parsedGst,
+      extraDiscount: parsedExtra,
+      extraDiscountType,
+      amountPaid: parsedAmountPaid,
+    });
+
+    // ── CREATE ORDER ──
     const order = await Order.create({
       createdFor,
       createdBy,
@@ -643,9 +808,9 @@ exports.createOrder = async (req, res) => {
       assignedTeamId,
       assignedUserId,
       secondaryUserId,
-      followupDates: parsedFollowupDates,
+      followupDates: parsedFollowup,
       source,
-      priority: priority?.toLowerCase() || "medium",
+      priority: prio,
       description,
       orderNo: parseInt(orderNo),
       quotationId,
@@ -653,125 +818,649 @@ exports.createOrder = async (req, res) => {
       masterPipelineNo,
       previousOrderNo,
       shipTo,
-      shipping: shipping ?? 0,
+      shipping: parsedShipping,
+      gst: parsedGst,
+      gstValue,
+      extraDiscount: parsedExtra,
+      extraDiscountType,
+      extraDiscountValue,
+      amountPaid: parsedAmountPaid,
+      finalAmount,
     });
 
-    // ──────── UPDATE PRODUCTS & LOG HISTORY WITH USERNAME ────────
-    if (productUpdates.length > 0) {
-      // Pre-fetch creator's username once
-      const username = user.username || "unknown";
-      const autoGeneratedMessage = `Stock removed by ${username} (Order #${order.orderNo})`;
-      const finalMessage = customMessage?.trim() || autoGeneratedMessage;
-
-      for (const update of productUpdates) {
-        const { productId, quantityToReduce, productRecord } = update;
-
-        // 1. Update Product quantity
-        const newQuantity = productRecord.quantity - quantityToReduce;
-        await Product.update(
-          { quantity: newQuantity },
-          { where: { productId } }
-        );
-
-        // 2. Log to MongoDB with auto message
-        try {
-          await InventoryHistory.findOneAndUpdate(
-            { productId },
-            {
-              $push: {
-                history: {
-                  quantity: -quantityToReduce,
-                  action: "remove-stock",
-                  timestamp: new Date(),
-                  orderNo: order.orderNo,
-                  userId: createdBy,
-                  message: finalMessage, // Auto or custom
-                },
-              },
-            },
-            { upsert: true, new: true }
-          );
-        } catch (err) {
-          console.error(
-            `Failed to log inventory history for ${productId}:`,
-            err
-          );
-        }
-
-        // 3. Update product status
-        let newStatus = "active";
-        if (newQuantity === 0) newStatus = "out_of_stock";
-        else if (
-          productRecord.alert_quantity &&
-          newQuantity <= productRecord.alert_quantity
-        )
-          newStatus = "low_stock";
-
-        if (newStatus !== productRecord.status) {
-          await Product.update({ status: newStatus }, { where: { productId } });
-        }
-
-        // 4. Notify admin on low/out-of-stock
-        if (newStatus === "out_of_stock" || newStatus === "low_stock") {
-          await sendNotification({
-            userId: ADMIN_USER_ID,
-            title: `Product ${newStatus.replace("_", " ")}`,
-            message: `Product ${productRecord.name} is now ${newStatus.replace(
-              "_",
-              " "
-            )} (Qty: ${newQuantity})`,
-          });
-        }
-      }
+    // ── STOCK REDUCTION ──
+    if (productUpdates.length) {
+      await reduceStockAndLog({
+        productUpdates,
+        createdBy,
+        orderNo: order.orderNo,
+        customMessage,
+      });
     }
 
-    // ──────── NOTIFICATIONS (unchanged) ────────
+    // ── NOTIFICATIONS ──
     const recipients = new Set(
       [createdBy, assignedUserId, secondaryUserId].filter(Boolean)
     );
-    const addressInfo =
+    const addrInfo =
       shipTo && addressDetails
-        ? `, to be shipped to ${
-            addressDetails.address || "address ID " + shipTo
-          }`
+        ? `, ship to ${addressDetails.address || "address ID " + shipTo}`
         : "";
 
-    for (const recipientId of recipients) {
+    for (const uid of recipients) {
       await sendNotification({
-        userId: recipientId,
-        title: `New Order Created #${orderNo}`,
-        message: `Order #${orderNo} has been created for ${customer.name}${addressInfo}.`,
+        userId: uid,
+        title: `New Order #${orderNo}`,
+        message: `Order #${orderNo} for ${customer.name}${addrInfo}.`,
       });
     }
-
     await sendNotification({
       userId: ADMIN_USER_ID,
-      title: `New Order Created #${orderNo}`,
-      message: `Order #${orderNo} created for ${customer.name} by ${user.name}${addressInfo}.`,
+      title: `New Order #${orderNo}`,
+      message: `Order #${orderNo} created by ${creator.name} for ${customer.name}${addrInfo}.`,
     });
 
     if (assignedTeamId) {
-      const teamMembers = await User.findAll({
+      const members = await User.findAll({
         include: [{ model: Team, as: "teams", where: { id: assignedTeamId } }],
         attributes: ["userId", "name"],
       });
-      for (const member of teamMembers) {
+      for (const m of members) {
         await sendNotification({
-          userId: member.userId,
+          userId: m.userId,
           title: `Order Assigned to Team #${orderNo}`,
-          message: `Order #${orderNo} has been assigned to your team for ${customer.name}${addressInfo}.`,
+          message: `Order #${orderNo} assigned to your team for ${customer.name}${addrInfo}.`,
         });
       }
     }
 
-    return res.status(201).json({
-      message: "Order created successfully",
-      id: order.id,
-    });
+    return res
+      .status(201)
+      .json({ message: "Order created", id: order.id, orderNo: order.orderNo });
   } catch (err) {
+    console.error(err);
     return sendErrorResponse(res, 500, "Failed to create order", err.message);
   }
 };
+
+// ──────── UPDATE ORDER (by id) ────────
+exports.updateOrderById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = { ...req.body };
+
+    const order = await Order.findByPk(id, {
+      include: [
+        { model: Customer, as: "customer" },
+        { model: Address, as: "shippingAddress" },
+      ],
+    });
+    if (!order) return sendErrorResponse(res, 404, "Order not found");
+
+    // ── STATUS ──
+    if (updates.status) {
+      const norm = updates.status.toUpperCase();
+      if (!VALID_STATUSES.includes(norm))
+        return sendErrorResponse(res, 400, `Invalid status: ${updates.status}`);
+      updates.status = norm;
+    }
+
+    // ── PRIORITY ──
+    if (updates.priority) {
+      const p = updates.priority.toLowerCase();
+      if (!VALID_PRIORITIES.includes(p))
+        return sendErrorResponse(
+          res,
+          400,
+          `Invalid priority: ${updates.priority}`
+        );
+      updates.priority = p;
+    }
+
+    // ── DATES ──
+    if (updates.dueDate) {
+      if (!moment(updates.dueDate, "YYYY-MM-DD", true).isValid())
+        return sendErrorResponse(res, 400, "Invalid dueDate");
+      updates.dueDate = moment(updates.dueDate).format("YYYY-MM-DD");
+    }
+    if (updates.followupDates) {
+      if (!Array.isArray(updates.followupDates))
+        return sendErrorResponse(res, 400, "followupDates must be array");
+      const bad = updates.followupDates.filter(
+        (d) => d && !moment(d, "YYYY-MM-DD", true).isValid()
+      );
+      if (bad.length)
+        return sendErrorResponse(res, 400, "Invalid followup date format");
+      updates.followupDates = updates.followupDates.filter(Boolean);
+    }
+
+    // ── TEAM / USERS ──
+    if (updates.assignedTeamId) {
+      const t = await Team.findByPk(updates.assignedTeamId);
+      if (!t) return sendErrorResponse(res, 400, "Assigned team not found");
+    }
+    if (updates.assignedUserId) {
+      const u = await User.findByPk(updates.assignedUserId);
+      if (!u) return sendErrorResponse(res, 400, "Assigned user not found");
+    }
+    if (updates.secondaryUserId) {
+      const u = await User.findByPk(updates.secondaryUserId);
+      if (!u) return sendErrorResponse(res, 400, "Secondary user not found");
+    }
+
+    // ── ORDERNO (unique except self) ──
+    if (updates.orderNo !== undefined) {
+      if (!updates.orderNo)
+        return sendErrorResponse(res, 400, "orderNo required");
+      const n = parseInt(updates.orderNo);
+      if (isNaN(n))
+        return sendErrorResponse(res, 400, "orderNo must be numeric");
+      const conflict = await Order.findOne({
+        where: { orderNo: n, id: { [Op.ne]: id } },
+      });
+      if (conflict)
+        return sendErrorResponse(res, 400, "orderNo already exists");
+      updates.orderNo = n;
+    }
+
+    // ── MASTER / PREVIOUS ──
+    if (updates.masterPipelineNo !== undefined) {
+      if (updates.masterPipelineNo === null) updates.masterPipelineNo = null;
+      else {
+        const m = await Order.findOne({
+          where: { orderNo: updates.masterPipelineNo },
+        });
+        if (!m)
+          return sendErrorResponse(
+            res,
+            404,
+            `Master order ${updates.masterPipelineNo} not found`
+          );
+        if (updates.masterPipelineNo == order.orderNo)
+          return sendErrorResponse(
+            res,
+            400,
+            "Master cannot be same as orderNo"
+          );
+      }
+    }
+    if (updates.previousOrderNo !== undefined) {
+      if (updates.previousOrderNo === null) updates.previousOrderNo = null;
+      else {
+        const p = await Order.findOne({
+          where: { orderNo: updates.previousOrderNo },
+        });
+        if (!p)
+          return sendErrorResponse(
+            res,
+            404,
+            `Previous order ${updates.previousOrderNo} not found`
+          );
+        if (updates.previousOrderNo == order.orderNo)
+          return sendErrorResponse(
+            res,
+            400,
+            "Previous cannot be same as orderNo"
+          );
+      }
+    }
+
+    // ── QUOTATION ──
+    if (updates.quotationId !== undefined) {
+      if (updates.quotationId === null) updates.quotationId = null;
+      else {
+        const q = await Quotation.findByPk(updates.quotationId);
+        if (!q) return sendErrorResponse(res, 404, "Quotation not found");
+      }
+    }
+
+    // ── PRODUCTS (full replace) ──
+    let newProductUpdates = [];
+    if (updates.products !== undefined) {
+      if (updates.products === null) updates.products = null;
+      else if (!Array.isArray(updates.products))
+        return sendErrorResponse(res, 400, "products must be array");
+
+      for (const p of updates.products) {
+        const { id, price, discount, total, quantity } = p;
+        if (
+          !id ||
+          price == null ||
+          discount == null ||
+          total == null ||
+          quantity == null ||
+          quantity < 1
+        )
+          return sendErrorResponse(
+            res,
+            400,
+            "Each product needs id,price,discount,total,quantity"
+          );
+
+        const prod = await Product.findByPk(id);
+        if (!prod)
+          return sendErrorResponse(res, 404, `Product ${id} not found`);
+
+        // numeric sanity
+        if (
+          typeof price !== "number" ||
+          price < 0 ||
+          typeof discount !== "number" ||
+          discount < 0 ||
+          typeof total !== "number" ||
+          total < 0
+        )
+          return sendErrorResponse(res, 400, `Invalid numeric for ${id}`);
+
+        // line total
+        const discType = prod.discountType || "fixed";
+        const expected = Number(
+          (
+            (discType === "percent"
+              ? price * (1 - discount / 100)
+              : price - discount) * quantity
+          ).toFixed(2)
+        );
+
+        if (Math.abs(total - expected) > 0.01) {
+          return sendErrorResponse(
+            res,
+            400,
+            `Invalid total for ${id}. Expected ${expected}`
+          );
+        }
+        // stock (only check – we will adjust later)
+        if (
+          prod.quantity +
+            (order.products?.find((op) => op.id == id)?.quantity || 0) <
+          quantity
+        ) {
+          return sendErrorResponse(res, 400, `Not enough stock for ${id}`);
+        }
+
+        newProductUpdates.push({
+          productId: id,
+          quantityToReduce: quantity,
+          productRecord: prod,
+        });
+      }
+    }
+
+    // ── SHIPPING / GST / EXTRA DISCOUNT / amountPaid ──
+    if (updates.shipping !== undefined) {
+      const s = parseFloat(updates.shipping);
+      if (isNaN(s) || s < 0)
+        return sendErrorResponse(res, 400, "Invalid shipping");
+      updates.shipping = s;
+    }
+    if (updates.gst !== undefined) {
+      const g = parseFloat(updates.gst);
+      if (isNaN(g) || g < 0 || g > 100)
+        return sendErrorResponse(res, 400, "Invalid GST %");
+      updates.gst = g;
+    }
+    if (updates.extraDiscount !== undefined) {
+      const d = parseFloat(updates.extraDiscount);
+      if (isNaN(d) || d < 0)
+        return sendErrorResponse(res, 400, "Invalid extraDiscount");
+      updates.extraDiscount = d;
+    }
+    if (updates.extraDiscountType !== undefined) {
+      if (!["percent", "fixed"].includes(updates.extraDiscountType))
+        return sendErrorResponse(res, 400, "Invalid extraDiscountType");
+    }
+    if (updates.amountPaid !== undefined) {
+      const a = parseFloat(updates.amountPaid);
+      if (isNaN(a) || a < 0)
+        return sendErrorResponse(res, 400, "Invalid amountPaid");
+      updates.amountPaid = a;
+    }
+
+    // ── RECALCULATE TOTALS BEFORE SAVE ──
+    const calcInput = {
+      products: updates.products ?? order.products ?? [],
+      shipping: updates.shipping ?? order.shipping ?? 0,
+      gst: updates.gst ?? order.gst ?? 0,
+      extraDiscount: updates.extraDiscount ?? order.extraDiscount ?? 0,
+      extraDiscountType:
+        updates.extraDiscountType ?? order.extraDiscountType ?? "fixed",
+      amountPaid: updates.amountPaid ?? order.amountPaid ?? 0,
+    };
+    // inside updateOrderById, after computeTotals()
+    const {
+      gstValue,
+      extraDiscountValue,
+      finalAmount, // <-- NEW
+    } = computeTotals(calcInput);
+
+    updates.gstValue = gstValue;
+    updates.extraDiscountValue = extraDiscountValue;
+    updates.finalAmount = finalAmount; // <-- NEW
+    // ── STOCK ADJUSTMENT (if products changed) ──
+    if (newProductUpdates.length) {
+      // 1. restore old quantities
+      if (order.products?.length) {
+        await restoreStock({
+          products: order.products,
+          orderNo: order.orderNo,
+        });
+      }
+      // 2. deduct new quantities
+      await reduceStockAndLog({
+        productUpdates: newProductUpdates,
+        createdBy: order.createdBy,
+        orderNo: order.orderNo,
+      });
+    }
+
+    // ── SAVE ──
+    await order.update(updates);
+    await order.reload();
+
+    // ── NOTIFICATIONS ──
+    const customer = order.customer;
+    const addrInfo =
+      order.shipTo && order.shippingAddress
+        ? `, ship to ${order.shippingAddress.address || "addr " + order.shipTo}`
+        : "";
+
+    const recipients = new Set(
+      [
+        order.createdBy,
+        updates.assignedUserId ?? order.assignedUserId,
+        updates.secondaryUserId ?? order.secondaryUserId,
+      ].filter(Boolean)
+    );
+    for (const uid of recipients) {
+      await sendNotification({
+        userId: uid,
+        title: `Order Updated #${order.orderNo}`,
+        message: `Order #${order.orderNo} for ${customer.name}${addrInfo} updated.`,
+      });
+    }
+    await sendNotification({
+      userId: ADMIN_USER_ID,
+      title: `Order Updated #${order.orderNo}`,
+      message: `Order #${order.orderNo} for ${customer.name}${addrInfo} updated.`,
+    });
+
+    // team change notification
+    if (
+      updates.assignedTeamId &&
+      updates.assignedTeamId !== order.assignedTeamId
+    ) {
+      const members = await User.findAll({
+        include: [
+          { model: Team, as: "teams", where: { id: updates.assignedTeamId } },
+        ],
+        attributes: ["userId", "name"],
+      });
+      for (const m of members) {
+        await sendNotification({
+          userId: m.userId,
+          title: `Order Assigned to Team #${order.orderNo}`,
+          message: `Order #${order.orderNo} assigned to your team for ${customer.name}${addrInfo}.`,
+        });
+      }
+    }
+
+    return res.status(200).json({ message: "Order updated", order });
+  } catch (err) {
+    console.error(err);
+    return sendErrorResponse(res, 500, "Failed to update order", err.message);
+  }
+};
+
+// ──────── UPDATE STATUS ONLY ────────
+exports.updateOrderStatus = async (req, res) => {
+  try {
+    const { id, status } = req.body;
+    if (!id || !status)
+      return sendErrorResponse(res, 400, "id & status required");
+
+    const order = await Order.findByPk(id, {
+      include: [{ model: Customer, as: "customer" }],
+    });
+    if (!order) return sendErrorResponse(res, 404, "Order not found");
+
+    const norm = status.toUpperCase();
+    if (!VALID_STATUSES.includes(norm))
+      return sendErrorResponse(res, 400, `Invalid status: ${status}`);
+
+    const old = order.status;
+    order.status = norm;
+    await order.save();
+
+    // special handling for CANCELED / CLOSED → restore stock
+    if (["CANCELED", "CLOSED"].includes(norm) && order.products?.length) {
+      await restoreStock({ products: order.products, orderNo: order.orderNo });
+    }
+
+    const recipients = new Set(
+      [order.createdBy, order.assignedUserId, order.secondaryUserId].filter(
+        Boolean
+      )
+    );
+    for (const uid of recipients) {
+      await sendNotification({
+        userId: uid,
+        title: `Order Status #${order.orderNo}`,
+        message: `Order #${order.orderNo} for ${
+          order.customer?.name || "Customer"
+        } → ${norm}.`,
+      });
+    }
+    await sendNotification({
+      userId: ADMIN_USER_ID,
+      title: `Order Status #${order.orderNo}`,
+      message: `Order #${order.orderNo} changed ${old} → ${norm}.`,
+    });
+
+    return res.status(200).json({ message: "Status updated", order });
+  } catch (err) {
+    return sendErrorResponse(res, 500, "Failed to update status", err.message);
+  }
+};
+
+// ──────── DELETE ORDER ────────
+exports.deleteOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const order = await Order.findByPk(id, {
+      include: [{ model: Customer, as: "customer" }],
+    });
+    if (!order) return sendErrorResponse(res, 404, "Order not found");
+
+    // prevent delete if referenced
+    const deps = await Order.findAll({
+      where: {
+        [Op.or]: [
+          { previousOrderNo: order.orderNo },
+          { masterPipelineNo: order.orderNo },
+        ],
+      },
+    });
+    if (deps.length)
+      return sendErrorResponse(
+        res,
+        400,
+        "Order referenced by other orders – cannot delete"
+      );
+
+    // restore stock
+    if (order.products?.length) {
+      await restoreStock({ products: order.products, orderNo: order.orderNo });
+    }
+
+    // notifications
+    const recipients = new Set(
+      [order.createdBy, order.assignedUserId, order.secondaryUserId].filter(
+        Boolean
+      )
+    );
+    for (const uid of recipients) {
+      await sendNotification({
+        userId: uid,
+        title: `Order Deleted #${order.orderNo}`,
+        message: `Order #${order.orderNo} for ${
+          order.customer?.name || "Customer"
+        } deleted.`,
+      });
+    }
+    await sendNotification({
+      userId: ADMIN_USER_ID,
+      title: `Order Deleted #${order.orderNo}`,
+      message: `Order #${order.orderNo} deleted.`,
+    });
+
+    // mongo clean-up
+    await Comment.deleteMany({ resourceId: id, resourceType: "Order" });
+    await OrderItem.deleteMany({ orderId: id });
+
+    await order.destroy();
+    return res.status(200).json({ message: "Order deleted" });
+  } catch (err) {
+    return sendErrorResponse(res, 500, "Delete failed", err.message);
+  }
+};
+
+// ──────── DRAFT ORDER (now also accepts amountPaid) ────────
+exports.draftOrder = async (req, res) => {
+  try {
+    const {
+      quotationId,
+      assignedTeamId,
+      products,
+      masterPipelineNo,
+      previousOrderNo,
+      shipTo,
+      amountPaid = 0, // ← NEW
+    } = req.body;
+
+    if (!assignedTeamId)
+      return sendErrorResponse(res, 400, "assignedTeamId required");
+
+    const team = await Team.findByPk(assignedTeamId);
+    if (!team) return sendErrorResponse(res, 400, "Team not found");
+
+    // optional validations (same as create)
+    if (quotationId) {
+      const q = await Quotation.findByPk(quotationId);
+      if (!q) return sendErrorResponse(res, 400, "Quotation not found");
+    }
+    if (masterPipelineNo) {
+      const m = await Order.findOne({ where: { orderNo: masterPipelineNo } });
+      if (!m)
+        return sendErrorResponse(
+          res,
+          404,
+          `Master order ${masterPipelineNo} not found`
+        );
+    }
+    if (previousOrderNo) {
+      const p = await Order.findOne({ where: { orderNo: previousOrderNo } });
+      if (!p)
+        return sendErrorResponse(
+          res,
+          404,
+          `Previous order ${previousOrderNo} not found`
+        );
+    }
+    if (shipTo) {
+      const a = await Address.findByPk(shipTo);
+      if (!a) return sendErrorResponse(res, 404, `Address ${shipTo} not found`);
+    }
+
+    // product validation (same as create, but **no stock reduction**)
+    if (products) {
+      if (!Array.isArray(products) || !products.length)
+        return sendErrorResponse(res, 400, "products must be non-empty array");
+      for (const p of products) {
+        const { id, price, discount, total } = p;
+        if (!id || price == null || discount == null || total == null)
+          return sendErrorResponse(
+            res,
+            400,
+            "Each product needs id,price,discount,total"
+          );
+        const prod = await Product.findByPk(id);
+        if (!prod)
+          return sendErrorResponse(res, 404, `Product ${id} not found`);
+        // line-total check
+        const discType = prod.discountType || "fixed";
+        const expected =
+          discType === "percent"
+            ? price * (1 - discount / 100)
+            : price - discount;
+        if (Math.abs(total - expected) > 0.01)
+          return sendErrorResponse(
+            res,
+            400,
+            `Invalid total for ${id}. Expected ${expected.toFixed(2)}`
+          );
+      }
+    }
+
+    // amountPaid validation (must be 0 for draft – optional)
+    const paid = parseFloat(amountPaid);
+    if (isNaN(paid) || paid < 0)
+      return sendErrorResponse(res, 400, "Invalid amountPaid");
+    if (paid > 0)
+      return sendErrorResponse(
+        res,
+        400,
+        "amountPaid must be 0 for draft orders"
+      );
+
+    // generate orderNo (same pattern as create)
+    const today = moment().format("DDMMYYYY");
+    const dayCount = await Order.count({
+      where: {
+        createdAt: {
+          [Op.gte]: moment().startOf("day").toDate(),
+          [Op.lte]: moment().endOf("day").toDate(),
+        },
+      },
+    });
+    const serial = String(dayCount + 1).padStart(5, "0");
+    const orderNo = `${today}${serial}`;
+
+    const order = await Order.create({
+      quotationId,
+      status: "DRAFT",
+      assignedTeamId,
+      products,
+      masterPipelineNo,
+      previousOrderNo,
+      orderNo: parseInt(orderNo),
+      shipTo,
+      amountPaid: 0,
+    });
+
+    // admin + team notifications
+    await sendNotification({
+      userId: ADMIN_USER_ID,
+      title: `Draft Order #${orderNo}`,
+      message: `Draft order #${orderNo} created.`,
+    });
+    const members = await User.findAll({
+      include: [{ model: Team, as: "teams", where: { id: assignedTeamId } }],
+      attributes: ["userId", "name"],
+    });
+    for (const m of members) {
+      await sendNotification({
+        userId: m.userId,
+        title: `Draft Assigned #${orderNo}`,
+        message: `Draft order #${orderNo} assigned to your team.`,
+      });
+    }
+
+    return res.status(201).json({ message: "Draft created", order });
+  } catch (err) {
+    return sendErrorResponse(res, 500, "Draft failed", err.message);
+  }
+};
+
 // Get all orders (no notification needed)
 exports.getAllOrders = async (req, res) => {
   try {
@@ -1047,153 +1736,6 @@ exports.getOrderDetails = async (req, res) => {
   }
 };
 
-// Update order status
-exports.updateOrderStatus = async (req, res) => {
-  try {
-    const { id, status } = req.body;
-
-    if (!id || !status) {
-      return sendErrorResponse(res, 400, "id and status are required");
-    }
-
-    const order = await Order.findByPk(id);
-    if (!order) {
-      return sendErrorResponse(res, 404, "Order not found");
-    }
-
-    const validStatuses = [
-      "PREPARING",
-      "CHECKING",
-      "INVOICE",
-      "DISPATCHED",
-      "DELIVERED",
-      "PARTIALLY_DELIVERED",
-      "CANCELED",
-      "DRAFT",
-      "ONHOLD",
-    ];
-    const normalizedStatus = status.toUpperCase();
-    if (!validStatuses.includes(normalizedStatus)) {
-      return sendErrorResponse(res, 400, `Invalid status: ${status}`);
-    }
-
-    const oldStatus = order.status;
-    order.status = normalizedStatus;
-    await order.save();
-
-    // Fetch customer for notification
-    const customer = await Customer.findByPk(order.createdFor);
-
-    // Send notification to creator, assignedUserId, and secondaryUserId
-    const recipients = new Set(
-      [order.createdBy, order.assignedUserId, order.secondaryUserId].filter(
-        (id) => id
-      )
-    );
-    for (const recipientId of recipients) {
-      await sendNotification({
-        userId: recipientId,
-        title: `Order Status Updated #${order.orderNo}`,
-        message: `Order #${order.orderNo} for ${
-          customer?.name || "Customer"
-        } has been updated to ${normalizedStatus}.`,
-      });
-    }
-
-    // Send notification to admin
-    await sendNotification({
-      userId: ADMIN_USER_ID,
-      title: `Order Status Updated #${order.orderNo}`,
-      message: `Order #${
-        order.orderNo
-      } status changed from ${oldStatus} to ${normalizedStatus} for ${
-        customer?.name || "Customer"
-      }.`,
-    });
-
-    return res.status(200).json({ message: "Order status updated", order });
-  } catch (err) {
-    return sendErrorResponse(
-      res,
-      500,
-      "Failed to update order status",
-      err.message
-    );
-  }
-};
-
-// Delete an order
-exports.deleteOrder = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const order = await Order.findByPk(id);
-    if (!order) {
-      return sendErrorResponse(res, 404, "Order not found");
-    }
-
-    // Check if the order is referenced by other orders
-    const dependentOrders = await Order.findAll({
-      where: {
-        [Op.or]: [
-          { previousOrderNo: order.orderNo },
-          { masterPipelineNo: order.orderNo },
-        ],
-      },
-    });
-    if (dependentOrders.length > 0) {
-      return sendErrorResponse(
-        res,
-        400,
-        "Cannot delete order as it is referenced by other orders in the pipeline"
-      );
-    }
-
-    // Fetch customer for notification
-    const customer = await Customer.findByPk(order.createdFor);
-
-    // Send notification to creator, assignedUserId, and secondaryUserId
-    const recipients = new Set(
-      [order.createdBy, order.assignedUserId, order.secondaryUserId].filter(
-        (id) => id
-      )
-    );
-    for (const recipientId of recipients) {
-      await sendNotification({
-        userId: recipientId,
-        title: `Order Deleted #${order.orderNo}`,
-        message: `Order #${order.orderNo} for ${
-          customer?.name || "Customer"
-        } has been deleted.`,
-      });
-    }
-
-    // Send notification to admin
-    await sendNotification({
-      userId: ADMIN_USER_ID,
-      title: `Order Deleted #${order.orderNo}`,
-      message: `Order #${order.orderNo} for ${
-        customer?.name || "Customer"
-      } has been deleted.`,
-    });
-
-    // Delete associated comments (Mongoose)
-    await Comment.deleteMany({ resourceId: id, resourceType: "Order" });
-
-    // Delete associated OrderItems (Mongoose)
-    await OrderItem.deleteMany({ orderId: id });
-
-    // Delete the order (Sequelize)
-    await order.destroy();
-
-    return res
-      .status(200)
-      .json({ message: "Order and associated data deleted successfully" });
-  } catch (err) {
-    return sendErrorResponse(res, 500, "Failed to delete order", err.message);
-  }
-};
-
 // Get recent orders (no notification needed)
 exports.recentOrders = async (req, res) => {
   try {
@@ -1324,560 +1866,6 @@ exports.orderById = async (req, res) => {
     return res.status(200).json({ order: orderWithComments });
   } catch (err) {
     return sendErrorResponse(res, 500, "Failed to fetch order", err.message);
-  }
-};
-
-// Update order by ID
-exports.updateOrderById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const updates = { ...req.body };
-
-    const order = await Order.findByPk(id);
-    if (!order) {
-      return res.status(404).json({ message: "Order not found" });
-    }
-
-    if (updates.status) {
-      const validStatuses = [
-        "PREPARING",
-        "CHECKING",
-        "INVOICE",
-        "DISPATCHED",
-        "DELIVERED",
-        "PARTIALLY_DELIVERED",
-        "CANCELED",
-        "DRAFT",
-        "ONHOLD",
-      ];
-      const normalizedStatus = updates.status.toUpperCase();
-      if (!validStatuses.includes(normalizedStatus)) {
-        return res
-          .status(400)
-          .json({ message: `Invalid status: ${updates.status}` });
-      }
-      updates.status = normalizedStatus;
-    }
-
-    if (updates.priority) {
-      const validPriorities = ["high", "medium", "low"];
-      const normalizedPriority = updates.priority.toLowerCase();
-      if (!validPriorities.includes(normalizedPriority)) {
-        return res
-          .status(400)
-          .json({ message: `Invalid priority: ${updates.priority}` });
-      }
-      updates.priority = normalizedPriority;
-    }
-
-    if (updates.dueDate) {
-      if (moment(updates.dueDate, "YYYY-MM-DD", true).isValid()) {
-        updates.dueDate = moment(updates.dueDate).format("YYYY-MM-DD");
-      } else {
-        return res.status(400).json({ message: "Invalid dueDate format" });
-      }
-    }
-
-    if (updates.followupDates) {
-      if (!Array.isArray(updates.followupDates)) {
-        return res
-          .status(400)
-          .json({ message: "followupDates must be an array" });
-      }
-      const invalidDates = updates.followupDates.filter(
-        (date) => date && !moment(date, "YYYY-MM-DD", true).isValid()
-      );
-      if (invalidDates.length > 0) {
-        return res
-          .status(400)
-          .json({ message: "Invalid followupDates format" });
-      }
-      if (updates.dueDate && updates.followupDates.length > 0) {
-        const dueDate = moment(updates.dueDate);
-        const invalidFollowupDates = updates.followupDates.filter(
-          (date) => date && moment(date).isAfter(dueDate, "day")
-        );
-        if (invalidFollowupDates.length > 0) {
-          return res.status(400).json({
-            message: "Follow-up dates cannot be after the due date",
-          });
-        }
-      }
-      updates.followupDates = updates.followupDates.filter((date) => date);
-    }
-
-    if (updates.assignedTeamId) {
-      const team = await Team.findByPk(updates.assignedTeamId);
-      if (!team) {
-        return res.status(400).json({ message: "Assigned team not found" });
-      }
-    }
-
-    if (updates.assignedUserId) {
-      const assignedUser = await User.findByPk(updates.assignedUserId);
-      if (!assignedUser) {
-        return res.status(400).json({ message: "Assigned user not found" });
-      }
-    }
-
-    if (updates.secondaryUserId) {
-      const secondaryUser = await User.findByPk(updates.secondaryUserId);
-      if (!secondaryUser) {
-        return res.status(400).json({ message: "Secondary user not found" });
-      }
-    }
-
-    if (updates.createdBy) {
-      const user = await User.findByPk(updates.createdBy);
-      if (!user) {
-        return res.status(404).json({ message: "Creator user not found" });
-      }
-    }
-
-    if (updates.createdFor) {
-      const customer = await Customer.findByPk(updates.createdFor);
-      if (!customer) {
-        return res.status(404).json({ message: "Customer not found" });
-      }
-    }
-
-    if (updates.orderNo !== undefined) {
-      if (updates.orderNo === "" || updates.orderNo === null) {
-        return res.status(400).json({ message: "orderNo is required" });
-      } else if (isNaN(parseInt(updates.orderNo))) {
-        return res
-          .status(400)
-          .json({ message: "orderNo must be a valid number" });
-      } else {
-        const existingOrder = await Order.findOne({
-          where: { orderNo: parseInt(updates.orderNo), id: { [Op.ne]: id } },
-        });
-        if (existingOrder) {
-          return res
-            .status(400)
-            .json({ message: "Order number already exists" });
-        }
-        updates.orderNo = parseInt(updates.orderNo);
-      }
-    }
-
-    if (updates.masterPipelineNo !== undefined) {
-      if (
-        updates.masterPipelineNo === null ||
-        updates.masterPipelineNo === ""
-      ) {
-        updates.masterPipelineNo = null;
-      } else {
-        const masterOrder = await Order.findOne({
-          where: { orderNo: updates.masterPipelineNo },
-        });
-        if (!masterOrder) {
-          return res.status(404).json({
-            message: `Master order with orderNo ${updates.masterPipelineNo} not found`,
-          });
-        }
-        if (updates.masterPipelineNo === order.orderNo) {
-          return res.status(400).json({
-            message:
-              "Master pipeline number cannot be the same as order number",
-          });
-        }
-      }
-    }
-
-    if (updates.previousOrderNo !== undefined) {
-      if (updates.previousOrderNo === null || updates.previousOrderNo === "") {
-        updates.previousOrderNo = null;
-      } else {
-        const previousOrder = await Order.findOne({
-          where: { orderNo: updates.previousOrderNo },
-        });
-        if (!previousOrder) {
-          return res.status(404).json({
-            message: `Previous order with orderNo ${updates.previousOrderNo} not found`,
-          });
-        }
-        if (updates.previousOrderNo === order.orderNo) {
-          return res.status(400).json({
-            message: "Previous order number cannot be the same as order number",
-          });
-        }
-      }
-    }
-
-    if (updates.invoiceLink && updates.invoiceLink.length > 500) {
-      return res
-        .status(400)
-        .json({ message: "Invoice Link cannot exceed 500 characters" });
-    }
-
-    if (updates.source && updates.source.length > 255) {
-      return res
-        .status(400)
-        .json({ message: "Source cannot exceed 255 characters" });
-    }
-
-    if (updates.quotationId !== undefined) {
-      if (updates.quotationId === null || updates.quotationId === "") {
-        updates.quotationId = null;
-      } else {
-        const quotation = await Quotation.findByPk(updates.quotationId);
-        if (!quotation) {
-          return res.status(404).json({ message: "Quotation not found" });
-        }
-      }
-    }
-
-    if (updates.products !== undefined) {
-      if (updates.products === null || updates.products === "") {
-        updates.products = null;
-      } else if (!Array.isArray(updates.products)) {
-        return res.status(400).json({ message: "Products must be an array" });
-      } else {
-        for (const product of updates.products) {
-          const { id, price, discount, total } = product;
-
-          if (
-            !id ||
-            price === undefined ||
-            discount === undefined ||
-            total === undefined
-          ) {
-            return res.status(400).json({
-              message: "Each product must have id, price, discount, and total",
-            });
-          }
-
-          const productRecord = await Product.findByPk(id);
-          if (!productRecord) {
-            return res
-              .status(404)
-              .json({ message: `Product with ID ${id} not found` });
-          }
-
-          if (typeof price !== "number" || price < 0) {
-            return res
-              .status(400)
-              .json({ message: `Invalid price for product ${id}` });
-          }
-          if (typeof discount !== "number" || discount < 0) {
-            return res
-              .status(400)
-              .json({ message: `Invalid discount for product ${id}` });
-          }
-          if (typeof total !== "number" || total < 0) {
-            return res
-              .status(400)
-              .json({ message: `Invalid total for product ${id}` });
-          }
-
-          const discountType = productRecord.discountType || "fixed";
-          let expectedTotal;
-          if (discountType === "percent") {
-            expectedTotal = price * (1 - discount / 100);
-          } else {
-            expectedTotal = price - discount;
-          }
-
-          if (Math.abs(total - expectedTotal) > 0.01) {
-            return res.status(400).json({
-              message: `Invalid total for product ${id}. Expected ${expectedTotal.toFixed(
-                2
-              )} based on price and discount`,
-            });
-          }
-        }
-      }
-    }
-
-    // Validate shipTo if provided
-    let addressDetails = null;
-    if (updates.shipTo !== undefined) {
-      if (updates.shipTo === null || updates.shipTo === "") {
-        updates.shipTo = null;
-      } else {
-        const address = await Address.findByPk(updates.shipTo);
-        if (!address) {
-          return res
-            .status(404)
-            .json({ message: `Address with ID ${updates.shipTo} not found` });
-        }
-        addressDetails = address.toJSON(); // Store for notification
-      }
-    }
-
-    // Fetch customer for notification
-    const customer = await Customer.findByPk(order.createdFor);
-
-    await order.update(updates);
-    await order.reload();
-
-    // Send notification to creator, assignedUserId, and secondaryUserId
-    const recipients = new Set(
-      [
-        order.createdBy,
-        updates.assignedUserId || order.assignedUserId,
-        updates.secondaryUserId || order.secondaryUserId,
-      ].filter((id) => id)
-    );
-    const addressInfo =
-      updates.shipTo !== undefined && addressDetails
-        ? `, shipping updated to ${
-            addressDetails.address || "address ID " + updates.shipTo
-          }`
-        : updates.shipTo === null
-        ? ", shipping address removed"
-        : "";
-    for (const recipientId of recipients) {
-      await sendNotification({
-        userId: recipientId,
-        title: `Order Updated #${order.orderNo}`,
-        message: `Order #${order.orderNo} for ${
-          customer?.name || "Customer"
-        } has been updated${addressInfo}.`,
-      });
-    }
-
-    // Send notification to admin
-    await sendNotification({
-      userId: ADMIN_USER_ID,
-      title: `Order Updated #${order.orderNo}`,
-      message: `Order #${order.orderNo} for ${
-        customer?.name || "Customer"
-      } has been updated${addressInfo}.`,
-    });
-
-    // If assignedTeamId is updated, notify team members
-    if (
-      updates.assignedTeamId &&
-      updates.assignedTeamId !== order.assignedTeamId
-    ) {
-      const teamMembers = await User.findAll({
-        include: [
-          {
-            model: Team,
-            as: "teams",
-            where: { id: updates.assignedTeamId },
-          },
-        ],
-        attributes: ["userId", "name"],
-      });
-      for (const member of teamMembers) {
-        await sendNotification({
-          userId: member.userId,
-          title: `Order Assigned to Team #${order.orderNo}`,
-          message: `Order #${
-            order.orderNo
-          } has been assigned to your team for ${
-            customer?.name || "Customer"
-          }${addressInfo}.`,
-        });
-      }
-    }
-
-    return res.status(200).json({
-      message: "Order updated successfully",
-      order,
-    });
-  } catch (err) {
-    return res
-      .status(500)
-      .json({ message: "Failed to update order", error: err.message });
-  }
-};
-
-// Create a draft order
-exports.draftOrder = async (req, res) => {
-  try {
-    const {
-      quotationId,
-      assignedTeamId,
-      products,
-      masterPipelineNo,
-      previousOrderNo,
-      shipTo, // Add shipTo
-    } = req.body;
-
-    if (!assignedTeamId) {
-      return sendErrorResponse(res, 400, "assignedTeamId is required");
-    }
-
-    const team = await Team.findByPk(assignedTeamId);
-    if (!team) {
-      return sendErrorResponse(res, 400, "Assigned team not found");
-    }
-
-    if (quotationId) {
-      const quotation = await Quotation.findByPk(quotationId);
-      if (!quotation) {
-        return sendErrorResponse(res, 400, "Quotation not found");
-      }
-    }
-
-    if (masterPipelineNo) {
-      const masterOrder = await Order.findOne({
-        where: { orderNo: masterPipelineNo },
-      });
-      if (!masterOrder) {
-        return sendErrorResponse(
-          res,
-          404,
-          `Master order with orderNo ${masterPipelineNo} not found`
-        );
-      }
-    }
-
-    if (previousOrderNo) {
-      const previousOrder = await Order.findOne({
-        where: { orderNo: previousOrderNo },
-      });
-      if (!previousOrder) {
-        return sendErrorResponse(
-          res,
-          404,
-          `Previous order with orderNo ${previousOrderNo} not found`
-        );
-      }
-    }
-
-    if (products) {
-      if (!Array.isArray(products)) {
-        return sendErrorResponse(res, 400, "Products must be an array");
-      }
-
-      for (const product of products) {
-        const { id, price, discount, total } = product;
-
-        if (
-          !id ||
-          price === undefined ||
-          discount === undefined ||
-          total === undefined
-        ) {
-          return sendErrorResponse(
-            res,
-            400,
-            "Each product must have id, price, discount, and total"
-          );
-        }
-
-        const productRecord = await Product.findByPk(id);
-        if (!productRecord) {
-          return sendErrorResponse(res, 404, `Product with ID ${id} not found`);
-        }
-
-        if (typeof price !== "number" || price < 0) {
-          return sendErrorResponse(res, 400, `Invalid price for product ${id}`);
-        }
-        if (typeof discount !== "number" || discount < 0) {
-          return sendErrorResponse(
-            res,
-            400,
-            `Invalid discount for product ${id}`
-          );
-        }
-        if (typeof total !== "number" || total < 0) {
-          return sendErrorResponse(res, 400, `Invalid total for product ${id}`);
-        }
-
-        const discountType = productRecord.discountType || "fixed";
-        let expectedTotal;
-        if (discountType === "percent") {
-          expectedTotal = price * (1 - discount / 100);
-        } else {
-          expectedTotal = price - discount;
-        }
-
-        if (Math.abs(total - expectedTotal) > 0.01) {
-          return sendErrorResponse(
-            res,
-            400,
-            `Invalid total for product ${id}. Expected ${expectedTotal.toFixed(
-              2
-            )} based on price and discount`
-          );
-        }
-      }
-    }
-
-    // Validate shipTo if provided
-    let addressDetails = null;
-    if (shipTo) {
-      const address = await Address.findByPk(shipTo);
-      if (!address) {
-        return sendErrorResponse(
-          res,
-          404,
-          `Address with ID ${shipTo} not found`
-        );
-      }
-      addressDetails = address.toJSON();
-    }
-
-    // Generate unique orderNo for draft order
-    const today = moment().format("DDMMYYYY");
-    const todayOrders = await Order.findAll({
-      where: {
-        createdAt: {
-          [Op.gte]: moment().startOf("day").toDate(),
-          [Op.lte]: moment().endOf("day").toDate(),
-        },
-      },
-    });
-    const serialNumber = String(todayOrders.length + 1).padStart(5, "0");
-    const orderNo = `${today}${serialNumber}`;
-
-    const order = await Order.create({
-      quotationId,
-      status: "DRAFT",
-      assignedTeamId,
-      products,
-      masterPipelineNo,
-      previousOrderNo,
-      orderNo: parseInt(orderNo),
-      shipTo, // Include shipTo
-    });
-
-    // Send notification to admin
-    const addressInfo =
-      shipTo && addressDetails
-        ? `, to be shipped to ${
-            addressDetails.address || "address ID " + shipTo
-          }`
-        : "";
-    await sendNotification({
-      userId: ADMIN_USER_ID,
-      title: `Draft Order Created #${orderNo}`,
-      message: `A draft order #${orderNo} has been created${addressInfo}.`,
-    });
-
-    // Notify team members
-    const teamMembers = await User.findAll({
-      include: [
-        {
-          model: Team,
-          as: "teams",
-          where: { id: assignedTeamId },
-        },
-      ],
-      attributes: ["userId", "name"],
-    });
-    for (const member of teamMembers) {
-      await sendNotification({
-        userId: member.userId,
-        title: `Draft Order Assigned to Team #${orderNo}`,
-        message: `Draft order #${orderNo} has been assigned to your team${addressInfo}.`,
-      });
-    }
-
-    return res.status(200).json({ message: "Draft order created", order });
-  } catch (err) {
-    return sendErrorResponse(
-      res,
-      500,
-      "Failed to create draft order",
-      err.message
-    );
   }
 };
 

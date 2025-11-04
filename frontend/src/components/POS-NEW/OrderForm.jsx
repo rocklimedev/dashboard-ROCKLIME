@@ -12,6 +12,8 @@ import {
   Radio,
   Space,
   Divider,
+  InputNumber,
+  Collapse,
 } from "antd";
 import {
   UserAddOutlined,
@@ -31,54 +33,57 @@ import { useGetAllOrdersQuery } from "../../api/orderApi";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
-const { Text } = Typography;
+const { Text, Title } = Typography;
 const { Option } = Select;
+const { Panel } = Collapse;
 
-// Styled Components
-const CartSummaryCard = styled(Card)`
+/* ────────────────────── Styled ────────────────────── */
+const CompactCard = styled(Card)`
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  padding: 16px;
-`;
-
-const FormContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-`;
-
-const FormSection = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-`;
-
-const EmptyCartWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-`;
-
-const CustomerSelect = styled(Select)`
-  width: 100%;
-`;
-
-const CheckoutButton = styled(Button)`
-  background-color: #1890ff;
-  border-color: #1890ff;
-  &:hover {
-    background-color: #40a9ff;
-    border-color: #40a9ff;
+  .ant-card-body {
+    padding: 12px 16px;
   }
 `;
-
-const ActionButton = styled(Button)`
-  padding: 0;
-  height: auto;
+const TightRow = styled(Row)`
+  margin-bottom: 8px;
+  .ant-col {
+    padding: 0 4px;
+  }
+`;
+const MiniSelect = styled(Select)`
+  width: 100%;
+  .ant-select-selector {
+    padding: 0 8px;
+    height: 28px;
+  }
+`;
+const MiniInput = styled(Input)`
+  height: 28px;
+`;
+const MiniNumber = styled(InputNumber)`
+  width: 100%;
+  height: 28px;
+  .ant-input-number-input {
+    height: 26px;
+  }
+`;
+const MiniDate = styled(DatePicker)`
+  width: 100%;
+  height: 28px;
+  .react-datepicker-wrapper {
+    width: 100%;
+  }
+  .react-datepicker__input-container input {
+    height: 28px;
+  }
+`;
+const CheckoutBtn = styled(Button)`
+  height: 36px;
+  font-weight: 600;
 `;
 
+/* ────────────────────── Constants ────────────────────── */
 const SOURCE_TYPES = [
   "Retail",
   "Architect",
@@ -86,7 +91,6 @@ const SOURCE_TYPES = [
   "Builder",
   "Contractor",
 ];
-
 const STATUS_VALUES = [
   "PREPARING",
   "CHECKING",
@@ -99,9 +103,10 @@ const STATUS_VALUES = [
   "ONHOLD",
 ];
 
-// Helper: Convert moment → Date for react-datepicker
+/* ────────────────────── Helper ────────────────────── */
 const momentToDate = (m) => (m ? m.toDate() : null);
 
+/* ────────────────────── Main Component ────────────────────── */
 const OrderForm = ({
   orderData,
   setOrderData,
@@ -114,26 +119,16 @@ const OrderForm = ({
   addresses = [],
   addressesLoading,
   addressesError,
-  userMap = {},
-  customerMap = {},
-  userQueries = [],
-  customerQueries = [],
   teams = [],
   teamsLoading,
   users = [],
   usersLoading,
-  usersError,
-  error,
-  orderNumber,
-  documentType,
-  setDocumentType,
   cartItems = [],
-  totalAmount,
+  subTotal,
   shipping,
   tax,
-  discount,
+  totalDiscount,
   roundOff,
-  subTotal,
   handleAddCustomer,
   handleAddAddress,
   setActiveTab,
@@ -141,7 +136,10 @@ const OrderForm = ({
   handleTeamAdded,
   useBillingAddress,
   setUseBillingAddress,
+  documentType,
+  setDocumentType,
 }) => {
+  /* ────── Local State ────── */
   const [assignmentType, setAssignmentType] = useState(
     orderData?.assignedTeamId
       ? "team"
@@ -149,97 +147,63 @@ const OrderForm = ({
       ? "users"
       : "team"
   );
-  const [customerSearch, setCustomerSearch] = useState("");
   const [sourceType, setSourceType] = useState("");
-  const [filteredCustomers, setFilteredCustomers] = useState(customers || []);
-  const [descriptionLength, setDescriptionLength] = useState(
-    orderData?.description?.length || 0
-  );
   const [isCreatingAddress, setIsCreatingAddress] = useState(false);
+  const [gst, setGst] = useState(orderData.gst ?? 18);
+  const [extraDiscount, setExtraDiscount] = useState(
+    orderData.extraDiscount ?? 0
+  );
+  const [extraDiscountType, setExtraDiscountType] = useState(
+    orderData.extraDiscountType ?? "percent"
+  );
+  const [customerSearch, setCustomerSearch] = useState("");
+
+  /* ────── RTK ────── */
   const [createAddress] = useCreateAddressMutation();
-  const {
-    data: allOrdersData,
-    isLoading: isAllOrdersLoading,
-    error: allOrdersError,
-  } = useGetAllOrdersQuery();
+  const { data: allOrdersData, isLoading: ordersLoading } =
+    useGetAllOrdersQuery();
+  const orders = useMemo(() => allOrdersData?.orders ?? [], [allOrdersData]);
 
-  const orders = useMemo(
-    () => (Array.isArray(allOrdersData?.orders) ? allOrdersData.orders : []),
-    [allOrdersData]
+  /* ────── Memos ────── */
+  const filteredAddresses = useMemo(
+    () =>
+      selectedCustomer
+        ? addresses.filter((a) => a.customerId === selectedCustomer)
+        : [],
+    [addresses, selectedCustomer]
+  );
+  const defaultAddress = useMemo(
+    () =>
+      customers.find((c) => c.customerId === selectedCustomer)?.address ?? null,
+    [customers, selectedCustomer]
+  );
+  const sourceCustomers = useMemo(
+    () =>
+      sourceType
+        ? customers.filter(
+            (c) => c.customerType?.toLowerCase() === sourceType.toLowerCase()
+          )
+        : [],
+    [customers, sourceType]
   );
 
-  // Memoized filtered addresses
-  const filteredAddresses = useMemo(() => {
-    if (!selectedCustomer) return [];
-    return addresses.filter((addr) => addr.customerId === selectedCustomer);
-  }, [addresses, selectedCustomer]);
-
-  // Memoized default address
-  const defaultAddress = useMemo(() => {
-    const customer = customers.find((c) => c.customerId === selectedCustomer);
-    return customer?.address || null;
-  }, [customers, selectedCustomer]);
-
-  // Memoized source customers
-  const sourceCustomers = useMemo(() => {
-    if (!sourceType) return [];
-    const normalized = sourceType.toLowerCase();
-    return customers.filter(
-      (c) => c.customerType && c.customerType.toLowerCase() === normalized
-    );
-  }, [customers, sourceType]);
-
-  // Auto-select previousOrderNo
-  useEffect(() => {
-    if (orderData?.masterPipelineNo) {
-      const related = orders.filter(
-        (o) =>
-          o.masterPipelineNo === orderData.masterPipelineNo &&
-          o.orderNo !== orderData.orderNo
-      );
-      const latest = related.sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-      )[0];
-      handleOrderChange("previousOrderNo", latest?.orderNo || "");
-    } else {
-      handleOrderChange("previousOrderNo", "");
-    }
-  }, [orderData?.masterPipelineNo, orders, handleOrderChange]);
-
-  // Debounced customer search
-  const debouncedCustomerSearch = useCallback(
-    debounce((value) => {
-      setCustomerSearch(value);
-      if (value) {
-        const filtered = customers.filter(
-          (c) =>
-            c.name.toLowerCase().includes(value.toLowerCase()) ||
-            (c.email && c.email.toLowerCase().includes(value.toLowerCase()))
-        );
-        setFilteredCustomers(filtered);
-      } else {
-        setFilteredCustomers(customers);
-      }
-    }, 300),
-    [customers]
-  );
-
-  const debouncedToast = useCallback(
-    debounce((msg, type = "error") => toast[type](msg), 300),
+  /* ────── Debounced Search ────── */
+  const debouncedSearch = useCallback(
+    debounce((v) => setCustomerSearch(v), 300),
     []
   );
 
-  // Initialize dueDate
+  /* ────── Auto-fill dueDate ────── */
   useEffect(() => {
     if (!orderData.dueDate) {
-      setOrderData((prev) => ({
-        ...prev,
-        dueDate: moment().add(1, "days").format("YYYY-MM-DD"),
+      setOrderData((p) => ({
+        ...p,
+        dueDate: moment().add(1, "day").format("YYYY-MM-DD"),
       }));
     }
   }, [orderData.dueDate, setOrderData]);
 
-  // Sync shipTo with billing address
+  /* ────── Sync shipTo with billing ────── */
   useEffect(() => {
     if (
       !selectedCustomer ||
@@ -249,59 +213,45 @@ const OrderForm = ({
       orderData?.shipTo
     )
       return;
-
-    const normalize = (s) => (s ? s.trim().toLowerCase() : "");
-
-    const match = filteredAddresses.find((addr) => {
-      const m = {
-        street: normalize(addr.street) === normalize(defaultAddress.street),
-        city: normalize(addr.city) === normalize(defaultAddress.city),
-        state: normalize(addr.state) === normalize(defaultAddress.state),
-        postal:
-          normalize(addr.postalCode || addr.zip) ===
-            normalize(defaultAddress.postalCode || defaultAddress.zip) ||
-          normalize(addr.postalCode || addr.zip) ===
-            normalize(defaultAddress.zip || defaultAddress.postalCode),
-        country:
-          normalize(addr.country || "india") ===
-          normalize(defaultAddress.country || "india"),
-      };
-      return m.street && m.city && m.state && m.postal && m.country;
-    });
-
+    const match = filteredAddresses.find(
+      (a) =>
+        a.street?.trim().toLowerCase() ===
+          defaultAddress.street?.trim().toLowerCase() &&
+        a.city?.trim().toLowerCase() ===
+          defaultAddress.city?.trim().toLowerCase() &&
+        a.state?.trim().toLowerCase() ===
+          defaultAddress.state?.trim().toLowerCase() &&
+        (a.postalCode || a.zip) ===
+          (defaultAddress.postalCode || defaultAddress.zip) &&
+        (a.country || "india").toLowerCase() ===
+          (defaultAddress.country || "india").toLowerCase()
+    );
     if (match) {
       handleOrderChange("shipTo", match.addressId);
       return;
     }
 
-    const createBilling = async () => {
+    const create = async () => {
       setIsCreatingAddress(true);
       try {
-        const payload = {
+        const res = await createAddress({
           customerId: selectedCustomer,
-          street: defaultAddress.street || "",
-          city: defaultAddress.city || "",
-          state: defaultAddress.state || "",
-          postalCode: defaultAddress.postalCode || defaultAddress.zip || "",
-          country: defaultAddress.country || "India",
+          street: defaultAddress.street ?? "",
+          city: defaultAddress.city ?? "",
+          state: defaultAddress.state ?? "",
+          postalCode: defaultAddress.postalCode ?? defaultAddress.zip ?? "",
+          country: defaultAddress.country ?? "India",
           status: "BILLING",
-        };
-        const result = await createAddress(payload).unwrap();
-        handleOrderChange("shipTo", result.data.addressId);
-        debouncedToast("Billing address created successfully.", "success");
-      } catch (err) {
-        debouncedToast(
-          `Failed to create billing address: ${
-            err.data?.message || "Unknown error"
-          }`
-        );
-        handleOrderChange("shipTo", null);
+        }).unwrap();
+        handleOrderChange("shipTo", res.data.addressId);
+        toast.success("Billing address created");
+      } catch (e) {
+        toast.error(e?.data?.message ?? "Failed");
       } finally {
         setIsCreatingAddress(false);
       }
     };
-
-    createBilling();
+    create();
   }, [
     useBillingAddress,
     defaultAddress,
@@ -309,610 +259,528 @@ const OrderForm = ({
     selectedCustomer,
     orderData?.shipTo,
     isCreatingAddress,
-    handleOrderChange,
-    createAddress,
-    debouncedToast,
   ]);
 
-  // Follow-up date handlers
-  const handleFollowupDateChange = (index, date) => {
-    const newDates = [...(orderData.followupDates || [])];
-    newDates[index] = date ? moment(date).format("YYYY-MM-DD") : null;
-    handleOrderChange("followupDates", newDates);
-  };
+  /* ────── Extra Discount Calc ────── */
+  const base = subTotal + shipping + tax - totalDiscount;
+  const extraDiscAmt = useMemo(() => {
+    const v = Number(extraDiscount) || 0;
+    return extraDiscountType === "percent"
+      ? ((base * v) / 100).toFixed(2)
+      : v.toFixed(2);
+  }, [base, extraDiscount, extraDiscountType]);
+  const gstBase = (base - Number(extraDiscAmt)).toFixed(2);
+  const gstAmt = ((Number(gstBase) * gst) / 100).toFixed(2);
 
-  const addFollowupDate = () => {
+  /* ────── Validation Helpers ────── */
+  const validOrderNo = (no) => /^\d{1,2}\d{1,2}25\d{3,}$/.test(no);
+  const uniqueOrderNo = (no) => !orders.some((o) => o.orderNo === no);
+
+  /* ────── UI Handlers ────── */
+  const setShip = (v) => {
+    if (v === "sameAsBilling") setUseBillingAddress(true);
+    else {
+      setUseBillingAddress(false);
+      handleOrderChange("shipTo", v);
+    }
+  };
+  const addFollow = () =>
     handleOrderChange("followupDates", [
       ...(orderData.followupDates || []),
       null,
     ]);
-  };
-
-  const removeFollowupDate = (index) => {
+  const rmFollow = (i) =>
     handleOrderChange(
       "followupDates",
-      orderData.followupDates?.filter((_, i) => i !== index) || []
+      (orderData.followupDates || []).filter((_, x) => x !== i)
     );
+  const setFollow = (i, d) => {
+    const arr = [...(orderData.followupDates || [])];
+    arr[i] = d ? moment(d).format("YYYY-MM-DD") : null;
+    handleOrderChange("followupDates", arr);
   };
 
-  // Validation
-  const validateOrderNo = (no) => /^\d{1,2}\d{1,2}25\d{3,}$/.test(no);
-  const checkOrderNoUniqueness = (no) => !orders.some((o) => o.orderNo === no);
-
-  const handleAddressChange = (value) => {
-    if (value === "sameAsBilling") {
-      setUseBillingAddress(true);
-    } else {
-      setUseBillingAddress(false);
-      handleOrderChange("shipTo", value);
-    }
-  };
+  /* ────── Render ────── */
+  if (!cartItems?.length) {
+    return (
+      <CompactCard>
+        <Empty
+          description="Cart empty"
+          image={<FcEmptyTrash style={{ fontSize: 48 }} />}
+        />
+        <Button
+          type="primary"
+          icon={<ArrowLeftOutlined />}
+          onClick={() => setActiveTab("cart")}
+          block
+        >
+          Back to Cart
+        </Button>
+      </CompactCard>
+    );
+  }
 
   return (
-    <Row gutter={[16, 16]} justify="center">
-      <Col xs={24} sm={24} md={16} lg={16}>
-        <CartSummaryCard>
-          {(cartItems?.length ?? 0) === 0 ? (
-            <EmptyCartWrapper>
-              <Empty
-                description="Your cart is empty"
-                image={<FcEmptyTrash style={{ fontSize: 64 }} />}
-              />
-              <Button
-                type="primary"
-                icon={<ArrowLeftOutlined />}
-                onClick={() => setActiveTab("cart")}
-                style={{ marginTop: 16 }}
-              >
-                Back to Cart
-              </Button>
-            </EmptyCartWrapper>
-          ) : (
-            <FormContainer>
-              <Text strong style={{ fontSize: "18px" }}>
-                Checkout
-              </Text>
+    <Row gutter={12}>
+      {/* ────── LEFT – FORM ────── */}
+      <Col xs={24} md={16}>
+        <CompactCard title={<Title level={5}>Checkout</Title>}>
+          <Collapse defaultActiveKey={["1", "2", "3", "4", "5"]} ghost>
+            {/* 1. Document & Customer */}
+            <Panel header="Document & Customer" key="1">
+              <TightRow gutter={8}>
+                <Col span={8}>
+                  <Text strong>Doc Type</Text>
+                </Col>
+                <Col span={16}>
+                  <MiniSelect value={documentType} onChange={setDocumentType}>
+                    {["Quotation", "Order", "Purchase Order"].map((v) => (
+                      <Option key={v} value={v}>
+                        {v}
+                      </Option>
+                    ))}
+                  </MiniSelect>
+                </Col>
+              </TightRow>
 
-              {/* Document Type */}
-              <FormSection>
-                <Text strong>Document Type</Text>
-                <Select
-                  value={documentType}
-                  onChange={setDocumentType}
-                  placeholder="Select document type"
-                >
-                  <Option value="Quotation">Quotation</Option>
-                  <Option value="Order">Order</Option>
-                  <Option value="Purchase Order">Purchase Order</Option>
-                </Select>
-              </FormSection>
-
-              {/* Customer */}
-              <FormSection>
-                <Text strong>
-                  Customer <span style={{ color: "red" }}>*</span>
-                </Text>
-                <Space direction="vertical" style={{ width: "100%" }}>
-                  <CustomerSelect
+              <TightRow gutter={8}>
+                <Col span={8}>
+                  <Text strong>
+                    Customer <span style={{ color: "red" }}>*</span>
+                  </Text>
+                </Col>
+                <Col span={16}>
+                  <MiniSelect
                     showSearch
+                    filterOption={false}
                     value={selectedCustomer}
+                    onSearch={debouncedSearch}
                     onChange={(v) => {
                       setSelectedCustomer(v);
                       handleOrderChange("createdFor", v);
                       handleOrderChange("shipTo", null);
                       setUseBillingAddress(false);
                     }}
-                    onSearch={debouncedCustomerSearch}
-                    placeholder="Select a customer"
                     loading={customersLoading}
-                    disabled={customersLoading || customersError}
-                    filterOption={false}
                   >
-                    {(filteredCustomers?.length ?? 0) > 0 ? (
-                      filteredCustomers.map((c) => (
-                        <Option key={c.customerId} value={c.customerId}>
-                          {c.name} ({c.email})
-                        </Option>
-                      ))
-                    ) : (
-                      <Option value="" disabled>
-                        No customers available
-                      </Option>
-                    )}
-                  </CustomerSelect>
-                  <ActionButton
-                    type="link"
-                    icon={<UserAddOutlined />}
-                    onClick={handleAddCustomer}
-                  >
-                    Add New Customer
-                  </ActionButton>
-                </Space>
-              </FormSection>
-
-              {/* Reference Type */}
-              <FormSection>
-                <Text strong>Reference Type</Text>
-                <Select
-                  value={sourceType}
-                  onChange={(v) => {
-                    setSourceType(v);
-                    if (v) handleOrderChange("source", "");
-                  }}
-                  placeholder="Select reference type"
-                  allowClear
-                >
-                  {SOURCE_TYPES.map((t) => (
-                    <Option key={t} value={t}>
-                      {t}
-                    </Option>
-                  ))}
-                </Select>
-              </FormSection>
-
-              {/* Reference Customer */}
-              <FormSection>
-                <Text strong>Reference Customer</Text>
-                <Select
-                  value={orderData?.source || undefined}
-                  onChange={(v) => handleOrderChange("source", v)}
-                  placeholder="Select reference customer"
-                  disabled={!sourceType || customersLoading || customersError}
-                  allowClear
-                >
-                  {customersLoading ? (
-                    <Option disabled>Loading customers...</Option>
-                  ) : customersError ? (
-                    <Option disabled>
-                      Error: {customersError?.data?.message || "Unknown"}
-                    </Option>
-                  ) : (sourceCustomers?.length ?? 0) > 0 ? (
-                    sourceCustomers.map((c) => (
+                    {(customerSearch
+                      ? customers.filter((c) =>
+                          c.name
+                            .toLowerCase()
+                            .includes(customerSearch.toLowerCase())
+                        )
+                      : customers
+                    ).map((c) => (
                       <Option key={c.customerId} value={c.customerId}>
                         {c.name} ({c.email})
                       </Option>
-                    ))
-                  ) : (
-                    <Option disabled>
-                      {sourceType
-                        ? `No ${sourceType} customers`
-                        : "Select type first"}
-                    </Option>
-                  )}
-                </Select>
-              </FormSection>
-
-              {/* Shipping Address */}
-              <FormSection>
-                <Text strong>
-                  Shipping Address <span style={{ color: "red" }}>*</span>
-                </Text>
-                <Space direction="vertical" style={{ width: "100%" }}>
-                  <Select
-                    value={
-                      useBillingAddress
-                        ? "sameAsBilling"
-                        : orderData?.shipTo || undefined
-                    }
-                    onChange={handleAddressChange}
-                    placeholder="Select shipping address"
-                    loading={addressesLoading || isCreatingAddress}
-                    disabled={
-                      !selectedCustomer ||
-                      addressesLoading ||
-                      addressesError ||
-                      isCreatingAddress
-                    }
+                    ))}
+                  </MiniSelect>
+                  <Button
+                    type="link"
+                    icon={<UserAddOutlined />}
+                    onClick={handleAddCustomer}
+                    block
+                    size="small"
                   >
-                    {selectedCustomer && defaultAddress && (
-                      <Option value="sameAsBilling">
-                        Same as Billing Address
-                      </Option>
+                    Add
+                  </Button>
+                </Col>
+              </TightRow>
+              <TightRow gutter={8}>
+                <Col span={8}>
+                  <Text strong>
+                    Shipping <span style={{ color: "red" }}>*</span>
+                  </Text>
+                </Col>
+                <Col span={16}>
+                  <MiniSelect
+                    value={
+                      useBillingAddress ? "sameAsBilling" : orderData?.shipTo
+                    }
+                    onChange={setShip}
+                    loading={addressesLoading || isCreatingAddress}
+                    disabled={!selectedCustomer}
+                  >
+                    {defaultAddress && (
+                      <Option value="sameAsBilling">Same as Billing</Option>
                     )}
-                    {!selectedCustomer ? (
-                      <Option disabled>Select customer first</Option>
-                    ) : addressesLoading || isCreatingAddress ? (
-                      <Option disabled>Loading...</Option>
-                    ) : addressesError ? (
-                      <Option disabled>
-                        Error: {addressesError?.data?.message || "Unknown"}
+                    {filteredAddresses.map((a) => (
+                      <Option key={a.addressId} value={a.addressId}>
+                        {`${a.street}, ${a.city} (${a.status})`}
                       </Option>
-                    ) : (filteredAddresses?.length ?? 0) === 0 ? (
-                      <Option disabled>No addresses</Option>
-                    ) : (
-                      filteredAddresses.map((a) => (
-                        <Option key={a.addressId} value={a.addressId}>
-                          {`${a.street}, ${a.city}, ${a.state || ""}, ${
-                            a.postalCode
-                          }, ${a.country || "India"} (${a.status})`}
-                        </Option>
-                      ))
-                    )}
-                  </Select>
-
-                  {useBillingAddress && defaultAddress && (
-                    <Text>
-                      <strong>Billing Address:</strong>{" "}
-                      {`${defaultAddress.street}, ${defaultAddress.city}, ${
-                        defaultAddress.state || ""
-                      }, ${
-                        defaultAddress.postalCode || defaultAddress.zip || ""
-                      }, ${defaultAddress.country || "India"} (${
-                        defaultAddress.status || "BILLING"
-                      })`}
-                    </Text>
-                  )}
-
-                  <ActionButton
+                    ))}
+                  </MiniSelect>
+                  <Button
                     type="link"
                     icon={<UserAddOutlined />}
                     onClick={handleAddAddress}
-                    disabled={!selectedCustomer || isCreatingAddress}
+                    block
+                    size="small"
+                    disabled={!selectedCustomer}
                   >
-                    Add New Address
-                  </ActionButton>
-                </Space>
-              </FormSection>
+                    Add
+                  </Button>
+                </Col>
+              </TightRow>
+            </Panel>
 
-              {/* Order Number */}
-              <FormSection>
-                <Text strong>Order Number</Text>
-                <Input
-                  value={orderData.orderNo}
-                  disabled
-                  placeholder="e.g., 151025101"
-                />
-              </FormSection>
+            {/* 2. Reference */}
+            <Panel header="Reference" key="2">
+              <TightRow gutter={8}>
+                <Col span={8}>
+                  <Text strong>Type</Text>
+                </Col>
+                <Col span={16}>
+                  <MiniSelect
+                    value={sourceType}
+                    onChange={(v) => {
+                      setSourceType(v);
+                      handleOrderChange("source", "");
+                    }}
+                    allowClear
+                  >
+                    {SOURCE_TYPES.map((t) => (
+                      <Option key={t} value={t}>
+                        {t}
+                      </Option>
+                    ))}
+                  </MiniSelect>
+                </Col>
+              </TightRow>
 
-              {/* Master Pipeline */}
-              <FormSection>
-                <Text strong>Master Pipeline Number</Text>
-                <Select
-                  value={orderData?.masterPipelineNo || undefined}
-                  onChange={(v) => handleOrderChange("masterPipelineNo", v)}
-                  placeholder="Select master pipeline"
-                  allowClear
-                >
-                  {isAllOrdersLoading ? (
-                    <Option disabled>Loading orders...</Option>
-                  ) : allOrdersError ? (
-                    <Option disabled>Error loading orders</Option>
-                  ) : (orders?.length ?? 0) === 0 ? (
-                    <Option disabled>No orders</Option>
-                  ) : (
-                    orders
-                      .filter(
-                        (o) => o.orderNo && o.orderNo !== orderData?.orderNo
+              <TightRow gutter={8}>
+                <Col span={8}>
+                  <Text strong>Customer</Text>
+                </Col>
+                <Col span={16}>
+                  <MiniSelect
+                    value={orderData?.source}
+                    onChange={(v) => handleOrderChange("source", v)}
+                    disabled={!sourceType}
+                    allowClear
+                  >
+                    {sourceCustomers.map((c) => (
+                      <Option key={c.customerId} value={c.customerId}>
+                        {c.name}
+                      </Option>
+                    ))}
+                  </MiniSelect>
+                </Col>
+              </TightRow>
+            </Panel>
+
+            {/* 4. Dates & Assignment */}
+            <Panel header="Dates & Assignment" key="4">
+              <TightRow gutter={8}>
+                <Col span={8}>
+                  <Text strong>
+                    Due Date <span style={{ color: "red" }}>*</span>
+                  </Text>
+                </Col>
+                <Col span={16}>
+                  <MiniDate
+                    selected={momentToDate(
+                      orderData?.dueDate ? moment(orderData.dueDate) : null
+                    )}
+                    onChange={(d) =>
+                      handleOrderChange(
+                        "dueDate",
+                        d ? moment(d).format("YYYY-MM-DD") : ""
                       )
-                      .map((o) => (
-                        <Option key={o.orderNo} value={o.orderNo}>
-                          {o.orderNo}
-                        </Option>
-                      ))
-                  )}
-                </Select>
-              </FormSection>
+                    }
+                    minDate={new Date()}
+                  />
+                </Col>
+              </TightRow>
 
-              {/* Status */}
-              <FormSection>
-                <Text strong>Status</Text>
-                <Select
-                  value={orderData?.status}
-                  onChange={(v) => handleOrderChange("status", v)}
-                  placeholder="Select status"
-                >
-                  {STATUS_VALUES.map((s) => (
-                    <Option key={s} value={s}>
-                      {s.charAt(0) + s.slice(1).toLowerCase().replace("_", " ")}
-                    </Option>
+              <TightRow gutter={8}>
+                <Col span={8}>
+                  <Text strong>Follow-ups</Text>
+                </Col>
+                <Col span={16}>
+                  {(orderData?.followupDates || []).map((d, i) => (
+                    <Space key={i} style={{ width: "100%", marginBottom: 4 }}>
+                      <MiniDate
+                        selected={momentToDate(d ? moment(d) : null)}
+                        onChange={(v) => setFollow(i, v)}
+                        minDate={new Date()}
+                        maxDate={
+                          orderData?.dueDate
+                            ? moment(orderData.dueDate).toDate()
+                            : undefined
+                        }
+                      />
+                      <Button
+                        danger
+                        size="small"
+                        icon={<DeleteOutlined />}
+                        onClick={() => rmFollow(i)}
+                      />
+                    </Space>
                   ))}
-                </Select>
-              </FormSection>
+                  <Button
+                    size="small"
+                    icon={<PlusOutlined />}
+                    onClick={addFollow}
+                  >
+                    Add
+                  </Button>
+                </Col>
+              </TightRow>
 
-              {/* Priority */}
-              <FormSection>
-                <Text strong>Priority</Text>
-                <Select
-                  value={orderData?.priority}
-                  onChange={(v) => handleOrderChange("priority", v)}
-                  placeholder="Select priority"
-                >
-                  <Option value="high">High</Option>
-                  <Option value="medium">Medium</Option>
-                  <Option value="low">Low</Option>
-                </Select>
-              </FormSection>
-
-              {/* Assigned To */}
-              <FormSection>
-                <Text strong>Assigned To</Text>
-                <Radio.Group
-                  value={assignmentType}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setAssignmentType(val);
-                    setOrderData((prev) => ({
-                      ...prev,
-                      assignedTeamId: val === "team" ? prev.assignedTeamId : "",
-                      assignedUserId:
-                        val === "users" ? prev.assignedUserId : "",
-                      secondaryUserId:
-                        val === "users" ? prev.secondaryUserId : "",
-                    }));
-                  }}
-                >
-                  <Radio value="team">Team</Radio>
-                  <Radio value="users">Users</Radio>
-                </Radio.Group>
-              </FormSection>
+              <TightRow gutter={8}>
+                <Col span={8}>
+                  <Text strong>Assign</Text>
+                </Col>
+                <Col span={16}>
+                  <Radio.Group
+                    value={assignmentType}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setAssignmentType(v);
+                      setOrderData((p) => ({
+                        ...p,
+                        assignedTeamId: v === "team" ? p.assignedTeamId : "",
+                        assignedUserId: v === "users" ? p.assignedUserId : "",
+                        secondaryUserId: v === "users" ? p.secondaryUserId : "",
+                      }));
+                    }}
+                  >
+                    <Radio value="team">Team</Radio>
+                    <Radio value="users">Users</Radio>
+                  </Radio.Group>
+                </Col>
+              </TightRow>
 
               {assignmentType === "team" && (
-                <FormSection>
-                  <Text strong>Team</Text>
-                  <Select
-                    value={orderData?.assignedTeamId || undefined}
-                    onChange={(v) => handleOrderChange("assignedTeamId", v)}
-                    placeholder="Select team"
-                    disabled={teamsLoading}
-                    dropdownRender={(menu) => (
-                      <>
-                        {menu}
-                        <Divider style={{ margin: "8px 0" }} />
-                        <Button
-                          type="primary"
-                          icon={<PlusOutlined />}
-                          onClick={() => handleTeamAdded(true)}
-                          style={{ width: "100%" }}
-                        >
-                          Add New Team
-                        </Button>
-                      </>
-                    )}
-                  >
-                    {(teams?.length ?? 0) > 0 ? (
-                      teams.map((t) => (
+                <TightRow gutter={8}>
+                  <Col span={8}>
+                    <Text strong>Team</Text>
+                  </Col>
+                  <Col span={16}>
+                    <MiniSelect
+                      value={orderData?.assignedTeamId}
+                      onChange={(v) => handleOrderChange("assignedTeamId", v)}
+                      loading={teamsLoading}
+                      dropdownRender={(menu) => (
+                        <>
+                          {menu}
+                          <Divider style={{ margin: "4px 0" }} />
+                          <Button
+                            type="primary"
+                            icon={<PlusOutlined />}
+                            onClick={() => handleTeamAdded(true)}
+                            block
+                            size="small"
+                          >
+                            Add Team
+                          </Button>
+                        </>
+                      )}
+                    >
+                      {teams.map((t) => (
                         <Option key={t.id} value={t.id}>
-                          {t.teamName} (
-                          {t.teammembers?.length
-                            ? t.teammembers.map((m) => m.userName).join(", ")
-                            : "No members"}
-                          )
+                          {t.teamName}
                         </Option>
-                      ))
-                    ) : (
-                      <Option disabled>No teams</Option>
-                    )}
-                  </Select>
-                </FormSection>
+                      ))}
+                    </MiniSelect>
+                  </Col>
+                </TightRow>
               )}
 
               {assignmentType === "users" && (
                 <>
-                  <FormSection>
-                    <Text strong>Primary User</Text>
-                    <Select
-                      value={orderData?.assignedUserId || undefined}
-                      onChange={(v) => handleOrderChange("assignedUserId", v)}
-                      placeholder="Select primary user"
-                      disabled={usersLoading}
-                    >
-                      {(users?.length ?? 0) > 0 ? (
-                        users.map((u) => (
+                  <TightRow gutter={8}>
+                    <Col span={8}>
+                      <Text strong>Primary</Text>
+                    </Col>
+                    <Col span={16}>
+                      <MiniSelect
+                        value={orderData?.assignedUserId}
+                        onChange={(v) => handleOrderChange("assignedUserId", v)}
+                        loading={usersLoading}
+                      >
+                        {users.map((u) => (
                           <Option key={u.userId} value={u.userId}>
-                            {u.username || u.name || "—"}
+                            {u.username || u.name}
                           </Option>
-                        ))
-                      ) : (
-                        <Option disabled>No users</Option>
-                      )}
-                    </Select>
-                  </FormSection>
-
-                  <FormSection>
-                    <Text strong>Secondary User (Optional)</Text>
-                    <Select
-                      value={orderData?.secondaryUserId || undefined}
-                      onChange={(v) => handleOrderChange("secondaryUserId", v)}
-                      placeholder="Select secondary user"
-                      disabled={usersLoading}
-                      allowClear
-                    >
-                      {(users?.length ?? 0) > 0 ? (
-                        users.map((u) => (
+                        ))}
+                      </MiniSelect>
+                    </Col>
+                  </TightRow>
+                  <TightRow gutter={8}>
+                    <Col span={8}>
+                      <Text strong>Secondary</Text>
+                    </Col>
+                    <Col span={16}>
+                      <MiniSelect
+                        value={orderData?.secondaryUserId}
+                        onChange={(v) =>
+                          handleOrderChange("secondaryUserId", v)
+                        }
+                        allowClear
+                        loading={usersLoading}
+                      >
+                        {users.map((u) => (
                           <Option key={u.userId} value={u.userId}>
-                            {u.username || u.name || "—"}
+                            {u.username || u.name}
                           </Option>
-                        ))
-                      ) : (
-                        <Option disabled>No users</Option>
-                      )}
-                    </Select>
-                  </FormSection>
+                        ))}
+                      </MiniSelect>
+                    </Col>
+                  </TightRow>
                 </>
               )}
+            </Panel>
 
-              {/* Due Date - react-datepicker */}
-              <FormSection>
-                <Text strong>
-                  Due Date <span style={{ color: "red" }}>*</span>
-                </Text>
-                <DatePicker
-                  selected={momentToDate(
-                    orderData?.dueDate ? moment(orderData.dueDate) : null
-                  )}
-                  onChange={(date) =>
-                    handleOrderChange(
-                      "dueDate",
-                      date ? moment(date).format("YYYY-MM-DD") : ""
-                    )
-                  }
-                  dateFormat="yyyy-MM-dd"
-                  minDate={new Date()}
-                  placeholderText="Select due date"
-                  className="ant-input"
-                  wrapperClassName="w-100"
-                />
-              </FormSection>
-
-              {/* Timeline Dates */}
-              <FormSection>
-                <Text strong>Timeline Dates</Text>
-                {(orderData?.followupDates || []).map((date, idx) => (
-                  <Space
-                    key={idx}
-                    align="center"
-                    style={{ width: "100%", marginBottom: 8 }}
+            {/* 5. Misc & Discount */}
+            <Panel header="Misc & Discount" key="5">
+              <TightRow gutter={8}>
+                <Col span={8}>
+                  <Text strong>Status</Text>
+                </Col>
+                <Col span={16}>
+                  <MiniSelect
+                    value={orderData?.status}
+                    onChange={(v) => handleOrderChange("status", v)}
                   >
-                    <DatePicker
-                      selected={momentToDate(date ? moment(date) : null)}
-                      onChange={(d) => handleFollowupDateChange(idx, d)}
-                      dateFormat="yyyy-MM-dd"
-                      minDate={new Date()}
-                      maxDate={
-                        orderData?.dueDate
-                          ? moment(orderData.dueDate).toDate()
-                          : undefined
-                      }
-                      placeholderText="Select follow-up date"
-                      className="ant-input"
-                      wrapperClassName="w-100"
-                    />
-                    <Button
-                      type="text"
-                      danger
-                      icon={<DeleteOutlined />}
-                      onClick={() => removeFollowupDate(idx)}
-                    />
-                  </Space>
-                ))}
-                <Button
-                  type="primary"
-                  onClick={addFollowupDate}
-                  icon={<PlusOutlined />}
-                >
-                  Add Follow-up Date
-                </Button>
-              </FormSection>
+                    {STATUS_VALUES.map((s) => (
+                      <Option key={s} value={s}>
+                        {s.replace("_", " ")}
+                      </Option>
+                    ))}
+                  </MiniSelect>
+                </Col>
+              </TightRow>
 
-              {/* Description */}
-              <FormSection>
-                <Text strong>Description</Text>
-                <Input.TextArea
-                  value={orderData?.description}
-                  onChange={(e) => {
-                    handleOrderChange("description", e.target.value);
-                    setDescriptionLength(e.target.value?.length || 0);
-                  }}
-                  rows={3}
-                  placeholder="Enter description"
-                  maxLength={60}
-                />
-                <Text
-                  style={{
-                    color: descriptionLength > 60 ? "red" : "inherit",
-                  }}
-                >
-                  {descriptionLength}/60 Characters (Recommended)
-                </Text>
-              </FormSection>
+              <TightRow gutter={8}>
+                <Col span={8}>
+                  <Text strong>Priority</Text>
+                </Col>
+                <Col span={16}>
+                  <MiniSelect
+                    value={orderData?.priority}
+                    onChange={(v) => handleOrderChange("priority", v)}
+                  >
+                    <Option value="high">High</Option>
+                    <Option value="medium">Medium</Option>
+                    <Option value="low">Low</Option>
+                  </MiniSelect>
+                </Col>
+              </TightRow>
 
-              {error && <Alert message={error} type="error" showIcon />}
-            </FormContainer>
-          )}
-        </CartSummaryCard>
+              <TightRow gutter={8}>
+                <Col span={8}>
+                  <Text strong>GST %</Text>
+                </Col>
+                <Col span={16}>
+                  <MiniNumber
+                    min={0}
+                    max={100}
+                    step={0.01}
+                    value={gst}
+                    onChange={(v) => {
+                      setGst(v ?? 0);
+                      handleOrderChange("gst", v ?? 0);
+                    }}
+                  />
+                </Col>
+              </TightRow>
+
+              <TightRow gutter={8}>
+                <Col span={8}>
+                  <Text strong>Extra Discount</Text>
+                </Col>
+                <Col span={16}>
+                  <Radio.Group
+                    value={extraDiscountType}
+                    onChange={(e) => {
+                      setExtraDiscountType(e.target.value);
+                      handleOrderChange("extraDiscountType", e.target.value);
+                    }}
+                  >
+                    <Radio value="percent">%</Radio>
+                    <Radio value="fixed">INR</Radio>
+                  </Radio.Group>
+                  <MiniNumber
+                    min={0}
+                    value={extraDiscount}
+                    onChange={(v) => {
+                      setExtraDiscount(v ?? 0);
+                      handleOrderChange("extraDiscount", v ?? 0);
+                    }}
+                    addonAfter={extraDiscountType === "percent" ? "%" : "INR"}
+                  />
+                </Col>
+              </TightRow>
+
+              <TightRow gutter={8}>
+                <Col span={8}>
+                  <Text strong>Description</Text>
+                </Col>
+                <Col span={16}>
+                  <Input.TextArea
+                    rows={2}
+                    maxLength={60}
+                    value={orderData?.description}
+                    onChange={(e) =>
+                      handleOrderChange("description", e.target.value)
+                    }
+                  />
+                </Col>
+              </TightRow>
+            </Panel>
+          </Collapse>
+        </CompactCard>
       </Col>
 
-      {/* Summary Column */}
-      <Col xs={24} sm={24} md={8} lg={8}>
-        <CartSummaryCard>
-          <Text strong>Order #: {orderData?.orderNo || "N/A"}</Text>
-          <Divider />
+      {/* ────── RIGHT – SUMMARY ────── */}
+      <Col xs={24} md={8}>
+        <CompactCard title={<Text strong>Summary</Text>}>
           <OrderTotal
             shipping={shipping}
             tax={tax}
-            coupon={0}
-            discount={discount}
+            discount={totalDiscount}
             roundOff={roundOff}
             subTotal={subTotal}
+            extraDiscount={Number(extraDiscAmt)}
+            gst={gst}
+            gstAmount={Number(gstAmt)}
           />
-          <Divider />
-          <CheckoutButton
+          <Divider style={{ margin: "8px 0" }} />
+          <CheckoutBtn
             type="primary"
+            block
             icon={<CheckCircleOutlined />}
             onClick={() => {
-              if (!selectedCustomer) return toast.error("Select a Customer.");
+              if (!selectedCustomer) return toast.error("Select customer");
               if (sourceType && !orderData?.source)
-                return toast.error("Select a Reference Customer.");
+                return toast.error("Select reference");
               if (assignmentType === "team" && !orderData?.assignedTeamId)
-                return toast.error("Select a Team.");
+                return toast.error("Select team");
               if (assignmentType === "users" && !orderData?.assignedUserId)
-                return toast.error("Select Primary User.");
-              if (
-                assignmentType === "users" &&
-                orderData?.assignedUserId === orderData?.secondaryUserId
-              )
-                return toast.error("Primary and Secondary cannot be same.");
-              if (!validateOrderNo(orderData?.orderNo))
-                return toast.error("Invalid Order Number format.");
-              if (!checkOrderNoUniqueness(orderData?.orderNo))
-                return toast.error("Order Number already exists.");
-              if (
-                orderData?.masterPipelineNo &&
-                !validateOrderNo(orderData.masterPipelineNo)
-              )
-                return toast.error("Invalid Master Pipeline Number.");
-              if (
-                orderData?.previousOrderNo &&
-                !validateOrderNo(orderData?.previousOrderNo)
-              )
-                return toast.error("Invalid Previous Order Number.");
-              if (
-                orderData?.masterPipelineNo &&
-                orders.every((o) => o.orderNo !== orderData.masterPipelineNo)
-              )
-                return toast.error("Master Pipeline not found.");
-              if (
-                orderData?.previousOrderNo &&
-                orders.every((o) => o.orderNo !== orderData.previousOrderNo)
-              )
-                return toast.error("Previous Order not found.");
+                return toast.error("Select primary user");
+              if (!validOrderNo(orderData?.orderNo))
+                return toast.error("Invalid order number");
+              if (!uniqueOrderNo(orderData?.orderNo))
+                return toast.error("Order number taken");
+              if (!orderData?.dueDate) return toast.error("Select due date");
               if (!orderData?.shipTo && !useBillingAddress)
-                return toast.error("Select shipping address.");
-              if (!orderData?.dueDate) return toast.error("Select due date.");
-
+                return toast.error("Select shipping");
               handleCreateDocument();
             }}
-            disabled={
-              (cartItems?.length ?? 0) === 0 ||
-              !selectedCustomer ||
-              error ||
-              !orderData?.dueDate ||
-              !orderData?.orderNo ||
-              (sourceType && !orderData?.source) ||
-              (assignmentType === "team" && !orderData?.assignedTeamId) ||
-              (assignmentType === "users" && !orderData?.assignedUserId) ||
-              !(orderData?.followupDates || []).every(
-                (d) =>
-                  !d ||
-                  moment(d).isSameOrBefore(moment(orderData?.dueDate), "day")
-              ) ||
-              (!orderData?.shipTo && !useBillingAddress)
-            }
-            block
-            size="large"
           >
             Create Order
-          </CheckoutButton>
-
+          </CheckoutBtn>
           <Button
-            type="default"
-            onClick={() => setActiveTab("cart")}
             block
-            style={{ marginTop: 8 }}
+            style={{ marginTop: 4 }}
+            onClick={() => setActiveTab("cart")}
           >
             Back to Cart
           </Button>
-        </CartSummaryCard>
+        </CompactCard>
       </Col>
     </Row>
   );
