@@ -349,7 +349,6 @@ const NewCart = ({ onConvertToOrder }) => {
   ]);
   const roundOff = parseFloat(quotationData.roundOff) || 0;
 
-  // ----- GST calculation (after shipping & extra discount) -----
   const amountForGst =
     subTotal + shipping + tax - totalDiscount - extraDiscount;
   const gstAmount =
@@ -727,7 +726,6 @@ const NewCart = ({ onConvertToOrder }) => {
     }
 
     if (documentType === "Quotation") {
-      // Inside handleCreateDocument(), Quotation section
       const quotationPayload = {
         quotationId: uuidv4(),
         document_title: `Quotation for ${selectedCustomerData.name}`,
@@ -737,59 +735,56 @@ const NewCart = ({ onConvertToOrder }) => {
         discountType: quotationData.discountType,
         discountAmount: parseFloat(quotationData.discountAmount) || 0,
         roundOff: parseFloat(quotationData.roundOff) || 0,
-        finalAmount: parseFloat(totalAmount.toFixed(2)),
         signature_name: quotationData.signatureName || "CM TRADING CO",
         signature_image: "",
         customerId: selectedCustomerData.customerId,
         shipTo: quotationData.shipTo || null,
         createdBy: userId,
-        followupDates: quotationData.followupDates.filter(
-          (date) => date && moment(date).isValid()
-        ),
 
-        // PER-ITEM PRODUCTS (with discount/tax/total)
+        // ---- PRODUCTS (plain array) ----
         products: cartItems.map((item) => {
           const price = parseFloat(item.price) || 0;
-          const quantity = parseInt(item.quantity, 10) || 1;
+          const qty = parseInt(item.quantity, 10) || 1;
+          const raw = Number(itemDiscounts[item.productId]) || 0;
+          const type = itemDiscountTypes[item.productId] || "percent";
 
-          const rawDiscount = Number(itemDiscounts[item.productId]) || 0;
-          const discountType = itemDiscountTypes[item.productId] || "percent";
+          const unitAfter =
+            type === "percent" ? price * (1 - raw / 100) : price - raw;
 
-          const unitPriceAfterDiscount =
-            discountType === "percent"
-              ? price * (1 - rawDiscount / 100)
-              : price - rawDiscount;
-
-          // CRITICAL FIX: Use Math.round() to ensure integer
-          const total = Math.round(unitPriceAfterDiscount * quantity);
+          const total = Math.round(unitAfter * qty); // integer line total
 
           return {
             id: item.productId,
             price: Number(price.toFixed(2)),
-            discount: Number(rawDiscount.toFixed(2)),
-            total, // Now guaranteed integer
-            quantity,
+            discount: Number(raw.toFixed(2)),
+            total,
+            quantity: qty,
+            // optional – keep name for UI only (not stored)
+            name: item.name,
           };
         }),
-        // GLOBAL EXTRA DISCOUNT (on top of per-item)
+
+        // ---- EXTRA DISCOUNT & GST ----
         extraDiscount: parseFloat(quotationData.discountAmount) || 0,
         extraDiscountType: quotationData.discountType,
-        // Inside quotationPayload
-        gst: gst, // ← Use the state value (18%)
-        gstAmount: gstAmount, // ← Use calculated GST amount
+        gst: gst, // <-- the % you entered
+        gstAmount: gstAmount, // <-- already calculated in NewCart
+        shippingAmount: shipping,
+        finalAmount: totalAmount.toFixed(2),
+        // ---- FOLLOW-UPS (plain array) ----
+        followupDates: quotationData.followupDates.filter(Boolean),
       };
+
+      // DEBUG – remove in prod
+      console.log("QUOTATION PAYLOAD →", quotationPayload);
 
       try {
         await createQuotation(quotationPayload).unwrap();
         await handleClearCart();
         resetForm();
         navigate("/quotations/list");
-      } catch (error) {
-        toast.error(
-          `Failed to create quotation: ${
-            error.data?.message || error.message || "Unknown error"
-          }`
-        );
+      } catch (e) {
+        toast.error(e?.data?.message || "Failed to create quotation");
       }
     } else if (documentType === "Order") {
       const orderNoRegex = /^\d{1,2}\d{2}25\d{3,}$/;

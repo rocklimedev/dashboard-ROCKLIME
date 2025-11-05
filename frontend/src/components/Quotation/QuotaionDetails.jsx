@@ -50,32 +50,48 @@ const QuotationsDetails = () => {
     const map = {};
     if (!quotation || !quotation.products) return map;
 
-    try {
-      const parsed = JSON.parse(quotation.products);
-      if (Array.isArray(parsed)) {
-        parsed.forEach((p) => {
-          map[p.productId] = {
-            sellingPrice: Number(p.sellingPrice || 0),
-            name: p.name,
-          };
-        });
+    const items = Array.isArray(quotation.products)
+      ? quotation.products
+      : safeParseProducts(quotation.products);
+
+    items.forEach((p) => {
+      if (p.productId) {
+        map[p.productId] = {
+          sellingPrice: Number(p.sellingPrice || p.price || 0),
+          name: p.name,
+        };
       }
-    } catch (e) {
-      console.error("Failed to parse quotation.products", e);
-    }
+    });
+
     return map;
-  }, [quotation?.products]); // Safe access with optional chaining
+  }, [quotation?.products]);
+  const safeParseProducts = (products) => {
+    if (Array.isArray(products)) return products;
+    if (typeof products === "string") {
+      try {
+        return JSON.parse(products);
+      } catch (e) {
+        console.error("Failed to parse products JSON", e);
+        return [];
+      }
+    }
+    return [];
+  };
   // === ACTIVE VERSION LOGIC ===
   const versions = useMemo(() => {
     const list = Array.isArray(versionsData) ? [...versionsData] : [];
 
-    // Always add current version, even if no historic ones
+    // Helper to safely parse products
+
+    // Always add current version
     if (quotation) {
+      const parsedItems = safeParseProducts(quotation.products);
+
       list.unshift({
         version: "current",
         quotationId: quotation.quotationId,
         quotationData: quotation,
-        quotationItems: JSON.parse(quotation.products || "[]"),
+        quotationItems: parsedItems,
         updatedBy: quotation.createdBy,
         updatedAt: quotation.updatedAt || new Date(),
       });
@@ -86,7 +102,6 @@ const QuotationsDetails = () => {
       a.version === "current" ? -1 : b.version - a.version
     );
   }, [quotation, versionsData]);
-
   const activeVersionData = useMemo(() => {
     const v = versions.find((x) => x.version === activeVersion);
 
