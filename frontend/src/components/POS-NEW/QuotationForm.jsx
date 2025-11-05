@@ -97,6 +97,7 @@ const QuotationForm = ({
   customersError,
   addresses,
   addressesLoading,
+  totalAmount,
   addressesError,
   error,
   quotationNumber,
@@ -500,7 +501,7 @@ const QuotationForm = ({
             roundOff={quotationData.roundOff || 0}
             gst={gst}
             gstAmount={gstAmount}
-            finalTotal={finalRoundedTotal}
+            finalTotal={totalAmount}
             items={cartItems.map((item) => ({
               ...item,
               discount: Number(itemDiscounts[item.productId]) || 0,

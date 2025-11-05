@@ -1,10 +1,8 @@
 // QuotationProductModal.jsx
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Modal, Table, Image, Spinner, Alert, Badge } from "react-bootstrap";
-import useProductsData from "../../data/useProductdata";
+import React, { useState, useEffect, useMemo } from "react";
+import { Modal, Table, Image, Alert, Badge } from "react-bootstrap";
 
 /* --------------------------------------------------------------- */
-/* Safe JSON parse – works with string, array or null */
 const safeParse = (str, fallback = []) => {
   if (Array.isArray(str)) return str;
   if (!str) return fallback;
@@ -24,64 +22,84 @@ const QuotationProductModal = ({
   selectedQuotation,
 }) => {
   const [lineItems, setLineItems] = useState([]);
-  const [productMap, setProductMap] = useState({});
 
-  /* ---------- 1. Normalise line-items ---------- */
+  /* ---------- 1. Normalise line-items (from props or selectedQuotation) ---------- */
   useEffect(() => {
+    const fromProps = safeParse(products);
     const fromItems = Array.isArray(items) ? items : [];
-    const fromProducts = safeParse(products);
-    setLineItems(fromItems.length ? fromItems : fromProducts);
-  }, [items, products]);
 
-  /* ---------- 2. Fetch full product details ---------- */
-  const { productsData, errors, loading } = useProductsData(lineItems);
+    const normalizedProps = Array.isArray(fromProps)
+      ? fromProps.map((p) => ({
+          productId: p.productId || p.id,
+          quantity: p.quantity || 1,
+          price: p.sellingPrice || p.price,
+          total: p.total,
+          discount: p.discount || 0,
+          discountType: p.discountType || "amount",
+          tax: p.tax || 0,
+          name: p.name,
+          imageUrl: p.imageUrl,
+        }))
+      : [];
 
-  /* ---------- 3. Build product map (price + image) ---------- */
-  useEffect(() => {
+    const hasFullInfo =
+      normalizedProps.length > 0 && normalizedProps[0].total !== undefined;
+
+    const nextLineItems = hasFullInfo ? normalizedProps : fromItems;
+
+    setLineItems((prev) =>
+      JSON.stringify(prev) === JSON.stringify(nextLineItems)
+        ? prev
+        : nextLineItems
+    );
+  }, [products, items]);
+  /* ---------- 2. Build product map directly from lineItems (NO API) ---------- */
+  const productMap = useMemo(() => {
     const map = {};
-    productsData.forEach((p) => {
-      const sellingPrice =
-        Number(p.metaDetails?.find((m) => m.slug === "sellingPrice")?.value) ||
-        0;
 
-      let imageUrl = null;
-      if (p.images) {
-        try {
-          const imgs = JSON.parse(p.images);
-          imageUrl = Array.isArray(imgs) && imgs[0] ? imgs[0] : null;
-        } catch {}
-      }
+    lineItems.forEach((it) => {
+      if (!it.productId) return;
 
-      map[p.productId] = {
-        sellingPrice,
-        imageUrl,
-        name: p.name || "Unnamed product",
-      };
+      const unitPrice = Number(it.price || it.sellingPrice || 0);
+      const name = it.name?.trim() || "Unnamed product";
+      const imageUrl = it.imageUrl || null;
+
+      map[it.productId] = { sellingPrice: unitPrice, name, imageUrl };
     });
-    setProductMap(map);
-  }, [productsData]);
 
-  /* ---------- 4. Line-item calculations (discount = amount by default) ---------- */
+    return map;
+  }, [lineItems]);
+
+  /* ---------- 3. Line-item calculations ---------- */
   const lineCalculations = useMemo(() => {
     const details = [];
-
     let subTotalExcl = 0;
     let grandTotal = 0;
 
     lineItems.forEach((it) => {
       const meta = productMap[it.productId] || {};
-      const unitPrice = meta.sellingPrice || Number(it.sellingPrice) || 0;
+      const unitPrice = meta.sellingPrice || 0;
       const qty = Number(it.quantity || it.qty || 1);
+
+      const lineTotalFromDB = Number(it.total) || 0;
+      const useDbTotal = lineTotalFromDB > 0;
+
       const discVal = Number(it.discount || 0);
-      const discType = it.discountType || "amount"; // default = fixed ₹
+      const discType = it.discountType || "amount";
+
+      let subtotal = useDbTotal ? lineTotalFromDB : unitPrice * qty;
+      let discountAmount = 0;
+
+      if (!useDbTotal && discVal > 0) {
+        discountAmount =
+          discType === "percent" ? (subtotal * discVal) / 100 : discVal;
+        subtotal -= discountAmount;
+      }
+
       const taxPct = Number(it.tax || 0);
-
-      const subtotal = unitPrice * qty;
-      const discountAmount =
-        discType === "percent" ? (subtotal * discVal) / 100 : discVal;
-
-      const amountExcl = subtotal - discountAmount;
-      const lineTotal = amountExcl * (1 + taxPct / 100);
+      const lineTotal = useDbTotal
+        ? lineTotalFromDB
+        : subtotal * (1 + taxPct / 100);
 
       details.push({
         ...it,
@@ -91,11 +109,12 @@ const QuotationProductModal = ({
         discType,
         discountAmount,
         taxPct,
-        amountExcl,
+        amountExcl: subtotal,
         lineTotal,
+        useDbTotal,
       });
 
-      subTotalExcl += amountExcl;
+      subTotalExcl += subtotal;
       grandTotal += lineTotal;
     });
 
@@ -104,105 +123,90 @@ const QuotationProductModal = ({
 
   const { details: lineDetails, subTotalExcl, grandTotal } = lineCalculations;
 
-  /* ---------- 5. Apply all adjustments (extra-discount, shipping, GST, round-off) ---------- */
+  /* ---------- 4. Final breakdown ---------- */
   const finalBreakdown = useMemo(() => {
-    // ---- 1. Base from lines ----
-    let afterLines = grandTotal;
+    let amount = grandTotal;
 
-    // ---- 2. Extra Discount ----
     const extraDisc = Number(selectedQuotation?.extraDiscount) || 0;
-    const extraType = selectedQuotation?.extraDiscountType || "fixed";
+    const extraType = selectedQuotation?.extraDiscountType || "percent";
 
-    let afterExtraDiscount = afterLines;
-    let discountAmount = 0;
-
+    let extraDiscountAmount = 0;
     if (extraDisc > 0) {
-      if (extraType === "percent") {
-        discountAmount = (afterLines * extraDisc) / 100;
-      } else {
-        discountAmount = extraDisc;
-      }
-      afterExtraDiscount = afterLines - discountAmount;
+      extraDiscountAmount =
+        extraType === "percent" ? (amount * extraDisc) / 100 : extraDisc;
+      amount -= extraDiscountAmount;
     }
 
-    // ---- 3. Shipping ----
     const shipping = Number(selectedQuotation?.shippingAmount) || 0;
-    const amountAfterShipping = afterExtraDiscount + shipping;
+    amount += shipping;
 
-    // ---- 4. GST (flat amount – not percentage) ----
-    const gstAmount = Number(selectedQuotation?.gst) || 0;
-    const amountWithGst = amountAfterShipping + gstAmount;
+    const gstPct = Number(selectedQuotation?.gst) || 0;
+    const gstAmount = gstPct > 0 ? (amount * gstPct) / 100 : 0;
+    amount += gstAmount;
 
-    // ---- 5. Round-off ----
     const roundOff = Number(selectedQuotation?.roundOff) || 0;
-    const amountAfterRoundOff = amountWithGst + roundOff;
+    amount += roundOff;
 
-    // ---- 6. Final amount from DB (fallback) ----
-    const finalAmountFromDB = Number(selectedQuotation?.finalAmount) || 0;
+    const finalAmountFromDB = parseFloat(selectedQuotation?.finalAmount) || 0;
 
-    // ---- 7. Use DB value if different (for audit) ----
-    const finalAmount = finalAmountFromDB;
+    // Define these BEFORE using them
+    const amountWithGst =
+      grandTotal - extraDiscountAmount + shipping + gstAmount;
+    const calculatedTotal = parseFloat((amountWithGst + roundOff).toFixed(2));
+    const mismatch = Math.abs(calculatedTotal - finalAmountFromDB) > 0.01;
 
     return {
-      afterLines,
+      afterLines: grandTotal,
       extraDisc,
       extraType,
-      discountAmount,
-      afterExtraDiscount,
+      extraDiscountAmount,
+      afterExtraDiscount: grandTotal - extraDiscountAmount,
       shipping,
-      amountAfterShipping,
+      amountAfterShipping: grandTotal - extraDiscountAmount + shipping,
+      gstPct,
       gstAmount,
       amountWithGst,
       roundOff,
-      amountAfterRoundOff,
-      finalAmount,
+      calculatedTotal,
       finalAmountFromDB,
+      mismatch,
     };
   }, [grandTotal, selectedQuotation]);
-
   const {
     afterLines,
     extraDisc,
     extraType,
-    discountAmount,
+    extraDiscountAmount,
     afterExtraDiscount,
     shipping,
     amountAfterShipping,
+    gstPct,
     gstAmount,
     amountWithGst,
     roundOff,
-    amountAfterRoundOff,
-    finalAmount,
+    calculatedTotal,
     finalAmountFromDB,
+    mismatch,
   } = finalBreakdown;
-
   /* --------------------------------------------------------------- */
   return (
     <Modal show={show} onHide={onHide} size="xl" centered>
-      <Modal.Header>
-        <Modal.Title>Quotation Products & Full Pricing</Modal.Title>
+      <Modal.Header closeButton>
+        <Modal.Title>Quotation Products & Pricing</Modal.Title>
       </Modal.Header>
 
-      <Modal.Body style={{ overflowX: "auto" }}>
-        {loading ? (
-          <div className="text-center py-4">
-            <Spinner animation="border" />
-            <p className="mt-2">Loading product details…</p>
-          </div>
-        ) : errors.length ? (
-          <Alert variant="danger">
-            Failed to load some products:{" "}
-            {errors.map((e) => e.error).join(", ")}
-          </Alert>
+      <Modal.Body className="p-4">
+        {lineItems.length === 0 ? (
+          <Alert variant="info">No products in this quotation.</Alert>
         ) : (
           <>
-            {/* ==================== LINE ITEMS ==================== */}
+            {/* LINE ITEMS TABLE */}
             <Table
               striped
               bordered
               hover
               responsive
-              className="align-middle text-center mb-4"
+              className="mb-4 align-middle text-center"
             >
               <thead className="table-dark">
                 <tr>
@@ -267,50 +271,43 @@ const QuotationProductModal = ({
               </tbody>
             </Table>
 
-            {/* ==================== FINANCIAL BREAKDOWN ==================== */}
+            {/* FINANCIAL BREAKDOWN */}
             <Table bordered className="table-sm">
               <tbody>
-                {/* 1. Line subtotal (excl. tax) */}
                 <tr className="table-info">
                   <td className="text-end fw-bold">Subtotal (excl. tax)</td>
                   <td className="text-end fw-bold">
                     ₹{subTotalExcl.toFixed(2)}
                   </td>
                 </tr>
-
-                {/* 2. Line total (incl. tax) */}
                 <tr>
                   <td className="text-end">Line Total (incl. tax)</td>
                   <td className="text-end">₹{afterLines.toFixed(2)}</td>
                 </tr>
 
-                {/* 3. Extra Discount */}
                 {extraDisc > 0 && (
-                  <tr>
-                    <td className="text-end">
-                      Extra Discount (
-                      {extraType === "percent"
-                        ? `${extraDisc}%`
-                        : `₹${extraDisc}`}
-                      )
-                    </td>
-                    <td className="text-end text-danger">
-                      -₹{discountAmount.toFixed(2)}
-                    </td>
-                  </tr>
+                  <>
+                    <tr>
+                      <td className="text-end">
+                        Extra Discount (
+                        {extraType === "percent"
+                          ? `${extraDisc}%`
+                          : `₹${extraDisc}`}
+                        )
+                      </td>
+                      <td className="text-end text-danger">
+                        -₹{extraDiscountAmount.toFixed(2)}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="text-end">After Extra Discount</td>
+                      <td className="text-end">
+                        ₹{afterExtraDiscount.toFixed(2)}
+                      </td>
+                    </tr>
+                  </>
                 )}
 
-                {/* 4. After Extra Discount */}
-                {extraDisc > 0 && (
-                  <tr>
-                    <td className="text-end">After Extra Discount</td>
-                    <td className="text-end">
-                      ₹{afterExtraDiscount.toFixed(2)}
-                    </td>
-                  </tr>
-                )}
-
-                {/* 5. Shipping */}
                 {shipping > 0 && (
                   <tr>
                     <td className="text-end">Shipping</td>
@@ -320,17 +317,15 @@ const QuotationProductModal = ({
                   </tr>
                 )}
 
-                {/* 6. GST (flat amount) */}
-                {gstAmount > 0 && (
+                {gstPct > 0 && (
                   <tr>
-                    <td className="text-end">GST</td>
+                    <td className="text-end">GST ({gstPct}%)</td>
                     <td className="text-end text-success">
                       +₹{gstAmount.toFixed(2)}
                     </td>
                   </tr>
                 )}
 
-                {/* 7. Amount before round-off */}
                 <tr className="table-secondary">
                   <td className="text-end fw-bold">Before Round-off</td>
                   <td className="text-end fw-bold">
@@ -338,7 +333,6 @@ const QuotationProductModal = ({
                   </td>
                 </tr>
 
-                {/* 8. Round-off */}
                 {roundOff !== 0 && (
                   <tr>
                     <td className="text-end">
@@ -356,15 +350,35 @@ const QuotationProductModal = ({
                   </tr>
                 )}
 
-                {/* 9. Calculated Grand Total */}
                 <tr className="table-success">
-                  <td className="text-end fw-bold">Grand Total (calc)</td>
                   <td className="text-end fw-bold">
-                    ₹{amountAfterRoundOff.toFixed(2)}
+                    Grand Total (calc)
+                    {mismatch && (
+                      <Badge bg="warning" className="ms-2">
+                        Mismatch
+                      </Badge>
+                    )}
+                  </td>
+                  <td className="text-end fw-bold">
+                    ₹{calculatedTotal.toFixed(2)}
+                  </td>
+                </tr>
+                <tr className="table-primary">
+                  <td className="text-end fw-bold">Final Amount (DB)</td>
+                  <td className="text-end fw-bold">
+                    ₹{finalAmountFromDB.toFixed(2)}
                   </td>
                 </tr>
               </tbody>
             </Table>
+
+            {mismatch && (
+              <Alert variant="warning" className="mt-3">
+                <strong>Warning:</strong> The locally calculated total (₹
+                {calculatedTotal.toFixed(2)}) differs from the stored final
+                amount (₹{finalAmountFromDB.toFixed(2)}).
+              </Alert>
+            )}
           </>
         )}
       </Modal.Body>
@@ -372,4 +386,4 @@ const QuotationProductModal = ({
   );
 };
 
-export default QuotationProductModal;
+export default React.memo(QuotationProductModal);
