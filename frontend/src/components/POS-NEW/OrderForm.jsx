@@ -76,6 +76,14 @@ const MiniDate = styled(DatePicker)`
   }
   .react-datepicker__input-container input {
     height: 28px;
+    width: 100%;
+    padding: 0 8px;
+    border-radius: 4px;
+    border: 1px solid #d9d9d9;
+  }
+  &.error-border .react-datepicker__input-container input {
+    border-color: #ff4d4f;
+    box-shadow: 0 0 0 2px rgba(245, 34, 45, 0.2);
   }
 `;
 const CheckoutBtn = styled(Button)`
@@ -157,6 +165,7 @@ const OrderForm = ({
     orderData.extraDiscountType ?? "percent"
   );
   const [customerSearch, setCustomerSearch] = useState("");
+  const [errors, setErrors] = useState({});
 
   /* ────── RTK ────── */
   const [createAddress] = useCreateAddressMutation();
@@ -213,6 +222,7 @@ const OrderForm = ({
       orderData?.shipTo
     )
       return;
+
     const match = filteredAddresses.find(
       (a) =>
         a.street?.trim().toLowerCase() ===
@@ -226,6 +236,7 @@ const OrderForm = ({
         (a.country || "india").toLowerCase() ===
           (defaultAddress.country || "india").toLowerCase()
     );
+
     if (match) {
       handleOrderChange("shipTo", match.addressId);
       return;
@@ -246,7 +257,7 @@ const OrderForm = ({
         handleOrderChange("shipTo", res.data.addressId);
         toast.success("Billing address created");
       } catch (e) {
-        toast.error(e?.data?.message ?? "Failed");
+        toast.error(e?.data?.message ?? "Failed to create address");
       } finally {
         setIsCreatingAddress(false);
       }
@@ -259,6 +270,8 @@ const OrderForm = ({
     selectedCustomer,
     orderData?.shipTo,
     isCreatingAddress,
+    createAddress,
+    handleOrderChange,
   ]);
 
   /* ────── Extra Discount Calc ────── */
@@ -276,6 +289,85 @@ const OrderForm = ({
   const validOrderNo = (no) => /^\d{1,2}\d{1,2}25\d{3,}$/.test(no);
   const uniqueOrderNo = (no) => !orders.some((o) => o.orderNo === no);
 
+  const validateField = useCallback(
+    (field) => {
+      const err = {};
+
+      switch (field) {
+        case "customer":
+          if (!selectedCustomer) err.customer = "Customer is required";
+          break;
+        case "shipping":
+          if (!useBillingAddress && !orderData?.shipTo)
+            err.shipping = "Shipping address is required";
+          break;
+        case "dueDate":
+          if (!orderData?.dueDate) err.dueDate = "Due date is required";
+          break;
+        case "orderNo":
+          if (!orderData?.orderNo) {
+            err.orderNo = "Order number is required";
+          } else if (!validOrderNo(orderData.orderNo)) {
+            err.orderNo = "Invalid format (e.g., 250425001)";
+          } else if (!uniqueOrderNo(orderData.orderNo)) {
+            err.orderNo = "Order number already exists";
+          }
+          break;
+        case "assignment":
+          if (assignmentType === "team" && !orderData?.assignedTeamId) {
+            err.assignment = "Select a team";
+          }
+          if (assignmentType === "users" && !orderData?.assignedUserId) {
+            err.assignment = "Select primary user";
+          }
+          break;
+        case "source":
+          if (sourceType && !orderData?.source) {
+            err.source = "Reference customer is required";
+          }
+          break;
+      }
+
+      return err;
+    },
+    [
+      selectedCustomer,
+      useBillingAddress,
+      orderData,
+      assignmentType,
+      sourceType,
+      validOrderNo,
+      uniqueOrderNo,
+    ]
+  );
+
+  /* ────── Real-time Validation ────── */
+  useEffect(() => {
+    const newErrors = {};
+    [
+      "customer",
+      "shipping",
+      "dueDate",
+      "orderNo",
+      "assignment",
+      "source",
+    ].forEach((field) => {
+      Object.assign(newErrors, validateField(field));
+    });
+    setErrors(newErrors);
+  }, [
+    selectedCustomer,
+    orderData,
+    assignmentType,
+    sourceType,
+    useBillingAddress,
+    validateField,
+  ]);
+
+  const hasError = (field) => !!errors[field];
+  const getError = (field) => errors[field];
+  const canSubmit = Object.keys(errors).length === 0 && cartItems.length > 0;
+
   /* ────── UI Handlers ────── */
   const setShip = (v) => {
     if (v === "sameAsBilling") setUseBillingAddress(true);
@@ -284,6 +376,7 @@ const OrderForm = ({
       handleOrderChange("shipTo", v);
     }
   };
+
   const addFollow = () =>
     handleOrderChange("followupDates", [
       ...(orderData.followupDates || []),
@@ -362,6 +455,7 @@ const OrderForm = ({
                       setUseBillingAddress(false);
                     }}
                     loading={customersLoading}
+                    status={hasError("customer") ? "error" : ""}
                   >
                     {(customerSearch
                       ? customers.filter((c) =>
@@ -376,6 +470,14 @@ const OrderForm = ({
                       </Option>
                     ))}
                   </MiniSelect>
+                  {hasError("customer") && (
+                    <Text
+                      type="danger"
+                      style={{ fontSize: 12, display: "block" }}
+                    >
+                      {getError("customer")}
+                    </Text>
+                  )}
                   <Button
                     type="link"
                     icon={<UserAddOutlined />}
@@ -387,6 +489,7 @@ const OrderForm = ({
                   </Button>
                 </Col>
               </TightRow>
+
               <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>
@@ -401,6 +504,7 @@ const OrderForm = ({
                     onChange={setShip}
                     loading={addressesLoading || isCreatingAddress}
                     disabled={!selectedCustomer}
+                    status={hasError("shipping") ? "error" : ""}
                   >
                     {defaultAddress && (
                       <Option value="sameAsBilling">Same as Billing</Option>
@@ -411,6 +515,14 @@ const OrderForm = ({
                       </Option>
                     ))}
                   </MiniSelect>
+                  {hasError("shipping") && (
+                    <Text
+                      type="danger"
+                      style={{ fontSize: 12, display: "block" }}
+                    >
+                      {getError("shipping")}
+                    </Text>
+                  )}
                   <Button
                     type="link"
                     icon={<UserAddOutlined />}
@@ -459,6 +571,7 @@ const OrderForm = ({
                     onChange={(v) => handleOrderChange("source", v)}
                     disabled={!sourceType}
                     allowClear
+                    status={hasError("source") ? "error" : ""}
                   >
                     {sourceCustomers.map((c) => (
                       <Option key={c.customerId} value={c.customerId}>
@@ -466,6 +579,14 @@ const OrderForm = ({
                       </Option>
                     ))}
                   </MiniSelect>
+                  {hasError("source") && (
+                    <Text
+                      type="danger"
+                      style={{ fontSize: 12, display: "block" }}
+                    >
+                      {getError("source")}
+                    </Text>
+                  )}
                 </Col>
               </TightRow>
             </Panel>
@@ -490,7 +611,16 @@ const OrderForm = ({
                       )
                     }
                     minDate={new Date()}
+                    className={hasError("dueDate") ? "error-border" : ""}
                   />
+                  {hasError("dueDate") && (
+                    <Text
+                      type="danger"
+                      style={{ fontSize: 12, display: "block" }}
+                    >
+                      {getError("dueDate")}
+                    </Text>
+                  )}
                 </Col>
               </TightRow>
 
@@ -556,13 +686,16 @@ const OrderForm = ({
               {assignmentType === "team" && (
                 <TightRow gutter={8}>
                   <Col span={8}>
-                    <Text strong>Team</Text>
+                    <Text strong>
+                      Team <span style={{ color: "red" }}>*</span>
+                    </Text>
                   </Col>
                   <Col span={16}>
                     <MiniSelect
                       value={orderData?.assignedTeamId}
                       onChange={(v) => handleOrderChange("assignedTeamId", v)}
                       loading={teamsLoading}
+                      status={hasError("assignment") ? "error" : ""}
                       dropdownRender={(menu) => (
                         <>
                           {menu}
@@ -585,6 +718,14 @@ const OrderForm = ({
                         </Option>
                       ))}
                     </MiniSelect>
+                    {hasError("assignment") && assignmentType === "team" && (
+                      <Text
+                        type="danger"
+                        style={{ fontSize: 12, display: "block" }}
+                      >
+                        {getError("assignment")}
+                      </Text>
+                    )}
                   </Col>
                 </TightRow>
               )}
@@ -593,13 +734,16 @@ const OrderForm = ({
                 <>
                   <TightRow gutter={8}>
                     <Col span={8}>
-                      <Text strong>Primary</Text>
+                      <Text strong>
+                        Primary <span style={{ color: "red" }}>*</span>
+                      </Text>
                     </Col>
                     <Col span={16}>
                       <MiniSelect
                         value={orderData?.assignedUserId}
                         onChange={(v) => handleOrderChange("assignedUserId", v)}
                         loading={usersLoading}
+                        status={hasError("assignment") ? "error" : ""}
                       >
                         {users.map((u) => (
                           <Option key={u.userId} value={u.userId}>
@@ -607,6 +751,14 @@ const OrderForm = ({
                           </Option>
                         ))}
                       </MiniSelect>
+                      {hasError("assignment") && assignmentType === "users" && (
+                        <Text
+                          type="danger"
+                          style={{ fontSize: 12, display: "block" }}
+                        >
+                          {getError("assignment")}
+                        </Text>
+                      )}
                     </Col>
                   </TightRow>
                   <TightRow gutter={8}>
@@ -636,6 +788,32 @@ const OrderForm = ({
 
             {/* 5. Misc & Discount */}
             <Panel header="Misc & Discount" key="5">
+              <TightRow gutter={8}>
+                <Col span={8}>
+                  <Text strong>
+                    Order No <span style={{ color: "red" }}>*</span>
+                  </Text>
+                </Col>
+                <Col span={16}>
+                  <MiniInput
+                    value={orderData?.orderNo || ""}
+                    onChange={(e) =>
+                      handleOrderChange("orderNo", e.target.value)
+                    }
+                    placeholder="e.g., 250425001"
+                    status={hasError("orderNo") ? "error" : ""}
+                  />
+                  {hasError("orderNo") && (
+                    <Text
+                      type="danger"
+                      style={{ fontSize: 12, display: "block" }}
+                    >
+                      {getError("orderNo")}
+                    </Text>
+                  )}
+                </Col>
+              </TightRow>
+
               <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>Status</Text>
@@ -754,22 +932,13 @@ const OrderForm = ({
             block
             icon={<CheckCircleOutlined />}
             onClick={() => {
-              if (!selectedCustomer) return toast.error("Select customer");
-              if (sourceType && !orderData?.source)
-                return toast.error("Select reference");
-              if (assignmentType === "team" && !orderData?.assignedTeamId)
-                return toast.error("Select team");
-              if (assignmentType === "users" && !orderData?.assignedUserId)
-                return toast.error("Select primary user");
-              if (!validOrderNo(orderData?.orderNo))
-                return toast.error("Invalid order number");
-              if (!uniqueOrderNo(orderData?.orderNo))
-                return toast.error("Order number taken");
-              if (!orderData?.dueDate) return toast.error("Select due date");
-              if (!orderData?.shipTo && !useBillingAddress)
-                return toast.error("Select shipping");
+              if (!canSubmit) {
+                toast.error("Please fix all required fields");
+                return;
+              }
               handleCreateDocument();
             }}
+            disabled={!canSubmit}
           >
             Create Order
           </CheckoutBtn>

@@ -8,14 +8,14 @@ import {
   Empty,
   Table,
   Button,
-  Dropdown,
-  Menu,
   Tabs,
   InputNumber,
   Badge,
   Space,
   Typography,
   message,
+  Modal,
+  Form as AntForm,
 } from "antd";
 import {
   SearchOutlined,
@@ -28,11 +28,12 @@ import {
   useRemoveStockMutation,
 } from "../../api/productApi";
 import { toast } from "sonner";
-import StockModal from "./StockModal";
-import HistoryModal from "./HistoryModal";
 import PageHeader from "../Common/PageHeader";
 import pos from "../../assets/img/default.png";
 import { CopyOutlined } from "@ant-design/icons";
+import { useGetHistoryByProductIdQuery } from "../../api/productApi";
+// Bootstrap ONLY for dropdown
+import { Dropdown } from "react-bootstrap";
 
 const { TabPane } = Tabs;
 const { Text } = Typography;
@@ -48,16 +49,17 @@ const InventoryWrapper = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
-  const [lowStockThreshold, setLowStockThreshold] = useState(10); // User-defined
-  const [maxStockFilter, setMaxStockFilter] = useState(null); // ≤ quantity filter
+  const [lowStockThreshold, setLowStockThreshold] = useState(10);
+  const [maxStockFilter, setMaxStockFilter] = useState(null);
 
-  const [isStockModalVisible, setStockModalVisible] = useState(false);
-  const [isHistoryModalVisible, setHistoryModalVisible] = useState(false);
+  // Modal state
+  const [stockModalOpen, setStockModalOpen] = useState(false);
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [stockHistoryMap, setStockHistoryMap] = useState({});
+  const [stockAction, setStockAction] = useState("add"); // Fixed: valid useState
 
-  const [form] = Form.useForm();
   const itemsPerPage = 30;
+  const [stockForm] = AntForm.useForm();
 
   // Parse images safely
   const parseImages = (images) => {
@@ -82,11 +84,14 @@ const InventoryWrapper = () => {
   };
 
   // Base products
-  const products = useMemo(
-    () => (Array.isArray(productsData) ? productsData : []),
-    [productsData]
-  );
-
+  const products = useMemo(() => {
+    // Safety: if productsData is NOT an array, return empty array
+    if (!Array.isArray(productsData)) {
+      console.warn("productsData is not an array:", productsData);
+      return [];
+    }
+    return productsData;
+  }, [productsData]);
   // Filter: Search + Max Stock
   const searchedAndFiltered = useMemo(() => {
     const term = search.toLowerCase();
@@ -136,63 +141,76 @@ const InventoryWrapper = () => {
 
   // Actions
   const handleAddProduct = () => navigate("/inventory/product/add");
+
   const handleCopy = (value) => {
     if (!value) return;
     navigator.clipboard.writeText(value);
     message.success("Copied to clipboard");
   };
 
-  const handleStockClick = (product, action = "add") => {
-    setSelectedProduct({ ...product, action });
-    setStockModalVisible(true);
-  };
-
-  const handleHistoryClick = (product) => {
+  const openStockModal = (product, action) => {
     setSelectedProduct(product);
-    setHistoryModalVisible(true);
+    setStockAction(action);
+    setStockModalOpen(true);
+    stockForm.resetFields();
   };
 
-  const handleStockSubmit = async (stockData) => {
-    const { productId, quantity, action } = stockData;
+  const openHistoryModal = (product) => {
+    setSelectedProduct(product);
+    setHistoryModalOpen(true);
+  };
+
+  const handleStockSubmit = async (values) => {
+    const { quantity } = values;
+    const payload = { productId: selectedProduct.productId, quantity };
+
     try {
-      if (action === "add") {
-        await addStock({ productId, quantity }).unwrap();
+      if (stockAction === "add") {
+        await addStock(payload).unwrap();
+        toast.success(`Added ${quantity} unit(s)`);
       } else {
-        await removeStock({ productId, quantity }).unwrap();
+        await removeStock(payload).unwrap();
+        toast.success(`Removed ${quantity} unit(s)`);
       }
-      setStockHistoryMap((prev) => ({
-        ...prev,
-        [productId]: [
-          ...(prev[productId] || []),
-          { quantity, action, date: new Date(), productId },
-        ],
-      }));
     } catch (err) {
-      toast.error(`Failed: ${err.data?.message || "Unknown error"}`);
+      toast.error(err?.data?.message || "Operation failed");
     } finally {
-      setStockModalVisible(false);
+      setStockModalOpen(false);
       setSelectedProduct(null);
     }
   };
 
-  const menu = (product) => (
-    <Menu>
-      <Menu.Item key="add" onClick={() => handleStockClick(product, "add")}>
-        Add Stock
-      </Menu.Item>
-      <Menu.Item
-        key="remove"
-        onClick={() => handleStockClick(product, "remove")}
-        disabled={product.quantity === 0}
+  // Bootstrap Dropdown Component
+  const ActionDropdown = ({ product }) => (
+    <Dropdown>
+      <Dropdown.Toggle
+        variant="link"
+        bsPrefix="p-0"
+        id={`dropdown-${product.productId}`}
+        className="text-muted"
+        style={{ boxShadow: "none" }}
       >
-        Remove Stock
-      </Menu.Item>
-      <Menu.Item key="history" onClick={() => handleHistoryClick(product)}>
-        View History
-      </Menu.Item>
-    </Menu>
+        <MoreOutlined style={{ fontSize: 18 }} />
+      </Dropdown.Toggle>
+
+      <Dropdown.Menu align="end">
+        <Dropdown.Item onClick={() => openStockModal(product, "add")}>
+          Add Stock
+        </Dropdown.Item>
+        <Dropdown.Item
+          onClick={() => openStockModal(product, "remove")}
+          disabled={product.quantity === 0}
+        >
+          Remove Stock
+        </Dropdown.Item>
+        <Dropdown.Item onClick={() => openHistoryModal(product)}>
+          View History
+        </Dropdown.Item>
+      </Dropdown.Menu>
+    </Dropdown>
   );
 
+  // Table Columns
   const columns = [
     {
       title: "Image",
@@ -225,7 +243,10 @@ const InventoryWrapper = () => {
         <Text
           code
           onClick={() => handleCopy(text)}
-          style={{ cursor: text ? "pointer" : "default", userSelect: "none" }}
+          style={{
+            cursor: text ? "pointer" : "default",
+            userSelect: "none",
+          }}
         >
           {text || "N/A"}
         </Text>
@@ -278,24 +299,30 @@ const InventoryWrapper = () => {
       title: "Actions",
       key: "actions",
       width: 80,
-      render: (_, record) => (
-        <Dropdown overlay={menu(record)} trigger={["click"]}>
-          <Button type="text" icon={<MoreOutlined />} size="small" />
-        </Dropdown>
-      ),
+      render: (_, record) => <ActionDropdown product={record} />,
     },
   ];
 
   // Count for tabs
   const counts = useMemo(() => {
+    if (!Array.isArray(products)) {
+      return { all: 0, inStock: 0, outStock: 0, lowStock: 0 };
+    }
+
     const inStock = products.filter((p) => p.quantity > 0).length;
     const outStock = products.filter((p) => p.quantity === 0).length;
     const lowStock = products.filter(
       (p) => p.quantity > 0 && p.quantity <= lowStockThreshold
     ).length;
-    return { all: products.length, inStock, outStock, lowStock };
-  }, [products, lowStockThreshold]);
 
+    return {
+      all: products.length,
+      inStock,
+      outStock,
+      lowStock,
+    };
+  }, [products, lowStockThreshold]);
+  // Loading & Error States
   if (isLoading) {
     return (
       <div className="loading-container text-center py-5">
@@ -352,7 +379,7 @@ const InventoryWrapper = () => {
                 />
 
                 <Space>
-                  <Text>Show products with stock ≤</Text>
+                  <Text>Show products with stock less than or equal to</Text>
                   <InputNumber
                     min={0}
                     placeholder="Qty"
@@ -372,7 +399,6 @@ const InventoryWrapper = () => {
               </Space>
             </Form>
 
-            {/* Low Stock Threshold */}
             <Space align="center">
               <Text type="secondary">Low stock threshold:</Text>
               <InputNumber
@@ -471,30 +497,140 @@ const InventoryWrapper = () => {
         )}
       </div>
 
-      {/* Modals */}
-      <StockModal
-        visible={isStockModalVisible}
-        onHide={() => {
-          setStockModalVisible(false);
+      {/* Stock Modal (Ant Design) */}
+      <Modal
+        title={`${stockAction === "add" ? "Add" : "Remove"} Stock – ${
+          selectedProduct?.name || ""
+        }`}
+        open={stockModalOpen}
+        onCancel={() => {
+          setStockModalOpen(false);
           setSelectedProduct(null);
         }}
-        product={selectedProduct}
-        onSubmit={(data) =>
-          handleStockSubmit({ ...data, action: selectedProduct?.action })
-        }
-        loading={isAddingStock || isRemovingStock}
-      />
+        footer={null}
+      >
+        <AntForm
+          form={stockForm}
+          layout="vertical"
+          onFinish={handleStockSubmit}
+        >
+          <AntForm.Item
+            name="quantity"
+            label="Quantity"
+            rules={[
+              { required: true, message: "Please enter quantity" },
+              {
+                type: "number",
+                min: 1,
+                message: "Quantity must be at least 1",
+              },
+            ]}
+          >
+            <InputNumber
+              style={{ width: "100%" }}
+              min={1}
+              disabled={isAddingStock || isRemovingStock}
+            />
+          </AntForm.Item>
 
-      <HistoryModal
-        visible={isHistoryModalVisible}
-        onHide={() => {
-          setHistoryModalVisible(false);
+          <AntForm.Item className="mb-0">
+            <Space>
+              <Button
+                onClick={() => {
+                  setStockModalOpen(false);
+                  setSelectedProduct(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={isAddingStock || isRemovingStock}
+              >
+                {stockAction === "add" ? "Add Stock" : "Remove Stock"}
+              </Button>
+            </Space>
+          </AntForm.Item>
+        </AntForm>
+      </Modal>
+
+      {/* History Modal (Ant Design) */}
+      <HistoryModalAntD
+        open={historyModalOpen}
+        onCancel={() => {
+          setHistoryModalOpen(false);
           setSelectedProduct(null);
         }}
         product={selectedProduct}
-        stockHistory={stockHistoryMap[selectedProduct?.productId] || []}
       />
     </div>
+  );
+};
+
+// === History Modal (Ant Design Version) ===
+const HistoryModalAntD = ({ open, onCancel, product }) => {
+  const {
+    data: response,
+    error,
+    isLoading,
+  } = useGetHistoryByProductIdQuery(product?.productId, {
+    skip: !product?.productId || !open,
+  });
+
+  const columns = [
+    {
+      title: "Date",
+      dataIndex: "timestamp",
+      key: "date",
+      render: (ts) => new Date(ts).toLocaleString(),
+    },
+    {
+      title: "Action",
+      dataIndex: "action",
+      key: "action",
+      render: (act) => (act === "add-stock" ? "Stock In" : "Stock Out"),
+    },
+    { title: "Quantity", dataIndex: "quantity", key: "quantity" },
+  ];
+
+  return (
+    <Modal
+      title={`Stock History – ${product?.name || ""}`}
+      open={open}
+      onCancel={onCancel}
+      footer={null}
+      width={680}
+    >
+      {isLoading && (
+        <div style={{ textAlign: "center", padding: "20px" }}>
+          <Spin tip="Loading history..." />
+        </div>
+      )}
+
+      {error && (
+        <div style={{ margin: "16px 0" }}>
+          <Empty description="Failed to load history" />
+        </div>
+      )}
+
+      {!isLoading &&
+        !error &&
+        (!response?.history || response.history.length === 0) && (
+          <Empty description="No history found" />
+        )}
+
+      {!isLoading && !error && response?.history?.length > 0 && (
+        <Table
+          dataSource={response.history}
+          columns={columns}
+          rowKey={(_, i) => i}
+          pagination={false}
+          size="small"
+          style={{ marginTop: 16 }}
+        />
+      )}
+    </Modal>
   );
 };
 

@@ -1,10 +1,6 @@
-import { PiAddressBook, PiUserList } from "react-icons/pi";
+import { PiUserList } from "react-icons/pi";
 import { LiaFileSignatureSolid } from "react-icons/lia";
-import {
-  MdOutlineBrandingWatermark,
-  MdError,
-  MdOutlineSettings,
-} from "react-icons/md";
+import { MdError, MdOutlineSettings } from "react-icons/md";
 import { AiOutlineProduct } from "react-icons/ai";
 import {
   BiAccessibility,
@@ -27,9 +23,7 @@ import {
   MdOutlinePeopleAlt,
 } from "react-icons/md";
 import { TiBusinessCard } from "react-icons/ti";
-import { PiMicrosoftTeamsLogoLight } from "react-icons/pi";
 import { IoPricetagOutline } from "react-icons/io5";
-import { FaFileInvoice } from "react-icons/fa6";
 import { RiFileListLine } from "react-icons/ri";
 import ForgotPassword from "../components/Auth/ForgotPassword";
 import Login from "../components/Auth/Login";
@@ -48,15 +42,12 @@ import QuotationList from "../components/Quotation/QuotationList";
 import RolePermission from "../components/RolesPermission/RolePermission";
 import Permissions from "../components/RolesPermission/Permissions";
 import Error500 from "../components/Error/Error500";
-import Brands from "../components/Brands/Brands";
 import ProductDetails from "../components/Product/ProductDetails";
 import UserList from "../components/User/UserList";
 import GeneralSettings from "../components/Settings/GeneralSettings";
 import ComingSoon from "../components/Error/ComingSoon";
 import TeamsList from "../components/Orders/TeamsList";
-import InvoiceDetails from "../components/Invoices/InvoiceDetails";
 import NoAccess from "../components/Common/NoAccess";
-import AddressList from "../components/Address/Address";
 import NewAddUser from "../components/User/NewAddUser";
 import UserPage from "../components/User/UserPage";
 import Product from "../components/Product/Product";
@@ -78,7 +69,6 @@ import LogTable from "../components/Logs/LogTable";
 import NotificationsWrapper from "../components/Notifications/NotificationsWrapper";
 import TaskWrapper from "../components/Tasks/TaskWrapper";
 import InventoryWrapper from "../components/Common/InventoryWrapper";
-import { element } from "prop-types";
 import ProfileForm from "../components/Profile/ProfileForm";
 import Error403 from "../components/Error/Error403";
 const masterRoutes = [
@@ -226,13 +216,7 @@ const masterRoutes = [
         isSidebarActive: false,
         element: <CustomerDetails />,
       },
-      {
-        path: "/address/list",
-        name: "Address",
-        icon: <PiAddressBook />,
-        isSidebarActive: true,
-        element: <AddressList />,
-      },
+
       {
         path: "/po/:id",
         name: "PO Details",
@@ -256,20 +240,7 @@ const masterRoutes = [
         element: <AddPurchaseOrder />,
         requiredPermission: { api: "edit", module: "purchase_orders" },
       },
-      {
-        path: "/signature/list",
-        name: "Signature",
-        icon: <LiaFileSignatureSolid />,
-        isSidebarActive: true,
-        element: <SignatureWrapper />,
-      },
-      {
-        path: "/brands/list",
-        name: "Brands",
-        icon: <MdOutlineBrandingWatermark />,
-        isSidebarActive: false,
-        element: <Brands />,
-      },
+
       {
         path: "/inventory/product/add",
         name: "Create Product",
@@ -329,19 +300,6 @@ const masterRoutes = [
         isSidebarActive: false,
         element: <AddNewOrder />,
         requiredPermission: { api: "edit", module: "orders" },
-      },
-      {
-        path: "/invoices/list",
-        name: "Invoices",
-        icon: <FaFileInvoice />,
-        isSidebarActive: false,
-      },
-      {
-        path: "/invoice/:invoiceId",
-        name: "Invoices",
-        icon: <FaFileInvoice />,
-        element: <InvoiceDetails />,
-        isSidebarActive: false,
       },
 
       {

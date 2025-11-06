@@ -92,7 +92,7 @@ const ProductsList = () => {
   const [form] = Form.useForm();
   const [search, setSearch] = useState("");
 
-  const itemsPerPage = 30;
+  const itemsPerPage = 50;
 
   // ──────────────────────────────────────────────────────
   // HELPERS
@@ -194,7 +194,6 @@ const ProductsList = () => {
   // ──────────────────────────────────────────────────────
   // HANDLERS
   // ──────────────────────────────────────────────────────
-  const handleAddProduct = () => navigate("/inventory/product/add");
 
   const handleDeleteClick = (product) => {
     setSelectedProduct(product);
@@ -511,7 +510,6 @@ const ProductsList = () => {
         <PageHeader
           title={pageTitle}
           subtitle="Explore our latest collection"
-          onAdd={handleAddProduct}
           tableData={formattedTableData}
           extra={{
             viewMode,

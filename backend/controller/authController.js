@@ -630,3 +630,50 @@ exports.getAllPermissionsOfLoggedInUser = async (req, res) => {
     });
   }
 };
+
+/**
+ * Validate JWT access token
+ * GET /auth/validate-token
+ *
+ * Header:  Authorization: Bearer <access-token>
+ *
+ * → 200 OK   – token is valid
+ * → 401      – token missing / invalid / expired
+ */
+exports.validateToken = async (req, res) => {
+  try {
+    // 1. Get token from Authorization header
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "No token provided" });
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    // 2. Verify JWT (signature + exp)
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      if (err.name === "TokenExpiredError") {
+        return res.status(401).json({ message: "Token has expired" });
+      }
+      return res.status(401).json({ message: "Invalid token" });
+    }
+
+    // 3. (Optional) Confirm user still exists & is active
+    const user = await User.findByPk(decoded.userId);
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+    if (user.status !== "active") {
+      return res.status(401).json({ message: "Account is inactive" });
+    }
+
+    // 4. Token is valid → just return 200
+    return res.status(200).json({ message: "Token is valid" });
+  } catch (err) {
+    console.error("validateToken error:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};

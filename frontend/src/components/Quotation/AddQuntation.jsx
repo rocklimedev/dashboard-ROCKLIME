@@ -5,7 +5,6 @@ import {
   message,
   Input,
   Select,
-  DatePicker,
   Table,
   InputNumber,
   Space,
@@ -27,6 +26,10 @@ import {
 } from "@ant-design/icons";
 import { debounce } from "lodash";
 import moment from "moment";
+import DatePicker from "react-datepicker"; // <-- react-datepicker
+import "react-datepicker/dist/react-datepicker.css"; // <-- CSS
+import { format, isAfter, isBefore, startOfDay } from "date-fns"; // date-fns
+
 import PageHeader from "../Common/PageHeader";
 import {
   useCreateQuotationMutation,
@@ -156,10 +159,10 @@ const AddQuotation = () => {
         quotationId: id,
         document_title: existingQuotation.document_title || "",
         quotation_date: existingQuotation.quotation_date
-          ? moment(existingQuotation.quotation_date)
+          ? new Date(existingQuotation.quotation_date)
           : null,
         due_date: existingQuotation.due_date
-          ? moment(existingQuotation.due_date)
+          ? new Date(existingQuotation.due_date)
           : null,
         reference_number: existingQuotation.reference_number || "",
         gst: existingQuotation.gst ?? null,
@@ -175,7 +178,9 @@ const AddQuotation = () => {
         shipTo: existingQuotation.shipTo || "",
         createdBy: userId,
         products: mapped,
-        followupDates: parsedFollowup,
+        followupDates: parsedFollowup
+          .map((d) => (d ? new Date(d) : null))
+          .filter(Boolean),
       });
     }
   }, [existingQuotation, isEditMode, products, userId]);
@@ -252,14 +257,12 @@ const AddQuotation = () => {
   };
 
   /* ────────────────────── CALCULATE FINAL ────────────────────── */
-  /* ────────────────────── CALCULATE FINAL ────────────────────── */
   const calculateFinal = useCallback(() => {
     const subtotal = formData.products.reduce(
       (s, p) => s + Number(p.total || 0),
       0
     );
 
-    // Extra Discount
     let extraDiscountAmount = 0;
     const extraDiscount = Number(formData.extraDiscount) || 0;
     if (extraDiscount > 0) {
@@ -271,10 +274,8 @@ const AddQuotation = () => {
     }
 
     const afterDiscount = subtotal - extraDiscountAmount;
-
     const gst = Number(formData.gst) || 0;
     const gstAmount = (afterDiscount * gst) / 100;
-
     const shipping = Number(formData.shippingAmount) || 0;
     const roundOff = Number(formData.roundOff) || 0;
 
@@ -299,7 +300,7 @@ const AddQuotation = () => {
   const addFollowup = () => {
     setFormData((prev) => ({
       ...prev,
-      followupDates: [...prev.followupDates, ""],
+      followupDates: [...prev.followupDates, null],
     }));
   };
 
@@ -311,17 +312,16 @@ const AddQuotation = () => {
   };
 
   const changeFollowup = (i, date) => {
-    const formatted = date ? date.format("YYYY-MM-DD") : "";
     setFormData((prev) => {
       const copy = [...prev.followupDates];
-      copy[i] = formatted;
+      copy[i] = date;
       return { ...prev, followupDates: copy };
     });
 
-    if (date && formData.due_date && date.isAfter(moment(formData.due_date))) {
+    if (date && formData.due_date && isAfter(date, formData.due_date)) {
       message.warning("Timeline date cannot be after due date");
     }
-    if (date && date.isBefore(moment().startOf("day"))) {
+    if (date && isBefore(date, startOfDay(new Date()))) {
       message.warning("Timeline date cannot be in the past");
     }
   };
@@ -334,8 +334,12 @@ const AddQuotation = () => {
 
     const payload = {
       ...formData,
-      quotation_date: formData.quotation_date?.format("YYYY-MM-DD"),
-      due_date: formData.due_date?.format("YYYY-MM-DD"),
+      quotation_date: formData.quotation_date
+        ? format(formData.quotation_date, "yyyy-MM-dd")
+        : null,
+      due_date: formData.due_date
+        ? format(formData.due_date, "yyyy-MM-dd")
+        : null,
       gst: formData.gst ?? null,
       shippingAmount: Number(formData.shippingAmount) || 0.0,
       extraDiscount: formData.extraDiscount ?? null,
@@ -350,7 +354,9 @@ const AddQuotation = () => {
         tax: Number(p.tax) || 0,
         total: Number(p.total) || 0,
       })),
-      followupDates: formData.followupDates.filter((d) => d),
+      followupDates: formData.followupDates
+        .filter((d) => d)
+        .map((d) => format(d, "yyyy-MM-dd")),
       shipTo: formData.shipTo || null,
     };
 
@@ -562,7 +568,7 @@ const AddQuotation = () => {
           <Card title="Quotation Details" style={{ marginBottom: 16 }}>
             <Row gutter={16}>
               <Col xs={24} md={12}>
-                <Form.Item label="Title *" required>
+                <Form.Item label="Title" required>
                   <Input
                     value={formData.document_title}
                     onChange={(e) =>
@@ -575,15 +581,11 @@ const AddQuotation = () => {
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
-                <Form.Item label="Reference #">
+                <Form.Item label="Quotation Number #">
                   <Input
                     value={formData.reference_number}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        reference_number: e.target.value,
-                      })
-                    }
+                    readOnly
+                    style={{ color: "#000", backgroundColor: "#f5f5f5" }}
                   />
                 </Form.Item>
               </Col>
@@ -591,22 +593,31 @@ const AddQuotation = () => {
 
             <Row gutter={16}>
               <Col xs={24} md={12}>
-                <Form.Item label="Quotation Date *" required>
+                <Form.Item label="Quotation Date" required>
                   <DatePicker
-                    style={{ width: "100%" }}
-                    value={formData.quotation_date}
-                    onChange={(d) =>
-                      setFormData({ ...formData, quotation_date: d })
+                    selected={formData.quotation_date}
+                    onChange={(date) =>
+                      setFormData({ ...formData, quotation_date: date })
                     }
+                    dateFormat="dd/MM/yyyy"
+                    className="ant-input"
+                    placeholderText="Select date"
+                    wrapperClassName="full-width"
                   />
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
-                <Form.Item label="Due Date *" required>
+                <Form.Item label="Due Date" required>
                   <DatePicker
-                    style={{ width: "100%" }}
-                    value={formData.due_date}
-                    onChange={(d) => setFormData({ ...formData, due_date: d })}
+                    selected={formData.due_date}
+                    onChange={(date) =>
+                      setFormData({ ...formData, due_date: date })
+                    }
+                    dateFormat="dd/MM/yyyy"
+                    className="ant-input"
+                    placeholderText="Select date"
+                    minDate={formData.quotation_date || new Date()}
+                    wrapperClassName="full-width"
                   />
                 </Form.Item>
               </Col>
@@ -615,17 +626,16 @@ const AddQuotation = () => {
             {/* Timeline */}
             <Form.Item label="Timeline Dates">
               <Space direction="vertical" style={{ width: "100%" }}>
-                {formData.followupDates.map((d, i) => (
+                {formData.followupDates.map((date, i) => (
                   <Space key={i} align="center">
                     <DatePicker
-                      value={d ? moment(d) : null}
-                      onChange={(date) => changeFollowup(i, date)}
-                      disabledDate={(cur) =>
-                        cur &&
-                        (cur < moment().startOf("day") ||
-                          (formData.due_date &&
-                            cur > moment(formData.due_date).endOf("day")))
-                      }
+                      selected={date}
+                      onChange={(d) => changeFollowup(i, d)}
+                      dateFormat="dd/MM/yyyy"
+                      className="ant-input"
+                      placeholderText="Select timeline date"
+                      minDate={new Date()}
+                      maxDate={formData.due_date || undefined}
                       style={{ width: 180 }}
                     />
                     <Button
@@ -882,6 +892,32 @@ const AddQuotation = () => {
             />
           )}
         </Modal>
+
+        {/* Custom CSS to make react-datepicker look like AntD */}
+        <style jsx>{`
+          .full-width > div {
+            width: 100% !important;
+          }
+          .react-datepicker-wrapper,
+          .react-datepicker__input-container {
+            width: 100%;
+          }
+          .react-datepicker__input-container input {
+            width: 100%;
+            height: 32px;
+            padding: 4px 11px;
+            font-size: 14px;
+            line-height: 1.5715;
+            border: 1px solid #d9d9d9;
+            border-radius: 6px;
+            transition: all 0.2s;
+          }
+          .react-datepicker__input-container input:focus {
+            border-color: #40a9ff;
+            outline: 0;
+            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+          }
+        `}</style>
       </div>
     </div>
   );

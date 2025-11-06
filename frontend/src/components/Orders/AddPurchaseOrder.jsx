@@ -11,7 +11,6 @@ import {
   Spin,
   Alert,
   Table,
-  DatePicker,
   InputNumber,
 } from "antd";
 import { toast } from "sonner";
@@ -29,7 +28,7 @@ import {
 } from "../../api/vendorApi";
 import { useGetAllBrandsQuery } from "../../api/brandsApi";
 import moment from "moment";
-
+import DatePicker from "react-datepicker";
 const { Option } = Select;
 
 // AddVendorModal Component (unchanged)
@@ -265,7 +264,8 @@ const AddPurchaseOrder = () => {
   const [showVendorModal, setShowVendorModal] = useState(false);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
-
+  const momentToDate = (m) => (m && m.isValid() ? m.toDate() : null);
+  const dateToMoment = (d) => (d ? moment(d) : null);
   useEffect(() => {
     if (
       isEditMode &&
@@ -720,12 +720,18 @@ const AddPurchaseOrder = () => {
                   style={{ flex: 1, minWidth: 300 }}
                 >
                   <DatePicker
-                    style={{ width: "100%" }}
-                    value={formData.orderDate}
+                    selected={momentToDate(formData.orderDate)}
                     onChange={(date) =>
-                      setFormData({ ...formData, orderDate: date })
+                      setFormData({
+                        ...formData,
+                        orderDate: dateToMoment(date),
+                      })
                     }
-                    format="YYYY-MM-DD"
+                    dateFormat="yyyy-MM-dd"
+                    className="ant-input"
+                    placeholderText="yyyy-mm-dd"
+                    minDate={new Date(2000, 0, 1)}
+                    maxDate={new Date(2100, 11, 31)}
                   />
                 </Form.Item>
               </div>
@@ -736,12 +742,18 @@ const AddPurchaseOrder = () => {
                   style={{ flex: 1, minWidth: 300 }}
                 >
                   <DatePicker
-                    style={{ width: "100%" }}
-                    value={formData.expectedDeliveryDate}
+                    selected={momentToDate(formData.expectedDeliveryDate)}
                     onChange={(date) =>
-                      setFormData({ ...formData, expectedDeliveryDate: date })
+                      setFormData({
+                        ...formData,
+                        expectedDeliveryDate: dateToMoment(date),
+                      })
                     }
-                    format="YYYY-MM-DD"
+                    dateFormat="yyyy-MM-dd"
+                    className="ant-input"
+                    placeholderText="yyyy-mm-dd"
+                    minDate={new Date()}
+                    isClearable
                   />
                 </Form.Item>
                 <Form.Item

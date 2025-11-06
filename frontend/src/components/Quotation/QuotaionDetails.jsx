@@ -15,7 +15,7 @@ import { useGetCompanyByIdQuery } from "../../api/companyApi";
 import { useGetAddressByIdQuery } from "../../api/addressApi";
 import "./quotation.css";
 import useProductsData from "../../data/useProductdata";
-
+import { useGetAllBrandsQuery } from "../../api/brandsApi";
 import { exportToPDF, exportToExcel } from "./hooks/exportHelpers";
 import { calcTotals, amountInWords } from "./hooks/calcHelpers";
 import { Helmet } from "react-helmet";
@@ -41,6 +41,7 @@ const QuotationsDetails = () => {
     isLoading: vLoading,
     error: vError,
   } = useGetQuotationVersionsQuery(id);
+  const { data: brandsData } = useGetAllBrandsQuery(); // <-- NEW
 
   const { data: usersData } = useGetAllUsersQuery();
   const { data: customersData } = useGetCustomersQuery();
@@ -152,20 +153,33 @@ const QuotationsDetails = () => {
     return c?.name || "Unknown";
   };
 
+  // ----- REPLACE the whole brandNames useMemo -----
   const brandNames = useMemo(() => {
     const set = new Set();
-    activeProducts.forEach((p) => {
-      const pd = productsData?.find((x) => x.productId === p.productId) || {};
-      const brand =
-        pd.brandName ||
-        pd.metaDetails?.find((m) => m.title.toLowerCase().includes("brand"))
-          ?.value ||
-        "N/A";
-      if (brand !== "N/A" && !/^[0-9a-f-]{36}$/.test(brand)) set.add(brand);
-    });
-    return set.size ? [...set].join(" / ") : "GROHE / AMERICAN STANDARD";
-  }, [activeProducts, productsData]);
 
+    activeProducts.forEach((p) => {
+      const pd = productsData?.find((x) => x.productId === p.productId) ?? {};
+
+      // 1. brandName field (new)
+      // 2. meta with title containing “brand”
+      // 3. lookup via brandId
+      let brand =
+        pd.brandName ??
+        pd.metaDetails?.find((m) => m.title?.toLowerCase().includes("brand"))
+          ?.value;
+
+      if (!brand && pd.brandId) {
+        const rec = brandsData?.find((b) => b.id === pd.brandId);
+        brand = rec?.brandName;
+      }
+
+      if (brand && brand !== "N/A" && !/^[0-9a-f-]{36}$/.test(brand)) {
+        set.add(brand.trim());
+      }
+    });
+
+    return set.size ? [...set].join(" / ") : "GROHE / AMERICAN STANDARD";
+  }, [activeProducts, productsData, brandsData]); // <-- brandsData in deps
   // ----- 1. call calcTotals with the new params -----
   const {
     subtotal,
@@ -205,6 +219,7 @@ const QuotationsDetails = () => {
           productsData,
           brandNames,
           safeQuotation,
+          brandsData,
           address
             ? `${address.street || ""}, ${address.city || ""}, ${
                 address.state || ""
@@ -454,28 +469,33 @@ const QuotationsDetails = () => {
 
                     {/* Extra Discount */}
                     {/* ----- 2. Extra-discount row (label shows % or ₹, value shows the real amount) ----- */}
-                    {activeVersionData.quotation?.extraDiscount > 0 && (
-                      <tr>
-                        <td>
-                          <strong>
-                            Extra Discount (
-                            {activeVersionData.quotation?.extraDiscountType ===
-                            "percent"
-                              ? `${parseFloat(
-                                  activeVersionData.quotation?.extraDiscount
-                                ).toFixed(2)}%`
-                              : `₹${parseFloat(
-                                  activeVersionData.quotation?.extraDiscount
-                                ).toFixed(2)}`}
-                            )
-                          </strong>
-                        </td>
-                        <td colSpan="5"></td>
-                        <td className="text-danger">
-                          <strong>-₹{extraDiscountAmt.toFixed(2)}</strong>
-                        </td>
-                      </tr>
-                    )}
+                    {/* Extra Discount */}
+                    {(() => {
+                      const extraDisc = parseFloat(
+                        activeVersionData.quotation?.extraDiscount || "0"
+                      );
+                      const extraDiscType =
+                        activeVersionData.quotation?.extraDiscountType ||
+                        "amount";
+
+                      return extraDisc > 0 ? (
+                        <tr>
+                          <td>
+                            <strong>
+                              Extra Discount (
+                              {extraDiscType === "percent"
+                                ? `${extraDisc.toFixed(2)}%`
+                                : `₹${extraDisc.toFixed(2)}`}
+                              )
+                            </strong>
+                          </td>
+                          <td colSpan="5"></td>
+                          <td className="text-danger">
+                            <strong>-₹{extraDiscountAmt.toFixed(2)}</strong>
+                          </td>
+                        </tr>
+                      ) : null;
+                    })()}
 
                     {/* Round-off */}
                     {activeVersionData.quotation?.roundOff != null && (
@@ -520,7 +540,7 @@ const QuotationsDetails = () => {
                   <tbody>
                     <tr>
                       <td colSpan="8" className="text-right">
-                        <strong>Amount Chargeable (in words)</strong>
+                        <strong>Final Amount (in words)</strong>
                       </td>
                       <td className="text-right">
                         <strong>
@@ -548,7 +568,7 @@ const QuotationsDetails = () => {
                         <br />
                         A/c No: <strong>10179373657</strong>
                         <br />
-                        Branch & IFS:{" "}
+                        Branch & IFSC:{" "}
                         <strong>
                           BHERA ENCLAVE PASCHIM VIHAR & IDFB0020149
                         </strong>
@@ -557,7 +577,7 @@ const QuotationsDetails = () => {
                         <strong>PAN:</strong> AALFE0496K
                         <br />
                         <strong>Declaration:</strong> We declare that this
-                        quotation shows the actual price...
+                        quotation shows the actual price.
                       </td>
                     </tr>
                     <tr>

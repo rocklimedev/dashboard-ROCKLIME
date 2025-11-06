@@ -17,17 +17,19 @@ import { useGetAllQuotationsQuery } from "../../api/quotationApi";
 import { useGetAllInvoicesQuery } from "../../api/invoiceApi";
 import { useGetProfileQuery } from "../../api/userApi";
 import { useGetAllOrdersQuery } from "../../api/orderApi";
-import { useGetCustomersQuery } from "../../api/customerApi";
+import { useGetCustomersQuery } from "../../api/customerApi"; // <-- NEW
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
 import { useAddProductToCartMutation } from "../../api/cartApi";
 import { useUpdateOrderStatusMutation } from "../../api/orderApi";
 import useTopProducts from "../../data/useTopProducts";
 import { BiPencil } from "react-icons/bi";
-// Import CSS
 import "./pagewrapper.css";
 
 const PageWrapper = () => {
+  /* ------------------------------------------------------------------ */
+  /*  STATE & MODALS                                                    */
+  /* ------------------------------------------------------------------ */
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -36,7 +38,7 @@ const PageWrapper = () => {
   const [editingOrderId, setEditingOrderId] = useState(null);
 
   const toggleEdit = (id) => {
-    setEditingOrderId(editingOrderId === id ? null : id);
+    setEditingOrderId((prev) => (prev === id ? null : id));
   };
 
   const statuses = [
@@ -50,19 +52,12 @@ const PageWrapper = () => {
     "DRAFT",
     "ONHOLD",
   ];
+
+  /* ------------------------------------------------------------------ */
+  /*  RTK-QUERY HOOKS                                                   */
+  /* ------------------------------------------------------------------ */
   const [addProductToCart, { isLoading: mutationLoading }] =
     useAddProductToCartMutation();
-
-  const today = useMemo(() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d;
-  }, []);
-
-  const startDate = today.toISOString().split("T")[0];
-  const endDate = new Date(today.getTime() + 24 * 60 * 60 * 1000)
-    .toISOString()
-    .split("T")[0];
 
   const {
     data: profile,
@@ -84,7 +79,8 @@ const PageWrapper = () => {
   const { data: productsData, isLoading: isProductsLoading } =
     useGetAllProductsQuery();
 
-  const { data: customersData, isLoading: isCustomersLoading } =
+  // NEW – customers
+  const { data: customers, isLoading: isCustomersLoading } =
     useGetCustomersQuery();
 
   const { data: categoriesData, isLoading: isCategoriesLoading } =
@@ -100,6 +96,20 @@ const PageWrapper = () => {
     quotations: quotationData,
     orders,
   });
+  const customersData = customers?.data || [];
+  /* ------------------------------------------------------------------ */
+  /*  ATTENDANCE (clock-in/out)                                         */
+  /* ------------------------------------------------------------------ */
+  const today = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
+
+  const startDate = today.toISOString().split("T")[0];
+  const endDate = new Date(today.getTime() + 24 * 60 * 60 * 1000)
+    .toISOString()
+    .split("T")[0];
 
   const {
     data: attendance,
@@ -134,6 +144,9 @@ const PageWrapper = () => {
     }
   };
 
+  /* ------------------------------------------------------------------ */
+  /*  CART & PRODUCT HELPERS                                            */
+  /* ------------------------------------------------------------------ */
   const handleAddToCart = async (product) => {
     if (!userId) return toast.error("User not logged in!");
     const priceEntry = Array.isArray(product.metaDetails)
@@ -193,41 +206,36 @@ const PageWrapper = () => {
     }
   };
 
+  /* ------------------------------------------------------------------ */
+  /*  COUNTS & LATEST LISTS                                            */
+  /* ------------------------------------------------------------------ */
   const orderCount = orders.length;
   const quotationCount = quotationData.length || 0;
   const productCount = products.length;
   const invoiceCount = invoiceData?.data?.length || 0;
 
-  if (
-    loadingProfile ||
-    isCustomersLoading ||
-    isCategoriesLoading ||
-    isUsersLoading ||
-    isProductsLoading ||
-    loadingQuotations
-  ) {
-    return (
-      <div className="text-center p-5">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading…</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (profileError) {
-    return (
-      <div className="alert alert-danger m-3">
-        <h5>Profile error</h5>
-        <p>{profileError?.data?.message || "Unknown error"}</p>
-      </div>
-    );
-  }
-
   const lastFiveQuotations = quotationData.slice(-5).reverse();
   const lastFiveOrders = orders.slice(-5).reverse();
   const lastFiveProducts = products.slice(-5).reverse();
 
+  /* ------------------------------------------------------------------ */
+  /*  CUSTOMER NAME MAP (NEW)                                           */
+  /* ------------------------------------------------------------------ */
+  const getCustomerName = (customerId) => {
+    const cust = customersData.find((c) => c.customerId === customerId);
+    return cust ? cust.name : "Unknown";
+  };
+
+  const customerMap = useMemo(() => {
+    return customersData.reduce((map, c) => {
+      map[c.customerId] = c.name;
+      return map;
+    }, {});
+  }, [customersData]);
+
+  /* ------------------------------------------------------------------ */
+  /*  UI HELPERS                                                        */
+  /* ------------------------------------------------------------------ */
   const statusColors = {
     PREPARING: "badge bg-warning text-dark",
     CHECKING: "badge bg-info text-dark",
@@ -258,11 +266,43 @@ const PageWrapper = () => {
     );
   };
 
+  /* ------------------------------------------------------------------ */
+  /*  LOADING / ERROR STATES                                            */
+  /* ------------------------------------------------------------------ */
+  if (
+    loadingProfile ||
+    isCustomersLoading ||
+    isCategoriesLoading ||
+    isUsersLoading ||
+    isProductsLoading ||
+    loadingQuotations
+  ) {
+    return (
+      <div className="text-center p-5">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading…</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (profileError) {
+    return (
+      <div className="alert alert-danger m-3">
+        <h5>Profile error</h5>
+        <p>{profileError?.data?.message || "Unknown error"}</p>
+      </div>
+    );
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  RENDER                                                            */
+  /* ------------------------------------------------------------------ */
   return (
     <div className="page-wrapper">
       <div className="content">
         <div className="row gx-3 gy-3">
-          {/* LEFT COLUMN */}
+          {/* ---------------- LEFT COLUMN – ORDERS ---------------- */}
           <div className="col-12 col-md-4 d-flex flex-column gap-3">
             <div className="card shadow-sm rounded-3">
               <div className="card-header bg-light fw-semibold">
@@ -301,7 +341,10 @@ const PageWrapper = () => {
                           <div className="mt-1 info-text">
                             <span className="me-2">
                               <i className="bi bi-person info-icon"></i>
-                              {o.customer?.name || "Unknown Customer"}
+                              {/* NEW – use map */}
+                              {getCustomerName(o.customerId) ||
+                                o.customer?.name ||
+                                "Unknown Customer"}
                             </span>
                             <span className="me-2">
                               <i className="bi bi-person-badge info-icon"></i>
@@ -337,7 +380,7 @@ const PageWrapper = () => {
                             />
                           </div>
 
-                          {/* Fixed Dropdown */}
+                          {/* ---- EDIT STATUS DROPDOWN ---- */}
                           {editingOrderId === o.id && (
                             <div
                               className="position-absolute bg-white shadow-sm rounded-2 border mt-1"
@@ -392,8 +435,10 @@ const PageWrapper = () => {
               </div>
             </div>
           </div>
-          {/* MIDDLE COLUMN */}
+
+          {/* ---------------- MIDDLE COLUMN ---------------- */}
           <div className="col-12 col-md-4 d-flex flex-column gap-3">
+            {/* Quotations */}
             <div className="card shadow-sm rounded-3">
               <div className="card-header bg-light fw-semibold">
                 <span>
@@ -402,7 +447,6 @@ const PageWrapper = () => {
                     ({quotationCount})
                   </span>
                 </span>
-                <div className="px-3 py-2 small text-muted">Latest five</div>
               </div>
               <div className="card-body p-0">
                 <ul className="list-unstyled m-0">
@@ -429,7 +473,10 @@ const PageWrapper = () => {
                           <div className="mt-1 info-text">
                             <span className="me-2">
                               <i className="bi bi-person info-icon"></i>
-                              {q.customer?.name || "Customer"}
+                              {/* NEW – use map */}
+                              {getCustomerName(q.customerId) ||
+                                q.customer?.name ||
+                                "Customer"}
                             </span>
                             <span className="me-2">
                               <i className="bi bi-calendar-event info-icon"></i>
@@ -470,6 +517,7 @@ const PageWrapper = () => {
               </div>
             </div>
 
+            {/* Low Stock */}
             {lowStockProducts.length > 0 && (
               <div className="card shadow-sm rounded-3">
                 <div className="card-header bg-light fw-semibold low-stock-header">
@@ -512,7 +560,7 @@ const PageWrapper = () => {
             )}
           </div>
 
-          {/* RIGHT COLUMN */}
+          {/* ---------------- RIGHT COLUMN ---------------- */}
           <div className="col-12 col-md-4 d-flex flex-column gap-3">
             {/* Top Selling Products */}
             <div className="card shadow-sm rounded-3">
@@ -599,7 +647,6 @@ const PageWrapper = () => {
                     ({productCount})
                   </span>
                 </span>
-                <div className="small text-muted">Last five</div>
               </div>
               <div className="card-body p-0">
                 <ul className="list-unstyled m-0">
