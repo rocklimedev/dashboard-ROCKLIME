@@ -377,6 +377,7 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
                     <Input />
                   </Form.Item>
                 </Col>
+
                 <Col lg={12} xs={24}>
                   <Form.Item label="Customer Type" name="customerType">
                     <Select placeholder="Select Type">
@@ -389,11 +390,13 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
                     </Select>
                   </Form.Item>
                 </Col>
+
                 <Col lg={12} xs={24}>
                   <Form.Item label="Company Name" name="companyName">
                     <Input />
                   </Form.Item>
                 </Col>
+
                 <Col lg={12} xs={24}>
                   <Form.Item
                     label="Email"
@@ -406,27 +409,82 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
                     <Input />
                   </Form.Item>
                 </Col>
+
+                {/* === MOBILE NUMBER (Required, 10 digits) === */}
                 <Col lg={12} xs={24}>
                   <Form.Item
                     label="Phone"
                     name="mobileNumber"
                     rules={[
                       { required: true, message: "Please enter phone number" },
+                      {
+                        pattern: /^\d{10}$/,
+                        message: "Phone must be exactly 10 digits",
+                      },
+                      {
+                        validator: (_, value) =>
+                          value && !/^\d+$/.test(value)
+                            ? Promise.reject("Only digits allowed")
+                            : Promise.resolve(),
+                      },
                     ]}
                   >
-                    <Input />
+                    <Input
+                      maxLength={10}
+                      placeholder="e.g. 9876543210"
+                      onKeyPress={(e) => {
+                        if (!/[0-9]/.test(e.key)) e.preventDefault();
+                      }}
+                      onBlur={(e) => {
+                        const clean = e.target.value
+                          .replace(/\D/g, "")
+                          .slice(0, 10);
+                        form.setFieldsValue({ mobileNumber: clean });
+                      }}
+                    />
                   </Form.Item>
                 </Col>
+
+                {/* === PHONE 2 (Optional, but 10 digits if filled) === */}
                 <Col lg={12} xs={24}>
-                  <Form.Item label="Optional Mobile Number" name="phone2">
-                    <Input />
+                  <Form.Item
+                    label="Optional Mobile Number"
+                    name="phone2"
+                    rules={[
+                      {
+                        pattern: /^\d{10}$/,
+                        message: "Phone 2 must be exactly 10 digits",
+                      },
+                      {
+                        validator: (_, value) =>
+                          value && !/^\d+$/.test(value)
+                            ? Promise.reject("Only digits allowed")
+                            : Promise.resolve(),
+                      },
+                    ]}
+                  >
+                    <Input
+                      maxLength={10}
+                      placeholder="e.g. 9123456789"
+                      onKeyPress={(e) => {
+                        if (!/[0-9]/.test(e.key)) e.preventDefault();
+                      }}
+                      onBlur={(e) => {
+                        const clean = e.target.value
+                          .replace(/\D/g, "")
+                          .slice(0, 10);
+                        form.setFieldsValue({ phone2: clean });
+                      }}
+                    />
                   </Form.Item>
                 </Col>
+
                 <Col lg={12} xs={24}>
                   <Form.Item label="GST Number" name="gstNumber">
                     <Input placeholder="Enter GST Number" />
                   </Form.Item>
                 </Col>
+
                 <Col lg={24} xs={24}>
                   <Form.Item label="Address">
                     <Row gutter={16}>
@@ -463,6 +521,8 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
               </Row>
             </TabPane>
           </Tabs>
+
+          {/* Submit Buttons */}
           <div
             style={{
               display: "flex",
@@ -488,6 +548,8 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
                 : "Add Customer"}
             </Button>
           </div>
+
+          {/* Error Alert */}
           {(createError || editError) && (
             <Alert
               message="Error"

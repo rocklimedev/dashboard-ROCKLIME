@@ -16,6 +16,49 @@ import { ReloadOutlined, ClearOutlined, LeftOutlined } from "@ant-design/icons";
 const { TabPane } = Tabs;
 const { Option } = Select;
 
+// Indian States JSON
+const indiaStates = {
+  name: "India",
+  states: [
+    "Andaman and Nicobar Islands",
+    "Andhra Pradesh",
+    "Arunachal Pradesh",
+    "Assam",
+    "Bihar",
+    "Chandigarh",
+    "Chhattisgarh",
+    "Dadra and Nagar Haveli and Daman and Diu",
+    "Delhi",
+    "Goa",
+    "Gujarat",
+    "Haryana",
+    "Himachal Pradesh",
+    "Jammu and Kashmir",
+    "Jharkhand",
+    "Karnataka",
+    "Kerala",
+    "Ladakh",
+    "Lakshadweep",
+    "Madhya Pradesh",
+    "Maharashtra",
+    "Manipur",
+    "Meghalaya",
+    "Mizoram",
+    "Nagaland",
+    "Odisha",
+    "Puducherry",
+    "Punjab",
+    "Rajasthan",
+    "Sikkim",
+    "Tamil Nadu",
+    "Telangana",
+    "Tripura",
+    "Uttar Pradesh",
+    "Uttarakhand",
+    "West Bengal",
+  ],
+};
+
 const AddCustomer = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -424,21 +467,83 @@ const AddCustomer = () => {
                       </Form.Item>
                     </Col>
 
+                    {/* Mobile Number - 10 digits */}
                     <Col lg={12} xs={24}>
                       <Form.Item
                         label="Phone"
                         name="mobileNumber"
                         rules={[
-                          { required: true, message: "Please enter phone" },
+                          {
+                            required: true,
+                            message: "Please enter phone number",
+                          },
+                          {
+                            pattern: /^\d{10}$/,
+                            message: "Mobile number must be exactly 10 digits",
+                          },
+                          {
+                            validator: (_, value) =>
+                              value && !/^\d+$/.test(value)
+                                ? Promise.reject(
+                                    new Error("Only numeric digits allowed")
+                                  )
+                                : Promise.resolve(),
+                          },
                         ]}
                       >
-                        <Input />
+                        <Input
+                          maxLength={10}
+                          placeholder="e.g. 9876543210"
+                          onKeyPress={(e) => {
+                            if (!/[0-9]/.test(e.key)) {
+                              e.preventDefault();
+                            }
+                          }}
+                          onBlur={(e) => {
+                            const clean = e.target.value
+                              .replace(/\D/g, "")
+                              .slice(0, 10);
+                            form.setFieldsValue({ mobileNumber: clean });
+                          }}
+                        />
                       </Form.Item>
                     </Col>
 
+                    {/* Phone 2 - Optional but 10 digits if filled */}
                     <Col lg={12} xs={24}>
-                      <Form.Item label="Phone 2" name="phone2">
-                        <Input />
+                      <Form.Item
+                        label="Phone 2"
+                        name="phone2"
+                        rules={[
+                          {
+                            pattern: /^\d{10}$/,
+                            message: "Phone 2 must be exactly 10 digits",
+                          },
+                          {
+                            validator: (_, value) =>
+                              value && !/^\d+$/.test(value)
+                                ? Promise.reject(
+                                    new Error("Only numeric digits allowed")
+                                  )
+                                : Promise.resolve(),
+                          },
+                        ]}
+                      >
+                        <Input
+                          maxLength={10}
+                          placeholder="e.g. 9876543210"
+                          onKeyPress={(e) => {
+                            if (!/[0-9]/.test(e.key)) {
+                              e.preventDefault();
+                            }
+                          }}
+                          onBlur={(e) => {
+                            const sanitized = e.target.value
+                              .replace(/\D/g, "")
+                              .slice(0, 10);
+                            form.setFieldsValue({ phone2: sanitized });
+                          }}
+                        />
                       </Form.Item>
                     </Col>
 
@@ -448,6 +553,7 @@ const AddCustomer = () => {
                       </Form.Item>
                     </Col>
 
+                    {/* Address with State Dropdown */}
                     <Col lg={24} xs={24}>
                       <Form.Item label="Address">
                         <Row gutter={16}>
@@ -463,7 +569,14 @@ const AddCustomer = () => {
                           </Col>
                           <Col lg={12} xs={24}>
                             <Form.Item name={["address", "state"]} noStyle>
-                              <Input placeholder="State" />
+                              <Select placeholder="Select State">
+                                <Option value="">Select State</Option>
+                                {indiaStates.states.map((state) => (
+                                  <Option key={state} value={state}>
+                                    {state}
+                                  </Option>
+                                ))}
+                              </Select>
                             </Form.Item>
                           </Col>
                           <Col lg={12} xs={24}>

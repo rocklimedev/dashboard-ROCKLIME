@@ -1,8 +1,7 @@
-// QuotationProductModal.jsx
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 import { Modal, Table, Image, Alert, Badge } from "react-bootstrap";
+import { useGetQuotationByIdQuery } from "../../api/quotationApi";
 
-/* --------------------------------------------------------------- */
 const safeParse = (str, fallback = []) => {
   if (Array.isArray(str)) return str;
   if (!str) return fallback;
@@ -13,23 +12,21 @@ const safeParse = (str, fallback = []) => {
   }
 };
 
-/* --------------------------------------------------------------- */
-const QuotationProductModal = ({
-  show,
-  onHide,
-  products = "[]",
-  items = [],
-  selectedQuotation,
-}) => {
-  const [lineItems, setLineItems] = useState([]);
+const QuotationProductModal = ({ show, onHide, quotationId }) => {
+  const {
+    data: q = {},
+    isLoading,
+    isError,
+  } = useGetQuotationByIdQuery(quotationId, {
+    skip: !quotationId,
+  });
 
-  /* ---------- 1. Normalise line-items (from props or selectedQuotation) ---------- */
-  useEffect(() => {
-    const fromProps = safeParse(products);
-    const fromItems = Array.isArray(items) ? items : [];
+  const lineItems = useMemo(() => {
+    const fromProducts = safeParse(q.products);
+    const fromItems = Array.isArray(q.items) ? q.items : [];
 
-    const normalizedProps = Array.isArray(fromProps)
-      ? fromProps.map((p) => ({
+    const normalized = Array.isArray(fromProducts)
+      ? fromProducts.map((p) => ({
           productId: p.productId || p.id,
           quantity: p.quantity || 1,
           price: p.sellingPrice || p.price,
@@ -43,34 +40,25 @@ const QuotationProductModal = ({
       : [];
 
     const hasFullInfo =
-      normalizedProps.length > 0 && normalizedProps[0].total !== undefined;
+      normalized.length > 0 && normalized[0].total !== undefined;
 
-    const nextLineItems = hasFullInfo ? normalizedProps : fromItems;
+    return hasFullInfo ? normalized : fromItems;
+  }, [q.products, q.items]);
 
-    setLineItems((prev) =>
-      JSON.stringify(prev) === JSON.stringify(nextLineItems)
-        ? prev
-        : nextLineItems
-    );
-  }, [products, items]);
-  /* ---------- 2. Build product map directly from lineItems (NO API) ---------- */
+  /* ---------- PRODUCT MAP (name + image) ---------- */
   const productMap = useMemo(() => {
     const map = {};
-
     lineItems.forEach((it) => {
       if (!it.productId) return;
-
       const unitPrice = Number(it.price || it.sellingPrice || 0);
       const name = it.name?.trim() || "Unnamed product";
       const imageUrl = it.imageUrl || null;
-
       map[it.productId] = { sellingPrice: unitPrice, name, imageUrl };
     });
-
     return map;
   }, [lineItems]);
 
-  /* ---------- 3. Line-item calculations ---------- */
+  /* ---------- LINE CALCULATIONS ---------- */
   const lineCalculations = useMemo(() => {
     const details = [];
     let subTotalExcl = 0;
@@ -123,55 +111,53 @@ const QuotationProductModal = ({
 
   const { details: lineDetails, subTotalExcl, grandTotal } = lineCalculations;
 
-  /* ---------- 4. Final breakdown ---------- */
+  /* ---------- FINAL BREAKDOWN ---------- */
   const finalBreakdown = useMemo(() => {
-    let amount = grandTotal;
+    const lineTotal = grandTotal;
 
-    const extraDisc = Number(selectedQuotation?.extraDiscount) || 0;
-    const extraType = selectedQuotation?.extraDiscountType || "percent";
+    const extraDisc = Number(q.extraDiscount || 0);
+    const extraType = q.extraDiscountType || "percent";
 
     let extraDiscountAmount = 0;
     if (extraDisc > 0) {
       extraDiscountAmount =
-        extraType === "percent" ? (amount * extraDisc) / 100 : extraDisc;
-      amount -= extraDiscountAmount;
+        extraType === "percent" ? (lineTotal * extraDisc) / 100 : extraDisc;
     }
 
-    const shipping = Number(selectedQuotation?.shippingAmount) || 0;
-    amount += shipping;
+    const afterExtra = lineTotal - extraDiscountAmount;
+    const shipping = Number(q.shippingAmount || 0);
+    const baseForTax = afterExtra + shipping;
 
-    const gstPct = Number(selectedQuotation?.gst) || 0;
-    const gstAmount = gstPct > 0 ? (amount * gstPct) / 100 : 0;
-    amount += gstAmount;
+    const gstPct = Number(q.gst || 0);
+    const gstAmount = gstPct > 0 ? (baseForTax * gstPct) / 100 : 0;
 
-    const roundOff = Number(selectedQuotation?.roundOff) || 0;
-    amount += roundOff;
+    const beforeRoundOff = baseForTax + gstAmount;
+    const roundOff = Number(q.roundOff || 0);
+    const calculatedTotal = parseFloat((beforeRoundOff + roundOff).toFixed(2));
 
-    const finalAmountFromDB = parseFloat(selectedQuotation?.finalAmount) || 0;
-
-    // Define these BEFORE using them
-    const amountWithGst =
-      grandTotal - extraDiscountAmount + shipping + gstAmount;
-    const calculatedTotal = parseFloat((amountWithGst + roundOff).toFixed(2));
-    const mismatch = Math.abs(calculatedTotal - finalAmountFromDB) > 0.01;
+    const finalAmountFromDB = parseFloat(q.finalAmount) || 0;
+    const isDraftZero = finalAmountFromDB === 0;
+    const mismatch =
+      !isDraftZero && Math.abs(calculatedTotal - finalAmountFromDB) > 0.01;
 
     return {
-      afterLines: grandTotal,
+      afterLines: lineTotal,
       extraDisc,
       extraType,
       extraDiscountAmount,
-      afterExtraDiscount: grandTotal - extraDiscountAmount,
+      afterExtraDiscount: afterExtra,
       shipping,
-      amountAfterShipping: grandTotal - extraDiscountAmount + shipping,
+      amountAfterShipping: afterExtra + shipping,
       gstPct,
       gstAmount,
-      amountWithGst,
+      amountWithGst: beforeRoundOff,
       roundOff,
       calculatedTotal,
       finalAmountFromDB,
       mismatch,
     };
-  }, [grandTotal, selectedQuotation]);
+  }, [grandTotal, q]);
+
   const {
     afterLines,
     extraDisc,
@@ -188,10 +174,32 @@ const QuotationProductModal = ({
     finalAmountFromDB,
     mismatch,
   } = finalBreakdown;
+
   /* --------------------------------------------------------------- */
+  if (isLoading) {
+    return (
+      <Modal show={show} onHide={onHide} centered>
+        <Modal.Body className="text-center py-5">
+          <div className="spinner-border text-primary" />
+          <p className="mt-2">Loading quotation…</p>
+        </Modal.Body>
+      </Modal>
+    );
+  }
+
+  if (isError || !q.quotationId) {
+    return (
+      <Modal show={show} onHide={onHide} centered>
+        <Modal.Body>
+          <Alert variant="danger">Failed to load quotation details.</Alert>
+        </Modal.Body>
+      </Modal>
+    );
+  }
+
   return (
     <Modal show={show} onHide={onHide} size="xl" centered>
-      <Modal.Header closeButton>
+      <Modal.Header>
         <Modal.Title>Quotation Products & Pricing</Modal.Title>
       </Modal.Header>
 
@@ -200,7 +208,7 @@ const QuotationProductModal = ({
           <Alert variant="info">No products in this quotation.</Alert>
         ) : (
           <>
-            {/* LINE ITEMS TABLE */}
+            {/* ---------- LINE ITEMS TABLE ---------- */}
             <Table
               striped
               bordered
@@ -271,7 +279,7 @@ const QuotationProductModal = ({
               </tbody>
             </Table>
 
-            {/* FINANCIAL BREAKDOWN */}
+            {/* ---------- FINANCIAL BREAKDOWN ---------- */}
             <Table bordered className="table-sm">
               <tbody>
                 <tr className="table-info">
@@ -280,6 +288,7 @@ const QuotationProductModal = ({
                     ₹{subTotalExcl.toFixed(2)}
                   </td>
                 </tr>
+
                 <tr>
                   <td className="text-end">Line Total (incl. tax)</td>
                   <td className="text-end">₹{afterLines.toFixed(2)}</td>
@@ -363,6 +372,7 @@ const QuotationProductModal = ({
                     ₹{calculatedTotal.toFixed(2)}
                   </td>
                 </tr>
+
                 <tr className="table-primary">
                   <td className="text-end fw-bold">Final Amount (DB)</td>
                   <td className="text-end fw-bold">

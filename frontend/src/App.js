@@ -1,3 +1,4 @@
+// src/App.jsx
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Header from "./components/Common/Header";
@@ -11,13 +12,13 @@ import SidebarNew from "./components/Common/SidebarNew2";
 import { useAuth } from "./context/AuthContext";
 
 function App() {
-  const { auth, setAuth, authChecked } = useAuth();
+  const { auth, setAuth, authChecked, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
   const [isSidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 768);
-  const [layoutMode, setLayoutMode] = useState("vertical");
-  const [isLoggingOut, setIsLoggingOut] = useState(false); // New flag
+  const [layoutMode] = useState("vertical");
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const MAINTENANCE_MODE = false;
 
   const isMaintenancePage = location.pathname === "/under-maintenance";
@@ -32,8 +33,6 @@ function App() {
     "/no-access",
     "/verify-account",
   ].includes(location.pathname);
-
-  // Restore token from storage
 
   // Toggle sidebar
   const toggleSidebar = (open) => setSidebarOpen(open);
@@ -63,36 +62,15 @@ function App() {
     return () => document.removeEventListener("click", handleClickOutside);
   }, [isSidebarOpen]);
 
-  // Authentication check
-  useEffect(() => {
-    if (!authChecked || isLoggingOut) return; // Skip if logging out
-    if (
-      !auth?.token &&
-      (location.pathname === "/no-access" ||
-        location.pathname === "/verify-account")
-    ) {
-      toast.warning("You must be logged in to access this page.");
-      navigate("/login", { replace: true });
-    } else if (!auth?.token && !isAuthPage) {
-      toast.warning("You are not authenticated. Please log in.");
-      navigate("/login", { replace: true });
-    }
-  }, [
-    auth,
-    isAuthPage,
-    navigate,
-    authChecked,
-    location.pathname,
-    isLoggingOut,
-  ]);
+  // ────── PROFILE FETCH ──────
   const {
     data: profileData,
     isLoading: isProfileLoading,
     error: profileError,
-    refetch: refetchProfile,
-    isUninitialized,
+    isUninitialized, // ← now defined
+    refetch: refetchProfile, // ← now defined
   } = useGetProfileQuery(undefined, {
-    skip: !auth?.token || isAuthPage, // Skip auto-fetch if no token or on auth page
+    skip: !auth?.token || isAuthPage,
   });
 
   // Manually trigger profile fetch only if needed
@@ -113,16 +91,46 @@ function App() {
     profileData,
     refetchProfile,
   ]);
-  // Debug profile fetch
+
+  // ────── AUTH CHECK (redirects) ──────
+  useEffect(() => {
+    if (!authChecked || isLoggingOut) return;
+
+    if (
+      !auth?.token &&
+      (location.pathname === "/no-access" ||
+        location.pathname === "/verify-account")
+    ) {
+      toast.warning("You must be logged in to access this page.");
+      navigate("/login", { replace: true });
+    } else if (!auth?.token && !isAuthPage) {
+      toast.warning("You are not authenticated. Please log in.");
+      navigate("/login", { replace: true });
+    }
+  }, [
+    auth,
+    isAuthPage,
+    navigate,
+    authChecked,
+    location.pathname,
+    isLoggingOut,
+  ]);
+
+  // ────── PROFILE ERROR (401 → logout) ──────
+  // In App.jsx → profile error effect
   useEffect(() => {
     if (profileError) {
-      toast.error("Failed to fetch user profile.");
-      if (!isLoggingOut) {
+      const status = profileError?.status;
+      if (status === 401 || status === 403) {
+        toast.error("Your session has expired. Please log in again.");
+        logout(); // ← Remove optional chaining
         navigate("/login", { replace: true });
+      } else {
+        toast.error("Failed to load profile.");
       }
     }
-  }, [profileData, profileError, navigate, isLoggingOut]);
-
+  }, [profileError, navigate, logout]);
+  // ────── USER ROLES / EMAIL VERIFICATION ──────
   useEffect(() => {
     if (!profileData?.user || isAuthPage || !auth?.token) return;
 
@@ -131,7 +139,7 @@ function App() {
     if (typeof roles === "string") {
       try {
         roles = JSON.parse(roles);
-      } catch (e) {
+      } catch {
         roles = [];
       }
     }
@@ -160,21 +168,22 @@ function App() {
     isAuthPage,
     setAuth,
   ]);
-  // Maintenance mode
+
+  // ────── MAINTENANCE MODE ──────
   useEffect(() => {
     if (MAINTENANCE_MODE && !isMaintenancePage) {
       navigate("/under-maintenance", { replace: true });
     }
   }, [MAINTENANCE_MODE, isMaintenancePage, navigate]);
 
-  // Expose setIsLoggingOut to AuthContext logout
+  // ────── WRAP LOGOUT TO SET isLoggingOut FLAG ──────
   useEffect(() => {
-    const originalLogout = auth?.logout;
-    if (originalLogout) {
+    if (auth?.logout) {
+      const original = auth.logout;
       auth.logout = async () => {
         setIsLoggingOut(true);
         try {
-          await originalLogout();
+          await original();
         } finally {
           setIsLoggingOut(false);
         }
@@ -182,8 +191,10 @@ function App() {
     }
   }, [auth]);
 
+  // ────── EARLY RETURN WHILE CHECKING AUTH ──────
   if ((MAINTENANCE_MODE && !isMaintenancePage) || !authChecked) return null;
 
+  // ────── RENDER ──────
   return (
     <>
       <Loader loading={isProfileLoading} />

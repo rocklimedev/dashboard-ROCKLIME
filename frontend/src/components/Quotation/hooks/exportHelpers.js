@@ -199,7 +199,8 @@ export const exportToExcel = async (
   logo,
   accountDetails,
   id,
-  activeVersion
+  activeVersion,
+  allBrands = []
 ) => {
   /* ---------- 1. Normalise product list ---------- */
   let productList = [];
@@ -292,7 +293,7 @@ export const exportToExcel = async (
 
   ws.mergeCells("F2:I2");
   const brandCell = ws.getCell("F2");
-  brandCell.value = brandNames || "GROHE / AMERICAN STANDARD";
+  brandCell.value = brandNames;
   brandCell.font = { bold: true };
   brandCell.alignment = { horizontal: "right" };
 

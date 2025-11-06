@@ -14,7 +14,6 @@ import {
 } from "@ant-design/icons";
 import {
   Select,
-  DatePicker,
   Button,
   Input,
   Spin,
@@ -51,7 +50,7 @@ import {
 import AddNewTeam from "./AddNewTeam";
 import AddCustomerModal from "../Customers/AddCustomerModal";
 import AddAddress from "../Address/AddAddressModal";
-
+import DatePicker from "react-datepicker";
 const { Option } = Select;
 const { Text } = Typography;
 
@@ -535,17 +534,18 @@ const AddNewOrder = ({ adminName }) => {
     });
   };
 
-  const handleFollowupDateChange = (index, date) => {
+  const handleFollowupDateChange = (index, dateMoment) => {
     const updatedDates = [...formData.followupDates];
-    updatedDates[index] = date ? date.format("YYYY-MM-DD") : "";
+    updatedDates[index] = dateMoment ? dateMoment.format("YYYY-MM-DD") : "";
+
     if (
+      dateMoment &&
       formData.dueDate &&
-      date &&
-      moment(date).isAfter(moment(formData.dueDate), "day")
+      dateMoment.isAfter(moment(formData.dueDate), "day")
     ) {
       toast.warning(`Timeline date ${index + 1} cannot be after the due date.`);
     }
-    if (date && moment(date).isBefore(moment().startOf("day"))) {
+    if (dateMoment && dateMoment.isBefore(moment().startOf("day"))) {
       toast.warning(`Timeline date ${index + 1} cannot be before today.`);
     }
     setFormData({ ...formData, followupDates: updatedDates });
@@ -564,7 +564,8 @@ const AddNewOrder = ({ adminName }) => {
       followupDates: formData.followupDates.filter((_, i) => i !== index),
     });
   };
-
+  const momentToDate = (m) => (m && m.isValid() ? m.toDate() : null);
+  const dateToMomentStr = (d) => (d ? moment(d).format("YYYY-MM-DD") : "");
   const validateOrderNo = (orderNo) => {
     if (!orderNo) return false;
     const orderNoRegex = /^\d{1,2}\d{1,2}25\d{3,}$/;
@@ -1031,23 +1032,21 @@ const AddNewOrder = ({ adminName }) => {
                   <Text strong>
                     Due Date <span style={{ color: "red" }}>*</span>
                   </Text>
-                  <CompactDatePicker
-                    value={formData.dueDate ? moment(formData.dueDate) : null}
+
+                  <DatePicker
+                    selected={momentToDate(moment(formData.dueDate))}
                     onChange={(date) =>
-                      handleChange(
-                        "dueDate",
-                        date ? date.format("YYYY-MM-DD") : ""
-                      )
+                      handleChange("dueDate", dateToMomentStr(date))
                     }
-                    format="YYYY-MM-DD"
-                    disabledDate={(current) =>
-                      current && current < moment().startOf("day")
-                    }
-                    aria-label="Select due date"
+                    dateFormat="yyyy-MM-dd"
+                    minDate={new Date()} // disable past dates
+                    placeholderText="yyyy-mm-dd"
+                    className="ant-input" // keep AntD styling
+                    wrapperClassName="w-100"
+                    customInput={<CompactInput />} // reuse your styled input
                   />
                 </FormSection>
               </Col>
-
               {/* Status */}
               <Col xs={24} md={12}>
                 <FormSection>
@@ -1432,7 +1431,6 @@ const AddNewOrder = ({ adminName }) => {
                           </FormSection>
                         </Col>
                       )}
-
                       {/* Timeline Dates */}
                       <Col xs={24}>
                         <FormSection>
@@ -1442,21 +1440,24 @@ const AddNewOrder = ({ adminName }) => {
                               key={index}
                               align="center"
                               size={4}
-                              style={{ marginBottom: 8 }}
+                              style={{ marginBottom: 8, width: "100%" }}
                             >
-                              <CompactDatePicker
-                                value={date ? moment(date) : null}
+                              <DatePicker
+                                selected={momentToDate(moment(date))}
                                 onChange={(d) =>
-                                  handleFollowupDateChange(index, d)
+                                  handleFollowupDateChange(index, moment(d))
                                 }
-                                format="YYYY-MM-DD"
-                                disabledDate={(c) =>
-                                  c &&
-                                  (c < moment().startOf("day") ||
-                                    (formData.dueDate &&
-                                      c >
-                                        moment(formData.dueDate).endOf("day")))
+                                dateFormat="yyyy-MM-dd"
+                                minDate={new Date()}
+                                maxDate={
+                                  formData.dueDate
+                                    ? moment(formData.dueDate).toDate()
+                                    : null
                                 }
+                                placeholderText="yyyy-mm-dd"
+                                className="ant-input"
+                                wrapperClassName="w-100"
+                                customInput={<CompactInput />}
                               />
                               <Button
                                 type="text"
@@ -1466,6 +1467,7 @@ const AddNewOrder = ({ adminName }) => {
                               />
                             </Space>
                           ))}
+
                           <Button
                             type="primary"
                             onClick={addFollowupDate}

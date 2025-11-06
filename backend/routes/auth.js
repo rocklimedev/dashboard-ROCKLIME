@@ -11,6 +11,7 @@ const {
   validateResetToken,
   changePassword,
   getAllPermissionsOfLoggedInUser,
+  validateToken,
 } = require("../controller/authController");
 const checkPermission = require("../middleware/permission");
 const { auth } = require("../middleware/auth"); // Authentication Middleware
@@ -60,4 +61,5 @@ router.post("/resend-verification", resendVerificationEmail); // New endpoint
 
 router.get("/me/permissions", auth, getAllPermissionsOfLoggedInUser);
 
+router.get("/validate-token", validateToken);
 module.exports = router;

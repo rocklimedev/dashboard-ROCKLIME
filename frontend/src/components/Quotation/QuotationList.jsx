@@ -402,6 +402,7 @@ View: ${window.location.origin}/quotations/${quotation.quotationId}
       key: "referenceNumber",
       width: 150,
     },
+    // Inside the columns definition (Products column)
     {
       title: "Products",
       dataIndex: "products",
@@ -410,7 +411,7 @@ View: ${window.location.origin}/quotations/${quotation.quotationId}
       render: (_, rec) => (
         <button
           className="btn btn-link"
-          onClick={() => handleOpenProductModal(rec.products, rec)}
+          onClick={() => handleOpenProductModal(rec)} // <-- pass whole row
           style={{ color: "#e31e24" }}
         >
           Quick View ({getProductCount(rec.products)})
@@ -662,18 +663,15 @@ View: ${window.location.origin}/quotations/${quotation.quotationId}
     }
   };
 
-  const handleOpenProductModal = (products, quotation) => {
-    const parsed =
-      typeof products === "string"
-        ? JSON.parse(products || "[]")
-        : products || [];
-    setSelectedProducts(parsed);
-    setSelectedQuotation(quotation);
+  // Handler
+  const handleOpenProductModal = (quotation) => {
+    setSelectedQuotation(quotation); // whole object as fallback
     setShowProductModal(true);
   };
+  // Close handler stays the same
   const handleCloseProductModal = () => {
     setShowProductModal(false);
-    setSelectedProducts([]);
+    setSelectedQuotation(null);
   };
 
   const handleOpenInvoiceModal = (q) => {
@@ -854,11 +852,12 @@ View: ${window.location.origin}/quotations/${quotation.quotationId}
         </div>
 
         {/* -------------------------- Modals -------------------------- */}
+
         <QuotationProductModal
           show={showProductModal}
           onHide={handleCloseProductModal}
-          products={selectedProducts}
-          selectedQuotation={selectedQuotation}
+          quotationId={selectedQuotation?.quotationId} // <-- fetch from API
+          fallbackQuotation={selectedQuotation} // <-- immediate UI (no flash)
         />
 
         {showDeleteModal && (

@@ -1,25 +1,76 @@
-import { createContext, useContext, useState, useEffect } from "react";
-import { authApi, useGetMyPermissionsQuery } from "../api/authApi";
+// src/context/AuthContext.jsx
+import React, { createContext, useContext, useState, useEffect } from "react";
+import {
+  useGetMyPermissionsQuery,
+  useValidateTokenQuery,
+} from "../api/authApi";
+import { isTokenExpired, clearAuthStorage } from "./jwt";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [auth, setAuth] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [storedToken, setStoredToken] = useState(null);
 
-  // Step 1: Load token from storage
+  // ────── STEP 1: Load token from storage ──────
   useEffect(() => {
     const token =
       localStorage.getItem("token") || sessionStorage.getItem("token");
-    if (token) {
-      setAuth({ token, user: null, permissions: null });
+
+    if (!token) {
+      setAuthChecked(true);
+      return;
     }
-    setAuthChecked(true);
+
+    if (isTokenExpired(token)) {
+      console.warn("Token expired (client) → clearing");
+      clearAuthStorage();
+      setAuthChecked(true);
+      return;
+    }
+
+    setStoredToken(token);
   }, []);
 
-  // Step 2: Sync across tabs
+  // ────── STEP 2: Validate token (only if we have one) ──────
+  const {
+    isLoading: isValidating,
+    isSuccess: isTokenValid,
+    isError: isTokenInvalid,
+    error: validationError,
+  } = useValidateTokenQuery(undefined, {
+    skip: !storedToken,
+  });
+
+  // ────── STEP 3: Finalize auth AFTER validation completes ──────
   useEffect(() => {
-    const handleStorageChange = () => {
+    if (!storedToken) return;
+
+    // Wait until validation is done
+    if (isValidating) return;
+
+    if (isTokenValid) {
+      setAuth({ token: storedToken, user: null, permissions: null });
+    } else if (isTokenInvalid) {
+      console.warn("Server rejected token:", validationError);
+      clearAuthStorage();
+      setAuth(null);
+    }
+
+    // ← Always set authChecked = true once validation is done
+    setAuthChecked(true);
+  }, [
+    storedToken,
+    isValidating,
+    isTokenValid,
+    isTokenInvalid,
+    validationError,
+  ]);
+
+  // ────── STEP 4: Sync across tabs ──────
+  useEffect(() => {
+    const handleStorage = () => {
       const token =
         localStorage.getItem("token") || sessionStorage.getItem("token");
       if (token && (!auth || auth.token !== token)) {
@@ -28,21 +79,17 @@ export const AuthProvider = ({ children }) => {
         setAuth(null);
       }
     };
-
-    window.addEventListener("storage", handleStorageChange);
-    handleStorageChange(); // Immediate check
-
-    return () => window.removeEventListener("storage", handleStorageChange);
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
   }, [auth]);
 
-  // Step 3: Fetch permissions when token exists
+  // ────── STEP 5: Fetch permissions ──────
   const { data: permissionsData, isLoading: isLoadingPermissions } =
     useGetMyPermissionsQuery(undefined, {
-      skip: !auth?.token, // Only run if logged in
+      skip: !auth?.token,
       refetchOnMountOrArgChange: true,
     });
 
-  // Step 4: Update auth state with permissions
   useEffect(() => {
     if (permissionsData && auth?.token) {
       setAuth((prev) => ({
@@ -53,28 +100,19 @@ export const AuthProvider = ({ children }) => {
     }
   }, [permissionsData, auth?.token]);
 
-  // Optional: Auto-refresh permissions on reconnect
-  useEffect(() => {
-    if (auth?.token && !isLoadingPermissions && !permissionsData) {
-      // Trigger refetch if permissions missing
-    }
-  }, [auth?.token, isLoadingPermissions, permissionsData]);
-
-  // Login helper
-  const login = (token, user) => {
+  // ────── Helpers ──────
+  const login = (token, user = null) => {
     return new Promise((resolve) => {
       setAuth({ token, user, permissions: null });
-      localStorage.setItem("token", token); // or sessionStorage
+      sessionStorage.setItem("token", token);
       resolve();
     });
   };
 
-  // Logout helper
   const logout = () => {
     return new Promise((resolve) => {
       setAuth(null);
-      localStorage.removeItem("token");
-      sessionStorage.removeItem("token");
+      clearAuthStorage();
       resolve();
     });
   };
@@ -87,7 +125,7 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         authChecked,
-        isLoadingPermissions, // Optional: expose loading state
+        isLoadingPermissions,
       }}
     >
       {children}

@@ -102,6 +102,12 @@ export const authApi = baseApi.injectEndpoints({
       }),
       providesTags: ["Permissions", "Auth"],
     }),
+    validateToken: builder.query({
+      query: () => ({
+        url: "/auth/validate-token",
+        method: "GET",
+      }),
+    }),
   }),
 });
 
@@ -110,6 +116,7 @@ export const {
   useResendVerificationEmailMutation,
   useRegisterMutation,
   useLoginMutation,
+  useValidateTokenQuery,
   useLogoutMutation,
   useForgotPasswordMutation,
   useResetPasswordMutation,

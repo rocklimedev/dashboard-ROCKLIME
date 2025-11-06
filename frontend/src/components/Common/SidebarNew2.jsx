@@ -192,19 +192,28 @@ const SidebarNew = ({
           </div>
         </div>
 
-        {/* ---------- LOGOUT BUTTON ---------- */}
-        <div className="p-3 mt-auto border-top">
-          <button
-            onClick={handleLogout}
-            disabled={isLoggingOut}
-            className={`btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2 ${
-              isSidebarOpen ? "" : "py-2 px-0"
-            }`}
-            title="Logout"
-          >
-            <BiLogOut size={20} />
-            {isSidebarOpen && (isLoggingOut ? "Logging out..." : "Logout")}
-          </button>
+        <div className="sidebar-logout mt-auto">
+          <ul className="p-3 pt-0 border-top">
+            <li>
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleLogout();
+                }}
+                className={`d-flex align-items-center gap-2 text-danger ${
+                  isSidebarOpen ? "" : "justify-content-center"
+                }`}
+                style={{ cursor: "pointer" }}
+                title={!isSidebarOpen ? "Logout" : ""}
+              >
+                <BiLogOut size={20} />
+                {isSidebarOpen && (
+                  <span>{isLoggingOut ? "Logging out..." : "Logout"}</span>
+                )}
+              </a>
+            </li>
+          </ul>
         </div>
       </div>
     </div>

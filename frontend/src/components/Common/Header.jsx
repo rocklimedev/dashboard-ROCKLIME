@@ -103,9 +103,6 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
             <h6 className="fw-medium mb-0">
               @{user?.user?.username || "John Smilga"}
             </h6>
-            <p className="mb-0 text-muted">
-              {user?.user?.roles?.join(", ") || "Admin"}
-            </p>
           </div>
         </Menu.Item>
         <Menu.Divider />
@@ -114,7 +111,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
           onClick={() => navigate(`/u/${userId}`)}
           icon={<FaUserCircle className="me-2" />}
         >
-          My Profile
+          Profile
         </Menu.Item>
         <Menu.Item
           key="settings"

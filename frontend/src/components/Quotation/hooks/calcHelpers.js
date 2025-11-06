@@ -90,52 +90,59 @@ export const calcTotals = (
   includeGst = false,
   productDetailsMap = {},
   extraDiscount = 0,
-  extraDiscountType = "amount", // "amount" | "percent"
+  extraDiscountType = "amount",
   roundOff = 0
 ) => {
-  /* ---- 1. Sub-total (after per-item discount) ---- */
+  // === SAFELY PARSE ALL INPUTS ===
+  const safeGstRate = Number(gstRate) || 0;
+  const safeIncludeGst = Boolean(includeGst);
+  const safeExtraDiscount = Number(extraDiscount) || 0;
+  const safeExtraDiscountType = String(
+    extraDiscountType || "amount"
+  ).toLowerCase();
+  const safeRoundOff = Number(roundOff) || 0;
+
+  // === 1. Subtotal (after per-item discount) ===
   let subtotal = 0;
 
   products.forEach((p) => {
     const qty = Number(p.quantity) || 1;
-
-    // MRP comes from the parsed product string (productDetailsMap)
     const detail = productDetailsMap[p.productId] || {};
     const mrp = Number(detail.sellingPrice) || 0;
-
-    // p.total = line total **after** the per-item discount
     const lineTotal = Number(p.total) || 0;
 
-    // safety – line total must never exceed MRP * qty
+    // Optional: warn if lineTotal > mrp * qty
     if (lineTotal > mrp * qty) {
-      console.warn("Invalid line total for product", p);
+      console.warn("Line total exceeds MRP", { p, mrp, qty, lineTotal });
     }
 
     subtotal += lineTotal;
   });
 
-  /* ---- 2. Extra discount (percent or flat) ---- */
+  // === 2. Extra Discount ===
   let extraDiscountAmt = 0;
-  if (extraDiscountType === "percent") {
-    extraDiscountAmt = subtotal * (Number(extraDiscount) / 100);
-  } else {
-    extraDiscountAmt = Number(extraDiscount);
+  if (safeExtraDiscount > 0) {
+    if (safeExtraDiscountType === "percent") {
+      extraDiscountAmt = subtotal * (safeExtraDiscount / 100);
+    } else {
+      extraDiscountAmt = safeExtraDiscount;
+    }
   }
 
   const amountAfterDiscount = subtotal - extraDiscountAmt;
 
-  /* ---- 3. GST (optional) ---- */
-  const gstAmount = includeGst
-    ? (amountAfterDiscount * Number(gstRate)) / 100
+  // === 3. GST ===
+  const gstAmount = safeIncludeGst
+    ? (amountAfterDiscount * safeGstRate) / 100
     : 0;
 
-  /* ---- 4. Final total + round-off ---- */
-  let total = amountAfterDiscount + gstAmount + Number(roundOff);
+  // === 4. Final Total + Round-off ===
+  let total = amountAfterDiscount + gstAmount + safeRoundOff;
 
-  /* ---- 5. Return everything the UI needs ---- */
+  // === 5. Return ===
   return {
     subtotal: Number(subtotal.toFixed(2)),
-    extraDiscountAmt: Number(extraDiscountAmt.toFixed(2)), // <-- NEW
+    extraDiscountAmt: Number(extraDiscountAmt.toFixed(2)),
     amountAfterDiscount: Number(amountAfterDiscount.toFixed(2)),
     gst: Number(gstAmount.toFixed(2)),
     total: Number(total.toFixed(2)),
