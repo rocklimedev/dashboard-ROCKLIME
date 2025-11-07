@@ -61,7 +61,7 @@ const SidebarNew = ({
           <img src={logo} alt="Logo" />
         </NavLink>
         <NavLink to="/" className="logo-small">
-          <img src={logo} alt="Logo" />
+          <img src={logo_small} alt="Logo" />
         </NavLink>
         <NavLink to="/" className="logo logo-white">
           <img src={logo} alt="Logo" />
@@ -79,8 +79,8 @@ const SidebarNew = ({
         </a>
       </div>
 
-      {/* ---------- MENU + LOGOUT CONTAINER ---------- */}
-      <div className="d-flex flex-column flex-grow-1">
+      {/* ---------- MENU SECTION ---------- */}
+      <div className="flex-grow-1 d-flex flex-column overflow-hidden">
         <div className="sidebar-inner slimscroll flex-grow-1">
           <div id="sidebar-menu" className="sidebar-menu">
             <ul>
@@ -192,8 +192,9 @@ const SidebarNew = ({
           </div>
         </div>
 
-        <div className="sidebar-logout mt-auto">
-          <ul className="p-3 pt-0 border-top">
+        {/* ---------- LOGOUT BUTTON AT BOTTOM ---------- */}
+        <div className="sidebar-menu border-top">
+          <ul>
             <li>
               <a
                 href="#"
@@ -204,8 +205,20 @@ const SidebarNew = ({
                 className={`d-flex align-items-center gap-2 text-danger ${
                   isSidebarOpen ? "" : "justify-content-center"
                 }`}
-                style={{ cursor: "pointer" }}
+                style={{
+                  cursor: "pointer",
+                  fontWeight: 500,
+                  borderRadius: "8px",
+                  padding: isSidebarOpen ? "10px 12px" : "10px",
+                  transition: "background 0.2s ease",
+                }}
                 title={!isSidebarOpen ? "Logout" : ""}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = "#f8d7da")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = "transparent")
+                }
               >
                 <BiLogOut size={20} />
                 {isSidebarOpen && (

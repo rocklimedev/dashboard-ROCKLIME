@@ -113,6 +113,7 @@ const QuotationForm = ({
   gst,
   gstAmount,
   setGst,
+  onShippingChange,
   handleAddCustomer,
   handleAddAddress,
   setActiveTab,
@@ -278,30 +279,26 @@ const QuotationForm = ({
                   </Text>
                 </Col>
                 <Col span={16}>
-                  <MiniSelect
-                    value={selectedCustomer}
-                    onChange={(v) => {
-                      setSelectedCustomer(v);
-                      setQuotationData((p) => ({ ...p, shipTo: null }));
-                      setUseBillingAddress(false);
-                    }}
-                    loading={customersLoading}
-                  >
-                    {customers.map((c) => (
-                      <Option key={c.customerId} value={c.customerId}>
-                        {c.name}
-                      </Option>
-                    ))}
-                  </MiniSelect>
-                  <Button
-                    type="link"
-                    icon={<UserAddOutlined />}
-                    onClick={handleAddCustomer}
-                    block
-                    size="small"
-                  >
-                    Add
-                  </Button>
+                  <Space.Compact block>
+                    <MiniSelect
+                      value={selectedCustomer}
+                      onChange={(v) => {
+                        setSelectedCustomer(v);
+                        setQuotationData((p) => ({ ...p, shipTo: null }));
+                        setUseBillingAddress(false);
+                      }}
+                      loading={customersLoading}
+                    >
+                      {customers.map((c) => (
+                        <Option key={c.customerId} value={c.customerId}>
+                          {c.name}
+                        </Option>
+                      ))}
+                    </MiniSelect>
+                    <Button type="primary" onClick={handleAddCustomer}>
+                      +
+                    </Button>
+                  </Space.Compact>
                 </Col>
               </TightRow>
             </Panel>
@@ -315,39 +312,40 @@ const QuotationForm = ({
                   </Text>
                 </Col>
                 <Col span={16}>
-                  <MiniSelect
-                    value={
-                      useBillingAddress ? "sameAsBilling" : quotationData.shipTo
-                    }
-                    onChange={(v) => {
-                      if (v === "sameAsBilling") setUseBillingAddress(true);
-                      else {
-                        setUseBillingAddress(false);
-                        handleQuotationChange("shipTo", v);
+                  <Space.Compact block>
+                    <MiniSelect
+                      value={
+                        useBillingAddress
+                          ? "sameAsBilling"
+                          : quotationData.shipTo
                       }
-                    }}
-                    loading={addressesLoading || isCreatingAddress}
-                    disabled={!selectedCustomer}
-                  >
-                    {defaultAddress && (
-                      <Option value="sameAsBilling">Same as Billing</Option>
-                    )}
-                    {filteredAddresses.map((a) => (
-                      <Option key={a.addressId} value={a.addressId}>
-                        {`${a.street}, ${a.city} (${a.status})`}
-                      </Option>
-                    ))}
-                  </MiniSelect>
-                  <Button
-                    type="link"
-                    icon={<UserAddOutlined />}
-                    onClick={handleAddAddress}
-                    block
-                    size="small"
-                    disabled={!selectedCustomer}
-                  >
-                    Add
-                  </Button>
+                      onChange={(v) => {
+                        if (v === "sameAsBilling") setUseBillingAddress(true);
+                        else {
+                          setUseBillingAddress(false);
+                          handleQuotationChange("shipTo", v);
+                        }
+                      }}
+                      loading={addressesLoading || isCreatingAddress}
+                      disabled={!selectedCustomer}
+                    >
+                      {defaultAddress && (
+                        <Option value="sameAsBilling">Same as Billing</Option>
+                      )}
+                      {filteredAddresses.map((a) => (
+                        <Option key={a.addressId} value={a.addressId}>
+                          {`${a.street}, ${a.city} (${a.status})`}
+                        </Option>
+                      ))}
+                    </MiniSelect>
+                    <Button
+                      type="primary"
+                      onClick={handleAddAddress}
+                      disabled={!selectedCustomer}
+                    >
+                      +
+                    </Button>
+                  </Space.Compact>
                 </Col>
               </TightRow>
             </Panel>
@@ -463,7 +461,26 @@ const QuotationForm = ({
                   </Text>
                 </Col>
               </TightRow>
-
+              <TightRow gutter={8}>
+                <Col span={8}>
+                  <Text strong>Shipping</Text>
+                </Col>
+                <Col span={16}>
+                  <Space.Compact block>
+                    <MiniNumber
+                      value={shipping}
+                      onChange={onShippingChange}
+                      min={0}
+                      step={1}
+                      placeholder="0"
+                      addonAfter="₹"
+                    />
+                  </Space.Compact>
+                  <Text type="secondary" style={{ fontSize: 11 }} block>
+                    +₹{(Number(shipping) || 0).toFixed(2)}
+                  </Text>
+                </Col>
+              </TightRow>
               <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>Round Off</Text>

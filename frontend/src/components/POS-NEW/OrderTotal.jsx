@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useMemo } from "react";
+// OrderTotal.jsx  –  NEW VERSION (copy-paste)
+
+import React, { useMemo } from "react";
 import PropTypes from "prop-types";
-import { Input, Tag, Table } from "antd";
+import { Table, Tag } from "antd";
 import { EditOutlined } from "@ant-design/icons";
 
 const formatCurrency = (value) =>
@@ -11,42 +13,18 @@ const formatCurrency = (value) =>
     maximumFractionDigits: 2,
   }).format(Math.abs(value) || 0);
 
-/* -------------------------------------------------------------------------- */
-/*                               MAIN COMPONENT                               */
-/* -------------------------------------------------------------------------- */
 const OrderTotal = React.memo(
   ({
     shipping = 0,
     tax = 0,
     roundOff = 0,
     subTotal = 0,
-    discount = 0, // <-- **total of per-item discounts** (orig-price – discounted-price)
-    extraDiscount = 0, // <-- amount already calculated in the form
+    discount = 0,
+    extraDiscount = 0,
     gst = 0,
     gstAmount = 0,
     finalTotal: finalTotalProp,
-    onShippingChange,
   }) => {
-    /* --------------------------- Editable Shipping -------------------------- */
-    const [isEditingShipping, setIsEditingShipping] = useState(false);
-    const [shippingInput, setShippingInput] = useState(shipping.toString());
-
-    useEffect(() => setShippingInput(shipping.toString()), [shipping]);
-
-    const handleShippingChange = (e) => {
-      const val = e.target.value;
-      if (/^\d*\.?\d*$/.test(val)) setShippingInput(val);
-    };
-
-    const handleShippingSubmit = () => {
-      const newVal = parseFloat(shippingInput) || 0;
-      onShippingChange?.(newVal);
-      setIsEditingShipping(false);
-    };
-
-    const handleKeyPress = (e) => e.key === "Enter" && handleShippingSubmit();
-
-    /* --------------------------- Safe Numbers --------------------------- */
     const safe = (n) => (typeof n === "number" && !isNaN(n) ? n : 0);
 
     const safeSubTotal = safe(subTotal);
@@ -58,21 +36,19 @@ const OrderTotal = React.memo(
     const safeGst = safe(gst);
     const safeGstAmount = safe(gstAmount);
 
-    /* --------------------------- Calculations (NO ITEM-LEVEL RE-CALC) --------------------------- */
     const calculations = useMemo(() => {
-      // 1. Sub-total – already includes original prices
-      const taxable = safeSubTotal - safeDiscount; // after per-item discounts
-      const afterTax = taxable + safeTax; // any extra tax (rare)
-      const afterExtra = afterTax - safeExtraDiscount; // extra % / fixed discount
-      const afterShipping = afterExtra + safeShipping; // shipping
-      const afterGst = afterShipping + safeGstAmount; // GST
+      const taxable = safeSubTotal - safeDiscount;
+      const afterTax = taxable + safeTax;
+      const afterExtra = afterTax - safeExtraDiscount;
+      const afterShipping = afterExtra + safeShipping;
+      const afterGst = afterShipping + safeGstAmount;
       const beforeRound = afterGst;
       const calculated = beforeRound + safeRoundOff;
 
       const final =
         finalTotalProp != null && !isNaN(finalTotalProp)
           ? finalTotalProp
-          : Math.round(calculated); // nearest rupee
+          : Math.round(calculated);
 
       return {
         taxable,
@@ -95,54 +71,44 @@ const OrderTotal = React.memo(
       finalTotalProp,
     ]);
 
-    /* --------------------------- Table Columns --------------------------- */
     const columns = [
       {
         title: "Description",
         dataIndex: "label",
         key: "label",
-        render: (text, record) =>
-          record.isTotal ? <strong>{text}</strong> : text,
+        render: (text, r) => (r.isTotal ? <strong>{text}</strong> : text),
       },
       {
         title: "Amount",
         dataIndex: "amount",
         key: "amount",
         align: "right",
-        render: (amount, record) => {
-          const formatted = formatCurrency(amount);
-          if (record.isNegative)
-            return <span className="text-danger">-{formatted}</span>;
-          if (record.isPositive)
-            return <span className="text-success">+{formatted}</span>;
-          if (record.isTotal)
+        render: (amount, r) => {
+          const f = formatCurrency(amount);
+          if (r.isNegative)
+            return <span style={{ color: "#e74c3c" }}>-{f}</span>;
+          if (r.isPositive)
+            return <span style={{ color: "#27ae60" }}>+{f}</span>;
+          if (r.isTotal)
             return (
               <strong style={{ fontSize: "18px", color: "#e31e24" }}>
-                {formatted}
+                {f}
               </strong>
             );
-          return formatted;
+          return f;
         },
       },
     ];
 
     const dataSource = [
       { key: "subtotal", label: "Sub Total", amount: safeSubTotal },
-
-      // **Per-item discount** – comes straight from the cart API
       {
         key: "item-discount",
         label: "Discount (Items)",
         amount: safeDiscount,
-        isNegative: true,
+        isNegative: safeDiscount > 0,
       },
-
-      // “Final Amount” = sub-total – item-discounts (no re-calc)
-      {
-        key: "after-tax",
-        label: "Final Amount",
-        amount: calculations.taxable,
-      },
+      { key: "after-tax", label: "Final Amount", amount: calculations.taxable },
 
       ...(safeExtraDiscount > 0
         ? [
@@ -159,8 +125,7 @@ const OrderTotal = React.memo(
         key: "shipping",
         label: "Shipping",
         amount: safeShipping,
-        isPositive: true,
-        renderEdit: true,
+        isPositive: safeShipping > 0,
       },
 
       ...(safeGst > 0
@@ -200,69 +165,16 @@ const OrderTotal = React.memo(
       },
     ];
 
-    /* --------------------------- Render --------------------------- */
     return (
-      <div className="block-section order-method bg-light m-0">
-        <div className="order-total">
-          <Table
-            columns={columns}
-            dataSource={dataSource}
-            pagination={false}
-            bordered={false}
-            size="small"
-            rowClassName={(record) =>
-              record.isTotal ? "ant-table-row-total" : ""
-            }
-            onRow={(record) => ({
-              onClick: () => {
-                if (record.renderEdit) setIsEditingShipping(true);
-              },
-            })}
-          />
-
-          {/* Inline editing overlay */}
-          {isEditingShipping && (
-            <div
-              style={{
-                position: "absolute",
-                right: 16,
-                top: 16,
-                zIndex: 10,
-              }}
-            >
-              <Input
-                value={shippingInput}
-                onChange={handleShippingChange}
-                onBlur={handleShippingSubmit}
-                onKeyPress={handleKeyPress}
-                style={{
-                  width: 100,
-                  fontSize: 14,
-                  background: "transparent",
-                }}
-                autoFocus
-              />
-            </div>
-          )}
-
-          {/* Tag fallback (click-to-edit) */}
-          {!isEditingShipping && safeShipping > 0 && (
-            <Tag
-              color="blue"
-              style={{
-                cursor: "pointer",
-                fontSize: "14px",
-                padding: "4px 8px",
-                position: "absolute",
-                right: 16,
-                top: 16,
-              }}
-              onClick={() => setIsEditingShipping(true)}
-            >
-              {formatCurrency(safeShipping)} <EditOutlined />
-            </Tag>
-          )}
-        </div>
+      <div className="order-total">
+        <Table
+          columns={columns}
+          dataSource={dataSource}
+          pagination={false}
+          bordered={false}
+          size="small"
+          rowClassName={(r) => (r.isTotal ? "ant-table-row-total" : "")}
+        />
       </div>
     );
   }
@@ -280,11 +192,10 @@ OrderTotal.propTypes = {
   gst: PropTypes.number,
   gstAmount: PropTypes.number,
   finalTotal: PropTypes.number,
-  onShippingChange: PropTypes.func,
 };
 
 OrderTotal.defaultProps = {
-  onShippingChange: () => {},
+  shipping: 0,
   extraDiscount: 0,
   finalTotal: undefined,
 };

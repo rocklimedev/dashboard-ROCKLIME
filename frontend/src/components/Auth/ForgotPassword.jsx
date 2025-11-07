@@ -1,38 +1,42 @@
+// src/pages/auth/ForgotPassword.jsx
 import React, { useState, useEffect } from "react";
 import { useForgotPasswordMutation } from "../../api/authApi";
+import { useGetProfileQuery } from "../../api/userApi";
 import { toast } from "sonner";
 import logo from "../../assets/img/logo.png";
-import { Spinner } from "react-bootstrap";
-import { useGetProfileQuery } from "../../api/userApi";
 import { MailOutlined } from "@ant-design/icons";
+
 const ForgotPassword = () => {
-  const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
+  const [forgotPassword] = useForgotPasswordMutation();
   const {
     data: profile,
     isLoading: profileLoading,
     error: profileError,
   } = useGetProfileQuery();
+
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
   const [useManualInput, setUseManualInput] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
-  const [countdown, setCountdown] = useState(15); // 15-second countdown
+  const [countdown, setCountdown] = useState(15); // 15-second auto-close
 
+  // ────── EMAIL VALIDATION ──────
   const validateEmail = (value) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!value || value.trim() === "") return "Email is required";
+    if (!value?.trim()) return "Email is required";
     if (!emailRegex.test(value.trim()))
       return "Please enter a valid email address";
     return "";
   };
 
+  // ────── AUTO-FILL FROM PROFILE ──────
   useEffect(() => {
     if (!profileLoading && !profileError && profile?.user?.email) {
-      const fetchedEmail = String(profile.user.email);
-      const validationError = validateEmail(fetchedEmail);
-      setEmail(fetchedEmail);
-      setEmailError(validationError);
-      setUseManualInput(validationError !== "");
+      const fetched = String(profile.user.email);
+      const err = validateEmail(fetched);
+      setEmail(fetched);
+      setEmailError(err);
+      setUseManualInput(err !== "");
     } else if (!profileLoading && (profileError || !profile?.user?.email)) {
       setUseManualInput(true);
       setEmail("");
@@ -40,44 +44,46 @@ const ForgotPassword = () => {
     }
   }, [profile, profileLoading, profileError]);
 
+  // ────── AUTO-CLOSE COUNTDOWN ──────
   useEffect(() => {
-    let timer;
-    if (emailSent && countdown > 0) {
-      timer = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            try {
-              window.close(); // Attempt to close the tab
-            } catch (e) {
-              console.warn("Window close failed:", e);
-            }
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(timer); // Clean up timer on unmount
+    if (!emailSent || countdown === 0) return;
+
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          try {
+            window.close();
+          } catch (_) {}
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
   }, [emailSent, countdown]);
 
+  // ────── SUBMIT ──────
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const validationError = validateEmail(email);
-    if (validationError) {
-      setEmailError(validationError);
-      toast.error(validationError);
+    const err = validateEmail(email);
+    if (err) {
+      setEmailError(err);
+      toast.error(err);
       return;
     }
 
     try {
-      const response = await forgotPassword({ email: email.trim() }).unwrap();
-      setEmailSent(true); // Show success message and start timer
+      await forgotPassword({ email: email.trim() }).unwrap();
+      setEmailSent(true);
+      toast.success("Reset link sent! Check your inbox (and spam).");
     } catch (error) {
       toast.error(error?.data?.message || "Failed to send reset link.");
     }
   };
 
+  // ────── RENDER ──────
   return (
     <div className="main-wrapper">
       <div className="account-content">
@@ -88,13 +94,15 @@ const ForgotPassword = () => {
                 <div className="login-logo">
                   <img src={logo} alt="CM Trading Co Logo" />
                 </div>
+
+                {/* ────── SUCCESS STATE ────── */}
                 {emailSent ? (
                   <div
                     className="card"
                     style={{
                       border: "1px solid #eee",
                       borderRadius: "8px",
-                      backgroundColor: "#ffffff",
+                      backgroundColor: "#fff",
                     }}
                   >
                     <div
@@ -118,19 +126,19 @@ const ForgotPassword = () => {
                       <p style={{ marginBottom: "20px" }}>
                         A password reset link has been sent to{" "}
                         <strong>{email}</strong>. Please check your email (and
-                        spam/junk folder) to reset your password.
+                        spam/junk folder).
                       </p>
                       <p style={{ marginBottom: "20px" }}>
                         This tab will close in{" "}
                         <strong style={{ color: "#e31e24" }}>
                           {countdown} seconds
                         </strong>
-                        . If it doesn’t close automatically, please close it
-                        manually.
+                        . If it doesn’t close, please close it manually.
                       </p>
                     </div>
                   </div>
                 ) : (
+                  /* ────── FORM STATE ────── */
                   <form onSubmit={handleSubmit}>
                     <div className="card">
                       <div className="card-body p-5">
@@ -138,6 +146,8 @@ const ForgotPassword = () => {
                           <h3>Forgot Password?</h3>
                           <h4>We'll send a reset link to your email.</h4>
                         </div>
+
+                        {/* EMAIL INPUT */}
                         <div className="mb-3">
                           <label className="form-label">
                             Email <span className="text-danger">*</span>
@@ -158,9 +168,7 @@ const ForgotPassword = () => {
                               placeholder={
                                 useManualInput ? "Enter your email" : ""
                               }
-                              disabled={
-                                isLoading || profileLoading || !useManualInput
-                              }
+                              disabled={profileLoading || !useManualInput}
                             />
                             <span className="input-group-text border-start-0">
                               <MailOutlined />
@@ -171,6 +179,8 @@ const ForgotPassword = () => {
                               </div>
                             )}
                           </div>
+
+                          {/* PROFILE FETCH ERROR */}
                           {(profileError || !profile?.user?.email) &&
                             !profileLoading && (
                               <div className="text-danger mt-2">
@@ -179,35 +189,22 @@ const ForgotPassword = () => {
                               </div>
                             )}
                         </div>
+
+                        {/* SUBMIT BUTTON */}
                         <div className="form-login">
                           <button
                             type="submit"
                             className="btn btn-login"
                             disabled={
-                              isLoading ||
-                              profileLoading ||
-                              emailError ||
-                              !email.trim()
+                              profileLoading || emailError || !email.trim()
                             }
+                            style={{ minWidth: "160px" }}
                           >
-                            {isLoading ? (
-                              <>
-                                <Spinner
-                                  as="span"
-                                  animation="border"
-                                  size="sm"
-                                  role="status"
-                                  aria-hidden="true"
-                                  className="me-2"
-                                />
-                                Sending...
-                              </>
-                            ) : (
-                              "Send Reset Link"
-                            )}
+                            Send Reset Link
                           </button>
                         </div>
-                        <div className="signinform text-center">
+
+                        <div className="signinform text-center mt-3">
                           <h4>
                             Return to{" "}
                             <a href="/login" className="hover-a">

@@ -34,11 +34,6 @@
   border: none !important;
 }
 
-/* Logo cell */
-.logo-cell {
-  width: 30%;
-  text-align: left;
-}
 
 /* Title cell */
 .title-cell {
@@ -55,11 +50,6 @@
   font-weight: bold;
 }
 
-/* Logo image */
-.logo-img {
-  height: 50px;
-  max-width: 100%; /* Ensure logo doesn't overflow */
-}
 
 /* Product image */
 .product-img {

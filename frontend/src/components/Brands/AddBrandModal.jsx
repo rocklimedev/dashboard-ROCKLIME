@@ -4,7 +4,7 @@ import {
   useUpdateBrandMutation,
   useGetAllBrandsQuery,
 } from "../../api/brandsApi";
-import { toast } from "sonner"; // Changed import
+import { toast } from "sonner";
 
 const AddBrand = ({ onClose, existingBrand }) => {
   const [formData, setFormData] = useState({
@@ -14,8 +14,8 @@ const AddBrand = ({ onClose, existingBrand }) => {
   });
 
   const { data: allBrands = [] } = useGetAllBrandsQuery();
-  const [createBrand, { isLoading: isCreating }] = useCreateBrandMutation();
-  const [updateBrand, { isLoading: isUpdating }] = useUpdateBrandMutation();
+  const [createBrand] = useCreateBrandMutation();
+  const [updateBrand] = useUpdateBrandMutation();
 
   useEffect(() => {
     if (existingBrand) {
@@ -42,11 +42,10 @@ const AddBrand = ({ onClose, existingBrand }) => {
     const { brandName, brandSlug, id } = formData;
 
     if (!brandName || !brandSlug) {
-      toast.error("Please fill in all fields."); // Sonner toast
+      toast.error("Please fill in all fields.");
       return;
     }
 
-    // Check for duplicate brandSlug (excluding current brand if editing)
     const isDuplicate = allBrands.some(
       (brand) =>
         brand.brandSlug.toLowerCase() === brandSlug.toLowerCase() &&
@@ -54,7 +53,7 @@ const AddBrand = ({ onClose, existingBrand }) => {
     );
 
     if (isDuplicate) {
-      toast.error("This brand slug is already taken."); // Sonner toast
+      toast.error("This brand slug is already taken.");
       return;
     }
 
@@ -69,7 +68,7 @@ const AddBrand = ({ onClose, existingBrand }) => {
         onClose();
       }, 2000);
     } catch (err) {
-      toast.error(err?.data?.message || "Failed to submit brand. Try again."); // Sonner toast
+      toast.error(err?.data?.message || "Failed to submit brand. Try again.");
     }
   };
 
@@ -124,16 +123,8 @@ const AddBrand = ({ onClose, existingBrand }) => {
               >
                 Cancel
               </button>
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={isCreating || isUpdating}
-              >
-                {isCreating || isUpdating
-                  ? "Saving..."
-                  : formData.id
-                  ? "Update Brand"
-                  : "Add Brand"}
+              <button type="submit" className="btn btn-primary">
+                {formData.id ? "Update Brand" : "Add Brand"}
               </button>
             </div>
           </form>
