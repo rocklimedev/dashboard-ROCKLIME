@@ -232,15 +232,32 @@ const CategoryManagement = () => {
       width: 70,
       render: (_, record) => {
         let imageUrl = null;
-        try {
-          if (record.images) {
-            const images = JSON.parse(record.images);
-            imageUrl = Array.isArray(images) ? images[0] : record.images;
+
+        // Safely parse images
+        if (record.images && typeof record.images === "string") {
+          try {
+            const parsed = JSON.parse(record.images);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              imageUrl = parsed[0];
+            } else if (typeof parsed === "string") {
+              imageUrl = parsed;
+            }
+          } catch (e) {
+            console.warn("Failed to parse images JSON:", record.images, e);
+            // Optional: report to backend via logging
           }
-        } catch (e) {}
+        }
 
         return imageUrl ? (
-          <img src={imageUrl} alt={record.name} className="product-image" />
+          <img
+            src={imageUrl}
+            alt={record.name}
+            className="product-image"
+            onError={(e) => {
+              e.target.style.display = "none";
+              e.target.nextSibling.style.display = "flex";
+            }}
+          />
         ) : (
           <div className="no-image">No img</div>
         );

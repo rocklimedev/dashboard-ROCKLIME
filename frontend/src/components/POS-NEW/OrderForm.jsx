@@ -132,6 +132,7 @@ const OrderForm = ({
   users = [],
   usersLoading,
   cartItems = [],
+  onShippingChange,
   subTotal,
   shipping,
   tax,
@@ -273,15 +274,17 @@ const OrderForm = ({
     createAddress,
     handleOrderChange,
   ]);
+  const safeShipping = Number(shipping) || 0;
 
-  /* ────── Extra Discount Calc ────── */
-  const base = subTotal + shipping + tax - totalDiscount;
+  /* ────── Extra Discount & GST Calc ────── */
+  const base = subTotal + safeShipping + tax - totalDiscount;
   const extraDiscAmt = useMemo(() => {
     const v = Number(extraDiscount) || 0;
     return extraDiscountType === "percent"
       ? ((base * v) / 100).toFixed(2)
       : v.toFixed(2);
   }, [base, extraDiscount, extraDiscountType]);
+
   const gstBase = (base - Number(extraDiscAmt)).toFixed(2);
   const gstAmt = ((Number(gstBase) * gst) / 100).toFixed(2);
 
@@ -443,50 +446,46 @@ const OrderForm = ({
                   </Text>
                 </Col>
                 <Col span={16}>
-                  <MiniSelect
-                    showSearch
-                    filterOption={false}
-                    value={selectedCustomer}
-                    onSearch={debouncedSearch}
-                    onChange={(v) => {
-                      setSelectedCustomer(v);
-                      handleOrderChange("createdFor", v);
-                      handleOrderChange("shipTo", null);
-                      setUseBillingAddress(false);
-                    }}
-                    loading={customersLoading}
-                    status={hasError("customer") ? "error" : ""}
-                  >
-                    {(customerSearch
-                      ? customers.filter((c) =>
-                          c.name
-                            .toLowerCase()
-                            .includes(customerSearch.toLowerCase())
-                        )
-                      : customers
-                    ).map((c) => (
-                      <Option key={c.customerId} value={c.customerId}>
-                        {c.name} ({c.email})
-                      </Option>
-                    ))}
-                  </MiniSelect>
-                  {hasError("customer") && (
-                    <Text
-                      type="danger"
-                      style={{ fontSize: 12, display: "block" }}
+                  <Space.Compact block>
+                    <MiniSelect
+                      showSearch
+                      filterOption={false}
+                      value={selectedCustomer}
+                      onSearch={debouncedSearch}
+                      onChange={(v) => {
+                        setSelectedCustomer(v);
+                        handleOrderChange("createdFor", v);
+                        handleOrderChange("shipTo", null);
+                        setUseBillingAddress(false);
+                      }}
+                      loading={customersLoading}
+                      status={hasError("customer") ? "error" : ""}
                     >
-                      {getError("customer")}
-                    </Text>
-                  )}
-                  <Button
-                    type="link"
-                    icon={<UserAddOutlined />}
-                    onClick={handleAddCustomer}
-                    block
-                    size="small"
-                  >
-                    Add
-                  </Button>
+                      {(customerSearch
+                        ? customers.filter((c) =>
+                            c.name
+                              .toLowerCase()
+                              .includes(customerSearch.toLowerCase())
+                          )
+                        : customers
+                      ).map((c) => (
+                        <Option key={c.customerId} value={c.customerId}>
+                          {c.name} ({c.email})
+                        </Option>
+                      ))}
+                    </MiniSelect>
+                    {hasError("customer") && (
+                      <Text
+                        type="danger"
+                        style={{ fontSize: 12, display: "block" }}
+                      >
+                        {getError("customer")}
+                      </Text>
+                    )}
+                    <Button type="primary" onClick={handleAddCustomer}>
+                      +
+                    </Button>
+                  </Space.Compact>
                 </Col>
               </TightRow>
 
@@ -497,42 +496,41 @@ const OrderForm = ({
                   </Text>
                 </Col>
                 <Col span={16}>
-                  <MiniSelect
-                    value={
-                      useBillingAddress ? "sameAsBilling" : orderData?.shipTo
-                    }
-                    onChange={setShip}
-                    loading={addressesLoading || isCreatingAddress}
-                    disabled={!selectedCustomer}
-                    status={hasError("shipping") ? "error" : ""}
-                  >
-                    {defaultAddress && (
-                      <Option value="sameAsBilling">Same as Billing</Option>
-                    )}
-                    {filteredAddresses.map((a) => (
-                      <Option key={a.addressId} value={a.addressId}>
-                        {`${a.street}, ${a.city} (${a.status})`}
-                      </Option>
-                    ))}
-                  </MiniSelect>
-                  {hasError("shipping") && (
-                    <Text
-                      type="danger"
-                      style={{ fontSize: 12, display: "block" }}
+                  <Space.Compact block>
+                    <MiniSelect
+                      value={
+                        useBillingAddress ? "sameAsBilling" : orderData?.shipTo
+                      }
+                      onChange={setShip}
+                      loading={addressesLoading || isCreatingAddress}
+                      disabled={!selectedCustomer}
+                      status={hasError("shipping") ? "error" : ""}
                     >
-                      {getError("shipping")}
-                    </Text>
-                  )}
-                  <Button
-                    type="link"
-                    icon={<UserAddOutlined />}
-                    onClick={handleAddAddress}
-                    block
-                    size="small"
-                    disabled={!selectedCustomer}
-                  >
-                    Add
-                  </Button>
+                      {defaultAddress && (
+                        <Option value="sameAsBilling">Same as Billing</Option>
+                      )}
+                      {filteredAddresses.map((a) => (
+                        <Option key={a.addressId} value={a.addressId}>
+                          {`${a.street}, ${a.city} (${a.status})`}
+                        </Option>
+                      ))}
+                    </MiniSelect>
+                    {hasError("shipping") && (
+                      <Text
+                        type="danger"
+                        style={{ fontSize: 12, display: "block" }}
+                      >
+                        {getError("shipping")}
+                      </Text>
+                    )}
+                    <Button
+                      type="primary"
+                      onClick={handleAddAddress}
+                      disabled={!selectedCustomer}
+                    >
+                      +
+                    </Button>
+                  </Space.Compact>
                 </Col>
               </TightRow>
             </Panel>
@@ -847,7 +845,26 @@ const OrderForm = ({
                   </MiniSelect>
                 </Col>
               </TightRow>
-
+              <TightRow gutter={8}>
+                <Col span={8}>
+                  <Text strong>Shipping</Text>
+                </Col>
+                <Col span={16}>
+                  <Space.Compact block>
+                    <MiniNumber
+                      value={shipping}
+                      onChange={onShippingChange}
+                      min={0}
+                      step={1}
+                      placeholder="0"
+                      addonAfter="₹"
+                    />
+                  </Space.Compact>
+                  <Text type="secondary" style={{ fontSize: 11 }} block>
+                    +₹{safeShipping.toFixed(2)}
+                  </Text>
+                </Col>
+              </TightRow>
               <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>GST %</Text>

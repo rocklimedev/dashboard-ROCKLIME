@@ -1,3 +1,4 @@
+// src/pages/auth/Login.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useLoginMutation } from "../../api/authApi";
@@ -11,28 +12,29 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [loginMutation, { isLoading }] = useLoginMutation();
+  const [loginMutation] = useLoginMutation();
   const { login: authLogin, auth } = useAuth();
   const navigate = useNavigate();
 
+  // Redirect if already logged in
   useEffect(() => {
     if (auth?.token) {
       navigate("/", { replace: true });
     }
   }, [auth?.token, navigate]);
-  // At top of Login component
-  if (auth?.token) {
-    return null; // Let App handle redirect
-  }
+
+  // Early return to avoid flash
+  if (auth?.token) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
       const response = await loginMutation({ email, password }).unwrap();
       const token = response.accessToken;
       if (!token) throw new Error("No access token received");
 
-      // Store token based on rememberMe
+      // Store token
       if (rememberMe) {
         localStorage.setItem("token", token);
         sessionStorage.removeItem("token");
@@ -41,10 +43,7 @@ const Login = () => {
         localStorage.removeItem("token");
       }
 
-      // Update auth context
       await authLogin(token, response.user || null);
-
-      // Navigate immediately after login
       navigate("/", { replace: true });
     } catch (err) {
       toast.error("Login failed! " + (err?.data?.message || err.message));
@@ -64,12 +63,15 @@ const Login = () => {
                   style={{ width: "177px", height: "auto" }}
                 />
               </div>
+
               <div className="login-userheading">
                 <h3>Sign In</h3>
                 <h4 className="fs-16">
                   Access the panel using your email and passcode.
                 </h4>
               </div>
+
+              {/* Email Field */}
               <div className="mb-3">
                 <label className="form-label">
                   Email <span className="text-danger">*</span>
@@ -88,6 +90,8 @@ const Login = () => {
                   </span>
                 </div>
               </div>
+
+              {/* Password Field */}
               <div className="mb-3">
                 <label className="form-label">
                   Password <span className="text-danger">*</span>
@@ -104,11 +108,18 @@ const Login = () => {
                   <span
                     className="input-group-text border-start-0 cursor-pointer"
                     onClick={() => setShowPassword(!showPassword)}
+                    onKeyDown={(e) =>
+                      e.key === "Enter" && setShowPassword(!showPassword)
+                    }
+                    tabIndex={0}
+                    role="button"
                   >
                     {showPassword ? <FaEyeSlash /> : <FaEye />}
                   </span>
                 </div>
               </div>
+
+              {/* Remember Me + Forgot Password */}
               <div className="form-login authentication-check">
                 <div className="row">
                   <div className="col-12 d-flex align-items-center justify-content-between">
@@ -131,31 +142,24 @@ const Login = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Submit Button */}
               <div className="form-login">
                 <button
                   type="submit"
                   className="btn btn-primary w-100 d-flex align-items-center justify-content-center"
-                  disabled={isLoading}
+                  style={{ minHeight: "44px" }}
+                  disabled={false} // Let global loader handle it
                 >
-                  {isLoading ? (
-                    <>
-                      <span
-                        className="spinner-border spinner-border-sm me-2"
-                        role="status"
-                        aria-hidden="true"
-                      ></span>
-                      Signing In...
-                    </>
-                  ) : (
-                    "Sign In"
-                  )}
+                  Sign In
                 </button>
               </div>
+
+              {/* Sign Up Link */}
               <div className="signinform text-center">
                 <h4>
-                  New on our platform?
+                  New on our platform?{" "}
                   <Link to="/signup" className="hover-a">
-                    {" "}
                     Create an account
                   </Link>
                 </h4>

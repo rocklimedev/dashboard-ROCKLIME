@@ -80,8 +80,6 @@ const Profile = () => {
     return currentUser?.addresses || [];
   }, [usersWithAddresses, userId]);
 
-  console.log("My Addresses:", myAddressesRaw);
-
   const {
     data: signaturesData,
     isLoading: isSignaturesLoading,

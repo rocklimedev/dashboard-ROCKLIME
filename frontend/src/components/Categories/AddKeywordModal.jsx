@@ -11,11 +11,9 @@ const AddKeywordModal = ({ open, onClose, editData, selectedCategoryId }) => {
   const [form] = Form.useForm();
   const isEditMode = !!editData;
 
-  const { data: categoryData, isLoading: categoryLoading } =
-    useGetAllCategoriesQuery();
-
-  const [createKeyword, { isLoading: isCreating }] = useCreateKeywordMutation();
-  const [updateKeyword, { isLoading: isUpdating }] = useUpdateKeywordMutation();
+  const { data: categoryData } = useGetAllCategoriesQuery();
+  const [createKeyword] = useCreateKeywordMutation();
+  const [updateKeyword] = useUpdateKeywordMutation();
 
   useEffect(() => {
     if (isEditMode && editData) {
@@ -67,7 +65,6 @@ const AddKeywordModal = ({ open, onClose, editData, selectedCategoryId }) => {
         >
           <Select
             placeholder="Select category"
-            loading={categoryLoading}
             showSearch
             optionFilterProp="children"
           >
@@ -82,11 +79,7 @@ const AddKeywordModal = ({ open, onClose, editData, selectedCategoryId }) => {
         <Form.Item style={{ marginBottom: 0 }}>
           <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
             <Button onClick={onClose}>Cancel</Button>
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={isCreating || isUpdating}
-            >
+            <Button type="primary" htmlType="submit">
               {isEditMode ? "Update" : "Add"} Keyword
             </Button>
           </div>

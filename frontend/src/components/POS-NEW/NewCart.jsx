@@ -437,8 +437,9 @@ const NewCart = ({ onConvertToOrder }) => {
   }, [selectedCustomer, customerList]);
 
   // ==================== HANDLERS ====================
-  const handleShippingChange = (newShipping) => setShipping(newShipping);
-
+  const handleShippingChange = useCallback((newShipping) => {
+    setShipping(newShipping);
+  }, []);
   const handleDiscountChange = (productId, value) => {
     setItemDiscounts((prev) => ({
       ...prev,
@@ -775,9 +776,6 @@ const NewCart = ({ onConvertToOrder }) => {
         followupDates: quotationData.followupDates.filter(Boolean),
       };
 
-      // DEBUG – remove in prod
-      console.log("QUOTATION PAYLOAD →", quotationPayload);
-
       try {
         await createQuotation(quotationPayload).unwrap();
         await handleClearCart();
@@ -864,7 +862,7 @@ const NewCart = ({ onConvertToOrder }) => {
           };
         }),
       };
-      console.log(orderPayload);
+
       try {
         await createOrder(orderPayload).unwrap();
         await handleClearCart();
@@ -883,7 +881,7 @@ const NewCart = ({ onConvertToOrder }) => {
             : `Something went wrong: ${
                 error.data?.message || "Please try again."
               }`;
-        console.log(error);
+
         toast.error(errorMessage);
       }
     }
@@ -1177,6 +1175,8 @@ const NewCart = ({ onConvertToOrder }) => {
                 customers={customerList}
                 customersLoading={customersLoading}
                 customersError={customersError}
+                shipping={shipping}
+                onShippingChange={handleShippingChange}
                 addresses={addresses}
                 addressesLoading={addressesLoading}
                 addressesError={addressesError}
@@ -1195,7 +1195,6 @@ const NewCart = ({ onConvertToOrder }) => {
                 setDocumentType={setDocumentType}
                 cartItems={cartItems}
                 totalAmount={totalAmount}
-                shipping={shipping}
                 tax={tax}
                 totalDiscount={totalDiscount}
                 extraDiscount={orderData.extraDiscount}
@@ -1216,6 +1215,7 @@ const NewCart = ({ onConvertToOrder }) => {
                 setQuotationData={setQuotationData}
                 handleQuotationChange={handleQuotationChange}
                 selectedCustomer={selectedCustomer}
+                onShippingChange={handleShippingChange}
                 setSelectedCustomer={setSelectedCustomer}
                 customers={customerList}
                 customersLoading={customersLoading}

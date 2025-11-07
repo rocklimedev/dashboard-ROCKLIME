@@ -547,14 +547,6 @@ const PageWrapper = () => {
                       onPageChange={setCurrentPage}
                     />
                   )}
-                  <div className="add-product-bar">
-                    <input
-                      type="text"
-                      placeholder="Add product..."
-                      className="form-control form-control-sm"
-                    />
-                    <button className="btn btn-danger btn-sm">Add</button>
-                  </div>
                 </div>
               </div>
             )}

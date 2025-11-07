@@ -5,7 +5,7 @@ const path = require("path");
 const PRODUCTS_FILE = "./seeder/backup/products_backup.json";
 const IMAGES_DIR = "./seeder/images";
 const OUTPUT_FILE = "./updated.json";
-const UNUSED_IMAGES_FILE = "./unused_images2.txt";
+const UNUSED_IMAGES_FILE = "./unused_images3.txt";
 const COMPANY_CODE_KEY = "d11da9f9-3f2e-4536-8236-9671200cca4a";
 const BASE_URL = "https://static.cmtradingco.com/product_images/";
 

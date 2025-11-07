@@ -2,7 +2,7 @@ import React, { useRef, useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { toast } from "sonner";
 
-import logo from "../../assets/img/logo.png";
+import logo from "../../assets/img/logo-quotation.png";
 
 import {
   useGetQuotationByIdQuery,

@@ -17,7 +17,7 @@ const AddParentCategoryModal = ({
 
   const [createParent] = useCreateParentCategoryMutation();
   const [updateParent] = useUpdateParentCategoryMutation();
-  const { data: brands, isLoading: brandsLoading } = useGetAllBrandsQuery();
+  const { data: brands } = useGetAllBrandsQuery(); // Removed isLoading
 
   useEffect(() => {
     if (editMode && parentCategoryData) {
@@ -84,7 +84,6 @@ const AddParentCategoryModal = ({
         >
           <Select
             placeholder="Select brand"
-            loading={brandsLoading}
             showSearch
             optionFilterProp="children"
           >

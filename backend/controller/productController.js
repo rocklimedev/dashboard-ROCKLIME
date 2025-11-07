@@ -577,7 +577,7 @@ exports.searchProducts = async (req, res) => {
 exports.getAllProductCodes = async (req, res) => {
   try {
     const products = await Product.findAll({
-      attributes: ["productId", "product_code", "name", "categoryId"],
+      attributes: ["productId", "product_code", "name", "categoryId", "images"],
       include: [
         {
           model: ProductMeta,

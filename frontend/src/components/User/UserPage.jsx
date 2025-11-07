@@ -117,36 +117,6 @@ const UserPage = () => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        <div className="page-header">
-          <div>
-            <Link to="/users/list" className="d-inline-flex align-items-center">
-              <LeftOutlined />
-              Back to List
-            </Link>
-          </div>
-          <ul className="table-top-head">
-            <li className="me-2">
-              <a
-                data-bs-toggle="tooltip"
-                data-bs-placement="top"
-                title="Refresh"
-                onClick={refetch}
-              >
-                <ReloadOutlined />
-              </a>
-            </li>
-            <li className="me-2">
-              <a
-                data-bs-toggle="tooltip"
-                data-bs-placement="top"
-                title="Collapse"
-                id="collapse-header"
-              >
-                <NodeCollapseOutlined />
-              </a>
-            </li>
-          </ul>
-        </div>
         <div className="row">
           <div className="col-xl-4 theiaStickySidebar">
             <div className="card rounded-0 border-0">
