@@ -342,9 +342,7 @@ const PageWrapper = () => {
                             <span className="me-2">
                               <i className="bi bi-person info-icon"></i>
                               {/* NEW – use map */}
-                              {getCustomerName(o.customerId) ||
-                                o.customer?.name ||
-                                "Unknown Customer"}
+                              {o.customer?.name || "Unknown Customer"}
                             </span>
                             <span className="me-2">
                               <i className="bi bi-person-badge info-icon"></i>
