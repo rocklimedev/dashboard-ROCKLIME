@@ -75,16 +75,16 @@ export const userApi = baseApi.injectEndpoints({
     uploadPhoto: builder.mutation({
       query: (file) => {
         const formData = new FormData();
-        formData.append("photo", file);
+        formData.append("photo", file); // ← Must be "photo", not "file"
         return {
           url: "/user/photo",
           method: "POST",
           body: formData,
-          // Important: let the browser set the Content-Type (multipart/form-data)
-          headers: {},
+          // DO NOT set Content-Type — let browser set multipart boundary
+          // headers: { "Content-Type": "multipart/form-data" } ← BAD
         };
       },
-      invalidatesTags: ["Users"], // refresh profile after upload
+      invalidatesTags: ["Users"],
     }),
     // NEW: Update User Status (active, inactive, restricted)
     updateStatus: builder.mutation({

@@ -379,7 +379,7 @@ const Profile = () => {
               <div className="card-header rounded-0 bg-primary d-flex align-items-center">
                 <span className="avatar avatar-xl avatar-rounded flex-shrink-0 border border-white border-3 me-3">
                   <Avatar
-                    src={avatarUrl || undefined}
+                    src={avatarUrl || user.photo_thumbnail}
                     name={user.name || "User"}
                     size="60"
                     round

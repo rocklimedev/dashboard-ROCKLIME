@@ -335,7 +335,10 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                     <span className="user-letter avatar-container">
                       <Avatar
                         name={user?.user?.name || "User"}
-                        src={user?.user?.profileImage}
+                        src={
+                          user?.user?.photo_thumbnail ||
+                          user?.user?.profileImage
+                        }
                         size="40"
                         round={true}
                         className="circular-avatar"

@@ -3,41 +3,44 @@ const ProductMeta = require("../models/productMeta");
 const { Op } = require("sequelize");
 const InventoryHistory = require("../models/history"); // Mongoose model (exported directly)
 const Brand = require("../models/brand");
+const User = require("../models/users");
 // ─────────────────────────────────────────────────────────────────────────────
 // Create a product with meta data
 // ─────────────────────────────────────────────────────────────────────────────
 exports.createProduct = async (req, res) => {
   try {
     const { meta, ...productData } = req.body;
+    const metaObj = meta ? JSON.parse(meta) : {};
 
-    // Validate meta data if provided
-    if (meta) {
-      for (const metaId of Object.keys(meta)) {
-        const metaField = await ProductMeta.findByPk(metaId);
-        if (!metaField) {
-          return res
-            .status(400)
-            .json({ message: `Invalid ProductMeta ID: ${metaId}` });
-        }
-        if (metaField.fieldType === "number" && isNaN(meta[metaId])) {
-          return res
-            .status(400)
-            .json({ message: `Value for ${metaField.title} must be a number` });
-        }
+    // ---- validate meta (same as before) ----
+    for (const id of Object.keys(metaObj)) {
+      const m = await ProductMeta.findByPk(id);
+      if (!m) return res.status(400).json({ message: `Invalid meta ID ${id}` });
+      if (m.fieldType === "number" && isNaN(metaObj[id]))
+        return res.status(400).json({ message: `${m.title} must be a number` });
+    }
+
+    // ---- upload new images ----
+    const imageUrls = [];
+    if (req.files) {
+      for (const f of req.files) {
+        const url = await uploadToFtp(f.buffer, f.originalname);
+        imageUrls.push(url);
       }
     }
 
-    const product = await Product.create({ ...productData, meta });
-    return res
-      .status(201)
-      .json({ message: "Product created successfully", product });
-  } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Error creating product", error: error.message });
+    const product = await Product.create({
+      ...productData,
+      meta: Object.keys(metaObj).length ? metaObj : null,
+      images: JSON.stringify(imageUrls),
+      isFeatured: productData.isFeatured === "true",
+    });
+
+    res.status(201).json({ message: "Product created", product });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
   }
 };
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Get all products with their meta data
 // ─────────────────────────────────────────────────────────────────────────────
@@ -145,29 +148,41 @@ exports.getProductsByCategory = async (req, res) => {
 
     const enrichedProducts = products.map((product) => {
       const productData = product.toJSON();
-      if (productData.meta) {
+      productData.metaDetails = [];
+
+      if (
+        productData.meta &&
+        typeof productData.meta === "object" &&
+        productData.product_metas &&
+        Array.isArray(productData.product_metas)
+      ) {
         productData.metaDetails = Object.keys(productData.meta).map(
           (metaId) => {
+            const id = parseInt(metaId, 10);
             const metaField = productData.product_metas.find(
-              (mf) => mf.id === metaId
+              (mf) => mf.id === id
             );
+
             return {
               id: metaId,
-              title: metaField ? metaField.title : "Unknown",
-              slug: metaField ? metaField.slug : null,
+              title: metaField?.title ?? "Unknown",
+              slug: metaField?.slug ?? null,
               value: productData.meta[metaId],
-              fieldType: metaField ? metaField.fieldType : null,
-              unit: metaField ? metaField.unit : null,
+              fieldType: metaField?.fieldType ?? null,
+              unit: metaField?.unit ?? null,
             };
           }
         );
       }
+
       delete productData.product_metas;
+      delete productData.meta;
       return productData;
     });
 
     res.status(200).json(enrichedProducts);
   } catch (error) {
+    console.log(error);
     res.status(500).json({ message: "Internal server error." });
   }
 };
@@ -175,41 +190,99 @@ exports.getProductsByCategory = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // Update a product with meta data
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Update a product with meta data
+// ─────────────────────────────────────────────────────────────────────────────
 exports.updateProduct = async (req, res) => {
   try {
-    const { meta, ...productData } = req.body;
     const product = await Product.findByPk(req.params.productId);
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
+    if (!product) return res.status(404).json({ message: "Not found" });
+
+    const { meta, imagesToDelete, ...data } = req.body;
+    const metaObj = meta ? JSON.parse(meta) : {};
+    const deleteList = imagesToDelete ? JSON.parse(imagesToDelete) : [];
+
+    // ---- Validate meta ----
+    for (const id of Object.keys(metaObj)) {
+      const m = await ProductMeta.findByPk(id);
+      if (!m) return res.status(400).json({ message: `Invalid meta ID ${id}` });
+      if (m.fieldType === "number" && isNaN(metaObj[id]))
+        return res.status(400).json({ message: `${m.title} must be a number` });
     }
 
-    if (meta) {
-      for (const metaId of Object.keys(meta)) {
-        const metaField = await ProductMeta.findByPk(metaId);
-        if (!metaField) {
-          return res
-            .status(400)
-            .json({ message: `Invalid ProductMeta ID: ${metaId}` });
-        }
-        if (metaField.fieldType === "number" && isNaN(meta[metaId])) {
-          return res
-            .status(400)
-            .json({ message: `Value for ${metaField.title} must be a number` });
-        }
+    // ---- Parse current images ----
+    let current = [];
+    if (product.images) {
+      try {
+        current = JSON.parse(product.images);
+      } catch (_) {}
+    }
+
+    // ---- Remove deleted ----
+    if (Array.isArray(deleteList)) {
+      current = current.filter((url) => !deleteList.includes(url));
+    }
+
+    // ---- Upload new ----
+    if (req.files) {
+      for (const f of req.files) {
+        const url = await uploadToFtp(f.buffer, f.originalname);
+        current.push(url);
       }
     }
 
-    await product.update({ ...productData, meta });
-    return res
-      .status(200)
-      .json({ message: "Product updated successfully", product });
-  } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Error updating product", error: error.message });
+    // ────── CLEAN & TYPE DATA ──────
+    const cleanData = {
+      name: data.name?.trim(),
+      product_code: data.product_code?.trim(),
+      quantity: data.quantity ? parseInt(data.quantity, 10) : undefined,
+      alert_quantity: data.alert_quantity
+        ? parseInt(data.alert_quantity, 10)
+        : undefined,
+      tax: data.tax ? parseFloat(data.tax) : undefined,
+      description: data.description?.trim() || null,
+      isFeatured: data.isFeatured === "true",
+      categoryId: data.categoryId || null,
+      brandId: data.brandId || null,
+      vendorId: data.vendorId || null,
+      brand_parentcategoriesId: data.brand_parentcategoriesId || null,
+    };
+
+    const updateFields = {};
+    for (const [key, value] of Object.entries(cleanData)) {
+      if (value !== undefined) {
+        updateFields[key] = value;
+      }
+    }
+
+    // ────── STRINGIFY JSON FIELDS ──────
+    const finalMeta = Object.keys(metaObj).length
+      ? JSON.stringify(metaObj)
+      : product.meta;
+    const finalImages = JSON.stringify(current);
+
+    // ────── SET ──────
+    product.set({
+      ...updateFields,
+      meta: finalMeta,
+      images: finalImages,
+    });
+
+    // ────── FORCE SAVE ──────
+    const changed = product.changed();
+    if (!changed || changed.length === 0) {
+      product.changed("updatedAt", true);
+    }
+
+    await product.save();
+
+    console.log("UPDATED PRODUCT (DB):", product.toJSON());
+    res.json({ message: "Product updated", product: product.toJSON() });
+  } catch (e) {
+    console.error("Update error:", e);
+    res.status(500).json({ message: e.message });
   }
 };
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Delete a product
 // ─────────────────────────────────────────────────────────────────────────────

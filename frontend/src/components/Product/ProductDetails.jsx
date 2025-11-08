@@ -293,7 +293,7 @@ const ProductDetails = () => {
             <Breadcrumb
               items={[
                 { title: <Link to="/">Home</Link> },
-                { title: <Link to="/category-selector/products">Shop</Link> },
+                { title: <Link to="/category-selector">Shop</Link> },
                 { title: <span>{product.name || "N/A"}</span> },
               ]}
             />

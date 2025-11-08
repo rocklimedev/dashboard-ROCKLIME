@@ -1,0 +1,75 @@
+.po-container {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.po-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.po-table th,
+.po-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.po-table th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+.po-table .label-cell {
+  font-weight: bold;
+  background-color: #f9f9f9;
+}
+
+.po-table .title-cell {
+  font-size: 18px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.po-table .brand-cell {
+  font-size: 14px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.po-table.bordered td,
+.po-table.bordered th {
+  border: 1px solid #000;
+}
+
+.po-table .text-right {
+  text-align: right;
+}
+
+.po-table .fw-bold {
+  font-weight: bold;
+}
+
+.logo-img {
+  max-width: 100px;
+  height: auto;
+}
+
+.product-img {
+  max-width: 50px;
+  height: auto;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.back-icon {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.back-icon:hover {
+  text-decoration: underline;
+}

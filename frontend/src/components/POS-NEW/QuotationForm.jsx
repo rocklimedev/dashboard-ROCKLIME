@@ -301,10 +301,7 @@ const QuotationForm = ({
                   </Space.Compact>
                 </Col>
               </TightRow>
-            </Panel>
 
-            {/* 2. Address */}
-            <Panel header="Shipping Address" key="2">
               <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>
