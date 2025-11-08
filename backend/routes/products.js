@@ -2,12 +2,40 @@ const express = require("express");
 const router = express.Router();
 const productController = require("../controller/productController");
 const checkPermission = require("../middleware/permission");
+const multer = require("multer");
+const path = require("path");
 
+const productUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  fileFilter: (req, file, cb) => {
+    const allowed = /jpeg|jpg|png|gif/;
+    const ext = allowed.test(path.extname(file.originalname).toLowerCase());
+    const mime = allowed.test(file.mimetype);
+    cb(null, ext && mime);
+  },
+}).array("images", 5); // field name used by the React form
+
+// ---------------------------------------------------------------
+// 2. Helper – call Multer *inside* the controller (same pattern as invoice)
+// ---------------------------------------------------------------
+const withUpload = (handler) => (req, res) => {
+  productUpload(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      return res.status(400).json({ message: `Multer error: ${err.message}` });
+    }
+    if (err) {
+      return res.status(400).json({ message: err.message });
+    }
+    // files are now in req.files (array of buffers)
+    handler(req, res);
+  });
+};
 // ✅ Product CRUD Routes
 router.post(
   "/",
   //checkPermission("write", "create_product", "products", "/products"),
-  productController.createProduct
+  withUpload(productController.createProduct) // <-- NEW
 );
 
 router.get(
@@ -39,7 +67,7 @@ router.get(
 router.put(
   "/:productId",
   // checkPermission("edit", "update_product", "products", "/products/:productId"),
-  productController.updateProduct
+  withUpload(productController.updateProduct) // <-- NEW
 );
 router.post("/by-ids", productController.getProductsByIds);
 router.delete(

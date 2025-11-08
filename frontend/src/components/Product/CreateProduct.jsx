@@ -71,7 +71,6 @@ const CreateProduct = () => {
     ? brandParentCategories
     : [];
   const productMetaData = Array.isArray(productMetas) ? productMetas : [];
-  const userId = user?.user?.userId;
 
   const initialFormData = {
     name: "",
@@ -146,6 +145,7 @@ const CreateProduct = () => {
       setMetaData(metaObject);
     } else {
       console.log("No existingProduct data available");
+      console.log(error);
     }
   }, [existingProduct, form]);
 
@@ -231,8 +231,6 @@ const CreateProduct = () => {
       name: values.name,
       product_code: values.product_code,
       quantity: values.quantity,
-
-      userId: userId,
     };
 
     const emptyFields = Object.entries(requiredFields).filter(
@@ -272,7 +270,7 @@ const CreateProduct = () => {
     formDataToSend.append("description", values.description);
     formDataToSend.append("tax", values.tax ? Number(values.tax) : "");
     formDataToSend.append("alert_quantity", Number(values.alert_quantity) || 0);
-    formDataToSend.append("userId", userId || "");
+
     if (values.categoryId)
       formDataToSend.append("categoryId", values.categoryId);
     if (values.brandId) formDataToSend.append("brandId", values.brandId);
@@ -292,22 +290,23 @@ const CreateProduct = () => {
     if (isEditMode && imagesToDelete.length > 0) {
       formDataToSend.append("imagesToDelete", JSON.stringify(imagesToDelete));
     }
-
+    console.log(formDataToSend);
     try {
       if (isEditMode) {
         await updateProduct({ productId, formData: formDataToSend }).unwrap();
-        navigate("/category-selector/products");
+        navigate("/category-selector");
       } else {
         await createProduct(formDataToSend).unwrap();
         form.resetFields();
         setNewImages([]);
         setMetaData({});
-        navigate("/category-selector/products");
+        navigate("/category-selector");
       }
     } catch (error) {
       const message =
         error.data?.message || "Something went wrong while saving the product.";
       toast.error(`Error: ${message}`);
+      console.log(error);
     }
   };
 
@@ -344,7 +343,7 @@ const CreateProduct = () => {
             </Col>
             <Col>
               <Button
-                href="/category-selector/products"
+                href="/category-selector"
                 icon={<FaArrowLeft style={{ marginRight: 8 }} />}
               >
                 Back to Products

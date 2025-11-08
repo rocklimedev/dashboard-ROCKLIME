@@ -2,15 +2,32 @@ import { baseApi } from "./baseApi";
 
 export const productApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
+    // api/productApi.js
+
     createProduct: builder.mutation({
       query: (productData) => ({
         url: "/products/",
         method: "POST",
         body: productData,
+        // Disable JSON serialization
+        headers: {
+          // Let browser set Content-Type with boundary
+        },
+        // This is the key:
+        formData: true, // RTK Query v2+ supports this
       }),
       invalidatesTags: ["Product"],
     }),
 
+    updateProduct: builder.mutation({
+      query: ({ productId, formData }) => ({
+        url: `/products/${productId}`,
+        method: "PUT",
+        body: formData,
+        formData: true, // Critical!
+      }),
+      invalidatesTags: ["Product"],
+    }),
     getProductsByIds: builder.query({
       query: (productIds) => ({
         url: "/products/by-ids",
@@ -25,18 +42,11 @@ export const productApi = baseApi.injectEndpoints({
       providesTags: ["Product"],
     }),
 
+    // In productApi.js
     getProductById: builder.query({
       query: (productId) => `/products/${productId}`,
       providesTags: ["Product"],
-    }),
-
-    updateProduct: builder.mutation({
-      query: ({ productId, updatedData }) => ({
-        url: `/products/${productId}`,
-        method: "PUT",
-        body: updatedData,
-      }),
-      invalidatesTags: ["Product"],
+      keepUnusedDataFor: 5, // ← add this
     }),
 
     deleteProduct: builder.mutation({

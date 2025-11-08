@@ -236,6 +236,7 @@ const RolePermission = () => {
             subtitle="Manage your roles and permissions"
             onAdd={handleOpenRoleModal}
             tableData={paginatedRoles}
+            exportOptions={{ pdf: false, excel: false }}
           />
 
           <div className="card-body">
@@ -361,6 +362,7 @@ const RolePermission = () => {
                                             user.email ||
                                             "U"
                                           }
+                                          src={user.photo_thumbnail} // Use avatar URL or fallback
                                           size="30"
                                           round={true}
                                           className="me-1"

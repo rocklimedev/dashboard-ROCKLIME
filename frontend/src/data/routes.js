@@ -81,7 +81,7 @@ const masterRoutes = [
     submenu: [],
   },
   {
-    path: "/category-selector/products",
+    path: "/category-selector",
     name: "Products",
     element: <Product />,
     icon: <MdOutlineInventory2 />,
@@ -265,7 +265,7 @@ const masterRoutes = [
         requiredPermission: { api: "edit", module: "products" },
       },
       {
-        path: "/products/brand/:id",
+        path: "/store/:id",
         name: "Products",
         icon: <AiOutlineProduct />,
         element: <ProductList />,

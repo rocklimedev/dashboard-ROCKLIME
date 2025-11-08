@@ -58,7 +58,7 @@ const BrandSelection = () => {
       ? bpc.brands.map((brand) => ({
           id: brand.id,
           name: brand.brandName,
-          url: `/products/brand/${brand.id}`,
+          url: `/store/${brand.id}`,
           image: logoMap[brand.brandSlug] || "https://via.placeholder.com/300",
           alt: `${brand.brandName} logo`,
         }))
@@ -69,7 +69,7 @@ const BrandSelection = () => {
 
   const breadcrumbItems = [
     { label: "Home", url: "/" },
-    { label: "Categories", url: "/category-selector/products" },
+    { label: "Categories", url: "/category-selector" },
     { label: bpc?.name || "Category" },
   ];
 

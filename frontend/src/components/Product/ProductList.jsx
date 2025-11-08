@@ -449,13 +449,13 @@ const ProductsList = () => {
   const breadcrumbItems = brandId
     ? [
         { label: "Home", url: "/" },
-        { label: "Brands", url: "/category-selector/products" },
+        { label: "Brands", url: "/category-selector" },
         { label: "Products" },
       ]
     : bpcId
     ? [
         { label: "Home", url: "/" },
-        { label: "Categories", url: "/category-selector/products" },
+        { label: "Categories", url: "/category-selector" },
         {
           label: bpcData?.name || "Category",
           url: `/brand-parent-categories/${bpcId}`,

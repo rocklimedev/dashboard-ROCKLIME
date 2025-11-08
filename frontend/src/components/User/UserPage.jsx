@@ -1,7 +1,7 @@
 import React from "react";
 import { useParams, Link } from "react-router-dom";
 import { useGetUserByIdQuery } from "../../api/userApi";
-import Avatar from "react-avatar"; // Import react-avatar
+import Avatar from "react-avatar";
 import {
   LeftOutlined,
   ReloadOutlined,
@@ -9,17 +9,18 @@ import {
   TeamOutlined,
   CalendarOutlined,
 } from "@ant-design/icons";
+
 const UserPage = () => {
   const { userId } = useParams(); // Get userId from URL
 
   // Skip query if userId is undefined
   const {
     data: userData,
-    isLoading,
     isError,
     error,
     refetch,
   } = useGetUserByIdQuery(userId, { skip: !userId });
+
   const user = userData?.user || {};
 
   // Format roles (array or string)
@@ -57,6 +58,9 @@ const UserPage = () => {
       : "N/A";
   };
 
+  /* --------------------------------------------------------------------- */
+  /*  No userId – show warning                                            */
+  /* --------------------------------------------------------------------- */
   if (!userId) {
     return (
       <div className="page-wrapper">
@@ -72,20 +76,9 @@ const UserPage = () => {
     );
   }
 
-  if (isLoading) {
-    return (
-      <div className="page-wrapper">
-        <div className="content">
-          <div className="text-center">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  /* --------------------------------------------------------------------- */
+  /*  Error handling – keep retry button                                   */
+  /* --------------------------------------------------------------------- */
   if (isError) {
     return (
       <div className="page-wrapper">
@@ -104,6 +97,9 @@ const UserPage = () => {
     );
   }
 
+  /* --------------------------------------------------------------------- */
+  /*  No data / empty user object                                          */
+  /* --------------------------------------------------------------------- */
   if (!user || !user.userId) {
     return (
       <div className="page-wrapper">
@@ -114,22 +110,25 @@ const UserPage = () => {
     );
   }
 
+  /* --------------------------------------------------------------------- */
+  /*  Main render – data is guaranteed to be present                       */
+  /* --------------------------------------------------------------------- */
   return (
     <div className="page-wrapper">
       <div className="content">
         <div className="row">
+          {/* ---------- Sidebar ---------- */}
           <div className="col-xl-4 theiaStickySidebar">
             <div className="card rounded-0 border-0">
               <div className="card-header rounded-0 bg-primary d-flex align-items-center">
                 <span className="avatar avatar-xl avatar-rounded flex-shrink-0 border border-white border-3 me-3">
                   <Avatar
-                    name={user.name || "User"} // Use user name for initials
-                    src={user.avatar || "/assets/img/users/user-32.jpg"} // Use avatar URL or fallback
-                    size="60" // Match the size of the previous image
-                    round={true} // Rounded avatar
+                    name={user.name || "User"}
+                    src={user.avatar || user.photo_thumbnail}
+                    size="60"
+                    round={true}
                     className="rounded"
-                    color="#4A90E2" // Optional: Customize background color
-                    textSizeRatio={2.5} // Optional: Adjust text size for initials
+                    textSizeRatio={2.5}
                     alt={`Avatar of ${user.name || "User"}`}
                   />
                 </span>
@@ -145,6 +144,7 @@ const UserPage = () => {
                   </Link>
                 </div>
               </div>
+
               <div className="card-body">
                 <div className="d-flex align-items-center justify-content-between mb-2">
                   <span className="d-inline-flex align-items-center">
@@ -163,7 +163,10 @@ const UserPage = () => {
               </div>
             </div>
           </div>
+
+          {/* ---------- Main Content ---------- */}
           <div className="col-xl-8">
+            {/* Basic Information */}
             <div className="card rounded-0 border-0">
               <div className="card-header border-0 rounded-0 bg-light d-flex align-items-center">
                 <h6>Basic Information</h6>
@@ -178,6 +181,7 @@ const UserPage = () => {
                       </span>
                     </div>
                   </div>
+
                   <div className="col-md-4">
                     <div className="mb-3">
                       <p className="fs-13 mb-2">Email</p>
@@ -186,6 +190,7 @@ const UserPage = () => {
                       </span>
                     </div>
                   </div>
+
                   <div className="col-md-4">
                     <div className="mb-3">
                       <p className="fs-13 mb-2">Username</p>
@@ -194,6 +199,7 @@ const UserPage = () => {
                       </span>
                     </div>
                   </div>
+
                   <div className="col-md-4">
                     <div className="mb-3">
                       <p className="fs-13 mb-2">Birthday</p>
@@ -202,12 +208,14 @@ const UserPage = () => {
                       </span>
                     </div>
                   </div>
+
                   <div className="col-md-4">
                     <div className="mb-3">
                       <p className="fs-13 mb-2">Address</p>
                       <span className="text-gray-900 fs-13">{address}</span>
                     </div>
                   </div>
+
                   <div className="col-md-4">
                     <div className="mb-3">
                       <p className="fs-13 mb-2">Blood Group</p>
@@ -216,6 +224,7 @@ const UserPage = () => {
                       </span>
                     </div>
                   </div>
+
                   <div className="col-md-4">
                     <div className="mb-3">
                       <p className="fs-13 mb-2">Shift</p>
@@ -228,6 +237,7 @@ const UserPage = () => {
                       </span>
                     </div>
                   </div>
+
                   <div className="col-md-4">
                     <div className="mb-3">
                       <p className="fs-13 mb-2">Status</p>
@@ -239,6 +249,8 @@ const UserPage = () => {
                 </div>
               </div>
             </div>
+
+            {/* Emergency Contact */}
             <div className="card rounded-0 border-0">
               <div className="card-header border-0 rounded-0 bg-light d-flex align-items-center">
                 <h6>Emergency Contact</h6>

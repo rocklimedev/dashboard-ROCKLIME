@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Form,
   Input,
@@ -14,10 +14,11 @@ import {
   message,
   Divider,
   Modal,
+  Slider,
 } from "antd";
 import moment from "moment";
 import { UploadOutlined, UserOutlined } from "@ant-design/icons";
-import Cropper from "react-cropper";
+import Cropper from "react-easy-crop"; // <-- NEW
 import {
   useUpdateProfileMutation,
   useUploadPhotoMutation,
@@ -27,6 +28,43 @@ import {
 const { Title, Text } = Typography;
 const { Option } = Select;
 
+/* -------------------------------------------------------------
+   Helper: create a cropped blob from the selected area
+   ------------------------------------------------------------- */
+const getCroppedImg = (imageSrc, pixelCrop) => {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.src = imageSrc;
+    image.onload = () => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return reject(new Error("Canvas context error"));
+
+      const targetSize = 400;
+      canvas.width = targetSize;
+      canvas.height = targetSize;
+
+      ctx.drawImage(
+        image,
+        pixelCrop.x,
+        pixelCrop.y,
+        pixelCrop.width,
+        pixelCrop.height,
+        0,
+        0,
+        targetSize,
+        targetSize
+      );
+
+      canvas.toBlob((blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error("Blob creation failed"));
+      }, "image/jpeg");
+    };
+    image.onerror = reject;
+  });
+};
+
 const ProfileForm = ({ userId, onSuccess, onCancel }) => {
   const [form] = Form.useForm();
   const { data: profileData, isLoading, refetch } = useGetProfileQuery();
@@ -34,13 +72,15 @@ const ProfileForm = ({ userId, onSuccess, onCancel }) => {
   const [uploadPhoto, { isLoading: isUploading }] = useUploadPhotoMutation();
 
   // Avatar URLs
-  const [avatarUrl, setAvatarUrl] = useState(null); // thumbnail
-  const [originalUrl, setOriginalUrl] = useState(null); // original (optional)
+  const [avatarUrl, setAvatarUrl] = useState(null);
+  const [originalUrl, setOriginalUrl] = useState(null);
 
-  // Crop modal
+  // Crop modal state
   const [cropModalVisible, setCropModalVisible] = useState(false);
   const [cropImage, setCropImage] = useState(null);
-  const cropperRef = useRef(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
   // -----------------------------------------------------------------
   // Load profile data
@@ -90,39 +130,41 @@ const ProfileForm = ({ userId, onSuccess, onCancel }) => {
       return Upload.LIST_IGNORE;
     }
 
-    // Open crop modal
     const reader = new FileReader();
     reader.onload = (e) => {
-      setCropImage(e.target.result);
+      setCropImage(e.target?.result);
       setCropModalVisible(true);
+      // reset crop/zoom for a fresh start
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
     };
     reader.readAsDataURL(file);
     return false; // stop default upload
   };
 
+  const onCropComplete = useCallback((_, croppedAreaPixels) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
   const handleCropSave = async () => {
-    if (!cropperRef.current) return;
+    if (!cropImage || !croppedAreaPixels) return;
 
-    const cropper = cropperRef.current.cropper;
-    const canvas = cropper.getCroppedCanvas({ width: 400, height: 400 });
+    try {
+      const croppedBlob = await getCroppedImg(cropImage, croppedAreaPixels);
 
-    canvas.toBlob(async (blob) => {
-      if (!blob) return;
+      // Pass blob directly
+      const result = await uploadPhoto(croppedBlob).unwrap();
 
-      try {
-        const result = await uploadPhoto({ file: blob }).unwrap();
+      setAvatarUrl(result.photo_thumbnail);
+      setOriginalUrl(result.photo_original);
+      message.success("Avatar uploaded successfully!");
 
-        // Backend must return { photo_thumbnail, photo_original }
-        setAvatarUrl(result.photo_thumbnail);
-        setOriginalUrl(result.photo_original);
-        message.success("Avatar uploaded successfully!");
-
-        setCropModalVisible(false);
-        setCropImage(null);
-      } catch (err) {
-        message.error(err?.data?.message || "Upload failed");
-      }
-    }, "image/jpeg");
+      setCropModalVisible(false);
+      setCropImage(null);
+    } catch (err) {
+      console.error("Upload error:", err);
+      message.error(err?.data?.message || "Upload failed");
+    }
   };
 
   // -----------------------------------------------------------------
@@ -154,7 +196,7 @@ const ProfileForm = ({ userId, onSuccess, onCancel }) => {
         postalCode: values.postalCode || "",
         country: values.country || "",
       },
-      avatarUrl: avatarUrl || null, // thumbnail for UI
+      avatarUrl: avatarUrl || null,
     };
 
     try {
@@ -427,7 +469,7 @@ const ProfileForm = ({ userId, onSuccess, onCancel }) => {
           </Col>
         </Row>
 
-        {/* Crop Modal */}
+        {/* ==================== CROP MODAL (react-easy-crop) ==================== */}
         <Modal
           title="Crop Your Avatar"
           open={cropModalVisible}
@@ -454,22 +496,36 @@ const ProfileForm = ({ userId, onSuccess, onCancel }) => {
               Save
             </Button>,
           ]}
-          width={520}
+          width={540}
+          destroyOnClose
         >
           {cropImage && (
-            <Cropper
-              src={cropImage}
-              style={{ height: 350, width: "100%" }}
-              initialAspectRatio={1}
-              aspectRatio={1}
-              guides={false}
-              viewMode={1}
-              ref={cropperRef}
-              background={false}
-              responsive
-              autoCropArea={1}
-              checkOrientation={false}
-            />
+            <>
+              <div style={{ position: "relative", height: 400 }}>
+                <Cropper
+                  image={cropImage}
+                  crop={crop}
+                  zoom={zoom}
+                  aspect={1}
+                  onCropChange={setCrop}
+                  onZoomChange={setZoom}
+                  onCropComplete={onCropComplete}
+                  cropShape="round"
+                  showGrid={false}
+                />
+              </div>
+
+              <div style={{ padding: "12px 0" }}>
+                <Slider
+                  min={1}
+                  max={3}
+                  step={0.05}
+                  value={zoom}
+                  onChange={setZoom}
+                  tooltip={{ formatter: (v) => `${v.toFixed(2)}x` }}
+                />
+              </div>
+            </>
           )}
         </Modal>
       </div>

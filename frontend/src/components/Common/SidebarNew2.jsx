@@ -193,7 +193,7 @@ const SidebarNew = ({
         </div>
 
         {/* ---------- LOGOUT BUTTON AT BOTTOM ---------- */}
-        <div className="sidebar-menu border-top">
+        <div className="sidebar-menu">
           <ul>
             <li>
               <a
