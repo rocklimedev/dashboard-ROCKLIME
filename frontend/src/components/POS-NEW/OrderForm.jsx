@@ -800,6 +800,7 @@ const OrderForm = ({
                     }
                     placeholder="e.g., 250425001"
                     status={hasError("orderNo") ? "error" : ""}
+                    disabled
                   />
                   {hasError("orderNo") && (
                     <Text
@@ -879,6 +880,7 @@ const OrderForm = ({
                       setGst(v ?? 0);
                       handleOrderChange("gst", v ?? 0);
                     }}
+                    disabled
                   />
                 </Col>
               </TightRow>
