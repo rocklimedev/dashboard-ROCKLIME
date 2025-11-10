@@ -458,7 +458,7 @@ const QuotationForm = ({
                   </Text>
                 </Col>
               </TightRow>
-              <TightRow gutter={8}>
+              {/* <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>Shipping</Text>
                 </Col>
@@ -477,7 +477,7 @@ const QuotationForm = ({
                     +₹{(Number(shipping) || 0).toFixed(2)}
                   </Text>
                 </Col>
-              </TightRow>
+              </TightRow> */}
               <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>Round Off</Text>
@@ -511,7 +511,7 @@ const QuotationForm = ({
             discount={discount}
             extraDiscount={extraDiscount}
             tax={tax}
-            shipping={shipping}
+            // shipping={shipping}
             roundOff={quotationData.roundOff || 0}
             gst={gst}
             gstAmount={gstAmount}
