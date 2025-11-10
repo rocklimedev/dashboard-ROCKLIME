@@ -4,7 +4,6 @@ import { useGetProfileQuery } from "../../api/userApi";
 import { useGetRolesQuery } from "../../api/rolesApi";
 import { useGetAllQuotationsQuery } from "../../api/quotationApi";
 import { useGetAllTeamsQuery } from "../../api/teamApi";
-import { useGetAllInvoicesQuery } from "../../api/invoiceApi";
 import { useGetAllOrdersQuery } from "../../api/orderApi";
 import { useGetPurchaseOrdersQuery } from "../../api/poApi";
 import {
@@ -20,14 +19,38 @@ import DataTable from "./DataTable";
 import Avatar from "react-avatar";
 import AddAddress from "../Address/AddAddressModal";
 import AddSignature from "../Signature/AddSignature";
-import "./profile.css";
+
 import {
   TeamOutlined,
   CalendarOutlined,
   EnvironmentOutlined,
+  MailOutlined,
+  PhoneOutlined,
+  UserOutlined,
+  EditOutlined,
+  PlusOutlined,
+  HeartOutlined,
+  MessageOutlined,
+  EyeOutlined,
+  GlobalOutlined,
+  ClockCircleOutlined,
+  DollarCircleOutlined,
 } from "@ant-design/icons";
-import { Button, Image } from "antd";
+import {
+  Button,
+  Image,
+  Card,
+  Badge,
+  Tabs,
+  Tag,
+  Space,
+  Divider,
+  Row,
+  Col,
+} from "antd";
 import { useNavigate } from "react-router-dom";
+
+const { TabPane } = Tabs;
 
 const Profile = () => {
   /* ──────────────────────── QUERIES ──────────────────────── */
@@ -64,6 +87,7 @@ const Profile = () => {
       { userId, page: 1, limit: 10 },
       { skip: !userId }
     );
+
   const {
     data: usersWithAddresses = {},
     isLoading: isAddressesLoading,
@@ -73,7 +97,6 @@ const Profile = () => {
 
   const myAddressesRaw = useMemo(() => {
     if (!Array.isArray(usersWithAddresses.data) || !userId) return [];
-
     const currentUser = usersWithAddresses.data.find(
       (u) => u.userId === userId
     );
@@ -94,11 +117,8 @@ const Profile = () => {
 
   /* ──────────────────────── STATE ──────────────────────── */
   const [activeTab, setActiveTab] = useState("profile");
-
-  // Modal states
   const [addressModalOpen, setAddressModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
-
   const [signatureModalOpen, setSignatureModalOpen] = useState(false);
   const [editingSignature, setEditingSignature] = useState(null);
 
@@ -130,31 +150,22 @@ const Profile = () => {
   const embedded = profile?.user?.address;
   const primaryFromTable = getPrimaryAddress(myAddressesRaw);
   const primaryAddressObj = embedded ?? primaryFromTable;
-  const primaryAddress = primaryAddressObj ? (
-    formatAddress(primaryAddressObj)
-  ) : (
-    <em style={{ color: "#999" }}>No address added</em>
-  );
+  const primaryAddress = primaryAddressObj
+    ? formatAddress(primaryAddressObj)
+    : "No address added";
 
   const team = profile?.user?.roles?.includes("SALES")
     ? "Sales Team"
     : profile?.user?.team || "N/A";
 
-  const formatTime = (time) => {
-    if (!time) return "N/A";
-    const date = new Date(`1970-01-01T${time}`);
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  };
-
-  const formatDate = (date) => {
-    return date
+  const formatDate = (date) =>
+    date
       ? new Date(date).toLocaleDateString("en-US", {
-          day: "2-digit",
+          day: "numeric",
           month: "short",
           year: "numeric",
         })
       : "N/A";
-  };
 
   /* ──────────────────────── EFFECTS ──────────────────────── */
   useEffect(() => {
@@ -166,7 +177,7 @@ const Profile = () => {
     }
   }, []);
 
-  /* ──────── ADDRESS MODAL HANDLERS ──────── */
+  /* ──────── MODAL HANDLERS ──────── */
   const openAddressModal = (address = null) => {
     setEditingAddress(address);
     setAddressModalOpen(true);
@@ -195,7 +206,6 @@ const Profile = () => {
     }
   };
 
-  /* ──────── SIGNATURE MODAL HANDLERS ──────── */
   const openSignatureModal = (signature = null) => {
     setEditingSignature(signature);
     setSignatureModalOpen(true);
@@ -224,80 +234,12 @@ const Profile = () => {
     }
   };
 
-  /* ──────────────────────── TABLE COLUMNS ──────────────────────── */
-  const addressColumns = [
-    { title: "Street", dataIndex: "street", key: "street" },
-    { title: "City", dataIndex: "city", key: "city" },
-    { title: "State", dataIndex: "state", key: "state" },
-    { title: "Postal Code", dataIndex: "postalCode", key: "postalCode" },
-    { title: "Country", dataIndex: "country", key: "country" },
-    {
-      title: "Actions",
-      key: "actions",
-      render: (_, record) => (
-        <div>
-          <Button type="link" onClick={() => openAddressModal(record)}>
-            Edit
-          </Button>
-          <Button
-            type="link"
-            danger
-            onClick={() => handleDeleteAddress(record.addressId)}
-            loading={isDeletingAddress}
-          >
-            Delete
-          </Button>
-        </div>
-      ),
-    },
-  ];
-
-  const signatureColumns = [
-    { title: "Name", dataIndex: "signature_name", key: "signature_name" },
-    {
-      title: "Image",
-      dataIndex: "signature_image",
-      key: "signature_image",
-      render: (url) => (url ? <Image src={url} width={100} preview /> : "N/A"),
-    },
-    {
-      title: "Default",
-      dataIndex: "mark_as_default",
-      key: "mark_as_default",
-      render: (v) => (v ? "Yes" : "No"),
-    },
-    {
-      title: "Created",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      render: formatDate,
-    },
-    {
-      title: "Actions",
-      key: "actions",
-      render: (_, record) => (
-        <div>
-          <Button type="link" onClick={() => openSignatureModal(record)}>
-            Edit
-          </Button>
-          <Button
-            type="link"
-            danger
-            onClick={() => handleDeleteSignature(record.signatureId)}
-            loading={isDeletingSignature}
-          >
-            Delete
-          </Button>
-        </div>
-      ),
-    },
-  ];
-
   /* ──────────────────────── FILTERED DATA ──────────────────────── */
   const myQuotations = useMemo(
     () => quotationsData?.filter((q) => q.createdBy === userId) ?? [],
     [quotationsData, userId]
   );
+
   const myTeams = useMemo(
     () =>
       teamsData?.teams?.filter(
@@ -307,6 +249,7 @@ const Profile = () => {
       ) ?? [],
     [teamsData, userId]
   );
+
   const myOrders = useMemo(
     () =>
       ordersData?.orders?.filter(
@@ -317,6 +260,7 @@ const Profile = () => {
       ) ?? [],
     [ordersData, userId]
   );
+
   const myPurchaseOrders = useMemo(
     () =>
       purchaseOrdersData?.purchaseOrders?.filter(
@@ -324,7 +268,6 @@ const Profile = () => {
       ) ?? [],
     [purchaseOrdersData, userId]
   );
-  // ... [Keep all imports and queries the same until render]
 
   /* ──────────────────────── RENDER ──────────────────────── */
   if (
@@ -367,450 +310,364 @@ const Profile = () => {
   }
 
   const user = profile.user;
-  const avatarUrl = user.avatarUrl;
+  const avatarUrl = user.avatarUrl || user.photo_thumbnail;
 
   return (
-    <div className="page-wrapper">
-      <div className="content">
-        <div className="row">
+    <div
+      className="page-wrapper"
+      style={{ background: "#f9f9fb", minHeight: "100vh" }}
+    >
+      <div className="content p-4">
+        <Row gutter={[24, 24]}>
           {/* ────── LEFT SIDEBAR ────── */}
-          <div className="col-xl-4 theiaStickySidebar">
-            <div className="card rounded-0 border-0 mb-4">
-              <div className="card-header rounded-0 bg-primary d-flex align-items-center">
-                <span className="avatar avatar-xl avatar-rounded flex-shrink-0 border border-white border-3 me-3">
-                  <Avatar
-                    src={avatarUrl || user.photo_thumbnail}
-                    name={user.name || "User"}
-                    size="60"
-                    round
-                    textSizeRatio={2.5}
-                  />
-                </span>
-                <div className="me-3 flex-grow-1">
-                  <h6 className="text-white mb-1">{user.name || "N/A"}</h6>
-                  <span className="badge bg-purple-transparent text-purple">
-                    {Array.isArray(user.roles)
-                      ? user.roles.join(", ")
-                      : user.roles || "User"}
-                  </span>
-                </div>
-                <div>
-                  <Button
-                    type="primary"
-                    size="small"
-                    onClick={() => navigate(`/u/${userId}/edit`)}
-                  >
-                    Edit Profile
-                  </Button>
+          <Col xs={24} lg={8}>
+            <Card className="shadow-sm border-0 rounded-4 overflow-hidden">
+              <div className="text-center pt-4 pb-3 px-3">
+                <Avatar
+                  src={avatarUrl}
+                  name={user.name}
+                  size="100"
+                  round
+                  className="border border-4 border-white shadow"
+                  style={{ marginBottom: "-50px" }}
+                />
+                <div className="mt-5">
+                  <h4 className="mb-1">{user.name}</h4>
+                  <p className="text-muted mb-2">@{user.username || "user"}</p>
+                  <Space size={6}>
+                    {user.roles?.map((role) => (
+                      <Tag key={role} color="purple" className="mb-2">
+                        {role}
+                      </Tag>
+                    ))}
+                  </Space>
                 </div>
               </div>
 
-              <div className="card-body">
-                <div className="d-flex align-items-center justify-content-between mb-2">
-                  <span className="d-inline-flex align-items-center">
-                    <TeamOutlined /> Team
-                  </span>
-                  <p className="text-dark">{team}</p>
-                </div>
-                <div className="d-flex align-items-center justify-content-between mb-2">
-                  <span className="d-inline-flex align-items-center">
-                    <CalendarOutlined /> Date Of Join
-                  </span>
-                  <p className="text-dark">{formatDate(user.createdAt)}</p>
-                </div>
-                <div className="d-flex align-items-center justify-content-between">
-                  <span className="d-inline-flex align-items-center">
-                    <EnvironmentOutlined /> Primary Address
-                  </span>
-                  <p className="text-dark">{primaryAddress}</p>
-                </div>
-              </div>
-            </div>
-            {/* ────── ADDRESS CARDS SECTION ────── */}
-            <div className="card rounded-0 border-0">
-              <div className="card-header d-flex justify-content-between align-items-center bg-light">
-                <h6 className="mb-0">My Addresses</h6>
+              <div className="px-4 pb-4">
+                <Space direction="vertical" size="middle" className="w-100">
+                  <div className="d-flex justify-content-between">
+                    <span className="text-muted">
+                      <TeamOutlined className="me-2" />
+                      Team
+                    </span>
+                    <strong>{team}</strong>
+                  </div>
+                  <div className="d-flex justify-content-between">
+                    <span className="text-muted">
+                      <CalendarOutlined className="me-2" />
+                      Joined
+                    </span>
+                    <strong>{formatDate(user.createdAt)}</strong>
+                  </div>
+                  <div className="d-flex justify-content-between">
+                    <span className="text-muted">
+                      <EnvironmentOutlined className="me-2" />
+                      Address
+                    </span>
+                    <strong className="text-end">{primaryAddress}</strong>
+                  </div>
+                </Space>
+
+                <Divider className="my-3" />
+
                 <Button
                   type="primary"
-                  size="small"
-                  onClick={() => openAddressModal()}
+                  block
+                  icon={<EditOutlined />}
+                  onClick={() => navigate(`/u/${userId}/edit`)}
+                  className="rounded-pill"
                 >
-                  Add Address
+                  Edit Profile
                 </Button>
               </div>
-              <div className="card-body p-0">
-                {!userId || (myAddressesRaw.length === 0 && !embedded) ? (
-                  <div className="p-4 text-center text-muted">
-                    <em>No addresses added yet.</em>
-                  </div>
+            </Card>
+
+            {/* Teams Section (Inspired by "Interested In") */}
+            <Card className="mt-4 shadow-sm border-0 rounded-4">
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h6 className="mb-0">Teams</h6>
+                <Button type="text" size="small" icon={<PlusOutlined />} />
+              </div>
+              <div className="row g-3">
+                {myTeams.length === 0 ? (
+                  <p className="text-muted text-center mb-0">No teams yet.</p>
                 ) : (
-                  <div className="row g-3 p-3">
-                    {/* Embedded Address (Legacy) */}
-                    {embedded && (
-                      <div className="col-12">
-                        <div className="border rounded p-3 position-relative hover-shadow-sm">
-                          <div className="d-flex justify-content-between align-items-start">
-                            <div className="flex-grow-1">
-                              <div className="d-flex align-items-center mb-2">
-                                <h6 className="mb-0 me-2">
-                                  Primary Address (Profile)
-                                </h6>
-                                <span
-                                  className="badge bg-success text-white"
-                                  style={{ fontSize: "0.65rem" }}
-                                >
-                                  PRIMARY
-                                </span>
-                              </div>
-                              <p className="mb-0 text-muted small">
-                                {formatAddress(embedded)}
-                              </p>
-                            </div>
-                            <div className="text-muted small">
-                              <em>From profile</em>
-                            </div>
+                  myTeams.slice(0, 4).map((team) => (
+                    <div key={team.id} className="col-6">
+                      <Card
+                        hoverable
+                        className="text-center p-3 rounded-3 border-0 shadow-sm"
+                        cover={
+                          <div
+                            className="d-flex align-items-center justify-content-center"
+                            style={{ height: 80 }}
+                          >
+                            <TeamOutlined
+                              style={{ fontSize: 32, color: "#1890ff" }}
+                            />
                           </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Table Addresses */}
-                    {myAddressesRaw.map((addr) => {
-                      const isPrimary = addr.status === "PRIMARY";
-                      const isBilling = addr.status === "BILLING";
-                      const badgeClass = isPrimary
-                        ? "bg-success"
-                        : isBilling
-                        ? "bg-info"
-                        : "bg-secondary";
-
-                      return (
-                        <div key={addr.addressId} className="col-12">
-                          <div className="border rounded p-3 position-relative hover-shadow-sm">
-                            <div className="d-flex justify-content-between align-items-start">
-                              <div className="flex-grow-1">
-                                <div className="d-flex align-items-center mb-2">
-                                  <h6 className="mb-0 me-2">
-                                    {addr.street || "Unnamed Address"}
-                                  </h6>
-                                  <span
-                                    className={`badge ${badgeClass} text-white`}
-                                    style={{ fontSize: "0.65rem" }}
-                                  >
-                                    {addr.status}
-                                  </span>
-                                </div>
-                                <p className="mb-0 text-muted small">
-                                  {formatAddress(addr)}
-                                </p>
-                              </div>
-                              <div className="d-flex gap-1">
-                                <Button
-                                  type="text"
-                                  size="small"
-                                  icon={<i className="fas fa-pencil-alt"></i>}
-                                  onClick={() => openAddressModal(addr)}
-                                  title="Edit"
-                                />
-                                <Button
-                                  type="text"
-                                  size="small"
-                                  danger
-                                  icon={<i className="fas fa-trash"></i>}
-                                  onClick={() =>
-                                    handleDeleteAddress(addr.addressId)
-                                  }
-                                  loading={isDeletingAddress}
-                                  title="Delete"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* ────── MAIN CONTENT (TABS WITHOUT ADDRESSES) ────── */}
-          <div className="col-xl-8">
-            <div className="card rounded-0 border-0 mb-4">
-              <div className="card-header border-0 rounded-0 bg-light d-flex align-items-center">
-                <h6>Basic Information</h6>
-              </div>
-              <div className="card-body pb-0">
-                <div className="row">
-                  <div className="col-md-4">
-                    <div className="mb-3">
-                      <p className="fs-13 mb-2">Phone</p>
-                      <span className="text-gray-900 fs-13">
-                        {user.mobileNumber || "N/A"}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="col-md-4">
-                    <div className="mb-3">
-                      <p className="fs-13 mb-2">Email</p>
-                      <span className="text-gray-900 fs-13">
-                        <a href={`mailto:${user.email}`}>{user.email}</a>
-                      </span>
-                    </div>
-                  </div>
-                  <div className="col-md-4">
-                    <div className="mb-3">
-                      <p className="fs-13 mb-2">Username</p>
-                      <span className="text-gray-900 fs-13">
-                        {user.username || "N/A"}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="col-md-4">
-                    <div className="mb-3">
-                      <p className="fs-13 mb-2">Birthday</p>
-                      <span className="text-gray-900 fs-13">
-                        {formatDate(user.dateOfBirth)}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="col-md-4">
-                    <div className="mb-3">
-                      <p className="fs-13 mb-2">Blood Group</p>
-                      <span className="text-gray-900 fs-13">
-                        {user.bloodGroup || "N/A"}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="col-md-4">
-                    <div className="mb-3">
-                      <p className="fs-13 mb-2">Shift</p>
-                      <span className="text-gray-900 fs-13">
-                        {user.shiftFrom && user.shiftTo
-                          ? `${formatTime(user.shiftFrom)} - ${formatTime(
-                              user.shiftTo
-                            )}`
-                          : "N/A"}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="col-md-4">
-                    <div className="mb-3">
-                      <p className="fs-13 mb-2">Emergency Contact</p>
-                      <span className="text-gray-900 fs-13">
-                        {user.emergencyNumber || "N/A"}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="col-md-4">
-                    <div className="mb-3">
-                      <p className="fs-13 mb-2">Status</p>
-                      <span className="text-gray-900 fs-13">
-                        {user.status || "N/A"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* ────── TABS (Addresses Removed) ────── */}
-            <div className="card rounded-0 border-0">
-              <div className="card-header bg-light d-flex align-items-center justify-content-between">
-                <ul
-                  className="nav nav-pills border d-inline-flex p-1 rounded bg-light"
-                  role="tablist"
-                >
-                  {[
-                    "Quotations",
-                    "Teams",
-                    "Orders",
-                    "Purchase Orders",
-                    ...(isSuperAdmin ? ["Signatures"] : []),
-                  ].map((tab) => (
-                    <li className="nav-item" key={tab}>
-                      <button
-                        className={`nav-link btn btn-sm py-3 ${
-                          activeTab === tab.toLowerCase().replace(" ", "")
-                            ? "active"
-                            : ""
-                        }`}
-                        onClick={() =>
-                          setActiveTab(tab.toLowerCase().replace(" ", ""))
                         }
                       >
-                        {tab}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-
-                {activeTab === "signatures" && isSuperAdmin && (
-                  <Button type="primary" onClick={() => openSignatureModal()}>
-                    Add Signature
-                  </Button>
+                        <Card.Meta
+                          title={team.teamName}
+                          description={
+                            <small className="text-muted">
+                              {team.teammembers?.length || 0} members
+                            </small>
+                          }
+                        />
+                        <div className="mt-2">
+                          <Button
+                            type="link"
+                            size="small"
+                            className="text-success"
+                          >
+                            View
+                          </Button>
+                        </div>
+                      </Card>
+                    </div>
+                  ))
                 )}
               </div>
+            </Card>
+          </Col>
 
-              <div className="card-body">
-                <div className="tab-content">
-                  {/* QUOTATIONS */}
-                  <div
-                    className={`tab-pane fade ${
-                      activeTab === "quotations" ? "show active" : ""
-                    }`}
-                  >
-                    <DataTable
-                      title="My Quotations"
-                      columns={[
-                        { title: "Title", dataIndex: "document_title" },
-                        {
-                          title: "Date",
-                          dataIndex: "quotation_date",
-                          render: formatDate,
-                        },
-                        {
-                          title: "Due",
-                          dataIndex: "due_date",
-                          render: formatDate,
-                        },
-                        { title: "Ref", dataIndex: "reference_number" },
-                        {
-                          title: "Amount",
-                          dataIndex: "finalAmount",
-                          render: (t) => `₹${parseFloat(t).toFixed(2)}`,
-                        },
-                      ]}
-                      dataSource={myQuotations}
-                      isLoading={isQuotationsLoading}
-                      rowKey="quotationId"
-                    />
-                  </div>
-
-                  {/* TEAMS */}
-                  <div
-                    className={`tab-pane fade ${
-                      activeTab === "teams" ? "show active" : ""
-                    }`}
-                  >
-                    <DataTable
-                      title="My Teams"
-                      columns={[
-                        { title: "Name", dataIndex: "teamName" },
-                        { title: "Admin", dataIndex: "adminName" },
-                        {
-                          title: "Members",
-                          dataIndex: "teammembers",
-                          render: (m) =>
-                            m?.map((x) => x.userName).join(", ") || "N/A",
-                        },
-                      ]}
-                      dataSource={myTeams}
-                      isLoading={isTeamsLoading}
-                      rowKey="id"
-                    />
-                  </div>
-
-                  {/* ORDERS */}
-                  <div
-                    className={`tab-pane fade ${
-                      activeTab === "orders" ? "show active" : ""
-                    }`}
-                  >
-                    <DataTable
-                      title="My Orders"
-                      columns={[
-                        { title: "Order #", dataIndex: "orderNo" },
-                        {
-                          title: "Customer",
-                          dataIndex: "customers",
-                          render: (c) => c?.name,
-                        },
-                        { title: "Status", dataIndex: "status" },
-                        {
-                          title: "Due",
-                          dataIndex: "dueDate",
-                          render: formatDate,
-                        },
-                      ]}
-                      dataSource={myOrders}
-                      isLoading={isOrdersLoading}
-                      rowKey="id"
-                    />
-                  </div>
-
-                  {/* PURCHASE ORDERS */}
-                  <div
-                    className={`tab-pane fade ${
-                      activeTab === "purchaseorders" ? "show active" : ""
-                    }`}
-                  >
-                    <DataTable
-                      title="My POs"
-                      columns={[
-                        { title: "PO #", dataIndex: "poNumber" },
-                        {
-                          title: "Vendor",
-                          dataIndex: "Vendor",
-                          render: (v) => v?.vendorName,
-                        },
-                        { title: "Status", dataIndex: "status" },
-                        {
-                          title: "Amount",
-                          dataIndex: "totalAmount",
-                          render: (t) => `₹${parseFloat(t).toFixed(2)}`,
-                        },
-                      ]}
-                      dataSource={myPurchaseOrders}
-                      isLoading={isPurchaseOrdersLoading}
-                      rowKey="id"
-                    />
-                  </div>
-
-                  {/* SIGNATURES */}
-                  {isSuperAdmin && (
-                    <div
-                      className={`tab-pane fade ${
-                        activeTab === "signatures" ? "show active" : ""
-                      }`}
+          {/* ────── MAIN CONTENT ────── */}
+          <Col xs={24} lg={16}>
+            <Card className="shadow-sm border-0 rounded-4 mb-4">
+              <Tabs
+                activeKey={activeTab}
+                onChange={setActiveTab}
+                tabBarExtraContent={
+                  activeTab === "signatures" && isSuperAdmin ? (
+                    <Button
+                      type="primary"
+                      size="small"
+                      icon={<PlusOutlined />}
+                      onClick={() => openSignatureModal()}
                     >
-                      <DataTable
-                        title="My Signatures"
-                        columns={signatureColumns}
-                        dataSource={signaturesData || []}
-                        isLoading={isSignaturesLoading}
-                        rowKey="signatureId"
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+                      Add Signature
+                    </Button>
+                  ) : null
+                }
+              >
+                <TabPane tab="Profile" key="profile">
+                  <Row gutter={[16, 16]}>
+                    <Col span={12}>
+                      <Space direction="vertical">
+                        <small className="text-muted">Phone</small>
+                        <strong>{user.mobileNumber || "N/A"}</strong>
+                      </Space>
+                    </Col>
+                    <Col span={12}>
+                      <Space direction="vertical">
+                        <small className="text-muted">Email</small>
+                        <strong>
+                          <a href={`mailto:${user.email}`}>{user.email}</a>
+                        </strong>
+                      </Space>
+                    </Col>
+                    <Col span={12}>
+                      <Space direction="vertical">
+                        <small className="text-muted">Birthday</small>
+                        <strong>{formatDate(user.dateOfBirth)}</strong>
+                      </Space>
+                    </Col>
+                    <Col span={12}>
+                      <Space direction="vertical">
+                        <small className="text-muted">Blood Group</small>
+                        <strong>{user.bloodGroup || "N/A"}</strong>
+                      </Space>
+                    </Col>
+                    <Col span={12}>
+                      <Space direction="vertical">
+                        <small className="text-muted">Emergency Contact</small>
+                        <strong>{user.emergencyNumber || "N/A"}</strong>
+                      </Space>
+                    </Col>
+                    <Col span={12}>
+                      <Space direction="vertical">
+                        <small className="text-muted">Status</small>
+                        <strong>
+                          <Badge
+                            status="success"
+                            text={user.status || "Active"}
+                          />
+                        </strong>
+                      </Space>
+                    </Col>
+                  </Row>
+                </TabPane>
+
+                <TabPane tab="Quotations" key="quotations">
+                  <div className="row g-3">
+                    {myQuotations.length === 0 ? (
+                      <p className="text-center text-muted">
+                        No quotations created.
+                      </p>
+                    ) : (
+                      myQuotations.slice(0, 6).map((q) => (
+                        <div key={q.quotationId} className="col-md-6">
+                          <Card
+                            hoverable
+                            className="h-100 rounded-3 border-0 shadow-sm"
+                            actions={[
+                              <Button
+                                type="link"
+                                size="small"
+                                className="text-success"
+                              >
+                                View
+                              </Button>,
+                              <Button type="link" size="small">
+                                Edit
+                              </Button>,
+                            ]}
+                          >
+                            <Space direction="vertical" className="w-100">
+                              <div className="d-flex justify-content-between">
+                                <h6 className="mb-0">{q.document_title}</h6>
+                                <Tag color="blue">
+                                  ₹{parseFloat(q.finalAmount).toFixed(0)}
+                                </Tag>
+                              </div>
+                              <small className="text-muted">
+                                Due: {formatDate(q.due_date)}
+                              </small>
+                            </Space>
+                          </Card>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </TabPane>
+
+                <TabPane tab="Orders" key="orders">
+                  <DataTable
+                    title="My Orders"
+                    columns={[
+                      { title: "Order #", dataIndex: "orderNo" },
+                      {
+                        title: "Customer",
+                        render: (r) => r.customers?.name || "N/A",
+                      },
+                      { title: "Status", dataIndex: "status" },
+                      {
+                        title: "Due",
+                        dataIndex: "dueDate",
+                        render: formatDate,
+                      },
+                    ]}
+                    dataSource={myOrders}
+                    isLoading={isOrdersLoading}
+                    rowKey="id"
+                    pagination={{ pageSize: 5 }}
+                  />
+                </TabPane>
+
+                <TabPane tab="Purchase Orders" key="purchaseorders">
+                  <DataTable
+                    title="My POs"
+                    columns={[
+                      { title: "PO #", dataIndex: "poNumber" },
+                      {
+                        title: "Vendor",
+                        render: (r) => r.Vendor?.vendorName || "N/A",
+                      },
+                      { title: "Status", dataIndex: "status" },
+                      {
+                        title: "Amount",
+                        render: (r) =>
+                          `₹${parseFloat(r.totalAmount).toFixed(2)}`,
+                      },
+                    ]}
+                    dataSource={myPurchaseOrders}
+                    isLoading={isPurchaseOrdersLoading}
+                    rowKey="id"
+                    pagination={{ pageSize: 5 }}
+                  />
+                </TabPane>
+
+                {isSuperAdmin && (
+                  <TabPane tab="Signatures" key="signatures">
+                    <DataTable
+                      title="My Signatures"
+                      columns={[
+                        { title: "Name", dataIndex: "signature_name" },
+                        {
+                          title: "Image",
+                          dataIndex: "signature_image",
+                          render: (url) =>
+                            url ? (
+                              <Image src={url} width={80} preview />
+                            ) : (
+                              "N/A"
+                            ),
+                        },
+                        { title: "Default", render: (v) => (v ? "Yes" : "No") },
+                        {
+                          title: "Created",
+                          dataIndex: "createdAt",
+                          render: formatDate,
+                        },
+                        {
+                          title: "Actions",
+                          render: (_, record) => (
+                            <Space>
+                              <Button
+                                size="small"
+                                onClick={() => openSignatureModal(record)}
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                size="small"
+                                danger
+                                onClick={() =>
+                                  handleDeleteSignature(record.signatureId)
+                                }
+                                loading={isDeletingSignature}
+                              >
+                                Delete
+                              </Button>
+                            </Space>
+                          ),
+                        },
+                      ]}
+                      dataSource={signaturesData || []}
+                      isLoading={isSignaturesLoading}
+                      rowKey="signatureId"
+                    />
+                  </TabPane>
+                )}
+              </Tabs>
+            </Card>
+          </Col>
+        </Row>
+
+        {/* MODALS */}
+        {addressModalOpen && (
+          <AddAddress
+            onClose={closeAddressModal}
+            onSave={onAddressSaved}
+            existingAddress={editingAddress}
+            selectedCustomer={null}
+          />
+        )}
+
+        {signatureModalOpen && (
+          <AddSignature
+            signatureId={editingSignature?.signatureId}
+            existingSignature={editingSignature}
+            entityType="user"
+            entityId={userId}
+            onClose={closeSignatureModal}
+            onSuccess={onSignatureSuccess}
+          />
+        )}
       </div>
-
-      {/* ────── MODALS ────── */}
-      {addressModalOpen && (
-        <AddAddress
-          onClose={closeAddressModal}
-          onSave={onAddressSaved}
-          existingAddress={editingAddress}
-          selectedCustomer={null}
-        />
-      )}
-
-      {signatureModalOpen && (
-        <AddSignature
-          signatureId={editingSignature?.signatureId}
-          existingSignature={editingSignature}
-          entityType="user"
-          entityId={userId}
-          onClose={closeSignatureModal}
-          onSuccess={onSignatureSuccess}
-        />
-      )}
     </div>
   );
 };

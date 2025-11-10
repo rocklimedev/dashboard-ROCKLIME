@@ -159,7 +159,9 @@ exports.searchUser = async (req, res) => {
 };
 
 // Update Profile
+// Update Profile - FIXED
 exports.updateProfile = async (req, res) => {
+  const t = await sequelize.transaction();
   try {
     const {
       username,
@@ -171,49 +173,81 @@ exports.updateProfile = async (req, res) => {
       emergencyNumber,
       shiftFrom,
       shiftTo,
-      addressId,
+      address, // <-- Now accept full address object
+      photo_thumbnail,
+      photo_original,
     } = req.body;
 
-    const user = await User.findByPk(req.user.userId);
+    const user = await User.findByPk(req.user.userId, { transaction: t });
     if (!user) {
+      await t.rollback();
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Check for duplicate username or email
+    // Check for duplicate username or email (excluding current user)
     const existingUser = await User.findOne({
       where: {
         [Op.or]: [{ username }, { email }],
         userId: { [Op.ne]: user.userId },
       },
+      transaction: t,
     });
     if (existingUser) {
+      await t.rollback();
       return res
         .status(400)
         .json({ message: "Username or Email already exists" });
     }
 
-    // Update fields
-    user.username = username || user.username;
-    user.name = name || user.name;
-    user.email = email || user.email;
-    user.mobileNumber = mobileNumber || user.mobileNumber;
-    user.dateOfBirth = dateOfBirth || user.dateOfBirth;
-    user.bloodGroup = bloodGroup || user.bloodGroup;
-    user.emergencyNumber = emergencyNumber || user.emergencyNumber;
-    user.shiftFrom = shiftFrom || user.shiftFrom;
-    user.shiftTo = shiftTo || user.shiftTo;
-    user.addressId = addressId || user.addressId;
+    // Update user fields
+    user.username = username ?? user.username;
+    user.name = name ?? user.name;
+    user.email = email ?? user.email;
+    user.mobileNumber = mobileNumber ?? user.mobileNumber;
+    user.dateOfBirth = dateOfBirth ?? user.dateOfBirth;
+    user.bloodGroup = bloodGroup ?? user.bloodGroup;
+    user.emergencyNumber = emergencyNumber ?? user.emergencyNumber;
+    user.shiftFrom = shiftFrom ?? user.shiftFrom;
+    user.shiftTo = shiftTo ?? user.shiftTo;
 
-    await user.save();
+    // Update photo fields
+    if (photo_thumbnail) user.photo_thumbnail = photo_thumbnail;
+    if (photo_original) user.photo_original = photo_original;
+
+    // Handle address
+    if (address) {
+      if (user.addressId) {
+        // Update existing address
+        await Address.update(address, {
+          where: { addressId: user.addressId },
+          transaction: t,
+        });
+      } else {
+        // Create new address
+        const newAddress = await Address.create(address, { transaction: t });
+        user.addressId = newAddress.addressId;
+      }
+    }
+
+    await user.save({ transaction: t });
+    await t.commit();
+
+    // Return updated user
+    const updatedUser = await User.findByPk(user.userId, {
+      ...excludeSensitiveFields,
+      include: [{ model: Address, as: "address" }],
+    });
+
     res.status(200).json({
       message: "Profile updated successfully",
-      user: await User.findByPk(user.userId, excludeSensitiveFields),
+      user: updatedUser,
     });
   } catch (err) {
+    await t.rollback();
+    console.error("Update profile error:", err);
     res.status(500).json({ message: "Server Error", error: err.message });
   }
 };
-
 // Report User
 exports.reportUser = async (req, res) => {
   try {
