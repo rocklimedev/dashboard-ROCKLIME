@@ -15,7 +15,7 @@ const formatCurrency = (value) =>
 
 const OrderTotal = React.memo(
   ({
-    shipping = 0,
+    shipping: _shippingProp, // ← ignore incoming prop
     tax = 0,
     roundOff = 0,
     subTotal = 0,
@@ -25,6 +25,7 @@ const OrderTotal = React.memo(
     gstAmount = 0,
     finalTotal: finalTotalProp,
   }) => {
+    const shipping = 0; // ← ALWAYS 0
     const safe = (n) => (typeof n === "number" && !isNaN(n) ? n : 0);
 
     const safeSubTotal = safe(subTotal);
@@ -120,13 +121,6 @@ const OrderTotal = React.memo(
             },
           ]
         : []),
-
-      {
-        key: "shipping",
-        label: "Shipping",
-        amount: safeShipping,
-        isPositive: safeShipping > 0,
-      },
 
       ...(safeGst > 0
         ? [

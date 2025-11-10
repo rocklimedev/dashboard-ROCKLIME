@@ -846,7 +846,7 @@ const OrderForm = ({
                   </MiniSelect>
                 </Col>
               </TightRow>
-              <TightRow gutter={8}>
+              {/* <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>Shipping</Text>
                 </Col>
@@ -865,7 +865,7 @@ const OrderForm = ({
                     +₹{safeShipping.toFixed(2)}
                   </Text>
                 </Col>
-              </TightRow>
+              </TightRow> */}
               <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>GST %</Text>
@@ -936,7 +936,7 @@ const OrderForm = ({
       <Col xs={24} md={8}>
         <CompactCard title={<Text strong>Summary</Text>}>
           <OrderTotal
-            shipping={shipping}
+            // shipping={shipping}
             tax={tax}
             discount={totalDiscount}
             roundOff={roundOff}
