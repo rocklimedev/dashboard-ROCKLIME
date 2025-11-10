@@ -166,29 +166,27 @@ const ProfileForm = ({ userId, onSuccess, onCancel }) => {
       message.error(err?.data?.message || "Upload failed");
     }
   };
-
+  console.log(profileData);
   // -----------------------------------------------------------------
   // Save profile
   // -----------------------------------------------------------------
   const handleSave = async (values) => {
-    if (!userId) return message.error("User ID not found.");
+    if (!profileData?.user?.userId) {
+      return message.error("User not found.");
+    }
 
     const payload = {
       username: values.username,
       name: values.name,
       email: values.email,
       mobileNumber: values.mobileNumber,
-      dateOfBirth: values.dateOfBirth
-        ? moment(values.dateOfBirth).format("YYYY-MM-DD")
-        : null,
-      shiftFrom: values.shiftFrom
-        ? moment(values.shiftFrom).format("HH:mm:ss")
-        : null,
-      shiftTo: values.shiftTo
-        ? moment(values.shiftTo).format("HH:mm:ss")
-        : null,
+      dateOfBirth: values.dateOfBirth?.format("YYYY-MM-DD") || null,
+      shiftFrom: values.shiftFrom?.format("HH:mm:ss") || null,
+      shiftTo: values.shiftTo?.format("HH:mm:ss") || null,
       bloodGroup: values.bloodGroup || null,
       emergencyNumber: values.emergencyNumber || null,
+      photo_thumbnail: avatarUrl || null, // use thumbnail
+      photo_original: originalUrl || null,
       address: {
         street: values.street || "",
         city: values.city || "",
@@ -196,18 +194,15 @@ const ProfileForm = ({ userId, onSuccess, onCancel }) => {
         postalCode: values.postalCode || "",
         country: values.country || "",
       },
-      avatarUrl: avatarUrl || null,
     };
 
     try {
       await updateProfile(payload).unwrap();
       message.success("Profile updated!");
-      refetch?.();
+      refetch();
       onSuccess?.();
     } catch (error) {
-      message.error(
-        `Failed to update profile: ${error.data?.message || "Unknown error"}`
-      );
+      message.error(error?.data?.message || "Failed to update profile");
     }
   };
 

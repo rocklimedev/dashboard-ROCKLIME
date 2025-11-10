@@ -2,81 +2,63 @@ const fs = require("fs");
 const path = require("path");
 const excelToJson = require("convert-excel-to-json");
 
-// File paths
-const inputFilePath = path.join(__dirname, "OnePager_JUNE2025.xlsx");
+// === CONFIG ===
+const inputFilePath = path.join(__dirname, "./PRODUCT REPLACEMENTS.xlsx");
 const outputFolder = path.join(__dirname, "json-outputs");
+const outputFile = path.join(outputFolder, "product_replacements.json");
 
-console.log("Looking for file at:", inputFilePath);
-
-// Ensure the file exists
+// === VALIDATE INPUT ===
 if (!fs.existsSync(inputFilePath)) {
-  console.error("❌ Error: File not found. Please check the path.");
+  console.error("❌ Excel file not found at:", inputFilePath);
   process.exit(1);
 }
 
-// Ensure output folder exists
 if (!fs.existsSync(outputFolder)) {
   fs.mkdirSync(outputFolder, { recursive: true });
 }
 
-// Convert Excel to JSON
-const rawData = excelToJson({
+// === CONVERT EXCEL ===
+const result = excelToJson({
   sourceFile: inputFilePath,
-  header: { rows: 1 }, // Treat first row as headers
+  header: { rows: 1 }, // First row is header
 });
 
-console.log("Extracted rawData:", JSON.stringify(rawData, null, 2));
+// === PROCESS SHEETS ===
+Object.keys(result).forEach((sheetName) => {
+  const rows = result[sheetName];
+  const cleanedData = [];
 
-const formattedData = {};
-Object.keys(rawData).forEach((sheetName) => {
-  const sheetData = rawData[sheetName];
+  rows.forEach((row, index) => {
+    const values = Object.values(row);
 
-  let currentCategory = null;
-  formattedData[sheetName] = {};
+    // Skip if all cells are empty
+    if (values.every((v) => !v || String(v).trim() === "")) return;
 
-  sheetData.forEach((row, index) => {
-    const rowValues = Object.values(row);
+    const sno = String(row.A || "").trim();
+    const removeCode = String(row.B || "").trim();
+    const replaceCode = String(row.C || "").trim();
+    const extraCol = row.D ? String(row.D).trim() : null;
 
-    // Debugging: Check what row contains
-    console.log(`Row ${index}:`, rowValues);
+    const entry = {
+      SNO: sno || null,
+      REMOVE: removeCode && removeCode !== "----" ? removeCode : null,
+      REPLACE: replaceCode && replaceCode !== "----" ? replaceCode : null,
+    };
 
-    if (rowValues.length === 1 && rowValues[0] && rowValues[0] !== "#VALUE!") {
-      // If only one column has a value, it's a category
-      currentCategory = rowValues[0].trim();
-      formattedData[sheetName][currentCategory] = [];
-    } else if (
-      rowValues.length >= 4 &&
-      rowValues[1] &&
-      rowValues[2] &&
-      rowValues[3]
-    ) {
-      // Product row: Ensure name, code, and price exist
-      const [_, name, code, price] = rowValues;
-
-      if (currentCategory) {
-        formattedData[sheetName][currentCategory].push({
-          Name: String(name || "").trim(),
-          Code: String(code || "").trim(),
-          Price: price,
-          Image: `${String(code || "").trim()}.jpg`,
-        });
-      } else {
-        console.warn(
-          `⚠️ Skipping product row without category at index ${index}:`,
-          rowValues
-        );
-      }
+    // If there’s a 4th column like “MRP - 75400” extract number
+    if (extraCol) {
+      const match = extraCol.match(/(\d+)/);
+      if (match) entry.MRP = match[1];
     }
+
+    cleanedData.push(entry);
   });
 
-  // Write JSON file per sheet
-  const outputFilePath = path.join(outputFolder, `${sheetName}.json`);
-  fs.writeFileSync(
-    outputFilePath,
-    JSON.stringify(formattedData[sheetName], null, 2),
-    "utf-8"
+  // === WRITE TO JSON ===
+  fs.writeFileSync(outputFile, JSON.stringify(cleanedData, null, 2), "utf-8");
+  console.log(
+    `✅ ${sheetName}: Saved ${cleanedData.length} entries to ${outputFile}`
   );
-  console.log(`✅ ${sheetName}.json saved in ${outputFolder}`);
 });
 
-console.log("✅ All sheets converted successfully!");
+console.log("✅ Conversion complete!");

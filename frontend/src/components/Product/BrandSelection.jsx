@@ -7,7 +7,7 @@ import Breadcrumb from "./Breadcrumb"; // Adjust the path as needed
 const mainWrapper =
   "https://static.cmtradingco.com/brands/product_page_title.png";
 const americanStandard =
-  "https://static.cmtradingco.com/brands/american_standard.png";
+  "https://static.cmtradingco.com/brands/american_standard.png?v=2";
 const grohe = "https://static.cmtradingco.com/brands/grohe.png";
 const colston = "https://static.cmtradingco.com/brands/colston-logo_black.png";
 const groheBau = "https://static.cmtradingco.com/brands/grohe.png";
