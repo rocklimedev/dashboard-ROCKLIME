@@ -76,7 +76,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "CI=false react-scripts build",
+    "build": "cross-env CI=false react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
@@ -99,6 +99,7 @@
     ]
   },
   "devDependencies": {
+    "cross-env": "^10.1.0",
     "source-map-explorer": "^2.5.3"
   }
 }

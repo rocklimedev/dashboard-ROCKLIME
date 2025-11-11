@@ -486,22 +486,19 @@ const ProductDetails = () => {
                         product={recProduct}
                         getBrandsName={getBrandsName}
                         getCategoryName={getCategoryName}
-                        formatPrice={(p, u) => {
-                          const spEntry = Array.isArray(u)
-                            ? u.find((m) => m.slug === "sellingPrice")
-                            : null;
-                          const priceValue = spEntry
-                            ? parseFloat(spEntry.value)
-                            : p;
-                          return priceValue
-                            ? `₹ ${Number(priceValue).toFixed(2)}`
+                        formatPrice={(fallback, metaDetails) => {
+                          if (!Array.isArray(metaDetails)) return "N/A";
+                          const sp = metaDetails.find(
+                            (m) => m.slug === "sellingPrice"
+                          );
+                          const price = sp ? parseFloat(sp.value) : null;
+                          return price != null && !isNaN(price)
+                            ? `₹${price.toFixed(2)}`
                             : "N/A";
                         }}
                         getCompanyCode={getCompanyCode}
                         handleAddToCart={handleAddToCart}
-                        handleToggleFeatured={() => {}}
                         cartLoadingStates={cartLoadingStates}
-                        featuredLoadingStates={{}}
                         menu={(product) => (
                           <Menu>
                             <Menu.Item key="view">
