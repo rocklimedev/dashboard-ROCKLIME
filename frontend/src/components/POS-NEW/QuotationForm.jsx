@@ -28,8 +28,9 @@ import { toast } from "sonner";
 import { useCreateAddressMutation } from "../../api/addressApi";
 import moment from "moment";
 import DatePicker from "react-datepicker";
+import { useAuth } from "../../context/AuthContext"; // <-- ADD THIS
 import "react-datepicker/dist/react-datepicker.css";
-
+const RESTRICTED_ROLES = ["SUPER_ADMIN", "DEVELOPER", "ADMIN"];
 const { Text, Title } = Typography;
 const { Option } = Select;
 const { Panel } = Collapse;
@@ -121,6 +122,10 @@ const QuotationForm = ({
   useBillingAddress,
   setUseBillingAddress,
 }) => {
+  const { auth } = useAuth(); // <-- GET CURRENT USER ROLE
+  const canCreatePurchaseOrder =
+    auth?.role && RESTRICTED_ROLES.includes(auth.role);
+
   const [isCreatingAddress, setIsCreatingAddress] = useState(false);
   const [createAddress] = useCreateAddressMutation();
 
@@ -263,11 +268,11 @@ const QuotationForm = ({
                 </Col>
                 <Col span={16}>
                   <MiniSelect value={documentType} onChange={setDocumentType}>
-                    {["Quotation", "Order", "Purchase Order"].map((v) => (
-                      <Option key={v} value={v}>
-                        {v}
-                      </Option>
-                    ))}
+                    <Option value="Quotation">Quotation</Option>
+                    <Option value="Order">Order</Option>
+                    {canCreatePurchaseOrder && (
+                      <Option value="Purchase Order">Purchase Order</Option>
+                    )}
                   </MiniSelect>
                 </Col>
               </TightRow>
