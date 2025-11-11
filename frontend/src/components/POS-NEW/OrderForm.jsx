@@ -32,11 +32,12 @@ import { useCreateAddressMutation } from "../../api/addressApi";
 import { useGetAllOrdersQuery } from "../../api/orderApi";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { useAuth } from "../../context/AuthContext"; // <-- ADD THIS
 
 const { Text, Title } = Typography;
 const { Option } = Select;
 const { Panel } = Collapse;
-
+const RESTRICTED_ROLES = ["SUPER_ADMIN", "DEVELOPER", "ADMIN"];
 /* ────────────────────── Styled ────────────────────── */
 const CompactCard = styled(Card)`
   border-radius: 8px;
@@ -148,6 +149,10 @@ const OrderForm = ({
   documentType,
   setDocumentType,
 }) => {
+  const { auth } = useAuth(); // <-- GET CURRENT USER ROLE
+  const canCreatePurchaseOrder =
+    auth?.role && RESTRICTED_ROLES.includes(auth.role);
+
   /* ────── Local State ────── */
   const [assignmentType, setAssignmentType] = useState(
     orderData?.assignedTeamId
@@ -430,15 +435,14 @@ const OrderForm = ({
                 </Col>
                 <Col span={16}>
                   <MiniSelect value={documentType} onChange={setDocumentType}>
-                    {["Quotation", "Order", "Purchase Order"].map((v) => (
-                      <Option key={v} value={v}>
-                        {v}
-                      </Option>
-                    ))}
+                    <Option value="Quotation">Quotation</Option>
+                    <Option value="Order">Order</Option>
+                    {canCreatePurchaseOrder && (
+                      <Option value="Purchase Order">Purchase Order</Option>
+                    )}
                   </MiniSelect>
                 </Col>
               </TightRow>
-
               <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>

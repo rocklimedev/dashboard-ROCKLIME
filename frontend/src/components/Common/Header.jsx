@@ -15,6 +15,7 @@ import { CgShoppingCart } from "react-icons/cg";
 import { useLogoutMutation } from "../../api/authApi";
 import { useAuth } from "../../context/AuthContext";
 import { SunFilled, MoonFilled } from "@ant-design/icons";
+import PermissionsGate from "../../context/PermissionGate";
 
 const Header = ({ toggleSidebar, isSidebarOpen }) => {
   const location = useLocation();
@@ -288,20 +289,21 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
               </Badge>
             </Link>
           </li>
-
-          {/* Cart with Badge */}
-          <li className="nav-item nav-item-box">
-            <Link to="/cart" style={{ position: "relative" }}>
-              <Badge
-                count={cartItemCount}
-                size="small"
-                offset={[-5, 5]}
-                showZero={false}
-              >
-                <CgShoppingCart style={{ fontSize: 20 }} />
-              </Badge>
-            </Link>
-          </li>
+          <PermissionsGate api="write" module="cart">
+            {/* Cart with Badge */}
+            <li className="nav-item nav-item-box">
+              <Link to="/cart" style={{ position: "relative" }}>
+                <Badge
+                  count={cartItemCount}
+                  size="small"
+                  offset={[-5, 5]}
+                  showZero={false}
+                >
+                  <CgShoppingCart style={{ fontSize: 20 }} />
+                </Badge>
+              </Link>
+            </li>
+          </PermissionsGate>
 
           {/* Dark Mode (Desktop) */}
           <li className="nav-item nav-item-box d-none d-lg-flex">
