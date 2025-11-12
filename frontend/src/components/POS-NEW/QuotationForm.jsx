@@ -139,9 +139,34 @@ const QuotationForm = ({
     const billing = addresses.find(
       (a) => a.customerId === selectedCustomer && a.status === "BILLING"
     );
-    return billing || selectedCustomerData?.address || null;
-  }, [addresses, selectedCustomerData, selectedCustomer]);
 
+    if (billing) return billing;
+
+    const customer = selectedCustomerData;
+    if (!customer?.address) return null;
+
+    let parsed;
+    try {
+      // Safely parse the JSON string
+      parsed =
+        typeof customer.address === "string"
+          ? JSON.parse(customer.address)
+          : customer.address;
+    } catch (e) {
+      console.warn("Failed to parse customer address JSON", customer.address);
+      return null;
+    }
+
+    // Clean up null/"null" values
+    return {
+      street:
+        parsed.street === "null" || !parsed.street ? "" : parsed.street.trim(),
+      city: parsed.city || "",
+      state: parsed.state || "",
+      postalCode: parsed.zip || parsed.postalCode || "",
+      country: parsed.country || "India",
+    };
+  }, [addresses, selectedCustomerData, selectedCustomer]);
   const filteredAddresses = useMemo(
     () => addresses.filter((a) => a.customerId === selectedCustomer),
     [addresses, selectedCustomer]
@@ -176,6 +201,13 @@ const QuotationForm = ({
   useEffect(() => {
     if (!useBillingAddress || !defaultAddress || !selectedCustomer) return;
 
+    // Validate required fields
+    if (!defaultAddress.city || !defaultAddress.state) {
+      toast.error("Customer's billing address is incomplete");
+      setUseBillingAddress(false);
+      return;
+    }
+
     const match = filteredAddresses.find(
       (a) =>
         normalize(a.street) === normalize(defaultAddress.street) &&
@@ -193,15 +225,22 @@ const QuotationForm = ({
       const create = async () => {
         setIsCreatingAddress(true);
         try {
-          const res = await createAddress({
+          const payload = {
             customerId: selectedCustomer,
-            ...defaultAddress,
+            street: defaultAddress.street || "",
+            city: defaultAddress.city,
+            state: defaultAddress.state,
+            postalCode: defaultAddress.postalCode,
+            country: defaultAddress.country,
             status: "BILLING",
-          }).unwrap();
+          };
+
+          const res = await createAddress(payload).unwrap();
           handleQuotationChange("shipTo", res.addressId);
           toast.success("Billing address created");
         } catch (e) {
-          toast.error("Failed to create billing address");
+          console.error(e);
+          toast.error("Failed to create address. Check required fields.");
         } finally {
           setIsCreatingAddress(false);
         }
@@ -209,7 +248,6 @@ const QuotationForm = ({
       create();
     }
   }, [useBillingAddress, defaultAddress, filteredAddresses, selectedCustomer]);
-
   // === Follow-up Dates ===
   const handleFollowup = (i, d) => {
     const arr = [...quotationData.followupDates];
