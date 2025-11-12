@@ -120,6 +120,8 @@ const QuotationForm = ({
   setActiveTab,
   handleCreateDocument,
   useBillingAddress,
+  billingAddressId,
+  setBillingAddressId,
   setUseBillingAddress,
 }) => {
   const { auth } = useAuth(); // <-- GET CURRENT USER ROLE
@@ -171,7 +173,13 @@ const QuotationForm = ({
     () => addresses.filter((a) => a.customerId === selectedCustomer),
     [addresses, selectedCustomer]
   );
-
+  const hasBillingAddress = useMemo(
+    () =>
+      addresses.some(
+        (a) => a.customerId === selectedCustomer && a.status === "BILLING"
+      ),
+    [addresses, selectedCustomer]
+  );
   const extraDiscount = useMemo(() => {
     const amount = parseFloat(quotationData.discountAmount) || 0;
     if (!amount) return 0;
@@ -205,6 +213,7 @@ const QuotationForm = ({
     if (!defaultAddress.city || !defaultAddress.state) {
       toast.error("Customer's billing address is incomplete");
       setUseBillingAddress(false);
+      setBillingAddressId(null);
       return;
     }
 
@@ -219,8 +228,13 @@ const QuotationForm = ({
           normalize(defaultAddress.country || "india")
     );
 
+    const finalize = (addressId) => {
+      setBillingAddressId(addressId);
+      handleQuotationChange("shipTo", addressId);
+    };
+
     if (match) {
-      handleQuotationChange("shipTo", match.addressId);
+      finalize(match.addressId);
     } else {
       const create = async () => {
         setIsCreatingAddress(true);
@@ -236,11 +250,12 @@ const QuotationForm = ({
           };
 
           const res = await createAddress(payload).unwrap();
-          handleQuotationChange("shipTo", res.addressId);
+          finalize(res.addressId);
           toast.success("Billing address created");
         } catch (e) {
           console.error(e);
           toast.error("Failed to create address. Check required fields.");
+          setBillingAddressId(null);
         } finally {
           setIsCreatingAddress(false);
         }
@@ -356,21 +371,35 @@ const QuotationForm = ({
                     <MiniSelect
                       value={
                         useBillingAddress
-                          ? "sameAsBilling"
+                          ? billingAddressId
                           : quotationData.shipTo
                       }
                       onChange={(v) => {
-                        if (v === "sameAsBilling") setUseBillingAddress(true);
-                        else {
+                        // “Same as Billing” is now a *real* address id
+                        if (v === "sameAsBilling" || v === "creating") {
+                          setUseBillingAddress(true);
+                        } else {
                           setUseBillingAddress(false);
+                          setBillingAddressId(null);
                           handleQuotationChange("shipTo", v);
                         }
                       }}
                       loading={addressesLoading || isCreatingAddress}
                       disabled={!selectedCustomer}
                     >
-                      {defaultAddress && (
-                        <Option value="sameAsBilling">Same as Billing</Option>
+                      {/* Keep the friendly label but store the real id */}
+                      {defaultAddress && !hasBillingAddress && (
+                        <Option
+                          value={
+                            billingAddressId ??
+                            (isCreatingAddress ? "creating" : "sameAsBilling")
+                          }
+                          disabled={isCreatingAddress}
+                        >
+                          Same as Billing – {defaultAddress.street},{" "}
+                          {defaultAddress.city}
+                          {isCreatingAddress && " (creating...)"}
+                        </Option>
                       )}
                       {filteredAddresses.map((a) => (
                         <Option key={a.addressId} value={a.addressId}>
@@ -572,7 +601,10 @@ const QuotationForm = ({
             onClick={() => {
               if (!selectedCustomer) return toast.error("Select customer");
               if (!quotationData.dueDate) return toast.error("Select due date");
-              if (!quotationData.shipTo && !useBillingAddress)
+              if (
+                !quotationData.shipTo &&
+                !(useBillingAddress && (billingAddressId || isCreatingAddress))
+              )
                 return toast.error("Select shipping");
               handleCreateDocument({ gst, gstAmount });
             }}

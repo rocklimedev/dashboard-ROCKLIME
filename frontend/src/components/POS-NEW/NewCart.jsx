@@ -93,7 +93,7 @@ const NewCart = ({ onConvertToOrder }) => {
   const user = profileData?.user || {};
   const userId = user.userId;
   const [useBillingAddress, setUseBillingAddress] = useState(false);
-
+  const [billingAddressId, setBillingAddressId] = useState(null);
   // ==================== STATE ====================
   const [activeTab, setActiveTab] = useState("cart");
   const [selectedCustomer, setSelectedCustomer] = useState("");
@@ -1246,6 +1246,7 @@ const NewCart = ({ onConvertToOrder }) => {
                 setActiveTab={setActiveTab}
                 handleCreateDocument={handleCreateDocument}
                 useBillingAddress={useBillingAddress}
+                setBillingAddressId={setBillingAddressId}
                 setUseBillingAddress={setUseBillingAddress}
                 itemDiscounts={itemDiscounts}
                 itemTaxes={itemTaxes}
