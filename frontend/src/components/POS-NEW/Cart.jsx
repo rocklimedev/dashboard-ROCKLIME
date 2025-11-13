@@ -167,7 +167,7 @@ const CartTab = ({
               <Button
                 type="primary"
                 icon={<ArrowLeftOutlined />}
-                href="/category-selector/products"
+                href="/store"
                 style={{ marginTop: 16 }}
               >
                 Continue Shopping

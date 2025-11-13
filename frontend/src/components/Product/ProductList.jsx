@@ -103,11 +103,19 @@ const ProductsList = () => {
       : "Not Branded";
   };
 
+  // ──────────────────────────────────────────────────────
+  // HELPERS (add these two functions)
+  // ──────────────────────────────────────────────────────
   const getCategoryName = (categoryId) => {
     return categoryId
       ? categoriesData?.find((c) => c.id === categoryId)?.name ||
           "Uncategorized"
       : "Uncategorized";
+  };
+
+  const getParentCategoryName = (categoryId) => {
+    const cat = categoriesData?.find((c) => c.id === categoryId);
+    return cat?.parentcategories?.name || "";
   };
 
   const formatPrice = (value, unit) => {
@@ -155,23 +163,40 @@ const ProductsList = () => {
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
+      // ── 1. Brand / Parent-Category filter (unchanged) ──
       const matchesFilter = brandId
         ? String(product.brandId) === String(brandId)
         : bpcId
         ? String(product.brand_parentcategoriesId) === String(bpcId)
         : true;
+
+      // ── 2. Search term ──
       const term = search.toLowerCase();
       const code = getCompanyCode(product.metaDetails);
+
+      // Existing fields
+      const matchesName = product.name?.toLowerCase().includes(term);
+      const matchesCode = product.product_code?.toLowerCase().includes(term);
+      const matchesCompany = code?.toLowerCase().includes(term);
+
+      // ── NEW: category fields ──
+      const catName = getCategoryName(product.categoryId);
+      const parentCatName = getParentCategoryName(product.categoryId);
+      const matchesCategory = catName.toLowerCase().includes(term);
+      const matchesParentCategory = parentCatName.toLowerCase().includes(term);
+
+      // ── 3. Combine ──
       return (
         matchesFilter &&
         (!term ||
-          product.name?.toLowerCase().includes(term) ||
-          product.product_code?.toLowerCase().includes(term) ||
-          code?.toLowerCase().includes(term))
+          matchesName ||
+          matchesCode ||
+          matchesCompany ||
+          matchesCategory ||
+          matchesParentCategory)
       );
     });
-  }, [products, brandId, bpcId, search]);
-
+  }, [products, brandId, bpcId, search, categoriesData]); // <-- added categoriesData
   const formattedTableData = useMemo(
     () =>
       filteredProducts.map((product) => ({
