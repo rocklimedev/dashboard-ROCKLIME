@@ -112,7 +112,7 @@ const QuotationForm = ({
   itemDiscounts,
   itemTaxes,
   gst,
-  gstAmount,
+
   setGst,
   onShippingChange,
   handleAddCustomer,
@@ -130,7 +130,7 @@ const QuotationForm = ({
 
   const [isCreatingAddress, setIsCreatingAddress] = useState(false);
   const [createAddress] = useCreateAddressMutation();
-
+  const [isAddressResolved, setIsAddressResolved] = useState(false);
   // === Memos ===
   const selectedCustomerData = useMemo(
     () => customers.find((c) => c.customerId === selectedCustomer),
@@ -169,6 +169,7 @@ const QuotationForm = ({
       country: parsed.country || "India",
     };
   }, [addresses, selectedCustomerData, selectedCustomer]);
+
   const filteredAddresses = useMemo(
     () => addresses.filter((a) => a.customerId === selectedCustomer),
     [addresses, selectedCustomer]
@@ -180,6 +181,21 @@ const QuotationForm = ({
       ),
     [addresses, selectedCustomer]
   );
+  const dropdownValue = useMemo(() => {
+    if (useBillingAddress) {
+      if (billingAddressId) return billingAddressId;
+      if (isCreatingAddress) return "creating";
+      if (defaultAddress && !hasBillingAddress) return "sameAsBilling";
+    }
+    return quotationData.shipTo;
+  }, [
+    useBillingAddress,
+    billingAddressId,
+    isCreatingAddress,
+    defaultAddress,
+    hasBillingAddress,
+    quotationData.shipTo,
+  ]);
   const extraDiscount = useMemo(() => {
     const amount = parseFloat(quotationData.discountAmount) || 0;
     if (!amount) return 0;
@@ -195,25 +211,45 @@ const QuotationForm = ({
     tax,
   ]);
 
-  const finalRoundedTotal = useMemo(() => {
-    const base =
-      subTotal + shipping + tax - discount - extraDiscount + (gstAmount || 0);
-    const rupees = Math.floor(Math.round(base * 100) / 100);
-    const last = rupees % 10;
-    if (last <= 4) return rupees - last;
-    if (last >= 6) return rupees + (10 - last);
-    return rupees;
-  }, [subTotal, shipping, tax, discount, extraDiscount, gstAmount]);
+  const amountBeforeGst = useMemo(() => {
+    return subTotal + tax - discount - extraDiscount;
+  }, [subTotal, tax, discount, extraDiscount]);
 
+  const gstAmount = useMemo(() => {
+    if (!gst || gst <= 0) return 0;
+    return parseFloat(((amountBeforeGst * gst) / 100).toFixed(2));
+  }, [amountBeforeGst, gst]);
+
+  const totalBeforeRoundOff = useMemo(() => {
+    return amountBeforeGst + gstAmount;
+  }, [amountBeforeGst, gstAmount]);
+
+  // AUTO-CALCULATE ROUND-OFF
+  const autoRoundOff = useMemo(() => {
+    const total = totalBeforeRoundOff;
+    const rupees = Math.floor(total);
+    const paise = Math.round((total - rupees) * 100);
+
+    if (paise === 0) return 0;
+    if (paise <= 50) return -(paise / 100); // Round down
+    return (100 - paise) / 100; // Round up
+  }, [totalBeforeRoundOff]);
+
+  const finalRoundedTotal = useMemo(() => {
+    return Math.round(totalBeforeRoundOff + autoRoundOff);
+  }, [totalBeforeRoundOff, autoRoundOff]);
   // === Address Sync ===
   useEffect(() => {
-    if (!useBillingAddress || !defaultAddress || !selectedCustomer) return;
+    if (!useBillingAddress || !defaultAddress || !selectedCustomer) {
+      setIsAddressResolved(false);
+      return;
+    }
 
-    // Validate required fields
     if (!defaultAddress.city || !defaultAddress.state) {
       toast.error("Customer's billing address is incomplete");
       setUseBillingAddress(false);
       setBillingAddressId(null);
+      setIsAddressResolved(false);
       return;
     }
 
@@ -231,6 +267,7 @@ const QuotationForm = ({
     const finalize = (addressId) => {
       setBillingAddressId(addressId);
       handleQuotationChange("shipTo", addressId);
+      setIsAddressResolved(true); // Mark as resolved
     };
 
     if (match) {
@@ -256,13 +293,21 @@ const QuotationForm = ({
           console.error(e);
           toast.error("Failed to create address. Check required fields.");
           setBillingAddressId(null);
+          setIsAddressResolved(false); // Failed → not resolved
         } finally {
           setIsCreatingAddress(false);
         }
       };
       create();
     }
-  }, [useBillingAddress, defaultAddress, filteredAddresses, selectedCustomer]);
+  }, [
+    useBillingAddress,
+    defaultAddress,
+    filteredAddresses,
+    selectedCustomer,
+    createAddress,
+    handleQuotationChange,
+  ]);
   // === Follow-up Dates ===
   const handleFollowup = (i, d) => {
     const arr = [...quotationData.followupDates];
@@ -369,13 +414,8 @@ const QuotationForm = ({
                 <Col span={16}>
                   <Space.Compact block>
                     <MiniSelect
-                      value={
-                        useBillingAddress
-                          ? billingAddressId
-                          : quotationData.shipTo
-                      }
+                      value={dropdownValue}
                       onChange={(v) => {
-                        // “Same as Billing” is now a *real* address id
                         if (v === "sameAsBilling" || v === "creating") {
                           setUseBillingAddress(true);
                         } else {
@@ -390,15 +430,17 @@ const QuotationForm = ({
                       {/* Keep the friendly label but store the real id */}
                       {defaultAddress && !hasBillingAddress && (
                         <Option
-                          value={
-                            billingAddressId ??
-                            (isCreatingAddress ? "creating" : "sameAsBilling")
-                          }
+                          value="sameAsBilling"
                           disabled={isCreatingAddress}
                         >
                           Same as Billing – {defaultAddress.street},{" "}
                           {defaultAddress.city}
                           {isCreatingAddress && " (creating...)"}
+                        </Option>
+                      )}
+                      {isCreatingAddress && (
+                        <Option value="creating" disabled>
+                          Creating billing address...
                         </Option>
                       )}
                       {filteredAddresses.map((a) => (
@@ -550,21 +592,16 @@ const QuotationForm = ({
                   </Text>
                 </Col>
               </TightRow> */}
-              <TightRow gutter={8}>
+              {/* <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>Round Off</Text>
                 </Col>
                 <Col span={16}>
-                  <MiniNumber
-                    value={quotationData.roundOff || 0}
-                    disabled
-                    prefix="₹"
-                  />
-                  <Text type="secondary" style={{ fontSize: 11 }} block>
-                    Final: <strong>₹{finalRoundedTotal}</strong>
+                  <Text>
+                    {autoRoundOff >= 0 ? "+" : ""}₹{autoRoundOff.toFixed(2)}
                   </Text>
                 </Col>
-              </TightRow>
+              </TightRow> */}
             </Panel>
           </Collapse>
         </CompactCard>
@@ -601,11 +638,17 @@ const QuotationForm = ({
             onClick={() => {
               if (!selectedCustomer) return toast.error("Select customer");
               if (!quotationData.dueDate) return toast.error("Select due date");
-              if (
-                !quotationData.shipTo &&
-                !(useBillingAddress && (billingAddressId || isCreatingAddress))
-              )
-                return toast.error("Select shipping");
+
+              const hasValidShipping =
+                quotationData.shipTo || // Direct address selected
+                (useBillingAddress &&
+                  (billingAddressId || isCreatingAddress) && // Same as billing in progress
+                  isAddressResolved); // Only allow if resolved
+
+              if (!hasValidShipping) {
+                return toast.error("Select or create shipping address");
+              }
+
               handleCreateDocument({ gst, gstAmount });
             }}
           >

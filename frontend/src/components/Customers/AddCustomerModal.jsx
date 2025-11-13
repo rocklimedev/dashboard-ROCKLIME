@@ -500,7 +500,21 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
                       </Col>
                       <Col lg={12} xs={24}>
                         <Form.Item name={["address", "state"]} noStyle>
-                          <Select placeholder="Select State">
+                          <Select
+                            placeholder="Select or search state"
+                            showSearch
+                            optionFilterProp="children"
+                            filterOption={(input, option) =>
+                              option.children
+                                .toLowerCase()
+                                .includes(input.toLowerCase())
+                            }
+                            filterSort={(optionA, optionB) =>
+                              optionA.children
+                                .toLowerCase()
+                                .localeCompare(optionB.children.toLowerCase())
+                            }
+                          >
                             <Option value="">Select State</Option>
                             {indiaStates.states.map((state) => (
                               <Option key={state} value={state}>

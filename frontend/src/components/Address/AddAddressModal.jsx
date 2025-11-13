@@ -54,7 +54,8 @@ const countryData = {
     "West Bengal",
   ],
 };
-
+// ---- ADD THIS RIGHT AFTER `countryData` ----
+const sortedStates = [...countryData.states].sort((a, b) => a.localeCompare(b));
 const AddAddress = ({ onClose, onSave, existingAddress, selectedCustomer }) => {
   const isEdit = !!existingAddress;
   const [form] = Form.useForm();
@@ -254,21 +255,16 @@ const AddAddress = ({ onClose, onSave, existingAddress, selectedCustomer }) => {
           <Select
             showSearch
             allowClear
-            placeholder="Select or type a state"
+            placeholder="Search and select state"
+            optionFilterProp="children"
             filterOption={(input, option) =>
               option.children.toLowerCase().includes(input.toLowerCase())
             }
-            // Allow custom input by not restricting to predefined options
-            onSearch={(value) => {
-              if (value) {
-                form.setFieldsValue({ state: value });
-              }
-            }}
-            onChange={(value) => {
-              form.setFieldsValue({ state: value });
-            }}
+            notFoundContent="No state found"
+            style={{ width: "100%" }}
           >
-            {countryData.states.map((state) => (
+            <Option value="">Select State</Option>
+            {sortedStates.map((state) => (
               <Option key={state} value={state}>
                 {state}
               </Option>

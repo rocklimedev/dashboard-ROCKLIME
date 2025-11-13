@@ -76,7 +76,7 @@ const CartContainer = styled.div`
   }
 `;
 
-const NewCart = ({ onConvertToOrder }) => {
+const NewCart = ({ onConvertToOrder, autoRoundOff }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const {
@@ -117,7 +117,6 @@ const NewCart = ({ onConvertToOrder }) => {
     signatureName: "CM TRADING CO",
     discountType: "percent",
     discountAmount: "",
-    roundOff: "",
     followupDates: [],
   });
   const [orderData, setOrderData] = useState({
@@ -158,7 +157,7 @@ const NewCart = ({ onConvertToOrder }) => {
   const [updatingItems, setUpdatingItems] = useState({});
   const [productSearch, setProductSearch] = useState("");
   const [filteredProducts, setFilteredProducts] = useState([]);
-  const [shipping, setShipping] = useState(40);
+  const [shipping, setShipping] = useState(0);
   const [gst, setGst] = useState(18);
   // ==================== QUERIES ====================
   const {
@@ -735,7 +734,7 @@ const NewCart = ({ onConvertToOrder }) => {
         reference_number: quotationNumber,
         discountType: quotationData.discountType,
         discountAmount: parseFloat(quotationData.discountAmount) || 0,
-        roundOff: parseFloat(quotationData.roundOff) || 0,
+        roundOff: autoRoundOff,
         signature_name: quotationData.signatureName || "CM TRADING CO",
         signature_image: "",
         customerId: selectedCustomerData.customerId,
@@ -775,7 +774,7 @@ const NewCart = ({ onConvertToOrder }) => {
         // ---- FOLLOW-UPS (plain array) ----
         followupDates: quotationData.followupDates.filter(Boolean),
       };
-
+      console.log(quotationPayload);
       try {
         await createQuotation(quotationPayload).unwrap();
         await handleClearCart();
@@ -886,6 +885,7 @@ const NewCart = ({ onConvertToOrder }) => {
       }
     }
   };
+
   // Sync OrderForm extra discount changes back to quotationData for consistent totals
   useEffect(() => {
     if (documentType === "Order") {
