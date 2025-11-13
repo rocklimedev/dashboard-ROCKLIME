@@ -294,7 +294,6 @@ const setupDB = async () => {
     // 🔥 SYNC DATABASE
     // ======================================
 
-    await sequelize.sync({ alter: true });
     console.log("\x1b[32m%s\x1b[0m", "✓ Database tables synced!");
   } catch (error) {
     console.log(

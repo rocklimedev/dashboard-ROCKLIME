@@ -58,7 +58,8 @@ const indiaStates = {
     "West Bengal",
   ],
 };
-
+// Sort states alphabetically for better UX
+const sortedStates = [...indiaStates.states].sort((a, b) => a.localeCompare(b));
 const AddCustomer = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -567,11 +568,22 @@ const AddCustomer = () => {
                               <Input placeholder="City" />
                             </Form.Item>
                           </Col>
+
                           <Col lg={12} xs={24}>
                             <Form.Item name={["address", "state"]} noStyle>
-                              <Select placeholder="Select State">
+                              <Select
+                                showSearch
+                                placeholder="Search and select state"
+                                optionFilterProp="children"
+                                filterOption={(input, option) =>
+                                  option.children
+                                    .toLowerCase()
+                                    .includes(input.toLowerCase())
+                                }
+                                style={{ width: "100%" }}
+                              >
                                 <Option value="">Select State</Option>
-                                {indiaStates.states.map((state) => (
+                                {sortedStates.map((state) => (
                                   <Option key={state} value={state}>
                                     {state}
                                   </Option>
@@ -579,6 +591,7 @@ const AddCustomer = () => {
                               </Select>
                             </Form.Item>
                           </Col>
+
                           <Col lg={12} xs={24}>
                             <Form.Item name={["address", "zip"]} noStyle>
                               <Input placeholder="ZIP Code" />
