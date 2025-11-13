@@ -9,24 +9,40 @@ const sequelize = new Sequelize(
     host: process.env.DB_HOST,
     dialect: "mysql",
     port: process.env.DB_PORT || 3306,
-    logging: console.log,
+    logging: false,
+    dialectOptions: {
+      connectTimeout: 120000, // 120s
+    },
     pool: {
       max: 10,
       min: 0,
-      acquire: 60000, // 60s
+      acquire: 60000,
       idle: 10000,
+    },
+    retry: {
+      max: 3,
     },
   }
 );
 
-// Test the connection
-sequelize
-  .authenticate()
-  .then(() => {
-    console.log("✅ Connection has been established successfully.");
-  })
-  .catch((err) => {
-    console.error("❌ Unable to connect to the database:", err);
-  });
+// --- keep-alive ping to stop Render’s idle disconnects ---
+setInterval(async () => {
+  try {
+    await sequelize.query("SELECT 1");
+  } catch (err) {
+    console.error("Keep-alive ping failed:", err.message);
+  }
+}, 300000); // every 5 min
+
+async function connectWithRetry() {
+  try {
+    await sequelize.authenticate();
+    console.log("✅ MySQL connected");
+  } catch (err) {
+    console.error("❌ MySQL connection failed:", err.message);
+    setTimeout(connectWithRetry, 5000);
+  }
+}
+connectWithRetry();
 
 module.exports = sequelize;
