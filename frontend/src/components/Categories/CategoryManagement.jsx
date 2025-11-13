@@ -249,15 +249,7 @@ const CategoryManagement = () => {
         }
 
         return imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={record.name}
-            className="product-image"
-            onError={(e) => {
-              e.target.style.display = "none";
-              e.target.nextSibling.style.display = "flex";
-            }}
-          />
+          <img src={imageUrl} alt={record.name} className="product-image" />
         ) : (
           <div className="no-image">No img</div>
         );
