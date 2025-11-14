@@ -68,7 +68,12 @@ const Order = sequelize.define(
         key: "customerId",
       },
     },
-
+    // models/orders.js  (only the new field – the rest of your file stays unchanged)
+    gatePassLink: {
+      type: DataTypes.STRING(500),
+      allowNull: true,
+      comment: "URL of the uploaded gate-pass image/PDF",
+    },
     createdBy: {
       type: DataTypes.UUID,
       allowNull: false,

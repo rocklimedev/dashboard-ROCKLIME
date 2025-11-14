@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Spin, Empty } from "antd";
+import { Empty } from "antd";
 import { useGetBrandParentCategoriesQuery } from "../../api/brandParentCategoryApi";
 import Breadcrumb from "./Breadcrumb"; // Adjust the path as needed
 import "./productwrapper.css";
@@ -15,7 +15,7 @@ const adhesive = "https://static.cmtradingco.com/brands/ADHESIVE.png";
 const Product = () => {
   const {
     data: bpcList,
-    isLoading,
+    isLoading, // kept for potential global loader
     error,
   } = useGetBrandParentCategoriesQuery();
 
@@ -67,14 +67,9 @@ const Product = () => {
     { label: "Categories" },
   ];
 
-  if (isLoading) {
-    return (
-      <div className="loading-container">
-        <Spin size="large" />
-        <p>Loading product groups...</p>
-      </div>
-    );
-  }
+  /* ------------------------------------------------------------------ */
+  /*  Global loader is applied elsewhere – we only handle error/empty   */
+  /* ------------------------------------------------------------------ */
 
   if (error) {
     return (

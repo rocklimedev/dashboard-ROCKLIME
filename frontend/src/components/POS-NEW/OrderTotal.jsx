@@ -44,7 +44,6 @@ const OrderTotal = React.memo(
       const withGst = afterExtra + safeGstAmount;
       const beforeRound = withGst;
 
-      // Auto round-off logic
       const rupees = Math.floor(beforeRound);
       const paise = Math.round((beforeRound - rupees) * 100);
       let roundOff = 0;
@@ -53,7 +52,7 @@ const OrderTotal = React.memo(
       } else if (paise > 50) {
         roundOff = (100 - paise) / 100;
       }
-      const final = Math.round(beforeRound + roundOff);
+      const final = Math.round(beforeRound + roundOff); // ← already correct
 
       return {
         taxable,

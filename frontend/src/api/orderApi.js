@@ -49,6 +49,18 @@ export const orderApi = baseApi.injectEndpoints({
         { type: "Orders", id: "LIST" },
       ],
     }),
+    /* ──────────────────────── GATE-PASS ──────────────────────── */
+    issueGatePass: builder.mutation({
+      query: ({ orderId, formData }) => ({
+        url: `/order/${orderId}/gatepass`,
+        method: "POST",
+        body: formData,
+      }),
+      invalidatesTags: (result, error, { orderId }) => [
+        { type: "Orders", id: orderId },
+        { type: "Orders", id: "LIST" },
+      ],
+    }),
     createOrder: builder.mutation({
       query: (orderData) => ({
         url: "/order/create",
@@ -152,6 +164,7 @@ export const orderApi = baseApi.injectEndpoints({
 });
 
 export const {
+  useIssueGatePassMutation,
   useGetOrderCountByDateQuery,
   useUploadInvoiceMutation,
   useDeleteCommentMutation,
