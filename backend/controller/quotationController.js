@@ -7,6 +7,9 @@ const { sendNotification } = require("./notificationController");
 const Product = require("../models/product");
 // ---------------------------------------------------------------------
 // Helper: Calculate totals (uses `total` if provided, else price × qty)
+// ---------------------------------------------------------------------
+// Helper: Calculate totals (ROUND-OFF BEFORE GST, GST LAST)
+// ---------------------------------------------------------------------
 const calculateTotals = (
   products,
   extraDiscount = 0,
@@ -14,11 +17,13 @@ const calculateTotals = (
   shippingAmount = 0,
   gst = 0
 ) => {
+  // 1. SubTotal (after item discount)
   const subTotal = products.reduce((sum, p) => {
     const lineTotal = p.total ?? (p.price || 0) * (p.quantity || 1);
     return sum + lineTotal;
   }, 0);
 
+  // 2. Total Item Discount
   const totalItemDiscount = products.reduce((sum, p) => {
     const lineTotal = p.total ?? (p.price || 0) * (p.quantity || 1);
     const discount = p.discount || 0;
@@ -28,8 +33,7 @@ const calculateTotals = (
     return sum + discAmt;
   }, 0);
 
-  const taxableAfterItemDiscount = subTotal - totalItemDiscount;
-
+  // 3. Item Tax (after item discount)
   const itemTax = products.reduce((sum, p) => {
     const lineTotal = p.total ?? (p.price || 0) * (p.quantity || 1);
     const discAmt =
@@ -40,31 +44,53 @@ const calculateTotals = (
     return sum + (taxable * (p.tax || 0)) / 100;
   }, 0);
 
-  const amountAfterItemDiscAndTax = taxableAfterItemDiscount + itemTax;
-
+  // 4. Extra Discount (after item tax + shipping)
   let extraDiscountAmount = 0;
   if (extraDiscount > 0) {
+    const base = subTotal - totalItemDiscount + itemTax + (shippingAmount || 0);
     extraDiscountAmount =
       extraDiscountType === "percent"
-        ? (amountAfterItemDiscAndTax * extraDiscount) / 100
-        : extraDiscount;
+        ? parseFloat(((base * extraDiscount) / 100).toFixed(2))
+        : parseFloat(extraDiscount.toFixed(2));
   }
 
-  const baseForGst =
-    amountAfterItemDiscAndTax - extraDiscountAmount + (shippingAmount || 0);
+  // 5. Amount BEFORE GST (for round-off)
+  const amountBeforeGstRaw =
+    subTotal -
+    totalItemDiscount +
+    itemTax +
+    (shippingAmount || 0) -
+    extraDiscountAmount;
+  const amountBeforeGst = parseFloat(amountBeforeGstRaw.toFixed(2));
 
-  const gstAmount = gst > 0 ? (baseForGst * gst) / 100 : 0;
+  let roundOff = 0; // ← local variable
+  const rupees = Math.floor(amountBeforeGst);
+  const paise = Math.round((amountBeforeGst - rupees) * 100);
 
-  const finalBeforeRoundOff = baseForGst + gstAmount;
+  if (paise > 0 && paise <= 50) {
+    roundOff = parseFloat((-(paise / 100)).toFixed(2));
+  } else if (paise > 50) {
+    roundOff = parseFloat(((100 - paise) / 100).toFixed(2));
+  }
+  const roundedAmount = parseFloat((amountBeforeGst + roundOff).toFixed(2));
+
+  // 7. GST: FINAL STEP
+  const gstAmount =
+    gst > 0 ? parseFloat(((roundedAmount * gst) / 100).toFixed(2)) : 0;
+
+  // 8. Final Amount
+  const finalAmount = parseFloat((roundedAmount + gstAmount).toFixed(2));
 
   return {
     subTotal: parseFloat(subTotal.toFixed(2)),
     totalItemDiscount: parseFloat(totalItemDiscount.toFixed(2)),
     itemTax: parseFloat(itemTax.toFixed(2)),
-    extraDiscountAmount: parseFloat(extraDiscountAmount.toFixed(2)),
-    baseForGst: parseFloat(baseForGst.toFixed(2)),
-    gstAmount: parseFloat(gstAmount.toFixed(2)),
-    finalBeforeRoundOff: parseFloat(finalBeforeRoundOff.toFixed(2)),
+    extraDiscountAmount,
+    amountBeforeGst,
+    roundOff,
+    roundedAmount,
+    gstAmount,
+    finalAmount,
   };
 };
 
@@ -81,14 +107,12 @@ exports.createQuotation = async (req, res) => {
       products,
       extraDiscount = 0,
       extraDiscountType = "percent",
-      followupDates = [],
       shippingAmount = 0,
       gst = 0,
-      roundOff = 0,
+      roundOff: clientRoundOff = 0,
       finalAmount: clientFinalAmount,
       ...quotationData
     } = req.body;
-
     // ---------- 1. Safe JSON parsing ----------
     if (typeof products === "string") {
       try {
@@ -171,31 +195,36 @@ exports.createQuotation = async (req, res) => {
       totalItemDiscount,
       itemTax,
       extraDiscountAmount,
+      amountBeforeGst,
+      roundOff: serverRoundOff,
+      roundedAmount,
       gstAmount: calcGst,
-      finalBeforeRoundOff,
+      finalAmount: serverFinalAmount,
     } = calculateTotals(
-      enrichedProducts.map((p) => ({
-        ...p,
-        // `calculateTotals` expects `price` and `total` keys
-        price: p.price,
-        total: p.total,
-        quantity: p.quantity,
-        discount: p.discount,
-        discountType: p.discountType,
-        tax: p.tax,
-      })),
+      enrichedProducts.map((p) => ({ ...p, total: null })), // force recalc
       extraDiscount,
       extraDiscountType,
       shippingAmount,
       gst
+      // ← NO clientRoundOff
     );
 
-    const serverFinalAmount = parseFloat(
-      (finalBeforeRoundOff + Number(roundOff || 0)).toFixed(2)
-    );
-
-    // ---------- 6. Validate client finalAmount ----------
     const clientFinal = parseFloat(clientFinalAmount);
+
+    if (Math.abs(clientFinal - serverFinalAmount) > 0.01) {
+      return res.status(400).json({
+        error: "Final amount mismatch",
+        expected: serverFinalAmount,
+        received: clientFinal,
+        debug: {
+          amountBeforeGst,
+          roundOff: serverRoundOff,
+          roundedAmount,
+          gstAmount: calcGst,
+        },
+      });
+    }
+
     if (isNaN(clientFinal)) {
       return res.status(400).json({
         error: "finalAmount is required and must be a valid number",
@@ -224,17 +253,15 @@ exports.createQuotation = async (req, res) => {
     const quotation = await Quotation.create(
       {
         ...quotationData,
-        quotationId: quotationData.quotationId || uuidv4(),
-        products: enrichedProducts, // <-- enriched array
+        products: enrichedProducts,
         extraDiscount: Number(extraDiscount) || 0,
         extraDiscountType: extraDiscountType || "percent",
         discountAmount: Number(extraDiscountAmount) || 0,
         shippingAmount: Number(shippingAmount) || 0,
         gst: Number(gst) || 0,
         gstAmount: Number(calcGst) || 0,
-        finalAmount,
-        followupDates: Array.isArray(followupDates) ? followupDates : [],
-        roundOff: Number(roundOff) || 0,
+        roundOff: Number(clientRoundOff) || 0,
+        finalAmount: serverFinalAmount,
       },
       { transaction: t }
     );

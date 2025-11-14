@@ -76,7 +76,7 @@ const CartContainer = styled.div`
   }
 `;
 
-const NewCart = ({ onConvertToOrder, autoRoundOff }) => {
+const NewCart = ({ onConvertToOrder }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const {
@@ -307,16 +307,6 @@ const NewCart = ({ onConvertToOrder, autoRoundOff }) => {
     [cartItems]
   );
 
-  const tax = useMemo(
-    () =>
-      cartItems.reduce((acc, item) => {
-        const itemSubtotal = (item.price || 0) * (item.quantity || 1);
-        const itemTax = parseFloat(itemTaxes[item.productId]) || 0;
-        return acc + (itemSubtotal * itemTax) / 100;
-      }, 0),
-    [cartItems, itemTaxes]
-  );
-
   const totalDiscount = useMemo(() => {
     return cartItems.reduce((sum, item) => {
       const subtotal = (item.price || 0) * (item.quantity || 1);
@@ -329,32 +319,64 @@ const NewCart = ({ onConvertToOrder, autoRoundOff }) => {
       return sum + disc;
     }, 0);
   }, [cartItems, itemDiscounts, itemDiscountTypes]);
+
+  const tax = useMemo(() => {
+    return cartItems.reduce((acc, item) => {
+      const price = item.price || 0;
+      const qty = item.quantity || 1;
+      const subtotal = price * qty;
+
+      const discVal = Number(itemDiscounts[item.productId]) || 0;
+      const type = itemDiscountTypes[item.productId] || "percent";
+      const discAmt =
+        type === "percent" ? (subtotal * discVal) / 100 : discVal * qty;
+
+      const taxable = subtotal - discAmt;
+      const itemTax = parseFloat(itemTaxes[item.productId]) || 0;
+
+      return acc + (taxable * itemTax) / 100;
+    }, 0);
+  }, [cartItems, itemDiscounts, itemDiscountTypes, itemTaxes]);
+
+  // === GLOBAL DISCOUNT (extraDiscount) ===
   const extraDiscount = useMemo(() => {
     const amount = parseFloat(quotationData.discountAmount) || 0;
     if (!amount) return 0;
 
-    const taxableBase = subTotal - totalDiscount;
-    const afterTax = taxableBase + tax;
-
+    const base = subTotal - totalDiscount + tax + shipping;
     return quotationData.discountType === "percent"
-      ? parseFloat(((afterTax * amount) / 100).toFixed(2))
-      : amount;
+      ? parseFloat(((base * amount) / 100).toFixed(2))
+      : parseFloat(amount.toFixed(2));
   }, [
-    quotationData.discountType,
     quotationData.discountAmount,
+    quotationData.discountType,
     subTotal,
     totalDiscount,
     tax,
+    shipping,
   ]);
-  const roundOff = parseFloat(quotationData.roundOff) || 0;
 
-  const amountForGst =
-    subTotal + shipping + tax - totalDiscount - extraDiscount;
-  const gstAmount =
-    isNaN(amountForGst) || isNaN(gst)
-      ? 0
-      : parseFloat(((amountForGst * gst) / 100).toFixed(2));
-  const totalAmount = amountForGst + gstAmount + roundOff;
+  // === AMOUNT BEFORE GST (for round-off) ===
+  const amountBeforeGstRaw =
+    subTotal - totalDiscount + tax + shipping - extraDiscount;
+  const amountBeforeGst = parseFloat(amountBeforeGstRaw.toFixed(2));
+
+  // === ROUND-OFF: Applied BEFORE GST (EXACT SAME AS BACKEND) ===
+  const rupees = Math.floor(amountBeforeGst);
+  const paise = Math.round((amountBeforeGst - rupees) * 100);
+  let roundOff = 0;
+  if (paise > 0 && paise <= 50) {
+    roundOff = parseFloat((-(paise / 100)).toFixed(2));
+  } else if (paise > 50) {
+    roundOff = parseFloat(((100 - paise) / 100).toFixed(2));
+  }
+  const roundedAmount = parseFloat((amountBeforeGst + roundOff).toFixed(2));
+
+  // === GST: FINAL STEP ===
+  const gstAmount = parseFloat(((roundedAmount * gst) / 100).toFixed(2));
+
+  // === FINAL TOTAL ===
+  const totalAmount = parseFloat((roundedAmount + gstAmount).toFixed(2));
   const purchaseOrderTotal = useMemo(
     () =>
       purchaseOrderData.items
@@ -724,63 +746,66 @@ const NewCart = ({ onConvertToOrder, autoRoundOff }) => {
         );
       }
     }
-
     if (documentType === "Quotation") {
+      // === BUILD PAYLOAD ===
+      // === BUILD PAYLOAD (MATCH BACKEND EXACTLY) ===
       const quotationPayload = {
         quotationId: uuidv4(),
         document_title: `Quotation for ${selectedCustomerData.name}`,
         quotation_date: quotationData.quotationDate,
         due_date: quotationData.dueDate,
         reference_number: quotationNumber,
-        discountType: quotationData.discountType,
-        discountAmount: parseFloat(quotationData.discountAmount) || 0,
-        roundOff: autoRoundOff,
-        signature_name: quotationData.signatureName || "CM TRADING CO",
-        signature_image: "",
-        customerId: selectedCustomerData.customerId,
-        shipTo: quotationData.shipTo || null,
-        createdBy: userId,
 
-        // ---- PRODUCTS (plain array) ----
+        // === GLOBAL DISCOUNT: Use backend field names ===
+        extraDiscount: parseFloat(quotationData.discountAmount) || 0,
+        extraDiscountType: quotationData.discountType || "percent",
+
+        shippingAmount: Number(shipping),
+        gst: gst,
+
+        // === FINAL VALUES (calculated on frontend) ===
+
+        finalAmount: totalAmount,
+
         products: cartItems.map((item) => {
-          const price = parseFloat(item.price) || 0;
-          const qty = parseInt(item.quantity, 10) || 1;
-          const raw = Number(itemDiscounts[item.productId]) || 0;
+          const price = Number(item.price) || 0;
+          const qty = Number(item.quantity) || 1;
+          const disc = Number(itemDiscounts[item.productId]) || 0;
           const type = itemDiscountTypes[item.productId] || "percent";
 
           const unitAfter =
-            type === "percent" ? price * (1 - raw / 100) : price - raw;
-
-          const total = Math.round(unitAfter * qty); // integer line total
+            type === "percent" ? price * (1 - disc / 100) : price - disc;
+          const lineTotal = parseFloat((unitAfter * qty).toFixed(2));
 
           return {
-            id: item.productId,
-            price: Number(price.toFixed(2)),
-            discount: Number(raw.toFixed(2)),
-            total,
-            quantity: qty,
-            // optional – keep name for UI only (not stored)
+            productId: item.productId,
             name: item.name,
+            price: Number(price.toFixed(2)),
+            discount: Number(disc.toFixed(2)),
+            discountType: type,
+            quantity: qty,
+            total: lineTotal,
+            tax: Number(itemTaxes[item.productId]) || 0,
           };
         }),
 
-        // ---- EXTRA DISCOUNT & GST ----
-        extraDiscount: parseFloat(quotationData.discountAmount) || 0,
-        extraDiscountType: quotationData.discountType,
-        gst: gst, // <-- the % you entered
-        gstAmount: gstAmount, // <-- already calculated in NewCart
-        shippingAmount: shipping,
-        finalAmount: totalAmount.toFixed(2),
-        // ---- FOLLOW-UPS (plain array) ----
         followupDates: quotationData.followupDates.filter(Boolean),
+
+        customerId: selectedCustomerData.customerId,
+        shipTo: quotationData.shipTo || null,
+        createdBy: userId,
+        signature_name: quotationData.signatureName || "CM TRADING CO",
+        signature_image: "",
       };
-      console.log(quotationPayload);
+      console.log("QUOTATION PAYLOAD →", quotationPayload);
+
       try {
         await createQuotation(quotationPayload).unwrap();
         await handleClearCart();
         resetForm();
         navigate("/quotations/list");
       } catch (e) {
+        console.error(e);
         toast.error(e?.data?.message || "Failed to create quotation");
       }
     } else if (documentType === "Order") {
@@ -1239,6 +1264,7 @@ const NewCart = ({ onConvertToOrder, autoRoundOff }) => {
                 shipping={shipping}
                 tax={tax}
                 discount={totalDiscount}
+                extraDiscount={extraDiscount}
                 roundOff={roundOff}
                 subTotal={subTotal}
                 handleAddCustomer={handleAddCustomer}

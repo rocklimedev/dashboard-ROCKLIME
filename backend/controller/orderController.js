@@ -32,7 +32,11 @@ const VALID_STATUSES = [
   "CLOSED", // ← NEW
 ];
 const VALID_PRIORITIES = ["high", "medium", "low"];
-
+// ──────── HELPERS ──────── (add near the top of the controller file)
+const canDispatch = (order) => {
+  // Gate-pass is mandatory **only** when moving to DISPATCHED
+  return order.gatePassLink !== null && order.gatePassLink.trim() !== "";
+};
 // Assume an admin user ID or system channel for notifications
 const ADMIN_USER_ID = "2ef0f07a-a275-4fe1-832d-fe9a5d145f60"; // Replace with actual admin user ID or channel
 
@@ -884,6 +888,7 @@ exports.createOrder = async (req, res) => {
 };
 
 // ──────── UPDATE ORDER (by id) ────────
+// ──────── UPDATE ORDER (by id) ────────
 exports.updateOrderById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -902,6 +907,16 @@ exports.updateOrderById = async (req, res) => {
       const norm = updates.status.toUpperCase();
       if (!VALID_STATUSES.includes(norm))
         return sendErrorResponse(res, 400, `Invalid status: ${updates.status}`);
+
+      // GATE-PASS REQUIRED FOR DISPATCHED
+      if (norm === "DISPATCHED" && !order.gatePassLink) {
+        return sendErrorResponse(
+          res,
+          400,
+          "Gate-pass must be uploaded before dispatching the order"
+        );
+      }
+
       updates.status = norm;
     }
 
@@ -920,32 +935,45 @@ exports.updateOrderById = async (req, res) => {
     // ── DATES ──
     if (updates.dueDate) {
       if (!moment(updates.dueDate, "YYYY-MM-DD", true).isValid())
-        return sendErrorResponse(res, 400, "Invalid dueDate");
+        return sendErrorResponse(
+          res,
+          400,
+          "Invalid dueDate format (YYYY-MM-DD)"
+        );
       updates.dueDate = moment(updates.dueDate).format("YYYY-MM-DD");
     }
     if (updates.followupDates) {
       if (!Array.isArray(updates.followupDates))
         return sendErrorResponse(res, 400, "followupDates must be array");
-      const bad = updates.followupDates.filter(
+      const invalid = updates.followupDates.filter(
         (d) => d && !moment(d, "YYYY-MM-DD", true).isValid()
       );
-      if (bad.length)
-        return sendErrorResponse(res, 400, "Invalid followup date format");
+      if (invalid.length)
+        return sendErrorResponse(res, 400, "Invalid followup date(s)");
       updates.followupDates = updates.followupDates.filter(Boolean);
     }
 
     // ── TEAM / USERS ──
-    if (updates.assignedTeamId) {
-      const t = await Team.findByPk(updates.assignedTeamId);
-      if (!t) return sendErrorResponse(res, 400, "Assigned team not found");
+    if (updates.assignedTeamId !== undefined) {
+      if (updates.assignedTeamId === null) updates.assignedTeamId = null;
+      else {
+        const t = await Team.findByPk(updates.assignedTeamId);
+        if (!t) return sendErrorResponse(res, 400, "Assigned team not found");
+      }
     }
-    if (updates.assignedUserId) {
-      const u = await User.findByPk(updates.assignedUserId);
-      if (!u) return sendErrorResponse(res, 400, "Assigned user not found");
+    if (updates.assignedUserId !== undefined) {
+      if (updates.assignedUserId === null) updates.assignedUserId = null;
+      else {
+        const u = await User.findByPk(updates.assignedUserId);
+        if (!u) return sendErrorResponse(res, 400, "Assigned user not found");
+      }
     }
-    if (updates.secondaryUserId) {
-      const u = await User.findByPk(updates.secondaryUserId);
-      if (!u) return sendErrorResponse(res, 400, "Secondary user not found");
+    if (updates.secondaryUserId !== undefined) {
+      if (updates.secondaryUserId === null) updates.secondaryUserId = null;
+      else {
+        const u = await User.findByPk(updates.secondaryUserId);
+        if (!u) return sendErrorResponse(res, 400, "Secondary user not found");
+      }
     }
 
     // ── ORDERNO (unique except self) ──
@@ -1034,14 +1062,13 @@ exports.updateOrderById = async (req, res) => {
           return sendErrorResponse(
             res,
             400,
-            "Each product needs id,price,discount,total,quantity"
+            "Each product needs id, price, discount, total, quantity (>=1)"
           );
 
         const prod = await Product.findByPk(id);
         if (!prod)
           return sendErrorResponse(res, 404, `Product ${id} not found`);
 
-        // numeric sanity
         if (
           typeof price !== "number" ||
           price < 0 ||
@@ -1052,7 +1079,6 @@ exports.updateOrderById = async (req, res) => {
         )
           return sendErrorResponse(res, 400, `Invalid numeric for ${id}`);
 
-        // line total
         const discType = prod.discountType || "fixed";
         const expected = Number(
           (
@@ -1061,22 +1087,18 @@ exports.updateOrderById = async (req, res) => {
               : price - discount) * quantity
           ).toFixed(2)
         );
-
-        if (Math.abs(total - expected) > 0.01) {
+        if (Math.abs(total - expected) > 0.01)
           return sendErrorResponse(
             res,
             400,
             `Invalid total for ${id}. Expected ${expected}`
           );
-        }
-        // stock (only check – we will adjust later)
-        if (
-          prod.quantity +
-            (order.products?.find((op) => op.id == id)?.quantity || 0) <
-          quantity
-        ) {
+
+        // Stock check: current stock + old qty in order >= new qty
+        const oldQty =
+          order.products?.find((op) => op.id === id)?.quantity || 0;
+        if (prod.quantity + oldQty < quantity)
           return sendErrorResponse(res, 400, `Not enough stock for ${id}`);
-        }
 
         newProductUpdates.push({
           productId: id,
@@ -1116,7 +1138,7 @@ exports.updateOrderById = async (req, res) => {
       updates.amountPaid = a;
     }
 
-    // ── RECALCULATE TOTALS BEFORE SAVE ──
+    // ── RECALCULATE TOTALS ──
     const calcInput = {
       products: updates.products ?? order.products ?? [],
       shipping: updates.shipping ?? order.shipping ?? 0,
@@ -1126,26 +1148,24 @@ exports.updateOrderById = async (req, res) => {
         updates.extraDiscountType ?? order.extraDiscountType ?? "fixed",
       amountPaid: updates.amountPaid ?? order.amountPaid ?? 0,
     };
-    // inside updateOrderById, after computeTotals()
-    const {
-      gstValue,
-      extraDiscountValue,
-      finalAmount, // <-- NEW
-    } = computeTotals(calcInput);
+
+    const { gstValue, extraDiscountValue, finalAmount } =
+      computeTotals(calcInput);
 
     updates.gstValue = gstValue;
     updates.extraDiscountValue = extraDiscountValue;
-    updates.finalAmount = finalAmount; // <-- NEW
+    updates.finalAmount = finalAmount;
+
     // ── STOCK ADJUSTMENT (if products changed) ──
     if (newProductUpdates.length) {
-      // 1. restore old quantities
+      // 1. Restore old stock
       if (order.products?.length) {
         await restoreStock({
           products: order.products,
           orderNo: order.orderNo,
         });
       }
-      // 2. deduct new quantities
+      // 2. Deduct new stock
       await reduceStockAndLog({
         productUpdates: newProductUpdates,
         createdBy: order.createdBy,
@@ -1171,6 +1191,7 @@ exports.updateOrderById = async (req, res) => {
         updates.secondaryUserId ?? order.secondaryUserId,
       ].filter(Boolean)
     );
+
     for (const uid of recipients) {
       await sendNotification({
         userId: uid,
@@ -1184,7 +1205,7 @@ exports.updateOrderById = async (req, res) => {
       message: `Order #${order.orderNo} for ${customer.name}${addrInfo} updated.`,
     });
 
-    // team change notification
+    // Notify new team if changed
     if (
       updates.assignedTeamId &&
       updates.assignedTeamId !== order.assignedTeamId
@@ -1212,6 +1233,7 @@ exports.updateOrderById = async (req, res) => {
 };
 
 // ──────── UPDATE STATUS ONLY ────────
+// ──────── UPDATE STATUS ONLY ────────
 exports.updateOrderStatus = async (req, res) => {
   try {
     const { id, status } = req.body;
@@ -1227,20 +1249,31 @@ exports.updateOrderStatus = async (req, res) => {
     if (!VALID_STATUSES.includes(norm))
       return sendErrorResponse(res, 400, `Invalid status: ${status}`);
 
-    const old = order.status;
+    // GATE-PASS REQUIRED FOR DISPATCHED
+    if (norm === "DISPATCHED" && !order.gatePassLink) {
+      return sendErrorResponse(
+        res,
+        400,
+        "Gate-pass must be uploaded before dispatching the order"
+      );
+    }
+
+    const oldStatus = order.status;
     order.status = norm;
     await order.save();
 
-    // special handling for CANCELED / CLOSED → restore stock
+    // Restore stock on CANCELED / CLOSED
     if (["CANCELED", "CLOSED"].includes(norm) && order.products?.length) {
       await restoreStock({ products: order.products, orderNo: order.orderNo });
     }
 
+    // ── NOTIFICATIONS ──
     const recipients = new Set(
       [order.createdBy, order.assignedUserId, order.secondaryUserId].filter(
         Boolean
       )
     );
+
     for (const uid of recipients) {
       await sendNotification({
         userId: uid,
@@ -1250,10 +1283,11 @@ exports.updateOrderStatus = async (req, res) => {
         } → ${norm}.`,
       });
     }
+
     await sendNotification({
       userId: ADMIN_USER_ID,
       title: `Order Status #${order.orderNo}`,
-      message: `Order #${order.orderNo} changed ${old} → ${norm}.`,
+      message: `Order #${order.orderNo} changed from ${oldStatus} → ${norm}.`,
     });
 
     return res.status(200).json({ message: "Status updated", order });
@@ -2315,5 +2349,51 @@ exports.countOrders = async (req, res) => {
     res.json({ count });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
+  }
+};
+// ──────── ISSUE GATE-PASS ────────
+exports.issueGatePass = async (req, res) => {
+  try {
+    if (!req.file) {
+      return sendErrorResponse(res, 400, "No file uploaded");
+    }
+
+    const { orderId } = req.params;
+    const order = await Order.findByPk(orderId);
+    if (!order) return sendErrorResponse(res, 404, "Order not found");
+
+    // reuse the same FTP upload you already have for invoices
+    const fileUrl = await uploadToCDN(req.file); // <-- already defined in your file
+
+    await order.update({ gatePassLink: fileUrl });
+
+    // ---------- NOTIFICATIONS ----------
+    const customer = await Customer.findByPk(order.createdFor);
+    const recipients = new Set(
+      [order.createdBy, order.assignedUserId, order.secondaryUserId].filter(
+        Boolean
+      )
+    );
+    for (const uid of recipients) {
+      await sendNotification({
+        userId: uid,
+        title: `Gate-Pass Issued #${order.orderNo}`,
+        message: `Gate-pass uploaded for order #${order.orderNo} – ${
+          customer?.name || ""
+        }.`,
+      });
+    }
+    await sendNotification({
+      userId: ADMIN_USER_ID,
+      title: `Gate-Pass Issued #${order.orderNo}`,
+      message: `Gate-pass uploaded for order #${order.orderNo}.`,
+    });
+
+    return res.status(200).json({
+      message: "Gate-pass uploaded",
+      gatePassLink: fileUrl,
+    });
+  } catch (err) {
+    return sendErrorResponse(res, 500, "Gate-pass upload failed", err.message);
   }
 };

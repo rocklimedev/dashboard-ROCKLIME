@@ -3,3 +3,4 @@ node_modules
 /static.cmtradingco.com
 /product_images
 new_images
+.env.production

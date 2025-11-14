@@ -199,10 +199,6 @@ const OrderPage = () => {
 
   const { data: teamData } = useGetAllTeamsQuery();
   const { data: customersData } = useGetCustomersQuery();
-  const totalOrders = useMemo(() => {
-    // `customerData?.invoices` is an array of invoice objects for the customer
-    return customerData?.invoices?.length ?? 0;
-  }, [customerData]);
 
   // ── PRODUCTS & QUOTATION ──
   const quotationDetails = useMemo(() => {

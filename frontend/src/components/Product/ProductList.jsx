@@ -171,7 +171,7 @@ const ProductsList = () => {
         : true;
 
       // ── 2. Search term ──
-      const term = search.toLowerCase();
+      const term = (search || "").toLowerCase();
       const code = getCompanyCode(product.metaDetails);
 
       // Existing fields
@@ -188,7 +188,7 @@ const ProductsList = () => {
       // ── 3. Combine ──
       return (
         matchesFilter &&
-        (!term ||
+        (term === "" ||
           matchesName ||
           matchesCode ||
           matchesCompany ||
@@ -196,7 +196,7 @@ const ProductsList = () => {
           matchesParentCategory)
       );
     });
-  }, [products, brandId, bpcId, search, categoriesData]); // <-- added categoriesData
+  }, [products, brandId, bpcId, search, categoriesData]); // <-- **keep** categoriesData
   const formattedTableData = useMemo(
     () =>
       filteredProducts.map((product) => ({
