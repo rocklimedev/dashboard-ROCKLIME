@@ -8,7 +8,6 @@ import {
   Select,
   Button,
   Modal,
-  Spin,
   Alert,
   Table,
   InputNumber,
@@ -29,15 +28,12 @@ import {
 import { useGetAllBrandsQuery } from "../../api/brandsApi";
 import moment from "moment";
 import DatePicker from "react-datepicker";
+
 const { Option } = Select;
 
-// AddVendorModal Component (unchanged)
+// AddVendorModal Component (loading removed)
 const AddVendorModal = ({ show, onClose, onSave, isCreatingVendor }) => {
-  const {
-    data: brandsData,
-    isLoading: isBrandsLoading,
-    error: brandsError,
-  } = useGetAllBrandsQuery(undefined, {
+  const { data: brandsData } = useGetAllBrandsQuery(undefined, {
     refetchOnMountOrArgChange: true,
   });
   const brands = brandsData || [];
@@ -103,14 +99,6 @@ const AddVendorModal = ({ show, onClose, onSave, isCreatingVendor }) => {
       centered
     >
       <Form form={form} onFinish={handleSubmit} layout="vertical">
-        {brandsError && (
-          <Alert
-            message="Failed to load brands"
-            description={brandsError?.data?.message || "Unknown error"}
-            type="error"
-            showIcon
-          />
-        )}
         <Form.Item
           label="Vendor ID"
           name="vendorId"
@@ -143,11 +131,7 @@ const AddVendorModal = ({ show, onClose, onSave, isCreatingVendor }) => {
             style={{ width: "100%" }}
             value={vendorData.brandId || undefined}
             onChange={handleBrandChange}
-            placeholder={
-              isBrandsLoading ? "Loading brands..." : "Select a brand"
-            }
-            loading={isBrandsLoading}
-            disabled={isBrandsLoading}
+            placeholder="Select a brand"
             aria-label="Select a brand"
             options={brands.map((brand) => ({
               value: brand.id,
@@ -163,12 +147,8 @@ const AddVendorModal = ({ show, onClose, onSave, isCreatingVendor }) => {
           >
             Cancel
           </Button>
-          <Button
-            type="primary"
-            htmlType="submit"
-            disabled={isCreatingVendor || isBrandsLoading}
-          >
-            {isCreatingVendor ? <Spin size="small" /> : "Save Vendor"}
+          <Button type="primary" htmlType="submit" disabled={isCreatingVendor}>
+            {isCreatingVendor ? "Saving..." : "Save Vendor"}
           </Button>
         </div>
       </Form>
@@ -176,7 +156,7 @@ const AddVendorModal = ({ show, onClose, onSave, isCreatingVendor }) => {
   );
 };
 
-// ProductTableRow Component
+// ProductTableRow (unchanged)
 const ProductTableRow = ({
   item,
   index,
@@ -225,16 +205,11 @@ const AddPurchaseOrder = () => {
   const navigate = useNavigate();
   const [form] = Form.useForm();
 
-  // Queries and Mutations
-  const {
-    data: existingPurchaseOrder,
-    isLoading: isFetching,
-    error: fetchError,
-  } = useGetPurchaseOrderByIdQuery(id, { skip: !isEditMode });
-  const { data: productsData, isLoading: isProductsLoading } =
-    useGetAllProductsQuery();
-  const { data: vendorsData, isLoading: isVendorsLoading } =
-    useGetVendorsQuery();
+  // Queries and Mutations (no loading checks)
+  const { data: existingPurchaseOrder, error: fetchError } =
+    useGetPurchaseOrderByIdQuery(id, { skip: !isEditMode });
+  const { data: productsData } = useGetAllProductsQuery();
+  const { data: vendorsData } = useGetVendorsQuery();
   const [createPurchaseOrder, { isLoading: isCreating }] =
     useCreatePurchaseOrderMutation();
   const [updatePurchaseOrder, { isLoading: isUpdating }] =
@@ -246,7 +221,6 @@ const AddPurchaseOrder = () => {
   const products = productsData || [];
   const statuses = ["pending", "confirmed", "delivered", "cancelled"];
 
-  // Initial form data
   const initialFormData = useMemo(
     () => ({
       vendorId: "",
@@ -254,6 +228,7 @@ const AddPurchaseOrder = () => {
       expectedDeliveryDate: null,
       items: [],
       totalAmount: 0,
+      status: "pending",
     }),
     []
   );
@@ -264,8 +239,11 @@ const AddPurchaseOrder = () => {
   const [showVendorModal, setShowVendorModal] = useState(false);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+
   const momentToDate = (m) => (m && m.isValid() ? m.toDate() : null);
   const dateToMoment = (d) => (d ? moment(d) : null);
+
+  // Populate edit mode
   useEffect(() => {
     if (
       isEditMode &&
@@ -273,7 +251,6 @@ const AddPurchaseOrder = () => {
       products.length > 0 &&
       vendors.length > 0
     ) {
-      // Validate vendor
       const vendorExists = vendors.some(
         (vendor) => vendor.id === existingPurchaseOrder.vendorId
       );
@@ -282,7 +259,6 @@ const AddPurchaseOrder = () => {
         setFormData((prev) => ({ ...prev, vendorId: "" }));
       }
 
-      // Map items
       const items = Array.isArray(existingPurchaseOrder.items)
         ? existingPurchaseOrder.items
             .map((item) => {
@@ -315,20 +291,17 @@ const AddPurchaseOrder = () => {
                 total: quantity * sellingPrice,
               };
             })
-            // Do not filter out items; keep them even if product is not found
             .map((item) => ({
               ...item,
               name: item.name || "Unknown Product",
-              mrp: item.mrp > 0 ? item.mrp : 0.01, // Ensure valid MRP
+              mrp: item.mrp > 0 ? item.mrp : 0.01,
             }))
         : [];
 
-      // Calculate total amount
       const totalAmount = items
         .reduce((sum, item) => sum + Number(item.total || 0), 0)
         .toFixed(2);
 
-      // Set formData
       const newFormData = {
         vendorId: vendorExists ? existingPurchaseOrder.vendorId : "",
         orderDate: existingPurchaseOrder.orderDate
@@ -343,8 +316,6 @@ const AddPurchaseOrder = () => {
       };
 
       setFormData(newFormData);
-
-      // Set Ant Design Form fields
       form.setFieldsValue({
         vendorId: newFormData.vendorId,
         orderDate: newFormData.orderDate,
@@ -353,6 +324,7 @@ const AddPurchaseOrder = () => {
       });
     }
   }, [existingPurchaseOrder, isEditMode, products, vendors, form]);
+
   // Debounced product search
   const debouncedSearch = useCallback(
     debounce((value) => {
@@ -440,7 +412,7 @@ const AddPurchaseOrder = () => {
     });
   };
 
-  // Update product fields
+  // Update product field
   const updateProductField = (index, field, value) => {
     const updatedItems = [...formData.items];
     updatedItems[index][field] = value;
@@ -457,13 +429,13 @@ const AddPurchaseOrder = () => {
     setFormData({ ...formData, items: updatedItems, totalAmount });
   };
 
-  // Handle vendor selection
+  // Handle vendor change
   const handleVendorChange = (value) => {
     setFormData((prev) => ({ ...prev, vendorId: value }));
     form.setFieldsValue({ vendorId: value });
   };
 
-  // Handle clear form with confirmation
+  // Clear form with confirmation
   const handleClearForm = () => {
     setShowClearConfirm(true);
   };
@@ -476,11 +448,9 @@ const AddPurchaseOrder = () => {
     setShowClearConfirm(false);
   };
 
-  // Inside AddPurchaseOrder component
+  // Submit handler
   const handleSubmit = async () => {
     try {
-      const formValues = form.getFieldsValue();
-
       await form.validateFields();
       if (formData.items.length === 0) {
         toast.error("Please add at least one product.");
@@ -517,13 +487,9 @@ const AddPurchaseOrder = () => {
       };
 
       if (isEditMode) {
-        const result = await updatePurchaseOrder({
-          id,
-          ...formattedFormData,
-        }).unwrap();
+        await updatePurchaseOrder({ id, ...formattedFormData }).unwrap();
       } else {
-        const result = await createPurchaseOrder(formattedFormData).unwrap();
-
+        await createPurchaseOrder(formattedFormData).unwrap();
         setFormData(initialFormData);
         form.resetFields();
         setProductSearch("");
@@ -551,21 +517,7 @@ const AddPurchaseOrder = () => {
     }
   };
 
-  // Loading state
-  if (isFetching || isVendorsLoading || isProductsLoading) {
-    return (
-      <div className="content">
-        <div className="card">
-          <div className="card-body text-center">
-            <Spin />
-            <p>Loading data...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Error state
+  // Error state only (no loading)
   if (fetchError) {
     return (
       <div className="content">
@@ -585,7 +537,7 @@ const AddPurchaseOrder = () => {
     );
   }
 
-  // Table columns for AntD Table
+  // Table columns
   const columns = [
     {
       title: "Product",
@@ -664,6 +616,7 @@ const AddPurchaseOrder = () => {
               </Link>
               <Button onClick={handleClearForm}>Clear Form</Button>
             </div>
+
             <Form form={form} layout="vertical" onFinish={handleSubmit}>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
                 <Form.Item
@@ -680,8 +633,6 @@ const AddPurchaseOrder = () => {
                       value={formData.vendorId}
                       onChange={handleVendorChange}
                       placeholder="Select a vendor"
-                      disabled={isVendorsLoading}
-                      aria-label="Select a vendor"
                       showSearch
                       filterOption={(input, option) =>
                         option.children
@@ -705,12 +656,12 @@ const AddPurchaseOrder = () => {
                       type="primary"
                       style={{ marginLeft: 8 }}
                       onClick={() => setShowVendorModal(true)}
-                      aria-label="Add new vendor"
                     >
                       +
                     </Button>
                   </div>
                 </Form.Item>
+
                 <Form.Item
                   label="Order Date"
                   name="orderDate"
@@ -735,6 +686,7 @@ const AddPurchaseOrder = () => {
                   />
                 </Form.Item>
               </div>
+
               <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
                 <Form.Item
                   label="Expected Delivery Date"
@@ -756,6 +708,7 @@ const AddPurchaseOrder = () => {
                     isClearable
                   />
                 </Form.Item>
+
                 <Form.Item
                   label="Total Amount (₹)"
                   style={{ flex: 1, minWidth: 300 }}
@@ -767,6 +720,7 @@ const AddPurchaseOrder = () => {
                     aria-readonly="true"
                   />
                 </Form.Item>
+
                 <Form.Item
                   label="Status"
                   name="status"
@@ -783,22 +737,16 @@ const AddPurchaseOrder = () => {
                   </Select>
                 </Form.Item>
               </div>
+
+              {/* Product Search */}
               <Select
                 showSearch
-                style={{ width: "100%" }}
+                style={{ width: "100%", marginBottom: 16 }}
                 placeholder="Search by product name or code"
                 onSearch={debouncedSearch}
                 onChange={addProduct}
                 filterOption={false}
-                loading={isProductsLoading}
-                aria-label="Search products"
-                notFoundContent={
-                  isProductsLoading ? (
-                    <Spin size="small" />
-                  ) : (
-                    "No products found"
-                  )
-                }
+                notFoundContent="No products found"
               >
                 {filteredProducts.map((product, index) => (
                   <Option
@@ -809,6 +757,8 @@ const AddPurchaseOrder = () => {
                   </Option>
                 ))}
               </Select>
+
+              {/* Products Table */}
               <Table
                 columns={columns}
                 dataSource={formData.items}
@@ -816,6 +766,8 @@ const AddPurchaseOrder = () => {
                 locale={{ emptyText: "No products added" }}
                 pagination={false}
               />
+
+              {/* Submit Buttons */}
               <div
                 style={{
                   display: "flex",
@@ -835,10 +787,12 @@ const AddPurchaseOrder = () => {
                   htmlType="submit"
                   disabled={isCreating || isUpdating}
                 >
-                  {isCreating || isUpdating ? <Spin size="small" /> : "Submit"}
+                  {isCreating || isUpdating ? "Submitting..." : "Submit"}
                 </Button>
               </div>
             </Form>
+
+            {/* Modals */}
             <AddVendorModal
               show={showVendorModal}
               onClose={() => setShowVendorModal(false)}

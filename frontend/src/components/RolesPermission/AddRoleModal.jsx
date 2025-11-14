@@ -7,7 +7,7 @@ import Form from "react-bootstrap/Form";
 
 const AddRoleModal = ({ show, onClose }) => {
   const [roleName, setRoleName] = useState("");
-  const [createRole, { isLoading }] = useCreateRoleMutation();
+  const [createRole] = useCreateRoleMutation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -49,14 +49,13 @@ const AddRoleModal = ({ show, onClose }) => {
               value={roleName}
               onChange={(e) => setRoleName(e.target.value)}
               required
-              disabled={isLoading}
             />
           </Form.Group>
         </Modal.Body>
 
         <Modal.Footer>
-          <Button variant="primary" type="submit" disabled={isLoading}>
-            {isLoading ? "Adding..." : "Add New"}
+          <Button variant="primary" type="submit">
+            Add New
           </Button>
         </Modal.Footer>
       </Form>

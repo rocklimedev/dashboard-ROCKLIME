@@ -10,6 +10,7 @@ import {
   Button,
   Tooltip,
   Dropdown,
+  Select,
   Menu,
 } from "antd";
 import {
@@ -43,7 +44,7 @@ import ProductCard from "./ProductCard";
 import PageHeader from "../Common/PageHeader";
 import Breadcrumb from "./Breadcrumb";
 import pos from "../../assets/img/default.png";
-
+import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import PermissionGate from "../../context/PermissionGate"; // <-- NEW
 import { useAuth } from "../../context/AuthContext";
 
@@ -63,7 +64,7 @@ const ProductsList = () => {
     data: categoriesData,
     isLoading: categoriesLoading,
     error: categoriesError,
-  } = useGetBrandParentCategoriesQuery();
+  } = useGetAllCategoriesQuery();
   const { data: customersData } = useGetCustomersQuery();
   const { data: user, isLoading: userLoading } = useGetProfileQuery();
 
@@ -80,6 +81,7 @@ const ProductsList = () => {
   // ──────────────────────────────────────────────────────
   // STATE
   // ──────────────────────────────────────────────────────
+  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const [viewMode, setViewMode] = useState("list");
   const [currentPage, setCurrentPage] = useState(1);
   const [isDeleteModalVisible, setDeleteModalVisible] = useState(false);
@@ -102,19 +104,32 @@ const ProductsList = () => {
       ? brandsData?.find((b) => b.id === brandId)?.brandName || "Not Branded"
       : "Not Branded";
   };
+  const categoryOptions = useMemo(() => {
+    const categories = categoriesData?.categories ?? []; // <-- Extract array
 
+    const opts = [
+      { label: "All Categories", value: "" },
+      ...categories.map((c) => ({
+        label: c.name,
+        value: c.id || c.categoryId, // use correct ID field
+      })),
+    ];
+    return opts;
+  }, [categoriesData]);
   // ──────────────────────────────────────────────────────
   // HELPERS (add these two functions)
   // ──────────────────────────────────────────────────────
   const getCategoryName = (categoryId) => {
     return categoryId
-      ? categoriesData?.find((c) => c.id === categoryId)?.name ||
-          "Uncategorized"
+      ? categoriesData?.categories?.find((c) => c.categoryId === categoryId)
+          ?.name || "Uncategorized"
       : "Uncategorized";
   };
 
   const getParentCategoryName = (categoryId) => {
-    const cat = categoriesData?.find((c) => c.id === categoryId);
+    const cat = categoriesData?.categories?.find(
+      (c) => c.categoryId === categoryId
+    );
     return cat?.parentcategories?.name || "";
   };
 
@@ -163,40 +178,49 @@ const ProductsList = () => {
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
-      // ── 1. Brand / Parent-Category filter (unchanged) ──
+      // ── 1. Brand / Parent-Category filter
       const matchesFilter = brandId
         ? String(product.brandId) === String(brandId)
         : bpcId
         ? String(product.brand_parentcategoriesId) === String(bpcId)
         : true;
 
-      // ── 2. Search term ──
-      const term = (search || "").toLowerCase();
+      // ── 2. Category filter
+      const matchesCategory = selectedCategoryId
+        ? String(product.categoryId) === selectedCategoryId
+        : true;
+
+      // ── 3. Search term
+      const term = search.toLowerCase();
       const code = getCompanyCode(product.metaDetails);
 
-      // Existing fields
       const matchesName = product.name?.toLowerCase().includes(term);
       const matchesCode = product.product_code?.toLowerCase().includes(term);
       const matchesCompany = code?.toLowerCase().includes(term);
-
-      // ── NEW: category fields ──
       const catName = getCategoryName(product.categoryId);
       const parentCatName = getParentCategoryName(product.categoryId);
-      const matchesCategory = catName.toLowerCase().includes(term);
+      const matchesCategoryName = catName.toLowerCase().includes(term);
       const matchesParentCategory = parentCatName.toLowerCase().includes(term);
 
-      // ── 3. Combine ──
       return (
         matchesFilter &&
-        (term === "" ||
+        matchesCategory &&
+        (!term ||
           matchesName ||
           matchesCode ||
           matchesCompany ||
-          matchesCategory ||
+          matchesCategoryName ||
           matchesParentCategory)
       );
     });
-  }, [products, brandId, bpcId, search, categoriesData]); // <-- **keep** categoriesData
+  }, [
+    products,
+    brandId,
+    bpcId,
+    search,
+    categoriesData,
+    selectedCategoryId, // ← NEW dependency
+  ]);
   const formattedTableData = useMemo(
     () =>
       filteredProducts.map((product) => ({
@@ -557,9 +581,32 @@ const ProductsList = () => {
                 onChange={handleSearchChange}
               />
             </Form.Item>
+
+            {/* ── NEW CATEGORY DROPDOWN ── */}
+            <Form.Item className="filter-item">
+              <Select
+                style={{ width: 220 }}
+                placeholder="Filter by category"
+                allowClear
+                size="large"
+                options={categoryOptions}
+                onChange={(value) => {
+                  setSelectedCategoryId(value || null);
+                  setCurrentPage(1);
+                }}
+                value={selectedCategoryId}
+                // ADD THESE PROPS BELOW
+                showSearch
+                filterOption={(input, option) =>
+                  (option?.label ?? "")
+                    .toLowerCase()
+                    .includes(input.toLowerCase())
+                }
+                optionFilterProp="label"
+              />
+            </Form.Item>
           </Form>
         </div>
-
         {filteredProducts.length === 0 ? (
           <div className="empty-container text-center py-5">
             <Empty
