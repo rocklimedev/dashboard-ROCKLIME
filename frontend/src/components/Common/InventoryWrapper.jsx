@@ -15,6 +15,7 @@ import {
   Typography,
   message,
   Modal,
+  Alert,
   Form as AntForm,
 } from "antd";
 import {
@@ -36,7 +37,7 @@ import PageHeader from "../Common/PageHeader";
 import pos from "../../assets/img/default.png";
 import { useGetHistoryByProductIdQuery } from "../../api/productApi";
 import { Dropdown } from "react-bootstrap";
-
+import HistoryModalAntD from "./HistoryModal";
 const { TabPane } = Tabs;
 const { Text } = Typography;
 
@@ -654,72 +655,6 @@ const InventoryWrapper = () => {
         product={selectedProduct}
       />
     </div>
-  );
-};
-
-/* ────── History Modal ────── */
-const HistoryModalAntD = ({ open, onCancel, product }) => {
-  const {
-    data: response,
-    error,
-    isLoading,
-  } = useGetHistoryByProductIdQuery(product?.productId, {
-    skip: !product?.productId || !open,
-  });
-
-  const columns = [
-    {
-      title: "Date",
-      dataIndex: "timestamp",
-      key: "date",
-      render: (ts) => new Date(ts).toLocaleString(),
-    },
-    {
-      title: "Action",
-      dataIndex: "action",
-      key: "action",
-      render: (act) => (act === "add-stock" ? "Stock In" : "Stock Out"),
-    },
-    { title: "Quantity", dataIndex: "quantity", key: "quantity" },
-  ];
-
-  return (
-    <Modal
-      title={`Stock History – ${product?.name || ""}`}
-      open={open}
-      onCancel={onCancel}
-      footer={null}
-      width={680}
-    >
-      {isLoading && (
-        <div style={{ textAlign: "center", padding: "20px" }}>
-          <Spin tip="Loading history..." />
-        </div>
-      )}
-
-      {error && (
-        <div style={{ margin: "16px 0" }}>
-          <Empty description="Failed to load history" />
-        </div>
-      )}
-
-      {!isLoading &&
-        !error &&
-        (!response?.history || response.history.length === 0) && (
-          <Empty description="No history found" />
-        )}
-
-      {!isLoading && !error && response?.history?.length > 0 && (
-        <Table
-          dataSource={response.history}
-          columns={columns}
-          rowKey={(_, i) => i}
-          pagination={false}
-          size="small"
-          style={{ marginTop: 16 }}
-        />
-      )}
-    </Modal>
   );
 };
 

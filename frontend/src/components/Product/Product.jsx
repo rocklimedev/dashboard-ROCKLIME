@@ -13,11 +13,7 @@ const accessories = "https://static.cmtradingco.com/brands/ACCESORIES.png";
 const adhesive = "https://static.cmtradingco.com/brands/ADHESIVE.png";
 
 const Product = () => {
-  const {
-    data: bpcList,
-    isLoading, // kept for potential global loader
-    error,
-  } = useGetBrandParentCategoriesQuery();
+  const { data: bpcList, error } = useGetBrandParentCategoriesQuery();
 
   const imageBySlug = {
     plumbing: plumbing,
@@ -39,6 +35,7 @@ const Product = () => {
 
   const cards = useMemo(() => {
     const list = Array.isArray(bpcList) ? bpcList : [];
+
     const sorted = [...list].sort((a, b) => {
       const ai = desiredOrder.indexOf((a.slug || "").toLowerCase());
       const bi = desiredOrder.indexOf((b.slug || "").toLowerCase());
@@ -68,9 +65,10 @@ const Product = () => {
   ];
 
   /* ------------------------------------------------------------------ */
-  /*  Global loader is applied elsewhere – we only handle error/empty   */
+  /*  No loading UI – global loader is used instead                     */
   /* ------------------------------------------------------------------ */
 
+  // Optional: keep error & empty states (remove if not needed)
   if (error) {
     return (
       <div className="error-container">
