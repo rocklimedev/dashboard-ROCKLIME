@@ -47,39 +47,74 @@ exports.createProduct = async (req, res) => {
 exports.getAllProducts = async (req, res) => {
   try {
     const products = await Product.findAll();
-    const productMetaIds = [
-      ...new Set(
-        products.filter((p) => p.meta).flatMap((p) => Object.keys(p.meta))
-      ),
-    ];
+
+    // 1. Collect every meta-key that appears in any product
+    const metaKeySet = new Set();
+    products.forEach((p) => {
+      if (p.meta) {
+        try {
+          const obj = typeof p.meta === "string" ? JSON.parse(p.meta) : p.meta;
+          Object.keys(obj).forEach((k) => metaKeySet.add(k));
+        } catch (_) {}
+      }
+    });
+
+    // 2. Pull the meta definitions once
     const productMetas = await ProductMeta.findAll({
-      where: { id: { [Op.in]: productMetaIds } },
+      where: { id: { [Op.in]: [...metaKeySet] } },
       attributes: ["id", "title", "slug", "fieldType", "unit"],
     });
 
-    const enrichedProducts = products.map((product) => {
-      const productData = product.toJSON();
-      if (productData.meta) {
-        productData.metaDetails = Object.keys(productData.meta).map(
-          (metaId) => {
-            const metaField = productMetas.find((mf) => mf.id === metaId);
-            return {
-              id: metaId,
-              title: metaField ? metaField.title : "Unknown",
-              slug: metaField ? metaField.slug : null,
-              value: productData.meta[metaId],
-              fieldType: metaField ? metaField.fieldType : null,
-              unit: metaField ? metaField.unit : null,
-            };
-          }
-        );
+    // 3. Enrich each product
+    const enriched = products.map((p) => {
+      const raw = p.toJSON();
+
+      // ---- images → array -------------------------------------------------
+      let images = [];
+      if (raw.images) {
+        try {
+          images =
+            typeof raw.images === "string"
+              ? JSON.parse(raw.images)
+              : Array.isArray(raw.images)
+              ? raw.images
+              : [];
+        } catch (_) {}
       }
-      return productData;
+
+      // ---- meta → object --------------------------------------------------
+      let metaObj = {};
+      if (raw.meta) {
+        try {
+          metaObj =
+            typeof raw.meta === "string" ? JSON.parse(raw.meta) : raw.meta;
+        } catch (_) {}
+      }
+
+      // ---- metaDetails ----------------------------------------------------
+      const metaDetails = Object.entries(metaObj).map(([id, value]) => {
+        const def = productMetas.find((m) => m.id === id);
+        return {
+          id,
+          title: def?.title ?? "Unknown",
+          slug: def?.slug ?? null,
+          value: String(value),
+          fieldType: def?.fieldType ?? null,
+          unit: def?.unit ?? null,
+        };
+      });
+
+      return {
+        ...raw,
+        images, // ← array
+        meta: metaObj, // ← plain object
+        metaDetails,
+      };
     });
 
-    return res.status(200).json(enrichedProducts);
+    res.status(200).json(enriched);
   } catch (error) {
-    return res
+    res
       .status(500)
       .json({ message: "Error fetching products", error: error.message });
   }
@@ -91,36 +126,189 @@ exports.getAllProducts = async (req, res) => {
 exports.getProductById = async (req, res) => {
   try {
     const product = await Product.findByPk(req.params.productId);
-
     if (!product) return res.status(404).json({ message: "Product not found" });
 
-    const metaIds = Object.keys(product.meta || {});
+    const raw = product.toJSON();
+
+    // ---- images -----------------------------------------------------------
+    let images = [];
+    if (raw.images) {
+      try {
+        images =
+          typeof raw.images === "string"
+            ? JSON.parse(raw.images)
+            : Array.isArray(raw.images)
+            ? raw.images
+            : [];
+      } catch (_) {}
+    }
+
+    // ---- meta -------------------------------------------------------------
+    let metaObj = {};
+    if (raw.meta) {
+      try {
+        metaObj =
+          typeof raw.meta === "string" ? JSON.parse(raw.meta) : raw.meta;
+      } catch (_) {}
+    }
+
+    // ---- fetch meta definitions for the keys that exist -----------------
+    const metaIds = Object.keys(metaObj);
     const metas = await ProductMeta.findAll({
       where: { id: { [Op.in]: metaIds } },
       attributes: ["id", "title", "slug", "fieldType", "unit"],
     });
 
-    const productData = product.toJSON();
-    productData.metaDetails = metaIds.map((id) => {
-      const field = metas.find((m) => m.id === id);
+    const metaDetails = metaIds.map((id) => {
+      const def = metas.find((m) => m.id === id);
       return {
         id,
-        title: field?.title || "Unknown",
-        slug: field?.slug || null,
-        value: productData.meta[id],
-        fieldType: field?.fieldType || null,
-        unit: field?.unit || null,
+        title: def?.title ?? "Unknown",
+        slug: def?.slug ?? null,
+        value: String(metaObj[id]),
+        fieldType: def?.fieldType ?? null,
+        unit: def?.unit ?? null,
       };
     });
 
-    return res.status(200).json(productData);
+    res.status(200).json({
+      ...raw,
+      images, // ← array
+      meta: metaObj, // ← plain object
+      metaDetails,
+    });
   } catch (error) {
-    return res
+    res
       .status(500)
       .json({ message: "Error fetching product", error: error.message });
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Update a product with meta data
+// ─────────────────────────────────────────────────────────────────────────────
+exports.updateProduct = async (req, res) => {
+  try {
+    const product = await Product.findByPk(req.params.productId);
+    if (!product) return res.status(404).json({ message: "Not found" });
+
+    const { meta, imagesToDelete, ...data } = req.body;
+    const metaObj = meta ? JSON.parse(meta) : {};
+    const deleteList = imagesToDelete ? JSON.parse(imagesToDelete) : [];
+
+    // ---- Validate meta ----------------------------------------------------
+    for (const id of Object.keys(metaObj)) {
+      const m = await ProductMeta.findByPk(id);
+      if (!m) return res.status(400).json({ message: `Invalid meta ID ${id}` });
+      if (m.fieldType === "number" && isNaN(metaObj[id]))
+        return res.status(400).json({ message: `${m.title} must be a number` });
+    }
+
+    // ---- Current images ---------------------------------------------------
+    let current = [];
+    if (product.images) {
+      try {
+        current = JSON.parse(product.images);
+      } catch (_) {}
+    }
+
+    // ---- Remove deleted ---------------------------------------------------
+    if (Array.isArray(deleteList)) {
+      current = current.filter((url) => !deleteList.includes(url));
+    }
+
+    // ---- Upload new -------------------------------------------------------
+    if (req.files) {
+      for (const f of req.files) {
+        const url = await uploadToFtp(f.buffer, f.originalname);
+        current.push(url);
+      }
+    }
+
+    // ---- Clean incoming data ---------------------------------------------
+    const cleanData = {
+      name: data.name?.trim(),
+      product_code: data.product_code?.trim(),
+      quantity: data.quantity ? parseInt(data.quantity, 10) : undefined,
+      alert_quantity: data.alert_quantity
+        ? parseInt(data.alert_quantity, 10)
+        : undefined,
+      tax: data.tax ? parseFloat(data.tax) : undefined,
+      description: data.description?.trim() || null,
+      isFeatured: data.isFeatured === "true",
+      categoryId: data.categoryId || null,
+      brandId: data.brandId || null,
+      vendorId: data.vendorId || null,
+      brand_parentcategoriesId: data.brand_parentcategoriesId || null,
+    };
+
+    const updateFields = Object.fromEntries(
+      Object.entries(cleanData).filter(([, v]) => v !== undefined)
+    );
+
+    // ---- Store JSON fields ------------------------------------------------
+    const finalMeta = Object.keys(metaObj).length
+      ? JSON.stringify(metaObj)
+      : product.meta;
+    const finalImages = JSON.stringify(current);
+
+    product.set({
+      ...updateFields,
+      meta: finalMeta,
+      images: finalImages,
+    });
+
+    // force updatedAt if nothing else changed
+    const changed = product.changed();
+    if (!changed || changed.length === 0) product.changed("updatedAt", true);
+
+    await product.save();
+
+    // ---- Return the SAME shape the UI expects ----------------------------
+    const saved = product.toJSON();
+
+    let imagesArr = [];
+    try {
+      imagesArr = JSON.parse(saved.images);
+    } catch (_) {}
+
+    let metaObjOut = {};
+    try {
+      metaObjOut = JSON.parse(saved.meta || "{}");
+    } catch (_) {}
+
+    const metaIds = Object.keys(metaObjOut);
+    const metas = await ProductMeta.findAll({
+      where: { id: { [Op.in]: metaIds } },
+      attributes: ["id", "title", "slug", "fieldType", "unit"],
+    });
+
+    const metaDetails = metaIds.map((id) => {
+      const def = metas.find((m) => m.id === id);
+      return {
+        id,
+        title: def?.title ?? "Unknown",
+        slug: def?.slug ?? null,
+        value: String(metaObjOut[id]),
+        fieldType: def?.fieldType ?? null,
+        unit: def?.unit ?? null,
+      };
+    });
+
+    res.json({
+      message: "Product updated",
+      product: {
+        ...saved,
+        images: imagesArr,
+        meta: metaObjOut,
+        metaDetails,
+      },
+    });
+  } catch (e) {
+    console.error("Update error:", e);
+    res.status(500).json({ message: e.message });
+  }
+};
 // ─────────────────────────────────────────────────────────────────────────────
 // Get products by category
 // ─────────────────────────────────────────────────────────────────────────────
@@ -187,102 +375,6 @@ exports.getProductsByCategory = async (req, res) => {
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Update a product with meta data
-// ─────────────────────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
-// Update a product with meta data
-// ─────────────────────────────────────────────────────────────────────────────
-exports.updateProduct = async (req, res) => {
-  try {
-    const product = await Product.findByPk(req.params.productId);
-    if (!product) return res.status(404).json({ message: "Not found" });
-
-    const { meta, imagesToDelete, ...data } = req.body;
-    const metaObj = meta ? JSON.parse(meta) : {};
-    const deleteList = imagesToDelete ? JSON.parse(imagesToDelete) : [];
-
-    // ---- Validate meta ----
-    for (const id of Object.keys(metaObj)) {
-      const m = await ProductMeta.findByPk(id);
-      if (!m) return res.status(400).json({ message: `Invalid meta ID ${id}` });
-      if (m.fieldType === "number" && isNaN(metaObj[id]))
-        return res.status(400).json({ message: `${m.title} must be a number` });
-    }
-
-    // ---- Parse current images ----
-    let current = [];
-    if (product.images) {
-      try {
-        current = JSON.parse(product.images);
-      } catch (_) {}
-    }
-
-    // ---- Remove deleted ----
-    if (Array.isArray(deleteList)) {
-      current = current.filter((url) => !deleteList.includes(url));
-    }
-
-    // ---- Upload new ----
-    if (req.files) {
-      for (const f of req.files) {
-        const url = await uploadToFtp(f.buffer, f.originalname);
-        current.push(url);
-      }
-    }
-
-    // ────── CLEAN & TYPE DATA ──────
-    const cleanData = {
-      name: data.name?.trim(),
-      product_code: data.product_code?.trim(),
-      quantity: data.quantity ? parseInt(data.quantity, 10) : undefined,
-      alert_quantity: data.alert_quantity
-        ? parseInt(data.alert_quantity, 10)
-        : undefined,
-      tax: data.tax ? parseFloat(data.tax) : undefined,
-      description: data.description?.trim() || null,
-      isFeatured: data.isFeatured === "true",
-      categoryId: data.categoryId || null,
-      brandId: data.brandId || null,
-      vendorId: data.vendorId || null,
-      brand_parentcategoriesId: data.brand_parentcategoriesId || null,
-    };
-
-    const updateFields = {};
-    for (const [key, value] of Object.entries(cleanData)) {
-      if (value !== undefined) {
-        updateFields[key] = value;
-      }
-    }
-
-    // ────── STRINGIFY JSON FIELDS ──────
-    const finalMeta = Object.keys(metaObj).length
-      ? JSON.stringify(metaObj)
-      : product.meta;
-    const finalImages = JSON.stringify(current);
-
-    // ────── SET ──────
-    product.set({
-      ...updateFields,
-      meta: finalMeta,
-      images: finalImages,
-    });
-
-    // ────── FORCE SAVE ──────
-    const changed = product.changed();
-    if (!changed || changed.length === 0) {
-      product.changed("updatedAt", true);
-    }
-
-    await product.save();
-
-    console.log("UPDATED PRODUCT (DB):", product.toJSON());
-    res.json({ message: "Product updated", product: product.toJSON() });
-  } catch (e) {
-    console.error("Update error:", e);
-    res.status(500).json({ message: e.message });
-  }
-};
 // ─────────────────────────────────────────────────────────────────────────────
 // Delete a product
 // ─────────────────────────────────────────────────────────────────────────────
