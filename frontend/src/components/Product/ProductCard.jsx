@@ -27,36 +27,40 @@ const ProductCard = ({
   const { auth, isLoadingPermissions } = useAuth(); // HOOK AT TOP LEVEL
 
   /* --------------------------------------------------------------
-     1. IMAGE PARSING
+     1. IMAGE PARSING – now works with **array** OR **string**
      -------------------------------------------------------------- */
-  const parseImages = (images) => {
-    try {
-      if (typeof images === "string" && images.trim() !== "") {
-        return JSON.parse(images);
+  const safeParseImages = (images) => {
+    if (Array.isArray(images) && images.length) return images;
+    if (typeof images === "string" && images.trim()) {
+      try {
+        const parsed = JSON.parse(images);
+        return Array.isArray(parsed) && parsed.length ? parsed : [pos];
+      } catch {
+        return [pos];
       }
-      return [pos];
-    } catch {
-      return [pos];
     }
+    return [pos];
   };
-  const productImages = product.images ? parseImages(product.images) : [pos];
+  const productImages = safeParseImages(product.images);
 
   /* --------------------------------------------------------------
-     2. PRICE
+     2. PRICE – metaDetails is now a proper array of objects
      -------------------------------------------------------------- */
-  const sellingPriceMeta = product.metaDetails?.find(
-    (meta) => meta.slug === "sellingPrice"
-  );
+  const sellingPriceMeta = Array.isArray(product.metaDetails)
+    ? product.metaDetails.find((m) => m.slug === "sellingPrice")
+    : null;
+
   const sellingPrice = sellingPriceMeta
     ? parseFloat(sellingPriceMeta.value)
     : null;
+
   const displayPrice =
     sellingPrice !== null && !isNaN(sellingPrice)
       ? `₹${sellingPrice.toFixed(2)}`
       : "Price not available";
 
   /* --------------------------------------------------------------
-     3. QUANTITY HANDLERS
+     3. QUANTITY HANDLERS (unchanged)
      -------------------------------------------------------------- */
   const handleIncrement = () => {
     if (quantity < product.quantity) setQuantity(quantity + 1);
@@ -82,7 +86,7 @@ const ProductCard = ({
   };
 
   /* --------------------------------------------------------------
-     4. PERMISSION CHECKS (TOP-LEVEL)
+     4. PERMISSION CHECKS (unchanged)
      -------------------------------------------------------------- */
   const permissions = auth?.permissions ?? [];
 
@@ -94,6 +98,9 @@ const ProductCard = ({
     (p) => ["edit", "delete"].includes(p.action) && p.module === "products"
   );
 
+  /* --------------------------------------------------------------
+     5. RENDER (unchanged – UI is identical)
+     -------------------------------------------------------------- */
   return (
     <div className="card mb-0">
       {/* ---------- IMAGE + STOCK ---------- */}

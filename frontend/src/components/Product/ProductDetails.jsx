@@ -20,6 +20,7 @@ import ProductCard from "./ProductCard";
 import "./pd.css";
 import noimage from "../../assets/img/default.png";
 import { Helmet } from "react-helmet";
+
 const ProductDetails = () => {
   const { id } = useParams();
 
@@ -74,30 +75,33 @@ const ProductDetails = () => {
   const [barcodeData, setBarcodeData] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
-
   const barcodeRef = useRef(null);
 
-  const getParsedImages = (imageField) => {
-    if (!imageField) return [noimage];
-    try {
-      if (typeof imageField === "string") {
-        const parsed = JSON.parse(imageField);
-        return Array.isArray(parsed)
-          ? parsed.filter((img) => img && typeof img === "string")
-          : parsed.startsWith("http")
-          ? [parsed]
-          : [noimage];
-      }
-      return Array.isArray(imageField)
-        ? imageField.filter((img) => img && typeof img === "string")
-        : [noimage];
-    } catch {
-      return typeof imageField === "string" && imageField.startsWith("http")
-        ? [imageField]
-        : [noimage];
+  /* --------------------------------------------------------------
+     1. IMAGE PARSING – works with array OR string
+     -------------------------------------------------------------- */
+  const safeParseImages = (imageField) => {
+    if (Array.isArray(imageField) && imageField.length) {
+      return imageField.filter((i) => typeof i === "string" && i);
     }
+    if (typeof imageField === "string" && imageField.trim()) {
+      try {
+        const parsed = JSON.parse(imageField);
+        return Array.isArray(parsed) && parsed.length
+          ? parsed.filter((i) => typeof i === "string" && i)
+          : imageField.startsWith("http")
+          ? [imageField]
+          : [noimage];
+      } catch {
+        return imageField.startsWith("http") ? [imageField] : [noimage];
+      }
+    }
+    return [noimage];
   };
 
+  /* --------------------------------------------------------------
+     2. BARCODE
+     -------------------------------------------------------------- */
   const generateBarcode = (code) => {
     if (code && barcodeRef.current) {
       try {
@@ -108,50 +112,52 @@ const ProductDetails = () => {
           height: 48,
           displayValue: true,
         });
-      } catch (error) {
+      } catch {
         toast.error("Failed to generate barcode.");
       }
     }
   };
 
   const handlePrint = () => {
-    if (barcodeRef.current) {
-      const svg = barcodeRef.current;
-      const serializer = new XMLSerializer();
-      const svgStr = serializer.serializeToString(svg);
-      const printWindow = window.open("", "_blank");
-      if (!printWindow) {
-        toast.error("Unable to open print window.");
-        return;
-      }
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>Print Barcode</title>
-            <style>body{display:flex;align-items:center;justify-content:center;height:100vh;margin:0}</style>
-          </head>
-          <body onload="window.print();window.close();">
-            ${svgStr}
-          </body>
-        </html>
-      `);
-      printWindow.document.close();
-    } else {
+    if (!barcodeRef.current) {
       toast.error("No barcode available to print.");
+      return;
     }
+    const svg = barcodeRef.current;
+    const serializer = new XMLSerializer();
+    const svgStr = serializer.serializeToString(svg);
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      toast.error("Unable to open print window.");
+      return;
+    }
+    printWindow.document.write(`
+      <html>
+        <head><title>Print Barcode</title>
+          <style>body{display:flex;align-items:center;justify-content:center;height:100vh;margin:0}</style>
+        </head>
+        <body onload="window.print();window.close();">${svgStr}</body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
+  /* --------------------------------------------------------------
+     3. CART
+     -------------------------------------------------------------- */
   const handleAddToCart = async (product) => {
     if (!userId) {
       toast.error("User not logged in!");
       return;
     }
+
     const sellingPriceEntry = Array.isArray(product.metaDetails)
-      ? product.metaDetails.find((detail) => detail.slug === "sellingPrice")
+      ? product.metaDetails.find((m) => m.slug === "sellingPrice")
       : null;
     const sellingPrice = sellingPriceEntry
       ? parseFloat(sellingPriceEntry.value)
       : null;
+
     if (!sellingPrice || isNaN(sellingPrice)) {
       toast.error("Invalid product price");
       return;
@@ -160,6 +166,7 @@ const ProductDetails = () => {
       toast.error("Invalid quantity");
       return;
     }
+
     const productId = product.productId;
     setCartLoadingStates((prev) => ({ ...prev, [productId]: true }));
     try {
@@ -170,60 +177,61 @@ const ProductDetails = () => {
       }).unwrap();
       setQuantity(1);
     } catch (error) {
-      toast.error(`Error: ${error.data?.message || "Unknown error"}`);
+      toast.error(error.data?.message || "Unknown error");
     } finally {
       setCartLoadingStates((prev) => ({ ...prev, [productId]: false }));
     }
   };
 
-  const handleThumbnailClick = (index) => {
-    setActiveImage(index);
-  };
+  /* --------------------------------------------------------------
+     4. HELPERS
+     -------------------------------------------------------------- */
+  const handleThumbnailClick = (idx) => setActiveImage(idx);
 
   const handleQuantityChange = (value) => {
-    if (value >= 1 && value <= (product?.quantity || 1)) {
-      setQuantity(value);
-    }
+    if (value >= 1 && value <= (product?.quantity || 1)) setQuantity(value);
   };
 
-  const getSellingPrice = (metaDetails) => {
-    const spObj = metaDetails?.find((m) => m.slug === "sellingPrice");
-    return spObj ? Number(spObj.value) : null;
-  };
+  const getSellingPrice = (metaDetails) =>
+    Array.isArray(metaDetails)
+      ? Number(metaDetails.find((m) => m.slug === "sellingPrice")?.value || 0)
+      : null;
 
-  const getCompanyCode = (metaDetails) => {
-    if (!Array.isArray(metaDetails)) {
-      return "N/A";
-    }
-    const companyCodeEntry = metaDetails.find(
-      (detail) => detail.slug?.toLowerCase() === "companycode"
-    );
-    return companyCodeEntry ? String(companyCodeEntry.value) : "N/A";
-  };
+  const getCompanyCode = (metaDetails) =>
+    Array.isArray(metaDetails)
+      ? metaDetails.find((m) => m.slug?.toLowerCase() === "companycode")
+          ?.value || "N/A"
+      : "N/A";
 
-  const getBrandsName = (brandId) => brandData?.brandName || "Not Branded";
-  const getCategoryName = (categoryId) =>
-    categoryData?.category?.name || "Uncategorized";
+  const getBrandsName = () => brandData?.brandName || "Not Branded";
+  const getCategoryName = () =>
+    parentCategoryData?.data?.name ||
+    categoryData?.category?.name ||
+    "Uncategorized";
 
+  /* --------------------------------------------------------------
+     5. EFFECTS
+     -------------------------------------------------------------- */
   useEffect(() => {
     if (product?.product_code) {
       setBarcodeData(product.product_code);
       generateBarcode(product.product_code);
     }
-    if (brandError) {
-      toast.error("Failed to load brand information.");
-    }
+    if (brandError) toast.error("Failed to load brand information.");
     if (allProductsError) {
-      toast.error(
+      const msg =
         allProductsError.status === 401 || allProductsError.status === 403
           ? "Unauthorized to view products."
           : allProductsError.status === 404
           ? "No products found."
-          : "Failed to load products."
-      );
+          : "Failed to load products.";
+      toast.error(msg);
     }
   }, [product, brandError, allProductsError]);
 
+  /* --------------------------------------------------------------
+     6. LOADING / ERROR
+     -------------------------------------------------------------- */
   if (
     isProductLoading ||
     isCategoryLoading ||
@@ -265,21 +273,24 @@ const ProductDetails = () => {
     );
   }
 
-  const images = getParsedImages(product.images);
+  /* --------------------------------------------------------------
+     7. DATA PREP
+     -------------------------------------------------------------- */
+  const images = safeParseImages(product.images);
   const sellingPrice = getSellingPrice(product.metaDetails);
 
   const relatedProducts = (
     recommendedProducts?.length
-      ? recommendedProducts.filter(
-          (recProduct) => recProduct.productId !== product.productId
-        )
+      ? recommendedProducts.filter((p) => p.productId !== product.productId)
       : allProducts?.filter(
-          (recProduct) =>
-            recProduct.productId !== product.productId &&
-            recProduct.brandId === product.brandId
+          (p) =>
+            p.productId !== product.productId && p.brandId === product.brandId
         ) || []
   ).slice(0, 4);
 
+  /* --------------------------------------------------------------
+     8. RENDER
+     -------------------------------------------------------------- */
   return (
     <div className="page-wrapper">
       <Helmet>
@@ -376,7 +387,7 @@ const ProductDetails = () => {
                       product.quantity <= 0 ||
                       isCartLoading ||
                       !userId ||
-                      !sellingPrice ||
+                      sellingPrice === null ||
                       isNaN(sellingPrice)
                     }
                     loading={
@@ -406,13 +417,10 @@ const ProductDetails = () => {
                     {product.product_code || "N/A"}
                   </div>
                   <div>
-                    <strong>Brand:</strong> {brandData?.brandName || "N/A"}
+                    <strong>Brand:</strong> {getBrandsName()}
                   </div>
                   <div>
-                    <strong>Category:</strong>{" "}
-                    {parentCategoryData?.data?.name ||
-                      categoryData?.category?.name ||
-                      "N/A"}
+                    <strong>Category:</strong> {getCategoryName()}
                   </div>
                 </div>
               </aside>
@@ -445,22 +453,19 @@ const ProductDetails = () => {
                             <span>Product Code:</span>{" "}
                             {product.product_code || "N/A"}
                           </li>
-
                           <li>
-                            <span>Category:</span>{" "}
-                            {parentCategoryData?.data?.name ||
-                              categoryData?.category?.name ||
-                              "N/A"}
+                            <span>Category:</span> {getCategoryName()}
                           </li>
                           <li>
-                            <span>Brand:</span> {brandData?.brandName || "N/A"}
+                            <span>Brand:</span> {getBrandsName()}
                           </li>
-                          {product.metaDetails?.map((meta) => (
-                            <li key={meta.id}>
-                              <span>{meta.title}:</span> {meta.value}{" "}
-                              {meta.unit || ""}
-                            </li>
-                          ))}
+                          {Array.isArray(product.metaDetails) &&
+                            product.metaDetails.map((meta) => (
+                              <li key={meta.id}>
+                                <span>{meta.title}:</span> {meta.value}{" "}
+                                {meta.unit || ""}
+                              </li>
+                            ))}
                         </ul>
                       </div>
                     ),
@@ -478,7 +483,7 @@ const ProductDetails = () => {
                 <div className="pd-loading">
                   <Spin size="large" />
                 </div>
-              ) : relatedProducts?.length > 0 ? (
+              ) : relatedProducts.length > 0 ? (
                 <div className="pd-related__grid">
                   {relatedProducts.map((recProduct) => (
                     <div key={recProduct.productId}>
@@ -499,12 +504,10 @@ const ProductDetails = () => {
                         getCompanyCode={getCompanyCode}
                         handleAddToCart={handleAddToCart}
                         cartLoadingStates={cartLoadingStates}
-                        menu={(product) => (
+                        menu={(p) => (
                           <Menu>
                             <Menu.Item key="view">
-                              <Link to={`/product/${product.productId}`}>
-                                View
-                              </Link>
+                              <Link to={`/product/${p.productId}`}>View</Link>
                             </Menu.Item>
                           </Menu>
                         )}

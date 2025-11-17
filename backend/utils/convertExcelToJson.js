@@ -3,9 +3,12 @@ const path = require("path");
 const excelToJson = require("convert-excel-to-json");
 
 // === CONFIG ===
-const inputFilePath = path.join(__dirname, "./PRODUCT REPLACEMENTS.xlsx");
+const inputFilePath = path.join(
+  __dirname,
+  "../seeder/data/CM Contractors.xlsx"
+);
 const outputFolder = path.join(__dirname, "json-outputs");
-const outputFile = path.join(outputFolder, "product_replacements.json");
+const outputFile = path.join(outputFolder, "vendors_contact_list.json");
 
 // === VALIDATE INPUT ===
 if (!fs.existsSync(inputFilePath)) {
@@ -17,48 +20,31 @@ if (!fs.existsSync(outputFolder)) {
   fs.mkdirSync(outputFolder, { recursive: true });
 }
 
-// === CONVERT EXCEL ===
+// === CONVERT EXCEL WITH HEADERS AS KEYS ===
 const result = excelToJson({
   sourceFile: inputFilePath,
-  header: { rows: 1 }, // First row is header
+  header: { rows: 1 }, // First row used as keys
+  columnToKey: {
+    "*": "{{columnHeader}}", // force actual header names
+  },
 });
 
-// === PROCESS SHEETS ===
+const finalOutput = {};
+
 Object.keys(result).forEach((sheetName) => {
   const rows = result[sheetName];
-  const cleanedData = [];
 
-  rows.forEach((row, index) => {
-    const values = Object.values(row);
-
-    // Skip if all cells are empty
-    if (values.every((v) => !v || String(v).trim() === "")) return;
-
-    const sno = String(row.A || "").trim();
-    const removeCode = String(row.B || "").trim();
-    const replaceCode = String(row.C || "").trim();
-    const extraCol = row.D ? String(row.D).trim() : null;
-
-    const entry = {
-      SNO: sno || null,
-      REMOVE: removeCode && removeCode !== "----" ? removeCode : null,
-      REPLACE: replaceCode && replaceCode !== "----" ? replaceCode : null,
-    };
-
-    // If there’s a 4th column like “MRP - 75400” extract number
-    if (extraCol) {
-      const match = extraCol.match(/(\d+)/);
-      if (match) entry.MRP = match[1];
-    }
-
-    cleanedData.push(entry);
-  });
-
-  // === WRITE TO JSON ===
-  fs.writeFileSync(outputFile, JSON.stringify(cleanedData, null, 2), "utf-8");
-  console.log(
-    `✅ ${sheetName}: Saved ${cleanedData.length} entries to ${outputFile}`
+  // remove fully empty rows
+  const cleanedData = rows.filter((row) =>
+    Object.values(row).some((v) => v && String(v).trim() !== "")
   );
+
+  finalOutput[sheetName] = cleanedData;
+
+  console.log(`✅ ${sheetName}: ${cleanedData.length} rows processed`);
 });
 
-console.log("✅ Conversion complete!");
+// === WRITE JSON ===
+fs.writeFileSync(outputFile, JSON.stringify(finalOutput, null, 2), "utf-8");
+
+console.log("✅ All sheets saved to:", outputFile);

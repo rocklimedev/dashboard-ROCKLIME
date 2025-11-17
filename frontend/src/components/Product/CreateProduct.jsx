@@ -95,40 +95,72 @@ const CreateProduct = () => {
       };
       form.setFieldsValue(formValues);
 
+      // --- IMAGES ---
       let imagesArray = [];
       if (existingProduct.images) {
         try {
           imagesArray =
             typeof existingProduct.images === "string"
               ? JSON.parse(existingProduct.images)
-              : existingProduct.images;
-        } catch (error) {
+              : Array.isArray(existingProduct.images)
+              ? existingProduct.images
+              : [];
+        } catch (e) {
+          console.error("Failed to parse images:", e);
           imagesArray = [];
         }
       }
       setExistingImages(Array.isArray(imagesArray) ? imagesArray : []);
 
+      // --- META DATA: ROBUST PARSING ---
       let metaObject = {};
+
       if (existingProduct.meta) {
         try {
+          // Case 1: String (from formData)
           if (typeof existingProduct.meta === "string") {
             metaObject = JSON.parse(existingProduct.meta);
-          } else if (Array.isArray(existingProduct.meta)) {
-            metaObject = existingProduct.meta.reduce((acc, meta) => {
-              acc[meta.id] = meta.value;
-              return acc;
-            }, {});
-          } else {
+          }
+          // Case 2: Already an object (Sequelize auto-parsed)
+          else if (
+            typeof existingProduct.meta === "object" &&
+            existingProduct.meta !== null
+          ) {
             metaObject = existingProduct.meta;
           }
+
+          // Validate: must be object with string keys
+          if (
+            typeof metaObject !== "object" ||
+            metaObject === null ||
+            Array.isArray(metaObject)
+          ) {
+            console.warn(
+              "Invalid meta format, resetting:",
+              existingProduct.meta
+            );
+            metaObject = {};
+          }
+
+          // Optional: Validate keys exist in productMetas
+          const validMeta = {};
+          Object.entries(metaObject).forEach(([key, value]) => {
+            const metaExists = productMetaData.some((m) => m.id === key);
+            if (metaExists) {
+              validMeta[key] = value;
+            }
+          });
+          metaObject = validMeta;
         } catch (error) {
-          toast.error("Failed to load meta data. Please try again.");
+          console.error("Meta parse error:", error);
+          toast.error("Failed to load product specifications.");
+          metaObject = {};
         }
       }
+
       setMetaData(metaObject);
     }
-  }, [existingProduct, form]);
-
+  }, [existingProduct, form, productMetaData]);
   // Clean up preview URLs
   useEffect(() => {
     return () => {
