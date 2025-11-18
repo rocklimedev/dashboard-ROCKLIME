@@ -3,16 +3,13 @@ const path = require("path");
 const excelToJson = require("convert-excel-to-json");
 
 // === CONFIG ===
-const inputFilePath = path.join(
-  __dirname,
-  "../seeder/data/CM Contractors.xlsx"
-);
+const inputFilePath = path.join(__dirname, "./PRODUCT REPLACEMENTS (1).xlsx");
 const outputFolder = path.join(__dirname, "json-outputs");
-const outputFile = path.join(outputFolder, "vendors_contact_list.json");
+const outputFile = path.join(outputFolder, "product_replacements.json");
 
 // === VALIDATE INPUT ===
 if (!fs.existsSync(inputFilePath)) {
-  console.error("❌ Excel file not found at:", inputFilePath);
+  console.error("Excel file not found at:", inputFilePath);
   process.exit(1);
 }
 
@@ -20,13 +17,16 @@ if (!fs.existsSync(outputFolder)) {
   fs.mkdirSync(outputFolder, { recursive: true });
 }
 
-// === CONVERT EXCEL WITH HEADERS AS KEYS ===
+// === CONVERT EXCEL WITHOUT TRUSTING HEADERS ===
 const result = excelToJson({
   sourceFile: inputFilePath,
-  header: { rows: 1 }, // First row used as keys
   columnToKey: {
-    "*": "{{columnHeader}}", // force actual header names
+    A: "S.NO",
+    B: "REMOVE",
+    C: "REPLACE",
+    D: "MRP",
   },
+  header: { rows: 1 }, // skip header row in sheet
 });
 
 const finalOutput = {};
@@ -34,17 +34,17 @@ const finalOutput = {};
 Object.keys(result).forEach((sheetName) => {
   const rows = result[sheetName];
 
-  // remove fully empty rows
+  // remove empty rows
   const cleanedData = rows.filter((row) =>
     Object.values(row).some((v) => v && String(v).trim() !== "")
   );
 
   finalOutput[sheetName] = cleanedData;
 
-  console.log(`✅ ${sheetName}: ${cleanedData.length} rows processed`);
+  console.log(`Processed ${cleanedData.length} rows from ${sheetName}`);
 });
 
 // === WRITE JSON ===
 fs.writeFileSync(outputFile, JSON.stringify(finalOutput, null, 2), "utf-8");
 
-console.log("✅ All sheets saved to:", outputFile);
+console.log("Saved to:", outputFile);
