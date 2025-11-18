@@ -71,11 +71,12 @@ const setupDB = async () => {
     User.belongsTo(Role, { foreignKey: "roleId", as: "role" });
 
     // User ↔ Address (1:M)
-    User.hasMany(Address, {
+    User.hasOne(Address, {
       foreignKey: "userId",
-      as: "addresses", // plural for user → many addresses
+      as: "address",
+      onDelete: "SET NULL",
+      constraints: false, // if you have issues with FK
     });
-
     Address.belongsTo(User, {
       foreignKey: "userId",
       as: "user", // singular for address → one user

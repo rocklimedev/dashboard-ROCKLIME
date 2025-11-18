@@ -296,7 +296,11 @@ const OrderForm = ({
   /* ────── Validation Helpers ────── */
   const validOrderNo = (no) => /^\d{1,2}\d{1,2}25\d{3,}$/.test(no);
   const uniqueOrderNo = (no) => !orders.some((o) => o.orderNo === no);
-
+  /* ────── Prevent same user in Primary & Secondary ────── */
+  const availableSecondaryUsers = useMemo(() => {
+    if (!orderData?.assignedUserId) return users;
+    return users.filter((u) => u.userId !== orderData.assignedUserId);
+  }, [users, orderData?.assignedUserId]);
   const validateField = useCallback(
     (field) => {
       const err = {};
@@ -325,8 +329,15 @@ const OrderForm = ({
           if (assignmentType === "team" && !orderData?.assignedTeamId) {
             err.assignment = "Select a team";
           }
-          if (assignmentType === "users" && !orderData?.assignedUserId) {
-            err.assignment = "Select primary user";
+          if (assignmentType === "users") {
+            if (!orderData?.assignedUserId) {
+              err.assignment = "Select primary user";
+            } else if (
+              orderData?.secondaryUserId &&
+              orderData.secondaryUserId === orderData.assignedUserId
+            ) {
+              err.assignment = "Primary and Secondary user cannot be the same";
+            }
           }
           break;
         case "source":
@@ -775,8 +786,9 @@ const OrderForm = ({
                         }
                         allowClear
                         loading={usersLoading}
+                        placeholder="Select secondary user"
                       >
-                        {users.map((u) => (
+                        {availableSecondaryUsers.map((u) => (
                           <Option key={u.userId} value={u.userId}>
                             {u.username || u.name}
                           </Option>
