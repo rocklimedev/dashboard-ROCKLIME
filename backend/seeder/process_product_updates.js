@@ -31,51 +31,68 @@ const CODE_KEY = "d11da9f9-3f2e-4536-8236-9671200cca4a";
 console.log(`Loaded ${products.length} products from backup`);
 console.log(`Loaded ${replacements.length} replacement rules`);
 
+// === NORMALIZER ===
+const normalize = (v) =>
+  v === null || v === undefined
+    ? ""
+    : String(v)
+        .trim()
+        .replace(/^"+|"+$/g, "");
+
 // === MAIN LOOP ===
 for (const r of replacements) {
-  if (!r.REMOVE) continue;
-
-  const removeCode = String(r.REMOVE).trim();
-  const replaceCode = r.REPLACE ? String(r.REPLACE).trim() : null;
+  const removeCode = r.REMOVE ? normalize(r.REMOVE) : null;
+  const replaceCode = r.REPLACE ? normalize(r.REPLACE) : null;
   const mrp = r.MRP ? Number(r.MRP) : null;
 
-  const matchingProducts = products.filter(
-    (p) => p.meta && String(p.meta[CODE_KEY]) === removeCode
-  );
-
-  if (matchingProducts.length === 0) {
-    logs.push(`⚠️ No product found with code ${removeCode}`);
+  // Case 1: Only REMOVE → delete
+  if (removeCode && !replaceCode) {
+    const matching = products.filter(
+      (p) => p.meta && normalize(p.meta[CODE_KEY]) === removeCode
+    );
+    for (const product of matching) {
+      deletedProducts.push(product);
+      logs.push(`Deleted: ${product.name || "(Unnamed)"} [${removeCode}]`);
+    }
+    if (matching.length === 0)
+      logs.push(`No product found to delete with code ${removeCode}`);
     continue;
   }
 
-  if (replaceCode) {
-    // UPDATE operation
-    for (const product of matchingProducts) {
+  // Case 2: Both REMOVE and REPLACE → update code (and MRP if given)
+  if (removeCode && replaceCode) {
+    const matching = products.filter(
+      (p) => p.meta && normalize(p.meta[CODE_KEY]) === removeCode
+    );
+    for (const product of matching) {
       const oldCode = product.meta[CODE_KEY];
       product.meta[CODE_KEY] = replaceCode;
-
-      if (mrp) {
-        product.meta[PRICE_KEY] = mrp;
-      }
-
+      if (mrp !== null) product.meta[PRICE_KEY] = mrp;
       updatedProducts.push(product);
       logs.push(
-        `✅ Updated ${
+        `Updated: ${
           product.name || "(Unnamed)"
-        }: CODE ${oldCode} → ${replaceCode}${mrp ? `, MRP → ${mrp}` : ""}`
+        } CODE ${oldCode} → ${replaceCode}${
+          mrp !== null ? `, MRP → ${mrp}` : ""
+        }`
       );
     }
-  } else {
-    // DELETE operation
-    for (const product of matchingProducts) {
-      deletedProducts.push(product);
-      logs.push(
-        `🗑️ Marked for deletion: ${product.name || "(Unnamed)"} [${removeCode}]`
-      );
-    }
+    if (matching.length === 0)
+      logs.push(`No product found with code ${removeCode} to update`);
+    continue;
   }
-}
 
+  // Case 3: Only REPLACE (no REMOVE) → Warning or special handling?
+  if (!removeCode && replaceCode) {
+    logs.push(
+      `Invalid rule S.NO ${r["S.NO"]}: REPLACE provided without REMOVE → skipped`
+    );
+    continue;
+  }
+
+  // Case 4: Nothing → skip
+  logs.push(`Invalid rule S.NO ${r["S.NO"]}: no REMOVE or REPLACE → skipped`);
+}
 // === WRITE OUTPUTS ===
 const updatedFile = path.join(outputFolder, "updated_products.json");
 const deletedFile = path.join(outputFolder, "deleted_products.json");

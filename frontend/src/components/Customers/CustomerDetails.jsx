@@ -416,6 +416,7 @@ const CustomerDetails = () => {
                 <div>
                   <Link
                     to={`/customers/edit/${customer.customerId}`}
+                    state={{ customer }} // ← THIS IS THE MISSING LINE!
                     className="btn btn-white"
                   >
                     Edit Customer
