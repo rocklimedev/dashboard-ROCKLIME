@@ -1,6 +1,7 @@
 const { Op } = require("sequelize");
 const User = require("../models/users");
 const Roles = require("../models/roles");
+const sequelize = require("../config/database");
 const bcrypt = require("bcrypt");
 const Address = require("../models/address");
 const ROLES = require("../config/constant").ROLES;
@@ -117,12 +118,24 @@ exports.createUser = async (req, res) => {
 // Get Profile
 exports.getProfile = async (req, res) => {
   try {
-    const user = await User.findByPk(req.user.userId, excludeSensitiveFields);
+    const user = await User.findByPk(req.user.userId, {
+      ...excludeSensitiveFields,
+      include: [
+        {
+          model: Address,
+          as: "address", // ← Must match your association alias in setupDB.js
+          attributes: ["street", "city", "state", "postalCode", "country"], // optional: only return needed fields
+        },
+      ],
+    });
+
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+
     res.status(200).json({ user });
   } catch (err) {
+    console.error("getProfile error:", err);
     res.status(500).json({ message: "Server Error", error: err.message });
   }
 };
@@ -158,10 +171,9 @@ exports.searchUser = async (req, res) => {
   }
 };
 
-// Update Profile
-// Update Profile - FIXED
+// UPDATE PROFILE (MANAGED TRANSACTION - BEST ONE)
+// ========================
 exports.updateProfile = async (req, res) => {
-  const t = await sequelize.transaction();
   try {
     const {
       username,
@@ -173,79 +185,86 @@ exports.updateProfile = async (req, res) => {
       emergencyNumber,
       shiftFrom,
       shiftTo,
-      address, // <-- Now accept full address object
+      address,
       photo_thumbnail,
       photo_original,
     } = req.body;
 
-    const user = await User.findByPk(req.user.userId, { transaction: t });
-    if (!user) {
-      await t.rollback();
-      return res.status(404).json({ message: "User not found" });
-    }
+    const updatedUser = await sequelize.transaction(async (t) => {
+      const user = await User.findByPk(req.user.userId, { transaction: t });
+      if (!user) throw new Error("User not found");
 
-    // Check for duplicate username or email (excluding current user)
-    const existingUser = await User.findOne({
-      where: {
-        [Op.or]: [{ username }, { email }],
-        userId: { [Op.ne]: user.userId },
-      },
-      transaction: t,
-    });
-    if (existingUser) {
-      await t.rollback();
-      return res
-        .status(400)
-        .json({ message: "Username or Email already exists" });
-    }
-
-    // Update user fields
-    user.username = username ?? user.username;
-    user.name = name ?? user.name;
-    user.email = email ?? user.email;
-    user.mobileNumber = mobileNumber ?? user.mobileNumber;
-    user.dateOfBirth = dateOfBirth ?? user.dateOfBirth;
-    user.bloodGroup = bloodGroup ?? user.bloodGroup;
-    user.emergencyNumber = emergencyNumber ?? user.emergencyNumber;
-    user.shiftFrom = shiftFrom ?? user.shiftFrom;
-    user.shiftTo = shiftTo ?? user.shiftTo;
-
-    // Update photo fields
-    if (photo_thumbnail) user.photo_thumbnail = photo_thumbnail;
-    if (photo_original) user.photo_original = photo_original;
-
-    // Handle address
-    if (address) {
-      if (user.addressId) {
-        // Update existing address
-        await Address.update(address, {
-          where: { addressId: user.addressId },
+      // Check duplicate username/email
+      if (username || email) {
+        const exists = await User.findOne({
+          where: {
+            [Op.or]: [
+              username ? { username } : null,
+              email ? { email } : null,
+            ].filter(Boolean),
+            userId: { [Op.ne]: user.userId },
+          },
           transaction: t,
         });
-      } else {
-        // Create new address
-        const newAddress = await Address.create(address, { transaction: t });
-        user.addressId = newAddress.addressId;
+        if (exists) throw new Error("Username or Email already exists");
       }
-    }
 
-    await user.save({ transaction: t });
-    await t.commit();
+      // Update fields
+      Object.assign(user, {
+        username: username ?? user.username,
+        name: name ?? user.name,
+        email: email ?? user.email,
+        mobileNumber: mobileNumber ?? user.mobileNumber,
+        dateOfBirth: dateOfBirth ?? user.dateOfBirth,
+        bloodGroup: bloodGroup ?? user.bloodGroup,
+        emergencyNumber: emergencyNumber ?? user.emergencyNumber,
+        shiftFrom: shiftFrom ?? user.shiftFrom,
+        shiftTo: shiftTo ?? user.shiftTo,
+        photo_thumbnail: photo_thumbnail || user.photo_thumbnail,
+        photo_original: photo_original || user.photo_original,
+      });
 
-    // Return updated user
-    const updatedUser = await User.findByPk(user.userId, {
-      ...excludeSensitiveFields,
-      include: [{ model: Address, as: "address" }],
+      // Handle address
+      // Handle address
+      if (address) {
+        if (user.addressId) {
+          await Address.update(address, {
+            where: { addressId: user.addressId },
+            transaction: t,
+          });
+        } else {
+          // FIX: Pass userId explicitly when creating
+          const newAddr = await Address.create(
+            {
+              ...address,
+              userId: user.userId, // ← THIS WAS MISSING!
+            },
+            { transaction: t }
+          );
+          user.addressId = newAddr.addressId;
+        }
+      }
+      await user.save({ transaction: t });
+
+      return await User.findByPk(user.userId, {
+        ...excludeSensitiveFields,
+        include: [{ model: Address, as: "address" }],
+        transaction: t,
+      });
     });
 
-    res.status(200).json({
+    res.json({
       message: "Profile updated successfully",
       user: updatedUser,
     });
   } catch (err) {
-    await t.rollback();
-    console.error("Update profile error:", err);
-    res.status(500).json({ message: "Server Error", error: err.message });
+    const status =
+      err.message === "User not found"
+        ? 404
+        : err.message.includes("already exists")
+        ? 400
+        : 500;
+    res.status(status).json({ message: err.message || "Server Error" });
   }
 };
 // Report User

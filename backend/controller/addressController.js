@@ -307,7 +307,7 @@ exports.getAllUserAddresses = async (req, res) => {
       include: [
         {
           model: Address,
-          as: "addresses", // must match association alias
+          as: "address", // must match association alias
           attributes: [
             "addressId",
             "street",
@@ -322,7 +322,7 @@ exports.getAllUserAddresses = async (req, res) => {
           required: false,
         },
       ],
-      order: [[{ model: Address, as: "addresses" }, "createdAt", "DESC"]],
+      order: [[{ model: Address, as: "address" }, "createdAt", "DESC"]],
     });
 
     return res.json({

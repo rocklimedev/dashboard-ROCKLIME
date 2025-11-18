@@ -341,10 +341,11 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                           user?.user?.photo_thumbnail ||
                           user?.user?.profileImage
                         }
-                        size="40"
+                        size={40} // important – tell the library the exact size
                         round={true}
                         className="circular-avatar"
-                        color="#e31e24"
+                        textSizeRatio={2.2}
+                        maxInitials={2}
                       />
                     </span>
                   </span>
