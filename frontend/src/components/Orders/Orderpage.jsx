@@ -200,10 +200,20 @@ const OrderPage = () => {
   const { data: teamData } = useGetAllTeamsQuery();
   const { data: customersData } = useGetCustomersQuery();
   const totalOrders = useMemo(() => {
-    // `customerData?.invoices` is an array of invoice objects for the customer
-    return customerData?.invoices?.length ?? 0;
-  }, [customerData]);
+    if (!customersData?.data || !order.createdFor) return 0;
 
+    const customer = customersData.data.find(
+      (c) => c.customerId === order.createdFor
+    );
+
+    // Try multiple possible shapes
+    return (
+      customer?.orders?.length ||
+      customer?.orderCount ||
+      customer?.totalOrders ||
+      0
+    );
+  }, [customersData, order.createdFor]);
   // ── PRODUCTS & QUOTATION ──
   const quotationDetails = useMemo(() => {
     const details = order.quotationDetails || order.quotation || {};

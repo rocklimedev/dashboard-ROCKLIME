@@ -97,9 +97,7 @@ const AddQuotation = () => {
     shippingAmount: 0.0,
     extraDiscount: null,
     extraDiscountType: "fixed",
-    discountAmount: 0.0,
-    roundOff: 0.0,
-    finalAmount: 0.0,
+
     signature_name: "",
     signature_image: "",
     customerId: "",
@@ -150,7 +148,7 @@ const AddQuotation = () => {
           sellingPrice: price,
           discount: Number(p.discount) || 0,
           tax: Number(p.tax) || 0,
-          total: Number(p.total) || price,
+          total: null, // ← Force backend to recalculate
         };
       });
 
@@ -192,14 +190,28 @@ const AddQuotation = () => {
         setFilteredProducts([]);
         return;
       }
-      const filtered = products
-        .filter(
-          (p) =>
-            p.name?.toLowerCase().includes(val.toLowerCase()) ||
-            p.product_code?.toLowerCase().includes(val.toLowerCase())
-        )
-        .slice(0, 8);
-      setFilteredProducts(filtered);
+
+      const searchTerm = val.toLowerCase().trim();
+
+      const filtered = products.filter((p) => {
+        // 1. Name or product_code
+        const matchesName = p.name?.toLowerCase().includes(searchTerm);
+        const matchesCode = p.product_code?.toLowerCase().includes(searchTerm);
+
+        // 2. Company Code (from meta or metaDetails)
+        const companyCode =
+          p.meta?.["d11da9f9-3f2e-4536-8236-9671200cca4a"] ||
+          p.metaDetails?.find((m) => m.slug === "companyCode")?.value ||
+          "";
+
+        const matchesCompanyCode = String(companyCode)
+          .toLowerCase()
+          .includes(searchTerm);
+
+        return matchesName || matchesCode || matchesCompanyCode;
+      });
+
+      setFilteredProducts(filtered.slice(0, 8)); // keep it fast & limited
     }, 300),
     [products]
   );
@@ -245,78 +257,67 @@ const AddQuotation = () => {
       const copy = [...prev.products];
       copy[idx] = { ...copy[idx], [field]: value };
 
-      if (["qty", "discount", "tax", "discountType"].includes(field)) {
-        const qty = Number(copy[idx].qty) || 1;
-        const price = Number(copy[idx].sellingPrice) || 0;
-        const discRaw = Number(copy[idx].discount) || 0;
-        const discType = copy[idx].discountType || "fixed";
+      // DO NOT calculate total here anymore
+      // Just store the raw values
+      // Backend will do correct calculation
 
-        // ----- Convert % → fixed amount -----
-        const discount =
-          discType === "percent" ? (qty * price * discRaw) / 100 : discRaw;
-
-        const tax = Number(copy[idx].tax) || 0;
-        copy[idx].total = Number(
-          (qty * price - discount) * (1 + tax / 100)
-        ).toFixed(2);
-      }
       return { ...prev, products: copy };
     });
   };
 
   /* ────────────────────── CALCULATE FINAL ────────────────────── */
   /* ────────────────────── CALCULATE FINAL ────────────────────── */
-  const calculateFinal = useCallback(() => {
-    // 1. Sub‑total (after per‑item tax & discount)
-    const subtotal = formData.products.reduce(
-      (s, p) => s + Number(p.total || 0),
-      0
-    );
+  // const calculateFinal = useCallback(() => {
+  //   // 1. Sub‑total (after per‑item tax & discount)
+  //   const subtotal = formData.products.reduce(
+  //     (s, p) => s + Number(p.total || 0),
+  //     0
+  //   );
 
-    // 2. Extra Discount
-    let extraDiscountAmount = 0;
-    const extraDiscount = Number(formData.extraDiscount) || 0;
-    if (extraDiscount > 0) {
-      if (formData.extraDiscountType === "percent") {
-        extraDiscountAmount = (subtotal * extraDiscount) / 100;
-      } else {
-        extraDiscountAmount = extraDiscount;
-      }
-    }
+  //   // 2. Extra Discount
+  //   let extraDiscountAmount = 0;
+  //   const extraDiscount = Number(formData.extraDiscount) || 0;
+  //   if (extraDiscount > 0) {
+  //     if (formData.extraDiscountType === "percent") {
+  //       extraDiscountAmount = (subtotal * extraDiscount) / 100;
+  //     } else {
+  //       extraDiscountAmount = extraDiscount;
+  //     }
+  //   }
 
-    const afterDiscount = subtotal - extraDiscountAmount;
+  //   const afterDiscount = subtotal - extraDiscountAmount;
 
-    // 3. GST
-    const gst = Number(formData.gst) || 0;
-    const gstAmount = (afterDiscount * gst) / 100;
+  //   // 3. GST
+  //   const gst = Number(formData.gst) || 0;
+  //   const gstAmount = (afterDiscount * gst) / 100;
 
-    // 4. Shipping
-    const shipping = Number(formData.shippingAmount) || 0;
+  //   // 4. Shipping
+  //   const shipping = Number(formData.shippingAmount) || 0;
 
-    // 5. **AUTO ROUND‑OFF**
-    const amountBeforeRound = afterDiscount + gstAmount + shipping;
-    const roundedFinal = Math.round(amountBeforeRound); // nearest whole ₹
-    const roundOff = roundedFinal - amountBeforeRound; // +ve or –ve
+  //   // 5. **AUTO ROUND‑OFF**
+  //   const amountBeforeRound = afterDiscount + gstAmount + shipping;
+  //   const roundedFinal = Math.round(amountBeforeRound); // nearest whole ₹
+  //   const roundOff = roundedFinal - amountBeforeRound; // +ve or –ve
 
-    // 6. Update state
-    setFormData((prev) => ({
-      ...prev,
-      discountAmount: parseFloat(extraDiscountAmount.toFixed(2)),
-      roundOff: parseFloat(roundOff.toFixed(2)),
-      finalAmount: parseFloat(roundedFinal.toFixed(2)),
-    }));
-  }, [
-    formData.products,
-    formData.gst,
-    formData.shippingAmount,
-    formData.extraDiscount,
-    formData.extraDiscountType,
-  ]);
+  //   // 6. Update state
+  //   setFormData((prev) => ({
+  //     ...prev,
+  //     discountAmount: parseFloat(extraDiscountAmount.toFixed(2)),
+  //     roundOff: parseFloat(roundOff.toFixed(2)),
+  //     finalAmount: parseFloat(roundedFinal.toFixed(2)),
+  //   }));
+  // }, [
+  //   formData.products,
+  //   formData.gst,
+  //   formData.shippingAmount,
+  //   formData.extraDiscount,
+  //   formData.extraDiscountType,
+  // ]);
 
   // Re‑run on any change
-  useEffect(() => {
-    calculateFinal();
-  }, [calculateFinal]);
+  // useEffect(() => {
+  //   calculateFinal();
+  // }, [calculateFinal]);
   // Re‑run whenever any of the dependencies change
 
   /* ────────────────────── FOLLOW-UP DATES ────────────────────── */
@@ -363,34 +364,71 @@ const AddQuotation = () => {
       due_date: formData.due_date
         ? format(formData.due_date, "yyyy-MM-dd")
         : null,
-      gst: formData.gst ?? null,
-      shippingAmount: Number(formData.shippingAmount) || 0.0,
-      extraDiscount: formData.extraDiscount ?? null,
-      extraDiscountType: formData.extraDiscountType ?? null,
-      discountAmount: Number(formData.discountAmount) || 0.0,
-      roundOff: Number(formData.roundOff) || 0.0,
-      finalAmount: Number(formData.finalAmount) || 0.0,
-      products: formData.products.map((p) => {
-        const qty = Number(p.qty) || 1;
-        const price = Number(p.sellingPrice) || 0;
-        const discRaw = Number(p.discount) || 0;
-        const discType = p.discountType || "fixed";
+      gst: formData.gst ?? 0,
+      shippingAmount: Number(formData.shippingAmount) || 0,
+      extraDiscount: Number(formData.extraDiscount) || 0,
+      extraDiscountType: formData.extraDiscountType || "fixed",
 
-        const discount =
-          discType === "percent"
-            ? (qty * price * discRaw) / 100 // ← % → ₹
-            : discRaw;
+      // Remove these — backend calculates them
+      // discountAmount, roundOff, finalAmount
+
+      products: formData.products.map((p) => {
+        const prod = products.find(
+          (pr) => (pr.id || pr.productId) === p.productId
+        );
+        let imageUrl = null;
+        if (prod?.images) {
+          if (typeof prod.images === "string") {
+            // If it's a JSON array string like '["https://..."]'
+            if (
+              prod.images.trim().startsWith("[") ||
+              prod.images.trim().startsWith("{")
+            ) {
+              try {
+                const parsed = JSON.parse(prod.images);
+                imageUrl = Array.isArray(parsed) ? parsed[0] : null;
+              } catch (e) {
+                // If parsing fails → it's probably a raw URL
+                imageUrl = prod.images.trim();
+              }
+            } else {
+              // It's already a direct URL string
+              imageUrl = prod.images.trim();
+            }
+          } else if (Array.isArray(prod.images)) {
+            imageUrl = prod.images[0];
+          }
+        }
+        // Calculate correct line total (same logic as backend)
+        const price = Number(p.sellingPrice) || 0;
+        const qty = Number(p.qty) || 1;
+        const discount = Number(p.discount) || 0;
+        const discountType = p.discountType || "fixed";
+        const taxRate = Number(p.tax) || 0;
+
+        let discountAmount =
+          discountType === "percent"
+            ? (price * qty * discount) / 100
+            : discount;
+
+        const taxable = price * qty - discountAmount;
+        const lineTotal = taxable * (1 + taxRate / 100);
 
         return {
           productId: p.productId,
+          name: p.name,
+          price: Number(p.sellingPrice || 0).toFixed(2),
           quantity: qty,
-          discount: discount, // ← **fixed amount**
-          tax: Number(p.tax) || 0,
-          total: Number(p.total) || 0,
+          discount: discount,
+          discountType: discountType,
+          tax: taxRate,
+          total: parseFloat(lineTotal.toFixed(2)), // ← SEND CORRECT TOTAL
+          imageUrl: imageUrl, // ← SEND IMAGE URL
         };
       }),
+
       followupDates: formData.followupDates
-        .filter((d) => d)
+        .filter(Boolean)
         .map((d) => format(d, "yyyy-MM-dd")),
       shipTo: formData.shipTo || null,
     };
@@ -519,10 +557,24 @@ const AddQuotation = () => {
       ),
     },
     {
-      title: "Total (₹)",
+      title: "Line Total (₹)",
       key: "total",
-      width: 110,
-      render: (_, rec) => Number(rec.total).toFixed(2),
+      render: (_, __, idx) => {
+        const p = formData.products[idx];
+        const qty = Number(p.qty) || 1;
+        const price = Number(p.sellingPrice) || 0;
+        const discRaw = Number(p.discount) || 0;
+        const discType = p.discountType || "fixed";
+        const taxRate = Number(p.tax) || 0;
+
+        const discountAmt =
+          discType === "percent" ? (price * qty * discRaw) / 100 : discRaw;
+
+        const taxable = price * qty - discountAmt;
+        const total = taxable * (1 + taxRate / 100);
+
+        return total.toFixed(2);
+      },
     },
     {
       title: "",
