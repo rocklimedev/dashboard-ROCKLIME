@@ -18,7 +18,6 @@ import moment from "moment";
 import DataTable from "./DataTable";
 import Avatar from "react-avatar";
 import AddAddress from "../Address/AddAddressModal";
-import AddSignature from "../Signature/AddSignature";
 
 import {
   TeamOutlined,
@@ -654,17 +653,6 @@ const Profile = () => {
             onSave={onAddressSaved}
             existingAddress={editingAddress}
             selectedCustomer={null}
-          />
-        )}
-
-        {signatureModalOpen && (
-          <AddSignature
-            signatureId={editingSignature?.signatureId}
-            existingSignature={editingSignature}
-            entityType="user"
-            entityId={userId}
-            onClose={closeSignatureModal}
-            onSuccess={onSignatureSuccess}
           />
         )}
       </div>

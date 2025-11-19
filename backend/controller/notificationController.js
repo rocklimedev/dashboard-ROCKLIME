@@ -117,9 +117,7 @@ const deleteOldNotifications = async () => {
 cron.schedule("0 0 * * *", async () => {
   try {
     await deleteOldNotifications();
-  } catch (error) {
-    console.error("Scheduled deletion failed:", error);
-  }
+  } catch (error) {}
 });
 // Clear all notifications for a specific user
 const clearAllNotifications = async (userId) => {

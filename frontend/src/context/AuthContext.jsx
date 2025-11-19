@@ -24,7 +24,6 @@ export const AuthProvider = ({ children }) => {
     }
 
     if (isTokenExpired(token)) {
-      console.warn("Token expired (client) → clearing");
       clearAuthStorage();
       setAuthChecked(true);
       return;
@@ -53,7 +52,6 @@ export const AuthProvider = ({ children }) => {
     if (isTokenValid) {
       setAuth({ token: storedToken, user: null, permissions: null });
     } else if (isTokenInvalid) {
-      console.warn("Server rejected token:", validationError);
       clearAuthStorage();
       setAuth(null);
     }

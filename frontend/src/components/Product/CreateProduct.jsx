@@ -106,7 +106,6 @@ const CreateProduct = () => {
               ? existingProduct.images
               : [];
         } catch (e) {
-          console.error("Failed to parse images:", e);
           imagesArray = [];
         }
       }
@@ -135,10 +134,6 @@ const CreateProduct = () => {
             metaObject === null ||
             Array.isArray(metaObject)
           ) {
-            console.warn(
-              "Invalid meta format, resetting:",
-              existingProduct.meta
-            );
             metaObject = {};
           }
 
@@ -152,7 +147,6 @@ const CreateProduct = () => {
           });
           metaObject = validMeta;
         } catch (error) {
-          console.error("Meta parse error:", error);
           toast.error("Failed to load product specifications.");
           metaObject = {};
         }
@@ -318,7 +312,6 @@ const CreateProduct = () => {
       const message =
         error.data?.message || "Something went wrong while saving the product.";
       toast.error(`Error: ${message}`);
-      console.log(error);
     }
   };
 

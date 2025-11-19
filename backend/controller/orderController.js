@@ -199,7 +199,8 @@ const fetchCommentsWithUsers = async (
 
   const commentsWithUsers = await Promise.all(
     comments.map(async (comment) => {
-      const user = await User.findByPk(comment.userId, {
+      const user = await User.findOne({
+        where: { userId: String(comment.userId) },
         attributes: ["userId", "username", "name"],
       });
       return {
@@ -215,10 +216,22 @@ const fetchCommentsWithUsers = async (
 };
 
 // Add a comment
+// Add a comment - FINAL WORKING VERSION
 exports.addComment = async (req, res) => {
   try {
-    const { resourceId, resourceType, userId, comment } = req.body;
+    const { resourceId, resourceType, userId: rawUserId, comment } = req.body;
 
+    // ── 1. Force userId to string & validate early ──
+    const userId = String(rawUserId || "").trim();
+    if (!userId || userId === "null" || userId === "undefined") {
+      return sendErrorResponse(
+        res,
+        400,
+        "userId is required and must be valid"
+      );
+    }
+
+    // ── 2. Validate inputs ──
     const inputValidation = validateCommentInput({
       resourceId,
       resourceType,
@@ -229,82 +242,87 @@ exports.addComment = async (req, res) => {
       return sendErrorResponse(res, 400, inputValidation.error);
     }
 
-    const user = await User.findByPk(userId, {
+    // ── 3. Verify user exists in MySQL (Sequelize) ──
+    const user = await User.findOne({
+      where: { userId }, // ← userId is guaranteed string now
       attributes: ["userId", "username", "name"],
     });
+
     if (!user) {
-      return sendErrorResponse(res, 404, "User not found");
+      return sendErrorResponse(res, 404, "User not found", `userId: ${userId}`);
     }
 
+    // ── 4. Verify resource exists ──
     const resourceValidation = await validateResource(resourceId, resourceType);
     if (!resourceValidation.valid) {
       return sendErrorResponse(res, 404, resourceValidation.error);
     }
 
+    // ── 5. Check comment limit (max 3 per user per resource) ──
     const hasReachedLimit = await Comment.hasReachedCommentLimit(
       resourceId,
       resourceType,
-      userId
+      userId // ← string
     );
     if (hasReachedLimit) {
       return sendErrorResponse(
         res,
         400,
-        `User has reached the maximum of 3 comments for this ${resourceType.toLowerCase()}`
+        `You can only add up to 3 comments on this ${resourceType.toLowerCase()}`
       );
     }
 
+    // ── 6. Sanitize comment ──
     const sanitizedComment = sanitizeHtml(comment.trim(), {
       allowedTags: [],
       allowedAttributes: {},
     });
     if (!sanitizedComment) {
-      return sendErrorResponse(
-        res,
-        400,
-        "Comment cannot be empty after sanitization"
-      );
+      return sendErrorResponse(res, 400, "Comment cannot be empty");
     }
 
+    // ── 7. Create comment in MongoDB (userId saved as string) ──
     const newComment = await Comment.create({
       resourceId,
       resourceType,
-      userId,
+      userId, // ← guaranteed string
       comment: sanitizedComment,
     });
 
-    const populatedComment = await Comment.findById(newComment._id).lean();
-    populatedComment.user = user.toJSON();
+    // ── 8. Populate user data for response ──
+    const populatedComment = {
+      ...newComment.toObject(),
+      user: {
+        userId: user.userId,
+        username: user.username,
+        name: user.name,
+      },
+    };
 
-    // If resourceType is Order, notify customer, creator, assignedUserId, and secondaryUserId
+    // ── 9. Send notifications (only for Orders) ──
     if (resourceType === "Order") {
       const order = await Order.findByPk(resourceId);
       if (order) {
-        const recipients = new Set(
+        const recipientIds = new Set(
           [
             order.createdFor,
             order.createdBy,
             order.assignedUserId,
             order.secondaryUserId,
-          ].filter((id) => id)
+          ].filter(Boolean)
         );
-        for (const recipientId of recipients) {
+
+        for (const recipientId of recipientIds) {
           await sendNotification({
             userId: recipientId,
             title: `New Comment on Order #${order.orderNo}`,
-            message: `A new comment has been added to your order: "${sanitizedComment}" by ${user.name}`,
+            message: `${user.name} commented: "${sanitizedComment}"`,
           });
         }
       }
-    } else if (resourceType === "Customer") {
-      // Notify the customer
-      await sendNotification({
-        userId: resourceId, // Assuming customerId can be used as userId
-        title: "New Comment on Your Profile",
-        message: `A new comment has been added to your profile: "${sanitizedComment}" by ${user.name}`,
-      });
     }
 
+    // ── 10. Success response ──
     return res.status(201).json({
       message: "Comment added successfully",
       comment: populatedComment,
@@ -474,9 +492,7 @@ async function reduceStockAndLog({
         },
         { upsert: true, new: true }
       );
-    } catch (e) {
-      console.error(`InventoryHistory error (pid ${productId}):`, e);
-    }
+    } catch (e) {}
 
     // ---- status
     let newStatus = "active";
@@ -535,9 +551,7 @@ async function restoreStock({ products, orderNo }) {
         },
         { upsert: true }
       );
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) {}
   }
 }
 
@@ -882,7 +896,6 @@ exports.createOrder = async (req, res) => {
       .status(201)
       .json({ message: "Order created", id: order.id, orderNo: order.orderNo });
   } catch (err) {
-    console.error(err);
     return sendErrorResponse(res, 500, "Failed to create order", err.message);
   }
 };
@@ -1227,7 +1240,6 @@ exports.updateOrderById = async (req, res) => {
 
     return res.status(200).json({ message: "Order updated", order });
   } catch (err) {
-    console.error(err);
     return sendErrorResponse(res, 500, "Failed to update order", err.message);
   }
 };

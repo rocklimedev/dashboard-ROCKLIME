@@ -135,7 +135,6 @@ exports.getProfile = async (req, res) => {
 
     res.status(200).json({ user });
   } catch (err) {
-    console.error("getProfile error:", err);
     res.status(500).json({ message: "Server Error", error: err.message });
   }
 };

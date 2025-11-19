@@ -162,7 +162,6 @@ const ProfileForm = ({ userId, onSuccess, onCancel }) => {
       setCropModalVisible(false);
       setCropImage(null);
     } catch (err) {
-      console.error("Upload error:", err);
       message.error(err?.data?.message || "Upload failed");
     }
   };

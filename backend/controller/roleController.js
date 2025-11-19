@@ -104,9 +104,7 @@ const checkUserRoleStatus = async () => {
         { $set: { status: "inactive" } }
       );
     }
-  } catch (error) {
-    console.error("Error updating user statuses:", error);
-  }
+  } catch (error) {}
 };
 
 // Create a new role

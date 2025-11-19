@@ -806,7 +806,6 @@ const NewCart = ({ onConvertToOrder }) => {
         signature_name: quotationData.signatureName || "CM TRADING CO",
         signature_image: "",
       };
-      console.log("QUOTATION PAYLOAD →", quotationPayload);
 
       try {
         await createQuotation(quotationPayload).unwrap();
@@ -814,7 +813,6 @@ const NewCart = ({ onConvertToOrder }) => {
         resetForm();
         navigate("/quotations/list");
       } catch (e) {
-        console.error(e);
         toast.error(e?.data?.message || "Failed to create quotation");
       }
     } else if (documentType === "Order") {

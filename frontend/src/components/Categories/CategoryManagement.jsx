@@ -243,7 +243,6 @@ const CategoryManagement = () => {
               imageUrl = parsed;
             }
           } catch (e) {
-            console.warn("Failed to parse images JSON:", record.images, e);
             // Optional: report to backend via logging
           }
         }

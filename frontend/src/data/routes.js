@@ -33,7 +33,6 @@ import PageWrapper from "../components/Home/PageWrapper";
 import ProductList from "../components/Product/ProductList";
 import CustomerList from "../components/Customers/CustomerList";
 import CustomerDetails from "../components/Customers/CustomerDetails";
-import SignatureWrapper from "../components/Signature/SignatureWrapper";
 import OrderWrapper from "../components/Orders/OrderWrapper";
 import Profile from "../components/Profile/Profile";
 import CreateProduct from "../components/Product/CreateProduct";

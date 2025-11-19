@@ -305,7 +305,6 @@ exports.updateProduct = async (req, res) => {
       },
     });
   } catch (e) {
-    console.error("Update error:", e);
     res.status(500).json({ message: e.message });
   }
 };
@@ -370,7 +369,6 @@ exports.getProductsByCategory = async (req, res) => {
 
     res.status(200).json(enrichedProducts);
   } catch (error) {
-    console.log(error);
     res.status(500).json({ message: "Internal server error." });
   }
 };
@@ -448,9 +446,7 @@ exports.addStock = async (req, res) => {
       );
 
       historyEntry = result.history[result.history.length - 1];
-    } catch (mongoErr) {
-      console.error("Failed to log add-stock history:", mongoErr);
-    }
+    } catch (mongoErr) {}
 
     return res.status(200).json({
       message: "Stock added successfully",
@@ -532,9 +528,7 @@ exports.removeStock = async (req, res) => {
       );
 
       historyEntry = result.history[result.history.length - 1];
-    } catch (mongoErr) {
-      console.error("Failed to log remove-stock history:", mongoErr);
-    }
+    } catch (mongoErr) {}
 
     return res.status(200).json({
       message: "Stock removed successfully",
