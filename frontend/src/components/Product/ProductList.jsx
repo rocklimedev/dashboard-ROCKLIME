@@ -104,18 +104,7 @@ const ProductsList = () => {
       ? brandsData?.find((b) => b.id === brandId)?.brandName || "Not Branded"
       : "Not Branded";
   };
-  const categoryOptions = useMemo(() => {
-    const categories = categoriesData?.categories ?? []; // <-- Extract array
 
-    const opts = [
-      { label: "All Categories", value: "" },
-      ...categories.map((c) => ({
-        label: c.name,
-        value: c.id || c.categoryId, // use correct ID field
-      })),
-    ];
-    return opts;
-  }, [categoriesData]);
   // ──────────────────────────────────────────────────────
   // HELPERS (add these two functions)
   // ──────────────────────────────────────────────────────
@@ -175,7 +164,43 @@ const ProductsList = () => {
     () => (Array.isArray(productsData) ? productsData : []),
     [productsData]
   );
+  const categoryOptions = useMemo(() => {
+    const allCategories = categoriesData?.categories ?? [];
 
+    // Step 1: Determine which products we're filtering by brand/bpc
+    const relevantProducts = products.filter((product) => {
+      if (brandId) {
+        return String(product.brandId) === String(brandId);
+      }
+      if (bpcId) {
+        return String(product.brand_parentcategoriesId) === String(bpcId);
+      }
+      return true; // all products if no filter-brand filter
+    });
+
+    // Step 2: Extract unique categoryIds used in these products
+    const usedCategoryIds = new Set(
+      relevantProducts.map((p) => p.categoryId).filter(Boolean) // remove null/undefined
+    );
+
+    // Step 3: Build options only for categories that are actually used
+    const filteredCategories = allCategories.filter((cat) =>
+      usedCategoryIds.has(cat.categoryId || cat.id)
+    );
+
+    // Step 4: Sort alphabetically (optional but nice)
+    filteredCategories.sort((a, b) => a.name.localeCompare(b.name));
+
+    const options = [
+      { label: "All Categories", value: "" },
+      ...filteredCategories.map((c) => ({
+        label: c.name,
+        value: c.categoryId || c.id,
+      })),
+    ];
+
+    return options;
+  }, [categoriesData, products, brandId, bpcId]);
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
       // ── 1. Brand / Parent-Category filter

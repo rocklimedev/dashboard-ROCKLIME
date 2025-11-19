@@ -901,19 +901,22 @@ const AddNewOrder = ({ adminName }) => {
                 <>
                   <Col xs={24} md={12}>
                     <FormSection>
-                      <Text strong>Primary User</Text>
+                      <Text strong>
+                        Primary User <span style={{ color: "red" }}>*</span>
+                      </Text>
                       <CompactSelect
                         value={formData.assignedUserId || undefined}
                         onChange={(v) => handleChange("assignedUserId", v)}
                         placeholder="Select primary user"
                       >
-                        {users.length ? (
-                          users.map((u) => (
+                        {users
+                          .filter((u) => u.userId !== formData.secondaryUserId) // EXCLUDE SECONDARY USER
+                          .map((u) => (
                             <Option key={u.userId} value={u.userId}>
-                              {u.username || u.name || "—"}
+                              {u.name || "—"}
                             </Option>
-                          ))
-                        ) : (
+                          ))}
+                        {users.length === 0 && (
                           <Option disabled>No users available</Option>
                         )}
                       </CompactSelect>
@@ -927,14 +930,16 @@ const AddNewOrder = ({ adminName }) => {
                         onChange={(v) => handleChange("secondaryUserId", v)}
                         placeholder="Select secondary user"
                         allowClear
+                        disabled={!formData.assignedUserId} // optional: disable until primary is selected
                       >
-                        {users.length ? (
-                          users.map((u) => (
+                        {users
+                          .filter((u) => u.userId !== formData.assignedUserId) // EXCLUDE PRIMARY USER
+                          .map((u) => (
                             <Option key={u.userId} value={u.userId}>
-                              {u.username || u.name || "—"}
+                              {u.name || "—"}
                             </Option>
-                          ))
-                        ) : (
+                          ))}
+                        {users.length === 0 && (
                           <Option disabled>No users available</Option>
                         )}
                       </CompactSelect>

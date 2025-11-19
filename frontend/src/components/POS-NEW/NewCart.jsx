@@ -357,23 +357,27 @@ const NewCart = ({ onConvertToOrder }) => {
   ]);
 
   // === AMOUNT BEFORE GST (for round-off) ===
+  // === AMOUNT BEFORE GST (for round-off) ===
   const amountBeforeGstRaw =
     subTotal - totalDiscount + tax + shipping - extraDiscount;
   const amountBeforeGst = parseFloat(amountBeforeGstRaw.toFixed(2));
 
-  // === ROUND-OFF: Applied BEFORE GST (EXACT SAME AS BACKEND) ===
+  // === ROUND-OFF BEFORE GST (exact same as backend) ===
   const rupees = Math.floor(amountBeforeGst);
   const paise = Math.round((amountBeforeGst - rupees) * 100);
+
   let roundOff = 0;
   if (paise > 0 && paise <= 50) {
-    roundOff = parseFloat((-(paise / 100)).toFixed(2));
+    roundOff = parseFloat((-paise / 100).toFixed(2));
   } else if (paise > 50) {
     roundOff = parseFloat(((100 - paise) / 100).toFixed(2));
   }
+
   const roundedAmount = parseFloat((amountBeforeGst + roundOff).toFixed(2));
 
-  // === GST: FINAL STEP ===
-  const gstAmount = parseFloat(((roundedAmount * gst) / 100).toFixed(2));
+  // === GST ON ROUNDED AMOUNT ===
+  const gstAmount =
+    gst > 0 ? parseFloat(((roundedAmount * gst) / 100).toFixed(2)) : 0;
 
   // === FINAL TOTAL ===
   const totalAmount = parseFloat((roundedAmount + gstAmount).toFixed(2));
@@ -769,23 +773,28 @@ const NewCart = ({ onConvertToOrder }) => {
 
         products: cartItems.map((item) => {
           const price = Number(item.price) || 0;
-          const qty = Number(item.quantity) || 1;
-          const disc = Number(itemDiscounts[item.productId]) || 0;
-          const type = itemDiscountTypes[item.productId] || "percent";
+          const quantity = Number(item.quantity) || 1;
+          const rawDiscount = Number(itemDiscounts[item.productId]) || 0;
+          const discountType = itemDiscountTypes[item.productId] || "percent";
 
-          const unitAfter =
-            type === "percent" ? price * (1 - disc / 100) : price - disc;
-          const lineTotal = parseFloat((unitAfter * qty).toFixed(2));
+          // Calculate correct line total AFTER item discount
+          let lineTotalAfterDiscount;
+          if (discountType === "percent") {
+            lineTotalAfterDiscount = price * quantity * (1 - rawDiscount / 100);
+          } else {
+            // fixed discount = amount per unit
+            lineTotalAfterDiscount = (price - rawDiscount) * quantity;
+          }
 
           return {
             productId: item.productId,
-            name: item.name,
+            name: item.name || "Unknown Product",
             price: Number(price.toFixed(2)),
-            discount: Number(disc.toFixed(2)),
-            discountType: type,
-            quantity: qty,
-            total: lineTotal,
-            tax: Number(itemTaxes[item.productId]) || 0,
+            quantity,
+            discount: Number(rawDiscount.toFixed(2)),
+            discountType,
+            tax: Number(itemTaxes[item.productId] || 0),
+            total: parseFloat(lineTotalAfterDiscount.toFixed(2)), // ← THIS IS KEY
           };
         }),
 

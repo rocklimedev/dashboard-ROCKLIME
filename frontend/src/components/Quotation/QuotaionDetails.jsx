@@ -399,7 +399,20 @@ const QuotationsDetails = () => {
                         productsData?.find(
                           (x) => x.productId === p.productId
                         ) || {};
-                      const img = pd.images ? JSON.parse(pd.images)[0] : null;
+                      const img =
+                        p.imageUrl || // ← Most important: comes from quotation
+                        (pd.images
+                          ? (() => {
+                              try {
+                                const parsed = JSON.parse(pd.images);
+                                return Array.isArray(parsed)
+                                  ? parsed[0]
+                                  : parsed;
+                              } catch {
+                                return pd.images;
+                              }
+                            })()
+                          : null);
                       const code =
                         pd.metaDetails?.find((cc) => cc.slug === "companyCode")
                           ?.value ||
