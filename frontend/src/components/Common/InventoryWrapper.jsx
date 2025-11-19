@@ -99,7 +99,6 @@ const InventoryWrapper = () => {
   // ────── Base products ──────
   const products = useMemo(() => {
     if (!Array.isArray(productsData)) {
-      console.warn("productsData is not an array:", productsData);
       return [];
     }
     return productsData;

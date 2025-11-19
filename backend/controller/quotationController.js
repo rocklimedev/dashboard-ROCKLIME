@@ -262,7 +262,7 @@ exports.createQuotation = async (req, res) => {
     if (mongoItem) {
       await QuotationItem.deleteOne({ _id: mongoItem._id }).catch(() => {});
     }
-    console.error("Create Quotation Error:", error);
+
     return res.status(500).json({
       error: "Failed to create quotation",
       details: error.message,
@@ -312,7 +312,6 @@ exports.updateQuotation = async (req, res) => {
         .sort({ version: -1 })
         .exec();
     } catch (err) {
-      console.error("Error fetching latest version:", err);
       latestVersion = null;
     }
     const newVersionNumber = latestVersion ? latestVersion.version + 1 : 1;
@@ -327,14 +326,12 @@ exports.updateQuotation = async (req, res) => {
         updatedBy: req.user.userId,
         updatedAt: new Date(),
       });
-      console.log(`Version ${newVersionNumber} created for ${id}`);
     } catch (err) {
       if (err.code === 11000) {
         console.warn(
           `Version ${newVersionNumber} already exists – skipping version creation`
         );
       } else {
-        console.error("Failed to create version:", err);
         await t.rollback();
         return res
           .status(500)
@@ -474,7 +471,7 @@ exports.updateQuotation = async (req, res) => {
     });
   } catch (error) {
     await t.rollback();
-    console.error("Update Quotation Failed:", error);
+
     return res.status(500).json({
       error: "Failed to update quotation",
       details: error.message,

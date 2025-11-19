@@ -41,12 +41,18 @@ const CommentSchema = new mongoose.Schema(
 CommentSchema.index({ resourceId: 1, resourceType: 1, userId: 1 });
 
 // Method to check comment limit for a user on a resource
+// In models/comment.js — make sure userId is always string
 CommentSchema.statics.hasReachedCommentLimit = async function (
   resourceId,
   resourceType,
   userId
 ) {
-  const count = await this.countDocuments({ resourceId, resourceType, userId });
+  const userIdStr = String(userId).trim();
+  const count = await this.countDocuments({
+    resourceId,
+    resourceType,
+    userId: userIdStr,
+  });
   return count >= 3;
 };
 

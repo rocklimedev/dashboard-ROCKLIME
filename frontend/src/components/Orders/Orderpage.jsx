@@ -167,7 +167,7 @@ const OrderPage = () => {
 
   const { data: profileData, isLoading: profileLoading } = useGetProfileQuery();
   const user = profileData?.user || {};
-
+  console.log(user);
   const {
     data: orderData,
     isLoading: orderLoading,
@@ -327,7 +327,7 @@ const OrderPage = () => {
   const shippingAddress = useMemo(
     () =>
       addressesData?.find(
-        (a) => a.status === "SHIPPING" && a.customerId === order.createdFor
+        (a) => a.status === "ADDITIONAL" && a.customerId === order.createdFor
       ) ||
       order.shippingAddress ||
       null,
@@ -405,14 +405,7 @@ const OrderPage = () => {
       toast.error(err?.data?.message || "Delete failed");
     }
   };
-  const handleHoldOrder = async () => {
-    try {
-      await updateOrderStatus({ id, status: "ONHOLD" }).unwrap();
-      refetchOrder();
-    } catch (err) {
-      toast.error(err?.data?.message || "Failed to hold order");
-    }
-  };
+
   const handleAddComment = async () => {
     if (!newComment.trim()) return toast.error("Comment cannot be empty");
     if (!user.userId) return navigate("/login");
@@ -421,7 +414,7 @@ const OrderPage = () => {
       await addComment({
         resourceId: id,
         resourceType: "Order",
-        userId: user.userId,
+        userId: String(user.userId || "").trim(),
         comment: newComment,
       }).unwrap();
       setNewComment("");
@@ -432,7 +425,10 @@ const OrderPage = () => {
   const handleDeleteComment = async (commentId) => {
     if (!window.confirm("Delete comment?")) return;
     try {
-      await deleteComment({ commentId, userId: user.userId }).unwrap();
+      await deleteComment({
+        commentId,
+        userId: String(user.userId || "").trim(),
+      }).unwrap();
     } catch (err) {
       toast.error(err?.data?.message || "Delete failed");
     }
@@ -481,9 +477,6 @@ const OrderPage = () => {
       </Menu.Item>
       <Menu.Item key="delete" danger onClick={handleDeleteOrder}>
         Delete
-      </Menu.Item>
-      <Menu.Item key="hold" onClick={handleHoldOrder}>
-        Put on Hold
       </Menu.Item>
     </Menu>
   );
@@ -1075,7 +1068,7 @@ const OrderPage = () => {
                         key={c._id}
                         comment={c}
                         onDelete={handleDeleteComment}
-                        currentUserId={user.userId}
+                        currentUserId={String(user.userId || "").trim()}
                       />
                     ))}
                   </div>

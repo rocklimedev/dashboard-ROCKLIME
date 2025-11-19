@@ -673,7 +673,6 @@ exports.validateToken = async (req, res) => {
     // 4. Token is valid → just return 200
     return res.status(200).json({ message: "Token is valid" });
   } catch (err) {
-    console.error("validateToken error:", err);
     return res.status(500).json({ message: "Server error" });
   }
 };

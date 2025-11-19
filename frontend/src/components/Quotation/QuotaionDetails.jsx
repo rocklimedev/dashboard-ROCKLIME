@@ -72,7 +72,6 @@ const QuotationsDetails = () => {
       try {
         return JSON.parse(products);
       } catch (e) {
-        console.error("Failed to parse products JSON", e);
         return [];
       }
     }
