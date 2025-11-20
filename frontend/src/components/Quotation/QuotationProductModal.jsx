@@ -55,7 +55,7 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
 
   return (
     <Modal show={show} onHide={onHide} size="xl" centered scrollable>
-      <Modal.Header closeButton>
+      <Modal.Header>
         <Modal.Title>
           Quotation #{q.reference_number || q.quotationId} – Products & Pricing
         </Modal.Title>
@@ -148,78 +148,73 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
             </Table>
 
             {/* ========== FINAL BREAKDOWN (FROM DB) ========== */}
-            <div className="border rounded p-3 bg-light">
-              <Table bordered size="sm">
-                <tbody>
+
+            <Table bordered size="sm">
+              <tbody>
+                <tr>
+                  <td className="text-end fw-bold">
+                    Subtotal (after line items)
+                  </td>
+                  <td className="text-end">
+                    ₹{Number(q.subtotal || 0).toFixed(2)}
+                  </td>
+                </tr>
+
+                {q.extraDiscount > 0 && (
                   <tr>
-                    <td className="text-end fw-bold">
-                      Subtotal (after line items)
+                    <td className="text-end text-danger">
+                      Extra Discount (
+                      {q.extraDiscountType === "percent"
+                        ? `${q.extraDiscount}%`
+                        : `₹${q.extraDiscount}`}
+                      )
                     </td>
-                    <td className="text-end">
-                      ₹{Number(q.subtotal || 0).toFixed(2)}
-                    </td>
-                  </tr>
-
-                  {q.extraDiscount > 0 && (
-                    <tr>
-                      <td className="text-end text-danger">
-                        Extra Discount (
-                        {q.extraDiscountType === "percent"
-                          ? `${q.extraDiscount}%`
-                          : `₹${q.extraDiscount}`}
-                        )
-                      </td>
-                      <td className="text-end text-danger">
-                        -₹{Number(q.discountAmount || 0).toFixed(2)}
-                      </td>
-                    </tr>
-                  )}
-
-                  {q.shippingAmount > 0 && (
-                    <tr>
-                      <td className="text-end text-success">Shipping</td>
-                      <td className="text-end text-success">
-                        +₹{Number(q.shippingAmount).toFixed(2)}
-                      </td>
-                    </tr>
-                  )}
-
-                  {q.gst > 0 && (
-                    <tr>
-                      <td className="text-end text-success">GST ({q.gst}%)</td>
-                      <td className="text-end text-success">
-                        +₹{Number(q.gstAmount || 0).toFixed(2)}
-                      </td>
-                    </tr>
-                  )}
-
-                  {q.roundOff != null && q.roundOff !== 0 && (
-                    <tr>
-                      <td className="text-end">Round-off</td>
-                      <td
-                        className={`text-end ${
-                          q.roundOff >= 0 ? "text-success" : "text-danger"
-                        }`}
-                      >
-                        {q.roundOff >= 0 ? "+" : "-"}₹
-                        {Math.abs(q.roundOff).toFixed(2)}
-                      </td>
-                    </tr>
-                  )}
-
-                  <tr className="table-success">
-                    <td className="text-end fw-bold fs-5">Final Amount</td>
-                    <td className="text-end fw-bold fs-5">
-                      ₹{Number(q.finalAmount || 0).toFixed(2)}
+                    <td className="text-end text-danger">
+                      -₹{Number(q.discountAmount || 0).toFixed(2)}
                     </td>
                   </tr>
-                </tbody>
-              </Table>
-            </div>
+                )}
 
-            <div className="mt-3 text-center text-muted small">
-              All amounts are final and calculated by the server.
-            </div>
+                {q.shippingAmount > 0 && (
+                  <tr>
+                    <td className="text-end text-success">Shipping</td>
+                    <td className="text-end text-success">
+                      +₹{Number(q.shippingAmount).toFixed(2)}
+                    </td>
+                  </tr>
+                )}
+
+                {q.gst > 0 && (
+                  <tr>
+                    <td className="text-end text-success">GST ({q.gst}%)</td>
+                    <td className="text-end text-success">
+                      +₹{Number(q.gstAmount || 0).toFixed(2)}
+                    </td>
+                  </tr>
+                )}
+
+                {q.roundOff != null && q.roundOff !== 0 && (
+                  <tr>
+                    <td className="text-end">Round-off</td>
+                    <td
+                      className={`text-end ${
+                        q.roundOff >= 0 ? "text-success" : "text-danger"
+                      }`}
+                    >
+                      {q.roundOff >= 0 ? "+" : "-"}₹
+                      {Math.abs(q.roundOff).toFixed(2)}
+                    </td>
+                  </tr>
+                )}
+
+                <tr>
+                  <td className="text-end">Final Amount</td>
+                  <td className="text-end">
+                    ₹{Number(q.finalAmount || 0).toFixed(2)}
+                  </td>
+                </tr>
+              </tbody>
+            </Table>
           </>
         )}
       </Modal.Body>
