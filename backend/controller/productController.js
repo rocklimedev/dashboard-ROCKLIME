@@ -902,3 +902,126 @@ exports.getAllProductCodesBrandWise = async (req, res) => {
     });
   }
 };
+
+exports.batchCreateProducts = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const {
+      categoryId,
+      brandId,
+      vendorId,
+      brand_parentcategoriesId,
+      products, // array of { name, product_code, quantity, price, meta: { "1": "8GB", "2": "256GB" } }
+    } = req.body;
+
+    if (
+      !Array.isArray(products) ||
+      products.length === 0 ||
+      products.length > 50
+    ) {
+      return res.status(400).json({ message: "Send 1–50 products" });
+    }
+
+    // Validate common fields
+    if (!categoryId || !brandId) {
+      return res
+        .status(400)
+        .json({ message: "categoryId and brandId required" });
+    }
+
+    const results = [];
+    const errors = [];
+
+    for (let i = 0; i < products.length; i++) {
+      const p = products[i];
+      const index = i + 1;
+
+      if (!p.name?.trim() || !p.product_code?.trim()) {
+        errors.push(`Row ${index}: Name and Code required`);
+        continue;
+      }
+
+      try {
+        const product = await Product.create(
+          {
+            name: p.name.trim(),
+            product_code: p.product_code.trim(),
+            quantity: parseInt(p.quantity) || 0,
+            price: parseFloat(p.price) || 0,
+            categoryId,
+            brandId,
+            vendorId: vendorId || null,
+            brand_parentcategoriesId: brand_parentcategoriesId || null,
+            description: p.description?.trim() || null,
+            meta: p.meta && Object.keys(p.meta).length ? p.meta : null,
+            images: "[]", // or allow bulk image later
+            status: "active",
+            isFeatured: false,
+          },
+          { transaction: t }
+        );
+
+        results.push({
+          row: index,
+          productId: product.productId,
+          name: product.name,
+          product_code: product.product_code,
+          status: "success",
+        });
+      } catch (err) {
+        if (err.name === "SequelizeUniqueConstraintError") {
+          errors.push(`Row ${index}: Code ${p.product_code} already exists`);
+        } else {
+          errors.push(`Row ${index}: ${err.message}`);
+        }
+      }
+    }
+
+    if (errors.length > 0 && results.length === 0) {
+      await t.rollback();
+      return res.status(400).json({ message: "All failed", errors });
+    }
+
+    if (results.length > 0) {
+      await t.commit();
+    } else {
+      await t.rollback();
+    }
+
+    return res.status(201).json({
+      message: `${results.length} products created`,
+      successCount: results.length,
+      failedCount: errors.length,
+      created: results,
+      errors,
+    });
+  } catch (err) {
+    await t.rollback();
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+exports.checkproductCode = async (req, res) => {
+  try {
+    const { code } = req.query;
+
+    if (!code || typeof code !== "string") {
+      return res
+        .status(400)
+        .json({ exists: false, message: "Code is required" });
+    }
+
+    // Case-insensitive check (optional, but recommended for consistency)
+    const existing = await Product.findOne({
+      where: {
+        product_code: code.trim(),
+      },
+      attributes: ["product_code"], // only fetch the code, minimal data
+    });
+
+    res.json({ exists: !!existing });
+  } catch (error) {
+    console.error("Error checking product code:", error);
+    res.status(500).json({ exists: false, error: "Server error" });
+  }
+};

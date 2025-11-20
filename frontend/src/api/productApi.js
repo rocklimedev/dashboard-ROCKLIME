@@ -18,7 +18,28 @@ export const productApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Product"],
     }),
-
+    batchCreateProducts: builder.mutation({
+      query: (payload) => ({
+        url: "/products/batch-create",
+        method: "POST",
+        body: payload, // JSON payload (no files in batch)
+      }),
+      invalidatesTags: ["Product", "LowStock", "ProductCodes"],
+    }),
+    // Add this inside your endpoints builder
+    checkProductCode: builder.query({
+      query: (code) => ({
+        url: "/products/check-code",
+        method: "GET",
+        params: { code }, // Automatically becomes ?code=EGRGR1234567
+      }),
+      // Important: Don't cache forever — codes can change
+      keepUnusedDataFor: 10, // seconds
+      // Optional: provide a tag so it's invalidated on product create/update
+      providesTags: (result, error, code) => [
+        { type: "ProductCode", id: code },
+      ],
+    }),
     updateProduct: builder.mutation({
       query: ({ productId, formData }) => ({
         url: `/products/${productId}`,
@@ -125,6 +146,9 @@ export const productApi = baseApi.injectEndpoints({
 
 // Export all hooks including the new one
 export const {
+  useCheckProductCodeQuery,
+  useLazyCheckProductCodeQuery,
+  useBatchCreateProductsMutation,
   useGetProductsByIdsQuery,
   useUpdateProductFeaturedMutation,
   useCreateProductMutation,
