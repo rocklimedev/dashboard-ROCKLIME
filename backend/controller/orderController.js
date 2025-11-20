@@ -18,6 +18,7 @@ const sanitizeHtml = require("sanitize-html");
 const { Readable } = require("stream");
 const moment = require("moment");
 const { sendNotification } = require("./notificationController"); // Import sendNotification
+const { error } = require("console");
 // ──────── HELPERS ────────
 const VALID_STATUSES = [
   "PREPARING",
@@ -690,7 +691,8 @@ exports.createOrder = async (req, res) => {
         }
 
         // line-total validation
-        const discType = prod.discountType || "fixed";
+        // Use discountType from payload if exists, else fall back to DB
+        const discType = p.discountType || prod.discountType || "percent";
         const expected = Number(
           (
             (discType === "percent"
@@ -723,7 +725,58 @@ exports.createOrder = async (req, res) => {
         });
       }
     }
+    // ── ENHANCED: Save order items with name + image (MongoDB) ──
+    if (products && products.length > 0) {
+      const productIds = products
+        .map((p) => p.id || p.productId)
+        .filter(Boolean);
+      const dbProducts = await Product.findAll({
+        where: { productId: productIds },
+        attributes: ["productId", "name", "images"],
+      });
 
+      const productMap = {};
+      dbProducts.forEach((p) => {
+        let imageUrl = null;
+        if (p.images) {
+          try {
+            const imgs = JSON.parse(p.images);
+            if (Array.isArray(imgs) && imgs.length > 0) imageUrl = imgs[0];
+          } catch {}
+        }
+        productMap[p.productId] = {
+          name: p.name || "Unnamed Product",
+          imageUrl,
+        };
+      });
+
+      const mongoItems = products.map((p) => {
+        const id = p.id || p.productId;
+        const { name, imageUrl } = productMap[id] || {
+          name: "Unknown",
+          imageUrl: null,
+        };
+
+        return {
+          productId: id,
+          name,
+          imageUrl,
+          quantity: p.quantity,
+          price: p.price,
+          discount: p.discount || 0,
+          discountType: p.discountType || "percent",
+          tax: 0,
+          total: p.total,
+        };
+      });
+
+      // Save or update in MongoDB
+      await require("../models/orderItem").findOneAndUpdate(
+        { orderId: order.id },
+        { orderId: order.id, items: mongoItems },
+        { upsert: true }
+      );
+    }
     // ── DATES ──
     if (dueDate && new Date(dueDate).toString() === "Invalid Date") {
       return sendErrorResponse(res, 400, "Invalid dueDate");
@@ -1092,7 +1145,8 @@ exports.updateOrderById = async (req, res) => {
         )
           return sendErrorResponse(res, 400, `Invalid numeric for ${id}`);
 
-        const discType = prod.discountType || "fixed";
+        // Use discountType from payload if exists, else fall back to DB
+        const discType = p.discountType || prod.discountType || "percent";
         const expected = Number(
           (
             (discType === "percent"
@@ -1120,7 +1174,58 @@ exports.updateOrderById = async (req, res) => {
         });
       }
     }
+    // ── ENHANCED: Save order items with name + image (MongoDB) ──
+    if (products && products.length > 0) {
+      const productIds = products
+        .map((p) => p.id || p.productId)
+        .filter(Boolean);
+      const dbProducts = await Product.findAll({
+        where: { productId: productIds },
+        attributes: ["productId", "name", "images"],
+      });
 
+      const productMap = {};
+      dbProducts.forEach((p) => {
+        let imageUrl = null;
+        if (p.images) {
+          try {
+            const imgs = JSON.parse(p.images);
+            if (Array.isArray(imgs) && imgs.length > 0) imageUrl = imgs[0];
+          } catch {}
+        }
+        productMap[p.productId] = {
+          name: p.name || "Unnamed Product",
+          imageUrl,
+        };
+      });
+
+      const mongoItems = products.map((p) => {
+        const id = p.id || p.productId;
+        const { name, imageUrl } = productMap[id] || {
+          name: "Unknown",
+          imageUrl: null,
+        };
+
+        return {
+          productId: id,
+          name,
+          imageUrl,
+          quantity: p.quantity,
+          price: p.price,
+          discount: p.discount || 0,
+          discountType: p.discountType || "percent",
+          tax: 0,
+          total: p.total,
+        };
+      });
+
+      // Save or update in MongoDB
+      await require("../models/orderItem").findOneAndUpdate(
+        { orderId: order.id },
+        { orderId: order.id, items: mongoItems },
+        { upsert: true }
+      );
+    }
     // ── SHIPPING / GST / EXTRA DISCOUNT / amountPaid ──
     if (updates.shipping !== undefined) {
       const s = parseFloat(updates.shipping);
@@ -1240,6 +1345,7 @@ exports.updateOrderById = async (req, res) => {
 
     return res.status(200).json({ message: "Order updated", order });
   } catch (err) {
+    console.error(err);
     return sendErrorResponse(res, 500, "Failed to update order", err.message);
   }
 };
@@ -1433,7 +1539,8 @@ exports.draftOrder = async (req, res) => {
         if (!prod)
           return sendErrorResponse(res, 404, `Product ${id} not found`);
         // line-total check
-        const discType = prod.discountType || "fixed";
+        // Use discountType from payload if exists, else fall back to DB
+        const discType = p.discountType || prod.discountType || "percent";
         const expected =
           discType === "percent"
             ? price * (1 - discount / 100)

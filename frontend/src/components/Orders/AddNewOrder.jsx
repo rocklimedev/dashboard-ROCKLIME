@@ -51,7 +51,17 @@ import DatePicker from "react-datepicker";
 
 const { Option } = Select;
 const { Text } = Typography;
-
+// ────────────────────── QUOTATION → ORDER TRANSFORMER ──────────────────────
+const transformQuotationProductsForOrder = (products) => {
+  return products.map((item) => ({
+    id: item.productId,
+    price: Number(item.price),
+    quantity: Number(item.quantity || 1),
+    discount: Number(item.discount || 0),
+    discountType: item.discountType || "percent", // ← safe now
+    total: Number(item.total),
+  }));
+};
 /* ────────────────────── Constants ────────────────────── */
 const SOURCE_TYPES = [
   "Retail",
@@ -125,7 +135,9 @@ const AddNewOrder = ({ adminName }) => {
   const [createCustomer] = useCreateCustomerMutation();
 
   const quotationData = location.state?.quotationData || {};
-
+  const [products, setProducts] = useState(
+    quotationData.products || [] // ← Pre-fill if from quotation
+  );
   const [formData, setFormData] = useState({
     createdFor: quotationData.createdFor || "",
     createdBy: "",
@@ -551,6 +563,11 @@ const AddNewOrder = ({ adminName }) => {
     const payload = {
       createdFor: formData.createdFor,
       createdBy: formData.createdBy,
+      products: quotationData.products
+        ? transformQuotationProductsForOrder(quotationData.products)
+        : products.length > 0
+        ? products
+        : [],
       assignedTeamId:
         assignmentType === "team" ? formData.assignedTeamId : null,
       assignedUserId:
@@ -573,22 +590,33 @@ const AddNewOrder = ({ adminName }) => {
       previousOrderNo: sanitize(formData.previousOrderNo),
       shipTo: sanitize(formData.shipTo),
       shipping: parseFloat(formData.shipping) || 0.0,
-      gst:
-        formData.gst != null && formData.gst !== ""
-          ? parseFloat(formData.gst)
-          : null,
-      extraDiscount:
-        formData.extraDiscount != null && formData.extraDiscount !== ""
-          ? parseFloat(formData.extraDiscount)
-          : null,
-      extraDiscountType:
-        formData.extraDiscount != null && formData.extraDiscount !== ""
-          ? formData.extraDiscountType
-          : null,
-      gstValue: gstValue || null,
-      extraDiscountValue: extraDiscountValue || null,
+      gst: (() => {
+        if (
+          formData.gst === null ||
+          formData.gst === undefined ||
+          formData.gst === ""
+        ) {
+          return null;
+        }
+        const parsed = parseFloat(formData.gst);
+        return isNaN(parsed) || parsed < 0 || parsed > 100 ? null : parsed;
+      })(),
+      // Only include discount fields if a valid discount exists
+      ...(formData.extraDiscount != null &&
+      formData.extraDiscount !== "" &&
+      parseFloat(formData.extraDiscount) > 0
+        ? {
+            extraDiscount: parseFloat(formData.extraDiscount),
+            extraDiscountType: formData.extraDiscountType || "fixed",
+          }
+        : {
+            extraDiscount: null,
+            extraDiscountType: null,
+          }),
+      // gstValue: gstValue || null,
+      // extraDiscountValue: extraDiscountValue || null,
     };
-
+    console.log(formData.gst);
     try {
       if (isEditMode) {
         if (!id) return toast.error("Invalid order ID.");
@@ -608,6 +636,7 @@ const AddNewOrder = ({ adminName }) => {
           : err?.status === 500
           ? "Server error."
           : "Something went wrong.";
+      console.error(err);
       toast.error(msg);
     }
   };
@@ -644,12 +673,6 @@ const AddNewOrder = ({ adminName }) => {
               </Typography.Text>
             </div>
             <Space>
-              <Avatar
-                name={user.name || "Unknown User"}
-                size="32"
-                round
-                title={`Created by ${user.name || "Unknown User"}`}
-              />
               <Link to="/orders/list" className="btn btn-secondary">
                 Back
               </Link>
