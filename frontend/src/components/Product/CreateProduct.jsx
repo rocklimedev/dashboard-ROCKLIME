@@ -5,6 +5,7 @@ import {
   useCreateProductMutation,
   useUpdateProductMutation,
   useGetProductByIdQuery,
+  useLazyCheckProductCodeQuery,
 } from "../../api/productApi";
 import { GiFeatherWound } from "react-icons/gi";
 import { FiImage, FiPlusCircle, FiLifeBuoy } from "react-icons/fi";
@@ -33,7 +34,7 @@ import {
 
 const { Option } = Select;
 const { TextArea } = Input;
-
+const COMPANY_CODE_META_ID = "d11da9f9-3f2e-4536-8236-9671200cca4a"; // Company Code UUID
 const { Panel } = Collapse; // This is correct
 const CreateProduct = () => {
   const { productId } = useParams();
@@ -45,7 +46,9 @@ const CreateProduct = () => {
   const [metaData, setMetaData] = useState({}); // Meta key-value pairs
   const [selectedImage, setSelectedImage] = useState(null); // For modal
   const [form] = Form.useForm();
-
+  const [autoCode, setAutoCode] = useState("");
+  const [isCodeDirty, setIsCodeDirty] = useState(false);
+  const [codeStatus, setCodeStatus] = useState(""); // "checking" | "unique" | "duplicate"
   // Fetch data
   const { data: existingProduct, isLoading: isFetching } =
     useGetProductByIdQuery(productId, { skip: !isEditMode });
@@ -62,7 +65,8 @@ const CreateProduct = () => {
   const { data: productMetas, isLoading: isProductMetaLoading } =
     useGetAllProductMetaQuery();
   const { data: user, isLoading: isUserLoading } = useGetProfileQuery();
-
+  const [triggerCheckCode, { isFetching: isCheckingCode }] =
+    useLazyCheckProductCodeQuery();
   const categories = Array.isArray(categoryData?.categories)
     ? categoryData.categories
     : [];
@@ -76,7 +80,65 @@ const CreateProduct = () => {
   const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
   const [updateProduct, { isLoading: isUpdating, error }] =
     useUpdateProductMutation();
+  // Generate Unique Product Code
+  const generateUniqueCode = useCallback(
+    async (brandId, companyCodeValue, attempt = 0) => {
+      if (attempt > 15) {
+        toast.error("Couldn't generate unique code. Please enter manually.");
+        setCodeStatus("error");
+        return;
+      }
 
+      const brand = brands.find((b) => b.id === brandId);
+      if (!brand) return;
+
+      const brandPrefix = (brand.brandName || "XX").slice(0, 2).toUpperCase();
+
+      // Extract last 4 digits from company code
+      const cleanCode = (companyCodeValue || "").toString().trim();
+      const digitsOnly = cleanCode.replace(/\D/g, ""); // remove non-digits
+      const last4 = digitsOnly ? digitsOnly.slice(-4).padEnd(4, "0") : "0000";
+
+      const random3 = String(Math.floor(Math.random() * 900) + 100); // 100–999
+
+      const candidate = `E${brandPrefix}${brandPrefix}${last4}${random3}`;
+
+      setAutoCode(candidate);
+      form.setFieldsValue({ product_code: candidate });
+      setCodeStatus("checking");
+
+      try {
+        const exists = await triggerCheckCode(candidate).unwrap();
+        if (exists) {
+          setCodeStatus("duplicate");
+          generateUniqueCode(brandId, companyCodeValue, attempt + 1);
+        } else {
+          setCodeStatus("unique");
+        }
+      } catch (err) {
+        setCodeStatus("error");
+      }
+    },
+    [brands, form, triggerCheckCode]
+  );
+  // Auto Generate on Brand + Size Change
+  useEffect(() => {
+    if (isEditMode || isCodeDirty) return;
+
+    const values = form.getFieldsValue();
+    const brandId = values.brandId;
+    const companyCode = metaData[COMPANY_CODE_META_ID];
+
+    if (brandId && companyCode) {
+      generateUniqueCode(brandId, companyCode);
+    }
+  }, [
+    form.getFieldValue("brandId"),
+    metaData[COMPANY_CODE_META_ID],
+    isEditMode,
+    isCodeDirty,
+    generateUniqueCode,
+  ]);
   useEffect(() => {
     if (existingProduct) {
       const formValues = {

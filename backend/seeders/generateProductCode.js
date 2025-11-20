@@ -2,10 +2,10 @@ const fs = require("fs").promises;
 const path = require("path");
 
 // JSON data to process
-const jsonData = require("./newproduct.json");
+const jsonData = require("./error.json");
 
 // Mock brand
-const mockBrand = { brandName: "Grohe" };
+const mockBrand = { brandName: "Grohe Premium" };
 
 // Generate a random 3-digit number as a string
 function generateRandomSuffix() {
