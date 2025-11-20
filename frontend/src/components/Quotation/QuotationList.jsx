@@ -690,10 +690,9 @@ View: ${window.location.origin}/quotations/${quotation.quotationId}
           title: q.document_title || "",
           createdFor: q.customerId || "",
           dueDate: q.due_date || "",
-          source: q.reference_number ? `Quotation #${q.reference_number}` : "",
-          description: `Converted from Quotation #${
-            q.reference_number || "N/A"
-          }`,
+          products: q.products,
+          source: q.reference_number ? `Quotation #${q.reference_no}` : "",
+          description: `Converted from Quotation #${q.reference_no || "N/A"}`,
           quotationId: q.quotationId || "",
         },
       },

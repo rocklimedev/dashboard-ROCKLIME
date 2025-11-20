@@ -439,6 +439,32 @@ const OrderPage = () => {
       setCommentPage(page);
     }
   };
+  // ── CALCULATIONS ──
+  // ── CALCULATIONS (FINAL & CORRECT) ──
+  const lineItemsTotal = useMemo(() => {
+    return mergedProducts.reduce(
+      (sum, p) => sum + (parseFloat(p.total) || 0),
+      0
+    );
+  }, [mergedProducts]);
+
+  const gstRate = order.gst ? parseFloat(order.gst) : 18;
+  const gstAmount = order.gstValue
+    ? parseFloat(order.gstValue)
+    : (lineItemsTotal * gstRate) / 100;
+
+  const extraDiscountAmount = order.extraDiscountValue
+    ? parseFloat(order.extraDiscountValue)
+    : 0;
+
+  const finalAmount = parseFloat(order.finalAmount || 0);
+
+  // For display: actual ₹ discount per item
+  const getItemDiscountAmount = (item) => {
+    if (!item.discount || item.discount === 0) return 0;
+    if (item.discountType === "fixed") return item.discount;
+    return (item.price * item.quantity * item.discount) / 100;
+  };
 
   // ── LOADING / ERROR ──
   if (profileLoading || orderLoading || productsLoading) {
@@ -460,15 +486,6 @@ const OrderPage = () => {
     );
   }
 
-  // ── CALCULATIONS ──
-  const subTotal = mergedProducts.reduce(
-    (a, p) => a + (p.total || p.price * p.quantity),
-    0
-  );
-  const discount = mergedProducts.reduce((a, p) => a + (p.discount || 0), 0);
-  const vat = subTotal * 0.1;
-  const total = subTotal - discount + vat;
-
   // ── MENU ──
   const menu = (
     <Menu>
@@ -488,7 +505,7 @@ const OrderPage = () => {
       render: (_, r) => (
         <div className="product-cell">
           <img
-            src={r.image}
+            src={r.imageUrl}
             alt={r.name}
             className="product-image"
             onError={(e) => (e.target.src = "https://via.placeholder.com/60")}
@@ -514,16 +531,23 @@ const OrderPage = () => {
     },
     {
       title: "Disc",
-      dataIndex: "discount",
       key: "discount",
-      render: (d) => `₹${parseFloat(d || 0).toFixed(2)}`,
+      render: (_, r) => {
+        const discAmt = getItemDiscountAmount(r);
+        return discAmt > 0 ? (
+          <Text type="danger">-₹{discAmt.toFixed(2)}</Text>
+        ) : (
+          <Text type="secondary">—</Text>
+        );
+      },
     },
     {
       title: "Total",
       key: "total",
       align: "right",
-      render: (_, r) =>
-        `₹${parseFloat(r.total || r.price * r.quantity).toFixed(2)}`,
+      render: (_, r) => (
+        <Text strong>₹{parseFloat(r.total || 0).toFixed(2)}</Text>
+      ),
     },
   ];
 
@@ -569,32 +593,69 @@ const OrderPage = () => {
                       rowKey="productId"
                       scroll={{ x: "max-content" }}
                       footer={() => (
-                        <div className="table-footer">
-                          <table>
+                        <div
+                          className="table-footer"
+                          style={{
+                            padding: "16px 24px",
+                            background: "#fafafa",
+                          }}
+                        >
+                          <table
+                            style={{
+                              width: "100%",
+                              borderCollapse: "collapse",
+                            }}
+                          >
                             <tbody>
                               <tr>
-                                <td>Sub Total:</td>
-                                <td>
-                                  <Text strong>₹{subTotal.toFixed(2)}</Text>
+                                <td style={{ padding: "6px 0" }}>Sub Total:</td>
+                                <td align="right">
+                                  ₹{lineItemsTotal.toFixed(2)}
                                 </td>
                               </tr>
+                              {extraDiscountAmount > 0 && (
+                                <tr>
+                                  <td
+                                    style={{
+                                      padding: "6px 0",
+                                      color: "#d9363e",
+                                    }}
+                                  >
+                                    Extra Discount{" "}
+                                    {order.extraDiscountType === "percent"
+                                      ? `(${order.extraDiscount}%)`
+                                      : ""}
+                                  </td>
+                                  <td
+                                    align="right"
+                                    style={{ color: "#d9363e" }}
+                                  >
+                                    -₹{extraDiscountAmount.toFixed(2)}
+                                  </td>
+                                </tr>
+                              )}
                               <tr>
-                                <td>Discount:</td>
-                                <td>
-                                  <Text strong>-₹{discount.toFixed(2)}</Text>
+                                <td style={{ padding: "6px 0" }}>
+                                  GST {gstRate > 0 ? `(${gstRate}%)` : ""}
                                 </td>
+                                <td align="right">₹{gstAmount.toFixed(2)}</td>
                               </tr>
-                              <tr>
-                                <td>Tax:</td>
-                                <td>
-                                  <Text strong>₹{vat.toFixed(2)}</Text>
+                              <tr
+                                style={{
+                                  borderTop: "2px solid #ddd",
+                                  fontSize: "1.1em",
+                                }}
+                              >
+                                <td style={{ padding: "12px 0" }}>
+                                  <Text strong>Final Amount:</Text>
                                 </td>
-                              </tr>
-                              <tr>
-                                <td>Total:</td>
-                                <td>
-                                  <Text strong className="total-amount">
-                                    ₹{total.toFixed(2)}
+                                <td align="right">
+                                  <Text
+                                    strong
+                                    type="danger"
+                                    style={{ fontSize: "1.3em" }}
+                                  >
+                                    ₹{finalAmount.toFixed(2)}
                                   </Text>
                                 </td>
                               </tr>
@@ -798,10 +859,8 @@ const OrderPage = () => {
                       </li>
 
                       <li>
-                        <Text type="secondary">Amount Paid</Text>
-                        <Text strong>
-                          ₹{(parseFloat(order.finalAmount) || 0).toFixed(2)}
-                        </Text>
+                        <Text type="secondary">Final Amount</Text>
+                        <Text strong>₹{finalAmount.toFixed(2)}</Text>
                       </li>
                       <li>
                         <Text type="secondary">Order Date</Text>
