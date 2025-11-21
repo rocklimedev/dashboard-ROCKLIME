@@ -1,77 +1,110 @@
-const Cart = require("../models/carts"); // MongoDB Model
-const Product = require("../models/product"); // MySQL Model
-const User = require("../models/users"); // MySQL Model
+const Cart = require("../models/carts");
+const Product = require("../models/product");
+const User = require("../models/users");
 const Quotation = require("../models/quotation");
 
-// Helper function to extract and validate sellingPrice
-const ProductMeta = require("../models/productMeta"); // Import ProductMeta model
-
-// Helper function to extract and validate sellingPrice
-const getSellingPrice = (meta) => {
-  if (!meta || typeof meta !== "object") return null;
-
-  // Try to find a key with value that looks like a selling price
-  const priceEntry = Object.entries(meta).find(([_, val]) => {
-    return !isNaN(val) && parseFloat(val) > 0;
-  });
-
-  if (!priceEntry) return null;
-
-  const [_, price] = priceEntry;
-  const parsedPrice = parseFloat(price);
-  return isNaN(parsedPrice) ? null : parsedPrice;
+// ──────────────────────────────────────────────────────
+// META SLUGS – these UUIDs are the same for ALL products
+// ──────────────────────────────────────────────────────
+const META_SLUGS = {
+  sellingPrice: "9ba862ef-f993-4873-95ef-1fef10036aa5",
+  companyCode: "d11da9f9-3f2e-4536-8236-9671200cca4a",
+  barcode: "4ded1cb3-5d31-42e8-90ec-a381a6ab1e35",
+  productGroup: "81cd6d76-d7d2-4226-b48e-6704e6224c2b",
 };
 
-// ✅ Add Product to Cart
-// ✅ Add Product to Cart
+// ──────────────────────────────────────────────────────
+// Reliable & synchronous price extractor
+// ──────────────────────────────────────────────────────
+const getSellingPrice = (meta) => {
+  let parsedMeta = meta;
+
+  // Step 1: If meta is a string → it’s double-encoded → fix it
+  if (typeof meta === "string") {
+    try {
+      parsedMeta = JSON.parse(meta);
+    } catch (e) {
+      // If parsing fails, it's corrupted → fallback later
+      parsedMeta = {};
+    }
+  }
+
+  // Step 2: If still not an object → give up
+  if (!parsedMeta || typeof parsedMeta !== "object") {
+    return null;
+  }
+
+  // Step 3: Try known price UUID
+  const PRICE_UUID = "9ba862ef-f993-4873-95ef-1fef10036aa5";
+  let raw = parsedMeta[PRICE_UUID];
+
+  // Step 4: Fallback — scan all values for anything that looks like a price
+  if (!raw) {
+    for (const value of Object.values(parsedMeta)) {
+      if (
+        typeof value === "string" &&
+        /^\d{2,15}(\.\d{1,4})?$/.test(value.trim())
+      ) {
+        raw = value;
+        break;
+      }
+      if (typeof value === "number" && value >= 1) {
+        return value;
+      }
+    }
+  }
+
+  if (!raw) return null;
+
+  // Step 5: Clean and parse aggressively
+  const cleaned = String(raw)
+    .replace(/[^\d.]/g, "") // Remove everything except digits and dot
+    .replace(/\.(?=.*\.)/g, ""); // Keep only last dot
+
+  const price = parseFloat(cleaned);
+  return !isNaN(price) && price >= 1 ? price : null;
+};
+
+// ──────────────────────────────────────────────────────
+// Add Single Product to Cart
+// ──────────────────────────────────────────────────────
 exports.addProductToCart = async (req, res) => {
   try {
     const { userId, productId, quantity = 1 } = req.body;
 
     if (!userId || !productId || !Number.isInteger(quantity) || quantity < 1) {
-      return res.status(400).json({
-        message: "userId, productId, and valid quantity are required",
-      });
+      return res
+        .status(400)
+        .json({ message: "userId, productId and valid quantity required" });
     }
 
-    // Check if user exists in MySQL
     const user = await User.findByPk(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Check if product exists in MySQL
     const product = await Product.findOne({ where: { productId } });
-    if (!product) {
+    if (!product)
       return res
         .status(404)
         .json({ message: `Product not found: ${productId}` });
+
+    const sellingPrice = getSellingPrice(product.meta); // Fixed
+    if (!sellingPrice) {
+      return res.status(400).json({
+        message: `Invalid or missing sellingPrice for product: ${productId}`,
+      });
     }
 
-    // Extract and validate sellingPrice
-    const sellingPrice = await getSellingPrice(product.meta, productId);
-    if (sellingPrice === null) {
-      return res
-        .status(400)
-        .json({ message: `Invalid sellingPrice for product: ${productId}` });
-    }
-
-    // Check stock availability
     if (product.quantity < quantity) {
       return res
         .status(400)
         .json({ message: `Insufficient stock for product: ${productId}` });
     }
 
-    // Find or create a cart for the user
     let cart = await Cart.findOne({ userId });
-    if (!cart) {
-      cart = new Cart({ userId, items: [] });
-    }
+    if (!cart) cart = new Cart({ userId, items: [] });
 
-    // Check if the product is already in the cart
     const existingItem = cart.items.find(
-      (item) => item.productId.toString() === productId.toString()
+      (i) => i.productId.toString() === productId.toString()
     );
 
     if (existingItem) {
@@ -90,85 +123,74 @@ exports.addProductToCart = async (req, res) => {
     }
 
     await cart.save();
-
     res.status(200).json({ message: "Product added to cart", cart });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
-// ✅ Add Items to Cart
+// ──────────────────────────────────────────────────────
+// Bulk Add to Cart
+// ──────────────────────────────────────────────────────
 exports.addToCart = async (req, res) => {
   try {
     const { userId, items, customerId } = req.body;
 
     if (!userId || !Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({
-        message: "userId and items are required",
-      });
+      return res
+        .status(400)
+        .json({ message: "userId and items array required" });
     }
 
-    // Check if user exists in MySQL
     const user = await User.findByPk(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Find or create a cart
     let cart = await Cart.findOne({ userId, customerId: customerId || null });
-    if (!cart) {
+    if (!cart)
       cart = new Cart({ userId, customerId: customerId || null, items: [] });
-    }
 
-    for (let item of items) {
+    for (const item of items) {
       const { productId, quantity, discount = 0, tax = 0 } = item;
-
-      const parsedQuantity = Number(quantity);
-      if (!productId || isNaN(parsedQuantity) || parsedQuantity < 1) {
-        return res.status(400).json({ message: "Invalid cart item data" });
+      const qty = Number(quantity);
+      if (!productId || isNaN(qty) || qty < 1) {
+        return res.status(400).json({ message: "Invalid item data" });
       }
 
-      // Fetch product from MySQL
       const product = await Product.findOne({ where: { productId } });
-      if (!product) {
+      if (!product)
         return res
           .status(404)
           .json({ message: `Product not found: ${productId}` });
-      }
 
-      // Extract and validate sellingPrice
-      const sellingPrice = await getSellingPrice(product.meta, productId);
-      if (sellingPrice === null) {
+      const sellingPrice = getSellingPrice(product.meta); // Fixed
+      if (!sellingPrice) {
         return res
           .status(400)
           .json({ message: `Invalid sellingPrice for product: ${productId}` });
       }
 
-      // Check stock availability
-      if (product.quantity < parsedQuantity) {
+      if (product.quantity < qty) {
         return res
           .status(400)
           .json({ message: `Insufficient stock for product: ${productId}` });
       }
 
-      const totalPrice = sellingPrice * parsedQuantity;
-
-      const existingItem = cart.items.find(
-        (cartItem) => cartItem.productId.toString() === productId.toString()
+      const existing = cart.items.find(
+        (i) => i.productId.toString() === productId.toString()
       );
-
-      if (existingItem) {
-        existingItem.quantity += parsedQuantity;
-        existingItem.total = existingItem.price * existingItem.quantity;
+      if (existing) {
+        existing.quantity += qty;
+        existing.total = existing.price * existing.quantity;
       } else {
         cart.items.push({
           productId,
           name: product.name,
           price: sellingPrice,
-          quantity: parsedQuantity,
+          quantity: qty,
           discount: Number(discount),
           tax: Number(tax),
-          total: totalPrice,
+          total: sellingPrice * qty,
         });
       }
     }
@@ -176,6 +198,7 @@ exports.addToCart = async (req, res) => {
     await cart.save();
     res.status(200).json({ message: "Items added to cart", cart });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
