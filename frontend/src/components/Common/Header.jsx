@@ -7,7 +7,7 @@ import { Dropdown, Button, Menu, Badge } from "antd";
 import { FaUserCircle, FaSearch, FaBell, FaEllipsisV } from "react-icons/fa";
 import { SettingOutlined } from "@ant-design/icons";
 import { BiFullscreen, BiLogOut } from "react-icons/bi";
-import { toast } from "sonner";
+import { message } from "antd";
 import Avatar from "react-avatar";
 import logo from "../../assets/img/logo.png";
 import logo_small from "../../assets/img/fav_icon.png";
@@ -75,7 +75,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
       logout();
       navigate("/login", { replace: true });
     } catch (error) {
-      toast.error("Logout failed. Please try again.");
+      message.error("Logout failed. Please try again.");
     }
   }, [logoutMutation, logout, navigate]);
 

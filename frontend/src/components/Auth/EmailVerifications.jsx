@@ -2,11 +2,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useResendVerificationEmailMutation } from "../../api/authApi";
-import { toast } from "sonner";
 import logo from "../../assets/img/logo.png";
 import logoWhite from "../../assets/img/logo.png";
 import { FaEnvelope } from "react-icons/fa";
-
+import { message } from "antd";
 const EmailVerification = () => {
   const [email, setEmail] = useState("");
   const [emailSent, setEmailSent] = useState(false);
@@ -23,15 +22,15 @@ const EmailVerification = () => {
     e.preventDefault();
     const trimmed = email.trim().toLowerCase();
 
-    if (!trimmed) return toast.error("Please enter an email address");
-    if (!emailRegex.test(trimmed)) return toast.error("Invalid email format");
+    if (!trimmed) return message.error("Please enter an email address");
+    if (!emailRegex.test(trimmed)) return message.error("Invalid email format");
 
     try {
       await resendVerificationEmail({ email: trimmed }).unwrap();
       setEmailSent(true);
       setTimer(60);
     } catch (err) {
-      toast.error(err?.data?.message || "Failed to send verification email");
+      message.error(err?.data?.message || "Failed to send verification email");
     }
   };
 

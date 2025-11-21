@@ -7,7 +7,6 @@ import {
 } from "../../api/teamApi";
 import { useGetAllUsersQuery, useGetUserByIdQuery } from "../../api/userApi";
 import { Modal, Form, Input, Select, Button, List, message } from "antd";
-import { toast } from "sonner";
 import "./teamList.css";
 
 const { Option } = Select;
@@ -103,7 +102,7 @@ const AddNewTeam = ({ onClose, onTeamAdded, team, visible }) => {
       onTeamAdded?.(newTeamId); // Pass the new team ID to the callback
       onClose();
     } catch (err) {
-      toast.error(
+      message.error(
         `Error saving team: ${
           err.data?.message || err.status === 404
             ? "Team not found"
@@ -129,13 +128,11 @@ const AddNewTeam = ({ onClose, onTeamAdded, team, visible }) => {
         },
       ]);
       setSelectedUserId("");
-      message.success("Member added successfully");
     }
   };
 
   const removeMember = (id) => {
     setMembers(members.filter((member) => member.userId !== id));
-    message.info("Member removed");
   };
 
   return (

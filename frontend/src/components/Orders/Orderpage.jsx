@@ -45,7 +45,6 @@ import {
   DownloadOutlined,
   FileImageOutlined,
 } from "@ant-design/icons";
-import { toast } from "sonner";
 import { Document, Page, pdfjs } from "react-pdf";
 import useProductsData from "../../data/useProductdata";
 import AddAddress from "../Address/AddAddressModal";
@@ -339,7 +338,7 @@ const OrderPage = () => {
     if (file && file.type === "application/pdf") {
       setInvoiceFile(file);
     } else {
-      toast.error("Only PDF files are allowed for invoice.");
+      message.error("Only PDF files are allowed for invoice.");
     }
   };
 
@@ -348,35 +347,33 @@ const OrderPage = () => {
     if (file && allowed.includes(file.type)) {
       setGatePassFile(file);
     } else {
-      toast.error("Only PDF, PNG, JPG allowed for gate-pass.");
+      message.error("Only PDF, PNG, JPG allowed for gate-pass.");
     }
   };
 
   const handleInvoiceSubmit = async () => {
-    if (!invoiceFile) return toast.error("Select a PDF file.");
+    if (!invoiceFile) return message.error("Select a PDF file.");
     const formData = new FormData();
     formData.append("invoice", invoiceFile);
     try {
       await uploadInvoice({ orderId: id, formData }).unwrap();
       setInvoiceFile(null);
       refetchOrder();
-      toast.success("Invoice uploaded");
     } catch (err) {
-      toast.error(err.data?.message || "Upload failed");
+      message.error(err.data?.message || "Upload failed");
     }
   };
 
   const handleGatePassSubmit = async () => {
-    if (!gatePassFile) return toast.error("Select a file.");
+    if (!gatePassFile) return message.error("Select a file.");
     const formData = new FormData();
     formData.append("gatepass", gatePassFile);
     try {
       await issueGatePass({ orderId: id, formData }).unwrap();
       setGatePassFile(null);
       refetchOrder();
-      toast.success("Gate-pass uploaded");
     } catch (err) {
-      toast.error(err.data?.message || "Gate-pass upload failed");
+      message.error(err.data?.message || "Gate-pass upload failed");
     }
   };
 
@@ -402,12 +399,12 @@ const OrderPage = () => {
       await deleteOrder(id).unwrap();
       navigate("/orders/list");
     } catch (err) {
-      toast.error(err?.data?.message || "Delete failed");
+      message.error(err?.data?.message || "Delete failed");
     }
   };
 
   const handleAddComment = async () => {
-    if (!newComment.trim()) return toast.error("Comment cannot be empty");
+    if (!newComment.trim()) return message.error("Comment cannot be empty");
     if (!user.userId) return navigate("/login");
 
     try {
@@ -419,7 +416,7 @@ const OrderPage = () => {
       }).unwrap();
       setNewComment("");
     } catch (err) {
-      toast.error(err?.data?.message || "Failed to add comment");
+      message.error(err?.data?.message || "Failed to add comment");
     }
   };
   const handleDeleteComment = async (commentId) => {
@@ -430,7 +427,7 @@ const OrderPage = () => {
         userId: String(user.userId || "").trim(),
       }).unwrap();
     } catch (err) {
-      toast.error(err?.data?.message || "Delete failed");
+      message.error(err?.data?.message || "Delete failed");
     }
   };
 

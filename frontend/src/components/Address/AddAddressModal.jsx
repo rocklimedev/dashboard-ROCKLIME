@@ -7,8 +7,7 @@ import {
 import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
 import { v4 as uuidv4 } from "uuid";
-import { toast } from "sonner";
-import { Modal, Button, Input, Select, Form, Radio } from "antd";
+import { Modal, Button, Input, Select, Form, Radio, message } from "antd";
 
 const { Option } = Select;
 
@@ -155,11 +154,11 @@ const AddAddress = ({ onClose, onSave, existingAddress, selectedCustomer }) => {
 
   const handleSubmit = async (values) => {
     if (!values.userId && !values.customerId) {
-      toast.error("Either User or Customer is required");
+      message.error("Either User or Customer is required");
       return;
     }
     if (values.userId && values.customerId) {
-      toast.error(
+      message.error(
         "Address can only be associated with either a User or a Customer"
       );
       return;
@@ -197,7 +196,7 @@ const AddAddress = ({ onClose, onSave, existingAddress, selectedCustomer }) => {
       onSave(newAddressId);
       onClose();
     } catch (err) {
-      toast.error(
+      message.error(
         `Failed to save address: ${
           err?.data?.message || err.message || "Unknown error"
         }`

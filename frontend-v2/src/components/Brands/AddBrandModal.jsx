@@ -4,8 +4,7 @@ import {
   useUpdateBrandMutation,
   useGetAllBrandsQuery,
 } from "../../api/brandsApi";
-import { toast } from "sonner";
-
+import { message } from "antd";
 const AddBrand = ({ onClose, existingBrand }) => {
   const [formData, setFormData] = useState({
     id: null,
@@ -42,7 +41,7 @@ const AddBrand = ({ onClose, existingBrand }) => {
     const { brandName, brandSlug, id } = formData;
 
     if (!brandName || !brandSlug) {
-      toast.error("Please fill in all fields.");
+      message.error("Please fill in all fields.");
       return;
     }
 
@@ -53,7 +52,7 @@ const AddBrand = ({ onClose, existingBrand }) => {
     );
 
     if (isDuplicate) {
-      toast.error("This brand slug is already taken.");
+      message.error("This brand slug is already taken.");
       return;
     }
 
@@ -68,7 +67,7 @@ const AddBrand = ({ onClose, existingBrand }) => {
         onClose();
       }, 2000);
     } catch (err) {
-      toast.error(err?.data?.message || "Failed to submit brand. Try again.");
+      message.error(err?.data?.message || "Failed to submit brand. Try again.");
     }
   };
 

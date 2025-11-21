@@ -5,8 +5,7 @@ import {
   useUpdateCategoryMutation,
 } from "../../api/categoryApi";
 import { useGetAllParentCategoriesQuery } from "../../api/parentCategoryApi";
-import { toast } from "sonner";
-
+import { message } from "antd";
 const AddCategoryModal = ({
   open,
   onClose,
@@ -44,7 +43,7 @@ const AddCategoryModal = ({
       }
       onClose();
     } catch (err) {
-      toast.error(err?.data?.message || "Failed to save category");
+      message.error(err?.data?.message || "Failed to save category");
     }
   };
 

@@ -86,8 +86,8 @@ export const amountInWords = (num) => {
    -------------------------------------------------------------- */
 export const calcTotals = (
   products = [],
-  gstRate = 0,
-  includeGst = false,
+  gstRate = 0, // <-- can be `gst` or `gst_value`
+  includeGst = true, // <-- default to true (most Indian B2B quotes)
   productDetailsMap = {},
   extraDiscount = 0,
   extraDiscountType = "amount",
@@ -109,11 +109,18 @@ export const calcTotals = (
     const qty = Number(p.quantity) || 1;
     const detail = productDetailsMap[p.productId] || {};
     const mrp = Number(detail.sellingPrice) || 0;
+
+    // Use the line-total that was saved with the product (already discounted)
     const lineTotal = Number(p.total) || 0;
 
-    // Optional: warn if lineTotal > mrp * qty
+    // Defensive: line total must never exceed MRP × qty
     if (lineTotal > mrp * qty) {
-      console.warn("Line total exceeds MRP", { p, mrp, qty, lineTotal });
+      console.warn("calcTotals: line total exceeds MRP", {
+        productId: p.productId,
+        mrp,
+        qty,
+        lineTotal,
+      });
     }
 
     subtotal += lineTotal;
@@ -131,7 +138,7 @@ export const calcTotals = (
 
   const amountAfterDiscount = subtotal - extraDiscountAmt;
 
-  // === 3. GST ===
+  // === 3. GST (only if includeGst === true) ===
   const gstAmount = safeIncludeGst
     ? (amountAfterDiscount * safeGstRate) / 100
     : 0;
@@ -139,7 +146,7 @@ export const calcTotals = (
   // === 4. Final Total + Round-off ===
   let total = amountAfterDiscount + gstAmount + safeRoundOff;
 
-  // === 5. Return ===
+  // === 5. Return (all values rounded to 2 dp) ===
   return {
     subtotal: Number(subtotal.toFixed(2)),
     extraDiscountAmt: Number(extraDiscountAmt.toFixed(2)),

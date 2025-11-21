@@ -7,7 +7,7 @@ import { Dropdown, Button, Menu, Badge } from "antd";
 import { FaUserCircle, FaSearch, FaBell, FaEllipsisV } from "react-icons/fa";
 import { SettingOutlined } from "@ant-design/icons";
 import { BiFullscreen, BiLogOut } from "react-icons/bi";
-import { toast } from "sonner";
+import { message } from "antd";
 import Avatar from "react-avatar";
 import logo from "../../assets/img/logo.png";
 import logo_small from "../../assets/img/fav_icon.png";
@@ -15,6 +15,7 @@ import { CgShoppingCart } from "react-icons/cg";
 import { useLogoutMutation } from "../../api/authApi";
 import { useAuth } from "../../context/AuthContext";
 import { SunFilled, MoonFilled } from "@ant-design/icons";
+import PermissionsGate from "../../context/PermissionGate";
 
 const Header = ({ toggleSidebar, isSidebarOpen }) => {
   const location = useLocation();
@@ -74,7 +75,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
       logout();
       navigate("/login", { replace: true });
     } catch (error) {
-      toast.error("Logout failed. Please try again.");
+      message.error("Logout failed. Please try again.");
     }
   }, [logoutMutation, logout, navigate]);
 
@@ -288,20 +289,21 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
               </Badge>
             </Link>
           </li>
-
-          {/* Cart with Badge */}
-          <li className="nav-item nav-item-box">
-            <Link to="/cart" style={{ position: "relative" }}>
-              <Badge
-                count={cartItemCount}
-                size="small"
-                offset={[-5, 5]}
-                showZero={false}
-              >
-                <CgShoppingCart style={{ fontSize: 20 }} />
-              </Badge>
-            </Link>
-          </li>
+          <PermissionsGate api="write" module="cart">
+            {/* Cart with Badge */}
+            <li className="nav-item nav-item-box">
+              <Link to="/cart" style={{ position: "relative" }}>
+                <Badge
+                  count={cartItemCount}
+                  size="small"
+                  offset={[-5, 5]}
+                  showZero={false}
+                >
+                  <CgShoppingCart style={{ fontSize: 20 }} />
+                </Badge>
+              </Link>
+            </li>
+          </PermissionsGate>
 
           {/* Dark Mode (Desktop) */}
           <li className="nav-item nav-item-box d-none d-lg-flex">
@@ -335,11 +337,15 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                     <span className="user-letter avatar-container">
                       <Avatar
                         name={user?.user?.name || "User"}
-                        src={user?.user?.profileImage}
-                        size="40"
+                        src={
+                          user?.user?.photo_thumbnail ||
+                          user?.user?.profileImage
+                        }
+                        size={40} // important – tell the library the exact size
                         round={true}
                         className="circular-avatar"
-                        color="#e31e24"
+                        textSizeRatio={2.2}
+                        maxInitials={2}
                       />
                     </span>
                   </span>

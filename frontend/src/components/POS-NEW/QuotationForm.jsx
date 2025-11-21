@@ -24,7 +24,7 @@ import { FcEmptyTrash } from "react-icons/fc";
 import { InfoCircleOutlined } from "@ant-design/icons";
 import styled from "styled-components";
 import OrderTotal from "./OrderTotal";
-import { toast } from "sonner";
+import { message } from "antd";
 import { useCreateAddressMutation } from "../../api/addressApi";
 import moment from "moment";
 import DatePicker from "react-datepicker";
@@ -235,7 +235,7 @@ const QuotationForm = ({
     }
 
     if (!defaultAddress.city || !defaultAddress.state) {
-      toast.error("Customer's billing address is incomplete");
+      message.error("Customer's billing address is incomplete");
       setUseBillingAddress(false);
       setBillingAddressId(null);
       setIsAddressResolved(false);
@@ -276,9 +276,8 @@ const QuotationForm = ({
           };
           const res = await createAddress(payload).unwrap();
           finalize(res.addressId);
-          toast.success("Billing address created");
         } catch (e) {
-          toast.error("Failed to create address. Check required fields.");
+          message.error("Failed to create address. Check required fields.");
           setBillingAddressId(null);
           setIsAddressResolved(false);
         } finally {
@@ -301,7 +300,7 @@ const QuotationForm = ({
     const arr = [...quotationData.followupDates];
     arr[i] = d ? moment(d).format("YYYY-MM-DD") : "";
     if (d && quotationData.dueDate && moment(d).isAfter(quotationData.dueDate))
-      toast.warning("Follow‑up cannot be after due date");
+      message.warning("Follow‑up cannot be after due date");
     handleQuotationChange("followupDates", arr);
   };
   const addFollow = () =>
@@ -600,8 +599,9 @@ const QuotationForm = ({
             block
             icon={<CheckCircleOutlined />}
             onClick={() => {
-              if (!selectedCustomer) return toast.error("Select customer");
-              if (!quotationData.dueDate) return toast.error("Select due date");
+              if (!selectedCustomer) return message.error("Select customer");
+              if (!quotationData.dueDate)
+                return message.error("Select due date");
 
               const hasValidShipping =
                 quotationData.shipTo ||
@@ -610,7 +610,7 @@ const QuotationForm = ({
                   isAddressResolved);
 
               if (!hasValidShipping)
-                return toast.error("Select or create shipping address");
+                return message.error("Select or create shipping address");
 
               handleCreateDocument();
             }}

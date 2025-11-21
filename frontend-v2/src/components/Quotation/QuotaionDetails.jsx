@@ -1,7 +1,6 @@
 import React, { useRef, useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
-import { toast } from "sonner";
-
+import { message } from "antd";
 import logo from "../../assets/img/logo-quotation.png";
 
 import {
@@ -72,7 +71,6 @@ const QuotationsDetails = () => {
       try {
         return JSON.parse(products);
       } catch (e) {
-        console.error("Failed to parse products JSON", e);
         return [];
       }
     }
@@ -181,23 +179,31 @@ const QuotationsDetails = () => {
     return set.size ? [...set].join(" / ") : "GROHE / AMERICAN STANDARD";
   }, [activeProducts, productsData, brandsData]); // <-- brandsData in deps
   // ----- 1. call calcTotals with the new params -----
+  const gstRate = Number(
+    activeVersionData.quotation?.gst || // <-- API field
+      activeVersionData.quotation?.gst_value || // fallback for UI form
+      0
+  );
+  const includeGst = activeVersionData.quotation?.include_gst ?? true;
+
   const {
     subtotal,
-    extraDiscountAmt, // <-- the amount that must be shown in red
+    extraDiscountAmt,
     gst: gstAmount,
     total: finalTotal,
   } = calcTotals(
     activeProducts,
-    activeVersionData.quotation?.gst_value || 0,
-    activeVersionData.quotation?.include_gst || false,
+    gstRate,
+    includeGst,
     productDetailsMap,
     activeVersionData.quotation?.extraDiscount || 0,
     activeVersionData.quotation?.extraDiscountType || "amount",
     activeVersionData.quotation?.roundOff || 0
   );
+  console.log(gstAmount);
   // === EXPORT HANDLER ===
   const handleExport = async () => {
-    if (!id || !quotation) return toast.error("Quotation missing");
+    if (!id || !quotation) return message.error("Quotation missing");
 
     setIsExporting(true);
     try {
@@ -236,9 +242,8 @@ const QuotationsDetails = () => {
           activeVersion
         );
       }
-      toast.success(`Exported as ${exportFormat.toUpperCase()}`);
     } catch (err) {
-      toast.error("Export failed");
+      message.error("Export failed");
     } finally {
       setIsExporting(false);
     }
@@ -391,7 +396,20 @@ const QuotationsDetails = () => {
                         productsData?.find(
                           (x) => x.productId === p.productId
                         ) || {};
-                      const img = pd.images ? JSON.parse(pd.images)[0] : null;
+                      const img =
+                        p.imageUrl || // ← Most important: comes from quotation
+                        (pd.images
+                          ? (() => {
+                              try {
+                                const parsed = JSON.parse(pd.images);
+                                return Array.isArray(parsed)
+                                  ? parsed[0]
+                                  : parsed;
+                              } catch {
+                                return pd.images;
+                              }
+                            })()
+                          : null);
                       const code =
                         pd.metaDetails?.find((cc) => cc.slug === "companyCode")
                           ?.value ||
@@ -444,6 +462,7 @@ const QuotationsDetails = () => {
 
                 {/* Tax Summary */}
                 {/* === FINAL AMOUNT BREAKDOWN (Same Style as HSN Table) === */}
+                {/* Tax Summary with GST Breakdown */}
                 <table className="quotation-table full-width mt-3">
                   <thead>
                     <tr>
@@ -457,7 +476,7 @@ const QuotationsDetails = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {/* Subtotal Row */}
+                    {/* Subtotal (before discount & GST) */}
                     <tr>
                       <td>
                         <strong>Subtotal</strong>
@@ -467,8 +486,6 @@ const QuotationsDetails = () => {
                       <td>₹{subtotal.toFixed(2)}</td>
                     </tr>
 
-                    {/* Extra Discount */}
-                    {/* ----- 2. Extra-discount row (label shows % or ₹, value shows the real amount) ----- */}
                     {/* Extra Discount */}
                     {(() => {
                       const extraDisc = parseFloat(
@@ -497,6 +514,78 @@ const QuotationsDetails = () => {
                       ) : null;
                     })()}
 
+                    {/* GST Rows */}
+                    {gstAmount > 0 && (
+                      <>
+                        {/* Taxable Amount after discount */}
+                        <tr>
+                          <td>
+                            <strong>Taxable Amount</strong>
+                            <br />
+                            <small>(After Extra Discount)</small>
+                          </td>
+                          <td>₹{(subtotal - extraDiscountAmt).toFixed(2)}</td>
+                          <td colSpan="4"></td>
+                          <td>₹{(subtotal - extraDiscountAmt).toFixed(2)}</td>
+                        </tr>
+
+                        {/* CGST Row */}
+                        <tr>
+                          <td>
+                            <strong>CGST</strong> @{" "}
+                            {(
+                              activeVersionData.quotation?.gst_value / 2 || 0
+                            ).toFixed(1)}
+                            %
+                          </td>
+                          <td></td>
+                          <td>
+                            {(
+                              activeVersionData.quotation?.gst_value / 2 || 0
+                            ).toFixed(1)}
+                            %
+                          </td>
+                          <td>₹{(gstAmount / 2).toFixed(2)}</td>
+                          <td></td>
+                          <td></td>
+                          <td>₹{(gstAmount / 2).toFixed(2)}</td>
+                        </tr>
+
+                        {/* SGST Row */}
+                        <tr>
+                          <td>
+                            <strong>SGST</strong> @{" "}
+                            {(
+                              activeVersionData.quotation?.gst_value / 2 || 0
+                            ).toFixed(1)}
+                            %
+                          </td>
+                          <td></td>
+                          <td></td>
+                          <td></td>
+                          <td>
+                            {(
+                              activeVersionData.quotation?.gst_value / 2 || 0
+                            ).toFixed(1)}
+                            %
+                          </td>
+                          <td>₹{(gstAmount / 2).toFixed(2)}</td>
+                          <td>₹{(gstAmount / 2).toFixed(2)}</td>
+                        </tr>
+
+                        {/* Total GST */}
+                        <tr>
+                          <td>
+                            <strong>Total GST</strong>
+                          </td>
+                          <td colSpan="5"></td>
+                          <td>
+                            <strong>₹{gstAmount.toFixed(2)}</strong>
+                          </td>
+                        </tr>
+                      </>
+                    )}
+
                     {/* Round-off */}
                     {activeVersionData.quotation?.roundOff != null && (
                       <tr>
@@ -522,14 +611,17 @@ const QuotationsDetails = () => {
                     <tr className="table-success">
                       <td>
                         <strong>Final Amount</strong>
+                        {activeVersionData.quotation?.include_gst === false && (
+                          <>
+                            <br />
+                            <small className="text-muted">(Excl. GST)</small>
+                          </>
+                        )}
                       </td>
                       <td colSpan="5"></td>
                       <td>
                         <strong style={{ fontSize: "1.1rem" }}>
-                          ₹
-                          {Number(
-                            activeVersionData.quotation?.finalAmount || subtotal
-                          ).toFixed(2)}
+                          ₹{finalTotal.toFixed(2)}
                         </strong>
                       </td>
                     </tr>

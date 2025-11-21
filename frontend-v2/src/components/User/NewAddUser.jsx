@@ -8,7 +8,7 @@ import {
   DatePicker,
   TimePicker,
 } from "antd";
-import { toast } from "sonner";
+import { message } from "antd";
 import moment from "moment";
 import {
   useCreateUserMutation,
@@ -135,24 +135,26 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
     }
   }, [userToEdit]);
 
-  // === Error Toasts ===
+  // === Error messages ===
   useEffect(() => {
     if (createError)
-      toast.error(createError?.data?.message || "Failed to create user");
+      message.error(createError?.data?.message || "Failed to create user");
     if (updateError)
-      toast.error(updateError?.data?.message || "Failed to update user");
+      message.error(updateError?.data?.message || "Failed to update user");
     if (rolesError)
-      toast.error(rolesError?.data?.message || "Failed to load roles");
+      message.error(rolesError?.data?.message || "Failed to load roles");
     if (addressCreateError)
-      toast.error(
+      message.error(
         addressCreateError?.data?.message || "Failed to create address"
       );
     if (addressUpdateError)
-      toast.error(
+      message.error(
         addressUpdateError?.data?.message || "Failed to update address"
       );
     if (fetchUserError)
-      toast.error(fetchUserError?.data?.message || "Failed to fetch user data");
+      message.error(
+        fetchUserError?.data?.message || "Failed to fetch user data"
+      );
   }, [
     createError,
     updateError,
@@ -278,7 +280,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
             setManageAddress(!!user.addressId);
           }
         } catch {
-          toast.error("Failed to reload user data");
+          message.error("Failed to reload user data");
         }
       }
     } else {
@@ -330,7 +332,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
 
       for (const field of requiredFields) {
         if (!formData[field]) {
-          toast.error(
+          message.error(
             `${field.charAt(0).toUpperCase() + field.slice(1)} is required`
           );
           return;
@@ -341,14 +343,14 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
         const from = new Date(`1970-01-01T${formData.shiftFrom}`);
         const to = new Date(`1970-01-01T${formData.shiftTo}`);
         if (to <= from) {
-          toast.error("Shift To must be after Shift From");
+          message.error("Shift To must be after Shift From");
           return;
         }
       }
 
       const selectedRoleObj = roles?.find((r) => r.roleId === formData.roleId);
       if (!selectedRoleObj) {
-        toast.error("Selected role is invalid");
+        message.error("Selected role is invalid");
         return;
       }
 
@@ -389,11 +391,11 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
             addressId =
               addressResponse.addressId || addressResponse.data?.addressId;
             if (!addressId) {
-              toast.error("Failed to obtain address ID");
+              message.error("Failed to obtain address ID");
               return;
             }
           } catch (err) {
-            toast.error(
+            message.error(
               `Address operation failed: ${
                 err.data?.message || "Unknown error"
               }`
@@ -401,7 +403,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
             return;
           }
         } else if (isEditMode && addressId) {
-          toast.warning(
+          message.warning(
             "Address fields are empty; address will remain unchanged."
           );
         }
@@ -437,7 +439,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
           newUserId = userResponse.userId || userResponse.data?.userId;
         }
       } catch (err) {
-        toast.error(
+        message.error(
           `User operation failed: ${err.data?.message || "Unknown error"}`
         );
         return;
@@ -457,7 +459,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
             updatedAt: new Date().toISOString(),
           }).unwrap();
         } catch (err) {
-          toast.error(
+          message.error(
             `Failed to associate address: ${
               err.data?.message || "Unknown error"
             }`
@@ -468,7 +470,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
 
       navigate("/users/list");
     } catch (err) {
-      toast.error(`Operation failed: ${err.message || "Unknown error"}`);
+      message.error(`Operation failed: ${err.message || "Unknown error"}`);
     }
   };
 

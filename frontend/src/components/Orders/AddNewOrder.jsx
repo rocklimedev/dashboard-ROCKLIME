@@ -23,7 +23,7 @@ import {
   Col,
   InputNumber,
 } from "antd";
-import { toast } from "sonner";
+import { message } from "antd";
 import { debounce } from "lodash";
 import Avatar from "react-avatar";
 import styled from "styled-components";
@@ -345,7 +345,7 @@ const AddNewOrder = ({ adminName }) => {
         const res = await createAddress(newAddr).unwrap();
         handleChange("shipTo", res.data.addressId);
       } catch (e) {
-        toast.error(
+        message.error(
           `Failed to create billing address: ${
             e.data?.message || "Unknown error"
           }`
@@ -450,9 +450,9 @@ const AddNewOrder = ({ adminName }) => {
     const dates = [...formData.followupDates];
     dates[idx] = m ? m.format("YYYY-MM-DD") : "";
     if (m && formData.dueDate && m.isAfter(moment(formData.dueDate), "day"))
-      toast.warning(`Timeline date ${idx + 1} cannot be after due date.`);
+      message.warning(`Timeline date ${idx + 1} cannot be after due date.`);
     if (m && m.isBefore(moment().startOf("day")))
-      toast.warning(`Timeline date ${idx + 1} cannot be before today.`);
+      message.warning(`Timeline date ${idx + 1} cannot be before today.`);
     setFormData((p) => ({ ...p, followupDates: dates }));
   };
   const addFollowupDate = () =>
@@ -479,7 +479,9 @@ const AddNewOrder = ({ adminName }) => {
         const newSerial = todayOrders.length + 102;
         const newNo = `${today}${newSerial}`;
         setFormData((p) => ({ ...p, orderNo: newNo }));
-        toast.warning(`Order number ${no} already exists. Generated ${newNo}`);
+        message.warning(
+          `Order number ${no} already exists. Generated ${newNo}`
+        );
         return false;
       }
       return !exists;
@@ -496,21 +498,21 @@ const AddNewOrder = ({ adminName }) => {
     e.preventDefault();
 
     // ---------- validation ----------
-    if (!formData.createdFor) return toast.error("Please select a Customer.");
+    if (!formData.createdFor) return message.error("Please select a Customer.");
     if (
       formData.secondaryUserId &&
       !users.some((u) => u.userId === formData.secondaryUserId)
     )
-      return toast.error("Selected Secondary User does not exist.");
+      return message.error("Selected Secondary User does not exist.");
     if (formData.sourceType && !formData.source)
-      return toast.error(
+      return message.error(
         "Please select a Source Customer for the selected Source Type."
       );
 
     if (assignmentType === "team" && !formData.assignedTeamId)
-      return toast.error("Please select a Team for assignment.");
+      return message.error("Please select a Team for assignment.");
     if (assignmentType === "users" && !formData.assignedUserId)
-      return toast.error(
+      return message.error(
         "Please select at least a Primary User for assignment."
       );
     if (
@@ -519,44 +521,44 @@ const AddNewOrder = ({ adminName }) => {
       formData.secondaryUserId &&
       formData.assignedUserId === formData.secondaryUserId
     )
-      return toast.error("Primary and Secondary Users cannot be the same.");
+      return message.error("Primary and Secondary Users cannot be the same.");
 
     if (!validateOrderNo(formData.orderNo))
-      return toast.error("Order Number must be DDMM25XXX (e.g., 151025101).");
+      return message.error("Order Number must be DDMM25XXX (e.g., 151025101).");
     if (isEditMode && formData.orderNo !== order?.orderNo)
-      return toast.error("Order Number cannot be changed in update mode.");
+      return message.error("Order Number cannot be changed in update mode.");
     if (!isEditMode && !checkOrderNoUniqueness(formData.orderNo, false))
-      return toast.error("Order Number already exists.");
+      return message.error("Order Number already exists.");
 
-    if (!formData.dueDate) return toast.error("Please select a due date.");
+    if (!formData.dueDate) return message.error("Please select a due date.");
     if (!validateFollowupDates())
-      return toast.error("Timeline dates cannot be after the due date.");
+      return message.error("Timeline dates cannot be after the due date.");
 
     if (
       formData.masterPipelineNo &&
       !validateOrderNo(formData.masterPipelineNo)
     )
-      return toast.error("Master Pipeline Number must be DDMM25XXX.");
+      return message.error("Master Pipeline Number must be DDMM25XXX.");
     if (formData.previousOrderNo && !validateOrderNo(formData.previousOrderNo))
-      return toast.error("Previous Order Number must be DDMM25XXX.");
+      return message.error("Previous Order Number must be DDMM25XXX.");
 
     if (
       formData.masterPipelineNo &&
       orders.every((o) => o.orderNo !== formData.masterPipelineNo)
     )
-      return toast.error(
+      return message.error(
         "Master Pipeline Number does not match any existing order."
       );
     if (
       formData.previousOrderNo &&
       orders.every((o) => o.orderNo !== formData.previousOrderNo)
     )
-      return toast.error(
+      return message.error(
         "Previous Order Number does not match any existing order."
       );
 
     if (!formData.shipTo && !useBillingAddress)
-      return toast.error("Please select a shipping address.");
+      return message.error("Please select a shipping address.");
 
     // ---------- payload ----------
     const sanitize = (v) => (v === "" || v == null ? null : v);
@@ -619,12 +621,10 @@ const AddNewOrder = ({ adminName }) => {
     console.log(formData.gst);
     try {
       if (isEditMode) {
-        if (!id) return toast.error("Invalid order ID.");
+        if (!id) return message.error("Invalid order ID.");
         await updateOrder({ id, ...payload }).unwrap();
-        toast.success("Order updated successfully!");
       } else {
         await createOrder(payload).unwrap();
-        toast.success("Order created successfully!");
       }
       navigate("/orders/list");
     } catch (err) {
@@ -637,7 +637,7 @@ const AddNewOrder = ({ adminName }) => {
           ? "Server error."
           : "Something went wrong.";
       console.error(err);
-      toast.error(msg);
+      message.error(msg);
     }
   };
 
@@ -648,7 +648,7 @@ const AddNewOrder = ({ adminName }) => {
       setFormData((p) => ({ ...p, createdFor: res.data.customerId }));
       setShowAddCustomerModal(false);
     } catch (e) {
-      toast.error(e?.data?.message || "Failed to create customer.");
+      message.error(e?.data?.message || "Failed to create customer.");
     }
   };
   const handleAddressSave = async (newId) => {

@@ -7,9 +7,8 @@ import {
 import { AiOutlineEdit, AiOutlineDelete } from "react-icons/ai";
 import AddBrand from "./AddBrandModal";
 import DeleteModal from "../Common/DeleteModal";
-import { toast } from "sonner";
 import DataTablePagination from "../Common/DataTablePagination";
-
+import { message } from "antd";
 const Brands = () => {
   const { data, error, refetch } = useGetAllBrandsQuery();
   const [deleteBrand] = useDeleteBrandMutation();
@@ -50,7 +49,7 @@ const Brands = () => {
 
   const handleConfirmDelete = async () => {
     if (!brandToDelete?.id) {
-      toast.error("No brand selected for deletion");
+      message.error("No brand selected for deletion");
       setShowDeleteModal(false);
       return;
     }
@@ -65,7 +64,7 @@ const Brands = () => {
       setBrandToDelete(null);
       refetch();
     } catch (err) {
-      toast.error(
+      message.error(
         `Failed to delete brand: ${err.data?.message || "Unknown error"}`
       );
     }

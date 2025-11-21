@@ -1,10 +1,10 @@
+// src/components/Quotation/QuotationForm.jsx
 import React, { useState, useEffect, useMemo } from "react";
 import {
   Card,
   Button,
   Select,
   InputNumber,
-  Alert,
   Row,
   Col,
   Empty,
@@ -24,17 +24,19 @@ import { FcEmptyTrash } from "react-icons/fc";
 import { InfoCircleOutlined } from "@ant-design/icons";
 import styled from "styled-components";
 import OrderTotal from "./OrderTotal";
-import { toast } from "sonner";
+import { message } from "antd";
 import { useCreateAddressMutation } from "../../api/addressApi";
 import moment from "moment";
 import DatePicker from "react-datepicker";
+import { useAuth } from "../../context/AuthContext";
 import "react-datepicker/dist/react-datepicker.css";
 
+const RESTRICTED_ROLES = ["SUPER_ADMIN", "DEVELOPER", "ADMIN"];
 const { Text, Title } = Typography;
 const { Option } = Select;
 const { Panel } = Collapse;
 
-// === Styled Components ===
+/* ────────────────────── Styled ────────────────────── */
 const CompactCard = styled(Card)`
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -81,11 +83,11 @@ const CheckoutBtn = styled(Button)`
   }
 `;
 
-// === Helper ===
+/* ────────────────────── Helpers ────────────────────── */
 const momentToDate = (m) => (m ? m.toDate() : null);
 const normalize = (s) => (s ? s.trim().toLowerCase() : "");
 
-// === Main Component ===
+/* ────────────────────── Main Component ────────────────────── */
 const QuotationForm = ({
   quotationData,
   setQuotationData,
@@ -97,7 +99,6 @@ const QuotationForm = ({
   customersError,
   addresses,
   addressesLoading,
-  totalAmount,
   addressesError,
   error,
   quotationNumber,
@@ -108,23 +109,30 @@ const QuotationForm = ({
   shipping,
   tax,
   discount,
+  extraDiscount, // <-- per‑item total discount
   itemDiscounts,
   itemTaxes,
   gst,
-  gstAmount,
   setGst,
   onShippingChange,
+  billingAddressId,
   handleAddCustomer,
   handleAddAddress,
   setActiveTab,
   handleCreateDocument,
   useBillingAddress,
+  setBillingAddressId,
   setUseBillingAddress,
 }) => {
+  const { auth } = useAuth();
+  const canCreatePurchaseOrder =
+    auth?.role && RESTRICTED_ROLES.includes(auth.role);
+
   const [isCreatingAddress, setIsCreatingAddress] = useState(false);
   const [createAddress] = useCreateAddressMutation();
+  const [isAddressResolved, setIsAddressResolved] = useState(false);
 
-  // === Memos ===
+  /* ────── Customer / Address memos ────── */
   const selectedCustomerData = useMemo(
     () => customers.find((c) => c.customerId === selectedCustomer),
     [customers, selectedCustomer]
@@ -134,7 +142,29 @@ const QuotationForm = ({
     const billing = addresses.find(
       (a) => a.customerId === selectedCustomer && a.status === "BILLING"
     );
-    return billing || selectedCustomerData?.address || null;
+    if (billing) return billing;
+
+    const cust = selectedCustomerData;
+    if (!cust?.address) return null;
+
+    let parsed;
+    try {
+      parsed =
+        typeof cust.address === "string"
+          ? JSON.parse(cust.address)
+          : cust.address;
+    } catch {
+      return null;
+    }
+
+    return {
+      street:
+        parsed.street === "null" || !parsed.street ? "" : parsed.street.trim(),
+      city: parsed.city || "",
+      state: parsed.state || "",
+      postalCode: parsed.zip || parsed.postalCode || "",
+      country: parsed.country || "India",
+    };
   }, [addresses, selectedCustomerData, selectedCustomer]);
 
   const filteredAddresses = useMemo(
@@ -142,34 +172,75 @@ const QuotationForm = ({
     [addresses, selectedCustomer]
   );
 
-  const extraDiscount = useMemo(() => {
-    const amount = parseFloat(quotationData.discountAmount) || 0;
-    if (!amount) return 0;
-    const base = subTotal - discount + tax;
-    return quotationData.discountType === "percent"
-      ? parseFloat(((base * amount) / 100).toFixed(2))
-      : amount;
+  const hasBillingAddress = useMemo(
+    () =>
+      addresses.some(
+        (a) => a.customerId === selectedCustomer && a.status === "BILLING"
+      ),
+    [addresses, selectedCustomer]
+  );
+
+  const dropdownValue = useMemo(() => {
+    if (useBillingAddress) {
+      if (billingAddressId) return billingAddressId;
+      if (isCreatingAddress) return "creating";
+      if (defaultAddress && !hasBillingAddress) return "sameAsBilling";
+    }
+    return quotationData.shipTo;
   }, [
-    quotationData.discountType,
-    quotationData.discountAmount,
-    subTotal,
-    discount,
-    tax,
+    useBillingAddress,
+    billingAddressId,
+    isCreatingAddress,
+    defaultAddress,
+    hasBillingAddress,
+    quotationData.shipTo,
   ]);
 
-  const finalRoundedTotal = useMemo(() => {
-    const base =
-      subTotal + shipping + tax - discount - extraDiscount + (gstAmount || 0);
-    const rupees = Math.floor(Math.round(base * 100) / 100);
-    const last = rupees % 10;
-    if (last <= 4) return rupees - last;
-    if (last >= 6) return rupees + (10 - last);
-    return rupees;
-  }, [subTotal, shipping, tax, discount, extraDiscount, gstAmount]);
+  /* ────── GLOBAL DISCOUNT (extraDiscount) ────── */
 
-  // === Address Sync ===
+  /* ────── GST & Auto‑Round‑Off ────── */
+  const amountBeforeGst = useMemo(
+    () => subTotal + tax + shipping - discount - extraDiscount,
+    [subTotal, tax, shipping, discount, extraDiscount]
+  );
+
+  const gstAmount = useMemo(() => {
+    if (!gst || gst <= 0) return 0;
+    return parseFloat(((amountBeforeGst * gst) / 100).toFixed(2));
+  }, [amountBeforeGst, gst]);
+
+  const totalBeforeRoundOff = useMemo(
+    () => amountBeforeGst + gstAmount,
+    [amountBeforeGst, gstAmount]
+  );
+
+  const autoRoundOff = useMemo(() => {
+    const rupees = Math.floor(totalBeforeRoundOff);
+    const paise = Math.round((totalBeforeRoundOff - rupees) * 100);
+    if (paise === 0) return 0;
+    if (paise <= 50) return -(paise / 100);
+    return (100 - paise) / 100;
+  }, [totalBeforeRoundOff]);
+
+  const finalRoundedTotal = useMemo(
+    () => Math.round(totalBeforeRoundOff + autoRoundOff),
+    [totalBeforeRoundOff, autoRoundOff]
+  );
+
+  /* ────── Address Sync (same‑as‑billing) ────── */
   useEffect(() => {
-    if (!useBillingAddress || !defaultAddress || !selectedCustomer) return;
+    if (!useBillingAddress || !defaultAddress || !selectedCustomer) {
+      setIsAddressResolved(false);
+      return;
+    }
+
+    if (!defaultAddress.city || !defaultAddress.state) {
+      message.error("Customer's billing address is incomplete");
+      setUseBillingAddress(false);
+      setBillingAddressId(null);
+      setIsAddressResolved(false);
+      return;
+    }
 
     const match = filteredAddresses.find(
       (a) =>
@@ -182,40 +253,54 @@ const QuotationForm = ({
           normalize(defaultAddress.country || "india")
     );
 
+    const finalize = (addressId) => {
+      setBillingAddressId(addressId);
+      handleQuotationChange("shipTo", addressId);
+      setIsAddressResolved(true);
+    };
+
     if (match) {
-      handleQuotationChange("shipTo", match.addressId);
+      finalize(match.addressId);
     } else {
       const create = async () => {
         setIsCreatingAddress(true);
         try {
-          const res = await createAddress({
+          const payload = {
             customerId: selectedCustomer,
-            ...defaultAddress,
+            street: defaultAddress.street || "",
+            city: defaultAddress.city,
+            state: defaultAddress.state,
+            postalCode: defaultAddress.postalCode,
+            country: defaultAddress.country,
             status: "BILLING",
-          }).unwrap();
-          handleQuotationChange("shipTo", res.addressId);
-          toast.success("Billing address created");
+          };
+          const res = await createAddress(payload).unwrap();
+          finalize(res.addressId);
         } catch (e) {
-          toast.error("Failed to create billing address");
+          message.error("Failed to create address. Check required fields.");
+          setBillingAddressId(null);
+          setIsAddressResolved(false);
         } finally {
           setIsCreatingAddress(false);
         }
       };
       create();
     }
-  }, [useBillingAddress, defaultAddress, filteredAddresses, selectedCustomer]);
+  }, [
+    useBillingAddress,
+    defaultAddress,
+    filteredAddresses,
+    selectedCustomer,
+    createAddress,
+    handleQuotationChange,
+  ]);
 
-  // === Follow-up Dates ===
+  /* ────── Follow‑up dates ────── */
   const handleFollowup = (i, d) => {
     const arr = [...quotationData.followupDates];
     arr[i] = d ? moment(d).format("YYYY-MM-DD") : "";
-    if (
-      d &&
-      quotationData.dueDate &&
-      moment(d).isAfter(quotationData.dueDate)
-    ) {
-      toast.warning("Follow-up cannot be after due date");
-    }
+    if (d && quotationData.dueDate && moment(d).isAfter(quotationData.dueDate))
+      message.warning("Follow‑up cannot be after due date");
     handleQuotationChange("followupDates", arr);
   };
   const addFollow = () =>
@@ -229,7 +314,7 @@ const QuotationForm = ({
       quotationData.followupDates.filter((_, x) => x !== i)
     );
 
-  // === Render ===
+  /* ────── Render ────── */
   if (!cartItems.length) {
     return (
       <CompactCard>
@@ -251,7 +336,7 @@ const QuotationForm = ({
 
   return (
     <Row gutter={12}>
-      {/* LEFT: FORM */}
+      {/* LEFT – FORM */}
       <Col xs={24} md={16}>
         <CompactCard title={<Title level={5}>Quotation Checkout</Title>}>
           <Collapse defaultActiveKey={["1", "2", "3"]} ghost>
@@ -263,11 +348,11 @@ const QuotationForm = ({
                 </Col>
                 <Col span={16}>
                   <MiniSelect value={documentType} onChange={setDocumentType}>
-                    {["Quotation", "Order", "Purchase Order"].map((v) => (
-                      <Option key={v} value={v}>
-                        {v}
-                      </Option>
-                    ))}
+                    <Option value="Quotation">Quotation</Option>
+                    <Option value="Order">Order</Option>
+                    {canCreatePurchaseOrder && (
+                      <Option value="Purchase Order">Purchase Order</Option>
+                    )}
                   </MiniSelect>
                 </Col>
               </TightRow>
@@ -301,10 +386,7 @@ const QuotationForm = ({
                   </Space.Compact>
                 </Col>
               </TightRow>
-            </Panel>
 
-            {/* 2. Address */}
-            <Panel header="Shipping Address" key="2">
               <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>
@@ -314,23 +396,33 @@ const QuotationForm = ({
                 <Col span={16}>
                   <Space.Compact block>
                     <MiniSelect
-                      value={
-                        useBillingAddress
-                          ? "sameAsBilling"
-                          : quotationData.shipTo
-                      }
+                      value={dropdownValue}
                       onChange={(v) => {
-                        if (v === "sameAsBilling") setUseBillingAddress(true);
-                        else {
+                        if (v === "sameAsBilling" || v === "creating") {
+                          setUseBillingAddress(true);
+                        } else {
                           setUseBillingAddress(false);
+                          setBillingAddressId(null);
                           handleQuotationChange("shipTo", v);
                         }
                       }}
                       loading={addressesLoading || isCreatingAddress}
                       disabled={!selectedCustomer}
                     >
-                      {defaultAddress && (
-                        <Option value="sameAsBilling">Same as Billing</Option>
+                      {defaultAddress && !hasBillingAddress && (
+                        <Option
+                          value="sameAsBilling"
+                          disabled={isCreatingAddress}
+                        >
+                          Same as Billing – {defaultAddress.street},{" "}
+                          {defaultAddress.city}
+                          {isCreatingAddress && " (creating...)"}
+                        </Option>
+                      )}
+                      {isCreatingAddress && (
+                        <Option value="creating" disabled>
+                          Creating billing address...
+                        </Option>
                       )}
                       {filteredAddresses.map((a) => (
                         <Option key={a.addressId} value={a.addressId}>
@@ -378,7 +470,7 @@ const QuotationForm = ({
 
               <TightRow gutter={8}>
                 <Col span={8}>
-                  <Text strong>Follow-ups</Text>
+                  <Text strong>Follow‑ups</Text>
                 </Col>
                 <Col span={16}>
                   {quotationData.followupDates.map((d, i) => (
@@ -411,36 +503,41 @@ const QuotationForm = ({
                 </Col>
               </TightRow>
 
-              <TightRow gutter={8}>
+              {/* GLOBAL DISCOUNT */}
+              {/* GLOBAL DISCOUNT */}
+              <TightRow gutter={16} align="middle" style={{ marginBottom: 16 }}>
                 <Col span={8}>
-                  <Text strong>Extra Discount</Text>
+                  <Text strong>Global Discount</Text>
                 </Col>
                 <Col span={16}>
                   <Space.Compact block>
-                    <MiniSelect
-                      value={quotationData.discountType}
-                      onChange={(v) => {
-                        handleQuotationChange("discountType", v);
-                        handleQuotationChange("discountAmount", "");
-                      }}
+                    <Select
+                      value={quotationData.discountType || "percent"}
+                      onChange={(value) =>
+                        handleQuotationChange("discountType", value)
+                      }
                       style={{ width: 80 }}
                     >
                       <Option value="percent">%</Option>
                       <Option value="fixed">₹</Option>
-                    </MiniSelect>
-                    <MiniNumber
-                      value={quotationData.discountAmount}
-                      onChange={(v) =>
-                        handleQuotationChange("discountAmount", v)
+                    </Select>
+                    <InputNumber
+                      value={quotationData.discountAmount || ""}
+                      onChange={(value) =>
+                        handleQuotationChange(
+                          "discountAmount",
+                          value === null ? "" : value.toString()
+                        )
                       }
                       placeholder={
-                        quotationData.discountType === "percent" ? "5" : "250"
+                        quotationData.discountType === "percent" ? "8" : "500"
                       }
+                      min={0}
+                      style={{ width: "100%" }}
                     />
                   </Space.Compact>
                 </Col>
               </TightRow>
-
               <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>
@@ -461,38 +558,14 @@ const QuotationForm = ({
                   </Text>
                 </Col>
               </TightRow>
-              <TightRow gutter={8}>
-                <Col span={8}>
-                  <Text strong>Shipping</Text>
-                </Col>
-                <Col span={16}>
-                  <Space.Compact block>
-                    <MiniNumber
-                      value={shipping}
-                      onChange={onShippingChange}
-                      min={0}
-                      step={1}
-                      placeholder="0"
-                      addonAfter="₹"
-                    />
-                  </Space.Compact>
-                  <Text type="secondary" style={{ fontSize: 11 }} block>
-                    +₹{(Number(shipping) || 0).toFixed(2)}
-                  </Text>
-                </Col>
-              </TightRow>
+
               <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>Round Off</Text>
                 </Col>
                 <Col span={16}>
-                  <MiniNumber
-                    value={quotationData.roundOff || 0}
-                    disabled
-                    prefix="₹"
-                  />
-                  <Text type="secondary" style={{ fontSize: 11 }} block>
-                    Final: <strong>₹{finalRoundedTotal}</strong>
+                  <Text>
+                    {autoRoundOff >= 0 ? "+" : ""}₹{autoRoundOff.toFixed(2)}
                   </Text>
                 </Col>
               </TightRow>
@@ -501,7 +574,7 @@ const QuotationForm = ({
         </CompactCard>
       </Col>
 
-      {/* RIGHT: SUMMARY */}
+      {/* RIGHT – SUMMARY */}
       <Col xs={24} md={8}>
         <CompactCard
           title={<Text strong>Summary</Text>}
@@ -509,36 +582,42 @@ const QuotationForm = ({
         >
           <Text strong>#{quotationNumber}</Text>
           <Divider style={{ margin: "8px 0" }} />
+
+          {/* ORDER TOTAL – NOW 100% CORRECT */}
           <OrderTotal
             subTotal={subTotal}
-            discount={discount}
-            extraDiscount={extraDiscount}
+            discount={discount} // per‑item total
+            extraDiscount={extraDiscount} // GLOBAL
             tax={tax}
-            shipping={shipping}
-            roundOff={quotationData.roundOff || 0}
             gst={gst}
             gstAmount={gstAmount}
-            finalTotal={totalAmount}
-            items={cartItems.map((item) => ({
-              ...item,
-              discount: Number(itemDiscounts[item.productId]) || 0,
-              tax: Number(itemTaxes[item.productId]) || 0,
-            }))}
+            roundOff={autoRoundOff}
           />
+
           <Divider style={{ margin: "8px 0" }} />
           <CheckoutBtn
             block
             icon={<CheckCircleOutlined />}
             onClick={() => {
-              if (!selectedCustomer) return toast.error("Select customer");
-              if (!quotationData.dueDate) return toast.error("Select due date");
-              if (!quotationData.shipTo && !useBillingAddress)
-                return toast.error("Select shipping");
-              handleCreateDocument({ gst, gstAmount });
+              if (!selectedCustomer) return message.error("Select customer");
+              if (!quotationData.dueDate)
+                return message.error("Select due date");
+
+              const hasValidShipping =
+                quotationData.shipTo ||
+                (useBillingAddress &&
+                  (billingAddressId || isCreatingAddress) &&
+                  isAddressResolved);
+
+              if (!hasValidShipping)
+                return message.error("Select or create shipping address");
+
+              handleCreateDocument();
             }}
           >
             Create {documentType}
           </CheckoutBtn>
+
           <Button
             block
             style={{ marginTop: 4 }}

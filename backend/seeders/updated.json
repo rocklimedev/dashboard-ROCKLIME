@@ -8,7 +8,7 @@
     "alert_quantity": 20,
     "tax": "18.00",
     "description": "RSH Aqua THM rough-in 3 Smartcontrol",
-    "images": "",
+    "images": "[\"https://static.cmtradingco.com/product_images/1068690000.jpg\"]",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -16,11 +16,11 @@
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "1068690000",
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "85350.00"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": "85350.00",
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "1068690000"
     },
     "createdAt": "2025-11-20T08:25:19.000Z",
-    "updatedAt": "2025-11-20T08:25:19.000Z"
+    "updatedAt": "2025-11-20T11:26:09.255Z"
   },
   {
     "productId": "0f440d8a-0e31-4f4d-ab4c-684274175209",
@@ -31,7 +31,7 @@
     "alert_quantity": 20,
     "tax": "18.00",
     "description": "RSH Aqua THM trim 3 Smartcontrol",
-    "images": "",
+    "images": "[\"https://static.cmtradingco.com/product_images/106866GN00.jpg\"]",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -39,11 +39,11 @@
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "106866GN00",
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "154050.00"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": "154050.00",
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "106866GN00"
     },
     "createdAt": "2025-11-20T08:25:21.000Z",
-    "updatedAt": "2025-11-20T08:25:21.000Z"
+    "updatedAt": "2025-11-20T11:26:09.256Z"
   },
   {
     "productId": "445ddf58-bc89-4d0d-82f7-37fdef98dea2",
@@ -54,7 +54,7 @@
     "alert_quantity": 20,
     "tax": "18.00",
     "description": "RSH Aqua THM trim 5 Smartcontrol",
-    "images": "",
+    "images": "[\"https://static.cmtradingco.com/product_images/1068680000.jpg\"]",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -62,11 +62,11 @@
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "1068680000",
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "215650.00"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": "215650.00",
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "1068680000"
     },
     "createdAt": "2025-11-20T08:25:20.000Z",
-    "updatedAt": "2025-11-20T08:25:20.000Z"
+    "updatedAt": "2025-11-20T11:26:09.256Z"
   },
   {
     "productId": "4b791eb4-ff10-45b9-9e7c-72e100c26722",
@@ -77,7 +77,7 @@
     "alert_quantity": 20,
     "tax": "18.00",
     "description": "RSH Aqua THM trim 5 Smartcontrol",
-    "images": "",
+    "images": "[\"https://static.cmtradingco.com/product_images/106868KF00.jpg\"]",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -85,11 +85,11 @@
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "106868KF00",
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "358000.00"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": "358000.00",
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "106868KF00"
     },
     "createdAt": "2025-11-20T08:25:21.000Z",
-    "updatedAt": "2025-11-20T08:25:21.000Z"
+    "updatedAt": "2025-11-20T11:26:09.257Z"
   },
   {
     "productId": "5b67e7d4-4be4-4eb0-840c-eaabce8212e6",
@@ -100,7 +100,7 @@
     "alert_quantity": 20,
     "tax": "18.00",
     "description": "RSH Aqua THM trim 4 Smartcontrol",
-    "images": "",
+    "images": "[\"https://static.cmtradingco.com/product_images/106867DL00.jpg\"]",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -108,11 +108,11 @@
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "106867DL00",
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "279400.00"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": "279400.00",
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "106867DL00"
     },
     "createdAt": "2025-11-20T08:25:23.000Z",
-    "updatedAt": "2025-11-20T08:25:23.000Z"
+    "updatedAt": "2025-11-20T11:26:09.257Z"
   },
   {
     "productId": "5e258d89-7719-4da0-82a0-e1aa009c4929",
@@ -123,7 +123,7 @@
     "alert_quantity": 20,
     "tax": "18.00",
     "description": "RSH Aqua THM trim 4 Smartcontrol",
-    "images": "",
+    "images": "[\"https://static.cmtradingco.com/product_images/106867AL00.jpg\"]",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -131,34 +131,11 @@
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "106867AL00",
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "279400.00"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": "279400.00",
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "106867AL00"
     },
     "createdAt": "2025-11-20T08:25:22.000Z",
-    "updatedAt": "2025-11-20T08:25:22.000Z"
-  },
-  {
-    "productId": "785aba45-b13d-4b03-8b9f-dd11741e8caa",
-    "name": "RSH Aqua THM trim 5 Smartcontrol",
-    "product_code": "106868AL00",
-    "quantity": 99,
-    "discountType": "percent",
-    "alert_quantity": 20,
-    "tax": "18.00",
-    "description": "RSH Aqua THM trim 5 Smartcontrol",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": "ea86ed02-c5e7-11f0-a3b0-52540021303b",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "106868AL00",
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "358000.00"
-    },
-    "createdAt": "2025-11-20T08:25:22.000Z",
-    "updatedAt": "2025-11-20T08:25:22.000Z"
+    "updatedAt": "2025-11-20T11:26:09.257Z"
   },
   {
     "productId": "8d722b2a-b82f-4d8b-b5fa-4b200fb086b5",
@@ -169,7 +146,7 @@
     "alert_quantity": 20,
     "tax": "18.00",
     "description": "RSH Aqua THM trim 4 Smartcontrol",
-    "images": "",
+    "images": "[\"https://static.cmtradingco.com/product_images/1068670000.jpg\"]",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -177,11 +154,11 @@
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "1068670000",
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "164350.00"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": "164350.00",
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "1068670000"
     },
     "createdAt": "2025-11-20T08:25:20.000Z",
-    "updatedAt": "2025-11-20T08:25:20.000Z"
+    "updatedAt": "2025-11-20T11:26:09.257Z"
   },
   {
     "productId": "9a6723a4-14d3-4573-9e2e-bc6192ddeecc",
@@ -192,7 +169,7 @@
     "alert_quantity": 20,
     "tax": "18.00",
     "description": "RSH Aqua THM trim 4 Smartcontrol",
-    "images": "",
+    "images": "[\"https://static.cmtradingco.com/product_images/106867GN00.jpg\"]",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -200,11 +177,11 @@
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "106867GN00",
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "279400.00"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": "279400.00",
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "106867GN00"
     },
     "createdAt": "2025-11-20T08:25:21.000Z",
-    "updatedAt": "2025-11-20T08:25:21.000Z"
+    "updatedAt": "2025-11-20T11:26:09.257Z"
   },
   {
     "productId": "adb5e433-e751-4663-9a3c-c12944b23764",
@@ -215,7 +192,7 @@
     "alert_quantity": 20,
     "tax": "18.00",
     "description": "RSH Aqua THM trim 5 Smartcontrol",
-    "images": "",
+    "images": "[\"https://static.cmtradingco.com/product_images/106868DL00.jpg\"]",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -223,11 +200,11 @@
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "106868DL00",
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "358000.00"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": "358000.00",
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "106868DL00"
     },
     "createdAt": "2025-11-20T08:25:23.000Z",
-    "updatedAt": "2025-11-20T08:25:23.000Z"
+    "updatedAt": "2025-11-20T11:26:09.258Z"
   },
   {
     "productId": "b09b5c1b-91a3-4ed1-bb97-352089e98b5f",
@@ -238,7 +215,7 @@
     "alert_quantity": 20,
     "tax": "18.00",
     "description": "RSH Aqua THM rough-in 4 Smartcontrol",
-    "images": "",
+    "images": "[\"https://static.cmtradingco.com/product_images/1068810000.jpg\"]",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -246,11 +223,11 @@
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "1068810000",
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "119850.00"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": "119850.00",
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "1068810000"
     },
     "createdAt": "2025-11-20T08:25:19.000Z",
-    "updatedAt": "2025-11-20T08:25:19.000Z"
+    "updatedAt": "2025-11-20T11:26:09.258Z"
   },
   {
     "productId": "bdc6a644-0a3d-4c6d-86fe-bc94330ef646",
@@ -261,7 +238,7 @@
     "alert_quantity": 20,
     "tax": "18.00",
     "description": "RSH Aqua THM trim 4 Smartcontrol",
-    "images": "",
+    "images": "[\"https://static.cmtradingco.com/product_images/106867KF00.jpg\"]",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -269,11 +246,11 @@
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "106867KF00",
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "279400.00"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": "279400.00",
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "106867KF00"
     },
     "createdAt": "2025-11-20T08:25:21.000Z",
-    "updatedAt": "2025-11-20T08:25:21.000Z"
+    "updatedAt": "2025-11-20T11:26:09.258Z"
   },
   {
     "productId": "c4675547-cdd8-4f0b-9b38-57e993fbb866",
@@ -284,7 +261,7 @@
     "alert_quantity": 20,
     "tax": "18.00",
     "description": "RSH Aqua THM trim 3 Smartcontrol",
-    "images": "",
+    "images": "[\"https://static.cmtradingco.com/product_images/106866KF00.jpg\"]",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -292,11 +269,11 @@
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "106866KF00",
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "154050.00"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": "154050.00",
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "106866KF00"
     },
     "createdAt": "2025-11-20T08:25:20.000Z",
-    "updatedAt": "2025-11-20T08:25:20.000Z"
+    "updatedAt": "2025-11-20T11:26:09.258Z"
   },
   {
     "productId": "e348acfa-b075-463d-abdb-527f3c22ccd9",
@@ -307,7 +284,7 @@
     "alert_quantity": 20,
     "tax": "18.00",
     "description": "RSH Aqua THM trim 3 Smartcontrol",
-    "images": "",
+    "images": "[\"https://static.cmtradingco.com/product_images/106866AL00.jpg\"]",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -315,11 +292,11 @@
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "106866AL00",
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "154050.00"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": "154050.00",
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "106866AL00"
     },
     "createdAt": "2025-11-20T08:25:22.000Z",
-    "updatedAt": "2025-11-20T08:25:22.000Z"
+    "updatedAt": "2025-11-20T11:26:09.258Z"
   },
   {
     "productId": "efe63b0a-4692-4b0c-ac6a-49d535682b24",
@@ -330,7 +307,7 @@
     "alert_quantity": 20,
     "tax": "18.00",
     "description": "RSH Aqua THM trim 3 Smartcontrol",
-    "images": "",
+    "images": "[\"https://static.cmtradingco.com/product_images/1068660000.jpg\"]",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -338,11 +315,11 @@
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "1068660000",
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "85600.00"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": "85600.00",
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "1068660000"
     },
     "createdAt": "2025-11-20T08:25:20.000Z",
-    "updatedAt": "2025-11-20T08:25:20.000Z"
+    "updatedAt": "2025-11-20T11:26:09.258Z"
   },
   {
     "productId": "f48f140d-89e7-4dce-9031-72c82b8ff619",
@@ -353,7 +330,7 @@
     "alert_quantity": 20,
     "tax": "18.00",
     "description": "RSH Aqua THM trim 5 Smartcontrol",
-    "images": "",
+    "images": "[\"https://static.cmtradingco.com/product_images/106868GN00.jpg\"]",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -361,11 +338,11 @@
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "106868GN00",
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "358000.00"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": "358000.00",
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "106868GN00"
     },
     "createdAt": "2025-11-20T08:25:21.000Z",
-    "updatedAt": "2025-11-20T08:25:21.000Z"
+    "updatedAt": "2025-11-20T11:26:09.258Z"
   },
   {
     "productId": "f5d0b14a-edca-4653-910b-b904effbf540",
@@ -376,7 +353,7 @@
     "alert_quantity": 20,
     "tax": "18.00",
     "description": "RSH Aqua THM trim 3 Smartcontrol",
-    "images": "",
+    "images": "[\"https://static.cmtradingco.com/product_images/106866DL00.jpg\"]",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -384,11 +361,11 @@
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "106866DL00",
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "154050.00"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": "154050.00",
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "106866DL00"
     },
     "createdAt": "2025-11-20T08:25:22.000Z",
-    "updatedAt": "2025-11-20T08:25:22.000Z"
+    "updatedAt": "2025-11-20T11:26:09.258Z"
   },
   {
     "productId": "fce2ef46-066a-4b03-b679-e417c5a2a672",
@@ -399,7 +376,7 @@
     "alert_quantity": 20,
     "tax": "18.00",
     "description": "RSH Aqua THM rough-in 5 Smartcontrol",
-    "images": "",
+    "images": "[\"https://static.cmtradingco.com/product_images/1068820000.jpg\"]",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -407,10 +384,10 @@
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "1068820000",
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "137350.00"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": "137350.00",
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "1068820000"
     },
     "createdAt": "2025-11-20T08:25:19.000Z",
-    "updatedAt": "2025-11-20T08:25:19.000Z"
+    "updatedAt": "2025-11-20T11:26:09.259Z"
   }
 ]

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { toast } from "sonner";
+import { message } from "antd";
 import { useCreateRoleMutation } from "../../api/rolesApi";
 import Modal from "react-bootstrap/Modal";
 import Button from "react-bootstrap/Button";
@@ -12,17 +12,16 @@ const AddRoleModal = ({ show, onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!roleName.trim()) {
-      toast.error("Role name is required.");
+      message.error("Role name is required.");
       return;
     }
 
     try {
       await createRole({ roleName }).unwrap();
-      toast.success("Role added successfully!");
       setRoleName("");
       onClose();
     } catch (error) {
-      toast.error(
+      message.error(
         `Failed to add role: ${error.data?.message || "Please try again."}`
       );
     }

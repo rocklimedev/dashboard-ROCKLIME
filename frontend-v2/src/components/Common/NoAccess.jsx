@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button, Space, Typography, Result, ConfigProvider } from "antd";
-import { toast } from "sonner";
+import { message } from "antd";
 import { useResendVerificationEmailMutation } from "../../api/authApi";
 import { useGetProfileQuery } from "../../api/userApi";
 import { useAuth } from "../../context/AuthContext";
@@ -45,7 +45,7 @@ const NoAccess = () => {
   // Handle profile fetch errors
   useEffect(() => {
     if (profileError) {
-      toast.error("Failed to fetch user profile.");
+      message.error("Failed to fetch user profile.");
     }
   }, [profileError]);
 
@@ -65,7 +65,7 @@ const NoAccess = () => {
     try {
       await refetchProfile();
     } catch (error) {
-      toast.error("Failed to retry. Please try again.");
+      message.error("Failed to retry. Please try again.");
     }
   };
 
@@ -74,24 +74,24 @@ const NoAccess = () => {
       await logout();
       navigate("/login", { replace: true });
     } catch (error) {
-      toast.error("Logout failed. Please try again.");
+      message.error("Logout failed. Please try again.");
     }
   };
 
   const handleResendVerification = async () => {
     if (!user?.email) {
-      toast.error("No email found for your account.");
+      message.error("No email found for your account.");
       return;
     }
     try {
       await resendVerificationEmail({ email: user.email }).unwrap();
       setEmailSent(true);
       setTimer(60);
-      toast.success("Verification email sent! Please check your inbox.");
+      message.success("Verification email sent! Please check your inbox.");
     } catch (error) {
       const errorMessage =
         error?.data?.message || "Failed to resend verification email.";
-      toast.error(errorMessage);
+      message.error(errorMessage);
     }
   };
 

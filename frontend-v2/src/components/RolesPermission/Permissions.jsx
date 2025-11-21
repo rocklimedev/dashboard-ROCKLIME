@@ -5,7 +5,7 @@ import { Spinner, Alert } from "react-bootstrap";
 import { FaSearch, FaArrowLeft } from "react-icons/fa";
 import { MoreOutlined } from "@ant-design/icons";
 import { Dropdown, Menu, Button } from "antd";
-import { toast } from "sonner";
+import { message } from "antd";
 import PageHeader from "../Common/PageHeader";
 import { rolePermissionsApi as api } from "../../api/rolePermissionApi";
 import "./permission.css";
@@ -139,7 +139,7 @@ const Permissions = () => {
         api.util.invalidateTags([{ type: "RolePermissions", id: roleId }])
       );
     } catch (error) {
-      toast.error(`Failed to update ${type} permission for ${module}.`);
+      message.error(`Failed to update ${type} permission for ${module}.`);
     } finally {
       setIsUpdating(false);
     }

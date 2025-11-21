@@ -10,8 +10,7 @@ import {
 import { Link } from "react-router-dom";
 import pos from "../../assets/img/default.png";
 import "./productlist.css";
-import { toast } from "sonner";
-
+import { message } from "antd";
 import PermissionGate from "../../context/PermissionGate";
 import { useAuth } from "../../context/AuthContext";
 
@@ -81,7 +80,7 @@ const ProductCard = ({
     if (quantity > 0 && sellingPrice !== null && !isNaN(sellingPrice)) {
       handleAddToCart({ productId: product.productId, quantity });
     } else {
-      toast.error("Invalid quantity or price");
+      message.error("Invalid quantity or price");
     }
   };
 

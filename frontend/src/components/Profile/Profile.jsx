@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { toast } from "react-toastify";
+import { message } from "antd";
 import { useGetProfileQuery } from "../../api/userApi";
 import { useGetRolesQuery } from "../../api/rolesApi";
 import { useGetAllQuotationsQuery } from "../../api/quotationApi";
@@ -171,7 +171,7 @@ const Profile = () => {
     const token =
       localStorage.getItem("token") || sessionStorage.getItem("token");
     if (!token) {
-      toast.error("No authentication token found. Redirecting to login...");
+      message.error("No authentication token found. Redirecting to login...");
       window.location.href = "/login";
     }
   }, []);
@@ -188,7 +188,6 @@ const Profile = () => {
   };
 
   const onAddressSaved = () => {
-    toast.success(editingAddress ? "Address updated!" : "Address added!");
     refetchAddresses();
     closeAddressModal();
   };
@@ -196,10 +195,9 @@ const Profile = () => {
   const handleDeleteAddress = async (addressId) => {
     try {
       await deleteAddress(addressId).unwrap();
-      toast.success("Address deleted");
       refetchAddresses();
     } catch (error) {
-      toast.error(
+      message.error(
         `Failed to delete address: ${error.data?.message || "Unknown error"}`
       );
     }
@@ -216,7 +214,6 @@ const Profile = () => {
   };
 
   const onSignatureSuccess = () => {
-    toast.success(editingSignature ? "Signature updated!" : "Signature added!");
     refetchSignatures();
     closeSignatureModal();
   };
@@ -224,10 +221,9 @@ const Profile = () => {
   const handleDeleteSignature = async (signatureId) => {
     try {
       await deleteSignature(signatureId).unwrap();
-      toast.success("Signature deleted");
       refetchSignatures();
     } catch (error) {
-      toast.error(
+      message.error(
         `Failed to delete signature: ${error.data?.message || "Unknown error"}`
       );
     }

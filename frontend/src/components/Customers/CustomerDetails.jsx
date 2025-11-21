@@ -40,7 +40,7 @@ import Avatar from "react-avatar";
 import "./customerdetails.css";
 import { LeftOutlined, CalendarOutlined } from "@ant-design/icons";
 import { Form as AntdForm, Input, Button as AntdButton } from "antd";
-import { toast } from "react-toastify";
+import { message } from "antd";
 import { Helmet } from "react-helmet";
 const CustomerDetails = () => {
   const { id } = useParams();
@@ -291,7 +291,7 @@ const CustomerDetails = () => {
       addressForm.resetFields();
       refetchAddresses();
     } catch (error) {
-      toast.error(
+      message.error(
         `Failed to ${editingAddress ? "update" : "add"} address: ${
           error.data?.message || "Unknown error"
         }`
@@ -304,7 +304,7 @@ const CustomerDetails = () => {
       await deleteAddress(addressId).unwrap();
       refetchAddresses();
     } catch (error) {
-      toast.error(
+      message.error(
         `Failed to delete address: ${error.data?.message || "Unknown error"}`
       );
     }
@@ -415,7 +415,7 @@ const CustomerDetails = () => {
                 </div>
                 <div>
                   <Link
-                    to={`/customers/edit/${customer.customerId}`}
+                    to={`/customer/edit/${customer.customerId}`}
                     state={{ customer }} // ← THIS IS THE MISSING LINE!
                     className="btn btn-white"
                   >
@@ -584,7 +584,7 @@ const CustomerDetails = () => {
                             <tr key={quotation.quotationId}>
                               <td>
                                 <Link
-                                  to={`/quotations/${quotation.quotationId}`}
+                                  to={`/quotation/${quotation.quotationId}`}
                                   className="text-primary"
                                 >
                                   {quotation.reference_number || "N/A"}
@@ -603,7 +603,7 @@ const CustomerDetails = () => {
                               <td>{getUsername(quotation.createdBy)}</td>
                               <td className="text-end">
                                 <Link
-                                  to={`/quotations/${quotation.quotationId}`}
+                                  to={`/quotation/${quotation.quotationId}`}
                                   className="btn btn-sm btn-outline-primary me-2"
                                   title="View Quotation"
                                 >

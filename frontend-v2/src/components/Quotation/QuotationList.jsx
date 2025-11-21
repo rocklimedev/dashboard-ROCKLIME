@@ -17,7 +17,7 @@ import { EditOutlined } from "@ant-design/icons";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import QuotationProductModal from "./QuotationProductModal";
 import DeleteModal from "../Common/DeleteModal";
-import { toast } from "sonner";
+import { message } from "antd";
 import {
   Table,
   Dropdown,
@@ -267,7 +267,7 @@ Created By: ${quotation?.signature_name || "N/A"}
 Customer: ${quotation?.customerId || "N/A"}
 Ship To: ${quotation?.shipTo || "N/A"}
 
-View: ${window.location.origin}/quotations/${quotation.quotationId}
+View: ${window.location.origin}/quotation/${quotation.quotationId}
 ==========================`;
 
     const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
@@ -283,7 +283,7 @@ View: ${window.location.origin}/quotations/${quotation.quotationId}
       key: "quotationTitle",
       width: 150,
       render: (text, rec) => (
-        <Link to={`/quotations/${rec.quotationId}`}>{text || "N/A"}</Link>
+        <Link to={`/quotation/${rec.quotationId}`}>{text || "N/A"}</Link>
       ),
     },
     {
@@ -545,7 +545,7 @@ View: ${window.location.origin}/quotations/${quotation.quotationId}
           <PermissionGate api="edit" module="quotations">
             <span
               onClick={() =>
-                navigate(`/quotations/${rec.quotationId}/edit`, {
+                navigate(`/quotation/${rec.quotationId}/edit`, {
                   state: { quotation: rec },
                 })
               }
@@ -562,7 +562,7 @@ View: ${window.location.origin}/quotations/${quotation.quotationId}
                 <PermissionGate api="view" module="quotations">
                   <Menu.Item key="view">
                     <Link
-                      to={`/quotations/${rec.quotationId}`}
+                      to={`/quotation/${rec.quotationId}`}
                       style={{ textDecoration: "none", color: "inherit" }}
                     >
                       <FaEye style={{ marginRight: 8 }} />
@@ -633,7 +633,7 @@ View: ${window.location.origin}/quotations/${quotation.quotationId}
   }, [currentQuotations, currentPage, pageSize, customers]);
 
   /* --------------------------- Handlers --------------------------- */
-  const handleAddQuotation = () => navigate("/quotations/add");
+  const handleAddQuotation = () => navigate("/quotation/add");
 
   const handleDeleteClick = (q) => {
     setQuotationToDelete(q);
@@ -642,7 +642,7 @@ View: ${window.location.origin}/quotations/${quotation.quotationId}
 
   const handleConfirmDelete = async () => {
     if (!quotationToDelete?.quotationId) {
-      toast.error("No quotation selected");
+      message.error("No quotation selected");
       setShowDeleteModal(false);
       return;
     }
@@ -655,7 +655,7 @@ View: ${window.location.origin}/quotations/${quotation.quotationId}
         setCurrentPage((p) => p - 1);
       }
     } catch (e) {
-      toast.error(
+      message.error(
         `Delete failed: ${
           e.data?.message || e.data?.error || e.message || "unknown"
         }`
@@ -690,10 +690,9 @@ View: ${window.location.origin}/quotations/${quotation.quotationId}
           title: q.document_title || "",
           createdFor: q.customerId || "",
           dueDate: q.due_date || "",
-          source: q.reference_number ? `Quotation #${q.reference_number}` : "",
-          description: `Converted from Quotation #${
-            q.reference_number || "N/A"
-          }`,
+          products: q.products,
+          source: q.reference_number ? `Quotation #${q.reference_no}` : "",
+          description: `Converted from Quotation #${q.reference_no || "N/A"}`,
           quotationId: q.quotationId || "",
         },
       },

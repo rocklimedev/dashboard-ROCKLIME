@@ -8,7 +8,7 @@ import { useGetVendorByIdQuery } from "../../api/vendorApi";
 import { useGetProductByIdQuery } from "../../api/productApi";
 import { useGetVendorsQuery } from "../../api/vendorApi";
 import { useGetCompanyByIdQuery } from "../../api/companyApi";
-import { toast } from "sonner";
+import { message } from "antd";
 import logo from "../../assets/img/logo.png";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -81,7 +81,7 @@ const PODetails = () => {
   useEffect(() => {
     if (errors.length > 0) {
       errors.forEach(({ productId, error }) => {
-        toast.error(`Failed to fetch product ${productId}: ${error}`);
+        message.error(`Failed to fetch product ${productId}: ${error}`);
       });
     }
   }, [errors]);
@@ -194,7 +194,7 @@ const PODetails = () => {
   const handleExport = async () => {
     try {
       if (!id) {
-        toast.error("Purchase Order ID is missing.");
+        message.error("Purchase Order ID is missing.");
         return;
       }
 
@@ -202,7 +202,7 @@ const PODetails = () => {
 
       if (exportFormat === "excel") {
         if (!products || products.length === 0) {
-          toast.error("No products available to export.");
+          message.error("No products available to export.");
           return;
         }
 
@@ -281,7 +281,7 @@ const PODetails = () => {
             };
           }
         } catch (error) {
-          toast.warning("Using placeholder logo.");
+          message.warning("Using placeholder logo.");
         }
 
         // Fetch product images
@@ -479,7 +479,7 @@ const PODetails = () => {
         window.URL.revokeObjectURL(url);
       } else if (exportFormat === "pdf") {
         if (!poRef.current) {
-          toast.error("Purchase Order content not found.");
+          message.error("Purchase Order content not found.");
           return;
         }
         const canvas = await html2canvas(poRef.current, {
@@ -509,7 +509,7 @@ const PODetails = () => {
         pdf.save(`PurchaseOrder_${id}.pdf`);
       }
     } catch (error) {
-      toast.error(
+      message.error(
         `Failed to export purchase order as ${exportFormat.toUpperCase()}: ${
           error.message
         }`

@@ -5,7 +5,6 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import ExcelJS from "exceljs";
 import { PDFDocument } from "pdf-lib";
-import { toast } from "sonner";
 import termsAndConditionsPdf from "../../../assets/Terms.pdf";
 import { fetchImg, placeholder } from "./imageHelpers";
 import { calcTotals, amountInWords } from "./calcHelpers";
@@ -62,13 +61,11 @@ export const exportToPDF = async (ref, id, activeVersion) => {
           const dataURL = canvas.toDataURL("image/png");
           resolve(dataURL);
         } catch (err) {
-          console.warn("Image CORS blocked, using placeholder", src);
           resolve(placeholder); // fallback
         }
       };
 
       img.onerror = () => {
-        console.warn("Image failed to load", src);
         resolve(placeholder);
       };
 
@@ -130,7 +127,6 @@ export const exportToPDF = async (ref, id, activeVersion) => {
       scrollY: 0,
     });
   } catch (err) {
-    console.error("html2canvas failed", err);
     throw err;
   } finally {
     document.body.removeChild(clone);
@@ -172,7 +168,6 @@ export const exportToPDF = async (ref, id, activeVersion) => {
     const finalBytes = await mainDoc.save();
     downloadBlob(finalBytes, `Quotation_${id}_Version_${activeVersion}.pdf`);
   } catch (err) {
-    console.warn("T&C attachment failed, saving without it", err);
     pdf.save(`Quotation_${id}_Version_${activeVersion}.pdf`);
   }
 };
@@ -211,7 +206,6 @@ export const exportToExcel = async (
       ? JSON.parse(products)
       : [];
   } catch (e) {
-    console.warn("product parse error", e);
     productList = [];
   }
 

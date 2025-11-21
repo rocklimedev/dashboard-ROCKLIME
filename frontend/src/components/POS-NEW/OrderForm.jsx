@@ -26,7 +26,7 @@ import { FcEmptyTrash } from "react-icons/fc";
 import styled from "styled-components";
 import OrderTotal from "./OrderTotal";
 import moment from "moment";
-import { toast } from "sonner";
+import { message } from "antd";
 import { debounce } from "lodash";
 import { useCreateAddressMutation } from "../../api/addressApi";
 import { useGetAllOrdersQuery } from "../../api/orderApi";
@@ -261,9 +261,8 @@ const OrderForm = ({
           status: "BILLING",
         }).unwrap();
         handleOrderChange("shipTo", res.data.addressId);
-        toast.success("Billing address created");
       } catch (e) {
-        toast.error(e?.data?.message ?? "Failed to create address");
+        message.error(e?.data?.message ?? "Failed to create address");
       } finally {
         setIsCreatingAddress(false);
       }
@@ -968,7 +967,7 @@ const OrderForm = ({
             icon={<CheckCircleOutlined />}
             onClick={() => {
               if (!canSubmit) {
-                toast.error("Please fix all required fields");
+                message.error("Please fix all required fields");
                 return;
               }
               handleCreateDocument();

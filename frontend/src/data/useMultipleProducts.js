@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { API_URL } from "./config";
-import { toast } from "react-toastify";
+import { message } from "antd";
 export const useMultipleProducts = (products = []) => {
   const [productDetailsMap, setProductDetailsMap] = useState(new Map());
   const [isLoading, setIsLoading] = useState(true);
@@ -29,7 +29,7 @@ export const useMultipleProducts = (products = []) => {
 
         setProductDetailsMap(detailsMap);
       } catch (error) {
-        toast.error("Error fetching products:", error);
+        message.error("Error fetching products:", error);
         setIsError(true);
       } finally {
         setIsLoading(false);

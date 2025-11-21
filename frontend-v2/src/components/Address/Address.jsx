@@ -11,14 +11,13 @@ import {
   DeleteOutlined,
   MoreOutlined,
 } from "@ant-design/icons";
-import { Dropdown, Menu, Button, Pagination, Input } from "antd";
+import { Dropdown, Menu, Button, Pagination, Input, message } from "antd";
 import DeleteModal from "../Common/DeleteModal";
-import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "../Common/PageHeader";
 import AddAddress from "./AddAddressModal";
 
-// Custom CSS for search bar and table styling
+// Custom CSS (kept exactly as you had it)
 const styles = `
   .address-list-search .ant-input-affix-wrapper {
     border-radius: 8px;
@@ -76,7 +75,7 @@ const styles = `
   }
 `;
 
-// Inject styles into the document
+// Inject styles
 const styleSheet = document.createElement("style");
 styleSheet.type = "text/css";
 styleSheet.innerText = styles;
@@ -86,15 +85,11 @@ const AddressList = () => {
   const {
     data: addressesData,
     error: addressError,
-    isLoading: addressLoading,
     refetch,
   } = useGetAllAddressesQuery();
   const [deleteAddress, { isLoading: isDeleting }] = useDeleteAddressMutation();
-  const {
-    data: userData,
-    isLoading: userLoading,
-    error: userError,
-  } = useGetAllUsersQuery();
+  const { data: userData, error: userError } = useGetAllUsersQuery();
+
   const addresses = Array.isArray(addressesData) ? addressesData : [];
   const users = Array.isArray(userData?.users) ? userData.users : [];
 
@@ -172,13 +167,13 @@ const AddressList = () => {
     return filteredAndSortedAddresses
       .map((address) => ({
         ...address,
-        username:
-          userMap[address.userId] || (userLoading ? "Loading..." : "No User"),
+        username: userMap[address.userId] || "No User",
         createdAt: new Date(address.createdAt).toLocaleDateString(),
       }))
       .slice(startIndex, endIndex);
-  }, [filteredAndSortedAddresses, currentPage, userMap, userLoading]);
+  }, [filteredAndSortedAddresses, currentPage, userMap]);
 
+  // Handlers
   const handleAddAddress = () => {
     setEditMode(false);
     setSelectedAddress(null);
@@ -198,12 +193,14 @@ const AddressList = () => {
 
   const handleConfirmDelete = async () => {
     if (!addressToDelete?.addressId) {
-      toast.error("No address selected for deletion");
+      message.error("No address selected for deletion");
       setShowDeleteModal(false);
       return;
     }
     try {
       await deleteAddress(addressToDelete.addressId).unwrap();
+
+      // Adjust page if last item on page was deleted
       if (paginatedAddresses.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
@@ -212,7 +209,7 @@ const AddressList = () => {
       setAddressToDelete(null);
       refetch();
     } catch (err) {
-      toast.error(
+      message.error(
         `Failed to delete address: ${err.data?.message || "Unknown error"}`
       );
     }
@@ -225,36 +222,18 @@ const AddressList = () => {
     refetch();
   };
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-
+  const handlePageChange = (page) => setCurrentPage(page);
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
     setCurrentPage(1);
   };
-
   const clearFilters = () => {
     setSearchQuery("");
     setSortBy("Recently Added");
     setCurrentPage(1);
   };
 
-  if (addressLoading || userLoading) {
-    return (
-      <div className="content">
-        <div className="card">
-          <div className="card-body text-center">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </div>
-            <p>Loading addresses...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  // Error handling (global loader will show while data is fetching)
   if (addressError || userError) {
     return (
       <div className="content">
@@ -275,99 +254,6 @@ const AddressList = () => {
     );
   }
 
-  const columns = [
-    {
-      title: "Username",
-      dataIndex: "username",
-      key: "username",
-      render: (username, record) => (
-        <a
-          onClick={() => navigate(`/user/${record.userId || "profile"}`)}
-          style={{ color: "#e31e24" }}
-        >
-          {username}
-        </a>
-      ),
-    },
-    {
-      title: "Street",
-      dataIndex: "street",
-      key: "street",
-      render: (street) => street || "—",
-    },
-    {
-      title: "City",
-      dataIndex: "city",
-      key: "city",
-    },
-    {
-      title: "State",
-      dataIndex: "state",
-      key: "state",
-    },
-    {
-      title: "Postal Code",
-      dataIndex: "postalCode",
-      key: "postalCode",
-    },
-    {
-      title: "Country",
-      dataIndex: "country",
-      key: "country",
-    },
-    {
-      title: "Created At",
-      dataIndex: "createdAt",
-      key: "createdAt",
-    },
-    {
-      title: "",
-      key: "actions",
-      render: (_, record) => (
-        <Dropdown
-          overlay={
-            <Menu>
-              <Menu.Item
-                key="view"
-                onClick={() => navigate(`/user/${record.userId || "profile"}`)}
-                title={`View ${record.username || "user"}'s profile`}
-              >
-                <EyeOutlined style={{ marginRight: 8 }} />
-                View User
-              </Menu.Item>
-              <Menu.Item
-                key="edit"
-                onClick={() => handleEditAddress(record)}
-                title={`Edit ${record.username || "address"}`}
-              >
-                <EditOutlined style={{ marginRight: 8 }} />
-                Edit Address
-              </Menu.Item>
-              <Menu.Item
-                key="delete"
-                onClick={() => handleDeleteAddress(record)}
-                disabled={isDeleting}
-                style={{ color: "#ff4d4f" }}
-                title={`Delete ${record.username || "address"}`}
-              >
-                <DeleteOutlined style={{ marginRight: 8 }} />
-                Delete Address
-              </Menu.Item>
-            </Menu>
-          }
-          trigger={["click"]}
-          placement="bottomRight"
-        >
-          <Button
-            type="text"
-            icon={<MoreOutlined />}
-            aria-label={`More actions for ${record.username || "address"}`}
-          />
-        </Dropdown>
-      ),
-    },
-  ];
-
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -378,23 +264,24 @@ const AddressList = () => {
             onAdd={handleAddAddress}
             tableData={filteredAndSortedAddresses}
           />
+
           <div className="card-body">
-            <div className="row">
+            {/* Controls */}
+            <div className="row mb-3">
               <div className="col-lg-12">
-                <div className="d-flex align-items-center justify-content-between flex-wrap row-gap-3 mb-3 address-list-controls">
-                  <div className="input-icon-start position-relative">
-                    <Input
-                      className="address-list-search"
-                      placeholder="Search by username, street, city, etc."
-                      value={searchQuery}
-                      onChange={handleSearchChange}
-                      prefix={<FaSearch />}
-                      style={{ width: 300 }}
-                    />
-                  </div>
-                  <div className="d-flex align-items-center">
+                <div className="d-flex align-items-center justify-content-between flex-wrap row-gap-3 address-list-controls">
+                  <Input
+                    className="address-list-search"
+                    placeholder="Search by username, street, city, etc."
+                    value={searchQuery}
+                    onChange={handleSearchChange}
+                    prefix={<FaSearch />}
+                    style={{ width: 300 }}
+                  />
+
+                  <div className="d-flex align-items-center gap-2">
                     <select
-                      className="form-select me-2"
+                      className="form-select"
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value)}
                       style={{ width: 200 }}
@@ -417,6 +304,8 @@ const AddressList = () => {
                 </div>
               </div>
             </div>
+
+            {/* Table */}
             <div className="table-responsive">
               <table className="table table-hover">
                 <thead>
@@ -439,7 +328,7 @@ const AddressList = () => {
                           onClick={() =>
                             navigate(`/user/${address.userId || "profile"}`)
                           }
-                          style={{ color: "#e31e24" }}
+                          style={{ color: "#e31e24", cursor: "pointer" }}
                         >
                           {address.username}
                         </a>
@@ -461,9 +350,6 @@ const AddressList = () => {
                                     `/user/${address.userId || "profile"}`
                                   )
                                 }
-                                title={`View ${
-                                  address.username || "user"
-                                }'s profile`}
                               >
                                 <EyeOutlined style={{ marginRight: 8 }} />
                                 View User
@@ -471,7 +357,6 @@ const AddressList = () => {
                               <Menu.Item
                                 key="edit"
                                 onClick={() => handleEditAddress(address)}
-                                title={`Edit ${address.username || "address"}`}
                               >
                                 <EditOutlined style={{ marginRight: 8 }} />
                                 Edit Address
@@ -481,9 +366,6 @@ const AddressList = () => {
                                 onClick={() => handleDeleteAddress(address)}
                                 disabled={isDeleting}
                                 style={{ color: "#ff4d4f" }}
-                                title={`Delete ${
-                                  address.username || "address"
-                                }`}
                               >
                                 <DeleteOutlined style={{ marginRight: 8 }} />
                                 Delete Address
@@ -493,19 +375,15 @@ const AddressList = () => {
                           trigger={["click"]}
                           placement="bottomRight"
                         >
-                          <Button
-                            type="text"
-                            icon={<MoreOutlined />}
-                            aria-label={`More actions for ${
-                              address.username || "address"
-                            }`}
-                          />
+                          <Button type="text" icon={<MoreOutlined />} />
                         </Dropdown>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+
+              {/* Pagination */}
               {filteredAndSortedAddresses.length > itemsPerPage && (
                 <div className="pagination-section mt-4 d-flex justify-content-end">
                   <Pagination
@@ -518,20 +396,25 @@ const AddressList = () => {
                   />
                 </div>
               )}
+
+              {/* Empty state */}
+              {paginatedAddresses.length === 0 && (
+                <p className="text-muted text-center">
+                  No addresses match in the database match the applied filters.
+                </p>
+              )}
             </div>
-            {paginatedAddresses.length === 0 && (
-              <p className="text-muted">
-                No addresses match the applied filters
-              </p>
-            )}
           </div>
         </div>
+
+        {/* Modals */}
         {showModal && (
           <AddAddress
             onClose={handleCloseModal}
             existingAddress={selectedAddress}
           />
         )}
+
         {showDeleteModal && (
           <DeleteModal
             item={addressToDelete}

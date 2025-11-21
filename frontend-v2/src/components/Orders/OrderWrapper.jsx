@@ -9,7 +9,7 @@ import {
   useDeleteOrderMutation,
   useUpdateOrderStatusMutation,
 } from "../../api/orderApi";
-import { toast } from "sonner";
+import { message } from "antd";
 import { FaSearch } from "react-icons/fa";
 import {
   EditOutlined,
@@ -309,13 +309,13 @@ const OrderWrapper = () => {
   // ──────────────────────────────────────────────────────
   const handleStatusChange = async (orderId, newStatus) => {
     if (!canUpdateOrderStatus) {
-      toast.error("You don't have permission to update order status");
+      message.error("You don't have permission to update order status");
       return;
     }
     try {
       await updateOrderStatus({ orderId, status: newStatus }).unwrap();
     } catch (err) {
-      toast.error(
+      message.error(
         `Failed to update status: ${err.data?.message || "Unknown error"}`
       );
     }
@@ -327,7 +327,7 @@ const OrderWrapper = () => {
 
   const handleEditClick = (order) => {
     if (!canEditOrder) {
-      toast.error("You don't have permission to edit orders");
+      message.error("You don't have permission to edit orders");
       return;
     }
     navigate(`/order/${order.id}/edit`, { state: { order } });
@@ -340,7 +340,7 @@ const OrderWrapper = () => {
 
   const handleDeleteClick = (orderId) => {
     if (!canDeleteOrder) {
-      toast.error("You don't have permission to delete orders");
+      message.error("You don't have permission to delete orders");
       return;
     }
     setOrderToDelete(orderId);
@@ -364,7 +364,7 @@ const OrderWrapper = () => {
       await deleteOrder(orderId).unwrap();
       handleModalClose();
     } catch (err) {
-      toast.error(
+      message.error(
         `Failed to delete order: ${err.data?.message || "Unknown error"}`
       );
     }

@@ -8,6 +8,7 @@ import {
   useDeleteOrderMutation,
   useUpdateOrderStatusMutation,
   useUploadInvoiceMutation,
+  useIssueGatePassMutation,
 } from "../../api/orderApi";
 import {
   useGetCustomerByIdQuery,
@@ -32,6 +33,7 @@ import {
   Typography,
   Upload,
   Badge,
+  message,
 } from "antd";
 import {
   EllipsisOutlined,
@@ -39,8 +41,10 @@ import {
   MailOutlined,
   PhoneOutlined,
   EditOutlined,
+  FilePdfOutlined,
+  DownloadOutlined,
+  FileImageOutlined,
 } from "@ant-design/icons";
-import { toast } from "sonner";
 import { Document, Page, pdfjs } from "react-pdf";
 import useProductsData from "../../data/useProductdata";
 import AddAddress from "../Address/AddAddressModal";
@@ -48,17 +52,17 @@ import "./orderpage.css";
 import { PiPaperPlaneTiltFill } from "react-icons/pi";
 import { Helmet } from "react-helmet";
 
-// Set PDF.js worker
+// PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
 
 const { Text, Title } = Typography;
 
-// CommentRow Component (unchanged)
+// ──────────────────────────────────────────────
+// Comment Row Component
+// ──────────────────────────────────────────────
 const CommentRow = ({ comment, onDelete, currentUserId }) => {
   const isCurrentUser = comment.userId === currentUserId;
-  const userInitial = comment.user?.name
-    ? comment.user.name[0].toUpperCase()
-    : "U";
+  const userInitial = comment.user?.name?.[0]?.toUpperCase() || "U";
 
   return (
     <div
@@ -132,34 +136,37 @@ const CommentRow = ({ comment, onDelete, currentUserId }) => {
   );
 };
 
+// ──────────────────────────────────────────────
+// Main OrderPage Component
+// ──────────────────────────────────────────────
 const OrderPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [customerMap, setCustomerMap] = useState({});
-  const [deleteOrder] = useDeleteOrderMutation();
-  const [updateOrderStatus] = useUpdateOrderStatusMutation();
-  const [addComment] = useAddCommentMutation();
-  const [deleteComment] = useDeleteCommentMutation();
-  const [uploadInvoice, { isLoading: isUploading }] =
-    useUploadInvoiceMutation();
-  const [teamMap, setTeamMap] = useState({});
+
+  // ── STATE ──
   const [newComment, setNewComment] = useState("");
   const [commentPage, setCommentPage] = useState(1);
   const [invoiceFile, setInvoiceFile] = useState(null);
+  const [gatePassFile, setGatePassFile] = useState(null);
   const [pdfPageNum, setPdfPageNum] = useState(1);
   const [numPages, setNumPages] = useState(null);
   const [isBillingModalVisible, setIsBillingModalVisible] = useState(false);
   const [isShippingModalVisible, setIsShippingModalVisible] = useState(false);
   const commentLimit = 10;
 
-  // Fetch data
-  const {
-    data: profileData,
-    isLoading: profileLoading,
-    error: profileError,
-  } = useGetProfileQuery();
-  const user = profileData?.user || {};
+  // ── RTK QUERY ──
+  const [deleteOrder] = useDeleteOrderMutation();
+  const [updateOrderStatus] = useUpdateOrderStatusMutation();
+  const [addComment] = useAddCommentMutation();
+  const [deleteComment] = useDeleteCommentMutation();
+  const [uploadInvoice, { isLoading: isUploading }] =
+    useUploadInvoiceMutation();
+  const [issueGatePass, { isLoading: isGatePassUploading }] =
+    useIssueGatePassMutation();
 
+  const { data: profileData, isLoading: profileLoading } = useGetProfileQuery();
+  const user = profileData?.user || {};
+  console.log(user);
   const {
     data: orderData,
     isLoading: orderLoading,
@@ -168,11 +175,7 @@ const OrderPage = () => {
   } = useGetOrderDetailsQuery(id);
   const order = orderData?.order || {};
 
-  const {
-    data: commentData,
-    isLoading: commentLoading,
-    error: commentError,
-  } = useGetCommentsQuery(
+  const { data: commentData, isLoading: commentLoading } = useGetCommentsQuery(
     {
       resourceId: id,
       resourceType: "Order",
@@ -182,33 +185,35 @@ const OrderPage = () => {
     { skip: !id }
   );
 
-  const {
-    data: customerData,
-    isLoading: customerLoading,
-    error: customerError,
-  } = useGetCustomerByIdQuery(order.createdFor, {
+  const { data: customerData } = useGetCustomerByIdQuery(order.createdFor, {
     skip: !order.createdFor,
   });
-  const customer = customerData?.data || customerData || {};
+  const customer = customerData?.data || {};
 
-  const {
-    data: addressesData,
-    isLoading: addressesLoading,
-    error: addressesError,
-    refetch: refetchAddresses,
-  } = useGetAllAddressesQuery(
-    { customerId: order.createdFor },
-    { skip: !order.createdFor }
-  );
+  const { data: addressesData, refetch: refetchAddresses } =
+    useGetAllAddressesQuery(
+      { customerId: order.createdFor },
+      { skip: !order.createdFor }
+    );
 
-  const {
-    data: teamData,
-    isLoading: teamLoading,
-    error: teamError,
-  } = useGetAllTeamsQuery();
+  const { data: teamData } = useGetAllTeamsQuery();
   const { data: customersData } = useGetCustomersQuery();
+  const totalOrders = useMemo(() => {
+    if (!customersData?.data || !order.createdFor) return 0;
 
-  // Process quotation details with fallback to order.quotation
+    const customer = customersData.data.find(
+      (c) => c.customerId === order.createdFor
+    );
+
+    // Try multiple possible shapes
+    return (
+      customer?.orders?.length ||
+      customer?.orderCount ||
+      customer?.totalOrders ||
+      0
+    );
+  }, [customersData, order.createdFor]);
+  // ── PRODUCTS & QUOTATION ──
   const quotationDetails = useMemo(() => {
     const details = order.quotationDetails || order.quotation || {};
     return {
@@ -225,128 +230,80 @@ const OrderPage = () => {
       discountAmount: parseFloat(details.discountAmount || 0),
       roundOff: parseFloat(details.roundOff || 0),
       finalAmount: parseFloat(details.finalAmount || 0),
-      signature_name: details.signature_name || null,
-      signature_image: details.signature_image || null,
-      createdBy: details.createdBy || null,
-      customerId: details.customerId || null,
-      shipTo: details.shipTo || null,
-      status: details.status || "N/A",
     };
   }, [order.quotationDetails, order.quotation]);
 
-  // Product data processing
   const products = useMemo(() => {
-    try {
-      // First, try to use order.products if it exists and is an array
-      if (
-        order.products &&
-        Array.isArray(order.products) &&
-        order.products.length > 0
-      ) {
-        return order.products;
-      }
-      // Fallback to order.quotation.products if available
-      if (order.quotation?.products) {
-        try {
-          const quotationProducts =
-            typeof order.quotation.products === "string"
-              ? JSON.parse(order.quotation.products)
-              : order.quotation.products;
-
-          if (Array.isArray(quotationProducts)) {
-            return quotationProducts;
-          }
-        } catch (error) {
-          toast.error("Error parsing quotation products:", error);
-        }
-      }
-      return [];
-    } catch (error) {
-      toast.error("Error processing order products:", error);
-      return [];
+    if (
+      order.products &&
+      Array.isArray(order.products) &&
+      order.products.length > 0
+    )
+      return order.products;
+    if (order.quotation?.products) {
+      try {
+        const qp =
+          typeof order.quotation.products === "string"
+            ? JSON.parse(order.quotation.products)
+            : order.quotation.products;
+        if (Array.isArray(qp)) return qp;
+      } catch {}
     }
+    return [];
   }, [order.products, order.quotation]);
+
   const productInputs = useMemo(
     () =>
-      products.map((product) => ({
-        productId: product.productId || product.id,
-        price: product.price || 0,
-        total: product.total || 0,
-        discount: product.discount || 0,
-        quantity: product.quantity || 1,
+      products.map((p) => ({
+        productId: p.productId || p.id,
+        price: p.price || 0,
+        total: p.total || 0,
+        discount: p.discount || 0,
+        quantity: p.quantity || 1,
       })),
     [products]
   );
 
-  const {
-    productsData,
-    errors: productErrors,
-    loading: productsLoading,
-  } = useProductsData(productInputs);
-
-  useEffect(() => {
-    if (productErrors.length > 0) {
-      productErrors.forEach(({ productId, error }) => {
-        toast.error(`Failed to fetch product ${productId}: ${error}`);
-      });
-    }
-  }, [productErrors]);
+  const { productsData, loading: productsLoading } =
+    useProductsData(productInputs);
 
   const mergedProducts = useMemo(() => {
-    return productInputs.map((orderProduct) => {
-      const productDetail =
-        productsData.find((p) => p.productId === orderProduct.productId) || {};
-
+    return productInputs.map((op) => {
+      const pd = productsData.find((p) => p.productId === op.productId) || {};
       let imageUrl = "https://via.placeholder.com/60";
       try {
-        if (productDetail.images) {
-          const imgs = JSON.parse(productDetail.images);
+        if (pd.images) {
+          const imgs = JSON.parse(pd.images);
           imageUrl =
             Array.isArray(imgs) && imgs.length > 0 ? imgs[0] : imageUrl;
         }
-      } catch {
-        // Fallback to placeholder
-      }
+      } catch {}
 
-      let brandName = "N/A";
-      if (productDetail.brandName) {
-        brandName = productDetail.brandName;
-      } else if (productDetail.metaDetails) {
-        const brandMeta = productDetail.metaDetails.find(
+      let brandName = pd.brandName || "N/A";
+      if (pd.metaDetails) {
+        const brandMeta = pd.metaDetails.find(
           (m) => m.title === "brandName" || m.title === "brand"
         );
-        brandName = brandMeta?.value || "N/A";
+        brandName = brandMeta?.value || brandName;
       }
-
-      if (
-        /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
-          brandName
-        )
-      ) {
-        brandName = "N/A";
-      }
+      if (/^[0-9a-fA-F-]{36}$/.test(brandName)) brandName = "N/A";
 
       const productCode =
-        productDetail?.product_code ||
-        productDetail?.meta?.d11da9f9_3f2e_4536_8236_9671200cca4a ||
+        pd.product_code ||
+        pd.meta?.d11da9f9_3f2e_4536_8236_9671200cca4a ||
         "N/A";
-
       const sellingPrice =
-        productDetail.metaDetails?.find((m) => m.title === "Selling Price")
-          ?.value ||
-        orderProduct.price ||
-        productDetail.price ||
+        pd.metaDetails?.find((m) => m.title === "Selling Price")?.value ||
+        op.price ||
         0;
 
       return {
-        productId: orderProduct.productId,
+        productId: op.productId,
         price: parseFloat(sellingPrice),
-        total:
-          parseFloat(orderProduct.total) ||
-          sellingPrice * orderProduct.quantity,
-        discount: parseFloat(orderProduct.discount) || 0,
-        quantity: orderProduct.quantity || 1,
-        name: productDetail?.name || orderProduct.name || "Unnamed Product",
+        total: parseFloat(op.total) || sellingPrice * op.quantity,
+        discount: parseFloat(op.discount) || 0,
+        quantity: op.quantity || 1,
+        name: pd.name || op.name || "Unnamed Product",
         brand: brandName,
         sku: productCode,
         image: imageUrl,
@@ -357,43 +314,11 @@ const OrderPage = () => {
   const comments = useMemo(() => commentData?.comments || [], [commentData]);
   const totalComments = commentData?.totalCount || 0;
 
-  useEffect(() => {
-    if (customersData?.data) {
-      const map = customersData.data.reduce((acc, customer) => {
-        acc[customer.customerId] = customer.name || "—";
-        return acc;
-      }, {});
-      setCustomerMap(map);
-    }
-  }, [customersData]);
-
-  useEffect(() => {
-    if (teamData?.teams) {
-      const map = teamData.teams.reduce((acc, team) => {
-        acc[team.id] = team.teamName || "—";
-        return acc;
-      }, {});
-      setTeamMap(map);
-    }
-  }, [teamData]);
-
-  const userMap = useMemo(() => {
-    const map = {};
-    if (teamData?.teams) {
-      teamData.teams.forEach((team) => {
-        team.teammembers.forEach((member) => {
-          map[member.userId] = member.userName;
-        });
-      });
-    }
-    return map;
-  }, [teamData]);
-
+  // ── ADDRESSES ──
   const billingAddress = useMemo(
     () =>
       addressesData?.find(
-        (addr) =>
-          addr.status === "BILLING" && addr.customerId === order.createdFor
+        (a) => a.status === "BILLING" && a.customerId === order.createdFor
       ) || null,
     [addressesData, order.createdFor]
   );
@@ -401,168 +326,145 @@ const OrderPage = () => {
   const shippingAddress = useMemo(
     () =>
       addressesData?.find(
-        (addr) =>
-          addr.status === "SHIPPING" && addr.customerId === order.createdFor
+        (a) => a.status === "ADDITIONAL" && a.customerId === order.createdFor
       ) ||
       order.shippingAddress ||
       null,
     [addressesData, order.createdFor, order.shippingAddress]
   );
 
-  const handleFileChange = ({ file }) => {
+  // ── FILE HANDLERS ──
+  const handleInvoiceChange = ({ file }) => {
     if (file && file.type === "application/pdf") {
       setInvoiceFile(file);
     } else {
-      toast.error("Please upload a valid PDF file.");
+      message.error("Only PDF files are allowed for invoice.");
     }
   };
 
-  const handleInvoiceFormSubmit = async () => {
-    if (!invoiceFile) {
-      toast.error("Please select a PDF file to upload.");
-      return;
+  const handleGatePassChange = ({ file }) => {
+    const allowed = ["application/pdf", "image/png", "image/jpeg", "image/jpg"];
+    if (file && allowed.includes(file.type)) {
+      setGatePassFile(file);
+    } else {
+      message.error("Only PDF, PNG, JPG allowed for gate-pass.");
     }
-    if (!id) {
-      toast.error("Order ID is missing.");
-      return;
-    }
+  };
 
+  const handleInvoiceSubmit = async () => {
+    if (!invoiceFile) return message.error("Select a PDF file.");
+    const formData = new FormData();
+    formData.append("invoice", invoiceFile);
     try {
-      const formData = new FormData();
-      formData.append("invoice", invoiceFile);
       await uploadInvoice({ orderId: id, formData }).unwrap();
       setInvoiceFile(null);
-      await refetchOrder();
-    } catch (err) {
-      toast.error(
-        `Upload error: ${err.data?.message || "Failed to upload invoice"}`
-      );
-    }
-  };
-
-  const onDocumentLoadSuccess = ({ numPages }) => {
-    setNumPages(numPages);
-    setPdfPageNum(1);
-  };
-
-  const handleEditOrder = () => {
-    navigate(`/order/${order.id}/edit`, { state: { order } });
-  };
-
-  const handleDeleteOrder = async () => {
-    if (window.confirm("Are you sure you want to delete this order?")) {
-      try {
-        await deleteOrder(id).unwrap();
-        navigate("/orders/list");
-      } catch (err) {
-        toast.error(
-          `Failed to delete order: ${err?.data?.message || "Unknown error"}`
-        );
-      }
-    }
-  };
-
-  const handleHoldOrder = async () => {
-    try {
-      await updateOrderStatus({ id, status: "ONHOLD" }).unwrap();
       refetchOrder();
     } catch (err) {
-      toast.error(
-        `Failed to update order status: ${
-          err?.data?.message || "Unknown error"
-        }`
-      );
+      message.error(err.data?.message || "Upload failed");
+    }
+  };
+
+  const handleGatePassSubmit = async () => {
+    if (!gatePassFile) return message.error("Select a file.");
+    const formData = new FormData();
+    formData.append("gatepass", gatePassFile);
+    try {
+      await issueGatePass({ orderId: id, formData }).unwrap();
+      setGatePassFile(null);
+      refetchOrder();
+    } catch (err) {
+      message.error(err.data?.message || "Gate-pass upload failed");
+    }
+  };
+
+  // ── URL HELPERS ──
+  const getFileUrl = (link) => {
+    if (!link) return null;
+    return link.startsWith("http")
+      ? link
+      : `${process.env.REACT_APP_FTP_BASE_URL}${link}`;
+  };
+
+  const invoiceUrl = getFileUrl(order.invoiceLink);
+  const gatePassUrl = getFileUrl(order.gatePassLink);
+
+  const isDispatched = order.status === "DISPATCHED";
+
+  // ── ACTION HANDLERS ──
+  const handleEditOrder = () =>
+    navigate(`/order/${order.id}/edit`, { state: { order } });
+  const handleDeleteOrder = async () => {
+    if (!window.confirm("Delete this order?")) return;
+    try {
+      await deleteOrder(id).unwrap();
+      navigate("/orders/list");
+    } catch (err) {
+      message.error(err?.data?.message || "Delete failed");
     }
   };
 
   const handleAddComment = async () => {
-    if (!newComment.trim()) {
-      toast.error("Comment cannot be empty");
-      return;
-    }
-    if (!user.userId) {
-      toast.error("User profile not loaded. Please log in again.");
-      navigate("/login");
-      return;
-    }
+    if (!newComment.trim()) return message.error("Comment cannot be empty");
+    if (!user.userId) return navigate("/login");
 
     try {
       await addComment({
         resourceId: id,
         resourceType: "Order",
-        userId: user.userId,
+        userId: String(user.userId || "").trim(),
         comment: newComment,
       }).unwrap();
       setNewComment("");
     } catch (err) {
-      const errorMessage =
-        err?.data?.message || "Failed to add comment. Please try again.";
-      if (errorMessage.includes("maximum of 3 comments")) {
-        toast.error(
-          "You have reached the maximum of 3 comments for this order."
-        );
-      } else {
-        toast.error(errorMessage);
-      }
+      message.error(err?.data?.message || "Failed to add comment");
     }
   };
-
   const handleDeleteComment = async (commentId) => {
-    if (!user.userId) {
-      toast.error("User profile not loaded. Please log in again.");
-      navigate("/login");
-      return;
-    }
-    if (window.confirm("Are you sure you want to delete this comment?")) {
-      try {
-        await deleteComment({ commentId, userId: user.userId }).unwrap();
-      } catch (err) {
-        toast.error(
-          `Failed to delete comment: ${err?.data?.message || "Unknown error"}`
-        );
-      }
+    if (!window.confirm("Delete comment?")) return;
+    try {
+      await deleteComment({
+        commentId,
+        userId: String(user.userId || "").trim(),
+      }).unwrap();
+    } catch (err) {
+      message.error(err?.data?.message || "Delete failed");
     }
   };
 
-  const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= Math.ceil(totalComments / commentLimit)) {
-      setCommentPage(newPage);
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= Math.ceil(totalComments / commentLimit)) {
+      setCommentPage(page);
     }
   };
+  // ── CALCULATIONS ──
+  // ── CALCULATIONS (FINAL & CORRECT) ──
+  const lineItemsTotal = useMemo(() => {
+    return mergedProducts.reduce(
+      (sum, p) => sum + (parseFloat(p.total) || 0),
+      0
+    );
+  }, [mergedProducts]);
 
-  const handleAddressSave = async () => {
-    await refetchAddresses();
+  const gstRate = order.gst ? parseFloat(order.gst) : 18;
+  const gstAmount = order.gstValue
+    ? parseFloat(order.gstValue)
+    : (lineItemsTotal * gstRate) / 100;
+
+  const extraDiscountAmount = order.extraDiscountValue
+    ? parseFloat(order.extraDiscountValue)
+    : 0;
+
+  const finalAmount = parseFloat(order.finalAmount || 0);
+
+  // For display: actual ₹ discount per item
+  const getItemDiscountAmount = (item) => {
+    if (!item.discount || item.discount === 0) return 0;
+    if (item.discountType === "fixed") return item.discount;
+    return (item.price * item.quantity * item.discount) / 100;
   };
 
-  const handleBillingModalClose = () => {
-    setIsBillingModalVisible(false);
-  };
-
-  const handleShippingModalClose = () => {
-    setIsShippingModalVisible(false);
-  };
-
-  const pdfUrl =
-    order.invoiceLink && order.invoiceLink !== ""
-      ? order.invoiceLink.startsWith("http")
-        ? order.invoiceLink
-        : `${process.env.REACT_APP_FTP_BASE_URL}${order.invoiceLink}`
-      : null;
-
-  if (profileError && profileError.status === 401) {
-    toast.error("Please log in to access this page.");
-    navigate("/login");
-    return null;
-  }
-
-  if (
-    profileLoading ||
-    orderLoading ||
-    teamLoading ||
-    productsLoading ||
-    customerLoading ||
-    addressesLoading
-  ) {
+  // ── LOADING / ERROR ──
+  if (profileLoading || orderLoading || productsLoading) {
     return (
       <div className="loading-container">
         <Spin /> <Text style={{ marginLeft: 8 }}>Loading...</Text>
@@ -570,46 +472,18 @@ const OrderPage = () => {
     );
   }
 
-  if (
-    profileError ||
-    orderError ||
-    teamError ||
-    customerError ||
-    addressesError ||
-    productErrors.length > 0
-  ) {
+  if (orderError || !order.id) {
     return (
       <div className="error-container">
         <Alert
-          message={
-            profileError?.data?.message ||
-            orderError?.data?.message ||
-            teamError?.data?.message ||
-            customerError?.data?.message ||
-            addressesError?.data?.message ||
-            productErrors.map((err) => err.error).join(", ") ||
-            "Error loading data. Please try again."
-          }
+          message={orderError?.data?.message || "Order not found"}
           type="error"
         />
       </div>
     );
   }
 
-  // Financial calculations
-  const subTotal = mergedProducts.reduce(
-    (acc, product) => acc + (product.total || product.price * product.quantity),
-    0
-  );
-  const discount = mergedProducts.reduce(
-    (acc, product) => acc + (product.discount || 0),
-    0
-  );
-  const vat = subTotal * 0.1; // Assuming 10% VAT
-  const total = subTotal - discount + vat;
-
-  const totalOrders = customerData?.invoices?.length || 0;
-
+  // ── MENU ──
   const menu = (
     <Menu>
       <Menu.Item key="edit" onClick={handleEditOrder}>
@@ -618,65 +492,59 @@ const OrderPage = () => {
       <Menu.Item key="delete" danger onClick={handleDeleteOrder}>
         Delete
       </Menu.Item>
-      <Menu.Item key="hold" onClick={handleHoldOrder}>
-        Put on Hold
-      </Menu.Item>
     </Menu>
   );
 
   const columns = [
     {
       title: "Product",
-      dataIndex: "product",
       key: "product",
-      render: (_, record) => (
+      render: (_, r) => (
         <div className="product-cell">
           <img
-            src={record.image}
-            alt={record.name}
+            src={r.imageUrl}
+            alt={r.name}
             className="product-image"
-            onError={(e) => {
-              e.target.src = "https://via.placeholder.com/60";
-            }}
+            onError={(e) => (e.target.src = "https://via.placeholder.com/60")}
           />
           <div>
-            <Text strong>{record.name}</Text>
+            <Text strong>{r.name}</Text>
           </div>
         </div>
       ),
     },
     {
-      title: "Product Code",
+      title: "Code",
       dataIndex: "sku",
       key: "sku",
-      render: (sku) => <Text type="secondary">{sku}</Text>,
+      render: (s) => <Text type="secondary">{s}</Text>,
     },
+    { title: "Qty", dataIndex: "quantity", key: "quantity", align: "center" },
     {
-      title: "Quantity",
-      dataIndex: "quantity",
-      key: "quantity",
-      align: "center",
-      render: (quantity) => quantity || 1,
-    },
-    {
-      title: "Price Per Unit",
+      title: "Price",
       dataIndex: "price",
       key: "price",
-      render: (price) => `₹${parseFloat(price).toFixed(2)}`,
+      render: (p) => `₹${parseFloat(p).toFixed(2)}`,
     },
     {
-      title: "Discount",
-      dataIndex: "discount",
+      title: "Disc",
       key: "discount",
-      render: (discount) => `₹${parseFloat(discount || 0).toFixed(2)}`,
+      render: (_, r) => {
+        const discAmt = getItemDiscountAmount(r);
+        return discAmt > 0 ? (
+          <Text type="danger">-₹{discAmt.toFixed(2)}</Text>
+        ) : (
+          <Text type="secondary">—</Text>
+        );
+      },
     },
     {
       title: "Total",
-      dataIndex: "total",
       key: "total",
       align: "right",
-      render: (total, record) =>
-        `₹${parseFloat(total || record.price * record.quantity).toFixed(2)}`,
+      render: (_, r) => (
+        <Text strong>₹{parseFloat(r.total || 0).toFixed(2)}</Text>
+      ),
     },
   ];
 
@@ -687,6 +555,7 @@ const OrderPage = () => {
       </Helmet>
       <div className="content">
         <div className="container-fluid">
+          {/* MAIN GRID */}
           <Row gutter={[16, 16]}>
             <Col xs={24} lg={16} xxl={18}>
               <Row gutter={[16, 16]}>
@@ -708,11 +577,7 @@ const OrderPage = () => {
                           text={order.status}
                         />
                         <Dropdown overlay={menu} trigger={["click"]}>
-                          <Button
-                            type="text"
-                            icon={<EllipsisOutlined />}
-                            aria-label="Order actions"
-                          />
+                          <Button type="text" icon={<EllipsisOutlined />} />
                         </Dropdown>
                       </Space>
                     }
@@ -722,77 +587,75 @@ const OrderPage = () => {
                       columns={columns}
                       dataSource={mergedProducts}
                       pagination={false}
-                      rowKey={(record) => record.productId}
-                      className="product-table"
+                      rowKey="productId"
                       scroll={{ x: "max-content" }}
                       footer={() => (
-                        <div className="table-footer">
-                          <table>
+                        <div
+                          className="table-footer"
+                          style={{
+                            padding: "16px 24px",
+                            background: "#fafafa",
+                          }}
+                        >
+                          <table
+                            style={{
+                              width: "100%",
+                              borderCollapse: "collapse",
+                            }}
+                          >
                             <tbody>
                               <tr>
-                                <td>Sub Total:</td>
-                                <td>
-                                  <Text strong>₹{subTotal.toFixed(2)}</Text>
+                                <td style={{ padding: "6px 0" }}>Sub Total:</td>
+                                <td align="right">
+                                  ₹{lineItemsTotal.toFixed(2)}
                                 </td>
                               </tr>
+                              {extraDiscountAmount > 0 && (
+                                <tr>
+                                  <td
+                                    style={{
+                                      padding: "6px 0",
+                                      color: "#d9363e",
+                                    }}
+                                  >
+                                    Extra Discount{" "}
+                                    {order.extraDiscountType === "percent"
+                                      ? `(${order.extraDiscount}%)`
+                                      : ""}
+                                  </td>
+                                  <td
+                                    align="right"
+                                    style={{ color: "#d9363e" }}
+                                  >
+                                    -₹{extraDiscountAmount.toFixed(2)}
+                                  </td>
+                                </tr>
+                              )}
                               <tr>
-                                <td>Avail Discount:</td>
-                                <td>
-                                  <Text strong>-₹{discount.toFixed(2)}</Text>
+                                <td style={{ padding: "6px 0" }}>
+                                  GST {gstRate > 0 ? `(${gstRate}%)` : ""}
                                 </td>
+                                <td align="right">₹{gstAmount.toFixed(2)}</td>
                               </tr>
-                              <tr>
-                                <td>Tax:</td>
-                                <td>
-                                  <Text strong>₹{vat.toFixed(2)}</Text>
+                              <tr
+                                style={{
+                                  borderTop: "2px solid #ddd",
+                                  fontSize: "1.1em",
+                                }}
+                              >
+                                <td style={{ padding: "12px 0" }}>
+                                  <Text strong>Final Amount:</Text>
                                 </td>
-                              </tr>
-                              <tr>
-                                <td>Total:</td>
-                                <td>
-                                  <Text strong className="total-amount">
-                                    ₹{total.toFixed(2)}
+                                <td align="right">
+                                  <Text
+                                    strong
+                                    type="danger"
+                                    style={{ fontSize: "1.3em" }}
+                                  >
+                                    ₹{finalAmount.toFixed(2)}
                                   </Text>
                                 </td>
                               </tr>
-                              {(quotationDetails.quotationId ||
-                                order.quotation) && (
-                                <>
-                                  <tr>
-                                    <td>Quotation Discount:</td>
-                                    <td>
-                                      <Text strong>
-                                        -₹
-                                        {parseFloat(
-                                          quotationDetails.discountAmount
-                                        ).toFixed(2)}
-                                      </Text>
-                                    </td>
-                                  </tr>
-                                  <tr>
-                                    <td>Round Off:</td>
-                                    <td>
-                                      <Text strong>
-                                        ₹
-                                        {parseFloat(
-                                          quotationDetails.roundOff
-                                        ).toFixed(2)}
-                                      </Text>
-                                    </td>
-                                  </tr>
-                                  <tr>
-                                    <td>Final Quotation Total:</td>
-                                    <td>
-                                      <Text strong className="total-amount">
-                                        ₹
-                                        {parseFloat(
-                                          quotationDetails.finalAmount
-                                        ).toFixed(2)}
-                                      </Text>
-                                    </td>
-                                  </tr>
-                                </>
-                              )}
                             </tbody>
                           </table>
                         </div>
@@ -993,10 +856,8 @@ const OrderPage = () => {
                       </li>
 
                       <li>
-                        <Text type="secondary">Amount Paid</Text>
-                        <Text strong>
-                          ₹{(parseFloat(order.finalAmount) || 0).toFixed(2)}
-                        </Text>
+                        <Text type="secondary">Final Amount</Text>
+                        <Text strong>₹{finalAmount.toFixed(2)}</Text>
                       </li>
                       <li>
                         <Text type="secondary">Order Date</Text>
@@ -1077,15 +938,16 @@ const OrderPage = () => {
             </Col>
           </Row>
 
+          {/* INVOICE + GATE-PASS */}
           <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
-            <Col xs={24}>
-              <Card title="📄 Invoice" className="invoice-card">
-                <Form onFinish={handleInvoiceFormSubmit} layout="vertical">
-                  <Form.Item label="Upload Invoice (PDF only)" name="invoice">
+            <Col xs={24} md={12}>
+              <Card title="Invoice">
+                <Form onFinish={handleInvoiceSubmit} layout="vertical">
+                  <Form.Item label="Upload PDF">
                     <Upload
                       accept="application/pdf"
                       beforeUpload={() => false}
-                      onChange={handleFileChange}
+                      onChange={handleInvoiceChange}
                       fileList={
                         invoiceFile
                           ? [
@@ -1101,9 +963,6 @@ const OrderPage = () => {
                     >
                       <Button>Choose File</Button>
                     </Upload>
-                    <Text type="secondary" className="upload-hint">
-                      Upload a PDF invoice.
-                    </Text>
                   </Form.Item>
                   <Button
                     type="primary"
@@ -1111,172 +970,177 @@ const OrderPage = () => {
                     disabled={!invoiceFile || isUploading}
                     loading={isUploading}
                   >
-                    Upload Invoice
+                    Upload
                   </Button>
                 </Form>
-                {pdfUrl ? (
-                  <div className="pdf-viewer">
-                    <div className="pdf-header">
-                      <span className="pdf-icon">📄</span>
-                      <div>
-                        <a
-                          href={pdfUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <Text strong>
-                            {order.invoiceLink.split("/").pop() ||
-                              "Invoice.pdf"}
-                          </Text>
-                        </a>
-                        <Text type="secondary" className="pdf-type">
-                          PDF Document
-                        </Text>
-                      </div>
-                      <Button
-                        type="default"
-                        onClick={() => {
-                          const link = document.createElement("a");
-                          link.href = pdfUrl;
-                          link.download =
-                            order.invoiceLink.split("/").pop() || "invoice.pdf";
-                          document.body.appendChild(link);
-                          link.click();
-                          document.body.removeChild(link);
-                        }}
-                      >
-                        Download
-                      </Button>
-                    </div>
-                    <div className="pdf-container">
-                      <Document
-                        file={pdfUrl}
-                        onLoadSuccess={onDocumentLoadSuccess}
-                        onLoadError={(error) => {
-                          toast.error("Failed to load PDF invoice.");
-                        }}
-                      >
-                        <Page pageNumber={pdfPageNum} width={600} />
-                      </Document>
-                      {numPages && (
-                        <div className="pdf-controls">
-                          <Button
-                            disabled={pdfPageNum <= 1}
-                            onClick={() => setPdfPageNum(pdfPageNum - 1)}
-                          >
-                            Previous
-                          </Button>
-                          <Text>
-                            Page {pdfPageNum} of {numPages}
-                          </Text>
-                          <Button
-                            disabled={pdfPageNum >= numPages}
-                            onClick={() => setPdfPageNum(pdfPageNum + 1)}
-                          >
-                            Next
-                          </Button>
-                        </div>
-                      )}
-                    </div>
+
+                {invoiceUrl && (
+                  <div style={{ marginTop: 16 }}>
+                    <a
+                      href={invoiceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <FilePdfOutlined /> {order.invoiceLink.split("/").pop()}
+                    </a>
+                    <Button
+                      icon={<DownloadOutlined />}
+                      size="small"
+                      style={{ marginLeft: 8 }}
+                      onClick={() => {
+                        const a = document.createElement("a");
+                        a.href = invoiceUrl;
+                        a.download = order.invoiceLink.split("/").pop();
+                        a.click();
+                      }}
+                    >
+                      Download
+                    </Button>
                   </div>
-                ) : (
+                )}
+              </Card>
+            </Col>
+
+            <Col xs={24} md={12}>
+              <Card
+                title="Gate-Pass"
+                extra={
+                  isDispatched && <Badge status="success" text="Dispatched" />
+                }
+              >
+                {isDispatched ? (
                   <Alert
-                    message="No invoice uploaded for this order."
-                    type="warning"
-                    style={{ marginTop: 16 }}
+                    message="Cannot modify gate-pass after dispatch"
+                    type="info"
                   />
+                ) : (
+                  <Form onFinish={handleGatePassSubmit} layout="vertical">
+                    <Form.Item label="Upload (PDF/PNG/JPG)">
+                      <Upload
+                        accept="application/pdf,image/*"
+                        beforeUpload={() => false}
+                        onChange={handleGatePassChange}
+                        fileList={
+                          gatePassFile
+                            ? [
+                                {
+                                  uid: "-1",
+                                  name: gatePassFile.name,
+                                  status: "done",
+                                },
+                              ]
+                            : []
+                        }
+                        disabled={isGatePassUploading}
+                      >
+                        <Button>Choose File</Button>
+                      </Upload>
+                    </Form.Item>
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      disabled={!gatePassFile || isGatePassUploading}
+                      loading={isGatePassUploading}
+                    >
+                      Upload
+                    </Button>
+                  </Form>
+                )}
+
+                {gatePassUrl && (
+                  <div style={{ marginTop: 16, textAlign: "center" }}>
+                    {gatePassUrl.endsWith(".pdf") ? (
+                      <Document
+                        file={gatePassUrl}
+                        onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+                      >
+                        <Page pageNumber={1} width={300} />
+                      </Document>
+                    ) : (
+                      <img
+                        src={gatePassUrl}
+                        alt="Gate Pass"
+                        style={{
+                          maxWidth: "100%",
+                          maxHeight: 300,
+                          borderRadius: 8,
+                        }}
+                      />
+                    )}
+                    <br />
+                    <Button
+                      icon={<DownloadOutlined />}
+                      size="small"
+                      style={{ marginTop: 8 }}
+                      onClick={() => {
+                        const a = document.createElement("a");
+                        a.href = gatePassUrl;
+                        a.download = order.gatePassLink.split("/").pop();
+                        a.click();
+                      }}
+                    >
+                      Download
+                    </Button>
+                  </div>
                 )}
               </Card>
             </Col>
           </Row>
 
-          <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
+          {/* COMMENTS */}
+          <Row style={{ marginTop: 24 }}>
             <Col xs={24}>
-              <Card className="comments-card">
-                <div className="comments-container">
-                  {!user.userId ? (
-                    <Alert
-                      message={
-                        <span>
-                          You must be logged in to add comments.{" "}
-                          <Button
-                            type="link"
-                            onClick={() => navigate("/login")}
-                            style={{ padding: 0 }}
-                          >
-                            Log in
-                          </Button>
-                        </span>
-                      }
-                      type="warning"
-                      style={{ marginTop: 16 }}
+              <Card title="Comments">
+                <Form
+                  onFinish={handleAddComment}
+                  layout="inline"
+                  style={{ marginBottom: 16 }}
+                >
+                  <Form.Item style={{ flex: 1 }}>
+                    <Input.TextArea
+                      rows={2}
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      placeholder="Add a comment..."
                     />
-                  ) : (
-                    <Form
-                      onFinish={handleAddComment}
-                      className="comment-form"
-                      layout="inline"
+                  </Form.Item>
+                  <Form.Item>
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      disabled={!newComment.trim()}
                     >
-                      <Form.Item style={{ flex: 1 }}>
-                        <Input.TextArea
-                          rows={2}
-                          value={newComment}
-                          onChange={(e) => setNewComment(e.target.value)}
-                          placeholder="Type your comment here..."
-                          maxLength={1000}
-                          className="comment-input"
-                        />
-                      </Form.Item>
-                      <Form.Item>
-                        <Button
-                          type="primary"
-                          htmlType="submit"
-                          disabled={!newComment.trim()}
-                          className="comment-submit"
-                        >
-                          <PiPaperPlaneTiltFill />
-                        </Button>
-                      </Form.Item>
-                    </Form>
-                  )}
-                  {commentLoading ? (
-                    <div className="comments-loading">
-                      <Spin /> Loading comments...
-                    </div>
-                  ) : commentError ? (
-                    <Alert
-                      message={`Unable to load comments: ${
-                        commentError?.data?.message || "Please try again later."
-                      }`}
-                      type="error"
-                    />
-                  ) : comments.length > 0 ? (
-                    <div className="comments-list">
-                      {comments.map((comment) => (
-                        <CommentRow
-                          key={comment._id}
-                          comment={comment}
-                          onDelete={handleDeleteComment}
-                          currentUserId={user.userId}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <Text className="no-comments">
-                      No comments found for this order.
-                    </Text>
-                  )}
-                </div>
+                      <PiPaperPlaneTiltFill />
+                    </Button>
+                  </Form.Item>
+                </Form>
 
-                {comments.length > 0 && (
-                  <div className="comments-pagination">
+                {commentLoading ? (
+                  <Spin />
+                ) : comments.length > 0 ? (
+                  <div>
+                    {comments.map((c) => (
+                      <CommentRow
+                        key={c._id}
+                        comment={c}
+                        onDelete={handleDeleteComment}
+                        currentUserId={String(user.userId || "").trim()}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <Text type="secondary">No comments yet.</Text>
+                )}
+
+                {totalComments > commentLimit && (
+                  <div style={{ marginTop: 16, textAlign: "center" }}>
                     <Button
                       disabled={commentPage === 1}
                       onClick={() => handlePageChange(commentPage - 1)}
                     >
-                      Previous
+                      Prev
                     </Button>
-                    <Text>
+                    <Text style={{ margin: "0 8px" }}>
                       Page {commentPage} of{" "}
                       {Math.ceil(totalComments / commentLimit)}
                     </Text>
@@ -1294,18 +1158,19 @@ const OrderPage = () => {
             </Col>
           </Row>
 
+          {/* MODALS */}
           {isBillingModalVisible && (
             <AddAddress
-              onClose={handleBillingModalClose}
-              onSave={handleAddressSave}
+              onClose={() => setIsBillingModalVisible(false)}
+              onSave={refetchAddresses}
               existingAddress={billingAddress}
               selectedCustomer={order.createdFor}
             />
           )}
           {isShippingModalVisible && (
             <AddAddress
-              onClose={handleShippingModalClose}
-              onSave={handleAddressSave}
+              onClose={() => setIsShippingModalVisible(false)}
+              onSave={refetchAddresses}
               existingAddress={shippingAddress}
               selectedCustomer={order.createdFor}
             />

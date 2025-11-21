@@ -8,8 +8,7 @@ import { DownCircleOutlined } from "@ant-design/icons";
 import { BiLogOut } from "react-icons/bi";
 import { useAuth } from "../../context/AuthContext";
 import { useLogoutMutation } from "../../api/authApi";
-import { toast } from "sonner";
-
+import { message } from "antd";
 const SidebarNew = ({
   isSidebarOpen,
   toggleSidebar,
@@ -41,7 +40,7 @@ const SidebarNew = ({
       await logout();
       navigate("/login", { replace: true });
     } catch (error) {
-      toast.error("Logout failed. Please try again.");
+      message.error("Logout failed. Please try again.");
     }
   };
 

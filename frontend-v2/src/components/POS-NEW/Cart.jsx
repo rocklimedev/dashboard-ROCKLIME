@@ -84,22 +84,22 @@ const CartTab = ({
   cartProductsData,
   totalItems,
   shipping,
-  discount, // global discount (used only for display)
+  discount,
   roundOff,
   subTotal,
   quotationData,
-  itemDiscounts, // {productId: number}
-  itemDiscountTypes, // {productId: "percent" | "fixed"}  <-- NEW
-  itemTaxes, // {productId: number}
+  itemDiscounts,
+  itemDiscountTypes,
+  itemTaxes,
   updatingItems,
   handleUpdateQuantity,
   handleRemoveItem,
   handleDiscountChange,
-  handleDiscountTypeChange, // <-- NEW
+  handleDiscountTypeChange,
   handleTaxChange,
   setShowClearCartModal,
   setActiveTab,
-  onShippingChange, // <-- NEW – comes from NewCart
+  onShippingChange,
 }) => {
   /* ────── Helper: line-item total (price × qty – discount + tax) ────── */
   const lineTotal = (item) => {
@@ -111,7 +111,7 @@ const CartTab = ({
     const disc =
       itemDiscountTypes[item.productId] === "percent"
         ? (subtotal * discVal) / 100
-        : discVal * qty; // fixed amount per unit
+        : discVal * qty;
 
     const taxPct = Number(itemTaxes[item.productId]) || 0;
     const tax = (subtotal * taxPct) / 100;
@@ -136,6 +136,23 @@ const CartTab = ({
     return sum + disc;
   }, 0);
 
+  /* ────── Safe image parser – works with array OR string ────── */
+  const getFirstImage = (product) => {
+    if (!product?.images) return null;
+    if (Array.isArray(product.images) && product.images.length > 0) {
+      return product.images[0];
+    }
+    if (typeof product.images === "string") {
+      try {
+        const parsed = JSON.parse(product.images);
+        return Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : null;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  };
+
   return (
     <Row gutter={[16, 16]}>
       {/* ────── LEFT – CART ITEMS ────── */}
@@ -147,7 +164,7 @@ const CartTab = ({
                 Your Cart <ShoppingCartOutlined /> ({totalItems} items)
               </Title>
               <Button
-                type="button" // ← ADD THIS
+                type="button"
                 danger
                 onClick={() => setShowClearCartModal(true)}
                 disabled={!cartItems.length}
@@ -167,7 +184,7 @@ const CartTab = ({
               <Button
                 type="primary"
                 icon={<ArrowLeftOutlined />}
-                href="/category-selector/products"
+                href="/store"
                 style={{ marginTop: 16 }}
               >
                 Continue Shopping
@@ -178,13 +195,7 @@ const CartTab = ({
               const product = cartProductsData?.find(
                 (p) => p.productId === item.productId
               );
-              let imageUrl = null;
-              try {
-                if (product?.images) {
-                  const imgs = JSON.parse(product.images);
-                  imageUrl = Array.isArray(imgs) ? imgs[0] : null;
-                }
-              } catch {}
+              const imageUrl = getFirstImage(product);
               const discType = itemDiscountTypes[item.productId] || "percent";
 
               return (
@@ -284,10 +295,10 @@ const CartTab = ({
                         ₹{lineTotal(item)}
                       </Text>
                       <RemoveButton
-                        type="button" // ← ADD THIS
+                        type="button"
                         danger
                         icon={<BiTrash />}
-                        onClick={(e) => handleRemoveItem(e, item.productId)} // ← PASS e
+                        onClick={(e) => handleRemoveItem(e, item.productId)}
                         disabled={updatingItems[item.productId]}
                         loading={updatingItems[item.productId]}
                       />
@@ -311,7 +322,7 @@ const CartTab = ({
           <OrderTotal
             shipping={shipping}
             tax={totalTax}
-            discount={totalDiscount} // <-- now per-item aggregated
+            discount={totalDiscount}
             roundOff={roundOff}
             subTotal={subTotal}
             onShippingChange={onShippingChange}

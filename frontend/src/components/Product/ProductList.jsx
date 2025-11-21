@@ -35,7 +35,7 @@ import {
   useRemoveFromCartMutation,
 } from "../../api/cartApi";
 import { useGetProfileQuery } from "../../api/userApi";
-import { toast } from "sonner";
+import { message } from "antd";
 import "./productdetails.css";
 import DeleteModal from "../Common/DeleteModal";
 import HistoryModal from "../Common/HistoryModal";
@@ -276,7 +276,7 @@ const ProductsList = () => {
 
   const handleConfirmDelete = async () => {
     if (!selectedProduct?.productId) {
-      toast.error("No product selected");
+      message.error("No product selected");
       setDeleteModalVisible(false);
       return;
     }
@@ -286,7 +286,7 @@ const ProductsList = () => {
         setCurrentPage(currentPage - 1);
       }
     } catch (e) {
-      toast.error(e.data?.message || "Delete failed");
+      message.error(e.data?.message || "Delete failed");
     } finally {
       setDeleteModalVisible(false);
       setSelectedProduct(null);
@@ -294,7 +294,7 @@ const ProductsList = () => {
   };
 
   const handleToggleFeatured = async (product) => {
-    if (!userId) return toast.error("User not logged in");
+    if (!userId) return message.error("User not logged in");
     const productId = product.productId;
     setFeaturedLoadingStates((s) => ({ ...s, [productId]: true }));
     try {
@@ -303,7 +303,7 @@ const ProductsList = () => {
         isFeatured: !product.isFeatured,
       }).unwrap();
     } catch (e) {
-      toast.error(e.data?.message || "Failed");
+      message.error(e.data?.message || "Failed");
     } finally {
       setFeaturedLoadingStates((s) => ({ ...s, [productId]: false }));
     }
@@ -311,17 +311,17 @@ const ProductsList = () => {
 
   // ProductsList.jsx  (only the handler changes)
   const handleAddToCart = async ({ productId, quantity }) => {
-    if (!userId) return toast.error("User not logged in");
-    if (!quantity || quantity < 1) return toast.error("Invalid quantity");
+    if (!userId) return message.error("User not logged in");
+    if (!quantity || quantity < 1) return message.error("Invalid quantity");
 
     const product = products.find((p) => p.productId === productId);
-    if (!product) return toast.error("Product not found");
+    if (!product) return message.error("Product not found");
 
     const sellingPrice = product.metaDetails?.find(
       (m) => m.slug === "sellingPrice"
     )?.value;
     if (!sellingPrice || isNaN(sellingPrice))
-      return toast.error("Invalid price");
+      return message.error("Invalid price");
 
     setCartLoadingStates((s) => ({ ...s, [productId]: true }));
 
@@ -336,7 +336,7 @@ const ProductsList = () => {
       }).unwrap();
       refetchCart();
     } catch (e) {
-      toast.error(e.data?.message || "Failed");
+      message.error(e.data?.message || "Failed");
     } finally {
       setCartLoadingStates((s) => ({ ...s, [productId]: false }));
     }

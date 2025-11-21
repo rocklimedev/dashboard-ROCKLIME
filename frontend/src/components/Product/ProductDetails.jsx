@@ -12,7 +12,7 @@ import { useGetBrandByIdQuery } from "../../api/brandsApi";
 import { useAddProductToCartMutation } from "../../api/cartApi";
 import { useGetProfileQuery } from "../../api/userApi";
 import JsBarcode from "jsbarcode";
-import { toast } from "sonner";
+import { message } from "antd";
 import { Breadcrumb, Button, InputNumber, Spin, Tabs, Menu } from "antd";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import { ShoppingCartOutlined } from "@ant-design/icons";
@@ -113,14 +113,14 @@ const ProductDetails = () => {
           displayValue: true,
         });
       } catch {
-        toast.error("Failed to generate barcode.");
+        message.error("Failed to generate barcode.");
       }
     }
   };
 
   const handlePrint = () => {
     if (!barcodeRef.current) {
-      toast.error("No barcode available to print.");
+      message.error("No barcode available to print.");
       return;
     }
     const svg = barcodeRef.current;
@@ -128,7 +128,7 @@ const ProductDetails = () => {
     const svgStr = serializer.serializeToString(svg);
     const printWindow = window.open("", "_blank");
     if (!printWindow) {
-      toast.error("Unable to open print window.");
+      message.error("Unable to open print window.");
       return;
     }
     printWindow.document.write(`
@@ -147,7 +147,7 @@ const ProductDetails = () => {
      -------------------------------------------------------------- */
   const handleAddToCart = async (product) => {
     if (!userId) {
-      toast.error("User not logged in!");
+      message.error("User not logged in!");
       return;
     }
 
@@ -159,11 +159,11 @@ const ProductDetails = () => {
       : null;
 
     if (!sellingPrice || isNaN(sellingPrice)) {
-      toast.error("Invalid product price");
+      message.error("Invalid product price");
       return;
     }
     if (quantity <= 0 || quantity > product.quantity) {
-      toast.error("Invalid quantity");
+      message.error("Invalid quantity");
       return;
     }
 
@@ -177,7 +177,7 @@ const ProductDetails = () => {
       }).unwrap();
       setQuantity(1);
     } catch (error) {
-      toast.error(error.data?.message || "Unknown error");
+      message.error(error.data?.message || "Unknown error");
     } finally {
       setCartLoadingStates((prev) => ({ ...prev, [productId]: false }));
     }
@@ -217,7 +217,7 @@ const ProductDetails = () => {
       setBarcodeData(product.product_code);
       generateBarcode(product.product_code);
     }
-    if (brandError) toast.error("Failed to load brand information.");
+    if (brandError) message.error("Failed to load brand information.");
     if (allProductsError) {
       const msg =
         allProductsError.status === 401 || allProductsError.status === 403
@@ -225,7 +225,7 @@ const ProductDetails = () => {
           : allProductsError.status === 404
           ? "No products found."
           : "Failed to load products.";
-      toast.error(msg);
+      message.error(msg);
     }
   }, [product, brandError, allProductsError]);
 
