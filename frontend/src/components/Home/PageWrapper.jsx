@@ -1,12 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { message } from "antd";
 import { Link } from "react-router-dom";
 import { FaChartBar, FaBox } from "react-icons/fa6";
-
 import Alert from "./Alert";
 import StockModal from "../Common/StockModal";
 import DataTablePagination from "../Common/DataTablePagination";
-
 import {
   useClockInMutation,
   useClockOutMutation,
@@ -127,20 +125,20 @@ const PageWrapper = () => {
   const [clockOut] = useClockOutMutation();
 
   const handleClockIn = async () => {
-    if (!userId) return toast.error("User ID missing");
+    if (!userId) return message.error("User ID missing");
     try {
       await clockIn({ userId }).unwrap();
     } catch {
-      toast.error("Clock-in failed");
+      message.error("Clock-in failed");
     }
   };
 
   const handleClockOut = async () => {
-    if (!userId) return toast.error("User ID missing");
+    if (!userId) return message.error("User ID missing");
     try {
       await clockOut({ userId }).unwrap();
     } catch {
-      toast.error("Clock-out failed");
+      message.error("Clock-out failed");
     }
   };
 
@@ -148,15 +146,15 @@ const PageWrapper = () => {
   /*  CART & PRODUCT HELPERS                                            */
   /* ------------------------------------------------------------------ */
   const handleAddToCart = async (product) => {
-    if (!userId) return toast.error("User not logged in!");
+    if (!userId) return message.error("User not logged in!");
     const priceEntry = Array.isArray(product.metaDetails)
       ? product.metaDetails.find((d) => d.slug === "sellingPrice")
       : null;
     const price = priceEntry ? parseFloat(priceEntry.value) : null;
-    if (!price) return toast.error("Invalid price");
+    if (!price) return message.error("Invalid price");
 
     const qty = product.quantity || 1;
-    if (!Number.isInteger(qty) || qty <= 0) return toast.error("Invalid qty");
+    if (!Number.isInteger(qty) || qty <= 0) return message.error("Invalid qty");
 
     setCartLoadingStates((s) => ({ ...s, [product.productId]: true }));
     try {
@@ -166,7 +164,7 @@ const PageWrapper = () => {
         quantity: qty,
       }).unwrap();
     } catch (e) {
-      toast.error(e?.data?.message || "Add to cart failed");
+      message.error(e?.data?.message || "Add to cart failed");
     } finally {
       setCartLoadingStates((s) => ({ ...s, [product.productId]: false }));
     }
@@ -202,7 +200,7 @@ const PageWrapper = () => {
       await updateOrderStatus({ orderId, status: newStatus }).unwrap();
       refetchOrders();
     } catch (e) {
-      toast.error(e?.data?.message || "Status update failed");
+      message.error(e?.data?.message || "Status update failed");
     }
   };
 
@@ -462,7 +460,7 @@ const PageWrapper = () => {
                       >
                         <div className="flex-grow-1">
                           <a
-                            href={`/quotations/${q.quotationId}`}
+                            href={`/quotation/${q.quotationId}`}
                             className="order-link"
                           >
                             {q.reference_number || "Quotation"}

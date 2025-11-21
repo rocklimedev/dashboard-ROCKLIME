@@ -1,7 +1,6 @@
 import React, { useRef, useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
-import { toast } from "sonner";
-
+import { message } from "antd";
 import logo from "../../assets/img/logo-quotation.png";
 
 import {
@@ -204,7 +203,7 @@ const QuotationsDetails = () => {
   console.log(gstAmount);
   // === EXPORT HANDLER ===
   const handleExport = async () => {
-    if (!id || !quotation) return toast.error("Quotation missing");
+    if (!id || !quotation) return message.error("Quotation missing");
 
     setIsExporting(true);
     try {
@@ -243,9 +242,8 @@ const QuotationsDetails = () => {
           activeVersion
         );
       }
-      toast.success(`Exported as ${exportFormat.toUpperCase()}`);
     } catch (err) {
-      toast.error("Export failed");
+      message.error("Export failed");
     } finally {
       setIsExporting(false);
     }

@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Spin, Empty } from "antd";
+import { Empty } from "antd";
 import { useGetBrandParentCategoriesQuery } from "../../api/brandParentCategoryApi";
 import Breadcrumb from "./Breadcrumb"; // Adjust the path as needed
 import "./productwrapper.css";
@@ -13,11 +13,7 @@ const accessories = "https://static.cmtradingco.com/brands/ACCESORIES.png";
 const adhesive = "https://static.cmtradingco.com/brands/ADHESIVE.png";
 
 const Product = () => {
-  const {
-    data: bpcList,
-    isLoading,
-    error,
-  } = useGetBrandParentCategoriesQuery();
+  const { data: bpcList, error } = useGetBrandParentCategoriesQuery();
 
   const imageBySlug = {
     plumbing: plumbing,
@@ -39,6 +35,7 @@ const Product = () => {
 
   const cards = useMemo(() => {
     const list = Array.isArray(bpcList) ? bpcList : [];
+
     const sorted = [...list].sort((a, b) => {
       const ai = desiredOrder.indexOf((a.slug || "").toLowerCase());
       const bi = desiredOrder.indexOf((b.slug || "").toLowerCase());
@@ -67,15 +64,11 @@ const Product = () => {
     { label: "Categories" },
   ];
 
-  if (isLoading) {
-    return (
-      <div className="loading-container">
-        <Spin size="large" />
-        <p>Loading product groups...</p>
-      </div>
-    );
-  }
+  /* ------------------------------------------------------------------ */
+  /*  No loading UI – global loader is used instead                     */
+  /* ------------------------------------------------------------------ */
 
+  // Optional: keep error & empty states (remove if not needed)
   if (error) {
     return (
       <div className="error-container">

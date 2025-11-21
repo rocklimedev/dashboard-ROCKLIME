@@ -8,7 +8,7 @@ import {
 } from "../../api/customerApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetVendorsQuery } from "../../api/vendorApi";
-import { toast } from "sonner";
+import { message } from "antd";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Form, Input, Select, Button, Tabs, Row, Col, Spin, Alert } from "antd";
 import { ReloadOutlined, ClearOutlined, LeftOutlined } from "@ant-design/icons";
@@ -58,7 +58,8 @@ const indiaStates = {
     "West Bengal",
   ],
 };
-
+// Sort states alphabetically for better UX
+const sortedStates = [...indiaStates.states].sort((a, b) => a.localeCompare(b));
 const AddCustomer = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -175,7 +176,7 @@ const AddCustomer = () => {
 
       const total = parseFloat(formData.totalAmount || 0);
       if (paid > total) {
-        toast.error("Paid Amount cannot exceed Total Amount");
+        message.error("Paid Amount cannot exceed Total Amount");
         return;
       }
     }
@@ -219,7 +220,7 @@ const AddCustomer = () => {
         setFormData(original);
         form.setFieldsValue(original);
       } catch {
-        toast.error("Failed to reload customer data");
+        message.error("Failed to reload customer data");
       }
     } else {
       clearForm();
@@ -251,7 +252,7 @@ const AddCustomer = () => {
 
     setFormData(empty);
     form.setFieldsValue(empty);
-    toast.info("Form cleared");
+    message("Form cleared");
   };
 
   const handleRefresh = async () => {
@@ -273,7 +274,7 @@ const AddCustomer = () => {
             cust.mobileNumber === values.mobileNumber.trim()
         );
         if (isDuplicate) {
-          toast.error(
+          message.error(
             "Customer with same email or mobile number already exists."
           );
           return;
@@ -322,7 +323,7 @@ const AddCustomer = () => {
 
       navigate("/customers/list");
     } catch (err) {
-      toast.error(err?.data?.message || "Failed to process request.");
+      message.error(err?.data?.message || "Failed to process request.");
     }
   };
 
@@ -567,11 +568,22 @@ const AddCustomer = () => {
                               <Input placeholder="City" />
                             </Form.Item>
                           </Col>
+
                           <Col lg={12} xs={24}>
                             <Form.Item name={["address", "state"]} noStyle>
-                              <Select placeholder="Select State">
+                              <Select
+                                showSearch
+                                placeholder="Search and select state"
+                                optionFilterProp="children"
+                                filterOption={(input, option) =>
+                                  option.children
+                                    .toLowerCase()
+                                    .includes(input.toLowerCase())
+                                }
+                                style={{ width: "100%" }}
+                              >
                                 <Option value="">Select State</Option>
-                                {indiaStates.states.map((state) => (
+                                {sortedStates.map((state) => (
                                   <Option key={state} value={state}>
                                     {state}
                                   </Option>
@@ -579,6 +591,7 @@ const AddCustomer = () => {
                               </Select>
                             </Form.Item>
                           </Col>
+
                           <Col lg={12} xs={24}>
                             <Form.Item name={["address", "zip"]} noStyle>
                               <Input placeholder="ZIP Code" />

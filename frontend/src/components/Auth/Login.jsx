@@ -2,11 +2,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useLoginMutation } from "../../api/authApi";
-import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
 import logo from "../../assets/img/logo.png";
 import { FaEnvelope, FaEye, FaEyeSlash } from "react-icons/fa";
-
+import { message } from "antd";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -46,7 +45,7 @@ const Login = () => {
       await authLogin(token, response.user || null);
       navigate("/", { replace: true });
     } catch (err) {
-      toast.error("Login failed! " + (err?.data?.message || err.message));
+      message.error("Login failed! " + (err?.data?.message || err.message));
     }
   };
 

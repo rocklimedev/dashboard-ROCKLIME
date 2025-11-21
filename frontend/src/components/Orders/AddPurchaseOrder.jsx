@@ -12,7 +12,7 @@ import {
   Table,
   InputNumber,
 } from "antd";
-import { toast } from "sonner";
+import { message } from "antd";
 import { debounce } from "lodash";
 import PageHeader from "../Common/PageHeader";
 import {
@@ -62,7 +62,7 @@ const AddVendorModal = ({ show, onClose, onSave, isCreatingVendor }) => {
 
   const handleSubmit = async () => {
     if (!vendorData.vendorId || !vendorData.vendorName) {
-      toast.error("Vendor ID and Name are required.");
+      message.error("Vendor ID and Name are required.");
       return;
     }
     try {
@@ -86,7 +86,7 @@ const AddVendorModal = ({ show, onClose, onSave, isCreatingVendor }) => {
         err.status === 400 && err.data?.message.includes("vendorId")
           ? "Vendor ID already exists. Please use a unique ID."
           : err.data?.message || "Failed to create vendor";
-      toast.error(errorMessage);
+      message.error(errorMessage);
     }
   };
 
@@ -255,7 +255,9 @@ const AddPurchaseOrder = () => {
         (vendor) => vendor.id === existingPurchaseOrder.vendorId
       );
       if (!vendorExists) {
-        toast.error("Selected vendor not found. Please select a valid vendor.");
+        message.error(
+          "Selected vendor not found. Please select a valid vendor."
+        );
         setFormData((prev) => ({ ...prev, vendorId: "" }));
       }
 
@@ -277,7 +279,7 @@ const AddPurchaseOrder = () => {
               const quantity = Number(item.quantity) || 1;
 
               if (sellingPrice <= 0) {
-                toast.warning(
+                message.warning(
                   `Product ${item.productId} has an invalid price (₹${sellingPrice}).`
                 );
               }
@@ -356,15 +358,15 @@ const AddPurchaseOrder = () => {
       !product ||
       formData.items.some((item) => item.productId === productId)
     ) {
-      if (!product) toast.error("Product not found.");
-      else toast.error("Product already added.");
+      if (!product) message.error("Product not found.");
+      else message.error("Product already added.");
       return;
     }
     const sellingPrice =
       product.metaDetails?.find((meta) => meta.slug === "sellingPrice")
         ?.value || 0;
     if (sellingPrice <= 0) {
-      toast.error(
+      message.error(
         `Product ${product.name} has an invalid MRP (₹${sellingPrice}).`
       );
       return;
@@ -453,11 +455,11 @@ const AddPurchaseOrder = () => {
     try {
       await form.validateFields();
       if (formData.items.length === 0) {
-        toast.error("Please add at least one product.");
+        message.error("Please add at least one product.");
         return;
       }
       if (formData.items.some((item) => item.mrp <= 0)) {
-        toast.error("All products must have a valid MRP greater than 0.");
+        message.error("All products must have a valid MRP greater than 0.");
         return;
       }
       if (
@@ -465,7 +467,7 @@ const AddPurchaseOrder = () => {
           (item) => !products.some((p) => p.productId === item.productId)
         )
       ) {
-        toast.error(
+        message.error(
           "Some products are no longer available. Please remove them."
         );
         return;
@@ -498,7 +500,7 @@ const AddPurchaseOrder = () => {
       navigate("/po/list");
     } catch (err) {
       if (err.errorFields) {
-        toast.error("Please fill in all required fields correctly.");
+        message.error("Please fill in all required fields correctly.");
         return;
       }
       const errorMessage =
@@ -509,7 +511,7 @@ const AddPurchaseOrder = () => {
               err.data?.error || err.data?.message || "Check your input data."
             }`
           : err.data?.message || "Failed to process purchase order";
-      toast.error(errorMessage);
+      message.error(errorMessage);
 
       if (err.status === 404) {
         setTimeout(() => navigate("/po/list"), 2000);

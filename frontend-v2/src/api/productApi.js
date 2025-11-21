@@ -2,15 +2,53 @@ import { baseApi } from "./baseApi";
 
 export const productApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
+    // api/productApi.js
+
     createProduct: builder.mutation({
       query: (productData) => ({
         url: "/products/",
         method: "POST",
         body: productData,
+        // Disable JSON serialization
+        headers: {
+          // Let browser set Content-Type with boundary
+        },
+        // This is the key:
+        formData: true, // RTK Query v2+ supports this
       }),
       invalidatesTags: ["Product"],
     }),
-
+    batchCreateProducts: builder.mutation({
+      query: (payload) => ({
+        url: "/products/batch-create",
+        method: "POST",
+        body: payload, // JSON payload (no files in batch)
+      }),
+      invalidatesTags: ["Product", "LowStock", "ProductCodes"],
+    }),
+    // Add this inside your endpoints builder
+    checkProductCode: builder.query({
+      query: (code) => ({
+        url: "/products/check-code",
+        method: "GET",
+        params: { code }, // Automatically becomes ?code=EGRGR1234567
+      }),
+      // Important: Don't cache forever — codes can change
+      keepUnusedDataFor: 10, // seconds
+      // Optional: provide a tag so it's invalidated on product create/update
+      providesTags: (result, error, code) => [
+        { type: "ProductCode", id: code },
+      ],
+    }),
+    updateProduct: builder.mutation({
+      query: ({ productId, formData }) => ({
+        url: `/products/${productId}`,
+        method: "PUT",
+        body: formData,
+        formData: true, // Critical!
+      }),
+      invalidatesTags: ["Product"],
+    }),
     getProductsByIds: builder.query({
       query: (productIds) => ({
         url: "/products/by-ids",
@@ -25,18 +63,11 @@ export const productApi = baseApi.injectEndpoints({
       providesTags: ["Product"],
     }),
 
+    // In productApi.js
     getProductById: builder.query({
       query: (productId) => `/products/${productId}`,
       providesTags: ["Product"],
-    }),
-
-    updateProduct: builder.mutation({
-      query: ({ productId, updatedData }) => ({
-        url: `/products/${productId}`,
-        method: "PUT",
-        body: updatedData,
-      }),
-      invalidatesTags: ["Product"],
+      keepUnusedDataFor: 5, // ← add this
     }),
 
     deleteProduct: builder.mutation({
@@ -115,6 +146,9 @@ export const productApi = baseApi.injectEndpoints({
 
 // Export all hooks including the new one
 export const {
+  useCheckProductCodeQuery,
+  useLazyCheckProductCodeQuery,
+  useBatchCreateProductsMutation,
   useGetProductsByIdsQuery,
   useUpdateProductFeaturedMutation,
   useCreateProductMutation,

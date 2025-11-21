@@ -173,7 +173,6 @@ const CategoryManagement = () => {
         await deleteCategory(item.categoryId).unwrap();
       else if (type === "keyword") await deleteKeyword(item.id).unwrap();
 
-      message.success(`${type} deleted`);
       if (
         selectedNode?.id === item.id ||
         selectedNode?.id === item.categoryId ||

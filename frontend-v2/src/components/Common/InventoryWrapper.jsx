@@ -15,8 +15,13 @@ import {
   Typography,
   message,
   Modal,
+  Alert,
   Form as AntForm,
 } from "antd";
+import {
+  SortAscendingOutlined,
+  SortDescendingOutlined,
+} from "@ant-design/icons";
 import {
   SearchOutlined,
   MoreOutlined,
@@ -27,14 +32,11 @@ import {
   useAddStockMutation,
   useRemoveStockMutation,
 } from "../../api/productApi";
-import { toast } from "sonner";
 import PageHeader from "../Common/PageHeader";
 import pos from "../../assets/img/default.png";
-import { CopyOutlined } from "@ant-design/icons";
 import { useGetHistoryByProductIdQuery } from "../../api/productApi";
-// Bootstrap ONLY for dropdown
 import { Dropdown } from "react-bootstrap";
-
+import HistoryModalAntD from "./HistoryModal";
 const { TabPane } = Tabs;
 const { Text } = Typography;
 
@@ -45,23 +47,26 @@ const InventoryWrapper = () => {
   const [removeStock, { isLoading: isRemovingStock }] =
     useRemoveStockMutation();
 
-  // State
+  // ────── State ──────
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
   const [lowStockThreshold, setLowStockThreshold] = useState(10);
   const [maxStockFilter, setMaxStockFilter] = useState(null);
+  const [priceRange, setPriceRange] = useState([null, null]);
 
+  // **New** – sort state
+  const [priceSort, setPriceSort] = useState(null); // or "asc" | "desc" | null
   // Modal state
   const [stockModalOpen, setStockModalOpen] = useState(false);
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [stockAction, setStockAction] = useState("add"); // Fixed: valid useState
+  const [stockAction, setStockAction] = useState("add");
 
   const itemsPerPage = 30;
   const [stockForm] = AntForm.useForm();
 
-  // Parse images safely
+  // ────── Helpers ──────
   const parseImages = (images) => {
     try {
       if (typeof images === "string") {
@@ -74,42 +79,53 @@ const InventoryWrapper = () => {
     }
   };
 
-  // Extract company code
   const getCompanyCode = (metaDetails) => {
     if (!Array.isArray(metaDetails)) return "N/A";
     const entry = metaDetails.find(
-      (d) => d.slug?.toLowerCase() === "companycode"
+      (d) => d.slug && d.slug.toLowerCase() === "companycode"
     );
     return entry ? String(entry.value) : "N/A";
   };
 
-  // Base products
+  const getSellingPrice = (metaDetails) => {
+    if (!Array.isArray(metaDetails)) return null;
+    const entry = metaDetails.find(
+      (d) => d.slug && d.slug.toLowerCase() === "sellingprice"
+    );
+    return entry ? Number(entry.value) : null;
+  };
+
+  // ────── Base products ──────
   const products = useMemo(() => {
-    // Safety: if productsData is NOT an array, return empty array
     if (!Array.isArray(productsData)) {
-      console.warn("productsData is not an array:", productsData);
       return [];
     }
     return productsData;
   }, [productsData]);
-  // Filter: Search + Max Stock
+
+  // ────── Search + Max-Stock + Price-Range filter ──────
   const searchedAndFiltered = useMemo(() => {
     const term = search.toLowerCase();
     return products.filter((p) => {
       const matchesSearch =
         !term ||
-        p.name?.toLowerCase().includes(term) ||
-        p.product_code?.toLowerCase().includes(term) ||
-        getCompanyCode(p.metaDetails)?.toLowerCase().includes(term);
+        (p.name && p.name.toLowerCase().includes(term)) ||
+        (p.product_code && p.product_code.toLowerCase().includes(term)) ||
+        getCompanyCode(p.metaDetails).toLowerCase().includes(term);
 
       const matchesMaxStock =
         maxStockFilter === null || p.quantity <= maxStockFilter;
 
-      return matchesSearch && matchesMaxStock;
-    });
-  }, [products, search, maxStockFilter]);
+      const price = getSellingPrice(p.metaDetails);
+      const matchesPrice =
+        (priceRange[0] == null || price >= priceRange[0]) &&
+        (priceRange[1] == null || price <= priceRange[1]);
 
-  // Tab-based filtering
+      return matchesSearch && matchesMaxStock && matchesPrice;
+    });
+  }, [products, search, maxStockFilter, priceRange]);
+
+  // ────── Tab filter ──────
   const tabFilteredProducts = useMemo(() => {
     switch (activeTab) {
       case "in-stock":
@@ -125,21 +141,31 @@ const InventoryWrapper = () => {
     }
   }, [searchedAndFiltered, activeTab, lowStockThreshold]);
 
-  // Pagination
+  // ────── **Price sorting** ──────
+  const sortedProducts = useMemo(() => {
+    if (!priceSort) return tabFilteredProducts;
+
+    return [...tabFilteredProducts].sort((a, b) => {
+      const priceA = getSellingPrice(a.metaDetails) ?? -Infinity;
+      const priceB = getSellingPrice(b.metaDetails) ?? -Infinity;
+      return priceSort === "asc" ? priceA - priceB : priceB - priceA;
+    });
+  }, [tabFilteredProducts, priceSort]);
+
+  // ────── Pagination ──────
   const offset = (currentPage - 1) * itemsPerPage;
   const currentItems = useMemo(
-    () => tabFilteredProducts.slice(offset, offset + itemsPerPage),
-    [tabFilteredProducts, currentPage, itemsPerPage]
+    () => sortedProducts.slice(offset, offset + itemsPerPage),
+    [sortedProducts, currentPage, itemsPerPage]
   );
+  const totalItems = sortedProducts.length;
 
-  const totalItems = tabFilteredProducts.length;
-
-  // Reset page on filter/tab change
+  // Reset page when any filter/tab changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeTab, search, maxStockFilter]);
+  }, [activeTab, search, maxStockFilter, priceRange, priceSort]);
 
-  // Actions
+  // ────── Actions ──────
   const handleAddProduct = () => navigate("/inventory/product/add");
 
   const handleCopy = (value) => {
@@ -167,20 +193,18 @@ const InventoryWrapper = () => {
     try {
       if (stockAction === "add") {
         await addStock(payload).unwrap();
-        toast.success(`Added ${quantity} unit(s)`);
       } else {
         await removeStock(payload).unwrap();
-        toast.success(`Removed ${quantity} unit(s)`);
       }
     } catch (err) {
-      toast.error(err?.data?.message || "Operation failed");
+      message.error(err?.data?.message || "Operation failed");
     } finally {
       setStockModalOpen(false);
       setSelectedProduct(null);
     }
   };
 
-  // Bootstrap Dropdown Component
+  // ────── Dropdown ──────
   const ActionDropdown = ({ product }) => (
     <Dropdown>
       <Dropdown.Toggle
@@ -210,7 +234,7 @@ const InventoryWrapper = () => {
     </Dropdown>
   );
 
-  // Table Columns
+  // ────── Table Columns ──────
   const columns = [
     {
       title: "Image",
@@ -236,7 +260,7 @@ const InventoryWrapper = () => {
       ),
     },
     {
-      title: "Company Code",
+      title: "Product Code",
       dataIndex: "product_code",
       key: "product_code",
       render: (text) => (
@@ -253,7 +277,7 @@ const InventoryWrapper = () => {
       ),
     },
     {
-      title: "Product Code",
+      title: "Company Code",
       dataIndex: "metaDetails",
       key: "company_code",
       render: (meta) => {
@@ -263,13 +287,44 @@ const InventoryWrapper = () => {
             code
             onClick={() => handleCopy(companyCode)}
             style={{
-              cursor: companyCode ? "pointer" : "default",
+              cursor: companyCode !== "N/A" ? "pointer" : "default",
               userSelect: "none",
             }}
           >
-            {companyCode || "N/A"}
+            {companyCode}
           </Text>
         );
+      },
+    },
+    {
+      title: () => (
+        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          Selling Price
+          {priceSort === "asc" ? (
+            <SortAscendingOutlined
+              style={{ cursor: "pointer" }}
+              onClick={() => setPriceSort("desc")}
+            />
+          ) : priceSort === "desc" ? (
+            <SortDescendingOutlined
+              style={{ cursor: "pointer" }}
+              onClick={() => setPriceSort(null)}
+            />
+          ) : (
+            <span
+              style={{ cursor: "pointer", opacity: 0.4 }}
+              onClick={() => setPriceSort("asc")}
+            >
+              <SortAscendingOutlined />
+            </span>
+          )}
+        </div>
+      ),
+      dataIndex: "metaDetails",
+      key: "sellingPrice",
+      render: (meta) => {
+        const price = getSellingPrice(meta);
+        return price != null ? `₹${price.toLocaleString()}` : "N/A";
       },
     },
     {
@@ -303,12 +358,11 @@ const InventoryWrapper = () => {
     },
   ];
 
-  // Count for tabs
+  // ────── Tab counts ──────
   const counts = useMemo(() => {
     if (!Array.isArray(products)) {
       return { all: 0, inStock: 0, outStock: 0, lowStock: 0 };
     }
-
     const inStock = products.filter((p) => p.quantity > 0).length;
     const outStock = products.filter((p) => p.quantity === 0).length;
     const lowStock = products.filter(
@@ -322,7 +376,8 @@ const InventoryWrapper = () => {
       lowStock,
     };
   }, [products, lowStockThreshold]);
-  // Loading & Error States
+
+  // ────── Loading / Error ──────
   if (isLoading) {
     return (
       <div className="loading-container text-center py-5">
@@ -346,6 +401,7 @@ const InventoryWrapper = () => {
     );
   }
 
+  // ────── Render ──────
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -378,8 +434,38 @@ const InventoryWrapper = () => {
                   value={search}
                 />
 
+                {/* Price Range */}
                 <Space>
-                  <Text>Show products with stock less than or equal to</Text>
+                  <Text>Price range (₹)</Text>
+                  <InputNumber
+                    min={0}
+                    placeholder="Min"
+                    size="middle"
+                    value={priceRange[0]}
+                    onChange={(v) => setPriceRange([v, priceRange[1]])}
+                    style={{ width: 100 }}
+                  />
+                  <Text>to</Text>
+                  <InputNumber
+                    min={0}
+                    placeholder="Max"
+                    size="middle"
+                    value={priceRange[1]}
+                    onChange={(v) => setPriceRange([priceRange[0], v])}
+                    style={{ width: 100 }}
+                  />
+                  <Button
+                    icon={<FilterOutlined />}
+                    onClick={() => setPriceRange([null, null])}
+                    disabled={!priceRange[0] && !priceRange[1]}
+                  >
+                    Clear
+                  </Button>
+                </Space>
+
+                {/* Max Stock */}
+                <Space>
+                  <Text>Stock ≤</Text>
                   <InputNumber
                     min={0}
                     placeholder="Qty"
@@ -477,7 +563,7 @@ const InventoryWrapper = () => {
               dataSource={currentItems}
               rowKey="productId"
               pagination={false}
-              scroll={{ x: 800 }}
+              scroll={{ x: 1000 }}
             />
             <div
               className="pagination-container"
@@ -497,7 +583,7 @@ const InventoryWrapper = () => {
         )}
       </div>
 
-      {/* Stock Modal (Ant Design) */}
+      {/* Stock Modal */}
       <Modal
         title={`${stockAction === "add" ? "Add" : "Remove"} Stock – ${
           selectedProduct?.name || ""
@@ -555,7 +641,7 @@ const InventoryWrapper = () => {
         </AntForm>
       </Modal>
 
-      {/* History Modal (Ant Design) */}
+      {/* History Modal */}
       <HistoryModalAntD
         open={historyModalOpen}
         onCancel={() => {
@@ -565,72 +651,6 @@ const InventoryWrapper = () => {
         product={selectedProduct}
       />
     </div>
-  );
-};
-
-// === History Modal (Ant Design Version) ===
-const HistoryModalAntD = ({ open, onCancel, product }) => {
-  const {
-    data: response,
-    error,
-    isLoading,
-  } = useGetHistoryByProductIdQuery(product?.productId, {
-    skip: !product?.productId || !open,
-  });
-
-  const columns = [
-    {
-      title: "Date",
-      dataIndex: "timestamp",
-      key: "date",
-      render: (ts) => new Date(ts).toLocaleString(),
-    },
-    {
-      title: "Action",
-      dataIndex: "action",
-      key: "action",
-      render: (act) => (act === "add-stock" ? "Stock In" : "Stock Out"),
-    },
-    { title: "Quantity", dataIndex: "quantity", key: "quantity" },
-  ];
-
-  return (
-    <Modal
-      title={`Stock History – ${product?.name || ""}`}
-      open={open}
-      onCancel={onCancel}
-      footer={null}
-      width={680}
-    >
-      {isLoading && (
-        <div style={{ textAlign: "center", padding: "20px" }}>
-          <Spin tip="Loading history..." />
-        </div>
-      )}
-
-      {error && (
-        <div style={{ margin: "16px 0" }}>
-          <Empty description="Failed to load history" />
-        </div>
-      )}
-
-      {!isLoading &&
-        !error &&
-        (!response?.history || response.history.length === 0) && (
-          <Empty description="No history found" />
-        )}
-
-      {!isLoading && !error && response?.history?.length > 0 && (
-        <Table
-          dataSource={response.history}
-          columns={columns}
-          rowKey={(_, i) => i}
-          pagination={false}
-          size="small"
-          style={{ marginTop: 16 }}
-        />
-      )}
-    </Modal>
   );
 };
 

@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Header from "./components/Common/Header";
 import Router from "./router/Router";
 import Footer from "./components/Common/Footer";
-import { toast, Toaster } from "sonner";
+import { message } from "antd";
 import { useGetProfileQuery } from "./api/userApi";
 import Loader from "./components/Common/Loader";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
@@ -101,10 +101,10 @@ function App() {
       (location.pathname === "/no-access" ||
         location.pathname === "/verify-account")
     ) {
-      toast.warning("You must be logged in to access this page.");
+      message.warning("You must be logged in to access this page.");
       navigate("/login", { replace: true });
     } else if (!auth?.token && !isAuthPage) {
-      toast.warning("You are not authenticated. Please log in.");
+      message.warning("You are not authenticated. Please log in.");
       navigate("/login", { replace: true });
     }
   }, [
@@ -122,11 +122,11 @@ function App() {
     if (profileError) {
       const status = profileError?.status;
       if (status === 401 || status === 403) {
-        toast.error("Your session has expired. Please log in again.");
+        message.error("Your session has expired. Please log in again.");
         logout(); // ← Remove optional chaining
         navigate("/login", { replace: true });
       } else {
-        toast.error("Failed to load profile.");
+        message.error("Failed to load profile.");
       }
     }
   }, [profileError, navigate, logout]);
@@ -147,7 +147,7 @@ function App() {
 
     if (!user.isEmailVerified || accessRoles.length === 0) {
       if (location.pathname !== "/no-access") {
-        toast.warning(
+        message.warning(
           "Access restricted. Please verify your email or request access."
         );
         navigate("/no-access", { replace: true });
@@ -214,7 +214,7 @@ function App() {
         )}
         <Router />
         <Footer />
-        <Toaster richColors position="top-right" />
+
         {isSidebarOpen && (
           <div
             className="sidebar-overlay active"

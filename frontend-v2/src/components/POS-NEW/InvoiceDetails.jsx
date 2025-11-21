@@ -2,9 +2,8 @@ import React, { useEffect, useState, useMemo } from "react";
 import { useGetAllAddressesQuery } from "../../api/addressApi";
 import { useGetProfileQuery } from "../../api/userApi";
 import { Form, Button } from "react-bootstrap"; // Added Button for consistency
-import { toast } from "sonner";
 import AddAddress from "../Address/AddAddressModal";
-
+import { message } from "antd";
 const InvoiceDetails = ({ invoiceData, onChange, error }) => {
   const { shipTo, invoiceDate, dueDate, signatureName, billTo } = invoiceData;
   const { data: userProfile } = useGetProfileQuery();
@@ -37,7 +36,7 @@ const InvoiceDetails = ({ invoiceData, onChange, error }) => {
       refetch();
       setShowModal(false);
     } else {
-      toast.error("Failed to add address. Please try again.");
+      message.error("Failed to add address. Please try again.");
     }
   };
 

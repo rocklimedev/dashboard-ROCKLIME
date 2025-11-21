@@ -6,9 +6,9 @@ import logo from "../../assets/img/logo.png";
 import logo_small from "../../assets/img/fav_icon.png";
 import { DownCircleOutlined } from "@ant-design/icons";
 import { BiLogOut } from "react-icons/bi";
-import { useAuth } from "../../context/AuthContext"; // <-- your hook
+import { useAuth } from "../../context/AuthContext";
 import { useLogoutMutation } from "../../api/authApi";
-import { toast } from "sonner";
+import { message } from "antd";
 const SidebarNew = ({
   isSidebarOpen,
   toggleSidebar,
@@ -16,9 +16,9 @@ const SidebarNew = ({
 }) => {
   const navigate = useNavigate();
   const [openMenu, setOpenMenu] = useState(null);
-  const { auth } = useAuth(); // <-- role comes from here
-  const { logout } = useAuth();
+  const { auth, logout } = useAuth();
   const [logoutMutation, { isLoading: isLoggingOut }] = useLogoutMutation();
+
   const toggleDropdown = (index) => {
     setOpenMenu((prev) => (prev === index ? null : index));
   };
@@ -26,27 +26,39 @@ const SidebarNew = ({
   const handleRouteClick = () => setOpenMenu(null);
 
   // --------------------------------------------------------------
-  // 1. Allowed roles for the “Master Table” section
+  // 1. Roles allowed to see restricted sections
   // --------------------------------------------------------------
-  const MASTER_TABLE_ALLOWED_ROLES = ["SUPER_ADMIN", "DEVELOPER", "ADMIN"];
-  const canSeeMasterTable =
-    auth?.role && MASTER_TABLE_ALLOWED_ROLES.includes(auth.role);
+  const RESTRICTED_ROLES = ["SUPER_ADMIN", "DEVELOPER", "ADMIN"];
+
+  const canSeeMasterTable = auth?.role && RESTRICTED_ROLES.includes(auth.role);
+  const canSeePurchaseOrders =
+    auth?.role && RESTRICTED_ROLES.includes(auth.role);
+
   const handleLogout = async () => {
     try {
       await logoutMutation().unwrap();
       await logout();
       navigate("/login", { replace: true });
     } catch (error) {
-      toast.error("Logout failed. Please try again.");
+      message.error("Logout failed. Please try again.");
     }
   };
+
   // --------------------------------------------------------------
-  // 2. Filter masterRoutes – hide Master Table if not allowed
+  // 2. Filter routes: hide Master Table & Purchase Orders if not allowed
   // --------------------------------------------------------------
   const visibleRoutes = masterRoutes.filter((section) => {
+    // Hide "Master Table"
     if (section.name === "Master Table") {
       return canSeeMasterTable;
     }
+
+    // Hide "Purchase Orders" (top-level route)
+    if (section.name === "Purchase Orders") {
+      return canSeePurchaseOrders;
+    }
+
+    // For any other section, respect isSidebarActive
     return section.isSidebarActive;
   });
 
@@ -113,6 +125,7 @@ const SidebarNew = ({
                     </NavLink>
                   )}
 
+                  {/* Submenu rendering (unchanged) */}
                   {section.submenu?.length > 0 && (
                     <ul
                       className={
@@ -193,7 +206,7 @@ const SidebarNew = ({
         </div>
 
         {/* ---------- LOGOUT BUTTON AT BOTTOM ---------- */}
-        <div className="sidebar-menu border-top">
+        <div className="sidebar-menu">
           <ul>
             <li>
               <a

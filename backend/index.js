@@ -63,6 +63,8 @@ const corsOptions = {
     "https://cmtradingco.vercel.app",
     "https://dashboard-cmtradingco.vercel.app",
     "http://localhost:5173",
+    "http://erp.cmtradingco.com",
+    "https://erp.cmtradingco.com",
   ],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],

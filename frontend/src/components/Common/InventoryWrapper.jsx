@@ -32,7 +32,6 @@ import {
   useAddStockMutation,
   useRemoveStockMutation,
 } from "../../api/productApi";
-import { toast } from "sonner";
 import PageHeader from "../Common/PageHeader";
 import pos from "../../assets/img/default.png";
 import { useGetHistoryByProductIdQuery } from "../../api/productApi";
@@ -194,13 +193,11 @@ const InventoryWrapper = () => {
     try {
       if (stockAction === "add") {
         await addStock(payload).unwrap();
-        toast.success(`Added ${quantity} unit(s)`);
       } else {
         await removeStock(payload).unwrap();
-        toast.success(`Removed ${quantity} unit(s)`);
       }
     } catch (err) {
-      toast.error(err?.data?.message || "Operation failed");
+      message.error(err?.data?.message || "Operation failed");
     } finally {
       setStockModalOpen(false);
       setSelectedProduct(null);

@@ -1,13 +1,12 @@
 import React, { useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Spin, Empty } from "antd";
 import { useGetBrandParentCategoryByIdQuery } from "../../api/brandParentCategoryApi";
 import Breadcrumb from "./Breadcrumb"; // Adjust the path as needed
 
 const mainWrapper =
   "https://static.cmtradingco.com/brands/product_page_title.png";
 const americanStandard =
-  "https://static.cmtradingco.com/brands/american_standard.png";
+  "https://static.cmtradingco.com/brands/american_standard.png?v=2";
 const grohe = "https://static.cmtradingco.com/brands/grohe.png";
 const colston = "https://static.cmtradingco.com/brands/colston-logo_black.png";
 const groheBau = "https://static.cmtradingco.com/brands/grohe.png";
@@ -25,11 +24,7 @@ const jayna = "https://via.placeholder.com/300";
 const BrandSelection = () => {
   const { bpcId } = useParams();
 
-  const {
-    data: bpc,
-    isLoading,
-    error,
-  } = useGetBrandParentCategoryByIdQuery(bpcId);
+  const { data: bpc } = useGetBrandParentCategoryByIdQuery(bpcId);
 
   const brands = useMemo(() => {
     const logoMap = {
@@ -37,7 +32,6 @@ const BrandSelection = () => {
       AS_001: americanStandard,
       colston: colston,
       GP_002: grohe,
-
       JA_003: groheBau,
       surface: groheBau,
       sgt: sgt,
@@ -58,7 +52,7 @@ const BrandSelection = () => {
       ? bpc.brands.map((brand) => ({
           id: brand.id,
           name: brand.brandName,
-          url: `/products/brand/${brand.id}`,
+          url: `/store/${brand.id}`,
           image: logoMap[brand.brandSlug] || "https://via.placeholder.com/300",
           alt: `${brand.brandName} logo`,
         }))
@@ -69,36 +63,9 @@ const BrandSelection = () => {
 
   const breadcrumbItems = [
     { label: "Home", url: "/" },
-    { label: "Categories", url: "/category-selector/products" },
+    { label: "Categories", url: "/category-selector" },
     { label: bpc?.name || "Category" },
   ];
-
-  if (isLoading) {
-    return (
-      <div className="loading-container text-center py-5">
-        <Spin size="large" />
-        <p>Loading brands...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="error-container text-center py-5">
-        <Empty
-          description={`Error: ${error?.data?.message || "Unknown error"}`}
-        />
-      </div>
-    );
-  }
-
-  if (!brands.length) {
-    return (
-      <div className="empty-container text-center py-5">
-        <Empty description="No brands available for this category." />
-      </div>
-    );
-  }
 
   return (
     <section className="page-wrapper">

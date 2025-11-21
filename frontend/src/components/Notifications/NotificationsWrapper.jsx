@@ -7,7 +7,7 @@ import {
 } from "../../api/notificationApi";
 import { useAuth } from "../../context/AuthContext";
 import Avatar from "react-avatar";
-import { toast } from "sonner";
+import { message } from "antd";
 import { formatDistanceToNow, parseISO, differenceInSeconds } from "date-fns";
 import { Tooltip } from "antd";
 import { io } from "socket.io-client";
@@ -182,18 +182,16 @@ const NotificationsWrapper = () => {
   const handleMarkRead = async (id) => {
     try {
       await markNotificationAsRead(id).unwrap();
-      toast.success("Marked as read");
     } catch {
-      toast.error("Failed to mark as read");
+      message.error("Failed to mark as read");
     }
   };
 
   const handleDelete = async (id) => {
     try {
       await deleteNotification(id).unwrap();
-      toast.success("Deleted");
     } catch {
-      toast.error("Failed to delete");
+      message.error("Failed to delete");
     }
   };
 
@@ -238,7 +236,7 @@ const NotificationsWrapper = () => {
     try {
       await clearAllNotifications().unwrap();
     } catch {
-      toast.error("Failed to clear all");
+      message.error("Failed to clear all");
     }
   };
 

@@ -2,10 +2,9 @@
 import React, { useState, useEffect } from "react";
 import { useForgotPasswordMutation } from "../../api/authApi";
 import { useGetProfileQuery } from "../../api/userApi";
-import { toast } from "sonner";
 import logo from "../../assets/img/logo.png";
 import { MailOutlined } from "@ant-design/icons";
-
+import { message } from "antd";
 const ForgotPassword = () => {
   const [forgotPassword] = useForgotPasswordMutation();
   const {
@@ -70,16 +69,16 @@ const ForgotPassword = () => {
     const err = validateEmail(email);
     if (err) {
       setEmailError(err);
-      toast.error(err);
+      message.error(err);
       return;
     }
 
     try {
       await forgotPassword({ email: email.trim() }).unwrap();
       setEmailSent(true);
-      toast.success("Reset link sent! Check your inbox (and spam).");
+      message.success("Reset link sent! Check your inbox (and spam).");
     } catch (error) {
-      toast.error(error?.data?.message || "Failed to send reset link.");
+      message.error(error?.data?.message || "Failed to send reset link.");
     }
   };
 

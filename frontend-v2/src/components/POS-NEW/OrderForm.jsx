@@ -26,17 +26,18 @@ import { FcEmptyTrash } from "react-icons/fc";
 import styled from "styled-components";
 import OrderTotal from "./OrderTotal";
 import moment from "moment";
-import { toast } from "sonner";
+import { message } from "antd";
 import { debounce } from "lodash";
 import { useCreateAddressMutation } from "../../api/addressApi";
 import { useGetAllOrdersQuery } from "../../api/orderApi";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { useAuth } from "../../context/AuthContext"; // <-- ADD THIS
 
 const { Text, Title } = Typography;
 const { Option } = Select;
 const { Panel } = Collapse;
-
+const RESTRICTED_ROLES = ["SUPER_ADMIN", "DEVELOPER", "ADMIN"];
 /* ────────────────────── Styled ────────────────────── */
 const CompactCard = styled(Card)`
   border-radius: 8px;
@@ -148,6 +149,10 @@ const OrderForm = ({
   documentType,
   setDocumentType,
 }) => {
+  const { auth } = useAuth(); // <-- GET CURRENT USER ROLE
+  const canCreatePurchaseOrder =
+    auth?.role && RESTRICTED_ROLES.includes(auth.role);
+
   /* ────── Local State ────── */
   const [assignmentType, setAssignmentType] = useState(
     orderData?.assignedTeamId
@@ -256,9 +261,8 @@ const OrderForm = ({
           status: "BILLING",
         }).unwrap();
         handleOrderChange("shipTo", res.data.addressId);
-        toast.success("Billing address created");
       } catch (e) {
-        toast.error(e?.data?.message ?? "Failed to create address");
+        message.error(e?.data?.message ?? "Failed to create address");
       } finally {
         setIsCreatingAddress(false);
       }
@@ -291,7 +295,11 @@ const OrderForm = ({
   /* ────── Validation Helpers ────── */
   const validOrderNo = (no) => /^\d{1,2}\d{1,2}25\d{3,}$/.test(no);
   const uniqueOrderNo = (no) => !orders.some((o) => o.orderNo === no);
-
+  /* ────── Prevent same user in Primary & Secondary ────── */
+  const availableSecondaryUsers = useMemo(() => {
+    if (!orderData?.assignedUserId) return users;
+    return users.filter((u) => u.userId !== orderData.assignedUserId);
+  }, [users, orderData?.assignedUserId]);
   const validateField = useCallback(
     (field) => {
       const err = {};
@@ -320,8 +328,15 @@ const OrderForm = ({
           if (assignmentType === "team" && !orderData?.assignedTeamId) {
             err.assignment = "Select a team";
           }
-          if (assignmentType === "users" && !orderData?.assignedUserId) {
-            err.assignment = "Select primary user";
+          if (assignmentType === "users") {
+            if (!orderData?.assignedUserId) {
+              err.assignment = "Select primary user";
+            } else if (
+              orderData?.secondaryUserId &&
+              orderData.secondaryUserId === orderData.assignedUserId
+            ) {
+              err.assignment = "Primary and Secondary user cannot be the same";
+            }
           }
           break;
         case "source":
@@ -430,15 +445,14 @@ const OrderForm = ({
                 </Col>
                 <Col span={16}>
                   <MiniSelect value={documentType} onChange={setDocumentType}>
-                    {["Quotation", "Order", "Purchase Order"].map((v) => (
-                      <Option key={v} value={v}>
-                        {v}
-                      </Option>
-                    ))}
+                    <Option value="Quotation">Quotation</Option>
+                    <Option value="Order">Order</Option>
+                    {canCreatePurchaseOrder && (
+                      <Option value="Purchase Order">Purchase Order</Option>
+                    )}
                   </MiniSelect>
                 </Col>
               </TightRow>
-
               <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>
@@ -771,8 +785,9 @@ const OrderForm = ({
                         }
                         allowClear
                         loading={usersLoading}
+                        placeholder="Select secondary user"
                       >
-                        {users.map((u) => (
+                        {availableSecondaryUsers.map((u) => (
                           <Option key={u.userId} value={u.userId}>
                             {u.username || u.name}
                           </Option>
@@ -800,6 +815,7 @@ const OrderForm = ({
                     }
                     placeholder="e.g., 250425001"
                     status={hasError("orderNo") ? "error" : ""}
+                    disabled
                   />
                   {hasError("orderNo") && (
                     <Text
@@ -845,7 +861,7 @@ const OrderForm = ({
                   </MiniSelect>
                 </Col>
               </TightRow>
-              <TightRow gutter={8}>
+              {/* <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>Shipping</Text>
                 </Col>
@@ -864,7 +880,7 @@ const OrderForm = ({
                     +₹{safeShipping.toFixed(2)}
                   </Text>
                 </Col>
-              </TightRow>
+              </TightRow> */}
               <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>GST %</Text>
@@ -879,6 +895,7 @@ const OrderForm = ({
                       setGst(v ?? 0);
                       handleOrderChange("gst", v ?? 0);
                     }}
+                    disabled
                   />
                 </Col>
               </TightRow>
@@ -934,7 +951,7 @@ const OrderForm = ({
       <Col xs={24} md={8}>
         <CompactCard title={<Text strong>Summary</Text>}>
           <OrderTotal
-            shipping={shipping}
+            // shipping={shipping}
             tax={tax}
             discount={totalDiscount}
             roundOff={roundOff}
@@ -950,7 +967,7 @@ const OrderForm = ({
             icon={<CheckCircleOutlined />}
             onClick={() => {
               if (!canSubmit) {
-                toast.error("Please fix all required fields");
+                message.error("Please fix all required fields");
                 return;
               }
               handleCreateDocument();

@@ -8,7 +8,7 @@ import {
 } from "../../api/customerApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetVendorsQuery } from "../../api/vendorApi";
-import { toast } from "sonner";
+import { message } from "antd";
 import { useNavigate } from "react-router-dom";
 import {
   Form,
@@ -141,7 +141,7 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
       );
 
       if (isDuplicate) {
-        toast.error(
+        message.error(
           "Customer with same email or mobile number already exists."
         );
       }
@@ -211,7 +211,7 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
       const total = parseFloat(formData.totalAmount || 0);
       const paid = parseFloat(changedValues.paidAmount || 0);
       if (paid > total) {
-        toast.error("Paid Amount cannot exceed Total Amount");
+        message.error("Paid Amount cannot exceed Total Amount");
         return;
       }
     }
@@ -261,7 +261,7 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
         );
 
         if (isDuplicate) {
-          toast.error(
+          message.error(
             "Customer with same email or mobile number already exists."
           );
           return;
@@ -310,7 +310,7 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
 
       onClose(); // Close the modal
     } catch (err) {
-      toast.error(err?.data?.message || "Failed to process request.");
+      message.error(err?.data?.message || "Failed to process request.");
     }
   };
 
@@ -500,7 +500,21 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
                       </Col>
                       <Col lg={12} xs={24}>
                         <Form.Item name={["address", "state"]} noStyle>
-                          <Select placeholder="Select State">
+                          <Select
+                            placeholder="Select or search state"
+                            showSearch
+                            optionFilterProp="children"
+                            filterOption={(input, option) =>
+                              option.children
+                                .toLowerCase()
+                                .includes(input.toLowerCase())
+                            }
+                            filterSort={(optionA, optionB) =>
+                              optionA.children
+                                .toLowerCase()
+                                .localeCompare(optionB.children.toLowerCase())
+                            }
+                          >
                             <Option value="">Select State</Option>
                             {indiaStates.states.map((state) => (
                               <Option key={state} value={state}>

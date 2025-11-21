@@ -31,7 +31,7 @@ import {
 } from "../../api/vendorApi";
 import { useCreatePurchaseOrderMutation } from "../../api/poApi";
 import { useGetAllProductsQuery } from "../../api/productApi";
-import { toast } from "sonner";
+import { message } from "antd";
 import { v4 as uuidv4 } from "uuid";
 import { useDispatch } from "react-redux";
 import useUserAndCustomerData from "../../data/useUserAndCustomerData";
@@ -481,7 +481,7 @@ const NewCart = ({ onConvertToOrder }) => {
   };
 
   const handleClearCart = async () => {
-    if (!userId) return toast.error("User not logged in!");
+    if (!userId) return message.error("User not logged in!");
     try {
       await clearCart({ userId }).unwrap();
       setItemDiscounts({});
@@ -494,7 +494,7 @@ const NewCart = ({ onConvertToOrder }) => {
       setShowClearCartModal(false);
       setActiveTab("cart");
     } catch (error) {
-      toast.error(`Error: ${error.data?.message || "Failed to clear cart"}`);
+      message.error(`Error: ${error.data?.message || "Failed to clear cart"}`);
     }
   };
   // ────────────────────────────────────────────────────────────────────────
@@ -505,7 +505,7 @@ const NewCart = ({ onConvertToOrder }) => {
       if (e && e.preventDefault) e.preventDefault();
       if (e && e.stopPropagation) e.stopPropagation();
 
-      if (!userId) return toast.error("User not logged in!");
+      if (!userId) return message.error("User not logged in!");
 
       // Optimistic removal
       dispatch(
@@ -536,7 +536,7 @@ const NewCart = ({ onConvertToOrder }) => {
         await removeFromCart({ userId, productId }).unwrap();
         // NO refetch()
       } catch (err) {
-        toast.error(`Error: ${err?.data?.message || "Failed"}`);
+        message.error(`Error: ${err?.data?.message || "Failed"}`);
         // Rollback
         dispatch(
           cartApi.util.updateQueryData("getCart", userId, (draft) => {
@@ -565,7 +565,7 @@ const NewCart = ({ onConvertToOrder }) => {
           quantity: Number(newQuantity),
         }).unwrap();
       } catch (err) {
-        toast.error(`Error: ${err?.data?.message || "Failed"}`);
+        message.error(`Error: ${err?.data?.message || "Failed"}`);
       } finally {
         setUpdatingItems((p) => ({ ...p, [productId]: false }));
       }
@@ -590,11 +590,11 @@ const NewCart = ({ onConvertToOrder }) => {
   }, []);
   const handleCreateDocument = async () => {
     if (documentType === "Purchase Order") {
-      if (!selectedVendor) return toast.error("Please select a vendor.");
+      if (!selectedVendor) return message.error("Please select a vendor.");
       if (cartItems.length === 0 && purchaseOrderData.items.length === 0)
-        return toast.error("Please add at least one product.");
+        return message.error("Please add at least one product.");
       if (purchaseOrderData.items.some((item) => item.mrp <= 0))
-        return toast.error(
+        return message.error(
           "All products must have a valid MRP greater than 0."
         );
       if (
@@ -602,7 +602,7 @@ const NewCart = ({ onConvertToOrder }) => {
           (item) => !products.some((p) => p.productId === item.productId)
         )
       )
-        return toast.error(
+        return message.error(
           "Some products are no longer available. Please remove them."
         );
 
@@ -636,45 +636,45 @@ const NewCart = ({ onConvertToOrder }) => {
                 err.data?.error || err.data?.message || "Check your input data."
               }`
             : err.data?.message || "Failed to create purchase order";
-        toast.error(errorMessage);
+        message.error(errorMessage);
       }
       return;
     }
 
-    if (!selectedCustomer) return toast.error("Please select a customer.");
-    if (!userId) return toast.error("User not logged in!");
+    if (!selectedCustomer) return message.error("Please select a customer.");
+    if (!userId) return message.error("User not logged in!");
     if (cartItems.length === 0)
-      return toast.error("Cart is empty. Add items to proceed.");
+      return message.error("Cart is empty. Add items to proceed.");
 
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     if (documentType === "Order") {
       if (!orderData.dueDate || !dateRegex.test(orderData.dueDate)) {
-        return toast.error("Invalid due date format. Use YYYY-MM-DD.");
+        return message.error("Invalid due date format. Use YYYY-MM-DD.");
       }
       if (moment(orderData.dueDate).isBefore(moment().startOf("day"))) {
-        return toast.error("Due date cannot be in the past.");
+        return message.error("Due date cannot be in the past.");
       }
     } else {
       if (
         !quotationData.quotationDate ||
         !dateRegex.test(quotationData.quotationDate)
       ) {
-        return toast.error("Invalid quotation date format. Use YYYY-MM-DD.");
+        return message.error("Invalid quotation date format. Use YYYY-MM-DD.");
       }
       if (!quotationData.dueDate || !dateRegex.test(quotationData.dueDate)) {
-        return toast.error("Invalid due date format. Use YYYY-MM-DD.");
+        return message.error("Invalid due date format. Use YYYY-MM-DD.");
       }
       if (
         moment(quotationData.dueDate).isBefore(
           moment(quotationData.quotationDate)
         )
       ) {
-        return toast.error("Due date must be after quotation date.");
+        return message.error("Due date must be after quotation date.");
       }
     }
 
     if (isNaN(totalAmount) || totalAmount <= 0)
-      return toast.error("Invalid total amount.");
+      return message.error("Invalid total amount.");
 
     if (
       !cartItems.every(
@@ -686,7 +686,7 @@ const NewCart = ({ onConvertToOrder }) => {
           item.price >= 0
       )
     ) {
-      return toast.error(
+      return message.error(
         "Invalid cart items. Ensure all items have valid productId, quantity, and price."
       );
     }
@@ -718,7 +718,7 @@ const NewCart = ({ onConvertToOrder }) => {
           setOrderData((prev) => ({ ...prev, shipTo: result.addressId }));
           await refetchAddresses();
         } catch (err) {
-          toast.error(
+          message.error(
             `Failed to create address: ${err.data?.message || "Unknown error"}`
           );
           return;
@@ -731,21 +731,21 @@ const NewCart = ({ onConvertToOrder }) => {
       orderData.shipTo &&
       !addresses.find((addr) => addr.addressId === orderData.shipTo)
     ) {
-      return toast.error("Invalid shipping address selected.");
+      return message.error("Invalid shipping address selected.");
     }
 
     const selectedCustomerData = customerList.find(
       (customer) => customer.customerId === selectedCustomer
     );
     if (!selectedCustomerData)
-      return toast.error("Selected customer not found.");
+      return message.error("Selected customer not found.");
 
     if (documentType === "Order" && orderData.shipTo) {
       const selectedAddress = addresses.find(
         (addr) => addr.addressId === orderData.shipTo
       );
       if (selectedAddress && selectedAddress.customerId !== selectedCustomer) {
-        return toast.error(
+        return message.error(
           "Selected address does not belong to the chosen customer."
         );
       }
@@ -813,18 +813,18 @@ const NewCart = ({ onConvertToOrder }) => {
         resetForm();
         navigate("/quotations/list");
       } catch (e) {
-        toast.error(e?.data?.message || "Failed to create quotation");
+        message.error(e?.data?.message || "Failed to create quotation");
       }
     } else if (documentType === "Order") {
       const orderNoRegex = /^\d{1,2}\d{2}25\d{3,}$/;
       if (!orderData.orderNo || !orderNoRegex.test(orderData.orderNo)) {
-        return toast.error(
+        return message.error(
           "Order Number must be in the format DDMM25XXX (e.g., 151025101)."
         );
       }
 
       if (!validateFollowupDates()) {
-        return toast.error("Follow-up dates cannot be after the due date.");
+        return message.error("Follow-up dates cannot be after the due date.");
       }
 
       // Calculate extra discount value FIRST
@@ -913,7 +913,7 @@ const NewCart = ({ onConvertToOrder }) => {
                 error.data?.message || "Please try again."
               }`;
 
-        toast.error(errorMessage);
+        message.error(errorMessage);
       }
     }
   };
@@ -1001,7 +1001,7 @@ const NewCart = ({ onConvertToOrder }) => {
       setSelectedCustomer(newCustomer.customerId || "");
       setShowAddCustomerModal(false);
     } catch (err) {
-      toast.error(err?.data?.message || "Failed to create customer.");
+      message.error(err?.data?.message || "Failed to create customer.");
     }
   };
 
@@ -1118,7 +1118,7 @@ const NewCart = ({ onConvertToOrder }) => {
                     ) ||
                     cartItems.some((i) => i.productId === productId)
                   ) {
-                    toast.error(
+                    message.error(
                       product ? "Product already added." : "Product not found."
                     );
                     return;
@@ -1127,7 +1127,7 @@ const NewCart = ({ onConvertToOrder }) => {
                     product.metaDetails?.find((m) => m.slug === "sellingPrice")
                       ?.value || 0;
                   if (sellingPrice <= 0) {
-                    toast.error(`Invalid MRP for ${product.name}`);
+                    message.error(`Invalid MRP for ${product.name}`);
                     return;
                   }
                   const quantity = 1;

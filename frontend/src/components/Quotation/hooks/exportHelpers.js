@@ -5,7 +5,6 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import ExcelJS from "exceljs";
 import { PDFDocument } from "pdf-lib";
-import { toast } from "sonner";
 import termsAndConditionsPdf from "../../../assets/Terms.pdf";
 import { fetchImg, placeholder } from "./imageHelpers";
 import { calcTotals, amountInWords } from "./calcHelpers";

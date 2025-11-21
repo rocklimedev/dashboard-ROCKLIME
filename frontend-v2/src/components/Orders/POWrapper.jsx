@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { toast } from "sonner";
+import { message } from "antd";
 import { FaSearch } from "react-icons/fa";
 import { EditOutlined, DeleteOutlined, MoreOutlined } from "@ant-design/icons";
 import { Dropdown, Menu, Button, Select, Spin, Pagination } from "antd"; // <-- Pagination added
@@ -172,7 +172,7 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
       await deletePurchaseOrder(poId).unwrap();
       handleModalClose();
     } catch (err) {
-      toast.error(
+      message.error(
         `Failed to delete purchase order: ${
           err.data?.message || "Unknown error"
         }`
@@ -185,7 +185,7 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
       await updatePurchaseOrderStatus({ id: poId, status: newStatus }).unwrap();
       setEditingStatusId(null);
     } catch (err) {
-      toast.error(
+      message.error(
         `Failed to update status: ${err.data?.message || "Unknown error"}`
       );
     }

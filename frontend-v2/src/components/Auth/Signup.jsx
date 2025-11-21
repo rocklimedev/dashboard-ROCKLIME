@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useRegisterMutation } from "../../api/authApi";
-import { toast } from "sonner";
 import logo from "../../assets/img/logo.png";
-
+import { message } from "antd";
 const Signup = () => {
   const [formData, setFormData] = useState({
     username: "",
@@ -29,12 +28,12 @@ const Signup = () => {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
-      toast.error("Passwords do not match!");
+      message.error("Passwords do not match!");
       return;
     }
 
     if (!formData.agreeTerms) {
-      toast.error("You must agree to the terms and conditions!");
+      message.error("You must agree to the terms and conditions!");
       return;
     }
 
@@ -42,7 +41,7 @@ const Signup = () => {
       await register(formData).unwrap();
       navigate("/login");
     } catch (err) {
-      toast.error(err?.data?.message || "Something went wrong. Try again.");
+      message.error(err?.data?.message || "Something went wrong. Try again.");
     }
   };
 

@@ -241,7 +241,7 @@ const masterRoutes = [
       },
 
       {
-        path: "/inventory/product/add",
+        path: "/product/add",
         name: "Create Product",
         icon: <AiOutlineProduct />,
         isSidebarActive: false,
@@ -302,7 +302,7 @@ const masterRoutes = [
       },
 
       {
-        path: "/quotations/:id",
+        path: "/quotation/:id",
         name: "Quotations Details",
         icon: <IoPricetagOutline />,
         isSidebarActive: false,
@@ -310,7 +310,7 @@ const masterRoutes = [
         requiredPermission: { api: "view", module: "quotations" },
       },
       {
-        path: "/quotations/add",
+        path: "/quotation/add",
         name: "Add Quotations",
         icon: <IoPricetagOutline />,
         element: <AddQuotation />,
@@ -318,7 +318,7 @@ const masterRoutes = [
         requiredPermission: { api: "write", module: "quotations" },
       },
       {
-        path: "/quotations/:id/edit",
+        path: "/quotation/:id/edit",
         name: "Edit Quotations",
         icon: <IoPricetagOutline />,
         element: <AddQuotation />,
@@ -426,7 +426,7 @@ const masterRoutes = [
         element: <ComingSoon />,
       },
       {
-        path: "/customers/add",
+        path: "/customer/add",
         element: <AddCustomer />,
         name: "Add Customer",
         icon: <BiCart />,
@@ -434,7 +434,7 @@ const masterRoutes = [
         requiredPermission: { api: "write", module: "customers" },
       },
       {
-        path: "/customers/edit/:customerId",
+        path: "/customer/edit/:customerId",
         element: <AddCustomer />,
         name: "Edit Customer",
         icon: <BiCart />,

@@ -1,11 +1,12 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { FaSearch, FaPen } from "react-icons/fa"; // <-- add FaPen
+import { FaSearch, FaPen, FaThList, FaThLarge } from "react-icons/fa";
+import Avatar from "react-avatar";
 import {
   useGetAllUsersQuery,
-  useGetUserByIdQuery,
   useReportUserMutation,
   useDeleteUserMutation,
-  useUpdateStatusMutation, // <-- NEW
+  useUpdateStatusMutation,
+  useGetUserByIdQuery,
 } from "../../api/userApi";
 import {
   EyeOutlined,
@@ -15,18 +16,18 @@ import {
   MoreOutlined,
   MailOutlined,
 } from "@ant-design/icons";
-import { Dropdown, Menu, Button, Pagination, Popover } from "antd";
+import { Dropdown, Menu, Button, Pagination, Tooltip } from "antd";
 import DeleteModal from "../Common/DeleteModal";
-import { toast } from "sonner";
+import { message } from "antd";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "../Common/PageHeader";
 import { useResendVerificationEmailMutation } from "../../api/authApi";
 
 const UserList = () => {
-  /* ----------------------- STATE ----------------------- */
+  // Fixed useState (this was the main crash!)
+  const [viewMode, setViewMode] = useState("list"); // that's it!
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("Recently Added");
   const [activeTab, setActiveTab] = useState("All");
   const itemsPerPage = 20;
 
@@ -34,7 +35,7 @@ const UserList = () => {
   const [userToDelete, setUserToDelete] = useState(null);
   const [resendUserId, setResendUserId] = useState(null);
 
-  /* ----------------------- QUERIES / MUTATIONS ----------------------- */
+  // Queries
   const { data, error, isLoading, isFetching, refetch } = useGetAllUsersQuery({
     page: currentPage,
     limit: itemsPerPage,
@@ -42,34 +43,33 @@ const UserList = () => {
 
   const users = data?.users || [];
   const totalUsers = data?.total || 0;
-
   const navigate = useNavigate();
 
-  const [reportUser, { isLoading: isReporting }] = useReportUserMutation();
+  const [reportUser] = useReportUserMutation();
   const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
-  const [resendVerificationEmail, { isLoading: isResending }] =
-    useResendVerificationEmailMutation();
-
-  // NEW mutation
   const [updateStatus, { isLoading: isUpdatingStatus }] =
     useUpdateStatusMutation();
+  const [resendVerificationEmail] = useResendVerificationEmailMutation();
 
-  const {
-    data: selectedUserData,
-    isLoading: isUserLoading,
-    error: userError,
-  } = useGetUserByIdQuery(resendUserId, { skip: !resendUserId });
+  const { data: selectedUserData, isLoading: isUserLoading } =
+    useGetUserByIdQuery(resendUserId, {
+      skip: !resendUserId,
+    });
 
   const selectedUser =
     selectedUserData?.data?.user || selectedUserData?.user || selectedUserData;
 
-  /* ----------------------- MEMOIZED VALUES ----------------------- */
+  // Safe helpers (prevents crashes!)
+  const safeRoles = (roles) => (Array.isArray(roles) ? roles.join(", ") : "—");
+  const isUserActive = (status) =>
+    status === "active" || status === 1 || status === "1" || status === true;
 
+  // Grouping
   const groupedUsers = useMemo(
     () => ({
       All: users,
-      Active: users.filter((u) => u.status === "active"),
-      Inactive: users.filter((u) => u.status !== "active"),
+      Active: users.filter((u) => isUserActive(u.status)),
+      Inactive: users.filter((u) => !isUserActive(u.status)),
     }),
     [users]
   );
@@ -78,165 +78,77 @@ const UserList = () => {
     let result = groupedUsers[activeTab] || [];
 
     if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
       result = result.filter((user) =>
         [user.name, user.email, user.username, user.mobileNumber]
           .filter(Boolean)
-          .some((field) =>
-            field.toLowerCase().includes(searchTerm.toLowerCase())
-          )
+          .some((field) => field?.toString().toLowerCase().includes(term))
       );
     }
 
-    switch (sortBy) {
-      case "Ascending":
-        result = [...result].sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      case "Descending":
-        result = [...result].sort((a, b) => b.name.localeCompare(b.name));
-        break;
-      case "Recently Added":
-        result = [...result].sort(
-          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-        );
-        break;
-      default:
-        break;
-    }
     return result;
-  }, [groupedUsers, activeTab, searchTerm, sortBy]);
+  }, [groupedUsers, activeTab, searchTerm]);
 
-  /* ----------------------- HANDLERS ----------------------- */
-  const handleAddUser = () => navigate("/user/add");
-  const handleEditUser = (user) => navigate(`/user/${user.userId}/edit`);
+  // Handlers
   const handleViewUser = (user) => navigate(`/user/${user.userId}`);
-
+  const handleEditUser = (user) => navigate(`/user/${user.userId}/edit`);
   const handleDeleteUser = (userId) => {
     setUserToDelete(userId);
     setShowDeleteModal(true);
   };
 
-  const handleResendVerification = (userId) => setResendUserId(userId);
+  const handleStatusChange = async (userId, newStatus) => {
+    try {
+      await updateStatus({ userId, status: newStatus }).unwrap();
+    } catch (err) {
+      message.error("Failed to update status");
+    }
+  };
 
   const handleConfirmDelete = async () => {
-    if (!userToDelete) return;
     try {
       await deleteUser(userToDelete).unwrap();
-      if (filteredUsers.length === 1 && currentPage > 1) {
+
+      if (filteredUsers.length === 1 && currentPage > 1)
         setCurrentPage((p) => p - 1);
-      }
     } catch (err) {
-      toast.error(
-        `Failed to delete user: ${err.data?.message || "Unknown error"}`
-      );
+      message.error("Failed to delete user");
     } finally {
       setShowDeleteModal(false);
       setUserToDelete(null);
     }
   };
 
-  const handleReportUser = async (userId) => {
-    try {
-      await reportUser(userId).unwrap();
-    } catch (err) {
-      toast.error(
-        `Failed to report user: ${err.data?.message || "Unknown error"}`
-      );
-    }
-  };
-
-  // NEW: change status via PATCH
-  const handleStatusChange = async (userId, newStatus) => {
-    try {
-      await updateStatus({ userId, status: newStatus }).unwrap();
-    } catch (err) {
-      toast.error(
-        `Failed to update status: ${err.data?.message || "Unknown error"}`
-      );
-    }
-  };
-
-  const handlePageChange = (page) => setCurrentPage(page);
-
-  const clearFilters = () => {
-    setSearchTerm("");
-    setSortBy("Recently Added");
-    setActiveTab("All");
-    setCurrentPage(1);
-  };
-
-  /* ----------------------- RESEND VERIFICATION EFFECT ----------------------- */
+  // Resend verification
   useEffect(() => {
-    if (resendUserId && !isUserLoading) {
-      if (userError) {
-        toast.error(
-          `Failed to fetch user: ${
-            userError.data?.message || userError.message || "Unknown error"
-          }`
-        );
-        setResendUserId(null);
-        return;
-      }
-
-      if (!selectedUser?.email) {
-        toast.error("Invalid or missing user email");
-        setResendUserId(null);
-        return;
-      }
-
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(selectedUser.email)) {
-        toast.error("Invalid email format");
-        setResendUserId(null);
-        return;
-      }
-
+    if (resendUserId && selectedUser?.email) {
       resendVerificationEmail({ email: selectedUser.email })
         .unwrap()
-        .then(() => toast.success("Verification link sent successfully"))
-        .catch((err) =>
-          toast.error(
-            `Failed to resend: ${err.data?.message || "Unknown error"}`
-          )
-        )
+        .then(() => message.success("Verification email sent"))
+        .catch(() => message.error("Failed to send email"))
         .finally(() => setResendUserId(null));
     }
-  }, [
-    resendUserId,
-    selectedUser,
-    isUserLoading,
-    userError,
-    resendVerificationEmail,
-  ]);
+  }, [resendUserId, selectedUser]);
 
-  /* ----------------------- RENDER ----------------------- */
   if (isLoading || isFetching) {
     return (
-      <div className="content">
-        <div className="card">
-          <div className="card-body text-center">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </div>
-            <p>Loading users...</p>
-          </div>
+      <div className="content p-4 text-center">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
         </div>
+        <p className="mt-3">Loading users...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="content">
-        <div className="card">
-          <div className="card-body">
-            <div className="alert alert-danger" role="alert">
-              Error fetching users:{" "}
-              {error.data?.message || error.message || "Unknown error"}
-              <button className="btn btn-link ms-2" onClick={refetch}>
-                Retry
-              </button>
-            </div>
-          </div>
+      <div className="content p-4">
+        <div className="alert alert-danger">
+          Error loading users.{" "}
+          <button className="btn btn-link p-0" onClick={refetch}>
+            Retry
+          </button>
         </div>
       </div>
     );
@@ -248,245 +160,368 @@ const UserList = () => {
         <div className="card">
           <PageHeader
             title="Users"
-            subtitle="Manage your Users"
-            onAdd={handleAddUser}
-            tableData={filteredUsers}
+            subtitle="Manage your users"
+            onAdd={() => navigate("/user/add")}
           />
 
           <div className="card-body">
-            {/* ---------- FILTERS / TABS ---------- */}
-            <div className="row">
-              <div className="col-lg-4">
-                <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
-                  <h6 className="me-2">Status</h6>
-                  <ul
-                    className="nav nav-pills border d-inline-flex p-1 rounded bg-light todo-tabs"
-                    id="pills-tab"
-                    role="tablist"
-                  >
-                    {Object.keys(groupedUsers).map((status) => (
-                      <li className="nav-item" role="presentation" key={status}>
-                        <button
-                          className={`nav-link btn btn-sm btn-icon py-3 d-flex align-items-center justify-content-center w-auto ${
-                            activeTab === status ? "active" : ""
-                          }`}
-                          onClick={() => setActiveTab(status)}
-                        >
-                          {status} ({groupedUsers[status].length})
-                        </button>
-                      </li>
+            {/* Filters & View Toggle */}
+            <div className="row mb-4 align-items-center">
+              <div className="col-lg-6">
+                <div className="d-flex align-items-center gap-3 flex-wrap">
+                  <h6 className="mb-0">Status:</h6>
+                  <div className="btn-group">
+                    {Object.keys(groupedUsers).map((tab) => (
+                      <button
+                        key={tab}
+                        className={`btn btn-sm ${
+                          activeTab === tab
+                            ? "btn-primary"
+                            : "btn-outline-secondary"
+                        }`}
+                        onClick={() => setActiveTab(tab)}
+                      >
+                        {tab} ({groupedUsers[tab].length})
+                      </button>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               </div>
 
-              <div className="col-lg-8">
-                <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
-                  <div className="input-icon-start position-relative">
-                    <span className="input-icon-addon">
+              <div className="col-lg-6 text-lg-end">
+                <div className="d-flex justify-content-end gap-2 flex-wrap">
+                  <div className="input-group" style={{ maxWidth: "280px" }}>
+                    <span className="input-group-text">
                       <FaSearch />
                     </span>
                     <input
                       type="text"
                       className="form-control"
-                      placeholder="Search Users"
+                      placeholder="Search..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      aria-label="Search users"
                     />
                   </div>
-                  <button
-                    className="btn btn-outline-secondary ms-2"
-                    onClick={clearFilters}
-                  >
-                    Clear Filters
-                  </button>
+
+                  {/* View Mode Toggle */}
+                  <div className="btn-group">
+                    <button
+                      className={`btn ${
+                        viewMode === "list"
+                          ? "btn-primary"
+                          : "btn-outline-secondary"
+                      }`}
+                      onClick={() => setViewMode("list")}
+                    >
+                      <FaThList />
+                    </button>
+                    <button
+                      className={`btn ${
+                        viewMode === "card"
+                          ? "btn-primary"
+                          : "btn-outline-secondary"
+                      }`}
+                      onClick={() => setViewMode("card")}
+                    >
+                      <FaThLarge />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* ---------- TABLE ---------- */}
-            <div className="table-responsive">
-              <table className="table table-hover">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Username</th>
-                    <th>Mobile Number</th>
-                    <th>Roles</th>
-                    <th>Status</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredUsers.map((user) => {
-                    const isActive = user.status === "active";
-
-                    return (
-                      <tr key={user.userId}>
-                        <td>
-                          <a onClick={() => handleViewUser(user)}>
-                            {user.name || "N/A"}
-                          </a>
-                        </td>
-                        <td>{user.email || "N/A"}</td>
-                        <td>
-                          <a onClick={() => handleViewUser(user)}>
-                            {user.username || "N/A"}
-                          </a>
-                        </td>
-                        <td>{user.mobileNumber || "N/A"}</td>
-                        <td>{user.roles?.join(", ") || "N/A"}</td>
-
-                        {/* ---- STATUS BADGE + PEN ---- */}
-                        <td>
-                          <Dropdown
-                            overlay={
-                              <Menu>
-                                <Menu.Item
-                                  key="active"
-                                  disabled={isActive || isUpdatingStatus}
-                                  onClick={() =>
-                                    handleStatusChange(user.userId, "active")
-                                  }
-                                >
-                                  Active
-                                </Menu.Item>
-                                <Menu.Item
-                                  key="inactive"
-                                  disabled={!isActive || isUpdatingStatus}
-                                  onClick={() =>
-                                    handleStatusChange(user.userId, "inactive")
-                                  }
-                                >
-                                  Inactive
-                                </Menu.Item>
-                              </Menu>
-                            }
-                            trigger={["click"]}
-                            placement="bottomLeft"
-                          >
-                            <span
-                              className={`badge d-inline-flex align-items-center gap-1 cursor-pointer ${
-                                isActive ? "badge-success" : "badge-danger"
-                              }`}
-                            >
-                              {isActive ? "Active" : "Inactive"}
-                              <FaPen
-                                className="ms-1"
-                                style={{ fontSize: "0.85rem" }}
-                              />
-                            </span>
-                          </Dropdown>
-                        </td>
-
-                        {/* ---- ACTIONS ---- */}
-                        <td>
-                          <EditOutlined
-                            style={{ marginRight: 8, cursor: "pointer" }}
-                            onClick={() => handleEditUser(user)}
-                            title={`Edit ${user.name || "user"}`}
+            {/* CARD VIEW */}
+            {viewMode === "card" && (
+              <div className="row g-4">
+                {filteredUsers.map((user) => {
+                  const active = isUserActive(user.status);
+                  return (
+                    <div
+                      key={user.userId}
+                      className="col-md-6 col-lg-4 col-xl-3"
+                    >
+                      <div className="card h-100 shadow-sm border-0">
+                        <div className="card-body text-center p-4">
+                          <Avatar
+                            src={user.photo_thumbnail}
+                            name={user.name || user.username}
+                            round
+                            size="80"
+                            className="mb-3"
                           />
+                          <h6 className="mb-1">{user.name || "No Name"}</h6>
+                          <p className="text-muted small">@{user.username}</p>
 
-                          <Dropdown
-                            overlay={
-                              <Menu>
-                                <Menu.Item
-                                  key="view"
-                                  onClick={() => handleViewUser(user)}
-                                >
-                                  <EyeOutlined style={{ marginRight: 8 }} />
-                                  View User
-                                </Menu.Item>
-
-                                <Menu.Item
-                                  key="report"
-                                  onClick={() => handleReportUser(user.userId)}
-                                  disabled={isReporting}
-                                >
-                                  <ExclamationCircleOutlined
-                                    style={{ marginRight: 8 }}
-                                  />
-                                  Report User
-                                </Menu.Item>
-
-                                {!user.isEmailVerified && (
+                          <div className="d-flex justify-content-center gap-2 mb-3 flex-wrap">
+                            <span className="badge bg-light text-dark">
+                              {safeRoles(user.roles)}
+                            </span>
+                            <Dropdown
+                              overlay={
+                                <Menu>
                                   <Menu.Item
-                                    key="resend-verification"
+                                    key="active"
+                                    disabled={active || isUpdatingStatus}
                                     onClick={() =>
-                                      handleResendVerification(user.userId)
-                                    }
-                                    disabled={
-                                      isResending ||
-                                      (resendUserId === user.userId &&
-                                        isUserLoading)
+                                      handleStatusChange(user.userId, "active")
                                     }
                                   >
-                                    <MailOutlined style={{ marginRight: 8 }} />
-                                    Resend Verification
+                                    Active
                                   </Menu.Item>
-                                )}
+                                  <Menu.Item
+                                    key="inactive"
+                                    disabled={!active || isUpdatingStatus}
+                                    onClick={() =>
+                                      handleStatusChange(
+                                        user.userId,
+                                        "inactive"
+                                      )
+                                    }
+                                  >
+                                    Inactive
+                                  </Menu.Item>
+                                </Menu>
+                              }
+                              trigger={["click"]}
+                            >
+                              <span
+                                className={`badge ${
+                                  active ? "bg-success" : "bg-danger"
+                                } text-white cursor-pointer`}
+                              >
+                                {active ? "Active" : "Inactive"}{" "}
+                                <FaPen size={10} />
+                              </span>
+                            </Dropdown>
+                          </div>
 
-                                <Menu.Item
-                                  key="delete"
-                                  onClick={() => handleDeleteUser(user.userId)}
-                                  disabled={isDeleting}
-                                  style={{ color: "#ff4d4f" }}
-                                >
-                                  <DeleteOutlined style={{ marginRight: 8 }} />
-                                  Delete User
-                                </Menu.Item>
-                              </Menu>
-                            }
-                            trigger={["click"]}
-                            placement="bottomRight"
-                          >
-                            <Button
-                              type="text"
-                              icon={<MoreOutlined />}
-                              aria-label={`More actions for ${
-                                user.name || "user"
-                              }`}
+                          <div className="d-flex justify-content-center gap-2">
+                            <Tooltip title="View">
+                              <Button
+                                size="small"
+                                onClick={() => handleViewUser(user)}
+                              >
+                                <EyeOutlined />
+                              </Button>
+                            </Tooltip>
+                            <Tooltip title="Edit">
+                              <Button
+                                size="small"
+                                onClick={() => handleEditUser(user)}
+                              >
+                                <EditOutlined />
+                              </Button>
+                            </Tooltip>
+                            <Dropdown
+                              overlay={
+                                <Menu>
+                                  <Menu.Item
+                                    onClick={() =>
+                                      reportUser(user.userId)
+                                        .unwrap()
+                                        .then(() => message.success("Reported"))
+                                    }
+                                  >
+                                    <ExclamationCircleOutlined /> Report
+                                  </Menu.Item>
+                                  {!user.isEmailVerified && (
+                                    <Menu.Item
+                                      onClick={() =>
+                                        setResendUserId(user.userId)
+                                      }
+                                    >
+                                      <MailOutlined /> Resend Email
+                                    </Menu.Item>
+                                  )}
+                                  <Menu.Item
+                                    danger
+                                    onClick={() =>
+                                      handleDeleteUser(user.userId)
+                                    }
+                                  >
+                                    <DeleteOutlined /> Delete
+                                  </Menu.Item>
+                                </Menu>
+                              }
+                              trigger={["click"]}
+                            >
+                              <Button size="small">
+                                <MoreOutlined />
+                              </Button>
+                            </Dropdown>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* LIST VIEW */}
+            {viewMode === "list" && (
+              <div className="table-responsive">
+                <table className="table table-hover align-middle">
+                  <thead className="table-light">
+                    <tr>
+                      <th>Avatar</th>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Username</th>
+                      <th>Phone</th>
+                      <th>Role</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredUsers.map((user) => {
+                      const active = isUserActive(user.status);
+                      return (
+                        <tr key={user.userId}>
+                          <td>
+                            <Avatar
+                              src={user.photo_thumbnail}
+                              name={user.name || user.username}
+                              size="40"
+                              round
                             />
-                          </Dropdown>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                          </td>
+                          <td>
+                            <a
+                              href="#"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleViewUser(user);
+                              }}
+                              className="text-primary"
+                            >
+                              {user.name || "—"}
+                            </a>
+                          </td>
+                          <td>{user.email || "—"}</td>
+                          <td>{user.username || "—"}</td>
+                          <td>{user.mobileNumber || "—"}</td>
+                          <td>
+                            <span className="badge bg-light text-dark">
+                              {safeRoles(user.roles)}
+                            </span>
+                          </td>
+                          <td>
+                            <Dropdown
+                              overlay={
+                                <Menu>
+                                  <Menu.Item
+                                    key="active"
+                                    disabled={active}
+                                    onClick={() =>
+                                      handleStatusChange(user.userId, "active")
+                                    }
+                                  >
+                                    Active
+                                  </Menu.Item>
+                                  <Menu.Item
+                                    key="inactive"
+                                    disabled={!active}
+                                    onClick={() =>
+                                      handleStatusChange(
+                                        user.userId,
+                                        "inactive"
+                                      )
+                                    }
+                                  >
+                                    Inactive
+                                  </Menu.Item>
+                                </Menu>
+                              }
+                              trigger={["click"]}
+                            >
+                              <span
+                                className={`badge ${
+                                  active ? "bg-success" : "bg-danger"
+                                } text-white cursor-pointer`}
+                              >
+                                {active ? "Active" : "Inactive"}{" "}
+                                <FaPen size={10} />
+                              </span>
+                            </Dropdown>
+                          </td>
+                          <td>
+                            <EditOutlined
+                              className="me-3 text-primary"
+                              style={{ cursor: "pointer" }}
+                              onClick={() => handleEditUser(user)}
+                            />
+                            <Dropdown
+                              overlay={
+                                <Menu>
+                                  <Menu.Item
+                                    onClick={() => handleViewUser(user)}
+                                  >
+                                    <EyeOutlined /> View
+                                  </Menu.Item>
+                                  <Menu.Item
+                                    onClick={() => reportUser(user.userId)}
+                                  >
+                                    <ExclamationCircleOutlined /> Report
+                                  </Menu.Item>
+                                  {!user.isEmailVerified && (
+                                    <Menu.Item
+                                      onClick={() =>
+                                        setResendUserId(user.userId)
+                                      }
+                                    >
+                                      <MailOutlined /> Resend
+                                    </Menu.Item>
+                                  )}
+                                  <Menu.Item
+                                    danger
+                                    onClick={() =>
+                                      handleDeleteUser(user.userId)
+                                    }
+                                  >
+                                    <DeleteOutlined /> Delete
+                                  </Menu.Item>
+                                </Menu>
+                              }
+                              trigger={["click"]}
+                            >
+                              <Button type="text" icon={<MoreOutlined />} />
+                            </Dropdown>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
-              {totalUsers > itemsPerPage && (
-                <div className="pagination-section mt-4 d-flex justify-content-end">
-                  <Pagination
-                    current={currentPage}
-                    pageSize={itemsPerPage}
-                    total={totalUsers}
-                    onChange={handlePageChange}
-                    showSizeChanger={false}
-                    showQuickJumper
-                  />
-                </div>
-              )}
-            </div>
+            {/* Pagination */}
+            {totalUsers > itemsPerPage && (
+              <div className="d-flex justify-content-end mt-4">
+                <Pagination
+                  current={currentPage}
+                  pageSize={itemsPerPage}
+                  total={totalUsers}
+                  onChange={setCurrentPage}
+                  showSizeChanger={false}
+                />
+              </div>
+            )}
           </div>
         </div>
 
-        {/* ----- DELETE MODAL ----- */}
-        {showDeleteModal && (
-          <DeleteModal
-            item={userToDelete}
-            itemType="User"
-            isVisible={showDeleteModal}
-            onConfirm={handleConfirmDelete}
-            onCancel={() => {
-              setShowDeleteModal(false);
-              setUserToDelete(null);
-            }}
-            isLoading={isDeleting}
-          />
-        )}
+        <DeleteModal
+          isVisible={showDeleteModal}
+          onCancel={() => {
+            setShowDeleteModal(false);
+            setUserToDelete(null);
+          }}
+          onConfirm={handleConfirmDelete}
+          itemType="User"
+          isLoading={isDeleting}
+        />
       </div>
     </div>
   );

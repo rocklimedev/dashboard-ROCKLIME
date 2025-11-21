@@ -7,8 +7,7 @@ import {
 import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
 import { v4 as uuidv4 } from "uuid";
-import { toast } from "sonner";
-import { Modal, Button, Input, Select, Form, Radio } from "antd";
+import { Modal, Button, Input, Select, Form, Radio, message } from "antd";
 
 const { Option } = Select;
 
@@ -54,7 +53,8 @@ const countryData = {
     "West Bengal",
   ],
 };
-
+// ---- ADD THIS RIGHT AFTER `countryData` ----
+const sortedStates = [...countryData.states].sort((a, b) => a.localeCompare(b));
 const AddAddress = ({ onClose, onSave, existingAddress, selectedCustomer }) => {
   const isEdit = !!existingAddress;
   const [form] = Form.useForm();
@@ -154,11 +154,11 @@ const AddAddress = ({ onClose, onSave, existingAddress, selectedCustomer }) => {
 
   const handleSubmit = async (values) => {
     if (!values.userId && !values.customerId) {
-      toast.error("Either User or Customer is required");
+      message.error("Either User or Customer is required");
       return;
     }
     if (values.userId && values.customerId) {
-      toast.error(
+      message.error(
         "Address can only be associated with either a User or a Customer"
       );
       return;
@@ -196,7 +196,7 @@ const AddAddress = ({ onClose, onSave, existingAddress, selectedCustomer }) => {
       onSave(newAddressId);
       onClose();
     } catch (err) {
-      toast.error(
+      message.error(
         `Failed to save address: ${
           err?.data?.message || err.message || "Unknown error"
         }`
@@ -254,21 +254,16 @@ const AddAddress = ({ onClose, onSave, existingAddress, selectedCustomer }) => {
           <Select
             showSearch
             allowClear
-            placeholder="Select or type a state"
+            placeholder="Search and select state"
+            optionFilterProp="children"
             filterOption={(input, option) =>
               option.children.toLowerCase().includes(input.toLowerCase())
             }
-            // Allow custom input by not restricting to predefined options
-            onSearch={(value) => {
-              if (value) {
-                form.setFieldsValue({ state: value });
-              }
-            }}
-            onChange={(value) => {
-              form.setFieldsValue({ state: value });
-            }}
+            notFoundContent="No state found"
+            style={{ width: "100%" }}
           >
-            {countryData.states.map((state) => (
+            <Option value="">Select State</Option>
+            {sortedStates.map((state) => (
               <Option key={state} value={state}>
                 {state}
               </Option>

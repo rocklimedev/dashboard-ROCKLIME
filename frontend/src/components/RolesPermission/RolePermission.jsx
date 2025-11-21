@@ -8,7 +8,7 @@ import { Link } from "react-router-dom";
 import AddRoleModal from "./AddRoleModal";
 import DeleteModal from "../Common/DeleteModal";
 import DataTablePagination from "../Common/DataTablePagination";
-import { toast } from "sonner";
+import { message } from "antd";
 import PageHeader from "../Common/PageHeader";
 
 const RolePermission = () => {
@@ -156,7 +156,7 @@ const RolePermission = () => {
 
   const handleConfirmDelete = async () => {
     if (!selectedRole) {
-      toast.error("No role selected for deletion");
+      message.error("No role selected for deletion");
       setShowDeleteModal(false);
       return;
     }
@@ -166,7 +166,7 @@ const RolePermission = () => {
         setCurrentPage((p) => p - 1);
       }
     } catch (error) {
-      toast.error(
+      message.error(
         `Failed to delete role: ${error.data?.message || "Unknown error"}`
       );
     } finally {

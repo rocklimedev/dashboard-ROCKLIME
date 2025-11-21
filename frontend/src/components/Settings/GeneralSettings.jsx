@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { toast } from "sonner";
+import { message } from "antd";
 import {
   useDeleteUserMutation,
   useInactiveUserMutation,
@@ -59,9 +59,8 @@ const GeneralSettings = () => {
       await changePassword(passwordData).unwrap();
       setPasswordData({ password: "", newPassword: "" });
       setShowPasswordModal(false);
-      toast.success("Password changed successfully");
     } catch (error) {
-      toast.error(error?.data?.message || "Failed to change password");
+      message.error(error?.data?.message || "Failed to change password");
     }
   };
 
@@ -69,9 +68,11 @@ const GeneralSettings = () => {
   const handleResendVerification = async () => {
     try {
       await resendVerificationEmail({ email: profile?.user?.email }).unwrap();
-      toast.success("Verification email sent");
+      message.success("Verification email sent");
     } catch (error) {
-      toast.error(error?.data?.message || "Failed to send verification email");
+      message.error(
+        error?.data?.message || "Failed to send verification email"
+      );
     }
   };
 
@@ -99,7 +100,7 @@ const GeneralSettings = () => {
       dispatch(logout());
       navigate("/login");
     } catch (error) {
-      toast.error(error?.data?.message || "Failed to deactivate account");
+      message.error(error?.data?.message || "Failed to deactivate account");
     } finally {
       setShowConfirmModal(false);
     }
@@ -120,7 +121,7 @@ const GeneralSettings = () => {
       dispatch(logout());
       navigate("/login");
     } catch (error) {
-      toast.error(error?.data?.message || "Failed to delete account");
+      message.error(error?.data?.message || "Failed to delete account");
     } finally {
       setShowConfirmModal(false);
     }

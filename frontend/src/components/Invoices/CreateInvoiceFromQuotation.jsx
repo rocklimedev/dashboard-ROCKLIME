@@ -2,8 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Modal, Button, Form, Col, Row, Table } from "react-bootstrap";
 import { useGetAllAddressesQuery } from "../../api/addressApi";
 import { useGetProfileQuery } from "../../api/userApi";
-import { toast } from "sonner";
-
+import { message } from "antd";
 const CreateInvoiceFromQuotation = ({
   quotation,
   onClose,
@@ -165,7 +164,7 @@ const CreateInvoiceFromQuotation = ({
         error.data?.errors?.join(", ") ||
         "Failed to create invoice. Please try again.";
       setError(errorMessage);
-      toast.error(errorMessage);
+      message.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

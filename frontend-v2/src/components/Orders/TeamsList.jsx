@@ -4,44 +4,26 @@ import PageHeader from "../Common/PageHeader";
 import AddNewTeam from "./AddNewTeam";
 import DeleteModal from "../Common/DeleteModal";
 import DataTablePagination from "../Common/DataTablePagination";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
-import { format, subDays } from "date-fns";
-import {
-  Input,
-  Select,
-  Button,
-  Card,
-  Tooltip,
-  Space,
-  Typography,
-  Alert,
-} from "antd";
-import { Spinner } from "react-bootstrap";
 import {
   SearchOutlined,
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  MoreOutlined,
 } from "@ant-design/icons";
-import { toast } from "sonner";
-import Avatar from "react-avatar"; // Imported react-avatar
-import { Dropdown, Menu } from "antd";
+import { message, Button, Space, Tooltip, Card } from "antd";
+import Avatar from "react-avatar";
 import { BsThreeDotsVertical } from "react-icons/bs";
-const { Option } = Select;
-const { Text, Title } = Typography;
+import { FaThList, FaThLarge } from "react-icons/fa";
 
-const TeamsList = ({ adminName }) => {
+const TeamsList = () => {
   const { data, isLoading, isError, refetch } = useGetAllTeamsQuery();
   const [deleteTeam, { isLoading: isDeleting }] = useDeleteTeamMutation();
 
   const teams = Array.isArray(data?.teams) ? data.teams : [];
 
+  // State
+  const [viewMode, setViewMode] = useState("list"); // that's it!
   const [searchTerm, setSearchTerm] = useState("");
-  const [createdDate, setCreatedDate] = useState(null);
-  const [selectedStatus, setSelectedStatus] = useState("");
-  const [sortBy, setSortBy] = useState("Recently Added");
   const [activeTab, setActiveTab] = useState("All");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showNewTeamModal, setShowNewTeamModal] = useState(false);
@@ -50,97 +32,38 @@ const TeamsList = ({ adminName }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
 
+  // Grouped teams
   const groupedTeams = useMemo(
     () => ({
       All: teams,
-      Active: teams.filter((team) => team.status?.toLowerCase() === "active"),
-      Inactive: teams.filter(
-        (team) => team.status?.toLowerCase() === "inactive"
-      ),
-      "New Joiners": teams.filter(
-        (team) => team.status?.toLowerCase() === "new"
-      ),
+      Active: teams.filter((t) => t.status?.toLowerCase() === "active"),
+      Inactive: teams.filter((t) => t.status?.toLowerCase() === "inactive"),
+      "New Joiners": teams.filter((t) => t.status?.toLowerCase() === "new"),
     }),
     [teams]
   );
 
+  // Filtered teams
   const filteredTeams = useMemo(() => {
     let result = groupedTeams[activeTab] || [];
 
     if (searchTerm.trim()) {
-      result = result.filter((team) =>
-        [team.teamName, team.adminName]
-          .join(" ")
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase())
-      );
-    }
-
-    if (createdDate) {
-      result = result.filter((team) => {
-        const teamDate = new Date(team.createdDate);
-        return teamDate.toDateString() === createdDate.toDateString();
-      });
-    }
-
-    if (selectedStatus) {
+      const term = searchTerm.toLowerCase();
       result = result.filter(
-        (team) => team.status?.toLowerCase() === selectedStatus.toLowerCase()
+        (team) =>
+          team.teamName?.toLowerCase().includes(term) ||
+          team.adminName?.toLowerCase().includes(term)
       );
     }
 
-    switch (sortBy) {
-      case "Ascending":
-        result = [...result].sort((a, b) =>
-          a.teamName.localeCompare(b.teamName)
-        );
-        break;
-      case "Descending":
-        result = [...result].sort((a, b) =>
-          b.teamName.localeCompare(a.teamName)
-        );
-        break;
-      case "Recently Added":
-      case "Created Date":
-        result = [...result].sort(
-          (a, b) => new Date(b.createdDate) - new Date(a.createdDate)
-        );
-        break;
-      case "Last 7 Days":
-        const sevenDaysAgo = subDays(new Date(), 7);
-        result = result.filter(
-          (team) => new Date(team.createdDate) >= sevenDaysAgo
-        );
-        result = [...result].sort(
-          (a, b) => new Date(b.createdDate) - new Date(a.createdDate)
-        );
-        break;
-      case "Last Month":
-        const oneMonthAgo = subDays(new Date(), 30);
-        result = result.filter(
-          (team) => new Date(team.createdDate) >= oneMonthAgo
-        );
-        result = [...result].sort(
-          (a, b) => new Date(b.createdDate) - new Date(a.createdDate)
-        );
-        break;
-      default:
-        break;
-    }
-
-    return result;
-  }, [
-    groupedTeams,
-    activeTab,
-    searchTerm,
-    createdDate,
-    selectedStatus,
-    sortBy,
-  ]);
+    return result.sort(
+      (a, b) => new Date(b.createdDate) - new Date(a.createdDate)
+    );
+  }, [groupedTeams, activeTab, searchTerm]);
 
   const paginatedTeams = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredTeams.slice(startIndex, startIndex + itemsPerPage);
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredTeams.slice(start, start + itemsPerPage);
   }, [filteredTeams, currentPage]);
 
   const handleAddTeam = () => {
@@ -168,11 +91,7 @@ const TeamsList = ({ adminName }) => {
         setCurrentPage(currentPage - 1);
       }
     } catch (err) {
-      toast.error(
-        `Error deleting team: ${
-          err.data?.message || err.data?.error || "Unknown error"
-        }`
-      );
+      message.error(err.data?.message || "Failed to delete team");
     } finally {
       setShowDeleteModal(false);
       setTeamToDelete(null);
@@ -181,44 +100,28 @@ const TeamsList = ({ adminName }) => {
 
   const clearFilters = () => {
     setSearchTerm("");
-    setCreatedDate(null);
-    setSelectedStatus("");
-    setSortBy("Recently Added");
-    setActiveTab("All");
     setCurrentPage(1);
-  };
-
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
   };
 
   if (isLoading) {
     return (
-      <div className="content">
-        <div className="card">
-          <div className="card-body text-center">
-            <Spinner
-              animation="border"
-              variant="primary"
-              role="status"
-              aria-label="Loading data"
-            />
-            <p>Loading teams...</p>
-          </div>
+      <div className="content p-5 text-center">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
         </div>
+        <p className="mt-3">Loading teams...</p>
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div className="content">
-        <div className="card">
-          <div className="card-body">
-            <Alert variant="danger" role="alert">
-              Error loading teams: {JSON.stringify(isError)}. Please try again.
-            </Alert>
-          </div>
+      <div className="content p-4">
+        <div className="alert alert-danger">
+          Failed to load teams.{" "}
+          <button className="btn btn-link p-0" onClick={refetch}>
+            Retry
+          </button>
         </div>
       </div>
     );
@@ -229,196 +132,277 @@ const TeamsList = ({ adminName }) => {
       <div className="content">
         <div className="card">
           <PageHeader
-            onAdd={handleAddTeam}
             title="Teams"
-            subtitle="Manage your teams & team-members"
+            subtitle="Manage your teams & team members"
+            onAdd={handleAddTeam}
             tableData={paginatedTeams}
           />
+
           <div className="card-body">
-            <div className="row">
-              <div className="col-lg-12">
-                <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
-                  <div className="input-icon-start position-relative me-2">
-                    <span className="input-icon-addon">
-                      <SearchOutlined />
-                    </span>
+            {/* Tabs + Filters */}
+            <div className="row mb-4 align-items-center">
+              <div className="col-lg-8">
+                <div className="d-flex gap-2 flex-wrap">
+                  {Object.keys(groupedTeams).map((tab) => (
+                    <button
+                      key={tab}
+                      className={`btn btn-sm ${
+                        activeTab === tab
+                          ? "btn-primary"
+                          : "btn-outline-secondary"
+                      }`}
+                      onClick={() => {
+                        setActiveTab(tab);
+                        setCurrentPage(1);
+                      }}
+                    >
+                      {tab} ({groupedTeams[tab].length})
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="col-lg-4">
+                <div className="d-flex justify-content-end gap-2">
+                  <div className="position-relative" style={{ width: 250 }}>
+                    <SearchOutlined className="position-absolute top-50 start-3 translate-middle-y text-muted" />
                     <input
                       type="text"
-                      className="form-control"
-                      placeholder="Search Teams"
+                      className="form-control ps-5"
+                      placeholder="Search teams..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      aria-label="Search teams"
                     />
                   </div>
+
                   <button
-                    className="btn btn-outline-secondary ms-2"
+                    className="btn btn-outline-secondary"
                     onClick={clearFilters}
                   >
-                    Clear Filters
+                    Clear
                   </button>
+
+                  {/* View Toggle */}
+                  <div className="btn-group">
+                    <button
+                      className={`btn ${
+                        viewMode === "list"
+                          ? "btn-primary"
+                          : "btn-outline-secondary"
+                      }`}
+                      onClick={() => setViewMode("list")}
+                    >
+                      <FaThList />
+                    </button>
+                    <button
+                      className={`btn ${
+                        viewMode === "card"
+                          ? "btn-primary"
+                          : "btn-outline-secondary"
+                      }`}
+                      onClick={() => setViewMode("card")}
+                    >
+                      <FaThLarge />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-            <div className="tab-content" id="pills-tabContent">
-              {Object.entries(groupedTeams).map(([status, list]) => (
-                <div
-                  className={`tab-pane fade ${
-                    activeTab === status ? "show active" : ""
-                  }`}
-                  id={`pills-${status}`}
-                  role="tabpanel"
-                  aria-labelledby={`tab-${status}`}
-                  key={status}
-                >
-                  {filteredTeams.length === 0 ? (
-                    <p className="text-muted">
-                      No {status.toLowerCase()} teams match the applied filters
-                    </p>
-                  ) : (
-                    <div className="table-responsive">
-                      <table className="table table-hover">
-                        <thead>
-                          <tr>
-                            <th>Team Name</th>
-                            <th>Admin</th>
-                            <th>Total Members</th>
-                            <th></th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {paginatedTeams.map((team) => (
-                            <tr key={team.id}>
-                              <td>{team.teamName || "N/A"}</td>
-                              <td>
-                                <Space>
-                                  <Avatar
-                                    src={
-                                      team.adminId
-                                        ? `/u/${team.adminId}`
-                                        : "/u/default"
-                                    } // Use /u/:userId format
-                                    name={team.adminName || "Unknown"} // Fallback to name if no image
-                                    size={30}
-                                    round
-                                  />
-                                  {team.adminName || "Unknown"}
-                                </Space>
-                              </td>
-                              <td>
-                                <Space className="avatar-list-stacked">
-                                  {team.teammembers
-                                    ?.slice(0, 3)
-                                    .map((member, index) => (
-                                      <Tooltip
-                                        key={index}
-                                        title={member.userName}
-                                      >
-                                        <Avatar
-                                          src={
-                                            member.userId
-                                              ? `/u/${member.userId}`
-                                              : "/u/default"
-                                          } // Use /u/:userId format
-                                          name={member.userName || "Unknown"} // Fallback to name
-                                          size={30}
-                                          round
-                                        />
-                                      </Tooltip>
-                                    ))}
-                                  {team.teammembers?.length > 3 && (
-                                    <Tooltip
-                                      title={`+${
-                                        team.teammembers.length - 3
-                                      } more members`}
-                                    >
-                                      <Avatar
-                                        value={`+${
-                                          team.teammembers.length - 3
-                                        }`} // Display number of extra members
-                                        size={30}
-                                        round
-                                        color="#6c757d"
-                                        fgColor="#fff"
-                                      />
-                                    </Tooltip>
-                                  )}
-                                  <Text>{team.teammembers?.length || 0}</Text>
-                                </Space>
-                              </td>
-                              <td>
-                                <span>
-                                  <EditOutlined
-                                    onClick={() => handleEditTeam(team)}
-                                    className="me-2"
-                                  />
-                                </span>
 
-                                <Dropdown
-                                  overlay={
-                                    <Menu>
-                                      <Menu.Item
-                                        key="delete"
-                                        onClick={() => handleDeleteTeam(team)}
-                                        icon={
-                                          <DeleteOutlined className="me-2" />
-                                        }
-                                        disabled={isDeleting}
-                                        danger
-                                      >
-                                        Delete
-                                      </Menu.Item>
-                                    </Menu>
-                                  }
-                                  trigger={["click"]}
-                                  placement="bottomRight"
-                                >
-                                  <Button
-                                    icon={<BsThreeDotsVertical />}
-                                    size="small"
-                                    aria-label={`Actions for team ${team.teamName}`}
-                                  />
-                                </Dropdown>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      <div className="pagination-section mt-4">
-                        <DataTablePagination
-                          totalItems={filteredTeams.length}
-                          itemNo={itemsPerPage}
-                          onPageChange={handlePageChange}
-                          currentPage={currentPage}
+            {/* CARD VIEW */}
+            {viewMode === "card" && (
+              <div className="row g-4">
+                {paginatedTeams.map((team) => (
+                  <div key={team.id} className="col-md-6 col-lg-4">
+                    <Card
+                      hoverable
+                      className="h-100 shadow-sm"
+                      actions={[
+                        <EditOutlined
+                          key="edit"
+                          onClick={() => handleEditTeam(team)}
+                        />,
+                        <Dropdown
+                          key="more"
+                          overlay={
+                            <Menu>
+                              <Menu.Item
+                                danger
+                                onClick={() => handleDeleteTeam(team)}
+                                disabled={isDeleting}
+                              >
+                                <DeleteOutlined /> Delete Team
+                              </Menu.Item>
+                            </Menu>
+                          }
+                          trigger={["click"]}
+                        >
+                          <Button type="text" icon={<BsThreeDotsVertical />} />
+                        </Dropdown>,
+                      ]}
+                    >
+                      <div className="d-flex align-items-center mb-3">
+                        <Avatar
+                          name={team.teamName}
+                          size="50"
+                          round
+                          color="#1890ff"
+                          className="me-3"
                         />
+                        <div>
+                          <h6 className="mb-0">{team.teamName}</h6>
+                          <small className="text-muted">
+                            {team.teammembers?.length || 0} members
+                          </small>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+
+                      <div className="mb-3">
+                        <Space size={8}>
+                          <Avatar
+                            name={team.adminName || "Admin"}
+                            size="32"
+                            round
+                          />
+                          <span>{team.adminName || "Unknown Admin"}</span>
+                        </Space>
+                      </div>
+
+                      <Space size={[8, 8]} wrap>
+                        {team.teammembers?.slice(0, 6).map((member, i) => (
+                          <Tooltip key={i} title={member.userName}>
+                            <Avatar name={member.userName} size="32" round />
+                          </Tooltip>
+                        ))}
+                        {team.teammembers?.length > 6 && (
+                          <Avatar
+                            name={`+${team.teammembers.length - 6}`}
+                            size="32"
+                            round
+                            color="#999"
+                          />
+                        )}
+                      </Space>
+                    </Card>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* LIST VIEW */}
+            {viewMode === "list" && (
+              <div className="table-responsive">
+                <table className="table table-hover align-middle">
+                  <thead className="table-light">
+                    <tr>
+                      <th>Team Name</th>
+                      <th>Admin</th>
+                      <th>Members</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedTeams.map((team) => (
+                      <tr key={team.id}>
+                        <td>
+                          <strong>{team.teamName || "Unnamed Team"}</strong>
+                        </td>
+                        <td>
+                          <Space>
+                            <Avatar
+                              name={team.adminName || "A"}
+                              size="32"
+                              round
+                            />
+                            <span>{team.adminName || "Unknown"}</span>
+                          </Space>
+                        </td>
+                        <td>
+                          <Space size={8} wrap>
+                            {team.teammembers?.slice(0, 5).map((m, i) => (
+                              <Tooltip key={i} title={m.userName}>
+                                <Avatar name={m.userName} size="30" round />
+                              </Tooltip>
+                            ))}
+                            {team.teammembers?.length > 5 && (
+                              <Avatar
+                                name={`+${team.teammembers.length - 5}`}
+                                size="30"
+                                round
+                                color="#666"
+                              />
+                            )}
+                            <span className="text-muted small">
+                              ({team.teammembers?.length || 0})
+                            </span>
+                          </Space>
+                        </td>
+                        <td>
+                          <Space>
+                            <EditOutlined
+                              style={{ cursor: "pointer", fontSize: 18 }}
+                              onClick={() => handleEditTeam(team)}
+                            />
+                            <Dropdown
+                              overlay={
+                                <Menu>
+                                  <Menu.Item
+                                    danger
+                                    onClick={() => handleDeleteTeam(team)}
+                                  >
+                                    <DeleteOutlined /> Delete
+                                  </Menu.Item>
+                                </Menu>
+                              }
+                              trigger={["click"]}
+                            >
+                              <Button
+                                type="text"
+                                icon={<BsThreeDotsVertical />}
+                              />
+                            </Dropdown>
+                          </Space>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Pagination */}
+            {filteredTeams.length > itemsPerPage && (
+              <div className="mt-4 d-flex justify-content-center">
+                <DataTablePagination
+                  totalItems={filteredTeams.length}
+                  itemNo={itemsPerPage}
+                  onPageChange={setCurrentPage}
+                  currentPage={currentPage}
+                />
+              </div>
+            )}
           </div>
         </div>
 
+        {/* Modals */}
         <AddNewTeam
           team={selectedTeam}
           visible={showNewTeamModal}
           onClose={() => setShowNewTeamModal(false)}
           onTeamAdded={refetch}
         />
-        {showDeleteModal && (
-          <DeleteModal
-            item={teamToDelete}
-            itemType="Team"
-            isVisible={showDeleteModal}
-            onConfirm={confirmDelete}
-            onCancel={() => {
-              setShowDeleteModal(false);
-              setTeamToDelete(null);
-            }}
-            isLoading={isDeleting}
-          />
-        )}
+
+        <DeleteModal
+          isVisible={showDeleteModal}
+          onConfirm={confirmDelete}
+          onCancel={() => {
+            setShowDeleteModal(false);
+            setTeamToDelete(null);
+          }}
+          itemType="Team"
+          item={teamToDelete}
+          isLoading={isDeleting}
+        />
       </div>
     </div>
   );

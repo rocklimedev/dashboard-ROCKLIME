@@ -74,9 +74,7 @@ const EditInvoice = ({ invoice, onClose }) => {
               quantity: parseInt(prod.quantity) || 1,
             }));
         }
-      } catch (err) {
-        console.error("Failed to parse invoice.products:", err);
-      }
+      } catch (err) {}
     }
 
     return initialProducts;

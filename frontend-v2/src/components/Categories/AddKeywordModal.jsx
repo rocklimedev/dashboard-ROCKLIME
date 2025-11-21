@@ -5,8 +5,7 @@ import {
   useUpdateKeywordMutation,
 } from "../../api/keywordApi";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
-import { toast } from "sonner";
-
+import { message } from "antd";
 const AddKeywordModal = ({ open, onClose, editData, selectedCategoryId }) => {
   const [form] = Form.useForm();
   const isEditMode = !!editData;
@@ -37,7 +36,7 @@ const AddKeywordModal = ({ open, onClose, editData, selectedCategoryId }) => {
       }
       onClose();
     } catch (err) {
-      toast.error(err?.data?.message || "Failed to save keyword");
+      message.error(err?.data?.message || "Failed to save keyword");
     }
   };
 

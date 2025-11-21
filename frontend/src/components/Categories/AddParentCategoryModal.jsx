@@ -5,8 +5,7 @@ import {
   useUpdateParentCategoryMutation,
 } from "../../api/parentCategoryApi";
 import { useGetAllBrandsQuery } from "../../api/brandsApi";
-import { toast } from "sonner";
-
+import { message } from "antd";
 const AddParentCategoryModal = ({
   open,
   onClose,
@@ -33,7 +32,7 @@ const AddParentCategoryModal = ({
 
   const onFinish = async (values) => {
     if (!values.brandId) {
-      toast.error("Please select a brand");
+      message.error("Please select a brand");
       return;
     }
 
@@ -48,7 +47,7 @@ const AddParentCategoryModal = ({
       }
       onClose();
     } catch (err) {
-      toast.error(err?.data?.message || "Operation failed");
+      message.error(err?.data?.message || "Operation failed");
     }
   };
 

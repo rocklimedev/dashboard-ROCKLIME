@@ -10,6 +10,7 @@ import {
   Button,
   Tooltip,
   Dropdown,
+  Select,
   Menu,
 } from "antd";
 import {
@@ -34,7 +35,7 @@ import {
   useRemoveFromCartMutation,
 } from "../../api/cartApi";
 import { useGetProfileQuery } from "../../api/userApi";
-import { toast } from "sonner";
+import { message } from "antd";
 import "./productdetails.css";
 import DeleteModal from "../Common/DeleteModal";
 import HistoryModal from "../Common/HistoryModal";
@@ -43,7 +44,7 @@ import ProductCard from "./ProductCard";
 import PageHeader from "../Common/PageHeader";
 import Breadcrumb from "./Breadcrumb";
 import pos from "../../assets/img/default.png";
-
+import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import PermissionGate from "../../context/PermissionGate"; // <-- NEW
 import { useAuth } from "../../context/AuthContext";
 
@@ -63,7 +64,7 @@ const ProductsList = () => {
     data: categoriesData,
     isLoading: categoriesLoading,
     error: categoriesError,
-  } = useGetBrandParentCategoriesQuery();
+  } = useGetAllCategoriesQuery();
   const { data: customersData } = useGetCustomersQuery();
   const { data: user, isLoading: userLoading } = useGetProfileQuery();
 
@@ -80,6 +81,7 @@ const ProductsList = () => {
   // ──────────────────────────────────────────────────────
   // STATE
   // ──────────────────────────────────────────────────────
+  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const [viewMode, setViewMode] = useState("list");
   const [currentPage, setCurrentPage] = useState(1);
   const [isDeleteModalVisible, setDeleteModalVisible] = useState(false);
@@ -103,11 +105,21 @@ const ProductsList = () => {
       : "Not Branded";
   };
 
+  // ──────────────────────────────────────────────────────
+  // HELPERS (add these two functions)
+  // ──────────────────────────────────────────────────────
   const getCategoryName = (categoryId) => {
     return categoryId
-      ? categoriesData?.find((c) => c.id === categoryId)?.name ||
-          "Uncategorized"
+      ? categoriesData?.categories?.find((c) => c.categoryId === categoryId)
+          ?.name || "Uncategorized"
       : "Uncategorized";
+  };
+
+  const getParentCategoryName = (categoryId) => {
+    const cat = categoriesData?.categories?.find(
+      (c) => c.categoryId === categoryId
+    );
+    return cat?.parentcategories?.name || "";
   };
 
   const formatPrice = (value, unit) => {
@@ -152,26 +164,88 @@ const ProductsList = () => {
     () => (Array.isArray(productsData) ? productsData : []),
     [productsData]
   );
+  const categoryOptions = useMemo(() => {
+    const allCategories = categoriesData?.categories ?? [];
 
+    // Step 1: Determine which products we're filtering by brand/bpc
+    const relevantProducts = products.filter((product) => {
+      if (brandId) {
+        return String(product.brandId) === String(brandId);
+      }
+      if (bpcId) {
+        return String(product.brand_parentcategoriesId) === String(bpcId);
+      }
+      return true; // all products if no filter-brand filter
+    });
+
+    // Step 2: Extract unique categoryIds used in these products
+    const usedCategoryIds = new Set(
+      relevantProducts.map((p) => p.categoryId).filter(Boolean) // remove null/undefined
+    );
+
+    // Step 3: Build options only for categories that are actually used
+    const filteredCategories = allCategories.filter((cat) =>
+      usedCategoryIds.has(cat.categoryId || cat.id)
+    );
+
+    // Step 4: Sort alphabetically (optional but nice)
+    filteredCategories.sort((a, b) => a.name.localeCompare(b.name));
+
+    const options = [
+      { label: "All Categories", value: "" },
+      ...filteredCategories.map((c) => ({
+        label: c.name,
+        value: c.categoryId || c.id,
+      })),
+    ];
+
+    return options;
+  }, [categoriesData, products, brandId, bpcId]);
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
+      // ── 1. Brand / Parent-Category filter
       const matchesFilter = brandId
         ? String(product.brandId) === String(brandId)
         : bpcId
         ? String(product.brand_parentcategoriesId) === String(bpcId)
         : true;
+
+      // ── 2. Category filter
+      const matchesCategory = selectedCategoryId
+        ? String(product.categoryId) === selectedCategoryId
+        : true;
+
+      // ── 3. Search term
       const term = search.toLowerCase();
       const code = getCompanyCode(product.metaDetails);
+
+      const matchesName = product.name?.toLowerCase().includes(term);
+      const matchesCode = product.product_code?.toLowerCase().includes(term);
+      const matchesCompany = code?.toLowerCase().includes(term);
+      const catName = getCategoryName(product.categoryId);
+      const parentCatName = getParentCategoryName(product.categoryId);
+      const matchesCategoryName = catName.toLowerCase().includes(term);
+      const matchesParentCategory = parentCatName.toLowerCase().includes(term);
+
       return (
         matchesFilter &&
+        matchesCategory &&
         (!term ||
-          product.name?.toLowerCase().includes(term) ||
-          product.product_code?.toLowerCase().includes(term) ||
-          code?.toLowerCase().includes(term))
+          matchesName ||
+          matchesCode ||
+          matchesCompany ||
+          matchesCategoryName ||
+          matchesParentCategory)
       );
     });
-  }, [products, brandId, bpcId, search]);
-
+  }, [
+    products,
+    brandId,
+    bpcId,
+    search,
+    categoriesData,
+    selectedCategoryId, // ← NEW dependency
+  ]);
   const formattedTableData = useMemo(
     () =>
       filteredProducts.map((product) => ({
@@ -202,7 +276,7 @@ const ProductsList = () => {
 
   const handleConfirmDelete = async () => {
     if (!selectedProduct?.productId) {
-      toast.error("No product selected");
+      message.error("No product selected");
       setDeleteModalVisible(false);
       return;
     }
@@ -212,7 +286,7 @@ const ProductsList = () => {
         setCurrentPage(currentPage - 1);
       }
     } catch (e) {
-      toast.error(e.data?.message || "Delete failed");
+      message.error(e.data?.message || "Delete failed");
     } finally {
       setDeleteModalVisible(false);
       setSelectedProduct(null);
@@ -220,7 +294,7 @@ const ProductsList = () => {
   };
 
   const handleToggleFeatured = async (product) => {
-    if (!userId) return toast.error("User not logged in");
+    if (!userId) return message.error("User not logged in");
     const productId = product.productId;
     setFeaturedLoadingStates((s) => ({ ...s, [productId]: true }));
     try {
@@ -229,7 +303,7 @@ const ProductsList = () => {
         isFeatured: !product.isFeatured,
       }).unwrap();
     } catch (e) {
-      toast.error(e.data?.message || "Failed");
+      message.error(e.data?.message || "Failed");
     } finally {
       setFeaturedLoadingStates((s) => ({ ...s, [productId]: false }));
     }
@@ -237,17 +311,17 @@ const ProductsList = () => {
 
   // ProductsList.jsx  (only the handler changes)
   const handleAddToCart = async ({ productId, quantity }) => {
-    if (!userId) return toast.error("User not logged in");
-    if (!quantity || quantity < 1) return toast.error("Invalid quantity");
+    if (!userId) return message.error("User not logged in");
+    if (!quantity || quantity < 1) return message.error("Invalid quantity");
 
     const product = products.find((p) => p.productId === productId);
-    if (!product) return toast.error("Product not found");
+    if (!product) return message.error("Product not found");
 
     const sellingPrice = product.metaDetails?.find(
       (m) => m.slug === "sellingPrice"
     )?.value;
     if (!sellingPrice || isNaN(sellingPrice))
-      return toast.error("Invalid price");
+      return message.error("Invalid price");
 
     setCartLoadingStates((s) => ({ ...s, [productId]: true }));
 
@@ -262,7 +336,7 @@ const ProductsList = () => {
       }).unwrap();
       refetchCart();
     } catch (e) {
-      toast.error(e.data?.message || "Failed");
+      message.error(e.data?.message || "Failed");
     } finally {
       setCartLoadingStates((s) => ({ ...s, [productId]: false }));
     }
@@ -449,13 +523,13 @@ const ProductsList = () => {
   const breadcrumbItems = brandId
     ? [
         { label: "Home", url: "/" },
-        { label: "Brands", url: "/category-selector/products" },
+        { label: "Brands", url: "/category-selector" },
         { label: "Products" },
       ]
     : bpcId
     ? [
         { label: "Home", url: "/" },
-        { label: "Categories", url: "/category-selector/products" },
+        { label: "Categories", url: "/category-selector" },
         {
           label: bpcData?.name || "Category",
           url: `/brand-parent-categories/${bpcId}`,
@@ -532,9 +606,32 @@ const ProductsList = () => {
                 onChange={handleSearchChange}
               />
             </Form.Item>
+
+            {/* ── NEW CATEGORY DROPDOWN ── */}
+            <Form.Item className="filter-item">
+              <Select
+                style={{ width: 220 }}
+                placeholder="Filter by category"
+                allowClear
+                size="large"
+                options={categoryOptions}
+                onChange={(value) => {
+                  setSelectedCategoryId(value || null);
+                  setCurrentPage(1);
+                }}
+                value={selectedCategoryId}
+                // ADD THESE PROPS BELOW
+                showSearch
+                filterOption={(input, option) =>
+                  (option?.label ?? "")
+                    .toLowerCase()
+                    .includes(input.toLowerCase())
+                }
+                optionFilterProp="label"
+              />
+            </Form.Item>
           </Form>
         </div>
-
         {filteredProducts.length === 0 ? (
           <div className="empty-container text-center py-5">
             <Empty

@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { Modal, Button, Form } from "react-bootstrap";
 import { useAddStockMutation } from "../../api/productApi";
-import { toast } from "sonner"; // Import Sonner
-
+import { message } from "antd";
 const StockModal = ({ show, onHide, product }) => {
   const [quantity, setQuantity] = useState("");
 
@@ -11,7 +10,7 @@ const StockModal = ({ show, onHide, product }) => {
 
   const handleSubmit = async () => {
     if (!quantity || isNaN(quantity) || quantity <= 0) {
-      toast.error("Please enter a valid quantity."); // Sonner toast
+      message.error("Please enter a valid quantity.");
       return;
     }
 
@@ -23,7 +22,7 @@ const StockModal = ({ show, onHide, product }) => {
     try {
       await addStock(stockData).unwrap();
     } catch (error) {
-      toast.error(error?.data?.message || "Something went wrong!"); // Error toast
+      message.error(error?.data?.message || "Something went wrong!");
     }
 
     setQuantity("");

@@ -3,9 +3,10 @@ import {
   useGetCustomersQuery,
   useDeleteCustomerMutation,
 } from "../../api/customerApi";
+import Avatar from "react-avatar";
 import { BiTrash } from "react-icons/bi";
-import { FaEye, FaSearch } from "react-icons/fa";
-import { toast } from "sonner";
+import { FaEye, FaSearch, FaThList, FaThLarge } from "react-icons/fa";
+import { message } from "antd";
 import DeleteModal from "../Common/DeleteModal";
 import PageHeader from "../Common/PageHeader";
 import { BsThreeDotsVertical } from "react-icons/bs";
@@ -22,20 +23,16 @@ const CustomerList = () => {
   const customers = Array.isArray(data?.data) ? data.data : [];
   const [deleteCustomer] = useDeleteCustomerMutation();
 
-  // ──────────────────────────────────────────────────────
   // State
-  // ──────────────────────────────────────────────────────
+  const [viewMode, setViewMode] = useState("list"); // that's it!
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("Recently Added");
-  const [customerTypeFilter, setCustomerTypeFilter] = useState("All"); // ← NEW
+  const [customerTypeFilter, setCustomerTypeFilter] = useState("All");
 
-  // ──────────────────────────────────────────────────────
-  // Customer types
-  // ──────────────────────────────────────────────────────
   const customerTypes = [
     { value: "All", label: "All Customers" },
     { value: "Retail", label: "Retail" },
@@ -45,13 +42,22 @@ const CustomerList = () => {
     { value: "Contractor", label: "Contractor" },
   ];
 
-  // ──────────────────────────────────────────────────────
-  // Filtered + sorted customers
-  // ──────────────────────────────────────────────────────
+  // Safe helpers
+  const safeString = (val) => (val ? String(val).trim() : "");
+  const getInitials = (name) => {
+    if (!name) return "CU";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  // Filtered & sorted
   const filteredCustomers = useMemo(() => {
     let result = customers;
 
-    // Filter by customer type
     if (customerTypeFilter !== "All") {
       result = result.filter((c) => {
         if (customerTypeFilter === "Retail") {
@@ -61,22 +67,25 @@ const CustomerList = () => {
       });
     }
 
-    // Search
     if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
       result = result.filter((c) =>
         [c.name, c.email, c.companyName, c.mobileNumber]
           .filter(Boolean)
-          .some((f) => f.toLowerCase().includes(searchTerm.toLowerCase()))
+          .some((f) => safeString(f).toLowerCase().includes(term))
       );
     }
 
-    // Sort
     switch (sortBy) {
       case "Ascending":
-        result = [...result].sort((a, b) => a.name.localeCompare(b.name));
+        result = [...result].sort((a, b) =>
+          safeString(a.name).localeCompare(safeString(b.name))
+        );
         break;
       case "Descending":
-        result = [...result].sort((a, b) => b.name.localeCompare(b.name));
+        result = [...result].sort((a, b) =>
+          safeString(b.name).localeCompare(safeString(a.name))
+        );
         break;
       case "Recently Added":
         result = [...result].sort(
@@ -90,26 +99,20 @@ const CustomerList = () => {
     return result;
   }, [customers, customerTypeFilter, searchTerm, sortBy]);
 
-  // ──────────────────────────────────────────────────────
-  // Pagination
-  // ──────────────────────────────────────────────────────
   const paginatedCustomers = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return filteredCustomers.slice(start, start + pageSize);
   }, [filteredCustomers, currentPage, pageSize]);
 
-  // ──────────────────────────────────────────────────────
   // Handlers
-  // ──────────────────────────────────────────────────────
   const handlePageChange = (page, newPageSize) => {
     setCurrentPage(page);
     if (newPageSize !== pageSize) setPageSize(newPageSize);
   };
 
-  const handleAddCustomer = () => navigate("/customers/add");
-
+  const handleAddCustomer = () => navigate("/customer/add");
   const handleEditCustomer = (customer) => {
-    navigate(`/customers/edit/${customer.customerId}`, { state: { customer } });
+    navigate(`/customer/edit/${customer.customerId}`, { state: { customer } });
   };
 
   const handleDelete = (customerId) => {
@@ -118,24 +121,18 @@ const CustomerList = () => {
   };
 
   const confirmDelete = async () => {
-    if (!customerToDelete) {
-      toast.warn("No customer selected to delete.");
-      return;
-    }
+    if (!customerToDelete) return;
 
     try {
       await deleteCustomer(customerToDelete).unwrap();
-
       if (paginatedCustomers.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
     } catch (err) {
-      if (err?.status === 500) {
-        toast.error("Server error. Please try again later.");
-      } else if (err?.data?.message?.toLowerCase().includes("quotation")) {
-        toast.error("Cannot delete — quotations are linked.");
+      if (err?.data?.message?.toLowerCase().includes("quotation")) {
+        message.error("Cannot delete — quotations are linked.");
       } else {
-        toast.error("Failed to delete customer!");
+        message.error(err?.data?.message || "Failed to delete customer");
       }
     } finally {
       setShowDeleteModal(false);
@@ -150,41 +147,28 @@ const CustomerList = () => {
     setCurrentPage(1);
   };
 
-  // ──────────────────────────────────────────────────────
   // Loading / Error
-  // ──────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="content">
-        <div className="card">
-          <div className="card-body text-center py-5">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </div>
-            <p className="mt-3">Loading customers...</p>
-          </div>
+      <div className="content p-5 text-center">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
         </div>
+        <p className="mt-3">Loading customers...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="content">
-        <div className="card">
-          <div className="card-body">
-            <div className="alert alert-danger">
-              Error: {error?.data?.message || "Failed to load customers"}
-            </div>
-          </div>
+      <div className="content p-4">
+        <div className="alert alert-danger">
+          Error: {error?.data?.message || "Failed to load customers"}
         </div>
       </div>
     );
   }
 
-  // ──────────────────────────────────────────────────────
-  // Render
-  // ──────────────────────────────────────────────────────
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -193,14 +177,12 @@ const CustomerList = () => {
             title="Customers"
             subtitle="Manage your customer database"
             onAdd={handleAddCustomer}
-            tableData={paginatedCustomers}
           />
 
           <div className="card-body">
-            {/* ── Filters: Type Dropdown + Search + Sort + Clear ── */}
+            {/* Filters + View Toggle */}
             <div className="row mb-4 align-items-center g-3">
-              {/* Customer Type Dropdown */}
-              <div className="col-lg-3 col-md-6">
+              <div className="col-lg-3">
                 <Select
                   value={customerTypeFilter}
                   onChange={(val) => {
@@ -213,21 +195,25 @@ const CustomerList = () => {
                   {customerTypes.map((type) => (
                     <Option key={type.value} value={type.value}>
                       {type.label}{" "}
-                      {type.value !== "All" &&
-                        `(${
-                          customers.filter((c) =>
-                            type.value === "Retail"
-                              ? !c.customerType || c.customerType === "Retail"
-                              : c.customerType === type.value
-                          ).length
-                        })`}
+                      {type.value !== "All" && (
+                        <span className="text-muted">
+                          (
+                          {
+                            customers.filter((c) =>
+                              type.value === "Retail"
+                                ? !c.customerType || c.customerType === "Retail"
+                                : c.customerType === type.value
+                            ).length
+                          }
+                          )
+                        </span>
+                      )}
                     </Option>
                   ))}
                 </Select>
               </div>
 
-              {/* Search */}
-              <div className="col-lg-4 col-md-6">
+              <div className="col-lg-4">
                 <div className="position-relative">
                   <FaSearch className="position-absolute top-50 start-3 translate-middle-y text-muted" />
                   <input
@@ -239,41 +225,130 @@ const CustomerList = () => {
                       setSearchTerm(e.target.value);
                       setCurrentPage(1);
                     }}
-                    style={{ height: "40px" }}
                   />
                 </div>
               </div>
 
-              {/* Sort + Clear */}
-              <div className="col-lg-5 d-flex gap-2 justify-content-end flex-wrap">
+              <div className="col-lg-5 d-flex justify-content-end gap-2 flex-wrap">
                 <Select
                   value={sortBy}
-                  onChange={(val) => {
-                    setSortBy(val);
-                    setCurrentPage(1);
-                  }}
+                  onChange={setSortBy}
                   style={{ width: 180 }}
                 >
                   <Option value="Recently Added">Recently Added</Option>
-                  <Option value="Ascending">Name: A → Z</Option>
-                  <Option value="Descending">Name: Z → A</Option>
+                  <Option value="Ascending">Name: A to Z</Option>
+                  <Option value="Descending">Name: Z to A</Option>
                 </Select>
 
-                <Button onClick={clearFilters} type="default">
-                  Clear Filters
-                </Button>
+                <Button onClick={clearFilters}>Clear</Button>
+
+                {/* View Toggle */}
+                <div className="btn-group">
+                  <Button
+                    type={viewMode === "list" ? "primary" : "default"}
+                    onClick={() => setViewMode("list")}
+                    icon={<FaThList />}
+                  />
+                  <Button
+                    type={viewMode === "card" ? "primary" : "default"}
+                    onClick={() => setViewMode("card")}
+                    icon={<FaThLarge />}
+                  />
+                </div>
               </div>
             </div>
 
-            {/* ── Table ── */}
-            {paginatedCustomers.length === 0 ? (
-              <div className="text-center py-5 text-muted">
-                <p>
-                  No {customerTypeFilter.toLowerCase()} customers found.
-                  {searchTerm && " Try adjusting your search."}
-                </p>
+            {/* CARD VIEW */}
+            {viewMode === "card" && (
+              <div className="row g-4">
+                {paginatedCustomers.map((c) => (
+                  <div
+                    key={c.customerId}
+                    className="col-md-6 col-lg-4 col-xl-3"
+                  >
+                    <div className="card h-100 shadow-sm border-0 hover-shadow">
+                      <div className="card-body text-center p-4">
+                        <Avatar
+                          name={c.name || c.companyName || "Customer"}
+                          round
+                          size="80"
+                          className="mb-3"
+                          color="#1890ff"
+                          fgColor="#fff"
+                        />
+                        <h6 className="mb-1">{c.name || "Unnamed Customer"}</h6>
+                        {c.companyName && (
+                          <p className="text-muted small">{c.companyName}</p>
+                        )}
+                        <p className="text-muted small mb-2">
+                          {c.email || c.mobileNumber || "—"}
+                        </p>
+
+                        <div className="d-flex justify-content-center gap-2 mb-3">
+                          <span className="badge bg-light text-dark">
+                            {c.customerType || "Retail"}
+                          </span>
+                        </div>
+
+                        <div className="d-flex justify-content-center gap-2">
+                          <PermissionGate
+                            api="edit"
+                            module="Customer Management"
+                          >
+                            <Button
+                              size="small"
+                              onClick={() => handleEditCustomer(c)}
+                            >
+                              <EditOutlined />
+                            </Button>
+                          </PermissionGate>
+
+                          <PermissionGate api="view|delete" module="customers">
+                            <Dropdown
+                              trigger={["click"]}
+                              overlay={
+                                <Menu>
+                                  <PermissionGate api="view" module="customers">
+                                    <Menu.Item>
+                                      <a
+                                        href={`/customer/${c.customerId}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                      >
+                                        <FaEye className="me-2" /> View
+                                      </a>
+                                    </Menu.Item>
+                                  </PermissionGate>
+                                  <PermissionGate
+                                    api="delete"
+                                    module="customers"
+                                  >
+                                    <Menu.Item
+                                      danger
+                                      onClick={() => handleDelete(c.customerId)}
+                                    >
+                                      <BiTrash className="me-2" /> Delete
+                                    </Menu.Item>
+                                  </PermissionGate>
+                                </Menu>
+                              }
+                            >
+                              <Button
+                                size="small"
+                                icon={<BsThreeDotsVertical />}
+                              />
+                            </Dropdown>
+                          </PermissionGate>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ) : (
+            )}
+
+            {/* LIST VIEW */}
+            {viewMode === "list" && (
               <div className="table-responsive">
                 <table className="table table-hover align-middle">
                   <thead className="table-light">
@@ -290,14 +365,23 @@ const CustomerList = () => {
                     {paginatedCustomers.map((c) => (
                       <tr key={c.customerId}>
                         <td>
-                          <a
-                            href={`/customer/${c.customerId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary"
-                          >
-                            {c.name || "N/A"}
-                          </a>
+                          <div className="d-flex align-items-center gap-3">
+                            <Avatar
+                              name={c.name || c.companyName}
+                              round
+                              size="40"
+                              color="#1890ff"
+                              fgColor="#fff"
+                            />
+                            <a
+                              href={`/customer/${c.customerId}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary fw-medium"
+                            >
+                              {c.name || "Unnamed"}
+                            </a>
+                          </div>
                         </td>
                         <td>{c.email || "—"}</td>
                         <td>{c.mobileNumber || "—"}</td>
@@ -309,7 +393,6 @@ const CustomerList = () => {
                         </td>
                         <td className="text-end">
                           <div className="d-flex justify-content-end gap-2">
-                            {/* Edit */}
                             <PermissionGate
                               api="edit"
                               module="Customer Management"
@@ -318,11 +401,9 @@ const CustomerList = () => {
                                 size="small"
                                 icon={<EditOutlined />}
                                 onClick={() => handleEditCustomer(c)}
-                                title="Edit"
                               />
                             </PermissionGate>
 
-                            {/* Dropdown: View + Delete */}
                             <PermissionGate
                               api="view|delete"
                               module="customers"
@@ -335,7 +416,7 @@ const CustomerList = () => {
                                       api="view"
                                       module="customers"
                                     >
-                                      <Menu.Item key="view">
+                                      <Menu.Item>
                                         <a
                                           href={`/customer/${c.customerId}`}
                                           target="_blank"
@@ -345,13 +426,11 @@ const CustomerList = () => {
                                         </a>
                                       </Menu.Item>
                                     </PermissionGate>
-
                                     <PermissionGate
                                       api="delete"
                                       module="customers"
                                     >
                                       <Menu.Item
-                                        key="delete"
                                         danger
                                         onClick={() =>
                                           handleDelete(c.customerId)
@@ -376,46 +455,30 @@ const CustomerList = () => {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
 
-                {/* ── Pagination (Integrated) ── */}
-                {filteredCustomers.length > pageSize && (
-                  <div
-                    className="mt-4 p-3 bg-light rounded"
-                    style={{
-                      borderTop: "1px solid #eee",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                      gap: "12px",
-                    }}
-                  >
-                    <div className="text-muted small">
-                      Showing {(currentPage - 1) * pageSize + 1}–
-                      {Math.min(
-                        currentPage * pageSize,
-                        filteredCustomers.length
-                      )}{" "}
-                      of {filteredCustomers.length} customers
-                    </div>
-                    <Pagination
-                      current={currentPage}
-                      pageSize={pageSize}
-                      total={filteredCustomers.length}
-                      onChange={handlePageChange}
-                      showSizeChanger
-                      pageSizeOptions={["10", "20", "50", "100"]}
-                      showQuickJumper
-                      size="small"
-                    />
-                  </div>
-                )}
+            {/* Pagination */}
+            {filteredCustomers.length > pageSize && (
+              <div className="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div className="text-muted small">
+                  Showing {(currentPage - 1) * pageSize + 1}–
+                  {Math.min(currentPage * pageSize, filteredCustomers.length)}{" "}
+                  of {filteredCustomers.length}
+                </div>
+                <Pagination
+                  current={currentPage}
+                  pageSize={pageSize}
+                  total={filteredCustomers.length}
+                  onChange={handlePageChange}
+                  showSizeChanger
+                  pageSizeOptions={["10", "20", "50", "100"]}
+                />
               </div>
             )}
           </div>
         </div>
 
-        {/* ── Delete Modal ── */}
         <DeleteModal
           isVisible={showDeleteModal}
           onConfirm={confirmDelete}
@@ -423,7 +486,6 @@ const CustomerList = () => {
             setShowDeleteModal(false);
             setCustomerToDelete(null);
           }}
-          item={customerToDelete}
           itemType="Customer"
         />
       </div>

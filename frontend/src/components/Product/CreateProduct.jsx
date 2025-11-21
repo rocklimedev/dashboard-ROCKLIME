@@ -12,7 +12,7 @@ import { FiImage, FiPlusCircle, FiLifeBuoy } from "react-icons/fi";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import { useGetAllBrandsQuery } from "../../api/brandsApi";
 import { useGetProfileQuery } from "../../api/userApi";
-import { toast } from "sonner";
+import { message } from "antd";
 import { useDropzone } from "react-dropzone";
 import { useGetVendorsQuery } from "../../api/vendorApi";
 import { useGetAllProductMetaQuery } from "../../api/productMetaApi";
@@ -84,7 +84,7 @@ const CreateProduct = () => {
   const generateUniqueCode = useCallback(
     async (brandId, companyCodeValue, attempt = 0) => {
       if (attempt > 15) {
-        toast.error("Couldn't generate unique code. Please enter manually.");
+        message.error("Couldn't generate unique code. Please enter manually.");
         setCodeStatus("error");
         return;
       }
@@ -209,7 +209,7 @@ const CreateProduct = () => {
           });
           metaObject = validMeta;
         } catch (error) {
-          toast.error("Failed to load product specifications.");
+          message.error("Failed to load product specifications.");
           metaObject = {};
         }
       }
@@ -238,16 +238,16 @@ const CreateProduct = () => {
       if (rejectedFiles.length > 0) {
         rejectedFiles.forEach((file) => {
           if (file.errors.some((e) => e.code === "file-too-large")) {
-            toast.warning(`File "${file.file.name}" exceeds 5MB limit.`);
+            message.warning(`File "${file.file.name}" exceeds 5MB limit.`);
           } else if (file.errors.some((e) => e.code === "file-invalid-type")) {
-            toast.warning(`File "${file.file.name}" is not an image.`);
+            message.warning(`File "${file.file.name}" is not an image.`);
           }
         });
         return;
       }
 
       if (existingImages.length + newImages.length + acceptedFiles.length > 5) {
-        toast.warning("You can upload a maximum of 5 images.");
+        message.warning("You can upload a maximum of 5 images.");
         return;
       }
 
@@ -306,7 +306,7 @@ const CreateProduct = () => {
     );
 
     if (emptyFields.length > 0) {
-      toast.warning(
+      message.warning(
         `Please fill all required fields: ${emptyFields
           .map(([key]) => key)
           .join(", ")}.`
@@ -317,7 +317,7 @@ const CreateProduct = () => {
     for (const metaId of Object.keys(metaData)) {
       const metaField = productMetaData.find((meta) => meta.id === metaId);
       if (!metaField) {
-        toast.error(`Invalid ProductMeta ID: ${metaId}`);
+        message.error(`Invalid ProductMeta ID: ${metaId}`);
         return;
       }
       if (
@@ -325,7 +325,7 @@ const CreateProduct = () => {
         metaData[metaId] !== "" &&
         isNaN(metaData[metaId])
       ) {
-        toast.error(`Value for ${metaField.title} must be a number`);
+        message.error(`Value for ${metaField.title} must be a number`);
         return;
       }
     }
@@ -373,7 +373,7 @@ const CreateProduct = () => {
     } catch (error) {
       const message =
         error.data?.message || "Something went wrong while saving the product.";
-      toast.error(`Error: ${message}`);
+      message.error(`Error: ${message}`);
     }
   };
 

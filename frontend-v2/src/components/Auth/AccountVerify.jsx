@@ -1,9 +1,8 @@
 import React, { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useVerifyAccountMutation } from "../../api/authApi";
-import { toast } from "sonner";
 import logo from "../../assets/img/logo.png";
-
+import { message } from "antd";
 const AccountVerify = () => {
   const navigate = useNavigate();
   const { token } = useParams();
@@ -12,18 +11,18 @@ const AccountVerify = () => {
   useEffect(() => {
     const verifyToken = async () => {
       if (!token || typeof token !== "string" || token.trim() === "") {
-        toast.error("Invalid verification link.");
+        message.error("Invalid verification link.");
         setTimeout(() => navigate("/login"), 2000);
         return;
       }
 
       try {
         await verifyAccount({ token }).unwrap();
-        toast.success("Account verified successfully!");
+        message.success("Account verified successfully!");
         setTimeout(() => navigate("/login"), 2000);
       } catch (error) {
         const message = error?.data?.message || "Failed to verify account.";
-        toast.error(message);
+        message.error(message);
         setTimeout(() => navigate("/login"), 2000);
       }
     };

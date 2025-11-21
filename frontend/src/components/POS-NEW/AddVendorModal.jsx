@@ -6,7 +6,7 @@ import {
   useCreateVendorMutation,
 } from "../../api/vendorApi"; // Assume vendorApi
 import { useSendNotificationMutation } from "../../api/notificationApi";
-import { toast } from "sonner";
+import { message } from "antd";
 import { useGetAllBrandsQuery } from "../../api/brandsApi";
 import { useAuth } from "../../context/AuthContext";
 const { Option } = Select;
@@ -70,7 +70,7 @@ const AddVendorModal = ({ show, onClose, isCreatingVendor }) => {
     try {
       await form.validateFields();
       if (vendorIdError || isVendorIdUnique === false) {
-        toast.error("Please fix the Vendor ID error before submitting.");
+        message.error("Please fix the Vendor ID error before submitting.");
         return;
       }
       const vendor = await createVendor({
@@ -100,7 +100,7 @@ const AddVendorModal = ({ show, onClose, isCreatingVendor }) => {
         err.status === 400 && err.data?.message.includes("vendorId")
           ? "Vendor ID already exists. Please use a unique ID."
           : err.data?.message || "Failed to create vendor";
-      toast.error(errorMessage);
+      message.error(errorMessage);
     }
   };
 

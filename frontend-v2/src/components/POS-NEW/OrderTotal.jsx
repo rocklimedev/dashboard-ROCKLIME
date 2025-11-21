@@ -15,7 +15,7 @@ const formatCurrency = (value) =>
 
 const OrderTotal = React.memo(
   ({
-    shipping = 0,
+    shipping: _shippingProp, // ← ignore incoming prop
     tax = 0,
     roundOff = 0,
     subTotal = 0,
@@ -25,6 +25,7 @@ const OrderTotal = React.memo(
     gstAmount = 0,
     finalTotal: finalTotalProp,
   }) => {
+    const shipping = 0; // ← ALWAYS 0
     const safe = (n) => (typeof n === "number" && !isNaN(n) ? n : 0);
 
     const safeSubTotal = safe(subTotal);
@@ -40,36 +41,29 @@ const OrderTotal = React.memo(
       const taxable = safeSubTotal - safeDiscount;
       const afterTax = taxable + safeTax;
       const afterExtra = afterTax - safeExtraDiscount;
-      const afterShipping = afterExtra + safeShipping;
-      const afterGst = afterShipping + safeGstAmount;
-      const beforeRound = afterGst;
-      const calculated = beforeRound + safeRoundOff;
+      const withGst = afterExtra + safeGstAmount;
+      const beforeRound = withGst;
 
-      const final =
-        finalTotalProp != null && !isNaN(finalTotalProp)
-          ? finalTotalProp
-          : Math.round(calculated);
+      const rupees = Math.floor(beforeRound);
+      const paise = Math.round((beforeRound - rupees) * 100);
+      let roundOff = 0;
+      if (paise > 0 && paise <= 50) {
+        roundOff = -(paise / 100);
+      } else if (paise > 50) {
+        roundOff = (100 - paise) / 100;
+      }
+      const final = Math.round(beforeRound + roundOff); // ← already correct
 
       return {
         taxable,
         afterTax,
         afterExtra,
-        afterShipping,
-        afterGst,
+        withGst,
         beforeRound,
-        calculated,
+        roundOff,
         final,
       };
-    }, [
-      safeSubTotal,
-      safeDiscount,
-      safeTax,
-      safeExtraDiscount,
-      safeGstAmount,
-      safeShipping,
-      safeRoundOff,
-      finalTotalProp,
-    ]);
+    }, [safeSubTotal, safeDiscount, safeTax, safeExtraDiscount, safeGstAmount]);
 
     const columns = [
       {
@@ -108,8 +102,10 @@ const OrderTotal = React.memo(
         amount: safeDiscount,
         isNegative: safeDiscount > 0,
       },
-      { key: "after-tax", label: "Final Amount", amount: calculations.taxable },
-
+      { key: "taxable", label: "Taxable Amount", amount: calculations.taxable },
+      ...(safeTax > 0
+        ? [{ key: "tax", label: "Tax", amount: safeTax, isPositive: true }]
+        : []),
       ...(safeExtraDiscount > 0
         ? [
             {
@@ -120,14 +116,6 @@ const OrderTotal = React.memo(
             },
           ]
         : []),
-
-      {
-        key: "shipping",
-        label: "Shipping",
-        amount: safeShipping,
-        isPositive: safeShipping > 0,
-      },
-
       ...(safeGst > 0
         ? [
             {
@@ -138,25 +126,22 @@ const OrderTotal = React.memo(
             },
           ]
         : []),
-
       {
         key: "before-round",
         label: "Before Round-off",
-        amount: calculations.afterGst,
+        amount: calculations.withGst,
       },
-
-      ...(safeRoundOff !== 0
+      ...(calculations.roundOff !== 0
         ? [
             {
               key: "roundoff",
-              label: safeRoundOff > 0 ? "Round-off (+)" : "Round-off (-)",
-              amount: Math.abs(safeRoundOff),
-              isPositive: safeRoundOff > 0,
-              isNegative: safeRoundOff < 0,
+              label: calculations.roundOff > 0 ? "Round-up" : "Round-down",
+              amount: Math.abs(calculations.roundOff),
+              isPositive: calculations.roundOff > 0,
+              isNegative: calculations.roundOff < 0,
             },
           ]
         : []),
-
       {
         key: "final",
         label: "Grand Total",
