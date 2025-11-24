@@ -5,6 +5,8 @@
   "dependencies": {
     "@ant-design/icons": "^6.0.0",
     "@fancyapps/ui": "^5.0.36",
+    "@pdfme/common": "^5.5.1",
+    "@pdfme/generator": "^5.5.1",
     "@reduxjs/toolkit": "^2.5.1",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
@@ -26,6 +28,8 @@
     "flatpickr": "^4.6.13",
     "html-to-pdfmake": "^2.5.32",
     "html2canvas": "^1.4.1",
+    "html2pdf": "^0.0.11",
+    "html2pdf.js": "^0.12.1",
     "jquery": "^3.7.1",
     "jsbarcode": "^3.11.6",
     "jspdf": "^3.0.3",

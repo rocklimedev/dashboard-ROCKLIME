@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { Spinner, Alert } from "react-bootstrap";
 import { FaSearch, FaArrowLeft } from "react-icons/fa";
 import { MoreOutlined } from "@ant-design/icons";
 import { Dropdown, Menu, Button } from "antd";
@@ -9,6 +8,7 @@ import { message } from "antd";
 import PageHeader from "../Common/PageHeader";
 import { rolePermissionsApi as api } from "../../api/rolePermissionApi";
 import "./permission.css";
+
 import { useGetRoleQuery } from "../../api/rolesApi";
 import { useGetAllRolePermissionsByRoleIdQuery } from "../../api/rolePermissionApi";
 import { useAssignPermissionToRoleMutation } from "../../api/rolePermissionApi";
@@ -20,28 +20,17 @@ const Permissions = () => {
   const dispatch = useDispatch();
 
   // Queries
-  const {
-    data: roleData,
-    isLoading: isRoleLoading,
-    error: roleError,
-  } = useGetRoleQuery(roleId);
+  const { data: roleData, error: roleError } = useGetRoleQuery(roleId);
 
-  const {
-    data: rolePermissionsData,
-    isLoading: isRolePermissionsLoading,
-    error: rolePermissionsError,
-  } = useGetAllRolePermissionsByRoleIdQuery(roleId, {
-    skip: !roleId,
-    refetchOnMountOrArgChange: false,
-  });
+  const { data: rolePermissionsData, error: rolePermissionsError } =
+    useGetAllRolePermissionsByRoleIdQuery(roleId, {
+      skip: !roleId,
+    });
 
-  const {
-    data: permissionsData,
-    isLoading: isPermissionsLoading,
-    error: permissionsError,
-  } = useGetAllPermissionsQuery(undefined, {
-    refetchOnMountOrArgChange: false,
-  });
+  const { data: permissionsData, error: permissionsError } =
+    useGetAllPermissionsQuery(undefined, {
+      refetchOnMountOrArgChange: false,
+    });
 
   // Mutations
   const [assignPermission, { isLoading: isAssigning }] =
@@ -71,29 +60,20 @@ const Permissions = () => {
       const hasApi =
         perm.api && typeof perm.api === "string" && perm.api.trim() !== "";
 
-      // SKIP if no valid api
       if (!hasApi) return;
 
-      // Track module
-      if (!moduleMap[module]) {
-        moduleMap[module] = {};
-      }
+      if (!moduleMap[module]) moduleMap[module] = {};
       moduleMap[module][perm.api] = true;
 
-      // Track global types
       types.add(perm.api);
 
-      // Build lookup
-      if (!lookup[module]) {
-        lookup[module] = {};
-      }
+      if (!lookup[module]) lookup[module] = {};
       lookup[module][perm.api] = {
         permissionId: perm.permissionId,
         route: perm.route || "No route",
       };
     });
 
-    // Only keep modules that have at least one valid permission
     const validModules = Object.keys(moduleMap);
 
     return {
@@ -149,32 +129,15 @@ const Permissions = () => {
     return isGranted ? "badge bg-success" : "badge bg-warning";
   };
 
-  /* ==================== LOADING & ERROR STATES ==================== */
-  const isLoading =
-    isRoleLoading || isRolePermissionsLoading || isPermissionsLoading;
-  const hasError = roleError || rolePermissionsError || permissionsError;
-
-  if (isLoading) {
-    return (
-      <div className="content">
-        <div className="card">
-          <div className="card-body text-center py-5">
-            <Spinner animation="border" variant="primary" />
-            <p className="mt-3">Loading permissions...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (hasError || !roleId) {
+  /* ==================== ERROR STATE (optional – remove if handled globally) ==================== */
+  if (roleError || rolePermissionsError || permissionsError || !roleId) {
     return (
       <div className="content">
         <div className="card">
           <div className="card-body">
-            <Alert variant="danger">
-              Error loading data. Please try again.
-            </Alert>
+            <div className="alert alert-danger" role="alert">
+              Error loading permissions. Please try again later.
+            </div>
           </div>
         </div>
       </div>

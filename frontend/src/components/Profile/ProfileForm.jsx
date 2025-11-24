@@ -15,10 +15,18 @@ import {
   Divider,
   Modal,
   Slider,
+  Card,
 } from "antd";
+import {
+  UploadOutlined,
+  UserOutlined,
+  MailOutlined,
+  PhoneOutlined,
+  CalendarOutlined,
+  HomeOutlined,
+} from "@ant-design/icons";
 import moment from "moment";
-import { UploadOutlined, UserOutlined } from "@ant-design/icons";
-import Cropper from "react-easy-crop"; // <-- NEW
+import Cropper from "react-easy-crop";
 import {
   useUpdateProfileMutation,
   useUploadPhotoMutation,
@@ -28,9 +36,6 @@ import {
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-/* -------------------------------------------------------------
-   Helper: create a cropped blob from the selected area
-   ------------------------------------------------------------- */
 const getCroppedImg = (imageSrc, pixelCrop) => {
   return new Promise((resolve, reject) => {
     const image = new Image();
@@ -38,11 +43,10 @@ const getCroppedImg = (imageSrc, pixelCrop) => {
     image.onload = () => {
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
-      if (!ctx) return reject(new Error("Canvas context error"));
+      if (!ctx) return reject(new Error("Canvas error"));
 
-      const targetSize = 400;
-      canvas.width = targetSize;
-      canvas.height = targetSize;
+      canvas.width = 400;
+      canvas.height = 400;
 
       ctx.drawImage(
         image,
@@ -52,39 +56,35 @@ const getCroppedImg = (imageSrc, pixelCrop) => {
         pixelCrop.height,
         0,
         0,
-        targetSize,
-        targetSize
+        400,
+        400
       );
 
-      canvas.toBlob((blob) => {
-        if (blob) resolve(blob);
-        else reject(new Error("Blob creation failed"));
-      }, "image/jpeg");
+      canvas.toBlob(
+        (blob) => {
+          blob ? resolve(blob) : reject(new Error("Crop failed"));
+        },
+        "image/jpeg",
+        0.95
+      );
     };
     image.onerror = reject;
   });
 };
 
-const ProfileForm = ({ userId, onSuccess, onCancel }) => {
+const ProfileForm = ({ onSuccess, onCancel }) => {
   const [form] = Form.useForm();
-  const { data: profileData, isLoading, refetch } = useGetProfileQuery();
+  const { data: profileData, isLoading } = useGetProfileQuery();
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
   const [uploadPhoto, { isLoading: isUploading }] = useUploadPhotoMutation();
 
-  // Avatar URLs
-  const [avatarUrl, setAvatarUrl] = useState(null);
-  const [originalUrl, setOriginalUrl] = useState(null);
-
-  // Crop modal state
+  const [avatarUrl, setAvatarUrl] = useState("");
   const [cropModalVisible, setCropModalVisible] = useState(false);
   const [cropImage, setCropImage] = useState(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
-  // -----------------------------------------------------------------
-  // Load profile data
-  // -----------------------------------------------------------------
   useEffect(() => {
     if (profileData?.user) {
       const u = profileData.user;
@@ -94,52 +94,42 @@ const ProfileForm = ({ userId, onSuccess, onCancel }) => {
         email: u.email || "",
         mobileNumber: u.mobileNumber || "",
         dateOfBirth: u.dateOfBirth ? moment(u.dateOfBirth) : null,
+        bloodGroup: u.bloodGroup || undefined,
+        emergencyNumber: u.emergencyNumber || "",
         shiftFrom: u.shiftFrom ? moment(u.shiftFrom, "HH:mm:ss") : null,
         shiftTo: u.shiftTo ? moment(u.shiftTo, "HH:mm:ss") : null,
-        bloodGroup: u.bloodGroup || null,
-        emergencyNumber: u.emergencyNumber || "",
         street: u.address?.street || "",
         city: u.address?.city || "",
         state: u.address?.state || "",
         postalCode: u.address?.postalCode || "",
         country: u.address?.country || "",
       });
-
-      setAvatarUrl(u.photo_thumbnail ?? null);
-      setOriginalUrl(u.photo_original ?? null);
+      setAvatarUrl(u.photo_thumbnail || "");
     }
   }, [profileData, form]);
 
-  // -----------------------------------------------------------------
-  // Upload + Crop flow
-  // -----------------------------------------------------------------
   const beforeUpload = (file) => {
-    const isImg = [
-      "image/jpeg",
-      "image/jpg",
-      "image/png",
-      "image/webp",
-    ].includes(file.type);
-    if (!isImg) {
-      message.error("Only JPEG, PNG, or WEBP images are allowed");
+    const isImage = /image\/(jpeg|png|webp)/.test(file.type);
+    const isLt5M = file.size / 1024 / 1024 < 5;
+
+    if (!isImage) {
+      message.error("Only JPG, PNG, or WebP images allowed!");
       return Upload.LIST_IGNORE;
     }
-    const isLt5M = file.size / 1024 / 1024 < 5;
     if (!isLt5M) {
-      message.error("Image must be smaller than 5MB");
+      message.error("Image must be smaller than 5MB!");
       return Upload.LIST_IGNORE;
     }
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      setCropImage(e.target?.result);
+      setCropImage(e.target.result);
       setCropModalVisible(true);
-      // reset crop/zoom for a fresh start
-      setCrop({ x: 0, y: 0 });
       setZoom(1);
+      setCrop({ x: 0, y: 0 });
     };
     reader.readAsDataURL(file);
-    return false; // stop default upload
+    return false;
   };
 
   const onCropComplete = useCallback((_, croppedAreaPixels) => {
@@ -147,355 +137,296 @@ const ProfileForm = ({ userId, onSuccess, onCancel }) => {
   }, []);
 
   const handleCropSave = async () => {
-    if (!cropImage || !croppedAreaPixels) return;
-
     try {
       const croppedBlob = await getCroppedImg(cropImage, croppedAreaPixels);
-
-      // Pass blob directly
       const result = await uploadPhoto(croppedBlob).unwrap();
 
       setAvatarUrl(result.photo_thumbnail);
-      setOriginalUrl(result.photo_original);
-      message.success("Avatar uploaded successfully!");
-
+      message.success("Avatar updated successfully!");
       setCropModalVisible(false);
       setCropImage(null);
     } catch (err) {
-      message.error(err?.data?.message || "Upload failed");
+      message.error("Failed to upload image");
     }
   };
-  console.log(profileData);
-  // -----------------------------------------------------------------
-  // Save profile
-  // -----------------------------------------------------------------
-  const handleSave = async (values) => {
-    if (!profileData?.user?.userId) {
-      return message.error("User not found.");
-    }
 
+  const onFinish = async (values) => {
     const payload = {
-      username: values.username,
-      name: values.name,
-      email: values.email,
-      mobileNumber: values.mobileNumber,
+      ...values,
       dateOfBirth: values.dateOfBirth?.format("YYYY-MM-DD") || null,
       shiftFrom: values.shiftFrom?.format("HH:mm:ss") || null,
       shiftTo: values.shiftTo?.format("HH:mm:ss") || null,
-      bloodGroup: values.bloodGroup || null,
-      emergencyNumber: values.emergencyNumber || null,
-      photo_thumbnail: avatarUrl || null, // use thumbnail
-      photo_original: originalUrl || null,
+      photo_thumbnail: avatarUrl || null,
       address: {
-        street: values.street || "",
-        city: values.city || "",
-        state: values.state || "",
-        postalCode: values.postalCode || "",
-        country: values.country || "",
+        street: values.street?.trim() || "",
+        city: values.city?.trim() || "",
+        state: values.state?.trim() || "",
+        postalCode: values.postalCode?.trim() || "",
+        country: values.country?.trim() || "",
       },
     };
 
     try {
       await updateProfile(payload).unwrap();
-      message.success("Profile updated!");
-      refetch();
+      message.success("Profile updated successfully!");
       onSuccess?.();
-    } catch (error) {
-      message.error(error?.data?.message || "Failed to update profile");
+    } catch (err) {
+      message.error(err?.data?.message || "Failed to update profile");
     }
   };
 
-  // -----------------------------------------------------------------
-  // Loading UI
-  // -----------------------------------------------------------------
   if (isLoading) {
     return (
-      <div className="page-wrapper">
-        <div className="content text-center py-5">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-        </div>
+      <div className="flex justify-center items-center min-h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600"></div>
       </div>
     );
   }
 
-  // -----------------------------------------------------------------
-  // Render
-  // -----------------------------------------------------------------
   return (
     <div className="page-wrapper">
       <div className="content">
-        <Row gutter={[24, 24]}>
-          {/* Avatar */}
-          <Col xs={24} md={8} lg={6}>
-            <div style={{ textAlign: "center" }}>
-              <Avatar
-                size={140}
-                icon={<UserOutlined />}
-                src={avatarUrl}
-                style={{
-                  border: "4px solid #f0f0f0",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                }}
-              />
-              <div style={{ marginTop: 16 }}>
-                <Upload
-                  name="photo"
-                  showUploadList={false}
-                  beforeUpload={beforeUpload}
-                  disabled={isUploading}
-                >
-                  <Button
-                    icon={<UploadOutlined />}
-                    loading={isUploading}
-                    block
-                    type="default"
-                    style={{ borderRadius: 8 }}
-                  >
-                    Change Avatar
-                  </Button>
-                </Upload>
-                <Text
-                  type="secondary"
-                  style={{ display: "block", marginTop: 8, fontSize: 12 }}
-                >
-                  Max 5 MB (JPEG, PNG, WEBP)
-                </Text>
-              </div>
-            </div>
-          </Col>
-
-          {/* Form */}
-          <Col xs={24} md={16} lg={18}>
-            <Form
-              form={form}
-              layout="vertical"
-              onFinish={handleSave}
-              style={{ width: "100%" }}
-            >
-              {/* Personal Information */}
-              <Divider orientation="left">
-                <Title level={5} style={{ margin: 0 }}>
-                  Personal Information
-                </Title>
-              </Divider>
-
-              <Row gutter={16}>
-                <Col xs={24} sm={12}>
-                  <Form.Item
-                    label="Username"
-                    name="username"
-                    rules={[
-                      { required: true, message: "Username is required" },
-                      { max: 50, message: "Max 50 characters" },
-                    ]}
-                  >
-                    <Input placeholder="Enter username" />
-                  </Form.Item>
-                </Col>
-
-                <Col xs={24} sm={12}>
-                  <Form.Item
-                    label="Full Name"
-                    name="name"
-                    rules={[
-                      { required: true, message: "Name is required" },
-                      { max: 100, message: "Max 100 characters" },
-                    ]}
-                  >
-                    <Input placeholder="Enter full name" />
-                  </Form.Item>
-                </Col>
-
-                <Col xs={24} sm={12}>
-                  <Form.Item
-                    label="Email"
-                    name="email"
-                    rules={[
-                      { required: true, message: "Email is required" },
-                      { type: "email", message: "Invalid email" },
-                      { max: 100, message: "Max 100 characters" },
-                    ]}
-                  >
-                    <Input placeholder="example@domain.com" />
-                  </Form.Item>
-                </Col>
-
-                <Col xs={24} sm={12}>
-                  <Form.Item
-                    label="Phone Number"
-                    name="mobileNumber"
-                    rules={[
-                      {
-                        pattern: /^[0-9]{10}$/,
-                        message: "Must be 10 digits",
-                      },
-                    ]}
-                  >
-                    <Input placeholder="1234567890" />
-                  </Form.Item>
-                </Col>
-
-                <Col xs={24} sm={12}>
-                  <Form.Item label="Date of Birth" name="dateOfBirth">
-                    <DatePicker
-                      style={{ width: "100%" }}
-                      format="YYYY-MM-DD"
-                      placeholder="Select date"
-                    />
-                  </Form.Item>
-                </Col>
-
-                <Col xs={24} sm={12}>
-                  <Form.Item label="Blood Group" name="bloodGroup">
-                    <Select allowClear placeholder="Select blood group">
-                      {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map(
-                        (group) => (
-                          <Option key={group} value={group}>
-                            {group}
-                          </Option>
-                        )
-                      )}
-                    </Select>
-                  </Form.Item>
-                </Col>
-
-                <Col xs={24} sm={12}>
-                  <Form.Item
-                    label="Emergency Contact"
-                    name="emergencyNumber"
-                    rules={[
-                      {
-                        pattern: /^[0-9]{10}$/,
-                        message: "Must be 10 digits",
-                      },
-                    ]}
-                  >
-                    <Input placeholder="Emergency contact number" />
-                  </Form.Item>
-                </Col>
-
-                <Col xs={24} sm={12}>
-                  <Form.Item label="Shift Start" name="shiftFrom">
-                    <DatePicker
-                      picker="time"
-                      format="HH:mm:ss"
-                      style={{ width: "100%" }}
-                      placeholder="Shift Start"
-                    />
-                  </Form.Item>
-                </Col>
-
-                <Col xs={24} sm={12}>
-                  <Form.Item label="Shift End" name="shiftTo">
-                    <DatePicker
-                      picker="time"
-                      format="HH:mm:ss"
-                      style={{ width: "100%" }}
-                      placeholder="Shift End"
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              {/* Address Information */}
-              <Divider orientation="left" style={{ marginTop: 32 }}>
-                <Title level={5} style={{ margin: 0 }}>
-                  Address Information
-                </Title>
-              </Divider>
-
-              <Row gutter={16}>
-                <Col xs={24} sm={12}>
-                  <Form.Item label="Street" name="street">
-                    <Input placeholder="123 Main St" />
-                  </Form.Item>
-                </Col>
-
-                <Col xs={24} sm={12}>
-                  <Form.Item label="City" name="city">
-                    <Input placeholder="Your City" />
-                  </Form.Item>
-                </Col>
-
-                <Col xs={24} sm={12}>
-                  <Form.Item label="State" name="state">
-                    <Input placeholder="State" />
-                  </Form.Item>
-                </Col>
-
-                <Col xs={24} sm={12}>
-                  <Form.Item label="Postal Code" name="postalCode">
-                    <Input placeholder="Postal Code" />
-                  </Form.Item>
-                </Col>
-
-                <Col xs={24}>
-                  <Form.Item label="Country" name="country">
-                    <Input placeholder="Country" />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              {/* Action Buttons */}
-              <Form.Item style={{ marginTop: 32, textAlign: "right" }}>
-                <Space size="middle">
-                  <Button
-                    onClick={() => onCancel?.()}
-                    size="large"
-                    style={{ minWidth: 100 }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    loading={isUpdating}
-                    size="large"
-                    style={{ minWidth: 140 }}
-                  >
-                    Save Changes
-                  </Button>
-                </Space>
-              </Form.Item>
-            </Form>
-          </Col>
-        </Row>
-
-        {/* ==================== CROP MODAL (react-easy-crop) ==================== */}
-        <Modal
-          title="Crop Your Avatar"
-          open={cropModalVisible}
-          onCancel={() => {
-            setCropModalVisible(false);
-            setCropImage(null);
+        <div
+          style={{
+            background: "#f8fafc",
+            minHeight: "100vh",
+            padding: "24px 0",
           }}
-          footer={[
-            <Button
-              key="cancel"
-              onClick={() => {
+        >
+          <div style={{ maxWidth: 1000, margin: "0 auto", padding: "0 16px" }}>
+            <Card className="shadow-xl rounded-2xl border-0">
+              <div className="text-center mb-8">
+                <Title level={2} className="text-gray-800">
+                  Edit Profile
+                </Title>
+                <Text type="secondary">Update your personal information</Text>
+              </div>
+
+              <Row gutter={[32, 24]} align="top">
+                {/* Avatar Section */}
+                <Col xs={24} md={8}>
+                  <Card className="text-center border-0 shadow-lg rounded-2xl">
+                    <Avatar
+                      size={160}
+                      icon={<UserOutlined />}
+                      src={avatarUrl}
+                      className="shadow-2xl border-8 border-white"
+                      style={{ backgroundColor: "#e6f7ff" }}
+                    />
+                    <div className="mt-6">
+                      <Upload
+                        showUploadList={false}
+                        beforeUpload={beforeUpload}
+                      >
+                        <Button
+                          type="primary"
+                          size="large"
+                          icon={<UploadOutlined />}
+                          loading={isUploading}
+                          className="rounded-xl font-medium"
+                        >
+                          Change Avatar
+                        </Button>
+                      </Upload>
+                      <Text type="secondary" className="block mt-3 text-sm">
+                        JPG, PNG or WebP • Max 5MB
+                      </Text>
+                    </div>
+                  </Card>
+                </Col>
+
+                {/* Form Section */}
+                <Col xs={24} md={16}>
+                  <Form form={form} layout="vertical" onFinish={onFinish}>
+                    {/* Personal Info */}
+                    <Divider>
+                      <Title level={4} className="flex items-center gap-2">
+                        <UserOutlined className="text-blue-600" />
+                        Personal Information
+                      </Title>
+                    </Divider>
+
+                    <Row gutter={16}>
+                      <Col xs={24} sm={12}>
+                        <Form.Item
+                          label="Full Name"
+                          name="name"
+                          rules={[
+                            { required: true, message: "Name is required" },
+                          ]}
+                        >
+                          <Input
+                            size="large"
+                            prefix={<UserOutlined />}
+                            placeholder="John Doe"
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col xs={24} sm={12}>
+                        <Form.Item
+                          label="Username"
+                          name="username"
+                          rules={[
+                            { required: true, message: "Username required" },
+                          ]}
+                        >
+                          <Input size="large" placeholder="@johndoe" />
+                        </Form.Item>
+                      </Col>
+                      <Col xs={24} sm={12}>
+                        <Form.Item
+                          label="Email Address"
+                          name="email"
+                          rules={[
+                            { required: true, message: "Email required" },
+                            { type: "email", message: "Invalid email" },
+                          ]}
+                        >
+                          <Input
+                            size="large"
+                            prefix={<MailOutlined />}
+                            disabled
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col xs={24} sm={12}>
+                        <Form.Item
+                          label="Phone Number"
+                          name="mobileNumber"
+                          rules={[
+                            {
+                              pattern: /^[0-9]{10}$/,
+                              message: "10 digits only",
+                            },
+                          ]}
+                        >
+                          <Input
+                            size="large"
+                            prefix={<PhoneOutlined />}
+                            placeholder="9876543210"
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col xs={24} sm={12}>
+                        <Form.Item label="Date of Birth" name="dateOfBirth">
+                          <DatePicker
+                            size="large"
+                            style={{ width: "100%" }}
+                            prefix={<CalendarOutlined />}
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col xs={24} sm={12}>
+                        <Form.Item label="Blood Group" name="bloodGroup">
+                          <Select
+                            size="large"
+                            allowClear
+                            placeholder="Select blood group"
+                          >
+                            {[
+                              "A+",
+                              "A-",
+                              "B+",
+                              "B-",
+                              "AB+",
+                              "AB-",
+                              "O+",
+                              "O-",
+                            ].map((g) => (
+                              <Option key={g} value={g}>
+                                {g}
+                              </Option>
+                            ))}
+                          </Select>
+                        </Form.Item>
+                      </Col>
+                      <Col xs={24} sm={12}>
+                        <Form.Item
+                          label="Emergency Contact"
+                          name="emergencyNumber"
+                        >
+                          <Input size="large" placeholder="9876543210" />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+
+                    {/* Address */}
+                    <Divider>
+                      <Title level={4} className="flex items-center gap-2">
+                        <HomeOutlined className="text-green-600" />
+                        Address
+                      </Title>
+                    </Divider>
+
+                    <Row gutter={16}>
+                      <Col span={24}>
+                        <Form.Item label="Street Address" name="street">
+                          <Input size="large" placeholder="123 Main Street" />
+                        </Form.Item>
+                      </Col>
+                      <Col xs={24} sm={12}>
+                        <Form.Item label="City" name="city">
+                          <Input size="large" placeholder="Mumbai" />
+                        </Form.Item>
+                      </Col>
+                      <Col xs={24} sm={12}>
+                        <Form.Item label="State" name="state">
+                          <Input size="large" placeholder="Maharashtra" />
+                        </Form.Item>
+                      </Col>
+                      <Col xs={24} sm={12}>
+                        <Form.Item label="Postal Code" name="postalCode">
+                          <Input size="large" placeholder="400001" />
+                        </Form.Item>
+                      </Col>
+                      <Col xs={24} sm={12}>
+                        <Form.Item label="Country" name="country">
+                          <Input size="large" placeholder="India" />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+
+                    {/* Actions */}
+                    <div className="flex justify-end gap-4 mt-10">
+                      <Button size="large" onClick={onCancel}>
+                        Cancel
+                      </Button>
+                      <Button
+                        type="primary"
+                        size="large"
+                        htmlType="submit"
+                        loading={isUpdating}
+                        className="px-8 font-medium"
+                      >
+                        Save Changes
+                      </Button>
+                    </div>
+                  </Form>
+                </Col>
+              </Row>
+            </Card>
+
+            {/* Crop Modal */}
+            <Modal
+              title={<Title level={4}>Crop Your Avatar</Title>}
+              open={cropModalVisible}
+              onCancel={() => {
                 setCropModalVisible(false);
                 setCropImage(null);
               }}
+              footer={null}
+              width={560}
+              destroyOnClose
             >
-              Cancel
-            </Button>,
-            <Button
-              key="save"
-              type="primary"
-              loading={isUploading}
-              onClick={handleCropSave}
-            >
-              Save
-            </Button>,
-          ]}
-          width={540}
-          destroyOnClose
-        >
-          {cropImage && (
-            <>
-              <div style={{ position: "relative", height: 400 }}>
+              <div
+                style={{
+                  position: "relative",
+                  height: 400,
+                  background: "#000",
+                  borderRadius: 12,
+                  overflow: "hidden",
+                }}
+              >
                 <Cropper
                   image={cropImage}
                   crop={crop}
@@ -506,22 +437,35 @@ const ProfileForm = ({ userId, onSuccess, onCancel }) => {
                   onCropComplete={onCropComplete}
                   cropShape="round"
                   showGrid={false}
+                  style={{ containerStyle: { borderRadius: 12 } }}
                 />
               </div>
-
-              <div style={{ padding: "12px 0" }}>
+              <div className="mt-6">
+                <Text>Zoom</Text>
                 <Slider
                   min={1}
                   max={3}
-                  step={0.05}
+                  step={0.1}
                   value={zoom}
                   onChange={setZoom}
-                  tooltip={{ formatter: (v) => `${v.toFixed(2)}x` }}
+                  className="mt-2"
                 />
               </div>
-            </>
-          )}
-        </Modal>
+              <div className="flex justify-end gap-3 mt-6">
+                <Button onClick={() => setCropModalVisible(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  type="primary"
+                  loading={isUploading}
+                  onClick={handleCropSave}
+                >
+                  Apply
+                </Button>
+              </div>
+            </Modal>
+          </div>
+        </div>
       </div>
     </div>
   );

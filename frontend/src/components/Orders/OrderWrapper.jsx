@@ -770,7 +770,7 @@ const OrderWrapper = () => {
                             </td>
                             <td>
                               {order.quotationId ? (
-                                <Link to={`/quotations/${order.quotationId}`}>
+                                <Link to={`/quotation/${order.quotationId}`}>
                                   {reference_number}
                                 </Link>
                               ) : (
