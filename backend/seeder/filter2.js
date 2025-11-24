@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 
 // ============================= CONFIG =============================
-const PRODUCTS_FILE = "./seeder/filteredProducts.json";
+const PRODUCTS_FILE = "./seeder/backup/products_backup.json";
 const IMAGES_DIR = "./seeder/images";
 const OUTPUT_FILE = "./updated.json";
 const UNUSED_IMAGES_FILE = "./unused_images3.txt";

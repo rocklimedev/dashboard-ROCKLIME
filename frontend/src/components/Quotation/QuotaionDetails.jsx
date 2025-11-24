@@ -200,7 +200,7 @@ const QuotationsDetails = () => {
     activeVersionData.quotation?.extraDiscountType || "amount",
     activeVersionData.quotation?.roundOff || 0
   );
-  console.log(gstAmount);
+
   // === EXPORT HANDLER ===
   const handleExport = async () => {
     if (!id || !quotation) return message.error("Quotation missing");

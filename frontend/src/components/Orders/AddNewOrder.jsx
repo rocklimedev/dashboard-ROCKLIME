@@ -52,16 +52,7 @@ import DatePicker from "react-datepicker";
 const { Option } = Select;
 const { Text } = Typography;
 // ────────────────────── QUOTATION → ORDER TRANSFORMER ──────────────────────
-const transformQuotationProductsForOrder = (products) => {
-  return products.map((item) => ({
-    id: item.productId,
-    price: Number(item.price),
-    quantity: Number(item.quantity || 1),
-    discount: Number(item.discount || 0),
-    discountType: item.discountType || "percent", // ← safe now
-    total: Number(item.total),
-  }));
-};
+
 /* ────────────────────── Constants ────────────────────── */
 const SOURCE_TYPES = [
   "Retail",
@@ -158,10 +149,13 @@ const AddNewOrder = ({ adminName }) => {
     masterPipelineNo: null,
     previousOrderNo: null,
     shipTo: null,
-    shipping: 0.0,
-    gst: null,
-    extraDiscount: null,
     extraDiscountType: "fixed",
+    gst: quotationData.gst ? parseFloat(quotationData.gst) : null,
+    extraDiscount: quotationData.extraDiscount
+      ? parseFloat(quotationData.extraDiscount)
+      : null,
+    extraDiscountType: quotationData.extraDiscountType || "fixed",
+    shipping: quotationData.shipping ? parseFloat(quotationData.shipping) : 0.0,
   });
 
   /* ────────────────────── Queries (no loading) ────────────────────── */
@@ -565,17 +559,24 @@ const AddNewOrder = ({ adminName }) => {
     const payload = {
       createdFor: formData.createdFor,
       createdBy: formData.createdBy,
-      products: quotationData.products
-        ? transformQuotationProductsForOrder(quotationData.products)
-        : products.length > 0
-        ? products
-        : [],
+      products:
+        quotationData.products && quotationData.products.length > 0
+          ? quotationData.products // ← Already correctly transformed in QuotationList
+          : products.length > 0
+          ? products
+          : [],
       assignedTeamId:
-        assignmentType === "team" ? formData.assignedTeamId : null,
+        assignmentType === "team" && formData.assignedTeamId
+          ? formData.assignedTeamId
+          : null,
       assignedUserId:
-        assignmentType === "users" ? formData.assignedUserId : null,
+        assignmentType === "users" && formData.assignedUserId
+          ? formData.assignedUserId
+          : null,
       secondaryUserId:
-        assignmentType === "users" ? sanitize(formData.secondaryUserId) : null,
+        assignmentType === "users" && formData.secondaryUserId
+          ? formData.secondaryUserId
+          : null,
       status: formData.status,
       dueDate: formData.dueDate || null,
       followupDates: formData.followupDates.filter(
@@ -690,11 +691,7 @@ const AddNewOrder = ({ adminName }) => {
                   <Text strong>
                     Customer <span style={{ color: "red" }}>*</span>
                   </Text>
-                  <Space
-                    direction="vertical"
-                    size={4}
-                    style={{ width: "100%" }}
-                  >
+                  <Space direction="horizontal" style={{ width: "100%" }}>
                     <CompactSelect
                       showSearch
                       value={formData.createdFor || undefined}
@@ -706,6 +703,7 @@ const AddNewOrder = ({ adminName }) => {
                       onSearch={debouncedCustomerSearch}
                       placeholder="Select a customer"
                       filterOption={false}
+                      style={{ flex: 1 }} // 👈 makes select take full width
                     >
                       {filteredCustomers.length ? (
                         filteredCustomers.map((c) => (
@@ -717,13 +715,10 @@ const AddNewOrder = ({ adminName }) => {
                         <Option disabled>No customers available</Option>
                       )}
                     </CompactSelect>
-                    <ActionButton
-                      type="link"
-                      icon={<UserAddOutlined />}
-                      onClick={handleAddCustomer}
-                    >
-                      Add Customer
-                    </ActionButton>
+
+                    <Button type="primary" onClick={handleAddCustomer}>
+                      +
+                    </Button>
                   </Space>
                 </FormSection>
               </Col>
@@ -734,11 +729,7 @@ const AddNewOrder = ({ adminName }) => {
                   <Text strong>
                     Shipping Address <span style={{ color: "red" }}>*</span>
                   </Text>
-                  <Space
-                    direction="vertical"
-                    size={4}
-                    style={{ width: "100%" }}
-                  >
+                  <Space direction="horizontal" style={{ width: "100%" }}>
                     <CompactSelect
                       value={
                         useBillingAddress
@@ -748,6 +739,7 @@ const AddNewOrder = ({ adminName }) => {
                       onChange={handleAddressChange}
                       placeholder="Select shipping address"
                       disabled={!formData.createdFor}
+                      style={{ flex: 1 }} // 👈 expand select
                     >
                       {formData.createdFor && defaultAddress && (
                         <Option value="sameAsBilling">
@@ -769,24 +761,13 @@ const AddNewOrder = ({ adminName }) => {
                       )}
                     </CompactSelect>
 
-                    {useBillingAddress && defaultAddress && (
-                      <Text type="secondary">
-                        {`${defaultAddress.street}, ${defaultAddress.city}, ${
-                          defaultAddress.state || ""
-                        }, ${
-                          defaultAddress.postalCode || defaultAddress.zip || ""
-                        }, ${defaultAddress.country || "India"}`}
-                      </Text>
-                    )}
-
-                    <ActionButton
-                      type="link"
-                      icon={<UserAddOutlined />}
+                    <Button
+                      type="primary"
                       onClick={() => setShowAddAddressModal(true)}
                       disabled={!formData.createdFor}
                     >
-                      Add Address
-                    </ActionButton>
+                      +
+                    </Button>
                   </Space>
                 </FormSection>
               </Col>
@@ -865,15 +846,15 @@ const AddNewOrder = ({ adminName }) => {
                   <Radio.Group
                     value={assignmentType}
                     onChange={(e) => {
-                      setAssignmentType(e.target.value);
+                      const value = e.target.value;
+                      setAssignmentType(value);
+
                       setFormData((p) => ({
                         ...p,
-                        assignedTeamId:
-                          e.target.value === "team" ? p.assignedTeamId : "",
-                        assignedUserId:
-                          e.target.value === "users" ? p.assignedUserId : "",
-                        secondaryUserId:
-                          e.target.value === "users" ? p.secondaryUserId : "",
+                        // Only nullify the fields that belong to the other type
+                        ...(value === "team"
+                          ? { assignedUserId: "", secondaryUserId: "" }
+                          : { assignedTeamId: "" }),
                       }));
                     }}
                   >
@@ -1132,16 +1113,14 @@ const AddNewOrder = ({ adminName }) => {
                         <FormSection>
                           <Text strong>Extra Discount</Text>
                           <InputNumber
-                            min={0}
-                            step={0.01}
-                            precision={2}
-                            style={{ width: "100%" }}
                             value={formData.extraDiscount}
-                            onChange={(v) =>
-                              handleNumericChange("extraDiscount", v)
-                            }
-                            placeholder="0.00"
-                            addonBefore="₹"
+                            onChange={(v) => {
+                              // v is number or null
+                              handleNumericChange("extraDiscount", v);
+                            }}
+                            min={0}
+                            precision={2}
+                            stringMode={false} // ensures number output
                           />
                         </FormSection>
                       </Col>

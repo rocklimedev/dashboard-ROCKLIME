@@ -684,16 +684,78 @@ View: ${window.location.origin}/quotation/${quotation.quotationId}
   };
 
   const handleConvertToOrder = (q) => {
+    let rawItems = [];
+
+    // Prefer items array (cleaner, from latest API)
+    if (q.items && Array.isArray(q.items) && q.items.length > 0) {
+      rawItems = q.items;
+    } else if (q.products) {
+      try {
+        rawItems =
+          typeof q.products === "string" ? JSON.parse(q.products) : q.products;
+      } catch (e) {
+        console.error("Failed to parse products", e);
+        rawItems = [];
+      }
+    }
+
+    if (rawItems.length === 0) {
+      message.error("No products found in quotation");
+      return;
+    }
+
+    // Ensure clean transformation
+    const products = rawItems.map((item) => {
+      const quantity = Number(item.quantity) || 1;
+      const price = Number(item.price) || 0;
+      const discount = Number(item.discount) || 0;
+      const discountType = item.discountType || "percent";
+
+      let finalPrice = price;
+      if (discountType === "percent") {
+        finalPrice = price * (1 - discount / 100);
+      } else {
+        finalPrice = price - discount;
+      }
+
+      const total = Number((finalPrice * quantity).toFixed(2));
+
+      return {
+        id: item.productId,
+        price: Number(price.toFixed(2)),
+        quantity,
+        discount,
+        discountType,
+        total,
+      };
+    });
+
+    // Double-check every product has required fields
+    const invalidProduct = products.find(
+      (p) => !p.id || isNaN(p.price) || isNaN(p.total) || p.quantity < 1
+    );
+
+    if (invalidProduct) {
+      console.error("Invalid product:", invalidProduct);
+      message.error("One or more products have invalid data");
+      return;
+    }
+
     navigate("/order/add", {
       state: {
         quotationData: {
-          title: q.document_title || "",
           createdFor: q.customerId || "",
-          dueDate: q.due_date || "",
-          products: q.products,
-          source: q.reference_number ? `Quotation #${q.reference_no}` : "",
-          description: `Converted from Quotation #${q.reference_no || "N/A"}`,
-          quotationId: q.quotationId || "",
+          dueDate: q.due_date || moment().add(7, "days").format("YYYY-MM-DD"),
+          description: `Converted from Quotation #${
+            q.reference_number || q.quotationId
+          }\n${q.document_title || ""}`.trim(),
+          shipTo: q.shipTo || null,
+          gst: q.gst ? parseFloat(q.gst) : null,
+          extraDiscount: q.extraDiscount ? parseFloat(q.extraDiscount) : null,
+          extraDiscountType: q.extraDiscountType || "fixed",
+          shipping: q.shippingAmount ? parseFloat(q.shippingAmount) : 0,
+          products, // ← This is now 100% valid
+          quotationId: q.quotationId,
         },
       },
     });

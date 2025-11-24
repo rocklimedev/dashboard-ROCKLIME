@@ -557,6 +557,7 @@ async function restoreStock({ products, orderNo }) {
 }
 
 // ──────── CREATE ORDER ────────
+// ──────── CREATE ORDER ────────
 exports.createOrder = async (req, res) => {
   try {
     const {
@@ -573,19 +574,19 @@ exports.createOrder = async (req, res) => {
       description,
       orderNo,
       quotationId,
-      products,
+      products = [],
       masterPipelineNo,
       previousOrderNo,
       shipTo,
-      shipping,
+      shipping = 0,
       message: customMessage,
-      gst = 0,
-      extraDiscount = 0,
+      gst = null,
+      extraDiscount = null,
       extraDiscountType = "fixed",
-      amountPaid = 0, // ← NEW
+      amountPaid = 0,
     } = req.body;
 
-    // ── BASIC REQUIRED ──
+    // ── REQUIRED FIELDS ──
     if (!createdFor || !createdBy || !orderNo) {
       return sendErrorResponse(
         res,
@@ -595,16 +596,17 @@ exports.createOrder = async (req, res) => {
     }
 
     // ── SHIPPING ──
-    const parsedShipping = shipping == null ? 0 : parseFloat(shipping);
+    const parsedShipping = parseFloat(shipping) || 0;
     if (isNaN(parsedShipping) || parsedShipping < 0) {
       return sendErrorResponse(res, 400, "Invalid shipping amount");
     }
 
-    // ── USER / CUSTOMER ──
+    // ── VALIDATE CREATOR & CUSTOMER ──
     const [creator, customer] = await Promise.all([
-      User.findByPk(createdBy, { attributes: ["username", "name"] }),
+      User.findByPk(createdBy, { attributes: ["userId", "username", "name"] }),
       Customer.findByPk(createdFor),
     ]);
+
     if (!creator) return sendErrorResponse(res, 404, "Creator user not found");
     if (!customer) return sendErrorResponse(res, 404, "Customer not found");
 
@@ -614,7 +616,7 @@ exports.createOrder = async (req, res) => {
       if (!q) return sendErrorResponse(res, 404, "Quotation not found");
     }
 
-    // ── MASTER / PREVIOUS (optional) ──
+    // ── MASTER / PREVIOUS ORDER VALIDATION ──
     if (masterPipelineNo) {
       const m = await Order.findOne({ where: { orderNo: masterPipelineNo } });
       if (!m)
@@ -627,7 +629,7 @@ exports.createOrder = async (req, res) => {
         return sendErrorResponse(
           res,
           400,
-          "Master pipeline cannot equal orderNo"
+          "Master pipeline cannot be the same as current order"
         );
     }
     if (previousOrderNo) {
@@ -642,79 +644,82 @@ exports.createOrder = async (req, res) => {
         return sendErrorResponse(
           res,
           400,
-          "Previous order cannot equal orderNo"
+          "Previous order cannot be the same as current order"
         );
     }
 
-    // ── PRODUCTS ──
+    // ── PRODUCTS VALIDATION & STOCK CHECK ──
     let productUpdates = [];
-    if (products) {
-      if (!Array.isArray(products) || !products.length) {
-        return sendErrorResponse(
-          res,
-          400,
-          "Products must be a non-empty array"
-        );
+
+    if (products.length > 0) {
+      if (!Array.isArray(products)) {
+        return sendErrorResponse(res, 400, "Products must be an array");
       }
 
       for (const p of products) {
-        const { id, price, discount, total, quantity } = p;
+        const {
+          id,
+          price,
+          discount = 0,
+          total,
+          quantity,
+          discountType = "percent",
+        } = p;
+
         if (
           !id ||
           price == null ||
-          discount == null ||
           total == null ||
-          quantity == null ||
+          !quantity ||
           quantity < 1
         ) {
           return sendErrorResponse(
             res,
             400,
-            "Each product needs id, price, discount, total, quantity (>=1)"
+            "Each product must have id, price, total, and quantity >= 1"
           );
         }
 
         const prod = await Product.findByPk(id);
         if (!prod)
-          return sendErrorResponse(res, 404, `Product ${id} not found`);
+          return sendErrorResponse(res, 404, `Product not found: ${id}`);
 
-        // numeric checks
+        // Validate numbers
         if (
           typeof price !== "number" ||
           price < 0 ||
-          typeof discount !== "number" ||
-          discount < 0 ||
           typeof total !== "number" ||
           total < 0
         ) {
-          return sendErrorResponse(res, 400, `Invalid numeric field for ${id}`);
-        }
-
-        // line-total validation
-        // Use discountType from payload if exists, else fall back to DB
-        const discType = p.discountType || prod.discountType || "percent";
-        const expected = Number(
-          (
-            (discType === "percent"
-              ? price * (1 - discount / 100)
-              : price - discount) * quantity
-          ).toFixed(2)
-        );
-
-        if (Math.abs(total - expected) > 0.01) {
           return sendErrorResponse(
             res,
             400,
-            `Invalid total for ${id}. Expected ${expected}`
+            `Invalid price or total for product ${id}`
           );
         }
 
-        // stock check
+        // Validate line total calculation
+        const calculatedTotal =
+          discountType === "percent"
+            ? price * (1 - discount / 100) * quantity
+            : (price - discount) * quantity;
+
+        if (Math.abs(total - calculatedTotal) > 0.01) {
+          return sendErrorResponse(
+            res,
+            400,
+            `Invalid total for product ${id}. Expected ~${calculatedTotal.toFixed(
+              2
+            )}`
+          );
+        }
+
+        // Stock check
         if (prod.quantity < quantity) {
           return sendErrorResponse(
             res,
             400,
-            `Insufficient stock for ${id}. Have ${prod.quantity}, need ${quantity}`
+            `Insufficient stock for ${prod.name}. Available: ${prod.quantity}, Required: ${quantity}`
           );
         }
 
@@ -725,8 +730,150 @@ exports.createOrder = async (req, res) => {
         });
       }
     }
-    // ── ENHANCED: Save order items with name + image (MongoDB) ──
-    if (products && products.length > 0) {
+
+    // ── DATE VALIDATIONS ──
+    if (dueDate && isNaN(new Date(dueDate).getTime())) {
+      return sendErrorResponse(res, 400, "Invalid dueDate format");
+    }
+
+    const parsedFollowup = Array.isArray(followupDates)
+      ? followupDates.filter((d) => d && !isNaN(new Date(d).getTime()))
+      : [];
+
+    // ── TEAM & USER VALIDATIONS ──
+    if (assignedTeamId) {
+      const team = await Team.findByPk(assignedTeamId);
+      if (!team) return sendErrorResponse(res, 404, "Assigned team not found");
+    }
+    if (assignedUserId) {
+      const user = await User.findByPk(assignedUserId);
+      if (!user) return sendErrorResponse(res, 404, "Assigned user not found");
+    }
+    if (secondaryUserId) {
+      const user = await User.findByPk(secondaryUserId);
+      if (!user) return sendErrorResponse(res, 404, "Secondary user not found");
+    }
+
+    // ── ORDER NUMBER UNIQUENESS ──
+    const orderNoInt = parseInt(orderNo);
+    if (isNaN(orderNoInt)) {
+      return sendErrorResponse(res, 400, "orderNo must be numeric");
+    }
+    const existingOrder = await Order.findOne({
+      where: { orderNo: orderNoInt },
+    });
+    if (existingOrder) {
+      return sendErrorResponse(res, 400, "Order number already exists");
+    }
+
+    // ── SHIPPING ADDRESS ──
+    let addressDetails = null;
+    if (shipTo) {
+      const addr = await Address.findByPk(shipTo);
+      if (!addr)
+        return sendErrorResponse(
+          res,
+          404,
+          `Shipping address not found: ${shipTo}`
+        );
+      addressDetails = addr.toJSON();
+    }
+
+    // ── PRIORITY & STATUS ──
+    const priorityLower = priority ? priority.toLowerCase() : "medium";
+    if (!VALID_PRIORITIES.includes(priorityLower)) {
+      return sendErrorResponse(
+        res,
+        400,
+        `Invalid priority: ${priority}. Use: ${VALID_PRIORITIES.join(", ")}`
+      );
+    }
+
+    const statusUpper = status ? status.toUpperCase() : "PREPARING";
+    if (!VALID_STATUSES.includes(statusUpper)) {
+      return sendErrorResponse(res, 400, `Invalid status: ${status}`);
+    }
+
+    // ── GST & DISCOUNT CALCULATIONS ──
+    const parsedGst = gst != null && gst !== "" ? parseFloat(gst) : null;
+    if (
+      parsedGst !== null &&
+      (isNaN(parsedGst) || parsedGst < 0 || parsedGst > 100)
+    ) {
+      return sendErrorResponse(res, 400, "GST must be between 0 and 100");
+    }
+
+    const parsedExtraDiscount =
+      extraDiscount != null && extraDiscount !== ""
+        ? parseFloat(extraDiscount)
+        : null;
+    if (
+      parsedExtraDiscount !== null &&
+      (isNaN(parsedExtraDiscount) || parsedExtraDiscount < 0)
+    ) {
+      return sendErrorResponse(res, 400, "Invalid extra discount amount");
+    }
+
+    const finalDiscountType =
+      parsedExtraDiscount != null ? extraDiscountType : null;
+    if (
+      parsedExtraDiscount != null &&
+      !["fixed", "percent"].includes(finalDiscountType)
+    ) {
+      return sendErrorResponse(
+        res,
+        400,
+        "extraDiscountType must be 'fixed' or 'percent'"
+      );
+    }
+
+    const parsedAmountPaid = parseFloat(amountPaid) || 0;
+    if (isNaN(parsedAmountPaid) || parsedAmountPaid < 0) {
+      return sendErrorResponse(res, 400, "Invalid amountPaid");
+    }
+
+    const { gstValue, extraDiscountValue, finalAmount } = computeTotals({
+      products,
+      shipping: parsedShipping,
+      gst: parsedGst,
+      extraDiscount: parsedExtraDiscount,
+      extraDiscountType: finalDiscountType,
+      amountPaid: parsedAmountPaid,
+    });
+
+    // CREATE ORDER IN MYSQL (Sequelize) - FIXED VERSION
+    const order = await Order.create({
+      createdFor,
+      createdBy,
+      status: statusUpper,
+      dueDate: dueDate || null,
+      followupDates: parsedFollowup,
+      source: source || null,
+      priority: priorityLower,
+      description: description || null,
+      orderNo: orderNoInt,
+      quotationId: quotationId || null,
+      masterPipelineNo: masterPipelineNo || null,
+      previousOrderNo: previousOrderNo || null,
+      shipTo: shipTo || null,
+      shipping: parsedShipping,
+
+      assignedTeamId: assignedTeamId || null,
+      assignedUserId: assignedUserId || null,
+      secondaryUserId: secondaryUserId || null,
+
+      // Financial fields
+      gst: parsedGst,
+      gstValue,
+      extraDiscount: parsedExtraDiscount,
+      extraDiscountType: finalDiscountType,
+      extraDiscountValue,
+      amountPaid: parsedAmountPaid,
+      finalAmount,
+    });
+
+    // ── SAVE ORDER ITEMS IN MONGODB (with name & image) ──
+    if (products.length > 0) {
       const productIds = products
         .map((p) => p.id || p.productId)
         .filter(Boolean);
@@ -742,10 +889,10 @@ exports.createOrder = async (req, res) => {
           try {
             const imgs = JSON.parse(p.images);
             if (Array.isArray(imgs) && imgs.length > 0) imageUrl = imgs[0];
-          } catch {}
+          } catch (e) {}
         }
         productMap[p.productId] = {
-          name: p.name || "Unnamed Product",
+          name: p.name || "Unknown Product",
           imageUrl,
         };
       });
@@ -753,10 +900,9 @@ exports.createOrder = async (req, res) => {
       const mongoItems = products.map((p) => {
         const id = p.id || p.productId;
         const { name, imageUrl } = productMap[id] || {
-          name: "Unknown",
+          name: "Unknown Product",
           imageUrl: null,
         };
-
         return {
           productId: id,
           name,
@@ -770,137 +916,15 @@ exports.createOrder = async (req, res) => {
         };
       });
 
-      // Save or update in MongoDB
-      await require("../models/orderItem").findOneAndUpdate(
+      await OrderItem.findOneAndUpdate(
         { orderId: order.id },
         { orderId: order.id, items: mongoItems },
         { upsert: true }
       );
     }
-    // ── DATES ──
-    if (dueDate && new Date(dueDate).toString() === "Invalid Date") {
-      return sendErrorResponse(res, 400, "Invalid dueDate");
-    }
-    const parsedFollowup = Array.isArray(followupDates)
-      ? followupDates.filter(
-          (d) => d && new Date(d).toString() !== "Invalid Date"
-        )
-      : [];
 
-    // ── TEAM / USERS ──
-    if (assignedTeamId) {
-      const t = await Team.findByPk(assignedTeamId);
-      if (!t) return sendErrorResponse(res, 400, "Assigned team not found");
-    }
-    if (assignedUserId) {
-      const u = await User.findByPk(assignedUserId);
-      if (!u) return sendErrorResponse(res, 400, "Assigned user not found");
-    }
-    if (secondaryUserId != null && secondaryUserId !== "") {
-      const u = await User.findByPk(secondaryUserId);
-      if (!u) return sendErrorResponse(res, 400, "Secondary user not found");
-    } else {
-      secondaryUserId = null; // ensure clean null
-    }
-
-    // ── ORDERNO UNIQUENESS ──
-    if (isNaN(parseInt(orderNo))) {
-      return sendErrorResponse(res, 400, "orderNo must be numeric");
-    }
-    const existing = await Order.findOne({
-      where: { orderNo: parseInt(orderNo) },
-    });
-    if (existing) return sendErrorResponse(res, 400, "orderNo already used");
-
-    // ── SHIPTO ──
-    let addressDetails = null;
-    if (shipTo) {
-      const a = await Address.findByPk(shipTo);
-      if (!a) return sendErrorResponse(res, 404, `Address ${shipTo} not found`);
-      addressDetails = a.toJSON();
-    }
-
-    // ── PRIORITY ──
-    const prio = priority ? priority.toLowerCase() : "medium";
-    if (!VALID_PRIORITIES.includes(prio)) {
-      return sendErrorResponse(res, 400, `Invalid priority: ${priority}`);
-    }
-
-    // ── STATUS ──
-    const normalizedStatus = status ? status.toUpperCase() : "PREPARING";
-    if (!VALID_STATUSES.includes(normalizedStatus)) {
-      return sendErrorResponse(res, 400, `Invalid status: ${status}`);
-    }
-    // GST
-    const parsedGst = gst != null && gst !== "" ? parseFloat(gst) : null;
-    if (
-      parsedGst !== null &&
-      (isNaN(parsedGst) || parsedGst < 0 || parsedGst > 100)
-    ) {
-      return sendErrorResponse(res, 400, "Invalid GST %");
-    }
-    // Amount Paid
-    const parsedAmountPaid =
-      amountPaid != null && amountPaid !== "" ? parseFloat(amountPaid) : 0;
-    if (isNaN(parsedAmountPaid) || parsedAmountPaid < 0) {
-      return sendErrorResponse(res, 400, "Invalid amountPaid");
-    }
-
-    // Extra Discount
-    const parsedExtra =
-      extraDiscount != null && extraDiscount !== ""
-        ? parseFloat(extraDiscount)
-        : null;
-    if (parsedExtra !== null && (isNaN(parsedExtra) || parsedExtra < 0)) {
-      return sendErrorResponse(res, 400, "Invalid extraDiscount");
-    }
-
-    // Type
-    const discountType = parsedExtra != null ? extraDiscountType : null;
-    if (parsedExtra != null && !["percent", "fixed"].includes(discountType)) {
-      return sendErrorResponse(res, 400, "Invalid extraDiscountType");
-    }
-    // ---- compute totals (throws if amountPaid > final)
-    const { gstValue, extraDiscountValue, finalAmount } = computeTotals({
-      products,
-      shipping: parsedShipping,
-      gst: parsedGst,
-      extraDiscount: parsedExtra,
-      extraDiscountType,
-      amountPaid: parsedAmountPaid,
-    });
-
-    // ── CREATE ORDER ──
-    const order = await Order.create({
-      createdFor,
-      createdBy,
-      status: normalizedStatus,
-      dueDate,
-      assignedTeamId,
-      assignedUserId,
-      secondaryUserId,
-      followupDates: parsedFollowup,
-      source,
-      priority: prio,
-      description,
-      orderNo: parseInt(orderNo),
-      quotationId,
-      products,
-      masterPipelineNo,
-      previousOrderNo,
-      shipTo,
-      shipping: parsedShipping,
-      gst: parsedGst,
-      gstValue,
-      extraDiscount: parsedExtra,
-      extraDiscountType,
-      extraDiscountValue,
-      amountPaid: parsedAmountPaid,
-      finalAmount,
-    });
-
-    // ── STOCK REDUCTION ──
-    if (productUpdates.length) {
+    // ── REDUCE STOCK & LOG HISTORY ──
+    if (productUpdates.length > 0) {
       await reduceStockAndLog({
         productUpdates,
         createdBy,
@@ -909,52 +933,57 @@ exports.createOrder = async (req, res) => {
       });
     }
 
-    // ── NOTIFICATIONS ──
+    // ── SEND NOTIFICATIONS ──
     const recipients = new Set(
       [createdBy, assignedUserId, secondaryUserId].filter(Boolean)
     );
     const addrInfo =
       shipTo && addressDetails
-        ? `, ship to ${addressDetails.address || "address ID " + shipTo}`
+        ? `, ship to ${addressDetails.street || shipTo}`
         : "";
 
-    for (const uid of recipients) {
+    for (const userId of recipients) {
       await sendNotification({
-        userId: uid,
+        userId,
         title: `New Order #${orderNo}`,
-        message: `Order #${orderNo} for ${customer.name}${addrInfo}.`,
+        message: `Order #${orderNo} created for ${customer.name}${addrInfo}.`,
       });
     }
+
     await sendNotification({
       userId: ADMIN_USER_ID,
       title: `New Order #${orderNo}`,
-      message: `Order #${orderNo} created by ${creator.name} for ${customer.name}${addrInfo}.`,
+      message: `Order #${orderNo} created by ${creator.name} for ${customer.name}.`,
     });
 
     if (assignedTeamId) {
-      const members = await User.findAll({
+      const teamMembers = await User.findAll({
         include: [{ model: Team, as: "teams", where: { id: assignedTeamId } }],
         attributes: ["userId", "name"],
       });
-      for (const m of members) {
+      for (const member of teamMembers) {
         await sendNotification({
-          userId: m.userId,
-          title: `Order Assigned to Team #${orderNo}`,
-          message: `Order #${orderNo} assigned to your team for ${customer.name}${addrInfo}.`,
+          userId: member.userId,
+          title: `Order #${orderNo} Assigned to Your Team`,
+          message: `New order for ${customer.name} has been assigned to your team.`,
         });
       }
     }
 
-    return res
-      .status(201)
-      .json({ message: "Order created", id: order.id, orderNo: order.orderNo });
+    return res.status(201).json({
+      message: "Order created successfully",
+      id: order.id,
+      orderNo: order.orderNo,
+    });
   } catch (err) {
+    console.error("Create Order Error:", err);
     return sendErrorResponse(res, 500, "Failed to create order", err.message);
   }
 };
 
 // ──────── UPDATE ORDER (by id) ────────
 // ──────── UPDATE ORDER (by id) ────────
+// ────────────────────────────────
 exports.updateOrderById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -966,206 +995,213 @@ exports.updateOrderById = async (req, res) => {
         { model: Address, as: "shippingAddress" },
       ],
     });
-    if (!order) return sendErrorResponse(res, 404, "Order not found");
+
+    if (!order) {
+      return sendErrorResponse(res, 404, "Order not found");
+    }
 
     // ── STATUS ──
     if (updates.status) {
       const norm = updates.status.toUpperCase();
-      if (!VALID_STATUSES.includes(norm))
+      if (!VALID_STATUSES.includes(norm)) {
         return sendErrorResponse(res, 400, `Invalid status: ${updates.status}`);
-
-      // GATE-PASS REQUIRED FOR DISPATCHED
-      if (norm === "DISPATCHED" && !order.gatePassLink) {
+      }
+      if (norm === "DISPATCHED" && !order.gatePassLink?.trim()) {
         return sendErrorResponse(
           res,
           400,
-          "Gate-pass must be uploaded before dispatching the order"
+          "Gate-pass required before dispatching"
         );
       }
-
       updates.status = norm;
     }
 
     // ── PRIORITY ──
     if (updates.priority) {
       const p = updates.priority.toLowerCase();
-      if (!VALID_PRIORITIES.includes(p))
+      if (!VALID_PRIORITIES.includes(p)) {
         return sendErrorResponse(
           res,
           400,
           `Invalid priority: ${updates.priority}`
         );
+      }
       updates.priority = p;
     }
 
     // ── DATES ──
-    if (updates.dueDate) {
-      if (!moment(updates.dueDate, "YYYY-MM-DD", true).isValid())
+    if (updates.dueDate !== undefined) {
+      if (
+        updates.dueDate &&
+        !moment(updates.dueDate, "YYYY-MM-DD", true).isValid()
+      ) {
         return sendErrorResponse(
           res,
           400,
           "Invalid dueDate format (YYYY-MM-DD)"
         );
-      updates.dueDate = moment(updates.dueDate).format("YYYY-MM-DD");
+      }
+      updates.dueDate = updates.dueDate || null;
     }
-    if (updates.followupDates) {
-      if (!Array.isArray(updates.followupDates))
-        return sendErrorResponse(res, 400, "followupDates must be array");
-      const invalid = updates.followupDates.filter(
-        (d) => d && !moment(d, "YYYY-MM-DD", true).isValid()
+
+    if (updates.followupDates !== undefined) {
+      if (!Array.isArray(updates.followupDates)) {
+        return sendErrorResponse(res, 400, "followupDates must be an array");
+      }
+      const validDates = updates.followupDates.filter(
+        (d) => d && moment(d, "YYYY-MM-DD", true).isValid()
       );
-      if (invalid.length)
-        return sendErrorResponse(res, 400, "Invalid followup date(s)");
-      updates.followupDates = updates.followupDates.filter(Boolean);
+      updates.followupDates = validDates.length > 0 ? validDates : null;
     }
 
     // ── TEAM / USERS ──
     if (updates.assignedTeamId !== undefined) {
-      if (updates.assignedTeamId === null) updates.assignedTeamId = null;
-      else {
-        const t = await Team.findByPk(updates.assignedTeamId);
-        if (!t) return sendErrorResponse(res, 400, "Assigned team not found");
-      }
-    }
-    if (updates.assignedUserId !== undefined) {
-      if (updates.assignedUserId === null) updates.assignedUserId = null;
-      else {
-        const u = await User.findByPk(updates.assignedUserId);
-        if (!u) return sendErrorResponse(res, 400, "Assigned user not found");
-      }
-    }
-    if (updates.secondaryUserId !== undefined) {
-      if (updates.secondaryUserId === null) updates.secondaryUserId = null;
-      else {
-        const u = await User.findByPk(updates.secondaryUserId);
-        if (!u) return sendErrorResponse(res, 400, "Secondary user not found");
+      updates.assignedTeamId = updates.assignedTeamId || null;
+      if (updates.assignedTeamId) {
+        const team = await Team.findByPk(updates.assignedTeamId);
+        if (!team)
+          return sendErrorResponse(res, 404, "Assigned team not found");
       }
     }
 
-    // ── ORDERNO (unique except self) ──
+    if (updates.assignedUserId !== undefined) {
+      updates.assignedUserId = updates.assignedUserId || null;
+      if (updates.assignedUserId) {
+        const user = await User.findByPk(updates.assignedUserId);
+        if (!user)
+          return sendErrorResponse(res, 404, "Assigned user not found");
+      }
+    }
+
+    if (updates.secondaryUserId !== undefined) {
+      updates.secondaryUserId = updates.secondaryUserId || null;
+      if (updates.secondaryUserId) {
+        const user = await User.findByPk(updates.secondaryUserId);
+        if (!user)
+          return sendErrorResponse(res, 404, "Secondary user not found");
+      }
+    }
+
+    // ── ORDER NUMBER ──
     if (updates.orderNo !== undefined) {
-      if (!updates.orderNo)
-        return sendErrorResponse(res, 400, "orderNo required");
-      const n = parseInt(updates.orderNo);
-      if (isNaN(n))
-        return sendErrorResponse(res, 400, "orderNo must be numeric");
+      const newNo = parseInt(updates.orderNo);
+      if (isNaN(newNo) || newNo <= 0) {
+        return sendErrorResponse(res, 400, "orderNo must be a positive number");
+      }
       const conflict = await Order.findOne({
-        where: { orderNo: n, id: { [Op.ne]: id } },
+        where: { orderNo: newNo, id: { [Op.ne]: id } },
       });
       if (conflict)
-        return sendErrorResponse(res, 400, "orderNo already exists");
-      updates.orderNo = n;
+        return sendErrorResponse(res, 400, "Order number already exists");
+      updates.orderNo = newNo;
     }
 
-    // ── MASTER / PREVIOUS ──
+    // ── MASTER / PREVIOUS / QUOTATION ──
     if (updates.masterPipelineNo !== undefined) {
-      if (updates.masterPipelineNo === null) updates.masterPipelineNo = null;
+      if (!updates.masterPipelineNo) updates.masterPipelineNo = null;
       else {
         const m = await Order.findOne({
           where: { orderNo: updates.masterPipelineNo },
         });
-        if (!m)
-          return sendErrorResponse(
-            res,
-            404,
-            `Master order ${updates.masterPipelineNo} not found`
-          );
-        if (updates.masterPipelineNo == order.orderNo)
+        if (!m) return sendErrorResponse(res, 404, "Master order not found");
+        if (updates.masterPipelineNo === order.orderNo) {
           return sendErrorResponse(
             res,
             400,
-            "Master cannot be same as orderNo"
+            "Master cannot be the same as current order"
           );
+        }
       }
     }
+
     if (updates.previousOrderNo !== undefined) {
-      if (updates.previousOrderNo === null) updates.previousOrderNo = null;
+      if (!updates.previousOrderNo) updates.previousOrderNo = null;
       else {
         const p = await Order.findOne({
           where: { orderNo: updates.previousOrderNo },
         });
-        if (!p)
-          return sendErrorResponse(
-            res,
-            404,
-            `Previous order ${updates.previousOrderNo} not found`
-          );
-        if (updates.previousOrderNo == order.orderNo)
+        if (!p) return sendErrorResponse(res, 404, "Previous order not found");
+        if (updates.previousOrderNo === order.orderNo) {
           return sendErrorResponse(
             res,
             400,
-            "Previous cannot be same as orderNo"
+            "Previous cannot be the same as current order"
           );
+        }
       }
     }
 
-    // ── QUOTATION ──
     if (updates.quotationId !== undefined) {
-      if (updates.quotationId === null) updates.quotationId = null;
-      else {
+      updates.quotationId = updates.quotationId || null;
+      if (updates.quotationId) {
         const q = await Quotation.findByPk(updates.quotationId);
         if (!q) return sendErrorResponse(res, 404, "Quotation not found");
       }
     }
 
-    // ── PRODUCTS (full replace) ──
+    // ── PRODUCTS (FULL REPLACE) ──
     let newProductUpdates = [];
+
     if (updates.products !== undefined) {
-      if (updates.products === null) updates.products = null;
-      else if (!Array.isArray(updates.products))
-        return sendErrorResponse(res, 400, "products must be array");
+      if (updates.products === null || updates.products === "") {
+        updates.products = [];
+      } else if (!Array.isArray(updates.products)) {
+        return sendErrorResponse(res, 400, "products must be an array");
+      }
 
       for (const p of updates.products) {
-        const { id, price, discount, total, quantity } = p;
+        const {
+          id,
+          price,
+          quantity,
+          total,
+          discount = 0,
+          discountType, // ← optional
+        } = p;
+
         if (
           !id ||
           price == null ||
-          discount == null ||
-          total == null ||
           quantity == null ||
+          total == null ||
           quantity < 1
-        )
+        ) {
           return sendErrorResponse(
             res,
             400,
-            "Each product needs id, price, discount, total, quantity (>=1)"
+            "Each product needs id, price, quantity, and total"
           );
+        }
 
         const prod = await Product.findByPk(id);
         if (!prod)
-          return sendErrorResponse(res, 404, `Product ${id} not found`);
+          return sendErrorResponse(res, 404, `Product not found: ${id}`);
 
-        if (
-          typeof price !== "number" ||
-          price < 0 ||
-          typeof discount !== "number" ||
-          discount < 0 ||
-          typeof total !== "number" ||
-          total < 0
-        )
-          return sendErrorResponse(res, 400, `Invalid numeric for ${id}`);
+        const finalDiscountType =
+          discountType || prod.discountType || "percent";
+        const calculatedTotal =
+          finalDiscountType === "percent"
+            ? price * (1 - discount / 100) * quantity
+            : (price - discount) * quantity;
 
-        // Use discountType from payload if exists, else fall back to DB
-        const discType = p.discountType || prod.discountType || "percent";
-        const expected = Number(
-          (
-            (discType === "percent"
-              ? price * (1 - discount / 100)
-              : price - discount) * quantity
-          ).toFixed(2)
-        );
-        if (Math.abs(total - expected) > 0.01)
+        if (Math.abs(total - calculatedTotal) > 0.01) {
           return sendErrorResponse(
             res,
             400,
-            `Invalid total for ${id}. Expected ${expected}`
+            `Invalid total for product ${id}. Expected ${calculatedTotal.toFixed(
+              2
+            )}`
           );
+        }
 
-        // Stock check: current stock + old qty in order >= new qty
-        const oldQty =
-          order.products?.find((op) => op.id === id)?.quantity || 0;
-        if (prod.quantity + oldQty < quantity)
-          return sendErrorResponse(res, 400, `Not enough stock for ${id}`);
+        const oldQty = order.products?.find((x) => x.id === id)?.quantity || 0;
+        if (prod.quantity + oldQty < quantity) {
+          return sendErrorResponse(
+            res,
+            400,
+            `Insufficient stock for ${prod.name}`
+          );
+        }
 
         newProductUpdates.push({
           productId: id,
@@ -1174,83 +1210,57 @@ exports.updateOrderById = async (req, res) => {
         });
       }
     }
-    // ── ENHANCED: Save order items with name + image (MongoDB) ──
-    if (products && products.length > 0) {
-      const productIds = products
-        .map((p) => p.id || p.productId)
-        .filter(Boolean);
-      const dbProducts = await Product.findAll({
-        where: { productId: productIds },
-        attributes: ["productId", "name", "images"],
-      });
 
-      const productMap = {};
-      dbProducts.forEach((p) => {
-        let imageUrl = null;
-        if (p.images) {
-          try {
-            const imgs = JSON.parse(p.images);
-            if (Array.isArray(imgs) && imgs.length > 0) imageUrl = imgs[0];
-          } catch {}
-        }
-        productMap[p.productId] = {
-          name: p.name || "Unnamed Product",
-          imageUrl,
-        };
-      });
-
-      const mongoItems = products.map((p) => {
-        const id = p.id || p.productId;
-        const { name, imageUrl } = productMap[id] || {
-          name: "Unknown",
-          imageUrl: null,
-        };
-
-        return {
-          productId: id,
-          name,
-          imageUrl,
-          quantity: p.quantity,
-          price: p.price,
-          discount: p.discount || 0,
-          discountType: p.discountType || "percent",
-          tax: 0,
-          total: p.total,
-        };
-      });
-
-      // Save or update in MongoDB
-      await require("../models/orderItem").findOneAndUpdate(
-        { orderId: order.id },
-        { orderId: order.id, items: mongoItems },
-        { upsert: true }
-      );
-    }
-    // ── SHIPPING / GST / EXTRA DISCOUNT / amountPaid ──
+    // ── FINANCIAL FIELDS ──
     if (updates.shipping !== undefined) {
-      const s = parseFloat(updates.shipping);
-      if (isNaN(s) || s < 0)
-        return sendErrorResponse(res, 400, "Invalid shipping");
+      const s = parseFloat(updates.shipping) || 0;
+      if (s < 0) return sendErrorResponse(res, 400, "Invalid shipping");
       updates.shipping = s;
     }
+
     if (updates.gst !== undefined) {
-      const g = parseFloat(updates.gst);
-      if (isNaN(g) || g < 0 || g > 100)
-        return sendErrorResponse(res, 400, "Invalid GST %");
+      const g = updates.gst === "" ? null : parseFloat(updates.gst);
+      if (g !== null && (isNaN(g) || g < 0 || g > 100)) {
+        return sendErrorResponse(res, 400, "GST must be 0–100");
+      }
       updates.gst = g;
     }
+
     if (updates.extraDiscount !== undefined) {
-      const d = parseFloat(updates.extraDiscount);
-      if (isNaN(d) || d < 0)
-        return sendErrorResponse(res, 400, "Invalid extraDiscount");
-      updates.extraDiscount = d;
+      // Allow: null, undefined, empty string → treat as no discount (null)
+      if (
+        updates.extraDiscount === null ||
+        updates.extraDiscount === undefined ||
+        updates.extraDiscount === ""
+      ) {
+        updates.extraDiscount = null;
+        updates.extraDiscountType = null; // optional: clear type too
+      } else {
+        const parsed = parseFloat(updates.extraDiscount);
+        if (isNaN(parsed) || parsed < 0) {
+          return sendErrorResponse(
+            res,
+            400,
+            "Extra discount must be a positive number or zero"
+          );
+        }
+        updates.extraDiscount = parsed;
+      }
     }
+
     if (updates.extraDiscountType !== undefined) {
-      if (!["percent", "fixed"].includes(updates.extraDiscountType))
-        return sendErrorResponse(res, 400, "Invalid extraDiscountType");
+      if (updates.extraDiscount == null || updates.extraDiscount === 0) {
+        updates.extraDiscountType = null;
+      } else if (!["fixed", "percent"].includes(updates.extraDiscountType)) {
+        return sendErrorResponse(
+          res,
+          400,
+          "extraDiscountType must be 'fixed' or 'percent'"
+        );
+      }
     }
     if (updates.amountPaid !== undefined) {
-      const a = parseFloat(updates.amountPaid);
+      const a = parseFloat(updates.amountPaid) || 0;
       if (isNaN(a) || a < 0)
         return sendErrorResponse(res, 400, "Invalid amountPaid");
       updates.amountPaid = a;
@@ -1269,21 +1279,18 @@ exports.updateOrderById = async (req, res) => {
 
     const { gstValue, extraDiscountValue, finalAmount } =
       computeTotals(calcInput);
-
     updates.gstValue = gstValue;
     updates.extraDiscountValue = extraDiscountValue;
     updates.finalAmount = finalAmount;
 
-    // ── STOCK ADJUSTMENT (if products changed) ──
-    if (newProductUpdates.length) {
-      // 1. Restore old stock
-      if (order.products?.length) {
+    // ── STOCK: Restore old → Deduct new ──
+    if (newProductUpdates.length > 0) {
+      if (order.products && order.products.length > 0) {
         await restoreStock({
           products: order.products,
           orderNo: order.orderNo,
         });
       }
-      // 2. Deduct new stock
       await reduceStockAndLog({
         productUpdates: newProductUpdates,
         createdBy: order.createdBy,
@@ -1291,16 +1298,67 @@ exports.updateOrderById = async (req, res) => {
       });
     }
 
-    // ── SAVE ──
+    // ── SAVE TO MYSQL ──
     await order.update(updates);
     await order.reload();
 
+    // ── UPDATE MONGODB ORDER ITEMS (only if products changed) ──
+    if (updates.products && updates.products.length > 0) {
+      const productIds = updates.products
+        .map((p) => p.id || p.productId)
+        .filter(Boolean);
+
+      const dbProducts = await Product.findAll({
+        where: { productId: productIds },
+        attributes: ["productId", "name", "images"],
+      });
+
+      const productMap = {};
+      dbProducts.forEach((p) => {
+        let imageUrl = null;
+        if (p.images) {
+          try {
+            const imgs = JSON.parse(p.images);
+            if (Array.isArray(imgs) && imgs.length > 0) imageUrl = imgs[0];
+          } catch (e) {}
+        }
+        productMap[p.productId] = {
+          name: p.name || "Unknown Product",
+          imageUrl,
+        };
+      });
+
+      const mongoItems = updates.products.map((p) => {
+        const id = p.id || p.productId;
+        const { name, imageUrl } = productMap[id] || {
+          name: "Unknown Product",
+          imageUrl: null,
+        };
+        return {
+          productId: id,
+          name,
+          imageUrl,
+          quantity: p.quantity,
+          price: p.price,
+          discount: p.discount ?? 0,
+          discountType: p.discountType || "percent",
+          tax: 0,
+          total: p.total,
+        };
+      });
+
+      await OrderItem.findOneAndUpdate(
+        { orderId: order.id },
+        { orderId: order.id, items: mongoItems },
+        { upsert: true }
+      );
+    }
+
     // ── NOTIFICATIONS ──
-    const customer = order.customer;
-    const addrInfo =
-      order.shipTo && order.shippingAddress
-        ? `, ship to ${order.shippingAddress.address || "addr " + order.shipTo}`
-        : "";
+    const customerName = order.customer?.name || "Customer";
+    const addr = order.shippingAddress
+      ? `, ship to ${order.shippingAddress.street || ""}`
+      : "";
 
     const recipients = new Set(
       [
@@ -1314,38 +1372,22 @@ exports.updateOrderById = async (req, res) => {
       await sendNotification({
         userId: uid,
         title: `Order Updated #${order.orderNo}`,
-        message: `Order #${order.orderNo} for ${customer.name}${addrInfo} updated.`,
+        message: `Order #${order.orderNo} for ${customerName}${addr} updated.`,
       });
     }
+
     await sendNotification({
       userId: ADMIN_USER_ID,
-      title: `Order Updated #${order.orderNo}`,
-      message: `Order #${order.orderNo} for ${customer.name}${addrInfo} updated.`,
+      title: `Order #${order.orderNo} Updated`,
+      message: `Order updated by ${req.user?.name || "someone"}.`,
     });
 
-    // Notify new team if changed
-    if (
-      updates.assignedTeamId &&
-      updates.assignedTeamId !== order.assignedTeamId
-    ) {
-      const members = await User.findAll({
-        include: [
-          { model: Team, as: "teams", where: { id: updates.assignedTeamId } },
-        ],
-        attributes: ["userId", "name"],
-      });
-      for (const m of members) {
-        await sendNotification({
-          userId: m.userId,
-          title: `Order Assigned to Team #${order.orderNo}`,
-          message: `Order #${order.orderNo} assigned to your team for ${customer.name}${addrInfo}.`,
-        });
-      }
-    }
-
-    return res.status(200).json({ message: "Order updated", order });
+    return res.status(200).json({
+      message: "Order updated successfully",
+      order,
+    });
   } catch (err) {
-    console.error(err);
+    console.error("Update Order Error:", err);
     return sendErrorResponse(res, 500, "Failed to update order", err.message);
   }
 };
