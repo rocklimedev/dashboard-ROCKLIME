@@ -1,24 +1,96 @@
-// filter_by_brand.js
 const fs = require("fs");
+const path = require("path");
+const products = require("./updated.json");
 
-// ============================= CONFIG =============================
-const PRODUCTS_FILE = "./seeder/backup/products_backup.json";
-const OUTPUT_FILE = "./filtered_products.json";
-const TARGET_BRAND_ID = "acbe7061-9b76-47d1-a509-e4b1f982a36f";
+const IMAGES_DIR = path.join(__dirname, "images");
 
-// ============================= LOAD DATA =============================
-const products = JSON.parse(fs.readFileSync(PRODUCTS_FILE, "utf8"));
+// Extract filename correctly (decode %20 etc.)
+function extractFilename(url) {
+  if (!url || typeof url !== "string") return null;
 
-// ============================= FILTER =============================
-const filtered = products.filter((p) => {
-  const brandId = p.brandId || (p.meta && p.meta.brandId);
-  return brandId === TARGET_BRAND_ID;
-});
+  try {
+    const u = new URL(url);
+    let filename = decodeURIComponent(path.basename(u.pathname));
+    return filename.trim() || null;
+  } catch {
+    console.log("Invalid URL:", url);
+    return null;
+  }
+}
 
-// ============================= WRITE OUTPUT =============================
-fs.writeFileSync(OUTPUT_FILE, JSON.stringify(filtered, null, 2));
+// Case-insensitive file existence check
+function fileExistsInsensitive(filename) {
+  if (!filename) return false;
 
-console.log(
-  `Filtered ${filtered.length} products for brandId = ${TARGET_BRAND_ID}`
-);
-console.log(`Output written → ${OUTPUT_FILE}`);
+  const target = filename.toLowerCase();
+  const files = fs.readdirSync(IMAGES_DIR);
+
+  return files.some((f) => f.toLowerCase() === target);
+}
+
+function normalizeImagesField(images) {
+  if (!images) return [];
+
+  try {
+    if (typeof images === "string") return JSON.parse(images);
+    if (Array.isArray(images)) return images;
+    return [];
+  } catch (e) {
+    console.log("JSON parse fail for images:", images);
+    return [];
+  }
+}
+
+let updatedCount = 0;
+let usedFilenames = new Set();
+
+for (const product of products) {
+  const imgList = normalizeImagesField(product.images);
+
+  console.log("\n=============================");
+  console.log("PRODUCT:", product.productId);
+  console.log("=============================");
+
+  const validImages = imgList.filter((url) => {
+    const filename = extractFilename(url);
+    const exists = fileExistsInsensitive(filename);
+
+    console.log("URL:", url);
+    console.log(" → filename:", filename);
+    console.log(" → exists:", exists);
+
+    if (exists) usedFilenames.add(filename.toLowerCase());
+    return exists;
+  });
+
+  if (validImages.length === 0) {
+    console.log(' → ACTION: No valid images → setting images = ""');
+    if (product.images !== "") updatedCount++;
+    product.images = "";
+  } else {
+    console.log(" → ACTION: Keeping valid images:", validImages);
+    product.images = JSON.stringify(validImages);
+  }
+}
+
+// Save cleaned data
+fs.writeFileSync("data_cleaned.json", JSON.stringify(products, null, 2));
+
+console.log("\n===================================");
+console.log("FINAL SUMMARY: Updated products:", updatedCount);
+console.log("===================================");
+
+// --------------------
+// FIND UNUSED IMAGES
+// --------------------
+const allFiles = fs.readdirSync(IMAGES_DIR).map((f) => f.toLowerCase());
+
+const unused = allFiles.filter((f) => !usedFilenames.has(f));
+
+// Write unused images to txt file
+fs.writeFileSync("unused_images.txt", unused.join("\n"), "utf8");
+
+console.log("\n===================================");
+console.log("UNUSED IMAGES:", unused.length);
+console.log("Saved to unused_images.txt");
+console.log("===================================");
