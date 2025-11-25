@@ -16,7 +16,8 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "27200.00",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "28912000"
-    }
+    },
+    "product_code": "EGRGR0000144"
   },
   {
     "name": "BOTTLE TRAP",
@@ -35,7 +36,8 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "4050.00",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "28920000"
-    }
+    },
+    "product_code": "EGRGR0000136"
   },
   {
     "name": "BOTTLE TRAP",
@@ -54,7 +56,8 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "3850.00",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "29058000"
-    }
+    },
+    "product_code": "EGRGR0000533"
   },
   {
     "name": "BOTTLE TRAP",
@@ -73,6 +76,7 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "11100.00",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "40564000"
-    }
+    },
+    "product_code": "EGRGR0000778"
   }
 ]

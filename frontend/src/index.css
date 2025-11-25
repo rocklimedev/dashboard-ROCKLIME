@@ -2085,3 +2085,13 @@ body {
   border-radius: 50%;
   pointer-events: none;
 }
+/* In your global CSS or component CSS */
+.ant-input:focus,
+.ant-input-focused {
+  box-shadow: 0 0 0 3px rgba(24, 144, 255, 0.1) !important;
+}
+
+.ant-btn:hover {
+  transform: translateY(-1px);
+  transition: all 0.2s;
+}

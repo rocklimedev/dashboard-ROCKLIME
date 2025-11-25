@@ -167,73 +167,96 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
               </tbody>
             </Table>
 
-            {/* ========== FINAL BREAKDOWN (FROM DB) ========== */}
-
-            <Table bordered size="sm" className="mt-4">
-              <tbody>
-                <tr>
-                  <td className="text-end fw-bold">Subtotal</td>
-                  <td className="text-end">
-                    ₹{Number(q.subtotal || 0).toFixed(2)}
-                  </td>
-                </tr>
-
-                {q.extraDiscount > 0 && (
+            {/* ========== FINAL BREAKDOWN – ROBUST VERSION ========== */}
+            <div className="mt-4">
+              <Table bordered size="sm">
+                <tbody>
+                  {/* 1. Subtotal – sum of all line item totals */}
                   <tr>
-                    <td className="text-end text-danger">
-                      Extra Discount (
-                      {q.extraDiscountType === "percent"
-                        ? `${q.extraDiscount}%`
-                        : `₹${q.extraDiscount}`}
-                      )
-                    </td>
-                    <td className="text-end text-danger">
-                      -₹{Number(q.discountAmount || 0).toFixed(2)}
+                    <td className="text-end fw-bold">Subtotal</td>
+                    <td className="text-end">
+                      ₹
+                      {lineItems
+                        .reduce((sum, item) => sum + Number(item.total || 0), 0)
+                        .toFixed(2)}
                     </td>
                   </tr>
-                )}
 
-                {q.shippingAmount > 0 && (
-                  <tr>
-                    <td className="text-end text-success">Shipping</td>
-                    <td className="text-end text-success">
-                      +₹{Number(q.shippingAmount).toFixed(2)}
+                  {/* 2. Extra Discount */}
+                  {q.extraDiscount > 0 && (
+                    <tr>
+                      <td className="text-end text-danger">
+                        Extra Discount (
+                        {q.extraDiscountType === "percent"
+                          ? `${q.extraDiscount}%`
+                          : `₹${q.extraDiscount}`}
+                        )
+                      </td>
+                      <td className="text-end text-danger">
+                        -₹
+                        {Number(
+                          q.discountAmount || q.extraDiscount || 0
+                        ).toFixed(2)}
+                      </td>
+                    </tr>
+                  )}
+
+                  {/* 3. Shipping */}
+                  {q.shippingAmount > 0 && (
+                    <tr>
+                      <td className="text-end text-success">Shipping</td>
+                      <td className="text-end text-success">
+                        +₹{Number(q.shippingAmount).toFixed(2)}
+                      </td>
+                    </tr>
+                  )}
+
+                  {/* 4. GST – NOW FIXED! */}
+                  {q.gst > 0 && (
+                    <tr>
+                      <td className="text-end text-success">GST ({q.gst}%)</td>
+                      <td className="text-end text-success">
+                        +₹
+                        {(
+                          (lineItems.reduce(
+                            (sum, item) => sum + Number(item.total || 0),
+                            0
+                          ) +
+                            (q.shippingAmount || 0) -
+                            (q.discountAmount || 0)) *
+                          (q.gst / 100)
+                        ).toFixed(2)}
+                      </td>
+                    </tr>
+                  )}
+
+                  {/* 5. Round Off */}
+                  {q.roundOff != null && Number(q.roundOff) !== 0 && (
+                    <tr>
+                      <td className="text-end">Round Off</td>
+                      <td
+                        className={`text-end ${
+                          Number(q.roundOff) >= 0
+                            ? "text-success"
+                            : "text-danger"
+                        }`}
+                      >
+                        {Number(q.roundOff) >= 0 ? "+" : "-"}₹
+                        {Math.abs(Number(q.roundOff)).toFixed(2)}
+                      </td>
+                    </tr>
+                  )}
+
+                  {/* 6. Final Amount */}
+                  <tr className="table-primary fw-bold fs-5">
+                    <td className="text-end">Final Amount</td>
+                    <td className="text-end">
+                      ₹{Number(q.finalAmount || 0).toFixed(2)}
                     </td>
                   </tr>
-                )}
-
-                {/* This is the actual tax applied */}
-                {q.gst > 0 && (
-                  <tr>
-                    <td className="text-end text-success">GST ({q.gst}%)</td>
-                    <td className="text-end text-success">
-                      +₹{Number(q.gstAmount || 0).toFixed(2)}
-                    </td>
-                  </tr>
-                )}
-
-                {q.roundOff != null && Number(q.roundOff) !== 0 && (
-                  <tr>
-                    <td className="text-end">Round Off</td>
-                    <td
-                      className={`text-end ${
-                        q.roundOff >= 0 ? "text-success" : "text-danger"
-                      }`}
-                    >
-                      {q.roundOff >= 0 ? "+" : "-"}₹
-                      {Math.abs(q.roundOff).toFixed(2)}
-                    </td>
-                  </tr>
-                )}
-
-                <tr className="fw-bold">
-                  <td className="text-end">Final Amount</td>
-                  <td className="text-end">
-                    ₹{Number(q.finalAmount || 0).toFixed(2)}
-                  </td>
-                </tr>
-              </tbody>
-            </Table>
+                </tbody>
+              </Table>
+            </div>
           </>
         )}
       </Modal.Body>

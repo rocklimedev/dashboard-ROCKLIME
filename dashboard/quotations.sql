@@ -20,11 +20,9 @@ CREATE TABLE IF NOT EXISTS `quotations` (
   `document_title` varchar(255) NOT NULL,
   `quotation_date` date NOT NULL,
   `due_date` date NOT NULL,
+  `followupDates` json DEFAULT NULL COMMENT 'Array of follow-up date objects or timestamps',
   `reference_number` varchar(50) DEFAULT NULL,
-  `include_gst` tinyint(1) NOT NULL,
-  `gst_value` decimal(10,2) DEFAULT NULL,
   `products` json NOT NULL,
-  `discountType` enum('percent','fixed') DEFAULT NULL,
   `roundOff` decimal(10,2) DEFAULT NULL,
   `finalAmount` decimal(10,2) NOT NULL,
   `signature_name` varchar(255) DEFAULT NULL,
@@ -34,13 +32,18 @@ CREATE TABLE IF NOT EXISTS `quotations` (
   `customerId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `createdBy` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   `shipTo` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `discountAmount` decimal(10,2) DEFAULT NULL COMMENT 'Stores either fixed amount or percentage; interpretation handled in frontend',
+  `extraDiscount` decimal(10,2) DEFAULT NULL,
+  `extraDiscountType` enum('percent','fixed') DEFAULT NULL,
+  `shippingAmount` decimal(10,2) DEFAULT NULL,
+  `gst` decimal(5,2) DEFAULT NULL COMMENT 'GST percentage applied on total amount',
   PRIMARY KEY (`quotationId`),
   KEY `customerId` (`customerId`),
   KEY `createdBy` (`createdBy`),
   KEY `shipTo` (`shipTo`),
-  CONSTRAINT `quotations_ibfk_2351` FOREIGN KEY (`customerId`) REFERENCES `customers` (`customerId`) ON UPDATE CASCADE,
-  CONSTRAINT `quotations_ibfk_2352` FOREIGN KEY (`createdBy`) REFERENCES `users` (`userId`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `quotations_ibfk_2353` FOREIGN KEY (`shipTo`) REFERENCES `addresses` (`addressId`) ON DELETE SET NULL ON UPDATE CASCADE
+  CONSTRAINT `quotations_ibfk_3004` FOREIGN KEY (`customerId`) REFERENCES `customers` (`customerId`) ON UPDATE CASCADE,
+  CONSTRAINT `quotations_ibfk_3005` FOREIGN KEY (`createdBy`) REFERENCES `users` (`userId`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `quotations_ibfk_3006` FOREIGN KEY (`shipTo`) REFERENCES `addresses` (`addressId`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Data exporting was unselected.

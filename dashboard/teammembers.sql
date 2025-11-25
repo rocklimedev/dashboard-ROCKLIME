@@ -26,7 +26,9 @@ CREATE TABLE IF NOT EXISTS `teammembers` (
   `updatedAt` datetime NOT NULL,
   PRIMARY KEY (`id`),
   KEY `teamId` (`teamId`),
-  CONSTRAINT `teammembers_ibfk_1` FOREIGN KEY (`teamId`) REFERENCES `teams` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  KEY `userId` (`userId`),
+  CONSTRAINT `teammembers_ibfk_163` FOREIGN KEY (`teamId`) REFERENCES `teams` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `teammembers_ibfk_164` FOREIGN KEY (`userId`) REFERENCES `users` (`userId`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 -- Data exporting was unselected.

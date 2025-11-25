@@ -14,21 +14,24 @@
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
--- Dumping structure for table spsyn8lm_rocklime_dashboard.rolepermissions
-CREATE TABLE IF NOT EXISTS `rolepermissions` (
-  `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.inventory_history
+CREATE TABLE IF NOT EXISTS `inventory_history` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `productId` char(36) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `change` int(11) NOT NULL,
+  `quantityAfter` int(11) NOT NULL,
+  `action` enum('add-stock','remove-stock','sale','return','adjustment','correction') COLLATE utf8_unicode_ci NOT NULL,
+  `orderNo` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `userId` char(36) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL,
+  `message` text COLLATE utf8_unicode_ci,
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL,
-  `roleId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
-  `permissionId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `RolePermissions_permissionId_roleId_unique` (`roleId`,`permissionId`),
-  UNIQUE KEY `rolepermissions_role_id_permission_id` (`roleId`,`permissionId`),
-  KEY `permissionId` (`permissionId`),
-  KEY `rolepermissions_permission_id` (`permissionId`),
-  CONSTRAINT `rolepermissions_ibfk_2357` FOREIGN KEY (`roleId`) REFERENCES `roles` (`roleId`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `rolepermissions_ibfk_2358` FOREIGN KEY (`permissionId`) REFERENCES `permissions` (`permissionId`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  KEY `idx_product_id` (`productId`),
+  KEY `idx_created_at` (`createdAt`),
+  KEY `idx_product_created` (`productId`,`createdAt`),
+  KEY `idx_action` (`action`)
+) ENGINE=InnoDB AUTO_INCREMENT=200 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
 
