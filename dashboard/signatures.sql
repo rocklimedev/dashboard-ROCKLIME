@@ -19,13 +19,19 @@ CREATE TABLE IF NOT EXISTS `signatures` (
   `signatureId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `signature_name` varchar(255) NOT NULL,
   `signature_image` varchar(255) NOT NULL,
-  `mark_as_default` tinyint(1) NOT NULL,
+  `mark_as_default` tinyint(1) NOT NULL DEFAULT '0',
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL,
   `userId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `customerId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `vendorId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   PRIMARY KEY (`signatureId`),
   KEY `userId` (`userId`),
-  CONSTRAINT `signatures_ibfk_1` FOREIGN KEY (`userId`) REFERENCES `users` (`userId`) ON DELETE SET NULL ON UPDATE CASCADE
+  KEY `customerId` (`customerId`),
+  KEY `vendorId` (`vendorId`),
+  CONSTRAINT `signatures_ibfk_214` FOREIGN KEY (`userId`) REFERENCES `users` (`userId`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `signatures_ibfk_215` FOREIGN KEY (`customerId`) REFERENCES `customers` (`customerId`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `signatures_ibfk_216` FOREIGN KEY (`vendorId`) REFERENCES `vendors` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Data exporting was unselected.

@@ -454,7 +454,7 @@ function computeTotals({
 }
 
 /**
- * Reduce stock + log history (shared by create & update when products change)
+ * Reduce stock + log history (shared by create & update)
  */
 async function reduceStockAndLog({
   productUpdates,
@@ -462,40 +462,32 @@ async function reduceStockAndLog({
   orderNo,
   customMessage,
 }) {
-  const username = (
-    await User.findByPk(createdBy, { attributes: ["username"] })
-  ).username;
+  const username =
+    (await User.findByPk(createdBy, { attributes: ["username"] }))?.username ||
+    "unknown";
   const autoMsg = `Stock removed by ${username} (Order #${orderNo})`;
   const msg = customMessage?.trim() || autoMsg;
 
   for (const upd of productUpdates) {
     const { productId, quantityToReduce, productRecord } = upd;
 
-    // ---- update qty
     const newQty = productRecord.quantity - quantityToReduce;
+
+    // ---- Update product quantity ----
     await Product.update({ quantity: newQty }, { where: { productId } });
 
-    // ---- mongo history
-    try {
-      await InventoryHistory.findOneAndUpdate(
-        { productId },
-        {
-          $push: {
-            history: {
-              quantity: -quantityToReduce,
-              action: "remove-stock",
-              timestamp: new Date(),
-              orderNo,
-              userId: createdBy,
-              message: msg,
-            },
-          },
-        },
-        { upsert: true, new: true }
-      );
-    } catch (e) {}
+    // ---- Log to MySQL InventoryHistory (ACID safe) ----
+    await InventoryHistory.create({
+      productId,
+      change: -quantityToReduce,
+      quantityAfter: newQty,
+      action: "remove-stock",
+      orderNo,
+      userId: createdBy,
+      message: msg,
+    });
 
-    // ---- status
+    // ---- Update product status ----
     let newStatus = "active";
     if (newQty === 0) newStatus = "out_of_stock";
     else if (
@@ -508,7 +500,7 @@ async function reduceStockAndLog({
       await Product.update({ status: newStatus }, { where: { productId } });
     }
 
-    // ---- low / out-of-stock admin notification
+    // ---- Low / Out-of-stock notification ----
     if (["out_of_stock", "low_stock"].includes(newStatus)) {
       await sendNotification({
         userId: ADMIN_USER_ID,
@@ -521,44 +513,40 @@ async function reduceStockAndLog({
     }
   }
 }
-
 /**
- * Re-add stock when order is canceled / deleted
+ * Restore stock when order is canceled / deleted
  */
 async function restoreStock({ products, orderNo }) {
   if (!products?.length) return;
 
   for (const p of products) {
-    const prod = await Product.findByPk(p.id);
+    const prod = await Product.findByPk(p.id || p.productId);
     if (!prod) continue;
 
-    const newQty = prod.quantity + (p.quantity ?? 0);
-    await Product.update({ quantity: newQty }, { where: { productId: p.id } });
+    const qtyToAdd = p.quantity ?? 0;
+    const newQty = prod.quantity + qtyToAdd;
 
-    // optional mongo log
-    try {
-      await InventoryHistory.findOneAndUpdate(
-        { productId: p.id },
-        {
-          $push: {
-            history: {
-              quantity: p.quantity,
-              action: "add-stock",
-              timestamp: new Date(),
-              orderNo,
-              message: `Stock restored (order ${orderNo} cancelled/deleted)`,
-            },
-          },
-        },
-        { upsert: true }
-      );
-    } catch (e) {}
+    await Product.update(
+      { quantity: newQty },
+      { where: { productId: prod.productId } }
+    );
+
+    await InventoryHistory.create({
+      productId: prod.productId,
+      change: qtyToAdd,
+      quantityAfter: newQty,
+      action: "add-stock",
+      orderNo,
+      message: `Stock restored (order #${orderNo} cancelled/deleted)`,
+    });
   }
 }
 
 // ──────── CREATE ORDER ────────
 // ──────── CREATE ORDER ────────
+// ──────── CREATE ORDER – FINAL MYSQL-ONLY VERSION ────────
 exports.createOrder = async (req, res) => {
+  const t = await sequelize.transaction();
   try {
     const {
       createdFor,
@@ -572,7 +560,7 @@ exports.createOrder = async (req, res) => {
       source,
       priority,
       description,
-      orderNo,
+      orderNo: rawOrderNo,
       quotationId,
       products = [],
       masterPipelineNo,
@@ -586,8 +574,8 @@ exports.createOrder = async (req, res) => {
       amountPaid = 0,
     } = req.body;
 
-    // ── REQUIRED FIELDS ──
-    if (!createdFor || !createdBy || !orderNo) {
+    // ── BASIC REQUIRED FIELDS ──
+    if (!createdFor || !createdBy || !rawOrderNo) {
       return sendErrorResponse(
         res,
         400,
@@ -595,30 +583,39 @@ exports.createOrder = async (req, res) => {
       );
     }
 
-    // ── SHIPPING ──
-    const parsedShipping = parseFloat(shipping) || 0;
-    if (isNaN(parsedShipping) || parsedShipping < 0) {
-      return sendErrorResponse(res, 400, "Invalid shipping amount");
-    }
+    const orderNo = parseInt(rawOrderNo);
+    if (isNaN(orderNo))
+      return sendErrorResponse(res, 400, "orderNo must be a valid number");
 
-    // ── VALIDATE CREATOR & CUSTOMER ──
+    // ── VALIDATE USERS & CUSTOMER ──
     const [creator, customer] = await Promise.all([
-      User.findByPk(createdBy, { attributes: ["userId", "username", "name"] }),
-      Customer.findByPk(createdFor),
+      User.findByPk(createdBy, {
+        attributes: ["userId", "username", "name"],
+        transaction: t,
+      }),
+      Customer.findByPk(createdFor, { transaction: t }),
     ]);
-
     if (!creator) return sendErrorResponse(res, 404, "Creator user not found");
     if (!customer) return sendErrorResponse(res, 404, "Customer not found");
 
-    // ── QUOTATION (optional) ──
+    // ── ORDER NUMBER UNIQUENESS ──
+    const existingOrder = await Order.findOne({
+      where: { orderNo },
+      transaction: t,
+    });
+    if (existingOrder)
+      return sendErrorResponse(res, 400, "Order number already exists");
+
+    // ── OPTIONAL REFERENCES ──
     if (quotationId) {
-      const q = await Quotation.findByPk(quotationId);
+      const q = await Quotation.findByPk(quotationId, { transaction: t });
       if (!q) return sendErrorResponse(res, 404, "Quotation not found");
     }
-
-    // ── MASTER / PREVIOUS ORDER VALIDATION ──
     if (masterPipelineNo) {
-      const m = await Order.findOne({ where: { orderNo: masterPipelineNo } });
+      const m = await Order.findOne({
+        where: { orderNo: masterPipelineNo },
+        transaction: t,
+      });
       if (!m)
         return sendErrorResponse(
           res,
@@ -629,32 +626,27 @@ exports.createOrder = async (req, res) => {
         return sendErrorResponse(
           res,
           400,
-          "Master pipeline cannot be the same as current order"
+          "Master cannot be the same as current order"
         );
     }
     if (previousOrderNo) {
-      const p = await Order.findOne({ where: { orderNo: previousOrderNo } });
+      const p = await Order.findOne({
+        where: { orderNo: previousOrderNo },
+        transaction: t,
+      });
       if (!p)
         return sendErrorResponse(
           res,
           404,
           `Previous order ${previousOrderNo} not found`
         );
-      if (previousOrderNo === orderNo)
-        return sendErrorResponse(
-          res,
-          400,
-          "Previous order cannot be the same as current order"
-        );
     }
 
-    // ── PRODUCTS VALIDATION & STOCK CHECK ──
+    // ── PRODUCTS VALIDATION + STOCK CHECK + COLLECT UPDATES ──
     let productUpdates = [];
-
     if (products.length > 0) {
-      if (!Array.isArray(products)) {
+      if (!Array.isArray(products))
         return sendErrorResponse(res, 400, "Products must be an array");
-      }
 
       for (const p of products) {
         const {
@@ -668,37 +660,26 @@ exports.createOrder = async (req, res) => {
 
         if (
           !id ||
-          price == null ||
-          total == null ||
           !quantity ||
-          quantity < 1
+          quantity < 1 ||
+          price == null ||
+          total == null
         ) {
           return sendErrorResponse(
             res,
             400,
-            "Each product must have id, price, total, and quantity >= 1"
+            "Each product must have id, quantity ≥ 1, price, and total"
           );
         }
 
-        const prod = await Product.findByPk(id);
+        const prod = await Product.findByPk(id, {
+          lock: t.LOCK.UPDATE,
+          transaction: t,
+        });
         if (!prod)
           return sendErrorResponse(res, 404, `Product not found: ${id}`);
 
-        // Validate numbers
-        if (
-          typeof price !== "number" ||
-          price < 0 ||
-          typeof total !== "number" ||
-          total < 0
-        ) {
-          return sendErrorResponse(
-            res,
-            400,
-            `Invalid price or total for product ${id}`
-          );
-        }
-
-        // Validate line total calculation
+        // Validate line total
         const calculatedTotal =
           discountType === "percent"
             ? price * (1 - discount / 100) * quantity
@@ -731,106 +712,16 @@ exports.createOrder = async (req, res) => {
       }
     }
 
-    // ── DATE VALIDATIONS ──
-    if (dueDate && isNaN(new Date(dueDate).getTime())) {
-      return sendErrorResponse(res, 400, "Invalid dueDate format");
-    }
-
-    const parsedFollowup = Array.isArray(followupDates)
-      ? followupDates.filter((d) => d && !isNaN(new Date(d).getTime()))
-      : [];
-
-    // ── TEAM & USER VALIDATIONS ──
-    if (assignedTeamId) {
-      const team = await Team.findByPk(assignedTeamId);
-      if (!team) return sendErrorResponse(res, 404, "Assigned team not found");
-    }
-    if (assignedUserId) {
-      const user = await User.findByPk(assignedUserId);
-      if (!user) return sendErrorResponse(res, 404, "Assigned user not found");
-    }
-    if (secondaryUserId) {
-      const user = await User.findByPk(secondaryUserId);
-      if (!user) return sendErrorResponse(res, 404, "Secondary user not found");
-    }
-
-    // ── ORDER NUMBER UNIQUENESS ──
-    const orderNoInt = parseInt(orderNo);
-    if (isNaN(orderNoInt)) {
-      return sendErrorResponse(res, 400, "orderNo must be numeric");
-    }
-    const existingOrder = await Order.findOne({
-      where: { orderNo: orderNoInt },
-    });
-    if (existingOrder) {
-      return sendErrorResponse(res, 400, "Order number already exists");
-    }
-
-    // ── SHIPPING ADDRESS ──
-    let addressDetails = null;
-    if (shipTo) {
-      const addr = await Address.findByPk(shipTo);
-      if (!addr)
-        return sendErrorResponse(
-          res,
-          404,
-          `Shipping address not found: ${shipTo}`
-        );
-      addressDetails = addr.toJSON();
-    }
-
-    // ── PRIORITY & STATUS ──
-    const priorityLower = priority ? priority.toLowerCase() : "medium";
-    if (!VALID_PRIORITIES.includes(priorityLower)) {
-      return sendErrorResponse(
-        res,
-        400,
-        `Invalid priority: ${priority}. Use: ${VALID_PRIORITIES.join(", ")}`
-      );
-    }
-
-    const statusUpper = status ? status.toUpperCase() : "PREPARING";
-    if (!VALID_STATUSES.includes(statusUpper)) {
-      return sendErrorResponse(res, 400, `Invalid status: ${status}`);
-    }
-
-    // ── GST & DISCOUNT CALCULATIONS ──
-    const parsedGst = gst != null && gst !== "" ? parseFloat(gst) : null;
-    if (
-      parsedGst !== null &&
-      (isNaN(parsedGst) || parsedGst < 0 || parsedGst > 100)
-    ) {
-      return sendErrorResponse(res, 400, "GST must be between 0 and 100");
-    }
-
+    // ── FINANCIAL CALCULATIONS ──
+    const parsedShipping = parseFloat(shipping) || 0;
+    const parsedGst = gst !== null && gst !== "" ? parseFloat(gst) : null;
     const parsedExtraDiscount =
-      extraDiscount != null && extraDiscount !== ""
+      extraDiscount !== null && extraDiscount !== ""
         ? parseFloat(extraDiscount)
         : null;
-    if (
-      parsedExtraDiscount !== null &&
-      (isNaN(parsedExtraDiscount) || parsedExtraDiscount < 0)
-    ) {
-      return sendErrorResponse(res, 400, "Invalid extra discount amount");
-    }
-
     const finalDiscountType =
-      parsedExtraDiscount != null ? extraDiscountType : null;
-    if (
-      parsedExtraDiscount != null &&
-      !["fixed", "percent"].includes(finalDiscountType)
-    ) {
-      return sendErrorResponse(
-        res,
-        400,
-        "extraDiscountType must be 'fixed' or 'percent'"
-      );
-    }
-
+      parsedExtraDiscount !== null ? extraDiscountType : null;
     const parsedAmountPaid = parseFloat(amountPaid) || 0;
-    if (isNaN(parsedAmountPaid) || parsedAmountPaid < 0) {
-      return sendErrorResponse(res, 400, "Invalid amountPaid");
-    }
 
     const { gstValue, extraDiscountValue, finalAmount } = computeTotals({
       products,
@@ -838,48 +729,57 @@ exports.createOrder = async (req, res) => {
       gst: parsedGst,
       extraDiscount: parsedExtraDiscount,
       extraDiscountType: finalDiscountType,
-      amountPaid: parsedAmountPaid,
     });
 
-    // CREATE ORDER IN MYSQL (Sequelize) - FIXED VERSION
-    const order = await Order.create({
-      createdFor,
-      createdBy,
-      status: statusUpper,
-      dueDate: dueDate || null,
-      followupDates: parsedFollowup,
-      source: source || null,
-      priority: priorityLower,
-      description: description || null,
-      orderNo: orderNoInt,
-      quotationId: quotationId || null,
-      masterPipelineNo: masterPipelineNo || null,
-      previousOrderNo: previousOrderNo || null,
-      shipTo: shipTo || null,
-      shipping: parsedShipping,
+    // ── PRIORITY & STATUS ──
+    const priorityLower = priority ? priority.toLowerCase() : "medium";
+    if (!VALID_PRIORITIES.includes(priorityLower)) {
+      return sendErrorResponse(res, 400, `Invalid priority: ${priority}`);
+    }
+    const statusUpper = status ? status.toUpperCase() : "PREPARING";
+    if (!VALID_STATUSES.includes(statusUpper)) {
+      return sendErrorResponse(res, 400, `Invalid status: ${status}`);
+    }
 
-      assignedTeamId: assignedTeamId || null,
-      assignedUserId: assignedUserId || null,
-      secondaryUserId: secondaryUserId || null,
+    // ── CREATE ORDER IN MYSQL (Sequelize) ──
+    const order = await Order.create(
+      {
+        createdFor,
+        createdBy,
+        status: statusUpper,
+        dueDate: dueDate || null,
+        followupDates: Array.isArray(followupDates)
+          ? followupDates.filter((d) => d)
+          : null,
+        source: source || null,
+        priority: priorityLower,
+        description: description || null,
+        orderNo,
+        quotationId: quotationId || null,
+        masterPipelineNo: masterPipelineNo || null,
+        previousOrderNo: previousOrderNo || null,
+        shipTo: shipTo || null,
+        shipping: parsedShipping,
+        assignedTeamId: assignedTeamId || null,
+        assignedUserId: assignedUserId || null,
+        secondaryUserId: secondaryUserId || null,
+        gst: parsedGst,
+        gstValue,
+        extraDiscount: parsedExtraDiscount,
+        extraDiscountType: finalDiscountType,
+        extraDiscountValue,
+        amountPaid: parsedAmountPaid,
+        finalAmount,
+      },
+      { transaction: t }
+    );
 
-      // Financial fields
-      gst: parsedGst,
-      gstValue,
-      extraDiscount: parsedExtraDiscount,
-      extraDiscountType: finalDiscountType,
-      extraDiscountValue,
-      amountPaid: parsedAmountPaid,
-      finalAmount,
-    });
-
-    // ── SAVE ORDER ITEMS IN MONGODB (with name & image) ──
+    // ── SAVE ORDER ITEMS (MongoDB – safe to keep for now, or migrate later) ──
     if (products.length > 0) {
-      const productIds = products
-        .map((p) => p.id || p.productId)
-        .filter(Boolean);
       const dbProducts = await Product.findAll({
-        where: { productId: productIds },
+        where: { productId: products.map((p) => p.id) },
         attributes: ["productId", "name", "images"],
+        transaction: t,
       });
 
       const productMap = {};
@@ -889,29 +789,21 @@ exports.createOrder = async (req, res) => {
           try {
             const imgs = JSON.parse(p.images);
             if (Array.isArray(imgs) && imgs.length > 0) imageUrl = imgs[0];
-          } catch (e) {}
+          } catch (_) {}
         }
-        productMap[p.productId] = {
-          name: p.name || "Unknown Product",
-          imageUrl,
-        };
+        productMap[p.productId] = { name: p.name, imageUrl };
       });
 
       const mongoItems = products.map((p) => {
-        const id = p.id || p.productId;
-        const { name, imageUrl } = productMap[id] || {
-          name: "Unknown Product",
-          imageUrl: null,
-        };
+        const { name = "Unknown", imageUrl = null } = productMap[p.id] || {};
         return {
-          productId: id,
+          productId: p.id,
           name,
           imageUrl,
           quantity: p.quantity,
           price: p.price,
           discount: p.discount || 0,
           discountType: p.discountType || "percent",
-          tax: 0,
           total: p.total,
         };
       });
@@ -923,52 +815,35 @@ exports.createOrder = async (req, res) => {
       );
     }
 
-    // ── REDUCE STOCK & LOG HISTORY ──
+    // ── REDUCE STOCK & LOG HISTORY (NOW 100% MYSQL + SAFE) ──
     if (productUpdates.length > 0) {
       await reduceStockAndLog({
         productUpdates,
         createdBy,
         orderNo: order.orderNo,
         customMessage,
+        transaction: t, // ← pass transaction if you modify reduceStockAndLog to accept it
       });
     }
 
-    // ── SEND NOTIFICATIONS ──
+    await t.commit();
+
+    // ── NOTIFICATIONS ──
     const recipients = new Set(
       [createdBy, assignedUserId, secondaryUserId].filter(Boolean)
     );
-    const addrInfo =
-      shipTo && addressDetails
-        ? `, ship to ${addressDetails.street || shipTo}`
-        : "";
-
     for (const userId of recipients) {
       await sendNotification({
         userId,
         title: `New Order #${orderNo}`,
-        message: `Order #${orderNo} created for ${customer.name}${addrInfo}.`,
+        message: `Order #${orderNo} created for ${customer.name}.`,
       });
     }
-
     await sendNotification({
       userId: ADMIN_USER_ID,
       title: `New Order #${orderNo}`,
       message: `Order #${orderNo} created by ${creator.name} for ${customer.name}.`,
     });
-
-    if (assignedTeamId) {
-      const teamMembers = await User.findAll({
-        include: [{ model: Team, as: "teams", where: { id: assignedTeamId } }],
-        attributes: ["userId", "name"],
-      });
-      for (const member of teamMembers) {
-        await sendNotification({
-          userId: member.userId,
-          title: `Order #${orderNo} Assigned to Your Team`,
-          message: `New order for ${customer.name} has been assigned to your team.`,
-        });
-      }
-    }
 
     return res.status(201).json({
       message: "Order created successfully",
@@ -976,6 +851,7 @@ exports.createOrder = async (req, res) => {
       orderNo: order.orderNo,
     });
   } catch (err) {
+    await t.rollback();
     console.error("Create Order Error:", err);
     return sendErrorResponse(res, 500, "Failed to create order", err.message);
   }

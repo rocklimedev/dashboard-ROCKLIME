@@ -28,8 +28,8 @@ CREATE TABLE IF NOT EXISTS `brand_parentcategories` (
   UNIQUE KEY `slug` (`slug`),
   UNIQUE KEY `brand_parentcategories_parentCategoryId_brandId_unique` (`brandId`),
   KEY `parentCategoryId` (`parentCategoryId`),
-  CONSTRAINT `brand_parentcategories_ibfk_517` FOREIGN KEY (`brandId`) REFERENCES `brands` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `brand_parentcategories_ibfk_518` FOREIGN KEY (`parentCategoryId`) REFERENCES `parentcategories` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `brand_parentcategories_ibfk_967` FOREIGN KEY (`brandId`) REFERENCES `brands` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `brand_parentcategories_ibfk_968` FOREIGN KEY (`parentCategoryId`) REFERENCES `parentcategories` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Data exporting was unselected.

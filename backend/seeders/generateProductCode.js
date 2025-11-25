@@ -1,85 +1,92 @@
+// fix-product-codes.js
 const fs = require("fs").promises;
 const path = require("path");
 
-// JSON data to process
-const jsonData = require("./error.json");
+// Load your actual JSON file
+const jsonData = require("./duplicate_products.json"); // make sure this is correct path
 
-// Mock brand
+// Mock brand (or pull from real data later)
 const mockBrand = { brandName: "Grohe Premium" };
 
-// Generate a random 3-digit number as a string
 function generateRandomSuffix() {
   return Math.floor(Math.random() * 900 + 100).toString(); // 100-999
 }
 
 async function generateCode(product, existingCodes) {
-  let last4;
+  let last4 = "0000";
 
-  // Check if company_code exists
-  if (product.company_code) {
-    const companyCode = `${product.company_code}`;
-    const match = companyCode.match(/\d{4}(?!.*\d)/);
-    last4 = match ? match[0] : "0000";
-  } else {
-    // Use size from meta, remove asterisks and spaces, take last 4 digits
-    const size = product.meta["06857cb5-3fbe-404b-bdef-657c8ae7c345"] || "0000";
-    const cleanedSize = size.replace(/[\*\s]/g, "");
-    last4 = cleanedSize.slice(-4) || "0000";
+  // Use company_code from metaDetails if exists
+  if (product.metaDetails) {
+    const companyCodeEntry = product.metaDetails.find(
+      (m) => m.slug === "companycode"
+    );
+    if (companyCodeEntry && companyCodeEntry.value) {
+      const match = companyCodeEntry.value.toString().match(/\d{4}(?!.*\d)/);
+      last4 = match ? match[0].padStart(4, "0") : "0000";
+    }
   }
 
-  const productType = "GR";
+  // Fallback: use size from meta
+  if (last4 === "0000" && product.meta) {
+    const sizeValue =
+      product.meta["06857cb5-3fbe-404b-bdef-657c8ae7c345"] || "";
+    const cleaned = sizeValue.replace(/[\*\s]/g, "");
+    last4 = cleaned.slice(-4).padStart(4, "0") || "0000";
+  }
 
-  // Prefix: E + first 2 of productType + first 2 of brandName + last4
-  const prefix = `E${productType.slice(0, 2).toUpperCase()}${mockBrand.brandName
+  const prefix = `E${"GR".slice(0, 2)}${mockBrand.brandName
     .slice(0, 2)
     .toUpperCase()}${last4}`;
 
   let newCode;
   let attempts = 0;
 
-  // Keep generating random suffix until it's unique
   do {
-    if (attempts++ > 1000)
-      throw new Error("Too many attempts generating unique code!");
+    if (attempts++ > 1000) throw new Error("Failed to generate unique code");
     const suffix = generateRandomSuffix();
     newCode = `${prefix}${suffix}`;
-  } while (existingCodes.includes(newCode));
+  } while (existingCodes.has(newCode));
 
   return newCode;
 }
 
 async function updateProductJson() {
   try {
-    console.log("✅ Processing product.json...");
+    console.log("Processing duplicate_products.json...");
 
-    // Collect existing codes
-    const existingCodes = jsonData
-      .filter((item) => item.productCode)
-      .map((item) => item.productCode);
+    // Use a Set for O(1) lookup
+    const existingCodes = new Set(
+      jsonData
+        .filter((p) => p.product_code && p.product_code !== "undefined")
+        .map((p) => p.product_code)
+    );
+
+    let updatedCount = 0;
 
     for (const product of jsonData) {
-      // Skip if already has productCode
-      if (product.productCode) {
-        console.log(
-          `ℹ️ Already has code: ${product.name} (${product.productCode})`
-        );
-        continue;
+      // Fix: Check product_code (snake_case), not productCode
+      if (!product.product_code || product.product_code === "undefined") {
+        const newCode = await generateCode(product, existingCodes);
+        product.product_code = newCode;
+        existingCodes.add(newCode);
+        updatedCount++;
+        console.log(`Generated: ${newCode} → ${product.name}`);
+      } else {
+        existingCodes.add(product.product_code);
+        console.log(`Kept: ${product.product_code} → ${product.name}`);
       }
-
-      // Generate new code
-      const newCode = await generateCode(product, existingCodes);
-      product.productCode = newCode;
-      existingCodes.push(newCode);
-
-      console.log(`✅ Added productCode "${newCode}" to "${product.name}"`);
     }
 
-    // Save back
-    const outputPath = path.resolve(__dirname, "product.json");
+    // Write back to the same file
+    const outputPath = path.resolve(__dirname, "duplicate_products.json");
     await fs.writeFile(outputPath, JSON.stringify(jsonData, null, 2));
-    console.log("🎉 product.json updated successfully.");
+
+    console.log(
+      `Done! Updated ${updatedCount} products with unique product_code`
+    );
+    console.log(`Total products: ${jsonData.length}`);
   } catch (err) {
-    console.error("❌ Error:", err.message);
+    console.error("Error:", err.message);
   }
 }
 

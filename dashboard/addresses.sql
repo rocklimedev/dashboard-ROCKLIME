@@ -25,9 +25,13 @@ CREATE TABLE IF NOT EXISTS `addresses` (
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL,
   `userId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `customerId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `status` enum('BILLING','PRIMARY','ADDITIONAL') NOT NULL DEFAULT 'ADDITIONAL',
   PRIMARY KEY (`addressId`),
   KEY `userId` (`userId`),
-  CONSTRAINT `addresses_ibfk_1` FOREIGN KEY (`userId`) REFERENCES `users` (`userId`) ON DELETE SET NULL ON UPDATE CASCADE
+  KEY `customerId` (`customerId`),
+  CONSTRAINT `addresses_ibfk_369` FOREIGN KEY (`userId`) REFERENCES `users` (`userId`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `addresses_ibfk_370` FOREIGN KEY (`customerId`) REFERENCES `customers` (`customerId`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Data exporting was unselected.

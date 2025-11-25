@@ -27,8 +27,8 @@ CREATE TABLE IF NOT EXISTS `vendors` (
   UNIQUE KEY `vendorId` (`vendorId`),
   KEY `vendors_fk_brandId` (`brandId`),
   KEY `vendors_fk_brandSlug` (`brandSlug`),
-  CONSTRAINT `vendors_ibfk_549` FOREIGN KEY (`brandId`) REFERENCES `brands` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `vendors_ibfk_550` FOREIGN KEY (`brandSlug`) REFERENCES `brands` (`brandSlug`)
+  CONSTRAINT `vendors_ibfk_1011` FOREIGN KEY (`brandId`) REFERENCES `brands` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `vendors_ibfk_1012` FOREIGN KEY (`brandSlug`) REFERENCES `brands` (`brandSlug`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Data exporting was unselected.

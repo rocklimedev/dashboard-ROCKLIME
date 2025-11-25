@@ -117,7 +117,7 @@ const ProductCard = ({
       </div>
 
       {/* ---------- THREE-DOT MENU ---------- */}
-      {hasProductActionPermission && (
+      <PermissionGate api="edit|delete" module="products">
         <Dropdown overlay={menu(product)} trigger={["click"]}>
           <Button
             type="text"
@@ -127,7 +127,7 @@ const ProductCard = ({
             aria-label="More options"
           />
         </Dropdown>
-      )}
+      </PermissionGate>
 
       {/* ---------- OUT-OF-STOCK BADGE ---------- */}
       {product.quantity <= 0 && (

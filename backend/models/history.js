@@ -1,39 +1,95 @@
 // models/InventoryHistory.js
-const mongoose = require("mongoose");
+const { DataTypes } = require("sequelize");
+const sequelize = require("../config/database");
+const Product = require("./product");
 
-const HistoryEntrySchema = new mongoose.Schema({
-  quantity: { type: Number, required: true },
-  action: {
-    type: String,
-    enum: ["add-stock", "remove-stock"],
-    required: true,
+const InventoryHistory = sequelize.define(
+  "InventoryHistory",
+  {
+    id: {
+      type: DataTypes.CHAR(36), // ← UUID v7 as string
+      primaryKey: true,
+      allowNull: false,
+      defaultValue: DataTypes.UUIDV4, // ← temporary fallback
+      comment: "UUID v7 - time-ordered & distributed-safe",
+    },
+    productId: {
+      type: DataTypes.CHAR(36), // ← match your Product.id type
+      allowNull: false,
+      references: {
+        model: Product,
+        key: "id",
+      },
+    },
+    change: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      comment: "Positive = add stock, Negative = remove/sale",
+    },
+    quantityAfter: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      comment: "Snapshot of product.quantity AFTER this change",
+    },
+    action: {
+      type: DataTypes.ENUM(
+        "add-stock",
+        "remove-stock",
+        "sale",
+        "return",
+        "adjustment",
+        "correction"
+      ),
+      allowNull: false,
+    },
+    orderNo: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+    },
+    userId: {
+      type: DataTypes.CHAR(36),
+      allowNull: true,
+    },
+    message: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
   },
-  timestamp: { type: Date, default: Date.now },
-  orderNo: { type: Number, required: false },
-  userId: { type: String, required: false },
+  {
+    tableName: "inventory_history",
+    timestamps: true,
+    createdAt: "createdAt",
+    updatedAt: "updatedAt",
+    paranoid: false,
+    indexes: [
+      {
+        name: "idx_product_created",
+        fields: ["productId", { attribute: "createdAt", order: "DESC" }],
+      },
+      { name: "idx_created_at", fields: ["createdAt"] },
+      { name: "idx_action", fields: ["action"] },
+      { name: "idx_user", fields: ["userId"] },
+    ],
+    hooks: {
+      beforeCreate: (record) => {
+        // AUTO-GENERATE REAL UUID v7 IN CODE (overrides defaultValue)
+        const { v7: uuidv7 } = require("uuid");
+        record.id = uuidv7();
+      },
+    },
+  }
+);
 
-  // NEW FIELD
-  message: { type: String, required: false },
+// Relationships
+Product.hasMany(InventoryHistory, {
+  foreignKey: "productId",
+  as: "inventoryHistory",
+  onDelete: "CASCADE",
 });
 
-const InventoryHistorySchema = new mongoose.Schema(
-  {
-    productId: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    history: [HistoryEntrySchema],
-  },
-  { timestamps: true }
-);
+InventoryHistory.belongsTo(Product, {
+  foreignKey: "productId",
+  as: "product",
+});
 
-InventoryHistorySchema.index({ productId: 1 });
-InventoryHistorySchema.index({ "history.timestamp": -1 });
-
-const InventoryHistory = mongoose.model(
-  "InventoryHistory",
-  InventoryHistorySchema
-);
-
-module.exports = InventoryHistory; // exported directly
+module.exports = InventoryHistory;

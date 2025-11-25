@@ -38,7 +38,7 @@ import { useGetProfileQuery } from "../../api/userApi";
 import { message } from "antd";
 import "./productdetails.css";
 import DeleteModal from "../Common/DeleteModal";
-import HistoryModal from "../Common/HistoryModal";
+import HistoryModalAntD from "../Common/HistoryModal";
 import StockModal from "../Common/StockModal";
 import ProductCard from "./ProductCard";
 import PageHeader from "../Common/PageHeader";
@@ -91,6 +91,12 @@ const ProductsList = () => {
   const [stockHistoryMap, setStockHistoryMap] = useState({});
   const [cartLoadingStates, setCartLoadingStates] = useState({});
   const [featuredLoadingStates, setFeaturedLoadingStates] = useState({});
+
+  // NEW MODAL STATES (Ant Design uses `open`)
+  const [stockModalOpen, setStockModalOpen] = useState(false);
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [stockAction, setStockAction] = useState("add"); // "add" or "remove"
+
   const [form] = Form.useForm();
   const [search, setSearch] = useState("");
 
@@ -341,14 +347,15 @@ const ProductsList = () => {
       setCartLoadingStates((s) => ({ ...s, [productId]: false }));
     }
   };
-  const handleStockClick = (product) => {
+  const openStockModal = (product, action = "add") => {
     setSelectedProduct(product);
-    setStockModalVisible(true);
+    setStockAction(action);
+    setStockModalOpen(true);
   };
 
-  const handleHistoryClick = (product) => {
+  const openHistoryModal = (product) => {
     setSelectedProduct(product);
-    setHistoryModalVisible(true);
+    setHistoryModalOpen(true);
   };
 
   const handleStockSubmit = (stockData) => {
@@ -380,23 +387,29 @@ const ProductsList = () => {
       <Menu.Item key="view">
         <Link to={`/product/${product.productId}`}>View</Link>
       </Menu.Item>
-
       <PermissionGate api="edit" module="products">
         <Menu.Item key="edit">
           <Link to={`/product/${product.productId}/edit`}>Edit</Link>
         </Menu.Item>
       </PermissionGate>
-
-      <Menu.Item key="manage-stock" onClick={() => handleStockClick(product)}>
-        Manage Stock
+      <Menu.Item key="add-stock" onClick={() => openStockModal(product, "add")}>
+        Add Stock
       </Menu.Item>
-
-      <Menu.Item key="view-history" onClick={() => handleHistoryClick(product)}>
+      <Menu.Item
+        key="remove-stock"
+        onClick={() => openStockModal(product, "remove")}
+      >
+        Remove Stock
+      </Menu.Item>
+      <Menu.Item key="history" onClick={() => openHistoryModal(product)}>
         View History
       </Menu.Item>
-
       <PermissionGate api="delete" module="products">
-        <Menu.Item key="delete" onClick={() => handleDeleteClick(product)}>
+        <Menu.Item
+          key="delete"
+          danger
+          onClick={() => handleDeleteClick(product)}
+        >
           Delete
         </Menu.Item>
       </PermissionGate>
@@ -793,22 +806,19 @@ const ProductsList = () => {
         itemType="Product"
         isLoading={isDeleting}
       />
-      {isStockModalVisible && selectedProduct && (
-        <StockModal
-          show={isStockModalVisible}
-          onHide={() => setStockModalVisible(false)}
-          product={selectedProduct}
-          onSubmit={handleStockSubmit}
-        />
-      )}
-      {isHistoryModalVisible && selectedProduct && (
-        <HistoryModal
-          show={isHistoryModalVisible}
-          onHide={() => setHistoryModalVisible(false)}
-          product={selectedProduct}
-          stockHistory={stockHistoryMap[selectedProduct.productId] || []}
-        />
-      )}
+      {/* NEW ANT DESIGN MODALS */}
+      <StockModal
+        open={stockModalOpen}
+        onCancel={() => setStockModalOpen(false)}
+        product={selectedProduct}
+        action={stockAction}
+      />
+
+      <HistoryModalAntD
+        open={historyModalOpen}
+        onCancel={() => setHistoryModalOpen(false)}
+        product={selectedProduct}
+      />
     </div>
   );
 };
