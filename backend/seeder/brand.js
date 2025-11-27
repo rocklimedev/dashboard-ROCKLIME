@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-const products = require("./updated.json");
+const products = require("./backup/products_backup.json");
 
 const IMAGES_DIR = path.join(__dirname, "images");
 

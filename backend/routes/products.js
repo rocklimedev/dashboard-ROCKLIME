@@ -137,4 +137,30 @@ router.get("/codes/brand-wise", productController.getAllProductCodesBrandWise);
 router.get("/search/get-product-codes", productController.getAllProductCodes);
 router.patch("/:productId/featured", productController.updateProductFeatured);
 router.get("/check-code", productController.checkproductCode);
+router.post(
+  "/:productId/keywords",
+  // checkPermission("edit", "manage_keywords", "products"),
+  productController.addKeywordsToProduct
+);
+
+// 2. Remove a single keyword
+router.delete(
+  "/:productId/keywords/:keywordId",
+  // checkPermission("edit", "manage_keywords", "products"),
+  productController.removeKeywordFromProduct
+);
+
+// 3. Remove ALL keywords from product (useful on edit when replacing)
+router.delete(
+  "/:productId/keywords",
+  // checkPermission("edit", "manage_keywords", "products"),
+  productController.removeAllKeywordsFromProduct
+);
+
+// 4. Replace ALL keywords (BEST for edit mode — clear old + add new)
+router.put(
+  "/:productId/keywords",
+  // checkPermission("edit", "manage_keywords", "products"),
+  productController.replaceAllKeywordsForProduct // ← We'll create this
+);
 module.exports = router;

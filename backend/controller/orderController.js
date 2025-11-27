@@ -14,6 +14,7 @@ const { v4: uuidv4 } = require("uuid");
 const ftp = require("basic-ftp");
 require("dotenv").config();
 const { Op } = require("sequelize");
+const sequelize = require("../config/database");
 const sanitizeHtml = require("sanitize-html");
 const { Readable } = require("stream");
 const moment = require("moment");
@@ -461,33 +462,43 @@ async function reduceStockAndLog({
   createdBy,
   orderNo,
   customMessage,
+  transaction, // ← ADD THIS
 }) {
   const username =
-    (await User.findByPk(createdBy, { attributes: ["username"] }))?.username ||
-    "unknown";
+    (
+      await User.findByPk(createdBy, {
+        attributes: ["username"],
+        transaction, // ← pass here too if needed
+      })
+    )?.username || "unknown";
+
   const autoMsg = `Stock removed by ${username} (Order #${orderNo})`;
   const msg = customMessage?.trim() || autoMsg;
 
   for (const upd of productUpdates) {
     const { productId, quantityToReduce, productRecord } = upd;
-
     const newQty = productRecord.quantity - quantityToReduce;
 
-    // ---- Update product quantity ----
-    await Product.update({ quantity: newQty }, { where: { productId } });
+    // Use transaction for ALL writes!
+    await Product.update(
+      { quantity: newQty },
+      { where: { productId }, transaction }
+    );
 
-    // ---- Log to MySQL InventoryHistory (ACID safe) ----
-    await InventoryHistory.create({
-      productId,
-      change: -quantityToReduce,
-      quantityAfter: newQty,
-      action: "remove-stock",
-      orderNo,
-      userId: createdBy,
-      message: msg,
-    });
+    await InventoryHistory.create(
+      {
+        productId,
+        change: -quantityToReduce,
+        quantityAfter: newQty,
+        action: "remove-stock",
+        orderNo,
+        userId: createdBy,
+        message: msg,
+      },
+      { transaction }
+    ); // ← Important!
 
-    // ---- Update product status ----
+    // Status update also in transaction
     let newStatus = "active";
     if (newQty === 0) newStatus = "out_of_stock";
     else if (
@@ -497,19 +508,10 @@ async function reduceStockAndLog({
       newStatus = "low_stock";
 
     if (newStatus !== productRecord.status) {
-      await Product.update({ status: newStatus }, { where: { productId } });
-    }
-
-    // ---- Low / Out-of-stock notification ----
-    if (["out_of_stock", "low_stock"].includes(newStatus)) {
-      await sendNotification({
-        userId: ADMIN_USER_ID,
-        title: `Product ${newStatus.replace("_", " ")}`,
-        message: `Product ${productRecord.name} is now ${newStatus.replace(
-          "_",
-          " "
-        )} (Qty: ${newQty})`,
-      });
+      await Product.update(
+        { status: newStatus },
+        { where: { productId }, transaction }
+      );
     }
   }
 }
@@ -545,8 +547,10 @@ async function restoreStock({ products, orderNo }) {
 // ──────── CREATE ORDER ────────
 // ──────── CREATE ORDER ────────
 // ──────── CREATE ORDER – FINAL MYSQL-ONLY VERSION ────────
+// ──────── CREATE ORDER – FINAL FIXED & SAFE VERSION ────────
 exports.createOrder = async (req, res) => {
   const t = await sequelize.transaction();
+
   try {
     const {
       createdFor,
@@ -595,6 +599,7 @@ exports.createOrder = async (req, res) => {
       }),
       Customer.findByPk(createdFor, { transaction: t }),
     ]);
+
     if (!creator) return sendErrorResponse(res, 404, "Creator user not found");
     if (!customer) return sendErrorResponse(res, 404, "Customer not found");
 
@@ -606,7 +611,7 @@ exports.createOrder = async (req, res) => {
     if (existingOrder)
       return sendErrorResponse(res, 400, "Order number already exists");
 
-    // ── OPTIONAL REFERENCES ──
+    // ── OPTIONAL REFERENCES VALIDATION ──
     if (quotationId) {
       const q = await Quotation.findByPk(quotationId, { transaction: t });
       if (!q) return sendErrorResponse(res, 404, "Quotation not found");
@@ -642,7 +647,7 @@ exports.createOrder = async (req, res) => {
         );
     }
 
-    // ── PRODUCTS VALIDATION + STOCK CHECK + COLLECT UPDATES ──
+    // ── PRODUCTS VALIDATION + STOCK CHECK ──
     let productUpdates = [];
     if (products.length > 0) {
       if (!Array.isArray(products))
@@ -695,7 +700,6 @@ exports.createOrder = async (req, res) => {
           );
         }
 
-        // Stock check
         if (prod.quantity < quantity) {
           return sendErrorResponse(
             res,
@@ -731,7 +735,7 @@ exports.createOrder = async (req, res) => {
       extraDiscountType: finalDiscountType,
     });
 
-    // ── PRIORITY & STATUS ──
+    // ── PRIORITY & STATUS VALIDATION ──
     const priorityLower = priority ? priority.toLowerCase() : "medium";
     if (!VALID_PRIORITIES.includes(priorityLower)) {
       return sendErrorResponse(res, 400, `Invalid priority: ${priority}`);
@@ -741,7 +745,7 @@ exports.createOrder = async (req, res) => {
       return sendErrorResponse(res, 400, `Invalid status: ${status}`);
     }
 
-    // ── CREATE ORDER IN MYSQL (Sequelize) ──
+    // ── CREATE ORDER (MySQL) ──
     const order = await Order.create(
       {
         createdFor,
@@ -749,7 +753,7 @@ exports.createOrder = async (req, res) => {
         status: statusUpper,
         dueDate: dueDate || null,
         followupDates: Array.isArray(followupDates)
-          ? followupDates.filter((d) => d)
+          ? followupDates.filter(Boolean)
           : null,
         source: source || null,
         priority: priorityLower,
@@ -774,61 +778,69 @@ exports.createOrder = async (req, res) => {
       { transaction: t }
     );
 
-    // ── SAVE ORDER ITEMS (MongoDB – safe to keep for now, or migrate later) ──
-    if (products.length > 0) {
-      const dbProducts = await Product.findAll({
-        where: { productId: products.map((p) => p.id) },
-        attributes: ["productId", "name", "images"],
-        transaction: t,
-      });
-
-      const productMap = {};
-      dbProducts.forEach((p) => {
-        let imageUrl = null;
-        if (p.images) {
-          try {
-            const imgs = JSON.parse(p.images);
-            if (Array.isArray(imgs) && imgs.length > 0) imageUrl = imgs[0];
-          } catch (_) {}
-        }
-        productMap[p.productId] = { name: p.name, imageUrl };
-      });
-
-      const mongoItems = products.map((p) => {
-        const { name = "Unknown", imageUrl = null } = productMap[p.id] || {};
-        return {
-          productId: p.id,
-          name,
-          imageUrl,
-          quantity: p.quantity,
-          price: p.price,
-          discount: p.discount || 0,
-          discountType: p.discountType || "percent",
-          total: p.total,
-        };
-      });
-
-      await OrderItem.findOneAndUpdate(
-        { orderId: order.id },
-        { orderId: order.id, items: mongoItems },
-        { upsert: true }
-      );
-    }
-
-    // ── REDUCE STOCK & LOG HISTORY (NOW 100% MYSQL + SAFE) ──
+    // ── REDUCE STOCK & LOG HISTORY (FULLY TRANSACTIONAL) ──
     if (productUpdates.length > 0) {
       await reduceStockAndLog({
         productUpdates,
         createdBy,
         orderNo: order.orderNo,
         customMessage,
-        transaction: t, // ← pass transaction if you modify reduceStockAndLog to accept it
+        transaction: t, // Critical!
       });
     }
 
+    // ── COMMIT MYSQL TRANSACTION FIRST ──
     await t.commit();
 
-    // ── NOTIFICATIONS ──
+    // ── SAVE ORDER ITEMS TO MONGODB (AFTER COMMIT – NON-TRANSACTIONAL) ──
+    if (products.length > 0) {
+      try {
+        const dbProducts = await Product.findAll({
+          where: { productId: products.map((p) => p.id) },
+          attributes: ["productId", "name", "images"],
+        });
+
+        const productMap = {};
+        dbProducts.forEach((p) => {
+          let imageUrl = null;
+          if (p.images) {
+            try {
+              const imgs = JSON.parse(p.images);
+              if (Array.isArray(imgs) && imgs.length > 0) imageUrl = imgs[0];
+            } catch (_) {}
+          }
+          productMap[p.productId] = { name: p.name, imageUrl };
+        });
+
+        const mongoItems = products.map((p) => {
+          const { name = "Unknown", imageUrl = null } = productMap[p.id] || {};
+          return {
+            productId: p.id,
+            name,
+            imageUrl,
+            quantity: p.quantity,
+            price: p.price,
+            discount: p.discount || 0,
+            discountType: p.discountType || "percent",
+            total: p.total,
+          };
+        });
+
+        await OrderItem.findOneAndUpdate(
+          { orderId: order.id },
+          { orderId: order.id, items: mongoItems },
+          { upsert: true }
+        );
+      } catch (mongoErr) {
+        console.error(
+          "Warning: Failed to save OrderItems to MongoDB:",
+          mongoErr.message
+        );
+        // Don't fail the whole request — order is already created safely
+      }
+    }
+
+    // ── SEND NOTIFICATIONS (AFTER SUCCESS) ──
     const recipients = new Set(
       [createdBy, assignedUserId, secondaryUserId].filter(Boolean)
     );
@@ -851,7 +863,16 @@ exports.createOrder = async (req, res) => {
       orderNo: order.orderNo,
     });
   } catch (err) {
-    await t.rollback();
+    // ── SAFE ROLLBACK (PREVENT "connection closed" CRASH) ──
+    try {
+      await t.rollback();
+    } catch (rollbackErr) {
+      console.warn(
+        "Rollback failed (connection likely already closed):",
+        rollbackErr.message
+      );
+    }
+
     console.error("Create Order Error:", err);
     return sendErrorResponse(res, 500, "Failed to create order", err.message);
   }

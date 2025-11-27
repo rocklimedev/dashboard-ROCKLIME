@@ -32,9 +32,13 @@ import {
   useAddStockMutation,
   useRemoveStockMutation,
 } from "../../api/productApi";
-import PageHeader from "../Common/PageHeader";
+import PageHeader from "./PageHeader";
 import pos from "../../assets/img/default.png";
 import HistoryModalAntD from "./HistoryModal";
+import { FileTextOutlined, DownloadOutlined } from "@ant-design/icons";
+import { FilePdfOutlined, FileExcelOutlined } from "@ant-design/icons";
+import { generatePDF, generateExcel } from "../../data/helpers";
+import ReportBuilderModal from "./ReportBuilderModal"; // Adjust path
 const { TabPane } = Tabs;
 const { Text, Title } = Typography;
 
@@ -44,6 +48,10 @@ const InventoryWrapper = () => {
   const [addStock, { isLoading: isAddingStock }] = useAddStockMutation();
   const [removeStock, { isLoading: isRemovingStock }] =
     useRemoveStockMutation();
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [selectedReportProducts, setSelectedReportProducts] = useState([]);
+  const [generatingMonthly, setGeneratingMonthly] = useState(false);
+  const [reportSearch, setReportSearch] = useState("");
 
   // State
   const [currentPage, setCurrentPage] = useState(1);
@@ -119,7 +127,90 @@ const InventoryWrapper = () => {
       return matchesSearch && matchesMaxStock && matchesPrice;
     });
   }, [products, search, maxStockFilter, priceRange]);
+  const generateCustomReport = (format) => {
+    const selectedData = products.filter((p) =>
+      selectedReportProducts.includes(p.productId)
+    );
 
+    const reportData = selectedData.map((p) => ({
+      Name: p.name || "Unnamed Product",
+      "Product Code": p.product_code || "—",
+      "Company Code": getCompanyCode(p.metaDetails),
+      "Selling Price": getSellingPrice(p.metaDetails)
+        ? `₹${getSellingPrice(p.metaDetails).toLocaleString("en-IN")}`
+        : "—",
+      Stock: p.quantity,
+      Status:
+        p.quantity === 0
+          ? "Out of Stock"
+          : p.quantity <= lowStockThreshold
+          ? "Low Stock"
+          : "In Stock",
+    }));
+
+    const title = `Custom Inventory Report - ${new Date().toLocaleDateString(
+      "en-IN"
+    )}`;
+
+    if (format === "pdf") {
+      generatePDF(reportData, title);
+    } else {
+      generateExcel(reportData, title);
+    }
+
+    setReportModalOpen(false);
+    setSelectedReportProducts([]);
+    message.success("Report generated successfully!");
+  };
+
+  const generateMonthlyReport = async () => {
+    setGeneratingMonthly(true);
+
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthName = now.toLocaleString("en-US", {
+      month: "long",
+      year: "numeric",
+    });
+
+    // Filter products updated this month (assuming you have updatedAt field)
+    const updatedThisMonth = products.filter((p) => {
+      if (!p.updatedAt) return false;
+      const updatedDate = new Date(p.updatedAt);
+      return updatedDate >= startOfMonth;
+    });
+
+    if (updatedThisMonth.length === 0) {
+      message.info("No products were updated this month");
+      setGeneratingMonthly(false);
+      return;
+    }
+
+    const reportData = updatedThisMonth.map((p) => ({
+      Name: p.name || "Unnamed Product",
+      "Product Code": p.product_code || "—",
+      "Company Code": getCompanyCode(p.metaDetails),
+      "Selling Price": getSellingPrice(p.metaDetails)
+        ? `₹${getSellingPrice(p.metaDetails).toLocaleString("en-IN")}`
+        : "—",
+      Stock: p.quantity,
+      Status:
+        p.quantity === 0
+          ? "Out of Stock"
+          : p.quantity <= lowStockThreshold
+          ? "Low Stock"
+          : "In Stock",
+      "Last Updated": new Date(p.updatedAt).toLocaleDateString("en-IN"),
+    }));
+
+    const title = `Monthly Report - ${monthName} (${updatedThisMonth.length} updated)`;
+    generatePDF(reportData, title);
+
+    setGeneratingMonthly(false);
+    message.success(
+      `Monthly report: ${updatedThisMonth.length} products updated`
+    );
+  };
   // Tab logic
   const tabFilteredProducts = useMemo(() => {
     switch (activeTab) {
@@ -353,16 +444,7 @@ const InventoryWrapper = () => {
         <PageHeader
           title="Inventory Management"
           subtitle="Track stock levels, add/remove stock, and view history"
-          exportOptions={{ pdf: false, excel: false }}
-          extra={
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => navigate("/inventory/product/add")}
-            >
-              Add Product
-            </Button>
-          }
+          exportOptions={{ pdf: false, excel: false }} // Disable default export icons
         />
 
         {/* Filters */}
@@ -414,6 +496,29 @@ const InventoryWrapper = () => {
                 style={{ width: 80 }}
               />
             </Space>
+          </Space>
+          <Space>
+            <Button
+              type="primary"
+              icon={<FileTextOutlined />}
+              onClick={() => setReportModalOpen(true)}
+            >
+              Build Report
+            </Button>
+            <Button
+              icon={<DownloadOutlined />}
+              onClick={generateMonthlyReport}
+              loading={generatingMonthly}
+            >
+              Monthly Report (Auto)
+            </Button>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => navigate("/inventory/product/add")}
+            >
+              Add Product
+            </Button>
           </Space>
         </div>
 
@@ -532,6 +637,15 @@ const InventoryWrapper = () => {
         </Form>
       </Modal>
 
+      <ReportBuilderModal
+        open={reportModalOpen}
+        onClose={() => setReportModalOpen(false)}
+        products={products}
+        getCompanyCode={getCompanyCode}
+        getSellingPrice={getSellingPrice}
+        generatePDF={generatePDF}
+        generateExcel={generateExcel}
+      />
       {/* History Modal */}
       <HistoryModalAntD
         open={historyModalOpen}

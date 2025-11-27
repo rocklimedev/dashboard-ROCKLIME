@@ -9,7 +9,7 @@ const RolePermission = require("../models/rolePermission");
 const Address = require("../models/address");
 const Team = require("../models/team");
 const TeamMember = require("../models/teamMember");
-
+const ProductKeyword = require("../models/productKeywords");
 const Product = require("../models/product");
 const ProductMeta = require("../models/productMeta");
 const Category = require("../models/category");
@@ -290,6 +290,46 @@ const setupDB = async () => {
 
     // Customer ↔ Vendor
     Customer.belongsTo(Vendor, { foreignKey: "vendorId", as: "vendors" });
+    // ======================================
+    // PRODUCT ↔ KEYWORD (Many-to-Many via ProductKeyword)
+    // ======================================
+
+    // Product → Keywords (M:N)
+    Product.belongsToMany(Keyword, {
+      through: ProductKeyword,
+      foreignKey: "productId",
+      otherKey: "keywordId",
+      as: "keywords", // ← use this in includes
+    });
+
+    // Keyword → Products (M:N)
+    Keyword.belongsToMany(Product, {
+      through: ProductKeyword,
+      foreignKey: "keywordId",
+      otherKey: "productId",
+      as: "products",
+    });
+
+    // Direct hasMany for join table (very useful for raw access)
+    Product.hasMany(ProductKeyword, {
+      foreignKey: "productId",
+      as: "product_keywords", // ← include: { model: ProductKeyword, as: 'product_keywords' }
+    });
+
+    Keyword.hasMany(ProductKeyword, {
+      foreignKey: "keywordId",
+      as: "product_keywords",
+    });
+
+    // Join table → belongsTo both sides
+    ProductKeyword.belongsTo(Product, {
+      foreignKey: "productId",
+      as: "product",
+    });
+    ProductKeyword.belongsTo(Keyword, {
+      foreignKey: "keywordId",
+      as: "keyword",
+    });
 
     // ======================================
     // 🔥 SYNC DATABASE
