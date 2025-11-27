@@ -5,6 +5,9 @@ const sequelize = require("../config/database");
 const InventoryHistory = require("../models/history"); // Mongoose model (exported directly)
 const Brand = require("../models/brand");
 const User = require("../models/users");
+const ProductKeyword = require("../models/productKeywords");
+const Keyword = require("../models/keyword");
+const Category = require("../models/category");
 // ─────────────────────────────────────────────────────────────────────────────
 // Create a product with meta data
 // ─────────────────────────────────────────────────────────────────────────────
@@ -110,6 +113,11 @@ exports.getAllProducts = async (req, res) => {
         images, // ← array
         meta: metaObj, // ← plain object
         metaDetails,
+        isVariant: !!raw.masterProductId,
+        masterProductId: raw.masterProductId || raw.productId,
+        isMaster: raw.isMaster,
+        variantOptions: raw.variantOptions || {},
+        variantKey: raw.variantKey || null,
       };
     });
 
@@ -126,12 +134,43 @@ exports.getAllProducts = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 exports.getProductById = async (req, res) => {
   try {
-    const product = await Product.findByPk(req.params.productId);
-    if (!product) return res.status(404).json({ message: "Product not found" });
+    const { productId } = req.params;
+
+    const product = await Product.findByPk(productId, {
+      attributes: {
+        exclude: [], // keep all, or explicitly list if you want to reduce payload
+      },
+      include: [
+        // This single include replaces your manual ProductKeyword query!
+        {
+          model: ProductKeyword,
+          as: "product_keywords", // make sure you define this association!
+          attributes: [], // we don't need join table fields
+          include: [
+            {
+              model: Keyword,
+              as: "keyword",
+              attributes: ["id", "keyword"],
+              include: [
+                {
+                  model: Category,
+                  as: "categories",
+                  attributes: ["categoryId", "name", "slug"],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
 
     const raw = product.toJSON();
 
-    // ---- images -----------------------------------------------------------
+    // ── Images ─────────────────────────────────────
     let images = [];
     if (raw.images) {
       try {
@@ -144,7 +183,7 @@ exports.getProductById = async (req, res) => {
       } catch (_) {}
     }
 
-    // ---- meta -------------------------------------------------------------
+    // ── Meta ───────────────────────────────────────
     let metaObj = {};
     if (raw.meta) {
       try {
@@ -153,35 +192,61 @@ exports.getProductById = async (req, res) => {
       } catch (_) {}
     }
 
-    // ---- fetch meta definitions for the keys that exist -----------------
     const metaIds = Object.keys(metaObj);
-    const metas = await ProductMeta.findAll({
-      where: { id: { [Op.in]: metaIds } },
-      attributes: ["id", "title", "slug", "fieldType", "unit"],
-    });
+    const metaDefinitions =
+      metaIds.length > 0
+        ? await ProductMeta.findAll({
+            where: { id: { [Op.in]: metaIds } },
+            attributes: ["id", "title", "slug", "fieldType", "unit"],
+          })
+        : [];
 
     const metaDetails = metaIds.map((id) => {
-      const def = metas.find((m) => m.id === id);
+      const def = metaDefinitions.find((m) => m.id === id);
       return {
         id,
         title: def?.title ?? "Unknown",
         slug: def?.slug ?? null,
-        value: String(metaObj[id]),
+        value: String(metaObj[id] ?? ""),
         fieldType: def?.fieldType ?? null,
         unit: def?.unit ?? null,
       };
     });
 
+    // ── Keywords (now comes from include above) ─────
+    const keywords = (raw.product_keywords || []).map((pk) => ({
+      id: pk.Keyword.id,
+      keyword: pk.Keyword.keyword,
+      category: pk.Keyword.categories
+        ? {
+            id: pk.Keyword.categories.categoryId,
+            name: pk.Keyword.categories.name,
+            slug: pk.Keyword.categories.slug,
+          }
+        : null,
+    }));
+
+    // ── Final clean response ───────────────────────
+    delete raw.product_keywords; // clean up the join data
+
     res.status(200).json({
       ...raw,
-      images, // ← array
-      meta: metaObj, // ← plain object
+      images,
+      meta: metaObj,
       metaDetails,
+      keywords,
+      isVariant: !!raw.masterProductId,
+      isMaster: raw.isMaster || false,
+      variantOptions: raw.variantOptions || {},
+      variantKey: raw.variantKey || null,
+      skuSuffix: raw.skuSuffix || null,
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error fetching product", error: error.message });
+    console.error("getProductById error:", error);
+    res.status(500).json({
+      message: "Error fetching product",
+      error: error.message,
+    });
   }
 };
 
@@ -1032,5 +1097,257 @@ exports.checkproductCode = async (req, res) => {
   } catch (error) {
     console.error("Error checking product code:", error);
     res.status(500).json({ exists: false, error: "Server error" });
+  }
+};
+// GET /api/products/:productId/with-variants
+exports.getProductWithVariants = async (req, res) => {
+  try {
+    const { productId } = req.params;
+
+    const master = await Product.findByPk(productId);
+    if (!master) return res.status(404).json({ message: "Not found" });
+
+    let variants = [];
+    let mainProduct = master.toJSON();
+
+    if (mainProduct.isMaster || !mainProduct.masterProductId) {
+      // This is master → fetch all variants
+      variants = await Product.findAll({
+        where: { masterProductId: productId },
+        order: [["variantKey", "ASC"]],
+      });
+    } else {
+      // This is a variant → fetch master + siblings
+      mainProduct = await Product.findByPk(mainProduct.masterProductId);
+      variants = await Product.findAll({
+        where: { masterProductId: mainProduct.masterProductId },
+      });
+    }
+
+    const enrichedVariants = variants.map((v) => enrichProduct(v)); // reuse your enrich logic
+
+    res.json({
+      master: enrichProduct(mainProduct),
+      variants: enrichedVariants,
+      totalVariants: enrichedVariants.length,
+    });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+// POST /api/products/:masterId/variants
+exports.createVariant = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const { masterId } = req.params;
+    const { name, variantOptions, meta, quantity = 0 } = req.body;
+
+    const master = await Product.findByPk(masterId, { transaction: t });
+    if (!master || !master.isMaster) {
+      await t.rollback();
+      return res.status(400).json({ message: "Invalid master product" });
+    }
+
+    const variantKey = Object.values(variantOptions || {}).join(" ");
+    const suffix = `-${variantKey.toUpperCase().replace(/\s+/g, "-")}`;
+
+    const variant = await Product.create(
+      {
+        name: name || `${master.name} - ${variantKey}`,
+        product_code: `${master.product_code}${suffix}`,
+        quantity,
+        masterProductId: masterId,
+        isMaster: false,
+        variantOptions,
+        variantKey,
+        skuSuffix: suffix,
+        categoryId: master.categoryId,
+        brandId: master.brandId,
+        images: master.images,
+        description: master.description,
+        meta: meta ? JSON.stringify(meta) : master.meta,
+        status: "active",
+      },
+      { transaction: t }
+    );
+
+    await t.commit();
+    res.status(201).json({ message: "Variant created", variant });
+  } catch (e) {
+    await t.rollback();
+    res.status(500).json({ message: e.message });
+  }
+};
+// controllers/product.controller.js (add this function)
+
+exports.addKeywordsToProduct = async (req, res) => {
+  const { productId } = req.params;
+  const { keywordIds } = req.body; // array of keyword UUIDs
+
+  if (!Array.isArray(keywordIds) || keywordIds.length === 0) {
+    return res.status(400).json({ message: "keywordIds array is required" });
+  }
+
+  const t = await sequelize.transaction();
+  try {
+    const product = await Product.findByPk(productId);
+    if (!product) {
+      await t.rollback();
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    // Validate all keywordIds exist
+    const keywords = await Keyword.findAll({
+      where: { id: keywordIds },
+    });
+
+    if (keywords.length !== keywordIds.length) {
+      await t.rollback();
+      return res
+        .status(400)
+        .json({ message: "One or more keyword IDs are invalid" });
+    }
+
+    // Bulk create associations (ignore duplicates)
+    const associations = keywordIds.map((kid) => ({
+      productId,
+      keywordId: kid,
+    }));
+
+    await ProductKeyword.bulkCreate(associations, {
+      ignoreDuplicates: true, // prevents duplicate entry error
+      transaction: t,
+    });
+
+    await t.commit();
+
+    // Return updated list of keywords for this product
+    const updatedKeywords = await ProductKeyword.findAll({
+      where: { productId },
+      include: [
+        {
+          model: Keyword,
+          as: "keyword",
+          attributes: ["id", "keyword", "categoryId"],
+          include: [
+            { model: Category, as: "categories", attributes: ["name", "slug"] },
+          ],
+        },
+      ],
+    });
+
+    res.status(200).json({
+      message: "Keywords added successfully",
+      keywords: updatedKeywords.map((pk) => ({
+        id: pk.Keyword.id,
+        keyword: pk.Keyword.keyword,
+        category: pk.Keyword.categories,
+      })),
+    });
+  } catch (error) {
+    await t.rollback();
+    res.status(500).json({ message: error.message });
+  }
+};
+exports.removeKeywordFromProduct = async (req, res) => {
+  const { productId, keywordId } = req.params;
+
+  try {
+    const deleted = await ProductKeyword.destroy({
+      where: { productId, keywordId },
+    });
+
+    if (deleted === 0) {
+      return res
+        .status(404)
+        .json({ message: "Keyword not associated with this product" });
+    }
+
+    res.status(200).json({ message: "Keyword removed successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+exports.removeAllKeywordsFromProduct = async (req, res) => {
+  const { productId } = req.params;
+  try {
+    await ProductKeyword.destroy({ where: { productId } });
+    res.status(200).json({ message: "All keywords removed" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+// controllers/product.controller.js
+
+exports.replaceAllKeywordsForProduct = async (req, res) => {
+  const { productId } = req.params;
+  const { keywordIds = [] } = req.body; // Expect array of keyword UUIDs
+
+  if (!Array.isArray(keywordIds)) {
+    return res.status(400).json({ message: "keywordIds must be an array" });
+  }
+
+  const t = await sequelize.transaction();
+  try {
+    const product = await Product.findByPk(productId);
+    if (!product) {
+      await t.rollback();
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    // Step 1: Remove ALL existing keyword associations
+    await ProductKeyword.destroy({
+      where: { productId },
+      transaction: t,
+    });
+
+    // Step 2: Add new ones (if any)
+    if (keywordIds.length > 0) {
+      // Validate all keywordIds exist
+      const validKeywords = await Keyword.findAll({
+        where: { id: keywordIds },
+        attributes: ["id"],
+      });
+
+      if (validKeywords.length !== keywordIds.length) {
+        await t.rollback();
+        return res
+          .status(400)
+          .json({ message: "One or more keyword IDs are invalid" });
+      }
+
+      const associations = keywordIds.map((kid) => ({
+        productId,
+        keywordId: kid,
+      }));
+
+      await ProductKeyword.bulkCreate(associations, { transaction: t });
+    }
+
+    await t.commit();
+
+    // Return fresh list
+    const updated = await ProductKeyword.findAll({
+      where: { productId },
+      include: [
+        {
+          model: Keyword,
+          as: "keyword",
+          attributes: ["id", "keyword"],
+        },
+      ],
+    });
+
+    res.json({
+      message: "Keywords updated successfully",
+      keywords: updated.map((pk) => ({
+        id: pk.keyword.id,
+        keyword: pk.keyword.keyword,
+      })),
+    });
+  } catch (error) {
+    await t.rollback();
+    console.error("Replace keywords error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };

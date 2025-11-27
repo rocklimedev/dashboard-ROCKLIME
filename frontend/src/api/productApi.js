@@ -141,6 +141,45 @@ export const productApi = baseApi.injectEndpoints({
       query: () => "/products/codes/brand-wise",
       providesTags: ["Product"],
     }),
+    // ---------------- KEYWORD APIs ------------------
+
+    // 1️⃣ Add one or many keywords to a product
+    addKeywordsToProduct: builder.mutation({
+      query: ({ productId, keywords }) => ({
+        url: `/products/${productId}/keywords`,
+        method: "POST",
+        body: { keywords },
+      }),
+      invalidatesTags: ["Product"],
+    }),
+
+    // 2️⃣ Remove one keyword from product
+    removeKeywordFromProduct: builder.mutation({
+      query: ({ productId, keywordId }) => ({
+        url: `/products/${productId}/keywords/${keywordId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Product"],
+    }),
+
+    // 3️⃣ Remove ALL keywords from a product
+    removeAllKeywordsFromProduct: builder.mutation({
+      query: (productId) => ({
+        url: `/products/${productId}/keywords`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Product"],
+    }),
+
+    // 4️⃣ Replace ALL keywords (clear + insert)
+    replaceAllKeywordsForProduct: builder.mutation({
+      query: ({ productId, keywords }) => ({
+        url: `/products/${productId}/keywords`,
+        method: "PUT",
+        body: { keywords },
+      }),
+      invalidatesTags: ["Product"],
+    }),
   }),
 });
 
@@ -164,4 +203,8 @@ export const {
   useGetAllProductCodesQuery,
   useGetAllProductsByCategoryQuery,
   useGetAllProductCodesBrandWiseQuery, // NEW
+  useAddKeywordsToProductMutation,
+  useRemoveKeywordFromProductMutation,
+  useRemoveAllKeywordsFromProductMutation,
+  useReplaceAllKeywordsForProductMutation,
 } = productApi;

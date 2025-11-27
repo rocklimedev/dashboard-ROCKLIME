@@ -1,468 +1,463 @@
-import React, { useState, useMemo, useCallback, useEffect } from "react";
-import { FaSearch } from "react-icons/fa";
+// src/components/Logs/LogTable.jsx
+import React, { useState, useMemo } from "react";
 import {
+  Table,
+  Tag,
+  Button,
   Input,
   Select,
   DatePicker,
-  Button,
-  Pagination,
-  Table,
+  Space,
+  Card,
+  Statistic,
+  Row,
+  Col,
+  Popconfirm,
   message,
+  Pagination,
+  Typography,
 } from "antd";
+import {
+  SearchOutlined,
+  DownloadOutlined,
+  DeleteOutlined,
+} from "@ant-design/icons";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import moment from "moment";
 import PageHeader from "../Common/PageHeader";
 import {
   useGetLogsQuery,
-  useGetLogByIdQuery,
+  useGetLogStatsQuery,
   useDeleteLogMutation,
   useDeleteLogsMutation,
-  useGetLogStatsQuery,
 } from "../../api/logApi";
 import { useAuth } from "../../context/AuthContext";
-import { useNavigate } from "react-router-dom";
 
-const { Option } = Select;
 const { RangePicker } = DatePicker;
+const { Text } = Typography;
+const { Option } = Select;
+
+const methodColors = {
+  GET: "green",
+  POST: "blue",
+  PUT: "orange",
+  DELETE: "red",
+  PATCH: "purple",
+  OPTIONS: "cyan",
+};
+
+const statusColors = {
+  2: "success",
+  3: "warning",
+  4: "error",
+  5: "volcano",
+};
 
 const LogTable = () => {
-  const { auth, logout } = useAuth();
-  const navigate = useNavigate();
+  const { auth } = useAuth();
+  const currentUser = auth?.user;
 
-  // Define all hooks at the top level, unconditionally
+  // All hooks are now called unconditionally — Rules of Hooks satisfied
   const [filters, setFilters] = useState({
     page: 1,
-    limit: 10,
-    method: "",
-    route: "",
-    user: "",
-    startDate: null,
-    endDate: null,
-    sortBy: "Recently Added",
+    limit: 20,
+    search: "",
+    method: undefined,
+    status: undefined,
+    dateRange: [],
+    sortBy: "createdAt",
+    sortOrder: "desc",
   });
 
   const [expandedRowKeys, setExpandedRowKeys] = useState([]);
-  const [showStats, setShowStats] = useState(false);
 
-  const queryParams = useMemo(
-    () => ({
+  // Build query parameters
+  const queryParams = useMemo(() => {
+    const [start, end] = filters.dateRange || [];
+    return {
       page: filters.page,
       limit: filters.limit,
+      search: filters.search || undefined,
       method: filters.method,
-      route: filters.route,
-      user: filters.user,
-      startDate: filters.startDate,
-      endDate: filters.endDate,
-      sortBy: filters.sortBy === "Recently Added" ? "createdAt" : "route",
-      sortOrder:
-        filters.sortBy === "Recently Added"
-          ? "desc"
-          : filters.sortBy === "Ascending"
-          ? "asc"
-          : "desc",
-    }),
-    [
-      filters.page,
-      filters.limit,
-      filters.method,
-      filters.route,
-      filters.user,
-      filters.startDate,
-      filters.endDate,
-      filters.sortBy,
-    ]
-  );
+      status: filters.status,
+      startDate: start ? start.toISOString() : undefined,
+      endDate: end ? end.toISOString() : undefined,
+      sortBy: filters.sortBy,
+      sortOrder: filters.sortOrder,
+    };
+  }, [filters]);
 
-  const { data, isLoading, error, refetch } = useGetLogsQuery(queryParams, {
-    refetchOnMountOrArgChange: true,
-    skip: !auth?.token,
-  });
+  const { data, isLoading, refetch } = useGetLogsQuery(queryParams);
 
-  const { data: stats, isLoading: isStatsLoading } = useGetLogStatsQuery(
-    { startDate: filters.startDate, endDate: filters.endDate },
-    { skip: !showStats || !auth?.token }
+  const { data: stats } = useGetLogStatsQuery(
+    {
+      startDate: filters.dateRange[0]?.toISOString(),
+      endDate: filters.dateRange[1]?.toISOString(),
+    },
+    { skip: !filters.dateRange[0] && !filters.dateRange[1] } // optional optimization
   );
 
   const [deleteLog] = useDeleteLogMutation();
   const [deleteLogs] = useDeleteLogsMutation();
 
-  const logs = Array.isArray(data?.logs) ? data.logs : [];
-  const pagination = data?.pagination || {
-    page: 1,
-    limit: 10,
-    total: 0,
-    pages: 0,
+  const logs = data?.logs || [];
+  const pagination = data?.pagination || {};
+
+  const tableData = useMemo(() => {
+    return logs.map((log, idx) => ({
+      key: log._id,
+      ...log,
+      index: (filters.page - 1) * filters.limit + idx + 1,
+      userDisplay: log.user
+        ? `${log.user.name} (${log.user.email})`
+        : "Anonymous",
+      statusGroup: Math.floor((log.status || 200) / 100),
+    }));
+  }, [logs, filters.page, filters.limit]);
+
+  const handleExpand = (expanded, record) => {
+    setExpandedRowKeys(expanded ? [record.key] : []);
   };
 
-  const formattedLogs = useMemo(() => {
-    return logs.map((log) => ({
-      key: log._id, // Used by Ant Design Table for row identification
-      id: log._id,
-      method: log.method,
-      route: log.route,
-      user: log.user
-        ? `${log.user?.name || "Unknown"} (${log.user?.email || "Unknown"})`
-        : "Anonymous",
-      status: log.status || "-",
-      duration: log.duration ? `${log.duration} ms` : "-",
-      createdAt: moment(log.createdAt).format("YYYY-MM-DD HH:mm:ss"),
-      ipAddress: log.ipAddress || "-",
-      body: log.body ? JSON.stringify(log.body) : "-",
-      query: log.query ? JSON.stringify(log.query) : "-",
-      error: log.error || "-",
-      rawLog: log, // Store raw log for expandable content
-    }));
-  }, [logs]);
+  const handleDelete = async (id) => {
+    try {
+      await deleteLog(id).unwrap();
+      message.success("Log deleted successfully");
+      refetch();
+    } catch (err) {
+      message.error("Failed to delete log");
+    }
+  };
 
-  const handleFilterChange = useCallback((key, value) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: value,
-      page: 1,
-    }));
-  }, []);
-
-  const handleDateRangeChange = useCallback((dates) => {
-    const newStartDate = dates ? moment(dates[0]) : null;
-    const newEndDate = dates ? moment(dates[1]) : null;
-    setFilters((prev) => ({
-      ...prev,
-      startDate: newStartDate,
-      endDate: newEndDate,
-      page: 1,
-    }));
-  }, []);
-
-  const handleSearch = useCallback(() => {
-    refetch();
-  }, [refetch]);
-
-  const handlePageChange = useCallback((page, pageSize) => {
-    setFilters((prev) => ({
-      ...prev,
-      page,
-      limit: pageSize,
-    }));
-  }, []);
-
-  const clearFilters = useCallback(() => {
-    setFilters({
-      page: 1,
-      limit: 10,
-      method: "",
-      route: "",
-      user: "",
-      startDate: null,
-      endDate: null,
-      sortBy: "Recently Added",
-    });
-    setExpandedRowKeys([]);
-    refetch();
-  }, [refetch]);
-
-  const handleExpand = useCallback((expanded, record) => {
-    setExpandedRowKeys(expanded ? [record.key] : []);
-  }, []);
-
-  const handleDeleteLog = useCallback(
-    async (logId) => {
-      try {
-        await deleteLog(logId).unwrap();
-        message.success("Log deleted successfully");
-        setExpandedRowKeys([]); // Collapse any expanded row
-        refetch();
-      } catch (error) {
-        message.error(
-          "Failed to delete log: " + (error.data?.message || "Unknown error")
-        );
-      }
-    },
-    [deleteLog, refetch]
-  );
-
-  const handleBulkDelete = useCallback(async () => {
+  const handleBulkDelete = async () => {
     try {
       await deleteLogs({
+        search: filters.search || undefined,
         method: filters.method,
-        route: filters.route,
-        user: filters.user,
-        startDate: filters.startDate,
-        endDate: filters.endDate,
+        status: filters.status,
+        startDate: filters.dateRange[0]?.toISOString(),
+        endDate: filters.dateRange[1]?.toISOString(),
       }).unwrap();
-      message.success("Logs deleted successfully");
-      setExpandedRowKeys([]); // Collapse any expanded row
+      message.success("Filtered logs deleted successfully");
       refetch();
-    } catch (error) {
-      message.error(
-        "Failed to delete logs: " + (error.data?.message || "Unknown error")
-      );
+    } catch {
+      message.error("Bulk delete failed");
     }
-  }, [deleteLogs, filters, refetch]);
+  };
 
-  const handleToggleStats = useCallback(() => {
-    setShowStats((prev) => !prev);
-  }, []);
+  const exportCSV = () => {
+    const headers = [
+      "Time",
+      "Method",
+      "Route",
+      "Status",
+      "Duration",
+      "User",
+      "IP",
+    ];
 
-  // Handle authentication errors (e.g., 401/403)
-  useEffect(() => {
-    if (error && (error.status === 401 || error.status === 403)) {
-      logout();
-      navigate("/login");
-    }
-  }, [error, logout, navigate]);
+    const rows = tableData.map((l) => [
+      moment(l.createdAt).format("YYYY-MM-DD HH:mm:ss"),
+      l.method,
+      l.route,
+      l.status || "-",
+      l.duration ? `${l.duration}ms` : "-",
+      l.userDisplay,
+      l.ipAddress || "-",
+    ]);
 
-  // Early return after all hooks
-  if (!auth?.token) {
-    navigate("/login");
-    return null;
-  }
+    const csvContent = [headers, ...rows]
+      .map((row) =>
+        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
+      )
+      .join("\n");
 
-  if (isLoading) {
-    return (
-      <div className="content">
-        <div className="card">
-          <div className="card-body text-center">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </div>
-            <p>Loading logs...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `api-logs-${moment().format("YYYY-MM-DD_HHmm")}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
-  if (error) {
-    return (
-      <div className="content">
-        <div className="card">
-          <div className="card-body">
-            <div className="alert alert-danger" role="alert">
-              Error fetching logs:{" "}
-              {error.data?.message || JSON.stringify(error)}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Table columns
   const columns = [
+    { title: "#", dataIndex: "index", width: 60, fixed: "left" },
     {
-      title: "S.No.",
-      render: (_, __, index) => (filters.page - 1) * filters.limit + index + 1,
-      width: 80,
+      title: "Time",
+      dataIndex: "createdAt",
+      render: (t) => moment(t).format("MMM DD HH:mm:ss"),
+      width: 140,
     },
-    { title: "Method", dataIndex: "method", key: "method", width: 100 },
+    {
+      title: "Method",
+      dataIndex: "method",
+      render: (m) => <Tag color={methodColors[m] || "default"}>{m}</Tag>,
+      width: 90,
+    },
     {
       title: "Route",
       dataIndex: "route",
-      key: "route",
-      render: (text) => <span>{text}</span>, // Removed Button, as expansion handles details
-    },
-    { title: "User", dataIndex: "user", key: "user" },
-    { title: "Status", dataIndex: "status", key: "status", width: 100 },
-    { title: "Duration", dataIndex: "duration", key: "duration", width: 120 },
-    {
-      title: "Created At",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      width: 180,
-    },
-    { title: "IP Address", dataIndex: "ipAddress", key: "ipAddress" },
-    { title: "Body", dataIndex: "body", key: "body" },
-    { title: "Query", dataIndex: "query", key: "query" },
-    { title: "Error", dataIndex: "error", key: "error" },
-    auth.user?.roles?.includes("ADMIN") && {
-      title: "Actions",
-      key: "actions",
-      render: (_, record) => (
-        <Button size="small" danger onClick={() => handleDeleteLog(record.id)}>
-          Delete
-        </Button>
+      render: (r) => (
+        <Text code copyable={{ text: r }}>
+          {r}
+        </Text>
       ),
+    },
+    {
+      title: "Status",
+      render: (_, r) => (
+        <Tag color={statusColors[r.statusGroup] || "default"}>
+          {r.status || "—"}
+        </Tag>
+      ),
+      width: 90,
+    },
+    {
+      title: "Duration",
+      dataIndex: "duration",
+      render: (d) => (d ? `${d}ms` : "—"),
       width: 100,
     },
-  ].filter(Boolean); // Remove falsy entries (e.g., if not admin)
-
-  // Expandable row render
-  const expandableConfig = {
-    expandedRowKeys,
-    onExpand: handleExpand,
-    expandedRowRender: (record) => (
-      <div style={{ padding: 16, background: "#fafafa" }}>
-        <p>
-          <strong>ID:</strong> {record.id}
-        </p>
-        <p>
-          <strong>Method:</strong> {record.method}
-        </p>
-        <p>
-          <strong>Route:</strong> {record.route}
-        </p>
-        <p>
-          <strong>User:</strong> {record.user}
-        </p>
-        <p>
-          <strong>Status:</strong> {record.status}
-        </p>
-        <p>
-          <strong>Duration:</strong> {record.duration}
-        </p>
-        <p>
-          <strong>Created At:</strong> {record.createdAt}
-        </p>
-        <p>
-          <strong>IP Address:</strong> {record.ipAddress}
-        </p>
-        <p>
-          <strong>Body:</strong> {record.body}
-        </p>
-        <p>
-          <strong>Query:</strong> {record.query}
-        </p>
-        <p>
-          <strong>Error:</strong> {record.error}
-        </p>
-      </div>
-    ),
-  };
+    { title: "User", dataIndex: "userDisplay", width: 220 },
+    { title: "IP", dataIndex: "ipAddress", width: 130 },
+    // Admin-only Delete Action
+    currentUser?.roles?.includes("ADMIN") && {
+      title: "Actions",
+      key: "actions",
+      fixed: "right",
+      width: 100,
+      render: (_, record) => (
+        <Popconfirm
+          title="Delete this log?"
+          onConfirm={() => handleDelete(record.key)}
+          okText="Yes"
+          cancelText="No"
+        >
+          <Button danger size="small" icon={<DeleteOutlined />} />
+        </Popconfirm>
+      ),
+    },
+  ].filter(Boolean);
 
   return (
     <div className="page-wrapper">
       <div className="content">
-        <div className="card">
-          <PageHeader
-            title="API Logs"
-            subtitle="View API request logs"
-            tableData={formattedLogs}
-          />
-          <div className="card-body">
-            <div className="row">
-              <div className="col-lg-12">
-                <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
-                  <div className="input-icon-start position-relative">
-                    <span className="input-icon-addon">
-                      <FaSearch />
-                    </span>
-                    <Input
-                      className="form-control"
-                      placeholder="Search by Route"
-                      value={filters.route}
-                      onChange={(e) =>
-                        handleFilterChange("route", e.target.value)
-                      }
-                      aria-label="Search logs"
-                    />
-                  </div>
-                  <Select
-                    style={{ width: 120, marginLeft: 10 }}
-                    placeholder="Select Method"
-                    allowClear
-                    onChange={(value) => handleFilterChange("method", value)}
-                    value={filters.method}
-                  >
-                    <Option value="GET">GET</Option>
-                    <Option value="POST">POST</Option>
-                    <Option value="PUT">PUT</Option>
-                    <Option value="DELETE">DELETE</Option>
-                    <Option value="PATCH">PATCH</Option>
-                    <Option value="OPTIONS">OPTIONS</Option>
-                  </Select>
-                  <Input
-                    style={{ width: 200, marginLeft: 10 }}
-                    placeholder="Filter by User ID"
-                    value={filters.user}
-                    onChange={(e) => handleFilterChange("user", e.target.value)}
-                  />
-                  <RangePicker
-                    style={{ marginLeft: 10 }}
-                    onChange={handleDateRangeChange}
-                    value={[filters.startDate, filters.endDate]}
-                  />
-                  <Select
-                    style={{ width: 150, marginLeft: 10 }}
-                    value={filters.sortBy}
-                    onChange={(value) => handleFilterChange("sortBy", value)}
-                  >
-                    <Option value="Recently Added">Recently Added</Option>
-                    <Option value="Ascending">Route (A-Z)</Option>
-                    <Option value="Descending">Route (Z-A)</Option>
-                  </Select>
-                  <Button
-                    type="primary"
-                    style={{ marginLeft: 10 }}
-                    onClick={handleSearch}
-                  >
-                    Search
+        <PageHeader
+          title="API Monitoring"
+          subtitle="Real-time logs & analytics"
+        />
+
+        {/* Stats Cards */}
+        <Row gutter={16} style={{ marginBottom: 24 }}>
+          <Col span={6}>
+            <Card>
+              <Statistic
+                title="Total Requests"
+                value={stats?.totalRequests || 0}
+              />
+            </Card>
+          </Col>
+          <Col span={6}>
+            <Card>
+              <Statistic
+                title="Avg Response Time"
+                value={stats?.avgDuration || 0}
+                suffix="ms"
+                precision={2}
+              />
+            </Card>
+          </Col>
+          <Col span={6}>
+            <Card>
+              <Statistic
+                title="Error Rate"
+                value={stats?.errorRate || 0}
+                suffix="%"
+                precision={2}
+                valueStyle={{
+                  color: (stats?.errorRate || 0) > 5 ? "#cf1322" : "#3f8600",
+                }}
+              />
+            </Card>
+          </Col>
+          <Col span={6}>
+            <Card>
+              <Statistic title="Today's Logs" value={pagination.total || 0} />
+            </Card>
+          </Col>
+        </Row>
+
+        <Card>
+          <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+            {/* Filters & Actions */}
+            <Space wrap>
+              <Input.Search
+                placeholder="Search route, IP, user..."
+                allowClear
+                enterButton={<SearchOutlined />}
+                style={{ width: 320 }}
+                onSearch={(value) =>
+                  setFilters((prev) => ({ ...prev, search: value, page: 1 }))
+                }
+              />
+
+              <Select
+                placeholder="Method"
+                allowClear
+                style={{ width: 120 }}
+                onChange={(value) =>
+                  setFilters((prev) => ({ ...prev, method: value, page: 1 }))
+                }
+              >
+                {["GET", "POST", "PUT", "DELETE", "PATCH"].map((m) => (
+                  <Option key={m} value={m}>
+                    <Tag color={methodColors[m]}>{m}</Tag>
+                  </Option>
+                ))}
+              </Select>
+
+              <Select
+                placeholder="Status Code"
+                allowClear
+                style={{ width: 140 }}
+                onChange={(value) =>
+                  setFilters((prev) => ({ ...prev, status: value, page: 1 }))
+                }
+              >
+                <Option value={200}>200 OK</Option>
+                <Option value={201}>201 Created</Option>
+                <Option value={400}>400 Bad Request</Option>
+                <Option value={401}>401 Unauthorized</Option>
+                <Option value={403}>403 Forbidden</Option>
+                <Option value={404}>404 Not Found</Option>
+                <Option value={500}>500 Server Error</Option>
+              </Select>
+
+              <RangePicker
+                showTime={{ format: "HH:mm" }}
+                format="YYYY-MM-DD HH:mm"
+                onChange={(dates) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    dateRange: dates || [],
+                    page: 1,
+                  }))
+                }
+              />
+
+              <Button
+                type="primary"
+                icon={<DownloadOutlined />}
+                onClick={exportCSV}
+              >
+                Export CSV
+              </Button>
+
+              {currentUser?.roles?.includes("ADMIN") && (
+                <Popconfirm
+                  title="Delete all logs matching current filters?"
+                  description="This action cannot be undone."
+                  onConfirm={handleBulkDelete}
+                  okText="Delete"
+                  cancelText="Cancel"
+                  okButtonProps={{ danger: true }}
+                >
+                  <Button danger icon={<DeleteOutlined />}>
+                    Bulk Delete
                   </Button>
-                  <Button style={{ marginLeft: 10 }} onClick={clearFilters}>
-                    Clear
-                  </Button>
-                  {auth.user?.roles?.includes("ADMIN") && (
-                    <>
-                      <Button
-                        type="default"
-                        style={{ marginLeft: 10 }}
-                        onClick={handleBulkDelete}
-                      >
-                        Bulk Delete
-                      </Button>
-                      <Button
-                        type="default"
-                        style={{ marginLeft: 10 }}
-                        onClick={handleToggleStats}
-                      >
-                        {showStats ? "Hide Stats" : "Show Stats"}
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-            {showStats && (
-              <div className="stats-section mb-4">
-                <h3>Log Statistics</h3>
-                {isStatsLoading ? (
-                  <p>Loading stats...</p>
-                ) : (
-                  <div>
-                    <p>Total Requests: {stats?.totalRequests || 0}</p>
-                    <p>Average Duration: {stats?.avgDuration || 0} ms</p>
-                    <p>
-                      Method Breakdown:{" "}
-                      {JSON.stringify(stats?.methodBreakdown || {})}
-                    </p>
-                    <p>
-                      Status Breakdown:{" "}
-                      {JSON.stringify(stats?.statusBreakdown || {})}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
+                </Popconfirm>
+              )}
+            </Space>
+
+            {/* Logs Table */}
             <Table
               columns={columns}
-              dataSource={formattedLogs}
-              pagination={false} // Handled separately below
-              expandable={expandableConfig}
-              rowKey="key"
-              className="table-responsive"
+              dataSource={tableData}
+              loading={isLoading}
+              scroll={{ x: 1400 }}
+              pagination={false}
+              expandable={{
+                expandedRowKeys,
+                onExpand: handleExpand,
+                expandedRowRender: (record) => (
+                  <div style={{ padding: "20px 0" }}>
+                    <Row gutter={32}>
+                      <Col span={12}>
+                        <strong>Request Body:</strong>
+                        {record.body ? (
+                          <SyntaxHighlighter
+                            language="json"
+                            style={vscDarkPlus}
+                          >
+                            {JSON.stringify(record.body, null, 2)}
+                          </SyntaxHighlighter>
+                        ) : (
+                          <Text type="secondary">No body</Text>
+                        )}
+                      </Col>
+                      <Col span={12}>
+                        <strong>Query Params:</strong>
+                        {record.query ? (
+                          <SyntaxHighlighter
+                            language="json"
+                            style={vscDarkPlus}
+                          >
+                            {JSON.stringify(record.query, null, 2)}
+                          </SyntaxHighlighter>
+                        ) : (
+                          <Text type="secondary">No query params</Text>
+                        )}
+                      </Col>
+                    </Row>
+
+                    {record.error && (
+                      <div style={{ marginTop: 24 }}>
+                        <strong style={{ color: "#ff4d4f" }}>
+                          Error Stack:
+                        </strong>
+                        <pre
+                          style={{
+                            background: "#1e1e1e",
+                            color: "#ff6b6b",
+                            padding: 16,
+                            borderRadius: 6,
+                            marginTop: 8,
+                            overflowX: "auto",
+                            fontSize: 13,
+                          }}
+                        >
+                          {record.error}
+                        </pre>
+                      </div>
+                    )}
+                  </div>
+                ),
+              }}
             />
-            {pagination.total > pagination.limit && (
-              <div className="pagination-section mt-4">
-                <Pagination
-                  current={filters.page}
-                  pageSize={filters.limit}
-                  total={pagination.total}
-                  onChange={handlePageChange}
-                  showSizeChanger
-                  pageSizeOptions={["10", "20", "50", "100"]}
-                />
-              </div>
-            )}
-          </div>
-        </div>
+
+            {/* Pagination */}
+            <Pagination
+              style={{ textAlign: "right", marginTop: 16 }}
+              current={filters.page}
+              pageSize={filters.limit}
+              total={pagination.total || 0}
+              showSizeChanger
+              showQuickJumper
+              pageSizeOptions={["10", "20", "50", "100"]}
+              onChange={(page, pageSize) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  page,
+                  limit: pageSize || prev.limit,
+                }))
+              }
+            />
+          </Space>
+        </Card>
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+// index.js (or server.js)
 require("dotenv").config();
 const express = require("express");
 const { createServer } = require("http");
@@ -5,7 +6,7 @@ const { Server } = require("socket.io");
 const cors = require("cors");
 const helmet = require("helmet");
 const cron = require("node-cron");
-
+const LogStatsDaily = require("./models/log_stats_daily");
 const db = require("./config/database");
 const connectMongoDB = require("./config/dbMongo");
 const setupDB = require("./utils/db");
@@ -51,41 +52,68 @@ const routes = {
 
 // ------------------- Express App -------------------
 const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://localhost:3002",
+      "http://localhost:3003",
+      "http://localhost:5173",
+      "https://dashboard-rocklime.vercel.app",
+      "https://cmtradingco.vercel.app",
+      "https://dashboard-cmtradingco.vercel.app",
+      "http://erp.cmtradingco.com",
+      "https://erp.cmtradingco.com",
+    ],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  },
+});
 
-// ------------------- CORS Config -------------------
+// ------------------- CORS & Body Parsing -------------------
 const corsOptions = {
   origin: [
     "http://localhost:3000",
     "http://localhost:3001",
     "http://localhost:3002",
     "http://localhost:3003",
+    "http://localhost:5173",
     "https://dashboard-rocklime.vercel.app",
     "https://cmtradingco.vercel.app",
     "https://dashboard-cmtradingco.vercel.app",
-    "http://localhost:5173",
     "http://erp.cmtradingco.com",
     "https://erp.cmtradingco.com",
   ],
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
 };
 
-// ------------------- Middleware -------------------
 app.use(cors(corsOptions));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+// ------------------- Security -------------------
 app.use(
   helmet({
-    contentSecurityPolicy: false,
+    contentSecurityPolicy: false, // You can customize later
     frameguard: true,
+    hsts: { maxAge: 31536000, includeSubDomains: true },
   })
 );
-app.use(require("./middleware/logger"));
 
-// ------------------- Debug Request Logger -------------------
+// ------------------- NON-BLOCKING API LOGGER (FIRE & FORGET) -------------------
+app.use(require("./middleware/logger")); // CRITICAL: Updated logger
+
+// ------------------- Optional: Console Debug Logger -------------------
 app.use((req, res, next) => {
-  console.log(`[${req.method}] ${req.url}`);
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
+
+// ------------------- Make io available in all routes -------------------
+app.use((req, res, next) => {
+  req.io = io;
   next();
 });
 
@@ -122,51 +150,113 @@ app.use("/api/tasks", routes.task);
 app.use("/api/taskboards", routes.taskBoard);
 app.use("/api/feedback", routes.feedback);
 app.use("/api/cached-permissions", routes.cachedPermission);
-// ------------------- Error Handler -------------------
+
+// ------------------- Health Check -------------------
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "OK", uptime: process.uptime() });
+});
+
+// ------------------- 404 Handler -------------------
+app.use("*", (req, res) => {
+  res.status(404).json({ error: "Route not found" });
+});
+
+// ------------------- Global Error Handler -------------------
 app.use((err, req, res, next) => {
-  console.error("[ERROR]", err);
-  res.status(500).json({
-    error: "Internal server error",
-    details: err.message,
+  console.error("[GLOBAL ERROR]", err.stack || err);
+  res.status(err.status || 500).json({
+    error: "Internal Server Error",
+    message:
+      process.env.NODE_ENV === "production"
+        ? "Something went wrong"
+        : err.message,
   });
 });
 
-// ------------------- Database Setup -------------------
-connectMongoDB();
-setupDB();
+// ------------------- Database Connections -------------------
+connectMongoDB(); // MongoDB for logs, notifications, etc.
+setupDB(); // Any seeders or initial data
 
-db.sync()
-  .then(() => console.log("✅ SQL Database connected & synced."))
-  .catch((err) => console.error("❌ SQL Database connection failed:", err));
+db.sync({ alter: false }) // Set to true only during dev/migrations
+  .then(() => console.log("MySQL Database synced successfully"))
+  .catch((err) => console.error("MySQL sync failed:", err));
 
-// ------------------- Cron Job -------------------
-cron.schedule("0 0 * * *", async () => {
+// ------------------- Daily Cron: Clear Cached Permissions -------------------
+cron.schedule("0 2 * * *", async () => {
   try {
     const result = await CachedPermission.deleteMany({});
-    console.log(`[CRON] Cleared ${result.deletedCount} cached permissions`);
+    console.log(
+      `[CRON] Cleared ${result.deletedCount} cached permissions at 2 AM`
+    );
   } catch (err) {
-    console.error("[CRON] Failed to clear CachedPermission:", err);
+    console.error("[CRON] Failed to clear cache:", err);
   }
 });
+cron.schedule("0 1 * * *", async () => {
+  try {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    yesterday.setHours(0, 0, 0, 0);
 
-// ------------------- HTTP + Socket.IO Setup -------------------
-const httpServer = createServer(app);
-const io = new Server(httpServer, { cors: corsOptions });
+    const tomorrow = new Date(yesterday);
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
-// Attach io instance globally for all routes
-app.use((req, res, next) => {
-  req.io = io;
-  next();
+    const stats = await ApiLog.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: yesterday, $lt: tomorrow },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalRequests: { $sum: 1 },
+          avgDuration: { $avg: "$duration" },
+          errorCount: { $sum: { $cond: [{ $gte: ["$status", 400] }, 1, 0] } },
+          methods: { $push: "$method" },
+          statuses: { $push: "$status" },
+        },
+      },
+    ]);
+
+    if (stats[0]) {
+      await LogStatsDaily.findOneAndUpdate(
+        { date: yesterday },
+        {
+          date: yesterday,
+          totalRequests: stats[0].totalRequests,
+          avgDuration: Math.round(stats[0].avgDuration || 0),
+          errorRate: stats[0].totalRequests
+            ? Math.round(
+                (stats[0].errorCount / stats[0].totalRequests) * 10000
+              ) / 100
+            : 0,
+          methodBreakdown: (stats[0].methods || []).reduce(
+            (a, m) => ((a[m] = (a[m] || 0) + 1), a),
+            {}
+          ),
+          statusBreakdown: (stats[0].statuses || [])
+            .filter(Boolean)
+            .reduce((a, s) => ((a[s] = (a[s] || 0) + 1), a), {}),
+        },
+        { upsert: true }
+      );
+      console.log("[CRON] Daily log stats updated");
+    }
+  } catch (err) {
+    console.error("[CRON] Failed to update log stats:", err);
+  }
 });
-
-// Initialize socket logic
+// ------------------- Socket.IO Setup -------------------
 require("./socket")(io);
 initSocket(io);
 
 // ------------------- Start Server -------------------
-const PORT = keys.port || 5000;
-httpServer.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+const PORT = keys.port || process.env.PORT || 5000;
+httpServer.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`WebSocket ready on ws://localhost:${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
 });
 
 module.exports = { app, httpServer, io };
