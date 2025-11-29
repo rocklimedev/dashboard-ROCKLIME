@@ -207,25 +207,52 @@ const QuotationsDetails = () => {
 
     setIsExporting(true);
     try {
-      const safeQuotation = {
-        customerName:
-          getCustomerName(activeVersionData.quotation?.customerId) || "‑",
-        quotation_date:
-          activeVersionData.quotation?.quotation_date ||
-          new Date().toISOString(),
-        gst_value: activeVersionData.quotation?.gst_value ?? 0,
-        include_gst: activeVersionData.quotation?.include_gst ?? false,
+      const fullQuotation = activeVersionData.quotation;
+
+      // Improved title extraction
+      /* ------------------------------------------------------------------ */
+      /*                   FIXED: Safe Filename Title (Priority Fix)       */
+      /* ------------------------------------------------------------------ */
+      const getSafeTitle = (quotation = {}) => {
+        // Try multiple possible field names, with correct priority
+        const rawTitle =
+          quotation.document_title || // ← This is the correct field in your data
+          quotation.quotation_title ||
+          quotation.title ||
+          quotation.reference_number ||
+          "Quotation";
+
+        if (!rawTitle || typeof rawTitle !== "string") return "Quotation";
+
+        return rawTitle
+          .trim()
+          .replace(/[\\/:*?"<>|]/g, "_")
+          .replace(/\s+/g, "_")
+          .replace(/_+/g, "_")
+          .substring(0, 50)
+          .replace(/^_+|_+$/g, "");
       };
 
+      const title = getSafeTitle(fullQuotation);
+      const titlePart = title && title !== "Quotation" ? `${title}_` : "";
+      const versionLabel =
+        activeVersion === "current" ? "Latest" : activeVersion;
+      const baseName = `Quotation_${titlePart}${id}_V${versionLabel}`;
+
       if (exportFormat === "pdf") {
-        await exportToPDF(quotationRef, id, activeVersion);
+        await exportToPDF(
+          quotationRef,
+          id,
+          activeVersion,
+          fullQuotation,
+          `${baseName}.pdf`
+        );
       } else {
         await exportToExcel(
           activeVersionData.products,
           productsData,
           brandNames,
-          safeQuotation,
-          brandsData,
+          fullQuotation,
           address
             ? `${address.street || ""}, ${address.city || ""}, ${
                 address.state || ""
@@ -239,11 +266,16 @@ const QuotationsDetails = () => {
             branch: "BHERA ENCLAVE PASCHIM VIHAR",
           },
           id,
-          activeVersion
+          activeVersion,
+          [], // allBrands if needed
+          `${baseName}.xlsx` // Pass custom filename
         );
       }
+
+      message.success(`Quotation exported successfully!`);
     } catch (err) {
-      message.error("Export failed");
+      console.error("Export error:", err);
+      message.error("Export failed. Please try again.");
     } finally {
       setIsExporting(false);
     }

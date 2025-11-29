@@ -17,7 +17,7 @@ import {
   DeleteOutlined,
   MoreOutlined,
 } from "@ant-design/icons";
-import { Dropdown, Menu, Button, Select, Pagination } from "antd"; // <-- added Pagination
+import { Dropdown, Menu, Button, Select, Pagination } from "antd";
 import DatesModal from "./DateModal";
 import DeleteModal from "../Common/DeleteModal";
 import PageHeader from "../Common/PageHeader";
@@ -51,9 +51,7 @@ const OrderWrapper = () => {
   const [customerMap, setCustomerMap] = useState({});
   const [userMap, setUserMap] = useState({});
   const [quotationMap, setQuotationMap] = useState({});
-  const [showHoldModal, setShowHoldModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState(null);
   const [orderToDelete, setOrderToDelete] = useState(null);
   const [showDatesModal, setShowDatesModal] = useState(false);
   const [selectedDates, setSelectedDates] = useState({
@@ -83,17 +81,10 @@ const OrderWrapper = () => {
   const { data: customersData } = useGetCustomersQuery();
   const { data: usersData } = useGetAllUsersQuery();
   const { data: quotationsData } = useGetAllQuotationsQuery();
-  const {
-    data: allData,
-    error: allError,
-    isLoading: allLoading,
-    isFetching: allFetching,
-  } = useGetAllOrdersQuery();
+  const { data: allData, error: allError } = useGetAllOrdersQuery();
 
   const orders = allData?.orders || [];
   const totalCount = allData?.totalCount || orders.length;
-  const isLoading = allLoading;
-  const isFetching = allFetching;
   const error = allError;
 
   const [deleteOrder] = useDeleteOrderMutation();
@@ -184,6 +175,7 @@ const OrderWrapper = () => {
   // ──────────────────────────────────────────────────────
   const filteredOrders = useMemo(() => {
     let result = orders;
+
     if (filters.status) {
       result = result.filter((ord) => ord.status === filters.status);
     }
@@ -237,6 +229,7 @@ const OrderWrapper = () => {
         return (!start || orderDate >= start) && (!end || orderDate <= end);
       });
     }
+
     switch (sortBy) {
       case "Recently Added":
         result = [...result].sort(
@@ -314,6 +307,7 @@ const OrderWrapper = () => {
     }
     try {
       await updateOrderStatus({ orderId, status: newStatus }).unwrap();
+      message.success("Status updated successfully");
     } catch (err) {
       message.error(
         `Failed to update status: ${err.data?.message || "Unknown error"}`
@@ -321,9 +315,7 @@ const OrderWrapper = () => {
     }
   };
 
-  const handleOpenAddOrder = () => {
-    navigate("/order/add");
-  };
+  const handleOpenAddOrder = () => navigate("/order/add");
 
   const handleEditClick = (order) => {
     if (!canEditOrder) {
@@ -331,11 +323,6 @@ const OrderWrapper = () => {
       return;
     }
     navigate(`/order/${order.id}/edit`, { state: { order } });
-  };
-
-  const handleHoldClick = (order) => {
-    setSelectedOrder(order);
-    setShowHoldModal(true);
   };
 
   const handleDeleteClick = (orderId) => {
@@ -348,20 +335,20 @@ const OrderWrapper = () => {
   };
 
   const handleModalClose = () => {
-    setSelectedOrder(null);
-    setShowHoldModal(false);
-    setShowDeleteModal(false);
     setOrderToDelete(null);
+    setShowDeleteModal(false);
+    setShowDatesModal(false);
+    setSelectedDates({ dueDate: null, followupDates: [] });
   };
 
   const handleViewInvoice = (order) => {
-    window.open(`${order.invoiceLink}`, "_blank");
+    window.open(order.invoiceLink, "_blank");
   };
 
   const handleDeleteOrder = async (orderId) => {
-    if (!canDeleteOrder) return;
     try {
       await deleteOrder(orderId).unwrap();
+      message.success("Order deleted successfully");
       handleModalClose();
     } catch (err) {
       message.error(
@@ -370,16 +357,8 @@ const OrderWrapper = () => {
     }
   };
 
-  const handleConfirmHold = () => {
-    handleModalClose();
-  };
-
   const handlePageChange = (page, pageSize) => {
-    setFilters((prev) => ({
-      ...prev,
-      page,
-      limit: pageSize,
-    }));
+    setFilters((prev) => ({ ...prev, page, limit: pageSize }));
   };
 
   const handleClearFilters = () => {
@@ -398,29 +377,13 @@ const OrderWrapper = () => {
   };
 
   const handleOpenDatesModal = (dueDate, followupDates) => {
-    setSelectedDates({ dueDate, followupDates });
+    setSelectedDates({ dueDate, followupDates: followupDates || [] });
     setShowDatesModal(true);
-  };
-
-  const handleCloseDatesModal = () => {
-    setShowDatesModal(false);
-    setSelectedDates({ dueDate: null, followupDates: [] });
-  };
-
-  const handleDateRangeChange = (field) => (e) => {
-    setDateRange((prev) => ({
-      ...prev,
-      [field]: e.target.value,
-    }));
-    setFilters((prev) => ({ ...prev, page: 1 }));
   };
 
   const isDueDateClose = (dueDate) => {
     if (!dueDate) return false;
-    const today = new Date();
-    const due = new Date(dueDate);
-    const diffTime = due - today;
-    const diffDays = diffTime / (1000 * 60 * 60 * 24);
+    const diffDays = (new Date(dueDate) - new Date()) / (1000 * 60 * 60 * 24);
     return diffDays <= 3;
   };
 
@@ -437,12 +400,13 @@ const OrderWrapper = () => {
             tableData={tableDataForExport}
             exportOptions={{ pdf: true, excel: true }}
           />
+
           <div className="card-body">
             {/* Filters & Search */}
             <div className="row">
               <div className="col-lg-6">
                 <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
-                  <div className="d-flex align-items-center me-3">
+                  <div className="me-3">
                     <select
                       className="form-select"
                       value={filters.status}
@@ -473,7 +437,8 @@ const OrderWrapper = () => {
                       ))}
                     </select>
                   </div>
-                  <div className="d-flex align-items-center me-3">
+
+                  <div className="me-3">
                     <select
                       className="form-select"
                       value={filters.priority}
@@ -485,17 +450,15 @@ const OrderWrapper = () => {
                         }))
                       }
                     >
-                      {["All", "high", "medium", "low"].map((priority) => (
-                        <option
-                          key={priority}
-                          value={priority === "All" ? "" : priority}
-                        >
-                          {priority === "All" ? "All Priorities" : priority}
+                      {["All", "high", "medium", "low"].map((p) => (
+                        <option key={p} value={p === "All" ? "" : p}>
+                          {p === "All" ? "All Priorities" : p}
                         </option>
                       ))}
                     </select>
                   </div>
-                  <div className="d-flex align-items-center me-3">
+
+                  <div className="me-3">
                     <Select
                       style={{ width: 200 }}
                       value={filters.masterPipelineNo || undefined}
@@ -510,15 +473,16 @@ const OrderWrapper = () => {
                       allowClear
                     >
                       {orders
-                        .filter((order) => order.orderNo)
-                        .map((order) => (
-                          <Option key={order.orderNo} value={order.orderNo}>
-                            {order.orderNo}
+                        .filter((o) => o.orderNo)
+                        .map((o) => (
+                          <Option key={o.orderNo} value={o.orderNo}>
+                            {o.orderNo}
                           </Option>
                         ))}
                     </Select>
                   </div>
-                  <div className="d-flex align-items-center">
+
+                  <div>
                     <Select
                       style={{ width: 200 }}
                       value={filters.previousOrderNo || undefined}
@@ -533,16 +497,17 @@ const OrderWrapper = () => {
                       allowClear
                     >
                       {orders
-                        .filter((order) => order.orderNo)
-                        .map((order) => (
-                          <Option key={order.orderNo} value={order.orderNo}>
-                            {order.orderNo}
+                        .filter((o) => o.orderNo)
+                        .map((o) => (
+                          <Option key={o.orderNo} value={o.orderNo}>
+                            {o.orderNo}
                           </Option>
                         ))}
                     </Select>
                   </div>
                 </div>
               </div>
+
               <div className="col-lg-6">
                 <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
                   <div className="input-icon-start position-relative me-2">
@@ -558,42 +523,42 @@ const OrderWrapper = () => {
                         setSearchTerm(e.target.value);
                         setFilters((prev) => ({ ...prev, page: 1 }));
                       }}
-                      aria-label="Search orders"
                     />
                   </div>
+
                   <button
-                    className="btn btn-outline-secondary"
+                    className="btn btn-outline-secondary me-2"
                     onClick={handleClearFilters}
                   >
                     Clear Filters
                   </button>
-                  <div className="d-flex align-items-center ms-3">
-                    <select
-                      className="form-select"
-                      value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value)}
-                    >
-                      {[
-                        "Recently Added",
-                        "Due Date Ascending",
-                        "Due Date Descending",
-                      ].map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+
+                  <select
+                    className="form-select"
+                    style={{ width: 200 }}
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                  >
+                    {[
+                      "Recently Added",
+                      "Due Date Ascending",
+                      "Due Date Descending",
+                    ].map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>
 
             {/* Table */}
             <div className="tab-content">
-              {isLoading || isFetching ? (
-                <p>Loading...</p>
-              ) : error ? (
-                <p className="text-danger">Error: {error.message}</p>
+              {error ? (
+                <p className="text-danger">
+                  Error loading orders: {error.message}
+                </p>
               ) : paginatedOrders.length === 0 ? (
                 <p className="text-muted">
                   No orders match the applied filters
@@ -620,21 +585,14 @@ const OrderWrapper = () => {
                     <tbody>
                       {paginatedOrders.map((order, index) => {
                         const customerName = order.createdFor
-                          ? customerMap[order.createdFor] || "Loading..."
+                          ? customerMap[order.createdFor] || "—"
                           : "N/A";
                         const createdByName = order.createdBy
-                          ? userMap[order.createdBy] || "Loading..."
+                          ? userMap[order.createdBy] || "—"
                           : "N/A";
-                        const status = getStatusDisplay(order.status);
-                        const quotationStatus = getQuotationStatus(
-                          order.quotationId
-                        );
                         const reference_number = order.quotationId
-                          ? quotationMap[order.quotationId] || "Loading..."
+                          ? quotationMap[order.quotationId] || "—"
                           : "—";
-                        const dueDateClass = isDueDateClose(order.dueDate)
-                          ? "due-date-close"
-                          : "";
                         const serialNumber =
                           (filters.page - 1) * filters.limit + index + 1;
                         const showInvoiceOption =
@@ -644,13 +602,11 @@ const OrderWrapper = () => {
                             "DELIVERED",
                             "PARTIALLY_DELIVERED",
                             "CLOSED",
-                          ].includes(order.status) &&
-                          order.invoiceLink &&
-                          order.invoiceLink.trim() !== "";
+                          ].includes(order.status) && order.invoiceLink?.trim();
 
                         const menuItems = [
                           showInvoiceOption && {
-                            key: "viewInvoice",
+                            key: "invoice",
                             label: (
                               <span onClick={() => handleViewInvoice(order)}>
                                 <FileTextOutlined style={{ marginRight: 8 }} />
@@ -681,18 +637,16 @@ const OrderWrapper = () => {
                                 <span
                                   className="priority-badge"
                                   style={{
-                                    backgroundColor:
-                                      quotationStatus === "QUOTATIONED"
-                                        ? "#d4edda"
-                                        : "#f8d7da",
-                                    color:
-                                      quotationStatus === "QUOTATIONED"
-                                        ? "#155724"
-                                        : "#721c24",
-                                    marginLeft: "8px",
+                                    backgroundColor: order.quotationId
+                                      ? "#d4edda"
+                                      : "#f8d7da",
+                                    color: order.quotationId
+                                      ? "#155724"
+                                      : "#721c24",
+                                    marginLeft: 8,
                                   }}
                                 >
-                                  {quotationStatus}
+                                  {order.quotationId ? "QUOTATIONED" : "IDLE"}
                                 </span>
                               </Link>
                             </td>
@@ -729,7 +683,6 @@ const OrderWrapper = () => {
                                 {getStatusDisplay(order.status)}
                               </span>
 
-                              {/* Status Change Dropdown */}
                               {canUpdateOrderStatus && (
                                 <Dropdown
                                   overlay={
@@ -745,26 +698,22 @@ const OrderWrapper = () => {
                                         "DRAFT",
                                         "ONHOLD",
                                         "CLOSED",
-                                      ].map((status) => (
+                                      ].map((s) => (
                                         <Menu.Item
-                                          key={status}
+                                          key={s}
                                           onClick={() =>
-                                            handleStatusChange(order.id, status)
+                                            handleStatusChange(order.id, s)
                                           }
-                                          disabled={order.status === status}
+                                          disabled={order.status === s}
                                         >
-                                          {status}
+                                          {s}
                                         </Menu.Item>
                                       ))}
                                     </Menu>
                                   }
                                   trigger={["click"]}
-                                  placement="bottomLeft"
                                 >
-                                  <EditOutlined
-                                    style={{ cursor: "pointer" }}
-                                    aria-label="Change status"
-                                  />
+                                  <EditOutlined style={{ cursor: "pointer" }} />
                                 </Dropdown>
                               )}
                             </td>
@@ -805,7 +754,13 @@ const OrderWrapper = () => {
                                 "N/A"
                               )}
                             </td>
-                            <td className={dueDateClass}>
+                            <td
+                              className={
+                                isDueDateClose(order.dueDate)
+                                  ? "due-date-close"
+                                  : ""
+                              }
+                            >
                               {order.dueDate ? (
                                 <span
                                   className="due-date-link"
@@ -816,7 +771,7 @@ const OrderWrapper = () => {
                                   onClick={() =>
                                     handleOpenDatesModal(
                                       order.dueDate,
-                                      order.followupDates || []
+                                      order.followupDates
                                     )
                                   }
                                 >
@@ -828,25 +783,18 @@ const OrderWrapper = () => {
                             </td>
                             <td>
                               {canEditOrder && (
-                                <span>
-                                  <EditOutlined
-                                    style={{ marginRight: 8 }}
-                                    onClick={() => handleEditClick(order)}
-                                  />
-                                </span>
+                                <EditOutlined
+                                  style={{ marginRight: 12, cursor: "pointer" }}
+                                  onClick={() => handleEditClick(order)}
+                                />
                               )}
 
                               {(canDeleteOrder || showInvoiceOption) && (
                                 <Dropdown
                                   menu={{ items: menuItems }}
                                   trigger={["click"]}
-                                  placement="bottomRight"
                                 >
-                                  <Button
-                                    type="text"
-                                    icon={<MoreOutlined />}
-                                    aria-label="More actions"
-                                  />
+                                  <Button type="text" icon={<MoreOutlined />} />
                                 </Dropdown>
                               )}
                             </td>
@@ -856,7 +804,6 @@ const OrderWrapper = () => {
                     </tbody>
                   </table>
 
-                  {/* ──────── Ant Design Pagination ──────── */}
                   {totalCount > filters.limit && (
                     <div className="d-flex justify-content-end mt-4">
                       <Pagination
@@ -877,23 +824,20 @@ const OrderWrapper = () => {
         </div>
 
         {/* Modals */}
-        {showDeleteModal && (
-          <DeleteModal
-            isVisible={showDeleteModal}
-            item={orderToDelete}
-            itemType="Order"
-            onConfirm={handleDeleteOrder}
-            onCancel={handleModalClose}
-          />
-        )}
-        {showDatesModal && (
-          <DatesModal
-            show={showDatesModal}
-            onHide={handleCloseDatesModal}
-            dueDate={selectedDates.dueDate}
-            followupDates={selectedDates.followupDates}
-          />
-        )}
+        <DeleteModal
+          isVisible={showDeleteModal}
+          item={orderToDelete}
+          itemType="Order"
+          onConfirm={handleDeleteOrder}
+          onCancel={handleModalClose}
+        />
+
+        <DatesModal
+          show={showDatesModal}
+          onHide={handleModalClose}
+          dueDate={selectedDates.dueDate}
+          followupDates={selectedDates.followupDates}
+        />
       </div>
     </div>
   );

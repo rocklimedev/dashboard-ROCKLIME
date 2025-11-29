@@ -93,21 +93,42 @@ const NewQuotationsDetails = () => {
 
   const activeProducts = activeVersionData.products || [];
 
-  // FETCH CUSTOMER & ADDRESS
-  const customerId = activeVersionData.quotation?.customerId;
-  const shipToId = activeVersionData.quotation?.shipTo;
-
-  const { data: customerData, isFetching: custLoading } =
-    useGetCustomerByIdQuery(customerId, { skip: !customerId });
-  const customer = customerData?.data || {};
-  const { data: address, isFetching: addrLoading } = useGetAddressByIdQuery(
-    shipToId,
-    { skip: !shipToId }
-  );
-
+  // THIS LINE WAS MISSING — ADD IT BACK!
   const { productsData, loading: prodLoading } =
     useProductsData(activeProducts);
 
+  // Prioritize version-specific customer & address if available
+  const versionQuotation = activeVersionData.quotation;
+  let customerId = versionQuotation?.customerId;
+  let shipToId = versionQuotation?.shipTo;
+
+  // Fallback: Try to get from the version's quotationData (for historical versions)
+  if (!customerId && versionQuotation?.quotationData?.customerId) {
+    customerId = versionQuotation.quotationData.customerId;
+  }
+  if (!shipToId && versionQuotation?.quotationData?.shipTo) {
+    shipToId = versionQuotation.quotationData.shipTo;
+  }
+
+  // Optional: Even fallback to main quotation if still missing
+  if (!customerId && quotation?.customerId) customerId = quotation.customerId;
+  if (!shipToId && quotation?.shipTo) shipToId = quotation.shipTo;
+
+  const {
+    data: customerResponse,
+    isFetching: custLoading,
+    error: custError,
+  } = useGetCustomerByIdQuery(customerId, {
+    skip: !customerId,
+  });
+
+  const customer = customerResponse?.data || {};
+
+  // Now fetch address
+  const { data: addressResponse, isFetching: addrLoading } =
+    useGetAddressByIdQuery(shipToId, { skip: !shipToId });
+
+  const address = addressResponse?.data;
   // CUSTOMER DISPLAY VALUES
   const customerName = customer?.name || "Dear Client";
   const customerPhone =
@@ -180,9 +201,7 @@ const NewQuotationsDetails = () => {
 
       const versionLabel =
         activeVersion === "current" ? "Latest" : activeVersion;
-      const fileName = `Quotation_${safeTitle}_${
-        quotation?.reference_number || id
-      }_V${versionLabel}`;
+      const fileName = `${safeTitle}_V${versionLabel}`;
 
       if (exportFormat === "pdf") {
         await exportToPDF(
@@ -238,11 +257,11 @@ const NewQuotationsDetails = () => {
 
   const renderPages = () => {
     const pages = [];
-    const itemsPerPage = 12;
+    const itemsPerPage = 10;
 
     // PAGE 1: COVER
     pages.push(
-      <div key="cover" className={styles.coverPage}>
+      <div key="cover" className={`${styles.coverPage} page`}>
         <img src={coverImage} alt="Cover" className={styles.coverBg} />
         <div className={styles.coverContent}>
           <div className={styles.dynamicCustomerName}>
@@ -254,7 +273,7 @@ const NewQuotationsDetails = () => {
 
     // PAGE 2: LETTERHEAD
     pages.push(
-      <div key="letterhead" className={styles.letterheadPage}>
+      <div key="letterhead" className={`${styles.letterheadPage} page`}>
         <div className={styles.letterheadTop}>
           <img
             src={americanStandard}
@@ -289,7 +308,7 @@ const NewQuotationsDetails = () => {
             </tr>
           </thead>
           <tbody>
-            {Array(8)
+            {Array(2)
               .fill()
               .map((_, i) => (
                 <tr key={i}>
@@ -310,7 +329,6 @@ const NewQuotationsDetails = () => {
             <br />
             Phone: 099110 80605 • Web: www.cmtradingco.com
           </div>
-          <div style={{ width: 100 }} />
         </div>
       </div>
     );
@@ -321,7 +339,7 @@ const NewQuotationsDetails = () => {
       const isLastPage = i + itemsPerPage >= activeProducts.length;
 
       pages.push(
-        <div key={`product-${i}`} className={styles.productPage}>
+        <div key={`product-${i}`} className={`${styles.productPage} page`}>
           <div className={styles.pageTopHeader}>
             <div>
               <div className={styles.clientName}>Mr {customerName}</div>

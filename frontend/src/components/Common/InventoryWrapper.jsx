@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   Form,
   Input,
-  Spin,
   Pagination,
   Empty,
   Table,
@@ -36,22 +35,22 @@ import PageHeader from "./PageHeader";
 import pos from "../../assets/img/default.png";
 import HistoryModalAntD from "./HistoryModal";
 import { FileTextOutlined, DownloadOutlined } from "@ant-design/icons";
-import { FilePdfOutlined, FileExcelOutlined } from "@ant-design/icons";
 import { generatePDF, generateExcel } from "../../data/helpers";
-import ReportBuilderModal from "./ReportBuilderModal"; // Adjust path
+import ReportBuilderModal from "./ReportBuilderModal";
+
 const { TabPane } = Tabs;
 const { Text, Title } = Typography;
 
 const InventoryWrapper = () => {
   const navigate = useNavigate();
-  const { data: productsData, error, isLoading } = useGetAllProductsQuery();
+  const { data: productsData, error } = useGetAllProductsQuery(); // ← isLoading removed
   const [addStock, { isLoading: isAddingStock }] = useAddStockMutation();
   const [removeStock, { isLoading: isRemovingStock }] =
     useRemoveStockMutation();
+
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [selectedReportProducts, setSelectedReportProducts] = useState([]);
   const [generatingMonthly, setGeneratingMonthly] = useState(false);
-  const [reportSearch, setReportSearch] = useState("");
 
   // State
   const [currentPage, setCurrentPage] = useState(1);
@@ -127,6 +126,8 @@ const InventoryWrapper = () => {
       return matchesSearch && matchesMaxStock && matchesPrice;
     });
   }, [products, search, maxStockFilter, priceRange]);
+
+  // Report generators
   const generateCustomReport = (format) => {
     const selectedData = products.filter((p) =>
       selectedReportProducts.includes(p.productId)
@@ -152,11 +153,8 @@ const InventoryWrapper = () => {
       "en-IN"
     )}`;
 
-    if (format === "pdf") {
-      generatePDF(reportData, title);
-    } else {
-      generateExcel(reportData, title);
-    }
+    if (format === "pdf") generatePDF(reportData, title);
+    else generateExcel(reportData, title);
 
     setReportModalOpen(false);
     setSelectedReportProducts([]);
@@ -165,7 +163,6 @@ const InventoryWrapper = () => {
 
   const generateMonthlyReport = async () => {
     setGeneratingMonthly(true);
-
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const monthName = now.toLocaleString("en-US", {
@@ -173,7 +170,6 @@ const InventoryWrapper = () => {
       year: "numeric",
     });
 
-    // Filter products updated this month (assuming you have updatedAt field)
     const updatedThisMonth = products.filter((p) => {
       if (!p.updatedAt) return false;
       const updatedDate = new Date(p.updatedAt);
@@ -211,6 +207,7 @@ const InventoryWrapper = () => {
       `Monthly report: ${updatedThisMonth.length} products updated`
     );
   };
+
   // Tab logic
   const tabFilteredProducts = useMemo(() => {
     switch (activeTab) {
@@ -295,6 +292,7 @@ const InventoryWrapper = () => {
     }
   };
 
+  // Table Columns (unchanged)
   // Table Columns
   const columns = [
     {
@@ -423,20 +421,19 @@ const InventoryWrapper = () => {
       ),
     },
   ];
+  // ──────────────────────────────────────────────
+  // Render (removed local loading spinner & Empty on error)
+  // ──────────────────────────────────────────────
+  // If you have a global loading skeleton / spinner, just render nothing or a placeholder until data arrives.
+  if (!productsData && !error) return null; // or return <YourGlobalSkeleton />
 
-  // Render
-  if (isLoading)
-    return (
-      <div style={{ textAlign: "center", padding: "50px" }}>
-        <Spin size="large" tip="Loading inventory..." />
-      </div>
-    );
-  if (error)
+  if (error) {
     return (
       <div style={{ padding: 20 }}>
         <Empty description="Failed to load products" />
       </div>
     );
+  }
 
   return (
     <div className="page-wrapper">
@@ -444,7 +441,7 @@ const InventoryWrapper = () => {
         <PageHeader
           title="Inventory Management"
           subtitle="Track stock levels, add/remove stock, and view history"
-          exportOptions={{ pdf: false, excel: false }} // Disable default export icons
+          exportOptions={{ pdf: false, excel: false }}
         />
 
         {/* Filters */}
@@ -497,7 +494,7 @@ const InventoryWrapper = () => {
               />
             </Space>
           </Space>
-          <Space>
+          <Space style={{ float: "right" }}>
             <Button
               type="primary"
               icon={<FileTextOutlined />}
@@ -515,7 +512,7 @@ const InventoryWrapper = () => {
             <Button
               type="primary"
               icon={<PlusOutlined />}
-              onClick={() => navigate("/inventory/product/add")}
+              onClick={() => navigate("/product/add")}
             >
               Add Product
             </Button>
@@ -570,7 +567,6 @@ const InventoryWrapper = () => {
           />
         </Tabs>
 
-        {/* Table */}
         {totalItems === 0 ? (
           <Empty description="No products found" />
         ) : (
@@ -595,7 +591,7 @@ const InventoryWrapper = () => {
         )}
       </div>
 
-      {/* Stock Modal */}
+      {/* Modals (unchanged) */}
       <Modal
         title={
           <Title level={4}>
@@ -646,7 +642,7 @@ const InventoryWrapper = () => {
         generatePDF={generatePDF}
         generateExcel={generateExcel}
       />
-      {/* History Modal */}
+
       <HistoryModalAntD
         open={historyModalOpen}
         onCancel={() => {

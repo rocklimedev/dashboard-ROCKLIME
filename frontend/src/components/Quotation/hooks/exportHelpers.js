@@ -1,6 +1,3 @@
-// ---------------------------------------------------------------
-// exportHelpers.js – PDF (fixed) + EXCEL (exact PDF layout)
-// ---------------------------------------------------------------
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import ExcelJS from "exceljs";
@@ -8,188 +5,214 @@ import { PDFDocument } from "pdf-lib";
 import termsAndConditionsPdf from "../../../assets/Terms.pdf";
 import { fetchImg, placeholder } from "./imageHelpers";
 import { calcTotals, amountInWords } from "./calcHelpers";
-
+import { message } from "antd";
 /* ------------------------------------------------------------------ */
-/*                              PDF EXPORT (JS)                       */
+/*                          UTILITY: Safe Filename Title              */
 /* ------------------------------------------------------------------ */
-export const exportToPDF = async (ref, id, activeVersion) => {
-  if (!ref.current) throw new Error("Content missing");
+const getSafeTitle = (quotation = {}) => {
+  const rawTitle =
+    quotation.quotation_title ||
+    quotation.title ||
+    quotation.document_title ||
+    quotation.reference_number ||
+    "Quotation";
 
-  const clone = ref.current.cloneNode(true);
-  document.body.appendChild(clone);
+  if (!rawTitle || typeof rawTitle !== "string") return "Quotation";
 
-  // --- Force styles for print ---
-  clone.style.cssText = `
-    position: absolute !important;
-    left: -9999px !important;
-    top: 0 !left;
-    visibility: visible !important;
-    width: ${ref.current.scrollWidth}px !important;
-    overflow: visible !important;
-    background: white !important;
-  `;
-
-  const style = document.createElement("style");
-  style.textContent = `
-    * { font-family: Arial, sans-serif !important; }
-    table { table-layout: fixed; width: 100%; border-collapse: collapse; }
-    td, th { border: 1px solid #ddd; padding: 5px; font-size: 11px; word-wrap: break-word; }
-    img { max-width: 60px; height: auto; object-fit: contain; }
-    .product-img { height: 50px; width: auto; display: block; }
-    .logo-img { height: 70px; width: auto; }
-  `;
-  clone.appendChild(style);
-
-  // --- IMAGE PRELOAD FUNCTION ---
-  const loadImageAsDataURL = (src) => {
-    return new Promise((resolve, reject) => {
-      if (!src || src.startsWith("data:")) {
-        resolve(src);
-        return;
-      }
-
-      const img = new Image();
-      img.crossOrigin = "anonymous"; // Crucial for CORS
-
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0);
-        try {
-          const dataURL = canvas.toDataURL("image/png");
-          resolve(dataURL);
-        } catch (err) {
-          resolve(placeholder); // fallback
-        }
-      };
-
-      img.onerror = () => {
-        resolve(placeholder);
-      };
-
-      img.src = src;
-    });
-  };
-
-  // --- REPLACE ALL IMAGES WITH DATA URLS ---
-  const logoImgEl = clone.querySelector(".logo-img");
-  const productImgEls = Array.from(clone.querySelectorAll(".product-img"));
-
-  const imageReplacements = [];
-
-  if (logoImgEl?.src) {
-    imageReplacements.push(
-      loadImageAsDataURL(logoImgEl.src).then((dataURL) => {
-        logoImgEl.src = dataURL;
-        logoImgEl.style.opacity = "1";
-      })
-    );
-  }
-
-  productImgEls.forEach((imgEl) => {
-    if (imgEl.src && !imgEl.src.startsWith("data:")) {
-      imageReplacements.push(
-        loadImageAsDataURL(imgEl.src).then((dataURL) => {
-          imgEl.src = dataURL;
-          imgEl.style.opacity = "1";
-        })
-      );
-    }
-  });
-
-  // --- WAIT FOR ALL IMAGES ---
-  await Promise.all(imageReplacements);
-
-  // --- FORCE REPAINT (Critical!) ---
-  clone.style.display = "none";
-  void clone.offsetHeight; // Trigger reflow
-  clone.style.display = "";
-
-  // Small delay to ensure browser renders images
-  await new Promise((r) => setTimeout(r, 100));
-
-  // --- RENDER CANVAS ---
-  let canvas;
-  try {
-    canvas = await html2canvas(clone, {
-      scale: 2,
-      useCORS: true,
-      allowTaint: false, // We already converted to data URL
-      backgroundColor: "#ffffff",
-      logging: false,
-      width: clone.scrollWidth,
-      height: clone.scrollHeight,
-      windowWidth: clone.scrollWidth + 100,
-      windowHeight: clone.scrollHeight + 100,
-      scrollX: 0,
-      scrollY: 0,
-    });
-  } catch (err) {
-    throw err;
-  } finally {
-    document.body.removeChild(clone);
-  }
-
-  // --- GENERATE PDF ---
-  const imgData = canvas.toDataURL("image/png");
-  const pdf = new jsPDF("p", "mm", "a4");
-  const pdfWidth = pdf.internal.pageSize.getWidth();
-  const pdfHeight = pdf.internal.pageSize.getHeight();
-  const margin = 10;
-  const availableWidth = pdfWidth - 2 * margin;
-  const imgHeight = (canvas.height * availableWidth) / canvas.width;
-
-  let heightLeft = imgHeight;
-  let position = margin;
-
-  pdf.addImage(imgData, "PNG", margin, position, availableWidth, imgHeight);
-  heightLeft -= pdfHeight - 2 * margin;
-
-  while (heightLeft > 0) {
-    position = heightLeft - imgHeight + margin;
-    pdf.addPage();
-    pdf.addImage(imgData, "PNG", margin, position, availableWidth, imgHeight);
-    heightLeft -= pdfHeight - 2 * margin;
-  }
-
-  // --- ATTACH T&C PDF ---
-  try {
-    const tncRes = await fetch(termsAndConditionsPdf);
-    if (!tncRes.ok) throw new Error("T&C fetch failed");
-    const tncBuffer = await tncRes.arrayBuffer();
-    const tncDoc = await PDFDocument.load(tncBuffer);
-    const mainDoc = await PDFDocument.load(await pdf.output("arraybuffer"));
-
-    const pages = await mainDoc.copyPages(tncDoc, tncDoc.getPageIndices());
-    pages.forEach((p) => mainDoc.addPage(p));
-
-    const finalBytes = await mainDoc.save();
-    downloadBlob(finalBytes, `Quotation_${id}_Version_${activeVersion}.pdf`);
-  } catch (err) {
-    pdf.save(`Quotation_${id}_Version_${activeVersion}.pdf`);
-  }
+  return rawTitle
+    .trim()
+    .replace(/[\\/:*?"<>|]/g, "_")
+    .replace(/\s+/g, "_")
+    .replace(/_+/g, "_")
+    .substring(0, 50)
+    .replace(/^_+|_+$/g, "");
 };
 
-const downloadBlob = (bytes, filename) => {
-  const blob = new Blob([bytes], { type: "application/pdf" });
+// ------------------------------------------------------------
+// exportToPDF – FINAL WORKING VERSION (Multi-page, No Skipped Pages)
+// ------------------------------------------------------------
+
+// hooks/exportHelpers.js — FINAL BULLETPROOF PDF EXPORT
+// hooks/exportHelpers.js — FINAL FIXED VERSION (2025 Chrome/Firefox safe)
+// hooks/exportHelpers.js — FINAL 100% WORKING PDF EXPORT (Nov 2025)
+// hooks/exportHelpers.js — FINAL NOV 2025 WORKING VERSION
+export const exportToPDF = async (
+  ref,
+  id,
+  activeVersion,
+  quotation = {},
+  filename = "quotation.pdf"
+) => {
+  if (!ref?.current) {
+    console.error("Ref is null");
+    return;
+  }
+
+  // METHOD 1: Try .print-area
+  let printArea = ref.current.querySelector(".print-area");
+
+  // METHOD 2: Try data attribute (fallback)
+  if (!printArea) {
+    printArea = ref.current.querySelector("[data-print-root]");
+  }
+
+  // METHOD 3: If ref itself has the class, use it directly
+  if (!printArea && ref.current.classList.contains("print-area")) {
+    printArea = ref.current;
+  }
+
+  // METHOD 4: Last resort – use ref.current directly
+  if (!printArea) {
+    console.warn("No .print-area found → falling back to ref.current");
+    printArea = ref.current;
+  }
+
+  if (!printArea) {
+    console.error("No printable area found at all");
+    message.error("Print area not found");
+    return;
+  }
+
+  const nodeToPrint = printArea.cloneNode(true);
+  // ... rest of your function stays 100% the same
+
+  // FORCE ALL IMAGES TO HAVE crossOrigin AND BE LOADED
+  const images = nodeToPrint.querySelectorAll("img");
+  const imageLoadPromises = Array.from(images).map((img) => {
+    if (img.src && !img.crossOrigin && img.src.startsWith("http")) {
+      img.crossOrigin = "anonymous";
+    }
+    if (img.complete && img.naturalHeight !== 0) {
+      return Promise.resolve();
+    }
+    return new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = () => {
+        console.warn("Image failed to load:", img.src);
+        resolve(); // continue anyway
+      };
+      // Force reload to apply crossOrigin
+      if (img.src) img.src = img.src;
+    });
+  });
+
+  // Wait for all images
+  await Promise.all(imageLoadPromises);
+
+  // Temporarily inject cloned node into DOM (hidden) for accurate rendering
+  const container = document.createElement("div");
+  container.style.position = "absolute";
+  container.style.left = "-9999px";
+  container.style.top = "0";
+  container.style.width = "210mm"; // A4 width
+  container.style.background = "white";
+  Object.assign(nodeToPrint.style, {
+    width: "210mm",
+    minHeight: "297mm",
+    pageBreakAfter: "always",
+    background: "white",
+    boxShadow: "none",
+    transform: "none",
+  });
+  container.appendChild(nodeToPrint);
+  document.body.appendChild(container);
+
+  try {
+    const pages = nodeToPrint.querySelectorAll(".page");
+    if (pages.length === 0) throw new Error("No .page elements");
+
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+
+    for (let i = 0; i < pages.length; i++) {
+      const page = pages[i];
+
+      // Force page size
+      page.style.width = "210mm";
+      page.style.minHeight = "297mm";
+      page.style.background = "white";
+
+      const canvas = await html2canvas(page, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: false, // we handled CORS manually
+        backgroundColor: "#ffffff",
+        logging: false,
+        windowWidth: 210 * 3.78, // ~A4 in pixels at 96dpi
+        windowHeight: 297 * 3.78,
+        scrollX: 0,
+        scrollY: 0,
+      });
+
+      const imgData = canvas.toDataURL("image/jpeg", 0.95);
+
+      if (i > 0) pdf.addPage();
+      pdf.addImage(
+        imgData,
+        "JPEG",
+        0,
+        0,
+        pdfWidth,
+        pdfHeight,
+        undefined,
+        "FAST"
+      );
+    }
+
+    // === Attach T&C (optional) ===
+    let finalPdfBytes = pdf.output("arraybuffer");
+    try {
+      const tncRes = await fetch(termsAndConditionsPdf);
+      if (tncRes.ok) {
+        const tncBuffer = await tncRes.arrayBuffer();
+        const mainPdf = await PDFDocument.load(finalPdfBytes);
+        const tncPdf = await PDFDocument.load(tncBuffer);
+        const copied = await mainPdf.copyPages(tncPdf, tncPdf.getPageIndices());
+        copied.forEach((p) => mainPdf.addPage(p));
+        finalPdfBytes = await mainPdf.save();
+      }
+    } catch (e) {
+      console.warn("T&C attachment failed (continuing without):", e.message);
+    }
+
+    // === Download ===
+    const blob = new Blob([finalPdfBytes], { type: "application/pdf" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    message.success("PDF exported successfully!");
+  } catch (err) {
+    console.error("PDF Export failed:", err);
+    message.error("PDF export failed: " + err.message);
+  } finally {
+    document.body.removeChild(container);
+  }
+};
+const downloadBlob = (data, name) => {
+  const blob = new Blob([data], { type: "application/pdf" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = filename;
+  a.download = name;
+  document.body.appendChild(a);
   a.click();
+  document.body.removeChild(a);
   URL.revokeObjectURL(url);
 };
 
 /* ------------------------------------------------------------------ */
-/*                              EXCEL EXPORT                           */
+/*                              EXCEL EXPORT                          */
 /* ------------------------------------------------------------------ */
 export const exportToExcel = async (
   products,
   productsData,
   brandNames,
-  quotation,
+  quotation = {}, // Now used for title
   address,
   logo,
   accountDetails,
@@ -212,7 +235,33 @@ export const exportToExcel = async (
   /* ---------- 2. Build rows ---------- */
   const rows = productList.map((p, i) => {
     const pd = productsData.find((x) => x.productId === p.productId) || {};
-    const img = pd.images ? JSON.parse(pd.images)[0] : null;
+    let img = null;
+    try {
+      if (pd.images) {
+        // Case 1: Already parsed array
+        if (Array.isArray(pd.images)) {
+          img = pd.images[0];
+        }
+        // Case 2: JSON string like '["url"]'
+        else if (
+          typeof pd.images === "string" &&
+          pd.images.trim().startsWith("[")
+        ) {
+          const parsed = JSON.parse(pd.images);
+          img = Array.isArray(parsed) ? parsed[0] : null;
+        }
+        // Case 3: Direct URL string (most common now)
+        else if (
+          typeof pd.images === "string" &&
+          pd.images.trim().startsWith("http")
+        ) {
+          img = pd.images.trim();
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to parse product image:", pd.images, e);
+      img = null;
+    }
     const code =
       pd?.meta?.d11da9f9_3f2e_4536_8236_9671200cca4a || p.productCode || "N/A";
     const mrp =
@@ -265,11 +314,11 @@ export const exportToExcel = async (
     { width: 14 }, // Total
   ];
 
-  /* ---------- 6. LOGO (no squashing) ---------- */
+  /* ---------- 6. LOGO ---------- */
   if (logoImg?.buffer) {
     const logoId = wb.addImage({
       buffer: logoImg.buffer,
-      extension: logoImg.extension,
+      extension: logoImg.extension || "png",
     });
     ws.addImage(logoId, {
       tl: { col: 3, row: 0 },
@@ -280,16 +329,14 @@ export const exportToExcel = async (
 
   /* ---------- 7. Title + Brand ---------- */
   ws.mergeCells("B2:E2");
-  const titleCell = ws.getCell("B2");
-  titleCell.value = "Estimate / Quotation";
-  titleCell.font = { bold: true, size: 16 };
-  titleCell.alignment = { horizontal: "center", vertical: "middle" };
+  ws.getCell("B2").value = "Estimate / Quotation";
+  ws.getCell("B2").font = { bold: true, size: 16 };
+  ws.getCell("B2").alignment = { horizontal: "center", vertical: "middle" };
 
   ws.mergeCells("F2:I2");
-  const brandCell = ws.getCell("F2");
-  brandCell.value = brandNames;
-  brandCell.font = { bold: true };
-  brandCell.alignment = { horizontal: "right" };
+  ws.getCell("F2").value = brandNames || "";
+  ws.getCell("F2").font = { bold: true };
+  ws.getCell("F2").alignment = { horizontal: "right" };
 
   /* ---------- 8. Customer block ---------- */
   ws.mergeCells("B4:E5");
@@ -297,7 +344,7 @@ export const exportToExcel = async (
 
   ws.mergeCells("G4:I5");
   const dateStr = quotation?.quotation_date
-    ? new Date(quotation.quotation_date).toLocaleDateString()
+    ? new Date(quotation.quotation_date).toLocaleDateString("en-IN")
     : "‑";
   ws.getCell("G4").value = dateStr;
 
@@ -337,7 +384,7 @@ export const exportToExcel = async (
   rows.forEach((r, i) => {
     const row = ws.addRow([
       r.idx,
-      "", // image placeholder
+      "",
       r.name,
       r.code,
       r.mrp,
@@ -352,7 +399,7 @@ export const exportToExcel = async (
     if (img?.buffer) {
       const imgId = wb.addImage({
         buffer: img.buffer,
-        extension: img.extension,
+        extension: img.extension || "png",
       });
       ws.addImage(imgId, {
         tl: { col: 1, row: ws.rowCount - 1 },
@@ -361,7 +408,7 @@ export const exportToExcel = async (
     }
 
     row.eachCell((c, n) => {
-      if (n === 1) return; // image column
+      if (n === 2) return; // skip image column
       c.border = {
         top: { style: "thin" },
         left: { style: "thin" },
@@ -372,7 +419,7 @@ export const exportToExcel = async (
     });
   });
 
-  /* ---------- 11. Amount in words ---------- */
+  /* ---------- 11–13. Totals, Tax Summary, Bank Details (unchanged) ---------- */
   const {
     subtotal,
     gst: gstAmount,
@@ -390,7 +437,7 @@ export const exportToExcel = async (
   ).value = `Amount Chargeable (in words): ${amountInWords(finalTotal)}`;
   ws.getCell(`A${ws.rowCount}`).font = { bold: true };
 
-  /* ---------- 12. Tax summary ---------- */
+  // Tax summary logic (same as before)
   const taxHeader = ws.addRow([
     "HSN/SAC",
     "Taxable Value",
@@ -458,18 +505,22 @@ export const exportToExcel = async (
   )}`;
   ws.getCell(`A${ws.rowCount}`).font = { bold: true };
 
-  /* ---------- 13. Bank & Declaration ---------- */
   const bank = accountDetails || {};
   ws.addRow([]);
   ws.mergeCells(`A${ws.rowCount}:D${ws.rowCount}`);
-  const bankCell = ws.getCell(`A${ws.rowCount}`);
-  bankCell.value = `Company's Bank Details\nA/c Holder: EMBARK ENTERPRISES\nBank: IDFC FIRST BANK\nA/c No: 10179373657\nBranch & IFS: BHERA ENCLAVE PASCHIM VIHAR & IDFB0020149`;
-  bankCell.alignment = { vertical: "top" };
+  ws.getCell(
+    `A${ws.rowCount}`
+  ).value = `Company's Bank Details\nA/c Holder: EMBARK ENTERPRISES\nBank: IDFC FIRST BANK\nA/c No: 10179373657\nBranch & IFS: BHERA ENCLAVE PASCHIM VIHAR & IDFB0020149`;
+  ws.getCell(`A${ws.rowCount}`).alignment = { vertical: "top" };
 
   ws.mergeCells(`E${ws.rowCount}:I${ws.rowCount}`);
-  const declCell = ws.getCell(`E${ws.rowCount}`);
-  declCell.value = `PAN: AALFE0496K\nDeclaration: We declare that this quotation shows the actual price...`;
-  declCell.alignment = { horizontal: "right", vertical: "top" };
+  ws.getCell(
+    `E${ws.rowCount}`
+  ).value = `PAN: AALFE0496K\nDeclaration: We declare that this quotation shows the actual price...`;
+  ws.getCell(`E${ws.rowCount}`).alignment = {
+    horizontal: "right",
+    vertical: "top",
+  };
 
   ws.addRow([]);
   ws.mergeCells(`A${ws.rowCount}:I${ws.rowCount}`);
@@ -486,7 +537,12 @@ export const exportToExcel = async (
     "Terms & Conditions: Refer attached document.";
   ws.getCell(`A${ws.rowCount}`).font = { bold: true };
 
-  /* ---------- 14. Save ---------- */
+  /* ---------- 14. SAVE WITH CUSTOM FILENAME ---------- */
+  // Inside exportToExcel, near the end:
+  const safeVersion = activeVersion === "current" ? "Latest" : activeVersion;
+  const safeTitle = getSafeTitle(quotation);
+  const titlePart = safeTitle ? `${safeTitle}_` : "";
+  const excelFilename = `Quotation_${titlePart}${id}_V${safeVersion}.xlsx`;
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -494,7 +550,9 @@ export const exportToExcel = async (
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `Quotation_${id}_Version_${activeVersion}.xlsx`;
+  a.download = excelFilename;
+  document.body.appendChild(a);
   a.click();
+  document.body.removeChild(a);
   URL.revokeObjectURL(url);
 };

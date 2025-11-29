@@ -59,9 +59,15 @@ const AddQuotation = () => {
     error: fetchError,
   } = useGetQuotationByIdQuery(id, { skip: !isEditMode });
 
-  const { data: versionsData, isLoading: isVersionsLoading } =
-    useGetQuotationVersionsQuery(id, { skip: !isEditMode });
-
+  const {
+    data: versionsData = [],
+    isLoading: isVersionsLoading,
+    isFetching: isVersionsFetching,
+    refetch: refetchVersions,
+  } = useGetQuotationVersionsQuery(id, {
+    skip: !isEditMode,
+    refetchOnMountOrArgChange: true, // ← THIS IS KEY
+  });
   const { data: userData, isLoading: isUserLoading } = useGetProfileQuery();
   const { data: customersData, isLoading: isCustomersLoading } =
     useGetCustomersQuery();
@@ -264,61 +270,6 @@ const AddQuotation = () => {
       return { ...prev, products: copy };
     });
   };
-
-  /* ────────────────────── CALCULATE FINAL ────────────────────── */
-  /* ────────────────────── CALCULATE FINAL ────────────────────── */
-  // const calculateFinal = useCallback(() => {
-  //   // 1. Sub‑total (after per‑item tax & discount)
-  //   const subtotal = formData.products.reduce(
-  //     (s, p) => s + Number(p.total || 0),
-  //     0
-  //   );
-
-  //   // 2. Extra Discount
-  //   let extraDiscountAmount = 0;
-  //   const extraDiscount = Number(formData.extraDiscount) || 0;
-  //   if (extraDiscount > 0) {
-  //     if (formData.extraDiscountType === "percent") {
-  //       extraDiscountAmount = (subtotal * extraDiscount) / 100;
-  //     } else {
-  //       extraDiscountAmount = extraDiscount;
-  //     }
-  //   }
-
-  //   const afterDiscount = subtotal - extraDiscountAmount;
-
-  //   // 3. GST
-  //   const gst = Number(formData.gst) || 0;
-  //   const gstAmount = (afterDiscount * gst) / 100;
-
-  //   // 4. Shipping
-  //   const shipping = Number(formData.shippingAmount) || 0;
-
-  //   // 5. **AUTO ROUND‑OFF**
-  //   const amountBeforeRound = afterDiscount + gstAmount + shipping;
-  //   const roundedFinal = Math.round(amountBeforeRound); // nearest whole ₹
-  //   const roundOff = roundedFinal - amountBeforeRound; // +ve or –ve
-
-  //   // 6. Update state
-  //   setFormData((prev) => ({
-  //     ...prev,
-  //     discountAmount: parseFloat(extraDiscountAmount.toFixed(2)),
-  //     roundOff: parseFloat(roundOff.toFixed(2)),
-  //     finalAmount: parseFloat(roundedFinal.toFixed(2)),
-  //   }));
-  // }, [
-  //   formData.products,
-  //   formData.gst,
-  //   formData.shippingAmount,
-  //   formData.extraDiscount,
-  //   formData.extraDiscountType,
-  // ]);
-
-  // Re‑run on any change
-  // useEffect(() => {
-  //   calculateFinal();
-  // }, [calculateFinal]);
-  // Re‑run whenever any of the dependencies change
 
   /* ────────────────────── FOLLOW-UP DATES ────────────────────── */
   const addFollowup = () => {
@@ -611,10 +562,13 @@ const AddQuotation = () => {
           </Button>
           {isEditMode && (
             <Button
-              onClick={() => setShowVersionsModal(true)}
-              disabled={isVersionsLoading}
+              onClick={() => {
+                refetchVersions(); // ← Force fresh data
+                setShowVersionsModal(true);
+              }}
+              loading={isVersionsFetching}
             >
-              View Versions
+              View Versions ({versions.length})
             </Button>
           )}
           <Button
@@ -967,10 +921,10 @@ const AddQuotation = () => {
           footer={null}
           width={800}
         >
-          {isVersionsLoading ? (
-            <Spin />
+          {isVersionsFetching ? (
+            <Spin tip="Loading versions..." />
           ) : versions.length === 0 ? (
-            <Text>No versions</Text>
+            <Text type="secondary">No versions found</Text>
           ) : (
             <List
               dataSource={versions}
@@ -980,7 +934,14 @@ const AddQuotation = () => {
                     <Button
                       type="primary"
                       size="small"
-                      onClick={() => restoreVersion({ id, version: v.version })}
+                      onClick={() => {
+                        Modal.confirm({
+                          title: "Restore Version?",
+                          content: `Restore to version ${v.version}? This will overwrite current quotation.`,
+                          onOk: () =>
+                            restoreVersion({ id, version: v.version }),
+                        });
+                      }}
                       loading={isRestoring}
                     >
                       Restore
@@ -988,19 +949,21 @@ const AddQuotation = () => {
                   ]}
                 >
                   <List.Item.Meta
-                    title={`Version ${v.version}`}
+                    title={<strong>Version {v.version}</strong>}
                     description={
                       <>
-                        <Text>By: {v.updatedBy || "Unknown"}</Text>
-                        <br />
                         <Text>
-                          At: {new Date(v.updatedAt).toLocaleString()}
+                          By: <strong>{v.updatedBy || "System"}</strong>
                         </Text>
                         <br />
-                        <Text>Items: {v.quotationItems?.length ?? 0}</Text>
+                        <Text type="secondary">
+                          {new Date(v.updatedAt).toLocaleString()}
+                        </Text>
                         <br />
-                        <Text>
-                          Amount: ₹
+                        <Text>Items: {v.quotationItems?.length || 0}</Text>
+                        <br />
+                        <Text strong type="success">
+                          ₹
                           {Number(v.quotationData?.finalAmount || 0).toFixed(2)}
                         </Text>
                       </>
@@ -1011,7 +974,6 @@ const AddQuotation = () => {
             />
           )}
         </Modal>
-
         {/* Custom CSS to make react-datepicker look like AntD */}
         <style jsx>{`
           .full-width > div {

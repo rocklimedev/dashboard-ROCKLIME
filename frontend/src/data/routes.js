@@ -70,6 +70,7 @@ import TaskWrapper from "../components/Tasks/TaskWrapper";
 import InventoryWrapper from "../components/Common/InventoryWrapper";
 import ProfileForm from "../components/Profile/ProfileForm";
 import Error403 from "../components/Error/Error403";
+import NewQuotationsDetails from "../components/Quotation/NewQuotationDetails";
 const masterRoutes = [
   {
     path: "/",
@@ -121,6 +122,13 @@ const masterRoutes = [
     icon: <BiTask />,
     isSidebarActive: false,
     element: <TaskWrapper />,
+  },
+  {
+    path: "/inventory/list",
+    name: "Inventory",
+    icon: <BiCoinStack />,
+    isSidebarActive: true,
+    element: <InventoryWrapper />,
   },
   {
     path: "/cart",
@@ -178,13 +186,7 @@ const masterRoutes = [
         element: <RolePermission />,
         isSidebarActive: true,
       },
-      {
-        path: "/inventory/list",
-        name: "Inventory",
-        icon: <BiCoinStack />,
-        isSidebarActive: true,
-        element: <InventoryWrapper />,
-      },
+
       {
         path: "/inventory/categories-keywords",
         element: <CategoryManagement />,
@@ -306,7 +308,7 @@ const masterRoutes = [
         name: "Quotations Details",
         icon: <IoPricetagOutline />,
         isSidebarActive: false,
-        element: <QuotationsDetails />,
+        element: <NewQuotationsDetails />,
         requiredPermission: { api: "view", module: "quotations" },
       },
       {
@@ -316,6 +318,13 @@ const masterRoutes = [
         element: <AddQuotation />,
         isSidebarActive: false,
         requiredPermission: { api: "write", module: "quotations" },
+      },
+      {
+        path: "/quotation/:id/view",
+        name: "View Quotations",
+        icon: <IoPricetagOutline />,
+        element: <QuotationsDetails />,
+        isSidebarActive: false,
       },
       {
         path: "/quotation/:id/edit",
