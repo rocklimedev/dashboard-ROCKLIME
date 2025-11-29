@@ -47,6 +47,7 @@ exports.createUser = async (req, res) => {
       shiftFrom,
       shiftTo,
       addressId,
+      isEmailVerified = false,
     } = req.body;
 
     // Validate required fields
@@ -100,6 +101,7 @@ exports.createUser = async (req, res) => {
       roleId,
       roles: roleData.roleName,
       status: roleData.roleName === "Users" ? "inactive" : "active",
+      isEmailVerified: Boolean(isEmailVerified), // ← ADD THIS
     });
 
     res.status(201).json({
@@ -388,6 +390,7 @@ exports.getUserById = async (req, res) => {
 };
 
 // Update User
+// Update User (Admin / SuperAdmin only)
 exports.updateUser = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -404,18 +407,31 @@ exports.updateUser = async (req, res) => {
       shiftTo,
       addressId,
       status,
+      isEmailVerified, // ← NEW: Allow updating email verification status
+      about,
     } = req.body;
 
+    // Find the user to update
     const user = await User.findByPk(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Check for duplicate username or email
+    // Prevent self-modification of critical fields (optional security)
+    if (req.user.userId === userId) {
+      return res.status(403).json({
+        message: "You cannot modify your own account via this endpoint",
+      });
+    }
+
+    // === 1. Check duplicate username/email (excluding current user) ===
     if (username || email) {
       const existingUser = await User.findOne({
         where: {
-          [Op.or]: [{ username }, { email }],
+          [Op.or]: [
+            username ? { username } : null,
+            email ? { email } : null,
+          ].filter(Boolean),
           userId: { [Op.ne]: userId },
         },
       });
@@ -426,7 +442,7 @@ exports.updateUser = async (req, res) => {
       }
     }
 
-    // Validate addressId if provided
+    // === 2. Validate addressId if provided ===
     if (addressId) {
       const address = await Address.findByPk(addressId);
       if (!address) {
@@ -434,28 +450,14 @@ exports.updateUser = async (req, res) => {
       }
     }
 
-    // Update basic fields
-    user.username = username || user.username;
-    user.name = name || user.name;
-    user.email = email || user.email;
-    user.mobileNumber = mobileNumber || user.mobileNumber;
-    user.dateOfBirth = dateOfBirth || user.dateOfBirth;
-    user.bloodGroup = bloodGroup || user.bloodGroup;
-    user.emergencyNumber = emergencyNumber || user.emergencyNumber;
-    user.shiftFrom = shiftFrom || user.shiftFrom;
-    user.shiftTo = shiftTo || user.shiftTo;
-    user.addressId = addressId || user.addressId;
-    user.status =
-      status !== undefined ? (status ? "active" : "inactive") : user.status;
-
-    // Handle role update
+    // === 3. Handle Role Update (with SuperAdmin protection) ===
     if (roleId) {
       const roleData = await Roles.findOne({ where: { roleId } });
       if (!roleData) {
         return res.status(400).json({ message: "Invalid role specified" });
       }
 
-      // Check for existing SuperAdmin
+      // Prevent assigning SuperAdmin if one already exists (except current)
       if (roleData.roleName === "SUPER_ADMIN") {
         const existingSuperAdmin = await User.findOne({
           where: {
@@ -470,17 +472,85 @@ exports.updateUser = async (req, res) => {
         }
       }
 
-      user.roles = roleData.roleName;
       user.roleId = roleData.roleId;
+      user.roles = roleData.roleName;
+      // Auto-set status based on role (optional)
+      user.status = roleData.roleName === "Users" ? "inactive" : "active";
     }
 
+    // === 4. Update Basic Fields (only if provided) ===
+    if (username !== undefined) user.username = username;
+    if (name !== undefined) user.name = name;
+    if (email !== undefined) user.email = email;
+    if (mobileNumber !== undefined) user.mobileNumber = mobileNumber || null;
+    if (dateOfBirth !== undefined) user.dateOfBirth = dateOfBirth || null;
+    if (bloodGroup !== undefined) user.bloodGroup = bloodGroup || null;
+    if (emergencyNumber !== undefined)
+      user.emergencyNumber = emergencyNumber || null;
+    if (shiftFrom !== undefined) user.shiftFrom = shiftFrom || null;
+    if (shiftTo !== undefined) user.shiftTo = shiftTo || null;
+    if (addressId !== undefined) user.addressId = addressId || null;
+    if (about !== undefined) user.about = about || null;
+
+    // === 5. Update Status (active/inactive/restricted) ===
+    if (status !== undefined) {
+      const validStatuses = ["active", "inactive", "restricted"];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({
+          message: "Invalid status. Must be: active, inactive, or restricted",
+        });
+      }
+
+      // Prevent deactivating/restricting the last SuperAdmin
+      if (
+        user.roles.includes("SUPER_ADMIN") &&
+        status !== "active" &&
+        (await User.count({
+          where: { roles: { [Op.like]: `%SUPER_ADMIN%` } },
+        })) <= 1
+      ) {
+        return res.status(400).json({
+          message: "Cannot deactivate or restrict the only SuperAdmin",
+        });
+      }
+
+      user.status = status;
+    }
+
+    // === 6. Update Email Verification Status (Admin only) ===
+    if (isEmailVerified !== undefined) {
+      // Optional: Restrict to Admin/SuperAdmin only
+      const requester = await User.findByPk(req.user.userId);
+      if (!requester || !["ADMIN", "SUPER_ADMIN"].includes(requester.roles)) {
+        return res.status(403).json({
+          message: "Only Admin or SuperAdmin can verify email",
+        });
+      }
+      user.isEmailVerified = Boolean(isEmailVerified);
+    }
+
+    // === 7. Save Updated User ===
     await user.save();
-    res.status(200).json({
+
+    // === 8. Return Safe User Data (without password) ===
+    const updatedUser = await User.findByPk(user.userId, {
+      ...excludeSensitiveFields,
+      include: [
+        {
+          model: Address,
+          as: "address",
+          attributes: ["street", "city", "state", "country", "postalCode"],
+        },
+      ],
+    });
+
+    return res.status(200).json({
       message: "User updated successfully",
-      data: await User.findByPk(user.userId, excludeSensitiveFields),
+      data: updatedUser,
     });
   } catch (err) {
-    res.status(500).json({
+    console.error("Update User Error:", err);
+    return res.status(500).json({
       message: `Failed to update user: ${
         err.message || "Unknown server error"
       }`,
