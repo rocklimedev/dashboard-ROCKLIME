@@ -1,20 +1,54 @@
 const mongoose = require("mongoose");
 
-const quotationVersionSchema = new mongoose.Schema({
-  quotationId: { type: String, required: true, index: true }, // Reference to the original quotationId
-  version: { type: Number, required: true }, // Incremental version number (e.g., 1, 2, 3...)
-  quotationData: { type: Object, required: true }, // Snapshot of Sequelize Quotation model
-  quotationItems: [
-    {
-      productId: String,
-      quantity: Number,
-      discount: Number,
-      tax: Number,
-      total: Number,
+const quotationVersionSchema = new mongoose.Schema(
+  {
+    quotationId: {
+      type: String,
+      required: true,
+      index: true,
     },
-  ], // Snapshot of MongoDB QuotationItem items
-  updatedBy: { type: String, required: true }, // User who made the change
-  updatedAt: { type: Date, default: Date.now }, // Timestamp of the version
-});
+    version: {
+      type: Number,
+      required: true,
+    },
+    quotationData: {
+      type: Object,
+      required: true,
+    },
+    quotationItems: [
+      {
+        productId: String,
+        name: String,
+        imageUrl: String,
+        quantity: Number,
+        price: Number,
+        discount: Number,
+        discountType: { type: String, default: "fixed" },
+        tax: Number,
+        total: Number,
+      },
+    ],
+    updatedBy: {
+      type: String,
+      required: true,
+    },
+    updatedAt: {
+      type: Date,
+      default: Date.now,
+      index: true, // helpful for sorting
+    },
+  },
+  {
+    timestamps: false, // we control updatedAt manually
+  }
+);
 
-module.exports = mongoose.model("QuotationVersion", quotationVersionSchema);
+// CRITICAL: This is what prevents duplicates and makes versioning reliable
+quotationVersionSchema.index({ quotationId: 1, version: 1 }, { unique: true });
+
+const QuotationVersion = mongoose.model(
+  "QuotationVersion",
+  quotationVersionSchema
+);
+
+module.exports = QuotationVersion;

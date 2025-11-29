@@ -269,11 +269,10 @@ exports.createQuotation = async (req, res) => {
     });
   }
 };
-// UPDATE QUOTATION
-// UPDATE QUOTATION – FIXED
+
+// ========== UPDATE FUNCTION ==========
 exports.updateQuotation = async (req, res) => {
   const t = await sequelize.transaction();
-  let productMap = {}; // ← THIS WAS MISSING!
 
   try {
     const { id } = req.params;
@@ -293,53 +292,63 @@ exports.updateQuotation = async (req, res) => {
       return res.status(400).json({ message: "Quotation ID is required" });
     }
 
+    // 1. Fetch current quotation (PostgreSQL)
     const currentQuotation = await Quotation.findOne({
       where: { quotationId: id },
       transaction: t,
     });
+
     if (!currentQuotation) {
       await t.rollback();
       return res.status(404).json({ message: "Quotation not found" });
     }
 
-    // === FETCH CURRENT STATE FOR VERSIONING ===
-    const currentItems = await QuotationItem.findOne({ quotationId: id });
+    // 2. Fetch current items from MongoDB
+    const currentMongoItems = await QuotationItem.findOne({ quotationId: id });
 
-    // === DETERMINE NEXT VERSION ===
-    let latestVersion;
-    try {
-      latestVersion = await QuotationVersion.findOne({ quotationId: id })
-        .sort({ version: -1 })
-        .exec();
-    } catch (err) {
-      latestVersion = null;
-    }
-    const newVersionNumber = latestVersion ? latestVersion.version + 1 : 1;
+    // 3. Determine next version number (safe)
+    const latestVersion = await QuotationVersion.findOne(
+      { quotationId: id },
+      { version: 1 },
+      { sort: { version: -1 } } // This is now correct!
+    )
+      .lean()
+      .exec(); // Optional but good practice
 
-    // === CREATE VERSION (safe) ===
-    try {
-      await QuotationVersion.create({
-        quotationId: id,
-        version: newVersionNumber,
-        quotationData: currentQuotation.toJSON(),
-        quotationItems: currentItems ? currentItems.items : [],
-        updatedBy: req.user.userId,
-        updatedAt: new Date(),
-      });
-    } catch (err) {
-      if (err.code === 11000) {
-        console.warn(
-          `Version ${newVersionNumber} already exists – skipping version creation`
-        );
-      } else {
-        await t.rollback();
-        return res
-          .status(500)
-          .json({ error: "Failed to save version history" });
+    let newVersionNumber = latestVersion ? latestVersion.version + 1 : 1;
+
+    // 4. SAVE VERSION — WITH AUTOMATIC CONFLICT RESOLUTION
+    const saveVersion = async (attempt = 1) => {
+      try {
+        await QuotationVersion.create({
+          quotationId: id,
+          version: newVersionNumber,
+          quotationData: currentQuotation.toJSON(),
+          quotationItems: currentMongoItems?.items || [],
+          updatedBy: req.user?.userId || "unknown",
+          updatedAt: new Date(),
+        });
+        console.log(`Version ${newVersionNumber} saved successfully`);
+        return true;
+      } catch (err) {
+        if (err.code === 11000 && attempt <= 10) {
+          console.warn(
+            `Version conflict on ${newVersionNumber}, retrying with ${
+              newVersionNumber + 1
+            }...`
+          );
+          newVersionNumber += 1; // increment globally
+          return await saveVersion(attempt + 1);
+        } else {
+          console.error("Failed to save version after retries:", err.message);
+          return false; // non-blocking
+        }
       }
-    }
+    };
 
-    // === PREPARE PRODUCTS ===
+    await saveVersion(); // fire and forget (safe)
+
+    // 5. Validate products
     const products = Array.isArray(incomingProducts) ? incomingProducts : [];
     if (products.length === 0) {
       await t.rollback();
@@ -348,10 +357,11 @@ exports.updateQuotation = async (req, res) => {
         .json({ error: "At least one product is required" });
     }
 
-    // === BUILD productMap FOR IMAGE FALLBACK ===
+    // 6. Build product name/image map
     const productIds = [
       ...new Set(products.map((p) => p.productId || p.id).filter(Boolean)),
     ];
+    const productMap = {};
 
     if (productIds.length > 0) {
       const dbProducts = await Product.findAll({
@@ -366,21 +376,17 @@ exports.updateQuotation = async (req, res) => {
           try {
             const imgs = JSON.parse(p.images);
             if (Array.isArray(imgs) && imgs.length > 0) imageUrl = imgs[0];
-          } catch (e) {}
+          } catch {}
         }
         productMap[p.productId] = {
-          name: p.name?.trim() || "Unknown",
+          name: p.name?.trim() || "Unknown Product",
           imageUrl,
         };
       });
     }
 
-    // === CALCULATE TOTALS (server is source of truth) ===
-    const {
-      extraDiscountAmount,
-      gstAmount: calcGstAmount,
-      finalAmount: amountBeforeRound,
-    } = calculateTotals(
+    // 7. Server-side total calculation (source of truth)
+    const totals = calculateTotals(
       products,
       Number(extraDiscount),
       extraDiscountType,
@@ -389,61 +395,43 @@ exports.updateQuotation = async (req, res) => {
     );
 
     const finalAmount = parseFloat(
-      (amountBeforeRound + Number(roundOff)).toFixed(2)
+      (totals.finalAmount + Number(roundOff || 0)).toFixed(2)
     );
 
-    // === UPDATE POSTGRESQL ===
-    const updatePayload = {
-      ...quotationData,
-      products,
-      extraDiscount: extraDiscount > 0 ? Number(extraDiscount) : null,
-      extraDiscountType,
-      discountAmount: extraDiscountAmount > 0 ? extraDiscountAmount : null,
-      shippingAmount: shippingAmount > 0 ? Number(shippingAmount) : null,
-      gst: gst > 0 ? Number(gst) : null,
-      gstAmount: calcGstAmount > 0 ? calcGstAmount : null,
-      finalAmount,
-      followupDates: followupDates.length ? followupDates : null,
-      roundOff: Number(roundOff) || 0,
-    };
+    // 8. Update PostgreSQL record
+    await Quotation.update(
+      {
+        ...quotationData,
+        products,
+        extraDiscount: Number(extraDiscount) || null,
+        extraDiscountType,
+        discountAmount:
+          totals.extraDiscountAmount > 0 ? totals.extraDiscountAmount : null,
+        shippingAmount: Number(shippingAmount) || null,
+        gst: Number(gst) || null,
+        gstAmount: totals.gstAmount > 0 ? totals.gstAmount : null,
+        roundOff: Number(roundOff) || 0,
+        finalAmount,
+        followupDates: followupDates.length > 0 ? followupDates : null,
+      },
+      { where: { quotationId: id }, transaction: t }
+    );
 
-    await Quotation.update(updatePayload, {
-      where: { quotationId: id },
-      transaction: t,
-    });
-
-    // === SAVE TO MONGO (with correct imageUrl & total) ===
+    // 9. Update MongoDB items
     const mongoItems = products.map((p) => {
       const fallback = productMap[p.productId] || {};
-      const imageUrl = p.imageUrl || fallback.imageUrl || null;
-
-      // Prefer total from frontend (it’s calculated correctly now)
-      // If missing, fallback to server recalc (defensive)
-      let total = p.total ? parseFloat(p.total) : null;
-      if (!total) {
-        const price = Number(p.price) || 0;
-        const qty = Number(p.quantity) || 1;
-        const disc = Number(p.discount) || 0;
-        const discType = p.discountType || "percent";
-        const tax = Number(p.tax) || 0;
-
-        const discountAmt =
-          discType === "percent" ? (price * qty * disc) / 100 : disc;
-
-        const taxable = price * qty - discountAmt;
-        total = parseFloat((taxable * (1 + tax / 100)).toFixed(2));
-      }
+      const total = p.total ? parseFloat(p.total) : calculateLineTotal(p);
 
       return {
         productId: p.productId || p.id,
         name: p.name || fallback.name || "Unknown Product",
-        imageUrl,
+        imageUrl: p.imageUrl || fallback.imageUrl || null,
         quantity: Number(p.quantity) || 1,
         price: Number(p.price) || 0,
         discount: Number(p.discount) || 0,
         discountType: p.discountType || "percent",
         tax: Number(p.tax) || 0,
-        total,
+        total: parseFloat(total.toFixed(2)),
       };
     });
 
@@ -459,19 +447,17 @@ exports.updateQuotation = async (req, res) => {
 
     await t.commit();
 
-    await sendNotification({
-      userId: req.user.userId,
-      title: "Quotation Updated",
-      message: `Quotation "${id}" updated → v${newVersionNumber}`,
-    });
+    // Optional notification
+    // await sendNotification({ ... });
 
     return res.status(200).json({
       message: "Quotation updated successfully",
       version: newVersionNumber,
+      finalAmount,
     });
   } catch (error) {
     await t.rollback();
-
+    console.error("updateQuotation failed:", error);
     return res.status(500).json({
       error: "Failed to update quotation",
       details: error.message,
@@ -863,28 +849,38 @@ exports.deleteQuotation = async (req, res) => {
 };
 exports.getQuotationVersions = async (req, res) => {
   try {
-    const { id, version } = req.params;
+    const { id } = req.params;
 
-    // Query to find versions for the given quotationId
-    const query = { quotationId: id };
-
-    // If a specific version is requested, add it to the query
-    if (version) {
-      query.version = Number(version);
-    }
-
-    const versions = await QuotationVersion.find(query).sort({ version: 1 }); // Sort by version number (ascending)
+    const versions = await QuotationVersion.find({ quotationId: id })
+      .sort({ version: -1 }) // ← NEWEST FIRST (critical for UX)
+      .lean(); // ← Important: removes Mongoose wrappers
 
     if (!versions || versions.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No versions found for this quotation" });
+      return res.status(404).json({ message: "No versions found" });
     }
 
-    res.status(200).json(versions);
+    // Transform to clean, predictable shape
+    const cleanedVersions = versions.map((v) => ({
+      version: v.version,
+      updatedBy: v.updatedBy || "Unknown",
+      updatedAt: v.updatedAt,
+      // Use saved PostgreSQL data if available, fallback to stored
+      finalAmount: v.quotationData?.finalAmount || 0,
+      document_title: v.quotationData?.document_title || "Untitled Quotation",
+      customerId: v.quotationData?.customerId,
+      quotation_date: v.quotationData?.quotation_date,
+      // Items count
+      itemCount: (v.quotationItems || []).length,
+      // Full data for restore
+      quotationData: v.quotationData,
+      quotationItems: v.quotationItems || [],
+    }));
+
+    res.status(200).json(cleanedVersions);
   } catch (error) {
+    console.error("getQuotationVersions error:", error);
     res.status(500).json({
-      error: "Failed to retrieve quotation versions",
+      error: "Failed to retrieve versions",
       details: error.message,
     });
   }

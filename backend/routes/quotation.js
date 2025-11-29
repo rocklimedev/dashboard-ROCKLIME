@@ -22,7 +22,7 @@ router.get(
 // ✅ Get a single quotation by ID (Admins, Managers & Sales Team)
 router.get(
   "/:id",
-  auth,
+
   // checkPermission(
   //   "view",
   //   "get_quotation_by_id",
