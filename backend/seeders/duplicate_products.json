@@ -1,13 +1,12 @@
 [
   {
     "name": "Essence SLM Trim Shw",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/24168KF1.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -17,17 +16,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "22700",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "24168KF1"
-    }
+    },
+    "product_code": "EGRGR0000619"
   },
   {
     "name": "GRT SmartControl THM trimset round 2SC",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/29507KF0.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -37,17 +36,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "138200",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "29507KF0"
-    }
+    },
+    "product_code": "EGRGR0000822"
   },
   {
     "name": "GRT SmartControl THM trimset round 3SC",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/29508KF0.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -57,17 +56,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "151150",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "29508KF0"
-    }
+    },
+    "product_code": "EGRGR0000421"
   },
   {
     "name": "GRT SmartControl THM Trim Square",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/102166KF00.jpeg",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -77,17 +76,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "140900",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "102166KF00"
-    }
+    },
+    "product_code": "EGRGR0000813"
   },
   {
     "name": "GRT SmartControl THM Trim Square",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/102167KF00.jpeg",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -97,17 +96,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "151600",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "102167KF00"
-    }
+    },
+    "product_code": "EGRGR0000489"
   },
   {
     "name": "BauCosmopolitan Concealed Valve Trimset",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/19917000.jpeg",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -117,17 +116,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "2700",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "19917000"
-    }
+    },
+    "product_code": "EGRGR0000370"
   },
   {
     "name": "BauCosmopolitan Concealed Valve Trimset",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/19917GN0.jpeg",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -137,17 +136,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "3450",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "19917GN0"
-    }
+    },
+    "product_code": "EGRGR0000487"
   },
   {
     "name": "BauCosmopolitan Concealed Valve Trimset",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/19917DL0.jpeg",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -157,17 +156,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "3450",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "19917DL0"
-    }
+    },
+    "product_code": "EGRGR0000659"
   },
   {
     "name": "BauCosmopolitan Concealed Valve Trimset",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/19917AL0.jpeg",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -177,17 +176,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "3450",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "19917AL0"
-    }
+    },
+    "product_code": "EGRGR0000920"
   },
   {
     "name": "BauCosmopolitan Concealed Valve Trimset",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/19917GL0.jpeg",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -197,17 +196,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "3450",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "19917GL0"
-    }
+    },
+    "product_code": "EGRGR0000854"
   },
   {
     "name": "BauCosmopolitan Concealed Valve Trimset",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/19917DA0.jpeg",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -217,17 +216,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "3450",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "19917DA0"
-    }
+    },
+    "product_code": "EGRGR0000485"
   },
   {
     "name": "BauCosmopolitan Concealed Valve Trimset",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/19917DC0.jpeg",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -237,17 +236,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "3450",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "19917DC0"
-    }
+    },
+    "product_code": "EGRGR0000230"
   },
   {
     "name": "BauCosmopolitan Concealed Valve Trimset",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/19917A00.jpeg",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -257,17 +256,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "3450",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "19917A00"
-    }
+    },
+    "product_code": "EGRGR0000664"
   },
   {
     "name": "BauCosmopolitan Concealed Valve Trimset",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/19917GN0.jpeg",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -277,17 +276,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "3450",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "19917GN0"
-    }
+    },
+    "product_code": "EGRGR0000344"
   },
   {
     "name": "Loven wall hung",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/1013962080.jpeg",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -297,17 +296,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "22250",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "1013962080"
-    }
+    },
+    "product_code": "EGRGR0000757"
   },
   {
     "name": "Atrio Two-Hole, Single Lever Wall-Mount Basin Mixer Joystick, L Size",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/29406GN0.jpeg",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -317,37 +316,37 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "62650",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "29406GN0"
-    }
+    },
+    "product_code": "EGRGR0000412"
   },
   {
     "name": "Silverflex Shower Hose, 1750 mm",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/28388001.jpeg",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": "SHOWER HOSE",
+    "categoryId": "550316f6-d0c8-11f0-ae77-52540021303b",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "4000",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "28388001"
-    }
+    },
+    "product_code": "EGRGR0000443"
   },
   {
     "name": "Essence Single Lever Basin mixer, Without Pop-up, S Size",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/24172KF1.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -357,17 +356,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "27150",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "24172KF1"
-    }
+    },
+    "product_code": "EGRGR0000986"
   },
   {
     "name": "Essence Single Lever Basin mixer, Without Pop-up, M Size",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/24176KF1.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -377,17 +376,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "33650",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "24176KF1"
-    }
+    },
+    "product_code": "EGRGR0000943"
   },
   {
     "name": "Essence Single Lever Basin mixer, Without Pop-up, L Size",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/24177KF1.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -397,17 +396,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "40650",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "24177KF1"
-    }
+    },
+    "product_code": "EGRGR0000667"
   },
   {
     "name": "Essence Single Lever Basin mixer, Without Pop-up, XL Size",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/24170KF1.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -417,17 +416,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "45300",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "24170KF1"
-    }
+    },
+    "product_code": "EGRGR0000353"
   },
   {
     "name": "Essence Two holer Basin mixer, Wall Mounted, M Size",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/29192KF1.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -437,17 +436,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "53100",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "29192KF1"
-    }
+    },
+    "product_code": "EGRGR0000127"
   },
   {
     "name": "Essence Two holer Basin mixer, Wall Mounted, L Size",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/29193KF1.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -457,17 +456,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "56,400",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "29193KF1"
-    }
+    },
+    "product_code": "EGRGR0000534"
   },
   {
     "name": "Essence Single Lever Shower mixer",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/24168KF1.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -477,17 +476,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "22700",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "24168KF1"
-    }
+    },
+    "product_code": "EGRGR0000355"
   },
   {
     "name": "Essence Single Lever Bath /Shower mixer",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/24167KF1.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -497,17 +496,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "24850",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "24167KF1"
-    }
+    },
+    "product_code": "EGRGR0000617"
   },
   {
     "name": "Essence Single Lever Shower mixer Exposed",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/25252KF1.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -517,18 +516,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "45900",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "25252KF1"
-    }
+    },
+    "product_code": "EGRGR0000661"
   },
-
   {
     "name": "Essence Single Lever Bath /Shower mixer exposed",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/25250KF1.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -538,17 +536,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "58850",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "25250KF1"
-    }
+    },
+    "product_code": "EGRGR0000598"
   },
   {
     "name": "Essence Four Hole Bath Filler",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/25251KF1.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -558,17 +556,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "126200",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "25251KF1"
-    }
+    },
+    "product_code": "EGRGR0000784"
   },
   {
     "name": "Essence Freestanding Bath Filler",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/25248KF1.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -578,218 +576,217 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "153450",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "25248KF1"
-    }
+    },
+    "product_code": "EGRGR0000618"
   },
   {
     "name": "Grohtherm SmartControl Thermostat Round, 2 Control",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/29507KF0.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": "Thermostats Phantom Black",
+    "categoryId": "550914bd-d0c8-11f0-ae77-52540021303b",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "138200",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "29507KF0"
-    }
+    },
+    "product_code": "EGRGR0000446"
   },
   {
     "name": "Grohtherm SmartControl Thermostat Round, 3 Control",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/29508KF0.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": "Thermostats Phantom Black",
+    "categoryId": "550914bd-d0c8-11f0-ae77-52540021303b",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "151150",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "29508KF0"
-    }
+    },
+    "product_code": "EGRGR0000445"
   },
   {
     "name": "Rainshower SmartActive 310 Headshower Set, Round, 400mm",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/22123KF0.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": "Head Showers Phantom Black",
+    "categoryId": "550c01d9-d0c8-11f0-ae77-52540021303b",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "95550",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "22123KF0"
-    }
+    },
+    "product_code": "EGRGR0000314"
   },
   {
     "name": "Rainshower SmartActive 310 Headshower Set, Round, 142mm",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/22124KF0.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": "Head Showers Phantom Black",
+    "categoryId": "550c01d9-d0c8-11f0-ae77-52540021303b",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "95550",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "22124KF0"
-    }
+    },
+    "product_code": "EGRGR0000454"
   },
   {
     "name": "Rainshower 310 Mono Headshower Set, 422mm",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/22121KF0.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": "Head Showers Phantom Black",
+    "categoryId": "550c01d9-d0c8-11f0-ae77-52540021303b",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "88550",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "22121KF0"
-    }
+    },
+    "product_code": "EGRGR0000656"
   },
   {
     "name": "Rainshower 310 Mono Headshower Set 9.5L, 142mm",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/22122KF0.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": "Head Showers Phantom Black",
+    "categoryId": "550c01d9-d0c8-11f0-ae77-52540021303b",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "88550",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "22122KF0"
-    }
+    },
+    "product_code": "EGRGR0000362"
   },
   {
     "name": "Rainshower SmartActive 130 Hand Shower 9.5L",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/22127KF0.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": "Hand Showers Phantom Black",
+    "categoryId": "550c01d9-d0c8-11f0-ae77-52540021303b",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "28050",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "22127KF0"
-    }
+    },
+    "product_code": "EGRGR0000751"
   },
   {
     "name": "Euphoria Stick Cosmo",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/22126KF0.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": "Hand Showers Phantom Black",
+    "categoryId": "550c01d9-d0c8-11f0-ae77-52540021303b",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "12050",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "22126KF0"
-    }
+    },
+    "product_code": "EGRGR0000776"
   },
   {
     "name": "Rainshower 310 thermostatic shower system",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/22119KF0.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": "Shower Systems Phantom Black",
+    "categoryId": "550c3009-d0c8-11f0-ae77-52540021303b",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "198150",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "22119KF0"
-    }
+    },
+    "product_code": "EGRGR0000565"
   },
   {
     "name": "Euphoria SmartControl 310 Round Thermostatic Shower System, 3 Control",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/22120KF0.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": "Shower Systems Phantom Black",
+    "categoryId": "550c3009-d0c8-11f0-ae77-52540021303b",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "205200",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "22120KF0"
-    }
+    },
+    "product_code": "EGRGR0000183"
   },
-
   {
     "name": "Selection Robe Hook",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/41216KF0.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -799,17 +796,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "`4250",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "41216KF0"
-    }
+    },
+    "product_code": "EGRGR0000173"
   },
   {
     "name": "Selection holder f.glass/dish/dispenser",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/41217KF0.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -819,17 +816,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "4800",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "41217KF0"
-    }
+    },
+    "product_code": "EGRGR0000832"
   },
   {
     "name": "Selection Soap Dispenser",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/41218KF0.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -839,17 +836,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "7550",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "41218KF0"
-    }
+    },
+    "product_code": "EGRGR0000983"
   },
   {
     "name": "Selection Toilet Paper Holder without cover",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/41220KF0.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -859,17 +856,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "10200",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "41220KF0"
-    }
+    },
+    "product_code": "EGRGR0000311"
   },
   {
     "name": "Selection Double Towel Bar",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/41219KF0.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -879,17 +876,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "10950",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "41219KF0"
-    }
+    },
+    "product_code": "EGRGR0000497"
   },
   {
     "name": "Rainshower SmartActive Shower Rail 900mm",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/22125KF0.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -899,17 +896,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "27500",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "22125KF0"
-    }
+    },
+    "product_code": "EGRGR0000388"
   },
   {
     "name": "Rainshower Shower outlet elbow",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/22118KF0.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -919,17 +916,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "9900",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "22118KF0"
-    }
+    },
+    "product_code": "EGRGR0000176"
   },
   {
     "name": "Rainshower Wall hand shower holder",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/22117KF0.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -939,17 +936,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "6650",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "22117KF0"
-    }
+    },
+    "product_code": "EGRGR0000499"
   },
   {
     "name": "Shower Hose 1250 mm",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/28362KF1.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -959,17 +956,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "4750",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "28362KF1"
-    }
+    },
+    "product_code": "EGRGR0000196"
   },
   {
     "name": "Shower Hose 1750mm",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/28388KF1.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -979,17 +976,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "4950",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "28388KF1"
-    }
+    },
+    "product_code": "EGRGR0000666"
   },
   {
     "name": "Skate Air Flush Plate",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/38505KF0.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -999,17 +996,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "11450",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "38505KF0"
-    }
+    },
+    "product_code": "EGRGR0000290"
   },
   {
     "name": "Skate Cosmo Flush Plate",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/38732KF0.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -1019,17 +1016,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "13850",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "38732KF0"
-    }
+    },
+    "product_code": "EGRGR0000509"
   },
   {
     "name": "Arena Cosmopolitan Flush Plate",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/38844KF0.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -1039,17 +1036,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "10550",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "38844KF0"
-    }
+    },
+    "product_code": "EGRGR0000274"
   },
   {
     "name": "Nova Cosmopolitan Flush Plate",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/38765KF0.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -1059,17 +1056,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "6450",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "38765KF0"
-    }
+    },
+    "product_code": "EGRGR0000278"
   },
   {
     "name": "Nova Cosmopolitan Flush Plate, Small Size,",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/37601KF0.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -1079,17 +1076,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "13500",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "37601KF0"
-    }
+    },
+    "product_code": "EGRGR0000736"
   },
   {
     "name": "Skate Cosmopolitan Flush Plate, Small Size",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/37535KF0.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -1099,17 +1096,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "14000",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "37535KF0"
-    }
+    },
+    "product_code": "EGRGR0000697"
   },
   {
     "name": "Arena Cosmopolitan Flush Plate, Small Size",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/37624KF0.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -1119,17 +1116,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "22000",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "37624KF0"
-    }
+    },
+    "product_code": "EGRGR0000781"
   },
   {
     "name": "Angle Valve 1/2” x 3/8”",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/22074KF0.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -1139,17 +1136,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "11650",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "22074KF0"
-    }
+    },
+    "product_code": "EGRGR0000816"
   },
   {
     "name": "Waste Trap Basin 1 1/4”",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/29509KF0.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -1159,17 +1156,17 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "32350",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "29509KF0"
-    }
+    },
+    "product_code": "EGRGR0000292"
   },
   {
     "name": "Waste set",
-
     "quantity": 20,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
     "description": "Essence SLM Trim Shw",
-    "images": "",
+    "images": "https://static.cmtradingco.com/product_images/29510KF0.png",
     "isFeatured": false,
     "status": "active",
     "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
@@ -1179,6 +1176,7 @@
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": "5900",
       "d11da9f9-3f2e-4536-8236-9671200cca4a": "29510KF0"
-    }
+    },
+    "product_code": "EGRGR0000525"
   }
 ]

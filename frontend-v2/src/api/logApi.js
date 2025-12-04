@@ -1,17 +1,18 @@
+// src/api/logApi.js
 import { baseApi } from "./baseApi";
 
 export const logApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    // GET /api/logs - Fetch logs with filtering, sorting, and pagination
+    // GET /api/logs - Full text search + filters
     getLogs: builder.query({
       query: ({
         page = 1,
-        limit = 10,
-        method = "",
-        route = "",
-        user = "",
-        startDate = null,
-        endDate = null,
+        limit = 20,
+        search = "",
+        method,
+        status,
+        startDate,
+        endDate,
         sortBy = "createdAt",
         sortOrder = "desc",
       }) => ({
@@ -19,70 +20,63 @@ export const logApi = baseApi.injectEndpoints({
         params: {
           page,
           limit,
+          search: search || undefined,
           method: method || undefined,
-          route: route || undefined,
-          user: user || undefined,
+          status: status || undefined,
           startDate: startDate ? startDate.toISOString() : undefined,
           endDate: endDate ? endDate.toISOString() : undefined,
           sortBy,
           sortOrder,
         },
       }),
+      providesTags: ["Log"],
       transformResponse: (response) => ({
-        logs: response.logs,
-        pagination: response.pagination,
+        logs: response.logs || [],
+        pagination: response.pagination || { total: 0 },
       }),
     }),
 
-    // GET /api/logs/:id - Fetch a single log by ID
+    // GET /api/logs/:id
     getLogById: builder.query({
-      query: (id) => ({
-        url: `/logs/${id}`,
-      }),
-      transformResponse: (response) => response,
+      query: (id) => `/logs/${id}`,
+      providesTags: (result, error, id) => [{ type: "Log", id }],
     }),
 
-    // DELETE /api/logs/:id - Delete a single log by ID
+    // DELETE /api/logs/:id
     deleteLog: builder.mutation({
       query: (id) => ({
         url: `/logs/${id}`,
         method: "DELETE",
       }),
-      transformResponse: (response) => response,
+      invalidatesTags: ["Log"],
     }),
 
-    // DELETE /api/logs - Bulk delete logs based on filters
+    // DELETE /api/logs (bulk)
     deleteLogs: builder.mutation({
-      query: ({
-        method = "",
-        route = "",
-        user = "",
-        startDate = null,
-        endDate = null,
-      }) => ({
+      query: ({ search = "", method, status, startDate, endDate }) => ({
         url: "/logs",
         method: "DELETE",
         params: {
+          search: search || undefined,
           method: method || undefined,
-          route: route || undefined,
-          user: user || undefined,
+          status: status || undefined,
           startDate: startDate ? startDate.toISOString() : undefined,
           endDate: endDate ? endDate.toISOString() : undefined,
         },
       }),
-      transformResponse: (response) => response,
+      invalidatesTags: ["Log"],
     }),
 
-    // GET /api/logs/stats - Get summary statistics of logs
+    // GET /api/logs/stats
     getLogStats: builder.query({
-      query: ({ startDate = null, endDate = null }) => ({
+      query: ({ startDate, endDate }) => ({
         url: "/logs/stats",
         params: {
           startDate: startDate ? startDate.toISOString() : undefined,
           endDate: endDate ? endDate.toISOString() : undefined,
         },
       }),
-      transformResponse: (response) => response,
+      providesTags: ["LogStats"],
     }),
   }),
 });

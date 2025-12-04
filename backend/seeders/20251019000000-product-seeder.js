@@ -3,7 +3,7 @@
 const { v4: uuidv4 } = require("uuid");
 const BrandParentCategory = require("../models/brandParentCategory");
 const Product = require("../models/product");
-const jsonData = require("./updated.json"); // your JSON backup
+const jsonData = require("./duplicate_products.json"); // your JSON backup
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
@@ -14,14 +14,16 @@ module.exports = {
 
       for (const item of jsonData) {
         // --- VALIDATION ---
+        // Auto-generate productId if missing
         if (!item.productId) {
+          item.productId = uuidv4();
           console.warn(
-            `⚠️ Skipping product with missing productId: ${
+            `⚠️ Missing productId detected. Generated new UUID for: ${
               item.name || "Unnamed Product"
-            }`
+            } -> ${item.productId}`
           );
-          continue;
         }
+
         if (!item.product_code) {
           console.warn(
             `⚠️ Skipping product with missing product_code: ${

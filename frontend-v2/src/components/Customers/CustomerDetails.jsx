@@ -1,19 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import {
-  Container,
-  Row,
-  Col,
-  Card,
-  Table,
-  Badge,
-  Spinner,
-  Alert,
-  Button,
-  Modal,
-  OverlayTrigger,
-  Tooltip,
-} from "react-bootstrap";
 import {
   useGetCustomerByIdQuery,
   useGetInvoicesByCustomerIdQuery,
@@ -28,49 +14,77 @@ import {
 import { useGetAllQuotationsQuery } from "../../api/quotationApi";
 import { useGetAllOrdersQuery } from "../../api/orderApi";
 import {
-  FaEye,
-  FaTrash,
-  FaUser,
-  FaEnvelope,
-  FaPhone,
-  FaBuilding,
-  FaMapMarkerAlt,
-} from "react-icons/fa";
-import Avatar from "react-avatar";
-import "./customerdetails.css";
-import { LeftOutlined, CalendarOutlined } from "@ant-design/icons";
-import { Form as AntdForm, Input, Button as AntdButton } from "antd";
-import { message } from "antd";
+  EyeOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  LeftOutlined,
+  CalendarOutlined,
+  PhoneOutlined,
+  MailOutlined,
+  EnvironmentOutlined,
+  ShopOutlined,
+  DollarCircleOutlined,
+} from "@ant-design/icons";
+import {
+  Card,
+  Table,
+  Tag,
+  Space,
+  Typography,
+  Avatar,
+  Button,
+  Modal,
+  Form,
+  Input,
+  message,
+  Spin,
+  Alert,
+  Tabs,
+  Tooltip,
+  Divider,
+  Row,
+  Col,
+  Statistic,
+  Empty,
+} from "antd";
 import { Helmet } from "react-helmet";
+import moment from "moment";
+import styled from "styled-components";
+
+const { Title, Text } = Typography;
+
+const StyledPage = styled.div`
+  padding: 24px;
+  background: #f5f7fa;
+  min-height: 100vh;
+`;
+
 const CustomerDetails = () => {
   const { id } = useParams();
+  const [form] = Form.useForm();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingAddress, setEditingAddress] = useState(null);
+  const [activeTab, setActiveTab] = useState("quotations");
 
-  // Fetch data
+  // Queries
   const {
     data: customerData,
-    error: customerError,
     isLoading: isCustomerLoading,
-    refetch: refetchCustomer,
+    error: customerError,
   } = useGetCustomerByIdQuery(id);
+
   const customer = customerData?.data || {};
 
-  const {
-    data: invoicesData,
-    error: invoiceError,
-    isLoading: isInvoiceLoading,
-  } = useGetInvoicesByCustomerIdQuery(customer?.customerId, {
-    skip: !customer?.customerId,
-  });
+  const { data: invoicesData, isLoading: isInvoiceLoading } =
+    useGetInvoicesByCustomerIdQuery(customer?.customerId, {
+      skip: !customer?.customerId,
+    });
 
-  const {
-    data: usersData,
-    error: usersError,
-    isLoading: isUsersLoading,
-  } = useGetAllUsersQuery();
+  const { data: usersData } = useGetAllUsersQuery();
+  const users = usersData?.users || [];
 
   const {
     data: addressesData,
-    error: addressesError,
     isLoading: isAddressesLoading,
     refetch: refetchAddresses,
   } = useGetAllAddressesQuery(
@@ -78,200 +92,68 @@ const CustomerDetails = () => {
     { skip: !customer?.customerId }
   );
 
-  const {
-    data: quotationsData,
-    error: quotationsError,
-    isLoading: isQuotationsLoading,
-  } = useGetAllQuotationsQuery(
-    { customerId: customer?.customerId },
-    { skip: !customer?.customerId }
-  );
+  const { data: quotationsData, isLoading: isQuotationsLoading } =
+    useGetAllQuotationsQuery(
+      { customerId: customer?.customerId },
+      { skip: !customer?.customerId }
+    );
 
-  const {
-    data: ordersData,
-    error: ordersError,
-    isLoading: isOrdersLoading,
-  } = useGetAllOrdersQuery();
+  const { data: ordersData, isLoading: isOrdersLoading } =
+    useGetAllOrdersQuery();
 
-  const [createAddress, { isLoading: isCreatingAddress }] =
-    useCreateAddressMutation();
-  const [updateAddress, { isLoading: isUpdatingAddress }] =
-    useUpdateAddressMutation();
-  const [deleteAddress, { isLoading: isDeletingAddress }] =
-    useDeleteAddressMutation();
+  const [createAddress, { isLoading: isCreating }] = useCreateAddressMutation();
+  const [updateAddress, { isLoading: isUpdating }] = useUpdateAddressMutation();
+  const [deleteAddress] = useDeleteAddressMutation();
 
-  // State management
-  const [activeTab, setActiveTab] = useState("quotations");
-  const [isAddressModalVisible, setIsAddressModalVisible] = useState(false);
-  const [editingAddress, setEditingAddress] = useState(null);
-  const [addressForm] = AntdForm.useForm();
-
-  // Filter addresses by customerId
+  // Derived data
   const customerAddresses =
-    addressesData?.filter(
-      (address) => address.customerId === customer.customerId
-    ) || [];
-
-  // Derive first address for Basic Information
-  const address =
-    customerAddresses.length > 0
-      ? `${customerAddresses[0].street || ""}, ${
-          customerAddresses[0].city || ""
-        }, ${customerAddresses[0].state || ""}, ${
-          customerAddresses[0].country || ""
-        } ${customerAddresses[0].postalCode || ""}`.trim()
-      : "N/A";
-
-  // Calculate financial summary from quotations
-  const quotations = Array.isArray(quotationsData?.data)
-    ? quotationsData.data.filter((q) => q.customerId === customer.customerId)
-    : Array.isArray(quotationsData)
-    ? quotationsData.filter((q) => q.customerId === customer.customerId)
-    : [];
-  const totalAmount = (
-    Number(
-      quotations.reduce(
-        (sum, quotation) => sum + (Number(quotation.finalAmount) || 0),
-        0
-      )
-    ) || 0
-  ).toFixed(2);
-  const paidAmount = "0.00"; // Placeholder: No payment data in quotations table
-  const balance = totalAmount; // Since paidAmount is 0, balance equals totalAmount
-  // Loading state
-  if (
-    isCustomerLoading ||
-    isInvoiceLoading ||
-    isUsersLoading ||
-    isAddressesLoading ||
-    isQuotationsLoading ||
-    isOrdersLoading
-  ) {
-    return (
-      <div className="page-wrapper">
-        <div className="content">
-          <div className="text-center">
-            <Spinner animation="border" variant="primary" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Error state
-  if (
-    customerError ||
-    invoiceError ||
-    usersError ||
-    addressesError ||
-    quotationsError ||
-    ordersError
-  ) {
-    return (
-      <div className="page-wrapper">
-        <div className="content">
-          <Alert variant="danger">
-            Error loading data:{" "}
-            {customerError?.data?.message ||
-              invoiceError?.data?.message ||
-              usersError?.data?.message ||
-              addressesError?.data?.message ||
-              quotationsError?.data?.message ||
-              ordersError?.data?.message ||
-              "Unknown error"}
-            <Button
-              variant="link"
-              onClick={() => {
-                refetchCustomer();
-                refetchAddresses();
-              }}
-            >
-              Retry
-            </Button>
-          </Alert>
-        </div>
-      </div>
-    );
-  }
-
-  // No customer data
-  if (!customer || !customer.customerId) {
-    return (
-      <div className="page-wrapper">
-        <div className="content">
-          <Alert variant="warning">
-            No customer found.
-            <Link to="/customers/list" className="btn btn-link">
-              Back to Customers
-            </Link>
-          </Alert>
-        </div>
-      </div>
-    );
-  }
-
-  const invoices = invoicesData?.data || [];
-  const users = usersData?.data || [];
+    addressesData?.filter((a) => a.customerId === customer.customerId) || [];
+  const quotations = quotationsData?.data || [];
   const orders = (ordersData?.orders || []).filter(
-    (order) => order.createdFor === customer.customerId
+    (o) => o.createdFor === customer.customerId
   );
+  const invoices = invoicesData?.data || [];
 
-  // Helper functions
-  const formatAddress = (address) => {
-    if (!address) return "N/A";
-    const { street, city, state, postalCode, country } = address;
-    return (
-      [street, city, state, postalCode, country]
-        .filter(Boolean)
-        .join(", ")
-        .trim() || "N/A"
-    );
+  const totalAmount = quotations
+    .reduce((sum, q) => sum + (Number(q.finalAmount) || 0), 0)
+    .toFixed(2);
+  const paidAmount = "0.00"; // Placeholder
+  const balance = totalAmount;
+
+  const formatDate = (date) =>
+    date ? moment(date).format("DD MMM YYYY") : "N/A";
+  const formatAddress = (addr) => {
+    if (!addr) return "N/A";
+    const parts = [
+      addr.street,
+      addr.city,
+      addr.state,
+      addr.postalCode,
+      addr.country,
+    ];
+    return parts.filter(Boolean).join(", ") || "N/A";
   };
 
   const getUsername = (userId) => {
     const user = users.find((u) => u.userId === userId);
-    return user ? user.username || user.name || "Unknown User" : "Unknown User";
+    return user ? user.name || user.email || "Unknown" : "Unknown";
   };
 
-  const formatDate = (date) => {
-    return date
-      ? new Date(date).toLocaleDateString("en-US", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        })
-      : "N/A";
-  };
-
-  const getInvoiceStatusBadge = (status) => {
-    const statusColors = {
-      Paid: "success",
-      Overdue: "danger",
-      Cancelled: "secondary",
-      "Partially Paid": "warning",
-      Undue: "info",
-      Draft: "primary",
-    };
-    return (
-      <Badge bg={statusColors[status] || "secondary"}>{status || "N/A"}</Badge>
-    );
-  };
-
-  // Address Modal Handlers
+  // Address Modal
   const showAddressModal = (address = null) => {
     setEditingAddress(address);
     if (address) {
-      addressForm.setFieldsValue({
-        street: address.street || "",
-        city: address.city || "",
-        state: address.state || "",
-        postalCode: address.postalCode || "",
-        country: address.country || "",
+      form.setFieldsValue({
+        street: address.street,
+        city: address.city,
+        state: address.state,
+        postalCode: address.postalCode,
+        country: address.country || "India",
       });
     } else {
-      addressForm.resetFields();
+      form.resetFields();
     }
-    setIsAddressModalVisible(true);
+    setIsModalOpen(true);
   };
 
   const handleAddressSubmit = async (values) => {
@@ -281,555 +163,447 @@ const CustomerDetails = () => {
           addressId: editingAddress.addressId,
           updatedData: { ...values, customerId: customer.customerId },
         }).unwrap();
+        message.success("Address updated");
       } else {
         await createAddress({
           ...values,
           customerId: customer.customerId,
+          status: "ADDITIONAL",
         }).unwrap();
+        message.success("Address added");
       }
-      setIsAddressModalVisible(false);
-      addressForm.resetFields();
+      setIsModalOpen(false);
+      form.resetFields();
       refetchAddresses();
-    } catch (error) {
-      message.error(
-        `Failed to ${editingAddress ? "update" : "add"} address: ${
-          error.data?.message || "Unknown error"
-        }`
-      );
+    } catch (err) {
+      message.error(err?.data?.message || "Failed to save address");
     }
   };
 
-  const handleDeleteAddress = async (addressId) => {
-    try {
-      await deleteAddress(addressId).unwrap();
-      refetchAddresses();
-    } catch (error) {
-      message.error(
-        `Failed to delete address: ${error.data?.message || "Unknown error"}`
-      );
-    }
+  const handleDeleteAddress = (addressId) => {
+    Modal.confirm({
+      title: "Delete Address?",
+      content: "This action cannot be undone.",
+      onOk: async () => {
+        try {
+          await deleteAddress(addressId).unwrap();
+          message.success("Address deleted");
+          refetchAddresses();
+        } catch {
+          message.error("Failed to delete address");
+        }
+      },
+    });
   };
 
-  // Address table columns
-  const addressColumns = [
-    {
-      title: "Street",
-      dataIndex: "street",
-      key: "street",
-      render: (text) => text || "N/A",
-    },
-    {
-      title: "City",
-      dataIndex: "city",
-      key: "city",
-      render: (text) => text || "N/A",
-    },
-    {
-      title: "State",
-      dataIndex: "state",
-      key: "state",
-      render: (text) => text || "N/A",
-    },
-    {
-      title: "Postal Code",
-      dataIndex: "postalCode",
-      key: "postalCode",
-      render: (text) => text || "N/A",
-    },
-    {
-      title: "Country",
-      dataIndex: "country",
-      key: "country",
-      render: (text) => text || "N/A",
-    },
-    {
-      title: "Actions",
-      key: "actions",
-      render: (_, record) => (
-        <div>
-          <Button
-            variant="link"
-            onClick={() => showAddressModal(record)}
-            className="text-primary"
-          >
-            Edit
-          </Button>
-          <Button
-            variant="link"
-            className="text-danger"
-            onClick={() => handleDeleteAddress(record.addressId)}
-            disabled={isDeletingAddress}
-          >
-            Delete
-          </Button>
+  // Loading & Error States
+  if (
+    isCustomerLoading ||
+    isInvoiceLoading ||
+    isAddressesLoading ||
+    isQuotationsLoading ||
+    isOrdersLoading
+  ) {
+    return (
+      <StyledPage>
+        <div style={{ textAlign: "center", padding: "100px 0" }}>
+          <Spin size="large" />
         </div>
+      </StyledPage>
+    );
+  }
+
+  if (customerError) {
+    return (
+      <StyledPage>
+        <Alert
+          message="Error"
+          description={
+            customerError?.data?.message || "Failed to load customer"
+          }
+          type="error"
+          showIcon
+          action={
+            <Button
+              size="small"
+              danger
+              onClick={() => window.location.reload()}
+            >
+              Retry
+            </Button>
+          }
+        />
+      </StyledPage>
+    );
+  }
+
+  if (!customer?.customerId) {
+    return (
+      <StyledPage>
+        <Alert message="Customer not found" type="warning" showIcon />
+      </StyledPage>
+    );
+  }
+
+  const tabItems = [
+    {
+      key: "quotations",
+      label: "Quotations",
+      children:
+        quotations.length === 0 ? (
+          <Empty description="No quotations found" />
+        ) : (
+          <Table
+            dataSource={quotations}
+            rowKey="quotationId"
+            pagination={false}
+            columns={[
+              {
+                title: "Quotation No",
+                dataIndex: "reference_number",
+                render: (text, record) => (
+                  <Link to={`/quotation/${record.quotationId}`}>
+                    {text || "N/A"}
+                  </Link>
+                ),
+              },
+              { title: "Title", dataIndex: "document_title" },
+              { title: "Ship To", render: (_, r) => formatAddress(r.shipTo) },
+              {
+                title: "Date",
+                dataIndex: "quotation_date",
+                render: formatDate,
+              },
+              { title: "Due Date", dataIndex: "due_date", render: formatDate },
+              {
+                title: "Amount",
+                render: (_, r) => `₹${(r.finalAmount || 0).toFixed(2)}`,
+              },
+              {
+                title: "Created By",
+                render: (_, r) => getUsername(r.createdBy),
+              },
+              {
+                title: "Actions",
+                render: (_, record) => (
+                  <Space>
+                    <Button
+                      type="link"
+                      icon={<EyeOutlined />}
+                      href={`/quotation/${record.quotationId}`}
+                    />
+                  </Space>
+                ),
+              },
+            ]}
+          />
+        ),
+    },
+    {
+      key: "orders",
+      label: "Orders",
+      children:
+        orders.length === 0 ? (
+          <Empty description="No orders found" />
+        ) : (
+          <Table
+            dataSource={orders}
+            rowKey="id"
+            pagination={false}
+            columns={[
+              { title: "Order No", dataIndex: "orderNo" },
+              {
+                title: "Status",
+                dataIndex: "status",
+                render: (status) => {
+                  const color =
+                    status === "DELIVERED"
+                      ? "success"
+                      : status === "CANCELED"
+                      ? "error"
+                      : "processing";
+                  return <Tag color={color}>{status}</Tag>;
+                },
+              },
+              { title: "Due Date", dataIndex: "dueDate", render: formatDate },
+              {
+                title: "Priority",
+                dataIndex: "priority",
+                render: (p) => (
+                  <Tag
+                    color={
+                      p === "high" ? "red" : p === "low" ? "default" : "orange"
+                    }
+                  >
+                    {p?.toUpperCase()}
+                  </Tag>
+                ),
+              },
+              {
+                title: "Actions",
+                render: (_, record) => (
+                  <Button
+                    type="link"
+                    icon={<EyeOutlined />}
+                    href={`/order/${record.id}`}
+                  />
+                ),
+              },
+            ]}
+          />
+        ),
+    },
+    {
+      key: "addresses",
+      label: (
+        <Space>
+          Addresses
+          <Button
+            type="primary"
+            size="small"
+            onClick={() => showAddressModal()}
+          >
+            Add Address
+          </Button>
+        </Space>
       ),
+      children:
+        customerAddresses.length === 0 ? (
+          <Empty description="No addresses found" />
+        ) : (
+          <Table
+            dataSource={customerAddresses}
+            rowKey="addressId"
+            pagination={false}
+            columns={[
+              { title: "Street", dataIndex: "street", render: (t) => t || "—" },
+              { title: "City", dataIndex: "city", render: (t) => t || "—" },
+              { title: "State", dataIndex: "state", render: (t) => t || "—" },
+              {
+                title: "PIN",
+                dataIndex: "postalCode",
+                render: (t) => t || "—",
+              },
+              {
+                title: "Country",
+                dataIndex: "country",
+                render: (t) => t || "India",
+              },
+              {
+                title: "Actions",
+                render: (_, record) => (
+                  <Space>
+                    <Button
+                      type="link"
+                      size="small"
+                      onClick={() => showAddressModal(record)}
+                    >
+                      <EditOutlined />
+                    </Button>
+                    <Button
+                      type="link"
+                      danger
+                      size="small"
+                      onClick={() => handleDeleteAddress(record.addressId)}
+                    >
+                      <DeleteOutlined />
+                    </Button>
+                  </Space>
+                ),
+              },
+            ]}
+          />
+        ),
     },
   ];
 
-  // Tooltip for Financial Summary
-  const renderTooltip = (props) => (
-    <Tooltip id="financial-summary-tooltip" {...props}>
-      Financial summary is based on quotations only, not orders. Paid amount is
-      unavailable as it is not tracked in quotations.
-    </Tooltip>
-  );
-
   return (
     <div className="page-wrapper">
-      <Helmet>
-        <title>{customer?.name}</title>
-      </Helmet>
       <div className="content">
-        <div className="page-header">
-          <div>
-            <Link
-              to="/customers/list"
-              className="d-inline-flex align-items-center"
-            >
-              <LeftOutlined />
-              Back to List
-            </Link>
-          </div>
-        </div>
-        <div className="row">
-          <div className="col-xl-4 theiaStickySidebar">
-            <div className="card rounded-0 border-0">
-              <div className="card-header rounded-0 bg-primary d-flex align-items-center">
-                <span className="avatar avatar-xl flex-shrink-0 border border-white border-3 me-3">
-                  <Avatar
-                    name={customer.name || "Customer"}
-                    src={customer.avatar || "/assets/img/users/user-32.jpg"}
-                    size="60"
-                    round={true}
-                    color="#4A90E2"
-                    textSizeRatio={2.5}
-                    alt={`Avatar of ${customer.name || "Customer"}`}
-                  />
-                </span>
-                <div className="me-3">
-                  <h6 className="text-white mb-1">{customer.name || "N/A"}</h6>
-                  <span className="badge bg-purple-transparent text-purple">
-                    {customer.isVendor ? "Vendor/Customer" : "Customer"}
-                  </span>
-                </div>
-                <div>
-                  <Link
-                    to={`/customer/edit/${customer.customerId}`}
-                    state={{ customer }} // ← THIS IS THE MISSING LINE!
-                    className="btn btn-white"
-                  >
-                    Edit Customer
-                  </Link>
-                </div>
-              </div>
-              <div className="card-body">
-                <div className="d-flex align-items-center justify-content-between mb-2">
-                  <span className="d-inline-flex align-items-center">
-                    <FaBuilding />
-                    Company
-                  </span>
-                  <p className="text-dark">{customer.companyName || "N/A"}</p>
-                </div>
-                <div className="d-flex align-items-center justify-content-between">
-                  <span className="d-inline-flex align-items-center">
-                    <CalendarOutlined />
-                    Date
-                  </span>
-                  <p className="text-dark">{formatDate(customer.createdAt)}</p>
-                </div>
-                <div className="d-flex align-items-center justify-content-between">
-                  <span className="d-inline-flex align-items-center">
-                    <FaMapMarkerAlt />
-                    Primary Address
-                  </span>
-                  <p className="text-dark">{address}</p>
-                </div>
-              </div>
-            </div>
-            <div className="card rounded-0 border-0 mt-3">
-              <div className="card-header border-0 rounded-0 bg-light">
-                <OverlayTrigger placement="top" overlay={renderTooltip}>
-                  <h6>Financial Summary</h6>
-                </OverlayTrigger>
-              </div>
-              <div className="card-body">
-                <div className="d-flex align-items-center justify-content-between mb-2">
-                  <span>Total Amount</span>
-                  <p className="text-dark">Rs. {totalAmount}</p>
-                </div>
-                <div className="d-flex align-items-center justify-content-between mb-2">
-                  <span>Paid Amount</span>
-                  <p className="text-dark">Rs. {paidAmount}</p>
-                </div>
-                <div className="d-flex align-items-center justify-content-between">
-                  <span>Balance</span>
-                  <p className="text-dark">Rs. {balance}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="col-xl-8">
-            <div className="card rounded-0 border-0">
-              <div className="card-header border-0 rounded-0 bg-light">
-                <h6>Basic Information</h6>
-              </div>
-              <div className="card-body pb-0">
-                <div className="row">
-                  <div className="col-md-4">
-                    <div className="mb-3">
-                      <p className="fs-13 mb-2">Phone</p>
-                      <span className="text-gray-900 fs-13">
-                        {customer.mobileNumber || "N/A"}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="col-md-4">
-                    <div className="mb-3">
-                      <p className="fs-13 mb-2">Email</p>
-                      <span className="text-gray-900 fs-13">
-                        <a href={`mailto:${customer.email}`}>
-                          {customer.email || "N/A"}
-                        </a>
-                      </span>
-                    </div>
-                  </div>
-                  <div className="col-md-4">
-                    <div className="mb-3">
-                      <p className="fs-13 mb-2">Address</p>
-                      <span className="text-gray-900 fs-13">{address}</span>
-                    </div>
-                  </div>
-                  <div className="col-md-4">
-                    <div className="mb-3">
-                      <p className="fs-13 mb-2">Payment Mode</p>
-                      <span className="text-gray-900 fs-13">
-                        {customer.paymentMode || "N/A"}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="col-md-4">
-                    <div className="mb-3">
-                      <p className="fs-13 mb-2">Due Date</p>
-                      <span className="text-gray-900 fs-13">
-                        {formatDate(customer.dueDate)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="card rounded-0 border-0">
-              <div className="card-header border-0 rounded-0 bg-light">
-                <ul
-                  className="nav nav-pills border d-inline-flex p-1 rounded bg-light"
-                  id="pills-tab"
-                  role="tablist"
-                >
-                  {["Quotations", "Orders", "Addresses"].map((tab) => (
-                    <li className="nav-item" role="presentation" key={tab}>
-                      <button
-                        className={`nav-link btn btn-sm btn-icon py-3 d-flex align-items-center justify-content-center w-auto ${
-                          activeTab === tab.toLowerCase() ? "active" : ""
-                        }`}
-                        id={`tab-${tab}`}
-                        data-bs-toggle="pill"
-                        data-bs-target={`#pills-${tab}`}
-                        type="button"
-                        role="tab"
-                        aria-selected={activeTab === tab.toLowerCase()}
-                        onClick={() => setActiveTab(tab.toLowerCase())}
-                      >
-                        {tab}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-                {activeTab === "addresses" && (
-                  <Button
-                    variant="primary"
-                    className="float-end"
-                    onClick={() => showAddressModal()}
-                  >
-                    Add Address
-                  </Button>
-                )}
-              </div>
-              <div className="card-body">
-                <div className="tab-content" id="pills-tabContent">
-                  <div
-                    className={`tab-pane fade ${
-                      activeTab === "quotations" ? "show active" : ""
-                    }`}
-                    id="pills-Quotations"
-                    role="tabpanel"
-                    aria-labelledby="tab-Quotations"
-                  >
-                    <div className="table-responsive">
-                      <Table hover className="table table-borderless">
-                        <thead>
-                          <tr>
-                            <th>Quotation No</th>
-                            <th>Title</th>
-                            <th>Ship To</th>
-                            <th>Quotation Date</th>
-                            <th>Due Date</th>
-                            <th>Final Amount</th>
-                            <th>Created By</th>
-                            <th className="text-end">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {quotations.map((quotation) => (
-                            <tr key={quotation.quotationId}>
-                              <td>
-                                <Link
-                                  to={`/quotation/${quotation.quotationId}`}
-                                  className="text-primary"
-                                >
-                                  {quotation.reference_number || "N/A"}
-                                </Link>
-                              </td>
-                              <td>{quotation.document_title || "N/A"}</td>
-                              <td>{formatAddress(quotation.shipTo)}</td>
-                              <td>{formatDate(quotation.quotation_date)}</td>
-                              <td>{formatDate(quotation.due_date)}</td>
-                              <td>
-                                Rs.{" "}
-                                {(Number(quotation.finalAmount) || 0).toFixed(
-                                  2
-                                )}
-                              </td>
-                              <td>{getUsername(quotation.createdBy)}</td>
-                              <td className="text-end">
-                                <Link
-                                  to={`/quotation/${quotation.quotationId}`}
-                                  className="btn btn-sm btn-outline-primary me-2"
-                                  title="View Quotation"
-                                >
-                                  <FaEye />
-                                </Link>
-                                <Button
-                                  variant="outline-danger"
-                                  size="sm"
-                                  href="#"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#delete"
-                                  title="Delete Quotation"
-                                >
-                                  <FaTrash />
-                                </Button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </Table>
-                    </div>
-                  </div>
-                  <div
-                    className={`tab-pane fade ${
-                      activeTab === "orders" ? "show active" : ""
-                    }`}
-                    id="pills-Orders"
-                    role="tabpanel"
-                    aria-labelledby="tab-Orders"
-                  >
-                    <div className="table-responsive">
-                      <Table hover className="table table-borderless">
-                        <thead>
-                          <tr>
-                            <th>Order Number</th>
-                            <th>Status</th>
-                            <th>Due Date</th>
-                            <th>Priority</th>
-                            <th className="text-end">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {orders.map((order) => (
-                            <tr key={order.id}>
-                              <td>{order.orderNo}</td>
-                              <td>
-                                <Badge
-                                  bg={
-                                    order.status === "DELIVERED"
-                                      ? "success"
-                                      : order.status === "CANCELED"
-                                      ? "danger"
-                                      : "warning"
-                                  }
-                                >
-                                  {order.status}
-                                </Badge>
-                              </td>
-                              <td>{formatDate(order.dueDate)}</td>
-                              <td>
-                                <span
-                                  className={`priority-badge ${
-                                    order.priority?.toLowerCase() || "medium"
-                                  }`}
-                                >
-                                  {order.priority || "Medium"}
-                                </span>
-                              </td>
-                              <td className="text-end">
-                                <Link
-                                  to={`/order/${order.id}`}
-                                  className="btn btn-sm btn-outline-primary me-2"
-                                  title="View Order"
-                                >
-                                  <FaEye />
-                                </Link>
-                                <Button
-                                  variant="outline-danger"
-                                  size="sm"
-                                  href="#"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#delete"
-                                  title="Delete Order"
-                                >
-                                  <FaTrash />
-                                </Button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </Table>
-                    </div>
-                  </div>
-                  <div
-                    className={`tab-pane fade ${
-                      activeTab === "addresses" ? "show active" : ""
-                    }`}
-                    id="pills-Addresses"
-                    role="tabpanel"
-                    aria-labelledby="tab-Addresses"
-                  >
-                    <div className="table-responsive">
-                      <Table hover className="table table-borderless">
-                        <thead>
-                          <tr>
-                            <th>Street</th>
-                            <th>City</th>
-                            <th>State</th>
-                            <th>Postal Code</th>
-                            <th>Country</th>
-                            <th className="text-end">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {customerAddresses.map((address) => (
-                            <tr key={address.addressId}>
-                              <td>{address.street || "N/A"}</td>
-                              <td>{address.city || "N/A"}</td>
-                              <td>{address.state || "N/A"}</td>
-                              <td>{address.postalCode || "N/A"}</td>
-                              <td>{address.country || "N/A"}</td>
-                              <td className="text-end">
-                                <Button
-                                  variant="link"
-                                  onClick={() => showAddressModal(address)}
-                                  className="text-primary"
-                                >
-                                  Edit
-                                </Button>
-                                <Button
-                                  variant="link"
-                                  className="text-danger"
-                                  onClick={() =>
-                                    handleDeleteAddress(address.addressId)
-                                  }
-                                  disabled={isDeletingAddress}
-                                >
-                                  Delete
-                                </Button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </Table>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <StyledPage>
+          <Helmet>
+            <title>{customer.name} | Customer Details</title>
+          </Helmet>
 
-        {/* Address Modal */}
-        <Modal
-          show={isAddressModalVisible}
-          onHide={() => setIsAddressModalVisible(false)}
-          centered
-        >
-          <Modal.Header closeButton>
-            <Modal.Title>
-              {editingAddress ? "Edit Address" : "Add Address"}
-            </Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <AntdForm
-              form={addressForm}
-              onFinish={handleAddressSubmit}
-              layout="vertical"
-            >
-              <AntdForm.Item
+          <Space direction="vertical" size="large" style={{ width: "100%" }}>
+            <Link to="/customers/list">
+              <LeftOutlined /> Back to Customers
+            </Link>
+
+            <Row gutter={24}>
+              {/* Left Sidebar */}
+              <Col xs={24} lg={8}>
+                <Card>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 16,
+                      marginBottom: 16,
+                    }}
+                  >
+                    <Avatar
+                      size={80}
+                      src={customer.avatar}
+                      style={{ backgroundColor: "#4A90E2" }}
+                    >
+                      {customer.name?.[0] || "C"}
+                    </Avatar>
+                    <div>
+                      <Title level={4} style={{ margin: 0 }}>
+                        {customer.name}
+                      </Title>
+                      <Tag color={customer.isVendor ? "purple" : "blue"}>
+                        {customer.isVendor ? "Vendor/Customer" : "Customer"}
+                      </Tag>
+                    </div>
+                    <div style={{ marginLeft: "auto" }}>
+                      <Link
+                        to={`/customer/edit/${customer.customerId}`}
+                        state={{ customer }}
+                      >
+                        <Button type="primary">Edit Customer</Button>
+                      </Link>
+                    </div>
+                  </div>
+
+                  <Divider />
+
+                  <Space direction="vertical" style={{ width: "100%" }}>
+                    <div>
+                      <ShopOutlined /> <Text strong>Company:</Text>{" "}
+                      {customer.companyName || "N/A"}
+                    </div>
+                    <div>
+                      <CalendarOutlined /> <Text strong>Joined:</Text>{" "}
+                      {formatDate(customer.createdAt)}
+                    </div>
+                    <div>
+                      <EnvironmentOutlined /> <Text strong>Address:</Text>{" "}
+                      {formatAddress(customerAddresses[0])}
+                    </div>
+                  </Space>
+
+                  <Divider>
+                    <Tooltip title="Based on quotations only">
+                      <Text strong>Financial Summary</Text>
+                    </Tooltip>
+                  </Divider>
+
+                  <Row gutter={16}>
+                    <Col span={12}>
+                      <Statistic
+                        title="Total Amount"
+                        value={totalAmount}
+                        prefix="₹"
+                      />
+                    </Col>
+                    <Col span={12}>
+                      <Statistic
+                        title="Balance"
+                        value={balance}
+                        prefix="₹"
+                        valueStyle={{ color: "#cf1322" }}
+                      />
+                    </Col>
+                  </Row>
+                </Card>
+              </Col>
+
+              {/* Right Content */}
+              <Col xs={24} lg={16}>
+                <Card>
+                  <Title level={5}>Basic Information</Title>
+                  <Row gutter={[16, 16]}>
+                    <Col span={12}>
+                      <Text strong>
+                        <PhoneOutlined /> Phone:
+                      </Text>
+                      <br />
+                      <Text>{customer.mobileNumber || "N/A"}</Text>
+                    </Col>
+                    <Col span={12}>
+                      <Text strong>
+                        <MailOutlined /> Email:
+                      </Text>
+                      <br />
+                      <a href={`mailto:${customer.email}`}>
+                        {customer.email || "N/A"}
+                      </a>
+                    </Col>
+                    <Col span={24}>
+                      <Text strong>
+                        <EnvironmentOutlined /> Address:
+                      </Text>
+                      <br />
+                      <Text>{formatAddress(customerAddresses[0])}</Text>
+                    </Col>
+                  </Row>
+                </Card>
+
+                <Card style={{ marginTop: 24 }}>
+                  <Tabs
+                    activeKey={activeTab}
+                    onChange={setActiveTab}
+                    items={tabItems}
+                  />
+                </Card>
+              </Col>
+            </Row>
+          </Space>
+
+          {/* Address Modal */}
+          <Modal
+            title={editingAddress ? "Edit Address" : "Add New Address"}
+            open={isModalOpen}
+            onCancel={() => {
+              setIsModalOpen(false);
+              form.resetFields();
+            }}
+            footer={null}
+          >
+            <Form form={form} onFinish={handleAddressSubmit} layout="vertical">
+              <Form.Item
                 name="street"
                 label="Street"
-                rules={[{ required: true, message: "Please enter the street" }]}
+                rules={[{ required: true }]}
               >
+                <Input.TextArea rows={2} />
+              </Form.Item>
+              <Form.Item name="city" label="City" rules={[{ required: true }]}>
                 <Input />
-              </AntdForm.Item>
-              <AntdForm.Item
-                name="city"
-                label="City"
-                rules={[{ required: true, message: "Please enter the city" }]}
-              >
-                <Input />
-              </AntdForm.Item>
-              <AntdForm.Item
+              </Form.Item>
+              <Form.Item
                 name="state"
                 label="State"
-                rules={[{ required: true, message: "Please enter the state" }]}
+                rules={[{ required: true }]}
               >
                 <Input />
-              </AntdForm.Item>
-              <AntdForm.Item
-                name="postalCode"
-                label="Postal Code"
-                rules={[
-                  { required: true, message: "Please enter the postal code" },
-                ]}
-              >
+              </Form.Item>
+              <Form.Item name="postalCode" label="Postal Code">
                 <Input />
-              </AntdForm.Item>
-              <AntdForm.Item
-                name="country"
-                label="Country"
-                rules={[
-                  { required: true, message: "Please enter the country" },
-                ]}
-              >
+              </Form.Item>
+              <Form.Item name="country" label="Country" initialValue="India">
                 <Input />
-              </AntdForm.Item>
-            </AntdForm>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button
-              variant="secondary"
-              onClick={() => setIsAddressModalVisible(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              onClick={() => addressForm.submit()}
-              disabled={isCreatingAddress || isUpdatingAddress}
-            >
-              {editingAddress ? "Update Address" : "Add Address"}
-            </Button>
-          </Modal.Footer>
-        </Modal>
+              </Form.Item>
+              <Form.Item style={{ marginBottom: 0, textAlign: "right" }}>
+                <Button
+                  onClick={() => setIsModalOpen(false)}
+                  style={{ marginRight: 8 }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  loading={isCreating || isUpdating}
+                >
+                  {editingAddress ? "Update" : "Add"} Address
+                </Button>
+              </Form.Item>
+            </Form>
+          </Modal>
+        </StyledPage>
       </div>
     </div>
   );

@@ -7,66 +7,79 @@ import {
   useGetProductByIdQuery,
   useLazyCheckProductCodeQuery,
 } from "../../api/productApi";
-import { GiFeatherWound } from "react-icons/gi";
-import { FiImage, FiPlusCircle, FiLifeBuoy } from "react-icons/fi";
+import { FiImage, FiPlusCircle, FiLifeBuoy, FiPackage } from "react-icons/fi";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import { useGetAllBrandsQuery } from "../../api/brandsApi";
-import { useGetProfileQuery } from "../../api/userApi";
-import { message } from "antd";
-import { useDropzone } from "react-dropzone";
 import { useGetVendorsQuery } from "../../api/vendorApi";
 import { useGetAllProductMetaQuery } from "../../api/productMetaApi";
 import { useGetBrandParentCategoriesQuery } from "../../api/brandParentCategoryApi";
+import { useGetAllKeywordsQuery } from "../../api/keywordApi";
+import { useAddKeywordsToProductMutation } from "../../api/productApi";
+import { message } from "antd";
+import { useDropzone } from "react-dropzone";
 import {
   Form,
   Input,
+  InputNumber,
   Select,
   Button,
   Row,
   Col,
-  Spin,
   Modal,
-  Space,
-  Accordion,
-  Card,
   Collapse,
+  Tag,
+  Spin,
+  Space,
+  Typography,
 } from "antd";
+import { useGetAllProductsQuery } from "../../api/productApi";
 
 const { Option } = Select;
 const { TextArea } = Input;
-const COMPANY_CODE_META_ID = "d11da9f9-3f2e-4536-8236-9671200cca4a"; // Company Code UUID
-const { Panel } = Collapse; // This is correct
+const { Panel } = Collapse;
+const { Text } = Typography;
+
+const COMPANY_CODE_META_ID = "d11da9f9-3f2e-4536-8236-9671200cca4a";
+
 const CreateProduct = () => {
   const { productId } = useParams();
   const navigate = useNavigate();
   const isEditMode = Boolean(productId);
-  const [newImages, setNewImages] = useState([]); // { file, preview }
-  const [existingImages, setExistingImages] = useState([]); // Image URLs
-  const [imagesToDelete, setImagesToDelete] = useState([]); // Images to delete
-  const [metaData, setMetaData] = useState({}); // Meta key-value pairs
-  const [selectedImage, setSelectedImage] = useState(null); // For modal
+
   const [form] = Form.useForm();
+  const [newImages, setNewImages] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
+  const [imagesToDelete, setImagesToDelete] = useState([]);
+  const [metaData, setMetaData] = useState({});
+  const [selectedImage, setSelectedImage] = useState(null);
   const [autoCode, setAutoCode] = useState("");
   const [isCodeDirty, setIsCodeDirty] = useState(false);
-  const [codeStatus, setCodeStatus] = useState(""); // "checking" | "unique" | "duplicate"
-  // Fetch data
-  const { data: existingProduct, isLoading: isFetching } =
-    useGetProductByIdQuery(productId, { skip: !isEditMode });
-  const {
-    data: categoryData = { categories: [] },
-    isLoading: isCategoryLoading,
-  } = useGetAllCategoriesQuery();
-  const { data: brands, isLoading: isBrandLoading } = useGetAllBrandsQuery();
-  const { data: vendors, isLoading: isVendorLoading } = useGetVendorsQuery();
-  const {
-    data: brandParentCategories,
-    isLoading: isBrandParentCategoryLoading,
-  } = useGetBrandParentCategoriesQuery();
-  const { data: productMetas, isLoading: isProductMetaLoading } =
-    useGetAllProductMetaQuery();
-  const { data: user, isLoading: isUserLoading } = useGetProfileQuery();
-  const [triggerCheckCode, { isFetching: isCheckingCode }] =
-    useLazyCheckProductCodeQuery();
+  const [codeStatus, setCodeStatus] = useState(""); // "checking", "unique", "duplicate"
+  const [selectedKeywords, setSelectedKeywords] = useState([]); // array of keyword objects
+  const [searchKeyword, setSearchKeyword] = useState("");
+  // RTK Queries
+  const { data: existingProduct, isLoading: loadingProduct } =
+    useGetProductByIdQuery(productId, {
+      skip: !isEditMode,
+    });
+
+  const { data: categoryData = { categories: [] } } =
+    useGetAllCategoriesQuery();
+  const { data: brands = [] } = useGetAllBrandsQuery();
+  const { data: vendors = [] } = useGetVendorsQuery();
+  const { data: brandParentCategories = [] } =
+    useGetBrandParentCategoriesQuery();
+  const { data: productMetas = [] } = useGetAllProductMetaQuery();
+  const { data: allProducts = [] } = useGetAllProductsQuery(undefined, {
+    skip: !isEditMode,
+  }); // for master product dropdown
+  const { data: keywordList = [] } = useGetAllKeywordsQuery();
+  const allKeywords = Array.isArray(keywordList) ? keywordList : [];
+  const [addKeywordsToProduct] = useAddKeywordsToProductMutation();
+  const [triggerCheckCode] = useLazyCheckProductCodeQuery();
+  const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
+  const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
+
   const categories = Array.isArray(categoryData?.categories)
     ? categoryData.categories
     : [];
@@ -77,9 +90,6 @@ const CreateProduct = () => {
     : [];
   const productMetaData = Array.isArray(productMetas) ? productMetas : [];
 
-  const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
-  const [updateProduct, { isLoading: isUpdating, error }] =
-    useUpdateProductMutation();
   // Generate Unique Product Code
   const generateUniqueCode = useCallback(
     async (brandId, companyCodeValue, attempt = 0) => {
@@ -89,17 +99,14 @@ const CreateProduct = () => {
         return;
       }
 
-      const brand = brands.find((b) => b.id === brandId);
+      const brand = brandData.find((b) => b.id === brandId);
       if (!brand) return;
 
       const brandPrefix = (brand.brandName || "XX").slice(0, 2).toUpperCase();
-
-      // Extract last 4 digits from company code
       const cleanCode = (companyCodeValue || "").toString().trim();
-      const digitsOnly = cleanCode.replace(/\D/g, ""); // remove non-digits
+      const digitsOnly = cleanCode.replace(/\D/g, "");
       const last4 = digitsOnly ? digitsOnly.slice(-4).padEnd(4, "0") : "0000";
-
-      const random3 = String(Math.floor(Math.random() * 900) + 100); // 100–999
+      const random3 = String(Math.floor(Math.random() * 900) + 100);
 
       const candidate = `E${brandPrefix}${brandPrefix}${last4}${random3}`;
 
@@ -115,13 +122,14 @@ const CreateProduct = () => {
         } else {
           setCodeStatus("unique");
         }
-      } catch (err) {
+      } catch {
         setCodeStatus("error");
       }
     },
-    [brands, form, triggerCheckCode]
+    [brandData, form, triggerCheckCode]
   );
-  // Auto Generate on Brand + Size Change
+
+  // Auto generate code when brand or company code changes
   useEffect(() => {
     if (isEditMode || isCodeDirty) return;
 
@@ -133,364 +141,301 @@ const CreateProduct = () => {
       generateUniqueCode(brandId, companyCode);
     }
   }, [
-    form.getFieldValue("brandId"),
     metaData[COMPANY_CODE_META_ID],
     isEditMode,
     isCodeDirty,
     generateUniqueCode,
   ]);
+
+  // Load existing product
   useEffect(() => {
-    if (existingProduct) {
-      const formValues = {
-        name: existingProduct.name || "",
-        product_code: existingProduct.product_code || "",
-        quantity: existingProduct.quantity || "",
-        isFeatured: existingProduct.isFeatured?.toString() || "false",
-        description: existingProduct.description || "",
-        tax: existingProduct.tax || "",
-        alert_quantity: existingProduct.alert_quantity || "",
-        categoryId: existingProduct.categoryId || "",
-        brandId: existingProduct.brandId || "",
-        vendorId: existingProduct.vendorId || "",
-        brand_parentcategoriesId:
-          existingProduct.brand_parentcategoriesId || "",
-      };
-      form.setFieldsValue(formValues);
+    if (!existingProduct) return;
 
-      // --- IMAGES ---
-      let imagesArray = [];
-      if (existingProduct.images) {
-        try {
-          imagesArray =
-            typeof existingProduct.images === "string"
-              ? JSON.parse(existingProduct.images)
-              : Array.isArray(existingProduct.images)
-              ? existingProduct.images
-              : [];
-        } catch (e) {
-          imagesArray = [];
-        }
-      }
-      setExistingImages(Array.isArray(imagesArray) ? imagesArray : []);
+    const formValues = {
+      name: existingProduct.name || "",
+      product_code: existingProduct.product_code || "",
+      quantity: existingProduct.quantity || 0,
+      isFeatured: existingProduct.isFeatured ? "true" : "false",
+      description: existingProduct.description || "",
+      tax: existingProduct.tax || null,
+      alert_quantity: existingProduct.alert_quantity || null,
+      status: existingProduct.status || "active",
+      discountType: existingProduct.discountType || undefined,
 
-      // --- META DATA: ROBUST PARSING ---
-      let metaObject = {};
+      // Variant fields
+      isMaster: existingProduct.isMaster ? "true" : "false",
+      masterProductId: existingProduct.masterProductId || undefined,
+      variantKey: existingProduct.variantKey || "",
+      skuSuffix: existingProduct.skuSuffix || "",
 
-      if (existingProduct.meta) {
-        try {
-          // Case 1: String (from formData)
-          if (typeof existingProduct.meta === "string") {
-            metaObject = JSON.parse(existingProduct.meta);
-          }
-          // Case 2: Already an object (Sequelize auto-parsed)
-          else if (
-            typeof existingProduct.meta === "object" &&
-            existingProduct.meta !== null
-          ) {
-            metaObject = existingProduct.meta;
-          }
-
-          // Validate: must be object with string keys
-          if (
-            typeof metaObject !== "object" ||
-            metaObject === null ||
-            Array.isArray(metaObject)
-          ) {
-            metaObject = {};
-          }
-
-          // Optional: Validate keys exist in productMetas
-          const validMeta = {};
-          Object.entries(metaObject).forEach(([key, value]) => {
-            const metaExists = productMetaData.some((m) => m.id === key);
-            if (metaExists) {
-              validMeta[key] = value;
-            }
-          });
-          metaObject = validMeta;
-        } catch (error) {
-          message.error("Failed to load product specifications.");
-          metaObject = {};
-        }
-      }
-
-      setMetaData(metaObject);
-    }
-  }, [existingProduct, form, productMetaData]);
-  // Clean up preview URLs
-  useEffect(() => {
-    return () => {
-      newImages.forEach((img) => URL.revokeObjectURL(img.preview));
+      categoryId: existingProduct.categoryId || undefined,
+      brandId: existingProduct.brandId || undefined,
+      vendorId: existingProduct.vendorId || undefined,
+      brand_parentcategoriesId:
+        existingProduct.brand_parentcategoriesId || undefined,
     };
+
+    form.setFieldsValue(formValues);
+
+    // Images
+    let imagesArray = [];
+    try {
+      imagesArray =
+        typeof existingProduct.images === "string"
+          ? JSON.parse(existingProduct.images)
+          : Array.isArray(existingProduct.images)
+          ? existingProduct.images
+          : [];
+    } catch (e) {
+      console.error("Failed to parse images", e);
+    }
+    setExistingImages(Array.isArray(imagesArray) ? imagesArray : []);
+
+    // Meta
+    let metaObj = {};
+    try {
+      if (typeof existingProduct.meta === "string") {
+        metaObj = JSON.parse(existingProduct.meta);
+      } else if (
+        existingProduct.meta &&
+        typeof existingProduct.meta === "object"
+      ) {
+        metaObj = existingProduct.meta;
+      }
+
+      const valid = {};
+      Object.entries(metaObj).forEach(([k, v]) => {
+        if (productMetaData.some((m) => m.id === k)) valid[k] = v;
+      });
+      setMetaData(valid);
+    } catch (e) {
+      message.error("Failed to load specifications");
+    }
+    if (existingProduct.keywords) {
+      try {
+        const keywords =
+          typeof existingProduct.keywords === "string"
+            ? JSON.parse(existingProduct.keywords)
+            : existingProduct.keywords;
+
+        setSelectedKeywords(Array.isArray(keywords) ? keywords : []);
+      } catch (e) {
+        console.error("Failed to parse keywords", e);
+      }
+    }
+    // Variant options (JSON)
+    if (existingProduct.variantOptions) {
+      try {
+        const opts =
+          typeof existingProduct.variantOptions === "string"
+            ? JSON.parse(existingProduct.variantOptions)
+            : existingProduct.variantOptions;
+        form.setFieldsValue({ variantOptions: JSON.stringify(opts, null, 2) });
+      } catch {}
+    }
+  }, [existingProduct, productMetaData, form]);
+
+  // Cleanup previews
+  useEffect(() => {
+    return () => newImages.forEach((i) => URL.revokeObjectURL(i.preview));
   }, [newImages]);
 
-  // Handle meta data changes
-  const handleMetaChange = (metaId, value) => {
-    setMetaData((prev) => ({
-      ...prev,
-      [metaId]: value,
-    }));
+  const handleMetaChange = (id, value) => {
+    setMetaData((prev) => ({ ...prev, [id]: value }));
   };
 
-  // Handle image drop
   const onDrop = useCallback(
-    (acceptedFiles, rejectedFiles) => {
-      if (rejectedFiles.length > 0) {
-        rejectedFiles.forEach((file) => {
-          if (file.errors.some((e) => e.code === "file-too-large")) {
-            message.warning(`File "${file.file.name}" exceeds 5MB limit.`);
-          } else if (file.errors.some((e) => e.code === "file-invalid-type")) {
-            message.warning(`File "${file.file.name}" is not an image.`);
-          }
+    (accepted, rejected) => {
+      if (rejected.length > 0) {
+        rejected.forEach(({ file, errors }) => {
+          if (errors[0]?.code === "file-too-large")
+            message.warning(`${file.name} > 5MB`);
+          if (errors[0]?.code === "file-invalid-type")
+            message.warning(`${file.name} not image`);
         });
         return;
       }
 
-      if (existingImages.length + newImages.length + acceptedFiles.length > 5) {
-        message.warning("You can upload a maximum of 5 images.");
+      if (existingImages.length + newImages.length + accepted.length > 5) {
+        message.warning("Maximum 5 images allowed");
         return;
       }
 
-      const newFiles = acceptedFiles.map((file) => ({
+      const mapped = accepted.map((file) => ({
         file,
         preview: URL.createObjectURL(file),
       }));
-      setNewImages((prev) => [...prev, ...newFiles]);
+      setNewImages((p) => [...p, ...mapped]);
     },
-    [existingImages, newImages]
+    [existingImages.length, newImages.length]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    accept: { "image/*": [".jpeg", ".jpg", ".png", ".gif"] },
-    maxFiles: 5 - (existingImages.length + newImages.length),
-    maxSize: 5 * 1024 * 1024, // 5MB
+    accept: { "image/*": [] },
+    maxSize: 5 * 1024 * 1024,
     onDrop,
   });
 
-  // Handle image deletion
-  const handleDeleteImage = (imageUrl) => {
-    setExistingImages((prev) => prev.filter((img) => img !== imageUrl));
-    setImagesToDelete((prev) => [...prev, imageUrl]);
+  const removeExistingImage = (url) => {
+    setExistingImages((p) => p.filter((i) => i !== url));
+    setImagesToDelete((p) => [...p, url]);
   };
 
-  const handleDeleteNewImage = (preview) => {
-    setNewImages((prev) => {
-      const updated = prev.filter((img) => img.preview !== preview);
-      prev
-        .filter((img) => img.preview === preview)
-        .forEach((img) => URL.revokeObjectURL(img.preview));
-      return updated;
+  const removeNewImage = (preview) => {
+    setNewImages((p) => {
+      const filtered = p.filter((i) => i.preview !== preview);
+      p.filter((i) => i.preview === preview).forEach((i) =>
+        URL.revokeObjectURL(i.preview)
+      );
+      return filtered;
     });
   };
 
-  // Handle image click to open modal
-  const handleImageClick = (imageUrl) => {
-    setSelectedImage(imageUrl);
-  };
-
-  // Close modal
-  const closeModal = () => {
-    setSelectedImage(null);
-  };
-
-  // Handle form submission
-  const handleSubmit = async (values) => {
-    const requiredFields = {
-      name: values.name,
-      product_code: values.product_code,
-      quantity: values.quantity,
-    };
-
-    const emptyFields = Object.entries(requiredFields).filter(
-      ([key, value]) => value === "" || value === null || value === undefined
-    );
-
-    if (emptyFields.length > 0) {
-      message.warning(
-        `Please fill all required fields: ${emptyFields
-          .map(([key]) => key)
-          .join(", ")}.`
-      );
+  const onFinish = async (values) => {
+    const required = ["name", "product_code", "quantity"];
+    if (required.some((f) => !values[f])) {
+      message.warning("Please fill all required fields");
       return;
     }
 
-    for (const metaId of Object.keys(metaData)) {
-      const metaField = productMetaData.find((meta) => meta.id === metaId);
-      if (!metaField) {
-        message.error(`Invalid ProductMeta ID: ${metaId}`);
-        return;
-      }
-      if (
-        metaField.fieldType === "number" &&
-        metaData[metaId] !== "" &&
-        isNaN(metaData[metaId])
-      ) {
-        message.error(`Value for ${metaField.title} must be a number`);
+    // Validate number metas
+    for (const [id, val] of Object.entries(metaData)) {
+      const m = productMetaData.find((x) => x.id === id);
+      if (m?.fieldType === "number" && val !== "" && isNaN(val)) {
+        message.error(`${m.title} must be a number`);
         return;
       }
     }
 
-    const formDataToSend = new FormData();
-    formDataToSend.append("name", values.name);
-    formDataToSend.append("product_code", values.product_code);
-    formDataToSend.append("quantity", Number(values.quantity) || 0);
-    formDataToSend.append("isFeatured", values.isFeatured === "true");
-    formDataToSend.append("description", values.description);
-    formDataToSend.append("tax", values.tax ? Number(values.tax) : "");
-    formDataToSend.append("alert_quantity", Number(values.alert_quantity) || 0);
-
-    if (values.categoryId)
-      formDataToSend.append("categoryId", values.categoryId);
-    if (values.brandId) formDataToSend.append("brandId", values.brandId);
-    if (values.vendorId) formDataToSend.append("vendorId", values.vendorId);
-    if (values.brand_parentcategoriesId)
-      formDataToSend.append(
-        "brand_parentcategoriesId",
-        values.brand_parentcategoriesId
-      );
-    if (Object.keys(metaData).length > 0)
-      formDataToSend.append("meta", JSON.stringify(metaData));
-
-    newImages.forEach((image) => {
-      formDataToSend.append("images", image.file);
+    const formData = new FormData();
+    const fields = [
+      "name",
+      "product_code",
+      "description",
+      "status",
+      "discountType",
+      "isMaster",
+      "masterProductId",
+      "variantKey",
+      "skuSuffix",
+    ];
+    fields.forEach((k) => {
+      if (values[k] !== undefined && values[k] !== null) {
+        formData.append(k, values[k]);
+      }
     });
 
-    if (isEditMode && imagesToDelete.length > 0) {
-      formDataToSend.append("imagesToDelete", JSON.stringify(imagesToDelete));
+    formData.append("quantity", Number(values.quantity) || 0);
+    formData.append("isFeatured", values.isFeatured === "true");
+    if (values.tax !== undefined)
+      formData.append("tax", Number(values.tax) || 0);
+    if (values.alert_quantity !== undefined)
+      formData.append("alert_quantity", Number(values.alert_quantity) || 0);
+
+    ["categoryId", "brandId", "vendorId", "brand_parentcategoriesId"].forEach(
+      (k) => {
+        if (values[k]) formData.append(k, values[k]);
+      }
+    );
+
+    if (values.variantOptions) {
+      try {
+        const json = JSON.parse(values.variantOptions);
+        formData.append("variantOptions", JSON.stringify(json));
+      } catch {
+        message.error("Invalid JSON in Variant Options");
+        return;
+      }
+    }
+
+    if (Object.keys(metaData).length) {
+      formData.append("meta", JSON.stringify(metaData));
+    }
+
+    newImages.forEach((i) => formData.append("images", i.file));
+    if (isEditMode && imagesToDelete.length) {
+      formData.append("imagesToDelete", JSON.stringify(imagesToDelete));
     }
 
     try {
       if (isEditMode) {
-        await updateProduct({ productId, formData: formDataToSend }).unwrap();
-        navigate("/category-selector");
+        await updateProduct({ productId, formData }).unwrap();
+        message.success("Product updated!");
       } else {
-        await createProduct(formDataToSend).unwrap();
+        await createProduct(formData).unwrap();
+        message.success("Product created!");
         form.resetFields();
         setNewImages([]);
         setMetaData({});
-        navigate("/category-selector");
       }
-    } catch (error) {
-      const message =
-        error.data?.message || "Something went wrong while saving the product.";
-      message.error(`Error: ${message}`);
+    } catch (err) {
+      message.error(err.data?.message || "Save failed");
     }
   };
 
-  if (
-    isFetching ||
-    isCategoryLoading ||
-    isBrandLoading ||
-    isVendorLoading ||
-    isBrandParentCategoryLoading ||
-    isProductMetaLoading ||
-    isUserLoading
-  ) {
-    return (
-      <div className="page-wrapper">
-        <div className="content">
-          <Spin tip="Loading product details..." />
-        </div>
-      </div>
-    );
-  }
-
-  // Styles
-  const dropzoneStyle = {
-    border: "2px dashed #d9d9d9",
-    borderRadius: 8,
-    padding: 16,
-    textAlign: "center",
-    cursor: "pointer",
-    transition: "0.2s",
-    backgroundColor: isDragActive ? "#f5faff" : "transparent",
-  };
-
-  const thumbStyle = {
-    width: 80,
-    height: 80,
-    objectFit: "cover",
-    borderRadius: 6,
-    cursor: "zoom-in",
-    border: "1px solid #eee",
-  };
-
-  const deleteBtn = {
-    position: "absolute",
-    top: 4,
-    right: 4,
-    background: "rgba(0,0,0,0.6)",
-    border: "none",
-    color: "white",
-    padding: 0,
-    width: 20,
-    height: 20,
-    fontSize: 12,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  };
+  const totalImages = existingImages.length + newImages.length;
 
   return (
-    <div className="page-wrapper">
-      <div className="content">
-        <Space direction="vertical" size="middle" style={{ width: "100%" }}>
-          {/* Header */}
-          <Row justify="space-between" align="middle">
-            <Col>
-              <h4 style={{ fontWeight: "bold", margin: 0 }}>
-                {isEditMode ? "Edit Product" : "Create Product"}
-              </h4>
-            </Col>
-            <Col>
-              <Button
-                icon={<FaArrowLeft style={{ marginRight: 8 }} />}
-                onClick={() => navigate("/category-selector")}
-              >
-                Back
-              </Button>
-            </Col>
+    <>
+      <div className="page-wrapper">
+        <div className="content">
+          <Row
+            justify="space-between"
+            align="middle"
+            style={{ marginBottom: 16 }}
+          >
+            <h4 style={{ margin: 0, fontWeight: "bold" }}>
+              {isEditMode ? "Edit Product" : "Create New Product"}
+            </h4>
+            <Button icon={<FaArrowLeft />} onClick={() => navigate(-1)}>
+              Back
+            </Button>
           </Row>
 
-          <Form form={form} onFinish={handleSubmit} layout="vertical">
+          <Form form={form} onFinish={onFinish} layout="vertical">
             <Collapse
-              defaultActiveKey={["1", "2", "3", "4", "5"]}
+              defaultActiveKey={["1", "2", "3", "4", "5", "6", "7"]}
               className="compact-accordion"
             >
-              {/* 1. BASIC INFO */}
-              <Panel
-                header={
-                  <span>
-                    <GiFeatherWound
-                      style={{ marginRight: 8, color: "#1890ff" }}
-                    />
-                    <strong>Basic Information</strong>
-                  </span>
-                }
-                key="1"
-              >
+              {/* 1. Basic Info */}
+              <Panel header={<strong>Basic Information</strong>} key="1">
                 <Row gutter={16}>
                   <Col xs={24} md={12}>
                     <Form.Item
                       name="name"
                       label="Product Name"
-                      rules={[{ required: true, message: "Required" }]}
+                      rules={[{ required: true }]}
                     >
-                      <Input placeholder="Enter product name" />
+                      <Input />
                     </Form.Item>
                   </Col>
                   <Col xs={24} md={12}>
                     <Form.Item
                       name="product_code"
                       label="Product Code"
-                      rules={[{ required: true, message: "Required" }]}
+                      rules={[{ required: true }]}
                     >
-                      <Input placeholder="e.g. SKU123" />
+                      <Input
+                        addonAfter={
+                          codeStatus === "checking" ? (
+                            <Spin size="small" />
+                          ) : codeStatus === "unique" ? (
+                            <Tag color="green">Unique</Tag>
+                          ) : codeStatus === "duplicate" ? (
+                            <Tag color="red">Taken</Tag>
+                          ) : null
+                        }
+                        onChange={() => {
+                          setIsCodeDirty(true);
+                          setCodeStatus("");
+                        }}
+                      />
                     </Form.Item>
                   </Col>
-                  <Col xs={24} md={8}>
+
+                  <Col xs={24} sm={8}>
                     <Form.Item name="categoryId" label="Category">
-                      <Select placeholder="Select" allowClear>
+                      <Select allowClear placeholder="Select category">
                         {categories.map((c) => (
                           <Option key={c.categoryId} value={c.categoryId}>
                             {c.name}
@@ -499,9 +444,9 @@ const CreateProduct = () => {
                       </Select>
                     </Form.Item>
                   </Col>
-                  <Col xs={24} md={8}>
+                  <Col xs={24} sm={8}>
                     <Form.Item name="brandId" label="Brand">
-                      <Select placeholder="Select" allowClear>
+                      <Select allowClear placeholder="Select brand">
                         {brandData.map((b) => (
                           <Option key={b.id} value={b.id}>
                             {b.brandName}
@@ -510,9 +455,9 @@ const CreateProduct = () => {
                       </Select>
                     </Form.Item>
                   </Col>
-                  <Col xs={24} md={8}>
+                  <Col xs={24} sm={8}>
                     <Form.Item name="vendorId" label="Vendor">
-                      <Select placeholder="Select" allowClear>
+                      <Select allowClear placeholder="Select vendor">
                         {vendorData.map((v) => (
                           <Option key={v.id} value={v.id}>
                             {v.vendorName}
@@ -521,12 +466,13 @@ const CreateProduct = () => {
                       </Select>
                     </Form.Item>
                   </Col>
-                  <Col xs={24} md={12}>
+
+                  <Col xs={24} md={8}>
                     <Form.Item
                       name="brand_parentcategoriesId"
                       label="Parent Category"
                     >
-                      <Select placeholder="Optional" allowClear>
+                      <Select allowClear>
                         {brandParentCategoryData.map((b) => (
                           <Option key={b.id} value={b.id}>
                             {b.name}
@@ -535,12 +481,25 @@ const CreateProduct = () => {
                       </Select>
                     </Form.Item>
                   </Col>
-                  <Col xs={24} md={12}>
+
+                  <Col xs={24} md={8}>
                     <Form.Item
-                      name="isFeatured"
-                      label="Featured?"
-                      rules={[{ required: true, message: "Required" }]}
+                      name="status"
+                      label="Status"
+                      rules={[{ required: true }]}
                     >
+                      <Select>
+                        <Option value="active">Active</Option>
+                        <Option value="inactive">Inactive</Option>
+                        <Option value="expired">Expired</Option>
+                        <Option value="out_of_stock">Out of Stock</Option>
+                        <Option value="bulk_stocked">Bulk Stocked</Option>
+                      </Select>
+                    </Form.Item>
+                  </Col>
+
+                  <Col xs={24} md={8}>
+                    <Form.Item name="isFeatured" label="Featured Product">
                       <Select>
                         <Option value="false">No</Option>
                         <Option value="true">Yes</Option>
@@ -550,116 +509,202 @@ const CreateProduct = () => {
                 </Row>
               </Panel>
 
-              {/* 2. STOCK & PRICING */}
+              {/* 2. Variant Settings */}
               <Panel
                 header={
-                  <span>
-                    <FiLifeBuoy style={{ marginRight: 8, color: "#1890ff" }} />
-                    <strong>Stock & Tax</strong>
-                  </span>
+                  <>
+                    <FiPackage style={{ marginRight: 8 }} /> Variant Settings
+                  </>
                 }
                 key="2"
               >
+                <Row gutter={16}>
+                  <Col xs={24} sm={8}>
+                    <Form.Item name="isMaster" label="Is Master Product?">
+                      <Select>
+                        <Option value="false">No (Variant)</Option>
+                        <Option value="true">Yes (Master)</Option>
+                      </Select>
+                    </Form.Item>
+                  </Col>
+
+                  <Form.Item
+                    noStyle
+                    shouldUpdate={(prev, curr) =>
+                      prev.isMaster !== curr.isMaster
+                    }
+                  >
+                    {({ getFieldValue }) =>
+                      getFieldValue("isMaster") === "false" && (
+                        <Col xs={24} sm={16}>
+                          <Form.Item
+                            name="masterProductId"
+                            label="Master Product"
+                          >
+                            <Select
+                              allowClear
+                              placeholder="Search master product..."
+                            >
+                              {allProducts
+                                .filter((p) => p.isMaster)
+                                .map((p) => (
+                                  <Option key={p.productId} value={p.productId}>
+                                    {p.name} ({p.product_code})
+                                  </Option>
+                                ))}
+                            </Select>
+                          </Form.Item>
+                        </Col>
+                      )
+                    }
+                  </Form.Item>
+
+                  <Col xs={24} md={8}>
+                    <Form.Item
+                      name="variantKey"
+                      label="Variant Name (e.g. Red Matte)"
+                    >
+                      <Input />
+                    </Form.Item>
+                  </Col>
+                  <Col xs={24} md={8}>
+                    <Form.Item name="skuSuffix" label="SKU Suffix">
+                      <Input placeholder="-RED, -60X60" />
+                    </Form.Item>
+                  </Col>
+
+                  <Col xs={24}>
+                    <Form.Item
+                      name="variantOptions"
+                      label="Variant Options (JSON)"
+                    >
+                      <TextArea
+                        rows={4}
+                        placeholder='{"color": "Red", "size": "60x60", "finish": "Matte"}'
+                      />
+                      <Text type="secondary">
+                        Enter valid JSON object for variant attributes
+                      </Text>
+                    </Form.Item>
+                  </Col>
+                </Row>
+              </Panel>
+
+              {/* 3. Stock & Pricing */}
+              <Panel header="Stock & Tax" key="3">
                 <Row gutter={16}>
                   <Col xs={8}>
                     <Form.Item
                       name="quantity"
                       label="Quantity"
-                      rules={[{ required: true, message: "Required" }]}
+                      rules={[{ required: true }]}
                     >
-                      <Input type="number" min={0} />
+                      <InputNumber min={0} style={{ width: "100%" }} />
                     </Form.Item>
                   </Col>
                   <Col xs={8}>
-                    <Form.Item name="alert_quantity" label="Alert Qty">
-                      <Input type="number" min={0} />
+                    <Form.Item name="alert_quantity" label="Low Stock Alert">
+                      <InputNumber min={0} style={{ width: "100%" }} />
                     </Form.Item>
                   </Col>
                   <Col xs={8}>
                     <Form.Item name="tax" label="Tax (%)">
-                      <Input type="number" step="0.01" min={0} max={100} />
+                      <InputNumber
+                        min={0}
+                        max={100}
+                        step={0.01}
+                        style={{ width: "100%" }}
+                      />
+                    </Form.Item>
+                  </Col>
+                  <Col xs={24} sm={12}>
+                    <Form.Item name="discountType" label="Discount Type">
+                      <Select allowClear>
+                        <Option value="percent">Percent (%)</Option>
+                        <Option value="fixed">Fixed Amount</Option>
+                      </Select>
                     </Form.Item>
                   </Col>
                 </Row>
               </Panel>
 
-              {/* 3. DESCRIPTION */}
-              <Panel header={<strong>Description</strong>} key="3">
+              {/* 4. Description */}
+              <Panel header="Description" key="4">
                 <Form.Item name="description">
-                  <TextArea
-                    rows={2}
-                    placeholder="Max 60 words..."
-                    maxLength={300}
-                    showCount
-                  />
+                  <TextArea rows={4} maxLength={1000} showCount />
                 </Form.Item>
               </Panel>
 
-              {/* 4. IMAGES */}
-              <Panel
-                header={
-                  <span>
-                    <FiImage style={{ marginRight: 8, color: "#1890ff" }} />
-                    <strong>
-                      Images ({existingImages.length + newImages.length}/5)
-                    </strong>
-                  </span>
-                }
-                key="4"
-              >
-                <div {...getRootProps()} style={dropzoneStyle}>
+              {/* 5. Images */}
+              <Panel header={<>Images ({totalImages}/5)</>} key="5">
+                <div
+                  {...getRootProps()}
+                  style={{
+                    border: "2px dashed #d9d9d9",
+                    padding: 24,
+                    textAlign: "center",
+                    borderRadius: 8,
+                    background: isDragActive ? "#f0f8ff" : "transparent",
+                    cursor: "pointer",
+                  }}
+                >
                   <input {...getInputProps()} />
                   {isDragActive ? (
-                    <p>Drop images here...</p>
+                    <p>Drop images...</p>
                   ) : (
                     <p>
-                      <FiPlusCircle size={20} style={{ marginBottom: 8 }} />
+                      <FiPlusCircle size={32} />
                       <br />
-                      Click or drag images
+                      Click or drag (max 5)
                     </p>
                   )}
                 </div>
-                <small
-                  style={{ color: "#888", display: "block", marginTop: 8 }}
-                >
-                  Max 5 images, 5MB each (JPEG/PNG/GIF)
-                </small>
 
-                <Row gutter={[8, 8]} style={{ marginTop: 12 }}>
-                  {existingImages.map((img, i) => (
-                    <Col key={`e-${i}`}>
+                <Row gutter={[12, 12]} style={{ marginTop: 16 }}>
+                  {existingImages.map((url) => (
+                    <Col key={url}>
                       <div style={{ position: "relative" }}>
                         <img
-                          src={img}
+                          src={url}
                           alt=""
-                          style={thumbStyle}
-                          onClick={() => handleImageClick(img)}
+                          style={{
+                            width: 100,
+                            height: 100,
+                            objectFit: "cover",
+                            borderRadius: 8,
+                          }}
+                          onClick={() => setSelectedImage(url)}
                         />
                         <Button
                           danger
                           size="small"
-                          style={deleteBtn}
-                          onClick={() => handleDeleteImage(img)}
+                          style={{ position: "absolute", top: 4, right: 4 }}
+                          onClick={() => removeExistingImage(url)}
                         >
                           ×
                         </Button>
                       </div>
                     </Col>
                   ))}
-                  {newImages.map((img, i) => (
-                    <Col key={`n-${i}`}>
+                  {newImages.map((img) => (
+                    <Col key={img.preview}>
                       <div style={{ position: "relative" }}>
                         <img
                           src={img.preview}
                           alt=""
-                          style={thumbStyle}
-                          onClick={() => handleImageClick(img.preview)}
+                          style={{
+                            width: 100,
+                            height: 100,
+                            objectFit: "cover",
+                            borderRadius: 8,
+                          }}
+                          onClick={() => setSelectedImage(img.preview)}
                         />
                         <Button
                           danger
                           size="small"
-                          style={deleteBtn}
-                          onClick={() => handleDeleteNewImage(img.preview)}
+                          style={{ position: "absolute", top: 4, right: 4 }}
+                          onClick={() => removeNewImage(img.preview)}
                         >
                           ×
                         </Button>
@@ -668,73 +713,168 @@ const CreateProduct = () => {
                   ))}
                 </Row>
               </Panel>
+              {/* 7. Keywords & Tags */}
+              <Panel
+                header={<>Keywords & Tags ({selectedKeywords.length})</>}
+                key="7"
+              >
+                <Space direction="vertical" style={{ width: "100%" }}>
+                  <Select
+                    mode="multiple"
+                    allowClear
+                    style={{ width: "100%" }}
+                    placeholder="Search and add keywords..."
+                    value={selectedKeywords.map((k) => k.id)}
+                    onSearch={setSearchKeyword}
+                    onChange={(selectedIds) => {
+                      const newlySelected = allKeywords.filter(
+                        (kw) =>
+                          selectedIds.includes(kw.id) &&
+                          !selectedKeywords.some((s) => s.id === kw.id)
+                      );
+                      const updated = [
+                        ...selectedKeywords.filter((k) =>
+                          selectedIds.includes(k.id)
+                        ),
+                        ...newlySelected,
+                      ];
+                      setSelectedKeywords(updated);
+                    }}
+                    filterOption={(input, option) =>
+                      option.children
+                        .toLowerCase()
+                        .includes(input.toLowerCase())
+                    }
+                    dropdownRender={(menu) => (
+                      <>
+                        {menu}
+                        {searchKeyword &&
+                          !allKeywords.some(
+                            (k) =>
+                              k.keyword.toLowerCase() ===
+                              searchKeyword.toLowerCase()
+                          ) && (
+                            <div
+                              style={{
+                                padding: "8px",
+                                borderTop: "1px solid #f0f0f0",
+                              }}
+                            >
+                              <Button
+                                type="link"
+                                size="small"
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={() => {
+                                  // Optional: Create new keyword via API
+                                  message.info(
+                                    "New keyword creation not implemented"
+                                  );
+                                }}
+                              >
+                                + Create "{searchKeyword}"
+                              </Button>
+                            </div>
+                          )}
+                      </>
+                    )}
+                  >
+                    {allKeywords
+                      .filter((kw) =>
+                        kw.keyword
+                          .toLowerCase()
+                          .includes(searchKeyword.toLowerCase())
+                      )
+                      .map((kw) => (
+                        <Option key={kw.id} value={kw.id}>
+                          {kw.keyword}
+                          {kw.categories && (
+                            <Tag
+                              color="blue"
+                              style={{ marginLeft: 8, fontSize: 10 }}
+                            >
+                              {kw.categories.name}
+                            </Tag>
+                          )}
+                        </Option>
+                      ))}
+                  </Select>
 
-              {/* 5. META DATA */}
+                  <Space wrap>
+                    {selectedKeywords.map((kw) => (
+                      <Tag
+                        key={kw.id}
+                        closable
+                        onClose={() =>
+                          setSelectedKeywords((prev) =>
+                            prev.filter((k) => k.id !== kw.id)
+                          )
+                        }
+                        color="geekblue"
+                      >
+                        {kw.keyword}
+                        {kw.categories && ` • ${kw.categories.name}`}
+                      </Tag>
+                    ))}
+                  </Space>
+                </Space>
+              </Panel>
+              {/* 6. Specifications */}
               <Panel
                 header={
-                  <span>
-                    <FiLifeBuoy style={{ marginRight: 8, color: "#1890ff" }} />
-                    <strong>
-                      Meta Data{" "}
-                      {Object.keys(metaData).length > 0 &&
-                        `(${Object.keys(metaData).length})`}
-                    </strong>
-                  </span>
+                  <>Product Specifications ({Object.keys(metaData).length})</>
                 }
-                key="5"
+                key="6"
               >
+                {/* existing meta rows */}
                 {Object.entries(metaData).map(([id, val]) => {
-                  const meta = productMetaData.find((m) => m.id === id);
-                  if (!meta) return null;
+                  const m = productMetaData.find((x) => x.id === id);
+                  if (!m) return null;
                   return (
-                    <div
+                    <Row
                       key={id}
-                      style={{
-                        marginBottom: 8,
-                        display: "flex",
-                        gap: 8,
-                        alignItems: "center",
-                      }}
+                      gutter={8}
+                      align="middle"
+                      style={{ marginBottom: 8 }}
                     >
-                      <span style={{ width: 120, fontWeight: 500 }}>
-                        {meta.title}:
-                      </span>
-                      <Input
-                        type={meta.fieldType === "number" ? "number" : "text"}
-                        value={val}
-                        onChange={(e) => handleMetaChange(id, e.target.value)}
-                        style={{ flex: 1 }}
-                        placeholder={meta.unit ? `e.g. 500 ${meta.unit}` : ""}
-                      />
-                      <Button
-                        danger
-                        size="small"
-                        onClick={() =>
-                          setMetaData((prev) => {
-                            const p = { ...prev };
-                            delete p[id];
-                            return p;
-                          })
-                        }
-                      >
-                        ×
-                      </Button>
-                    </div>
+                      <Col flex="120px">
+                        <strong>{m.title}:</strong>
+                      </Col>
+                      <Col flex="1">
+                        <Input
+                          type={m.fieldType === "number" ? "number" : "text"}
+                          value={val}
+                          onChange={(e) => handleMetaChange(id, e.target.value)}
+                        />
+                      </Col>
+                      <Col>
+                        <Button
+                          danger
+                          size="small"
+                          onClick={() =>
+                            setMetaData((p) => {
+                              const { [id]: _, ...rest } = p;
+                              return rest;
+                            })
+                          }
+                        >
+                          Remove
+                        </Button>
+                      </Col>
+                    </Row>
                   );
                 })}
 
-                {productMetaData.filter((m) => !metaData[m.id]).length > 0 && (
+                {/* Add new spec */}
+                {productMetaData.filter((m) => !(m.id in metaData)).length >
+                  0 && (
                   <Select
-                    showSearch
-                    placeholder="Add meta field..."
-                    style={{ width: "100%", marginTop: 8 }}
-                    onChange={(id) =>
-                      setMetaData((prev) => ({ ...prev, [id]: "" }))
-                    }
-                    optionFilterProp="children"
+                    placeholder="Add specification..."
+                    style={{ width: "100%", marginTop: 12 }}
+                    onChange={(id) => setMetaData((p) => ({ ...p, [id]: "" }))}
+                    allowClear
                   >
                     {productMetaData
-                      .filter((m) => !metaData[m.id])
+                      .filter((m) => !(m.id in metaData))
                       .map((m) => (
                         <Option key={m.id} value={m.id}>
                           {m.title} {m.unit && `(${m.unit})`}
@@ -745,51 +885,42 @@ const CreateProduct = () => {
               </Panel>
             </Collapse>
 
-            {/* Submit */}
             <Button
               type="primary"
               htmlType="submit"
-              block
               size="large"
+              block
               loading={isCreating || isUpdating}
-              style={{ marginTop: 16 }}
+              style={{ marginTop: 24 }}
             >
               {isEditMode ? "Update Product" : "Create Product"}
             </Button>
           </Form>
-        </Space>
 
-        {/* Image Modal */}
-        <Modal
-          open={!!selectedImage}
-          footer={null}
-          onCancel={closeModal}
-          width="90%"
-          centered
-        >
-          <img
-            src={selectedImage}
-            alt="Preview"
-            style={{ width: "100%", borderRadius: 8, marginTop: 16 }}
-          />
-        </Modal>
+          <Modal
+            open={!!selectedImage}
+            footer={null}
+            onCancel={() => setSelectedImage(null)}
+            width={800}
+          >
+            <img
+              src={selectedImage}
+              alt="Zoom"
+              style={{ width: "100%", marginTop: 16, borderRadius: 8 }}
+            />
+          </Modal>
+        </div>
+
+        <style jsx>{`
+          .compact-accordion .ant-collapse-header {
+            padding: 8px 16px !important;
+          }
+          .compact-accordion .ant-collapse-content-box {
+            padding: 16px !important;
+          }
+        `}</style>
       </div>
-
-      <style jsx>{`
-        .compact-accordion .ant-collapse-header {
-          padding: 8px 16px !important;
-          font-size: 14px;
-        }
-        .compact-accordion .ant-collapse-content-box {
-          padding: 16px !important;
-        }
-        .dropzoneStyle:hover,
-        .dropzoneStyle:focus {
-          border-color: #1890ff;
-          background: #f5faff;
-        }
-      `}</style>
-    </div>
+    </>
   );
 };
 

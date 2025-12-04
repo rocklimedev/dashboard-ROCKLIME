@@ -242,3 +242,64 @@
   }
 }
 
+/* ====================== PDF EXPORT FIXES ====================== */
+/* These rules are CRUCIAL for multi-page PDF exports with jsPDF + html2canvas */
+
+@media print {
+  /* Force the entire quotation to behave like a printable document */
+  body, html {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+
+  .quotation-container {
+    width: 210mm !important;     /* A4 width */
+    min-height: 297mm !important; /* A4 height */
+    padding: 10mm !important;
+    box-sizing: border-box !important;
+    page-break-after: always;
+  }
+
+  /* Prevent ANY table row from breaking across pages */
+  .quotation-table,
+  .quotation-table tbody,
+  .quotation-table thead,
+  .quotation-table tr,
+  .quotation-table td,
+  .quotation-table th {
+    page-break-inside: avoid !important;
+    page-break-before: auto !important;
+    page-break-after: auto !important;
+    display: table-row-group !important;
+  }
+
+  /* Force entire rows to stay together */
+  .quotation-table tr {
+    page-break-inside: avoid !important;
+  }
+
+  /* Images must not break */
+  .product-img,
+  .logo-img {
+    page-break-inside: avoid !important;
+    page-break-before: avoid !important;
+    page-break-after: avoid !important;
+    max-height: 60px !important;
+    width: auto !important;
+  }
+
+  /* Force new page before major sections if needed */
+  .mt-3,
+  .mt-4,
+  .tax-summary-table,
+  .bank-details-table {
+    page-break-before: auto !important;
+  }
+
+  /* Ensure content doesn't overflow */
+  * {
+    overflow: visible !important;
+  }
+}
+

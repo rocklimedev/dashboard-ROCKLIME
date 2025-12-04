@@ -19,17 +19,15 @@ export const quotationApi = baseApi.injectEndpoints({
       invalidatesTags: ["Quotations"],
     }),
     updateQuotation: builder.mutation({
-      query: ({ id, updatedQuotation }) => {
-        return {
-          url: `/quotation/${id}`,
-          method: "PUT",
-          body: updatedQuotation,
-          headers: {
-            Accept: "application/json",
-          },
-        };
-      },
-      invalidatesTags: (result, error, { id }) => [{ type: "Quotations", id }],
+      query: ({ id, updatedQuotation }) => ({
+        url: `/quotation/${id}`,
+        method: "PUT",
+        body: updatedQuotation,
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Quotations", id },
+        "Quotations", // ← Also invalidate list
+      ],
     }),
     deleteQuotation: builder.mutation({
       query: (id) => ({
@@ -52,22 +50,20 @@ export const quotationApi = baseApi.injectEndpoints({
     // New endpoints for versioning
     getQuotationVersions: builder.query({
       query: (id) => `/quotation/${id}/versions`,
-      transformResponse: (response) => response?.data || [],
-      transformErrorResponse: (response) => {
-        if (response.status === 404) {
-          return { data: [] }; // Treat 404 as "no versions"
-        }
-        throw response;
-      },
-
-      providesTags: ["Quotation"],
+      providesTags: (result, error, id) => [
+        { type: "Quotations", id },
+        "Quotations",
+      ],
     }),
     restoreQuotationVersion: builder.mutation({
       query: ({ id, version }) => ({
         url: `/quotation/${id}/restore/${version}`,
         method: "POST",
       }),
-      invalidatesTags: ["Quotation"],
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Quotations", id },
+        "Quotations",
+      ],
     }),
   }),
 });

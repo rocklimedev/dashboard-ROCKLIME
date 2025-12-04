@@ -30,6 +30,9 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
   } = useGetProfileQuery();
 
   const userId = user?.user?.userId;
+  const userRoles = user?.user?.roles || [];
+  const hasAdminOrDevAccess =
+    userRoles.includes("SUPER_ADMIN") || userRoles.includes("DEVELOPER");
 
   const { data: cart } = useGetCartQuery(userId, {
     skip: !userId,
@@ -121,6 +124,19 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
         >
           Settings
         </Menu.Item>
+        {/* Conditionally render Logging for SUPER_ADMIN or DEVELOPER */}
+        {hasAdminOrDevAccess && (
+          <>
+            <Menu.Divider />
+            <Menu.Item
+              key="logging"
+              onClick={() => navigate("/logging")}
+              icon={<SettingOutlined className="me-2" />}
+            >
+              Logging
+            </Menu.Item>
+          </>
+        )}
         <Menu.Divider />
         <Menu.Item
           key="logout"
@@ -139,12 +155,12 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
       navigate,
       handleLogout,
       isLoggingOut,
+      hasAdminOrDevAccess, // Add dependency
     ]
   );
 
-  // === Mobile Menu Items (Memoized) ===
-  const mobileMenuItems = useMemo(
-    () => [
+  const mobileMenuItems = useMemo(() => {
+    const items = [
       {
         key: "profile",
         label: "My Profile",
@@ -195,27 +211,40 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
         icon: darkMode ? <SunFilled /> : <MoonFilled />,
         onClick: toggleDarkMode,
       },
-      {
-        key: "logout",
-        label: isLoggingOut ? "Logging out..." : "Logout",
-        icon: <BiLogOut className="me-2" />,
-        onClick: handleLogout,
-        disabled: isLoggingOut,
-      },
-    ],
-    [
-      userId,
-      navigate,
-      notificationCount,
-      cartItemCount,
-      isFullscreen,
-      darkMode,
-      isLoggingOut,
-      handleFullscreenToggle,
-      toggleDarkMode,
-      handleLogout,
-    ]
-  );
+    ];
+
+    // Insert Logging item before Logout if user has access
+    if (hasAdminOrDevAccess) {
+      items.push({
+        key: "logging",
+        label: "Logging",
+        icon: <SettingOutlined className="me-2" />,
+        onClick: () => navigate("/logging"),
+      });
+    }
+
+    items.push({
+      key: "logout",
+      label: isLoggingOut ? "Logging out..." : "Logout",
+      icon: <BiLogOut className="me-2" />,
+      onClick: handleLogout,
+      disabled: isLoggingOut,
+    });
+
+    return items;
+  }, [
+    userId,
+    navigate,
+    notificationCount,
+    cartItemCount,
+    isFullscreen,
+    darkMode,
+    isLoggingOut,
+    handleFullscreenToggle,
+    toggleDarkMode,
+    handleLogout,
+    hasAdminOrDevAccess, // Add dependency
+  ]);
 
   return (
     <div className="header">

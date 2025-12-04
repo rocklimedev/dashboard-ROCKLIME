@@ -91,19 +91,39 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
                   const qty = Number(item.quantity || item.qty || 1);
                   const price = Number(item.price || item.sellingPrice || 0);
                   const discount = Number(item.discount || 0);
-                  const discountType = item.discountType || "fixed";
-                  const tax = Number(item.tax || 0);
-                  const total = Number(item.total || 0);
+                  const discountType = item.discountType || "percent";
+
+                  // === Calculate discount amount ===
+                  let discountAmount = 0;
+                  if (discount > 0) {
+                    if (discountType === "percent") {
+                      discountAmount = (price * qty * discount) / 100;
+                    } else {
+                      discountAmount = discount;
+                    }
+                  }
+
+                  // === Subtotal = (Price × Qty) - Discount (NO TAX here) ===
+                  const subtotal = price * qty - discountAmount;
+
+                  // === DO NOT apply line-level tax (your items have tax: 0) ===
+                  // Tax is applied at document level via q.gst
+
+                  // Use saved total if valid, otherwise use calculated subtotal
+                  const savedTotal = Number(item.total);
+                  const displayTotal = savedTotal > 0 ? savedTotal : subtotal;
 
                   const discountDisplay =
-                    discountType === "percent"
-                      ? `${discount}%`
-                      : `₹${discount.toFixed(2)}`;
+                    discount > 0
+                      ? discountType === "percent"
+                        ? `${discount}%`
+                        : `₹${discount.toFixed(2)}`
+                      : "—";
 
                   const imageUrl = item.imageUrl || item.images?.[0];
 
                   return (
-                    <tr key={item.productId || idx}>
+                    <tr key={item.productId || item._id || idx}>
                       <td>{idx + 1}</td>
                       <td>
                         {imageUrl ? (
@@ -138,83 +158,105 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
                       </td>
                       <td>{qty}</td>
                       <td>₹{price.toFixed(2)}</td>
-                      <td>{discount > 0 ? discountDisplay : "—"}</td>
-                      <td>{tax > 0 ? `${tax}%` : "—"}</td>
-                      <td className="fw-bold">₹{total.toFixed(2)}</td>
+                      <td>{discountDisplay}</td>
+                      <td>—</td> {/* No per-line tax */}
+                      <td className="fw-bold">₹{displayTotal.toFixed(2)}</td>
                     </tr>
                   );
                 })}
               </tbody>
             </Table>
 
-            {/* ========== FINAL BREAKDOWN (FROM DB) ========== */}
-
-            <Table bordered size="sm">
-              <tbody>
-                <tr>
-                  <td className="text-end fw-bold">
-                    Subtotal (after line items)
-                  </td>
-                  <td className="text-end">
-                    ₹{Number(q.subtotal || 0).toFixed(2)}
-                  </td>
-                </tr>
-
-                {q.extraDiscount > 0 && (
+            {/* ========== FINAL BREAKDOWN – ROBUST VERSION ========== */}
+            <div className="mt-4">
+              <Table bordered size="sm">
+                <tbody>
+                  {/* 1. Subtotal – sum of all line item totals */}
                   <tr>
-                    <td className="text-end text-danger">
-                      Extra Discount (
-                      {q.extraDiscountType === "percent"
-                        ? `${q.extraDiscount}%`
-                        : `₹${q.extraDiscount}`}
-                      )
-                    </td>
-                    <td className="text-end text-danger">
-                      -₹{Number(q.discountAmount || 0).toFixed(2)}
+                    <td className="text-end fw-bold">Subtotal</td>
+                    <td className="text-end">
+                      ₹
+                      {lineItems
+                        .reduce((sum, item) => sum + Number(item.total || 0), 0)
+                        .toFixed(2)}
                     </td>
                   </tr>
-                )}
 
-                {q.shippingAmount > 0 && (
-                  <tr>
-                    <td className="text-end text-success">Shipping</td>
-                    <td className="text-end text-success">
-                      +₹{Number(q.shippingAmount).toFixed(2)}
+                  {/* 2. Extra Discount */}
+                  {q.extraDiscount > 0 && (
+                    <tr>
+                      <td className="text-end text-danger">
+                        Extra Discount (
+                        {q.extraDiscountType === "percent"
+                          ? `${q.extraDiscount}%`
+                          : `₹${q.extraDiscount}`}
+                        )
+                      </td>
+                      <td className="text-end text-danger">
+                        -₹
+                        {Number(
+                          q.discountAmount || q.extraDiscount || 0
+                        ).toFixed(2)}
+                      </td>
+                    </tr>
+                  )}
+
+                  {/* 3. Shipping */}
+                  {q.shippingAmount > 0 && (
+                    <tr>
+                      <td className="text-end text-success">Shipping</td>
+                      <td className="text-end text-success">
+                        +₹{Number(q.shippingAmount).toFixed(2)}
+                      </td>
+                    </tr>
+                  )}
+
+                  {/* 4. GST – NOW FIXED! */}
+                  {q.gst > 0 && (
+                    <tr>
+                      <td className="text-end text-success">GST ({q.gst}%)</td>
+                      <td className="text-end text-success">
+                        +₹
+                        {(
+                          (lineItems.reduce(
+                            (sum, item) => sum + Number(item.total || 0),
+                            0
+                          ) +
+                            (q.shippingAmount || 0) -
+                            (q.discountAmount || 0)) *
+                          (q.gst / 100)
+                        ).toFixed(2)}
+                      </td>
+                    </tr>
+                  )}
+
+                  {/* 5. Round Off */}
+                  {q.roundOff != null && Number(q.roundOff) !== 0 && (
+                    <tr>
+                      <td className="text-end">Round Off</td>
+                      <td
+                        className={`text-end ${
+                          Number(q.roundOff) >= 0
+                            ? "text-success"
+                            : "text-danger"
+                        }`}
+                      >
+                        {Number(q.roundOff) >= 0 ? "+" : "-"}₹
+                        {Math.abs(Number(q.roundOff)).toFixed(2)}
+                      </td>
+                    </tr>
+                  )}
+
+                  {/* 6. Final Amount */}
+                  <tr className="table-primary fw-bold fs-5">
+                    <td className="text-end">Final Amount</td>
+                    <td className="text-end">
+                      ₹{Number(q.finalAmount || 0).toFixed(2)}
                     </td>
                   </tr>
-                )}
-
-                {q.gst > 0 && (
-                  <tr>
-                    <td className="text-end text-success">GST ({q.gst}%)</td>
-                    <td className="text-end text-success">
-                      +₹{Number(q.gstAmount || 0).toFixed(2)}
-                    </td>
-                  </tr>
-                )}
-
-                {q.roundOff != null && q.roundOff !== 0 && (
-                  <tr>
-                    <td className="text-end">Round-off</td>
-                    <td
-                      className={`text-end ${
-                        q.roundOff >= 0 ? "text-success" : "text-danger"
-                      }`}
-                    >
-                      {q.roundOff >= 0 ? "+" : "-"}₹
-                      {Math.abs(q.roundOff).toFixed(2)}
-                    </td>
-                  </tr>
-                )}
-
-                <tr>
-                  <td className="text-end">Final Amount</td>
-                  <td className="text-end">
-                    ₹{Number(q.finalAmount || 0).toFixed(2)}
-                  </td>
-                </tr>
-              </tbody>
-            </Table>
+                </tbody>
+              </Table>
+            </div>
           </>
         )}
       </Modal.Body>

@@ -13,23 +13,12 @@ import PageHeader from "../Common/PageHeader";
 
 const RolePermission = () => {
   /* ==================== QUERIES ==================== */
-  const {
-    data: roles,
-    isLoading: isRolesLoading,
-    isError: isRolesError,
-  } = useGetRolesQuery();
+  const { data: roles, isError: isRolesError } = useGetRolesQuery();
 
-  const {
-    data: permissionsData,
-    isLoading: isPermissionsLoading,
-    isError: isPermissionsError,
-  } = useGetAllPermissionsQuery();
+  const { data: permissionsData, isError: isPermissionsError } =
+    useGetAllPermissionsQuery();
 
-  const {
-    data: users,
-    isLoading: isUsersLoading,
-    isError: isUsersError,
-  } = useGetAllUsersQuery();
+  const { data: users, isError: isUsersError } = useGetAllUsersQuery();
 
   const [deleteRole, { isLoading: isDeleting }] = useDeleteRoleMutation();
 
@@ -85,16 +74,12 @@ const RolePermission = () => {
       const hasApi =
         perm.api && typeof perm.api === "string" && perm.api.trim() !== "";
 
-      // SKIP if no valid api
       if (!hasApi) return;
 
-      if (!grouped[module]) {
-        grouped[module] = [];
-      }
+      if (!grouped[module]) grouped[module] = [];
       grouped[module].push(perm);
     });
 
-    // Remove modules with no valid permissions
     return Object.fromEntries(
       Object.entries(grouped).filter(([_, perms]) => perms.length > 0)
     );
@@ -194,22 +179,7 @@ const RolePermission = () => {
     return "secondary";
   };
 
-  /* ==================== LOADING / ERROR ==================== */
-  if (isRolesLoading || isPermissionsLoading || isUsersLoading) {
-    return (
-      <div className="content">
-        <div className="card">
-          <div className="card-body text-center py-5">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </div>
-            <p className="mt-3">Loading data...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  /* ==================== ERROR STATE (optional – remove if handled globally) ==================== */
   if (isRolesError || isPermissionsError || isUsersError) {
     return (
       <div className="content">
@@ -362,7 +332,7 @@ const RolePermission = () => {
                                             user.email ||
                                             "U"
                                           }
-                                          src={user.photo_thumbnail} // Use avatar URL or fallback
+                                          src={user.photo_thumbnail}
                                           size="30"
                                           round={true}
                                           className="me-1"
@@ -428,7 +398,6 @@ const RolePermission = () => {
                 id="pills-permissions"
                 role="tabpanel"
               >
-                {/* Search Bar */}
                 <div className="row mb-4">
                   <div className="col-lg-12">
                     <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
@@ -457,7 +426,6 @@ const RolePermission = () => {
                   </div>
                 </div>
 
-                {/* Render ONLY modules with valid API permissions */}
                 {availableModules.length === 0 ? (
                   <div className="text-center py-5 text-muted">
                     <p className="mb-0">
@@ -468,7 +436,6 @@ const RolePermission = () => {
                   availableModules.map((module) => {
                     const modulePermissions = validModulePermissions[module];
 
-                    // Apply search filter
                     const filtered = modulePermissions.filter(
                       (p) =>
                         p.name
@@ -481,7 +448,6 @@ const RolePermission = () => {
 
                     if (filtered.length === 0) return null;
 
-                    // Apply sort
                     let sorted = [...filtered];
                     switch (sortBy) {
                       case "Ascending":
