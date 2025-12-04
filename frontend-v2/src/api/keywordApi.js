@@ -1,14 +1,29 @@
+// src/api/keywordApi.js
 import { baseApi } from "./baseApi";
+
 export const keywordApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAllKeywords: builder.query({
       query: () => "/keyword/",
       providesTags: ["Keyword"],
+      // This is the key fix!
+      transformResponse: (response) => {
+        // Backend returns { keywords: [...] } → extract the array
+        if (response && Array.isArray(response.keywords)) {
+          return response.keywords;
+        }
+        if (Array.isArray(response)) {
+          return response; // fallback if backend returns direct array
+        }
+        return []; // always return array
+      },
     }),
+
     getKeywordById: builder.query({
       query: (id) => `/keyword/${id}`,
       providesTags: (result, error, id) => [{ type: "Keyword", id }],
     }),
+
     createKeyword: builder.mutation({
       query: (newKeyword) => ({
         url: "/keyword/",
@@ -17,6 +32,7 @@ export const keywordApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Keyword"],
     }),
+
     updateKeyword: builder.mutation({
       query: ({ id, updatedData }) => ({
         url: `/keyword/${id}`,
@@ -25,6 +41,7 @@ export const keywordApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: (result, error, { id }) => [{ type: "Keyword", id }],
     }),
+
     deleteKeyword: builder.mutation({
       query: (id) => ({
         url: `/keyword/${id}`,

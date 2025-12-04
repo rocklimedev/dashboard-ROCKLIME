@@ -48,6 +48,7 @@ const routes = {
   taskBoard: require("./routes/taskBoardRoutes"),
   feedback: require("./routes/feedback"),
   cachedPermission: require("./routes/cachedPermission"),
+  siteMap: require("./routes/siteMap"),
 };
 
 // ------------------- Express App -------------------
@@ -150,6 +151,7 @@ app.use("/api/tasks", routes.task);
 app.use("/api/taskboards", routes.taskBoard);
 app.use("/api/feedback", routes.feedback);
 app.use("/api/cached-permissions", routes.cachedPermission);
+app.use("/api/site-maps", routes.siteMap);
 
 // ------------------- Health Check -------------------
 app.get("/health", (req, res) => {

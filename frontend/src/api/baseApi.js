@@ -58,6 +58,8 @@ export const baseApi = createApi({
     "Members",
     "Vendors",
     "Feedback",
+    "SiteMap",
+    "SiteMapsByCustomer",
   ],
   endpoints: (builder) => ({}), // endpoints will be injected per module
 });

@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   Form,
   Input,
-  Spin,
   Pagination,
   Empty,
   Table,
@@ -15,65 +14,70 @@ import {
   Typography,
   message,
   Modal,
-  Alert,
-  Form as AntForm,
+  Tag,
 } from "antd";
-import {
-  SortAscendingOutlined,
-  SortDescendingOutlined,
-} from "@ant-design/icons";
 import {
   SearchOutlined,
   MoreOutlined,
   FilterOutlined,
+  PlusOutlined,
+  MinusOutlined,
+  HistoryOutlined,
+  SortAscendingOutlined,
+  SortDescendingOutlined,
 } from "@ant-design/icons";
 import {
   useGetAllProductsQuery,
   useAddStockMutation,
   useRemoveStockMutation,
 } from "../../api/productApi";
-import PageHeader from "../Common/PageHeader";
+import PageHeader from "./PageHeader";
 import pos from "../../assets/img/default.png";
-import { useGetHistoryByProductIdQuery } from "../../api/productApi";
-import { Dropdown } from "react-bootstrap";
 import HistoryModalAntD from "./HistoryModal";
+import { FileTextOutlined, DownloadOutlined } from "@ant-design/icons";
+import { generatePDF, generateExcel } from "../../data/helpers";
+import ReportBuilderModal from "./ReportBuilderModal";
+
 const { TabPane } = Tabs;
-const { Text } = Typography;
+const { Text, Title } = Typography;
 
 const InventoryWrapper = () => {
   const navigate = useNavigate();
-  const { data: productsData, error, isLoading } = useGetAllProductsQuery();
+  const { data: productsData, error } = useGetAllProductsQuery(); // ← isLoading removed
   const [addStock, { isLoading: isAddingStock }] = useAddStockMutation();
   const [removeStock, { isLoading: isRemovingStock }] =
     useRemoveStockMutation();
 
-  // ────── State ──────
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [selectedReportProducts, setSelectedReportProducts] = useState([]);
+  const [generatingMonthly, setGeneratingMonthly] = useState(false);
+
+  // State
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
   const [lowStockThreshold, setLowStockThreshold] = useState(10);
   const [maxStockFilter, setMaxStockFilter] = useState(null);
   const [priceRange, setPriceRange] = useState([null, null]);
+  const [priceSort, setPriceSort] = useState(null); // null | "asc" | "desc"
 
-  // **New** – sort state
-  const [priceSort, setPriceSort] = useState(null); // or "asc" | "desc" | null
-  // Modal state
+  // Modals
   const [stockModalOpen, setStockModalOpen] = useState(false);
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [stockAction, setStockAction] = useState("add");
+  const [stockAction, setStockAction] = useState("add"); // "add" | "remove"
 
   const itemsPerPage = 30;
-  const [stockForm] = AntForm.useForm();
+  const [stockForm] = Form.useForm();
 
-  // ────── Helpers ──────
+  // Helpers
   const parseImages = (images) => {
     try {
       if (typeof images === "string") {
         const parsed = JSON.parse(images);
-        return Array.isArray(parsed) ? parsed : [pos];
+        return Array.isArray(parsed) && parsed.length > 0 ? parsed : [pos];
       }
-      return Array.isArray(images) ? images : [pos];
+      return Array.isArray(images) && images.length > 0 ? images : [pos];
     } catch {
       return [pos];
     }
@@ -84,7 +88,7 @@ const InventoryWrapper = () => {
     const entry = metaDetails.find(
       (d) => d.slug && d.slug.toLowerCase() === "companycode"
     );
-    return entry ? String(entry.value) : "N/A";
+    return entry ? String(entry.value || "N/A") : "N/A";
   };
 
   const getSellingPrice = (metaDetails) => {
@@ -95,16 +99,14 @@ const InventoryWrapper = () => {
     return entry ? Number(entry.value) : null;
   };
 
-  // ────── Base products ──────
-  const products = useMemo(() => {
-    if (!Array.isArray(productsData)) {
-      return [];
-    }
-    return productsData;
-  }, [productsData]);
+  // Base products
+  const products = useMemo(
+    () => (Array.isArray(productsData) ? productsData : []),
+    [productsData]
+  );
 
-  // ────── Search + Max-Stock + Price-Range filter ──────
-  const searchedAndFiltered = useMemo(() => {
+  // Filters
+  const filteredProducts = useMemo(() => {
     const term = search.toLowerCase();
     return products.filter((p) => {
       const matchesSearch =
@@ -125,26 +127,106 @@ const InventoryWrapper = () => {
     });
   }, [products, search, maxStockFilter, priceRange]);
 
-  // ────── Tab filter ──────
+  // Report generators
+  const generateCustomReport = (format) => {
+    const selectedData = products.filter((p) =>
+      selectedReportProducts.includes(p.productId)
+    );
+
+    const reportData = selectedData.map((p) => ({
+      Name: p.name || "Unnamed Product",
+      "Product Code": p.product_code || "—",
+      "Company Code": getCompanyCode(p.metaDetails),
+      "Selling Price": getSellingPrice(p.metaDetails)
+        ? `₹${getSellingPrice(p.metaDetails).toLocaleString("en-IN")}`
+        : "—",
+      Stock: p.quantity,
+      Status:
+        p.quantity === 0
+          ? "Out of Stock"
+          : p.quantity <= lowStockThreshold
+          ? "Low Stock"
+          : "In Stock",
+    }));
+
+    const title = `Custom Inventory Report - ${new Date().toLocaleDateString(
+      "en-IN"
+    )}`;
+
+    if (format === "pdf") generatePDF(reportData, title);
+    else generateExcel(reportData, title);
+
+    setReportModalOpen(false);
+    setSelectedReportProducts([]);
+    message.success("Report generated successfully!");
+  };
+
+  const generateMonthlyReport = async () => {
+    setGeneratingMonthly(true);
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthName = now.toLocaleString("en-US", {
+      month: "long",
+      year: "numeric",
+    });
+
+    const updatedThisMonth = products.filter((p) => {
+      if (!p.updatedAt) return false;
+      const updatedDate = new Date(p.updatedAt);
+      return updatedDate >= startOfMonth;
+    });
+
+    if (updatedThisMonth.length === 0) {
+      message.info("No products were updated this month");
+      setGeneratingMonthly(false);
+      return;
+    }
+
+    const reportData = updatedThisMonth.map((p) => ({
+      Name: p.name || "Unnamed Product",
+      "Product Code": p.product_code || "—",
+      "Company Code": getCompanyCode(p.metaDetails),
+      "Selling Price": getSellingPrice(p.metaDetails)
+        ? `₹${getSellingPrice(p.metaDetails).toLocaleString("en-IN")}`
+        : "—",
+      Stock: p.quantity,
+      Status:
+        p.quantity === 0
+          ? "Out of Stock"
+          : p.quantity <= lowStockThreshold
+          ? "Low Stock"
+          : "In Stock",
+      "Last Updated": new Date(p.updatedAt).toLocaleDateString("en-IN"),
+    }));
+
+    const title = `Monthly Report - ${monthName} (${updatedThisMonth.length} updated)`;
+    generatePDF(reportData, title);
+
+    setGeneratingMonthly(false);
+    message.success(
+      `Monthly report: ${updatedThisMonth.length} products updated`
+    );
+  };
+
+  // Tab logic
   const tabFilteredProducts = useMemo(() => {
     switch (activeTab) {
       case "in-stock":
-        return searchedAndFiltered.filter((p) => p.quantity > 0);
+        return filteredProducts.filter((p) => p.quantity > 0);
       case "out-of-stock":
-        return searchedAndFiltered.filter((p) => p.quantity === 0);
+        return filteredProducts.filter((p) => p.quantity === 0);
       case "low-stock":
-        return searchedAndFiltered.filter(
+        return filteredProducts.filter(
           (p) => p.quantity > 0 && p.quantity <= lowStockThreshold
         );
       default:
-        return searchedAndFiltered;
+        return filteredProducts;
     }
-  }, [searchedAndFiltered, activeTab, lowStockThreshold]);
+  }, [filteredProducts, activeTab, lowStockThreshold]);
 
-  // ────── **Price sorting** ──────
+  // Price sorting
   const sortedProducts = useMemo(() => {
     if (!priceSort) return tabFilteredProducts;
-
     return [...tabFilteredProducts].sort((a, b) => {
       const priceA = getSellingPrice(a.metaDetails) ?? -Infinity;
       const priceB = getSellingPrice(b.metaDetails) ?? -Infinity;
@@ -152,28 +234,29 @@ const InventoryWrapper = () => {
     });
   }, [tabFilteredProducts, priceSort]);
 
-  // ────── Pagination ──────
-  const offset = (currentPage - 1) * itemsPerPage;
-  const currentItems = useMemo(
-    () => sortedProducts.slice(offset, offset + itemsPerPage),
-    [sortedProducts, currentPage, itemsPerPage]
+  // Pagination
+  const currentItems = sortedProducts.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   );
   const totalItems = sortedProducts.length;
 
-  // Reset page when any filter/tab changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [activeTab, search, maxStockFilter, priceRange, priceSort]);
+  useEffect(
+    () => setCurrentPage(1),
+    [activeTab, search, maxStockFilter, priceRange, priceSort]
+  );
 
-  // ────── Actions ──────
-  const handleAddProduct = () => navigate("/inventory/product/add");
+  // Counts
+  const counts = useMemo(() => {
+    const inStock = products.filter((p) => p.quantity > 0).length;
+    const outStock = products.filter((p) => p.quantity === 0).length;
+    const lowStock = products.filter(
+      (p) => p.quantity > 0 && p.quantity <= lowStockThreshold
+    ).length;
+    return { all: products.length, inStock, outStock, lowStock };
+  }, [products, lowStockThreshold]);
 
-  const handleCopy = (value) => {
-    if (!value) return;
-    navigator.clipboard.writeText(value);
-    message.success("Copied to clipboard");
-  };
-
+  // Actions
   const openStockModal = (product, action) => {
     setSelectedProduct(product);
     setStockAction(action);
@@ -187,407 +270,336 @@ const InventoryWrapper = () => {
   };
 
   const handleStockSubmit = async (values) => {
-    const { quantity } = values;
-    const payload = { productId: selectedProduct.productId, quantity };
-
     try {
       if (stockAction === "add") {
-        await addStock(payload).unwrap();
+        await addStock({
+          productId: selectedProduct.productId,
+          quantity: values.quantity,
+        }).unwrap();
+        message.success(`Added ${values.quantity} units`);
       } else {
-        await removeStock(payload).unwrap();
+        await removeStock({
+          productId: selectedProduct.productId,
+          quantity: values.quantity,
+        }).unwrap();
+        message.success(`Removed ${values.quantity} units`);
       }
     } catch (err) {
-      message.error(err?.data?.message || "Operation failed");
+      message.error(err?.data?.message || "Failed to update stock");
     } finally {
       setStockModalOpen(false);
       setSelectedProduct(null);
     }
   };
 
-  // ────── Dropdown ──────
-  const ActionDropdown = ({ product }) => (
-    <Dropdown>
-      <Dropdown.Toggle
-        variant="link"
-        bsPrefix="p-0"
-        id={`dropdown-${product.productId}`}
-        className="text-muted"
-        style={{ boxShadow: "none" }}
-      >
-        <MoreOutlined style={{ fontSize: 18 }} />
-      </Dropdown.Toggle>
-
-      <Dropdown.Menu align="end">
-        <Dropdown.Item onClick={() => openStockModal(product, "add")}>
-          Add Stock
-        </Dropdown.Item>
-        <Dropdown.Item
-          onClick={() => openStockModal(product, "remove")}
-          disabled={product.quantity === 0}
-        >
-          Remove Stock
-        </Dropdown.Item>
-        <Dropdown.Item onClick={() => openHistoryModal(product)}>
-          View History
-        </Dropdown.Item>
-      </Dropdown.Menu>
-    </Dropdown>
-  );
-
-  // ────── Table Columns ──────
+  // Table Columns (unchanged)
+  // Table Columns
   const columns = [
     {
       title: "Image",
       dataIndex: "images",
-      key: "images",
       width: 80,
       render: (images) => (
         <img
-          src={parseImages(images)[0] || pos}
+          src={parseImages(images)[0]}
           alt="Product"
-          style={{ width: 50, height: 50, objectFit: "cover", borderRadius: 6 }}
+          style={{
+            width: 50,
+            height: 50,
+            objectFit: "cover",
+            borderRadius: 8,
+            border: "1px solid #f0f0f0",
+          }}
         />
       ),
     },
     {
-      title: "Name",
+      title: "Product Name",
       dataIndex: "name",
-      key: "name",
-      render: (text, record) => (
+      render: (_, record) => (
         <Link to={`/product/${record.productId}`} style={{ fontWeight: 500 }}>
-          {text || "N/A"}
+          {record.name || "Unnamed Product"}
         </Link>
       ),
     },
     {
-      title: "Product Code",
+      title: "Code",
       dataIndex: "product_code",
-      key: "product_code",
-      render: (text) => (
+      render: (code) => (
         <Text
+          copyable={!!code}
           code
-          onClick={() => handleCopy(text)}
-          style={{
-            cursor: text ? "pointer" : "default",
-            userSelect: "none",
-          }}
+          style={{ cursor: code ? "pointer" : "default" }}
         >
-          {text || "N/A"}
+          {code || "—"}
         </Text>
       ),
     },
     {
       title: "Company Code",
       dataIndex: "metaDetails",
-      key: "company_code",
       render: (meta) => {
-        const companyCode = getCompanyCode(meta);
+        const code = getCompanyCode(meta);
         return (
-          <Text
-            code
-            onClick={() => handleCopy(companyCode)}
-            style={{
-              cursor: companyCode !== "N/A" ? "pointer" : "default",
-              userSelect: "none",
-            }}
-          >
-            {companyCode}
+          <Text copyable={code !== "N/A"} code>
+            {code}
           </Text>
         );
       },
     },
     {
       title: () => (
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+        <Space>
           Selling Price
           {priceSort === "asc" ? (
             <SortAscendingOutlined
-              style={{ cursor: "pointer" }}
               onClick={() => setPriceSort("desc")}
+              style={{ cursor: "pointer", color: "#1890ff" }}
             />
           ) : priceSort === "desc" ? (
             <SortDescendingOutlined
-              style={{ cursor: "pointer" }}
               onClick={() => setPriceSort(null)}
+              style={{ cursor: "pointer", color: "#1890ff" }}
             />
           ) : (
-            <span
-              style={{ cursor: "pointer", opacity: 0.4 }}
+            <SortAscendingOutlined
               onClick={() => setPriceSort("asc")}
-            >
-              <SortAscendingOutlined />
-            </span>
+              style={{ cursor: "pointer", opacity: 0.5 }}
+            />
           )}
-        </div>
+        </Space>
       ),
       dataIndex: "metaDetails",
-      key: "sellingPrice",
       render: (meta) => {
         const price = getSellingPrice(meta);
-        return price != null ? `₹${price.toLocaleString()}` : "N/A";
+        return price != null ? (
+          <strong>₹{price.toLocaleString("en-IN")}</strong>
+        ) : (
+          <Text type="secondary">—</Text>
+        );
       },
     },
     {
       title: "Stock",
       dataIndex: "quantity",
-      key: "quantity",
-      render: (qty) => (
-        <Badge
-          status={
-            qty > 0
-              ? qty <= lowStockThreshold
-                ? "warning"
-                : "success"
-              : "error"
-          }
-          text={
-            qty > 0 ? (
-              `${qty} in stock`
-            ) : (
-              <span style={{ color: "#ff4d4f" }}>Out of Stock</span>
-            )
-          }
-        />
-      ),
+      align: "center",
+      render: (qty) => {
+        if (qty === 0) return <Tag color="red">Out of Stock</Tag>;
+        if (qty <= lowStockThreshold)
+          return <Tag color="orange">{qty} Low</Tag>;
+        return <Tag color="green">{qty} In Stock</Tag>;
+      },
     },
     {
       title: "Actions",
       key: "actions",
-      width: 80,
-      render: (_, record) => <ActionDropdown product={record} />,
+      width: 140,
+      align: "center",
+      render: (_, record) => (
+        <Space>
+          <Button
+            size="small"
+            icon={<PlusOutlined />}
+            onClick={() => openStockModal(record, "add")}
+            title="Add Stock"
+          />
+          <Button
+            size="small"
+            danger
+            icon={<MinusOutlined />}
+            disabled={record.quantity === 0}
+            onClick={() => openStockModal(record, "remove")}
+            title="Remove Stock"
+          />
+          <Button
+            size="small"
+            icon={<HistoryOutlined />}
+            onClick={() => openHistoryModal(record)}
+            title="View History"
+          />
+        </Space>
+      ),
     },
   ];
-
-  // ────── Tab counts ──────
-  const counts = useMemo(() => {
-    if (!Array.isArray(products)) {
-      return { all: 0, inStock: 0, outStock: 0, lowStock: 0 };
-    }
-    const inStock = products.filter((p) => p.quantity > 0).length;
-    const outStock = products.filter((p) => p.quantity === 0).length;
-    const lowStock = products.filter(
-      (p) => p.quantity > 0 && p.quantity <= lowStockThreshold
-    ).length;
-
-    return {
-      all: products.length,
-      inStock,
-      outStock,
-      lowStock,
-    };
-  }, [products, lowStockThreshold]);
-
-  // ────── Loading / Error ──────
-  if (isLoading) {
-    return (
-      <div className="loading-container text-center py-5">
-        <Spin size="large" />
-        <p>Loading inventory...</p>
-      </div>
-    );
-  }
+  // ──────────────────────────────────────────────
+  // Render (removed local loading spinner & Empty on error)
+  // ──────────────────────────────────────────────
+  // If you have a global loading skeleton / spinner, just render nothing or a placeholder until data arrives.
+  if (!productsData && !error) return null; // or return <YourGlobalSkeleton />
 
   if (error) {
     return (
-      <div className="page-wrapper">
-        <div className="content">
-          <div className="error-container text-center py-5">
-            <Empty
-              description={`Error: ${error?.data?.message || "Unknown error"}`}
-            />
-          </div>
-        </div>
+      <div style={{ padding: 20 }}>
+        <Empty description="Failed to load products" />
       </div>
     );
   }
 
-  // ────── Render ──────
   return (
     <div className="page-wrapper">
       <div className="content">
         <PageHeader
           title="Inventory Management"
-          subtitle="Manage stock levels, track history, and filter products"
+          subtitle="Track stock levels, add/remove stock, and view history"
           exportOptions={{ pdf: false, excel: false }}
-          extra={
-            <Button type="primary" onClick={handleAddProduct}>
-              Add Product
-            </Button>
-          }
         />
 
-        {/* Filters Bar */}
-        <div className="filter-bar bg-white p-3 shadow-sm mb-3 border-radius-md">
-          <Space direction="vertical" size="middle" style={{ width: "100%" }}>
-            <Form
-              layout="inline"
-              style={{ justifyContent: "space-between", flexWrap: "wrap" }}
-            >
-              <Space wrap>
-                <Input
-                  prefix={<SearchOutlined />}
-                  placeholder="Search by name, code..."
-                  allowClear
-                  size="large"
-                  style={{ minWidth: 250 }}
-                  onChange={(e) => setSearch(e.target.value)}
-                  value={search}
-                />
-
-                {/* Price Range */}
-                <Space>
-                  <Text>Price range (₹)</Text>
-                  <InputNumber
-                    min={0}
-                    placeholder="Min"
-                    size="middle"
-                    value={priceRange[0]}
-                    onChange={(v) => setPriceRange([v, priceRange[1]])}
-                    style={{ width: 100 }}
-                  />
-                  <Text>to</Text>
-                  <InputNumber
-                    min={0}
-                    placeholder="Max"
-                    size="middle"
-                    value={priceRange[1]}
-                    onChange={(v) => setPriceRange([priceRange[0], v])}
-                    style={{ width: 100 }}
-                  />
-                  <Button
-                    icon={<FilterOutlined />}
-                    onClick={() => setPriceRange([null, null])}
-                    disabled={!priceRange[0] && !priceRange[1]}
-                  >
-                    Clear
-                  </Button>
-                </Space>
-
-                {/* Max Stock */}
-                <Space>
-                  <Text>Stock ≤</Text>
-                  <InputNumber
-                    min={0}
-                    placeholder="Qty"
-                    size="middle"
-                    value={maxStockFilter}
-                    onChange={(val) => setMaxStockFilter(val)}
-                    style={{ width: 100 }}
-                  />
-                  <Button
-                    icon={<FilterOutlined />}
-                    onClick={() => setMaxStockFilter(null)}
-                    disabled={maxStockFilter === null}
-                  >
-                    Clear
-                  </Button>
-                </Space>
-              </Space>
-            </Form>
-
-            <Space align="center">
-              <Text type="secondary">Low stock threshold:</Text>
+        {/* Filters */}
+        <div className="bg-white p-4 rounded-lg shadow-sm mb-4">
+          <Space wrap>
+            <Input
+              prefix={<SearchOutlined />}
+              placeholder="Search products..."
+              allowClear
+              size="large"
+              style={{ width: 300 }}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <Space>
+              <Text>Price:</Text>
+              <InputNumber
+                placeholder="Min"
+                value={priceRange[0]}
+                onChange={(v) => setPriceRange([v, priceRange[1]])}
+              />
+              <Text>to</Text>
+              <InputNumber
+                placeholder="Max"
+                value={priceRange[1]}
+                onChange={(v) => setPriceRange([priceRange[0], v])}
+              />
+              <Button size="small" onClick={() => setPriceRange([null, null])}>
+                Clear
+              </Button>
+            </Space>
+            <Space>
+              <Text>Max Stock ≤</Text>
+              <InputNumber
+                value={maxStockFilter}
+                onChange={setMaxStockFilter}
+                style={{ width: 100 }}
+              />
+              <Button size="small" onClick={() => setMaxStockFilter(null)}>
+                Clear
+              </Button>
+            </Space>
+            <Space>
+              <Text>Low stock alert:</Text>
               <InputNumber
                 min={1}
-                max={1000}
                 value={lowStockThreshold}
-                onChange={(val) => setLowStockThreshold(val || 10)}
+                onChange={(v) => setLowStockThreshold(v || 10)}
                 style={{ width: 80 }}
               />
-              <Text type="secondary">units</Text>
             </Space>
+          </Space>
+          <Space style={{ float: "right" }}>
+            <Button
+              type="primary"
+              icon={<FileTextOutlined />}
+              onClick={() => setReportModalOpen(true)}
+            >
+              Build Report
+            </Button>
+            <Button
+              icon={<DownloadOutlined />}
+              onClick={generateMonthlyReport}
+              loading={generatingMonthly}
+            >
+              Monthly Report (Auto)
+            </Button>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => navigate("/product/add")}
+            >
+              Add Product
+            </Button>
           </Space>
         </div>
 
         {/* Tabs */}
-        <Tabs activeKey={activeTab} onChange={setActiveTab} type="card">
+        <Tabs activeKey={activeTab} onChange={setActiveTab} className="mb-4">
           <TabPane
             tab={
-              <span>
-                All{" "}
-                <Badge
-                  count={counts.all}
-                  style={{ backgroundColor: "#52c41a" }}
-                />
-              </span>
+              <>
+                All <Badge count={counts.all} />
+              </>
             }
             key="all"
           />
           <TabPane
             tab={
-              <span>
+              <>
                 In Stock{" "}
                 <Badge
                   count={counts.inStock}
-                  style={{ backgroundColor: "#1890ff" }}
+                  style={{ backgroundColor: "#52c41a" }}
                 />
-              </span>
+              </>
             }
             key="in-stock"
           />
           <TabPane
             tab={
-              <span>
-                Out of Stock{" "}
-                <Badge
-                  count={counts.outStock}
-                  style={{ backgroundColor: "#ff4d4f" }}
-                />
-              </span>
-            }
-            key="out-of-stock"
-          />
-          <TabPane
-            tab={
-              <span>
+              <>
                 Low Stock{" "}
                 <Badge
                   count={counts.lowStock}
                   style={{ backgroundColor: "#faad14" }}
                 />
-              </span>
+              </>
             }
             key="low-stock"
           />
+          <TabPane
+            tab={
+              <>
+                Out of Stock{" "}
+                <Badge
+                  count={counts.outStock}
+                  style={{ backgroundColor: "#ff4d4f" }}
+                />
+              </>
+            }
+            key="out-of-stock"
+          />
         </Tabs>
 
-        {/* Table */}
         {totalItems === 0 ? (
-          <div className="bg-white p-5 text-center">
-            <Empty description="No products match your filters." />
-          </div>
+          <Empty description="No products found" />
         ) : (
-          <div className="products-section bg-white shadow-sm">
+          <>
             <Table
               columns={columns}
               dataSource={currentItems}
               rowKey="productId"
               pagination={false}
-              scroll={{ x: 1000 }}
+              scroll={{ x: 1200 }}
+              bordered
             />
-            <div
-              className="pagination-container"
-              style={{ padding: "16px", textAlign: "right" }}
-            >
-              <Pagination
-                current={currentPage}
-                total={totalItems}
-                pageSize={itemsPerPage}
-                onChange={setCurrentPage}
-                showSizeChanger={false}
-                showQuickJumper
-                size="default"
-              />
-            </div>
-          </div>
+            <Pagination
+              style={{ marginTop: 16, textAlign: "right" }}
+              current={currentPage}
+              total={totalItems}
+              pageSize={itemsPerPage}
+              onChange={setCurrentPage}
+              showTotal={(total) => `Total ${total} products`}
+            />
+          </>
         )}
       </div>
 
-      {/* Stock Modal */}
+      {/* Modals (unchanged) */}
       <Modal
-        title={`${stockAction === "add" ? "Add" : "Remove"} Stock – ${
-          selectedProduct?.name || ""
-        }`}
+        title={
+          <Title level={4}>
+            {stockAction === "add" ? <PlusOutlined /> : <MinusOutlined />}{" "}
+            {stockAction === "add" ? "Add" : "Remove"} Stock —{" "}
+            {selectedProduct?.name}
+          </Title>
+        }
         open={stockModalOpen}
         onCancel={() => {
           setStockModalOpen(false);
@@ -595,40 +607,20 @@ const InventoryWrapper = () => {
         }}
         footer={null}
       >
-        <AntForm
-          form={stockForm}
-          layout="vertical"
-          onFinish={handleStockSubmit}
-        >
-          <AntForm.Item
+        <Form form={stockForm} layout="vertical" onFinish={handleStockSubmit}>
+          <Form.Item
             name="quantity"
             label="Quantity"
             rules={[
-              { required: true, message: "Please enter quantity" },
-              {
-                type: "number",
-                min: 1,
-                message: "Quantity must be at least 1",
-              },
+              { required: true, message: "Enter quantity" },
+              { type: "number", min: 1 },
             ]}
           >
-            <InputNumber
-              style={{ width: "100%" }}
-              min={1}
-              disabled={isAddingStock || isRemovingStock}
-            />
-          </AntForm.Item>
-
-          <AntForm.Item className="mb-0">
+            <InputNumber style={{ width: "100%" }} min={1} />
+          </Form.Item>
+          <Form.Item>
             <Space>
-              <Button
-                onClick={() => {
-                  setStockModalOpen(false);
-                  setSelectedProduct(null);
-                }}
-              >
-                Cancel
-              </Button>
+              <Button onClick={() => setStockModalOpen(false)}>Cancel</Button>
               <Button
                 type="primary"
                 htmlType="submit"
@@ -637,11 +629,20 @@ const InventoryWrapper = () => {
                 {stockAction === "add" ? "Add Stock" : "Remove Stock"}
               </Button>
             </Space>
-          </AntForm.Item>
-        </AntForm>
+          </Form.Item>
+        </Form>
       </Modal>
 
-      {/* History Modal */}
+      <ReportBuilderModal
+        open={reportModalOpen}
+        onClose={() => setReportModalOpen(false)}
+        products={products}
+        getCompanyCode={getCompanyCode}
+        getSellingPrice={getSellingPrice}
+        generatePDF={generatePDF}
+        generateExcel={generateExcel}
+      />
+
       <HistoryModalAntD
         open={historyModalOpen}
         onCancel={() => {

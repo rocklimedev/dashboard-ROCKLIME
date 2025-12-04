@@ -1,6 +1,6 @@
 // src/components/ProductCard.jsx
 import React, { useState } from "react";
-import { Button, Tooltip, Badge, Dropdown, Spin, Input } from "antd";
+import { Button, Tooltip, Badge, Dropdown, Input } from "antd";
 import {
   ShoppingCartOutlined,
   MoreOutlined,
@@ -19,15 +19,13 @@ const ProductCard = ({
   getBrandsName,
   getCategoryName,
   handleAddToCart,
-  cartLoadingStates,
+  cartLoadingStates, // Kept for potential future use, but not used in UI
   menu,
 }) => {
   const [quantity, setQuantity] = useState(product.quantity > 0 ? 1 : 0);
-  const { auth, isLoadingPermissions } = useAuth(); // HOOK AT TOP LEVEL
+  const { auth } = useAuth();
 
-  /* --------------------------------------------------------------
-     1. IMAGE PARSING – now works with **array** OR **string**
-     -------------------------------------------------------------- */
+  // Safe image parsing – handles array or JSON string
   const safeParseImages = (images) => {
     if (Array.isArray(images) && images.length) return images;
     if (typeof images === "string" && images.trim()) {
@@ -40,11 +38,10 @@ const ProductCard = ({
     }
     return [pos];
   };
+
   const productImages = safeParseImages(product.images);
 
-  /* --------------------------------------------------------------
-     2. PRICE – metaDetails is now a proper array of objects
-     -------------------------------------------------------------- */
+  // Extract selling price from metaDetails
   const sellingPriceMeta = Array.isArray(product.metaDetails)
     ? product.metaDetails.find((m) => m.slug === "sellingPrice")
     : null;
@@ -56,23 +53,21 @@ const ProductCard = ({
   const displayPrice =
     sellingPrice !== null && !isNaN(sellingPrice)
       ? `₹${sellingPrice.toFixed(2)}`
-      : "Price not available";
+      : "Price not set";
 
-  /* --------------------------------------------------------------
-     3. QUANTITY HANDLERS (unchanged)
-     -------------------------------------------------------------- */
+  // Quantity controls
   const handleIncrement = () => {
     if (quantity < product.quantity) setQuantity(quantity + 1);
   };
+
   const handleDecrement = () => {
     if (quantity > 1) setQuantity(quantity - 1);
   };
+
   const handleQuantityChange = (e) => {
-    const value = parseInt(e.target.value, 10);
-    if (!isNaN(value) && value >= 1 && value <= product.quantity) {
-      setQuantity(value);
-    } else if (e.target.value === "") {
-      setQuantity(1);
+    const value = e.target.value === "" ? "" : parseInt(e.target.value, 10);
+    if (value === "" || (value >= 1 && value <= product.quantity)) {
+      setQuantity(value || 1);
     }
   };
 
@@ -84,74 +79,72 @@ const ProductCard = ({
     }
   };
 
-  /* --------------------------------------------------------------
-     4. PERMISSION CHECKS (unchanged)
-     -------------------------------------------------------------- */
+  // Permissions
   const permissions = auth?.permissions ?? [];
-
-  const hasAddToCartPermission = permissions.some(
+  const canAddToCart = permissions.some(
     (p) => p.action === "write" && p.module === "cart"
   );
 
-  const hasProductActionPermission = permissions.some(
+  const canEditOrDelete = permissions.some(
     (p) => ["edit", "delete"].includes(p.action) && p.module === "products"
   );
 
-  /* --------------------------------------------------------------
-     5. RENDER (unchanged – UI is identical)
-     -------------------------------------------------------------- */
+  const isOutOfStock = product.quantity <= 0;
+  const hasValidPrice = sellingPrice !== null && !isNaN(sellingPrice);
+
   return (
     <div className="card mb-0">
-      {/* ---------- IMAGE + STOCK ---------- */}
+      {/* Image + Stock Status */}
       <div className="image-wrapper">
         <img
           src={productImages[0] || pos}
           alt={product.name || "Product"}
           className="product-image-card"
         />
-        {product.quantity > 0 ? (
-          <div className="status-bar in-stock">{`${product.quantity} in stock`}</div>
-        ) : (
+        {isOutOfStock ? (
           <div className="status-bar out-of-stock">Out of Stock</div>
+        ) : (
+          <div className="status-bar in-stock">{`${product.quantity} in stock`}</div>
         )}
       </div>
 
-      {/* ---------- THREE-DOT MENU ---------- */}
-      {hasProductActionPermission && (
-        <Dropdown overlay={menu(product)} trigger={["click"]}>
-          <Button
-            type="text"
-            icon={<MoreOutlined />}
-            size="large"
-            className="more-options-btn"
-            aria-label="More options"
-          />
-        </Dropdown>
+      {/* More Options Menu */}
+      {canEditOrDelete && (
+        <PermissionGate api="edit|delete" module="products">
+          <Dropdown overlay={menu(product)} trigger={["click"]}>
+            <Button
+              type="text"
+              icon={<MoreOutlined />}
+              size="large"
+              className="more-options-btn"
+            />
+          </Dropdown>
+        </PermissionGate>
       )}
 
-      {/* ---------- OUT-OF-STOCK BADGE ---------- */}
-      {product.quantity <= 0 && (
+      {/* Out of Stock Badge */}
+      {isOutOfStock && (
         <Badge count="Out of Stock" className="out-of-stock-badge" />
       )}
 
-      {/* ---------- PRODUCT NAME ---------- */}
+      {/* Product Name */}
       <h6 className="product-name">
         <Link to={`/product/${product.productId}`}>
-          {product.name || "N/A"}
+          {product.name || "Unnamed Product"}
         </Link>
       </h6>
 
-      {/* ---------- PRICE + QUANTITY ---------- */}
+      {/* Price + Quantity Selector */}
       <div className="price">
         <p className="text-gray-9 mb-0">{displayPrice}</p>
 
         <div className="qty-item">
-          <Tooltip title="Minus">
+          <Tooltip title="Decrease">
             <button
               type="button"
               className="dec"
               onClick={handleDecrement}
-              disabled={product.quantity <= 0 || quantity <= 1}
+              disabled={isOutOfStock || quantity <= 1}
             >
               <MinusOutlined />
             </button>
@@ -162,15 +155,16 @@ const ProductCard = ({
             className="form-control text-center"
             value={quantity}
             onChange={handleQuantityChange}
-            disabled={product.quantity <= 0}
+            disabled={isOutOfStock}
+            style={{ width: 50 }}
           />
 
-          <Tooltip title="Plus">
+          <Tooltip title="Increase">
             <button
               type="button"
               className="inc"
               onClick={handleIncrement}
-              disabled={product.quantity <= 0 || quantity >= product.quantity}
+              disabled={isOutOfStock || quantity >= product.quantity}
             >
               <PlusOutlined />
             </button>
@@ -178,36 +172,27 @@ const ProductCard = ({
         </div>
       </div>
 
-      {/* ---------- ADD-TO-CART BUTTON ---------- */}
-      {hasAddToCartPermission && (
+      {/* Add to Cart Button */}
+      {canAddToCart && (
         <Tooltip
           title={
-            product.quantity <= 0
+            isOutOfStock
               ? "Out of stock"
-              : sellingPrice === null || isNaN(sellingPrice)
-              ? "Invalid price"
+              : !hasValidPrice
+              ? "Price not set"
               : "Add to cart"
           }
         >
           <Button
+            type="primary"
             className="cart-button"
-            icon={
-              cartLoadingStates[product.productId] ? (
-                <Spin size="small" />
-              ) : (
-                <ShoppingCartOutlined />
-              )
-            }
+            icon={<ShoppingCartOutlined />}
             onClick={handleAddToCartWithQuantity}
-            disabled={
-              cartLoadingStates[product.productId] ||
-              product.quantity <= 0 ||
-              sellingPrice === null ||
-              isNaN(sellingPrice)
-            }
+            disabled={isOutOfStock || !hasValidPrice}
             size="large"
+            block
           >
-            {product.quantity <= 0 ? "Out of Stock" : "Add to Cart"}
+            {isOutOfStock ? "Out of Stock" : "Add to Cart"}
           </Button>
         </Tooltip>
       )}

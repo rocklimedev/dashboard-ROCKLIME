@@ -173,6 +173,27 @@ CREATE TABLE IF NOT EXISTS `customers` (
 
 -- Data exporting was unselected.
 
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.inventory_history
+CREATE TABLE IF NOT EXISTS `inventory_history` (
+  `id` char(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `productId` char(36) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `change` int(11) NOT NULL,
+  `quantityAfter` int(11) NOT NULL,
+  `action` enum('add-stock','remove-stock','sale','return','adjustment','correction') COLLATE utf8_unicode_ci NOT NULL,
+  `orderNo` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `userId` char(36) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL,
+  `message` text COLLATE utf8_unicode_ci,
+  `createdAt` datetime NOT NULL,
+  `updatedAt` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_product_created` (`productId`,`createdAt`),
+  KEY `idx_created_at` (`createdAt`),
+  KEY `idx_action` (`action`),
+  KEY `idx_user` (`userId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- Data exporting was unselected.
+
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.invoices
 CREATE TABLE IF NOT EXISTS `invoices` (
   `invoiceId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
@@ -211,11 +232,10 @@ CREATE TABLE IF NOT EXISTS `keywords` (
   `keyword` varchar(100) NOT NULL,
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL,
-  `categoryId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `categoryId` char(36) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `keyword` (`keyword`),
-  KEY `categoryId` (`categoryId`),
-  CONSTRAINT `keywords_ibfk_1` FOREIGN KEY (`categoryId`) REFERENCES `categories` (`categoryId`) ON DELETE CASCADE ON UPDATE CASCADE
+  KEY `categoryId` (`categoryId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Data exporting was unselected.
@@ -329,16 +349,42 @@ CREATE TABLE IF NOT EXISTS `products` (
   `vendorId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   `brand_parentcategoriesId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   `meta` json DEFAULT NULL COMMENT 'Stores key-value pairs where key is ProductMeta UUID and value is the actual value',
+  `masterProductId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `isMaster` tinyint(1) DEFAULT '0',
+  `variantOptions` json DEFAULT NULL,
+  `variantKey` varchar(255) DEFAULT NULL,
+  `skuSuffix` varchar(50) DEFAULT NULL,
   PRIMARY KEY (`productId`),
   UNIQUE KEY `product_code` (`product_code`),
   KEY `brandId` (`brandId`),
   KEY `categoryId` (`categoryId`),
   KEY `vendorId` (`vendorId`),
   KEY `brand_parentcategoriesId` (`brand_parentcategoriesId`),
+  KEY `products_master_product_id` (`masterProductId`),
+  KEY `products_is_master` (`isMaster`),
+  KEY `products_variant_key` (`variantKey`),
+  KEY `products_product_code` (`product_code`),
   CONSTRAINT `products_ibfk_3119` FOREIGN KEY (`brandId`) REFERENCES `brands` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `products_ibfk_3120` FOREIGN KEY (`categoryId`) REFERENCES `categories` (`categoryId`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `products_ibfk_3121` FOREIGN KEY (`vendorId`) REFERENCES `vendors` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `products_ibfk_3122` FOREIGN KEY (`brand_parentcategoriesId`) REFERENCES `brand_parentcategories` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.products_keywords
+CREATE TABLE IF NOT EXISTS `products_keywords` (
+  `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `productId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `keywordId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `createdAt` datetime NOT NULL,
+  `updatedAt` datetime NOT NULL,
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `unique_product_keyword` (`productId`,`keywordId`),
+  KEY `idx_productId` (`productId`) USING BTREE,
+  KEY `idx_keywordId` (`keywordId`) USING BTREE,
+  CONSTRAINT `products_keywords_keyword_fk` FOREIGN KEY (`keywordId`) REFERENCES `keywords` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `products_keywords_product_fk` FOREIGN KEY (`productId`) REFERENCES `products` (`productId`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Data exporting was unselected.
@@ -531,9 +577,10 @@ CREATE TABLE IF NOT EXISTS `users` (
   UNIQUE KEY `username` (`username`),
   UNIQUE KEY `email` (`email`),
   UNIQUE KEY `username_31` (`username`),
+  UNIQUE KEY `username_2` (`username`),
+  UNIQUE KEY `email_2` (`email`),
   KEY `addressId` (`addressId`),
   KEY `roleId` (`roleId`),
-  CONSTRAINT `users_ibfk_1329` FOREIGN KEY (`addressId`) REFERENCES `addresses` (`addressId`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `users_ibfk_1330` FOREIGN KEY (`roleId`) REFERENCES `roles` (`roleId`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

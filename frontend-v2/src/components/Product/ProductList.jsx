@@ -1,9 +1,8 @@
 import React, { useState, useMemo } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import {
   Form,
   Input,
-  Spin,
   Pagination,
   Empty,
   Table,
@@ -12,6 +11,7 @@ import {
   Dropdown,
   Select,
   Menu,
+  Spin,
 } from "antd";
 import {
   SearchOutlined,
@@ -24,49 +24,41 @@ import {
   useUpdateProductFeaturedMutation,
 } from "../../api/productApi";
 import { useGetAllBrandsQuery } from "../../api/brandsApi";
-import {
-  useGetBrandParentCategoryByIdQuery,
-  useGetBrandParentCategoriesQuery,
-} from "../../api/brandParentCategoryApi";
+import { useGetBrandParentCategoryByIdQuery } from "../../api/brandParentCategoryApi";
+import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
+import { useGetProfileQuery } from "../../api/userApi";
 import {
   useAddProductToCartMutation,
   useGetCartQuery,
   useRemoveFromCartMutation,
 } from "../../api/cartApi";
-import { useGetProfileQuery } from "../../api/userApi";
 import { message } from "antd";
 import "./productdetails.css";
 import DeleteModal from "../Common/DeleteModal";
-import HistoryModal from "../Common/HistoryModal";
+import HistoryModalAntD from "../Common/HistoryModal";
 import StockModal from "../Common/StockModal";
 import ProductCard from "./ProductCard";
 import PageHeader from "../Common/PageHeader";
 import Breadcrumb from "./Breadcrumb";
 import pos from "../../assets/img/default.png";
-import { useGetAllCategoriesQuery } from "../../api/categoryApi";
-import PermissionGate from "../../context/PermissionGate"; // <-- NEW
+import PermissionGate from "../../context/PermissionGate";
 import { useAuth } from "../../context/AuthContext";
 
 const ProductsList = () => {
   const { id: brandId, bpcId } = useParams();
-  const navigate = useNavigate();
 
   // ──────────────────────────────────────────────────────
-  // DATA HOOKS
+  // DATA HOOKS (no loading checks – global loader handles it)
   // ──────────────────────────────────────────────────────
-  const { data: productsData, error, isLoading } = useGetAllProductsQuery();
+  const { data: productsData, error } = useGetAllProductsQuery();
   const { data: brandsData } = useGetAllBrandsQuery();
   const { data: bpcData } = useGetBrandParentCategoryByIdQuery(bpcId, {
     skip: !bpcId,
   });
-  const {
-    data: categoriesData,
-    isLoading: categoriesLoading,
-    error: categoriesError,
-  } = useGetAllCategoriesQuery();
+  const { data: categoriesData } = useGetAllCategoriesQuery();
   const { data: customersData } = useGetCustomersQuery();
-  const { data: user, isLoading: userLoading } = useGetProfileQuery();
+  const { data: user } = useGetProfileQuery();
 
   const userId = user?.user?.userId;
   const { data: cartData, refetch: refetchCart } = useGetCartQuery(userId, {
@@ -86,11 +78,12 @@ const ProductsList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [isDeleteModalVisible, setDeleteModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [isStockModalVisible, setStockModalVisible] = useState(false);
-  const [isHistoryModalVisible, setHistoryModalVisible] = useState(false);
-  const [stockHistoryMap, setStockHistoryMap] = useState({});
+  const [stockModalOpen, setStockModalOpen] = useState(false);
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [stockAction, setStockAction] = useState("add");
   const [cartLoadingStates, setCartLoadingStates] = useState({});
   const [featuredLoadingStates, setFeaturedLoadingStates] = useState({});
+
   const [form] = Form.useForm();
   const [search, setSearch] = useState("");
 
@@ -105,9 +98,6 @@ const ProductsList = () => {
       : "Not Branded";
   };
 
-  // ──────────────────────────────────────────────────────
-  // HELPERS (add these two functions)
-  // ──────────────────────────────────────────────────────
   const getCategoryName = (categoryId) => {
     return categoryId
       ? categoriesData?.categories?.find((c) => c.categoryId === categoryId)
@@ -124,14 +114,13 @@ const ProductsList = () => {
 
   const formatPrice = (value, unit) => {
     if (Array.isArray(unit)) {
-      const metaDetails = unit;
-      const sellingPriceEntry = metaDetails.find(
+      const sellingPriceEntry = unit.find(
         (detail) => detail.slug?.toLowerCase() === "sellingprice"
       );
       if (sellingPriceEntry) {
         const cleaned = String(sellingPriceEntry.value).replace(/[^0-9.]/g, "");
         const price = parseFloat(cleaned);
-        return !isNaN(price) ? `₹ ${price.toFixed(2)}` : "N/A 'N/A'";
+        return !isNaN(price) ? `₹ ${price.toFixed(2)}` : "N/A";
       }
     }
     return "N/A";
@@ -164,88 +153,60 @@ const ProductsList = () => {
     () => (Array.isArray(productsData) ? productsData : []),
     [productsData]
   );
+
   const categoryOptions = useMemo(() => {
     const allCategories = categoriesData?.categories ?? [];
 
-    // Step 1: Determine which products we're filtering by brand/bpc
-    const relevantProducts = products.filter((product) => {
-      if (brandId) {
-        return String(product.brandId) === String(brandId);
-      }
-      if (bpcId) {
-        return String(product.brand_parentcategoriesId) === String(bpcId);
-      }
-      return true; // all products if no filter-brand filter
+    const relevantProducts = products.filter((p) => {
+      if (brandId) return String(p.brandId) === String(brandId);
+      if (bpcId) return String(p.brand_parentcategoriesId) === String(bpcId);
+      return true;
     });
 
-    // Step 2: Extract unique categoryIds used in these products
     const usedCategoryIds = new Set(
-      relevantProducts.map((p) => p.categoryId).filter(Boolean) // remove null/undefined
+      relevantProducts.map((p) => p.categoryId).filter(Boolean)
     );
 
-    // Step 3: Build options only for categories that are actually used
     const filteredCategories = allCategories.filter((cat) =>
       usedCategoryIds.has(cat.categoryId || cat.id)
     );
-
-    // Step 4: Sort alphabetically (optional but nice)
     filteredCategories.sort((a, b) => a.name.localeCompare(b.name));
 
-    const options = [
+    return [
       { label: "All Categories", value: "" },
       ...filteredCategories.map((c) => ({
         label: c.name,
         value: c.categoryId || c.id,
       })),
     ];
-
-    return options;
   }, [categoriesData, products, brandId, bpcId]);
+
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
-      // ── 1. Brand / Parent-Category filter
       const matchesFilter = brandId
         ? String(product.brandId) === String(brandId)
         : bpcId
         ? String(product.brand_parentcategoriesId) === String(bpcId)
         : true;
 
-      // ── 2. Category filter
       const matchesCategory = selectedCategoryId
         ? String(product.categoryId) === selectedCategoryId
         : true;
 
-      // ── 3. Search term
       const term = search.toLowerCase();
       const code = getCompanyCode(product.metaDetails);
+      const matchesSearch =
+        !term ||
+        product.name?.toLowerCase().includes(term) ||
+        product.product_code?.toLowerCase().includes(term) ||
+        code?.toLowerCase().includes(term) ||
+        getCategoryName(product.categoryId).toLowerCase().includes(term) ||
+        getParentCategoryName(product.categoryId).toLowerCase().includes(term);
 
-      const matchesName = product.name?.toLowerCase().includes(term);
-      const matchesCode = product.product_code?.toLowerCase().includes(term);
-      const matchesCompany = code?.toLowerCase().includes(term);
-      const catName = getCategoryName(product.categoryId);
-      const parentCatName = getParentCategoryName(product.categoryId);
-      const matchesCategoryName = catName.toLowerCase().includes(term);
-      const matchesParentCategory = parentCatName.toLowerCase().includes(term);
-
-      return (
-        matchesFilter &&
-        matchesCategory &&
-        (!term ||
-          matchesName ||
-          matchesCode ||
-          matchesCompany ||
-          matchesCategoryName ||
-          matchesParentCategory)
-      );
+      return matchesFilter && matchesCategory && matchesSearch;
     });
-  }, [
-    products,
-    brandId,
-    bpcId,
-    search,
-    categoriesData,
-    selectedCategoryId, // ← NEW dependency
-  ]);
+  }, [products, brandId, bpcId, search, selectedCategoryId]);
+
   const formattedTableData = useMemo(
     () =>
       filteredProducts.map((product) => ({
@@ -268,23 +229,19 @@ const ProductsList = () => {
   // ──────────────────────────────────────────────────────
   // HANDLERS
   // ──────────────────────────────────────────────────────
-
   const handleDeleteClick = (product) => {
     setSelectedProduct(product);
     setDeleteModalVisible(true);
   };
 
   const handleConfirmDelete = async () => {
-    if (!selectedProduct?.productId) {
-      message.error("No product selected");
-      setDeleteModalVisible(false);
-      return;
-    }
+    if (!selectedProduct?.productId)
+      return message.error("No product selected");
+
     try {
       await deleteProduct(selectedProduct.productId).unwrap();
-      if (currentItems.length === 1 && currentPage > 1) {
+      if (currentItems.length === 1 && currentPage > 1)
         setCurrentPage(currentPage - 1);
-      }
     } catch (e) {
       message.error(e.data?.message || "Delete failed");
     } finally {
@@ -309,61 +266,31 @@ const ProductsList = () => {
     }
   };
 
-  // ProductsList.jsx  (only the handler changes)
-  const handleAddToCart = async ({ productId, quantity }) => {
+  const handleAddToCart = async ({ productId, quantity = 1 }) => {
     if (!userId) return message.error("User not logged in");
-    if (!quantity || quantity < 1) return message.error("Invalid quantity");
-
-    const product = products.find((p) => p.productId === productId);
-    if (!product) return message.error("Product not found");
-
-    const sellingPrice = product.metaDetails?.find(
-      (m) => m.slug === "sellingPrice"
-    )?.value;
-    if (!sellingPrice || isNaN(sellingPrice))
-      return message.error("Invalid price");
+    if (quantity < 1) return message.error("Invalid quantity");
 
     setCartLoadingStates((s) => ({ ...s, [productId]: true }));
 
-    const cartItems = cartData?.cart?.items || [];
-    const existing = cartItems.find((i) => i.productId === productId);
-
     try {
-      await addProductToCart({
-        userId,
-        productId,
-        quantity, // just the amount user wants to add
-      }).unwrap();
+      await addProductToCart({ userId, productId, quantity }).unwrap();
       refetchCart();
     } catch (e) {
-      message.error(e.data?.message || "Failed");
+      message.error(e.data?.message || "Failed to add");
     } finally {
       setCartLoadingStates((s) => ({ ...s, [productId]: false }));
     }
   };
-  const handleStockClick = (product) => {
+
+  const openStockModal = (product, action = "add") => {
     setSelectedProduct(product);
-    setStockModalVisible(true);
+    setStockAction(action);
+    setStockModalOpen(true);
   };
 
-  const handleHistoryClick = (product) => {
+  const openHistoryModal = (product) => {
     setSelectedProduct(product);
-    setHistoryModalVisible(true);
-  };
-
-  const handleStockSubmit = (stockData) => {
-    setStockHistoryMap((prev) => ({
-      ...prev,
-      [selectedProduct.productId]: [
-        ...(prev[selectedProduct.productId] || []),
-        {
-          ...stockData,
-          date: new Date(),
-          productId: selectedProduct.productId,
-        },
-      ],
-    }));
-    setStockModalVisible(false);
+    setHistoryModalOpen(true);
   };
 
   const handleSearchChange = (e) => {
@@ -380,32 +307,35 @@ const ProductsList = () => {
       <Menu.Item key="view">
         <Link to={`/product/${product.productId}`}>View</Link>
       </Menu.Item>
-
       <PermissionGate api="edit" module="products">
         <Menu.Item key="edit">
           <Link to={`/product/${product.productId}/edit`}>Edit</Link>
         </Menu.Item>
       </PermissionGate>
-
-      <Menu.Item key="manage-stock" onClick={() => handleStockClick(product)}>
-        Manage Stock
+      <Menu.Item key="add-stock" onClick={() => openStockModal(product, "add")}>
+        Add Stock
       </Menu.Item>
-
-      <Menu.Item key="view-history" onClick={() => handleHistoryClick(product)}>
+      <Menu.Item
+        key="remove-stock"
+        onClick={() => openStockModal(product, "remove")}
+      >
+        Remove Stock
+      </Menu.Item>
+      <Menu.Item key="history" onClick={() => openHistoryModal(product)}>
         View History
       </Menu.Item>
-
       <PermissionGate api="delete" module="products">
-        <Menu.Item key="delete" onClick={() => handleDeleteClick(product)}>
+        <Menu.Item
+          key="delete"
+          danger
+          onClick={() => handleDeleteClick(product)}
+        >
           Delete
         </Menu.Item>
       </PermissionGate>
     </Menu>
   );
 
-  // ──────────────────────────────────────────────────────
-  // TABLE COLUMNS (with PermissionGate)
-  // ──────────────────────────────────────────────────────
   const columns = [
     {
       title: "Image",
@@ -516,10 +446,6 @@ const ProductsList = () => {
       },
     },
   ];
-
-  // ──────────────────────────────────────────────────────
-  // BREADCRUMB
-  // ──────────────────────────────────────────────────────
   const breadcrumbItems = brandId
     ? [
         { label: "Home", url: "/" },
@@ -538,36 +464,6 @@ const ProductsList = () => {
       ]
     : [{ label: "Home", url: "/" }, { label: "Products" }];
 
-  // ──────────────────────────────────────────────────────
-  // LOADING / ERROR
-  // ──────────────────────────────────────────────────────
-  if (isLoading || userLoading || categoriesLoading) {
-    return (
-      <div className="loading-container text-center py-5">
-        <Spin size="large" />
-        <p>Loading products...</p>
-      </div>
-    );
-  }
-
-  if (error || categoriesError) {
-    return (
-      <div className="page-wrapper">
-        <div className="content">
-          <div className="error-container text-center py-5">
-            <Empty
-              description={`Error: ${
-                error?.data?.message ||
-                categoriesError?.data?.message ||
-                "Unknown error"
-              }`}
-            />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   const pageTitle = brandId
     ? "Products"
     : bpcId
@@ -575,7 +471,7 @@ const ProductsList = () => {
     : "All Products";
 
   // ──────────────────────────────────────────────────────
-  // RENDER
+  // RENDER (No local loading UI)
   // ──────────────────────────────────────────────────────
   return (
     <div className="page-wrapper">
@@ -607,7 +503,6 @@ const ProductsList = () => {
               />
             </Form.Item>
 
-            {/* ── NEW CATEGORY DROPDOWN ── */}
             <Form.Item className="filter-item">
               <Select
                 style={{ width: 220 }}
@@ -620,7 +515,6 @@ const ProductsList = () => {
                   setCurrentPage(1);
                 }}
                 value={selectedCategoryId}
-                // ADD THESE PROPS BELOW
                 showSearch
                 filterOption={(input, option) =>
                   (option?.label ?? "")
@@ -632,6 +526,7 @@ const ProductsList = () => {
             </Form.Item>
           </Form>
         </div>
+
         {filteredProducts.length === 0 ? (
           <div className="empty-container text-center py-5">
             <Empty
@@ -773,7 +668,7 @@ const ProductsList = () => {
         )}
       </div>
 
-      {/* Hidden modal trigger */}
+      {/* Hidden cart trigger */}
       <button
         id="cart-modal"
         data-bs-toggle="modal"
@@ -793,22 +688,19 @@ const ProductsList = () => {
         itemType="Product"
         isLoading={isDeleting}
       />
-      {isStockModalVisible && selectedProduct && (
-        <StockModal
-          show={isStockModalVisible}
-          onHide={() => setStockModalVisible(false)}
-          product={selectedProduct}
-          onSubmit={handleStockSubmit}
-        />
-      )}
-      {isHistoryModalVisible && selectedProduct && (
-        <HistoryModal
-          show={isHistoryModalVisible}
-          onHide={() => setHistoryModalVisible(false)}
-          product={selectedProduct}
-          stockHistory={stockHistoryMap[selectedProduct.productId] || []}
-        />
-      )}
+
+      <StockModal
+        open={stockModalOpen}
+        onCancel={() => setStockModalOpen(false)}
+        product={selectedProduct}
+        action={stockAction}
+      />
+
+      <HistoryModalAntD
+        open={historyModalOpen}
+        onCancel={() => setHistoryModalOpen(false)}
+        product={selectedProduct}
+      />
     </div>
   );
 };

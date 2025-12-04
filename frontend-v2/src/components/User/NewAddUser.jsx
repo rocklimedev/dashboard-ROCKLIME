@@ -87,6 +87,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
     city: "",
     postalCode: "",
     addressId: null,
+    isEmailVerified: false,
   });
 
   // === Populate Form on Load/Edit ===
@@ -97,6 +98,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
         name: userToEdit.name || "",
         email: userToEdit.email || "",
         mobileNumber: userToEdit.mobileNumber || "",
+        isEmailVerified: userToEdit.isEmailVerified ?? false,
         dateOfBirth: userToEdit.dateOfBirth
           ? new Date(userToEdit.dateOfBirth).toISOString().split("T")[0]
           : "",
@@ -425,6 +427,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
         status: formData.status,
         password: formData.password || undefined,
         about: formData.about || null,
+        isEmailVerified: formData.isEmailVerified,
       };
 
       let userResponse;
@@ -706,7 +709,20 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                     </Select>
                   </Form.Item>
                 </div>
-
+                <div className="col-lg-4 col-md-6">
+                  <Form.Item label="Email Verified">
+                    <Select
+                      value={formData.isEmailVerified}
+                      onChange={(value) =>
+                        handleChange("isEmailVerified", value)
+                      }
+                      placeholder="Select verification status"
+                    >
+                      <Option value={true}>Yes</Option>
+                      <Option value={false}>No</Option>
+                    </Select>
+                  </Form.Item>
+                </div>
                 <div className="col-lg-4 col-md-6">
                   <Form.Item label="Emergency Contact">
                     <Input
