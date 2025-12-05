@@ -73,6 +73,7 @@ import Error403 from "../components/Error/Error403";
 import NewQuotationsDetails from "../components/Quotation/NewQuotationDetails";
 import AddSiteMap from "../components/SiteMap/AddSiteMap";
 import SiteMapList from "../components/SiteMap/SiteMapList";
+import SiteMapDetails from "../components/SiteMap/SiteMapDetails";
 const masterRoutes = [
   {
     path: "/",
@@ -224,6 +225,13 @@ const masterRoutes = [
         icon: <BiCategory />,
         isSidebarActive: false,
         element: <AddSiteMap />,
+      },
+      {
+        path: "/site-map/:id",
+        name: "Site Map Details",
+        icon: <BiCategory />,
+        isSidebarActive: false,
+        element: <SiteMapDetails />,
       },
       {
         path: "/settings",

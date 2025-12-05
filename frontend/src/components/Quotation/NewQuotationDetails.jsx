@@ -188,7 +188,16 @@ const NewQuotationsDetails = () => {
   );
 
   const finalAmountInWords = amountInWords(Math.round(finalTotal));
+  // Add this with your other useMemo/useState
+  const pageTitle = useMemo(() => {
+    if (!quotation) return "Loading Quotation...";
 
+    const title =
+      quotation.document_title || quotation.quotation_title || "Quotation";
+    const ref = quotation.reference_number || id || "QID";
+
+    return `${title.trim()} - ${ref}`;
+  }, [quotation, id]);
   // EXPORT HANDLER
   const handleExport = async () => {
     if (!quotationRef.current) return;
@@ -478,12 +487,8 @@ const NewQuotationsDetails = () => {
   return (
     <>
       <Helmet>
-        <title>
-          {quotation.document_title || "Quotation"} -{" "}
-          {quotation.reference_number}
-        </title>
+        <title>{pageTitle}</title>
       </Helmet>
-
       <div className="page-wrapper">
         <div className="content">
           {/* TOP BAR */}

@@ -13,8 +13,9 @@ import {
   FaFileInvoice,
   FaWhatsapp,
 } from "react-icons/fa";
-import { EditOutlined } from "@ant-design/icons";
+import { EditOutlined, HomeOutlined } from "@ant-design/icons";
 import { BsThreeDotsVertical } from "react-icons/bs";
+
 import QuotationProductModal from "./QuotationProductModal";
 import DeleteModal from "../Common/DeleteModal";
 import { message } from "antd";
@@ -26,13 +27,11 @@ import {
   Input,
   DatePicker,
   Select,
-  Pagination, // <-- ADDED
+  Pagination,
 } from "antd";
 import PageHeader from "../Common/PageHeader";
-import { useCreateInvoiceMutation } from "../../api/invoiceApi";
 import CreateInvoiceFromQuotation from "../Invoices/CreateInvoiceFromQuotation";
 import moment from "moment";
-
 import PermissionGate from "../../context/PermissionGate";
 import { useAuth } from "../../context/AuthContext";
 
@@ -57,7 +56,6 @@ const QuotationList = () => {
   const { data: usersData } = useGetAllUsersQuery();
   const [deleteQuotation, { isLoading: isDeleting }] =
     useDeleteQuotationMutation();
-  const [createInvoice] = useCreateInvoiceMutation();
 
   const quotations = quotationsData || [];
   const customers = customersData?.data || [];
@@ -66,15 +64,15 @@ const QuotationList = () => {
   /* ------------------------------- State --------------------------------- */
   const [showProductModal, setShowProductModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
-  const [selectedProducts, setSelectedProducts] = useState([]);
-  const [quotationToDelete, setQuotationToDelete] = useState(null);
   const [selectedQuotation, setSelectedQuotation] = useState(null);
+  const [quotationToDelete, setQuotationToDelete] = useState(null);
+
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10); // <-- now dynamic
+  const [pageSize, setPageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("Recently Added");
   const [activeTab, setActiveTab] = useState("All");
+
   const [filters, setFilters] = useState({
     finalAmount: null,
     quotationDate: null,
@@ -133,30 +131,28 @@ const QuotationList = () => {
     [quotations]
   );
 
-  /* ----------------------------- Filtering ------------------------------ */
+  /* ----------------------------- Filtering & Sorting ----------------------------- */
   const filteredQuotations = useMemo(() => {
     let result = groupedQuotations[activeTab] || [];
 
-    // ----- Search -----
+    // Search
     if (searchTerm.trim()) {
       result = result.filter((q) => {
-        const cust = getCustomerName(q.customerId);
+        const custName = getCustomerName(q.customerId);
         return (
           q.document_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           q.reference_number
             ?.toLowerCase()
             .includes(searchTerm.toLowerCase()) ||
-          cust.toLowerCase().includes(searchTerm.toLowerCase())
+          custName.toLowerCase().includes(searchTerm.toLowerCase())
         );
       });
     }
 
-    // ----- Extra filters -----
+    // Filters
     if (filters.finalAmount) {
-      result = result.filter(
-        (q) =>
-          q.finalAmount &&
-          q.finalAmount.toString().includes(filters.finalAmount)
+      result = result.filter((q) =>
+        q.finalAmount?.toString().includes(filters.finalAmount)
       );
     }
     if (filters.quotationDate) {
@@ -170,7 +166,7 @@ const QuotationList = () => {
     if (filters.customerId) {
       result = result.filter((q) => q.customerId === filters.customerId);
     }
-    if (filters.dateRange && filters.dateRange.length === 2) {
+    if (filters.dateRange?.length === 2) {
       const [start, end] = filters.dateRange;
       result = result.filter(
         (q) =>
@@ -179,7 +175,7 @@ const QuotationList = () => {
       );
     }
 
-    // ----- Sorting -----
+    // Sorting
     switch (sortBy) {
       case "Ascending":
         result = [...result].sort((a, b) =>
@@ -224,7 +220,7 @@ const QuotationList = () => {
     return filteredQuotations.slice(start, start + pageSize);
   }, [filteredQuotations, currentPage, pageSize]);
 
-  /* -------------------------- WhatsApp Share -------------------------- */
+  /* -------------------------- WhatsApp & SiteMap -------------------------- */
   const handleShareOnWhatsApp = (quotation) => {
     let itemsArray = [];
     if (quotation.items && Array.isArray(quotation.items)) {
@@ -273,7 +269,58 @@ View: ${window.location.origin}/quotation/${quotation.quotationId}
     const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
     window.open(url, "_blank");
   };
+  const handleGenerateSiteMap = (quotation) => {
+    // Parse products (new API uses `items`, old uses `products` string)
+    let rawItems = [];
 
+    if (
+      quotation.items &&
+      Array.isArray(quotation.items) &&
+      quotation.items.length > 0
+    ) {
+      rawItems = quotation.items;
+    } else if (quotation.products) {
+      try {
+        rawItems =
+          typeof quotation.products === "string"
+            ? JSON.parse(quotation.products)
+            : quotation.products;
+      } catch (e) {
+        console.error("Failed to parse products", e);
+        rawItems = [];
+      }
+    }
+
+    if (rawItems.length === 0) {
+      message.warning(
+        "This quotation has no products to convert into a site map."
+      );
+      return;
+    }
+
+    // Transform into SiteMap items format
+    const siteMapItems = rawItems.map((item) => ({
+      productId: item.productId || item.id,
+      name: item.name || "Unknown Product",
+      imageUrl: item.imageUrl || null,
+      quantity: Number(item.quantity) || 1,
+      price: Number(item.price) || 0,
+      floor_number: 1, // Default to Ground Floor – user can change later
+      productType: item.category || "Others",
+    }));
+
+    // Navigate to AddSiteMap with pre-filled data
+    navigate("/site-map/add", {
+      state: {
+        fromQuotation: true,
+        quotationId: quotation.quotationId,
+        customerId: quotation.customerId,
+        projectName: `${quotation.document_title || "Quotation"} - Site Map`,
+        items: siteMapItems,
+        totalFloors: 1,
+      },
+    });
+  };
   /* ------------------------------ Columns ------------------------------ */
   const columns = [
     { title: "S.No.", dataIndex: "sNo", key: "sNo", width: 70 },
@@ -582,6 +629,16 @@ View: ${window.location.origin}/quotation/${quotation.quotationId}
                     Delete
                   </Menu.Item>
                 </PermissionGate>
+                {/* Inside the <Menu> of the Actions Dropdown */}
+
+                <Menu.Item
+                  key="generate-sitemap"
+                  onClick={() => handleGenerateSiteMap(rec)} // ← NEW
+                  style={{ color: "#722ed1" }}
+                >
+                  <HomeOutlined style={{ marginRight: 8 }} />
+                  Generate Site Map
+                </Menu.Item>
 
                 <PermissionGate api="write" module="quotations">
                   <Menu.Item
@@ -630,59 +687,7 @@ View: ${window.location.origin}/quotation/${quotation.quotationId}
       finalAmount: `₹${q.finalAmount || 0}`,
       quotationId: q.quotationId,
     }));
-  }, [currentQuotations, currentPage, pageSize, customers]);
-
-  /* --------------------------- Handlers --------------------------- */
-  const handleAddQuotation = () => navigate("/quotation/add");
-
-  const handleDeleteClick = (q) => {
-    setQuotationToDelete(q);
-    setShowDeleteModal(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!quotationToDelete?.quotationId) {
-      message.error("No quotation selected");
-      setShowDeleteModal(false);
-      return;
-    }
-    try {
-      await deleteQuotation(quotationToDelete.quotationId).unwrap();
-      setShowDeleteModal(false);
-      setQuotationToDelete(null);
-      refetch();
-      if (currentQuotations.length === 1 && currentPage > 1) {
-        setCurrentPage((p) => p - 1);
-      }
-    } catch (e) {
-      message.error(
-        `Delete failed: ${
-          e.data?.message || e.data?.error || e.message || "unknown"
-        }`
-      );
-    }
-  };
-
-  // Handler
-  const handleOpenProductModal = (quotation) => {
-    setSelectedQuotation(quotation); // whole object as fallback
-    setShowProductModal(true);
-  };
-  // Close handler stays the same
-  const handleCloseProductModal = () => {
-    setShowProductModal(false);
-    setSelectedQuotation(null);
-  };
-
-  const handleOpenInvoiceModal = (q) => {
-    setSelectedQuotation(q);
-    setShowInvoiceModal(true);
-  };
-  const handleCloseInvoiceModal = () => {
-    setShowInvoiceModal(false);
-    setSelectedQuotation(null);
-  };
-
+  }, [currentQuotations, currentPage, pageSize]);
   const handleConvertToOrder = (q) => {
     let rawItems = [];
 
@@ -761,11 +766,37 @@ View: ${window.location.origin}/quotation/${quotation.quotationId}
     });
   };
 
+  /* --------------------------- Handlers --------------------------- */
   const handlePageChange = (page, newPageSize) => {
     setCurrentPage(page);
-    setPageSize(newPageSize);
+    if (newPageSize !== pageSize) setPageSize(newPageSize);
   };
 
+  const handleDeleteClick = (q) => {
+    setQuotationToDelete(q);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!quotationToDelete?.quotationId) return;
+    try {
+      await deleteQuotation(quotationToDelete.quotationId).unwrap();
+      message.success("Quotation deleted successfully");
+      refetch();
+      if (currentQuotations.length === 1 && currentPage > 1) {
+        setCurrentPage((p) => p - 1);
+      }
+    } catch (e) {
+      message.error("Delete failed");
+    } finally {
+      setShowDeleteModal(false);
+      setQuotationToDelete(null);
+    }
+  };
+  const handleOpenProductModal = (quotation) => {
+    setSelectedQuotation(quotation); // whole object as fallback
+    setShowProductModal(true);
+  };
   const clearFilters = () => {
     setSearchTerm("");
     setSortBy("Recently Added");
@@ -777,38 +808,7 @@ View: ${window.location.origin}/quotation/${quotation.quotationId}
       dateRange: null,
     });
     setCurrentPage(1);
-    setPageSize(10);
   };
-
-  /* --------------------------- Loading / Error -------------------------- */
-  if (isLoading) {
-    return (
-      <div className="content">
-        <div className="card">
-          <div className="card-body text-center">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </div>
-            <p>Loading quotations...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="content">
-        <div className="card">
-          <div className="card-body">
-            <div className="alert alert-danger" role="alert">
-              Error fetching quotations!
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   /* ------------------------------- Render ------------------------------- */
   return (
@@ -823,11 +823,11 @@ View: ${window.location.origin}/quotation/${quotation.quotationId}
           />
 
           <div className="card-body">
-            {/* ---------- Search & Sort ---------- */}
-            <div className="row">
-              <div className="col-lg-12">
-                <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
-                  <div className="input-icon-start position-relative">
+            {/* Search & Sort */}
+            <div className="row mb-3">
+              <div className="col-12">
+                <div className="d-flex align-items-center justify-content-lg-end flex-wrap gap-2">
+                  <div className="position-relative">
                     <span className="input-icon-addon">
                       <FaSearch />
                     </span>
@@ -838,16 +838,16 @@ View: ${window.location.origin}/quotation/${quotation.quotationId}
                       value={searchTerm}
                       onChange={(e) => {
                         setSearchTerm(e.target.value);
-                        setCurrentPage(1); // Reset to first page on search
+                        setCurrentPage(1);
                       }}
                     />
                   </div>
 
                   <Select
-                    style={{ width: 200, marginLeft: 10 }}
+                    style={{ width: 200 }}
                     value={sortBy}
-                    onChange={(value) => {
-                      setSortBy(value);
+                    onChange={(v) => {
+                      setSortBy(v);
                       setCurrentPage(1);
                     }}
                   >
@@ -861,64 +861,42 @@ View: ${window.location.origin}/quotation/${quotation.quotationId}
               </div>
             </div>
 
-            {/* ---------- Tabs (All / Accepted / …) ---------- */}
-            <div className="tab-content" id="pills-tabContent">
-              {Object.entries(groupedQuotations).map(([status]) => (
-                <div
-                  key={status}
-                  className={`tab-pane fade ${
-                    activeTab === status ? "show active" : ""
-                  }`}
-                  id={`pills-${status}`}
-                  role="tabpanel"
-                >
-                  {currentQuotations.length === 0 ? (
-                    <p className="text-muted">
-                      No {status.toLowerCase()} quotations match the filters.
-                    </p>
-                  ) : (
-                    <div
-                      className="table-responsive"
-                      style={{ overflowX: "auto" }}
-                    >
-                      <Table
-                        className="table table-hover"
-                        columns={columns}
-                        dataSource={formattedTableData}
-                        pagination={false}
-                        rowKey="key"
-                        scroll={{ x: "max-content" }}
-                      />
+            {/* Table */}
+            <div className="table-responsive">
+              <Table
+                columns={columns}
+                dataSource={formattedTableData}
+                pagination={false}
+                rowKey="key"
+                scroll={{ x: "max-content" }}
+              />
 
-                      {/* ANT DESIGN PAGINATION */}
-                      {filteredQuotations.length > pageSize && (
-                        <div className="d-flex justify-content-end mt-4">
-                          <Pagination
-                            current={currentPage}
-                            pageSize={pageSize}
-                            total={filteredQuotations.length}
-                            onChange={handlePageChange}
-                            showSizeChanger
-                            pageSizeOptions={["10", "20", "50", "100"]}
-                            showQuickJumper
-                          />
-                        </div>
-                      )}
-                    </div>
-                  )}
+              {filteredQuotations.length > pageSize && (
+                <div className="d-flex justify-content-end mt-4">
+                  <Pagination
+                    current={currentPage}
+                    pageSize={pageSize}
+                    total={filteredQuotations.length}
+                    onChange={handlePageChange}
+                    showSizeChanger
+                    pageSizeOptions={["10", "20", "50", "100"]}
+                    showQuickJumper
+                  />
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
 
-        {/* -------------------------- Modals -------------------------- */}
-
+        {/* Modals */}
         <QuotationProductModal
           show={showProductModal}
-          onHide={handleCloseProductModal}
-          quotationId={selectedQuotation?.quotationId} // <-- fetch from API
-          fallbackQuotation={selectedQuotation} // <-- immediate UI (no flash)
+          onHide={() => {
+            setShowProductModal(false);
+            setSelectedQuotation(null);
+          }}
+          quotationId={selectedQuotation?.quotationId}
+          fallbackQuotation={selectedQuotation}
         />
 
         {showDeleteModal && (
@@ -932,16 +910,6 @@ View: ${window.location.origin}/quotation/${quotation.quotationId}
               setQuotationToDelete(null);
             }}
             isLoading={isDeleting}
-          />
-        )}
-
-        {showInvoiceModal && selectedQuotation && (
-          <CreateInvoiceFromQuotation
-            quotation={selectedQuotation}
-            onClose={handleCloseInvoiceModal}
-            createInvoice={createInvoice}
-            customerMap={customerMap}
-            addressMap={{}}
           />
         )}
       </div>
