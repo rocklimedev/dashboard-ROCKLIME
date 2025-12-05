@@ -275,7 +275,50 @@ const CreateProduct = () => {
     maxSize: 5 * 1024 * 1024,
     onDrop,
   });
+  // Clipboard Paste Support for Images
+  useEffect(() => {
+    const handlePaste = async (event) => {
+      const items = event.clipboardData?.items;
+      if (!items) return;
 
+      const pastedFiles = [];
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.type.indexOf("image") !== -1) {
+          const file = item.getAsFile();
+          if (file) {
+            // Optional: Limit size
+            if (file.size > 5 * 1024 * 1024) {
+              message.warning(`${file.name || "Image"} is larger than 5MB`);
+              continue;
+            }
+            pastedFiles.push(file);
+          }
+        }
+      }
+
+      if (pastedFiles.length > 0) {
+        // Check total image limit
+        if (existingImages.length + newImages.length + pastedFiles.length > 5) {
+          message.warning("Maximum 5 images allowed");
+          return;
+        }
+
+        const mapped = pastedFiles.map((file) => ({
+          file,
+          preview: URL.createObjectURL(file),
+        }));
+
+        setNewImages((prev) => [...prev, ...mapped]);
+        message.success(`${pastedFiles.length} image(s) pasted successfully!`);
+      }
+    };
+
+    // Only attach if we're on the page with the dropzone
+    document.addEventListener("paste", handlePaste);
+    return () => document.removeEventListener("paste", handlePaste);
+  }, [existingImages.length, newImages.length]);
   const removeExistingImage = (url) => {
     setExistingImages((p) => p.filter((i) => i !== url));
     setImagesToDelete((p) => [...p, url]);
@@ -641,25 +684,31 @@ const CreateProduct = () => {
                   {...getRootProps()}
                   style={{
                     border: "2px dashed #d9d9d9",
-                    padding: 24,
+                    padding: 32,
                     textAlign: "center",
                     borderRadius: 8,
-                    background: isDragActive ? "#f0f8ff" : "transparent",
+                    background: isDragActive ? "#e6f7ff" : "#fafafa",
                     cursor: "pointer",
+                    transition: "all 0.2s",
                   }}
                 >
                   <input {...getInputProps()} />
-                  {isDragActive ? (
-                    <p>Drop images...</p>
-                  ) : (
-                    <p>
-                      <FiPlusCircle size={32} />
-                      <br />
-                      Click or drag (max 5)
-                    </p>
-                  )}
+                  <FiImage
+                    size={48}
+                    color="#999"
+                    style={{ marginBottom: 16 }}
+                  />
+                  <p style={{ margin: 0, color: "#666", fontSize: 16 }}>
+                    <strong>Click to upload</strong> or drag & drop
+                  </p>
+                  <p style={{ margin: "8px 0 0", color: "#999", fontSize: 14 }}>
+                    You can also <strong>paste images</strong> from clipboard
+                    (Ctrl+V)
+                  </p>
+                  <p style={{ marginTop: 8, color: "#aaa", fontSize: 12 }}>
+                    Max 5 images • Up to 5MB each • JPG, PNG, WEBP
+                  </p>
                 </div>
-
                 <Row gutter={[12, 12]} style={{ marginTop: 16 }}>
                   {existingImages.map((url) => (
                     <Col key={url}>

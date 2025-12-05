@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
-  Spin,
   message,
   Input,
   Select,
@@ -16,19 +15,17 @@ import {
   Card,
   Row,
   Col,
-  Radio,
 } from "antd";
 import {
   SearchOutlined,
-  ArrowLeftOutlined,
+  ArrowLeftOutlined as ArrowLeftOutlined,
   PlusOutlined,
   DeleteOutlined,
 } from "@ant-design/icons";
 import { debounce } from "lodash";
-import moment from "moment";
-import DatePicker from "react-datepicker"; // <-- react-datepicker
-import "react-datepicker/dist/react-datepicker.css"; // <-- CSS
-import { format, isAfter, isBefore, startOfDay } from "date-fns"; // date-fns
+import { format, isAfter, isBefore, startOfDay } from "date-fns";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 import PageHeader from "../Common/PageHeader";
 import {
@@ -53,31 +50,18 @@ const AddQuotation = () => {
   const navigate = useNavigate();
 
   /* ────────────────────── QUERIES ────────────────────── */
-  const {
-    data: existingQuotation,
-    isLoading: isFetching,
-    error: fetchError,
-  } = useGetQuotationByIdQuery(id, { skip: !isEditMode });
-
-  const {
-    data: versionsData = [],
-    isLoading: isVersionsLoading,
-    isFetching: isVersionsFetching,
-    refetch: refetchVersions,
-  } = useGetQuotationVersionsQuery(id, {
+  const { data: existingQuotation } = useGetQuotationByIdQuery(id, {
     skip: !isEditMode,
-    refetchOnMountOrArgChange: true, // ← THIS IS KEY
   });
-  const { data: userData, isLoading: isUserLoading } = useGetProfileQuery();
-  const { data: customersData, isLoading: isCustomersLoading } =
-    useGetCustomersQuery();
-  const {
-    data: addressesData,
-    isLoading: isAddressesLoading,
-    refetch: refetchAddresses,
-  } = useGetAllAddressesQuery();
-  const { data: productsData, isLoading: isProductsLoading } =
-    useGetAllProductsQuery();
+
+  const { data: versionsData = [], refetch: refetchVersions } =
+    useGetQuotationVersionsQuery(id, { skip: !isEditMode });
+
+  const { data: userData } = useGetProfileQuery();
+  const { data: customersData } = useGetCustomersQuery();
+  const { data: addressesData, refetch: refetchAddresses } =
+    useGetAllAddressesQuery();
+  const { data: productsData } = useGetAllProductsQuery();
 
   const [createQuotation, { isLoading: isCreating }] =
     useCreateQuotationMutation();
@@ -103,7 +87,6 @@ const AddQuotation = () => {
     shippingAmount: 0.0,
     extraDiscount: null,
     extraDiscountType: "fixed",
-
     signature_name: "",
     signature_image: "",
     customerId: "",
@@ -146,6 +129,7 @@ const AddQuotation = () => {
         );
         const price =
           Number(prod?.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"]) || 0;
+
         return {
           id: p.productId,
           productId: p.productId,
@@ -153,8 +137,9 @@ const AddQuotation = () => {
           qty: Number(p.quantity) || 1,
           sellingPrice: price,
           discount: Number(p.discount) || 0,
+          discountType: "fixed",
           tax: Number(p.tax) || 0,
-          total: null, // ← Force backend to recalculate
+          total: null,
         };
       });
 
@@ -189,35 +174,26 @@ const AddQuotation = () => {
     }
   }, [existingQuotation, isEditMode, products, userId]);
 
-  // Debounced product search
   const debouncedSearch = useCallback(
     debounce((val) => {
       if (!val) {
         setFilteredProducts([]);
         return;
       }
-
-      const searchTerm = val.toLowerCase().trim();
-
-      const filtered = products.filter((p) => {
-        // 1. Name or product_code
-        const matchesName = p.name?.toLowerCase().includes(searchTerm);
-        const matchesCode = p.product_code?.toLowerCase().includes(searchTerm);
-
-        // 2. Company Code (from meta or metaDetails)
-        const companyCode =
-          p.meta?.["d11da9f9-3f2e-4536-8236-9671200cca4a"] ||
-          p.metaDetails?.find((m) => m.slug === "companyCode")?.value ||
-          "";
-
-        const matchesCompanyCode = String(companyCode)
-          .toLowerCase()
-          .includes(searchTerm);
-
-        return matchesName || matchesCode || matchesCompanyCode;
-      });
-
-      setFilteredProducts(filtered.slice(0, 8)); // keep it fast & limited
+      const term = val.toLowerCase().trim();
+      const filtered = products
+        .filter((p) => {
+          const name = p.name?.toLowerCase().includes(term);
+          const code = p.product_code?.toLowerCase().includes(term);
+          const companyCode =
+            p.meta?.["d11da9f9-3f2e-4536-8236-9671200cca4a"] ||
+            p.metaDetails?.find((m) => m.slug === "companyCode")?.value ||
+            "";
+          const cc = String(companyCode).toLowerCase().includes(term);
+          return name || code || cc;
+        })
+        .slice(0, 8);
+      setFilteredProducts(filtered);
     }, 300),
     [products]
   );
@@ -241,7 +217,7 @@ const AddQuotation = () => {
           qty: 1,
           sellingPrice: price,
           discount: 0,
-          discountType: "fixed", // ← NEW
+          discountType: "fixed",
           tax: 0,
           total: price,
         },
@@ -262,11 +238,6 @@ const AddQuotation = () => {
     setFormData((prev) => {
       const copy = [...prev.products];
       copy[idx] = { ...copy[idx], [field]: value };
-
-      // DO NOT calculate total here anymore
-      // Just store the raw values
-      // Backend will do correct calculation
-
       return { ...prev, products: copy };
     });
   };
@@ -320,49 +291,44 @@ const AddQuotation = () => {
       extraDiscount: Number(formData.extraDiscount) || 0,
       extraDiscountType: formData.extraDiscountType || "fixed",
 
-      // Remove these — backend calculates them
-      // discountAmount, roundOff, finalAmount
-
       products: formData.products.map((p) => {
         const prod = products.find(
           (pr) => (pr.id || pr.productId) === p.productId
         );
+
+        // Extract first image
         let imageUrl = null;
         if (prod?.images) {
           if (typeof prod.images === "string") {
-            // If it's a JSON array string like '["https://..."]'
             if (
               prod.images.trim().startsWith("[") ||
               prod.images.trim().startsWith("{")
             ) {
               try {
-                const parsed = JSON.parse(prod.images);
-                imageUrl = Array.isArray(parsed) ? parsed[0] : null;
-              } catch (e) {
-                // If parsing fails → it's probably a raw URL
+                imageUrl = JSON.parse(prod.images)[0];
+              } catch {
                 imageUrl = prod.images.trim();
               }
             } else {
-              // It's already a direct URL string
               imageUrl = prod.images.trim();
             }
           } else if (Array.isArray(prod.images)) {
             imageUrl = prod.images[0];
           }
         }
-        // Calculate correct line total (same logic as backend)
+
         const price = Number(p.sellingPrice) || 0;
         const qty = Number(p.qty) || 1;
         const discount = Number(p.discount) || 0;
         const discountType = p.discountType || "fixed";
         const taxRate = Number(p.tax) || 0;
 
-        let discountAmount =
+        const discountAmt =
           discountType === "percent"
             ? (price * qty * discount) / 100
             : discount;
 
-        const taxable = price * qty - discountAmount;
+        const taxable = price * qty - discountAmt;
         const lineTotal = taxable * (1 + taxRate / 100);
 
         return {
@@ -370,11 +336,11 @@ const AddQuotation = () => {
           name: p.name,
           price: Number(p.sellingPrice || 0).toFixed(2),
           quantity: qty,
-          discount: discount,
-          discountType: discountType,
+          discount,
+          discountType,
           tax: taxRate,
-          total: parseFloat(lineTotal.toFixed(2)), // ← SEND CORRECT TOTAL
-          imageUrl: imageUrl, // ← SEND IMAGE URL
+          total: parseFloat(lineTotal.toFixed(2)),
+          imageUrl,
         };
       }),
 
@@ -398,37 +364,9 @@ const AddQuotation = () => {
     }
   };
 
-  /* ────────────────────── LOADING / ERROR ────────────────────── */
-  if (isFetching || isUserLoading || isCustomersLoading || isAddressesLoading) {
-    return (
-      <div
-        className="page-wrapper"
-        style={{ padding: "40px", textAlign: "center" }}
-      >
-        <Spin size="large" />
-        <p>Loading...</p>
-      </div>
-    );
-  }
-
-  if (fetchError) {
-    return (
-      <div className="page-wrapper" style={{ padding: "20px" }}>
-        <div className="ant-alert ant-alert-error">
-          Error loading quotation. Please try again.
-        </div>
-      </div>
-    );
-  }
-
   /* ────────────────────── TABLE COLUMNS ────────────────────── */
   const columns = [
-    {
-      title: "Product",
-      dataIndex: "name",
-      key: "name",
-      width: 180,
-    },
+    { title: "Product", dataIndex: "name", key: "name", width: 180 },
     {
       title: "Qty",
       key: "qty",
@@ -447,13 +385,12 @@ const AddQuotation = () => {
       dataIndex: "sellingPrice",
       key: "price",
       width: 100,
-      render: (v) => v.toFixed(2),
+      render: (v) => Number(v).toFixed(2),
     },
-    // ── Inside the product table columns ──
     {
       title: "Disc (₹)",
       key: "discount",
-      width: 100,
+      width: 140,
       render: (_, __, idx) => {
         const prod = formData.products[idx];
         return (
@@ -463,13 +400,13 @@ const AddQuotation = () => {
               size="small"
               value={prod.discount}
               onChange={(v) => updateProduct(idx, "discount", v)}
-              style={{ width: 70 }}
+              style={{ width: 80 }}
             />
             <Select
               size="small"
               value={prod.discountType || "fixed"}
               onChange={(v) => updateProduct(idx, "discountType", v)}
-              style={{ width: 70 }}
+              style={{ width: 60 }}
             >
               <Option value="fixed">₹</Option>
               <Option value="percent">%</Option>
@@ -481,7 +418,7 @@ const AddQuotation = () => {
     {
       title: "Effective Disc (₹)",
       key: "effectiveDisc",
-      width: 100,
+      width: 110,
       render: (_, __, idx) => {
         const p = formData.products[idx];
         const qty = Number(p.qty) || 1;
@@ -552,7 +489,6 @@ const AddQuotation = () => {
           exportOptions={{ pdf: false, excel: false }}
         />
 
-        {/* Header Buttons */}
         <Space style={{ marginBottom: 16 }}>
           <Button
             icon={<ArrowLeftOutlined />}
@@ -563,10 +499,9 @@ const AddQuotation = () => {
           {isEditMode && (
             <Button
               onClick={() => {
-                refetchVersions(); // ← Force fresh data
+                refetchVersions();
                 setShowVersionsModal(true);
               }}
-              loading={isVersionsFetching}
             >
               View Versions ({versions.length})
             </Button>
@@ -581,7 +516,7 @@ const AddQuotation = () => {
         </Space>
 
         <Form form={form} layout="vertical">
-          {/* Customer Card */}
+          {/* Customer & Shipping */}
           <Card title="Customer & Shipping" style={{ marginBottom: 16 }}>
             <Row gutter={16}>
               <Col xs={24} md={12}>
@@ -593,7 +528,6 @@ const AddQuotation = () => {
                     onChange={(v) =>
                       setFormData({ ...formData, customerId: v, shipTo: "" })
                     }
-                    loading={isCustomersLoading}
                     filterOption={(input, opt) =>
                       opt.children.toLowerCase().includes(input.toLowerCase())
                     }
@@ -637,7 +571,7 @@ const AddQuotation = () => {
             </Row>
           </Card>
 
-          {/* Dates Card */}
+          {/* Quotation Details */}
           <Card title="Quotation Details" style={{ marginBottom: 16 }}>
             <Row gutter={16}>
               <Col xs={24} md={12}>
@@ -696,7 +630,6 @@ const AddQuotation = () => {
               </Col>
             </Row>
 
-            {/* Timeline */}
             <Form.Item label="Timeline Dates">
               <Space direction="vertical" style={{ width: "100%" }}>
                 {formData.followupDates.map((date, i) => (
@@ -726,7 +659,7 @@ const AddQuotation = () => {
             </Form.Item>
           </Card>
 
-          {/* Products Card */}
+          {/* Products */}
           <Card
             title="Products"
             style={{ marginBottom: 16 }}
@@ -740,7 +673,6 @@ const AddQuotation = () => {
                 style={{ width: 260 }}
                 notFoundContent={filteredProducts.length ? null : "No results"}
                 filterOption={false}
-                loading={isProductsLoading}
               >
                 {filteredProducts.map((p) => (
                   <Option key={p.id || p.productId} value={p.id || p.productId}>
@@ -763,9 +695,8 @@ const AddQuotation = () => {
             />
           </Card>
 
-          {/* ────────────────────── Financials Card ────────────────────── */}
+          {/* Financials */}
           <Card title="Financials" style={{ marginBottom: 16 }}>
-            {/* Row 1 – GST / Shipping / Round‑off */}
             <Row gutter={16}>
               <Col xs={24} sm={8}>
                 <Form.Item label="GST (%)">
@@ -781,7 +712,6 @@ const AddQuotation = () => {
                   />
                 </Form.Item>
               </Col>
-
               <Col xs={24} sm={8}>
                 <Form.Item label="Shipping">
                   <InputNumber
@@ -797,7 +727,6 @@ const AddQuotation = () => {
                   />
                 </Form.Item>
               </Col>
-
               <Col xs={24} sm={8}>
                 <Form.Item label="Round Off">
                   <InputNumber
@@ -811,7 +740,6 @@ const AddQuotation = () => {
               </Col>
             </Row>
 
-            {/* Row 2 – Extra Discount (compact: value + type) */}
             <Row gutter={16} style={{ marginTop: 16 }}>
               <Col xs={24} sm={4}>
                 <Form.Item label="Extra Discount">
@@ -840,8 +768,7 @@ const AddQuotation = () => {
                 </Form.Item>
               </Col>
 
-              {/* Final Amount – right aligned */}
-              <Col xs={24} sm={8}>
+              <Col xs={24} sm={8} offset={12}>
                 <Form.Item label="Final Amount (₹)">
                   <InputNumber
                     disabled
@@ -854,7 +781,7 @@ const AddQuotation = () => {
             </Row>
           </Card>
 
-          {/* Signature Card */}
+          {/* Signature */}
           <Card title="Signature">
             <Row gutter={16}>
               <Col xs={24} md={12}>
@@ -886,7 +813,6 @@ const AddQuotation = () => {
             </Row>
           </Card>
 
-          {/* Submit */}
           <Space style={{ marginTop: 24, float: "right" }}>
             <Button onClick={() => navigate("/quotations/list")}>Cancel</Button>
             <Button
@@ -921,9 +847,7 @@ const AddQuotation = () => {
           footer={null}
           width={800}
         >
-          {isVersionsFetching ? (
-            <Spin tip="Loading versions..." />
-          ) : versions.length === 0 ? (
+          {versions.length === 0 ? (
             <Text type="secondary">No versions found</Text>
           ) : (
             <List
@@ -974,7 +898,8 @@ const AddQuotation = () => {
             />
           )}
         </Modal>
-        {/* Custom CSS to make react-datepicker look like AntD */}
+
+        {/* AntD-like styling for react-datepicker */}
         <style jsx>{`
           .full-width > div {
             width: 100% !important;

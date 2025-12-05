@@ -1,574 +1,1013 @@
-// src/pages/quotations/NewQuotationsDetails.jsx
-import React, { useRef, useState, useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
-import { message, Button, Space, Typography, Spin, Alert, Tabs } from "antd";
+import React, { useState, useMemo, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import {
-  ArrowLeftOutlined,
-  FilePdfFilled,
-  FileExcelFilled,
-} from "@ant-design/icons";
-import { Helmet } from "react-helmet";
-
-import logo from "../../assets/img/logo-quotation.png";
-import styles from "./quotationnew.module.css";
-import americanStandard from "../../assets/img/american-standard-logo-2.png";
-import groheLogo from "../../assets/img/Grohe-Logo.png";
-import coverImage from "../../assets/img/quotation_first_page.png";
-
-import {
-  useGetQuotationByIdQuery,
-  useGetQuotationVersionsQuery,
+  useGetAllQuotationsQuery,
+  useDeleteQuotationMutation,
 } from "../../api/quotationApi";
-import { useGetCustomerByIdQuery } from "../../api/customerApi";
-import { useGetAddressByIdQuery } from "../../api/addressApi";
-import useProductsData from "../../data/useProductdata";
-import { useGetAllBrandsQuery } from "../../api/brandsApi";
+import { useGetCustomersQuery } from "../../api/customerApi";
+import { useGetAllUsersQuery } from "../../api/userApi";
+import {
+  FaSearch,
+  FaEye,
+  FaTrash,
+  FaFileInvoice,
+  FaWhatsapp,
+} from "react-icons/fa";
+import { EditOutlined } from "@ant-design/icons";
+import { BsThreeDotsVertical } from "react-icons/bs";
+import QuotationProductModal from "./QuotationProductModal";
+import DeleteModal from "../Common/DeleteModal";
+import { message } from "antd";
+import {
+  Table,
+  Dropdown,
+  Menu,
+  Button,
+  Input,
+  DatePicker,
+  Select,
+  Pagination, // <-- ADDED
+} from "antd";
+import PageHeader from "../Common/PageHeader";
+import { useCreateInvoiceMutation } from "../../api/invoiceApi";
+import CreateInvoiceFromQuotation from "../Invoices/CreateInvoiceFromQuotation";
+import moment from "moment";
+import { HomeOutlined } from "@ant-design/icons";
+import PermissionGate from "../../context/PermissionGate";
+import { useAuth } from "../../context/AuthContext";
 
-import { exportToPDF, exportToExcel } from "./hooks/exportHelpers";
-import { calcTotals, amountInWords } from "./hooks/calcHelpers";
+const { RangePicker } = DatePicker;
+const { Option } = Select;
 
-const { Title, Text } = Typography;
-const { TabPane } = Tabs;
+/* -------------------------------------------------------------------------- */
+/*                               QuotationList                                */
+/* -------------------------------------------------------------------------- */
+const QuotationList = () => {
+  const navigate = useNavigate();
+  const { auth } = useAuth();
 
-const NewQuotationsDetails = () => {
-  const { id } = useParams();
-  const [activeVersion, setActiveVersion] = useState("current");
-  const [exportFormat, setExportFormat] = useState("pdf");
-  const [isExporting, setIsExporting] = useState(false);
-  const quotationRef = useRef(null);
-
-  // FETCH QUOTATION & VERSIONS
+  /* ------------------------------ RTK Queries ----------------------------- */
   const {
-    data: quotation,
-    isLoading: qLoading,
-    error: qError,
-  } = useGetQuotationByIdQuery(id);
+    data: quotationsData,
+    isLoading,
+    isError,
+    refetch,
+  } = useGetAllQuotationsQuery({ sort: "quotation_date", order: "desc" });
+  const { data: customersData } = useGetCustomersQuery();
+  const { data: usersData } = useGetAllUsersQuery();
+  const [deleteQuotation, { isLoading: isDeleting }] =
+    useDeleteQuotationMutation();
+  const [createInvoice] = useCreateInvoiceMutation();
 
-  const { data: versionsData, isLoading: vLoading } =
-    useGetQuotationVersionsQuery(id);
-  const { data: brandsData } = useGetAllBrandsQuery();
+  const quotations = quotationsData || [];
+  const customers = customersData?.data || [];
+  const users = usersData?.users || [];
 
-  // SAFE PARSE PRODUCTS (handles string/array)
-  const safeParseProducts = (data) => {
-    if (!data) return [];
-    if (Array.isArray(data)) return data;
-    if (typeof data === "string") {
-      try {
-        return JSON.parse(data);
-      } catch {
-        return [];
-      }
-    }
-    return [];
+  /* ------------------------------- State --------------------------------- */
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [selectedProducts, setSelectedProducts] = useState([]);
+  const [quotationToDelete, setQuotationToDelete] = useState(null);
+  const [selectedQuotation, setSelectedQuotation] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10); // <-- now dynamic
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("Recently Added");
+  const [activeTab, setActiveTab] = useState("All");
+  const [filters, setFilters] = useState({
+    finalAmount: null,
+    quotationDate: null,
+    customerId: null,
+    dateRange: null,
+  });
+
+  /* -------------------------- Reset on mount --------------------------- */
+  useEffect(() => {
+    setSortBy("Recently Added");
+    setSearchTerm("");
+    setActiveTab("All");
+    setFilters({
+      finalAmount: null,
+      quotationDate: null,
+      customerId: null,
+      dateRange: null,
+    });
+    setCurrentPage(1);
+    setPageSize(10);
+  }, []);
+
+  /* --------------------------- Helper functions -------------------------- */
+  const getProductCount = (products) => {
+    const parsed =
+      typeof products === "string"
+        ? JSON.parse(products || "[]")
+        : products || [];
+    return parsed.length;
   };
 
-  // VERSIONS LOGIC
-  const versions = useMemo(() => {
-    const list = Array.isArray(versionsData) ? [...versionsData] : [];
-    if (quotation) {
-      list.unshift({
-        version: "current",
-        quotationData: quotation,
-        quotationItems: safeParseProducts(
-          quotation.products || quotation.items
-        ),
-        updatedAt: quotation.updatedAt || new Date(),
-        updatedBy: quotation.createdBy,
+  const getCustomerName = (customerId) => {
+    const cust = customers.find((c) => c.customerId === customerId);
+    return cust ? cust.name : "Unknown";
+  };
+
+  const customerMap = useMemo(() => {
+    return customers.reduce((map, c) => {
+      map[c.customerId] = c.name;
+      return map;
+    }, {});
+  }, [customers]);
+
+  /* -------------------------- Grouped Quotations ------------------------- */
+  const groupedQuotations = useMemo(
+    () => ({
+      All: quotations,
+      Accepted: quotations.filter(
+        (q) => q.status?.toLowerCase() === "accepted"
+      ),
+      Pending: quotations.filter((q) => q.status?.toLowerCase() === "pending"),
+      Rejected: quotations.filter(
+        (q) => q.status?.toLowerCase() === "rejected"
+      ),
+    }),
+    [quotations]
+  );
+
+  /* ----------------------------- Filtering ------------------------------ */
+  const filteredQuotations = useMemo(() => {
+    let result = groupedQuotations[activeTab] || [];
+
+    // ----- Search -----
+    if (searchTerm.trim()) {
+      result = result.filter((q) => {
+        const cust = getCustomerName(q.customerId);
+        return (
+          q.document_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          q.reference_number
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          cust.toLowerCase().includes(searchTerm.toLowerCase())
+        );
       });
     }
-    return list.sort((a, b) =>
-      a.version === "current" ? -1 : b.version - a.version
-    );
-  }, [quotation, versionsData]);
 
-  const activeVersionData = useMemo(() => {
-    const v =
-      versions.find((x) => x.version === activeVersion) || versions[0] || {};
-    return {
-      quotation: v.quotationData || quotation || {},
-      products: v.quotationItems || [],
-      updatedAt: v.updatedAt,
-    };
-  }, [activeVersion, versions, quotation]);
-
-  const activeProducts = activeVersionData.products || [];
-
-  // FETCH CUSTOMER & ADDRESS
-  const customerId = activeVersionData.quotation?.customerId;
-  const shipToId = activeVersionData.quotation?.shipTo;
-
-  const { data: customerData, isFetching: custLoading } =
-    useGetCustomerByIdQuery(customerId, { skip: !customerId });
-  const customer = customerData?.data || {};
-  const { data: address, isFetching: addrLoading } = useGetAddressByIdQuery(
-    shipToId,
-    { skip: !shipToId }
-  );
-
-  const { productsData, loading: prodLoading } =
-    useProductsData(activeProducts);
-
-  // CUSTOMER DISPLAY VALUES
-  const customerName = customer?.name || "Dear Client";
-  const customerPhone =
-    customer?.mobileNumber || customer?.phone || "XXXXXXXXXX";
-
-  const customerAddress = address
-    ? `${address.street || ""}, ${address.city || ""}, ${
-        address.state || ""
-      } - ${address.pincode || address.zip || ""}`
-        .replace(/^,\s*|,*\s*$/g, "")
-        .trim()
-    : "487/65, National Market, Peera Garhi, Delhi, 110087";
-
-  // BRAND NAMES
-  const brandNames = useMemo(() => {
-    const set = new Set();
-    activeProducts.forEach((p) => {
-      const pd = productsData?.find((x) => x.productId === p.productId) || {};
-      let brand =
-        pd.brandName ||
-        pd.metaDetails?.find((m) => m.title?.toLowerCase().includes("brand"))
-          ?.value ||
-        brandsData?.find((b) => b.id === pd.brandId)?.brandName;
-
-      if (brand && brand !== "N/A") set.add(brand.trim());
-    });
-    return set.size ? [...set].join(" / ") : "GROHE / AMERICAN STANDARD";
-  }, [activeProducts, productsData, brandsData]);
-
-  // CALCULATIONS
-  const gstRate = Number(activeVersionData.quotation?.gst || 18);
-  const includeGst = activeVersionData.quotation?.include_gst !== false;
-
-  const priceMap = activeProducts.reduce((map, p) => {
-    if (p.productId) {
-      map[p.productId] = {
-        sellingPrice: Number(p.price || p.sellingPrice || 0),
-        name: p.name,
-      };
+    // ----- Extra filters -----
+    if (filters.finalAmount) {
+      result = result.filter(
+        (q) =>
+          q.finalAmount &&
+          q.finalAmount.toString().includes(filters.finalAmount)
+      );
     }
-    return map;
-  }, {});
-
-  const {
-    subtotal,
-    extraDiscountAmt,
-    gst: gstAmount,
-    total: finalTotal,
-  } = calcTotals(
-    activeProducts,
-    gstRate,
-    includeGst,
-    priceMap,
-    activeVersionData.quotation?.extraDiscount || 0,
-    activeVersionData.quotation?.extraDiscountType || "amount",
-    activeVersionData.quotation?.roundOff || 0
-  );
-
-  const finalAmountInWords = amountInWords(Math.round(finalTotal));
-
-  // EXPORT HANDLER
-  const handleExport = async () => {
-    if (!quotationRef.current) return;
-    setIsExporting(true);
-    try {
-      const safeTitle = (quotation?.document_title || "Quotation")
-        .replace(/[\\/:*?"<>|]/g, "_")
-        .replace(/\s+/g, "_")
-        .substring(0, 50);
-
-      const versionLabel =
-        activeVersion === "current" ? "Latest" : activeVersion;
-      const fileName = `Quotation_${safeTitle}_${
-        quotation?.reference_number || id
-      }_V${versionLabel}`;
-
-      if (exportFormat === "pdf") {
-        await exportToPDF(
-          quotationRef,
-          id,
-          activeVersion,
-          activeVersionData.quotation,
-          `${fileName}.pdf`
-        );
-      } else {
-        await exportToExcel(
-          activeProducts,
-          productsData,
-          brandNames,
-          activeVersionData.quotation,
-          customerAddress,
-          logo,
-          {
-            bankName: "IDFC FIRST BANK",
-            accountNumber: "10179373657",
-            ifscCode: "IDFB0020149",
-            branch: "BHERA ENCLAVE PASCHIM VIHAR",
-          },
-          id,
-          activeVersion,
-          [],
-          `${fileName}.xlsx`
-        );
-      }
-      message.success(`${exportFormat.toUpperCase()} exported successfully!`);
-    } catch (err) {
-      message.error("Export failed");
-      console.error(err);
-    } finally {
-      setIsExporting(false);
+    if (filters.quotationDate) {
+      result = result.filter(
+        (q) =>
+          q.quotation_date &&
+          moment(q.quotation_date).format("YYYY-MM-DD") ===
+            moment(filters.quotationDate).format("YYYY-MM-DD")
+      );
     }
-  };
-
-  // LOADING STATES
-  if (qLoading || vLoading || prodLoading || custLoading || addrLoading) {
-    return (
-      <Spin
-        tip="Loading Quotation Details..."
-        size="large"
-        style={{ marginTop: 100 }}
-      />
-    );
-  }
-
-  if (qError || !quotation) {
-    return <Alert message="Quotation not found" type="error" showIcon />;
-  }
-
-  const renderPages = () => {
-    const pages = [];
-    const itemsPerPage = 12;
-
-    // PAGE 1: COVER
-    pages.push(
-      <div key="cover" className={styles.coverPage}>
-        <img src={coverImage} alt="Cover" className={styles.coverBg} />
-        <div className={styles.coverContent}>
-          <div className={styles.dynamicCustomerName}>
-            {customerName.toUpperCase()}
-          </div>
-        </div>
-      </div>
-    );
-
-    // PAGE 2: LETTERHEAD
-    pages.push(
-      <div key="letterhead" className={styles.letterheadPage}>
-        <div className={styles.letterheadTop}>
-          <img
-            src={americanStandard}
-            alt="American Standard"
-            className={styles.brandLogoLeft}
-          />
-          <img src={groheLogo} alt="GROHE" className={styles.brandLogoRight} />
-        </div>
-
-        <h1 className={styles.companyTitle}>CHHABRA MARBLE PVT.LTD</h1>
-        <h2 className={styles.subtitle}>Quotation Letter</h2>
-
-        <div className={styles.clientInfoGrid}>
-          <div className={styles.label}>Client Name</div>
-          <div className={styles.value}>{customerName}</div>
-          <div className={styles.label}>Contact Number</div>
-          <div className={styles.value}>{customerPhone}</div>
-          <div className={styles.label}>Address</div>
-          <div className={styles.value}>{customerAddress}</div>
-          <div className={styles.label}>ID</div>
-          <div className={styles.value}>
-            {quotation.reference_number || "—"}
-          </div>
-        </div>
-
-        <table className={styles.summaryTable}>
-          <thead>
-            <tr>
-              <th>Particulars</th>
-              <th>MRP</th>
-              <th>Discounted Price</th>
-            </tr>
-          </thead>
-          <tbody>
-            {Array(8)
-              .fill()
-              .map((_, i) => (
-                <tr key={i}>
-                  <td></td>
-                  <td></td>
-                  <td></td>
-                </tr>
-              ))}
-          </tbody>
-        </table>
-
-        <div className={styles.letterheadFooter}>
-          <img src={logo} alt="Logo" style={{ height: 80 }} />
-          <div style={{ textAlign: "center", fontSize: 16 }}>
-            <strong>CHHABRA MARBLE PVT. LTD.</strong>
-            <br />
-            487/65, National Market, Peera Garhi, Delhi, 110087
-            <br />
-            Phone: 099110 80605 • Web: www.cmtradingco.com
-          </div>
-          <div style={{ width: 100 }} />
-        </div>
-      </div>
-    );
-
-    // PAGE 3+: PRODUCT PAGES
-    for (let i = 0; i < activeProducts.length; i += itemsPerPage) {
-      const items = activeProducts.slice(i, i + itemsPerPage);
-      const isLastPage = i + itemsPerPage >= activeProducts.length;
-
-      pages.push(
-        <div key={`product-${i}`} className={styles.productPage}>
-          <div className={styles.pageTopHeader}>
-            <div>
-              <div className={styles.clientName}>Mr {customerName}</div>
-              <div className={styles.clientAddress}>{customerAddress}</div>
-            </div>
-            <div className={styles.pageDate}>
-              {new Date(quotation.quotation_date || Date.now())
-                .toLocaleDateString("en-IN", {
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric",
-                })
-                .replace(/ /g, " | ")}
-            </div>
-          </div>
-
-          <table className={styles.productTable}>
-            <colgroup>
-              <col className={styles.sno} />
-              <col className={styles.name} />
-              <col className={styles.code} />
-              <col className={styles.image} />
-              <col className={styles.unit} />
-              <col className={styles.mrp} />
-              <col className={styles.discount} />
-              <col className={styles.total} />
-            </colgroup>
-            <thead>
-              <tr>
-                <th>S.No</th>
-                <th>Product Name</th>
-                <th>Code</th>
-                <th>Product Image</th>
-                <th>Unit</th>
-                <th>MRP</th>
-                <th>Discount</th>
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((p, idx) => {
-                const pd =
-                  productsData?.find((x) => x.productId === p.productId) || {};
-                const img = p.imageUrl || pd.images?.[0] || "";
-                const code =
-                  pd.metaDetails?.find((m) => m.slug === "companyCode")
-                    ?.value || "—";
-                const mrp = Number(p.price || p.sellingPrice || 0);
-                const qty = Number(p.quantity || 1);
-                const discount = Number(p.discount || 0);
-                const total = Math.round(mrp * qty * (1 - discount / 100));
-
-                return (
-                  <tr key={p.productId}>
-                    <td className={styles.snoCell}>{i + idx + 1}.</td>
-                    <td className={styles.prodNameCell}>{p.name}</td>
-                    <td>{code}</td>
-                    <td>
-                      {img ? (
-                        <img
-                          src={img}
-                          alt={p.name}
-                          className={styles.prodImg}
-                        />
-                      ) : null}
-                    </td>
-                    <td>{qty}</td>
-                    <td>₹{mrp.toLocaleString("en-IN")}</td>
-                    <td className={styles.discountCell}>{discount}%</td>
-                    <td className={styles.totalCell}>
-                      ₹{total.toLocaleString("en-IN")}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          {/* FINAL SUMMARY – ONLY ON LAST PAGE */}
-          {isLastPage && (
-            <div className={styles.finalSummaryWrapper}>
-              <div className={styles.finalSummarySection}>
-                <div className={styles.summaryLeft}>
-                  <div className={styles.summaryRow}>
-                    <span>Taxable Value</span>
-                    <span>₹{subtotal.toLocaleString("en-IN")}</span>
-                  </div>
-                  {gstAmount > 0 ? (
-                    <>
-                      <div className={styles.summaryRow}>
-                        <span>CGST @{(gstRate / 2).toFixed(1)}%</span>
-                        <span>₹{(gstAmount / 2).toLocaleString("en-IN")}</span>
-                      </div>
-                      <div className={styles.summaryRow}>
-                        <span>SGST @{(gstRate / 2).toFixed(1)}%</span>
-                        <span>₹{(gstAmount / 2).toLocaleString("en-IN")}</span>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className={styles.summaryRow}>
-                        <span>CGST @0.0%</span>
-                        <span>₹0</span>
-                      </div>
-                      <div className={styles.summaryRow}>
-                        <span>SGST @0.0%</span>
-                        <span>₹0</span>
-                      </div>
-                    </>
-                  )}
-                  <div className={styles.summaryRow}>
-                    <span>Round off</span>
-
-                    <span>
-                      ₹
-                      {Number(
-                        activeVersionData.quotation?.roundOff || 0
-                      ).toFixed(2)}
-                    </span>
-                  </div>
-                  <div className={styles.summaryRow}>
-                    <span style={{ fontSize: "26px" }}>Total Amount</span>
-                    <span style={{ fontSize: "26px" }}>
-                      ₹{Math.round(finalTotal).toLocaleString("en-IN")}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+    if (filters.customerId) {
+      result = result.filter((q) => q.customerId === filters.customerId);
+    }
+    if (filters.dateRange && filters.dateRange.length === 2) {
+      const [start, end] = filters.dateRange;
+      result = result.filter(
+        (q) =>
+          q.quotation_date &&
+          moment(q.quotation_date).isBetween(start, end, "day", "[]")
       );
     }
 
-    return pages;
-  };
-  return (
-    <>
-      <Helmet>
-        <title>
-          {quotation.document_title || "Quotation"} -{" "}
-          {quotation.reference_number}
-        </title>
-      </Helmet>
+    // ----- Sorting -----
+    switch (sortBy) {
+      case "Ascending":
+        result = [...result].sort((a, b) =>
+          (a.reference_number || "").localeCompare(b.reference_number || "")
+        );
+        break;
+      case "Descending":
+        result = [...result].sort((a, b) =>
+          (b.reference_number || "").localeCompare(a.reference_number || "")
+        );
+        break;
+      case "Recently Added":
+        result = [...result].sort((a, b) => {
+          const da = a.quotation_date
+            ? new Date(a.quotation_date)
+            : new Date(0);
+          const db = b.quotation_date
+            ? new Date(b.quotation_date)
+            : new Date(0);
+          return db - da;
+        });
+        break;
+      case "Price High":
+        result = [...result].sort(
+          (a, b) => (b.finalAmount || 0) - (a.finalAmount || 0)
+        );
+        break;
+      case "Price Low":
+        result = [...result].sort(
+          (a, b) => (a.finalAmount || 0) - (b.finalAmount || 0)
+        );
+        break;
+      default:
+        break;
+    }
 
-      <div className="page-wrapper">
-        <div className="content">
-          {/* TOP BAR */}
-          <div
-            style={{
-              padding: "24px 40px",
-              background: "#fff",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
-            }}
-          >
-            <div
-              style={{
-                maxWidth: 1400,
-                margin: "0 auto",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
+    return result;
+  }, [groupedQuotations, activeTab, searchTerm, sortBy, filters]);
+
+  const currentQuotations = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredQuotations.slice(start, start + pageSize);
+  }, [filteredQuotations, currentPage, pageSize]);
+
+  /* -------------------------- WhatsApp Share -------------------------- */
+  const handleShareOnWhatsApp = (quotation) => {
+    let itemsArray = [];
+    if (quotation.items && Array.isArray(quotation.items)) {
+      itemsArray = quotation.items;
+    } else if (quotation.products) {
+      try {
+        itemsArray = JSON.parse(quotation.products);
+      } catch (_) {
+        itemsArray = [];
+      }
+    }
+
+    const items = itemsArray
+      .map(
+        (it, i) =>
+          `  ${i + 1}. Product ID: ${it.productId}\n` +
+          `     Qty: ${it.quantity}\n` +
+          `     Disc: ${it.discount}\n` +
+          `     Tax: ${it.tax}\n` +
+          `     Total: ₹${it.total}`
+      )
+      .join("\n");
+
+    const msg = `
+==== QUOTATION DETAILS ====
+Title: ${quotation?.document_title || "N/A"}
+Date: ${quotation?.quotation_date || "N/A"}
+Due: ${quotation?.due_date || "N/A"}
+Ref#: ${quotation?.reference_number || "N/A"}
+GST: ${quotation?.include_gst ? "Yes" : "No"}
+GST Val: ${quotation?.gst_value || 0}
+Disc Type: ${quotation?.discountType || "N/A"}
+Round Off: ₹${quotation?.roundOff || 0}
+
+-- ITEMS --
+${items || "No items"}
+
+Final: ₹${quotation?.finalAmount || 0}
+Created By: ${quotation?.signature_name || "N/A"}
+Customer: ${quotation?.customerId || "N/A"}
+Ship To: ${quotation?.shipTo || "N/A"}
+
+View: ${window.location.origin}/quotation/${quotation.quotationId}
+==========================`;
+
+    const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+    window.open(url, "_blank");
+  };
+  const handleGenerateSiteMap = (quotation) => {
+    // Parse products (new API uses `items`, old uses `products` string)
+    let rawItems = [];
+
+    if (
+      quotation.items &&
+      Array.isArray(quotation.items) &&
+      quotation.items.length > 0
+    ) {
+      rawItems = quotation.items;
+    } else if (quotation.products) {
+      try {
+        rawItems =
+          typeof quotation.products === "string"
+            ? JSON.parse(quotation.products)
+            : quotation.products;
+      } catch (e) {
+        console.error("Failed to parse products", e);
+        rawItems = [];
+      }
+    }
+
+    if (rawItems.length === 0) {
+      message.warning(
+        "This quotation has no products to convert into a site map."
+      );
+      return;
+    }
+
+    // Transform into SiteMap items format
+    const siteMapItems = rawItems.map((item) => ({
+      productId: item.productId || item.id,
+      name: item.name || "Unknown Product",
+      imageUrl: item.imageUrl || null,
+      quantity: Number(item.quantity) || 1,
+      price: Number(item.price) || 0,
+      floor_number: 1, // Default to Ground Floor – user can change later
+      productType: item.category || "Others",
+    }));
+
+    // Navigate to AddSiteMap with pre-filled data
+    navigate("/site-map/add", {
+      state: {
+        fromQuotation: true,
+        quotationId: quotation.quotationId,
+        customerId: quotation.customerId,
+        projectName: `${quotation.document_title || "Quotation"} - Site Map`,
+        items: siteMapItems,
+        totalFloors: 1,
+      },
+    });
+  };
+  /* ------------------------------ Columns ------------------------------ */
+  const columns = [
+    { title: "S.No.", dataIndex: "sNo", key: "sNo", width: 70 },
+    {
+      title: "Quotation Title",
+      dataIndex: "quotationTitle",
+      key: "quotationTitle",
+      width: 150,
+      render: (text, rec) => (
+        <Link to={`/quotation/${rec.quotationId}`}>{text || "N/A"}</Link>
+      ),
+    },
+    {
+      title: "Quotation Date",
+      dataIndex: "quotationDate",
+      key: "quotationDate",
+      width: 120,
+      filterDropdown: ({
+        setSelectedKeys,
+        selectedKeys,
+        confirm,
+        clearFilters,
+      }) => (
+        <div style={{ padding: 8 }}>
+          <DatePicker
+            style={{ width: "100%", marginBottom: 8 }}
+            value={selectedKeys[0] ? moment(selectedKeys[0]) : null}
+            onChange={(d) => setSelectedKeys(d ? [d] : [])}
+            placeholder="Select Date"
+          />
+          <div>
+            <Button
+              type="primary"
+              size="small"
+              style={{ width: 90, marginRight: 8 }}
+              onClick={() => {
+                setFilters((p) => ({
+                  ...p,
+                  quotationDate: selectedKeys[0]
+                    ? selectedKeys[0].toDate()
+                    : null,
+                }));
+                confirm();
               }}
             >
-              <div>
-                <Title level={2} style={{ margin: 0, color: "#aa0f1f" }}>
-                  {quotation.document_title || "Quotation"}
-                </Title>
-                <Text type="secondary">
-                  {quotation.reference_number} • {customerName} • {brandNames}
-                </Text>
-              </div>
+              OK
+            </Button>
+            <Button
+              size="small"
+              style={{ width: 90 }}
+              onClick={() => {
+                clearFilters();
+                setFilters((p) => ({ ...p, quotationDate: null }));
+                confirm();
+              }}
+            >
+              Reset
+            </Button>
+          </div>
+        </div>
+      ),
+      filterIcon: (f) => (
+        <FaSearch style={{ color: f ? "#1890ff" : undefined }} />
+      ),
+    },
+    {
+      title: "Due Date",
+      dataIndex: "dueDate",
+      key: "dueDate",
+      width: 120,
+      filterDropdown: ({
+        setSelectedKeys,
+        selectedKeys,
+        confirm,
+        clearFilters,
+      }) => (
+        <div style={{ padding: 8 }}>
+          <RangePicker
+            style={{ width: "100%", marginBottom: 8 }}
+            value={
+              selectedKeys[0]
+                ? [moment(selectedKeys[0][0]), moment(selectedKeys[0][1])]
+                : null
+            }
+            onChange={(d) => setSelectedKeys(d ? [[d[0], d[1]]] : [])}
+            placeholder={["Start", "End"]}
+          />
+          <div>
+            <Button
+              type="primary"
+              size="small"
+              style={{ width: 90, marginRight: 8 }}
+              onClick={() => {
+                setFilters((p) => ({
+                  ...p,
+                  dateRange: selectedKeys[0]
+                    ? [selectedKeys[0][0].toDate(), selectedKeys[0][1].toDate()]
+                    : null,
+                }));
+                confirm();
+              }}
+            >
+              OK
+            </Button>
+            <Button
+              size="small"
+              style={{ width: 90 }}
+              onClick={() => {
+                clearFilters();
+                setFilters((p) => ({ ...p, dateRange: null }));
+                confirm();
+              }}
+            >
+              Reset
+            </Button>
+          </div>
+        </div>
+      ),
+      filterIcon: (f) => (
+        <FaSearch style={{ color: f ? "#1890ff" : undefined }} />
+      ),
+    },
+    {
+      title: "Quotation Number",
+      dataIndex: "referenceNumber",
+      key: "referenceNumber",
+      width: 150,
+    },
+    // Inside the columns definition (Products column)
+    {
+      title: "Products",
+      dataIndex: "products",
+      key: "products",
+      width: 120,
+      render: (_, rec) => (
+        <button
+          className="btn btn-link"
+          onClick={() => handleOpenProductModal(rec)} // <-- pass whole row
+          style={{ color: "#e31e24" }}
+        >
+          Quick View ({getProductCount(rec.products)})
+        </button>
+      ),
+    },
+    {
+      title: "Customer",
+      dataIndex: "customer",
+      key: "customer",
+      width: 150,
+      filterDropdown: ({
+        setSelectedKeys,
+        selectedKeys,
+        confirm,
+        clearFilters,
+      }) => (
+        <div style={{ padding: 8 }}>
+          <Select
+            style={{ width: "100%", marginBottom: 8 }}
+            value={selectedKeys[0]}
+            onChange={(v) => setSelectedKeys(v ? [v] : [])}
+            placeholder="Select Customer"
+            allowClear
+          >
+            {customers.map((c) => (
+              <Option key={c.customerId} value={c.customerId}>
+                {c.name}
+              </Option>
+            ))}
+          </Select>
+          <div>
+            <Button
+              type="primary"
+              size="small"
+              style={{ width: 90, marginRight: 8 }}
+              onClick={() => {
+                setFilters((p) => ({
+                  ...p,
+                  customerId: selectedKeys[0] || null,
+                }));
+                confirm();
+              }}
+            >
+              OK
+            </Button>
+            <Button
+              size="small"
+              style={{ width: 90 }}
+              onClick={() => {
+                clearFilters();
+                setFilters((p) => ({ ...p, customerId: null }));
+                confirm();
+              }}
+            >
+              Reset
+            </Button>
+          </div>
+        </div>
+      ),
+      filterIcon: (f) => (
+        <FaSearch style={{ color: f ? "#1890ff" : undefined }} />
+      ),
+      render: (text, rec) => (
+        <Link to={`/customer/${rec.customerId}`}>{text}</Link>
+      ),
+    },
+    {
+      title: "Final Amount",
+      dataIndex: "finalAmount",
+      key: "finalAmount",
+      width: 120,
+      sorter: (a, b) =>
+        parseFloat(a.finalAmount.replace("₹", "")) -
+        parseFloat(b.finalAmount.replace("₹", "")),
+      filterDropdown: ({
+        setSelectedKeys,
+        selectedKeys,
+        confirm,
+        clearFilters,
+      }) => (
+        <div style={{ padding: 8 }}>
+          <Input
+            placeholder="Enter Amount"
+            value={selectedKeys[0]}
+            onChange={(e) =>
+              setSelectedKeys(e.target.value ? [e.target.value] : [])
+            }
+            style={{ width: "100%", marginBottom: 8 }}
+          />
+          <div>
+            <Button
+              type="primary"
+              size="small"
+              style={{ width: 90, marginRight: 8 }}
+              onClick={() => {
+                setFilters((p) => ({
+                  ...p,
+                  finalAmount: selectedKeys[0] || null,
+                }));
+                confirm();
+              }}
+            >
+              OK
+            </Button>
+            <Button
+              size="small"
+              style={{ width: 90 }}
+              onClick={() => {
+                clearFilters();
+                setFilters((p) => ({ ...p, finalAmount: null }));
+                confirm();
+              }}
+            >
+              Reset
+            </Button>
+          </div>
+        </div>
+      ),
+      filterIcon: (f) => (
+        <FaSearch style={{ color: f ? "#1890ff" : undefined }} />
+      ),
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      width: 100,
+      fixed: "right",
+      render: (_, rec) => (
+        <div className="d-flex align-items-center">
+          <PermissionGate api="edit" module="quotations">
+            <span
+              onClick={() =>
+                navigate(`/quotation/${rec.quotationId}/edit`, {
+                  state: { quotation: rec },
+                })
+              }
+              style={{ cursor: "pointer", marginRight: 8 }}
+              title="Edit Quotation"
+            >
+              <EditOutlined />
+            </span>
+          </PermissionGate>
 
-              <Space size="large">
-                <Tabs
-                  activeKey={activeVersion}
-                  onChange={setActiveVersion}
-                  type="card"
+          <Dropdown
+            overlay={
+              <Menu>
+                <PermissionGate api="view" module="quotations">
+                  <Menu.Item key="view">
+                    <Link
+                      to={`/quotation/${rec.quotationId}`}
+                      style={{ textDecoration: "none", color: "inherit" }}
+                    >
+                      <FaEye style={{ marginRight: 8 }} />
+                      View
+                    </Link>
+                  </Menu.Item>
+                </PermissionGate>
+
+                <PermissionGate api="delete" module="quotations">
+                  <Menu.Item
+                    key="delete"
+                    onClick={() => handleDeleteClick(rec)}
+                    disabled={isDeleting}
+                    style={{ color: "#ff4d4f" }}
+                  >
+                    <FaTrash style={{ marginRight: 8 }} />
+                    Delete
+                  </Menu.Item>
+                </PermissionGate>
+                {/* Inside the <Menu> of the Actions Dropdown */}
+
+                <Menu.Item
+                  key="generate-sitemap"
+                  onClick={() => handleGenerateSiteMap(rec)} // ← NEW
+                  style={{ color: "#722ed1" }}
                 >
-                  {versions.map((v) => (
-                    <TabPane
-                      tab={
-                        v.version === "current"
-                          ? "Current Version"
-                          : `Version ${v.version}`
-                      }
-                      key={v.version}
-                    />
-                  ))}
-                </Tabs>
+                  <HomeOutlined style={{ marginRight: 8 }} />
+                  Generate Site Map
+                </Menu.Item>
 
-                <Space>
-                  <select
-                    value={exportFormat}
-                    onChange={(e) => setExportFormat(e.target.value)}
-                    style={{ padding: "8px 16px", borderRadius: 6 }}
-                    disabled={isExporting}
+                <PermissionGate api="write" module="quotations">
+                  <Menu.Item
+                    key="convert"
+                    onClick={() => handleConvertToOrder(rec)}
                   >
-                    <option value="pdf">Export as PDF</option>
-                    <option value="excel">Export as Excel</option>
-                  </select>
-                  <Button
-                    type="primary"
-                    size="large"
-                    loading={isExporting}
-                    onClick={handleExport}
-                    icon={
-                      exportFormat === "pdf" ? (
-                        <FilePdfFilled />
-                      ) : (
-                        <FileExcelFilled />
-                      )
-                    }
-                    style={{ background: "#aa0f1f", border: "none" }}
-                  >
-                    {isExporting ? "Exporting..." : "Export Quotation"}
-                  </Button>
-                </Space>
+                    <FaFileInvoice style={{ marginRight: 8 }} />
+                    Convert to Order
+                  </Menu.Item>
+                </PermissionGate>
 
-                <Button icon={<ArrowLeftOutlined />} size="large">
-                  <Link to="/quotations/list">Back</Link>
-                </Button>
-              </Space>
+                <Menu.Item
+                  key="whatsapp"
+                  onClick={() => handleShareOnWhatsApp(rec)}
+                  style={{ color: "#25D366" }}
+                >
+                  <FaWhatsapp style={{ marginRight: 8 }} />
+                  Share on WhatsApp
+                </Menu.Item>
+              </Menu>
+            }
+            trigger={["click"]}
+            placement="bottomRight"
+          >
+            <Button type="text" icon={<BsThreeDotsVertical />} />
+          </Dropdown>
+        </div>
+      ),
+    },
+  ];
+
+  /* -------------------------- Table Data --------------------------- */
+  const formattedTableData = useMemo(() => {
+    return currentQuotations.map((q, i) => ({
+      key: q.quotationId,
+      sNo: (currentPage - 1) * pageSize + i + 1,
+      quotationTitle: q.document_title || "N/A",
+      quotationDate: q.quotation_date
+        ? new Date(q.quotation_date).toLocaleDateString()
+        : "N/A",
+      dueDate: q.due_date ? new Date(q.due_date).toLocaleDateString() : "N/A",
+      referenceNumber: q.reference_number || "N/A",
+      products: q.products,
+      customer: getCustomerName(q.customerId),
+      customerId: q.customerId,
+      finalAmount: `₹${q.finalAmount || 0}`,
+      quotationId: q.quotationId,
+    }));
+  }, [currentQuotations, currentPage, pageSize, customers]);
+
+  /* --------------------------- Handlers --------------------------- */
+  const handleAddQuotation = () => navigate("/quotation/add");
+
+  const handleDeleteClick = (q) => {
+    setQuotationToDelete(q);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!quotationToDelete?.quotationId) {
+      message.error("No quotation selected");
+      setShowDeleteModal(false);
+      return;
+    }
+    try {
+      await deleteQuotation(quotationToDelete.quotationId).unwrap();
+      setShowDeleteModal(false);
+      setQuotationToDelete(null);
+      refetch();
+      if (currentQuotations.length === 1 && currentPage > 1) {
+        setCurrentPage((p) => p - 1);
+      }
+    } catch (e) {
+      message.error(
+        `Delete failed: ${
+          e.data?.message || e.data?.error || e.message || "unknown"
+        }`
+      );
+    }
+  };
+
+  // Handler
+  const handleOpenProductModal = (quotation) => {
+    setSelectedQuotation(quotation); // whole object as fallback
+    setShowProductModal(true);
+  };
+  // Close handler stays the same
+  const handleCloseProductModal = () => {
+    setShowProductModal(false);
+    setSelectedQuotation(null);
+  };
+
+  const handleOpenInvoiceModal = (q) => {
+    setSelectedQuotation(q);
+    setShowInvoiceModal(true);
+  };
+  const handleCloseInvoiceModal = () => {
+    setShowInvoiceModal(false);
+    setSelectedQuotation(null);
+  };
+
+  const handleConvertToOrder = (q) => {
+    let rawItems = [];
+
+    // Prefer items array (cleaner, from latest API)
+    if (q.items && Array.isArray(q.items) && q.items.length > 0) {
+      rawItems = q.items;
+    } else if (q.products) {
+      try {
+        rawItems =
+          typeof q.products === "string" ? JSON.parse(q.products) : q.products;
+      } catch (e) {
+        console.error("Failed to parse products", e);
+        rawItems = [];
+      }
+    }
+
+    if (rawItems.length === 0) {
+      message.error("No products found in quotation");
+      return;
+    }
+
+    // Ensure clean transformation
+    const products = rawItems.map((item) => {
+      const quantity = Number(item.quantity) || 1;
+      const price = Number(item.price) || 0;
+      const discount = Number(item.discount) || 0;
+      const discountType = item.discountType || "percent";
+
+      let finalPrice = price;
+      if (discountType === "percent") {
+        finalPrice = price * (1 - discount / 100);
+      } else {
+        finalPrice = price - discount;
+      }
+
+      const total = Number((finalPrice * quantity).toFixed(2));
+
+      return {
+        id: item.productId,
+        price: Number(price.toFixed(2)),
+        quantity,
+        discount,
+        discountType,
+        total,
+      };
+    });
+
+    // Double-check every product has required fields
+    const invalidProduct = products.find(
+      (p) => !p.id || isNaN(p.price) || isNaN(p.total) || p.quantity < 1
+    );
+
+    if (invalidProduct) {
+      console.error("Invalid product:", invalidProduct);
+      message.error("One or more products have invalid data");
+      return;
+    }
+
+    navigate("/order/add", {
+      state: {
+        quotationData: {
+          createdFor: q.customerId || "",
+          dueDate: q.due_date || moment().add(7, "days").format("YYYY-MM-DD"),
+          description: `Converted from Quotation #${
+            q.reference_number || q.quotationId
+          }\n${q.document_title || ""}`.trim(),
+          shipTo: q.shipTo || null,
+          gst: q.gst ? parseFloat(q.gst) : null,
+          extraDiscount: q.extraDiscount ? parseFloat(q.extraDiscount) : null,
+          extraDiscountType: q.extraDiscountType || "fixed",
+          shipping: q.shippingAmount ? parseFloat(q.shippingAmount) : 0,
+          products, // ← This is now 100% valid
+          quotationId: q.quotationId,
+        },
+      },
+    });
+  };
+
+  const handlePageChange = (page, newPageSize) => {
+    setCurrentPage(page);
+    setPageSize(newPageSize);
+  };
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setSortBy("Recently Added");
+    setActiveTab("All");
+    setFilters({
+      finalAmount: null,
+      quotationDate: null,
+      customerId: null,
+      dateRange: null,
+    });
+    setCurrentPage(1);
+    setPageSize(10);
+  };
+
+  /* --------------------------- Loading / Error -------------------------- */
+  if (isLoading) {
+    return (
+      <div className="content">
+        <div className="card">
+          <div className="card-body text-center">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
             </div>
-          </div>
-
-          {/* HIDDEN FOR PRINT */}
-          <div
-            ref={quotationRef}
-            style={{ position: "absolute", left: "-9999px", top: 0 }}
-          >
-            <div className={styles.printArea}>{renderPages()}</div>
-          </div>
-
-          {/* ON-SCREEN PREVIEW */}
-          <div
-            style={{
-              padding: "40px 20px",
-              background: "#f5f5f5",
-              minHeight: "100vh",
-            }}
-          >
-            <div className={styles.printArea}>{renderPages()}</div>
+            <p>Loading quotations...</p>
           </div>
         </div>
       </div>
-    </>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="content">
+        <div className="card">
+          <div className="card-body">
+            <div className="alert alert-danger" role="alert">
+              Error fetching quotations!
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ------------------------------- Render ------------------------------- */
+  return (
+    <div className="page-wrapper">
+      <div className="content">
+        <div className="card">
+          <PageHeader
+            title="Quotations"
+            subtitle="Manage your Quotations"
+            tableData={formattedTableData}
+            exportOptions={{ pdf: true, excel: true }}
+          />
+
+          <div className="card-body">
+            {/* ---------- Search & Sort ---------- */}
+            <div className="row">
+              <div className="col-lg-12">
+                <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
+                  <div className="input-icon-start position-relative">
+                    <span className="input-icon-addon">
+                      <FaSearch />
+                    </span>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Search Quotations"
+                      value={searchTerm}
+                      onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        setCurrentPage(1); // Reset to first page on search
+                      }}
+                    />
+                  </div>
+
+                  <Select
+                    style={{ width: 200, marginLeft: 10 }}
+                    value={sortBy}
+                    onChange={(value) => {
+                      setSortBy(value);
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <Option value="Recently Added">Recently Added</Option>
+                    <Option value="Ascending">Reference Ascending</Option>
+                    <Option value="Descending">Reference Descending</Option>
+                    <Option value="Price High">Price High to Low</Option>
+                    <Option value="Price Low">Price Low to High</Option>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            {/* ---------- Tabs (All / Accepted / …) ---------- */}
+            <div className="tab-content" id="pills-tabContent">
+              {Object.entries(groupedQuotations).map(([status]) => (
+                <div
+                  key={status}
+                  className={`tab-pane fade ${
+                    activeTab === status ? "show active" : ""
+                  }`}
+                  id={`pills-${status}`}
+                  role="tabpanel"
+                >
+                  {currentQuotations.length === 0 ? (
+                    <p className="text-muted">
+                      No {status.toLowerCase()} quotations match the filters.
+                    </p>
+                  ) : (
+                    <div
+                      className="table-responsive"
+                      style={{ overflowX: "auto" }}
+                    >
+                      <Table
+                        className="table table-hover"
+                        columns={columns}
+                        dataSource={formattedTableData}
+                        pagination={false}
+                        rowKey="key"
+                        scroll={{ x: "max-content" }}
+                      />
+
+                      {/* ANT DESIGN PAGINATION */}
+                      {filteredQuotations.length > pageSize && (
+                        <div className="d-flex justify-content-end mt-4">
+                          <Pagination
+                            current={currentPage}
+                            pageSize={pageSize}
+                            total={filteredQuotations.length}
+                            onChange={handlePageChange}
+                            showSizeChanger
+                            pageSizeOptions={["10", "20", "50", "100"]}
+                            showQuickJumper
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* -------------------------- Modals -------------------------- */}
+
+        <QuotationProductModal
+          show={showProductModal}
+          onHide={handleCloseProductModal}
+          quotationId={selectedQuotation?.quotationId} // <-- fetch from API
+          fallbackQuotation={selectedQuotation} // <-- immediate UI (no flash)
+        />
+
+        {showDeleteModal && (
+          <DeleteModal
+            item={quotationToDelete}
+            itemType="Quotation"
+            isVisible={showDeleteModal}
+            onConfirm={handleConfirmDelete}
+            onCancel={() => {
+              setShowDeleteModal(false);
+              setQuotationToDelete(null);
+            }}
+            isLoading={isDeleting}
+          />
+        )}
+
+        {showInvoiceModal && selectedQuotation && (
+          <CreateInvoiceFromQuotation
+            quotation={selectedQuotation}
+            onClose={handleCloseInvoiceModal}
+            createInvoice={createInvoice}
+            customerMap={customerMap}
+            addressMap={{}}
+          />
+        )}
+      </div>
+    </div>
   );
 };
 
-export default NewQuotationsDetails;
+export default QuotationList;

@@ -56,7 +56,12 @@ const computeSummaries = (items, floorDetails) => {
 
   return { overall, perFloor, perType };
 };
-
+// Helper for nice floor names
+function getOrdinal(n) {
+  const s = ["th", "st", "nd", "rd"],
+    v = n % 100;
+  return s[(v - 20) % 10] || s[v] || s[0];
+}
 const siteMapController = {
   // 1. Create New Site Map
   async createSiteMap(req, res) {
@@ -146,7 +151,6 @@ const siteMapController = {
       const siteMaps = await SiteMap.findAll({
         where: { customerId },
         order: [["createdAt", "DESC"]],
-        attributes: { exclude: ["items"] }, // Reduce payload
       });
 
       res.json({ success: true, data: siteMaps });

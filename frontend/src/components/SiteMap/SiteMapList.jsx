@@ -102,7 +102,13 @@ const SiteMapList = () => {
       message.error(err.data?.message || "Failed to generate quotation");
     }
   };
-
+  const handleOpenAddSiteMap = () => {
+    if (!selectedCustomerId) {
+      message.warning("Please select a customer first.");
+      return;
+    }
+    navigate(`/site-map/add?customerId=${selectedCustomerId}`);
+  };
   const handleDeleteClick = (siteMap) => {
     setSiteMapToDelete(siteMap);
     setShowDeleteModal(true);
@@ -253,6 +259,7 @@ View Site Map: ${window.location.origin}/site-map/${siteMap.id}
           <PageHeader
             title="Site Maps"
             subtitle="Floor-wise product planning for projects"
+            onAdd={handleOpenAddSiteMap}
           />
           <Card>
             <div style={{ textAlign: "center", padding: "60px 20px" }}>
@@ -288,104 +295,134 @@ View Site Map: ${window.location.origin}/site-map/${siteMap.id}
       <div className="content">
         <PageHeader
           title="Site Maps"
-          subtitle={`Projects for ${getCustomerName(selectedCustomerId)}`}
-          rightContent={
-            <Space>
-              <Select
-                value={selectedCustomerId}
-                onChange={setSelectedCustomerId}
-                style={{ width: 300 }}
-                showSearch
-                placeholder="Switch customer"
-              >
-                {customers.map((c) => (
-                  <Option key={c.customerId} value={c.customerId}>
-                    {c.name}
-                  </Option>
-                ))}
-              </Select>
-              <Button
-                type="primary"
-                size="large"
-                onClick={() =>
-                  navigate(`/site-map/add?customerId=${selectedCustomerId}`)
-                }
-              >
-                + New Site Map
-              </Button>
-            </Space>
+          subtitle={
+            selectedCustomerId
+              ? `Projects for ${getCustomerName(selectedCustomerId)}`
+              : "Floor-wise product planning for projects"
           }
+          onAdd={() => {
+            if (!selectedCustomerId) {
+              message.warning("Please select a customer first.");
+              return;
+            }
+            navigate(`/site-map/add?customerId=${selectedCustomerId}`);
+          }}
         />
 
-        <Card>
-          <div className="card-body">
-            <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-              <Input
-                prefix={<FaSearch />}
-                placeholder="Search site maps..."
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1);
-                }}
-                style={{ width: 300 }}
-              />
-              <Text strong>
-                Total: {filteredSiteMaps.length} Site Map
-                {filteredSiteMaps.length !== 1 ? "s" : ""}
+        {/* Show empty state only when no customer selected */}
+        {!selectedCustomerId ? (
+          <Card>
+            <div style={{ textAlign: "center", padding: "80px 20px" }}>
+              <FaHome size={80} color="#1890ff" style={{ marginBottom: 24 }} />
+              <Title level={3}>Select a Customer to View Site Maps</Title>
+              <Text type="secondary">
+                Choose a customer from the dropdown above to see their projects
               </Text>
             </div>
-
-            <Table
-              columns={columns}
-              dataSource={currentSiteMaps}
-              pagination={false}
-              loading={isFetching}
-              rowKey="id"
-              scroll={{ x: 1200 }}
-            />
-
-            {filteredSiteMaps.length > pageSize && (
-              <div className="d-flex justify-content-end mt-4">
-                <Pagination
-                  current={currentPage}
-                  pageSize={pageSize}
-                  total={filteredSiteMaps.length}
-                  onChange={(page, size) => {
-                    setCurrentPage(page);
-                    setPageSize(size);
+          </Card>
+        ) : (
+          <Card>
+            {/* Your existing table code */}
+            <div className="card-body">
+              <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                <Input
+                  prefix={<FaSearch />}
+                  placeholder="Search site maps..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1);
                   }}
-                  showSizeChanger
-                  pageSizeOptions={["10", "20", "50"]}
+                  style={{ width: 300 }}
                 />
-              </div>
-            )}
-
-            {filteredSiteMaps.length === 0 && (
-              <div style={{ textAlign: "center", padding: "60px 20px" }}>
-                <FaHome
-                  size={48}
-                  color="#d9d9d9"
-                  style={{ marginBottom: 16 }}
-                />
-                <Text type="secondary">
-                  No site maps found for this customer
-                </Text>
-                <br />
-                <Button
-                  type="primary"
-                  size="large"
-                  style={{ marginTop: 16 }}
-                  onClick={() =>
-                    navigate(`/site-map/add?customerId=${selectedCustomerId}`)
+                <Select
+                  showSearch
+                  allowClear
+                  placeholder="Select customer to view site maps"
+                  style={{ width: 340 }}
+                  value={selectedCustomerId || undefined}
+                  onChange={(value) => {
+                    setSelectedCustomerId(value || "");
+                    setCurrentPage(1);
+                    setSearchTerm("");
+                  }}
+                  optionFilterProp="children"
+                  filterOption={(input, option) =>
+                    option.children
+                      .toString()
+                      .toLowerCase()
+                      .includes(input.toLowerCase())
                   }
                 >
-                  Create First Site Map
-                </Button>
+                  {customers.map((c) => (
+                    <Option key={c.customerId} value={c.customerId}>
+                      <div>
+                        <div>
+                          <strong>{c.name}</strong>
+                        </div>
+                        {c.phone && (
+                          <small style={{ color: "#666" }}>{c.phone}</small>
+                        )}
+                      </div>
+                    </Option>
+                  ))}
+                </Select>
+                <Text strong>
+                  Total: {filteredSiteMaps.length} Site Map
+                  {filteredSiteMaps.length !== 1 ? "s" : ""}
+                </Text>
               </div>
-            )}
-          </div>
-        </Card>
+
+              <Table
+                columns={columns}
+                dataSource={currentSiteMaps}
+                pagination={false}
+                loading={isFetching}
+                rowKey="id"
+                scroll={{ x: 1200 }}
+              />
+
+              {/* Pagination & Empty State */}
+              {filteredSiteMaps.length > pageSize && (
+                <div className="d-flex justify-content-end mt-4">
+                  <Pagination
+                    current={currentPage}
+                    pageSize={pageSize}
+                    total={filteredSiteMaps.length}
+                    onChange={(page, size) => {
+                      setCurrentPage(page);
+                      setPageSize(size);
+                    }}
+                    showSizeChanger
+                    pageSizeOptions={["10", "20", "50"]}
+                  />
+                </div>
+              )}
+
+              {filteredSiteMaps.length === 0 && (
+                <div style={{ textAlign: "center", padding: "60px 20px" }}>
+                  <FaHome
+                    size={48}
+                    color="#d9d9d9"
+                    style={{ marginBottom: 16 }}
+                  />
+                  <Text type="secondary">No site maps found</Text>
+                  <br />
+                  <Button
+                    type="primary"
+                    size="large"
+                    style={{ marginTop: 16 }}
+                    onClick={() =>
+                      navigate(`/site-map/add?customerId=${selectedCustomerId}`)
+                    }
+                  >
+                    Create First Site Map
+                  </Button>
+                </div>
+              )}
+            </div>
+          </Card>
+        )}
 
         <DeleteModal
           isVisible={showDeleteModal}
