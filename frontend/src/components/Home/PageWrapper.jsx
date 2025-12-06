@@ -15,7 +15,7 @@ import { useGetAllQuotationsQuery } from "../../api/quotationApi";
 import { useGetAllInvoicesQuery } from "../../api/invoiceApi";
 import { useGetProfileQuery } from "../../api/userApi";
 import { useGetAllOrdersQuery } from "../../api/orderApi";
-import { useGetCustomersQuery } from "../../api/customerApi"; // <-- NEW
+import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
 import { useAddProductToCartMutation } from "../../api/cartApi";
@@ -54,47 +54,33 @@ const PageWrapper = () => {
   /* ------------------------------------------------------------------ */
   /*  RTK-QUERY HOOKS                                                   */
   /* ------------------------------------------------------------------ */
-  const [addProductToCart, { isLoading: mutationLoading }] =
-    useAddProductToCartMutation();
-
-  const {
-    data: profile,
-    isLoading: loadingProfile,
-    error: profileError,
-  } = useGetProfileQuery();
-
+  const [addProductToCart] = useAddProductToCartMutation();
+  const { data: profile } = useGetProfileQuery();
   const userId = profile?.user?.userId;
 
-  const {
-    data: ordersData,
-    isLoading: loadingOrders,
-    refetch: refetchOrders,
-  } = useGetAllOrdersQuery(undefined, { pollingInterval: 30000 });
+  const { data: ordersData, refetch: refetchOrders } = useGetAllOrdersQuery(
+    undefined,
+    {
+      pollingInterval: 30000,
+    }
+  );
 
-  const { data: quotationData = [], isLoading: loadingQuotations } =
-    useGetAllQuotationsQuery();
-
-  const { data: productsData, isLoading: isProductsLoading } =
-    useGetAllProductsQuery();
-
-  // NEW – customers
-  const { data: customers, isLoading: isCustomersLoading } =
-    useGetCustomersQuery();
-
-  const { data: categoriesData, isLoading: isCategoriesLoading } =
-    useGetAllCategoriesQuery();
-
-  const { data: usersData, isLoading: isUsersLoading } = useGetAllUsersQuery();
-
-  const { data: invoiceData, isLoading: loadingInvoices } =
-    useGetAllInvoicesQuery();
+  const { data: quotationData = [] } = useGetAllQuotationsQuery();
+  const { data: productsData } = useGetAllProductsQuery();
+  const { data: customers } = useGetCustomersQuery();
+  const { data: invoiceData } = useGetAllInvoicesQuery();
 
   const orders = ordersData?.orders || [];
+  const products = Array.isArray(productsData)
+    ? productsData
+    : productsData?.data || [];
+  const customersData = customers?.data || [];
+
   const { topProducts, loading: topProductsLoading } = useTopProducts({
     quotations: quotationData,
     orders,
   });
-  const customersData = customers?.data || [];
+
   /* ------------------------------------------------------------------ */
   /*  ATTENDANCE (clock-in/out)                                         */
   /* ------------------------------------------------------------------ */
@@ -109,13 +95,9 @@ const PageWrapper = () => {
     .toISOString()
     .split("T")[0];
 
-  const {
-    data: attendance,
-    isLoading: loadingAttendance,
-    error: attendanceError,
-  } = useGetAttendanceQuery(
+  const { data: attendance } = useGetAttendanceQuery(
     { userId, startDate, endDate },
-    { skip: !userId || loadingProfile || !!profileError }
+    { skip: !userId }
   );
 
   const hasClockedIn = attendance?.length > 0 && !!attendance[0]?.clockIn;
@@ -128,6 +110,7 @@ const PageWrapper = () => {
     if (!userId) return message.error("User ID missing");
     try {
       await clockIn({ userId }).unwrap();
+      message.success("Clocked in successfully");
     } catch {
       message.error("Clock-in failed");
     }
@@ -137,6 +120,7 @@ const PageWrapper = () => {
     if (!userId) return message.error("User ID missing");
     try {
       await clockOut({ userId }).unwrap();
+      message.success("Clocked out successfully");
     } catch {
       message.error("Clock-out failed");
     }
@@ -147,14 +131,16 @@ const PageWrapper = () => {
   /* ------------------------------------------------------------------ */
   const handleAddToCart = async (product) => {
     if (!userId) return message.error("User not logged in!");
+
     const priceEntry = Array.isArray(product.metaDetails)
       ? product.metaDetails.find((d) => d.slug === "sellingPrice")
       : null;
     const price = priceEntry ? parseFloat(priceEntry.value) : null;
-    if (!price) return message.error("Invalid price");
+    if (!price || isNaN(price)) return message.error("Invalid price");
 
     const qty = product.quantity || 1;
-    if (!Number.isInteger(qty) || qty <= 0) return message.error("Invalid qty");
+    if (!Number.isInteger(qty) || qty <= 0)
+      return message.error("Invalid quantity");
 
     setCartLoadingStates((s) => ({ ...s, [product.productId]: true }));
     try {
@@ -163,16 +149,13 @@ const PageWrapper = () => {
         productId: product.productId,
         quantity: qty,
       }).unwrap();
+      message.success("Added to cart");
     } catch (e) {
       message.error(e?.data?.message || "Add to cart failed");
     } finally {
       setCartLoadingStates((s) => ({ ...s, [product.productId]: false }));
     }
   };
-
-  const products = Array.isArray(productsData)
-    ? productsData
-    : productsData?.data || [];
 
   const lowStockProducts = useMemo(
     () => products.filter((p) => p.quantity < p.alert_quantity),
@@ -199,13 +182,14 @@ const PageWrapper = () => {
     try {
       await updateOrderStatus({ orderId, status: newStatus }).unwrap();
       refetchOrders();
+      message.success("Status updated");
     } catch (e) {
       message.error(e?.data?.message || "Status update failed");
     }
   };
 
   /* ------------------------------------------------------------------ */
-  /*  COUNTS & LATEST LISTS                                            */
+  /*  COUNTS & LATEST LISTS                                             */
   /* ------------------------------------------------------------------ */
   const orderCount = orders.length;
   const quotationCount = quotationData.length || 0;
@@ -217,19 +201,16 @@ const PageWrapper = () => {
   const lastFiveProducts = products.slice(-5).reverse();
 
   /* ------------------------------------------------------------------ */
-  /*  CUSTOMER NAME MAP (NEW)                                           */
+  /*  CUSTOMER NAME MAP                                                 */
   /* ------------------------------------------------------------------ */
-  const getCustomerName = (customerId) => {
-    const cust = customersData.find((c) => c.customerId === customerId);
-    return cust ? cust.name : "Unknown";
-  };
-
   const customerMap = useMemo(() => {
     return customersData.reduce((map, c) => {
       map[c.customerId] = c.name;
       return map;
     }, {});
   }, [customersData]);
+
+  const getCustomerName = (customerId) => customerMap[customerId] || "Unknown";
 
   /* ------------------------------------------------------------------ */
   /*  UI HELPERS                                                        */
@@ -265,42 +246,13 @@ const PageWrapper = () => {
   };
 
   /* ------------------------------------------------------------------ */
-  /*  LOADING / ERROR STATES                                            */
-  /* ------------------------------------------------------------------ */
-  if (
-    loadingProfile ||
-    isCustomersLoading ||
-    isCategoriesLoading ||
-    isUsersLoading ||
-    isProductsLoading ||
-    loadingQuotations
-  ) {
-    return (
-      <div className="text-center p-5">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading…</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (profileError) {
-    return (
-      <div className="alert alert-danger m-3">
-        <h5>Profile error</h5>
-        <p>{profileError?.data?.message || "Unknown error"}</p>
-      </div>
-    );
-  }
-
-  /* ------------------------------------------------------------------ */
-  /*  RENDER                                                            */
+  /*  RENDER (No loading states — handled globally)                     */
   /* ------------------------------------------------------------------ */
   return (
     <div className="page-wrapper">
       <div className="content">
         <div className="row gx-3 gy-3">
-          {/* ---------------- LEFT COLUMN – ORDERS ---------------- */}
+          {/* LEFT COLUMN – ORDERS */}
           <div className="col-12 col-md-4 d-flex flex-column gap-3">
             <div className="card shadow-sm rounded-3">
               <div className="card-header bg-light fw-semibold">
@@ -323,8 +275,9 @@ const PageWrapper = () => {
                             #{o.orderNo}{" "}
                             <span className="me-2">
                               <i className="bi bi-person info-icon"></i>
-                              {/* NEW – use map */}
-                              {o.customer?.name || "Unknown Customer"}
+                              {o.customer?.name ||
+                                getCustomerName(o.customerId) ||
+                                "Unknown"}
                             </span>
                             {o.priority && (
                               <span
@@ -346,14 +299,17 @@ const PageWrapper = () => {
                               <i className="bi bi-person-badge info-icon"></i>
                               {o.assignedUser?.name || "Unassigned"}
                             </span>
+                            <span className="ms-2 info-text">
+                              {new Date(o.createdAt).toLocaleDateString(
+                                "en-IN",
+                                {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                }
+                              )}
+                            </span>
                           </div>
-                          <span className="ms-2 info-text">
-                            {new Date(o.createdAt).toLocaleDateString("en-IN", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                            })}
-                          </span>
                         </div>
 
                         <div className="d-flex flex-column align-items-end position-relative">
@@ -364,7 +320,6 @@ const PageWrapper = () => {
                             >
                               {o.status}
                             </span>
-
                             <BiPencil
                               size={16}
                               className="text-secondary cursor-pointer"
@@ -376,7 +331,6 @@ const PageWrapper = () => {
                             />
                           </div>
 
-                          {/* ---- EDIT STATUS DROPDOWN ---- */}
                           {editingOrderId === o.id && (
                             <div
                               className="position-absolute bg-white shadow-sm rounded-2 border mt-1"
@@ -432,16 +386,14 @@ const PageWrapper = () => {
             </div>
           </div>
 
-          {/* ---------------- MIDDLE COLUMN ---------------- */}
+          {/* MIDDLE COLUMN */}
           <div className="col-12 col-md-4 d-flex flex-column gap-3">
             {/* Quotations */}
             <div className="card shadow-sm rounded-3">
               <div className="card-header bg-light fw-semibold">
-                <span>
-                  Total Quotations{" "}
-                  <span className="text-danger fw-semibold">
-                    ({quotationCount})
-                  </span>
+                Total Quotations{" "}
+                <span className="text-danger fw-semibold">
+                  ({quotationCount})
                 </span>
               </div>
               <div className="card-body p-0">
@@ -465,11 +417,9 @@ const PageWrapper = () => {
                           >
                             {q.reference_number || "Quotation"}
                           </a>
-
                           <div className="mt-1 info-text">
                             <span className="me-2">
                               <i className="bi bi-person info-icon"></i>
-                              {/* NEW – use map */}
                               {getCustomerName(q.customerId) ||
                                 q.customer?.name ||
                                 "Customer"}
@@ -479,15 +429,11 @@ const PageWrapper = () => {
                               Due:{" "}
                               {new Date(q.due_date).toLocaleDateString(
                                 "en-IN",
-                                {
-                                  day: "2-digit",
-                                  month: "short",
-                                }
+                                { day: "2-digit", month: "short" }
                               )}
                             </span>
                           </div>
                         </div>
-
                         <div className="text-end">
                           <div className="amount">
                             ₹
@@ -495,7 +441,6 @@ const PageWrapper = () => {
                               "en-IN"
                             )}
                           </div>
-
                           <span className="ms-2 info-text">
                             {new Date(q.createdAt).toLocaleDateString("en-IN", {
                               day: "2-digit",
@@ -548,7 +493,7 @@ const PageWrapper = () => {
             )}
           </div>
 
-          {/* ---------------- RIGHT COLUMN ---------------- */}
+          {/* RIGHT COLUMN */}
           <div className="col-12 col-md-4 d-flex flex-column gap-3">
             {/* Top Selling Products */}
             <div className="card shadow-sm rounded-3">
@@ -574,19 +519,20 @@ const PageWrapper = () => {
                           }}
                         >
                           <div className="d-flex align-items-center gap-3 flex-grow-1">
-                            {imgUrl ? (
+                            {imgUrl && (
                               <img
                                 src={imgUrl}
                                 alt={product.name}
                                 className="product-image"
                                 onError={(e) => {
                                   e.target.style.display = "none";
-                                  e.target.nextElementSibling.style.display =
-                                    "flex";
+                                  const fallback = e.target.nextElementSibling;
+                                  if (fallback) {
+                                    fallback.style.display = "flex";
+                                  }
                                 }}
                               />
-                            ) : null}
-
+                            )}
                             <div className="d-flex flex-column">
                               <a
                                 href={`/product/${product.productId}`}
@@ -600,7 +546,6 @@ const PageWrapper = () => {
                               </div>
                             </div>
                           </div>
-
                           <div className="text-end">
                             <div className="price">
                               ₹
@@ -629,11 +574,9 @@ const PageWrapper = () => {
             {/* Last Five Products */}
             <div className="card shadow-sm rounded-3">
               <div className="card-header bg-light fw-semibold d-flex justify-content-between align-items-center">
-                <span>
-                  Total Products{" "}
-                  <span className="text-danger fw-semibold">
-                    ({productCount})
-                  </span>
+                Total Products{" "}
+                <span className="text-danger fw-semibold">
+                  ({productCount})
                 </span>
               </div>
               <div className="card-body p-0">
@@ -653,19 +596,20 @@ const PageWrapper = () => {
                           }}
                         >
                           <div className="d-flex align-items-center gap-3 flex-grow-1">
-                            {imgUrl ? (
+                            {imgUrl && (
                               <img
                                 src={imgUrl}
                                 alt={p.name}
                                 className="product-image"
                                 onError={(e) => {
                                   e.target.style.display = "none";
-                                  e.target.nextElementSibling.style.display =
-                                    "flex";
+                                  const fallback = e.target.nextElementSibling;
+                                  if (fallback) {
+                                    fallback.style.display = "flex";
+                                  }
                                 }}
                               />
-                            ) : null}
-
+                            )}
                             <div className="d-flex flex-column">
                               <a
                                 href={`/product/${p.productId}`}
@@ -685,7 +629,6 @@ const PageWrapper = () => {
                               </div>
                             </div>
                           </div>
-
                           <div className="info-text">
                             ₹{parseFloat(sellingPrice).toLocaleString("en-IN")}
                           </div>
@@ -702,13 +645,11 @@ const PageWrapper = () => {
         </div>
 
         {/* Stock Modal */}
-        {isModalVisible && selectedProduct && (
-          <StockModal
-            show={isModalVisible}
-            onHide={handleModalClose}
-            product={selectedProduct}
-          />
-        )}
+        <StockModal
+          show={isModalVisible}
+          onHide={handleModalClose}
+          product={selectedProduct}
+        />
       </div>
     </div>
   );

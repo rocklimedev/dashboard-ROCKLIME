@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   useGetCustomerByIdQuery,
   useGetInvoicesByCustomerIdQuery,
@@ -63,6 +63,7 @@ const { Title, Text, Paragraph } = Typography;
 
 const CustomerDetails = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [form] = Form.useForm();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
@@ -138,6 +139,9 @@ const CustomerDetails = () => {
   const getUsername = (userId) => {
     const user = users.find((u) => u.userId === userId);
     return user ? user.name || user.email.split("@")[0] : "System";
+  };
+  const handleEditCustomer = (customer) => {
+    navigate(`/customer/edit/${customer.customerId}`, { state: { customer } });
   };
 
   // Address Handlers
@@ -564,7 +568,8 @@ const CustomerDetails = () => {
                     type="primary"
                     block
                     icon={<EditOutlined />}
-                    href={`/customer/edit/${customer.customerId}`}
+                    onClick={() => handleEditCustomer(customer)}
+                    disabled={!customer.customerId}
                   >
                     Edit Customer
                   </Button>

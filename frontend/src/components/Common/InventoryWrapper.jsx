@@ -1,58 +1,56 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  Form,
-  Input,
-  Pagination,
-  Empty,
   Table,
-  Button,
   Tabs,
+  Input,
   InputNumber,
-  Badge,
+  Button,
   Space,
   Typography,
   message,
   Modal,
   Tag,
+  Badge,
+  Pagination,
+  Empty,
+  Form,
 } from "antd";
 import {
   SearchOutlined,
-  MoreOutlined,
-  FilterOutlined,
   PlusOutlined,
   MinusOutlined,
   HistoryOutlined,
   SortAscendingOutlined,
   SortDescendingOutlined,
+  FileTextOutlined,
+  DownloadOutlined,
 } from "@ant-design/icons";
+
 import {
   useGetAllProductsQuery,
   useAddStockMutation,
   useRemoveStockMutation,
 } from "../../api/productApi";
+
 import PageHeader from "./PageHeader";
 import pos from "../../assets/img/default.png";
 import HistoryModalAntD from "./HistoryModal";
-import { FileTextOutlined, DownloadOutlined } from "@ant-design/icons";
-import { generatePDF, generateExcel } from "../../data/helpers";
 import ReportBuilderModal from "./ReportBuilderModal";
+import { generatePDF, generateExcel } from "../../data/helpers";
 
 const { TabPane } = Tabs;
 const { Text, Title } = Typography;
 
 const InventoryWrapper = () => {
   const navigate = useNavigate();
-  const { data: productsData, error } = useGetAllProductsQuery(); // ← isLoading removed
-  const [addStock, { isLoading: isAddingStock }] = useAddStockMutation();
-  const [removeStock, { isLoading: isRemovingStock }] =
-    useRemoveStockMutation();
 
-  const [reportModalOpen, setReportModalOpen] = useState(false);
-  const [selectedReportProducts, setSelectedReportProducts] = useState([]);
-  const [generatingMonthly, setGeneratingMonthly] = useState(false);
+  // RTK Query hooks – loading is handled globally, so we only care about data/error
+  const { data: productsData, error } = useGetAllProductsQuery();
+  const [addStock] = useAddStockMutation();
+  const [removeStock] = useRemoveStockMutation();
 
-  // State
+  // UI States
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
@@ -64,13 +62,16 @@ const InventoryWrapper = () => {
   // Modals
   const [stockModalOpen, setStockModalOpen] = useState(false);
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [stockAction, setStockAction] = useState("add"); // "add" | "remove"
+  const [selectedReportProducts, setSelectedReportProducts] = useState([]);
+  const [generatingMonthly, setGeneratingMonthly] = useState(false);
 
-  const itemsPerPage = 30;
   const [stockForm] = Form.useForm();
+  const itemsPerPage = 30;
 
-  // Helpers
+  // ──────── Helpers ────────
   const parseImages = (images) => {
     try {
       if (typeof images === "string") {
@@ -86,7 +87,7 @@ const InventoryWrapper = () => {
   const getCompanyCode = (metaDetails) => {
     if (!Array.isArray(metaDetails)) return "N/A";
     const entry = metaDetails.find(
-      (d) => d.slug && d.slug.toLowerCase() === "companycode"
+      (d) => d.slug?.toLowerCase() === "companycode"
     );
     return entry ? String(entry.value || "N/A") : "N/A";
   };
@@ -94,12 +95,12 @@ const InventoryWrapper = () => {
   const getSellingPrice = (metaDetails) => {
     if (!Array.isArray(metaDetails)) return null;
     const entry = metaDetails.find(
-      (d) => d.slug && d.slug.toLowerCase() === "sellingprice"
+      (d) => d.slug?.toLowerCase() === "sellingprice"
     );
     return entry ? Number(entry.value) : null;
   };
 
-  // Base products
+  // ──────── Data Preparation ────────
   const products = useMemo(
     () => (Array.isArray(productsData) ? productsData : []),
     [productsData]
@@ -111,8 +112,8 @@ const InventoryWrapper = () => {
     return products.filter((p) => {
       const matchesSearch =
         !term ||
-        (p.name && p.name.toLowerCase().includes(term)) ||
-        (p.product_code && p.product_code.toLowerCase().includes(term)) ||
+        p.name?.toLowerCase().includes(term) ||
+        p.product_code?.toLowerCase().includes(term) ||
         getCompanyCode(p.metaDetails).toLowerCase().includes(term);
 
       const matchesMaxStock =
@@ -127,88 +128,7 @@ const InventoryWrapper = () => {
     });
   }, [products, search, maxStockFilter, priceRange]);
 
-  // Report generators
-  const generateCustomReport = (format) => {
-    const selectedData = products.filter((p) =>
-      selectedReportProducts.includes(p.productId)
-    );
-
-    const reportData = selectedData.map((p) => ({
-      Name: p.name || "Unnamed Product",
-      "Product Code": p.product_code || "—",
-      "Company Code": getCompanyCode(p.metaDetails),
-      "Selling Price": getSellingPrice(p.metaDetails)
-        ? `₹${getSellingPrice(p.metaDetails).toLocaleString("en-IN")}`
-        : "—",
-      Stock: p.quantity,
-      Status:
-        p.quantity === 0
-          ? "Out of Stock"
-          : p.quantity <= lowStockThreshold
-          ? "Low Stock"
-          : "In Stock",
-    }));
-
-    const title = `Custom Inventory Report - ${new Date().toLocaleDateString(
-      "en-IN"
-    )}`;
-
-    if (format === "pdf") generatePDF(reportData, title);
-    else generateExcel(reportData, title);
-
-    setReportModalOpen(false);
-    setSelectedReportProducts([]);
-    message.success("Report generated successfully!");
-  };
-
-  const generateMonthlyReport = async () => {
-    setGeneratingMonthly(true);
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const monthName = now.toLocaleString("en-US", {
-      month: "long",
-      year: "numeric",
-    });
-
-    const updatedThisMonth = products.filter((p) => {
-      if (!p.updatedAt) return false;
-      const updatedDate = new Date(p.updatedAt);
-      return updatedDate >= startOfMonth;
-    });
-
-    if (updatedThisMonth.length === 0) {
-      message.info("No products were updated this month");
-      setGeneratingMonthly(false);
-      return;
-    }
-
-    const reportData = updatedThisMonth.map((p) => ({
-      Name: p.name || "Unnamed Product",
-      "Product Code": p.product_code || "—",
-      "Company Code": getCompanyCode(p.metaDetails),
-      "Selling Price": getSellingPrice(p.metaDetails)
-        ? `₹${getSellingPrice(p.metaDetails).toLocaleString("en-IN")}`
-        : "—",
-      Stock: p.quantity,
-      Status:
-        p.quantity === 0
-          ? "Out of Stock"
-          : p.quantity <= lowStockThreshold
-          ? "Low Stock"
-          : "In Stock",
-      "Last Updated": new Date(p.updatedAt).toLocaleDateString("en-IN"),
-    }));
-
-    const title = `Monthly Report - ${monthName} (${updatedThisMonth.length} updated)`;
-    generatePDF(reportData, title);
-
-    setGeneratingMonthly(false);
-    message.success(
-      `Monthly report: ${updatedThisMonth.length} products updated`
-    );
-  };
-
-  // Tab logic
+  // Tab filtering
   const tabFilteredProducts = useMemo(() => {
     switch (activeTab) {
       case "in-stock":
@@ -241,12 +161,12 @@ const InventoryWrapper = () => {
   );
   const totalItems = sortedProducts.length;
 
-  useEffect(
-    () => setCurrentPage(1),
-    [activeTab, search, maxStockFilter, priceRange, priceSort]
-  );
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, search, maxStockFilter, priceRange, priceSort]);
 
-  // Counts
+  // Counts for badges
   const counts = useMemo(() => {
     const inStock = products.filter((p) => p.quantity > 0).length;
     const outStock = products.filter((p) => p.quantity === 0).length;
@@ -256,7 +176,88 @@ const InventoryWrapper = () => {
     return { all: products.length, inStock, outStock, lowStock };
   }, [products, lowStockThreshold]);
 
-  // Actions
+  // ──────── Report Generators ────────
+  const generateCustomReport = (format) => {
+    const selectedData = products.filter((p) =>
+      selectedReportProducts.includes(p.productId)
+    );
+
+    const reportData = selectedData.map((p) => ({
+      Name: p.name || "Unnamed Product",
+      "Product Code": p.product_code || "—",
+      "Company Code": getCompanyCode(p.metaDetails),
+      "Selling Price": getSellingPrice(p.metaDetails)
+        ? `₹${getSellingPrice(p.metaDetails).toLocaleString("en-IN")}`
+        : "—",
+      Stock: p.quantity,
+      Status:
+        p.quantity === 0
+          ? "Out of Stock"
+          : p.quantity <= lowStockThreshold
+          ? "Low Stock"
+          : "In Stock",
+    }));
+
+    const title = `Custom Inventory Report - ${new Date().toLocaleDateString(
+      "en-IN"
+    )}`;
+
+    format === "pdf"
+      ? generatePDF(reportData, title)
+      : generateExcel(reportData, title);
+    setReportModalOpen(false);
+    setSelectedReportProducts([]);
+    message.success("Report generated successfully!");
+  };
+
+  const generateMonthlyReport = () => {
+    setGeneratingMonthly(true);
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthName = now.toLocaleString("default", {
+      month: "long",
+      year: "numeric",
+    });
+
+    const updatedThisMonth = products.filter((p) => {
+      if (!p.updatedAt) return false;
+      return new Date(p.updatedAt) >= startOfMonth;
+    });
+
+    if (updatedThisMonth.length === 0) {
+      message.info("No products updated this month");
+      setGeneratingMonthly(false);
+      return;
+    }
+
+    const reportData = updatedThisMonth.map((p) => ({
+      Name: p.name || "Unnamed Product",
+      "Product Code": p.product_code || "—",
+      "Company Code": getCompanyCode(p.metaDetails),
+      "Selling Price": getSellingPrice(p.metaDetails)
+        ? `₹${getSellingPrice(p.metaDetails).toLocaleString("en-IN")}`
+        : "—",
+      Stock: p.quantity,
+      Status:
+        p.quantity === 0
+          ? "Out of Stock"
+          : p.quantity <= lowStockThreshold
+          ? "Low Stock"
+          : "In Stock",
+      "Last Updated": new Date(p.updatedAt).toLocaleDateString("en-IN"),
+    }));
+
+    generatePDF(
+      reportData,
+      `Monthly Report - ${monthName} (${updatedThisMonth.length} updated)`
+    );
+    setGeneratingMonthly(false);
+    message.success(
+      `Monthly report generated – ${updatedThisMonth.length} products`
+    );
+  };
+
+  // ──────── Actions ────────
   const openStockModal = (product, action) => {
     setSelectedProduct(product);
     setStockAction(action);
@@ -292,8 +293,7 @@ const InventoryWrapper = () => {
     }
   };
 
-  // Table Columns (unchanged)
-  // Table Columns
+  // ──────── Table Columns ────────
   const columns = [
     {
       title: "Image",
@@ -326,11 +326,7 @@ const InventoryWrapper = () => {
       title: "Code",
       dataIndex: "product_code",
       render: (code) => (
-        <Text
-          copyable={!!code}
-          code
-          style={{ cursor: code ? "pointer" : "default" }}
-        >
+        <Text copyable={code} code>
           {code || "—"}
         </Text>
       ),
@@ -421,12 +417,9 @@ const InventoryWrapper = () => {
       ),
     },
   ];
-  // ──────────────────────────────────────────────
-  // Render (removed local loading spinner & Empty on error)
-  // ──────────────────────────────────────────────
-  // If you have a global loading skeleton / spinner, just render nothing or a placeholder until data arrives.
-  if (!productsData && !error) return null; // or return <YourGlobalSkeleton />
 
+  // ──────── Early Returns (Global Loading + Error) ────────
+  if (!productsData && !error) return null; // Global skeleton will show
   if (error) {
     return (
       <div style={{ padding: 20 }}>
@@ -435,6 +428,7 @@ const InventoryWrapper = () => {
     );
   }
 
+  // ──────── Render ────────
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -444,7 +438,7 @@ const InventoryWrapper = () => {
           exportOptions={{ pdf: false, excel: false }}
         />
 
-        {/* Filters */}
+        {/* Filters & Actions */}
         <div className="bg-white p-4 rounded-lg shadow-sm mb-4">
           <Space wrap>
             <Input
@@ -456,6 +450,7 @@ const InventoryWrapper = () => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
+
             <Space>
               <Text>Price:</Text>
               <InputNumber
@@ -473,6 +468,7 @@ const InventoryWrapper = () => {
                 Clear
               </Button>
             </Space>
+
             <Space>
               <Text>Max Stock ≤</Text>
               <InputNumber
@@ -484,6 +480,7 @@ const InventoryWrapper = () => {
                 Clear
               </Button>
             </Space>
+
             <Space>
               <Text>Low stock alert:</Text>
               <InputNumber
@@ -494,6 +491,7 @@ const InventoryWrapper = () => {
               />
             </Space>
           </Space>
+
           <Space style={{ float: "right" }}>
             <Button
               type="primary"
@@ -507,7 +505,7 @@ const InventoryWrapper = () => {
               onClick={generateMonthlyReport}
               loading={generatingMonthly}
             >
-              Monthly Report (Auto)
+              Monthly Report
             </Button>
             <Button
               type="primary"
@@ -567,6 +565,7 @@ const InventoryWrapper = () => {
           />
         </Tabs>
 
+        {/* Table or Empty */}
         {totalItems === 0 ? (
           <Empty description="No products found" />
         ) : (
@@ -591,7 +590,7 @@ const InventoryWrapper = () => {
         )}
       </div>
 
-      {/* Modals (unchanged) */}
+      {/* Modals */}
       <Modal
         title={
           <Title level={4}>
@@ -621,11 +620,7 @@ const InventoryWrapper = () => {
           <Form.Item>
             <Space>
               <Button onClick={() => setStockModalOpen(false)}>Cancel</Button>
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={isAddingStock || isRemovingStock}
-              >
+              <Button type="primary" htmlType="submit">
                 {stockAction === "add" ? "Add Stock" : "Remove Stock"}
               </Button>
             </Space>
@@ -641,6 +636,9 @@ const InventoryWrapper = () => {
         getSellingPrice={getSellingPrice}
         generatePDF={generatePDF}
         generateExcel={generateExcel}
+        onGenerate={generateCustomReport}
+        selectedProducts={selectedReportProducts}
+        setSelectedProducts={setSelectedReportProducts}
       />
 
       <HistoryModalAntD

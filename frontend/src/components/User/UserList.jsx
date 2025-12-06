@@ -24,8 +24,7 @@ import PageHeader from "../Common/PageHeader";
 import { useResendVerificationEmailMutation } from "../../api/authApi";
 
 const UserList = () => {
-  // Fixed useState (this was the main crash!)
-  const [viewMode, setViewMode] = useState("list"); // that's it!
+  const [viewMode, setViewMode] = useState("list");
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("All");
@@ -35,8 +34,8 @@ const UserList = () => {
   const [userToDelete, setUserToDelete] = useState(null);
   const [resendUserId, setResendUserId] = useState(null);
 
-  // Queries
-  const { data, error, isLoading, isFetching, refetch } = useGetAllUsersQuery({
+  // === Queries & Mutations ===
+  const { data, refetch } = useGetAllUsersQuery({
     page: currentPage,
     limit: itemsPerPage,
   });
@@ -47,24 +46,23 @@ const UserList = () => {
 
   const [reportUser] = useReportUserMutation();
   const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
-  const [updateStatus, { isLoading: isUpdatingStatus }] =
-    useUpdateStatusMutation();
+  const [updateStatus] = useUpdateStatusMutation();
   const [resendVerificationEmail] = useResendVerificationEmailMutation();
 
-  const { data: selectedUserData, isLoading: isUserLoading } =
-    useGetUserByIdQuery(resendUserId, {
-      skip: !resendUserId,
-    });
+  const { data: selectedUserData } = useGetUserByIdQuery(resendUserId, {
+    skip: !resendUserId,
+  });
 
   const selectedUser =
     selectedUserData?.data?.user || selectedUserData?.user || selectedUserData;
 
-  // Safe helpers (prevents crashes!)
+  // === Helpers ===
   const safeRoles = (roles) => (Array.isArray(roles) ? roles.join(", ") : "—");
+
   const isUserActive = (status) =>
     status === "active" || status === 1 || status === "1" || status === true;
 
-  // Grouping
+  // === Grouping & Filtering ===
   const groupedUsers = useMemo(
     () => ({
       All: users,
@@ -89,9 +87,10 @@ const UserList = () => {
     return result;
   }, [groupedUsers, activeTab, searchTerm]);
 
-  // Handlers
+  // === Handlers ===
   const handleViewUser = (user) => navigate(`/user/${user.userId}`);
   const handleEditUser = (user) => navigate(`/user/${user.userId}/edit`);
+
   const handleDeleteUser = (userId) => {
     setUserToDelete(userId);
     setShowDeleteModal(true);
@@ -100,7 +99,8 @@ const UserList = () => {
   const handleStatusChange = async (userId, newStatus) => {
     try {
       await updateStatus({ userId, status: newStatus }).unwrap();
-    } catch (err) {
+      message.success("Status updated");
+    } catch {
       message.error("Failed to update status");
     }
   };
@@ -108,10 +108,13 @@ const UserList = () => {
   const handleConfirmDelete = async () => {
     try {
       await deleteUser(userToDelete).unwrap();
+      message.success("User deleted");
 
-      if (filteredUsers.length === 1 && currentPage > 1)
+      // Auto-fix pagination if last item on page was deleted
+      if (filteredUsers.length === 1 && currentPage > 1) {
         setCurrentPage((p) => p - 1);
-    } catch (err) {
+      }
+    } catch {
       message.error("Failed to delete user");
     } finally {
       setShowDeleteModal(false);
@@ -119,7 +122,7 @@ const UserList = () => {
     }
   };
 
-  // Resend verification
+  // Resend verification email
   useEffect(() => {
     if (resendUserId && selectedUser?.email) {
       resendVerificationEmail({ email: selectedUser.email })
@@ -128,32 +131,9 @@ const UserList = () => {
         .catch(() => message.error("Failed to send email"))
         .finally(() => setResendUserId(null));
     }
-  }, [resendUserId, selectedUser]);
+  }, [resendUserId, selectedUser, resendVerificationEmail]);
 
-  if (isLoading || isFetching) {
-    return (
-      <div className="content p-4 text-center">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
-        <p className="mt-3">Loading users...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="content p-4">
-        <div className="alert alert-danger">
-          Error loading users.{" "}
-          <button className="btn btn-link p-0" onClick={refetch}>
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
-
+  // === Render (No loading/error states — handled globally) ===
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -165,7 +145,7 @@ const UserList = () => {
           />
 
           <div className="card-body">
-            {/* Filters & View Toggle */}
+            {/* Filters & Controls */}
             <div className="row mb-4 align-items-center">
               <div className="col-lg-6">
                 <div className="d-flex align-items-center gap-3 flex-wrap">
@@ -197,13 +177,12 @@ const UserList = () => {
                     <input
                       type="text"
                       className="form-control"
-                      placeholder="Search..."
+                      placeholder="Search users..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
                   </div>
 
-                  {/* View Mode Toggle */}
                   <div className="btn-group">
                     <button
                       className={`btn ${
@@ -212,6 +191,7 @@ const UserList = () => {
                           : "btn-outline-secondary"
                       }`}
                       onClick={() => setViewMode("list")}
+                      title="List View"
                     >
                       <FaThList />
                     </button>
@@ -222,6 +202,7 @@ const UserList = () => {
                           : "btn-outline-secondary"
                       }`}
                       onClick={() => setViewMode("card")}
+                      title="Card View"
                     >
                       <FaThLarge />
                     </button>
@@ -260,8 +241,7 @@ const UserList = () => {
                               overlay={
                                 <Menu>
                                   <Menu.Item
-                                    key="active"
-                                    disabled={active || isUpdatingStatus}
+                                    disabled={active}
                                     onClick={() =>
                                       handleStatusChange(user.userId, "active")
                                     }
@@ -269,8 +249,7 @@ const UserList = () => {
                                     Active
                                   </Menu.Item>
                                   <Menu.Item
-                                    key="inactive"
-                                    disabled={!active || isUpdatingStatus}
+                                    disabled={!active}
                                     onClick={() =>
                                       handleStatusChange(
                                         user.userId,
@@ -296,14 +275,6 @@ const UserList = () => {
                           </div>
 
                           <div className="d-flex justify-content-center gap-2">
-                            <Tooltip title="View">
-                              <Button
-                                size="small"
-                                onClick={() => handleViewUser(user)}
-                              >
-                                <EyeOutlined />
-                              </Button>
-                            </Tooltip>
                             <Tooltip title="Edit">
                               <Button
                                 size="small"
@@ -315,6 +286,12 @@ const UserList = () => {
                             <Dropdown
                               overlay={
                                 <Menu>
+                                  <Menu.Item
+                                    onClick={() => handleViewUser(user)}
+                                  >
+                                    <EyeOutlined /> View
+                                  </Menu.Item>
+
                                   <Menu.Item
                                     onClick={() =>
                                       reportUser(user.userId)
@@ -394,7 +371,7 @@ const UserList = () => {
                                 e.preventDefault();
                                 handleViewUser(user);
                               }}
-                              className="text-primary"
+                              className="text-primary fw-medium"
                             >
                               {user.name || "—"}
                             </a>
@@ -412,7 +389,6 @@ const UserList = () => {
                               overlay={
                                 <Menu>
                                   <Menu.Item
-                                    key="active"
                                     disabled={active}
                                     onClick={() =>
                                       handleStatusChange(user.userId, "active")
@@ -421,7 +397,6 @@ const UserList = () => {
                                     Active
                                   </Menu.Item>
                                   <Menu.Item
-                                    key="inactive"
                                     disabled={!active}
                                     onClick={() =>
                                       handleStatusChange(
@@ -449,7 +424,7 @@ const UserList = () => {
                           <td>
                             <EditOutlined
                               className="me-3 text-primary"
-                              style={{ cursor: "pointer" }}
+                              style={{ cursor: "pointer", fontSize: 16 }}
                               onClick={() => handleEditUser(user)}
                             />
                             <Dropdown
@@ -486,7 +461,10 @@ const UserList = () => {
                               }
                               trigger={["click"]}
                             >
-                              <Button type="text" icon={<MoreOutlined />} />
+                              <Button
+                                type="text"
+                                icon={<MoreOutlined style={{ fontSize: 18 }} />}
+                              />
                             </Dropdown>
                           </td>
                         </tr>
@@ -512,6 +490,7 @@ const UserList = () => {
           </div>
         </div>
 
+        {/* Delete Modal */}
         <DeleteModal
           isVisible={showDeleteModal}
           onCancel={() => {
