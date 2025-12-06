@@ -1,1013 +1,1382 @@
-import React, { useState, useMemo, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { Spin, Alert, Tabs, Modal, Button, Typography } from "antd";
+import { ShoppingCartOutlined, CheckCircleOutlined } from "@ant-design/icons";
 import {
-  useGetAllQuotationsQuery,
-  useDeleteQuotationMutation,
-} from "../../api/quotationApi";
-import { useGetCustomersQuery } from "../../api/customerApi";
-import { useGetAllUsersQuery } from "../../api/userApi";
+  useGetCustomersQuery,
+  useCreateCustomerMutation,
+  customerApi,
+} from "../../api/customerApi";
 import {
-  FaSearch,
-  FaEye,
-  FaTrash,
-  FaFileInvoice,
-  FaWhatsapp,
-} from "react-icons/fa";
-import { EditOutlined } from "@ant-design/icons";
-import { BsThreeDotsVertical } from "react-icons/bs";
-import QuotationProductModal from "./QuotationProductModal";
-import DeleteModal from "../Common/DeleteModal";
+  useGetCartQuery,
+  useUpdateCartMutation,
+  useClearCartMutation,
+  useRemoveFromCartMutation,
+  cartApi,
+} from "../../api/cartApi";
+import { useGetProfileQuery } from "../../api/userApi";
+import { useCreateQuotationMutation } from "../../api/quotationApi";
+import {
+  useCreateOrderMutation,
+  useGetAllOrdersQuery,
+} from "../../api/orderApi";
+import {
+  useGetAllAddressesQuery,
+  useCreateAddressMutation,
+} from "../../api/addressApi";
+import { useGetAllTeamsQuery } from "../../api/teamApi";
+import {
+  useGetVendorsQuery,
+  useCreateVendorMutation,
+} from "../../api/vendorApi";
+import { useCreatePurchaseOrderMutation } from "../../api/poApi";
+import { useGetAllProductsQuery } from "../../api/productApi";
 import { message } from "antd";
-import {
-  Table,
-  Dropdown,
-  Menu,
-  Button,
-  Input,
-  DatePicker,
-  Select,
-  Pagination, // <-- ADDED
-} from "antd";
-import PageHeader from "../Common/PageHeader";
-import { useCreateInvoiceMutation } from "../../api/invoiceApi";
-import CreateInvoiceFromQuotation from "../Invoices/CreateInvoiceFromQuotation";
+import { v4 as uuidv4 } from "uuid";
+import { useDispatch } from "react-redux";
+import useUserAndCustomerData from "../../data/useUserAndCustomerData";
+import useProductsData from "../../data/useProductdata";
+import { debounce } from "lodash";
 import moment from "moment";
-import { HomeOutlined } from "@ant-design/icons";
-import PermissionGate from "../../context/PermissionGate";
-import { useAuth } from "../../context/AuthContext";
+import styled from "styled-components";
+import PropTypes from "prop-types";
+import CartTab from "./Cart";
+import QuotationForm from "./QuotationForm";
+import OrderForm from "./OrderForm";
+import PurchaseOrderForm from "./PurchaseOrderForm";
+import AddAddress from "../Address/AddAddressModal";
+import AddVendorModal from "./AddVendorModal";
+import AddNewTeam from "../Orders/AddNewTeam";
+import {
+  generateQuotationNumber,
+  generateOrderNumber,
+  generatePurchaseOrderNumber,
+} from "../../data/cartUtils";
+import { useGetAllUsersQuery } from "../../api/userApi";
+import AddCustomerModal from "../Customers/AddCustomerModal";
+import PreviewQuotation from "../Quotation/PreviewQuotation";
 
-const { RangePicker } = DatePicker;
-const { Option } = Select;
+const { TabPane } = Tabs;
+const { Text } = Typography;
 
-/* -------------------------------------------------------------------------- */
-/*                               QuotationList                                */
-/* -------------------------------------------------------------------------- */
-const QuotationList = () => {
+const PageWrapper = styled.div`
+  padding: 16px;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+  @media (min-width: 768px) {
+    padding: 24px;
+  }
+`;
+
+const CartContainer = styled.div`
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 12px;
+  @media (min-width: 768px) {
+    padding: 20px;
+  }
+`;
+
+const NewCart = ({ onConvertToOrder }) => {
   const navigate = useNavigate();
-  const { auth } = useAuth();
-
-  /* ------------------------------ RTK Queries ----------------------------- */
+  const dispatch = useDispatch();
   const {
-    data: quotationsData,
-    isLoading,
-    isError,
-    refetch,
-  } = useGetAllQuotationsQuery({ sort: "quotation_date", order: "desc" });
-  const { data: customersData } = useGetCustomersQuery();
-  const { data: usersData } = useGetAllUsersQuery();
-  const [deleteQuotation, { isLoading: isDeleting }] =
-    useDeleteQuotationMutation();
-  const [createInvoice] = useCreateInvoiceMutation();
-
-  const quotations = quotationsData || [];
-  const customers = customersData?.data || [];
-  const users = usersData?.users || [];
-
-  /* ------------------------------- State --------------------------------- */
-  const [showProductModal, setShowProductModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
-  const [selectedProducts, setSelectedProducts] = useState([]);
-  const [quotationToDelete, setQuotationToDelete] = useState(null);
-  const [selectedQuotation, setSelectedQuotation] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10); // <-- now dynamic
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("Recently Added");
-  const [activeTab, setActiveTab] = useState("All");
-  const [filters, setFilters] = useState({
-    finalAmount: null,
-    quotationDate: null,
-    customerId: null,
-    dateRange: null,
+    data: profileData,
+    isLoading: profileLoading,
+    error: profileError,
+  } = useGetProfileQuery();
+  const {
+    data: usersData,
+    isLoading: usersLoading,
+    error: usersError,
+  } = useGetAllUsersQuery();
+  const users = Array.isArray(usersData?.users) ? usersData.users : [];
+  const user = profileData?.user || {};
+  const userId = user.userId;
+  const [useBillingAddress, setUseBillingAddress] = useState(false);
+  const [billingAddressId, setBillingAddressId] = useState(null);
+  // ==================== STATE ====================
+  const [activeTab, setActiveTab] = useState("cart");
+  const [selectedCustomer, setSelectedCustomer] = useState("");
+  const [selectedVendor, setSelectedVendor] = useState("");
+  const [showClearCartModal, setShowClearCartModal] = useState(false);
+  const [showAddAddressModal, setShowAddAddressModal] = useState(false);
+  const [showAddVendorModal, setShowAddVendorModal] = useState(false);
+  const [showAddTeamModal, setShowAddTeamModal] = useState(false);
+  const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
+  const [documentType, setDocumentType] = useState("Quotation");
+  const [quotationNumber, setQuotationNumber] = useState(
+    generateQuotationNumber()
+  );
+  const [orderNumber, setOrderNumber] = useState("");
+  const [purchaseOrderNumber, setPurchaseOrderNumber] = useState("");
+  const [quotationData, setQuotationData] = useState({
+    quotationDate: new Date().toISOString().split("T")[0],
+    dueDate: "",
+    billTo: "",
+    shipTo: null,
+    signatureName: "CM TRADING CO",
+    discountType: "percent",
+    discountAmount: "",
+    followupDates: [],
+  });
+  const [orderData, setOrderData] = useState({
+    createdFor: "",
+    createdBy: userId || "",
+    assignedTeamId: "",
+    assignedUserId: "",
+    secondaryUserId: "",
+    pipeline: "",
+    status: "PREPARING",
+    dueDate: moment().add(1, "days").format("YYYY-MM-DD"),
+    followupDates: [],
+    source: "",
+    priority: "medium",
+    description: "",
+    invoiceLink: null,
+    orderNo: "",
+    quotationId: "",
+    masterPipelineNo: "",
+    previousOrderNo: "",
+    shipTo: "",
+  });
+  const [purchaseOrderData, setPurchaseOrderData] = useState({
+    vendorId: "",
+    orderDate: moment().format("YYYY-MM-DD"),
+    expectedDeliveryDate: null,
+    items: [],
+    totalAmount: 0,
+    status: "pending",
   });
 
-  /* -------------------------- Reset on mount --------------------------- */
-  useEffect(() => {
-    setSortBy("Recently Added");
-    setSearchTerm("");
-    setActiveTab("All");
-    setFilters({
-      finalAmount: null,
-      quotationDate: null,
-      customerId: null,
-      dateRange: null,
-    });
-    setCurrentPage(1);
-    setPageSize(10);
-  }, []);
+  // PER-ITEM STATE
+  const [itemDiscounts, setItemDiscounts] = useState({});
+  const [itemTaxes, setItemTaxes] = useState({});
+  const [itemDiscountTypes, setItemDiscountTypes] = useState({}); // NEW: % or fixed
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [error, setError] = useState("");
+  const [updatingItems, setUpdatingItems] = useState({});
+  const [productSearch, setProductSearch] = useState("");
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [shipping, setShipping] = useState(0);
+  const [gst, setGst] = useState(18);
+  // ==================== QUERIES ====================
+  const {
+    data: cartData,
+    isLoading: cartLoading,
+    isError: cartError,
+  } = useGetCartQuery(userId, {
+    skip: !userId,
+    refetchOnMountOrArgChange: false,
+    refetchOnReconnect: false,
+  });
+  const {
+    data: customerData,
+    isLoading: customersLoading,
+    isError: customersError,
+  } = useGetCustomersQuery();
+  const {
+    data: allOrdersData,
+    isLoading: isAllOrdersLoading,
+    error: allOrdersError,
+  } = useGetAllOrdersQuery();
+  const {
+    data: teamsData,
+    isLoading: teamsLoading,
+    refetch: refetchTeams,
+  } = useGetAllTeamsQuery();
+  const {
+    data: addressesData,
+    isLoading: addressesLoading,
+    isError: addressesError,
+    refetch: refetchAddresses,
+  } = useGetAllAddressesQuery(
+    { customerId: selectedCustomer },
+    {
+      skip: !selectedCustomer,
+      refetchOnMountOrArgChange: false,
+      refetchOnReconnect: false,
+    }
+  );
+  const { data: productsData, isLoading: isProductsLoading } =
+    useGetAllProductsQuery();
+  const { data: vendorsData, isLoading: isVendorsLoading } =
+    useGetVendorsQuery();
 
-  /* --------------------------- Helper functions -------------------------- */
-  const getProductCount = (products) => {
-    const parsed =
-      typeof products === "string"
-        ? JSON.parse(products || "[]")
-        : products || [];
-    return parsed.length;
-  };
+  const [updateCart] = useUpdateCartMutation();
+  const [clearCart] = useClearCartMutation();
+  const [removeFromCart] = useRemoveFromCartMutation();
+  const [createQuotation] = useCreateQuotationMutation();
+  const [createOrder] = useCreateOrderMutation();
+  const [createPurchaseOrder] = useCreatePurchaseOrderMutation();
+  const [createVendor, { isLoading: isCreatingVendor }] =
+    useCreateVendorMutation();
+  const [createAddress] = useCreateAddressMutation();
+  const [createCustomer, { isLoading: isCreatingCustomer }] =
+    useCreateCustomerMutation();
 
-  const getCustomerName = (customerId) => {
-    const cust = customers.find((c) => c.customerId === customerId);
-    return cust ? cust.name : "Unknown";
-  };
-
-  const customerMap = useMemo(() => {
-    return customers.reduce((map, c) => {
-      map[c.customerId] = c.name;
-      return map;
-    }, {});
-  }, [customers]);
-
-  /* -------------------------- Grouped Quotations ------------------------- */
-  const groupedQuotations = useMemo(
-    () => ({
-      All: quotations,
-      Accepted: quotations.filter(
-        (q) => q.status?.toLowerCase() === "accepted"
-      ),
-      Pending: quotations.filter((q) => q.status?.toLowerCase() === "pending"),
-      Rejected: quotations.filter(
-        (q) => q.status?.toLowerCase() === "rejected"
-      ),
-    }),
-    [quotations]
+  // ==================== MEMOIZED DATA ====================
+  const addresses = useMemo(
+    () => (Array.isArray(addressesData) ? addressesData : []),
+    [addressesData]
+  );
+  const userIds = useMemo(
+    () => [...new Set(addresses.map((addr) => addr.userId).filter(Boolean))],
+    [addresses]
+  );
+  const customerIds = useMemo(
+    () => [
+      ...new Set(addresses.map((addr) => addr.customerId).filter(Boolean)),
+    ],
+    [addresses]
+  );
+  const orders = useMemo(
+    () => (Array.isArray(allOrdersData?.orders) ? allOrdersData.orders : []),
+    [allOrdersData]
+  );
+  const teams = useMemo(
+    () => (Array.isArray(teamsData?.teams) ? teamsData.teams : []),
+    [teamsData]
+  );
+  const vendors = useMemo(() => vendorsData || [], [vendorsData]);
+  const products = useMemo(() => productsData || [], [productsData]);
+  const { userMap, customerMap, userQueries, customerQueries } =
+    useUserAndCustomerData(userIds, customerIds);
+  const cartItems = useMemo(
+    () => (Array.isArray(cartData?.cart?.items) ? cartData.cart.items : []),
+    [cartData]
+  );
+  const {
+    productsData: cartProductsData,
+    errors: productErrors,
+    loading: productsLoading,
+  } = useProductsData(cartItems);
+  const customers = customerData?.data || [];
+  const customerList = useMemo(
+    () => (Array.isArray(customers) ? customers : []),
+    [customers]
   );
 
-  /* ----------------------------- Filtering ------------------------------ */
-  const filteredQuotations = useMemo(() => {
-    let result = groupedQuotations[activeTab] || [];
+  // ==================== SYNC DISCOUNT TYPES WITH CART ====================
+  useEffect(() => {
+    const missing = cartItems
+      .filter((it) => !(it.productId in itemDiscountTypes))
+      .reduce((acc, it) => ({ ...acc, [it.productId]: "percent" }), {});
+    if (Object.keys(missing).length > 0) {
+      setItemDiscountTypes((prev) => ({ ...prev, ...missing }));
+    }
+  }, [cartItems]);
 
-    // ----- Search -----
-    if (searchTerm.trim()) {
-      result = result.filter((q) => {
-        const cust = getCustomerName(q.customerId);
-        return (
-          q.document_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          q.reference_number
-            ?.toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-          cust.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+  // ==================== PURCHASE ORDER SYNC ====================
+  useEffect(() => {
+    if (documentType === "Purchase Order") {
+      setPurchaseOrderData((prev) => ({
+        ...prev,
+        items: cartItems.map((item) => ({
+          id: item.productId,
+          productId: item.productId,
+          name: item.name || "Unknown",
+          quantity: item.quantity || 1,
+          mrp: item.price || 0.01,
+          total: (item.quantity || 1) * (item.price || 0.01),
+          tax: itemTaxes[item.productId] || 0,
+        })),
+        totalAmount: cartItems
+          .reduce((sum, item) => {
+            const price = item.price || 0.01;
+            const quantity = item.quantity || 1;
+            const tax = itemTaxes[item.productId] || 0;
+            return sum + price * quantity * (1 + tax / 100);
+          }, 0)
+          .toFixed(2),
+      }));
+    }
+  }, [cartItems, itemTaxes, documentType]);
+
+  // ==================== TOTALS (PER-ITEM DISCOUNT) ====================
+  const totalItems = useMemo(
+    () => cartItems.reduce((acc, item) => acc + (item.quantity || 0), 0),
+    [cartItems]
+  );
+
+  const subTotal = useMemo(
+    () =>
+      cartItems.reduce(
+        (acc, item) => acc + (item.price || 0) * (item.quantity || 0),
+        0
+      ),
+    [cartItems]
+  );
+
+  const totalDiscount = useMemo(() => {
+    return cartItems.reduce((sum, item) => {
+      const subtotal = (item.price || 0) * (item.quantity || 1);
+      const discVal = Number(itemDiscounts[item.productId]) || 0;
+      const type = itemDiscountTypes[item.productId] || "percent";
+      const disc =
+        type === "percent"
+          ? (subtotal * discVal) / 100
+          : discVal * (item.quantity || 1);
+      return sum + disc;
+    }, 0);
+  }, [cartItems, itemDiscounts, itemDiscountTypes]);
+
+  const tax = useMemo(() => {
+    return cartItems.reduce((acc, item) => {
+      const price = item.price || 0;
+      const qty = item.quantity || 1;
+      const subtotal = price * qty;
+
+      const discVal = Number(itemDiscounts[item.productId]) || 0;
+      const type = itemDiscountTypes[item.productId] || "percent";
+      const discAmt =
+        type === "percent" ? (subtotal * discVal) / 100 : discVal * qty;
+
+      const taxable = subtotal - discAmt;
+      const itemTax = parseFloat(itemTaxes[item.productId]) || 0;
+
+      return acc + (taxable * itemTax) / 100;
+    }, 0);
+  }, [cartItems, itemDiscounts, itemDiscountTypes, itemTaxes]);
+
+  // === GLOBAL DISCOUNT (extraDiscount) ===
+  const extraDiscount = useMemo(() => {
+    const amount = parseFloat(quotationData.discountAmount) || 0;
+    if (!amount) return 0;
+
+    const base = subTotal - totalDiscount + tax + shipping;
+    return quotationData.discountType === "percent"
+      ? parseFloat(((base * amount) / 100).toFixed(2))
+      : parseFloat(amount.toFixed(2));
+  }, [
+    quotationData.discountAmount,
+    quotationData.discountType,
+    subTotal,
+    totalDiscount,
+    tax,
+    shipping,
+  ]);
+
+  // === AMOUNT BEFORE GST (for round-off) ===
+  // === AMOUNT BEFORE GST (for round-off) ===
+  const amountBeforeGstRaw =
+    subTotal - totalDiscount + tax + shipping - extraDiscount;
+  const amountBeforeGst = parseFloat(amountBeforeGstRaw.toFixed(2));
+
+  // === ROUND-OFF BEFORE GST (exact same as backend) ===
+  const rupees = Math.floor(amountBeforeGst);
+  const paise = Math.round((amountBeforeGst - rupees) * 100);
+
+  let roundOff = 0;
+  if (paise > 0 && paise <= 50) {
+    roundOff = parseFloat((-paise / 100).toFixed(2));
+  } else if (paise > 50) {
+    roundOff = parseFloat(((100 - paise) / 100).toFixed(2));
+  }
+
+  const roundedAmount = parseFloat((amountBeforeGst + roundOff).toFixed(2));
+
+  // === GST ON ROUNDED AMOUNT ===
+  const gstAmount =
+    gst > 0 ? parseFloat(((roundedAmount * gst) / 100).toFixed(2)) : 0;
+
+  // === FINAL TOTAL ===
+  const totalAmount = parseFloat((roundedAmount + gstAmount).toFixed(2));
+  const purchaseOrderTotal = useMemo(
+    () =>
+      purchaseOrderData.items
+        .reduce(
+          (sum, item) =>
+            sum + Number(item.total || 0) * (1 + (item.tax || 0) / 100),
+          0
+        )
+        .toFixed(2),
+    [purchaseOrderData.items]
+  );
+
+  // ==================== DEBOUNCED SEARCH ====================
+  const debouncedSearch = useCallback(
+    debounce((value) => {
+      setProductSearch(value);
+      if (value) {
+        const filtered = products
+          .filter(
+            (product) =>
+              product.productId &&
+              (product.name.toLowerCase().includes(value.toLowerCase()) ||
+                product.product_code
+                  ?.toLowerCase()
+                  .includes(value.toLowerCase()))
+          )
+          .slice(0, 5);
+        setFilteredProducts(filtered);
+      } else {
+        setFilteredProducts([]);
+      }
+    }, 300),
+    [products]
+  );
+
+  // ==================== EFFECTS ====================
+  useEffect(() => {
+    if (!orderNumber && !isAllOrdersLoading && allOrdersData !== undefined) {
+      const today = moment().format("DDMMYY");
+      const todayOrders = orders.filter((order) =>
+        moment(order.createdAt).isSame(moment(), "day")
+      );
+      const serialNumber = todayOrders.length + 101;
+      const generatedOrderNo = `${today}${serialNumber}`;
+      setOrderData((prev) => ({ ...prev, orderNo: generatedOrderNo }));
+      setOrderNumber(generatedOrderNo);
+    }
+    if (
+      !purchaseOrderNumber &&
+      !isAllOrdersLoading &&
+      allOrdersData !== undefined
+    ) {
+      setPurchaseOrderNumber(generatePurchaseOrderNumber(orders));
+    }
+  }, [
+    isAllOrdersLoading,
+    allOrdersData,
+    orders,
+    orderNumber,
+    purchaseOrderNumber,
+  ]);
+
+  useEffect(() => {
+    if (selectedCustomer) {
+      const selectedCustomerData = customerList.find(
+        (c) => c.customerId === selectedCustomer
+      );
+      if (selectedCustomerData) {
+        setQuotationData((prev) => ({
+          ...prev,
+          billTo: selectedCustomerData.name || prev.billTo,
+        }));
+        setOrderData((prev) => ({
+          ...prev,
+          createdFor: selectedCustomerData.customerId,
+        }));
+      }
+    }
+  }, [selectedCustomer, customerList]);
+
+  // ==================== HANDLERS ====================
+  const handleShippingChange = useCallback((newShipping) => {
+    setShipping(newShipping);
+  }, []);
+  const handleDiscountChange = (productId, value) => {
+    setItemDiscounts((prev) => ({
+      ...prev,
+      [productId]: value >= 0 ? value : 0,
+    }));
+  };
+
+  const handleDiscountTypeChange = (productId, type) => {
+    setItemDiscountTypes((prev) => ({ ...prev, [productId]: type }));
+  };
+
+  const handleTaxChange = (productId, value) => {
+    setItemTaxes((prev) => ({ ...prev, [productId]: value >= 0 ? value : 0 }));
+  };
+
+  const handleClearCart = async () => {
+    if (!userId) return message.error("User not logged in!");
+    try {
+      await clearCart({ userId }).unwrap();
+      setItemDiscounts({});
+      setItemTaxes({});
+      setItemDiscountTypes({});
+      setQuotationNumber(generateQuotationNumber());
+      setPurchaseOrderNumber(generatePurchaseOrderNumber(orders));
+      setPurchaseOrderData((prev) => ({ ...prev, items: [] }));
+
+      setShowClearCartModal(false);
+      setActiveTab("cart");
+    } catch (error) {
+      message.error(`Error: ${error.data?.message || "Failed to clear cart"}`);
+    }
+  };
+  // ────────────────────────────────────────────────────────────────────────
+  //  Optimistic remove (trash icon)  –  NO PAGE REFRESH
+  // ────────────────────────────────────────────────────────────────────────
+  const handleRemoveItem = useCallback(
+    async (e, productId) => {
+      if (e && e.preventDefault) e.preventDefault();
+      if (e && e.stopPropagation) e.stopPropagation();
+
+      if (!userId) return message.error("User not logged in!");
+
+      // Optimistic removal
+      dispatch(
+        cartApi.util.updateQueryData("getCart", userId, (draft) => {
+          draft.cart.items = draft.cart.items.filter(
+            (i) => i.productId !== productId
+          );
+        })
+      );
+
+      // Clean state
+      setItemDiscounts((p) => {
+        const { [productId]: _, ...rest } = p;
+        return rest;
       });
-    }
+      setItemTaxes((p) => {
+        const { [productId]: _, ...rest } = p;
+        return rest;
+      });
+      setItemDiscountTypes((p) => {
+        const { [productId]: _, ...rest } = p;
+        return rest;
+      });
 
-    // ----- Extra filters -----
-    if (filters.finalAmount) {
-      result = result.filter(
-        (q) =>
-          q.finalAmount &&
-          q.finalAmount.toString().includes(filters.finalAmount)
-      );
-    }
-    if (filters.quotationDate) {
-      result = result.filter(
-        (q) =>
-          q.quotation_date &&
-          moment(q.quotation_date).format("YYYY-MM-DD") ===
-            moment(filters.quotationDate).format("YYYY-MM-DD")
-      );
-    }
-    if (filters.customerId) {
-      result = result.filter((q) => q.customerId === filters.customerId);
-    }
-    if (filters.dateRange && filters.dateRange.length === 2) {
-      const [start, end] = filters.dateRange;
-      result = result.filter(
-        (q) =>
-          q.quotation_date &&
-          moment(q.quotation_date).isBetween(start, end, "day", "[]")
-      );
-    }
+      setUpdatingItems((p) => ({ ...p, [productId]: true }));
 
-    // ----- Sorting -----
-    switch (sortBy) {
-      case "Ascending":
-        result = [...result].sort((a, b) =>
-          (a.reference_number || "").localeCompare(b.reference_number || "")
-        );
-        break;
-      case "Descending":
-        result = [...result].sort((a, b) =>
-          (b.reference_number || "").localeCompare(a.reference_number || "")
-        );
-        break;
-      case "Recently Added":
-        result = [...result].sort((a, b) => {
-          const da = a.quotation_date
-            ? new Date(a.quotation_date)
-            : new Date(0);
-          const db = b.quotation_date
-            ? new Date(b.quotation_date)
-            : new Date(0);
-          return db - da;
-        });
-        break;
-      case "Price High":
-        result = [...result].sort(
-          (a, b) => (b.finalAmount || 0) - (a.finalAmount || 0)
-        );
-        break;
-      case "Price Low":
-        result = [...result].sort(
-          (a, b) => (a.finalAmount || 0) - (b.finalAmount || 0)
-        );
-        break;
-      default:
-        break;
-    }
-
-    return result;
-  }, [groupedQuotations, activeTab, searchTerm, sortBy, filters]);
-
-  const currentQuotations = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return filteredQuotations.slice(start, start + pageSize);
-  }, [filteredQuotations, currentPage, pageSize]);
-
-  /* -------------------------- WhatsApp Share -------------------------- */
-  const handleShareOnWhatsApp = (quotation) => {
-    let itemsArray = [];
-    if (quotation.items && Array.isArray(quotation.items)) {
-      itemsArray = quotation.items;
-    } else if (quotation.products) {
       try {
-        itemsArray = JSON.parse(quotation.products);
-      } catch (_) {
-        itemsArray = [];
+        await removeFromCart({ userId, productId }).unwrap();
+        // NO refetch()
+      } catch (err) {
+        message.error(`Error: ${err?.data?.message || "Failed"}`);
+        // Rollback
+        dispatch(
+          cartApi.util.updateQueryData("getCart", userId, (draft) => {
+            draft.cart.items = cartItems;
+          })
+        );
+      } finally {
+        setUpdatingItems((p) => ({ ...p, [productId]: false }));
+      }
+    },
+    [userId, cartItems, dispatch, removeFromCart]
+  );
+  // ────────────────────────────────────────────────────────────────────────
+  //  Optimistic quantity update ( + / – )  –  NO PAGE REFRESH
+  // ────────────────────────────────────────────────────────────────────────
+  const handleUpdateQuantity = useCallback(
+    async (productId, newQuantity) => {
+      if (!userId || newQuantity < 1) return;
+
+      setUpdatingItems((p) => ({ ...p, [productId]: true }));
+
+      try {
+        await updateCart({
+          userId,
+          productId,
+          quantity: Number(newQuantity),
+        }).unwrap();
+      } catch (err) {
+        message.error(`Error: ${err?.data?.message || "Failed"}`);
+      } finally {
+        setUpdatingItems((p) => ({ ...p, [productId]: false }));
+      }
+    },
+    [userId, updateCart]
+  );
+  // Add this useMemo
+
+  const handleTeamAdded = (showModal) => {
+    setShowAddTeamModal(showModal);
+    if (!showModal) refetchTeams();
+  };
+
+  const handleAddressSave = async (newAddressId) => {
+    setOrderData((prev) => ({ ...prev, shipTo: newAddressId }));
+    setShowAddAddressModal(false);
+    await refetchAddresses();
+    if (useBillingAddress) setUseBillingAddress(true);
+  };
+  const handleQuotationChange = useCallback((key, value) => {
+    setQuotationData((prev) => ({ ...prev, [key]: value }));
+  }, []);
+  const handleCreateDocument = async () => {
+    if (documentType === "Purchase Order") {
+      if (!selectedVendor) return message.error("Please select a vendor.");
+      if (cartItems.length === 0 && purchaseOrderData.items.length === 0)
+        return message.error("Please add at least one product.");
+      if (purchaseOrderData.items.some((item) => item.mrp <= 0))
+        return message.error(
+          "All products must have a valid MRP greater than 0."
+        );
+      if (
+        purchaseOrderData.items.some(
+          (item) => !products.some((p) => p.productId === item.productId)
+        )
+      )
+        return message.error(
+          "Some products are no longer available. Please remove them."
+        );
+
+      const formattedItems = purchaseOrderData.items.map((item) => ({
+        productId: item.productId,
+        quantity: Number(item.quantity) || 1,
+        mrp: Number(item.mrp) || 0.01,
+        tax: Number(item.tax) || 0, // Include tax
+      }));
+
+      const formattedFormData = {
+        vendorId: selectedVendor,
+        items: formattedItems,
+        expectedDeliveryDate: purchaseOrderData.expectedDeliveryDate
+          ? moment(purchaseOrderData.expectedDeliveryDate).format("YYYY-MM-DD")
+          : null,
+        status: purchaseOrderData.status || "pending",
+      };
+
+      try {
+        await createPurchaseOrder(formattedFormData).unwrap();
+        await handleClearCart();
+        resetForm();
+        navigate("/po/list");
+      } catch (err) {
+        const errorMessage =
+          err.status === 404
+            ? "Vendor not found."
+            : err.status === 400
+            ? `Invalid request: ${
+                err.data?.error || err.data?.message || "Check your input data."
+              }`
+            : err.data?.message || "Failed to create purchase order";
+        message.error(errorMessage);
+      }
+      return;
+    }
+
+    if (!selectedCustomer) return message.error("Please select a customer.");
+    if (!userId) return message.error("User not logged in!");
+    if (cartItems.length === 0)
+      return message.error("Cart is empty. Add items to proceed.");
+
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (documentType === "Order") {
+      if (!orderData.dueDate || !dateRegex.test(orderData.dueDate)) {
+        return message.error("Invalid due date format. Use YYYY-MM-DD.");
+      }
+      if (moment(orderData.dueDate).isBefore(moment().startOf("day"))) {
+        return message.error("Due date cannot be in the past.");
+      }
+    } else {
+      if (
+        !quotationData.quotationDate ||
+        !dateRegex.test(quotationData.quotationDate)
+      ) {
+        return message.error("Invalid quotation date format. Use YYYY-MM-DD.");
+      }
+      if (!quotationData.dueDate || !dateRegex.test(quotationData.dueDate)) {
+        return message.error("Invalid due date format. Use YYYY-MM-DD.");
+      }
+      if (
+        moment(quotationData.dueDate).isBefore(
+          moment(quotationData.quotationDate)
+        )
+      ) {
+        return message.error("Due date must be after quotation date.");
       }
     }
 
-    const items = itemsArray
-      .map(
-        (it, i) =>
-          `  ${i + 1}. Product ID: ${it.productId}\n` +
-          `     Qty: ${it.quantity}\n` +
-          `     Disc: ${it.discount}\n` +
-          `     Tax: ${it.tax}\n` +
-          `     Total: ₹${it.total}`
-      )
-      .join("\n");
-
-    const msg = `
-==== QUOTATION DETAILS ====
-Title: ${quotation?.document_title || "N/A"}
-Date: ${quotation?.quotation_date || "N/A"}
-Due: ${quotation?.due_date || "N/A"}
-Ref#: ${quotation?.reference_number || "N/A"}
-GST: ${quotation?.include_gst ? "Yes" : "No"}
-GST Val: ${quotation?.gst_value || 0}
-Disc Type: ${quotation?.discountType || "N/A"}
-Round Off: ₹${quotation?.roundOff || 0}
-
--- ITEMS --
-${items || "No items"}
-
-Final: ₹${quotation?.finalAmount || 0}
-Created By: ${quotation?.signature_name || "N/A"}
-Customer: ${quotation?.customerId || "N/A"}
-Ship To: ${quotation?.shipTo || "N/A"}
-
-View: ${window.location.origin}/quotation/${quotation.quotationId}
-==========================`;
-
-    const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
-    window.open(url, "_blank");
-  };
-  const handleGenerateSiteMap = (quotation) => {
-    // Parse products (new API uses `items`, old uses `products` string)
-    let rawItems = [];
+    if (isNaN(totalAmount) || totalAmount <= 0)
+      return message.error("Invalid total amount.");
 
     if (
-      quotation.items &&
-      Array.isArray(quotation.items) &&
-      quotation.items.length > 0
+      !cartItems.every(
+        (item) =>
+          item.productId &&
+          typeof item.quantity === "number" &&
+          item.quantity > 0 &&
+          typeof item.price === "number" &&
+          item.price >= 0
+      )
     ) {
-      rawItems = quotation.items;
-    } else if (quotation.products) {
-      try {
-        rawItems =
-          typeof quotation.products === "string"
-            ? JSON.parse(quotation.products)
-            : quotation.products;
-      } catch (e) {
-        console.error("Failed to parse products", e);
-        rawItems = [];
-      }
-    }
-
-    if (rawItems.length === 0) {
-      message.warning(
-        "This quotation has no products to convert into a site map."
-      );
-      return;
-    }
-
-    // Transform into SiteMap items format
-    const siteMapItems = rawItems.map((item) => ({
-      productId: item.productId || item.id,
-      name: item.name || "Unknown Product",
-      imageUrl: item.imageUrl || null,
-      quantity: Number(item.quantity) || 1,
-      price: Number(item.price) || 0,
-      floor_number: 1, // Default to Ground Floor – user can change later
-      productType: item.category || "Others",
-    }));
-
-    // Navigate to AddSiteMap with pre-filled data
-    navigate("/site-map/add", {
-      state: {
-        fromQuotation: true,
-        quotationId: quotation.quotationId,
-        customerId: quotation.customerId,
-        projectName: `${quotation.document_title || "Quotation"} - Site Map`,
-        items: siteMapItems,
-        totalFloors: 1,
-      },
-    });
-  };
-  /* ------------------------------ Columns ------------------------------ */
-  const columns = [
-    { title: "S.No.", dataIndex: "sNo", key: "sNo", width: 70 },
-    {
-      title: "Quotation Title",
-      dataIndex: "quotationTitle",
-      key: "quotationTitle",
-      width: 150,
-      render: (text, rec) => (
-        <Link to={`/quotation/${rec.quotationId}`}>{text || "N/A"}</Link>
-      ),
-    },
-    {
-      title: "Quotation Date",
-      dataIndex: "quotationDate",
-      key: "quotationDate",
-      width: 120,
-      filterDropdown: ({
-        setSelectedKeys,
-        selectedKeys,
-        confirm,
-        clearFilters,
-      }) => (
-        <div style={{ padding: 8 }}>
-          <DatePicker
-            style={{ width: "100%", marginBottom: 8 }}
-            value={selectedKeys[0] ? moment(selectedKeys[0]) : null}
-            onChange={(d) => setSelectedKeys(d ? [d] : [])}
-            placeholder="Select Date"
-          />
-          <div>
-            <Button
-              type="primary"
-              size="small"
-              style={{ width: 90, marginRight: 8 }}
-              onClick={() => {
-                setFilters((p) => ({
-                  ...p,
-                  quotationDate: selectedKeys[0]
-                    ? selectedKeys[0].toDate()
-                    : null,
-                }));
-                confirm();
-              }}
-            >
-              OK
-            </Button>
-            <Button
-              size="small"
-              style={{ width: 90 }}
-              onClick={() => {
-                clearFilters();
-                setFilters((p) => ({ ...p, quotationDate: null }));
-                confirm();
-              }}
-            >
-              Reset
-            </Button>
-          </div>
-        </div>
-      ),
-      filterIcon: (f) => (
-        <FaSearch style={{ color: f ? "#1890ff" : undefined }} />
-      ),
-    },
-    {
-      title: "Due Date",
-      dataIndex: "dueDate",
-      key: "dueDate",
-      width: 120,
-      filterDropdown: ({
-        setSelectedKeys,
-        selectedKeys,
-        confirm,
-        clearFilters,
-      }) => (
-        <div style={{ padding: 8 }}>
-          <RangePicker
-            style={{ width: "100%", marginBottom: 8 }}
-            value={
-              selectedKeys[0]
-                ? [moment(selectedKeys[0][0]), moment(selectedKeys[0][1])]
-                : null
-            }
-            onChange={(d) => setSelectedKeys(d ? [[d[0], d[1]]] : [])}
-            placeholder={["Start", "End"]}
-          />
-          <div>
-            <Button
-              type="primary"
-              size="small"
-              style={{ width: 90, marginRight: 8 }}
-              onClick={() => {
-                setFilters((p) => ({
-                  ...p,
-                  dateRange: selectedKeys[0]
-                    ? [selectedKeys[0][0].toDate(), selectedKeys[0][1].toDate()]
-                    : null,
-                }));
-                confirm();
-              }}
-            >
-              OK
-            </Button>
-            <Button
-              size="small"
-              style={{ width: 90 }}
-              onClick={() => {
-                clearFilters();
-                setFilters((p) => ({ ...p, dateRange: null }));
-                confirm();
-              }}
-            >
-              Reset
-            </Button>
-          </div>
-        </div>
-      ),
-      filterIcon: (f) => (
-        <FaSearch style={{ color: f ? "#1890ff" : undefined }} />
-      ),
-    },
-    {
-      title: "Quotation Number",
-      dataIndex: "referenceNumber",
-      key: "referenceNumber",
-      width: 150,
-    },
-    // Inside the columns definition (Products column)
-    {
-      title: "Products",
-      dataIndex: "products",
-      key: "products",
-      width: 120,
-      render: (_, rec) => (
-        <button
-          className="btn btn-link"
-          onClick={() => handleOpenProductModal(rec)} // <-- pass whole row
-          style={{ color: "#e31e24" }}
-        >
-          Quick View ({getProductCount(rec.products)})
-        </button>
-      ),
-    },
-    {
-      title: "Customer",
-      dataIndex: "customer",
-      key: "customer",
-      width: 150,
-      filterDropdown: ({
-        setSelectedKeys,
-        selectedKeys,
-        confirm,
-        clearFilters,
-      }) => (
-        <div style={{ padding: 8 }}>
-          <Select
-            style={{ width: "100%", marginBottom: 8 }}
-            value={selectedKeys[0]}
-            onChange={(v) => setSelectedKeys(v ? [v] : [])}
-            placeholder="Select Customer"
-            allowClear
-          >
-            {customers.map((c) => (
-              <Option key={c.customerId} value={c.customerId}>
-                {c.name}
-              </Option>
-            ))}
-          </Select>
-          <div>
-            <Button
-              type="primary"
-              size="small"
-              style={{ width: 90, marginRight: 8 }}
-              onClick={() => {
-                setFilters((p) => ({
-                  ...p,
-                  customerId: selectedKeys[0] || null,
-                }));
-                confirm();
-              }}
-            >
-              OK
-            </Button>
-            <Button
-              size="small"
-              style={{ width: 90 }}
-              onClick={() => {
-                clearFilters();
-                setFilters((p) => ({ ...p, customerId: null }));
-                confirm();
-              }}
-            >
-              Reset
-            </Button>
-          </div>
-        </div>
-      ),
-      filterIcon: (f) => (
-        <FaSearch style={{ color: f ? "#1890ff" : undefined }} />
-      ),
-      render: (text, rec) => (
-        <Link to={`/customer/${rec.customerId}`}>{text}</Link>
-      ),
-    },
-    {
-      title: "Final Amount",
-      dataIndex: "finalAmount",
-      key: "finalAmount",
-      width: 120,
-      sorter: (a, b) =>
-        parseFloat(a.finalAmount.replace("₹", "")) -
-        parseFloat(b.finalAmount.replace("₹", "")),
-      filterDropdown: ({
-        setSelectedKeys,
-        selectedKeys,
-        confirm,
-        clearFilters,
-      }) => (
-        <div style={{ padding: 8 }}>
-          <Input
-            placeholder="Enter Amount"
-            value={selectedKeys[0]}
-            onChange={(e) =>
-              setSelectedKeys(e.target.value ? [e.target.value] : [])
-            }
-            style={{ width: "100%", marginBottom: 8 }}
-          />
-          <div>
-            <Button
-              type="primary"
-              size="small"
-              style={{ width: 90, marginRight: 8 }}
-              onClick={() => {
-                setFilters((p) => ({
-                  ...p,
-                  finalAmount: selectedKeys[0] || null,
-                }));
-                confirm();
-              }}
-            >
-              OK
-            </Button>
-            <Button
-              size="small"
-              style={{ width: 90 }}
-              onClick={() => {
-                clearFilters();
-                setFilters((p) => ({ ...p, finalAmount: null }));
-                confirm();
-              }}
-            >
-              Reset
-            </Button>
-          </div>
-        </div>
-      ),
-      filterIcon: (f) => (
-        <FaSearch style={{ color: f ? "#1890ff" : undefined }} />
-      ),
-    },
-    {
-      title: "Actions",
-      key: "actions",
-      width: 100,
-      fixed: "right",
-      render: (_, rec) => (
-        <div className="d-flex align-items-center">
-          <PermissionGate api="edit" module="quotations">
-            <span
-              onClick={() =>
-                navigate(`/quotation/${rec.quotationId}/edit`, {
-                  state: { quotation: rec },
-                })
-              }
-              style={{ cursor: "pointer", marginRight: 8 }}
-              title="Edit Quotation"
-            >
-              <EditOutlined />
-            </span>
-          </PermissionGate>
-
-          <Dropdown
-            overlay={
-              <Menu>
-                <PermissionGate api="view" module="quotations">
-                  <Menu.Item key="view">
-                    <Link
-                      to={`/quotation/${rec.quotationId}`}
-                      style={{ textDecoration: "none", color: "inherit" }}
-                    >
-                      <FaEye style={{ marginRight: 8 }} />
-                      View
-                    </Link>
-                  </Menu.Item>
-                </PermissionGate>
-
-                <PermissionGate api="delete" module="quotations">
-                  <Menu.Item
-                    key="delete"
-                    onClick={() => handleDeleteClick(rec)}
-                    disabled={isDeleting}
-                    style={{ color: "#ff4d4f" }}
-                  >
-                    <FaTrash style={{ marginRight: 8 }} />
-                    Delete
-                  </Menu.Item>
-                </PermissionGate>
-                {/* Inside the <Menu> of the Actions Dropdown */}
-
-                <Menu.Item
-                  key="generate-sitemap"
-                  onClick={() => handleGenerateSiteMap(rec)} // ← NEW
-                  style={{ color: "#722ed1" }}
-                >
-                  <HomeOutlined style={{ marginRight: 8 }} />
-                  Generate Site Map
-                </Menu.Item>
-
-                <PermissionGate api="write" module="quotations">
-                  <Menu.Item
-                    key="convert"
-                    onClick={() => handleConvertToOrder(rec)}
-                  >
-                    <FaFileInvoice style={{ marginRight: 8 }} />
-                    Convert to Order
-                  </Menu.Item>
-                </PermissionGate>
-
-                <Menu.Item
-                  key="whatsapp"
-                  onClick={() => handleShareOnWhatsApp(rec)}
-                  style={{ color: "#25D366" }}
-                >
-                  <FaWhatsapp style={{ marginRight: 8 }} />
-                  Share on WhatsApp
-                </Menu.Item>
-              </Menu>
-            }
-            trigger={["click"]}
-            placement="bottomRight"
-          >
-            <Button type="text" icon={<BsThreeDotsVertical />} />
-          </Dropdown>
-        </div>
-      ),
-    },
-  ];
-
-  /* -------------------------- Table Data --------------------------- */
-  const formattedTableData = useMemo(() => {
-    return currentQuotations.map((q, i) => ({
-      key: q.quotationId,
-      sNo: (currentPage - 1) * pageSize + i + 1,
-      quotationTitle: q.document_title || "N/A",
-      quotationDate: q.quotation_date
-        ? new Date(q.quotation_date).toLocaleDateString()
-        : "N/A",
-      dueDate: q.due_date ? new Date(q.due_date).toLocaleDateString() : "N/A",
-      referenceNumber: q.reference_number || "N/A",
-      products: q.products,
-      customer: getCustomerName(q.customerId),
-      customerId: q.customerId,
-      finalAmount: `₹${q.finalAmount || 0}`,
-      quotationId: q.quotationId,
-    }));
-  }, [currentQuotations, currentPage, pageSize, customers]);
-
-  /* --------------------------- Handlers --------------------------- */
-  const handleAddQuotation = () => navigate("/quotation/add");
-
-  const handleDeleteClick = (q) => {
-    setQuotationToDelete(q);
-    setShowDeleteModal(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!quotationToDelete?.quotationId) {
-      message.error("No quotation selected");
-      setShowDeleteModal(false);
-      return;
-    }
-    try {
-      await deleteQuotation(quotationToDelete.quotationId).unwrap();
-      setShowDeleteModal(false);
-      setQuotationToDelete(null);
-      refetch();
-      if (currentQuotations.length === 1 && currentPage > 1) {
-        setCurrentPage((p) => p - 1);
-      }
-    } catch (e) {
-      message.error(
-        `Delete failed: ${
-          e.data?.message || e.data?.error || e.message || "unknown"
-        }`
+      return message.error(
+        "Invalid cart items. Ensure all items have valid productId, quantity, and price."
       );
     }
-  };
 
-  // Handler
-  const handleOpenProductModal = (quotation) => {
-    setSelectedQuotation(quotation); // whole object as fallback
-    setShowProductModal(true);
-  };
-  // Close handler stays the same
-  const handleCloseProductModal = () => {
-    setShowProductModal(false);
-    setSelectedQuotation(null);
-  };
-
-  const handleOpenInvoiceModal = (q) => {
-    setSelectedQuotation(q);
-    setShowInvoiceModal(true);
-  };
-  const handleCloseInvoiceModal = () => {
-    setShowInvoiceModal(false);
-    setSelectedQuotation(null);
-  };
-
-  const handleConvertToOrder = (q) => {
-    let rawItems = [];
-
-    // Prefer items array (cleaner, from latest API)
-    if (q.items && Array.isArray(q.items) && q.items.length > 0) {
-      rawItems = q.items;
-    } else if (q.products) {
-      try {
-        rawItems =
-          typeof q.products === "string" ? JSON.parse(q.products) : q.products;
-      } catch (e) {
-        console.error("Failed to parse products", e);
-        rawItems = [];
+    // Auto-create address if useBillingAddress is true and no shipTo is set
+    if (
+      useBillingAddress &&
+      !orderData.shipTo &&
+      selectedCustomer &&
+      documentType === "Order"
+    ) {
+      const selectedCustomerData = customerList.find(
+        (customer) => customer.customerId === selectedCustomer
+      );
+      const defaultAddress = selectedCustomerData?.address;
+      if (defaultAddress) {
+        try {
+          const newAddress = {
+            customerId: selectedCustomer,
+            addressDetails: {
+              street: defaultAddress.street,
+              city: defaultAddress.city,
+              state: defaultAddress.state,
+              postalCode: defaultAddress.zip || defaultAddress.postalCode,
+              country: defaultAddress.country || "India",
+            },
+          };
+          const result = await createAddress(newAddress).unwrap();
+          setOrderData((prev) => ({ ...prev, shipTo: result.addressId }));
+          await refetchAddresses();
+        } catch (err) {
+          message.error(
+            `Failed to create address: ${err.data?.message || "Unknown error"}`
+          );
+          return;
+        }
       }
     }
 
-    if (rawItems.length === 0) {
-      message.error("No products found in quotation");
-      return;
+    if (
+      documentType === "Order" &&
+      orderData.shipTo &&
+      !addresses.find((addr) => addr.addressId === orderData.shipTo)
+    ) {
+      return message.error("Invalid shipping address selected.");
     }
 
-    // Ensure clean transformation
-    const products = rawItems.map((item) => {
-      const quantity = Number(item.quantity) || 1;
-      const price = Number(item.price) || 0;
-      const discount = Number(item.discount) || 0;
-      const discountType = item.discountType || "percent";
+    const selectedCustomerData = customerList.find(
+      (customer) => customer.customerId === selectedCustomer
+    );
+    if (!selectedCustomerData)
+      return message.error("Selected customer not found.");
 
-      let finalPrice = price;
-      if (discountType === "percent") {
-        finalPrice = price * (1 - discount / 100);
-      } else {
-        finalPrice = price - discount;
+    if (documentType === "Order" && orderData.shipTo) {
+      const selectedAddress = addresses.find(
+        (addr) => addr.addressId === orderData.shipTo
+      );
+      if (selectedAddress && selectedAddress.customerId !== selectedCustomer) {
+        return message.error(
+          "Selected address does not belong to the chosen customer."
+        );
       }
+    }
+    if (documentType === "Quotation") {
+      // === BUILD PAYLOAD ===
+      // === BUILD PAYLOAD (MATCH BACKEND EXACTLY) ===
+      const quotationPayload = {
+        quotationId: uuidv4(),
+        document_title: `Quotation for ${selectedCustomerData.name}`,
+        quotation_date: quotationData.quotationDate,
+        due_date: quotationData.dueDate,
+        reference_number: quotationNumber,
 
-      const total = Number((finalPrice * quantity).toFixed(2));
+        // === GLOBAL DISCOUNT: Use backend field names ===
+        extraDiscount: parseFloat(quotationData.discountAmount) || 0,
+        extraDiscountType: quotationData.discountType || "percent",
 
-      return {
-        id: item.productId,
-        price: Number(price.toFixed(2)),
-        quantity,
-        discount,
-        discountType,
-        total,
+        shippingAmount: Number(shipping),
+        gst: gst,
+
+        // === FINAL VALUES (calculated on frontend) ===
+
+        finalAmount: totalAmount,
+
+        products: cartItems.map((item) => {
+          const price = Number(item.price) || 0;
+          const quantity = Number(item.quantity) || 1;
+          const rawDiscount = Number(itemDiscounts[item.productId]) || 0;
+          const discountType = itemDiscountTypes[item.productId] || "percent";
+
+          // Calculate correct line total AFTER item discount
+          let lineTotalAfterDiscount;
+          if (discountType === "percent") {
+            lineTotalAfterDiscount = price * quantity * (1 - rawDiscount / 100);
+          } else {
+            // fixed discount = amount per unit
+            lineTotalAfterDiscount = (price - rawDiscount) * quantity;
+          }
+
+          return {
+            productId: item.productId,
+            name: item.name || "Unknown Product",
+            price: Number(price.toFixed(2)),
+            quantity,
+            discount: Number(rawDiscount.toFixed(2)),
+            discountType,
+            tax: Number(itemTaxes[item.productId] || 0),
+            total: parseFloat(lineTotalAfterDiscount.toFixed(2)), // ← THIS IS KEY
+          };
+        }),
+
+        followupDates: quotationData.followupDates.filter(Boolean),
+
+        customerId: selectedCustomerData.customerId,
+        shipTo: quotationData.shipTo || null,
+        createdBy: userId,
+        signature_name: quotationData.signatureName || "CM TRADING CO",
+        signature_image: "",
       };
-    });
 
-    // Double-check every product has required fields
-    const invalidProduct = products.find(
-      (p) => !p.id || isNaN(p.price) || isNaN(p.total) || p.quantity < 1
-    );
+      try {
+        await createQuotation(quotationPayload).unwrap();
+        await handleClearCart();
+        resetForm();
+        navigate("/quotations/list");
+      } catch (e) {
+        message.error(e?.data?.message || "Failed to create quotation");
+      }
+    } else if (documentType === "Order") {
+      const orderNoRegex = /^\d{1,2}\d{2}25\d{3,}$/;
+      if (!orderData.orderNo || !orderNoRegex.test(orderData.orderNo)) {
+        return message.error(
+          "Order Number must be in the format DDMM25XXX (e.g., 151025101)."
+        );
+      }
 
-    if (invalidProduct) {
-      console.error("Invalid product:", invalidProduct);
-      message.error("One or more products have invalid data");
-      return;
+      if (!validateFollowupDates()) {
+        return message.error("Follow-up dates cannot be after the due date.");
+      }
+
+      // Calculate extra discount value FIRST
+      const taxableBase = subTotal - totalDiscount + tax;
+      const afterTax = taxableBase + shipping;
+
+      const extraDiscountValue =
+        quotationData.discountType === "percent"
+          ? (afterTax * parseFloat(quotationData.discountAmount || 0)) / 100
+          : parseFloat(quotationData.discountAmount || 0);
+
+      const amountForGst =
+        subTotal + shipping + tax - totalDiscount - extraDiscountValue;
+      const gstAmount = Math.round((amountForGst * gst) / 100); // ← Integer
+
+      const orderPayload = {
+        id: uuidv4(),
+        orderNo: orderData.orderNo,
+        createdFor: selectedCustomerData.customerId,
+        createdBy: userId,
+        assignedTeamId: orderData.assignedTeamId || null,
+        assignedUserId: orderData.assignedUserId || null,
+        secondaryUserId: orderData.secondaryUserId || null,
+        pipeline: orderData.pipeline || null,
+        status: orderData.status || "PREPARING",
+        gst: gst,
+        gstValue: Number(gstAmount),
+        extraDiscount: parseFloat(quotationData.discountAmount || 0),
+        extraDiscountType: quotationData.discountType || "percent",
+        extraDiscountValue: Number(extraDiscountValue.toFixed(2)),
+
+        dueDate: orderData.dueDate,
+        followupDates: orderData.followupDates.filter(
+          (date) => date && moment(date).isValid()
+        ),
+        source: orderData.source || null,
+        priority: orderData.priority || "medium",
+        description: orderData.description || null,
+        invoiceLink: null,
+        quotationId: orderData.quotationId || null,
+        masterPipelineNo: orderData.masterPipelineNo || null,
+        previousOrderNo: orderData.previousOrderNo || null,
+        shipTo: orderData.shipTo || null,
+        products: cartItems.map((item) => {
+          const price = parseFloat(item.price) || 0;
+          const quantity = parseInt(item.quantity, 10) || 1;
+
+          const rawDiscount = Number(itemDiscounts[item.productId]) || 0;
+          const discountType = itemDiscountTypes[item.productId] || "percent"; // ← CRITICAL
+
+          // CORRECT: Apply discount per unit
+          const unitPriceAfterDiscount =
+            discountType === "percent"
+              ? price * (1 - rawDiscount / 100)
+              : price - rawDiscount;
+
+          // CORRECT: Line total (NO TAX)
+          const total = Number((unitPriceAfterDiscount * quantity).toFixed(2));
+
+          return {
+            id: item.productId,
+            price: Number(price.toFixed(2)),
+            discount: Number(rawDiscount.toFixed(2)),
+            total, // ← will be 63.00 → 63
+            quantity,
+          };
+        }),
+      };
+
+      try {
+        await createOrder(orderPayload).unwrap();
+        await handleClearCart();
+        resetForm();
+        navigate("/orders/list");
+      } catch (error) {
+        const errorMessage =
+          error?.status === 400
+            ? `Bad Request: ${error.data?.message || "Invalid data provided."}`
+            : error?.status === 404
+            ? `Not Found: ${error.data?.message || "Resource not found."}`
+            : error?.status === 500
+            ? `Server error: ${
+                error.data?.message || "Please try again later."
+              }`
+            : `Something went wrong: ${
+                error.data?.message || "Please try again."
+              }`;
+
+        message.error(errorMessage);
+      }
     }
+  };
 
-    navigate("/order/add", {
-      state: {
-        quotationData: {
-          createdFor: q.customerId || "",
-          dueDate: q.due_date || moment().add(7, "days").format("YYYY-MM-DD"),
-          description: `Converted from Quotation #${
-            q.reference_number || q.quotationId
-          }\n${q.document_title || ""}`.trim(),
-          shipTo: q.shipTo || null,
-          gst: q.gst ? parseFloat(q.gst) : null,
-          extraDiscount: q.extraDiscount ? parseFloat(q.extraDiscount) : null,
-          extraDiscountType: q.extraDiscountType || "fixed",
-          shipping: q.shippingAmount ? parseFloat(q.shippingAmount) : 0,
-          products, // ← This is now 100% valid
-          quotationId: q.quotationId,
-        },
-      },
+  // Sync OrderForm extra discount changes back to quotationData for consistent totals
+  useEffect(() => {
+    if (documentType === "Order") {
+      setQuotationData((prev) => ({
+        ...prev,
+        discountType: orderData.extraDiscountType || "percent",
+        discountAmount: orderData.extraDiscount?.toString() || "",
+      }));
+    }
+  }, [documentType, orderData.extraDiscountType, orderData.extraDiscount]);
+  const resetForm = () => {
+    setQuotationData({
+      quotationDate: new Date().toISOString().split("T")[0],
+      dueDate: "",
+      billTo: "",
+      shipTo: null,
+      signatureName: "CM TRADING CO",
+      discountType: "percent",
+      discountAmount: "",
+      roundOff: "",
+      followupDates: [],
+    });
+    setOrderData({
+      createdFor: "",
+      createdBy: userId || "",
+      assignedTeamId: "",
+      assignedUserId: "",
+      secondaryUserId: "",
+      pipeline: "",
+      status: "PREPARING",
+      dueDate: moment().add(1, "days").format("YYYY-MM-DD"),
+      followupDates: [],
+      source: "",
+      priority: "medium",
+      description: "",
+      invoiceLink: null,
+      orderNo: "",
+      quotationId: "",
+      masterPipelineNo: "",
+      previousOrderNo: "",
+      shipTo: null,
+    });
+    setPurchaseOrderData({
+      vendorId: "",
+      orderDate: moment().format("YYYY-MM-DD"),
+      expectedDeliveryDate: null,
+      items: [],
+      totalAmount: 0,
+      status: "pending",
+    });
+    setSelectedCustomer("");
+    setSelectedVendor("");
+    setItemDiscounts({});
+    setItemTaxes({});
+    setItemDiscountTypes({});
+    setQuotationNumber(generateQuotationNumber());
+    setOrderNumber("");
+    setPurchaseOrderNumber("");
+    setDocumentType("Quotation");
+    setActiveTab("cart");
+    setProductSearch("");
+    setFilteredProducts([]);
+    setUseBillingAddress(false);
+  };
+
+  const validateFollowupDates = () => {
+    if (!orderData.dueDate || orderData.followupDates.length === 0) return true;
+    const dueDate = moment(orderData.dueDate);
+    return orderData.followupDates.every((date) => {
+      if (!date || new Date(date).toString() === "Invalid Date") return true;
+      return moment(date).isSameOrBefore(dueDate, "day");
     });
   };
 
-  const handlePageChange = (page, newPageSize) => {
-    setCurrentPage(page);
-    setPageSize(newPageSize);
+  const handleAddCustomer = () => setShowAddCustomerModal(true);
+
+  const handleCustomerSave = async (newCustomer) => {
+    try {
+      await createCustomer(newCustomer).unwrap();
+      dispatch(customerApi.util.invalidateTags(["Customer"]));
+      setSelectedCustomer(newCustomer.customerId || "");
+      setShowAddCustomerModal(false);
+    } catch (err) {
+      message.error(err?.data?.message || "Failed to create customer.");
+    }
   };
 
-  const clearFilters = () => {
-    setSearchTerm("");
-    setSortBy("Recently Added");
-    setActiveTab("All");
-    setFilters({
-      finalAmount: null,
-      quotationDate: null,
-      customerId: null,
-      dateRange: null,
-    });
-    setCurrentPage(1);
-    setPageSize(10);
-  };
+  const handleAddAddress = () => setShowAddAddressModal(true);
 
-  /* --------------------------- Loading / Error -------------------------- */
-  if (isLoading) {
+  // ==================== RENDER ====================
+  if (
+    profileLoading ||
+    cartLoading ||
+    productsLoading ||
+    isAllOrdersLoading ||
+    teamsLoading ||
+    isProductsLoading ||
+    isVendorsLoading
+  ) {
     return (
-      <div className="content">
-        <div className="card">
-          <div className="card-body text-center">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </div>
-            <p>Loading quotations...</p>
-          </div>
-        </div>
-      </div>
+      <PageWrapper>
+        <Spin size="large" style={{ display: "block", margin: "50px auto" }} />
+      </PageWrapper>
     );
   }
 
-  if (isError) {
+  if (profileError || cartError || productErrors.length > 0 || allOrdersError) {
     return (
-      <div className="content">
-        <div className="card">
-          <div className="card-body">
-            <div className="alert alert-danger" role="alert">
-              Error fetching quotations!
-            </div>
-          </div>
-        </div>
-      </div>
+      <PageWrapper>
+        <Alert
+          message="Error loading data"
+          description={
+            profileError?.message ||
+            cartError?.message ||
+            productErrors.map((err) => err.error).join(", ") ||
+            allOrdersError?.data?.message ||
+            "An unexpected error occurred"
+          }
+          type="error"
+          action={<Button type="primary">Retry</Button>}
+          showIcon
+        />
+      </PageWrapper>
     );
   }
 
-  /* ------------------------------- Render ------------------------------- */
   return (
     <div className="page-wrapper">
       <div className="content">
-        <div className="card">
-          <PageHeader
-            title="Quotations"
-            subtitle="Manage your Quotations"
-            tableData={formattedTableData}
-            exportOptions={{ pdf: true, excel: true }}
+        <Tabs
+          activeKey={activeTab}
+          onChange={setActiveTab}
+          type="card"
+          style={{ marginBottom: 16 }}
+        >
+          <TabPane
+            tab={
+              <span>
+                <ShoppingCartOutlined /> Cart ({totalItems})
+              </span>
+            }
+            key="cart"
+          >
+            <CartTab
+              cartItems={cartItems}
+              cartProductsData={cartProductsData}
+              totalItems={totalItems}
+              shipping={shipping}
+              tax={tax}
+              discount={totalDiscount}
+              roundOff={roundOff}
+              subTotal={subTotal}
+              quotationData={quotationData}
+              itemDiscounts={itemDiscounts}
+              itemDiscountTypes={itemDiscountTypes}
+              itemTaxes={itemTaxes}
+              updatingItems={updatingItems}
+              handleUpdateQuantity={handleUpdateQuantity}
+              handleRemoveItem={handleRemoveItem}
+              handleDiscountChange={handleDiscountChange}
+              handleDiscountTypeChange={handleDiscountTypeChange}
+              handleTaxChange={handleTaxChange}
+              setShowClearCartModal={setShowClearCartModal}
+              setActiveTab={setActiveTab}
+              onShippingChange={handleShippingChange}
+            />
+          </TabPane>
+
+          <TabPane
+            tab={
+              <span>
+                <CheckCircleOutlined /> Checkout
+              </span>
+            }
+            key="checkout"
+          >
+            {documentType === "Purchase Order" ? (
+              <PurchaseOrderForm
+                purchaseOrderData={purchaseOrderData}
+                setPurchaseOrderData={setPurchaseOrderData}
+                selectedVendor={selectedVendor}
+                setSelectedVendor={setSelectedVendor}
+                vendors={vendors}
+                isVendorsLoading={isVendorsLoading}
+                products={products}
+                isProductsLoading={isProductsLoading}
+                productSearch={productSearch}
+                filteredProducts={filteredProducts}
+                debouncedSearch={debouncedSearch}
+                addPurchaseOrderProduct={(productId) => {
+                  const product = products.find(
+                    (p) => p.productId === productId
+                  );
+                  if (
+                    !product ||
+                    purchaseOrderData.items.some(
+                      (i) => i.productId === productId
+                    ) ||
+                    cartItems.some((i) => i.productId === productId)
+                  ) {
+                    message.error(
+                      product ? "Product already added." : "Product not found."
+                    );
+                    return;
+                  }
+                  const sellingPrice =
+                    product.metaDetails?.find((m) => m.slug === "sellingPrice")
+                      ?.value || 0;
+                  if (sellingPrice <= 0) {
+                    message.error(`Invalid MRP for ${product.name}`);
+                    return;
+                  }
+                  const quantity = 1;
+                  const total = quantity * sellingPrice;
+                  setPurchaseOrderData((prev) => {
+                    const newItems = [
+                      ...prev.items,
+                      {
+                        id: product.productId,
+                        productId: product.productId,
+                        name: product.name,
+                        quantity,
+                        mrp: sellingPrice,
+                        total,
+                        tax: 0,
+                      },
+                    ];
+                    const totalAmount = newItems
+                      .reduce((s, i) => s + i.total * (1 + i.tax / 100), 0)
+                      .toFixed(2);
+                    return { ...prev, items: newItems, totalAmount };
+                  });
+                  setProductSearch("");
+                  setFilteredProducts([]);
+                }}
+                removePurchaseOrderProduct={(index) => {
+                  setPurchaseOrderData((prev) => {
+                    const newItems = prev.items.filter((_, i) => i !== index);
+                    const totalAmount = newItems
+                      .reduce((s, i) => s + i.total * (1 + i.tax / 100), 0)
+                      .toFixed(2);
+                    return { ...prev, items: newItems, totalAmount };
+                  });
+                }}
+                updatePurchaseOrderProductField={(index, field, value) => {
+                  const items = [...purchaseOrderData.items];
+                  items[index][field] = value;
+                  if (["quantity", "mrp", "tax"].includes(field)) {
+                    const q = Number(items[index].quantity) || 1;
+                    const m = Number(items[index].mrp) || 0.01;
+                    const t = Number(items[index].tax) || 0;
+                    items[index].total = q * m * (1 + t / 100);
+                  }
+                  const totalAmount = items
+                    .reduce((s, i) => s + i.total * (1 + i.tax / 100), 0)
+                    .toFixed(2);
+                  setPurchaseOrderData({
+                    ...purchaseOrderData,
+                    items,
+                    totalAmount,
+                  });
+                }}
+                handlePurchaseOrderChange={(key, value) =>
+                  setPurchaseOrderData((prev) => ({
+                    ...prev,
+                    [key]: value,
+                  }))
+                }
+                purchaseOrderTotal={purchaseOrderTotal}
+                purchaseOrderNumber={purchaseOrderNumber}
+                documentType={documentType}
+                setDocumentType={setDocumentType}
+                cartItems={cartItems}
+                setActiveTab={setActiveTab}
+                handleCreateDocument={handleCreateDocument}
+                setShowAddVendorModal={setShowAddVendorModal}
+              />
+            ) : documentType === "Order" ? (
+              <OrderForm
+                orderData={orderData}
+                setOrderData={setOrderData}
+                handleOrderChange={(key, value) =>
+                  setOrderData((prev) => ({ ...prev, [key]: value }))
+                }
+                selectedCustomer={selectedCustomer}
+                setSelectedCustomer={setSelectedCustomer}
+                customers={customerList}
+                customersLoading={customersLoading}
+                customersError={customersError}
+                shipping={shipping}
+                onShippingChange={handleShippingChange}
+                addresses={addresses}
+                addressesLoading={addressesLoading}
+                addressesError={addressesError}
+                userMap={userMap}
+                customerMap={customerMap}
+                userQueries={userQueries}
+                customerQueries={customerQueries}
+                teams={teams}
+                teamsLoading={teamsLoading}
+                users={users}
+                usersLoading={usersLoading}
+                usersError={usersError}
+                error={error}
+                orderNumber={orderData.orderNo}
+                documentType={documentType}
+                setDocumentType={setDocumentType}
+                cartItems={cartItems}
+                totalAmount={totalAmount}
+                tax={tax}
+                totalDiscount={totalDiscount}
+                extraDiscount={orderData.extraDiscount}
+                extraDiscountType={orderData.extraDiscountType}
+                roundOff={roundOff}
+                subTotal={subTotal}
+                handleAddCustomer={handleAddCustomer}
+                handleAddAddress={handleAddAddress}
+                setActiveTab={setActiveTab}
+                handleCreateDocument={handleCreateDocument}
+                handleTeamAdded={handleTeamAdded}
+                useBillingAddress={useBillingAddress}
+                setUseBillingAddress={setUseBillingAddress}
+              />
+            ) : (
+              <QuotationForm
+                quotationData={quotationData}
+                setQuotationData={setQuotationData}
+                handleQuotationChange={handleQuotationChange}
+                selectedCustomer={selectedCustomer}
+                onShippingChange={handleShippingChange}
+                setSelectedCustomer={setSelectedCustomer}
+                customers={customerList}
+                customersLoading={customersLoading}
+                customersError={customersError}
+                addresses={addresses}
+                addressesLoading={addressesLoading}
+                addressesError={addressesError}
+                userMap={userMap}
+                customerMap={customerMap}
+                userQueries={userQueries}
+                customerQueries={customerQueries}
+                error={error}
+                quotationNumber={quotationNumber}
+                documentType={documentType}
+                setDocumentType={setDocumentType}
+                cartItems={cartItems}
+                totalAmount={totalAmount}
+                gst={gst}
+                gstAmount={gstAmount}
+                setGst={setGst}
+                shipping={shipping}
+                tax={tax}
+                discount={totalDiscount}
+                extraDiscount={extraDiscount}
+                roundOff={roundOff}
+                subTotal={subTotal}
+                handleAddCustomer={handleAddCustomer}
+                handleAddAddress={handleAddAddress}
+                setActiveTab={setActiveTab}
+                handleCreateDocument={handleCreateDocument}
+                useBillingAddress={useBillingAddress}
+                setBillingAddressId={setBillingAddressId}
+                setUseBillingAddress={setUseBillingAddress}
+                itemDiscounts={itemDiscounts}
+                itemTaxes={itemTaxes}
+                previewVisible={previewVisible}
+                setPreviewVisible={setPreviewVisible}
+              />
+            )}
+          </TabPane>
+        </Tabs>
+
+        <Modal
+          title="Confirm Clear Cart"
+          open={showClearCartModal}
+          onOk={handleClearCart}
+          onCancel={() => setShowClearCartModal(false)}
+          okText="Clear"
+          okButtonProps={{ danger: true }}
+          cancelText="Cancel"
+        >
+          <Text>Are you sure you want to clear all items from your cart?</Text>
+        </Modal>
+
+        {showAddAddressModal && (
+          <AddAddress
+            onClose={() => setShowAddAddressModal(false)}
+            onSave={handleAddressSave}
+            selectedCustomer={selectedCustomer}
           />
+        )}
 
-          <div className="card-body">
-            {/* ---------- Search & Sort ---------- */}
-            <div className="row">
-              <div className="col-lg-12">
-                <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
-                  <div className="input-icon-start position-relative">
-                    <span className="input-icon-addon">
-                      <FaSearch />
-                    </span>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="Search Quotations"
-                      value={searchTerm}
-                      onChange={(e) => {
-                        setSearchTerm(e.target.value);
-                        setCurrentPage(1); // Reset to first page on search
-                      }}
-                    />
-                  </div>
-
-                  <Select
-                    style={{ width: 200, marginLeft: 10 }}
-                    value={sortBy}
-                    onChange={(value) => {
-                      setSortBy(value);
-                      setCurrentPage(1);
-                    }}
-                  >
-                    <Option value="Recently Added">Recently Added</Option>
-                    <Option value="Ascending">Reference Ascending</Option>
-                    <Option value="Descending">Reference Descending</Option>
-                    <Option value="Price High">Price High to Low</Option>
-                    <Option value="Price Low">Price Low to High</Option>
-                  </Select>
-                </div>
-              </div>
-            </div>
-
-            {/* ---------- Tabs (All / Accepted / …) ---------- */}
-            <div className="tab-content" id="pills-tabContent">
-              {Object.entries(groupedQuotations).map(([status]) => (
-                <div
-                  key={status}
-                  className={`tab-pane fade ${
-                    activeTab === status ? "show active" : ""
-                  }`}
-                  id={`pills-${status}`}
-                  role="tabpanel"
-                >
-                  {currentQuotations.length === 0 ? (
-                    <p className="text-muted">
-                      No {status.toLowerCase()} quotations match the filters.
-                    </p>
-                  ) : (
-                    <div
-                      className="table-responsive"
-                      style={{ overflowX: "auto" }}
-                    >
-                      <Table
-                        className="table table-hover"
-                        columns={columns}
-                        dataSource={formattedTableData}
-                        pagination={false}
-                        rowKey="key"
-                        scroll={{ x: "max-content" }}
-                      />
-
-                      {/* ANT DESIGN PAGINATION */}
-                      {filteredQuotations.length > pageSize && (
-                        <div className="d-flex justify-content-end mt-4">
-                          <Pagination
-                            current={currentPage}
-                            pageSize={pageSize}
-                            total={filteredQuotations.length}
-                            onChange={handlePageChange}
-                            showSizeChanger
-                            pageSizeOptions={["10", "20", "50", "100"]}
-                            showQuickJumper
-                          />
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* -------------------------- Modals -------------------------- */}
-
-        <QuotationProductModal
-          show={showProductModal}
-          onHide={handleCloseProductModal}
-          quotationId={selectedQuotation?.quotationId} // <-- fetch from API
-          fallbackQuotation={selectedQuotation} // <-- immediate UI (no flash)
+        <AddVendorModal
+          show={showAddVendorModal}
+          onClose={() => setShowAddVendorModal(false)}
+          onSave={createVendor}
+          isCreatingVendor={isCreatingVendor}
         />
 
-        {showDeleteModal && (
-          <DeleteModal
-            item={quotationToDelete}
-            itemType="Quotation"
-            isVisible={showDeleteModal}
-            onConfirm={handleConfirmDelete}
-            onCancel={() => {
-              setShowDeleteModal(false);
-              setQuotationToDelete(null);
+        {showAddTeamModal && (
+          <AddNewTeam
+            onClose={() => handleTeamAdded(false)}
+            onTeamAdded={(newTeamId) => {
+              handleTeamAdded(false);
+              setOrderData((prev) => ({
+                ...prev,
+                assignedTeamId: newTeamId,
+              }));
             }}
-            isLoading={isDeleting}
+            visible={showAddTeamModal}
           />
         )}
 
-        {showInvoiceModal && selectedQuotation && (
-          <CreateInvoiceFromQuotation
-            quotation={selectedQuotation}
-            onClose={handleCloseInvoiceModal}
-            createInvoice={createInvoice}
-            customerMap={customerMap}
-            addressMap={{}}
+        {showAddCustomerModal && (
+          <AddCustomerModal
+            visible={showAddCustomerModal}
+            onClose={() => setShowAddCustomerModal(false)}
+            customer={null}
+            onSave={handleCustomerSave}
           />
         )}
+        {/* QUOTATION PREVIEW MODAL */}
+        <PreviewQuotation
+          visible={previewVisible}
+          onClose={() => setPreviewVisible(false)}
+          cartItems={cartItems}
+          productsData={cartProductsData}
+          customer={customerList.find((c) => c.customerId === selectedCustomer)}
+          address={addresses.find((a) => a.addressId === quotationData.shipTo)}
+          quotationData={{
+            ...quotationData,
+            document_title: `Quotation for ${
+              customerList.find((c) => c.customerId === selectedCustomer)
+                ?.name || "Client"
+            }`,
+            reference_number: quotationNumber,
+            quotation_date:
+              quotationData.quotationDate ||
+              new Date().toISOString().split("T")[0],
+            extraDiscount: parseFloat(quotationData.discountAmount) || 0,
+            extraDiscountType: quotationData.discountType || "percent",
+            roundOff: roundOff,
+          }}
+          gstRate={gst}
+          includeGst={true}
+        />
       </div>
     </div>
   );
 };
 
-export default QuotationList;
+NewCart.propTypes = {
+  onConvertToOrder: PropTypes.func,
+};
+
+NewCart.defaultProps = {
+  onConvertToOrder: (data) =>
+    console.warn("onConvertToOrder not provided", data),
+};
+
+export default NewCart;

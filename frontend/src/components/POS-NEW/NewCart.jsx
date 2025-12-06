@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Spin, Alert, Tabs, Modal, Button, Typography } from "antd";
+import { Alert, Tabs, Modal, Button, Typography } from "antd";
 import { ShoppingCartOutlined, CheckCircleOutlined } from "@ant-design/icons";
 import {
   useGetCustomersQuery,
@@ -40,6 +40,7 @@ import { debounce } from "lodash";
 import moment from "moment";
 import styled from "styled-components";
 import PropTypes from "prop-types";
+
 import CartTab from "./Cart";
 import QuotationForm from "./QuotationForm";
 import OrderForm from "./OrderForm";
@@ -54,6 +55,7 @@ import {
 } from "../../data/cartUtils";
 import { useGetAllUsersQuery } from "../../api/userApi";
 import AddCustomerModal from "../Customers/AddCustomerModal";
+import PreviewQuotation from "../Quotation/PreviewQuotation";
 
 const { TabPane } = Tabs;
 const { Text } = Typography;
@@ -67,34 +69,18 @@ const PageWrapper = styled.div`
   }
 `;
 
-const CartContainer = styled.div`
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 12px;
-  @media (min-width: 768px) {
-    padding: 20px;
-  }
-`;
-
 const NewCart = ({ onConvertToOrder }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const {
-    data: profileData,
-    isLoading: profileLoading,
-    error: profileError,
-  } = useGetProfileQuery();
-  const {
-    data: usersData,
-    isLoading: usersLoading,
-    error: usersError,
-  } = useGetAllUsersQuery();
+
+  // ────────────────────── PROFILE & USER ──────────────────────
+  const { data: profileData } = useGetProfileQuery();
+  const { data: usersData } = useGetAllUsersQuery();
   const users = Array.isArray(usersData?.users) ? usersData.users : [];
   const user = profileData?.user || {};
   const userId = user.userId;
-  const [useBillingAddress, setUseBillingAddress] = useState(false);
-  const [billingAddressId, setBillingAddressId] = useState(null);
-  // ==================== STATE ====================
+
+  // ────────────────────── STATE ──────────────────────
   const [activeTab, setActiveTab] = useState("cart");
   const [selectedCustomer, setSelectedCustomer] = useState("");
   const [selectedVendor, setSelectedVendor] = useState("");
@@ -109,6 +95,9 @@ const NewCart = ({ onConvertToOrder }) => {
   );
   const [orderNumber, setOrderNumber] = useState("");
   const [purchaseOrderNumber, setPurchaseOrderNumber] = useState("");
+  const [useBillingAddress, setUseBillingAddress] = useState(false);
+
+  // Form data
   const [quotationData, setQuotationData] = useState({
     quotationDate: new Date().toISOString().split("T")[0],
     dueDate: "",
@@ -119,6 +108,7 @@ const NewCart = ({ onConvertToOrder }) => {
     discountAmount: "",
     followupDates: [],
   });
+
   const [orderData, setOrderData] = useState({
     createdFor: "",
     createdBy: userId || "",
@@ -139,6 +129,7 @@ const NewCart = ({ onConvertToOrder }) => {
     previousOrderNo: "",
     shipTo: "",
   });
+
   const [purchaseOrderData, setPurchaseOrderData] = useState({
     vendorId: "",
     orderDate: moment().format("YYYY-MM-DD"),
@@ -148,60 +139,31 @@ const NewCart = ({ onConvertToOrder }) => {
     status: "pending",
   });
 
-  // PER-ITEM STATE
+  // Per-item overrides
   const [itemDiscounts, setItemDiscounts] = useState({});
   const [itemTaxes, setItemTaxes] = useState({});
-  const [itemDiscountTypes, setItemDiscountTypes] = useState({}); // NEW: % or fixed
-
-  const [error, setError] = useState("");
+  const [itemDiscountTypes, setItemDiscountTypes] = useState({});
+  const [previewVisible, setPreviewVisible] = useState(false);
   const [updatingItems, setUpdatingItems] = useState({});
   const [productSearch, setProductSearch] = useState("");
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [shipping, setShipping] = useState(0);
   const [gst, setGst] = useState(18);
-  // ==================== QUERIES ====================
-  const {
-    data: cartData,
-    isLoading: cartLoading,
-    isError: cartError,
-  } = useGetCartQuery(userId, {
-    skip: !userId,
-    refetchOnMountOrArgChange: false,
-    refetchOnReconnect: false,
-  });
-  const {
-    data: customerData,
-    isLoading: customersLoading,
-    isError: customersError,
-  } = useGetCustomersQuery();
-  const {
-    data: allOrdersData,
-    isLoading: isAllOrdersLoading,
-    error: allOrdersError,
-  } = useGetAllOrdersQuery();
-  const {
-    data: teamsData,
-    isLoading: teamsLoading,
-    refetch: refetchTeams,
-  } = useGetAllTeamsQuery();
-  const {
-    data: addressesData,
-    isLoading: addressesLoading,
-    isError: addressesError,
-    refetch: refetchAddresses,
-  } = useGetAllAddressesQuery(
-    { customerId: selectedCustomer },
-    {
-      skip: !selectedCustomer,
-      refetchOnMountOrArgChange: false,
-      refetchOnReconnect: false,
-    }
-  );
-  const { data: productsData, isLoading: isProductsLoading } =
-    useGetAllProductsQuery();
-  const { data: vendorsData, isLoading: isVendorsLoading } =
-    useGetVendorsQuery();
+  const [billingAddressId, setBillingAddressId] = useState(null);
+  // ────────────────────── QUERIES ──────────────────────
+  const { data: cartData } = useGetCartQuery(userId, { skip: !userId });
+  const { data: customerData } = useGetCustomersQuery();
+  const { data: allOrdersData } = useGetAllOrdersQuery();
+  const { data: teamsData, refetch: refetchTeams } = useGetAllTeamsQuery();
+  const { data: addressesData, refetch: refetchAddresses } =
+    useGetAllAddressesQuery(
+      { customerId: selectedCustomer },
+      { skip: !selectedCustomer }
+    );
+  const { data: productsData } = useGetAllProductsQuery();
+  const { data: vendorsData } = useGetVendorsQuery();
 
+  // Mutations
   const [updateCart] = useUpdateCartMutation();
   const [clearCart] = useClearCartMutation();
   const [removeFromCart] = useRemoveFromCartMutation();
@@ -211,23 +173,12 @@ const NewCart = ({ onConvertToOrder }) => {
   const [createVendor, { isLoading: isCreatingVendor }] =
     useCreateVendorMutation();
   const [createAddress] = useCreateAddressMutation();
-  const [createCustomer, { isLoading: isCreatingCustomer }] =
-    useCreateCustomerMutation();
+  const [createCustomer] = useCreateCustomerMutation();
 
-  // ==================== MEMOIZED DATA ====================
+  // ────────────────────── MEMOIZED VALUES ──────────────────────
   const addresses = useMemo(
     () => (Array.isArray(addressesData) ? addressesData : []),
     [addressesData]
-  );
-  const userIds = useMemo(
-    () => [...new Set(addresses.map((addr) => addr.userId).filter(Boolean))],
-    [addresses]
-  );
-  const customerIds = useMemo(
-    () => [
-      ...new Set(addresses.map((addr) => addr.customerId).filter(Boolean)),
-    ],
-    [addresses]
   );
   const orders = useMemo(
     () => (Array.isArray(allOrdersData?.orders) ? allOrdersData.orders : []),
@@ -239,71 +190,38 @@ const NewCart = ({ onConvertToOrder }) => {
   );
   const vendors = useMemo(() => vendorsData || [], [vendorsData]);
   const products = useMemo(() => productsData || [], [productsData]);
-  const { userMap, customerMap, userQueries, customerQueries } =
-    useUserAndCustomerData(userIds, customerIds);
-  const cartItems = useMemo(
-    () => (Array.isArray(cartData?.cart?.items) ? cartData.cart.items : []),
-    [cartData]
-  );
-  const {
-    productsData: cartProductsData,
-    errors: productErrors,
-    loading: productsLoading,
-  } = useProductsData(cartItems);
   const customers = customerData?.data || [];
   const customerList = useMemo(
     () => (Array.isArray(customers) ? customers : []),
     [customers]
   );
 
-  // ==================== SYNC DISCOUNT TYPES WITH CART ====================
-  useEffect(() => {
-    const missing = cartItems
-      .filter((it) => !(it.productId in itemDiscountTypes))
-      .reduce((acc, it) => ({ ...acc, [it.productId]: "percent" }), {});
-    if (Object.keys(missing).length > 0) {
-      setItemDiscountTypes((prev) => ({ ...prev, ...missing }));
-    }
-  }, [cartItems]);
-
-  // ==================== PURCHASE ORDER SYNC ====================
-  useEffect(() => {
-    if (documentType === "Purchase Order") {
-      setPurchaseOrderData((prev) => ({
-        ...prev,
-        items: cartItems.map((item) => ({
-          id: item.productId,
-          productId: item.productId,
-          name: item.name || "Unknown",
-          quantity: item.quantity || 1,
-          mrp: item.price || 0.01,
-          total: (item.quantity || 1) * (item.price || 0.01),
-          tax: itemTaxes[item.productId] || 0,
-        })),
-        totalAmount: cartItems
-          .reduce((sum, item) => {
-            const price = item.price || 0.01;
-            const quantity = item.quantity || 1;
-            const tax = itemTaxes[item.productId] || 0;
-            return sum + price * quantity * (1 + tax / 100);
-          }, 0)
-          .toFixed(2),
-      }));
-    }
-  }, [cartItems, itemTaxes, documentType]);
-
-  // ==================== TOTALS (PER-ITEM DISCOUNT) ====================
-  const totalItems = useMemo(
-    () => cartItems.reduce((acc, item) => acc + (item.quantity || 0), 0),
-    [cartItems]
+  const cartItems = useMemo(
+    () => (Array.isArray(cartData?.cart?.items) ? cartData.cart.items : []),
+    [cartData]
   );
 
+  const { productsData: cartProductsData, errors: productErrors } =
+    useProductsData(cartItems);
+
+  const userIds = useMemo(
+    () => [...new Set(addresses.map((a) => a.userId).filter(Boolean))],
+    [addresses]
+  );
+  const customerIds = useMemo(
+    () => [...new Set(addresses.map((a) => a.customerId).filter(Boolean))],
+    [addresses]
+  );
+  const { userMap, customerMap, userQueries, customerQueries } =
+    useUserAndCustomerData(userIds, customerIds);
+
+  // ────────────────────── TOTALS & CALCULATIONS ──────────────────────
+  const totalItems = useMemo(
+    () => cartItems.reduce((a, i) => a + (i.quantity || 0), 0),
+    [cartItems]
+  );
   const subTotal = useMemo(
-    () =>
-      cartItems.reduce(
-        (acc, item) => acc + (item.price || 0) * (item.quantity || 0),
-        0
-      ),
+    () => cartItems.reduce((a, i) => a + (i.price || 0) * (i.quantity || 0), 0),
     [cartItems]
   );
 
@@ -325,24 +243,19 @@ const NewCart = ({ onConvertToOrder }) => {
       const price = item.price || 0;
       const qty = item.quantity || 1;
       const subtotal = price * qty;
-
       const discVal = Number(itemDiscounts[item.productId]) || 0;
       const type = itemDiscountTypes[item.productId] || "percent";
       const discAmt =
         type === "percent" ? (subtotal * discVal) / 100 : discVal * qty;
-
       const taxable = subtotal - discAmt;
       const itemTax = parseFloat(itemTaxes[item.productId]) || 0;
-
       return acc + (taxable * itemTax) / 100;
     }, 0);
   }, [cartItems, itemDiscounts, itemDiscountTypes, itemTaxes]);
 
-  // === GLOBAL DISCOUNT (extraDiscount) ===
   const extraDiscount = useMemo(() => {
     const amount = parseFloat(quotationData.discountAmount) || 0;
     if (!amount) return 0;
-
     const base = subTotal - totalDiscount + tax + shipping;
     return quotationData.discountType === "percent"
       ? parseFloat(((base * amount) / 100).toFixed(2))
@@ -356,158 +269,122 @@ const NewCart = ({ onConvertToOrder }) => {
     shipping,
   ]);
 
-  // === AMOUNT BEFORE GST (for round-off) ===
-  // === AMOUNT BEFORE GST (for round-off) ===
   const amountBeforeGstRaw =
     subTotal - totalDiscount + tax + shipping - extraDiscount;
   const amountBeforeGst = parseFloat(amountBeforeGstRaw.toFixed(2));
 
-  // === ROUND-OFF BEFORE GST (exact same as backend) ===
   const rupees = Math.floor(amountBeforeGst);
   const paise = Math.round((amountBeforeGst - rupees) * 100);
-
   let roundOff = 0;
-  if (paise > 0 && paise <= 50) {
+  if (paise > 0 && paise <= 50)
     roundOff = parseFloat((-paise / 100).toFixed(2));
-  } else if (paise > 50) {
-    roundOff = parseFloat(((100 - paise) / 100).toFixed(2));
-  }
+  else if (paise > 50) roundOff = parseFloat(((100 - paise) / 100).toFixed(2));
 
   const roundedAmount = parseFloat((amountBeforeGst + roundOff).toFixed(2));
-
-  // === GST ON ROUNDED AMOUNT ===
   const gstAmount =
     gst > 0 ? parseFloat(((roundedAmount * gst) / 100).toFixed(2)) : 0;
-
-  // === FINAL TOTAL ===
   const totalAmount = parseFloat((roundedAmount + gstAmount).toFixed(2));
-  const purchaseOrderTotal = useMemo(
-    () =>
-      purchaseOrderData.items
-        .reduce(
-          (sum, item) =>
-            sum + Number(item.total || 0) * (1 + (item.tax || 0) / 100),
-          0
-        )
-        .toFixed(2),
-    [purchaseOrderData.items]
-  );
 
-  // ==================== DEBOUNCED SEARCH ====================
-  const debouncedSearch = useCallback(
-    debounce((value) => {
-      setProductSearch(value);
-      if (value) {
-        const filtered = products
-          .filter(
-            (product) =>
-              product.productId &&
-              (product.name.toLowerCase().includes(value.toLowerCase()) ||
-                product.product_code
-                  ?.toLowerCase()
-                  .includes(value.toLowerCase()))
-          )
-          .slice(0, 5);
-        setFilteredProducts(filtered);
-      } else {
-        setFilteredProducts([]);
-      }
-    }, 300),
-    [products]
-  );
-
-  // ==================== EFFECTS ====================
+  // ────────────────────── EFFECTS ──────────────────────
+  // Sync discount types for newly added items
   useEffect(() => {
-    if (!orderNumber && !isAllOrdersLoading && allOrdersData !== undefined) {
-      const today = moment().format("DDMMYY");
-      const todayOrders = orders.filter((order) =>
-        moment(order.createdAt).isSame(moment(), "day")
-      );
-      const serialNumber = todayOrders.length + 101;
-      const generatedOrderNo = `${today}${serialNumber}`;
-      setOrderData((prev) => ({ ...prev, orderNo: generatedOrderNo }));
-      setOrderNumber(generatedOrderNo);
+    const missing = cartItems
+      .filter((it) => !(it.productId in itemDiscountTypes))
+      .reduce((acc, it) => ({ ...acc, [it.productId]: "percent" }), {});
+    if (Object.keys(missing).length) {
+      setItemDiscountTypes((prev) => ({ ...prev, ...missing }));
     }
-    if (
-      !purchaseOrderNumber &&
-      !isAllOrdersLoading &&
-      allOrdersData !== undefined
-    ) {
+  }, [cartItems]);
+
+  // Purchase order sync
+  useEffect(() => {
+    if (documentType === "Purchase Order") {
+      setPurchaseOrderData((prev) => ({
+        ...prev,
+        items: cartItems.map((item) => ({
+          id: item.productId,
+          productId: item.productId,
+          name: item.name || "Unknown",
+          quantity: item.quantity || 1,
+          mrp: item.price || 0.01,
+          total: (item.quantity || 1) * (item.price || 0.01),
+          tax: itemTaxes[item.productId] || 0,
+        })),
+      }));
+    }
+  }, [cartItems, itemTaxes, documentType]);
+
+  // Generate order / PO numbers
+  useEffect(() => {
+    if (!orderNumber && allOrdersData) {
+      const today = moment().format("DDMMYY");
+      const todayOrders = orders.filter((o) =>
+        moment(o.createdAt).isSame(moment(), "day")
+      );
+      const serial = todayOrders.length + 101;
+      const generated = `${today}${serial}`;
+      setOrderData((prev) => ({ ...prev, orderNo: generated }));
+      setOrderNumber(generated);
+    }
+    if (!purchaseOrderNumber && allOrdersData) {
       setPurchaseOrderNumber(generatePurchaseOrderNumber(orders));
     }
-  }, [
-    isAllOrdersLoading,
-    allOrdersData,
-    orders,
-    orderNumber,
-    purchaseOrderNumber,
-  ]);
+  }, [allOrdersData, orders, orderNumber, purchaseOrderNumber]);
 
+  // Auto-fill customer name
   useEffect(() => {
     if (selectedCustomer) {
-      const selectedCustomerData = customerList.find(
-        (c) => c.customerId === selectedCustomer
-      );
-      if (selectedCustomerData) {
+      const cust = customerList.find((c) => c.customerId === selectedCustomer);
+      if (cust) {
         setQuotationData((prev) => ({
           ...prev,
-          billTo: selectedCustomerData.name || prev.billTo,
+          billTo: cust.name || prev.billTo,
         }));
-        setOrderData((prev) => ({
-          ...prev,
-          createdFor: selectedCustomerData.customerId,
-        }));
+        setOrderData((prev) => ({ ...prev, createdFor: cust.customerId }));
       }
     }
   }, [selectedCustomer, customerList]);
 
-  // ==================== HANDLERS ====================
-  const handleShippingChange = useCallback((newShipping) => {
-    setShipping(newShipping);
-  }, []);
-  const handleDiscountChange = (productId, value) => {
-    setItemDiscounts((prev) => ({
-      ...prev,
-      [productId]: value >= 0 ? value : 0,
-    }));
-  };
+  // Sync extra discount between Order & Quotation forms
+  useEffect(() => {
+    if (documentType === "Order") {
+      setQuotationData((prev) => ({
+        ...prev,
+        discountType: orderData.extraDiscountType || "percent",
+        discountAmount: orderData.extraDiscount?.toString() || "",
+      }));
+    }
+  }, [documentType, orderData.extraDiscountType, orderData.extraDiscount]);
 
-  const handleDiscountTypeChange = (productId, type) => {
-    setItemDiscountTypes((prev) => ({ ...prev, [productId]: type }));
-  };
-
-  const handleTaxChange = (productId, value) => {
-    setItemTaxes((prev) => ({ ...prev, [productId]: value >= 0 ? value : 0 }));
-  };
+  // ────────────────────── HANDLERS ──────────────────────
+  const handleShippingChange = useCallback((v) => setShipping(v), []);
+  const handleDiscountChange = (productId, value) =>
+    setItemDiscounts((p) => ({ ...p, [productId]: value >= 0 ? value : 0 }));
+  const handleDiscountTypeChange = (productId, type) =>
+    setItemDiscountTypes((p) => ({ ...p, [productId]: type }));
+  const handleTaxChange = (productId, value) =>
+    setItemTaxes((p) => ({ ...p, [productId]: value >= 0 ? value : 0 }));
 
   const handleClearCart = async () => {
     if (!userId) return message.error("User not logged in!");
     try {
       await clearCart({ userId }).unwrap();
-      setItemDiscounts({});
-      setItemTaxes({});
-      setItemDiscountTypes({});
-      setQuotationNumber(generateQuotationNumber());
-      setPurchaseOrderNumber(generatePurchaseOrderNumber(orders));
-      setPurchaseOrderData((prev) => ({ ...prev, items: [] }));
-
+      resetForm();
       setShowClearCartModal(false);
       setActiveTab("cart");
-    } catch (error) {
-      message.error(`Error: ${error.data?.message || "Failed to clear cart"}`);
+    } catch (e) {
+      message.error(e.data?.message || "Failed to clear cart");
     }
   };
-  // ────────────────────────────────────────────────────────────────────────
-  //  Optimistic remove (trash icon)  –  NO PAGE REFRESH
-  // ────────────────────────────────────────────────────────────────────────
+
   const handleRemoveItem = useCallback(
     async (e, productId) => {
-      if (e && e.preventDefault) e.preventDefault();
-      if (e && e.stopPropagation) e.stopPropagation();
+      e?.preventDefault?.();
+      e?.stopPropagation?.();
 
       if (!userId) return message.error("User not logged in!");
 
-      // Optimistic removal
+      // Optimistic UI
       dispatch(
         cartApi.util.updateQueryData("getCart", userId, (draft) => {
           draft.cart.items = draft.cart.items.filter(
@@ -516,7 +393,7 @@ const NewCart = ({ onConvertToOrder }) => {
         })
       );
 
-      // Clean state
+      // Clean local state
       setItemDiscounts((p) => {
         const { [productId]: _, ...rest } = p;
         return rest;
@@ -534,14 +411,12 @@ const NewCart = ({ onConvertToOrder }) => {
 
       try {
         await removeFromCart({ userId, productId }).unwrap();
-        // NO refetch()
       } catch (err) {
-        message.error(`Error: ${err?.data?.message || "Failed"}`);
-        // Rollback
+        message.error(err?.data?.message || "Failed");
         dispatch(
-          cartApi.util.updateQueryData("getCart", userId, (draft) => {
-            draft.cart.items = cartItems;
-          })
+          cartApi.util.updateQueryData("getCart", userId, () => ({
+            cart: { items: cartItems },
+          }))
         );
       } finally {
         setUpdatingItems((p) => ({ ...p, [productId]: false }));
@@ -549,45 +424,65 @@ const NewCart = ({ onConvertToOrder }) => {
     },
     [userId, cartItems, dispatch, removeFromCart]
   );
-  // ────────────────────────────────────────────────────────────────────────
-  //  Optimistic quantity update ( + / – )  –  NO PAGE REFRESH
-  // ────────────────────────────────────────────────────────────────────────
+
   const handleUpdateQuantity = useCallback(
-    async (productId, newQuantity) => {
-      if (!userId || newQuantity < 1) return;
-
+    async (productId, newQty) => {
+      if (!userId || newQty < 1) return;
       setUpdatingItems((p) => ({ ...p, [productId]: true }));
-
       try {
         await updateCart({
           userId,
           productId,
-          quantity: Number(newQuantity),
+          quantity: Number(newQty),
         }).unwrap();
       } catch (err) {
-        message.error(`Error: ${err?.data?.message || "Failed"}`);
+        message.error(err?.data?.message || "Failed");
       } finally {
         setUpdatingItems((p) => ({ ...p, [productId]: false }));
       }
     },
     [userId, updateCart]
   );
-  // Add this useMemo
-
   const handleTeamAdded = (showModal) => {
     setShowAddTeamModal(showModal);
     if (!showModal) refetchTeams();
   };
-
-  const handleAddressSave = async (newAddressId) => {
-    setOrderData((prev) => ({ ...prev, shipTo: newAddressId }));
-    setShowAddAddressModal(false);
-    await refetchAddresses();
-    if (useBillingAddress) setUseBillingAddress(true);
-  };
   const handleQuotationChange = useCallback((key, value) => {
     setQuotationData((prev) => ({ ...prev, [key]: value }));
   }, []);
+  const purchaseOrderTotal = useMemo(
+    () =>
+      purchaseOrderData.items
+        .reduce(
+          (sum, item) =>
+            sum + Number(item.total || 0) * (1 + (item.tax || 0) / 100),
+          0
+        )
+        .toFixed(2),
+    [purchaseOrderData.items]
+  );
+
+  const debouncedSearch = useCallback(
+    debounce((value) => {
+      setProductSearch(value);
+      if (value) {
+        const filtered = products
+          .filter(
+            (p) =>
+              p.productId &&
+              (p.name?.toLowerCase().includes(value.toLowerCase()) ||
+                p.product_code?.toLowerCase().includes(value.toLowerCase()))
+          )
+          .slice(0, 5);
+        setFilteredProducts(filtered);
+      } else {
+        setFilteredProducts([]);
+      }
+    }, 300),
+    [products]
+  );
+
+  // ────────────────────── CREATE DOCUMENT (main handler) ──────────────────────
   const handleCreateDocument = async () => {
     if (documentType === "Purchase Order") {
       if (!selectedVendor) return message.error("Please select a vendor.");
@@ -918,16 +813,6 @@ const NewCart = ({ onConvertToOrder }) => {
     }
   };
 
-  // Sync OrderForm extra discount changes back to quotationData for consistent totals
-  useEffect(() => {
-    if (documentType === "Order") {
-      setQuotationData((prev) => ({
-        ...prev,
-        discountType: orderData.extraDiscountType || "percent",
-        discountAmount: orderData.extraDiscount?.toString() || "",
-      }));
-    }
-  }, [documentType, orderData.extraDiscountType, orderData.extraDiscount]);
   const resetForm = () => {
     setQuotationData({
       quotationDate: new Date().toISOString().split("T")[0],
@@ -937,29 +822,23 @@ const NewCart = ({ onConvertToOrder }) => {
       signatureName: "CM TRADING CO",
       discountType: "percent",
       discountAmount: "",
-      roundOff: "",
       followupDates: [],
     });
-    setOrderData({
+    setOrderData((prev) => ({
+      ...prev,
       createdFor: "",
-      createdBy: userId || "",
       assignedTeamId: "",
       assignedUserId: "",
       secondaryUserId: "",
       pipeline: "",
-      status: "PREPARING",
       dueDate: moment().add(1, "days").format("YYYY-MM-DD"),
       followupDates: [],
       source: "",
       priority: "medium",
       description: "",
-      invoiceLink: null,
       orderNo: "",
-      quotationId: "",
-      masterPipelineNo: "",
-      previousOrderNo: "",
       shipTo: null,
-    });
+    }));
     setPurchaseOrderData({
       vendorId: "",
       orderDate: moment().format("YYYY-MM-DD"),
@@ -982,7 +861,6 @@ const NewCart = ({ onConvertToOrder }) => {
     setFilteredProducts([]);
     setUseBillingAddress(false);
   };
-
   const validateFollowupDates = () => {
     if (!orderData.dueDate || orderData.followupDates.length === 0) return true;
     const dueDate = moment(orderData.dueDate);
@@ -1007,37 +885,15 @@ const NewCart = ({ onConvertToOrder }) => {
 
   const handleAddAddress = () => setShowAddAddressModal(true);
 
-  // ==================== RENDER ====================
-  if (
-    profileLoading ||
-    cartLoading ||
-    productsLoading ||
-    isAllOrdersLoading ||
-    teamsLoading ||
-    isProductsLoading ||
-    isVendorsLoading
-  ) {
-    return (
-      <PageWrapper>
-        <Spin size="large" style={{ display: "block", margin: "50px auto" }} />
-      </PageWrapper>
-    );
-  }
-
-  if (profileError || cartError || productErrors.length > 0 || allOrdersError) {
+  // ────────────────────── RENDER ──────────────────────
+  // Global loader handles loading → only show real errors here
+  if (productErrors.length > 0) {
     return (
       <PageWrapper>
         <Alert
-          message="Error loading data"
-          description={
-            profileError?.message ||
-            cartError?.message ||
-            productErrors.map((err) => err.error).join(", ") ||
-            allOrdersError?.data?.message ||
-            "An unexpected error occurred"
-          }
+          message="Error loading cart products"
+          description={productErrors.map((e) => e.error).join(", ")}
           type="error"
-          action={<Button type="primary">Retry</Button>}
           showIcon
         />
       </PageWrapper>
@@ -1047,12 +903,7 @@ const NewCart = ({ onConvertToOrder }) => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        <Tabs
-          activeKey={activeTab}
-          onChange={setActiveTab}
-          type="card"
-          style={{ marginBottom: 16 }}
-        >
+        <Tabs activeKey={activeTab} onChange={setActiveTab} type="card">
           <TabPane
             tab={
               <span>
@@ -1101,9 +952,7 @@ const NewCart = ({ onConvertToOrder }) => {
                 selectedVendor={selectedVendor}
                 setSelectedVendor={setSelectedVendor}
                 vendors={vendors}
-                isVendorsLoading={isVendorsLoading}
                 products={products}
-                isProductsLoading={isProductsLoading}
                 productSearch={productSearch}
                 filteredProducts={filteredProducts}
                 debouncedSearch={debouncedSearch}
@@ -1205,23 +1054,15 @@ const NewCart = ({ onConvertToOrder }) => {
                 selectedCustomer={selectedCustomer}
                 setSelectedCustomer={setSelectedCustomer}
                 customers={customerList}
-                customersLoading={customersLoading}
-                customersError={customersError}
                 shipping={shipping}
                 onShippingChange={handleShippingChange}
                 addresses={addresses}
-                addressesLoading={addressesLoading}
-                addressesError={addressesError}
                 userMap={userMap}
                 customerMap={customerMap}
                 userQueries={userQueries}
                 customerQueries={customerQueries}
                 teams={teams}
-                teamsLoading={teamsLoading}
                 users={users}
-                usersLoading={usersLoading}
-                usersError={usersError}
-                error={error}
                 orderNumber={orderData.orderNo}
                 documentType={documentType}
                 setDocumentType={setDocumentType}
@@ -1250,16 +1091,11 @@ const NewCart = ({ onConvertToOrder }) => {
                 onShippingChange={handleShippingChange}
                 setSelectedCustomer={setSelectedCustomer}
                 customers={customerList}
-                customersLoading={customersLoading}
-                customersError={customersError}
                 addresses={addresses}
-                addressesLoading={addressesLoading}
-                addressesError={addressesError}
                 userMap={userMap}
                 customerMap={customerMap}
                 userQueries={userQueries}
                 customerQueries={customerQueries}
-                error={error}
                 quotationNumber={quotationNumber}
                 documentType={documentType}
                 setDocumentType={setDocumentType}
@@ -1283,11 +1119,14 @@ const NewCart = ({ onConvertToOrder }) => {
                 setUseBillingAddress={setUseBillingAddress}
                 itemDiscounts={itemDiscounts}
                 itemTaxes={itemTaxes}
+                previewVisible={previewVisible}
+                setPreviewVisible={setPreviewVisible}
               />
             )}
           </TabPane>
         </Tabs>
 
+        {/* Modals */}
         <Modal
           title="Confirm Clear Cart"
           open={showClearCartModal}
@@ -1295,7 +1134,6 @@ const NewCart = ({ onConvertToOrder }) => {
           onCancel={() => setShowClearCartModal(false)}
           okText="Clear"
           okButtonProps={{ danger: true }}
-          cancelText="Cancel"
         >
           <Text>Are you sure you want to clear all items from your cart?</Text>
         </Modal>
@@ -1303,7 +1141,7 @@ const NewCart = ({ onConvertToOrder }) => {
         {showAddAddressModal && (
           <AddAddress
             onClose={() => setShowAddAddressModal(false)}
-            onSave={handleAddressSave}
+            onSave={() => {}}
             selectedCustomer={selectedCustomer}
           />
         )}
@@ -1317,14 +1155,7 @@ const NewCart = ({ onConvertToOrder }) => {
 
         {showAddTeamModal && (
           <AddNewTeam
-            onClose={() => handleTeamAdded(false)}
-            onTeamAdded={(newTeamId) => {
-              handleTeamAdded(false);
-              setOrderData((prev) => ({
-                ...prev,
-                assignedTeamId: newTeamId,
-              }));
-            }}
+            onClose={() => setShowAddTeamModal(false)}
             visible={showAddTeamModal}
           />
         )}
@@ -1334,9 +1165,27 @@ const NewCart = ({ onConvertToOrder }) => {
             visible={showAddCustomerModal}
             onClose={() => setShowAddCustomerModal(false)}
             customer={null}
-            onSave={handleCustomerSave}
+            onSave={() => {}}
           />
         )}
+
+        <PreviewQuotation
+          visible={previewVisible}
+          onClose={() => setPreviewVisible(false)}
+          cartItems={cartItems}
+          productsData={cartProductsData}
+          customer={customerList.find((c) => c.customerId === selectedCustomer)}
+          address={addresses.find((a) => a.addressId === quotationData.shipTo)}
+          quotationData={{
+            ...quotationData,
+            reference_number: quotationNumber,
+          }}
+          itemDiscounts={itemDiscounts}
+          itemDiscountTypes={itemDiscountTypes}
+          itemTaxes={itemTaxes}
+          gstRate={gst}
+          includeGst
+        />
       </div>
     </div>
   );
@@ -1347,8 +1196,7 @@ NewCart.propTypes = {
 };
 
 NewCart.defaultProps = {
-  onConvertToOrder: (data) =>
-    console.warn("onConvertToOrder not provided", data),
+  onConvertToOrder: () => {},
 };
 
 export default NewCart;

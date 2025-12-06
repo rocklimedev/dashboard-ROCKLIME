@@ -10,7 +10,6 @@ import {
   Tag,
   Tooltip,
   Empty,
-  Spin,
   message,
   Popconfirm,
 } from "antd";
@@ -60,26 +59,10 @@ const CategoryManagement = () => {
   const [productNotFound, setProductNotFound] = useState(false);
 
   // === API ===
-  const {
-    data: parentData,
-    isLoading: parentLoading,
-    error: parentError,
-  } = useGetAllParentCategoriesQuery();
-  const {
-    data: catData,
-    isLoading: catLoading,
-    error: catError,
-  } = useGetAllCategoriesQuery();
-  const {
-    data: kwData,
-    isLoading: kwLoading,
-    error: kwError,
-  } = useGetAllKeywordsQuery();
-  const {
-    data: prodData,
-    isLoading: prodLoading,
-    error: prodError,
-  } = useGetAllProductCodesQuery();
+  const { data: parentData } = useGetAllParentCategoriesQuery();
+  const { data: catData } = useGetAllCategoriesQuery();
+  const { data: kwData } = useGetAllKeywordsQuery();
+  const { data: prodData } = useGetAllProductCodesQuery();
 
   const [deleteParent] = useDeleteParentCategoryMutation();
   const [deleteCategory] = useDeleteCategoryMutation();
@@ -141,10 +124,10 @@ const CategoryManagement = () => {
           <Popconfirm
             title={`Delete this ${type}?`}
             onConfirm={(e) => {
-              e.stopPropagation();
+              e?.stopPropagation();
               handleDelete(item, type);
             }}
-            onCancel={(e) => e.stopPropagation()}
+            onCancel={(e) => e?.stopPropagation()}
             okText="Yes"
             cancelText="No"
           >
@@ -180,32 +163,26 @@ const CategoryManagement = () => {
       ) {
         setSelectedNode(null);
       }
+      message.success("Deleted successfully");
     } catch (err) {
       message.error(err?.data?.message || "Delete failed");
     }
   };
 
   const handleNodeSelect = (selectedKeys, info) => {
-    if (!selectedKeys || selectedKeys.length === 0) {
+    if (!selectedKeys.length) {
       setSelectedNode(null);
       return;
     }
 
     const node = info.node;
-
-    // Extract correct ID safely
     let id;
-    if (node.type === "parent") {
-      id = node.data?.id;
-    } else if (node.type === "category") {
-      id = node.data?.categoryId;
-    } else if (node.type === "keyword") {
-      id = node.data?.id;
-    }
+    if (node.type === "parent") id = node.data?.id;
+    else if (node.type === "category") id = node.data?.categoryId;
+    else if (node.type === "keyword") id = node.data?.id;
 
-    // Safety check
     if (id === undefined || id === null) {
-      console.warn("Selected node has no valid ID", node);
+      console.warn("Invalid node selected", node);
       setSelectedNode(null);
       return;
     }
@@ -234,57 +211,37 @@ const CategoryManagement = () => {
 
   // === Table Columns ===
   const productColumns = [
-    {
-      title: "#",
-      key: "index",
-      width: 60,
-      render: (_, __, index) => index + 1,
-    },
+    { title: "#", key: "index", width: 60, render: (_, __, i) => i + 1 },
     {
       title: "Image",
       key: "image",
       width: 70,
-      render: (_, record) => {
-        let imageUrl = null;
-
-        // Safely parse images
-        if (record.images && typeof record.images === "string") {
+      render: (_, r) => {
+        let url = null;
+        if (r.images) {
           try {
-            const parsed = JSON.parse(record.images);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              imageUrl = parsed[0];
-            } else if (typeof parsed === "string") {
-              imageUrl = parsed;
-            }
-          } catch (e) {
-            // Optional: report to backend via logging
-          }
+            const parsed = JSON.parse(r.images);
+            url = Array.isArray(parsed)
+              ? parsed[0]
+              : typeof parsed === "string"
+              ? parsed
+              : null;
+          } catch {}
         }
-
-        return imageUrl ? (
-          <img src={imageUrl} alt={record.name} className="product-image" />
+        return url ? (
+          <img src={url} alt={r.name} className="product-image" />
         ) : (
           <div className="no-image">No img</div>
         );
       },
     },
-    {
-      title: "Name",
-      dataIndex: "name",
-      key: "name",
-      ellipsis: true,
-    },
-    {
-      title: "Code",
-      dataIndex: "product_code",
-      key: "code",
-    },
+    { title: "Name", dataIndex: "name", ellipsis: true },
+    { title: "Code", dataIndex: "product_code" },
     {
       title: "Action",
-      key: "action",
       width: 100,
-      render: (_, record) => (
-        <Link to={`/product/${record.productId}/edit`}>
+      render: (_, r) => (
+        <Link to={`/product/${r.productId}/edit`}>
           <Button size="small" type="link">
             Edit
           </Button>
@@ -351,43 +308,19 @@ const CategoryManagement = () => {
     });
   }, [parentCategories, categories, keywords, searchTerm, products]);
 
-  // === Modal Close ===
-  const handleCloseParentCategoryModal = () => {
+  // === Modal Close Handlers ===
+  const closeParentModal = () => {
     setShowParentModal(false);
     setEditingItem(null);
   };
-
-  const handleCloseCategoryModal = () => {
+  const closeCategoryModal = () => {
     setShowCategoryModal(false);
     setEditingItem(null);
   };
-
-  const handleCloseKeywordModal = () => {
+  const closeKeywordModal = () => {
     setShowKeywordModal(false);
     setEditingItem(null);
   };
-
-  // === Loading & Error ===
-  if (parentLoading || catLoading || kwLoading || prodLoading)
-    return (
-      <div className="page-wrapper">
-        <div
-          className="content"
-          style={{ padding: "24px", textAlign: "center" }}
-        >
-          <Spin size="large" />
-        </div>
-      </div>
-    );
-
-  if (parentError || catError || kwError || prodError)
-    return (
-      <div className="page-wrapper">
-        <div className="content" style={{ padding: "24px" }}>
-          <Empty description="Failed to load data" />
-        </div>
-      </div>
-    );
 
   return (
     <>
@@ -702,7 +635,6 @@ const CategoryManagement = () => {
         }
       `}</style>
 
-      {/* JSX */}
       <div className="page-wrapper">
         <div className="content">
           <div className="main-layout">
@@ -718,7 +650,6 @@ const CategoryManagement = () => {
                 <Space className="action-buttons" wrap>
                   <Button
                     type="primary"
-                    size="small"
                     icon={<PlusOutlined />}
                     onClick={() => {
                       setEditingItem(null);
@@ -728,32 +659,22 @@ const CategoryManagement = () => {
                     Parent
                   </Button>
                   <Button
-                    size="small"
                     icon={<PlusOutlined />}
+                    disabled={!selectedNode || selectedNode.type !== "parent"}
                     onClick={() => {
-                      if (!selectedNode || selectedNode.type !== "parent") {
-                        message.warning("Select a parent category first");
-                        return;
-                      }
                       setEditingItem(null);
                       setShowCategoryModal(true);
                     }}
-                    disabled={!selectedNode || selectedNode.type !== "parent"}
                   >
                     Category
                   </Button>
                   <Button
-                    size="small"
                     icon={<PlusOutlined />}
+                    disabled={!selectedNode || selectedNode.type !== "category"}
                     onClick={() => {
-                      if (!selectedNode || selectedNode.type !== "category") {
-                        message.warning("Select a category first");
-                        return;
-                      }
                       setEditingItem(null);
                       setShowKeywordModal(true);
                     }}
-                    disabled={!selectedNode || selectedNode.type !== "category"}
                   >
                     Keyword
                   </Button>
@@ -826,15 +747,14 @@ const CategoryManagement = () => {
                   title={
                     <Space>
                       {selectedNode.type === "parent" && <FolderOutlined />}
+
                       {selectedNode.type === "category" && <FolderOutlined />}
                       {selectedNode.type === "keyword" && <TagOutlined />}
-                      <span>
-                        {selectedNode.type === "parent"
-                          ? parentMap[selectedNode.id]
-                          : selectedNode.type === "category"
-                          ? categoryMap[selectedNode.id]
-                          : selectedNode.data.keyword}
-                      </span>
+                      {selectedNode.type === "parent"
+                        ? parentMap[selectedNode.id]
+                        : selectedNode.type === "category"
+                        ? categoryMap[selectedNode.id]
+                        : selectedNode.data.keyword}
                     </Space>
                   }
                 >
@@ -870,7 +790,7 @@ const CategoryManagement = () => {
           {/* Modals */}
           <AddParentCategoryModal
             open={showParentModal}
-            onClose={handleCloseParentCategoryModal}
+            onClose={closeParentModal}
             editMode={!!editingItem && editingItem.type === "parent"}
             parentCategoryData={
               editingItem?.type === "parent" ? editingItem : null
@@ -879,7 +799,7 @@ const CategoryManagement = () => {
 
           <AddCategoryModal
             open={showCategoryModal}
-            onClose={handleCloseCategoryModal}
+            onClose={closeCategoryModal}
             editMode={!!editingItem && editingItem.type === "category"}
             categoryData={editingItem?.type === "category" ? editingItem : null}
             selectedParentId={
@@ -889,7 +809,7 @@ const CategoryManagement = () => {
 
           <AddKeywordModal
             open={showKeywordModal}
-            onClose={handleCloseKeywordModal}
+            onClose={closeKeywordModal}
             editData={editingItem?.type === "keyword" ? editingItem : null}
             selectedCategoryId={
               selectedNode?.type === "category" ? selectedNode.id : null

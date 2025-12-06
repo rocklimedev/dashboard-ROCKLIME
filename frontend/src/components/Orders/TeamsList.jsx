@@ -6,7 +6,6 @@ import DeleteModal from "../Common/DeleteModal";
 import DataTablePagination from "../Common/DataTablePagination";
 import {
   SearchOutlined,
-  PlusOutlined,
   EditOutlined,
   DeleteOutlined,
 } from "@ant-design/icons";
@@ -15,14 +14,15 @@ import Avatar from "react-avatar";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { FaThList, FaThLarge } from "react-icons/fa";
 import { Dropdown, Menu } from "antd";
+
 const TeamsList = () => {
-  const { data, isLoading, isError, refetch } = useGetAllTeamsQuery();
+  const { data, refetch } = useGetAllTeamsQuery();
   const [deleteTeam, { isLoading: isDeleting }] = useDeleteTeamMutation();
 
   const teams = Array.isArray(data?.teams) ? data.teams : [];
 
-  // State
-  const [viewMode, setViewMode] = useState("list"); // that's it!
+  // === State ===
+  const [viewMode, setViewMode] = useState("list");
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("All");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -32,7 +32,7 @@ const TeamsList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
 
-  // Grouped teams
+  // === Grouping ===
   const groupedTeams = useMemo(
     () => ({
       All: teams,
@@ -43,7 +43,7 @@ const TeamsList = () => {
     [teams]
   );
 
-  // Filtered teams
+  // === Filtering & Sorting ===
   const filteredTeams = useMemo(() => {
     let result = groupedTeams[activeTab] || [];
 
@@ -66,6 +66,7 @@ const TeamsList = () => {
     return filteredTeams.slice(start, start + itemsPerPage);
   }, [filteredTeams, currentPage]);
 
+  // === Handlers ===
   const handleAddTeam = () => {
     setSelectedTeam(null);
     setShowNewTeamModal(true);
@@ -86,12 +87,15 @@ const TeamsList = () => {
 
     try {
       await deleteTeam(teamToDelete.id).unwrap();
+      message.success("Team deleted successfully");
       refetch();
+
+      // Adjust page if needed
       if (paginatedTeams.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
     } catch (err) {
-      message.error(err.data?.message || "Failed to delete team");
+      message.error(err?.data?.message || "Failed to delete team");
     } finally {
       setShowDeleteModal(false);
       setTeamToDelete(null);
@@ -103,30 +107,12 @@ const TeamsList = () => {
     setCurrentPage(1);
   };
 
-  if (isLoading) {
-    return (
-      <div className="content p-5 text-center">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
-        <p className="mt-3">Loading teams...</p>
-      </div>
-    );
-  }
+  const closeModal = () => {
+    setShowNewTeamModal(false);
+    setSelectedTeam(null);
+  };
 
-  if (isError) {
-    return (
-      <div className="content p-4">
-        <div className="alert alert-danger">
-          Failed to load teams.{" "}
-          <button className="btn btn-link p-0" onClick={refetch}>
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
-
+  // === Render (No loading/error states — handled globally) ===
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -135,7 +121,6 @@ const TeamsList = () => {
             title="Teams"
             subtitle="Manage your teams & team members"
             onAdd={handleAddTeam}
-            tableData={paginatedTeams}
           />
 
           <div className="card-body">
@@ -163,7 +148,7 @@ const TeamsList = () => {
               </div>
 
               <div className="col-lg-4">
-                <div className="d-flex justify-content-end gap-2">
+                <div className="d-flex justify-content-end gap-2 flex-wrap">
                   <div className="position-relative" style={{ width: 250 }}>
                     <SearchOutlined className="position-absolute top-50 start-3 translate-middle-y text-muted" />
                     <input
@@ -191,6 +176,7 @@ const TeamsList = () => {
                           : "btn-outline-secondary"
                       }`}
                       onClick={() => setViewMode("list")}
+                      title="List View"
                     >
                       <FaThList />
                     </button>
@@ -201,6 +187,7 @@ const TeamsList = () => {
                           : "btn-outline-secondary"
                       }`}
                       onClick={() => setViewMode("card")}
+                      title="Card View"
                     >
                       <FaThLarge />
                     </button>
@@ -218,10 +205,9 @@ const TeamsList = () => {
                       hoverable
                       className="h-100 shadow-sm"
                       actions={[
-                        <EditOutlined
-                          key="edit"
-                          onClick={() => handleEditTeam(team)}
-                        />,
+                        <Tooltip title="Edit" key="edit">
+                          <EditOutlined onClick={() => handleEditTeam(team)} />
+                        </Tooltip>,
                         <Dropdown
                           key="more"
                           overlay={
@@ -250,9 +236,12 @@ const TeamsList = () => {
                           className="me-3"
                         />
                         <div>
-                          <h6 className="mb-0">{team.teamName}</h6>
+                          <h6 className="mb-0">
+                            {team.teamName || "Unnamed Team"}
+                          </h6>
                           <small className="text-muted">
-                            {team.teammembers?.length || 0} members
+                            {team.teammembers?.length || 0} member
+                            {team.teammembers?.length !== 1 ? "s" : ""}
                           </small>
                         </div>
                       </div>
@@ -279,7 +268,7 @@ const TeamsList = () => {
                             name={`+${team.teammembers.length - 6}`}
                             size="32"
                             round
-                            color="#999"
+                            style={{ backgroundColor: "#999" }}
                           />
                         )}
                       </Space>
@@ -329,20 +318,22 @@ const TeamsList = () => {
                                 name={`+${team.teammembers.length - 5}`}
                                 size="30"
                                 round
-                                color="#666"
+                                style={{ backgroundColor: "#666" }}
                               />
                             )}
-                            <span className="text-muted small">
+                            <span className="text-muted small ms-2">
                               ({team.teammembers?.length || 0})
                             </span>
                           </Space>
                         </td>
                         <td>
                           <Space>
-                            <EditOutlined
-                              style={{ cursor: "pointer", fontSize: 18 }}
-                              onClick={() => handleEditTeam(team)}
-                            />
+                            <Tooltip title="Edit">
+                              <EditOutlined
+                                style={{ cursor: "pointer", fontSize: 18 }}
+                                onClick={() => handleEditTeam(team)}
+                              />
+                            </Tooltip>
                             <Dropdown
                               overlay={
                                 <Menu>
@@ -388,7 +379,7 @@ const TeamsList = () => {
         <AddNewTeam
           team={selectedTeam}
           visible={showNewTeamModal}
-          onClose={() => setShowNewTeamModal(false)}
+          onClose={closeModal}
           onTeamAdded={refetch}
         />
 
@@ -400,7 +391,7 @@ const TeamsList = () => {
             setTeamToDelete(null);
           }}
           itemType="Team"
-          item={teamToDelete}
+          item={teamToDelete?.teamName}
           isLoading={isDeleting}
         />
       </div>
