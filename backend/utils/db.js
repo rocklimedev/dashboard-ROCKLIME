@@ -318,7 +318,7 @@ const setupDB = async () => {
 
     Keyword.hasMany(ProductKeyword, {
       foreignKey: "keywordId",
-      as: "product_keywords",
+      as: "keyword_products", // ← CHANGE THIS — MUST BE UNIQUE!
     });
 
     // Join table → belongsTo both sides

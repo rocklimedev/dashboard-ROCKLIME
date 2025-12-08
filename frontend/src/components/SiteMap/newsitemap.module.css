@@ -1,0 +1,389 @@
+/* ============================================= */
+/*              newsitemap.module.css            */
+/*        FIXED & OPTIMIZED FOR A4 PDF EXPORT    */
+/* ============================================= */
+
+.printArea {
+  background: white;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto;
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  transform-origin: top left;
+}
+
+/* Force exact A4 size on all printable pages */
+.coverPage,
+.mockupPage,
+.thankYouPage {
+  width: 210mm !important;
+  height: 297mm !important;
+  page-break-after: always;
+  page-break-inside: avoid;
+  box-sizing: border-box;
+  background: white;
+  position: relative;
+  overflow: hidden;
+  display: block;
+}
+
+/* ============================================= */
+/*                 COVER PAGE                    */
+/* ============================================= */
+.coverPage {
+  padding: 40px 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logoCenter {
+  margin-top: 100px;
+  text-align: center;
+}
+
+.mainLogo {
+  width: 180px;
+  height: auto;
+  margin-bottom: 30px;
+  display: block;
+}
+
+.mockupBig {
+  font-size: 48px;
+  font-weight: bold;
+  color: #333;
+  letter-spacing: 5px;
+  margin: 20px 0;
+  text-transform: uppercase;
+}
+
+.coverFooter {
+  width: 100%;
+  text-align: center;
+  margin-top: auto;
+}
+
+.redLineLong {
+  height: 6px;
+  background: #e30613;
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.brandLogos {
+  display: flex;
+  justify-content: center;
+  gap: 60px;
+  font-size: 28px;
+  font-weight: bold;
+  color: #333;
+  text-transform: uppercase;
+}
+
+/* ============================================= */
+/*                 MOCKUP PAGE                   */
+/* ============================================= */
+.mockupPage {
+  padding: 35px 30px;
+}
+
+.header {
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.title {
+  font-size: 32px;
+  color: #e30613;
+  font-weight: bold;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.pageInfo {
+  font-size: 14px;
+  color: #666;
+  margin-top: 8px;
+}
+
+.redLineShort {
+  height: 5px;
+  background: #e30613;
+  width: 100%;
+  margin: 18px 0 30px;
+}
+
+.labelsRow {
+  display: flex;
+  justify-content: space-between;
+  margin: 20px 30px 35px;
+  font-weight: bold;
+  font-size: 24px;
+  color: #e30613;
+  text-transform: uppercase;
+}
+
+.labelShower {
+  transform: rotate(-8deg);
+  margin-left: 10px;
+}
+
+.labelBasin {
+  text-align: center;
+}
+
+.labelWc {
+  transform: rotate(8deg);
+  margin-right: 10px;
+}
+
+.grid {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 15px;
+  gap: 20px;
+  min-height: 620px; /* Ensures enough vertical space */
+}
+
+.column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.productCard {
+  width: 160px;
+  text-align: center;
+  page-break-inside: avoid;
+}
+
+.productCard img {
+  width: 130px;
+  height: 130px;
+  object-fit: contain;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fafafa;
+  display: block;
+}
+
+.code {
+  margin: 10px 0 4px;
+  font-size: 13px;
+  color: #333;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.name {
+  font-size: 13px;
+  color: #222;
+  margin: 4px 0;
+  line-height: 1.3;
+  height: 36px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.price {
+  margin: 6px 0 0;
+  font-size: 14px;
+  font-weight: bold;
+  color: #000;
+}
+
+.footer {
+  position: absolute;
+  bottom: 30px;
+  left: 30px;
+  right: 30px;
+  text-align: center;
+}
+
+/* ============================================= */
+/*               THANK YOU PAGE                  */
+/* ============================================= */
+.thankYouPage {
+  padding: 40px 50px;
+  text-align: center;
+}
+
+.thankYouPage h1 {
+  font-size: 90px;
+  color: #e30613;
+  margin-top: 160px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+}
+
+.address {
+  font-size: 18px;
+  color: #555;
+  margin: 50px 0 60px;
+  line-height: 1.6;
+}
+
+.summary {
+  width: 680px;
+  max-width: 100%;
+  margin: 0 auto 50px;
+}
+
+.summary table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 17px;
+  margin-bottom: 20px;
+}
+
+.summary th,
+.summary td {
+  border: 1.5px solid #999;
+  padding: 14px 16px;
+  text-align: left;
+}
+
+.summary th {
+  background: #f0f0f0;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.grandTotalRow td {
+  font-weight: bold;
+  font-size: 20px;
+  background: #e8e8e8;
+  color: #000;
+}
+
+.inWords {
+  margin: 40px auto;
+  font-size: 18px;
+  font-style: italic;
+  max-width: 700px;
+  line-height: 1.5;
+  color: #333;
+}
+
+.termsBank {
+  display: flex;
+  justify-content: space-between;
+  gap: 40px;
+  width: 800px;
+  max-width: 100%;
+  margin: 0 auto;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.terms,
+.bank {
+  width: 48%;
+  text-align: left;
+}
+
+.terms h4,
+.bank h4 {
+  color: #e30613;
+  margin-bottom: 14px;
+  font-size: 17px;
+  text-transform: uppercase;
+}
+
+.terms ol {
+  padding-left: 20px;
+  margin: 0;
+}
+
+.terms li {
+  margin-bottom: 8px;
+}
+
+/* ============================================= */
+/*               PRINT & PDF FIXES               */
+/* ============================================= */
+@page {
+  size: A4 portrait;
+  margin: 0;
+}
+
+@media print {
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 297mm;
+    width: 210mm;
+    background: white !important;
+  }
+
+  .printArea {
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    width: 210mm !important;
+    height: auto !important;
+  }
+
+  /* Hide everything except the printable content */
+  .backButton,
+  .card,
+  .ant-btn,
+  .text-end {
+    display: none !important;
+  }
+}
+
+/* Critical for html2pdf.js */
+.quotation-page-print {
+  transform: translateZ(0);
+  -webkit-font-smoothing: antialiased;
+  image-rendering: -webkit-optimize-contrast;
+}
+
+/* Force images to load cross-origin */
+.printArea img {
+  cross-origin: anonymous;
+  loading: eager !important;
+  max-width: 100% !important;
+  height: auto !important;
+}
+/* newsitemap.module.css */
+.imageWrapper {
+  width: 100%;
+  height: 120px;
+  background: #f8f8f8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 4px;
+}
+
+.imageWrapper img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.imageWrapper img.loaded {
+  opacity: 1;
+}
+
+.productCard {
+  position: relative;
+}

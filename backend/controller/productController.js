@@ -16,105 +16,67 @@ const Category = require("../models/category");
 
 // Correct import
 const { uploadToFtp } = require("../middleware/upload"); // ← this is where it really is
+// controllers/productController.js
+
+// ==================== CREATE PRODUCT ====================
+// ==================== CREATE PRODUCT ====================
+// ==================== CREATE PRODUCT (WITH FULL VARIANT SUPPORT) ====================
 exports.createProduct = async (req, res) => {
   const t = await sequelize.transaction();
 
   try {
     const {
       name,
-      product_code, // REQUIRED & unique — comes from frontend
-      price,
-      cost_price,
+      product_code,
       quantity = 0,
-      masterProductId, // if present → this is a variant
-      isMaster = false, // only true when creating the parent
-      variantOptions, // { color: "Red", size: "60x60" }
-      variantKey, // optional: human readable, e.g. "Red Matte"
-      skuSuffix = null, // optional, can be empty/null → ignored
+      isMaster,
+      masterProductId,
+      variantOptions: variantOptionsInput,
+      variantKey,
+      skuSuffix,
       meta: metaInput,
       isFeatured = false,
       status,
       ...restFields
     } = req.body;
 
-    // Parse meta if sent as string (from form-data)
     let metaObj = {};
     if (metaInput) {
       metaObj =
         typeof metaInput === "string" ? JSON.parse(metaInput) : metaInput;
     }
 
-    // === Validate ProductMeta fields ===
-    for (const metaId of Object.keys(metaObj)) {
-      const metaField = await ProductMeta.findByPk(metaId, { transaction: t });
-      if (!metaField) {
-        await t.rollback();
-        return res.status(400).json({ message: `Invalid meta ID: ${metaId}` });
-      }
-      if (metaField.fieldType === "number" && isNaN(metaObj[metaId])) {
-        await t.rollback();
-        return res
-          .status(400)
-          .json({ message: `${metaField.title} must be a number` });
-      }
-    }
-
-    // === Handle image uploads ===
     let imageUrls = [];
-    if (req.files && req.files.length > 0) {
+    if (req.files?.length > 0) {
       for (const file of req.files) {
         const url = await uploadToFtp(file.buffer, file.originalname);
         imageUrls.push(url);
       }
     }
 
-    // === Determine if this is a Master or Variant ===
     let productData = {
-      name,
-      product_code,
-      price,
-      cost_price,
+      name: name?.trim(),
+      product_code: product_code?.trim(),
       quantity: parseInt(quantity, 10),
       images: imageUrls.length > 0 ? JSON.stringify(imageUrls) : null,
       meta: Object.keys(metaObj).length > 0 ? metaObj : null,
-      isFeatured: isFeatured === true || isFeatured === "true",
+      isFeatured: isFeatured === "true" || isFeatured === true,
       status: status || (quantity > 0 ? "active" : "out_of_stock"),
-      ...restFields,
+      description: restFields.description || null,
+      tax: restFields.tax ? parseFloat(restFields.tax) : null,
+      alert_quantity: restFields.alert_quantity
+        ? parseInt(restFields.alert_quantity, 10)
+        : null,
+      categoryId: restFields.categoryId || null,
+      brandId: restFields.brandId || null,
+      vendorId: restFields.vendorId || null,
+      brand_parentcategoriesId: restFields.brand_parentcategoriesId || null,
     };
 
-    if (masterProductId) {
-      // ─── THIS IS A VARIANT ─────────────────────
-      const master = await Product.findOne({
-        where: { productId: masterProductId, isMaster: true },
-        transaction: t,
-      });
+    let finalProduct;
 
-      if (!master) {
-        await t.rollback();
-        return res.status(404).json({ message: "Master product not found" });
-      }
-
-      productData = {
-        ...productData,
-        masterProductId: master.productId,
-        isMaster: false,
-        variantOptions: variantOptions ? variantOptions : null,
-        variantKey: variantKey || null,
-        skuSuffix: skuSuffix || null, // can be null/empty → no problem
-        // Inherit shared fields if not provided
-        brandId: restFields.brandId || master.brandId,
-        categoryId: restFields.categoryId || master.categoryId,
-        vendorId: restFields.vendorId || master.vendorId,
-        brand_parentcategoriesId:
-          restFields.brand_parentcategoriesId ||
-          master.brand_parentcategoriesId,
-        // Optionally inherit images/meta if not provided
-        images:
-          imageUrls.length > 0 ? JSON.stringify(imageUrls) : master.images,
-        meta: Object.keys(metaObj).length > 0 ? metaObj : master.meta,
-      };
-    } else if (isMaster || isMaster === "true") {
-      // ─── THIS IS A MASTER PRODUCT ───────────────
+    // CASE 1: Creating a Master Product
+    if (isMaster === "true" || isMaster === true) {
       productData = {
         ...productData,
         isMaster: true,
@@ -123,35 +85,404 @@ exports.createProduct = async (req, res) => {
         variantKey: null,
         skuSuffix: null,
       };
-    } else {
-      // ─── REGULAR SINGLE PRODUCT (no variants) ───
-      productData = {
-        ...productData,
-        isMaster: false,
+
+      finalProduct = await Product.create(productData, { transaction: t });
+    }
+    // CASE 2: Creating a Variant (from master)
+    else if (masterProductId) {
+      const master = await Product.findOne({
+        where: { productId: masterProductId, isMaster: true },
+        transaction: t,
+      });
+
+      if (!master) {
+        await t.rollback();
+        return res.status(400).json({ message: "Master product not found" });
+      }
+
+      let variantOpts = {};
+      try {
+        variantOpts = variantOptionsInput
+          ? JSON.parse(variantOptionsInput)
+          : {};
+      } catch (e) {
+        await t.rollback();
+        return res.status(400).json({ message: "Invalid variantOptions JSON" });
+      }
+
+      const generatedVariantKey = Object.values(variantOpts)
+        .filter(Boolean)
+        .join(" ");
+      const generatedSkuSuffix = generatedVariantKey
+        ? `-${generatedVariantKey.toUpperCase().replace(/\s+/g, "-")}`
+        : "";
+
+      finalProduct = await Product.create(
+        {
+          ...productData,
+          name: name || `${master.name} - ${generatedVariantKey}`,
+          product_code:
+            product_code || `${master.product_code}${generatedSkuSuffix}`,
+          masterProductId: master.productId,
+          isMaster: false,
+          variantOptions: Object.keys(variantOpts).length ? variantOpts : null,
+          variantKey: generatedVariantKey || variantKey,
+          skuSuffix: generatedSkuSuffix || skuSuffix,
+          // Inherit from master if not provided
+          categoryId: restFields.categoryId || master.categoryId,
+          brandId: restFields.brandId || master.brandId,
+          vendorId: restFields.vendorId || master.vendorId,
+          brand_parentcategoriesId:
+            restFields.brand_parentcategoriesId ||
+            master.brand_parentcategoriesId,
+          images:
+            imageUrls.length > 0 ? JSON.stringify(imageUrls) : master.images,
+          meta: Object.keys(metaObj).length > 0 ? metaObj : master.meta,
+          description: restFields.description || master.description,
+        },
+        { transaction: t }
+      );
+    }
+    // CASE 3: Standalone product (no master, not master)
+    else {
+      productData.isMaster = false;
+      finalProduct = await Product.create(productData, { transaction: t });
+    }
+
+    // Handle keywords (after product exists)
+    const keywordIds = req.body.keywordIds || [];
+    if (keywordIds.length > 0) {
+      await ProductKeyword.destroy({
+        where: { productId: finalProduct.productId },
+        transaction: t,
+      });
+
+      await ProductKeyword.bulkCreate(
+        keywordIds.map((id) => ({
+          productId: finalProduct.productId,
+          keywordId: id,
+        })),
+        { transaction: t }
+      );
+    }
+
+    await t.commit();
+
+    // Return full product
+    const fullProduct = await Product.findByPk(finalProduct.productId, {
+      include: [
+        {
+          model: ProductKeyword,
+          as: "product_keywords",
+          include: [{ model: Keyword, as: "keyword", include: ["categories"] }],
+        },
+      ],
+    });
+
+    const keywords = (fullProduct.product_keywords || []).map((pk) => ({
+      id: pk.keyword.id,
+      keyword: pk.keyword.keyword,
+      categories: pk.keyword.categories
+        ? {
+            categoryId: pk.keyword.categories.categoryId,
+            name: pk.keyword.categories.name,
+            slug: pk.keyword.categories.slug,
+          }
+        : null,
+    }));
+
+    res.status(201).json({
+      message: "Product created successfully",
+      product: {
+        ...fullProduct.toJSON(),
+        images: fullProduct.images ? JSON.parse(fullProduct.images) : [],
+        meta: fullProduct.meta || {},
+        keywords,
+      },
+    });
+  } catch (error) {
+    await t.rollback();
+    console.error("Create Product Error:", error);
+    res
+      .status(500)
+      .json({ message: error.message || "Failed to create product" });
+  }
+};
+
+// ==================== UPDATE PRODUCT ====================
+// ==================== UPDATE PRODUCT ====================
+// ==================== UPDATE PRODUCT (FULLY FIXED FOR VARIANTS) ====================
+exports.updateProduct = async (req, res) => {
+  const t = await sequelize.transaction();
+
+  try {
+    const { productId } = req.params;
+
+    const product = await Product.findByPk(productId, { transaction: t });
+    if (!product) {
+      await t.rollback();
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    const {
+      name,
+      product_code,
+      quantity,
+      isMaster: isMasterInput,
+      masterProductId: newMasterId,
+      variantOptions: variantOptionsInput,
+      variantKey,
+      skuSuffix,
+      meta: metaInput,
+      imagesToDelete: deleteInput,
+      isFeatured,
+      status,
+      ...restFields
+    } = req.body;
+
+    // Parse JSON fields safely
+    const metaObj = metaInput
+      ? typeof metaInput === "string"
+        ? JSON.parse(metaInput)
+        : metaInput
+      : {};
+
+    const imagesToDelete = deleteInput
+      ? typeof deleteInput === "string"
+        ? JSON.parse(deleteInput)
+        : deleteInput
+      : [];
+
+    let variantOptions = null;
+    if (variantOptionsInput) {
+      try {
+        variantOptions =
+          typeof variantOptionsInput === "string"
+            ? JSON.parse(variantOptionsInput)
+            : variantOptionsInput;
+      } catch (e) {
+        await t.rollback();
+        return res.status(400).json({ message: "Invalid variantOptions JSON" });
+      }
+    }
+
+    // Handle images
+    let currentImages = product.images ? JSON.parse(product.images) : [];
+    currentImages = currentImages.filter(
+      (url) => !imagesToDelete.includes(url)
+    );
+
+    if (req.files?.length > 0) {
+      for (const file of req.files) {
+        const url = await uploadToFtp(file.buffer, file.originalname);
+        currentImages.push(url);
+      }
+    }
+
+    const isMaster = isMasterInput === "true" || isMasterInput === true;
+
+    let updateData = {
+      name: name?.trim() || product.name,
+      product_code: product_code?.trim() || product.product_code,
+      quantity:
+        quantity !== undefined ? parseInt(quantity, 10) : product.quantity,
+      images: JSON.stringify(currentImages),
+      meta: Object.keys(metaObj).length > 0 ? metaObj : null,
+      isFeatured:
+        isFeatured === "true" || isFeatured === true || product.isFeatured,
+      status: status || product.status,
+      description: restFields.description?.trim() || product.description,
+      tax: restFields.tax ? parseFloat(restFields.tax) : product.tax,
+      alert_quantity: restFields.alert_quantity
+        ? parseInt(restFields.alert_quantity, 10)
+        : product.alert_quantity,
+      categoryId: restFields.categoryId || product.categoryId,
+      brandId: restFields.brandId || product.brandId,
+      vendorId: restFields.vendorId || product.vendorId,
+      brand_parentcategoriesId:
+        restFields.brand_parentcategoriesId || product.brand_parentcategoriesId,
+    };
+
+    // ──────────────────────────────────────────────────────────────
+    // CASE 1: Converting to Master Product (dangerous — only allow if no variants exist)
+    // ──────────────────────────────────────────────────────────────
+    if (isMaster && !product.isMaster) {
+      const hasVariants = await Product.count({
+        where: { masterProductId: product.productId },
+        transaction: t,
+      });
+
+      if (hasVariants > 0) {
+        await t.rollback();
+        return res.status(400).json({
+          message:
+            "Cannot convert to master: this product already has variants attached",
+        });
+      }
+
+      updateData = {
+        ...updateData,
+        isMaster: true,
         masterProductId: null,
         variantOptions: null,
         variantKey: null,
         skuSuffix: null,
       };
     }
+    // ──────────────────────────────────────────────────────────────
+    // CASE 2: This is a Variant → preserve master link + auto-generate fields
+    // ──────────────────────────────────────────────────────────────
+    else if (
+      !isMaster &&
+      newMasterId &&
+      newMasterId !== product.masterProductId
+    ) {
+      const master = await Product.findOne({
+        where: { productId: newMasterId, isMaster: true },
+        transaction: t,
+      });
 
-    // === Final Create ===
-    const product = await Product.create(productData, { transaction: t });
+      if (!master) {
+        await t.rollback();
+        return res.status(400).json({ message: "Master product not found" });
+      }
+
+      const variantKeyGen = variantOptions
+        ? Object.values(variantOptions).filter(Boolean).join(" ")
+        : variantKey || "";
+
+      const skuSuffixGen = variantKeyGen
+        ? `-${variantKeyGen.toUpperCase().replace(/\s+/g, "-")}`
+        : "";
+
+      updateData = {
+        ...updateData,
+        masterProductId: master.productId,
+        isMaster: false,
+        variantOptions: Object.keys(variantOptions || {}).length
+          ? variantOptions
+          : null,
+        variantKey: variantKeyGen || null,
+        skuSuffix: skuSuffixGen || null,
+        product_code: product_code || `${master.product_code}${skuSuffixGen}`,
+        name: name || `${master.name} - ${variantKeyGen}`,
+        // Optional: Inherit from master if empty
+        categoryId: restFields.categoryId || master.categoryId,
+        brandId: restFields.brandId || master.brandId,
+        images:
+          currentImages.length > 0
+            ? JSON.stringify(currentImages)
+            : master.images,
+        meta: Object.keys(metaObj).length > 0 ? metaObj : master.meta,
+      };
+    }
+    // ──────────────────────────────────────────────────────────────
+    // CASE 3: Normal update (standalone or existing variant — just update fields)
+    // ──────────────────────────────────────────────────────────────
+    else {
+      if (!isMaster) {
+        // It's a variant — allow variant fields
+        const finalVariantKey =
+          variantKey ||
+          (variantOptions
+            ? Object.values(variantOptions).filter(Boolean).join(" ")
+            : product.variantKey);
+        const finalSkuSuffix =
+          skuSuffix ||
+          (finalVariantKey
+            ? `-${finalVariantKey.toUpperCase().replace(/\s+/g, "-")}`
+            : product.skuSuffix);
+
+        updateData.variantKey = finalVariantKey;
+        updateData.skuSuffix = finalSkuSuffix;
+        updateData.variantOptions = Object.keys(variantOptions || {}).length
+          ? variantOptions
+          : product.variantOptions;
+      } else {
+        // It's master → clear variant fields
+        updateData.variantOptions = null;
+        updateData.variantKey = null;
+        updateData.skuSuffix = null;
+        updateData.masterProductId = null;
+      }
+
+      updateData.isMaster = isMaster;
+    }
+
+    // Final update
+    await product.update(updateData, { transaction: t });
+
+    // ──────────────────────────────────────────────────────────────
+    // Keywords: Use replaceAllKeywordsForProduct mutation or direct DB
+    // ──────────────────────────────────────────────────────────────
+    const keywordIds = req.body.keywordIds || [];
+    if (Array.isArray(keywordIds)) {
+      await ProductKeyword.destroy({
+        where: { productId: product.productId },
+        transaction: t,
+      });
+
+      if (keywordIds.length > 0) {
+        await ProductKeyword.bulkCreate(
+          keywordIds.map((id) => ({
+            productId: product.productId,
+            keywordId: id,
+          })),
+          { transaction: t }
+        );
+      }
+    }
 
     await t.commit();
 
-    return res.status(201).json({
-      message: "Product created successfully",
-      product,
-      type: masterProductId ? "variant" : isMaster ? "master" : "single",
+    // Return fresh data with keywords
+    const updatedProduct = await Product.findByPk(product.productId, {
+      include: [
+        {
+          model: ProductKeyword,
+          as: "product_keywords",
+          include: [
+            {
+              model: Keyword,
+              as: "keyword",
+              include: [{ model: Category, as: "categories" }],
+            },
+          ],
+        },
+      ],
+    });
+
+    const keywords = (updatedProduct.product_keywords || []).map((pk) => ({
+      id: pk.keyword.id,
+      keyword: pk.keyword.keyword,
+      categories: pk.keyword.categories
+        ? {
+            categoryId: pk.keyword.categories.categoryId,
+            name: pk.keyword.categories.name,
+            slug: pk.keyword.categories.slug,
+          }
+        : null,
+    }));
+
+    res.json({
+      message: "Product updated successfully",
+      product: {
+        ...updatedProduct.toJSON(),
+        images: updatedProduct.images ? JSON.parse(updatedProduct.images) : [],
+        meta: updatedProduct.meta || {},
+        keywords,
+        variantOptions: updatedProduct.variantOptions || {},
+        variantKey: updatedProduct.variantKey || null,
+        skuSuffix: updatedProduct.skuSuffix || null,
+        isMaster: !!updatedProduct.isMaster,
+      },
     });
   } catch (error) {
     await t.rollback();
-    console.error("Create Product Error:", error);
-    return res.status(500).json({
-      message: "Failed to create product",
-      error: error.message,
-    });
+    console.error("updateProduct error:", error);
+    res
+      .status(500)
+      .json({ message: error.message || "Failed to update product" });
   }
 };
 // ─────────────────────────────────────────────────────────────────────────────
@@ -165,6 +496,28 @@ exports.getAllProducts = async (req, res) => {
     const products = await Product.findAll({
       attributes: { exclude: ["createdAt", "updatedAt"] }, // optional: reduce payload
       order: [["name", "ASC"]],
+      // In getAllProducts → add this include
+      include: [
+        {
+          model: ProductKeyword,
+          as: "product_keywords",
+          attributes: ["keywordId"],
+          include: [
+            {
+              model: Keyword,
+              as: "keyword",
+              attributes: ["id", "keyword"],
+              include: [
+                {
+                  model: Category,
+                  as: "categories",
+                  attributes: ["categoryId", "name", "slug"],
+                },
+              ],
+            },
+          ],
+        },
+      ],
     });
 
     if (products.length === 0) {
@@ -265,7 +618,6 @@ exports.getProductById = async (req, res) => {
         {
           model: ProductKeyword,
           as: "product_keywords",
-          attributes: [],
           include: [
             {
               model: Keyword,
@@ -332,9 +684,10 @@ exports.getProductById = async (req, res) => {
     const keywords = (raw.product_keywords || []).map((pk) => ({
       id: pk.keyword.id,
       keyword: pk.keyword.keyword,
-      category: pk.keyword.categories
+      // Change from "category" to "categories"
+      categories: pk.keyword.categories
         ? {
-            id: pk.keyword.categories.categoryId,
+            categoryId: pk.keyword.categories.categoryId,
             name: pk.keyword.categories.name,
             slug: pk.keyword.categories.slug,
           }
@@ -364,172 +717,6 @@ exports.getProductById = async (req, res) => {
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// UPDATE PRODUCT (now fully supports variants + safe image/meta handling)
-// ─────────────────────────────────────────────────────────────────────────────
-exports.updateProduct = async (req, res) => {
-  const t = await sequelize.transaction();
-  try {
-    const product = await Product.findByPk(req.params.productId, {
-      transaction: t,
-    });
-    if (!product) {
-      await t.rollback();
-      return res.status(404).json({ message: "Product not found" });
-    }
-
-    const {
-      meta: metaInput,
-      imagesToDelete: deleteInput,
-      variantOptions,
-      variantKey,
-      skuSuffix,
-      isMaster,
-      masterProductId,
-      ...data
-    } = req.body;
-
-    const metaObj = metaInput ? JSON.parse(metaInput) : {};
-    const imagesToDelete = deleteInput ? JSON.parse(deleteInput) : [];
-
-    // === Validate meta fields ===
-    for (const id of Object.keys(metaObj)) {
-      const m = await ProductMeta.findByPk(id, { transaction: t });
-      if (!m) {
-        await t.rollback();
-        return res.status(400).json({ message: `Invalid meta ID: ${id}` });
-      }
-      if (m.fieldType === "number" && isNaN(metaObj[id])) {
-        await t.rollback();
-        return res.status(400).json({ message: `${m.title} must be a number` });
-      }
-    }
-
-    // === Handle images ===
-    let currentImages = [];
-    if (product.images) {
-      try {
-        currentImages = JSON.parse(product.images);
-      } catch (_) {}
-    }
-
-    // Remove deleted
-    if (Array.isArray(imagesToDelete)) {
-      currentImages = currentImages.filter(
-        (url) => !imagesToDelete.includes(url)
-      );
-    }
-
-    // Add new uploads
-    if (req.files && req.files.length > 0) {
-      for (const file of req.files) {
-        const url = await uploadToFtp(file.buffer, file.originalname);
-        currentImages.push(url);
-      }
-    }
-
-    // === Prepare update data ===
-    const updateData = {
-      name: data.name?.trim(),
-      product_code: data.product_code?.trim(),
-      price: data.price ? parseFloat(data.price) : undefined,
-      cost_price: data.cost_price ? parseFloat(data.cost_price) : undefined,
-      quantity: data.quantity ? parseInt(data.quantity, 10) : undefined,
-      alert_quantity: data.alert_quantity
-        ? parseInt(data.alert_quantity, 10)
-        : undefined,
-      tax: data.tax ? parseFloat(data.tax) : undefined,
-      description: data.description?.trim() || null,
-      isFeatured: data.isFeatured === "true" || data.isFeatured === true,
-      status: data.status || (data.quantity > 0 ? "active" : "out_of_stock"),
-      categoryId: data.categoryId || null,
-      brandId: data.brandId || null,
-      vendorId: data.vendorId || null,
-      brand_parentcategoriesId: data.brand_parentcategoriesId || null,
-
-      // Variant-specific fields (only allowed on variants)
-      variantOptions: product.isMaster
-        ? null
-        : variantOptions
-        ? JSON.parse(variantOptions)
-        : product.variantOptions,
-      variantKey: product.isMaster ? null : variantKey || product.variantKey,
-      skuSuffix: product.isMaster ? null : skuSuffix || product.skuSuffix,
-
-      // Master flag protection
-      isMaster: product.isMaster, // cannot be changed after creation
-      masterProductId: product.masterProductId, // cannot be changed
-    };
-
-    // Only allow non-undefined values
-    const finalUpdate = Object.fromEntries(
-      Object.entries(updateData).filter(([_, v]) => v !== undefined)
-    );
-
-    // Update JSON fields
-    finalUpdate.meta = Object.keys(metaObj).length
-      ? metaObj
-      : productObj.meta || null;
-    finalUpdate.images = JSON.stringify(currentImages);
-
-    await product.update(finalUpdate, { transaction: t });
-    await t.commit();
-
-    // === Return enriched response (same shape as getProductById) ===
-    const updated = product.toJSON();
-    let images = [];
-    try {
-      images = JSON.parse(updated.images || "[]");
-    } catch (_) {}
-
-    let metaOut = {};
-    try {
-      metaOut =
-        typeof updated.meta === "string"
-          ? JSON.parse(updated.meta)
-          : updated.meta;
-    } catch (_) {}
-
-    const metaIds = Object.keys(metaOut);
-    const metas = metaIds.length
-      ? await ProductMeta.findAll({
-          where: { id: { [Op.in]: metaIds } },
-          attributes: ["id", "title", "slug", "fieldType", "unit"],
-        })
-      : [];
-
-    const metaDetails = metaIds.map((id) => {
-      const def = metas.find((m) => m.id === id);
-      return {
-        id,
-        title: def?.title ?? "Unknown",
-        slug: def?.slug ?? null,
-        value: String(metaOut[id] ?? ""),
-        fieldType: def?.fieldType ?? "text",
-        unit: def?.unit ?? null,
-      };
-    });
-
-    res.json({
-      message: "Product updated successfully",
-      product: {
-        ...updated,
-        images,
-        meta: metaOut,
-        metaDetails,
-        variantOptions: updated.variantOptions || {},
-        variantKey: updated.variantKey || null,
-        skuSuffix: updated.skuSuffix || null,
-        isMaster: !!updated.isMaster,
-        isVariant: !!updated.masterProductId,
-      },
-    });
-  } catch (e) {
-    await t.rollback();
-    console.error("updateProduct error:", e);
-    res.status(500).json({ message: e.message || "Failed to update product" });
-  }
-};
 // ─────────────────────────────────────────────────────────────────────────────
 // Get products by category
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1435,75 +1622,96 @@ exports.removeAllKeywordsFromProduct = async (req, res) => {
 };
 // controllers/product.controller.js
 
+// Replace ALL keywords for a product (used in edit mode)
 exports.replaceAllKeywordsForProduct = async (req, res) => {
-  const { productId } = req.params;
-  const { keywordIds = [] } = req.body; // Expect array of keyword UUIDs
-
-  if (!Array.isArray(keywordIds)) {
-    return res.status(400).json({ message: "keywordIds must be an array" });
-  }
-
   const t = await sequelize.transaction();
+
   try {
-    const product = await Product.findByPk(productId);
+    const { productId } = req.params;
+    let { keywordIds } = req.body;
+
+    // ────── DEFENSIVE PROGRAMMING (Handles ALL edge cases) ──────
+    if (!keywordIds) {
+      keywordIds = [];
+    }
+
+    // If frontend accidentally sends stringified JSON
+    if (typeof keywordIds === "string") {
+      try {
+        keywordIds = JSON.parse(keywordIds);
+      } catch (e) {
+        keywordIds = [];
+      }
+    }
+
+    // Final safety check
+    if (!Array.isArray(keywordIds)) {
+      return res.status(400).json({
+        message: "keywordIds must be an array",
+        received: keywordIds,
+      });
+    }
+
+    // Remove duplicates and invalid values
+    const cleanKeywordIds = [
+      ...new Set(keywordIds.filter((id) => id && typeof id === "string")),
+    ];
+
+    // ────── Validate product exists ──────
+    const product = await Product.findByPk(productId, { transaction: t });
     if (!product) {
       await t.rollback();
       return res.status(404).json({ message: "Product not found" });
     }
 
-    // Step 1: Remove ALL existing keyword associations
+    // ────── Replace keywords in one transaction ──────
     await ProductKeyword.destroy({
       where: { productId },
       transaction: t,
     });
 
-    // Step 2: Add new ones (if any)
-    if (keywordIds.length > 0) {
-      // Validate all keywordIds exist
+    if (cleanKeywordIds.length > 0) {
+      // Validate all keyword IDs exist
       const validKeywords = await Keyword.findAll({
-        where: { id: keywordIds },
+        where: { id: cleanKeywordIds },
         attributes: ["id"],
+        transaction: t,
       });
 
-      if (validKeywords.length !== keywordIds.length) {
+      const validIds = validKeywords.map((k) => k.id);
+      const invalidIds = cleanKeywordIds.filter((id) => !validIds.includes(id));
+
+      if (invalidIds.length > 0) {
         await t.rollback();
-        return res
-          .status(400)
-          .json({ message: "One or more keyword IDs are invalid" });
+        return res.status(400).json({
+          message: "Invalid keyword IDs",
+          invalidIds,
+        });
       }
 
-      const associations = keywordIds.map((kid) => ({
-        productId,
-        keywordId: kid,
-      }));
-
-      await ProductKeyword.bulkCreate(associations, { transaction: t });
+      // Bulk insert
+      await ProductKeyword.bulkCreate(
+        cleanKeywordIds.map((id) => ({
+          productId,
+          keywordId: id,
+        })),
+        { transaction: t }
+      );
     }
 
     await t.commit();
 
-    // Return fresh list
-    const updated = await ProductKeyword.findAll({
-      where: { productId },
-      include: [
-        {
-          model: Keyword,
-          as: "keyword",
-          attributes: ["id", "keyword"],
-        },
-      ],
-    });
-
-    res.json({
-      message: "Keywords updated successfully",
-      keywords: updated.map((pk) => ({
-        id: pk.keyword.id,
-        keyword: pk.keyword.keyword,
-      })),
+    return res.json({
+      message: "Keywords replaced successfully",
+      message: "Keywords replaced successfully",
+      count: cleanKeywordIds.length,
     });
   } catch (error) {
     await t.rollback();
-    console.error("Replace keywords error:", error);
-    res.status(500).json({ message: "Server error" });
+    console.error("replaceAllKeywordsForProduct error:", error);
+    return res.status(500).json({
+      message: "Failed to update keywords",
+      error: error.message,
+    });
   }
 };

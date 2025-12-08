@@ -79,10 +79,11 @@ const SiteMapList = () => {
       );
     }
 
-    // Sort by latest first
-    return result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    // Create a shallow copy before sorting to avoid mutating frozen array
+    return [...result].sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
   }, [siteMapsForCustomer, searchTerm]);
-
   const currentSiteMaps = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return filteredSiteMaps.slice(start, start + pageSize);
@@ -155,7 +156,6 @@ View Site Map: ${window.location.origin}/site-map/${siteMap.id}
       title: "Project Name",
       render: (_, record) => (
         <Link to={`/site-map/${record.id}`} style={{ fontWeight: 600 }}>
-          <FaHome style={{ marginRight: 8, color: "#1890ff" }} />
           {record.name || "Untitled Project"}
         </Link>
       ),

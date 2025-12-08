@@ -74,6 +74,7 @@ import NewQuotationsDetails from "../components/Quotation/NewQuotationDetails";
 import AddSiteMap from "../components/SiteMap/AddSiteMap";
 import SiteMapList from "../components/SiteMap/SiteMapList";
 import SiteMapDetails from "../components/SiteMap/SiteMapDetails";
+import NewSiteMapDetails from "../components/SiteMap/NewSiteMapDetails";
 const masterRoutes = [
   {
     path: "/",
@@ -225,6 +226,13 @@ const masterRoutes = [
         icon: <BiCategory />,
         isSidebarActive: false,
         element: <AddSiteMap />,
+      },
+      {
+        path: "/site-map/:id/new",
+        name: "Edit Site Map",
+        icon: <BiCategory />,
+        isSidebarActive: false,
+        element: <NewSiteMapDetails />,
       },
       {
         path: "/site-map/:id",

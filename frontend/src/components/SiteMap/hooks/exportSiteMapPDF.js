@@ -2,87 +2,75 @@
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
-export const exportToPDF = async (elementRef, siteMap, customer, styles) => {
+export const exportToPDF = async (elementRef, siteMap) => {
   if (!elementRef?.current) {
     console.warn("Element ref is not available");
     return;
   }
 
   const pdf = new jsPDF("p", "mm", "a4");
-  const pageWidth = pdf.internal.pageSize.getWidth(); // 210 mm
-  const pageHeight = pdf.internal.pageSize.getHeight(); // 297 mm
-
   const pages = elementRef.current.querySelectorAll(".quotation-page-print");
+
   if (pages.length === 0) {
-    console.warn("No .quotation-page elements found");
+    console.warn("No pages found to export");
     return;
   }
 
-  // Hide all pages initially
+  // Optional: Show a loading state
+  const originalDisplays = Array.from(pages).map((p) => p.style.display);
   pages.forEach((p) => (p.style.display = "none"));
 
   try {
     for (let i = 0; i < pages.length; i++) {
       const pageElement = pages[i];
-
-      // Show current page only
       pageElement.style.display = "block";
 
-      // Force reflow – tell ESLint we intentionally don't use the value
+      // Force layout recalculation
       void pageElement.offsetHeight;
 
       const canvas = await html2canvas(pageElement, {
         scale: 2,
         useCORS: true,
+        allowTaint: false,
         backgroundColor: "#ffffff",
         logging: false,
         windowWidth: 1200,
         scrollX: 0,
         scrollY: 0,
-        allowTaint: false,
-        foreignObjectRendering: false,
-        imageTimeout: 15000,
+        imageTimeout: 30000,
         removeContainer: true,
       });
 
       const imgData = canvas.toDataURL("image/png");
-      const imgHeight = (canvas.height * pageWidth) / canvas.width;
+      const imgWidth = pdf.internal.pageSize.getWidth(); // 210
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-      let heightLeft = imgHeight;
-      let positionY = 0;
-
-      // Add first page of this quotation page
+      // Add new page except for the first one
       if (i > 0) pdf.addPage();
-      pdf.addImage(imgData, "PNG", 0, positionY, pageWidth, imgHeight);
-      heightLeft -= pageHeight;
 
-      // Split very tall pages across multiple PDF pages
-      while (heightLeft > 0) {
-        pdf.addPage();
-        positionY -= pageHeight;
-        pdf.addImage(imgData, "PNG", 0, positionY, pageWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
+      // Add image fitted to A4 width, preserve aspect ratio
+      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
 
-      // Hide again after capture
+      // Hide again
       pageElement.style.display = "none";
     }
+
+    // Generate filename
+    const siteName = (siteMap?.project_name || "SiteMap").replace(
+      /[^a-zA-Z0-9]/g,
+      "_"
+    );
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    const fileName = `SiteMap_${siteName}_${dateStr}.pdf`;
+
+    pdf.save(fileName);
   } catch (error) {
-    console.error("PDF generation failed:", error);
-    alert("Failed to generate PDF. Please try again.");
-    return;
+    console.error("PDF Export Failed:", error);
+    alert("Failed to generate PDF. Check images (CORS) or try again.");
   } finally {
     // Always restore visibility
-    pages.forEach((p) => (p.style.display = "block"));
+    pages.forEach(
+      (p, idx) => (p.style.display = originalDisplays[idx] || "block")
+    );
   }
-
-  // Clean filename
-  const customerName = (customer?.name || "Customer").replace(
-    /[^a-zA-Z0-9]/g,
-    "_"
-  );
-  const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-  const fileName = `Quotation_${customerName}_${dateStr}.pdf`;
-
-  pdf.save(fileName);
 };
