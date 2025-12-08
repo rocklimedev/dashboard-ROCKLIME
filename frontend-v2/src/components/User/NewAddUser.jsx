@@ -24,9 +24,9 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   LeftOutlined,
   ReloadOutlined,
+  ClearOutlined,
   InfoCircleOutlined,
   HomeOutlined,
-  ClearOutlined,
 } from "@ant-design/icons";
 
 const { Option } = Select;
@@ -36,32 +36,17 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
   const navigate = useNavigate();
 
   // === RTK Queries & Mutations ===
-  const {
-    data: fetchedUser,
-    isLoading: isFetchingUser,
-    error: fetchUserError,
-    refetch,
-  } = useGetUserByIdQuery(userId, { skip: !userId || !!propUserToEdit });
+  const { data: fetchedUser, refetch } = useGetUserByIdQuery(userId, {
+    skip: !userId || !!propUserToEdit,
+  });
 
   const userToEdit = propUserToEdit || fetchedUser?.data || fetchedUser?.user;
 
-  const [createUser, { isLoading: isCreating, error: createError }] =
-    useCreateUserMutation();
-  const [updateUser, { isLoading: isUpdating, error: updateError }] =
-    useUpdateUserMutation();
-  const [
-    createAddress,
-    { isLoading: isAddressCreating, error: addressCreateError },
-  ] = useCreateAddressMutation();
-  const [
-    updateAddress,
-    { isLoading: isAddressUpdating, error: addressUpdateError },
-  ] = useUpdateAddressMutation();
-  const {
-    data: roles,
-    isLoading: isRolesLoading,
-    error: rolesError,
-  } = useGetRolesQuery();
+  const [createUser] = useCreateUserMutation();
+  const [updateUser] = useUpdateUserMutation();
+  const [createAddress] = useCreateAddressMutation();
+  const [updateAddress] = useUpdateAddressMutation();
+  const { data: roles } = useGetRolesQuery();
 
   // === Local State ===
   const [isEditMode, setIsEditMode] = useState(false);
@@ -103,16 +88,10 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
           ? new Date(userToEdit.dateOfBirth).toISOString().split("T")[0]
           : "",
         shiftFrom: userToEdit.shiftFrom
-          ? new Date(`1970-01-01T${userToEdit.shiftFrom}`).toLocaleTimeString(
-              "en-US",
-              { hour12: false, hour: "2-digit", minute: "2-digit" }
-            )
+          ? moment(userToEdit.shiftFrom, "HH:mm:ss").format("HH:mm")
           : "",
         shiftTo: userToEdit.shiftTo
-          ? new Date(`1970-01-01T${userToEdit.shiftTo}`).toLocaleTimeString(
-              "en-US",
-              { hour12: false, hour: "2-digit", minute: "2-digit" }
-            )
+          ? moment(userToEdit.shiftTo, "HH:mm:ss").format("HH:mm")
           : "",
         bloodGroup: userToEdit.bloodGroup || "",
         street: userToEdit.address?.street || "",
@@ -137,48 +116,17 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
     }
   }, [userToEdit]);
 
-  // === Error messages ===
-  useEffect(() => {
-    if (createError)
-      message.error(createError?.data?.message || "Failed to create user");
-    if (updateError)
-      message.error(updateError?.data?.message || "Failed to update user");
-    if (rolesError)
-      message.error(rolesError?.data?.message || "Failed to load roles");
-    if (addressCreateError)
-      message.error(
-        addressCreateError?.data?.message || "Failed to create address"
-      );
-    if (addressUpdateError)
-      message.error(
-        addressUpdateError?.data?.message || "Failed to update address"
-      );
-    if (fetchUserError)
-      message.error(
-        fetchUserError?.data?.message || "Failed to fetch user data"
-      );
-  }, [
-    createError,
-    updateError,
-    rolesError,
-    addressCreateError,
-    addressUpdateError,
-    fetchUserError,
-  ]);
-
   // === Input Handlers ===
   const handleChange = (name, value) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleDateChange = (name, date) => {
-    const value = date ? date.format("YYYY-MM-DD") : "";
-    handleChange(name, value);
+    handleChange(name, date ? date.format("YYYY-MM-DD") : "");
   };
 
   const handleTimeChange = (name, time) => {
-    const value = time ? time.format("HH:mm") : "";
-    handleChange(name, value);
+    handleChange(name, time ? time.format("HH:mm") : "");
   };
 
   // === Reset & Clear Functions ===
@@ -186,109 +134,53 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
     if (isEditMode) {
       if (propUserToEdit) {
         // Reset from props
-        setFormData({
-          username: propUserToEdit.username || "",
-          name: propUserToEdit.name || "",
-          email: propUserToEdit.email || "",
-          mobileNumber: propUserToEdit.mobileNumber || "",
-          dateOfBirth: propUserToEdit.dateOfBirth
-            ? new Date(propUserToEdit.dateOfBirth).toISOString().split("T")[0]
-            : "",
-          shiftFrom: propUserToEdit.shiftFrom
-            ? new Date(
-                `1970-01-01T${propUserToEdit.shiftFrom}`
-              ).toLocaleTimeString("en-US", {
-                hour12: false,
-                hour: "2-digit",
-                minute: "2-digit",
-              })
-            : "",
-          shiftTo: propUserToEdit.shiftTo
-            ? new Date(
-                `1970-01-01T${propUserToEdit.shiftTo}`
-              ).toLocaleTimeString("en-US", {
-                hour12: false,
-                hour: "2-digit",
-                minute: "2-digit",
-              })
-            : "",
-          bloodGroup: propUserToEdit.bloodGroup || "",
-          street: propUserToEdit.address?.street || "",
-          country: propUserToEdit.address?.country || "",
-          state: propUserToEdit.address?.state || "",
-          city: propUserToEdit.address?.city || "",
-          postalCode: propUserToEdit.address?.postalCode || "",
-          emergencyNumber: propUserToEdit.emergencyNumber || "",
-          roleId: propUserToEdit.roleId || "",
-          status: ["active", "inactive", "restricted"].includes(
-            propUserToEdit.status
-          )
-            ? propUserToEdit.status
-            : "inactive",
-          password: "",
-          about: propUserToEdit.about || "",
-          addressId: propUserToEdit.addressId || null,
-        });
-        setManageAddress(!!propUserToEdit.addressId);
+        populateForm(propUserToEdit);
       } else if (userId) {
-        // Refetch from API
         try {
-          const refetched = await refetch();
-          const user = refetched.data?.data || refetched.data?.user;
-          if (user) {
-            setFormData({
-              username: user.username || "",
-              name: user.name || "",
-              email: user.email || "",
-              mobileNumber: user.mobileNumber || "",
-              dateOfBirth: user.dateOfBirth
-                ? new Date(user.dateOfBirth).toISOString().split("T")[0]
-                : "",
-              shiftFrom: user.shiftFrom
-                ? new Date(`1970-01-01T${user.shiftFrom}`).toLocaleTimeString(
-                    "en-US",
-                    {
-                      hour12: false,
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    }
-                  )
-                : "",
-              shiftTo: user.shiftTo
-                ? new Date(`1970-01-01T${user.shiftTo}`).toLocaleTimeString(
-                    "en-US",
-                    {
-                      hour12: false,
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    }
-                  )
-                : "",
-              bloodGroup: user.bloodGroup || "",
-              street: user.address?.street || "",
-              country: user.address?.country || "",
-              state: user.address?.state || "",
-              city: user.address?.city || "",
-              postalCode: user.address?.postalCode || "",
-              emergencyNumber: user.emergencyNumber || "",
-              roleId: user.roleId || "",
-              status: ["active", "inactive", "restricted"].includes(user.status)
-                ? user.status
-                : "inactive",
-              password: "",
-              about: user.about || "",
-              addressId: user.addressId || null,
-            });
-            setManageAddress(!!user.addressId);
-          }
+          const { data } = await refetch();
+          const user = data?.data || data?.user;
+          if (user) populateForm(user);
         } catch {
           message.error("Failed to reload user data");
         }
       }
     } else {
-      // Add mode → clear all
       clearForm();
     }
+  };
+
+  const populateForm = (user) => {
+    setFormData({
+      username: user.username || "",
+      name: user.name || "",
+      email: user.email || "",
+      mobileNumber: user.mobileNumber || "",
+      isEmailVerified: user.isEmailVerified ?? false,
+      dateOfBirth: user.dateOfBirth
+        ? new Date(user.dateOfBirth).toISOString().split("T")[0]
+        : "",
+      shiftFrom: user.shiftFrom
+        ? moment(user.shiftFrom, "HH:mm:ss").format("HH:mm")
+        : "",
+      shiftTo: user.shiftTo
+        ? moment(user.shiftTo, "HH:mm:ss").format("HH:mm")
+        : "",
+      bloodGroup: user.bloodGroup || "",
+      street: user.address?.street || "",
+      country: user.address?.country || "",
+      state: user.address?.state || "",
+      city: user.address?.city || "",
+      postalCode: user.address?.postalCode || "",
+      emergencyNumber: user.emergencyNumber || "",
+      roleId: user.roleId || "",
+      status: ["active", "inactive", "restricted"].includes(user.status)
+        ? user.status
+        : "inactive",
+      password: "",
+      about: user.about || "",
+      addressId: user.addressId || null,
+    });
+    setManageAddress(!!user.addressId);
   };
 
   const clearForm = () => {
@@ -312,28 +204,23 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
       city: "",
       postalCode: "",
       addressId: null,
+      isEmailVerified: false,
     });
     setManageAddress(false);
   };
 
-  const handleRefresh = async () => {
-    await resetToOriginal();
-  };
-
-  const handleClear = () => {
-    clearForm();
-  };
-
+  const handleRefresh = () => resetToOriginal();
+  const handleClear = () => clearForm();
   const handleClose = () => navigate("/users/list");
 
   // === Form Submission ===
   const handleSubmit = async () => {
     try {
-      const requiredFields = ["username", "email", "name", "roleId"];
-      if (!isEditMode) requiredFields.push("password");
+      const required = ["username", "email", "name", "roleId"];
+      if (!isEditMode) required.push("password");
 
-      for (const field of requiredFields) {
-        if (!formData[field]) {
+      for (const field of required) {
+        if (!formData[field]?.trim()) {
           message.error(
             `${field.charAt(0).toUpperCase() + field.slice(1)} is required`
           );
@@ -342,80 +229,57 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
       }
 
       if (formData.shiftFrom && formData.shiftTo) {
-        const from = new Date(`1970-01-01T${formData.shiftFrom}`);
-        const to = new Date(`1970-01-01T${formData.shiftTo}`);
-        if (to <= from) {
+        const from = moment(`1970-01-01 ${formData.shiftFrom}`);
+        const to = moment(`1970-01-01 ${formData.shiftTo}`);
+        if (to.isSameOrBefore(from)) {
           message.error("Shift To must be after Shift From");
           return;
         }
       }
 
-      const selectedRoleObj = roles?.find((r) => r.roleId === formData.roleId);
-      if (!selectedRoleObj) {
-        message.error("Selected role is invalid");
+      const selectedRole = roles?.find((r) => r.roleId === formData.roleId);
+      if (!selectedRole) {
+        message.error("Invalid role selected");
         return;
       }
 
       let addressId = isEditMode ? formData.addressId : null;
-      let newUserId = null;
 
       // Handle Address
       if (manageAddress) {
-        const hasAddressFields =
+        const hasFields =
           formData.street ||
           formData.country ||
           formData.state ||
           formData.city ||
           formData.postalCode;
 
-        if (hasAddressFields) {
-          const addressPayload = {
+        if (hasFields) {
+          const payload = {
             street: formData.street || null,
             country: formData.country || null,
             state: formData.state || null,
             city: formData.city || null,
             postalCode: formData.postalCode || null,
-            createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             userId: isEditMode ? userToEdit.userId : null,
           };
 
-          let addressResponse;
-          try {
-            if (isEditMode && addressId) {
-              addressResponse = await updateAddress({
-                addressId,
-                ...addressPayload,
-              }).unwrap();
-            } else {
-              addressResponse = await createAddress(addressPayload).unwrap();
-            }
-            addressId =
-              addressResponse.addressId || addressResponse.data?.addressId;
-            if (!addressId) {
-              message.error("Failed to obtain address ID");
-              return;
-            }
-          } catch (err) {
-            message.error(
-              `Address operation failed: ${
-                err.data?.message || "Unknown error"
-              }`
-            );
-            return;
+          let result;
+          if (isEditMode && addressId) {
+            result = await updateAddress({ addressId, ...payload }).unwrap();
+          } else {
+            result = await createAddress(payload).unwrap();
           }
-        } else if (isEditMode && addressId) {
-          message.warning(
-            "Address fields are empty; address will remain unchanged."
-          );
+          addressId = result.addressId || result.data?.addressId;
         }
       }
 
       // Prepare User Payload
       const userPayload = {
-        username: formData.username,
-        name: formData.name,
-        email: formData.email,
+        username: formData.username.trim(),
+        name: formData.name.trim(),
+        email: formData.email.trim(),
         mobileNumber: formData.mobileNumber || null,
         dateOfBirth: formData.dateOfBirth || null,
         shiftFrom: formData.shiftFrom || null,
@@ -423,83 +287,42 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
         bloodGroup: formData.bloodGroup || null,
         addressId: addressId || null,
         emergencyNumber: formData.emergencyNumber || null,
-        roleId: selectedRoleObj.roleId,
+        roleId: selectedRole.roleId,
         status: formData.status,
         password: formData.password || undefined,
         about: formData.about || null,
         isEmailVerified: formData.isEmailVerified,
       };
 
-      let userResponse;
-      try {
-        if (isEditMode) {
-          userResponse = await updateUser({
-            userId: userToEdit.userId,
-            ...userPayload,
-          }).unwrap();
-        } else {
-          userResponse = await createUser(userPayload).unwrap();
-          newUserId = userResponse.userId || userResponse.data?.userId;
-        }
-      } catch (err) {
-        message.error(
-          `User operation failed: ${err.data?.message || "Unknown error"}`
-        );
-        return;
-      }
+      if (isEditMode) {
+        await updateUser({
+          userId: userToEdit.userId,
+          ...userPayload,
+        }).unwrap();
+      } else {
+        const res = await createUser(userPayload).unwrap();
+        const newUserId = res.userId || res.data?.userId;
 
-      // Associate address with new user
-      if (!isEditMode && addressId && newUserId) {
-        try {
+        // Link address to newly created user
+        if (addressId && newUserId) {
           await updateAddress({
             addressId,
             userId: newUserId,
-            street: formData.street || null,
-            country: formData.country || null,
-            state: formData.state || null,
-            city: formData.city || null,
-            postalCode: formData.postalCode || null,
             updatedAt: new Date().toISOString(),
           }).unwrap();
-        } catch (err) {
-          message.error(
-            `Failed to associate address: ${
-              err.data?.message || "Unknown error"
-            }`
-          );
-          return;
         }
       }
 
+      message.success(
+        isEditMode ? "User updated successfully" : "User created successfully"
+      );
       navigate("/users/list");
     } catch (err) {
-      message.error(`Operation failed: ${err.message || "Unknown error"}`);
+      message.error(err?.data?.message || "Operation failed");
     }
   };
 
-  // === Loading & Error States ===
-  if (isFetchingUser || isRolesLoading) {
-    return (
-      <div className="page-wrapper">
-        <div className="content text-center">
-          <p>Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (fetchUserError && userId) {
-    return (
-      <div className="page-wrapper">
-        <div className="content text-center">
-          <p className="text-danger">Error loading user data.</p>
-          <Button onClick={handleClose}>Go Back</Button>
-        </div>
-      </div>
-    );
-  }
-
-  // === Main Render ===
+  // === Main Render (No loading states — handled globally) ===
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -512,7 +335,6 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
             </div>
           </div>
 
-          {/* Action Icons: Refresh & Clear */}
           <ul className="table-top-head">
             <li className="me-2">
               <a
@@ -521,7 +343,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                   e.preventDefault();
                   handleRefresh();
                 }}
-                title="Reset to Original"
+                title="Reset"
               >
                 <ReloadOutlined />
               </a>
@@ -533,7 +355,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                   e.preventDefault();
                   handleClear();
                 }}
-                title="Clear All Fields"
+                title="Clear"
               >
                 <ClearOutlined />
               </a>
@@ -553,8 +375,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
           <div className="card mb-4">
             <div className="card-header bg-white border-bottom">
               <h5 className="d-inline-flex align-items-center">
-                <InfoCircleOutlined className="me-2" />
-                User Information
+                <InfoCircleOutlined className="me-2" /> User Information
               </h5>
             </div>
             <div className="card-body">
@@ -597,19 +418,18 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                     help={
                       formData.mobileNumber &&
                       !/^\d{10}$/.test(formData.mobileNumber)
-                        ? "Mobile number must be exactly 10 digits"
+                        ? "Must be 10 digits"
                         : ""
                     }
                   >
                     <Input
                       value={formData.mobileNumber}
-                      onChange={(e) => {
-                        const value = e.target.value
-                          .replace(/\D/g, "")
-                          .slice(0, 10);
-                        handleChange("mobileNumber", value);
-                      }}
-                      placeholder="Enter 10-digit mobile number"
+                      onChange={(e) =>
+                        handleChange(
+                          "mobileNumber",
+                          e.target.value.replace(/\D/g, "").slice(0, 10)
+                        )
+                      }
                       maxLength={10}
                     />
                   </Form.Item>
@@ -623,7 +443,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                           ? moment(formData.dateOfBirth)
                           : null
                       }
-                      onChange={(date) => handleDateChange("dateOfBirth", date)}
+                      onChange={(d) => handleDateChange("dateOfBirth", d)}
                       format="YYYY-MM-DD"
                       style={{ width: "100%" }}
                     />
@@ -638,7 +458,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                           ? moment(formData.shiftFrom, "HH:mm")
                           : null
                       }
-                      onChange={(time) => handleTimeChange("shiftFrom", time)}
+                      onChange={(t) => handleTimeChange("shiftFrom", t)}
                       format="HH:mm"
                       style={{ width: "100%" }}
                     />
@@ -653,7 +473,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                           ? moment(formData.shiftTo, "HH:mm")
                           : null
                       }
-                      onChange={(time) => handleTimeChange("shiftTo", time)}
+                      onChange={(t) => handleTimeChange("shiftTo", t)}
                       format="HH:mm"
                       style={{ width: "100%" }}
                     />
@@ -664,9 +484,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                   <Form.Item label="Blood Group">
                     <Select
                       value={formData.bloodGroup}
-                      onChange={(value) => handleChange("bloodGroup", value)}
-                      placeholder="Select blood group"
-                      style={{ width: "100%" }}
+                      onChange={(v) => handleChange("bloodGroup", v)}
                     >
                       {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map(
                         (bg) => (
@@ -683,14 +501,12 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                   <Form.Item label="Role" required>
                     <Select
                       value={formData.roleId}
-                      onChange={(value) => handleChange("roleId", value)}
+                      onChange={(v) => handleChange("roleId", v)}
                       placeholder="Select role"
-                      loading={isRolesLoading}
-                      style={{ width: "100%" }}
                     >
-                      {roles?.map((role) => (
-                        <Option key={role.roleId} value={role.roleId}>
-                          {role.roleName}
+                      {roles?.map((r) => (
+                        <Option key={r.roleId} value={r.roleId}>
+                          {r.roleName}
                         </Option>
                       ))}
                     </Select>
@@ -698,10 +514,10 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                 </div>
 
                 <div className="col-lg-4 col-md-6">
-                  <Form.Item label="Status" required>
+                  <Form.Item label="Status">
                     <Select
                       value={formData.status}
-                      onChange={(value) => handleChange("status", value)}
+                      onChange={(v) => handleChange("status", v)}
                     >
                       <Option value="active">Active</Option>
                       <Option value="inactive">Inactive</Option>
@@ -709,20 +525,19 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                     </Select>
                   </Form.Item>
                 </div>
+
                 <div className="col-lg-4 col-md-6">
                   <Form.Item label="Email Verified">
                     <Select
                       value={formData.isEmailVerified}
-                      onChange={(value) =>
-                        handleChange("isEmailVerified", value)
-                      }
-                      placeholder="Select verification status"
+                      onChange={(v) => handleChange("isEmailVerified", v)}
                     >
                       <Option value={true}>Yes</Option>
                       <Option value={false}>No</Option>
                     </Select>
                   </Form.Item>
                 </div>
+
                 <div className="col-lg-4 col-md-6">
                   <Form.Item label="Emergency Contact">
                     <Input
@@ -755,8 +570,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
           <div className="card mb-4">
             <div className="card-header bg-white border-bottom d-flex align-items-center">
               <h5 className="d-inline-flex align-items-center">
-                <HomeOutlined className="me-2" />
-                Address Information
+                <HomeOutlined className="me-2" /> Address Information
               </h5>
               <Checkbox
                 checked={manageAddress}
@@ -820,30 +634,12 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
             )}
           </div>
 
-          {/* Submit Buttons */}
+          {/* Submit */}
           <div className="text-end">
-            <Button
-              onClick={handleClose}
-              disabled={
-                isCreating ||
-                isUpdating ||
-                isAddressCreating ||
-                isAddressUpdating
-              }
-              style={{ marginRight: 8 }}
-            >
+            <Button onClick={handleClose} style={{ marginRight: 8 }}>
               Cancel
             </Button>
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={
-                isCreating ||
-                isUpdating ||
-                isAddressCreating ||
-                isAddressUpdating
-              }
-            >
+            <Button type="primary" htmlType="submit" loading={false}>
               {isEditMode ? "Update User" : "Add User"}
             </Button>
           </div>

@@ -183,30 +183,51 @@ const ProductsList = () => {
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
+      // 1. Brand / BPC filter
       const matchesFilter = brandId
         ? String(product.brandId) === String(brandId)
         : bpcId
         ? String(product.brand_parentcategoriesId) === String(bpcId)
         : true;
 
+      // 2. Category filter
       const matchesCategory = selectedCategoryId
         ? String(product.categoryId) === selectedCategoryId
         : true;
 
-      const term = search.toLowerCase();
-      const code = getCompanyCode(product.metaDetails);
-      const matchesSearch =
-        !term ||
-        product.name?.toLowerCase().includes(term) ||
-        product.product_code?.toLowerCase().includes(term) ||
-        code?.toLowerCase().includes(term) ||
-        getCategoryName(product.categoryId).toLowerCase().includes(term) ||
-        getParentCategoryName(product.categoryId).toLowerCase().includes(term);
+      // 3. Search term
+      const term = search.toLowerCase().trim();
+      if (!term) return matchesFilter && matchesCategory;
 
+      const productKeywords = Array.isArray(product.keywords)
+        ? product.keywords
+            .map((k) => k.keyword?.toLowerCase() || "")
+            .filter(Boolean)
+        : [];
+
+      const companyCode =
+        getCompanyCode(product.metaDetails)?.toLowerCase() || "";
+      const categoryName = getCategoryName(product.categoryId).toLowerCase();
+      const parentCategoryName = getParentCategoryName(
+        product.categoryId
+      ).toLowerCase();
+
+      const searchWords = term.split(/\s+/).filter(Boolean);
+
+      const matchesSearch =
+        searchWords.length === 0 ||
+        searchWords.some(
+          (word) =>
+            product.name?.toLowerCase().includes(word) ||
+            product.product_code?.toLowerCase().includes(word) ||
+            companyCode.includes(word) ||
+            categoryName.includes(word) ||
+            parentCategoryName.includes(word) ||
+            productKeywords.some((kw) => kw.includes(word))
+        );
       return matchesFilter && matchesCategory && matchesSearch;
     });
   }, [products, brandId, bpcId, search, selectedCategoryId]);
-
   const formattedTableData = useMemo(
     () =>
       filteredProducts.map((product) => ({

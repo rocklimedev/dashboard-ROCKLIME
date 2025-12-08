@@ -254,12 +254,33 @@ exports.forgotPassword = async (req, res, next) => {
     };
 
     const emailContent = emails.resetEmail(req.headers.host, resetToken);
-    await emails.sendMail(
-      user.email,
-      emailContent.subject,
-      emailContent.text,
-      emailContent.html
-    );
+    await emails
+      .sendMail(
+        user.email,
+        emailContent.subject,
+        emailContent.text,
+        emailContent.html
+      )
+      .catch(async (mailError) => {
+        if (
+          mailError.responseCode === 550 ||
+          /No Such User/i.test(mailError.response)
+        ) {
+          // Optional: mark user as having invalid email
+          await User.update(
+            { emailVerified: false, hasBounced: true },
+            { where: { userId: user.userId } }
+          );
+
+          // Or even delete the stale user if you're aggressive
+          // await User.destroy({ where: { userId: user.userId } });
+
+          console.warn(
+            `Hard bounce for ${user.email} - removing/invalidating user`
+          );
+        }
+        throw mailError; // still fail the request or handle gracefully
+      });
 
     res
       .status(200)

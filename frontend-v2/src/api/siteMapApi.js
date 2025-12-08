@@ -6,7 +6,7 @@ export const siteMapApi = baseApi.injectEndpoints({
     // CREATE
     createSiteMap: builder.mutation({
       query: (newSiteMap) => ({
-        url: "/",
+        url: "/site-maps",
         method: "POST",
         body: newSiteMap,
       }),
@@ -15,7 +15,7 @@ export const siteMapApi = baseApi.injectEndpoints({
 
     // READ ALL BY CUSTOMER
     getSiteMapsByCustomer: builder.query({
-      query: (customerId) => `/?customerId=${customerId}`,
+      query: (customerId) => `/site-maps/?customerId=${customerId}`,
       providesTags: (result, error, customerId) =>
         result
           ? [
@@ -27,14 +27,14 @@ export const siteMapApi = baseApi.injectEndpoints({
 
     // READ ONE
     getSiteMapById: builder.query({
-      query: (id) => `/${id}`,
+      query: (id) => `/site-maps/${id}`,
       providesTags: (result, error, id) => [{ type: "SiteMap", id }],
     }),
 
     // UPDATE
     updateSiteMap: builder.mutation({
       query: ({ id, updatedSiteMap }) => ({
-        url: `/${id}`,
+        url: `/site-maps/${id}`,
         method: "PUT",
         body: updatedSiteMap,
       }),
@@ -47,7 +47,7 @@ export const siteMapApi = baseApi.injectEndpoints({
     // DELETE
     deleteSiteMap: builder.mutation({
       query: (id) => ({
-        url: `/${id}`,
+        url: `/site-maps/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: (result, error, arg) => [
@@ -59,7 +59,7 @@ export const siteMapApi = baseApi.injectEndpoints({
     // GENERATE QUOTATION FROM SITEMAP
     generateQuotationFromSiteMap: builder.mutation({
       query: (siteMapId) => ({
-        url: `/${siteMapId}/generate-quotation`,
+        url: `/site-maps/${siteMapId}/generate-quotation`,
         method: "POST",
       }),
       invalidatesTags: ["SiteMap"],
