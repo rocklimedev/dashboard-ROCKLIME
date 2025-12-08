@@ -89,21 +89,40 @@ const siteMapController = {
           .status(404)
           .json({ success: false, message: "Customer not found" });
 
-      // Auto-generate floorDetails if empty
+      // Auto-generate floorDetails if empty, including default rooms (optional: customize based on siteSizeInBHK)
       let finalFloorDetails = floorDetails.length > 0 ? floorDetails : [];
       if (finalFloorDetails.length === 0) {
         for (let i = 1; i <= totalFloors; i++) {
+          const floorName =
+            i === 1 ? "Ground Floor" : `${getOrdinal(i - 1)} Floor`;
           finalFloorDetails.push({
             floor_number: i,
-            floor_name:
-              i === 1
-                ? "Ground Floor"
-                : `${i - 1}${i === 2 ? "st" : i === 3 ? "nd" : "th"} Floor`,
+            floor_name: floorName,
             floor_size: "",
             details: "",
+            rooms: [], // Default empty; user can add rooms later
           });
         }
       }
+
+      // Validate items' floor_number and room_id (optional: add stricter validation)
+      items.forEach((item) => {
+        if (item.floor_number) {
+          const floor = finalFloorDetails.find(
+            (f) => f.floor_number === item.floor_number
+          );
+          if (!floor)
+            throw new Error(`Invalid floor_number: ${item.floor_number}`);
+          if (
+            item.room_id &&
+            !floor.rooms.find((r) => r.room_id === item.room_id)
+          ) {
+            throw new Error(
+              `Invalid room_id: ${item.room_id} for floor ${item.floor_number}`
+            );
+          }
+        }
+      });
 
       const summaries = computeSummaries(items, finalFloorDetails);
 
@@ -193,6 +212,26 @@ const siteMapController = {
       if (updates.items || updates.floorDetails || updates.totalFloors) {
         const finalItems = updates.items || siteMap.items;
         const finalFloors = updates.floorDetails || siteMap.floorDetails;
+
+        // Validate items' floor_number and room_id
+        finalItems.forEach((item) => {
+          if (item.floor_number) {
+            const floor = finalFloors.find(
+              (f) => f.floor_number === item.floor_number
+            );
+            if (!floor)
+              throw new Error(`Invalid floor_number: ${item.floor_number}`);
+            if (
+              item.room_id &&
+              !floor.rooms.find((r) => r.room_id === item.room_id)
+            ) {
+              throw new Error(
+                `Invalid room_id: ${item.room_id} for floor ${item.floor_number}`
+              );
+            }
+          }
+        });
+
         updates.summaries = computeSummaries(finalItems, finalFloors);
       }
 

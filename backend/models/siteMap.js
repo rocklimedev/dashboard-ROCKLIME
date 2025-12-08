@@ -1,4 +1,3 @@
-// models/SiteMap.js
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
 const Customer = require("./customers");
@@ -38,14 +37,14 @@ const SiteMap = sequelize.define(
       allowNull: false,
       defaultValue: [],
       comment:
-        "Array of floors → [{ floor_number: 1, floor_name: 'Ground Floor', floor_size: '1400 sqft', details: 'Lobby + 2 Bathrooms' }]",
+        "Array of floors → [{ floor_number: 1, floor_name: 'Ground Floor', floor_size: '1400 sqft', details: 'Lobby + 2 Bathrooms', rooms: [{ room_id: 'r1', room_name: 'Master Bathroom', room_type: 'Bathroom', room_size: '100 sqft', details: 'Shower + Sink' }] }]",
     },
     items: {
       type: DataTypes.JSON,
       allowNull: false,
       defaultValue: [],
       comment:
-        "Full items array (same structure as quotation.products but with floor allocation) → [{ productId, name, imageUrl, quantity, price, floor_number, productType, ... }]",
+        "Full items array (same structure as quotation.products but with floor/room allocation) → [{ productId, name, imageUrl, quantity, price, floor_number, room_id, productType, ... }]",
     },
     summaries: {
       type: DataTypes.JSON,
@@ -54,7 +53,7 @@ const SiteMap = sequelize.define(
         perFloor: {},
         perType: {},
       },
-      comment: "Auto-computed on save",
+      comment: "Auto-computed on save, now with perRoom nested under perFloor",
     },
     quotationId: {
       type: DataTypes.UUID,
