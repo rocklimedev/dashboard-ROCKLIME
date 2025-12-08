@@ -263,7 +263,7 @@ const AddSiteMap = () => {
         await createSiteMap(payload).unwrap();
         message.success("Site Map created successfully!");
       }
-      navigate("/site-maps/list");
+      navigate("/site-map/list");
     } catch (err) {
       message.error(err?.data?.message || "Failed to save Site Map");
     }

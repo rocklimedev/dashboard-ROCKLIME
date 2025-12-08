@@ -1,31 +1,67 @@
 // controllers/keyword.controller.js
 const Keyword = require("../models/keyword");
 const Category = require("../models/category");
-
 // Create a new keyword
+
+const { Op } = require("sequelize");
+const sequelize = require("../config/database"); // <-- ADD THIS
 exports.createKeyword = async (req, res) => {
   try {
     const { keyword, categoryId } = req.body;
-    if (!keyword || !categoryId)
+
+    const trimmed = keyword?.trim();
+    if (!trimmed || !categoryId) {
       return res
         .status(400)
-        .json({ error: "Keyword and categoryId are required" });
+        .json({ message: "Keyword and categoryId required" });
+    }
 
-    const category = await Category.findByPk(categoryId);
-    if (!category) return res.status(400).json({ error: "Invalid categoryId" });
+    // MySQL case-insensitive search (works on MySQL, MariaDB, SQLite, etc.)
+    let existing = await Keyword.findOne({
+      where: {
+        categoryId,
+        [Op.and]: sequelize.where(
+          sequelize.fn("LOWER", sequelize.col("keyword")),
+          sequelize.fn("LOWER", trimmed)
+        ),
+      },
+    });
 
+    if (existing) {
+      const withCat = await Keyword.findByPk(existing.id, {
+        include: [
+          {
+            model: Category,
+            as: "categories",
+            attributes: ["categoryId", "name", "slug"],
+          },
+        ],
+      });
+      return res.status(200).json(withCat); // return existing
+    }
+
+    // Create new
     const newKeyword = await Keyword.create({
-      keyword: String(keyword).trim(),
+      keyword: trimmed,
       categoryId,
     });
-    return res
-      .status(201)
-      .json({ message: "Keyword added successfully", newKeyword });
+
+    const keywordWithCategory = await Keyword.findByPk(newKeyword.id, {
+      include: [
+        {
+          model: Category,
+          as: "categories",
+          attributes: ["categoryId", "name", "slug"],
+        },
+      ],
+    });
+
+    return res.status(201).json(keywordWithCategory);
   } catch (error) {
-    return res.status(500).json({ error: "Internal Server Error" });
+    console.error("createKeyword error:", error);
+    return res.status(500).json({ message: "Failed to create keyword" });
   }
 };
-
 // Get all keywords (with category)
 exports.getAllKeywords = async (req, res) => {
   try {

@@ -5,162 +5,109 @@ const checkPermission = require("../middleware/permission");
 const multer = require("multer");
 const path = require("path");
 
+// Multer config: accept up to 5 images, max 5MB each
 const productUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    const allowed = /jpeg|jpg|png|gif/;
+    const allowed = /jpeg|jpg|png|gif|webp/;
     const ext = allowed.test(path.extname(file.originalname).toLowerCase());
     const mime = allowed.test(file.mimetype);
     cb(null, ext && mime);
   },
-}).array("images", 5); // field name used by the React form
+}).array("images", 5); // matches FormData key in React
 
-// ---------------------------------------------------------------
-// 2. Helper – call Multer *inside* the controller (same pattern as invoice)
-// ---------------------------------------------------------------
+// Helper: safely run multer first, then controller
 const withUpload = (handler) => (req, res) => {
-  productUpload(req, res, (err) => {
+  productUpload(req, res, async (err) => {
     if (err instanceof multer.MulterError) {
-      return res.status(400).json({ message: `Multer error: ${err.message}` });
+      if (err.code === "LIMIT_FILE_SIZE") {
+        return res.status(400).json({ message: "Image too large. Max 5MB." });
+      }
+      if (err.code === "LIMIT_FILE_COUNT") {
+        return res.status(400).json({ message: "Maximum 5 images allowed." });
+      }
+      return res.status(400).json({ message: `Upload error: ${err.message}` });
     }
     if (err) {
       return res.status(400).json({ message: err.message });
     }
-    // files are now in req.files (array of buffers)
-    handler(req, res);
+
+    // req.files = array of { buffer, originalname, ... }
+    // req.body = parsed form fields (including keywordIds as JSON string or array)
+    try {
+      await handler(req, res);
+    } catch (error) {
+      console.error("Controller error:", error);
+      if (!res.headersSent) {
+        res.status(500).json({ message: "Server error" });
+      }
+    }
   });
 };
-// ✅ Product CRUD Routes
+
+// ==================== PRODUCT CRUD ====================
 router.post(
   "/",
-  //checkPermission("write", "create_product", "products", "/products"),
-  withUpload(productController.createProduct) // <-- NEW
+  // checkPermission("write", "create_product", "products", "/products"),
+  withUpload(productController.createProduct)
 );
 
 router.get(
   "/",
-  //  checkPermission("view", "get_all_products", "products", "/products"),
+  // checkPermission("view", "get_all_products", "products", "/products"),
   productController.getAllProducts
 );
 
-router.get(
-  "/:productId",
-  // checkPermission(
-  //   "view",
-  //   "get_product_by_id",
-  //   "products",
-  //   "/products/:productId"
-  // ),
-  productController.getProductById
-);
-router.get(
-  "/category/:categoryId",
-  // checkPermission(
-  //   "view",
-  //   "view_product_by_category",
-  //   "products",
-  //   "/products/category/:categoryId"
-  // ),
-  productController.getProductsByCategory
-);
+router.get("/:productId", productController.getProductById);
+
+router.get("/category/:categoryId", productController.getProductsByCategory);
+
+// THIS IS THE MOST IMPORTANT ONE FOR EDIT MODE
 router.put(
   "/:productId",
   // checkPermission("edit", "update_product", "products", "/products/:productId"),
-  withUpload(productController.updateProduct) // <-- NEW
+  withUpload(productController.updateProduct)
 );
+
 router.post("/by-ids", productController.getProductsByIds);
-router.delete(
-  "/:productId",
-  // checkPermission(
-  //   "delete",
-  //   "delete_product",
-  //   "products",
-  //   "/products/:productId"
-  // ),
-  productController.deleteProduct
-);
 
-// ✅ Inventory Management Routes
-router.post(
-  "/:productId/add-stock",
-  // checkPermission(
-  //   "edit",
-  //   "add_stock",
-  //   "products",
-  //   "/products/:productId/add-stock"
-  // ),
-  productController.addStock
-);
+router.delete("/:productId", productController.deleteProduct);
 
-router.post(
-  "/:productId/remove-stock",
-  // checkPermission(
-  //   "edit",
-  //   "remove_stock",
-  //   "products",
-  //   "/products/:productId/remove-stock"
-  // ),
-  productController.removeStock
-);
+// ==================== STOCK MANAGEMENT ====================
+router.post("/:productId/add-stock", productController.addStock);
+router.post("/:productId/remove-stock", productController.removeStock);
+router.get("/low-stock", productController.getLowStockProducts);
+router.get("/:productId/history", productController.getHistoryByProductId);
 
-router.get(
-  "/low-stock",
-  // checkPermission(
-  //   "view",
-  //   "get_low_stock_products",
-  //   "products",
-  //   "/products/low-stock"
-  // ),
-  productController.getLowStockProducts
-);
-
-router.get(
-  "/:productId/history",
-  // checkPermission(
-  //   "view",
-  //   "get_history_by_product_id",
-  //   "products",
-  //   "/products/:productId/history"
-  // ),
-  productController.getHistoryByProductId
-);
-
-router.get(
-  "/search/all",
-  //  checkPermission("view", "search_products", "products", "/products/search"),
-  productController.searchProducts
-);
+// ==================== SEARCH & UTILS ====================
+router.get("/search/all", productController.searchProducts);
 router.get("/codes/brand-wise", productController.getAllProductCodesBrandWise);
-// ✅ Unique Route for Product Codes
-// This will ensure that it is not mistaken for a product ID route
 router.get("/search/get-product-codes", productController.getAllProductCodes);
-router.patch("/:productId/featured", productController.updateProductFeatured);
 router.get("/check-code", productController.checkproductCode);
-router.post(
+router.patch("/:productId/featured", productController.updateProductFeatured);
+
+// ==================== KEYWORDS (CRITICAL FOR YOUR UI) ====================
+
+// 1. Replace ALL keywords (used in your React form → best performance & reliability)
+router.put(
   "/:productId/keywords",
-  // checkPermission("edit", "manage_keywords", "products"),
-  productController.addKeywordsToProduct
+  productController.replaceAllKeywordsForProduct
 );
 
-// 2. Remove a single keyword
+// 2. Optional: Add single keyword (not needed if using replaceAll)
+router.post("/:productId/keywords", productController.addKeywordsToProduct);
+
+// 3. Remove one keyword
 router.delete(
   "/:productId/keywords/:keywordId",
-  // checkPermission("edit", "manage_keywords", "products"),
   productController.removeKeywordFromProduct
 );
 
-// 3. Remove ALL keywords from product (useful on edit when replacing)
+// 4. Remove all (fallback)
 router.delete(
   "/:productId/keywords",
-  // checkPermission("edit", "manage_keywords", "products"),
   productController.removeAllKeywordsFromProduct
 );
 
-// 4. Replace ALL keywords (BEST for edit mode — clear old + add new)
-router.put(
-  "/:productId/keywords",
-  // checkPermission("edit", "manage_keywords", "products"),
-  productController.replaceAllKeywordsForProduct // ← We'll create this
-);
 module.exports = router;
