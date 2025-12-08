@@ -123,6 +123,8 @@ const QuotationForm = ({
   useBillingAddress,
   setBillingAddressId,
   setUseBillingAddress,
+  previewVisible, // ← ADD THIS
+  setPreviewVisible,
 }) => {
   const { auth } = useAuth();
   const canCreatePurchaseOrder =
@@ -575,6 +577,7 @@ const QuotationForm = ({
       </Col>
 
       {/* RIGHT – SUMMARY */}
+      {/* RIGHT – SUMMARY */}
       <Col xs={24} md={8}>
         <CompactCard
           title={<Text strong>Summary</Text>}
@@ -583,11 +586,10 @@ const QuotationForm = ({
           <Text strong>#{quotationNumber}</Text>
           <Divider style={{ margin: "8px 0" }} />
 
-          {/* ORDER TOTAL – NOW 100% CORRECT */}
           <OrderTotal
             subTotal={subTotal}
-            discount={discount} // per‑item total
-            extraDiscount={extraDiscount} // GLOBAL
+            discount={discount}
+            extraDiscount={extraDiscount}
             tax={tax}
             gst={gst}
             gstAmount={gstAmount}
@@ -595,8 +597,31 @@ const QuotationForm = ({
           />
 
           <Divider style={{ margin: "8px 0" }} />
+
+          {/* PREVIEW BUTTON */}
+          <Button
+            type="default"
+            size="large"
+            block
+            style={{
+              marginBottom: 8,
+              background: "#aa0f1f",
+              color: "white",
+              border: "none",
+            }}
+            onClick={() => setPreviewVisible(true)}
+          >
+            Preview Quotation
+          </Button>
+
           <CheckoutBtn
             block
+            style={{
+              marginBottom: 8,
+              background: "#aa0f1f",
+              color: "white",
+              border: "none",
+            }}
             icon={<CheckCircleOutlined />}
             onClick={() => {
               if (!selectedCustomer) return message.error("Select customer");

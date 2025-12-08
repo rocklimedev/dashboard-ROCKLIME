@@ -291,10 +291,7 @@ const CustomerList = () => {
                         </div>
 
                         <div className="d-flex justify-content-center gap-2">
-                          <PermissionGate
-                            api="edit"
-                            module="Customer Management"
-                          >
+                          <PermissionGate api="edit" module="customers">
                             <Button
                               size="small"
                               onClick={() => handleEditCustomer(c)}
@@ -393,10 +390,7 @@ const CustomerList = () => {
                         </td>
                         <td className="text-end">
                           <div className="d-flex justify-content-end gap-2">
-                            <PermissionGate
-                              api="edit"
-                              module="Customer Management"
-                            >
+                            <PermissionGate api="edit" module="customers">
                               <Button
                                 size="small"
                                 icon={<EditOutlined />}

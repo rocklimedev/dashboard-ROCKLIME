@@ -3,7 +3,7 @@ import {
   useGetNotificationsQuery,
   useMarkNotificationAsReadMutation,
   useClearAllNotificationsMutation,
-  useDeleteNotificationMutation, // NEW
+  useDeleteNotificationMutation,
 } from "../../api/notificationApi";
 import { useAuth } from "../../context/AuthContext";
 import Avatar from "react-avatar";
@@ -13,7 +13,7 @@ import { Tooltip } from "antd";
 import { io } from "socket.io-client";
 import { API_URL } from "../../data/config";
 
-const SWIPE_THRESHOLD = 80; // px
+const SWIPE_THRESHOLD = 80;
 
 const NotificationItem = ({
   notification,
@@ -28,42 +28,30 @@ const NotificationItem = ({
 
   const handleTouchStart = (e) => setTouchStart(e.changedTouches[0].clientX);
   const handleTouchMove = (e) => setTouchEnd(e.changedTouches[0].clientX);
+
   const handleTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
     const distance = touchStart - touchEnd;
     const isLeftSwipe = distance > SWIPE_THRESHOLD;
 
-    if (isLeftSwipe) {
-      setTranslateX(-160); // show actions
-    } else {
-      setTranslateX(0);
-    }
+    setTranslateX(isLeftSwipe ? -160 : 0);
     setTouchStart(null);
     setTouchEnd(null);
   };
 
   const resetSwipe = () => setTranslateX(0);
 
-  // Desktop “Mark as read”
-  const desktopMarkBtn = canMarkManually && (
-    <button
-      className="btn btn-sm btn-link text-primary mt-1 p-0"
-      onClick={() => onMarkRead(notification._id)}
-    >
-      Mark as Read
-    </button>
-  );
-
   return (
     <div className="position-relative overflow-hidden">
-      {/* Swipe actions (hidden on desktop) */}
+      {/* Swipe Actions (Mobile only) */}
       <div
-        className="d-md-none position-absolute top-0 start-0 h-100 d-flex align-items-center"
+        className="d-md-none position-absolute top-0 start-0 h-100 d-flex"
         style={{
           right: 0,
           background: "#dc3545",
           width: 160,
           transform: `translateX(${translateX + 160}px)`,
+          transition: "transform 0.3s ease",
         }}
       >
         <button
@@ -73,7 +61,7 @@ const NotificationItem = ({
             resetSwipe();
           }}
         >
-          <i className="fe fe-check"></i>
+          Mark Read
         </button>
         <button
           className="flex-fill h-100 text-white border-0 bg-danger"
@@ -82,11 +70,11 @@ const NotificationItem = ({
             resetSwipe();
           }}
         >
-          <i className="fe fe-trash-2"></i>
+          Delete
         </button>
       </div>
 
-      {/* Notification card */}
+      {/* Notification Card */}
       <div
         ref={itemRef}
         className={`card mb-3 border shadow-none ${
@@ -94,17 +82,12 @@ const NotificationItem = ({
         }`}
         style={{
           transform: `translateX(${translateX}px)`,
-          transition: translateX === 0 ? "transform .2s" : "none",
+          transition: translateX === 0 ? "transform 0.3s ease" : "none",
         }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        onClick={(e) => {
-          if (translateX !== 0) {
-            e.stopPropagation();
-            resetSwipe();
-          }
-        }}
+        onClick={(e) => translateX !== 0 && (e.stopPropagation(), resetSwipe())}
       >
         <div className="px-3 py-3">
           <Tooltip
@@ -114,46 +97,55 @@ const NotificationItem = ({
             placement="right"
           >
             <div className="d-flex align-items-center">
-              <div className="d-flex me-2">
+              <div className="me-3">
                 <a
-                  href={`/u/${notification.userId?._id || "profile"}`}
-                  className="avatar avatar-lg avatar-rounded"
+                  href={`/u/${notification.userId?._id || "#"}`}
                   onClick={(e) => e.stopPropagation()}
+                  className="avatar avatar-rounded"
                 >
                   <Avatar
-                    name={notification.userId?.username || "Unknown User"}
+                    name={notification.userId?.username || "User"}
                     src={notification.userId?.profileImage}
                     size="40"
                     round={true}
-                    className="circular-avatar"
-                    color={Math.random() > 0.5 ? "#28a745" : "#007bff"}
+                    color="#1890ff"
                     textSizeRatio={2}
                   />
                 </a>
               </div>
 
-              <div className="flex-fill ms-3">
-                <p className="text-sm lh-140 mb-0">
+              <div className="flex-fill">
+                <p className="mb-1 text-sm">
                   <a
-                    href={`/u/${notification.userId?._id || "profile"}`}
-                    className="h6 text-decoration-none"
+                    href={`/u/${notification.userId?._id || "#"}`}
+                    className="text-decoration-none fw-medium"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    {notification.userId?.username || "Unknown User"}
+                    {notification.userId?.username || "Someone"}
                   </a>{" "}
-                  <span className="text-dark">{notification.title}</span>{" "}
-                  <span className="text-muted">{notification.message}</span>
+                  <span className="text-dark">{notification.title}</span>
                 </p>
-
+                <p className="text-muted small mb-1">{notification.message}</p>
                 <small className="text-muted">
-                  <i className="far fa-clock me-1"></i>
                   {formatDistanceToNow(parseISO(notification.createdAt), {
                     addSuffix: true,
                   })}
                 </small>
 
-                {/* Desktop button */}
-                <div className="d-none d-md-block">{desktopMarkBtn}</div>
+                {/* Desktop "Mark as Read" */}
+                {canMarkManually && (
+                  <div className="d-none d-md-block mt-2">
+                    <button
+                      className="btn btn-link btn-sm p-0 text-primary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onMarkRead(notification._id);
+                      }}
+                    >
+                      Mark as Read
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </Tooltip>
@@ -167,17 +159,17 @@ const NotificationsWrapper = () => {
   const { auth } = useAuth();
   const userId = auth?.user?.userId;
 
-  const {
-    data: notifications = [],
-    isLoading,
-    error,
-    refetch,
-  } = useGetNotificationsQuery(undefined, { skip: !userId });
+  const { data: notifications = [], refetch } = useGetNotificationsQuery(
+    undefined,
+    {
+      skip: !userId,
+    }
+  );
 
   const [markNotificationAsRead] = useMarkNotificationAsReadMutation();
   const [clearAllNotifications, { isLoading: isClearing }] =
     useClearAllNotificationsMutation();
-  const [deleteNotification] = useDeleteNotificationMutation(); // NEW
+  const [deleteNotification] = useDeleteNotificationMutation();
 
   const handleMarkRead = async (id) => {
     try {
@@ -190,15 +182,26 @@ const NotificationsWrapper = () => {
   const handleDelete = async (id) => {
     try {
       await deleteNotification(id).unwrap();
+      message.success("Notification deleted");
     } catch {
       message.error("Failed to delete");
     }
   };
 
-  // Auto mark after 1 hour
+  const handleClearAll = async () => {
+    if (!notifications.length) return;
+    try {
+      await clearAllNotifications().unwrap();
+      message.success("All notifications cleared");
+    } catch {
+      message.error("Failed to clear notifications");
+    }
+  };
+
+  // Auto-mark after 1 hour
   useEffect(() => {
     if (!notifications.length) return;
-    const check = () => {
+    const interval = setInterval(() => {
       const now = new Date();
       notifications.forEach((n) => {
         if (
@@ -208,45 +211,29 @@ const NotificationsWrapper = () => {
           handleMarkRead(n._id);
         }
       });
-    };
-    check();
-    const iv = setInterval(check, 60_000);
-    return () => clearInterval(iv);
+    }, 60_000);
+    return () => clearInterval(interval);
   }, [notifications]);
 
-  // Socket.IO real-time
+  // Real-time Socket.IO
   useEffect(() => {
     if (!userId) return;
-    const socket = io(API_URL);
+    const socket = io(API_URL, { transports: ["websocket"] });
     socket.on("connect", () => socket.emit("join", userId));
-
-    const events = [
-      "notificationsDeleted",
-      "notificationsCleared",
-      "notificationDeleted",
-    ];
-    events.forEach((ev) => socket.on(ev, refetch));
-
+    socket.on("notificationsDeleted", refetch);
+    socket.on("notificationsCleared", refetch);
+    socket.on("notificationDeleted", refetch);
     return () => socket.disconnect();
   }, [userId, refetch]);
 
-  // Clear All
-  const handleClearAll = async () => {
-    if (!notifications.length) return;
-    try {
-      await clearAllNotifications().unwrap();
-    } catch {
-      message.error("Failed to clear all");
-    }
-  };
-
+  // === Render (No loading states — handled globally) ===
   return (
     <div className="page-wrapper">
       <div className="content mb-4">
-        <div className="page-header d-flex justify-content-between align-items-center">
+        <div className="page-header d-flex justify-content-between align-items-center mb-4">
           <div className="page-title">
             <h4>All Notifications</h4>
-            <h6>View your all activities</h6>
+            <h6>Stay updated with your activities</h6>
           </div>
 
           {notifications.length > 0 && (
@@ -254,7 +241,7 @@ const NotificationsWrapper = () => {
               onClick={handleClearAll}
               disabled={isClearing}
               className={`btn btn-sm ${
-                isClearing ? "btn-secondary" : "btn-danger"
+                isClearing ? "btn-secondary" : "btn-outline-danger"
               } d-flex align-items-center`}
             >
               {isClearing ? (
@@ -263,27 +250,20 @@ const NotificationsWrapper = () => {
                   Clearing...
                 </>
               ) : (
-                <>
-                  <i className="fe fe-trash-2 me-2"></i>Clear All
-                </>
+                <>Clear All</>
               )}
             </button>
           )}
         </div>
 
-        {/* ---------- CONTENT ---------- */}
+        {/* Main Content */}
         {!userId ? (
-          <div className="text-center">Please log in to view notifications</div>
-        ) : isLoading ? (
-          <div className="text-center">Loading notifications...</div>
-        ) : error ? (
-          <div className="text-danger text-center">
-            {error?.data?.message || "Unknown error"}
+          <div className="text-center py-5">
+            <p className="text-muted">Please log in to view notifications</p>
           </div>
         ) : notifications.length === 0 ? (
-          <div className="text-center text-muted">
-            <i className="fe fe-bell-off fa-2x mb-3"></i>
-            <p>No notifications available</p>
+          <div className="text-center py-5">
+            <p className="text-muted">No notifications yet</p>
           </div>
         ) : (
           notifications.map((n) => {

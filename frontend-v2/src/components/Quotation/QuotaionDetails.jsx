@@ -280,7 +280,24 @@ const QuotationsDetails = () => {
       setIsExporting(false);
     }
   };
+  // Safe page title – guaranteed to always be a valid string
+  // Add this near the top with your other useMemo hooks
+  // Add this near your other useMemo hooks (keep it exactly like this)
+  const pageTitle = useMemo(() => {
+    // If quotation data isn't loaded yet, return a safe fallback immediately
+    if (!activeVersionData.quotation) {
+      return "Loading Quotation...";
+    }
 
+    const q = activeVersionData.quotation;
+
+    const titlePart =
+      q.document_title || q.quotation_title || q.title || "Quotation";
+
+    const refPart = q.reference_number || id || "Unknown";
+
+    return `${String(titlePart).trim()} - ${refPart}`;
+  }, [activeVersionData.quotation, id]);
   // === LOADING & ERROR ===
   if (qLoading || vLoading || prodLoading) {
     return (
@@ -321,9 +338,7 @@ const QuotationsDetails = () => {
   return (
     <div className="page-wrapper">
       <Helmet>
-        <title>
-          {quotation?.document_title} - {quotation?.reference_number}
-        </title>
+        <title>{pageTitle}</title>
       </Helmet>
       <div className="content">
         <div className="row">

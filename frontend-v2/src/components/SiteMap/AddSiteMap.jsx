@@ -1,6 +1,7 @@
 // src/components/SiteMap/AddSiteMap.jsx
+
 import React, { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   Spin,
   message,
@@ -10,10 +11,6 @@ import {
   InputNumber,
   Space,
   Button,
-  Modal,
-  List,
-  Typography,
-  Form,
   Card,
   Row,
   Col,
@@ -21,9 +18,9 @@ import {
   Tag,
   Divider,
   Statistic,
+  Typography,
 } from "antd";
 import {
-  SearchOutlined,
   ArrowLeftOutlined,
   PlusOutlined,
   DeleteOutlined,
@@ -38,40 +35,48 @@ import {
   useCreateSiteMapMutation,
   useGetSiteMapByIdQuery,
   useUpdateSiteMapMutation,
-  useGetSiteMapsByCustomerQuery,
 } from "../../api/siteMapApi";
 import { useGetAllProductsQuery } from "../../api/productApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
-import { useGetProfileQuery } from "../../api/userApi";
 
 const { Panel } = Collapse;
-const { Text, Title } = Typography;
+const { Text } = Typography;
 const { Option } = Select;
+
+// Safe string helper
+const safeLower = (val) => {
+  if (val === null || val === undefined) return "";
+  return String(val).toLowerCase();
+};
 
 const AddSiteMap = () => {
   const { id } = useParams();
-  const isEditMode = Boolean(id);
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // ────────────────────── RTK QUERIES ──────────────────────
-  const { data: userData } = useGetProfileQuery();
+  const isEditMode = Boolean(id);
+  const fromQuotation = location.state?.fromQuotation === true;
+
+  // API Queries
   const { data: customersData, isLoading: isCustomersLoading } =
     useGetCustomersQuery();
-  const { data: productsData, isLoading: isProductsLoading } =
+  const { data: productsData = [], isLoading: isProductsLoading } =
     useGetAllProductsQuery();
+  const { data: existingSiteMapData, isLoading: isFetching } =
+    useGetSiteMapByIdQuery(id, {
+      skip: !isEditMode,
+    });
 
-  const { data: existingSiteMap, isLoading: isFetching } =
-    useGetSiteMapByIdQuery(id, { skip: !isEditMode });
+  const [createSiteMap, { isCreating }] = useCreateSiteMapMutation();
+  const [updateSiteMap, isUpdating] = useUpdateSiteMapMutation();
 
-  const [createSiteMap, { isLoading: isCreating }] = useCreateSiteMapMutation();
-  const [updateSiteMap, { isLoading: isUpdating }] = useUpdateSiteMapMutation();
-
-  // ────────────────────── DATA ──────────────────────
-  const userId = userData?.user?.userId || "unknown";
   const customers = customersData?.data || [];
-  const products = productsData || [];
+  const validProducts = productsData.filter(
+    (p) => p && (p.name || p.product_code)
+  );
 
-  // ────────────────────── STATE ──────────────────────
+  const existingSiteMap = existingSiteMapData?.data || null;
+
   const initialFormData = {
     customerId: "",
     name: "",
@@ -79,16 +84,36 @@ const AddSiteMap = () => {
     totalFloors: 1,
     floorDetails: [],
     items: [],
-    summaries: { overall: {}, perFloor: {}, perType: {} },
+    quotationId: null, // optional link
   };
 
   const [formData, setFormData] = useState(initialFormData);
   const [productSearch, setProductSearch] = useState("");
   const [filteredProducts, setFilteredProducts] = useState([]);
 
-  // ────────────────────── EFFECTS ──────────────────────
+  // Load data from quotation or existing sitemap
   useEffect(() => {
-    if (isEditMode && existingSiteMap) {
+    if (fromQuotation && location.state) {
+      const {
+        customerId = "",
+        projectName = "",
+        items = [],
+        totalFloors = 1,
+        quotationId = null,
+      } = location.state;
+
+      setFormData((prev) => ({
+        ...prev,
+        customerId,
+        name: projectName || "Site Map from Quotation",
+        totalFloors,
+        items: items.map((it) => ({
+          ...it,
+          floor_number: it.floor_number || 1, // default to ground floor
+        })),
+        quotationId,
+      }));
+    } else if (isEditMode && existingSiteMap) {
       setFormData({
         customerId: existingSiteMap.customerId || "",
         name: existingSiteMap.name || "",
@@ -96,74 +121,93 @@ const AddSiteMap = () => {
         totalFloors: existingSiteMap.totalFloors || 1,
         floorDetails: existingSiteMap.floorDetails || [],
         items: existingSiteMap.items || [],
-        summaries: existingSiteMap.summaries || initialFormData.summaries,
+        quotationId: existingSiteMap.quotationId || null,
       });
     }
-  }, [existingSiteMap, isEditMode]);
+  }, [fromQuotation, location.state, isEditMode, existingSiteMap]);
 
-  // Initialize floorDetails when totalFloors changes
+  // Auto manage floor details when totalFloors changes
   useEffect(() => {
     if (!formData.totalFloors) return;
 
-    const currentFloors = formData.floorDetails.length;
-    let updatedFloors = [...formData.floorDetails];
+    const currentCount = formData.floorDetails.length;
+    let newFloors = [...formData.floorDetails];
 
-    if (currentFloors < formData.totalFloors) {
-      for (let i = currentFloors; i < formData.totalFloors; i++) {
-        updatedFloors.push({
-          floor_number: i + 1,
-          floor_name: i === 0 ? "Ground Floor" : `${i}th Floor`,
+    if (currentCount < formData.totalFloors) {
+      for (let i = currentCount; i < formData.totalFloors; i++) {
+        const floorNum = i + 1;
+        newFloors.push({
+          floor_number: floorNum,
+          floor_name:
+            floorNum === 1
+              ? "Ground Floor"
+              : floorNum === 2
+              ? "First Floor"
+              : floorNum === 3
+              ? "Second Floor"
+              : `${floorNum - 1}th Floor`,
           floor_size: "",
           details: "",
         });
       }
-    } else if (currentFloors > formData.totalFloors) {
-      updatedFloors = updatedFloors.slice(0, formData.totalFloors);
+    } else if (currentCount > formData.totalFloors) {
+      newFloors = newFloors.slice(0, formData.totalFloors);
+      // Remove items from deleted floors
+      setFormData((prev) => ({
+        ...prev,
+        items: prev.items.filter(
+          (item) => item.floor_number <= formData.totalFloors
+        ),
+      }));
     }
 
-    setFormData((prev) => ({ ...prev, floorDetails: updatedFloors }));
+    setFormData((prev) => ({ ...prev, floorDetails: newFloors }));
   }, [formData.totalFloors]);
 
   // Debounced product search
   const debouncedSearch = useCallback(
     debounce((val) => {
-      if (!val.trim()) {
+      if (!val?.trim()) {
         setFilteredProducts([]);
         return;
       }
       const term = val.toLowerCase();
-      const filtered = products
+      const filtered = validProducts
         .filter((p) => {
-          const name = p.name?.toLowerCase() || "";
-          const code = p.product_code?.toLowerCase() || "";
-          const companyCode = (
-            p.meta?.["d11da9f9-3f2e-4536-8236-9671200cca4a"] || ""
-          ).toLowerCase();
+          const name = safeLower(p.name);
+          const code = safeLower(p.product_code);
+          const companyCode = safeLower(
+            p.meta?.["d11da9f9-3f2e-4536-8236-9671200cca4a"]
+          );
           return (
             name.includes(term) ||
             code.includes(term) ||
             companyCode.includes(term)
           );
         })
-        .slice(0, 10);
+        .slice(0, 12);
       setFilteredProducts(filtered);
     }, 300),
-    [products]
+    [validProducts]
   );
 
-  // ────────────────────── PRODUCT HANDLERS ──────────────────────
+  const handleProductSearch = (value) => {
+    setProductSearch(value);
+    debouncedSearch(value);
+  };
+
   const addProductToFloor = (floorNumber, productId) => {
-    const prod = products.find((p) => (p.id || p.productId) === productId);
+    const prod = validProducts.find((p) => (p.id || p.productId) === productId);
     if (!prod) return message.error("Product not found");
 
     const price =
       Number(prod.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"]) || 0;
-    const productType = prod.category?.name || "Others"; // Adjust based on your product schema
+    const productType = prod.category?.name || "Others";
 
     const newItem = {
       productId: prod.id || prod.productId,
-      name: prod.name,
-      imageUrl: prod.images?.[0] || null,
+      name: prod.name?.trim() || "Unknown Product",
+      imageUrl: Array.isArray(prod.images) ? prod.images[0] : null,
       quantity: 1,
       price,
       floor_number: floorNumber,
@@ -187,324 +231,314 @@ const AddSiteMap = () => {
   };
 
   const updateItemQty = (index, qty) => {
+    if (qty < 1) return;
     setFormData((prev) => {
-      const copy = [...prev.items];
-      copy[index].quantity = qty;
-      return { ...prev, items: copy };
+      const items = [...prev.items];
+      items[index].quantity = qty;
+      return { ...prev, items };
     });
   };
 
-  // ────────────────────── SUBMIT ──────────────────────
   const handleSubmit = async () => {
-    if (!formData.customerId) return message.error("Select a customer");
-    if (!formData.name) return message.error("Enter project name");
+    if (!formData.customerId) return message.error("Please select a customer");
+    if (!formData.name.trim())
+      return message.error("Please enter project name");
     if (formData.items.length === 0)
       return message.error("Add at least one product");
 
-    const payload = {
-      ...formData,
-      items: formData.items.map((item) => ({
-        ...item,
-        quantity: Number(item.quantity),
-        price: Number(item.price),
-      })),
-    };
-
     try {
+      const payload = {
+        ...formData,
+        items: formData.items.map((item) => ({
+          ...item,
+          quantity: Number(item.quantity) || 1,
+          price: Number(item.price) || 0,
+        })),
+      };
+
       if (isEditMode) {
         await updateSiteMap({ id, updatedSiteMap: payload }).unwrap();
-        message.success("Site Map updated successfully");
+        message.success("Site Map updated successfully!");
       } else {
         await createSiteMap(payload).unwrap();
-        message.success("Site Map created successfully");
+        message.success("Site Map created successfully!");
       }
-      navigate("/site-maps/list");
+      navigate("/site-map/list");
     } catch (err) {
-      message.error(err.data?.message || "Failed to save Site Map");
+      message.error(err?.data?.message || "Failed to save Site Map");
     }
   };
 
-  // ────────────────────── RENDER ──────────────────────
-  if (isFetching || isCustomersLoading) {
-    return (
-      <div
-        className="page-wrapper"
-        style={{ padding: 40, textAlign: "center" }}
-      >
-        <Spin size="large" />
-      </div>
-    );
-  }
-
-  const groupedByFloor = {};
+  // Group items by floor
+  const itemsByFloor = {};
   formData.items.forEach((item) => {
-    const floor = item.floor_number || "Unassigned";
-    if (!groupedByFloor[floor]) groupedByFloor[floor] = [];
-    groupedByFloor[floor].push(item);
+    const floor = item.floor_number || 999;
+    if (!itemsByFloor[floor]) itemsByFloor[floor] = [];
+    itemsByFloor[floor].push(item);
   });
 
-  const overall = formData.summaries?.overall || {
-    totalQty: 0,
-    totalAmount: 0,
-  };
-  const totalPages = Object.values(formData.summaries?.perType || {}).reduce(
-    (acc, t) => acc + (t.pages || 0),
+  // Totals
+  const totalAmount = formData.items.reduce(
+    (sum, i) => sum + i.quantity * i.price,
     0
   );
+  const totalQty = formData.items.reduce((sum, i) => sum + i.quantity, 0);
+
+  if (isFetching || isCustomersLoading || isProductsLoading) {
+    return (
+      <Spin tip="Loading..." style={{ display: "block", marginTop: 100 }} />
+    );
+  }
 
   return (
     <div className="page-wrapper">
       <div className="content">
         <PageHeader
-          title={isEditMode ? "Edit Site Map" : "Create Site Map"}
-          subtitle="Plan product allocation across floors"
+          title={isEditMode ? "Edit Site Map" : "Create New Site Map"}
+          subtitle={
+            fromQuotation
+              ? "Generated from Quotation – distribute products across floors"
+              : "Plan sanitaryware & tiles across floors for better visualization"
+          }
         />
 
-        <Space style={{ marginBottom: 16 }}>
+        <Space style={{ marginBottom: 20 }}>
           <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>
             Back
           </Button>
           <Button
             type="primary"
-            icon={<FileTextOutlined />}
+            size="large"
+            icon={<SaveOutlined />}
             onClick={handleSubmit}
-            loading={isCreating || isUpdating}
+            loading={isCreating?.isLoading || isUpdating?.isLoading}
           >
             {isEditMode ? "Update" : "Save"} Site Map
           </Button>
         </Space>
 
-        <Form layout="vertical">
-          {/* Project Info */}
-          <Card title="Project Details" style={{ marginBottom: 16 }}>
-            <Row gutter={16}>
-              <Col xs={24} md={8}>
-                <Form.Item label="Customer" required>
-                  <Select
-                    showSearch
-                    placeholder="Select customer"
-                    value={formData.customerId}
-                    onChange={(v) =>
-                      setFormData({ ...formData, customerId: v })
-                    }
-                    loading={isCustomersLoading}
-                  >
-                    {customers.map((c) => (
-                      <Option key={c.customerId} value={c.customerId}>
-                        {c.name}
-                      </Option>
-                    ))}
-                  </Select>
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={8}>
-                <Form.Item label="Project Name" required>
-                  <Input
-                    placeholder="e.g., Dhruv Verma Residence, Galaxy Mall"
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                  />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={4}>
-                <Form.Item label="Size">
-                  <Input
-                    placeholder="3BHK / 5000 sqft"
-                    value={formData.siteSizeInBHK}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        siteSizeInBHK: e.target.value,
-                      })
-                    }
-                  />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={4}>
-                <Form.Item label="Total Floors">
-                  <InputNumber
-                    min={1}
-                    max={50}
-                    style={{ width: "100%" }}
-                    value={formData.totalFloors}
-                    onChange={(v) =>
-                      setFormData({ ...formData, totalFloors: v })
-                    }
-                  />
-                </Form.Item>
-              </Col>
-            </Row>
-          </Card>
-
-          {/* Floor-wise Allocation */}
-          <Collapse accordion defaultActiveKey="1">
-            {formData.floorDetails.map((floor, idx) => (
-              <Panel
-                key={floor.floor_number}
-                header={
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      width: "100%",
-                    }}
-                  >
-                    <span>
-                      <HomeOutlined /> {floor.floor_name} (
-                      {groupedByFloor[floor.floor_number]?.length || 0} items)
-                    </span>
-                    <Tag color="blue">
-                      ₹
-                      {(groupedByFloor[floor.floor_number] || [])
-                        .reduce((sum, i) => sum + i.quantity * i.price, 0)
-                        .toFixed(0)}
-                    </Tag>
-                  </div>
+        {/* Project Info */}
+        <Card title="Project Information" style={{ marginBottom: 20 }}>
+          <Row gutter={16}>
+            <Col span={12}>
+              <strong>Customer *</strong>
+              <Select
+                showSearch
+                style={{ width: "100%", marginTop: 8 }}
+                placeholder="Select customer"
+                value={formData.customerId || undefined}
+                onChange={(v) =>
+                  setFormData((prev) => ({ ...prev, customerId: v }))
                 }
+                optionFilterProp="children"
               >
-                <Space direction="vertical" style={{ width: "100%" }}>
-                  <Select
-                    showSearch
-                    placeholder="Search & add product..."
-                    onSearch={debouncedSearch}
-                    onChange={(pid) =>
-                      addProductToFloor(floor.floor_number, pid)
-                    }
-                    value={null}
-                    style={{ width: "100%" }}
-                    notFoundContent="Type to search"
-                  >
-                    {filteredProducts.map((p) => (
-                      <Option
-                        key={p.id || p.productId}
-                        value={p.id || p.productId}
-                      >
-                        <div>
-                          <strong>{p.name}</strong> ({p.product_code})
-                          <Text type="secondary" style={{ marginLeft: 8 }}>
-                            ₹
-                            {Number(
-                              p.meta?.[
-                                "9ba862ef-f993-4873-95ef-1fef10036aa5"
-                              ] || 0
-                            ).toFixed(2)}
-                          </Text>
-                        </div>
-                      </Option>
-                    ))}
-                  </Select>
+                {customers.map((c) => (
+                  <Option key={c.customerId} value={c.customerId}>
+                    {c.name}
+                  </Option>
+                ))}
+              </Select>
+            </Col>
+            <Col span={12}>
+              <strong>Project Name *</strong>
+              <Input
+                style={{ marginTop: 8 }}
+                placeholder="e.g., Dhruv Verma 3BHK Residence"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, name: e.target.value }))
+                }
+              />
+            </Col>
+          </Row>
 
-                  <Table
-                    size="small"
-                    pagination={false}
-                    dataSource={groupedByFloor[floor.floor_number] || []}
-                    columns={[
-                      { title: "Product", dataIndex: "name", key: "name" },
-                      {
-                        title: "Qty",
-                        key: "qty",
-                        width: 100,
-                        render: (_, rec, idx) => (
-                          <InputNumber
-                            min={1}
-                            size="small"
-                            value={rec.quantity}
-                            onChange={(v) =>
-                              updateItemQty(formData.items.indexOf(rec), v)
-                            }
-                          />
-                        ),
-                      },
-                      {
-                        title: "Price",
-                        dataIndex: "price",
-                        key: "price",
-                        render: (v) => `₹${Number(v).toFixed(2)}`,
-                      },
-                      {
-                        title: "Total",
-                        key: "total",
-                        render: (_, rec) =>
-                          `₹${(rec.quantity * rec.price).toFixed(2)}`,
-                      },
-                      {
-                        title: "",
-                        key: "action",
-                        width: 60,
-                        render: (_, __, idx) => (
-                          <Button
-                            danger
-                            size="small"
-                            icon={<DeleteOutlined />}
-                            onClick={() =>
-                              removeItem(formData.items.indexOf(__))
-                            }
-                          />
-                        ),
-                      },
-                    ]}
-                  />
-                </Space>
-              </Panel>
-            ))}
-          </Collapse>
+          <Row gutter={16} style={{ marginTop: 16 }}>
+            <Col span={8}>
+              <strong>Size (e.g., 3BHK)</strong>
+              <Input
+                style={{ marginTop: 8 }}
+                value={formData.siteSizeInBHK}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    siteSizeInBHK: e.target.value,
+                  }))
+                }
+              />
+            </Col>
+            <Col span={8}>
+              <strong>Total Floors</strong>
+              <InputNumber
+                min={1}
+                max={50}
+                style={{ width: "100%", marginTop: 8 }}
+                value={formData.totalFloors}
+                onChange={(v) =>
+                  setFormData((prev) => ({ ...prev, totalFloors: v }))
+                }
+              />
+            </Col>
+          </Row>
+        </Card>
 
-          {/* Summary Bar (Sticky Bottom) */}
-          <div
-            style={{
-              marginTop: 24,
-              padding: "16px 24px",
-              background: "#f9f9f9",
-              borderRadius: 8,
-              border: "1px solid #e8e8e8",
-            }}
-          >
-            <Row gutter={24}>
-              <Col span={6}>
-                <Statistic
-                  title="Total Products"
-                  value={formData.items.length}
-                />
-              </Col>
-              <Col span={6}>
-                <Statistic
-                  title="Total Quantity"
-                  value={overall.totalQty || 0}
-                />
-              </Col>
-              <Col span={6}>
-                <Statistic
-                  title="Total Amount"
-                  value={`₹${(overall.totalAmount || 0).toFixed(0)}`}
-                />
-              </Col>
-              <Col span={6}>
-                <Statistic
-                  title="Estimated Pages (PDF)"
-                  value={totalPages || 0}
-                  suffix="pages"
-                />
-              </Col>
-            </Row>
-            <Divider />
-            <Space>
-              <Button
-                size="large"
-                icon={<SaveOutlined />}
-                onClick={handleSubmit}
-                type="primary"
-                loading={isCreating || isUpdating}
+        {/* Floors */}
+        <Collapse
+          accordion
+          defaultActiveKey={formData.floorDetails.length > 0 ? ["1"] : []}
+        >
+          {formData.floorDetails.map((floor) => (
+            <Panel
+              key={floor.floor_number}
+              header={
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    width: "100%",
+                  }}
+                >
+                  <span>
+                    <HomeOutlined /> {floor.floor_name} (
+                    {itemsByFloor[floor.floor_number]?.length || 0} items)
+                  </span>
+                  <Tag color="blue">
+                    ₹
+                    {(itemsByFloor[floor.floor_number] || [])
+                      .reduce((s, i) => s + i.quantity * i.price, 0)
+                      .toLocaleString("en-IN")}
+                  </Tag>
+                </div>
+              }
+            >
+              <Space
+                direction="vertical"
+                style={{ width: "100%" }}
+                size="middle"
               >
-                {isEditMode ? "Update Site Map" : "Save & Continue"}
-              </Button>
-              <Button size="large" icon={<FileTextOutlined />} type="dashed">
-                Generate Quotation →
-              </Button>
-            </Space>
-          </div>
-        </Form>
+                <Select
+                  showSearch
+                  placeholder="Search products by name, code or company code..."
+                  onSearch={handleProductSearch}
+                  onChange={(pid) => addProductToFloor(floor.floor_number, pid)}
+                  value={null}
+                  style={{ width: "100%" }}
+                  dropdownMatchSelectWidth={false}
+                >
+                  {filteredProducts.map((p) => (
+                    <Option
+                      key={p.productId || p.id}
+                      value={p.productId || p.id}
+                    >
+                      <div>
+                        <strong>{p.name || "No Name"}</strong>
+                        <Text type="secondary" style={{ marginLeft: 8 }}>
+                          ({p.product_code || "N/A"}) — ₹
+                          {Number(
+                            p.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"] ||
+                              0
+                          ).toFixed(2)}
+                        </Text>
+                      </div>
+                    </Option>
+                  ))}
+                </Select>
+
+                <Table
+                  size="small"
+                  pagination={false}
+                  dataSource={itemsByFloor[floor.floor_number] || []}
+                  rowKey={(r) => `${r.productId}-${Math.random()}`}
+                  columns={[
+                    { title: "Product", dataIndex: "name", key: "name" },
+                    {
+                      title: "Qty",
+                      width: 100,
+                      render: (_, record, idx) => (
+                        <InputNumber
+                          min={1}
+                          value={record.quantity}
+                          onChange={(v) =>
+                            updateItemQty(formData.items.indexOf(record), v)
+                          }
+                        />
+                      ),
+                    },
+                    {
+                      title: "Price",
+                      render: (_, r) => `₹${Number(r.price).toFixed(2)}`,
+                    },
+                    {
+                      title: "Total",
+                      render: (_, r) => `₹${(r.quantity * r.price).toFixed(2)}`,
+                    },
+                    {
+                      title: "",
+                      width: 60,
+                      render: (_, record) => (
+                        <Button
+                          danger
+                          size="small"
+                          icon={<DeleteOutlined />}
+                          onClick={() =>
+                            removeItem(formData.items.indexOf(record))
+                          }
+                        />
+                      ),
+                    },
+                  ]}
+                />
+              </Space>
+            </Panel>
+          ))}
+        </Collapse>
+
+        {/* Summary */}
+        <div
+          style={{
+            marginTop: 32,
+            padding: 24,
+            background: "#f9f9f9",
+            borderRadius: 8,
+          }}
+        >
+          <Row gutter={32}>
+            <Col>
+              <Statistic title="Total Products" value={formData.items.length} />
+            </Col>
+            <Col>
+              <Statistic title="Total Quantity" value={totalQty} />
+            </Col>
+            <Col>
+              <Statistic
+                title="Estimated Value"
+                value={`₹${totalAmount.toLocaleString("en-IN")}`}
+                precision={0}
+              />
+            </Col>
+          </Row>
+
+          <Divider />
+
+          <Space>
+            <Button
+              type="primary"
+              size="large"
+              icon={<SaveOutlined />}
+              onClick={handleSubmit}
+              loading={isCreating?.isLoading || isUpdating?.isLoading}
+            >
+              {isEditMode ? "Update" : "Save"} Site Map
+            </Button>
+            <Button
+              size="large"
+              icon={<FileTextOutlined />}
+              type="dashed"
+              disabled
+            >
+              Generate Quotation (Coming Soon)
+            </Button>
+          </Space>
+        </div>
       </div>
     </div>
   );
