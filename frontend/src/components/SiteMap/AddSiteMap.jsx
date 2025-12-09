@@ -212,6 +212,7 @@ const AddSiteMap = () => {
   const addProduct = (floorNumber, roomId, productId) => {
     const prod = validProducts.find((p) => getProductId(p) === productId);
     if (!prod) return message.error("Product not found");
+
     const price =
       Number(prod.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"]) || 0;
     const productType = prod.category?.name || "Others";
@@ -219,7 +220,7 @@ const AddSiteMap = () => {
     const newItem = {
       productId: getProductId(prod),
       name: prod.name?.trim() || "Unknown",
-      imageUrl: Array.isArray(prod.images) ? prod.images[0] : null,
+      imageUrl: prod.images?.[0]?.url || prod.images?.[0] || null,
       quantity: 1,
       price,
       floor_number: floorNumber,
@@ -227,7 +228,11 @@ const AddSiteMap = () => {
       productType,
     };
 
-    setFormData((prev) => ({ ...prev, items: [...prev.items, newItem] }));
+    setFormData((prev) => ({
+      ...prev,
+      items: [...prev.items, newItem], // ← immutable push
+    }));
+
     setProductSearch("");
     setFilteredProducts([]);
   };
@@ -257,49 +262,77 @@ const AddSiteMap = () => {
   };
 
   const saveRoom = () => {
-    roomForm.validateFields().then((values) => {
-      const floorIndex = formData.floorDetails.findIndex(
-        (f) => f.floor_number === roomModal.floor.floor_number
-      );
-      const updatedFloors = [...formData.floorDetails];
-      const floor = updatedFloors[floorIndex];
+    roomForm
+      .validateFields()
+      .then((values) => {
+        setFormData((prev) => {
+          // Deep clone to break any Immer/proxy/freeze
+          const updatedFloors = prev.floorDetails.map((f) => ({
+            ...f,
+            rooms: [...f.rooms], // clone rooms array
+          }));
 
-      if (roomModal.room) {
-        // Edit
-        const roomIndex = floor.rooms.findIndex(
-          (r) => r.room_id === roomModal.room.room_id
-        );
-        floor.rooms[roomIndex] = { ...floor.rooms[roomIndex], ...values };
-      } else {
-        // Add
-        floor.rooms.push({
-          room_id: uuidv4(),
-          room_name: values.room_name,
-          room_type: values.room_type || "General",
-          room_size: values.room_size || "",
-          details: values.details || "",
+          const floorIndex = updatedFloors.findIndex(
+            (f) => f.floor_number === roomModal.floor.floor_number
+          );
+
+          if (floorIndex === -1) return prev;
+
+          const floor = updatedFloors[floorIndex];
+
+          if (roomModal.room) {
+            // Edit existing room
+            const roomIndex = floor.rooms.findIndex(
+              (r) => r.room_id === roomModal.room.room_id
+            );
+            if (roomIndex !== -1) {
+              floor.rooms[roomIndex] = {
+                ...floor.rooms[roomIndex],
+                // keep original props
+                ...values, // override with new values
+              };
+            }
+          } else {
+            // Add new room
+            floor.rooms.push({
+              room_id: uuidv4(),
+              room_name: values.room_name,
+              room_type: values.room_type || "General",
+              room_size: values.room_size || "",
+              details: values.details || "",
+            });
+          }
+
+          return {
+            ...prev,
+            floorDetails: updatedFloors,
+          };
         });
-      }
 
-      setFormData((prev) => ({ ...prev, floorDetails: updatedFloors }));
-      setRoomModal({ visible: false });
-    });
+        setRoomModal({ visible: false });
+        roomForm.resetFields();
+      })
+      .catch(() => {});
   };
 
   const deleteRoom = (floorNumber, roomId) => {
-    setFormData((prev) => ({
-      ...prev,
-      floorDetails: prev.floorDetails.map((f) =>
-        f.floor_number === floorNumber
-          ? { ...f, rooms: f.rooms.filter((r) => r.room_id !== roomId) }
-          : f
-      ),
-      items: prev.items.filter(
-        (i) => !(i.floor_number === floorNumber && i.room_id === roomId)
-      ),
-    }));
-  };
+    setFormData((prev) => {
+      const updatedFloors = prev.floorDetails.map((f) => ({
+        ...f,
+        rooms: f.rooms.filter((r) => r.room_id !== roomId),
+      }));
 
+      const newItems = prev.items.filter(
+        (i) => !(i.floor_number === floorNumber && i.room_id === roomId)
+      );
+
+      return {
+        ...prev,
+        floorDetails: updatedFloors,
+        items: newItems,
+      };
+    });
+  };
   const handleSubmit = async () => {
     if (!formData.customerId) return message.error("Select a customer");
     if (!formData.name.trim()) return message.error("Enter project name");
