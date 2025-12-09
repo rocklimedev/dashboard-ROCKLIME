@@ -27,28 +27,6 @@ const Invoice = require("../models/invoice");
 const Order = require("../models/orders");
 const Signature = require("../models/signature");
 const Cart = require("../models/carts");
-// Force the hasMany association with correct alias — THIS FIXES THE ERROR
-if (!Product.associations.product_keywords) {
-  Product.hasMany(ProductKeyword, {
-    foreignKey: "productId",
-    as: "product_keywords", // This alias MUST match what you use in include
-  });
-}
-
-// Also ensure the belongsTo on the join table (needed for nested includes)
-if (!ProductKeyword.associations.keyword) {
-  ProductKeyword.belongsTo(Keyword, {
-    foreignKey: "keywordId",
-    as: "keyword",
-  });
-}
-
-if (!Keyword.associations.categories) {
-  Keyword.belongsTo(Category, {
-    foreignKey: "categoryId",
-    as: "categories",
-  });
-}
 const setupDB = async () => {
   try {
     await sequelize.authenticate();
