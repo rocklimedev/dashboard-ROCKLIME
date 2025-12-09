@@ -11,16 +11,43 @@ const { v4: uuidv4 } = require("uuid");
 const computeSummaries = (items, floorDetails) => {
   const perFloor = {};
   const perType = {};
+  const concealed = {
+    overall: { qty: 0, amount: 0, items: 0 },
+    perFloor: {},
+    perRoom: {},
+    byCategory: {},
+  };
+
   let overall = {
     totalItems: 0,
     totalQty: 0,
     totalAmount: 0,
     totalWithGST: 0,
+    visible: { qty: 0, amount: 0, items: 0 },
+    concealed: concealed.overall,
   };
 
   items.forEach((item) => {
     const floor = item.floor_number?.toString() || "Unassigned";
+    const roomKey = item.room_id ? `${floor}-${item.room_id}` : floor;
     const type = item.productType || "Others";
+
+    const amount = item.quantity * item.price;
+
+    // Overall
+    overall.totalQty += item.quantity;
+    overall.totalAmount += amount;
+    overall.totalItems += 1;
+
+    if (item.isConcealed) {
+      overall.concealed.qty += item.quantity;
+      overall.concealed.amount += amount;
+      overall.concealed.items += 1;
+    } else {
+      overall.visible.qty += item.quantity;
+      overall.visible.amount += amount;
+      overall.visible.items += 1;
+    }
 
     // Per Floor
     if (!perFloor[floor]) {
@@ -28,33 +55,72 @@ const computeSummaries = (items, floorDetails) => {
         (f) => f.floor_number === item.floor_number
       );
       perFloor[floor] = {
+        floorName: floorInfo?.floor_name || floor,
         qty: 0,
         amount: 0,
         items: 0,
-        floorName: floorInfo?.floor_name || floor,
+        visible: { qty: 0, amount: 0, items: 0 },
+        concealed: { qty: 0, amount: 0, items: 0 },
       };
     }
     perFloor[floor].qty += item.quantity;
-    perFloor[floor].amount += item.quantity * item.price;
+    perFloor[floor].amount += amount;
     perFloor[floor].items += 1;
 
-    // Per Type
+    if (item.isConcealed) {
+      perFloor[floor].concealed.qty += item.quantity;
+      perFloor[floor].concealed.amount += amount;
+      perFloor[floor].concealed.items += 1;
+    } else {
+      perFloor[floor].visible.qty += item.quantity;
+      perFloor[floor].visible.amount += amount;
+      perFloor[floor].visible.items += 1;
+    }
+
+    // Concealed-only breakdowns
+    if (item.isConcealed) {
+      // By category
+      const cat = item.concealedCategory || "others";
+      if (!concealed.byCategory[cat]) {
+        concealed.byCategory[cat] = { qty: 0, amount: 0, items: 0, name: cat };
+      }
+      concealed.byCategory[cat].qty += item.quantity;
+      concealed.byCategory[cat].amount += amount;
+      concealed.byCategory[cat].items += 1;
+
+      // Per room (optional deep dive)
+      if (item.room_id) {
+        if (!concealed.perRoom[roomKey])
+          concealed.perRoom[roomKey] = { qty: 0, amount: 0 };
+        concealed.perRoom[roomKey].qty += item.quantity;
+        concealed.perRoom[roomKey].amount += amount;
+      }
+    }
+
+    // Existing perType logic...
     if (!perType[type])
       perType[type] = { qty: 0, amount: 0, items: 0, pages: 0 };
     perType[type].qty += item.quantity;
-    perType[type].amount += item.quantity * item.price;
+    perType[type].amount += amount;
     perType[type].items += 1;
-    perType[type].pages = Math.ceil(perType[type].items / 10); // 10 items per page
-
-    // Overall
-    overall.totalQty += item.quantity;
-    overall.totalAmount += item.quantity * item.price;
-    overall.totalItems += 1;
+    perType[type].pages = Math.ceil(perType[type].items / 10);
   });
 
-  overall.totalWithGST = overall.totalAmount * 1.18; // 18% GST default
+  overall.totalWithGST = overall.totalAmount * 1.18;
 
-  return { overall, perFloor, perType };
+  return {
+    overall,
+    perFloor,
+    perType,
+    concealed: {
+      summary: concealed.overall,
+      byCategory: concealed.byCategory,
+      perFloor: Object.fromEntries(
+        Object.entries(perFloor).map(([k, v]) => [k, v.concealed])
+      ),
+      // perRoom: concealed.perRoom
+    },
+  };
 };
 // Helper for nice floor names
 function getOrdinal(n) {
