@@ -1,4 +1,4 @@
-import React, { useRef, useMemo, useState, useEffect } from "react";
+import React, { useRef, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { message, Button, Spin } from "antd";
 import { useGetSiteMapByIdQuery } from "../../api/siteMapApi";
@@ -6,9 +6,11 @@ import logo from "../../assets/img/logo-quotation.png";
 import { exportToPDF } from "./hooks/exportSiteMapPDF";
 import styles from "./newsitemap.module.css";
 import useProductsData from "../../data/useProductdata";
+import coverImage from "../../assets/img/quotation_first_page.png";
 
-// Indian Number to Words
+// Indian Number to Words (unchanged)
 const NumberToWords = (num) => {
+  // ... your existing function (keep as-is)
   if (!num || num === 0) return "Zero Rupees Only";
   const ones = [
     "",
@@ -69,70 +71,48 @@ const NumberToWords = (num) => {
   return (str.trim() || "Zero") + " Rupees Only";
 };
 
-// Classify product area
-const classifyArea = (name = "") => {
+// Smart area classification
+const getAreaCategory = (name = "") => {
   const n = name.toLowerCase();
   if (
-    [
-      "shower",
-      "head",
-      "rain",
-      "hand shower",
-      "divertor",
-      "overhead",
-      "hose",
-      "ceiling",
-    ].some((k) => n.includes(k))
+    /shower|head|rain|overhead|ceiling|hand ?shower|divertor|hose|rain shower/i.test(
+      n
+    )
   )
     return "shower";
   if (
-    [
-      "basin",
-      "mixer",
-      "faucet",
-      "pillar cock",
-      "towel",
-      "ring",
-      "holder",
-      "waste",
-      "bottle trap",
-      "tap",
-    ].some((k) => n.includes(k))
+    /basin|mixer|faucet|pillar cock|tap|towel|ring|holder|waste|bottle trap/i.test(
+      n
+    )
   )
     return "basin";
   if (
-    [
-      "wc",
-      "toilet",
-      "flush plate",
-      "health faucet",
-      "jet spray",
-      "european wc",
-      "cistern",
-    ].some((k) => n.includes(k))
+    /wc|toilet|flush|health faucet|jet spray|european wc|cistern|urinal/i.test(
+      n
+    )
   )
     return "wc";
-  return "basin";
+  return "basin"; // fallback
 };
 
-// Extract real code, price, image from full product
+// Extract product display data
 const getDisplayData = (item, fullProduct) => {
   if (!fullProduct) {
     return {
-      code: item.code || "N/A",
+      name: item.name || "Unknown",
+      code: "N/A",
       price: item.price || 0,
       image: item.imageUrl || "/placeholder.jpg",
-      name: item.name || "Unknown Product",
     };
   }
 
-  const companyCode =
+  const code =
     fullProduct.meta?.["d11da9f9-3f2e-4536-8236-9671200cca4a"] ||
     fullProduct.metaDetails?.find((m) => m.slug === "companyCode")?.value ||
     fullProduct.product_code ||
     "N/A";
 
-  const sellingPrice = Number(
+  const price = Number(
     fullProduct.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"] ||
       fullProduct.metaDetails?.find((m) => m.slug === "sellingPrice")?.value ||
       fullProduct.price ||
@@ -145,48 +125,23 @@ const getDisplayData = (item, fullProduct) => {
     item.imageUrl ||
     "/placeholder.jpg";
 
-  return {
-    code: companyCode,
-    price: sellingPrice,
-    image,
-    name: fullProduct.name || item.name,
-  };
+  return { name: fullProduct.name || item.name, code, price, image };
 };
 
-// Reusable Image with Fallback — THIS FIXES THE FLICKERING
-const ImageWithFallback = ({
-  src,
-  alt,
-  fallback = "/placeholder.jpg",
-  ...props
-}) => {
-  const [imgSrc, setImgSrc] = useState(src);
-
-  useEffect(() => {
-    setImgSrc(src); // Reset when src changes
-  }, [src]);
+// Image with fallback
+const ImageWithFallback = ({ src, alt, ...props }) => {
+  const [imgSrc, setImgSrc] = React.useState(src);
+  React.useEffect(() => setImgSrc(src), [src]);
 
   return (
     <img
-      src={imgSrc || fallback}
+      src={imgSrc || "/placeholder.jpg"}
       alt={alt}
       loading="lazy"
+      onError={() =>
+        imgSrc !== "/placeholder.jpg" && setImgSrc("/placeholder.jpg")
+      }
       {...props}
-      onError={() => {
-        if (imgSrc !== fallback) {
-          setImgSrc(fallback);
-        }
-      }}
-      style={{
-        width: "100%",
-        height: "120px",
-        objectFit: "contain",
-        background: "#f8f8f8",
-        borderRadius: "4px",
-        transition: "opacity 0.3s ease",
-        opacity: imgSrc ? 1 : 0.5,
-        ...props.style,
-      }}
     />
   );
 };
@@ -200,23 +155,18 @@ const NewSiteMapDetails = () => {
   const siteMap = response?.data || null;
   const customer = siteMap?.Customer || {};
 
-  const {
-    productsData,
-    loading: loadingProducts,
-    errors,
-  } = useProductsData(siteMap?.items || []);
+  const { productsData, loading: loadingProducts } = useProductsData(
+    siteMap?.items || []
+  );
 
-  // Stable product map
+  // Maps
   const productMap = useMemo(() => {
     const map = {};
-    productsData.forEach((p) => {
-      if (p.productId) map[p.productId] = p;
-    });
+    productsData.forEach((p) => p.productId && (map[p.productId] = p));
     return map;
   }, [productsData]);
 
-  // Stable floor names
-  const floorDetailsMap = useMemo(() => {
+  const floorNameMap = useMemo(() => {
     const map = {};
     (siteMap?.floorDetails || []).forEach((f) => {
       map[f.floor_number] = f.floor_name || `Floor ${f.floor_number}`;
@@ -224,108 +174,143 @@ const NewSiteMapDetails = () => {
     return map;
   }, [siteMap?.floorDetails]);
 
-  // Stable keys to prevent unnecessary re-renders
-  const itemsKey = useMemo(() => {
-    if (!siteMap?.items?.length) return "empty";
-    return siteMap.items
-      .map((i) => `${i.productId || i.id}-${i.floor_number}-${i.quantity || 1}`)
-      .sort()
-      .join("|");
-  }, [siteMap?.items]);
-
-  const productsKey = useMemo(() => {
-    return productsData
-      .map((p) => `${p.productId}-${p.price || 0}`)
-      .sort()
-      .join("|");
-  }, [productsData]);
-
-  const floorsKey = useMemo(() => {
-    return (siteMap?.floorDetails || [])
-      .map((f) => `${f.floor_number}-${f.floor_name || ""}`)
-      .join("|");
+  const roomMap = useMemo(() => {
+    const map = {};
+    siteMap?.floorDetails?.forEach((floor) => {
+      floor.rooms?.forEach((room) => {
+        map[room.room_id] = room.room_name || "Common Area";
+      });
+    });
+    return map;
   }, [siteMap?.floorDetails]);
 
-  // Main computation — now fully stable and flicker-free
-  const { mockupPages, grandTotal, floorTotals } = useMemo(() => {
+  // Main data processing — grouped by floor, then classified into 3 areas
+  // Add this inside your NewSiteMapDetails component, replace the old pages useMemo
+
+  const { pages, grandTotal, floorTotals } = useMemo(() => {
     if (!siteMap?.items?.length) {
-      return { mockupPages: [], grandTotal: 0, floorTotals: {} };
+      return { pages: [], grandTotal: 0, floorTotals: {} };
     }
 
-    const grouped = {};
-    let totalAmount = 0;
-    let counter = 0;
+    const floorData = {};
+    let grandTotal = 0;
 
+    // First: Group items by floor → room → area
     siteMap.items.forEach((item) => {
       const floorNum = item.floor_number || 1;
-      const key = `floor_${floorNum}`;
+      const floorName = floorNameMap[floorNum] || `Floor ${floorNum}`;
+      const roomId = item.room_id;
+      const roomName = roomMap[roomId] || "Common Area";
 
-      if (!grouped[key]) {
-        grouped[key] = {
-          name: floorDetailsMap[floorNum] || `Floor ${floorNum}`,
-          shower: [],
-          basin: [],
-          wc: [],
+      if (!floorData[floorNum]) {
+        floorData[floorNum] = {
+          name: floorName,
+          rooms: new Set(),
+          roomItems: {}, // roomName → { shower: [], basin: [], wc: [] }
           total: 0,
         };
       }
 
+      const roomGroup = floorData[floorNum];
+      roomGroup.rooms.add(roomName);
+
+      if (!roomGroup.roomItems[roomName]) {
+        roomGroup.roomItems[roomName] = { shower: [], basin: [], wc: [] };
+      }
+
       const fullProduct = productMap[item.productId];
       const display = getDisplayData(item, fullProduct);
-      const area = classifyArea(item.name || display.name);
+      const area = getAreaCategory(display.name || item.name);
       const qty = item.quantity || 1;
       const itemTotal = display.price * qty;
 
-      grouped[key][area].push({
+      roomGroup.roomItems[roomName][area].push({
         ...item,
-        area,
-        quantity: qty,
+        displayName: display.name,
         displayCode: display.code,
         displayPrice: display.price,
         displayImage: display.image,
-        displayName: display.name,
-        __uniqueId: `${item.productId || item.id}_${floorNum}_${counter++}`,
+        quantity: qty,
+        roomName,
       });
 
-      grouped[key].total += itemTotal;
-      totalAmount += itemTotal;
+      roomGroup.total += itemTotal;
+      grandTotal += itemTotal;
     });
 
-    const mockupPages = [];
+    const pages = [];
     const floorTotals = {};
 
-    Object.keys(grouped)
-      .sort((a, b) => parseInt(a.split("_")[1]) - parseInt(b.split("_")[1]))
-      .forEach((key) => {
-        const data = grouped[key];
-        floorTotals[data.name] = data.total;
+    Object.keys(floorData)
+      .sort((a, b) => Number(a) - Number(b))
+      .forEach((floorNum) => {
+        const floor = floorData[floorNum];
+        floorTotals[floor.name] = floor.total;
 
-        const allItems = [...data.shower, ...data.basin, ...data.wc];
-        const title = `SITE MAP - ${data.name.toUpperCase()}`;
+        // Get unique room names in logical order (you can customize priority if needed)
+        const roomNames = Array.from(floor.rooms);
+
+        // Assign rooms to 3 columns intelligently
+        // Priority: Try to put one toilet/bathroom per column
+        const columns = [
+          { title: "", items: { shower: [], basin: [], wc: [] } },
+          { title: "", items: { shower: [], basin: [], wc: [] } },
+          { title: "", items: { shower: [], basin: [], wc: [] } },
+        ];
+
+        roomNames.forEach((roomName, idx) => {
+          const colIndex = idx % 3;
+          columns[colIndex].title = roomName.toUpperCase();
+          const roomProducts = floor.roomItems[roomName];
+          columns[colIndex].items.shower.push(...roomProducts.shower);
+          columns[colIndex].items.basin.push(...roomProducts.basin);
+          columns[colIndex].items.wc.push(...roomProducts.wc);
+        });
+
+        // Fill empty columns with "NOT APPLICABLE" if needed
+        columns.forEach((col) => {
+          if (!col.title) col.title = "NOT APPLICABLE";
+        });
+
+        // Now create pages (15 items total per page max)
+        const allColumnItems = columns.flatMap((col) =>
+          [...col.items.shower, ...col.items.basin, ...col.items.wc].map(
+            (item) => ({
+              ...item,
+              columnRoom: col.title,
+            })
+          )
+        );
+
         const ITEMS_PER_PAGE = 15;
+        const chunks = [];
+        for (let i = 0; i < allColumnItems.length; i += ITEMS_PER_PAGE) {
+          chunks.push(allColumnItems.slice(i, i + ITEMS_PER_PAGE));
+        }
 
-        for (let i = 0; i < allItems.length; i += ITEMS_PER_PAGE) {
-          const chunk = allItems.slice(i, i + ITEMS_PER_PAGE);
-          const pageNum = Math.floor(i / ITEMS_PER_PAGE) + 1;
-          const totalPages = Math.ceil(allItems.length / ITEMS_PER_PAGE);
+        chunks.forEach((chunk, idx) => {
+          const pageNum = idx + 1;
+          const totalPages = chunks.length;
 
-          mockupPages.push({
-            title,
+          // Rebuild column structure for this page chunk
+          const pageColumns = columns.map((col) => ({
+            title: col.title,
+            items: chunk.filter((item) => item.columnRoom === col.title),
+          }));
+
+          pages.push({
+            title: `SITE MAP - ${floor.name.toUpperCase()}`,
             pageInfo:
               totalPages > 1 ? `Page ${pageNum} of ${totalPages}` : null,
-            showerItems: chunk.filter((x) => x.area === "shower").slice(0, 5),
-            basinItems: chunk.filter((x) => x.area === "basin").slice(0, 5),
-            wcItems: chunk.filter((x) => x.area === "wc").slice(0, 5),
-            floorTotal: data.total,
-            floorName: data.name,
-            pageKey: `${key}_page_${pageNum}`, // Stable key
+            columns: pageColumns,
+            floorTotal: floor.total,
+            pageKey: `floor_${floorNum}_page_${pageNum}`,
           });
-        }
+        });
       });
 
-    return { mockupPages, grandTotal: totalAmount, floorTotals };
-  }, [itemsKey, productsKey, floorsKey, productMap, floorDetailsMap]);
-
+    return { pages, grandTotal, floorTotals };
+  }, [siteMap?.items, productMap, floorNameMap, roomMap]);
   const handleExportPDF = async () => {
     if (!siteMapRef.current) return message.error("Content not ready");
     try {
@@ -341,14 +326,13 @@ const NewSiteMapDetails = () => {
     return (
       <div className="text-center py-5">
         <Spin size="large" />
-        <p className="mt-3">Loading site map and products...</p>
+        <p className="mt-3">Loading site map...</p>
       </div>
     );
   }
 
-  if (!siteMap) {
+  if (!siteMap)
     return <div className="text-center py-5">Site map not found</div>;
-  }
 
   return (
     <div className="page-wrapper">
@@ -390,17 +374,13 @@ const NewSiteMapDetails = () => {
                     <div className={styles.coverFooter}>
                       <div className={styles.redLineLong}></div>
                       <div className={styles.brandLogos}>
-                        <img
-                          src={logo}
-                          alt="Logo"
-                          className={styles.mainLogo}
-                        />
+                        <img src={logo} alt="Logo" />
                       </div>
                     </div>
                   </div>
 
-                  {/* MOCKUP PAGES */}
-                  {mockupPages.map((page) => (
+                  {/* FLOOR PAGES - 3 COLUMN LAYOUT PRESERVED */}
+                  {pages.map((page) => (
                     <div
                       key={page.pageKey}
                       className={`${styles.mockupPage} quotation-page-print`}
@@ -413,37 +393,62 @@ const NewSiteMapDetails = () => {
                         <div className={styles.redLineShort}></div>
                       </header>
 
+                      {/* Dynamic Room Headers */}
                       <div className={styles.labelsRow}>
-                        <div className={styles.labelShower}>SHOWER AREA</div>
-                        <div className={styles.labelBasin}>BASIN AREA</div>
-                        <div className={styles.labelWc}>WC AREA</div>
+                        {page.columns.map((col, i) => (
+                          <div
+                            key={i}
+                            className={
+                              col.title.includes("NOT APPLICABLE")
+                                ? styles.labelEmpty
+                                : styles.labelShower // reuse style, or make new ones
+                            }
+                            style={{
+                              fontWeight: 700,
+                              color: col.title.includes("NOT")
+                                ? "#999"
+                                : "#d4380d",
+                            }}
+                          >
+                            {col.title}
+                          </div>
+                        ))}
                       </div>
 
                       <div className={styles.grid}>
-                        {["shower", "basin", "wc"].map((area) => (
-                          <div key={area} className={styles.column}>
-                            {page[`${area}Items`]?.map((item) => (
+                        {page.columns.map((col, colIdx) => (
+                          <div key={colIdx} className={styles.column}>
+                            {col.items.map((item) => (
                               <div
-                                key={item.__uniqueId}
+                                key={item.productId + item.roomName}
                                 className={styles.productCard}
                               >
                                 <ImageWithFallback
                                   src={item.displayImage}
                                   alt={item.displayName}
-                                  fallback="/placeholder.jpg"
+                                  style={{
+                                    width: "100%",
+                                    height: "120px",
+                                    objectFit: "contain",
+                                  }}
                                 />
                                 <p className={styles.code}>
-                                  Code: {item.displayCode}
+                                  Code: {item.displayCode} ₹
+                                  {item.displayPrice.toLocaleString("en-IN")}
+                                  {item.quantity > 1 && ` × ${item.quantity}`}
                                 </p>
                                 <p className={styles.name}>
                                   {item.displayName}
                                 </p>
-                                <p className={styles.price}>
-                                  ₹{item.displayPrice.toLocaleString("en-IN")}
-                                  {item.quantity > 1 && ` × ${item.quantity}`}
-                                </p>
                               </div>
                             ))}
+                            {/* Optional: show empty state */}
+                            {col.items.length === 0 &&
+                              col.title !== "NOT APPLICABLE" && (
+                                <div className={styles.emptyColumnNote}>
+                                  No fittings selected
+                                </div>
+                              )}
                           </div>
                         ))}
                       </div>
@@ -501,11 +506,7 @@ const NewSiteMapDetails = () => {
                     <footer className={styles.footer}>
                       <div className={styles.redLineLong}></div>
                       <div className={styles.brandLogos}>
-                        <img
-                          src={logo}
-                          alt="Logo"
-                          className={styles.mainLogo}
-                        />
+                        <img src={logo} alt="Logo" />
                       </div>
                     </footer>
                   </div>
@@ -518,11 +519,7 @@ const NewSiteMapDetails = () => {
                     <footer className={styles.footer}>
                       <div className={styles.redLineLong}></div>
                       <div className={styles.brandLogos}>
-                        <img
-                          src={logo}
-                          alt="Logo"
-                          className={styles.mainLogo}
-                        />
+                        <img src={logo} alt="Logo" />
                       </div>
                     </footer>
                   </div>
