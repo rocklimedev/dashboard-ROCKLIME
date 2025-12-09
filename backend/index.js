@@ -157,7 +157,27 @@ app.use("/api/site-maps", routes.siteMap);
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", uptime: process.uptime() });
 });
-
+// ------------------- KEEP-ALIVE & DB HEALTH ENDPOINT (CRITICAL FOR RENDER) -------------------
+app.get("/api/health", async (req, res) => {
+  try {
+    // This will wake up MySQL if it's sleeping
+    await db.authenticate();
+    res.status(200).json({
+      status: "OK",
+      message: "Server & MySQL are alive",
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      env: process.env.NODE_ENV,
+    });
+  } catch (err) {
+    console.error("[HEALTH CHECK] MySQL connection failed:", err.message);
+    res.status(503).json({
+      status: "ERROR",
+      message: "MySQL connection failed",
+      error: err.message,
+    });
+  }
+});
 // ------------------- 404 Handler -------------------
 app.use("*", (req, res) => {
   res.status(404).json({ error: "Route not found" });
@@ -252,7 +272,23 @@ cron.schedule("0 1 * * *", async () => {
 // ------------------- Socket.IO Setup -------------------
 require("./socket")(io);
 initSocket(io);
+// ------------------- KEEP-ALIVE PINGER (PREVENTS RENDER SPIN-DOWN) -------------------
+if (process.env.NODE_ENV === "production" || process.env.RENDER) {
+  const axios = require("axios");
 
+  // Ping ourselves every 10 minutes to keep Render + MySQL awake
+  setInterval(async () => {
+    try {
+      const url =
+        process.env.RENDER_EXTERNAL_URL ||
+        `https://${process.env.RENDER_SERVICE_NAME}.onrender.com`;
+      await axios.get(`${url}/api/health`, { timeout: 10000 });
+      console.log(`[KEEP-ALIVE] Pinged ${url}/api/health → MySQL stays awake`);
+    } catch (err) {
+      console.error("[KEEP-ALIVE] Ping failed:", err.code || err.message);
+    }
+  }, 10 * 60 * 1000); // Every 10 minutes
+}
 // ------------------- Start Server -------------------
 const PORT = keys.port || process.env.PORT || 5000;
 httpServer.listen(PORT, "0.0.0.0", () => {
