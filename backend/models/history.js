@@ -14,12 +14,14 @@ const InventoryHistory = sequelize.define(
       comment: "UUID v7 - time-ordered & distributed-safe",
     },
     productId: {
-      type: DataTypes.CHAR(36), // ← match your Product.id type
+      type: DataTypes.CHAR(36),
       allowNull: false,
       references: {
         model: Product,
-        key: "id",
+        key: "productId", // ← THIS WAS THE BUG ALL ALONG
       },
+      onDelete: "CASCADE",
+      onUpdate: "CASCADE",
     },
     change: {
       type: DataTypes.INTEGER,

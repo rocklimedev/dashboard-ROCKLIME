@@ -6,6 +6,24 @@ const Category = require("../models/category");
 const { Op } = require("sequelize");
 const sequelize = require("../config/database");
 const { uploadToFtp } = require("../middleware/upload");
+// Helper: safely parse JSON with fallback and logging
+const parseJsonSafely = (input, fallback = {}, context = "") => {
+  if (input == null) return fallback;
+  if (typeof input !== "string") return input; // already object/array
+
+  const trimmed = input.trim();
+  if (trimmed === "" || trimmed === "null") return fallback;
+
+  try {
+    return JSON.parse(trimmed);
+  } catch (error) {
+    console.warn(
+      `Invalid JSON detected in ${context}:`,
+      trimmed.substring(0, 200)
+    );
+    return fallback;
+  }
+};
 
 // ==================== CREATE PRODUCT ====================
 exports.createProduct = async (req, res) => {
@@ -442,11 +460,12 @@ exports.updateProduct = async (req, res) => {
   }
 };
 
-// ==================== GET ALL PRODUCTS ====================
 exports.getAllProducts = async (req, res) => {
   try {
     const products = await Product.findAll({
-      attributes: { exclude: ["createdAt", "updatedAt"] },
+      attributes: {
+        exclude: ["createdAt", "updatedAt"],
+      },
       order: [["name", "ASC"]],
       include: [
         {
@@ -465,42 +484,65 @@ exports.getAllProducts = async (req, res) => {
       ],
     });
 
-    if (products.length === 0) return res.json([]);
+    if (products.length === 0) {
+      return res.json([]);
+    }
 
-    // Fetch meta definitions once
+    // Collect all meta IDs used across products
     const metaIds = new Set();
-    products.forEach((p) => {
-      if (p.meta) {
-        const meta = typeof p.meta === "string" ? JSON.parse(p.meta) : p.meta;
-        Object.keys(meta || {}).forEach((id) => metaIds.add(id));
+
+    products.forEach((product) => {
+      const meta = parseJsonSafely(
+        product.meta,
+        null,
+        `product ID ${product.id} meta`
+      );
+      if (meta && typeof meta === "object") {
+        Object.keys(meta).forEach((id) => metaIds.add(id));
       }
     });
 
+    // Fetch meta definitions once
     const metaDefs =
       metaIds.size > 0
         ? await ProductMeta.findAll({
-            where: { id: { [Op.in]: [...metaIds] } },
+            where: { id: { [Op.in]: Array.from(metaIds) } },
             attributes: ["id", "title", "slug", "fieldType", "unit"],
           })
         : [];
-    const metaMap = Object.fromEntries(metaDefs.map((m) => [m.id, m]));
 
-    const enriched = products.map((p) => {
-      const raw = p.toJSON();
-      const metaObj = raw.meta
-        ? typeof raw.meta === "string"
-          ? JSON.parse(raw.meta)
-          : raw.meta
-        : {};
-      const metaDetails = Object.entries(metaObj).map(([id, value]) => ({
-        id,
-        title: metaMap[id]?.title ?? "Unknown",
-        slug: metaMap[id]?.slug ?? null,
-        value: String(value),
-        fieldType: metaMap[id]?.fieldType ?? "text",
-        unit: metaMap[id]?.unit ?? null,
-      }));
+    const metaMap = Object.fromEntries(metaDefs.map((m) => [m.id, m.toJSON()]));
 
+    // Transform and enrich products
+    const enrichedProducts = products.map((product) => {
+      const raw = product.toJSON();
+
+      // Safely parse meta and images
+      const metaObj = parseJsonSafely(
+        raw.meta,
+        {},
+        `product ID ${raw.id} meta`
+      );
+      const images = parseJsonSafely(
+        raw.images,
+        [],
+        `product ID ${raw.id} images`
+      );
+
+      // Build detailed meta with titles, units, etc.
+      const metaDetails = Object.entries(metaObj).map(([id, value]) => {
+        const def = metaMap[id] || {};
+        return {
+          id,
+          title: def.title || "Unknown Field",
+          slug: def.slug || null,
+          value: value != null ? String(value) : "",
+          fieldType: def.fieldType || "text",
+          unit: def.unit || null,
+        };
+      });
+
+      // Clean keyword structure
       const keywords = (raw.keywords || []).map((k) => ({
         id: k.id,
         keyword: k.keyword,
@@ -515,23 +557,26 @@ exports.getAllProducts = async (req, res) => {
 
       return {
         ...raw,
-        images: raw.images ? JSON.parse(raw.images) : [],
-        meta: metaObj,
-        metaDetails,
+        images, // always an array
+        meta: metaObj, // parsed object or {}
+        metaDetails, // enriched with titles, units, etc.
         keywords,
         variantOptions: raw.variantOptions || {},
         variantKey: raw.variantKey || null,
         skuSuffix: raw.skuSuffix || null,
         isMaster: !!raw.isMaster,
         isVariant: !!raw.masterProductId,
-        masterProductId: raw.masterProductId || raw.productId,
+        masterProductId: raw.masterProductId || raw.id,
       };
     });
 
-    res.json(enriched);
+    res.json(enrichedProducts);
   } catch (error) {
     console.error("getAllProducts error:", error);
-    res.status(500).json({ message: "Error fetching products" });
+    res.status(500).json({
+      message: "Failed to fetch products",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
