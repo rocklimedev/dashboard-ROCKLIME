@@ -1,12 +1,17 @@
 // models/product.js
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
-const Category = require("./category");
 const { v4: uuidv4 } = require("uuid");
+
+// Only import models that are actually used in field references
+// → These are safe because they are only referenced, not used at definition time
+const Category = require("./category");
 const Brand = require("./brand");
-const Keyword = require("./keyword");
-const BrandParentCategory = require("./brandParentCategory");
 const Vendor = require("./vendor");
+const BrandParentCategory = require("./brandParentCategory");
+
+// DO NOT import ProductKeyword or Keyword here → causes circular/eager require issues
+// Associations will be set up later in setupDB.js
 
 const Product = sequelize.define(
   "Product",
@@ -16,11 +21,22 @@ const Product = sequelize.define(
       primaryKey: true,
       defaultValue: () => uuidv4(),
     },
-    name: { type: DataTypes.STRING, allowNull: false },
-    product_code: { type: DataTypes.STRING, allowNull: false, unique: true },
-    quantity: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    product_code: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+    },
+    quantity: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
 
-    // ──────────────────────── VARIANT FIELDS (NEW) ────────────────────────
+    // ──────────────────────── VARIANT FIELDS ────────────────────────
     masterProductId: {
       type: DataTypes.UUID,
       allowNull: true,
@@ -34,7 +50,7 @@ const Product = sequelize.define(
     variantOptions: {
       type: DataTypes.JSON,
       allowNull: true,
-      comment: "e.g., { color: 'Red', finish: 'Matte', size: '60x60' }",
+      comment: 'e.g., { color: "Red", finish: "Matte", size: "60x60" }',
     },
     variantKey: {
       type: DataTypes.STRING,
@@ -44,17 +60,35 @@ const Product = sequelize.define(
     skuSuffix: {
       type: DataTypes.STRING(50),
       allowNull: true,
-      comment: "e.g., '-RED', '-BLUE-MATTE' → helps build unique code",
+      comment: "e.g., '-RED', '-BLUE-MATTE'",
     },
     // ─────────────────────────────────────────────────────────────────────
 
-    discountType: { type: DataTypes.ENUM("percent", "fixed"), allowNull: true },
-    alert_quantity: { type: DataTypes.INTEGER, allowNull: true },
-    tax: { type: DataTypes.DECIMAL(5, 2), allowNull: true },
-    description: { type: DataTypes.TEXT, allowNull: true },
-    images: { type: DataTypes.JSON, allowNull: true, defaultValue: [] },
-    isFeatured: { type: DataTypes.BOOLEAN, defaultValue: false },
-
+    discountType: {
+      type: DataTypes.ENUM("percent", "fixed"),
+      allowNull: true,
+    },
+    alert_quantity: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    tax: {
+      type: DataTypes.DECIMAL(5, 2),
+      allowNull: true,
+    },
+    description: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    images: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      defaultValue: [],
+    },
+    isFeatured: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
     status: {
       type: DataTypes.ENUM(
         "active",
@@ -89,7 +123,6 @@ const Product = sequelize.define(
       references: { model: BrandParentCategory, key: "id" },
     },
 
-    // Flexible specs (kept as-is — this is your Option 2)
     meta: {
       type: DataTypes.JSON,
       allowNull: true,
@@ -108,7 +141,10 @@ const Product = sequelize.define(
   }
 );
 
-async function determineProductGroup(name) {
+// Optional: You can keep this helper function if you still use it somewhere
+// But it's better to move it to a service/utils file later
+Product.determineProductGroup = async function (name) {
+  const Keyword = require("./keyword"); // lazy require only when needed
   const keywords = await Keyword.findAll();
   const ceramics = keywords.filter(
     (k) =>
@@ -126,6 +162,6 @@ async function determineProductGroup(name) {
   if (ceramics > 0 && sanitary > 0)
     return ceramics >= sanitary ? "Ceramics" : "Sanitary";
   return "Uncategorized";
-}
+};
 
 module.exports = Product;

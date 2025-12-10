@@ -23,6 +23,7 @@ import {
   Form,
   Tabs,
   Badge,
+  Alert,
 } from "antd";
 import {
   ArrowLeftOutlined,
@@ -34,6 +35,7 @@ import {
   EditOutlined,
   EyeInvisibleOutlined,
   ToolOutlined,
+  WarningOutlined,
 } from "@ant-design/icons";
 import { debounce } from "lodash";
 import { v4 as uuidv4 } from "uuid";
@@ -70,10 +72,12 @@ const AddSiteMap = () => {
 
   const isEditMode = Boolean(id);
   const fromQuotation = location.state?.fromQuotation === true;
+
   const [selectedConcealedProduct, setSelectedConcealedProduct] =
     useState(null);
   const [selectedFloor, setSelectedFloor] = useState(null);
   const [selectedRoom, setSelectedRoom] = useState(null);
+
   // API
   const { data: customersData, isLoading: isCustomersLoading } =
     useGetCustomersQuery();
@@ -104,6 +108,10 @@ const AddSiteMap = () => {
   const [concealedSearch, setConcealedSearch] = useState("");
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [filteredConcealed, setFilteredConcealed] = useState([]);
+  const [assignModal, setAssignModal] = useState({
+    visible: false,
+    itemIndex: null, // index in formData.items
+  });
   const [roomModal, setRoomModal] = useState({
     visible: false,
     floor: null,
@@ -111,7 +119,7 @@ const AddSiteMap = () => {
   });
   const [roomForm] = Form.useForm();
 
-  // === Detect Concealed Products ===
+  // === Detect Concealed vs Normal Products ===
   const { normalProducts, concealedProducts } = useMemo(() => {
     const normal = [];
     const concealed = [];
@@ -132,9 +140,7 @@ const AddSiteMap = () => {
         name.includes("cable") ||
         name.includes("junction") ||
         name.includes("mcb") ||
-        name.includes("db") ||
-        category.includes("wiring") ||
-        category.includes("concealed");
+        name.includes("db");
 
       if (isConcealedItem) {
         concealed.push({ ...p, isConcealed: true });
@@ -146,7 +152,7 @@ const AddSiteMap = () => {
     return { normalProducts: normal, concealedProducts: concealed };
   }, [validProducts]);
 
-  // Load initial data
+  // === Load Data from Quotation or Edit Mode ===
   useEffect(() => {
     if (fromQuotation && location.state) {
       const {
@@ -156,17 +162,30 @@ const AddSiteMap = () => {
         totalFloors = 1,
         quotationId,
       } = location.state;
+
+      const mappedItems = items.map((it) => ({
+        productId: it.productId,
+        name: (it.name || "Unknown Product").trim(),
+        imageUrl: it.imageUrl || null,
+        quantity: Number(it.quantity) || 1,
+        price: Number(it.price) || 0,
+        discount: it.discount || 0,
+        discountType: it.discountType || "percent",
+        total: it.total || it.price,
+        floor_number: null, // ← Crucial: unassigned
+        room_id: null,
+        productType: it.category?.name || "Quotation Item",
+        isConcealed: false, // will be recalculated in useMemo
+      }));
+
       setFormData((prev) => ({
         ...prev,
-        customerId,
-        name: projectName || "Site Map from Quotation",
-        totalFloors,
-        items: items.map((it) => ({
-          ...it,
-          floor_number: it.floor_number || 1,
-          room_id: null,
-          isConcealed: it.isConcealed || false,
-        })),
+        customerId: customerId || "",
+        name:
+          projectName || `Site Map - ${new Date().toLocaleDateString("en-IN")}`,
+        siteSizeInBHK: "",
+        totalFloors: items.length > 0 ? totalFloors : 1,
+        items: mappedItems,
         quotationId,
       }));
     } else if (isEditMode && existingSiteMapData?.data) {
@@ -174,7 +193,29 @@ const AddSiteMap = () => {
     }
   }, [fromQuotation, location.state, isEditMode, existingSiteMapData]);
 
-  // Auto-manage floors
+  // Auto-create Ground Floor if none exist (only when from quotation and no floors)
+  useEffect(() => {
+    if (
+      fromQuotation &&
+      formData.floorDetails.length === 0 &&
+      formData.totalFloors >= 1
+    ) {
+      setFormData((prev) => ({
+        ...prev,
+        floorDetails: [
+          {
+            floor_number: 1,
+            floor_name: "Ground Floor",
+            floor_size: "",
+            details: "",
+            rooms: [],
+          },
+        ],
+      }));
+    }
+  }, [fromQuotation, formData.floorDetails.length]);
+
+  // Auto-manage floors based on totalFloors
   useEffect(() => {
     if (!formData.totalFloors) return;
 
@@ -223,56 +264,7 @@ const AddSiteMap = () => {
     }, 300),
     []
   );
-  const addSelectedConcealedItem = () => {
-    if (!selectedConcealedProduct || !selectedFloor) return;
 
-    const prod = concealedProducts.find(
-      (p) => getProductId(p) === selectedConcealedProduct
-    );
-    if (!prod) return;
-
-    const price =
-      Number(prod.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"]) || 0;
-    const categoryName = (prod.category?.name || "").toLowerCase();
-
-    let concealedCategory = "others";
-    if (categoryName.includes("conduit")) concealedCategory = "conduit-pipe";
-    else if (categoryName.includes("wiring") || categoryName.includes("cable"))
-      concealedCategory = "wiring-cable";
-    else if (categoryName.includes("junction"))
-      concealedCategory = "junction-box";
-    else if (
-      categoryName.includes("db") ||
-      categoryName.includes("distribution")
-    )
-      concealedCategory = "distribution-board";
-    else if (categoryName.includes("mcb")) concealedCategory = "mcb-dp";
-
-    const newItem = {
-      productId: getProductId(prod),
-      name: prod.name?.trim() || prod.product_code || "Unknown Concealed Item",
-      imageUrl: prod.images?.[0]?.url || null,
-      quantity: 1,
-      price,
-      floor_number: selectedFloor,
-      room_id: selectedRoom || null,
-      productType: prod.category?.name || "Concealed Works",
-      isConcealed: true,
-      concealedCategory,
-    };
-
-    setFormData((prev) => ({
-      ...prev,
-      items: [...prev.items, newItem],
-    }));
-
-    // Reset
-    setSelectedConcealedProduct(null);
-    setSelectedFloor(null);
-    setSelectedRoom(null);
-    setConcealedSearch("");
-    setFilteredConcealed([]);
-  };
   const handleProductSearch = (val) => {
     setProductSearch(val);
     debouncedSearch(val, normalProducts, setFilteredProducts);
@@ -285,14 +277,15 @@ const AddSiteMap = () => {
 
   const getProductId = (p) => p.productId || p.id;
 
+  // === Add Product (Visible) ===
   const addProduct = (floorNumber, roomId, productId, isConcealed = false) => {
     const list = isConcealed ? concealedProducts : normalProducts;
     const prod = list.find((p) => getProductId(p) === productId);
     if (!prod) return message.error("Product not found");
 
-    const price =
-      Number(prod.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"]) || 0;
-    const productType = prod.category?.name || "Others";
+    const price = Number(
+      prod.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"] || 0
+    );
 
     const newItem = {
       productId: getProductId(prod),
@@ -302,15 +295,8 @@ const AddSiteMap = () => {
       price,
       floor_number: floorNumber,
       room_id: roomId || null,
-      productType,
+      productType: prod.category?.name || "Others",
       isConcealed,
-      concealedCategory: isConcealed
-        ? (prod.category?.name?.toLowerCase().includes("conduit") &&
-            "conduit-pipe") ||
-          (prod.category?.name?.toLowerCase().includes("wiring") &&
-            "wiring-cable") ||
-          "others"
-        : null,
     };
 
     setFormData((prev) => ({
@@ -318,13 +304,47 @@ const AddSiteMap = () => {
       items: [...prev.items, newItem],
     }));
 
-    if (isConcealed) {
-      setConcealedSearch("");
-      setFilteredConcealed([]);
-    } else {
+    if (!isConcealed) {
       setProductSearch("");
       setFilteredProducts([]);
     }
+  };
+
+  // === Add Concealed Item ===
+  const addSelectedConcealedItem = () => {
+    if (!selectedConcealedProduct || !selectedFloor) return;
+
+    const prod = concealedProducts.find(
+      (p) => getProductId(p) === selectedConcealedProduct
+    );
+    if (!prod) return;
+
+    const price = Number(
+      prod.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"] || 0
+    );
+
+    const newItem = {
+      productId: getProductId(prod),
+      name: prod.name?.trim() || prod.product_code || "Unknown Concealed Item",
+      imageUrl: prod.images?.[0]?.url || null,
+      quantity: 1,
+      price,
+      floor_number: selectedFloor,
+      room_id: selectedRoom || null,
+      productType: prod.category?.name || "Concealed Works",
+      isConcealed: true,
+    };
+
+    setFormData((prev) => ({
+      ...prev,
+      items: [...prev.items, newItem],
+    }));
+
+    setSelectedConcealedProduct(null);
+    setSelectedFloor(null);
+    setSelectedRoom(null);
+    setConcealedSearch("");
+    setFilteredConcealed([]);
   };
 
   const removeItem = (index) => {
@@ -343,7 +363,7 @@ const AddSiteMap = () => {
     });
   };
 
-  // === Room Modal Logic (unchanged) ===
+  // Room Modal Logic
   const openRoomModal = (floor, room = null) => {
     roomForm.resetFields();
     setRoomModal({ visible: true, floor, room });
@@ -416,14 +436,14 @@ const AddSiteMap = () => {
 
       if (isEditMode) {
         await updateSiteMap({ id, updatedSiteMap: payload }).unwrap();
-        message.success("Site Map updated!");
+        message.success("Site Map updated successfully!");
       } else {
         await createSiteMap(payload).unwrap();
-        message.success("Site Map created!");
+        message.success("Site Map created successfully!");
       }
       navigate("/site-map/list");
     } catch (err) {
-      message.error(err?.data?.message || "Failed to save");
+      message.error(err?.data?.message || "Failed to save site map");
     }
   };
 
@@ -431,7 +451,7 @@ const AddSiteMap = () => {
   const itemsByLocation = useMemo(() => {
     const map = {};
     formData.items.forEach((item) => {
-      const floorKey = item.floor_number || "Unassigned";
+      const floorKey = item.floor_number || "unassigned";
       const roomKey = item.room_id || "floor-level";
       if (!map[floorKey]) map[floorKey] = {};
       if (!map[floorKey][roomKey]) map[floorKey][roomKey] = [];
@@ -456,6 +476,8 @@ const AddSiteMap = () => {
     };
   }, [formData.items]);
 
+  const hasUnassignedItems = formData.items.some((i) => !i.floor_number);
+
   if (isFetching || isCustomersLoading || isProductsLoading) {
     return (
       <Spin tip="Loading..." style={{ display: "block", marginTop: 100 }} />
@@ -467,10 +489,10 @@ const AddSiteMap = () => {
       <div className="content">
         <PageHeader
           title={isEditMode ? "Edit Site Map" : "Create Site Map"}
-          subtitle="Assign visible & concealed products to rooms for accurate electrical planning"
+          subtitle="Plan electrical layout by assigning products to floors and rooms"
         />
 
-        <Space style={{ marginBottom: 20 }}>
+        <Space style={{ marginBottom: 16 }}>
           <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>
             Back
           </Button>
@@ -484,6 +506,18 @@ const AddSiteMap = () => {
             {isEditMode ? "Update" : "Save"} Site Map
           </Button>
         </Space>
+
+        {/* Warning if items are unassigned */}
+        {hasUnassignedItems && (
+          <Alert
+            message="Unassigned Items Detected"
+            description="Some products are not yet assigned to any floor/room. Please assign them for accurate planning. They will still be saved."
+            type="warning"
+            showIcon
+            icon={<WarningOutlined />}
+            style={{ marginBottom: 20 }}
+          />
+        )}
 
         {/* Project Info */}
         <Card title="Project Information" style={{ marginBottom: 20 }}>
@@ -510,7 +544,7 @@ const AddSiteMap = () => {
               <strong>Project Name *</strong>
               <Input
                 style={{ marginTop: 8 }}
-                placeholder="e.g., Dhruv Verma 3BHK Residence"
+                placeholder="e.g., Jethalal Gada 3BHK Residence"
                 value={formData.name}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, name: e.target.value }))
@@ -547,8 +581,8 @@ const AddSiteMap = () => {
           </Row>
         </Card>
 
-        {/* Tabs: Visible vs Concealed */}
         <Tabs defaultActiveKey="visible" size="large">
+          {/* ==================== VISIBLE PRODUCTS TAB ==================== */}
           <TabPane
             tab={
               <span>
@@ -561,6 +595,104 @@ const AddSiteMap = () => {
             }
             key="visible"
           >
+            {formData.items.some((i) => !i.isConcealed && !i.floor_number) && (
+              <Card
+                title={
+                  <>
+                    <WarningOutlined /> Unassigned Visible Products (From
+                    Quotation)
+                  </>
+                }
+                style={{
+                  marginBottom: 24,
+                  border: "2px dashed #1890ff",
+                  backgroundColor: "#f0f8ff",
+                }}
+                extra={
+                  <Tag color="blue">
+                    {
+                      formData.items.filter(
+                        (i) => !i.isConcealed && !i.floor_number
+                      ).length
+                    }{" "}
+                    items
+                  </Tag>
+                }
+              >
+                <Table
+                  size="small"
+                  pagination={false}
+                  dataSource={formData.items.filter(
+                    (i) => !i.isConcealed && !i.floor_number
+                  )}
+                  columns={[
+                    { title: "Product", dataIndex: "name", width: "35%" },
+                    {
+                      title: "Qty",
+                      width: 100,
+                      render: (_, r) => (
+                        <InputNumber
+                          min={1}
+                          value={r.quantity}
+                          onChange={(v) =>
+                            updateItemQty(formData.items.indexOf(r), v)
+                          }
+                        />
+                      ),
+                    },
+                    {
+                      title: "Price",
+                      render: (_, r) => `₹${r.price.toLocaleString("en-IN")}`,
+                    },
+                    {
+                      title: "Total",
+                      render: (_, r) =>
+                        `₹${(r.quantity * r.price).toLocaleString("en-IN")}`,
+                    },
+                    {
+                      title: "Action",
+                      width: 120,
+                      render: (_, record) => (
+                        <Button
+                          type="primary"
+                          size="small"
+                          icon={<HomeOutlined />}
+                          onClick={() => {
+                            setAssignModal({
+                              visible: true,
+                              itemIndex: formData.items.indexOf(record),
+                            });
+                          }}
+                        >
+                          Assign
+                        </Button>
+                      ),
+                    },
+                    {
+                      title: "",
+                      render: (_, r) => (
+                        <Button
+                          danger
+                          size="small"
+                          icon={<DeleteOutlined />}
+                          onClick={() => removeItem(formData.items.indexOf(r))}
+                        />
+                      ),
+                    },
+                  ]}
+                />
+                <div style={{ marginTop: 12, textAlign: "right" }}>
+                  <Tag color="blue" size="large">
+                    Total: ₹
+                    {formData.items
+                      .filter((i) => !i.isConcealed && !i.floor_number)
+                      .reduce((s, i) => s + i.quantity * i.price, 0)
+                      .toLocaleString("en-IN")}
+                  </Tag>
+                </div>
+              </Card>
+            )}
+
             <Collapse accordion>
               {formData.floorDetails.map((floor) => {
                 const floorItems = itemsByLocation[floor.floor_number] || {};
@@ -585,7 +717,7 @@ const AddSiteMap = () => {
                       >
                         <span>
                           <HomeOutlined /> {floor.floor_name} (
-                          {visibleItems.length} visible items)
+                          {visibleItems.length} items)
                         </span>
                         <Tag color="green">
                           ₹{floorTotal.toLocaleString("en-IN")}
@@ -595,8 +727,7 @@ const AddSiteMap = () => {
                   >
                     <Space
                       direction="vertical"
-                      style={{ width: "100%" }}
-                      size="large"
+                      style={{ width: "100%", size: "large" }}
                     >
                       <Button
                         type="dashed"
@@ -610,7 +741,7 @@ const AddSiteMap = () => {
                       {floor.rooms.length === 0 ? (
                         <Card size="small">
                           <Text type="secondary">
-                            Add rooms to assign products
+                            Add rooms to assign visible products
                           </Text>
                         </Card>
                       ) : (
@@ -627,11 +758,9 @@ const AddSiteMap = () => {
                             <Card
                               key={room.room_id}
                               size="small"
-                              title={
-                                <span>
-                                  {room.room_name} <Tag>{room.room_type}</Tag>
-                                </span>
-                              }
+                              title={`${room.room_name} ${
+                                room.room_type && <Tag>{room.room_type}</Tag>
+                              }`}
                               extra={
                                 <Space>
                                   <Button
@@ -655,7 +784,7 @@ const AddSiteMap = () => {
                             >
                               <Select
                                 showSearch
-                                placeholder="Add visible product..."
+                                placeholder="Search & add visible product..."
                                 onSearch={handleProductSearch}
                                 onChange={(pid) =>
                                   addProduct(
@@ -679,19 +808,17 @@ const AddSiteMap = () => {
                                         justifyContent: "space-between",
                                       }}
                                     >
-                                      <div>
-                                        <strong>
-                                          {p.name || p.product_code}
-                                        </strong>
-                                      </div>
-                                      <div>
+                                      <strong>
+                                        {p.name || p.product_code}
+                                      </strong>
+                                      <span>
                                         ₹
                                         {Number(
                                           p.meta?.[
                                             "9ba862ef-f993-4873-95ef-1fef10036aa5"
                                           ] || 0
                                         ).toLocaleString("en-IN")}
-                                      </div>
+                                      </span>
                                     </div>
                                   </Option>
                                 ))}
@@ -759,6 +886,7 @@ const AddSiteMap = () => {
             </Collapse>
           </TabPane>
 
+          {/* ==================== CONCEALED WORKS TAB ==================== */}
           <TabPane
             tab={
               <span>
@@ -771,12 +899,11 @@ const AddSiteMap = () => {
             }
             key="concealed"
           >
-            {/* Add Concealed Item with Floor/Room Selector */}
+            {/* Add Concealed Item */}
             <Card
               title={
                 <>
-                  <ToolOutlined /> Add Concealed Item (Wiring, Conduit, DB,
-                  etc.)
+                  <ToolOutlined /> Add Concealed Item
                 </>
               }
               style={{ marginBottom: 24 }}
@@ -793,7 +920,6 @@ const AddSiteMap = () => {
                   onChange={setSelectedConcealedProduct}
                   value={selectedConcealedProduct || undefined}
                   style={{ width: "100%" }}
-                  dropdownMatchSelectWidth={false}
                 >
                   {filteredConcealed.map((p) => (
                     <Option key={getProductId(p)} value={getProductId(p)}>
@@ -805,92 +931,136 @@ const AddSiteMap = () => {
                       >
                         <div>
                           <strong>{p.name || p.product_code}</strong>
-                          <Tag
-                            color="volcano"
-                            size="small"
-                            style={{ marginLeft: 8 }}
-                          >
+                          <Tag color="volcano" style={{ marginLeft: 8 }}>
                             Concealed
                           </Tag>
                         </div>
-                        <div>
+                        <span>
                           ₹
                           {Number(
                             p.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"] ||
                               0
                           ).toLocaleString("en-IN")}
-                        </div>
+                        </span>
                       </div>
                     </Option>
                   ))}
                 </Select>
 
                 {selectedConcealedProduct && (
-                  <>
-                    <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-                      <Select
-                        placeholder="Select Floor"
-                        style={{ width: 300 }}
-                        value={selectedFloor}
-                        onChange={setSelectedFloor}
-                      >
-                        {formData.floorDetails.map((f) => (
-                          <Option key={f.floor_number} value={f.floor_number}>
-                            {f.floor_name}
-                          </Option>
-                        ))}
-                      </Select>
-
-                      <Select
-                        placeholder="Select Room (optional)"
-                        style={{ width: 300 }}
-                        value={selectedRoom}
-                        onChange={setSelectedRoom}
-                        allowClear
-                      >
-                        {selectedFloor &&
-                          formData.floorDetails
-                            .find((f) => f.floor_number === selectedFloor)
-                            ?.rooms.map((room) => (
-                              <Option key={room.room_id} value={room.room_id}>
-                                {room.room_name} ({room.room_type})
-                              </Option>
-                            ))}
-                      </Select>
-
-                      <Button
-                        type="primary"
-                        icon={<PlusOutlined />}
-                        onClick={addSelectedConcealedItem}
-                        disabled={!selectedFloor}
-                      >
-                        Add to Location
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          setSelectedConcealedProduct(null);
-                          setSelectedFloor(null);
-                          setSelectedRoom(null);
-                        }}
-                      >
-                        Clear
-                      </Button>
-                    </div>
-                  </>
+                  <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+                    <Select
+                      placeholder="Select Floor"
+                      style={{ minWidth: 250 }}
+                      value={selectedFloor}
+                      onChange={setSelectedFloor}
+                    >
+                      {formData.floorDetails.map((f) => (
+                        <Option key={f.floor_number} value={f.floor_number}>
+                          {f.floor_name}
+                        </Option>
+                      ))}
+                    </Select>
+                    <Select
+                      placeholder="Select Room (optional)"
+                      style={{ minWidth: 250 }}
+                      value={selectedRoom}
+                      onChange={setSelectedRoom}
+                      allowClear
+                    >
+                      {selectedFloor &&
+                        formData.floorDetails
+                          .find((f) => f.floor_number === selectedFloor)
+                          ?.rooms.map((room) => (
+                            <Option key={room.room_id} value={room.room_id}>
+                              {room.room_name} ({room.room_type})
+                            </Option>
+                          ))}
+                    </Select>
+                    <Button
+                      type="primary"
+                      icon={<PlusOutlined />}
+                      onClick={addSelectedConcealedItem}
+                      disabled={!selectedFloor}
+                    >
+                      Add
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setSelectedConcealedProduct(null);
+                        setSelectedFloor(null);
+                        setSelectedRoom(null);
+                      }}
+                    >
+                      Clear
+                    </Button>
+                  </div>
                 )}
               </Space>
             </Card>
 
-            {/* Concealed Items Table - Grouped by Floor → Room */}
+            {/* Unassigned Concealed Items */}
+            {formData.items.some((i) => i.isConcealed && !i.floor_number) && (
+              <Card
+                title="Unassigned Concealed Items"
+                style={{
+                  marginBottom: 24,
+                  border: "2px dashed #ff4d4f",
+                  backgroundColor: "#fff2f0",
+                }}
+              >
+                <Table
+                  size="small"
+                  dataSource={formData.items.filter(
+                    (i) => i.isConcealed && !i.floor_number
+                  )}
+                  columns={[
+                    { title: "Product", dataIndex: "name" },
+                    {
+                      title: "Qty",
+                      render: (_, r) => (
+                        <InputNumber
+                          min={1}
+                          value={r.quantity}
+                          onChange={(v) =>
+                            updateItemQty(formData.items.indexOf(r), v)
+                          }
+                        />
+                      ),
+                    },
+                    {
+                      title: "Price",
+                      render: (_, r) => `₹${r.price.toLocaleString("en-IN")}`,
+                    },
+                    {
+                      title: "Total",
+                      render: (_, r) =>
+                        `₹${(r.quantity * r.price).toLocaleString("en-IN")}`,
+                    },
+                    {
+                      title: "",
+                      render: (_, r) => (
+                        <Button
+                          danger
+                          size="small"
+                          icon={<DeleteOutlined />}
+                          onClick={() => removeItem(formData.items.indexOf(r))}
+                        />
+                      ),
+                    },
+                  ]}
+                />
+              </Card>
+            )}
+
+            {/* Assigned Concealed Items by Floor */}
             <Collapse accordion>
               {formData.floorDetails.map((floor) => {
                 const concealedInFloor = formData.items.filter(
                   (i) => i.isConcealed && i.floor_number === floor.floor_number
                 );
-
                 if (concealedInFloor.length === 0) return null;
 
-                // Group by room
                 const byRoom = {};
                 concealedInFloor.forEach((item) => {
                   const key = item.room_id || "floor-level";
@@ -911,10 +1081,7 @@ const AddSiteMap = () => {
                       >
                         <span>
                           <EyeInvisibleOutlined /> {floor.floor_name} -
-                          Concealed Works
-                          <Tag color="red" style={{ marginLeft: 8 }}>
-                            {concealedInFloor.length} items
-                          </Tag>
+                          Concealed ({concealedInFloor.length})
                         </span>
                         <Tag color="volcano">
                           ₹
@@ -1044,54 +1211,9 @@ const AddSiteMap = () => {
                 );
               })}
             </Collapse>
-
-            {/* Optional: Show unassigned concealed items */}
-            {formData.items.some((i) => i.isConcealed && !i.floor_number) && (
-              <Card
-                title="Unassigned Concealed Items"
-                style={{ marginTop: 16, borderColor: "#ff4d4f" }}
-              >
-                <Table
-                  size="small"
-                  dataSource={formData.items.filter(
-                    (i) => i.isConcealed && !i.floor_number
-                  )}
-                  columns={[
-                    { title: "Product", dataIndex: "name" },
-                    {
-                      title: "Qty",
-                      render: (_, r) => (
-                        <InputNumber
-                          min={1}
-                          value={r.quantity}
-                          onChange={(v) =>
-                            updateItemQty(formData.items.indexOf(r), v)
-                          }
-                        />
-                      ),
-                    },
-                    {
-                      title: "Total",
-                      render: (_, r) =>
-                        `₹${(r.quantity * r.price).toLocaleString("en-IN")}`,
-                    },
-                    {
-                      title: "",
-                      render: (_, r) => (
-                        <Button
-                          danger
-                          size="small"
-                          icon={<DeleteOutlined />}
-                          onClick={() => removeItem(formData.items.indexOf(r))}
-                        />
-                      ),
-                    },
-                  ]}
-                />
-              </Card>
-            )}
           </TabPane>
         </Tabs>
+
         {/* Summary */}
         <div
           style={{
@@ -1104,13 +1226,13 @@ const AddSiteMap = () => {
           <Row gutter={32}>
             <Col>
               <Statistic
-                title="Visible Items Value"
+                title="Visible Items"
                 value={`₹${visibleTotal.toLocaleString("en-IN")}`}
               />
             </Col>
             <Col>
               <Statistic
-                title="Concealed Works Value"
+                title="Concealed Works"
                 value={`₹${concealedTotal.toLocaleString("en-IN")}`}
                 valueStyle={{ color: "#ff4d4f" }}
               />
@@ -1130,19 +1252,16 @@ const AddSiteMap = () => {
               />
             </Col>
           </Row>
-
           <Divider />
-          <Space>
-            <Button
-              type="primary"
-              size="large"
-              icon={<SaveOutlined />}
-              onClick={handleSubmit}
-              loading={isCreating || isUpdating}
-            >
-              {isEditMode ? "Update" : "Save"} Site Map
-            </Button>
-          </Space>
+          <Button
+            type="primary"
+            size="large"
+            icon={<SaveOutlined />}
+            onClick={handleSubmit}
+            loading={isCreating || isUpdating}
+          >
+            {isEditMode ? "Update" : "Save"} Site Map
+          </Button>
         </div>
 
         {/* Room Modal */}
@@ -1176,6 +1295,74 @@ const AddSiteMap = () => {
               <Input.TextArea />
             </Form.Item>
           </Form>
+        </Modal>
+        {/* Assign Product Modal */}
+        <Modal
+          title="Assign Product to Location"
+          open={assignModal.visible}
+          onOk={() => {
+            if (!selectedFloor) return message.error("Please select a floor");
+            const index = assignModal.itemIndex;
+            setFormData((prev) => {
+              const items = [...prev.items];
+              items[index] = {
+                ...items[index],
+                floor_number: selectedFloor,
+                room_id: selectedRoom || null,
+              };
+              return { ...prev, items };
+            });
+            setAssignModal({ visible: false, itemIndex: null });
+            setSelectedFloor(null);
+            setSelectedRoom(null);
+            message.success("Product assigned successfully!");
+          }}
+          onCancel={() => {
+            setAssignModal({ visible: false, itemIndex: null });
+            setSelectedFloor(null);
+            setSelectedRoom(null);
+          }}
+          okText="Assign"
+          cancelText="Cancel"
+        >
+          <Space direction="vertical" style={{ width: "100%" }}>
+            <div>
+              <strong>Select Floor *</strong>
+              <Select
+                placeholder="Choose floor"
+                style={{ width: "100%", marginTop: 8 }}
+                value={selectedFloor}
+                onChange={setSelectedFloor}
+              >
+                {formData.floorDetails.map((f) => (
+                  <Option key={f.floor_number} value={f.floor_number}>
+                    {f.floor_name}
+                  </Option>
+                ))}
+              </Select>
+            </div>
+
+            {selectedFloor && (
+              <div>
+                <strong>Select Room (optional)</strong>
+                <Select
+                  placeholder="Common area if not selected"
+                  style={{ width: "100%", marginTop: 8 }}
+                  value={selectedRoom}
+                  onChange={setSelectedRoom}
+                  allowClear
+                >
+                  {formData.floorDetails
+                    .find((f) => f.floor_number === selectedFloor)
+                    ?.rooms.map((room) => (
+                      <Option key={room.room_id} value={room.room_id}>
+                        {room.room_name} ({room.room_type})
+                      </Option>
+                    ))}
+                </Select>
+              </div>
+            )}
+          </Space>
         </Modal>
       </div>
     </div>

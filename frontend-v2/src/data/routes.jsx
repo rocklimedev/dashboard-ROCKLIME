@@ -232,14 +232,14 @@ const masterRoutes = [
         name: "Edit Site Map",
         icon: <BiCategory />,
         isSidebarActive: false,
-        element: <NewSiteMapDetails />,
+        element: <SiteMapDetails />,
       },
       {
         path: "/site-map/:id",
         name: "Site Map Details",
         icon: <BiCategory />,
         isSidebarActive: false,
-        element: <SiteMapDetails />,
+        element: <NewSiteMapDetails />,
       },
       {
         path: "/settings",
