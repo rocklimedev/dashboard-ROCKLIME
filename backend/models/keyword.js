@@ -18,6 +18,18 @@ const Keyword = sequelize.define(
     categoryId: {
       type: DataTypes.UUID,
       allowNull: true,
+      references: {
+        model: "categories",
+        key: "categoryId",
+      },
+      onDelete: "SET NULL",
+      onUpdate: "CASCADE",
+      // This is the important part:
+      field: "categoryId",
+      comment: "FK to categories.categoryId",
+      // Force binary collation (same as categories table)
+      type: DataTypes.CHAR(36), // override the default
+      collate: "utf8mb4_bin", // <-- THIS LINE FIXES IT
     },
   },
   {
