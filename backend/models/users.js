@@ -55,16 +55,7 @@ const User = sequelize.define(
       type: DataTypes.ENUM("A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"),
       allowNull: true,
     },
-    addressId: {
-      type: DataTypes.UUID,
-      allowNull: true,
-      references: {
-        model: "addresses",
-        key: "addressId",
-      },
-      onDelete: "SET NULL",
-      onUpdate: "CASCADE",
-    },
+
     emergencyNumber: {
       type: DataTypes.STRING(20),
       allowNull: true,
