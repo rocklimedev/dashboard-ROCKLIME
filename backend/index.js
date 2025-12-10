@@ -6,13 +6,20 @@ const { Server } = require("socket.io");
 const cors = require("cors");
 const helmet = require("helmet");
 const cron = require("node-cron");
-const LogStatsDaily = require("./models/log_stats_daily");
+const axios = require("axios");
+
 const db = require("./config/database");
 const connectMongoDB = require("./config/dbMongo");
 const setupDB = require("./utils/db");
 const keys = require("./config/keys");
-const { initSocket } = require("./controller/notificationController");
+
+const LogStatsDaily = require("./models/log_stats_daily");
 const CachedPermission = require("./models/cachedPermission");
+const ApiLog = require("./models/apiLog"); // assuming you have this model
+
+// Socket & Notification Setup
+const { initSocket } = require("./controller/notificationController");
+require("./socket"); // your socket.io logic
 
 // ------------------- Route Imports -------------------
 const routes = {
@@ -51,9 +58,10 @@ const routes = {
   siteMap: require("./routes/siteMap"),
 };
 
-// ------------------- Express App -------------------
+// ------------------- Express & HTTP Server -------------------
 const app = express();
 const httpServer = createServer(app);
+
 const io = new Server(httpServer, {
   cors: {
     origin: [
@@ -73,52 +81,53 @@ const io = new Server(httpServer, {
   },
 });
 
-// ------------------- CORS & Body Parsing -------------------
-const corsOptions = {
-  origin: [
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "http://localhost:3002",
-    "http://localhost:3003",
-    "http://localhost:5173",
-    "https://dashboard-rocklime.vercel.app",
-    "https://cmtradingco.vercel.app",
-    "https://dashboard-cmtradingco.vercel.app",
-    "http://erp.cmtradingco.com",
-    "https://erp.cmtradingco.com",
-  ],
-  credentials: true,
-};
+// ------------------- Middleware -------------------
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "http://localhost:3002",
+  "http://localhost:3003",
+  "http://localhost:5173",
+  "https://dashboard-rocklime.vercel.app",
+  "https://cmtradingco.vercel.app",
+  "https://dashboard-cmtradingco.vercel.app",
+  "http://erp.cmtradingco.com",
+  "https://erp.cmtradingco.com",
+];
 
-app.use(cors(corsOptions));
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  })
+);
+
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// ------------------- Security -------------------
 app.use(
   helmet({
-    contentSecurityPolicy: false, // You can customize later
-    frameguard: true,
+    contentSecurityPolicy: false,
     hsts: { maxAge: 31536000, includeSubDomains: true },
   })
 );
 
-// ------------------- NON-BLOCKING API LOGGER (FIRE & FORGET) -------------------
-app.use(require("./middleware/logger")); // CRITICAL: Updated logger
+// API Logger (non-blocking)
+app.use(require("./middleware/logger"));
 
-// ------------------- Optional: Console Debug Logger -------------------
+// Debug log
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
 });
 
-// ------------------- Make io available in all routes -------------------
+// Make io available in all routes
 app.use((req, res, next) => {
   req.io = io;
   next();
 });
 
-// ------------------- Route Mounting -------------------
+// ------------------- Routes -------------------
 app.use("/api/auth", routes.auth);
 app.use("/api/attendance", routes.attendance);
 app.use("/api/user", routes.user);
@@ -153,14 +162,13 @@ app.use("/api/feedback", routes.feedback);
 app.use("/api/cached-permissions", routes.cachedPermission);
 app.use("/api/site-maps", routes.siteMap);
 
-// ------------------- Health Check -------------------
+// ------------------- Health Checks -------------------
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", uptime: process.uptime() });
 });
-// ------------------- KEEP-ALIVE & DB HEALTH ENDPOINT (CRITICAL FOR RENDER) -------------------
+
 app.get("/api/health", async (req, res) => {
   try {
-    // This will wake up MySQL if it's sleeping
     await db.authenticate();
     res.status(200).json({
       status: "OK",
@@ -170,20 +178,19 @@ app.get("/api/health", async (req, res) => {
       env: process.env.NODE_ENV,
     });
   } catch (err) {
-    console.error("[HEALTH CHECK] MySQL connection failed:", err.message);
-    res.status(503).json({
-      status: "ERROR",
-      message: "MySQL connection failed",
-      error: err.message,
-    });
+    console.error("[HEALTH] MySQL failed:", err.message);
+    res
+      .status(503)
+      .json({ status: "ERROR", message: "MySQL down", error: err.message });
   }
 });
-// ------------------- 404 Handler -------------------
+
+// 404
 app.use("*", (req, res) => {
   res.status(404).json({ error: "Route not found" });
 });
 
-// ------------------- Global Error Handler -------------------
+// Global Error Handler
 app.use((err, req, res, next) => {
   console.error("[GLOBAL ERROR]", err.stack || err);
   res.status(err.status || 500).json({
@@ -194,41 +201,20 @@ app.use((err, req, res, next) => {
         : err.message,
   });
 });
-// ------------------- Database Connections -------------------
-const startServer = async () => {
-  try {
-    await connectMongoDB(); // ← if this is async
-    console.log("MongoDB Connected");
 
-    await setupDB(); // ← NOW WE WAIT!
-    console.log("Sequelize associations loaded");
+// ------------------- CRON JOBS -------------------
 
-    await db.sync({ alter: false }); // ← also wait for sync
-    console.log("MySQL Database synced successfully");
-
-    httpServer.listen(PORT, "0.0.0.0", () => {
-      console.log(`Server running on http://localhost:${PORT}`);
-      console.log(`WebSocket ready on ws://localhost:${PORT}`);
-      console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
-    });
-  } catch (error) {
-    console.error("Failed to start server:", error);
-    process.exit(1);
-  }
-};
-
-startServer();
-// ------------------- Daily Cron: Clear Cached Permissions -------------------
+// Clear cached permissions daily at 2 AM
 cron.schedule("0 2 * * *", async () => {
   try {
-    const result = await CachedPermission.deleteMany({});
-    console.log(
-      `[CRON] Cleared ${result.deletedCount} cached permissions at 2 AM`
-    );
+    const { deletedCount } = await CachedPermission.deleteMany({});
+    console.log(`[CRON] Cleared ${deletedCount} cached permissions`);
   } catch (err) {
-    console.error("[CRON] Failed to clear cache:", err);
+    console.error("[CRON] Failed to clear cached permissions:", err);
   }
 });
+
+// Daily API stats at 1 AM
 cron.schedule("0 1 * * *", async () => {
   try {
     const yesterday = new Date();
@@ -239,11 +225,7 @@ cron.schedule("0 1 * * *", async () => {
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     const stats = await ApiLog.aggregate([
-      {
-        $match: {
-          createdAt: { $gte: yesterday, $lt: tomorrow },
-        },
-      },
+      { $match: { createdAt: { $gte: yesterday, $lt: tomorrow } } },
       {
         $group: {
           _id: null,
@@ -256,60 +238,83 @@ cron.schedule("0 1 * * *", async () => {
       },
     ]);
 
-    if (stats[0]) {
+    if (stats.length > 0) {
+      const s = stats[0];
       await LogStatsDaily.findOneAndUpdate(
         { date: yesterday },
         {
           date: yesterday,
-          totalRequests: stats[0].totalRequests,
-          avgDuration: Math.round(stats[0].avgDuration || 0),
-          errorRate: stats[0].totalRequests
-            ? Math.round(
-                (stats[0].errorCount / stats[0].totalRequests) * 10000
-              ) / 100
-            : 0,
-          methodBreakdown: (stats[0].methods || []).reduce(
+          totalRequests: s.totalRequests,
+          avgDuration: Math.round(s.avgDuration || 0),
+          errorRate: Math.round((s.errorCount / s.totalRequests) * 10000) / 100,
+          methodBreakdown: s.methods.reduce(
             (a, m) => ((a[m] = (a[m] || 0) + 1), a),
             {}
           ),
-          statusBreakdown: (stats[0].statuses || [])
-            .filter(Boolean)
-            .reduce((a, s) => ((a[s] = (a[s] || 0) + 1), a), {}),
+          statusBreakdown: s.statuses.reduce(
+            (a, st) => ((a[st] = (a[st] || 0) + 1), a),
+            {}
+          ),
         },
         { upsert: true }
       );
-      console.log("[CRON] Daily log stats updated");
+      console.log("[CRON] Daily API stats updated");
     }
   } catch (err) {
-    console.error("[CRON] Failed to update log stats:", err);
+    console.error("[CRON] Failed to update stats:", err);
   }
 });
-// ------------------- Socket.IO Setup -------------------
-require("./socket")(io);
-initSocket(io);
-// ------------------- KEEP-ALIVE PINGER (PREVENTS RENDER SPIN-DOWN) -------------------
-if (process.env.NODE_ENV === "production" || process.env.RENDER) {
-  const axios = require("axios");
 
-  // Ping ourselves every 10 minutes to keep Render + MySQL awake
+// ------------------- KEEP-ALIVE (Render, Railway, etc.) -------------------
+if (process.env.NODE_ENV === "production" || process.env.RENDER) {
   setInterval(async () => {
     try {
       const url =
         process.env.RENDER_EXTERNAL_URL ||
         `https://${process.env.RENDER_SERVICE_NAME}.onrender.com`;
       await axios.get(`${url}/api/health`, { timeout: 10000 });
-      console.log(`[KEEP-ALIVE] Pinged ${url}/api/health → MySQL stays awake`);
+      console.log(`[KEEP-ALIVE] Pinged ${url}/api/health`);
     } catch (err) {
-      console.error("[KEEP-ALIVE] Ping failed:", err.code || err.message);
+      console.error("[KEEP-ALIVE] Failed:", err.code || err.message);
     }
-  }, 10 * 60 * 1000); // Every 10 minutes
+  }, 10 * 60 * 1000); // every 10 mins
 }
-// ------------------- Start Server -------------------
-const PORT = keys.port || process.env.PORT || 5000;
-httpServer.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-  console.log(`WebSocket ready on ws://localhost:${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
-});
 
+// ------------------- START SERVER (ONLY ONCE!) -------------------
+const PORT = keys.port || process.env.PORT || 5000;
+
+const startServer = async () => {
+  try {
+    // MongoDB
+    await connectMongoDB();
+    console.log("MongoDB Connected");
+
+    // Sequelize Associations (CRITICAL — must complete first)
+    await setupDB();
+    console.log("Sequelize Associations Loaded");
+
+    // Sync MySQL
+    await db.sync({ alter: false });
+    console.log("MySQL Synced");
+
+    // Start HTTP + WebSocket Server
+    httpServer.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+      console.log(`WebSocket ready on ws://localhost:${PORT}`);
+      console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
+    });
+
+    // Initialize Socket.IO notification listeners
+    const socketModule = require("./socket");
+    socketModule(io); // if it's a function(io)
+    initSocket(io);
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
+};
+
+startServer();
+
+// Export for testing or clustering
 module.exports = { app, httpServer, io };
