@@ -194,15 +194,30 @@ app.use((err, req, res, next) => {
         : err.message,
   });
 });
-
 // ------------------- Database Connections -------------------
-connectMongoDB(); // MongoDB for logs, notifications, etc.
-setupDB(); // Any seeders or initial data
+const startServer = async () => {
+  try {
+    await connectMongoDB(); // ← if this is async
+    console.log("MongoDB Connected");
 
-db.sync({ alter: false }) // Set to true only during dev/migrations
-  .then(() => console.log("MySQL Database synced successfully"))
-  .catch((err) => console.error("MySQL sync failed:", err));
+    await setupDB(); // ← NOW WE WAIT!
+    console.log("Sequelize associations loaded");
 
+    await db.sync({ alter: false }); // ← also wait for sync
+    console.log("MySQL Database synced successfully");
+
+    httpServer.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+      console.log(`WebSocket ready on ws://localhost:${PORT}`);
+      console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
+};
+
+startServer();
 // ------------------- Daily Cron: Clear Cached Permissions -------------------
 cron.schedule("0 2 * * *", async () => {
   try {
