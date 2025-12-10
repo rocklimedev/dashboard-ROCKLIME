@@ -30,6 +30,7 @@ const BrandParentCategoryBrand = require("./brandParentCategoryBrand")(
   sequelize,
   DataTypes
 );
+const SiteMap = require("./siteMap")(sequelize, DataTypes);
 
 const Customer = require("./customers")(sequelize, DataTypes);
 const Quotation = require("./quotation")(sequelize, DataTypes);
@@ -65,6 +66,7 @@ const Cart = require("./carts")(sequelize, DataTypes);
   Order,
   Signature,
   Cart,
+  SiteMap,
 ].forEach((model) => {
   if (typeof model.associate === "function") {
     model.associate({
@@ -123,4 +125,5 @@ module.exports = {
   Order,
   Signature,
   Cart,
+  SiteMap,
 };

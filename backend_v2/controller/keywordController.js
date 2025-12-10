@@ -1,8 +1,5 @@
-// controllers/keyword.controller.js
-const Keyword = require("../models/keyword");
-const Category = require("../models/category");
 // Create a new keyword
-
+const { Category, Keyword } = require("../models");
 const { Op } = require("sequelize");
 const sequelize = require("../config/database"); // <-- ADD THIS
 exports.createKeyword = async (req, res) => {
@@ -32,7 +29,7 @@ exports.createKeyword = async (req, res) => {
         include: [
           {
             model: Category,
-            as: "categories",
+            as: "category",
             attributes: ["categoryId", "name", "slug"],
           },
         ],
@@ -50,7 +47,7 @@ exports.createKeyword = async (req, res) => {
       include: [
         {
           model: Category,
-          as: "categories",
+          as: "category",
           attributes: ["categoryId", "name", "slug"],
         },
       ],
@@ -69,7 +66,7 @@ exports.getAllKeywords = async (req, res) => {
       include: [
         {
           model: Category,
-          as: "categories",
+          as: "category",
           attributes: ["categoryId", "name", "slug"],
         },
       ],
@@ -77,6 +74,7 @@ exports.getAllKeywords = async (req, res) => {
     });
     return res.status(200).json({ keywords });
   } catch (error) {
+    console.log(error);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 };
@@ -103,7 +101,7 @@ exports.getKeywordById = async (req, res) => {
       include: [
         {
           model: Category,
-          as: "categories",
+          as: "category",
           attributes: ["categoryId", "name", "slug"],
         },
       ],

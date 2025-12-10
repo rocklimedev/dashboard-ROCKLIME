@@ -1,12 +1,13 @@
-// controllers/siteMapController.js
-const SiteMap = require("../models/siteMap");
-const Quotation = require("../models/quotation");
 const sequelize = require("../config/database");
-const Product = require("../models/product");
-const Customer = require("../models/customers");
 const { Op } = require("sequelize");
 const { v4: uuidv4 } = require("uuid");
-
+const {
+  Signature,
+  SiteMap,
+  Quotation,
+  Product,
+  Customer,
+} = require("../models");
 // Helper: Recompute summaries + pagination logic
 const computeSummaries = (items, floorDetails) => {
   const perFloor = {};

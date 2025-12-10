@@ -1,9 +1,6 @@
-const Signature = require("../models/signature");
-const User = require("../models/users");
-const Customer = require("../models/customers");
-const Vendor = require("../models/vendor");
 const axios = require("axios");
 const path = require("path");
+const { Vendor, User, Customer, Signature } = require("../models");
 const FormData = require("form-data");
 const { validate: isUUID } = require("uuid");
 

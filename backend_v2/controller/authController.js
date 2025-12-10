@@ -1,10 +1,7 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { Op } = require("sequelize");
-const User = require("../models/users");
-const Role = require("../models/roles");
-const RolePermission = require("../models/rolePermission");
-const Permission = require("../models/permisson");
+const { User, Role, RolePermission, Permission } = require("../models");
 const VerificationToken = require("../models/verificationToken");
 const emails = require("../middleware/sendMail");
 const ROLES = require("../config/constant");
