@@ -4,7 +4,7 @@ require("dotenv").config();
 
 console.log("Connecting to MySQL using individual credentials...");
 
-// Always use individual credentials — no DATABASE_URL fallback
+// ALWAYS use individual credentials — no DATABASE_URL fallback whatsoever
 const sequelize = new Sequelize(
   process.env.DB_NAME,
   process.env.DB_USER,
@@ -15,22 +15,23 @@ const sequelize = new Sequelize(
     dialect: "mysql",
     logging: false,
 
-    // Correct dialectOptions
+    // Critical timeouts & connection settings
     dialectOptions: {
-      connectTimeout: 60000, // 60s timeout
-      // ssl: optional, uncomment if required
+      connectTimeout: 60000,
+      acquireTimeout: 60000,
+      timeout: 60000,
+      // Add SSL only if your host requires it (most shared hosts don't)
       // ssl: { require: true, rejectUnauthorized: false },
     },
 
-    // Connection pool
     pool: {
-      max: 5,
+      max: 5, // Lower pool on Render (free tier has connection limits)
       min: 0,
-      acquire: 60000, // max time to acquire a connection
-      idle: 10000, // time before releasing idle connection
+      acquire: 60000,
+      idle: 10000,
     },
 
-    // Retry transient errors
+    // Built-in retry for transient errors
     retry: {
       match: [
         /ETIMEDOUT/,
@@ -46,13 +47,13 @@ const sequelize = new Sequelize(
   }
 );
 
-// Keep-alive ping for Render free tier
+// Keep-alive ping — very important on Render free tier
 if (process.env.RENDER || process.env.NODE_ENV === "production") {
   setInterval(() => {
     sequelize
       .query("SELECT 1")
       .catch((err) => console.error("Keep-alive ping failed:", err.message));
-  }, 5 * 60 * 1000); // every 5 minutes
+  }, 5 * 60 * 1000); // every 5 minutes (safe for Render)
 }
 
 // Exponential backoff connection retry
@@ -68,7 +69,7 @@ async function connectWithRetry(attempt = 1) {
       process.exit(1);
     }
 
-    const delay = Math.min(1000 * 2 ** attempt + Math.random() * 1000, 30000); // max 30s
+    const delay = Math.min(1000 * 2 ** attempt + Math.random() * 1000, 30000);
     console.log(
       `Retrying connection in ${Math.round(delay / 1000)} seconds... (attempt ${
         attempt + 1
@@ -78,7 +79,7 @@ async function connectWithRetry(attempt = 1) {
   }
 }
 
-// Start initial connection
+// Start connection
 connectWithRetry();
 
 module.exports = sequelize;
