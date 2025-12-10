@@ -201,12 +201,12 @@ exports.verifyAccount = async (req, res, next) => {
     await verificationToken.save();
 
     const emailContent = emails.accountVerificationConfirmationEmail(user.name);
-    await emails.sendMail(
-      user.email,
-      emailContent.subject,
-      emailContent.text,
-      emailContent.html
-    );
+    // await emails.sendMail(
+    //   user.email,
+    //   emailContent.subject,
+    //   emailContent.text,
+    //   emailContent.html
+    // );
 
     res.status(200).json({
       message: "Account verified successfully",
@@ -254,33 +254,33 @@ exports.forgotPassword = async (req, res, next) => {
     };
 
     const emailContent = emails.resetEmail(req.headers.host, resetToken);
-    await emails
-      .sendMail(
-        user.email,
-        emailContent.subject,
-        emailContent.text,
-        emailContent.html
-      )
-      .catch(async (mailError) => {
-        if (
-          mailError.responseCode === 550 ||
-          /No Such User/i.test(mailError.response)
-        ) {
-          // Optional: mark user as having invalid email
-          await User.update(
-            { emailVerified: false, hasBounced: true },
-            { where: { userId: user.userId } }
-          );
+    // await emails
+    //   .sendMail(
+    //     user.email,
+    //     emailContent.subject,
+    //     emailContent.text,
+    //     emailContent.html
+    //   )
+    //   .catch(async (mailError) => {
+    //     if (
+    //       mailError.responseCode === 550 ||
+    //       /No Such User/i.test(mailError.response)
+    //     ) {
+    //       // Optional: mark user as having invalid email
+    //       await User.update(
+    //         { emailVerified: false, hasBounced: true },
+    //         { where: { userId: user.userId } }
+    //       );
 
-          // Or even delete the stale user if you're aggressive
-          // await User.destroy({ where: { userId: user.userId } });
+    //       // Or even delete the stale user if you're aggressive
+    //       // await User.destroy({ where: { userId: user.userId } });
 
-          console.warn(
-            `Hard bounce for ${user.email} - removing/invalidating user`
-          );
-        }
-        throw mailError; // still fail the request or handle gracefully
-      });
+    //       console.warn(
+    //         `Hard bounce for ${user.email} - removing/invalidating user`
+    //       );
+    //     }
+    //     throw mailError; // still fail the request or handle gracefully
+    //   });
 
     res
       .status(200)
@@ -355,12 +355,12 @@ exports.resetPassword = async (req, res, next) => {
 
     // Send confirmation email
     const emailContent = emails.confirmResetPasswordEmail();
-    await emails.sendMail(
-      user.email,
-      emailContent.subject,
-      emailContent.text,
-      emailContent.html
-    );
+    // await emails.sendMail(
+    //   user.email,
+    //   emailContent.subject,
+    //   emailContent.text,
+    //   emailContent.html
+    // );
 
     res.status(200).json({ message: "Password changed successfully" });
   } catch (err) {
@@ -499,12 +499,12 @@ exports.resendVerificationEmail = async (req, res, next) => {
       verificationToken
     );
 
-    await emails.sendMail(
-      user.email,
-      emailContent.subject,
-      emailContent.text,
-      emailContent.html
-    );
+    // await emails.sendMail(
+    //   user.email,
+    //   emailContent.subject,
+    //   emailContent.text,
+    //   emailContent.html
+    // );
 
     res.status(200).json({ message: "Verification email sent successfully" });
   } catch (err) {
@@ -580,12 +580,12 @@ exports.changePassword = async (req, res, next) => {
 
     // Optional: Send confirmation email
     const emailContent = emails.confirmChangePasswordEmail(user.name);
-    await emails.sendMail(
-      user.email,
-      emailContent.subject,
-      emailContent.text,
-      emailContent.html
-    );
+    // await emails.sendMail(
+    //   user.email,
+    //   emailContent.subject,
+    //   emailContent.text,
+    //   emailContent.html
+    // );
 
     res.status(200).json({ message: "Password changed successfully" });
   } catch (err) {
