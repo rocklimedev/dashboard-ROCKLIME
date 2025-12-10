@@ -1,7 +1,5 @@
-const Brand = require("../models/brand");
-const Product = require("../models/product");
 const { sendNotification } = require("./notificationController"); // Import sendNotification
-
+const { Brand, Product } = require("../models");
 // Assume an admin user ID or system channel for notifications
 const ADMIN_USER_ID = "2ef0f07a-a275-4fe1-832d-fe9a5d145f60"; // Replace with actual admin user ID or channel
 

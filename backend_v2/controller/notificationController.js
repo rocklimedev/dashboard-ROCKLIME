@@ -1,8 +1,7 @@
 const Notification = require("../models/notification"); // Mongoose model
-const User = require("../models/users"); // Sequelize User model
 const cron = require("node-cron"); // Add node-cron for scheduling
 let ioInstance;
-
+const { User } = require("../models");
 // Initialize Socket.IO instance
 const initSocket = (io) => {
   ioInstance = io;

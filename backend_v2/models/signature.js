@@ -88,5 +88,3 @@ module.exports = (sequelize, DataTypes) => {
 
   return Signature;
 };
-// Signature ↔ User
-Signature.belongsTo(User, { foreignKey: "userId" });

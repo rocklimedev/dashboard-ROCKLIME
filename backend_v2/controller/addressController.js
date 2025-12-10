@@ -1,6 +1,4 @@
-const Address = require("../models/address");
-const User = require("../models/users");
-const Customer = require("../models/customers");
+const { Address, User, Customer } = require("../models");
 const { sendNotification } = require("./notificationController");
 const { Op } = require("sequelize");
 const { v4: uuidv4 } = require("uuid");

@@ -29,13 +29,13 @@ module.exports = (sequelize, DataTypes) => {
         { unique: true, fields: ["keyword"] },
         { fields: ["categoryId"] },
 
-        // trigram index (only respected by Postgres)
-        {
-          name: "idx_keyword_trgm",
-          fields: ["keyword"],
-          using: "GIN",
-          operator: "gin_trgm_ops",
-        },
+        // Remove or comment these 7 lines when using MySQL/MariaDB
+        // {
+        //   name: "idx_keyword_trgm",
+        //   fields: ["keyword"],
+        //   using: "GIN",
+        //   operator: "gin_trgm_ops",
+        // },
       ],
       hooks: {
         beforeValidate: (kw) => {

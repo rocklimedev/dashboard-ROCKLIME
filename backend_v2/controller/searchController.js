@@ -1,19 +1,21 @@
 const { Op } = require("sequelize");
-const Address = require("../models/address");
-const Brand = require("../models/brand");
-const Category = require("../models/category");
-const Company = require("../models/company");
-const Customer = require("../models/customers");
-const Invoice = require("../models/invoice");
-const Keyword = require("../models/keyword");
-const Order = require("../models/orders");
-const Product = require("../models/product");
-const Quotation = require("../models/quotation");
-const Role = require("../models/roles");
-const Team = require("../models/team");
-const User = require("../models/users");
-const Vendor = require("../models/vendor");
 
+const {
+  Vendor,
+  User,
+  Role,
+  Address,
+  Brand,
+  Category,
+  Company,
+  Customer,
+  Invoice,
+  Keyword,
+  Order,
+  Product,
+  Quotation,
+  Team,
+} = require("../models");
 // Search controller to handle global search across all models
 const searchAll = async (req, res) => {
   try {

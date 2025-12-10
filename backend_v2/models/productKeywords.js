@@ -3,16 +3,15 @@ module.exports = (sequelize, DataTypes) => {
   const ProductKeyword = sequelize.define(
     "ProductKeyword",
     {
-      id: {
-        type: DataTypes.UUID,
-        primaryKey: true,
-        defaultValue: DataTypes.UUIDV4,
-      },
+      // REMOVE THE SURROGATE ID COMPLETELY
+      // id: { ... } ← delete this whole block
+
       productId: {
         type: DataTypes.UUID,
         allowNull: false,
+        primaryKey: true, // ← now part of composite PK
         references: {
-          model: "products", // matches table name
+          model: "products",
           key: "productId",
         },
         onUpdate: "CASCADE",
@@ -21,6 +20,7 @@ module.exports = (sequelize, DataTypes) => {
       keywordId: {
         type: DataTypes.UUID,
         allowNull: false,
+        primaryKey: true, // ← now part of composite PK
         references: {
           model: "keywords",
           key: "id",
@@ -35,6 +35,7 @@ module.exports = (sequelize, DataTypes) => {
       indexes: [
         { name: "idx_productId", fields: ["productId"] },
         { name: "idx_keywordId", fields: ["keywordId"] },
+        // this unique index is still prevents duplicates
         {
           name: "unique_product_keyword",
           unique: true,
@@ -45,7 +46,6 @@ module.exports = (sequelize, DataTypes) => {
   );
 
   ProductKeyword.associate = (models) => {
-    // Join table → belongsTo both sides
     ProductKeyword.belongsTo(models.Product, {
       foreignKey: "productId",
       as: "product",

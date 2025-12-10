@@ -1,8 +1,5 @@
 const { v4: uuidv4 } = require("uuid");
-const Permission = require("../models/permisson");
-const Role = require("../models/roles");
-const RolePermission = require("../models/rolePermission");
-
+const { Permission, Role, RolePermission } = require("../models");
 /**
  * Create a new permission
  */

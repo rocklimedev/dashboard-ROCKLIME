@@ -1,9 +1,7 @@
 const { Op } = require("sequelize");
-const User = require("../models/users");
-const Roles = require("../models/roles");
+const { User, Roles, Address } = require("../models");
 const sequelize = require("../config/database");
 const bcrypt = require("bcrypt");
-const Address = require("../models/address");
 const ROLES = require("../config/constant").ROLES;
 const path = require("path");
 const ftp = require("basic-ftp");

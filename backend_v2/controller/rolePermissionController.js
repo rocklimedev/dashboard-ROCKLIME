@@ -1,8 +1,5 @@
 const { v4: uuidv4 } = require("uuid");
-const Role = require("../models/roles");
-const Permission = require("../models/permisson"); // Fixed typo: 'permisson' to 'permission'
-const RolePermission = require("../models/rolePermission");
-
+const { Permission, Role, RolePermission } = require("../models");
 const assignPermissionToRole = async (req, res) => {
   try {
     const { roleId, permissionId } = req.body;

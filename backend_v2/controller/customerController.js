@@ -1,7 +1,5 @@
-const Customer = require("../models/customers"); // Import the Customer model
-const Invoice = require("../models/invoice"); // Import Invoice model
 const { sendNotification } = require("./notificationController"); // Import sendNotification
-
+const { Invoice, Customer } = require("../models");
 const ADMIN_USER_ID = "2ef0f07a-a275-4fe1-832d-fe9a5d145f60"; // Replace with actual admin user ID or channel
 
 // Get invoices by customer ID (no notification needed)
