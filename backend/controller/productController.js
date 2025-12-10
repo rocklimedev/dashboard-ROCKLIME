@@ -6,6 +6,36 @@ const Category = require("../models/category");
 const { Op } = require("sequelize");
 const sequelize = require("../config/database");
 const { uploadToFtp } = require("../middleware/upload");
+
+// THIS IS THE MAGIC FIX — RUN IT ON EVERY REQUEST
+const ensureAssociations = () => {
+  // Force Product ↔ Keyword (M:N)
+  if (!Product.associations.keywords) {
+    Product.belongsToMany(Keyword, {
+      through: "products_keywords",
+      foreignKey: "productId",
+      otherKey: "keywordId",
+      as: "keywords",
+    });
+  }
+
+  if (!Keyword.associations.products) {
+    Keyword.belongsToMany(Product, {
+      through: "products_keywords",
+      foreignKey: "keywordId",
+      otherKey: "productId",
+      as: "products",
+    });
+  }
+
+  // Force Keyword → Category
+  if (!Keyword.associations.categories) {
+    Keyword.belongsTo(Category, {
+      foreignKey: "categoryId",
+      as: "categories",
+    });
+  }
+};
 // Helper: safely parse JSON with fallback and logging
 const parseJsonSafely = (input, fallback = {}, context = "") => {
   if (input == null) return fallback;
@@ -30,6 +60,8 @@ exports.createProduct = async (req, res) => {
   const t = await sequelize.transaction();
 
   try {
+    // THIS LINE FIXES EVERYTHING ON RENDER
+    ensureAssociations();
     const {
       name,
       product_code,
@@ -235,6 +267,8 @@ exports.updateProduct = async (req, res) => {
   const t = await sequelize.transaction();
 
   try {
+    // THIS LINE FIXES EVERYTHING ON RENDER
+    ensureAssociations();
     const { productId } = req.params;
     const product = await Product.findByPk(productId, { transaction: t });
     if (!product) {
@@ -462,6 +496,8 @@ exports.updateProduct = async (req, res) => {
 
 exports.getAllProducts = async (req, res) => {
   try {
+    // THIS LINE FIXES EVERYTHING ON RENDER
+    ensureAssociations();
     const products = await Product.findAll({
       attributes: {
         exclude: ["createdAt", "updatedAt"],
@@ -583,6 +619,8 @@ exports.getAllProducts = async (req, res) => {
 // ==================== GET SINGLE PRODUCT ====================
 exports.getProductById = async (req, res) => {
   try {
+    // THIS LINE FIXES EVERYTHING ON RENDER
+    ensureAssociations();
     const { productId } = req.params;
 
     const product = await Product.findByPk(productId, {
