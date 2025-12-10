@@ -36,7 +36,7 @@ exports.submitContactForm = async (req, res) => {
 
     // Send confirmation email to user
     const userEmail = contactFormEmail(firstName, message);
-    await sendMail(email, userEmail.subject, userEmail.text, userEmail.html);
+    // await sendMail(email, userEmail.subject, userEmail.text, userEmail.html);
 
     // Send notification email to admin
     const adminEmail = adminContactNotification(
@@ -46,12 +46,12 @@ exports.submitContactForm = async (req, res) => {
       phone,
       message
     );
-    await sendMail(
-      "no-reply@static.cmtradingco.com", // Fallback admin email
-      adminEmail.subject,
-      adminEmail.text,
-      adminEmail.html
-    );
+    // await sendMail(
+    //   "no-reply@static.cmtradingco.com", // Fallback admin email
+    //   adminEmail.subject,
+    //   adminEmail.text,
+    //   adminEmail.html
+    // );
 
     // Send real-time notification to admin or system channel
     await sendNotification({
@@ -226,12 +226,12 @@ exports.replyToEmail = async (req, res) => {
     };
 
     // Send reply email to the user
-    await sendMail(
-      query.email,
-      replyEmail.subject,
-      replyEmail.text,
-      replyEmail.html
-    );
+    // await sendMail(
+    //   query.email,
+    //   replyEmail.subject,
+    //   replyEmail.text,
+    //   replyEmail.html
+    // );
 
     // Send real-time notification to the user (if userId is available)
     // Note: Since Contact model doesn't have userId, we assume a lookup or skip
