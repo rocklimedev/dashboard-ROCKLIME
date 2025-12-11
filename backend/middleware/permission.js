@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/users");
 const Role = require("../models/roles");
-const Permission = require("../models/permisson");
+const Permission = require("../models/permission");
 const CachedPermission = require("../models/cachedPermission"); // <-- new Mongo model
 require("dotenv").config();
 

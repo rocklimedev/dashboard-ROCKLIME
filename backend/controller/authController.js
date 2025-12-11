@@ -595,16 +595,15 @@ exports.changePassword = async (req, res, next) => {
  * Assumes: req.user is populated by authentication middleware
  *          req.user.roleId exists
  */
+// CONTROLLER - getAllPermissionsOfLoggedInUser
 exports.getAllPermissionsOfLoggedInUser = async (req, res) => {
   try {
-    // req.user is guaranteed by auth middleware
-    const { roleId } = req.user;
+    const { roleId, name, email } = req.user;
 
     if (!roleId) {
       return res.status(403).json({ message: "User role not found" });
     }
 
-    // Fetch role with associated permissions
     const role = await Role.findByPk(roleId, {
       attributes: ["roleId", "roleName"],
       include: [
@@ -615,7 +614,7 @@ exports.getAllPermissionsOfLoggedInUser = async (req, res) => {
           include: [
             {
               model: Permission,
-              as: "permissions",
+              as: "permission", // ← matches belongsTo in RolePermission
               attributes: ["permissionId", "name", "api", "route", "module"],
             },
           ],
@@ -627,28 +626,38 @@ exports.getAllPermissionsOfLoggedInUser = async (req, res) => {
       return res.status(404).json({ message: "Role not found" });
     }
 
-    // Map to clean permission objects
-    const permissions = role.rolepermissions.map((rp) => ({
-      permissionId: rp.permissions.permissionId,
-      name: rp.permissions.name,
-      action: rp.permissions.api,
-      route: rp.permissions.route,
-      module: rp.permissions.module,
-    }));
+    // Safety: check if rolepermissions exists and has data
+    const permissions = (role.rolepermissions || [])
+      .map((rp) => {
+        // Extra safety in case include failed
+        if (!rp.permission) {
+          console.warn("Missing permission data for RolePermission:", rp);
+          return null;
+        }
+
+        return {
+          permissionId: rp.permission.permissionId,
+          name: rp.permission.name,
+          action: rp.permission.api,
+          route: rp.permission.route,
+          module: rp.permission.module,
+        };
+      })
+      .filter(Boolean); // remove nulls
 
     return res.status(200).json({
-      message: "Permissions fetched successfully",
-      role: role.roleName,
       permissions,
+      role: role.roleName,
+      roleId: role.roleId,
     });
   } catch (err) {
+    console.error("Error fetching permissions:", err);
     return res.status(500).json({
       message: "Failed to fetch permissions",
       error: err.message,
     });
   }
 };
-
 /**
  * Validate JWT access token
  * GET /auth/validate-token

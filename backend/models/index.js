@@ -7,7 +7,7 @@ const { DataTypes } = require("sequelize");
 // -------------------------------
 const User = require("./users")(sequelize, DataTypes);
 const Role = require("./roles")(sequelize, DataTypes);
-const Permission = require("./permisson")(sequelize, DataTypes);
+const Permission = require("./permission")(sequelize, DataTypes);
 const RolePermission = require("./rolePermission")(sequelize, DataTypes);
 
 const Address = require("./address")(sequelize, DataTypes);
@@ -31,14 +31,14 @@ const BrandParentCategoryBrand = require("./brandParentCategoryBrand")(
   DataTypes
 );
 const SiteMap = require("./siteMap")(sequelize, DataTypes);
-
+const InventoryHistory = require("./history")(sequelize, DataTypes);
 const Customer = require("./customers")(sequelize, DataTypes);
 const Quotation = require("./quotation")(sequelize, DataTypes);
 const Invoice = require("./invoice")(sequelize, DataTypes);
 const Order = require("./orders")(sequelize, DataTypes);
 const Signature = require("./signature")(sequelize, DataTypes);
 const Cart = require("./carts")(sequelize, DataTypes);
-
+const PurchaseOrder = require("./purchaseorder")(sequelize, DataTypes);
 // -------------------------------
 // 2️⃣ Run associations if defined
 // -------------------------------
@@ -67,6 +67,8 @@ const Cart = require("./carts")(sequelize, DataTypes);
   Signature,
   Cart,
   SiteMap,
+  PurchaseOrder,
+  InventoryHistory,
 ].forEach((model) => {
   if (typeof model.associate === "function") {
     model.associate({
@@ -93,6 +95,8 @@ const Cart = require("./carts")(sequelize, DataTypes);
       Order,
       Signature,
       Cart,
+      PurchaseOrder,
+      InventoryHistory,
     });
   }
 });
@@ -126,4 +130,6 @@ module.exports = {
   Signature,
   Cart,
   SiteMap,
+  PurchaseOrder,
+  InventoryHistory,
 };
