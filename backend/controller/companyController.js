@@ -1,7 +1,6 @@
-const Company = require("../models/company");
 const { Op } = require("sequelize");
 const { sendNotification } = require("./notificationController"); // Import sendNotification
-
+const { Company } = require("../models");
 // Assume an admin user ID or system channel for notifications
 const ADMIN_USER_ID = "admin-system"; // Replace with actual admin user ID or channel
 

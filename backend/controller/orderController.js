@@ -1,14 +1,5 @@
-const Order = require("../models/orders");
 const OrderItem = require("../models/orderItem");
-const Team = require("../models/team");
-const Invoice = require("../models/invoice");
-const Customer = require("../models/customers");
-const Quotation = require("../models/quotation");
-const Address = require("../models/address");
 const Comment = require("../models/comment");
-const User = require("../models/users");
-const Product = require("../models/product");
-const InventoryHistory = require("../models/history");
 const path = require("path");
 const { v4: uuidv4 } = require("uuid");
 const ftp = require("basic-ftp");
@@ -20,6 +11,17 @@ const { Readable } = require("stream");
 const moment = require("moment");
 const { sendNotification } = require("./notificationController"); // Import sendNotification
 const { error } = require("console");
+const {
+  User,
+  Order,
+  Team,
+  Invoice,
+  Customer,
+  Quotation,
+  Address,
+  Product,
+  InventoryHistory,
+} = require("../models");
 // ──────── HELPERS ────────
 const VALID_STATUSES = [
   "PREPARING",

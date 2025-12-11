@@ -1,6 +1,6 @@
 const TaskBoard = require("../models/taskBoard");
 const Task = require("../models/tasks");
-const User = require("../models/users");
+const { User } = require("../models");
 const {
   validateTaskBoard,
   sendErrorResponse,

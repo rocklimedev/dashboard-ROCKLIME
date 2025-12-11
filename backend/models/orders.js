@@ -1,216 +1,259 @@
-const { DataTypes } = require("sequelize");
-const sequelize = require("../config/database");
-const Team = require("./team");
-const Customer = require("./customers");
-const User = require("./users");
-const Quotation = require("./quotation");
+// models/Order.js
+module.exports = (sequelize, DataTypes) => {
+  const Order = sequelize.define(
+    "Order",
+    {
+      id: {
+        type: DataTypes.UUID,
+        primaryKey: true,
+        defaultValue: DataTypes.UUIDV4,
+      },
+      orderNo: {
+        type: DataTypes.STRING(30),
+        allowNull: false,
+        unique: true,
+      },
 
-const Order = sequelize.define(
-  "Order",
-  {
-    id: {
-      type: DataTypes.UUID,
-      primaryKey: true,
-      defaultValue: DataTypes.UUIDV4,
-    },
+      products: {
+        type: DataTypes.JSON,
+        allowNull: true,
+      },
 
-    products: {
-      type: DataTypes.JSON,
-      allowNull: true,
-    },
+      status: {
+        type: DataTypes.ENUM(
+          "DRAFT",
+          "PREPARING",
+          "CHECKING",
+          "INVOICE",
+          "DISPATCHED",
+          "PARTIALLY_DELIVERED",
+          "DELIVERED",
+          "ONHOLD",
+          "CANCELED",
+          "CLOSED"
+        ),
+        allowNull: false,
+        defaultValue: "DRAFT",
+      },
 
-    status: {
-      type: DataTypes.ENUM(
-        "PREPARING",
-        "CHECKING",
-        "INVOICE",
-        "DISPATCHED",
-        "DELIVERED",
-        "PARTIALLY_DELIVERED",
-        "CANCELED",
-        "DRAFT",
-        "ONHOLD",
-        "CLOSED" // Added new status
-      ),
-      defaultValue: "PREPARING",
-    },
+      priority: {
+        type: DataTypes.ENUM("high", "medium", "low"),
+        allowNull: false,
+        defaultValue: "medium",
+      },
 
-    dueDate: {
-      type: DataTypes.DATEONLY,
-      allowNull: true,
-    },
+      dueDate: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+      },
 
-    followupDates: {
-      type: DataTypes.JSON,
-      allowNull: true,
-    },
+      followupDates: {
+        type: DataTypes.JSON,
+        allowNull: true,
+      },
 
-    source: {
-      type: DataTypes.STRING(255),
-      allowNull: true,
-    },
+      source: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+      },
 
-    priority: {
-      type: DataTypes.ENUM("high", "medium", "low"),
-      defaultValue: "medium",
-    },
+      description: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
 
-    description: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-    },
+      createdFor: {
+        type: DataTypes.UUID,
+        allowNull: false,
+      },
 
-    createdFor: {
-      type: DataTypes.UUID,
-      allowNull: false,
-      references: {
-        model: Customer,
-        key: "customerId",
+      createdBy: {
+        type: DataTypes.UUID,
+        allowNull: false,
+      },
+
+      assignedUserId: {
+        type: DataTypes.UUID,
+        allowNull: true,
+      },
+
+      assignedTeamId: {
+        type: DataTypes.UUID,
+        allowNull: true,
+      },
+
+      secondaryUserId: {
+        type: DataTypes.UUID,
+        allowNull: true,
+      },
+
+      quotationId: {
+        type: DataTypes.UUID,
+        allowNull: true,
+      },
+
+      shipTo: {
+        type: DataTypes.UUID,
+        allowNull: true,
+      },
+
+      gatePassLink: {
+        type: DataTypes.STRING(500),
+        allowNull: true,
+      },
+
+      invoiceLink: {
+        type: DataTypes.STRING(500),
+        allowNull: true,
+      },
+
+      masterPipelineNo: {
+        type: DataTypes.STRING(30),
+        allowNull: true,
+      },
+
+      previousOrderNo: {
+        type: DataTypes.STRING(30),
+        allowNull: true,
+      },
+
+      shipping: {
+        type: DataTypes.DECIMAL(12, 2),
+        allowNull: false,
+        defaultValue: 0.0,
+      },
+
+      gst: {
+        type: DataTypes.DECIMAL(5, 2),
+        allowNull: true,
+      },
+
+      gstValue: {
+        type: DataTypes.DECIMAL(12, 2),
+        allowNull: true,
+        defaultValue: 0.0,
+      },
+
+      extraDiscount: {
+        type: DataTypes.DECIMAL(12, 2),
+        allowNull: true,
+        defaultValue: 0.0,
+      },
+
+      extraDiscountType: {
+        type: DataTypes.ENUM("percent", "fixed"),
+        allowNull: true,
+      },
+
+      extraDiscountValue: {
+        type: DataTypes.DECIMAL(12, 2),
+        allowNull: true,
+        defaultValue: 0.0,
+      },
+
+      finalAmount: {
+        type: DataTypes.DECIMAL(14, 2),
+        allowNull: false,
+        defaultValue: 0.0,
+      },
+
+      amountPaid: {
+        type: DataTypes.DECIMAL(14, 2),
+        allowNull: false,
+        defaultValue: 0.0,
       },
     },
-    // models/orders.js  (only the new field – the rest of your file stays unchanged)
-    gatePassLink: {
-      type: DataTypes.STRING(500),
-      allowNull: true,
-      comment: "URL of the uploaded gate-pass image/PDF",
-    },
-    createdBy: {
-      type: DataTypes.UUID,
-      allowNull: false,
-      references: {
-        model: User,
-        key: "userId",
-      },
-    },
+    {
+      tableName: "orders",
+      timestamps: true,
+      indexes: [
+        { unique: true, fields: ["orderNo"] },
+        { fields: ["status"] },
+        { fields: ["createdFor"] },
+        { fields: ["createdBy"] },
+        { fields: ["assignedUserId"] },
+        { fields: ["dueDate"] },
+        { fields: ["quotationId"] },
+        { fields: ["finalAmount"] },
+        { fields: ["createdAt"] },
+        {
+          name: "idx_order_status_date",
+          fields: ["status", "createdAt"],
+        },
+      ],
+    }
+  );
 
-    assignedUserId: {
-      type: DataTypes.UUID,
-      allowNull: true,
-      references: {
-        model: User,
-        key: "userId",
-      },
-    },
+  // -----------------------------------------------------------
+  //                ASSOCIATIONS START HERE
+  // -----------------------------------------------------------
+  Order.associate = (models) => {
+    // User relations
+    Order.belongsTo(models.User, {
+      foreignKey: "secondaryUserId",
+      as: "secondaryUser",
+    });
 
-    assignedTeamId: {
-      type: DataTypes.UUID,
-      allowNull: true,
-      references: {
-        model: Team,
-        key: "id",
-      },
-    },
+    Order.belongsTo(models.User, {
+      foreignKey: "createdBy",
+      as: "creator",
+    });
 
-    secondaryUserId: {
-      type: DataTypes.UUID,
-      allowNull: true,
-      references: {
-        model: User,
-        key: "userId",
-      },
-    },
+    Order.belongsTo(models.User, {
+      foreignKey: "assignedUserId",
+      as: "assignedUser",
+    });
 
-    invoiceLink: {
-      type: DataTypes.STRING(500),
-      allowNull: true,
-    },
+    // Team relation
+    Order.belongsTo(models.Team, {
+      foreignKey: "assignedTeamId",
+      as: "assignedTeam",
+    });
 
-    orderNo: {
-      type: DataTypes.STRING(20),
-      allowNull: false,
-      unique: true,
-    },
+    // Customer relation
+    Order.belongsTo(models.Customer, {
+      foreignKey: "createdFor",
+      as: "customer",
+    });
 
-    quotationId: {
-      type: DataTypes.UUID,
-      allowNull: true,
-      references: {
-        model: Quotation,
-        key: "quotationId",
-      },
-      onDelete: "SET NULL",
-      onUpdate: "CASCADE",
-    },
+    // Shipping Address
+    Order.belongsTo(models.Address, {
+      foreignKey: "shipTo",
+      as: "shippingAddress",
+    });
 
-    masterPipelineNo: {
-      type: DataTypes.STRING(20),
-      allowNull: true,
-    },
+    // Quotation relation
+    Order.belongsTo(models.Quotation, {
+      foreignKey: "quotationId",
+      as: "quotation",
+    });
 
-    previousOrderNo: {
-      type: DataTypes.STRING(20),
-      allowNull: true,
-    },
+    // Self-referencing relations
+    Order.hasMany(models.Order, {
+      foreignKey: "previousOrderNo",
+      sourceKey: "orderNo",
+      as: "nextOrders",
+    });
 
-    shipTo: {
-      type: DataTypes.UUID,
-      allowNull: true,
-      references: {
-        model: "addresses",
-        key: "addressId",
-      },
-      onDelete: "SET NULL",
-      onUpdate: "CASCADE",
-    },
+    Order.belongsTo(models.Order, {
+      foreignKey: "previousOrderNo",
+      targetKey: "orderNo",
+      as: "previousOrder",
+    });
 
-    // ===============================
-    // SHIPPING + GST + DISCOUNTS
-    // ===============================
-    shipping: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: true,
-      defaultValue: 0.0,
-    },
+    // Master Pipeline
+    Order.hasMany(models.Order, {
+      foreignKey: "masterPipelineNo",
+      sourceKey: "orderNo",
+      as: "pipelineOrders",
+    });
 
-    gst: {
-      type: DataTypes.DECIMAL(5, 2),
-      allowNull: true,
-      comment: "GST percentage applied on total amount",
-    },
+    Order.belongsTo(models.Order, {
+      foreignKey: "masterPipelineNo",
+      targetKey: "orderNo",
+      as: "masterOrder",
+    });
+  };
 
-    gstValue: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: true,
-      comment: "Computed GST value",
-    },
-
-    extraDiscount: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: true,
-      comment: "Extra discount numeric value",
-    },
-
-    extraDiscountType: {
-      type: DataTypes.ENUM("percent", "fixed"),
-      allowNull: true,
-      comment: "Discount type: percent or fixed",
-    },
-
-    extraDiscountValue: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: true,
-      comment: "Computed discount amount after applying extraDiscount",
-    },
-    finalAmount: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: true,
-      defaultValue: 0.0,
-      comment: "Final total amount after discounts, taxes, and shipping",
-    },
-    // ===============================
-    // NEW FIELD
-    // ===============================
-    amountPaid: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: true,
-      defaultValue: 0.0,
-      comment: "Total amount paid by customer",
-    },
-  },
-  {
-    tableName: "orders",
-    timestamps: true,
-  }
-);
-
-module.exports = Order;
+  return Order;
+};

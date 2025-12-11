@@ -1,5 +1,5 @@
 const Attendance = require("../models/attendance");
-const User = require("../models/users");
+const { User } = require("../models");
 const { Op } = require("sequelize");
 
 const clockIn = async (req, res) => {

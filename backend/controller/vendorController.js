@@ -1,5 +1,4 @@
-const Vendor = require("../models/vendor");
-
+const { Vendor } = require("../models");
 const createVendor = async (req, res) => {
   try {
     const { vendorId, vendorName, brandSlug, brandId } = req.body;

@@ -1,6 +1,4 @@
-const ParentCategory = require("../models/parentCategory");
-const Brand = require("../models/brand");
-const Category = require("../models/category");
+const { Category, Brand, ParentCategory } = require("../models");
 // ✅ Create Parent Category
 exports.createParentCategory = async (req, res) => {
   try {

@@ -1,45 +1,59 @@
-// models/RolePermission.js
-const { DataTypes } = require("sequelize");
-const sequelize = require("../config/database");
+module.exports = (sequelize, DataTypes) => {
+  const RolePermission = sequelize.define(
+    "RolePermission",
+    {
+      id: {
+        type: DataTypes.CHAR(36),
+        primaryKey: true,
+        defaultValue: DataTypes.UUIDV4,
+      },
+      roleId: {
+        type: DataTypes.CHAR(36),
+        allowNull: true,
+        references: {
+          model: "roles",
+          key: "roleId",
+        },
+        onUpdate: "CASCADE",
+        onDelete: "CASCADE",
+      },
+      permissionId: {
+        type: DataTypes.CHAR(36),
+        allowNull: true,
+        references: {
+          model: "permissions",
+          key: "permissionId",
+        },
+        onUpdate: "CASCADE",
+        onDelete: "CASCADE",
+      },
+    },
+    {
+      tableName: "rolepermissions",
+      timestamps: true,
+      indexes: [
+        { unique: true, fields: ["roleId", "permissionId"] },
+        { fields: ["permissionId"] },
+      ],
+    }
+  );
 
-const RolePermission = sequelize.define(
-  "RolePermission",
-  {
-    id: {
-      type: DataTypes.CHAR(36),
-      primaryKey: true,
-      defaultValue: DataTypes.UUIDV4,
-    },
-    roleId: {
-      type: DataTypes.CHAR(36),
-      allowNull: true, // Schema allows NULL, but we’ll enforce NOT NULL later
-      references: {
-        model: "roles",
-        key: "roleId",
-      },
-    },
-    permissionId: {
-      type: DataTypes.CHAR(36),
-      allowNull: true,
-      references: {
-        model: "permissions",
-        key: "permissionId",
-      },
-    },
-  },
-  {
-    tableName: "rolepermissions",
-    timestamps: true,
-    indexes: [
-      {
-        unique: true,
-        fields: ["roleId", "permissionId"],
-      },
-      {
-        fields: ["permissionId"],
-      },
-    ],
-  }
-);
+  // ---------------------------------------
+  // Associations
+  // ---------------------------------------
+  RolePermission.associate = (models) => {
+    // RolePermission → Role (M:1)
+    RolePermission.belongsTo(models.Role, {
+      foreignKey: "roleId",
+      as: "role",
+    });
 
-module.exports = RolePermission;
+    // RolePermission → Permission (M:1)
+    RolePermission.belongsTo(models.Permission, {
+      foreignKey: "permissionId",
+      as: "permission",
+    });
+  };
+
+  return RolePermission;
+};

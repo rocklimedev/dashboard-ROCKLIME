@@ -1,4 +1,4 @@
-const ProductMeta = require("../models/productMeta");
+const { Product, ProductMeta } = require("../models");
 // Create a new ProductMeta
 exports.createProductMeta = async (req, res) => {
   try {

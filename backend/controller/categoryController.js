@@ -1,13 +1,15 @@
 // controllers/category.controller.js
 const { Op } = require("sequelize");
 const sequelize = require("../config/database");
-const Category = require("../models/category");
-const ParentCategory = require("../models/parentCategory");
-const Brand = require("../models/brand");
-const Keyword = require("../models/keyword");
-const BrandParentCategory = require("../models/brandParentCategory");
-const slugify = require("slugify");
 
+const slugify = require("slugify");
+const {
+  BrandParentCategory,
+  Keyword,
+  Brand,
+  ParentCategory,
+  Category,
+} = require("../models");
 // Create Category (with optional keywords)
 exports.createCategory = async (req, res) => {
   const t = await sequelize.transaction();
@@ -77,7 +79,7 @@ exports.createCategory = async (req, res) => {
       include: [
         {
           model: ParentCategory,
-          as: "parentcategories",
+          as: "parentCategory",
           attributes: ["id", "name", "slug"],
         },
         {
@@ -85,7 +87,7 @@ exports.createCategory = async (req, res) => {
           as: "brand",
           attributes: ["id", "brandName", "brandSlug"],
         },
-        { model: Keyword, as: "Keywords" },
+        { model: Keyword, as: "keywords" },
       ],
     });
 
@@ -103,7 +105,7 @@ exports.getAllCategories = async (req, res) => {
       include: [
         {
           model: ParentCategory,
-          as: "parentcategories",
+          as: "parentCategory",
           attributes: ["id", "name", "slug"],
         },
         {
@@ -111,11 +113,11 @@ exports.getAllCategories = async (req, res) => {
           as: "brand",
           attributes: ["id", "brandName", "brandSlug"],
         },
-        { model: Keyword, as: "Keywords" },
+        { model: Keyword, as: "keywords" },
       ],
       order: [
         ["name", "ASC"],
-        [{ model: Keyword, as: "Keywords" }, "keyword", "ASC"],
+        [{ model: Keyword, as: "keywords" }, "keyword", "ASC"],
       ],
     });
     res.status(200).json({ success: true, categories });
@@ -132,7 +134,7 @@ exports.getCategoryById = async (req, res) => {
       include: [
         {
           model: ParentCategory,
-          as: "parentcategories",
+          as: "parentCategory",
           attributes: ["id", "name", "slug"],
         },
         {
@@ -140,7 +142,7 @@ exports.getCategoryById = async (req, res) => {
           as: "brand",
           attributes: ["id", "brandName", "brandSlug"],
         },
-        { model: Keyword, as: "Keywords" },
+        { model: Keyword, as: "keywords" },
       ],
     });
     if (!category)
@@ -245,7 +247,7 @@ exports.updateCategory = async (req, res) => {
       include: [
         {
           model: ParentCategory,
-          as: "parentcategories",
+          as: "parentCategory",
           attributes: ["id", "name", "slug"],
         },
         {
@@ -253,7 +255,7 @@ exports.updateCategory = async (req, res) => {
           as: "brand",
           attributes: ["id", "brandName", "brandSlug"],
         },
-        { model: Keyword, as: "Keywords" },
+        { model: Keyword, as: "keywords" },
       ],
     });
 
@@ -332,7 +334,7 @@ exports.replaceCategoryKeywords = async (req, res) => {
 
     await t.commit();
     const fresh = await Category.findByPk(id, {
-      include: [{ model: Keyword, as: "Keywords" }],
+      include: [{ model: Keyword, as: "keywords" }],
     });
     return res
       .status(200)
