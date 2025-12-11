@@ -1,11 +1,25 @@
-// controllers/productController.js
-const Product = require("../models/product");
-const ProductMeta = require("../models/productMeta");
-const Keyword = require("../models/keyword");
-const Category = require("../models/category");
 const { Op } = require("sequelize");
 const sequelize = require("../config/database");
-const { uploadToFtp } = require("../middleware/upload");
+
+const {
+  Product,
+  ProductMeta,
+  InventoryHistory,
+  Brand,
+  User,
+  ProductKeyword,
+  Keyword,
+  Category,
+} = require("../models");
+// ─────────────────────────────────────────────────────────────────────────────
+// Create a product with meta data
+// ─────────────────────────────────────────────────────────────────────────────
+// controllers/productController.js
+// controllers/productController.js
+
+// Correct import
+const { uploadToFtp } = require("../middleware/upload"); // ← this is where it really is
+// controllers/productController.js
 
 // THIS IS THE MAGIC FIX — RUN IT ON EVERY REQUEST
 const ensureAssociations = () => {

@@ -1,16 +1,13 @@
-const RolePermission = require("../models/rolePermission");
-const Roles = require("../models/roles");
-const Permission = require("../models/permisson"); // Corrected typo
 const { v4: uuidv4 } = require("uuid");
-const User = require("../models/users");
 const { ROLES } = require("../config/constant");
 const { Op } = require("sequelize");
-
+const { User, Permission, Roles, RolePermission } = require("../models");
 const assignRole = async (userId, role) => {
   try {
     const user = await User.findOne({ where: { id: userId } });
 
     if (!user) {
+      ``;
       return { success: false, message: "User not found" };
     }
 

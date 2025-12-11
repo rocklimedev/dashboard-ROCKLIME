@@ -1,8 +1,5 @@
-const Invoice = require("../models/invoice");
-const Address = require("../models/address");
 const { v4: uuidv4 } = require("uuid");
-const Customer = require("../models/customers");
-
+const { Invoice, Customer, Address } = require("../models");
 // Create a new invoice
 exports.createInvoice = async (req, res) => {
   try {

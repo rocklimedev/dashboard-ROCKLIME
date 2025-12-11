@@ -1,25 +1,47 @@
-const { DataTypes } = require("sequelize");
-const sequelize = require("../config/database");
-const { v4: uuidv4 } = require("uuid");
-
-const Role = sequelize.define(
-  "Role",
-  {
-    roleId: {
-      type: DataTypes.UUID,
-      primaryKey: true,
-      defaultValue: uuidv4,
+module.exports = (sequelize, DataTypes) => {
+  const Role = sequelize.define(
+    "Role",
+    {
+      roleId: {
+        type: DataTypes.UUID,
+        primaryKey: true,
+        defaultValue: DataTypes.UUIDV4,
+      },
+      roleName: {
+        type: DataTypes.STRING(100),
+        allowNull: false,
+        unique: true,
+      },
     },
-    roleName: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
-      unique: true,
-    },
-  },
-  {
-    tableName: "roles", // Force lowercase table name
-    timestamps: true,
-  }
-);
+    {
+      tableName: "roles",
+      timestamps: true,
+    }
+  );
 
-module.exports = Role;
+  // ---------------------------------------
+  // Associations
+  // ---------------------------------------
+  Role.associate = (models) => {
+    // Role ↔ Permission (M:N through RolePermission)
+    Role.belongsToMany(models.Permission, {
+      through: models.RolePermission,
+      foreignKey: "roleId",
+      otherKey: "permissionId",
+      as: "permissions",
+    });
+
+    Role.hasMany(models.RolePermission, {
+      foreignKey: "roleId",
+      as: "rolepermissions",
+    });
+
+    // Role ↔ User (1:M)
+    Role.hasMany(models.User, {
+      foreignKey: "roleId",
+      as: "users",
+    });
+  };
+
+  return Role;
+};

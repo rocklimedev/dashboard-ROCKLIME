@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 const Task = require("../models/tasks");
-const User = require("../models/users");
 const {
   uploadToCDN,
   validateResourceLink,
@@ -10,7 +9,7 @@ const {
   notifyTaskStakeholders,
 } = require("../utils/taskUtils");
 const sanitizeHtml = require("sanitize-html");
-
+const { User } = require("../models");
 // Create Task
 exports.createTask = async (req, res) => {
   try {

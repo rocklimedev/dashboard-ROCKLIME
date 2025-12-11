@@ -197,7 +197,7 @@ app.use((err, req, res, next) => {
 
 // ------------------- Database Connections -------------------
 connectMongoDB(); // MongoDB for logs, notifications, etc.
-setupDB(); // Any seeders or initial data
+// setupDB(); // Any seeders or initial data
 
 db.sync({ alter: false }) // Set to true only during dev/migrations
   .then(() => console.log("MySQL Database synced successfully"))

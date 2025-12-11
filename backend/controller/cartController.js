@@ -1,8 +1,6 @@
 const Cart = require("../models/carts");
-const Product = require("../models/product");
-const User = require("../models/users");
-const Quotation = require("../models/quotation");
 
+const { Quotation, User, Product } = require("../models");
 // ──────────────────────────────────────────────────────
 // META SLUGS – these UUIDs are the same for ALL products
 // ──────────────────────────────────────────────────────

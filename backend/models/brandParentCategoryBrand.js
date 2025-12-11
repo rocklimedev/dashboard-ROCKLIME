@@ -1,31 +1,42 @@
 // models/brandParentCategoryBrand.js
-const { DataTypes } = require("sequelize");
-const sequelize = require("../config/database");
-
-const BrandParentCategoryBrand = sequelize.define(
-  "BrandParentCategoryBrand",
-  {
-    brandParentCategoryId: {
-      type: DataTypes.UUID,
-      primaryKey: true,
-      references: {
-        model: "brand_parentcategories",
-        key: "id",
+module.exports = (sequelize, DataTypes) => {
+  const BrandParentCategoryBrand = sequelize.define(
+    "BrandParentCategoryBrand",
+    {
+      brandParentCategoryId: {
+        type: DataTypes.UUID,
+        primaryKey: true,
+        allowNull: false,
+        references: {
+          model: "brand_parentcategories",
+          key: "id",
+        },
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+      },
+      brandId: {
+        type: DataTypes.UUID,
+        primaryKey: true,
+        allowNull: false,
+        references: {
+          model: "brands",
+          key: "id",
+        },
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
       },
     },
-    brandId: {
-      type: DataTypes.UUID,
-      primaryKey: true,
-      references: {
-        model: "brands",
-        key: "id",
-      },
-    },
-  },
-  {
-    tableName: "brand_parentcategory_brands",
-    timestamps: false,
-  }
-);
+    {
+      tableName: "brand_parentcategory_brands",
+      timestamps: false,
+      indexes: [
+        {
+          unique: true,
+          fields: ["brandParentCategoryId", "brandId"], // Prevents duplicates
+        },
+      ],
+    }
+  );
 
-module.exports = BrandParentCategoryBrand;
+  return BrandParentCategoryBrand;
+};

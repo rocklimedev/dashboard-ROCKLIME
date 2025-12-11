@@ -1,10 +1,9 @@
 const { v4: uuidv4 } = require("uuid");
-const Quotation = require("../models/quotation");
 const QuotationItem = require("../models/quotationItem");
 const QuotationVersion = require("../models/quotationVersion");
 const sequelize = require("../config/database");
 const { sendNotification } = require("./notificationController");
-const Product = require("../models/product");
+const { Product, Quotation } = require("../models");
 // ---------------------------------------------------------------------
 // Helper: Calculate totals (uses `total` if provided, else price × qty)
 // ---------------------------------------------------------------------

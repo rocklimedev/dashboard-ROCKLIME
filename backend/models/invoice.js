@@ -1,120 +1,149 @@
-const { DataTypes } = require("sequelize");
-const sequelize = require("../config/database");
-const { v4: uuidv4 } = require("uuid");
+// models/Invoice.js
 const crypto = require("crypto");
-const Order = require("./orders");
-const Customer = require("./customers");
-const Address = require("./address");
-const User = require("./users");
-const Quotation = require("./quotation");
 
-const Invoice = sequelize.define(
-  "Invoice",
-  {
-    invoiceId: {
-      type: DataTypes.UUID,
-      primaryKey: true,
-      defaultValue: uuidv4,
-    },
-    invoiceNo: {
-      type: DataTypes.STRING,
-      allowNull: true,
-      unique: true,
-    },
-    createdBy: {
-      type: DataTypes.UUID,
-      allowNull: true, // Align with schema
-      references: {
-        model: User,
-        key: "userId",
+module.exports = (sequelize, DataTypes) => {
+  const Invoice = sequelize.define(
+    "Invoice",
+    {
+      invoiceId: {
+        type: DataTypes.UUID,
+        primaryKey: true,
+        defaultValue: DataTypes.UUIDV4,
+        field: "invoiceId",
+      },
+      invoiceNo: {
+        type: DataTypes.STRING(20),
+        allowNull: false,
+        unique: true,
+      },
+      createdBy: {
+        type: DataTypes.UUID,
+        allowNull: true,
+      },
+      quotationId: {
+        type: DataTypes.UUID,
+        allowNull: true,
+      },
+      customerId: {
+        type: DataTypes.UUID,
+        allowNull: true,
+      },
+      billTo: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+      },
+      shipTo: {
+        type: DataTypes.UUID,
+        allowNull: true,
+      },
+      amount: {
+        type: DataTypes.DECIMAL(12, 2),
+        allowNull: false,
+        validate: {
+          min: 0,
+        },
+      },
+      invoiceDate: {
+        type: DataTypes.DATEONLY,
+        allowNull: false,
+        defaultValue: DataTypes.NOW,
+      },
+      dueDate: {
+        type: DataTypes.DATEONLY,
+        allowNull: false,
+      },
+      paymentMethod: {
+        type: DataTypes.JSON,
+        allowNull: true,
+      },
+      status: {
+        type: DataTypes.ENUM(
+          "paid",
+          "unpaid",
+          "partially-paid",
+          "void",
+          "refunded",
+          "returned"
+        ),
+        allowNull: false,
+        defaultValue: "unpaid",
+      },
+      products: {
+        type: DataTypes.JSON,
+        allowNull: false,
+        comment: "Array: { productId, name, qty, price, total }",
+      },
+      signatureName: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+        defaultValue: "CM TRADING CO",
       },
     },
-    quotationId: {
-      type: DataTypes.UUID,
-      allowNull: true,
-      references: {
-        model: Quotation,
-        key: "quotationId",
-      },
-    },
-    customerId: {
-      type: DataTypes.UUID,
-      allowNull: true, // Add missing field
-      references: {
-        model: Customer,
-        key: "customerId",
-      },
-    },
-    billTo: {
-      type: DataTypes.STRING(255),
-      allowNull: false,
-    },
-    shipTo: {
-      type: DataTypes.UUID,
-      allowNull: true, // Align with schema
-      references: {
-        model: Address,
-        key: "addressId",
-      },
-    },
-    amount: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
-    },
-    invoiceDate: {
-      type: DataTypes.DATEONLY,
-      allowNull: false,
-    },
-    dueDate: {
-      type: DataTypes.DATEONLY,
-      allowNull: false,
-    },
-    paymentMethod: {
-      type: DataTypes.JSON,
-      allowNull: true,
-    },
-    status: {
-      type: DataTypes.ENUM(
-        "paid",
-        "unpaid",
-        "partially paid",
-        "void",
-        "refund",
-        "return"
-      ),
-      allowNull: false,
-    },
-    products: {
-      type: DataTypes.JSON,
-      allowNull: false,
-    },
-    signatureName: {
-      type: DataTypes.STRING(255),
-      allowNull: false,
-      defaultValue: "CM TRADING CO",
-    },
-  },
-  {
-    tableName: "invoices",
-    timestamps: true,
-  }
-);
+    {
+      tableName: "invoices",
+      timestamps: true,
+      indexes: [
+        { unique: true, fields: ["invoiceNo"] },
+        { fields: ["customerId"] },
+        { fields: ["status"] },
+        { fields: ["invoiceDate"] },
+        { fields: ["createdBy"] },
+        { fields: ["quotationId"] },
+      ],
+      hooks: {
+        beforeCreate: async (invoice, options) => {
+          if (!invoice.invoiceNo) {
+            const generateInvoiceNo = async () => {
+              const random = crypto.randomInt(100000, 999999);
+              const candidate = `INV-${random}`;
 
-Invoice.beforeCreate(async (invoice, options) => {
-  if (!invoice.invoiceNo) {
-    let unique = false;
-    while (!unique) {
-      const randomNumber = crypto.randomInt(100000, 999999);
-      const generatedNo = `INV_${randomNumber}`;
-      const existing = await Invoice.findOne({
-        where: { invoiceNo: generatedNo },
-      });
-      if (!existing) {
-        invoice.invoiceNo = generatedNo;
-        unique = true;
-      }
+              const exists = await Invoice.count({
+                where: { invoiceNo: candidate },
+                transaction: options?.transaction,
+              });
+
+              return exists ? null : candidate;
+            };
+
+            let invoiceNo = null;
+            while (!invoiceNo) {
+              invoiceNo = await generateInvoiceNo();
+            }
+            invoice.invoiceNo = invoiceNo;
+          }
+        },
+      },
     }
-  }
-});
+  );
 
-module.exports = Invoice;
+  // -------------------------
+  // ALL ASSOCIATIONS HERE
+  // -------------------------
+  Invoice.associate = (models) => {
+    // Invoice ↔ User
+    Invoice.belongsTo(models.User, {
+      foreignKey: "createdBy",
+      as: "createdByUser",
+    });
+
+    // Customer ↔ Invoice (1:M)
+    Invoice.belongsTo(models.Customer, {
+      foreignKey: "customerId",
+      as: "customer",
+    });
+
+    // Invoice ↔ Address (shipping address)
+    Invoice.belongsTo(models.Address, {
+      foreignKey: "shipTo",
+      as: "shippingAddress",
+    });
+
+    // Invoice ↔ Quotation
+    Invoice.belongsTo(models.Quotation, {
+      foreignKey: "quotationId",
+      as: "quotation",
+    });
+  };
+
+  return Invoice;
+};
