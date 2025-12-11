@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const sequelize = require("../config/database");
-const Product = require("../models/product"); // adjust the path to your model
+const { Product } = require("../models"); // adjust the path to your model
 
 async function backupProducts() {
   try {

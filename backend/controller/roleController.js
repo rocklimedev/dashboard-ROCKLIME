@@ -128,7 +128,7 @@ const getAllRoles = async (req, res) => {
     const roles = await Roles.findAll({
       include: {
         model: Permission,
-        as: "permissions",
+        as: "permission",
       },
     });
 
@@ -213,7 +213,7 @@ const getRoleById = async (req, res) => {
       where: { roleId },
       include: {
         model: Permission,
-        as: "permissions",
+        as: "permission",
       },
     });
 

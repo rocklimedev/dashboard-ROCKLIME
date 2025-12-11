@@ -124,7 +124,7 @@ const getAllRolePermissionsByRoleId = async (req, res) => {
         },
         {
           model: Permission,
-          as: "permissions", // Ensure this matches the model association
+          as: "permission", // Ensure this matches the model association
           attributes: ["permissionId", "module", "name", "route", "api"],
         },
       ],
@@ -199,7 +199,7 @@ const getRolePermissionByRoleIdAndPermissionId = async (req, res) => {
         },
         {
           model: Permission,
-          as: "permissions",
+          as: "permission",
           attributes: ["permissionId", "module", "name", "route", "api"],
         },
       ],
@@ -249,7 +249,7 @@ const getAllRolePermissions = async (req, res) => {
         },
         {
           model: Permission,
-          as: "permissions",
+          as: "permission",
           attributes: ["permissionId", "module", "name", "route", "api"],
         },
       ],

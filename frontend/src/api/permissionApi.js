@@ -49,6 +49,10 @@ export const permissionsApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Permissions"], // Invalidate to refetch permissions
     }),
+    getMyPermissions: builder.query({
+      query: () => "/permission/my", // no arg needed anymore
+      providesTags: ["Permissions"],
+    }),
   }),
 });
 
