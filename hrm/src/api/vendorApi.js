@@ -1,51 +1,56 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../data/config";
+import { baseApi } from "./baseApi";
 
-export const vendorApi = createApi({
-  reducerPath: "vendorApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}/vendors`, // Make sure API_URL is correct
-    credentials: "include",
-    prepareHeaders: (headers) => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
+export const vendorApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getVendors: builder.query({
-      query: () => "/",
+      query: () => "/vendors/",
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({ type: "Vendors", id })),
+              { type: "Vendors", id: "LIST" },
+            ]
+          : [{ type: "Vendors", id: "LIST" }],
     }),
     getVendorById: builder.query({
-      query: (id) => `/${id}`,
+      query: (id) => `/vendors/${id}`,
+      providesTags: (result, error, id) => [{ type: "Vendors", id }],
     }),
     createVendor: builder.mutation({
       query: (newVendor) => ({
-        url: "/",
+        url: "/vendors/",
         method: "POST",
         body: newVendor,
         headers: {
           "Content-Type": "application/json",
         },
       }),
+      invalidatesTags: [{ type: "Vendors", id: "LIST" }],
     }),
     updateVendor: builder.mutation({
       query: ({ id, updatedVendor }) => ({
-        url: `/${id}`,
+        url: `/vendors/${id}`,
         method: "PUT",
         body: updatedVendor,
         headers: {
           "Content-Type": "application/json",
         },
       }),
+      invalidatesTags: (result, error, { id }) => [{ type: "Vendors", id }],
+    }),
+    checkVendorId: builder.query({
+      query: (vendorId) => `/vendors/check-vendor-id/${vendorId}`,
+      transformResponse: (response) => response.isUnique,
     }),
     deleteVendor: builder.mutation({
       query: (id) => ({
-        url: `/${id}`,
+        url: `/vendors/${id}`,
         method: "DELETE",
       }),
+      invalidatesTags: (result, error, id) => [
+        { type: "Vendors", id },
+        { type: "Vendors", id: "LIST" },
+      ],
     }),
   }),
 });
@@ -56,4 +61,5 @@ export const {
   useCreateVendorMutation,
   useUpdateVendorMutation,
   useDeleteVendorMutation,
+  useCheckVendorIdQuery,
 } = vendorApi;

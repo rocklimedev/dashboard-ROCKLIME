@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useRegisterMutation } from "../../api/authApi";
-import { toast } from "sonner";
 import logo from "../../assets/img/logo.png";
-
+import { message } from "antd";
 const Signup = () => {
   const [formData, setFormData] = useState({
     username: "",
@@ -29,20 +28,20 @@ const Signup = () => {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
-      toast.error("Passwords do not match!");
+      message.error("Passwords do not match!");
       return;
     }
 
     if (!formData.agreeTerms) {
-      toast.error("You must agree to the terms and conditions!");
+      message.error("You must agree to the terms and conditions!");
       return;
     }
 
     try {
       await register(formData).unwrap();
-      setTimeout(() => navigate("/login"), 2000);
+      navigate("/login");
     } catch (err) {
-      toast.error(err?.data?.message || "Something went wrong. Try again.");
+      message.error(err?.data?.message || "Something went wrong. Try again.");
     }
   };
 
@@ -82,7 +81,7 @@ const Signup = () => {
                     Username <span className="text-danger">*</span>
                   </label>
                   <input
-                    type="text" // Changed from type="username" to type="text"
+                    type="text"
                     className="form-control"
                     name="username"
                     value={formData.username}
@@ -154,7 +153,18 @@ const Signup = () => {
                   className="btn btn-primary w-100"
                   disabled={isLoading}
                 >
-                  {isLoading ? "Registering..." : "Sign Up"}
+                  {isLoading ? (
+                    <>
+                      <span
+                        className="spinner-border spinner-border-sm me-2"
+                        role="status"
+                        aria-hidden="true"
+                      ></span>
+                      Registering...
+                    </>
+                  ) : (
+                    "Sign Up"
+                  )}
                 </button>
               </div>
               {error && (

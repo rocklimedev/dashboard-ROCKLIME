@@ -1,60 +1,100 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../data/config";
+import { baseApi } from "./baseApi";
 
-export const productApi = createApi({
-  reducerPath: "productApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}/products`,
-    prepareHeaders: (headers, { getState }) => {
-      // Add authentication token if required
-      const token = getState().auth?.token; // Adjust based on your auth state
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
-  tagTypes: ["Product"],
+export const productApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
+    // CREATE PRODUCT — with images & variant support
     createProduct: builder.mutation({
-      query: (productData) => ({
-        url: "/",
+      query: (formData) => ({
+        url: "/products/",
         method: "POST",
-        body: productData,
+        body: formData,
+        formData: true, // This tells RTK not to JSON.stringify
       }),
-      invalidatesTags: ["Product"],
+      transformResponse: (response) => response.product,
+      invalidatesTags: ["Product", "ProductCode"],
     }),
 
-    getAllProducts: builder.query({
-      query: () => "/",
-      providesTags: ["Product"],
-    }),
-
-    getProductById: builder.query({
-      query: (productId) => `/${productId}`,
-      providesTags: ["Product"],
-    }),
-
+    // UPDATE PRODUCT — critical: send FormData + keywordIds
     updateProduct: builder.mutation({
-      query: ({ productId, updatedData }) => ({
-        url: `/${productId}`,
+      query: ({ productId, formData }) => ({
+        url: `/products/${productId}`,
         method: "PUT",
-        body: updatedData,
+        body: formData,
+        formData: true, // This is the key
+      }),
+      transformResponse: (response) => response.product,
+      invalidatesTags: ["Product", "ProductCode"],
+    }),
+
+    // CHECK PRODUCT CODE UNIQUENESS
+    checkProductCode: builder.query({
+      query: (code) => `/products/check-code?code=${encodeURIComponent(code)}`,
+      providesTags: (result, error, code) => [
+        { type: "ProductCode", id: code },
+      ],
+      keepUnusedDataFor: 10,
+    }),
+
+    // REPLACE ALL KEYWORDS — this is the one you use on save!
+    // In productApi.js — THIS IS THE FIX
+    replaceAllKeywordsForProduct: builder.mutation({
+      query: ({ productId, keywordIds = [] }) => ({
+        url: `/products/${productId}/keywords`,
+        method: "PUT",
+        // REMOVE THIS LINE COMPLETELY:
+        // headers: { "Content-Type": "application/json" },
+        body: { keywordIds },
       }),
       invalidatesTags: ["Product"],
     }),
 
+    // Optional: add single keyword (not needed if using replaceAll)
+    addKeywordsToProduct: builder.mutation({
+      query: ({ productId, keywords }) => ({
+        url: `/products/${productId}/keywords`,
+        method: "POST",
+
+        body: { keywords },
+      }),
+      invalidatesTags: ["Product"],
+    }),
+
+    // GET ALL PRODUCTS
+    getAllProducts: builder.query({
+      query: () => "/products",
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ productId }) => ({
+                type: "Product",
+                id: productId,
+              })),
+              { type: "Product", id: "LIST" },
+            ]
+          : [{ type: "Product", id: "LIST" }],
+    }),
+
+    // GET SINGLE PRODUCT
+    getProductById: builder.query({
+      query: (productId) => `/products/${productId}`,
+      providesTags: (result, error, productId) => [
+        { type: "Product", id: productId },
+      ],
+    }),
+
+    // DELETE PRODUCT
     deleteProduct: builder.mutation({
       query: (productId) => ({
-        url: `/${productId}`,
+        url: `/products/${productId}`,
         method: "DELETE",
       }),
       invalidatesTags: ["Product"],
     }),
 
+    // STOCK
     addStock: builder.mutation({
       query: ({ productId, quantity }) => ({
-        url: `/${productId}/add-stock`,
+        url: `/products/${productId}/add-stock`,
         method: "POST",
         body: { quantity },
       }),
@@ -63,60 +103,70 @@ export const productApi = createApi({
 
     removeStock: builder.mutation({
       query: ({ productId, quantity }) => ({
-        url: `/${productId}/remove-stock`,
+        url: `/products/${productId}/remove-stock`,
         method: "POST",
         body: { quantity },
       }),
       invalidatesTags: ["Product"],
     }),
 
-    getAllProductsByCategory: builder.query({
-      query: (categoryId) => ({
-        url: `/category/${categoryId}`,
-        method: "GET",
+    // REST OF YOUR ENDPOINTS — all perfect
+    getProductsByIds: builder.query({
+      query: (productIds) => ({
+        url: "/products/by-ids",
+        method: "POST",
+        body: { productIds },
       }),
+    }),
+
+    getAllProductsByCategory: builder.query({
+      query: (categoryId) => `/products/category/${categoryId}`,
       providesTags: ["Product"],
     }),
 
     getLowStockProducts: builder.query({
-      query: (threshold = 10) => `/low-stock?threshold=${threshold}`,
+      query: () => "/products/low-stock",
       providesTags: ["Product"],
     }),
 
     getHistoryByProductId: builder.query({
-      query: (productId) => `/${productId}/history`,
-      providesTags: ["Product"],
-    }),
-
-    getAllProductCodes: builder.query({
-      query: () => "/search/get-product-codes",
+      query: (productId) => `/products/${productId}/history`,
       providesTags: ["Product"],
     }),
 
     searchProducts: builder.query({
-      query: (params) => {
-        const queryString = new URLSearchParams(params).toString();
-        return `/search/all?${queryString}`;
-      },
+      query: (searchTerm) =>
+        `/products/search/all?q=${encodeURIComponent(searchTerm)}`,
       providesTags: ["Product"],
     }),
+
+    getAllProductCodes: builder.query({
+      query: () => "/products/search/get-product-codes",
+      providesTags: ["ProductCode"],
+    }),
+
+    getAllProductCodesBrandWise: builder.query({
+      query: () => "/products/codes/brand-wise",
+      providesTags: ["ProductCode"],
+    }),
+
     updateProductFeatured: builder.mutation({
       query: ({ productId, isFeatured }) => ({
-        url: `/${productId}/featured`,
+        url: `/products/${productId}/featured`,
         method: "PATCH",
         body: { isFeatured },
       }),
-      invalidatesTags: ["Products"], // Refetch products after update
+      invalidatesTags: ["Product"],
     }),
   }),
 });
 
 export const {
-  useUpdateProductFeaturedMutation,
   useCreateProductMutation,
+  useUpdateProductMutation,
   useGetAllProductsQuery,
   useGetProductByIdQuery,
-  useUpdateProductMutation,
+  useLazyGetProductByIdQuery,
   useDeleteProductMutation,
   useAddStockMutation,
   useRemoveStockMutation,
@@ -124,5 +174,12 @@ export const {
   useGetHistoryByProductIdQuery,
   useSearchProductsQuery,
   useGetAllProductCodesQuery,
+  useGetAllProductCodesBrandWiseQuery,
+  useGetProductsByIdsQuery,
+  useCheckProductCodeQuery,
+  useLazyCheckProductCodeQuery,
+  useReplaceAllKeywordsForProductMutation,
+  useAddKeywordsToProductMutation,
+  useUpdateProductFeaturedMutation,
   useGetAllProductsByCategoryQuery,
 } = productApi;

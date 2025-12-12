@@ -14,7 +14,7 @@
 /******* Base *******/
 body {
   font-family: "Lato";
-  font-size: 14px;
+  font-size: 16px;
   color: #646b72;
   line-height: 1.5;
   background-color: #f7f7f7;
@@ -16550,7 +16550,7 @@ svg.feather {
 }
 .header .header-left .logo img {
   width: 130px;
-}
+} 
 @media (max-width: 991.96px) {
   .header .header-left .logo {
     text-align: center;

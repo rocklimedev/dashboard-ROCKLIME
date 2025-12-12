@@ -1,82 +1,160 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../data/config";
+import { baseApi } from "./baseApi";
 
-export const cartApi = createApi({
-  reducerPath: "cartApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}/carts`,
-    prepareHeaders: (headers) => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
-  tagTypes: ["Carts"], // Define tag type for carts
+export const cartApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     addToCart: builder.mutation({
       query: (cartData) => ({
-        url: "/add",
+        url: "/carts/add",
         method: "POST",
         body: cartData,
       }),
-      invalidatesTags: ["Carts"], // Invalidate to refetch carts
+      // Remove invalidatesTags
     }),
+
     addProductToCart: builder.mutation({
-      query: ({ userId, productId }) => ({
-        url: "/add-to-cart",
+      query: ({ userId, productId, quantity }) => ({
+        url: "/carts/add-to-cart",
         method: "POST",
-        body: { userId, productId },
+        body: { userId, productId, quantity }, // ← ADD QUANTITY
       }),
-      invalidatesTags: ["Carts"], // Invalidate to refetch carts
+      // Optional: invalidate or optimistic update
+      invalidatesTags: (result, error, { userId }) => [
+        { type: "Cart", id: userId },
+      ],
     }),
     getCart: builder.query({
-      query: (userId) => `/${userId}`,
-      providesTags: ["Carts"], // Tag to allow invalidation
+      query: (userId) => `/carts/${userId}`,
+      providesTags: (result, error, userId) => [{ type: "Cart", id: userId }],
+      // Use per-user tag for fine-grained control
     }),
+
     getAllCarts: builder.query({
-      query: () => "/all",
-      providesTags: ["Carts"], // Tag to allow invalidation
+      query: () => "/carts/all",
+      providesTags: ["Carts"],
     }),
-    removeFromCart: builder.mutation({
+
+    // OPTIMISTIC UPDATE + NO REFETCH
+    updateCart: builder.mutation({
       query: (data) => ({
-        url: "/remove",
+        url: "/carts/update",
         method: "POST",
         body: data,
       }),
-      invalidatesTags: ["Carts"], // Invalidate to refetch carts
+      async onQueryStarted(
+        { userId, productId, quantity },
+        { dispatch, queryFulfilled }
+      ) {
+        // Optimistic update
+        const patchResult = dispatch(
+          cartApi.util.updateQueryData("getCart", userId, (draft) => {
+            const item = draft.cart.items.find(
+              (i) => i.productId === productId
+            );
+            if (item) {
+              item.quantity = quantity;
+            }
+          })
+        );
+
+        try {
+          await queryFulfilled;
+        } catch {
+          patchResult.undo(); // Rollback on error
+        }
+      },
     }),
-    reduceQuantity: builder.mutation({
-      query: ({ userId, productId }) => ({
-        url: "/reduce",
+
+    // OPTIMISTIC REMOVE + NO REFETCH
+    removeFromCart: builder.mutation({
+      query: (data) => ({
+        url: "/carts/remove",
         method: "POST",
-        body: { userId, productId },
+        body: data,
       }),
-      invalidatesTags: ["Carts"], // Invalidate to refetch carts
+      async onQueryStarted(
+        { userId, productId },
+        { dispatch, queryFulfilled }
+      ) {
+        const patchResult = dispatch(
+          cartApi.util.updateQueryData("getCart", userId, (draft) => {
+            draft.cart.items = draft.cart.items.filter(
+              (i) => i.productId !== productId
+            );
+          })
+        );
+
+        try {
+          await queryFulfilled;
+        } catch {
+          patchResult.undo();
+        }
+      },
     }),
-    convertToCart: builder.mutation({
-      query: (quotationId) => ({
-        url: `/convert-to-cart/${quotationId}`,
-        method: "POST",
-      }),
-      invalidatesTags: ["Carts"], // Invalidate to refetch carts
-    }),
+
     clearCart: builder.mutation({
       query: ({ userId }) => ({
-        url: "/clear",
+        url: "/carts/clear",
         method: "POST",
         body: { userId },
       }),
-      invalidatesTags: ["Carts"], // Invalidate to refetch carts
+      async onQueryStarted({ userId }, { dispatch, queryFulfilled }) {
+        const patchResult = dispatch(
+          cartApi.util.updateQueryData("getCart", userId, (draft) => {
+            draft.cart.items = [];
+          })
+        );
+
+        try {
+          await queryFulfilled;
+        } catch {
+          patchResult.undo();
+        }
+      },
     }),
-    updateCart: builder.mutation({
-      query: (data) => ({
-        url: "/update",
+
+    // Optional: Keep others without invalidatesTags
+    reduceQuantity: builder.mutation({
+      query: ({ userId, productId }) => ({
+        url: "/carts/reduce",
         method: "POST",
-        body: data,
+        body: { userId, productId },
       }),
-      invalidatesTags: ["Carts"], // Invalidate to refetch carts
+      async onQueryStarted(
+        { userId, productId },
+        { dispatch, queryFulfilled }
+      ) {
+        const patchResult = dispatch(
+          cartApi.util.updateQueryData("getCart", userId, (draft) => {
+            const item = draft.cart.items.find(
+              (i) => i.productId === productId
+            );
+            if (item && item.quantity > 1) {
+              item.quantity -= 1;
+            } else if (item) {
+              draft.cart.items = draft.cart.items.filter(
+                (i) => i.productId !== productId
+              );
+            }
+          })
+        );
+
+        try {
+          await queryFulfilled;
+        } catch {
+          patchResult.undo();
+        }
+      },
+    }),
+
+    convertToCart: builder.mutation({
+      query: (quotationId) => ({
+        url: `/carts/convert-to-cart/${quotationId}`,
+        method: "POST",
+      }),
+      // Keep invalidates if you want fresh data after convert
+      invalidatesTags: (result, error, quotationId) => [
+        { type: "Cart", id: "CURRENT_USER" },
+      ],
     }),
   }),
 });

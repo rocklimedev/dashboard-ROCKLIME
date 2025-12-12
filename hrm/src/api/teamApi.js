@@ -1,15 +1,11 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../data/config";
+import { baseApi } from "./baseApi";
 
-export const teamApi = createApi({
-  reducerPath: "teamApi",
-  baseQuery: fetchBaseQuery({ baseUrl: `${API_URL}/teams` }),
-  tagTypes: ["Teams", "Members"],
+export const teamApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // Create Team
     createTeam: builder.mutation({
       query: (teamData) => ({
-        url: "/create",
+        url: "/teams/create",
         method: "POST",
         body: teamData,
       }),
@@ -18,13 +14,13 @@ export const teamApi = createApi({
 
     // Get All Teams
     getAllTeams: builder.query({
-      query: () => "/all",
+      query: () => "/teams/all",
       providesTags: ["Teams"],
     }),
 
     // Get Single Team
     getTeamById: builder.query({
-      query: (teamId) => `/${teamId}`,
+      query: (teamId) => `/teams/${teamId}`,
       providesTags: ["Teams"],
     }),
 
@@ -38,7 +34,7 @@ export const teamApi = createApi({
           memberIds: members.map((m) => m.userId), // Transform members to memberIds
         };
         return {
-          url: `/update/${teamId}`, // Correct endpoint
+          url: `/teams/update/${teamId}`, // Correct endpoint
           method: "PUT",
           body,
         };
@@ -48,7 +44,7 @@ export const teamApi = createApi({
     // Delete Team
     deleteTeam: builder.mutation({
       query: (teamId) => ({
-        url: `/delete/${teamId}`,
+        url: `/teams/delete/${teamId}`,
         method: "DELETE",
       }),
       invalidatesTags: ["Teams"],
@@ -57,7 +53,7 @@ export const teamApi = createApi({
     // Add Team Member
     addTeamMember: builder.mutation({
       query: (memberData) => ({
-        url: `/members/add`,
+        url: `/teams/members/add`,
         method: "POST",
         body: memberData,
       }),
@@ -66,14 +62,14 @@ export const teamApi = createApi({
 
     // Get Team Members
     getTeamMembers: builder.query({
-      query: (teamId) => `/members/${teamId}`,
+      query: (teamId) => `/teams/members/${teamId}`,
       providesTags: ["Members"],
     }),
 
     // Update Team Member
     updateTeamMember: builder.mutation({
       query: ({ memberId, memberData }) => ({
-        url: `/members/update/${memberId}`,
+        url: `/teams/members/update/${memberId}`,
         method: "PUT",
         body: memberData,
       }),
@@ -83,7 +79,7 @@ export const teamApi = createApi({
     // Remove Team Member
     removeTeamMember: builder.mutation({
       query: (memberId) => ({
-        url: `/members/remove/${memberId}`,
+        url: `/teams/members/remove/${memberId}`,
         method: "DELETE",
       }),
       invalidatesTags: ["Members", "Teams"],

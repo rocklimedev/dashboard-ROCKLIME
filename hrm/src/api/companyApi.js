@@ -1,43 +1,30 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../data/config";
+import { baseApi } from "./baseApi";
 
-export const companyApi = createApi({
-  reducerPath: "companyApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}/companies`,
-    prepareHeaders: (headers) => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
-  tagTypes: ["Companies"], // Define tag type for companies
+export const companyApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     createCompany: builder.mutation({
       query: (newCompany) => ({
-        url: "/",
+        url: "/companies/",
         method: "POST",
         body: newCompany,
       }),
       invalidatesTags: ["Companies"], // Invalidate to refetch companies
     }),
     getAllCompanies: builder.query({
-      query: () => "/",
+      query: () => "/companies/",
       providesTags: ["Companies"], // Tag to allow invalidation
     }),
     getCompanyById: builder.query({
-      query: (id) => `/${id}`,
+      query: (id) => `/companies/${id}`,
       providesTags: ["Companies"], // Tag for specific company data
     }),
     getChildCompanies: builder.query({
-      query: (parentId) => `/parent/${parentId}`,
+      query: (parentId) => `/companies/parent/${parentId}`,
       providesTags: ["Companies"], // Tag for child companies
     }),
     updateCompany: builder.mutation({
       query: ({ id, ...updatedData }) => ({
-        url: `/${id}`,
+        url: `/companies/${id}`,
         method: "PUT",
         body: updatedData,
       }),
@@ -45,7 +32,7 @@ export const companyApi = createApi({
     }),
     deleteCompany: builder.mutation({
       query: (id) => ({
-        url: `/${id}`,
+        url: `/companies/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: ["Companies"], // Invalidate to refetch companies

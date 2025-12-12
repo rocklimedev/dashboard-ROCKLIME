@@ -1,23 +1,17 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../data/config";
-export const parentCategoryApi = createApi({
-  reducerPath: "parentCategoryApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}/parent-categories`,
-  }), // Adjust base URL if needed
-  tagTypes: ["ParentCategory"], // Helps with caching and auto-refetching
+import { baseApi } from "./baseApi";
+export const parentCategoryApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAllParentCategories: builder.query({
-      query: () => "/",
+      query: () => "/parent-categories/",
       providesTags: ["ParentCategory"],
     }),
     getParentCategoryById: builder.query({
-      query: (id) => `/${id}`,
+      query: (id) => `/parent-categories/${id}`,
       providesTags: (result, error, id) => [{ type: "ParentCategory", id }],
     }),
     createParentCategory: builder.mutation({
       query: (newCategory) => ({
-        url: "/",
+        url: "/parent-categories/",
         method: "POST",
         body: newCategory,
       }),
@@ -25,7 +19,7 @@ export const parentCategoryApi = createApi({
     }),
     updateParentCategory: builder.mutation({
       query: ({ id, updatedData }) => ({
-        url: `/${id}`,
+        url: `/parent-categories/${id}`,
         method: "PUT",
         body: updatedData,
       }),
@@ -35,7 +29,7 @@ export const parentCategoryApi = createApi({
     }),
     deleteParentCategory: builder.mutation({
       query: (id) => ({
-        url: `/${id}`,
+        url: `/parent-categories/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: ["ParentCategory"],

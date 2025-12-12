@@ -1,80 +1,65 @@
+// src/pages/auth/ForgotPassword.jsx
 import React, { useState, useEffect } from "react";
 import { useForgotPasswordMutation } from "../../api/authApi";
-import { toast } from "sonner";
 import logo from "../../assets/img/logo.png";
-import { Spinner } from "react-bootstrap";
-import { useGetProfileQuery } from "../../api/userApi";
 import { MailOutlined } from "@ant-design/icons";
+import { message } from "antd";
+
 const ForgotPassword = () => {
   const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
-  const {
-    data: profile,
-    isLoading: profileLoading,
-    error: profileError,
-  } = useGetProfileQuery();
+
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
-  const [useManualInput, setUseManualInput] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
-  const [countdown, setCountdown] = useState(15); // 15-second countdown
+  const [countdown, setCountdown] = useState(15);
 
+  // Email validation
   const validateEmail = (value) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!value || value.trim() === "") return "Email is required";
+    if (!value?.trim()) return "Email is required";
     if (!emailRegex.test(value.trim()))
       return "Please enter a valid email address";
     return "";
   };
 
+  // Auto-close after success
   useEffect(() => {
-    if (!profileLoading && !profileError && profile?.user?.email) {
-      const fetchedEmail = String(profile.user.email);
-      const validationError = validateEmail(fetchedEmail);
-      setEmail(fetchedEmail);
-      setEmailError(validationError);
-      setUseManualInput(validationError !== "");
-    } else if (!profileLoading && (profileError || !profile?.user?.email)) {
-      setUseManualInput(true);
-      setEmail("");
-      setEmailError("Unable to fetch profile email. Please enter manually.");
-    }
-  }, [profile, profileLoading, profileError]);
+    if (!emailSent || countdown === 0) return;
 
-  useEffect(() => {
-    let timer;
-    if (emailSent && countdown > 0) {
-      timer = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            try {
-              window.close(); // Attempt to close the tab
-            } catch (e) {
-              console.warn("Window close failed:", e);
-            }
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(timer); // Clean up timer on unmount
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          try {
+            window.close();
+          } catch (_) {}
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
   }, [emailSent, countdown]);
 
+  // Handle form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const validationError = validateEmail(email);
-    if (validationError) {
-      setEmailError(validationError);
-      toast.error(validationError);
+    const err = validateEmail(email);
+    if (err) {
+      setEmailError(err);
+      message.error(err);
       return;
     }
 
     try {
-      const response = await forgotPassword({ email: email.trim() }).unwrap();
-      setEmailSent(true); // Show success message and start timer
+      await forgotPassword({ email: email.trim() }).unwrap();
+      setEmailSent(true);
+      message.success("Reset link sent! Check your inbox (and spam folder).");
     } catch (error) {
-      toast.error(error?.data?.message || "Failed to send reset link.");
+      const errMsg =
+        error?.data?.message || "Failed to send reset link. Please try again.";
+      message.error(errMsg);
     }
   };
 
@@ -88,17 +73,19 @@ const ForgotPassword = () => {
                 <div className="login-logo">
                   <img src={logo} alt="CM Trading Co Logo" />
                 </div>
+
+                {/* SUCCESS STATE */}
                 {emailSent ? (
                   <div
                     className="card"
                     style={{
                       border: "1px solid #eee",
                       borderRadius: "8px",
-                      backgroundColor: "#ffffff",
+                      backgroundColor: "#fff",
                     }}
                   >
                     <div
-                      className="card-body p-5"
+                      className="card-body p-5 text-center"
                       style={{
                         fontFamily: "'Lato', Arial, sans-serif",
                         color: "#646b72",
@@ -106,63 +93,75 @@ const ForgotPassword = () => {
                         lineHeight: "1.6",
                       }}
                     >
+                      <div className="mb-4">
+                        <MailOutlined
+                          style={{ fontSize: 48, color: "#52c41a" }}
+                        />
+                      </div>
                       <h3
                         style={{
                           color: "#212b36",
                           fontWeight: 700,
+                          marginBottom: "16px",
+                        }}
+                      >
+                        Check Your Email
+                      </h3>
+                      <p style={{ marginBottom: "16px" }}>
+                        A password reset link has been sent to:
+                      </p>
+                      <p
+                        style={{
+                          fontWeight: "600",
+                          color: "#1890ff",
                           marginBottom: "20px",
                         }}
                       >
-                        Email Sent!
-                      </h3>
-                      <p style={{ marginBottom: "20px" }}>
-                        A password reset link has been sent to{" "}
-                        <strong>{email}</strong>. Please check your email (and
-                        spam/junk folder) to reset your password.
+                        {email}
                       </p>
-                      <p style={{ marginBottom: "20px" }}>
+                      <p style={{ marginBottom: "20px", color: "#8c8c8c" }}>
+                        Please check your inbox (and spam/junk folder).
+                      </p>
+                      <p style={{ color: "#595959" }}>
                         This tab will close in{" "}
                         <strong style={{ color: "#e31e24" }}>
-                          {countdown} seconds
-                        </strong>
-                        . If it doesn’t close automatically, please close it
-                        manually.
+                          {countdown}
+                        </strong>{" "}
+                        seconds.
                       </p>
                     </div>
                   </div>
                 ) : (
+                  /* FORM STATE */
                   <form onSubmit={handleSubmit}>
                     <div className="card">
                       <div className="card-body p-5">
-                        <div className="login-userheading">
+                        <div className="login-userheading text-center mb-4">
                           <h3>Forgot Password?</h3>
-                          <h4>We'll send a reset link to your email.</h4>
+                          <h4 style={{ color: "#8c8c8c", fontSize: "15px" }}>
+                            Enter your email and we'll send you a reset link
+                          </h4>
                         </div>
-                        <div className="mb-3">
+
+                        <div className="mb-4">
                           <label className="form-label">
-                            Email <span className="text-danger">*</span>
+                            Email Address <span className="text-danger">*</span>
                           </label>
                           <div className="input-group">
                             <input
                               type="email"
-                              className={`form-control border-end-0 ${
+                              className={`form-control ${
                                 emailError ? "is-invalid" : ""
                               }`}
-                              value={profileLoading ? "Loading..." : email}
+                              value={email}
                               onChange={(e) => {
-                                if (useManualInput) {
-                                  setEmail(e.target.value);
-                                  setEmailError(validateEmail(e.target.value));
-                                }
+                                setEmail(e.target.value);
+                                setEmailError(validateEmail(e.target.value));
                               }}
-                              placeholder={
-                                useManualInput ? "Enter your email" : ""
-                              }
-                              disabled={
-                                isLoading || profileLoading || !useManualInput
-                              }
+                              placeholder="you@example.com"
+                              autoFocus
                             />
-                            <span className="input-group-text border-start-0">
+                            <span className="input-group-text">
                               <MailOutlined />
                             </span>
                             {emailError && (
@@ -171,47 +170,25 @@ const ForgotPassword = () => {
                               </div>
                             )}
                           </div>
-                          {(profileError || !profile?.user?.email) &&
-                            !profileLoading && (
-                              <div className="text-danger mt-2">
-                                Unable to fetch profile. Please enter your email
-                                manually.
-                              </div>
-                            )}
                         </div>
-                        <div className="form-login">
+
+                        <div className="form-login text-center">
                           <button
                             type="submit"
-                            className="btn btn-login"
+                            className="btn btn-login w-100"
                             disabled={
-                              isLoading ||
-                              profileLoading ||
-                              emailError ||
-                              !email.trim()
+                              isLoading || !!emailError || !email.trim()
                             }
                           >
-                            {isLoading ? (
-                              <>
-                                <Spinner
-                                  as="span"
-                                  animation="border"
-                                  size="sm"
-                                  role="status"
-                                  aria-hidden="true"
-                                  className="me-2"
-                                />
-                                Sending...
-                              </>
-                            ) : (
-                              "Send Reset Link"
-                            )}
+                            {isLoading ? "Sending..." : "Send Reset Link"}
                           </button>
                         </div>
-                        <div className="signinform text-center">
+
+                        <div className="signinform text-center mt-4">
                           <h4>
-                            Return to{" "}
+                            Remember your password?{" "}
                             <a href="/login" className="hover-a">
-                              login
+                              Back to Login
                             </a>
                           </h4>
                         </div>

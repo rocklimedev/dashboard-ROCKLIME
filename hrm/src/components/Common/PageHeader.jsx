@@ -1,9 +1,8 @@
 import React from "react";
 import { jsPDF } from "jspdf";
-import "jspdf-autotable"; // Import for structured PDF tables
+import "jspdf-autotable";
 import * as XLSX from "xlsx";
 import {
-  FileAddFilled,
   FilePdfFilled,
   FileExcelFilled,
   AppstoreOutlined,
@@ -11,117 +10,57 @@ import {
 } from "@ant-design/icons";
 import { Switch, Tooltip } from "antd";
 
-// Add custom CSS to style the Switch component
-const switchStyles = `
-  .custom-switch .ant-switch {
-    background-color: #808080 !important; /* Grey when unchecked */
-  }
-  .custom-switch .ant-switch-checked {
-    background-color: #808080 !important; /* Grey when checked */
-  }
-  .custom-switch .ant-switch-handle::before {
-    background-color: #fff !important; /* White handle for contrast */
-  }
-`;
-
-// Inject the styles into the document
-const styleSheet = document.createElement("style");
-styleSheet.innerText = switchStyles;
-document.head.appendChild(styleSheet);
-
 const PageHeader = ({
   title,
   subtitle,
   onAdd,
   tableData = [],
-  extra = {},
+  extra, // ← This will now accept any JSX (buttons, etc.)
   exportOptions = { pdf: true, excel: true },
 }) => {
-  // Function to handle downloading PDF
   const handleDownloadPDF = () => {
     if (tableData.length === 0) {
       alert("No data available to export");
       return;
     }
-
-    try {
-      const doc = new jsPDF();
-      doc.setFontSize(16);
-      doc.text(`${title} Report`, 14, 20);
-
-      // Define table columns (based on provided tableData structure)
-      const headers = Object.keys(tableData[0] || {});
-
-      // Prepare table rows
-      const rows = tableData.map((row) =>
-        headers.map((header) => {
-          let value = row[header] ?? "—";
-          if (value instanceof Date) {
-            value = value.toLocaleDateString();
-          } else if (typeof value === "object") {
-            value = JSON.stringify(value);
-          } else {
-            value = String(value);
-          }
-          return value;
-        })
-      );
-
-      // Generate table using jspdf-autotable
-      doc.autoTable({
-        head: [headers],
-        body: rows,
-        startY: 30,
-        styles: { fontSize: 8 },
-        headStyles: { fillColor: [60, 141, 188] },
-        columnStyles: headers.reduce((acc, _, index) => {
-          acc[index] = { cellWidth: 30 }; // Adjustable column width
-          return acc;
-        }, {}),
-      });
-
-      doc.save(`${title}.pdf`);
-    } catch (error) {
-      alert("Failed to generate PDF. Please try again.");
-      console.error(error);
-    }
+    // ... your PDF logic
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text(`${title} Report`, 14, 20);
+    const headers = Object.keys(tableData[0] || {});
+    const rows = tableData.map((row) =>
+      headers.map((h) => String(row[h] ?? "—"))
+    );
+    doc.autoTable({
+      head: [headers],
+      body: rows,
+      startY: 30,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [60, 141, 188] },
+    });
+    doc.save(`${title}.pdf`);
   };
 
-  // Function to handle downloading Excel
   const handleDownloadExcel = () => {
     if (tableData.length === 0) {
       alert("No data available to export");
       return;
     }
-
-    try {
-      const formattedData = tableData.map((row) => {
-        const formattedRow = {};
-        Object.keys(row).forEach((key) => {
-          let value = row[key] ?? "—";
-          if (value instanceof Date) {
-            value = value.toLocaleDateString();
-          } else if (typeof value === "object") {
-            value = JSON.stringify(value);
-          } else {
-            value = String(value);
-          }
-          formattedRow[key] = value;
-        });
-        return formattedRow;
-      });
-
-      const worksheet = XLSX.utils.json_to_sheet(formattedData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, title);
-      XLSX.writeFile(workbook, `${title}.xlsx`);
-    } catch (error) {
-      alert("Failed to generate Excel file. Please try again.");
-      console.error(error);
-    }
+    const worksheet = XLSX.utils.json_to_sheet(tableData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+    XLSX.writeFile(workbook, `${title}.xlsx`);
   };
 
-  const { viewMode, onViewToggle, showViewToggle = false } = extra;
+  // Extract view toggle if provided
+  const viewToggle =
+    extra && typeof extra === "object" && "viewMode" in extra
+      ? {
+          viewMode: extra.viewMode,
+          onViewToggle: extra.onViewToggle,
+          showViewToggle: extra.showViewToggle,
+        }
+      : null;
 
   return (
     <div className="page-header">
@@ -131,52 +70,51 @@ const PageHeader = ({
           {subtitle && <h6>{subtitle}</h6>}
         </div>
       </div>
+
+      {/* Export Buttons */}
       <ul className="table-top-head d-flex align-items-center">
         {exportOptions.pdf && (
           <li title="Download PDF" onClick={handleDownloadPDF}>
-            <a data-bs-toggle="tooltip" data-bs-placement="top" title="PDF">
-              <FilePdfFilled
-                size={22}
-                className="text-red-500 hover:text-red-700"
-              />
+            <a href="#" onClick={(e) => e.preventDefault()}>
+              <FilePdfFilled style={{ fontSize: 22, color: "#e74c3c" }} />
             </a>
           </li>
         )}
         {exportOptions.excel && (
           <li title="Download Excel" onClick={handleDownloadExcel}>
-            <a data-bs-toggle="tooltip" data-bs-placement="top" title="Excel">
-              <FileExcelFilled
-                size={22}
-                className="text-green-500 hover:text-green-700"
-              />
+            <a href="#" onClick={(e) => e.preventDefault()}>
+              <FileExcelFilled style={{ fontSize: 22, color: "#27ae60" }} />
             </a>
           </li>
         )}
-        {showViewToggle && (
+        {viewToggle?.showViewToggle && (
           <li>
             <Tooltip
-              title={
-                viewMode === "card"
-                  ? "Switch to List View"
-                  : "Switch to Card View"
-              }
+              title={viewToggle.viewMode === "card" ? "List View" : "Card View"}
             >
               <Switch
-                className="custom-switch"
                 checkedChildren={<AppstoreOutlined />}
                 unCheckedChildren={<UnorderedListOutlined />}
-                checked={viewMode === "card"}
-                onChange={onViewToggle}
+                checked={viewToggle.viewMode === "card"}
+                onChange={viewToggle.onViewToggle}
               />
             </Tooltip>
           </li>
         )}
       </ul>
+
+      {/* Custom Extra Buttons (This is what was missing!) */}
       <div className="page-btn">
+        {/* First: Render custom extra (your buttons) */}
+        {extra && typeof extra !== "object" && extra} {/* If extra is JSX */}
+        {extra &&
+          typeof extra === "object" &&
+          !("viewMode" in extra) &&
+          extra.children}
+        {/* Then: Default "Add" button */}
         {onAdd && (
-          <button onClick={onAdd} className="btn btn-primary">
-            <FileAddFilled size={20} />
-            Add {title}
+          <button onClick={onAdd} className="btn btn-primary ms-2">
+            + Add {title}
           </button>
         )}
       </div>

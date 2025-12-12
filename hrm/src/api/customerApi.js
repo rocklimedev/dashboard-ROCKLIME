@@ -1,43 +1,30 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../data/config";
+import { baseApi } from "./baseApi";
 
-export const customerApi = createApi({
-  reducerPath: "customerApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}/customers`,
-    prepareHeaders: (headers) => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
-  tagTypes: ["Customers"], // Define tag type for customers
+export const customerApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     createCustomer: builder.mutation({
       query: (customerData) => ({
-        url: "/",
+        url: "/customers/",
         method: "POST",
         body: customerData,
       }),
       invalidatesTags: ["Customers"], // Invalidate to refetch customers
     }),
     getCustomers: builder.query({
-      query: () => "/",
+      query: () => "/customers/",
       providesTags: ["Customers"], // Tag to allow invalidation
     }),
     getCustomerById: builder.query({
-      query: (id) => `/${id}`,
+      query: (id) => `/customers/${id}`,
       providesTags: ["Customers"], // Tag for specific customer data
     }),
     getInvoicesByCustomerId: builder.query({
-      query: (id) => `/${id}/invoices`,
+      query: (id) => `/customers/${id}/invoices`,
       providesTags: ["Customers"], // Tag for customer-related invoices
     }),
     updateCustomer: builder.mutation({
       query: ({ id, ...updatedData }) => ({
-        url: `/${id}`,
+        url: `/customers/${id}`,
         method: "PUT",
         body: updatedData,
       }),
@@ -45,7 +32,7 @@ export const customerApi = createApi({
     }),
     deleteCustomer: builder.mutation({
       query: (id) => ({
-        url: `/${id}`,
+        url: `/customers/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: ["Customers"], // Invalidate to refetch customers
